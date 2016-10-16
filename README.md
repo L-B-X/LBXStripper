@@ -19,3 +19,7 @@ This is a beta version.  More functionality will be added, things will change - 
 
 Report any errors or ask any questions here:
 http://forum.cockos.com/showthread.php?t=182233
+
+You may get some indication on how things work in this video - but bear in mind this version was a very early alpha version - and things have changed somewhat since then.
+
+https://www.youtube.com/watch?v=dFWRuXEQVDc&feature=youtu.be
