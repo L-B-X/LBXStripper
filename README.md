@@ -11,6 +11,10 @@ Place the LBX Stripper.Lua file somewhere within the LBX folder
 
 Open the LBX Stripper.Lua script in Reaper
 
+If you get any errors opening the script - please try copying and pasting the code direct from Github into a new script in Reaper - as my last script (Chaos Engine) had some reports of the downloaded .lua file not working - even though the code was fine.  This may be a me not knowing how to use github thing (perhaps an encoding problem with the lua file on github).
+
+
+
 Then...
 
 Suss out how to use it until I have time to create more detailed instructions :)
