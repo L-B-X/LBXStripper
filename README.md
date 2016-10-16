@@ -15,5 +15,7 @@ Then...
 
 Suss out how to use it until I have time to create more detailed instructions :)
 
+This is a beta version.  More functionality will be added, things will change - I will try to keep all changes compatible with older versions - but in some cases this may not be possible - so bear in mind if you incorporate it into important projects.
+
 Report any errors or ask any questions here:
 http://forum.cockos.com/showthread.php?t=182233
