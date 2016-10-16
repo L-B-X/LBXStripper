@@ -2,6 +2,8 @@
 Lua Reascript for Reaper to create custom channel strips
 
 Installation instructions:
+Download both LBXCS_resources.zip and LBX Stripper.Lua files.
+
 Create a folder in the reaper repository/Scripts folder called LBX
 Within this folder unpack the LBXCS_resources zip file
 
