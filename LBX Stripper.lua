@@ -1553,18 +1553,17 @@
               local toff = math.floor(strips[tracks[track_select].strip][page].controls[i].textoff)
               local toffv = math.floor(strips[tracks[track_select].strip][page].controls[i].textoffval)
               local tsz = nz(strips[tracks[track_select].strip][page].controls[i].textsize,0)
-              local frames = strips[tracks[track_select].strip][page].controls[i].ctl_info.frames
+              local frames = math.floor(strips[tracks[track_select].strip][page].controls[i].ctl_info.frames)
               local ctltype = strips[tracks[track_select].strip][page].controls[i].ctltype
               local ctlnmov = strips[tracks[track_select].strip][page].controls[i].ctlname_override
               local found = strips[tracks[track_select].strip][page].controls[i].fxfound
-    
               
               if fxnum == nil then return end
     
               local v2 = reaper.TrackFX_GetParamNormalized(track,fxnum,param)
               
-              local val2 =  F_limit(round(frames*v2,0),0,frames-1)
-                      
+              local val2 = F_limit(round(frames*v2),0,frames-1)
+              
               if mode == 1 and submode == 1 then
                 gfx.a = 0.5
               else
@@ -1639,7 +1638,7 @@
                 gfx.a = 0.5
               end              
               gfx.blit(iidx,scale,0, 0, (val2)*gh, w, h, px, py)
-
+              
               strips[tracks[track_select].strip][page].controls[i].tl1 = text_len1x
               strips[tracks[track_select].strip][page].controls[i].tl2 = text_len2x
               
@@ -1854,8 +1853,10 @@
         
         end
         
-        gfx.blit(1001,1,0,0,0,obj.sections[43].w+2,obj.sections[43].h,0,butt_h)
-
+        if plist_w > 0 then                  
+          gfx.blit(1001,1,0,0,0,obj.sections[43].w+2,obj.sections[43].h,0,butt_h)
+        end
+        
         f_Get_SSV(gui.color.black)
         gfx.rect(0,
                  obj.sections[11].y, 
@@ -1904,7 +1905,7 @@
                             obj.sections[10].x,
                             obj.sections[10].y)
           gfx.blit(1001,1,0,0,0,obj.sections[43].w+2,obj.sections[43].h,0,butt_h+2)
-
+          
           if dragparam ~= nil then
             if reass_param == nil then
               local x, y = dragparam.x, dragparam.y
@@ -1994,6 +1995,7 @@
                             obj.sections[10].h,
                             obj.sections[10].x,
                             obj.sections[10].y)
+          
           gfx.blit(1001,1,0,0,0,obj.sections[43].w+2,obj.sections[43].h,0,butt_h)
 
           if draggfx ~= nil then
@@ -2301,9 +2303,9 @@
              xywh.w,
              xywh.h, 1 )
 
-    local xywh = {x = (plist_w+2),
+    local xywh = {x = (plist_w),
                   y = (butt_h+2),
-                  w = sb_size+4,
+                  w = sb_size+6,
                   h = hh}
     f_Get_SSV(gui.color.black)
     gfx.a = 1
@@ -4259,7 +4261,7 @@
         if mouse.context and mouse.context == 'valoffsetslider' then
           local val = F_limit(MOUSE_sliderHBar(obj.sections[65]),0,1)
           if val ~= nil then
-            textoff_select = val*100 - 50
+            textoffval_select = val*100 - 50
             for i = 1, #ctl_select do
               strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].textoffval = textoffval_select
             end            
