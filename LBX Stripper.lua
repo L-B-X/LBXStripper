@@ -195,11 +195,6 @@
                           y = (butt_h+2)*2,
                           w = plist_w,
                           h = butt_h}
-      --grid
-      obj.sections[16] = {x = gfx1.main_w - 302,
-                          y = 0,
-                          w = 100,
-                          h = butt_h}
       --save
       obj.sections[17] = {x = gfx1.main_w - 200,
                           y = 0,
@@ -342,7 +337,7 @@
                           y = gfx1.main_h/2-seth/2,
                           w = setw,
                           h = seth}
-      local xofft, yoff, yoffm, bh, bw, sw = 200, 40, butt_h/2+14, butt_h/2+4, butt_h/2+4, 80
+      local xofft, yoff, yoffm, bh, bw, sw = 200, 28, butt_h/2+14, butt_h/2+4, butt_h/2+4, 80
       obj.sections[71] = {x = obj.sections[70].x+xofft,
                           y = obj.sections[70].y+yoff + yoffm*0,
                           w = bw,
@@ -375,7 +370,14 @@
                                 y = obj.sections[70].y+yoff + yoffm*5,
                                 w = 40,
                                 h = bh}
-
+      obj.sections[79] = {x = obj.sections[70].x+xofft+bw+10,
+                                y = obj.sections[70].y+yoff + yoffm*6,
+                                w = 40,
+                                h = bh}
+      obj.sections[80] = {x = obj.sections[70].x+xofft,
+                                y = obj.sections[70].y+yoff + yoffm*6,
+                                w = bw,
+                                h = bh}
     return obj
   end
   
@@ -2419,6 +2421,9 @@
     GUI_DrawTick(gui, 'Lock control window height', obj.sections[76], gui.color.white, locky)
     GUI_DrawButton(gui, lockw, obj.sections[77], gui.color.white, gui.color.black, lockx)
     GUI_DrawButton(gui, lockh, obj.sections[78], gui.color.white, gui.color.black, locky)
+    
+    GUI_DrawTick(gui, 'Show grid / grid size', obj.sections[80], gui.color.white, settings_showgrid)
+    GUI_DrawButton(gui, settings_gridsize, obj.sections[79], gui.color.white, gui.color.black, true)
                
   end
   
@@ -3785,10 +3790,20 @@
         update_gfx = true
       elseif mouse.context == nil and MOUSE_click(obj.sections[77]) then
         mouse.context = 'lockw'
-        oval = lockw
+        ctlpos = lockw
       elseif mouse.context == nil and MOUSE_click(obj.sections[78]) then
         mouse.context = 'lockh'
-        oval = lockh
+        ctlpos = lockh
+      elseif mouse.context == nil and MOUSE_click(obj.sections[80]) then
+        settings_showgrid = not settings_showgrid
+        osg = settings_showgrid
+        if settings_gridsize < 16 then
+          settings_showgrid = false
+        end
+        update_gfx = true
+      elseif mouse.context == nil and MOUSE_click(obj.sections[79]) then
+        mouse.context = 'gridslider'
+        ctlpos = settings_gridsize
       end
       
       if mouse.context and mouse.context == 'updatefreq' then
@@ -3803,15 +3818,30 @@
       elseif mouse.context and mouse.context == 'lockw' then
         local val = F_limit(MOUSE_slider(obj.sections[77]),0,1)
         if val ~= nil then
-          lockw = F_limit(math.floor((((1-val)*1000))/settings_gridsize)*settings_gridsize,0,1000)
+          val = 1-val
+          lockw = F_limit(ctlpos + math.floor((val*1000)/settings_gridsize)*settings_gridsize,64,1000)
           obj = GetObjects()
           update_gfx = true
         end
       elseif mouse.context and mouse.context == 'lockh' then
         local val = F_limit(MOUSE_slider(obj.sections[78]),0,1)
         if val ~= nil then
-          lockh = F_limit(math.floor((((1-val)*1000))/settings_gridsize)*settings_gridsize,0,1000)
+          val = 1-val
+          lockh = F_limit(ctlpos + math.floor((val*1000)/settings_gridsize)*settings_gridsize,64,1000)
           obj = GetObjects()
+          update_gfx = true
+        end
+      elseif mouse.context and mouse.context == 'gridslider' then
+        local val = F_limit(MOUSE_slider(obj.sections[79]),0,1)
+        if val ~= nil then
+          val = 1-val
+          settings_gridsize = F_limit(ctlpos + math.floor((val-0.5)*200),1,128)
+          ogrid = settings_gridsize
+          if settings_gridsize < 16 then
+            settings_showgrid = false
+          else
+            settings_showgrid = nz(osg,true)
+          end
           update_gfx = true
         end
       end
@@ -4085,7 +4115,7 @@
         end
       end
     
-      if mouse.context == nil and MOUSE_click(obj.sections[16]) then 
+      --[[if mouse.context == nil and MOUSE_click(obj.sections[16]) then 
         settings_showgrid = not settings_showgrid
         osg = settings_showgrid
         if settings_gridsize < 16 then
@@ -4109,7 +4139,7 @@
           end
           update_gfx = true
         end
-      end
+      end]]
             
       if mouse.shift then
         settings_gridsize = 1
