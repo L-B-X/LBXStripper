@@ -2112,10 +2112,6 @@
 
       GUI_DrawTopBar(gui,obj)
 
-      if show_settings then
-        GUI_DrawSettings(gui, obj)
-      end
-      
       if MS_Open > 0 then
         GUI_DrawMsg(gui, obj)
         
@@ -2130,6 +2126,11 @@
       if settings_showbars and (update_gfx or update_surface) then
         GUI_DrawBars(gui, obj)
       end
+
+      if show_settings then
+        GUI_DrawSettings(gui, obj)
+      end
+      
       
       --[[if lockw > 0 or lockh > 0 then
         UpdateLEdges()
@@ -3506,9 +3507,9 @@
   
     local mstr
     if mode == 0 then
-      mstr = 'Toggle Sidebar||Lock X|Lock Y|Scroll Up|Scroll Down||Save|Settings||Page 1|Page 2|Page 3|Page 4'
+      mstr = 'Toggle Sidebar||Lock X|Lock Y|Scroll Up|Scroll Down||Save Script State|Open Settings||Page 1|Page 2|Page 3|Page 4'
     else
-      mstr = '#Toggle Sidebar||Lock X|Lock Y|Scroll Up|Scroll Down||Save|Settings||Page 1|Page 2|Page 3|Page 4'
+      mstr = '#Toggle Sidebar||Lock X|Lock Y|Scroll Up|Scroll Down||Save Script State|Open Settings||Page 1|Page 2|Page 3|Page 4'
     end
     gfx.x, gfx.y = mouse.mx, mouse.my
     res = OpenMenu(mstr)
@@ -3819,7 +3820,7 @@
         local val = F_limit(MOUSE_slider(obj.sections[77]),0,1)
         if val ~= nil then
           val = 1-val
-          lockw = F_limit(ctlpos + math.floor((val*1000)/settings_gridsize)*settings_gridsize,64,1000)
+          lockw = F_limit( math.floor((val*1000)/settings_gridsize)*settings_gridsize,64,1000)
           obj = GetObjects()
           update_gfx = true
         end
@@ -3827,7 +3828,7 @@
         local val = F_limit(MOUSE_slider(obj.sections[78]),0,1)
         if val ~= nil then
           val = 1-val
-          lockh = F_limit(ctlpos + math.floor((val*1000)/settings_gridsize)*settings_gridsize,64,1000)
+          lockh = F_limit( math.floor((val*1000)/settings_gridsize)*settings_gridsize,64,1000)
           obj = GetObjects()
           update_gfx = true
         end
@@ -5608,6 +5609,8 @@
   
   function SaveData()
   
+    SaveSettings()
+    
     local s, p, c, g
     reaper.SetProjExtState(0,SCRIPT,"","") -- clear first
     
