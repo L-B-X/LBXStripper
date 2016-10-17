@@ -178,7 +178,7 @@
       --track title
       obj.sections[12] = {x = plist_w+2+127,
                           y = 0,
-                          w = gfx1.main_w - plist_w - 433,
+                          w = gfx1.main_w - plist_w - 331,
                           h = butt_h}
       --submode
       obj.sections[13] = {x = 0,
@@ -214,9 +214,14 @@
                           y = 0,
                           w = 25,
                           h = butt_h}
+      --XYUD
       obj.sections[20] = {x = obj.sections[18].x+obj.sections[18].w+2,
                           y = 0,
                           w = 100,
+                          h = butt_h}
+      obj.sections[21] = {x = gfx1.main_w - 25,
+                          y = 0,
+                          w = 25,
                           h = butt_h}
 
       local fx_h = 160
@@ -459,9 +464,9 @@
         gfx.a = 1 
         gfx.setfont(1, gui.fontname, gui.fontsz_knob + offs)
         local text_len, newlen = gfx.measurestr(text), string.len(text)
-        if limitx ~= nil and text_len > limitx then
+        if limitx ~= nil and text_len+4 > limitx then
           for l = string.len(text), 1, -2 do
-            text_len = gfx.measurestr(string.sub(text,0,l))
+            text_len = gfx.measurestr(string.sub(text,0,l))+4
             if text_len <= limitx then newlen = l break end
           end
         end
@@ -485,6 +490,26 @@
         local text_len = gfx.measurestr(text)
         gfx.x, gfx.y = xywh.x+(xywh.w-text_len)/2,xywh.y+(xywh.h-gfx.texth)/2 + 1
         gfx.drawstr(text)
+  end
+
+  function GUI_textC_LIM(gui, xywh, text, color, offs)
+        f_Get_SSV(color)  
+        gfx.a = 1 
+        gfx.setfont(1, gui.fontname, gui.fontsz_knob + offs)
+        local text_len, newlen = gfx.measurestr(text), string.len(text)
+        if text_len > xywh.w then
+          for l = string.len(text), 1, -2 do
+            text_len = gfx.measurestr(string.sub(text,0,l))
+            if text_len <= xywh.w then newlen = l break end
+          end
+        end
+        if xywh.w < 20 then return end
+        if newlen < string.len(text) then
+          gfx.x, gfx.y = xywh.x+2,xywh.y+(xywh.h-gfx.texth)/2 + 1
+        else
+          gfx.x, gfx.y = xywh.x+(xywh.w-text_len)/2,xywh.y+(xywh.h-gfx.texth)/2 + 1
+        end
+        gfx.drawstr(string.sub(text,1,newlen-1))
   end
   
   ------------------------------------------------------------
@@ -1863,14 +1888,6 @@
                  gfx1.main_w,
                  obj.sections[11].h+2, 1, 1)
 
-        f_Get_SSV(gui.color.white)
-        gfx.rect(obj.sections[11].x,
-                 obj.sections[11].y, 
-                 obj.sections[11].w,
-                 obj.sections[11].h, 1, 1)
-        
-        GUI_textC(gui,obj.sections[11],'LIVE MODE',gui.color.black,-2)
-
         if update_gfx then
           if lockh > 0 or lockw > 0 then
             UpdateLEdges()
@@ -2078,152 +2095,6 @@
         
         end
 
-        gfx.a=1
-        f_Get_SSV(gui.color.black)
-        gfx.rect(0,
-                 obj.sections[11].y, 
-                 gfx1.main_w,
-                 obj.sections[11].h+2, 1, 1)
-
-        f_Get_SSV(gui.color.red)
-        gfx.rect(obj.sections[11].x,
-                 obj.sections[11].y, 
-                 obj.sections[11].w,
-                 obj.sections[11].h, 1, 1)
-        
-        GUI_textC(gui,obj.sections[11],'EDIT MODE',gui.color.black,-2)
-
-        gfx.a=1
-        f_Get_SSV(gui.color.white)
-        gfx.rect(obj.sections[13].x,
-                 obj.sections[13].y, 
-                 obj.sections[13].w,
-                 obj.sections[13].h, 1, 1)
-        GUI_textC(gui,obj.sections[13],submode_table[submode+1],gui.color.black,-2)        
-              
-      end
-
-      local c = gui.color.black
-      if mode == 0 then
-        f_Get_SSV(gui.color.white)
-      elseif settings_showgrid then
-        f_Get_SSV(gui.color.white)
-      else
-        f_Get_SSV(gui.color.black)
-        c = gui.color.white        
-      end
-      gfx.rect(obj.sections[16].x,
-               obj.sections[16].y, 
-               obj.sections[16].w,
-               obj.sections[16].h, 1, 1)
-      if mode ~= 0 then
-        GUI_textC(gui,obj.sections[16],'GRID: '..settings_gridsize,c,-2)
-      end
-      
-      f_Get_SSV(gui.color.white)
-      gfx.rect(obj.sections[17].x,
-               obj.sections[17].y, 
-               obj.sections[17].w,
-               obj.sections[17].h, 1, 1)
-      GUI_textC(gui,obj.sections[17],'SAVE',gui.color.black,-2)
-
-      f_Get_SSV(gui.color.white)
-      gfx.rect(obj.sections[19].x,
-               obj.sections[19].y, 
-               obj.sections[19].w,
-               obj.sections[19].h, 1, 1)
-      GUI_textC(gui,obj.sections[19],'*',gui.color.black,-2)
-
-      f_Get_SSV(gui.color.white)
-      gfx.rect(obj.sections[12].x,
-               obj.sections[12].y, 
-               obj.sections[12].w,
-               obj.sections[12].h, 1, 1)
-
-      f_Get_SSV(gui.color.white)
-      gfx.rect(obj.sections[18].x,
-               obj.sections[18].y, 
-               obj.sections[18].w,
-               obj.sections[18].h, 1, 1)
-      if mode == 0 then
-        if show_editbar then
-          GUI_textC(gui,obj.sections[18],'<',gui.color.black,-2)
-        else
-          GUI_textC(gui,obj.sections[18],'>',gui.color.black,-2)      
-        end
-      end
-      
-      local c
-      for i = 0, 3 do
-        local xywh = {x = obj.sections[14].x+2 + i*(obj.sections[14].w/4),
-                      y = obj.sections[14].y, 
-                      w = obj.sections[14].w/4-2,
-                      h = obj.sections[14].h}
-        if page == i+1 then
-          f_Get_SSV(gui.color.white)
-          c = gui.color.black
-        else
-          f_Get_SSV(gui.color.black)
-          c = gui.color.white
-        end
-        gfx.rect(xywh.x,
-                 xywh.y, 
-                 xywh.w,
-                 xywh.h, 1, 1)
-        GUI_textC(gui,xywh,i+1,c,-2)
-      end
-      local t
-      for i = 0, 3 do
-        local xywh = {x = obj.sections[20].x + i*(obj.sections[20].w/4),
-                      y = obj.sections[20].y, 
-                      w = obj.sections[20].w/4-2,
-                      h = obj.sections[20].h}
-        if i == 0 and lockx == false then 
-          f_Get_SSV(gui.color.white)
-          c = gui.color.black
-          t = 'X'
-        elseif i == 0 then
-          f_Get_SSV(gui.color.black)
-          c = gui.color.white
-          t = 'X'
-        elseif i == 1 and locky == false then         
-          f_Get_SSV(gui.color.white)
-          c = gui.color.black
-          t = 'Y'
-        elseif i == 1 then
-          f_Get_SSV(gui.color.black)
-          c = gui.color.white
-          t = 'Y'
-        elseif i == 2 then
-          f_Get_SSV(gui.color.white)
-          c = gui.color.black
-          t = ''
-        elseif i == 3 then
-          f_Get_SSV(gui.color.white)
-          c = gui.color.black        
-          t = ''
-        end
-                
-        gfx.rect(xywh.x,
-                 xywh.y, 
-                 xywh.w,
-                 xywh.h, 1, 1)
-        GUI_textC(gui,xywh,t,c,-2)
-        if i == 2 then
-          gfx.triangle(xywh.x+xywh.w/2,xywh.y+6,xywh.x+xywh.w/2-4,xywh.y+xywh.h-6,xywh.x+xywh.w/2+4,xywh.y+xywh.h-6,1)
-        elseif i == 3 then
-          gfx.triangle(xywh.x+xywh.w/2,xywh.y+xywh.h-6,xywh.x+xywh.w/2-4,xywh.y+6,xywh.x+xywh.w/2+4,xywh.y+6,1)
-        end
-      end      
-      if infomsg ~= nil then
-        GUI_textC(gui,obj.sections[12],infomsg,gui.color.black,-2)
-        infomsg = nil        
-      elseif tracks and tracks[track_select] then
-        local trn = tracks[track_select].name
-        if trn == '' then
-          trn = '[unnamed track]'
-        end
-        GUI_textC(gui,obj.sections[12],'TRACK: ' .. tracks[track_select].tracknum+1 .. ' - '.. trn,gui.color.black,-2)
       end
       
       local xywh = {x = obj.sections[43].w-1,
@@ -2236,6 +2107,8 @@
                xywh.y, 
                xywh.w,
                xywh.h, 1 )
+
+      GUI_DrawTopBar(gui,obj)
 
       if show_settings then
         GUI_DrawSettings(gui, obj)
@@ -2281,6 +2154,192 @@
     
   end
   
+  function GUI_DrawTopBar(gui, obj)
+  
+    gfx.a=1
+    f_Get_SSV(gui.color.black)
+    gfx.rect(0,
+             obj.sections[11].y, 
+             gfx1.main_w,
+             obj.sections[11].h+2, 1, 1)
+
+    if mode == 0 then
+
+      f_Get_SSV(gui.color.white)
+      gfx.rect(obj.sections[11].x,
+               obj.sections[11].y, 
+               obj.sections[11].w,
+               obj.sections[11].h, 1, 1)
+      
+      GUI_textC(gui,obj.sections[11],'LIVE MODE',gui.color.black,-2)
+
+    else
+
+      f_Get_SSV(gui.color.red)
+      gfx.rect(obj.sections[11].x,
+               obj.sections[11].y, 
+               obj.sections[11].w,
+               obj.sections[11].h, 1, 1)
+    
+      GUI_textC(gui,obj.sections[11],'EDIT MODE',gui.color.black,-2)
+    
+      gfx.a=1
+      f_Get_SSV(gui.color.white)
+      gfx.rect(obj.sections[13].x,
+               obj.sections[13].y, 
+               obj.sections[13].w,
+               obj.sections[13].h, 1, 1)
+      GUI_textC(gui,obj.sections[13],submode_table[submode+1],gui.color.black,-2)        
+    end
+            
+    
+    --[[local c = gui.color.black
+    if mode == 0 then
+      f_Get_SSV(gui.color.white)
+    elseif settings_showgrid then
+      f_Get_SSV(gui.color.white)
+    else
+      f_Get_SSV(gui.color.black)
+      c = gui.color.white        
+    end
+    gfx.rect(obj.sections[16].x,
+             obj.sections[16].y, 
+             obj.sections[16].w,
+             obj.sections[16].h, 1, 1)
+    if mode ~= 0 then
+      GUI_textC(gui,obj.sections[16],'GRID: '..settings_gridsize,c,-2)
+    end]]    
+    
+    f_Get_SSV(gui.color.white)
+    gfx.rect(obj.sections[12].x,
+             obj.sections[12].y, 
+             obj.sections[12].w,
+             obj.sections[12].h, 1, 1)
+    
+    f_Get_SSV(gui.color.white)
+    gfx.rect(obj.sections[18].x,
+             obj.sections[18].y, 
+             obj.sections[18].w,
+             obj.sections[18].h, 1, 1)
+    if mode == 0 then
+      if show_editbar then
+        GUI_textC(gui,obj.sections[18],'<',gui.color.black,-2)
+      else
+        GUI_textC(gui,obj.sections[18],'>',gui.color.black,-2)      
+      end
+    end    
+    
+    local t
+    for i = 0, 3 do
+      local xywh = {x = obj.sections[20].x + i*(obj.sections[20].w/4),
+                    y = obj.sections[20].y, 
+                    w = obj.sections[20].w/4-2,
+                    h = obj.sections[20].h}
+      if i == 0 and lockx == false then 
+        f_Get_SSV(gui.color.white)
+        c = gui.color.black
+        t = 'X'
+      elseif i == 0 then
+        f_Get_SSV(gui.color.black)
+        c = gui.color.white
+        t = 'X'
+      elseif i == 1 and locky == false then         
+        f_Get_SSV(gui.color.white)
+        c = gui.color.black
+        t = 'Y'
+      elseif i == 1 then
+        f_Get_SSV(gui.color.black)
+        c = gui.color.white
+        t = 'Y'
+      elseif i == 2 then
+        f_Get_SSV(gui.color.white)
+        c = gui.color.black
+        t = ''
+      elseif i == 3 then
+        f_Get_SSV(gui.color.white)
+        c = gui.color.black        
+        t = ''
+      end
+              
+      gfx.rect(xywh.x,
+               xywh.y, 
+               xywh.w,
+               xywh.h, 1, 1)
+      GUI_textC(gui,xywh,t,c,-2)
+      if i == 2 then
+        gfx.triangle(xywh.x+xywh.w/2,xywh.y+6,xywh.x+xywh.w/2-4,xywh.y+xywh.h-6,xywh.x+xywh.w/2+4,xywh.y+xywh.h-6,1)
+      elseif i == 3 then
+        gfx.triangle(xywh.x+xywh.w/2,xywh.y+xywh.h-6,xywh.x+xywh.w/2-4,xywh.y+6,xywh.x+xywh.w/2+4,xywh.y+6,1)
+      end
+    end      
+    
+    if obj.sections[12].w > 0 then
+      if infomsg ~= nil then
+        GUI_textC(gui,obj.sections[12],infomsg,gui.color.black,-2)
+        infomsg = nil        
+      elseif tracks and tracks[track_select] then
+        local trn = tracks[track_select].name
+        if trn == '' then
+          trn = '[unnamed track]'
+        end
+        GUI_textC_LIM(gui,obj.sections[12],'TRACK: ' .. tracks[track_select].tracknum+1 .. ' - '.. trn,gui.color.black,-2)
+      end
+    end  
+
+    if obj.sections[17].x > obj.sections[20].x+obj.sections[20].w then
+      f_Get_SSV(gui.color.white)
+      gfx.rect(obj.sections[17].x,
+               obj.sections[17].y, 
+               obj.sections[17].w,
+               obj.sections[17].h, 1, 1)
+      GUI_textC(gui,obj.sections[17],'SAVE',gui.color.black,-2)
+    --end
+        
+    --if obj.sections[19].x > obj.sections[20].x+obj.sections[20].w then
+      f_Get_SSV(gui.color.white)
+      gfx.rect(obj.sections[19].x,
+               obj.sections[19].y, 
+               obj.sections[19].w,
+               obj.sections[19].h, 1, 1)
+      GUI_textC(gui,obj.sections[19],'*',gui.color.black,-2)
+    --end
+
+    --if obj.sections[14].x > obj.sections[20].x+obj.sections[20].w then
+      local c
+      for i = 0, 3 do
+        local xywh = {x = obj.sections[14].x+2 + i*(obj.sections[14].w/4),
+                      y = obj.sections[14].y, 
+                      w = obj.sections[14].w/4-2,
+                      h = obj.sections[14].h}
+        if page == i+1 then
+          f_Get_SSV(gui.color.white)
+          c = gui.color.black
+        else
+          f_Get_SSV(gui.color.black)
+          c = gui.color.white
+        end
+        gfx.rect(xywh.x,
+                 xywh.y, 
+                 xywh.w,
+                 xywh.h, 1, 1)
+        GUI_textC(gui,xywh,i+1,c,-2)
+      end
+    else
+      f_Get_SSV(gui.color.white)
+      gfx.rect(obj.sections[21].x,
+               obj.sections[21].y, 
+               obj.sections[21].w,
+               obj.sections[21].h, 1, 1)
+      GUI_textC(gui,obj.sections[21],'...',gui.color.black,-2)
+      f_Get_SSV(gui.color.black)
+      gfx.rect(obj.sections[21].x-2,
+               obj.sections[21].y, 
+               2,
+               obj.sections[21].h, 1, 1)
+      
+    end
+      
+  end
   
   function GUI_DrawBars(gui, obj)
   
@@ -3438,6 +3497,116 @@
     
   end
   
+  function TopMenu()
+  
+    local mstr
+    if mode == 0 then
+      mstr = 'Toggle Sidebar||Lock X|Lock Y|Scroll Up|Scroll Down||Save|Settings||Page 1|Page 2|Page 3|Page 4'
+    else
+      mstr = '#Toggle Sidebar||Lock X|Lock Y|Scroll Up|Scroll Down||Save|Settings||Page 1|Page 2|Page 3|Page 4'
+    end
+    gfx.x, gfx.y = mouse.mx, mouse.my
+    res = OpenMenu(mstr)
+    if res ~= 0 then
+      if res == 1 then
+        ToggleSidebar()
+      elseif res == 2 then
+        LockX()
+      elseif res == 3 then
+        LockY()
+      elseif res == 4 then
+        ScrollUp()
+      elseif res == 5 then
+        ScrollDown()
+      elseif res == 6 then
+        SaveData()
+        infomsg = "*** DATA SAVED ***"
+        OpenMsgBox(1,'Data Saved.',1)
+        update_gfx = true      
+      elseif res == 7 then
+        show_settings = not show_settings
+        update_gfx = true
+      elseif res >= 8 and res <= 11 then
+        SetPage(res-7)
+      end
+      update_gfx = true
+    end
+    
+  end
+  
+  function ToggleSidebar()
+    
+    if mode == 0 then
+      show_editbar = not show_editbar
+      if show_editbar then
+        plist_w = 140
+      else
+        plist_w = 0
+      end
+      force_resize = true
+    end    
+  
+  end
+  
+  function LockX()
+    lockx = not lockx
+    if lockx then
+      surface_offset.x = 0
+    end
+    obj = GetObjects()
+  end
+  
+  function LockY()
+    locky = not locky
+    if locky then
+      surface_offset.y = 0
+    end
+    obj = GetObjects()
+  end
+  
+  function ScrollUp()
+    if surface_offset.y > 0 then
+      if lockh > 0 then
+        surface_offset.y = surface_offset.y - lockh
+      else
+        surface_offset.y = surface_offset.y - math.floor(obj.sections[10].h/settings_gridsize)*settings_gridsize
+      end
+    end
+  end
+  
+  function ScrollDown()
+    if surface_offset.y < surface_size.h-obj.sections[10].h then
+      if lockh > 0 then
+        surface_offset.y = surface_offset.y + lockh
+      else
+        surface_offset.y = surface_offset.y + math.floor(obj.sections[10].h/settings_gridsize)*settings_gridsize
+      end
+    end
+  end
+  
+  function SetPage(lpage)
+    
+    page = lpage
+    ctl_select = nil
+    gfx2_select = nil
+    gfx3_select = nil
+    
+    if strips and tracks[track_select] and strips[tracks[track_select].strip] then
+      strips[tracks[track_select].strip].page = page
+      surface_offset.x = tonumber(strips[tracks[track_select].strip][page].surface_x)
+      surface_offset.y = tonumber(strips[tracks[track_select].strip][page].surface_y)
+    else
+      surface_offset.x = 0
+      surface_offset.y = 0       
+    end
+    
+    if settings_autocentrectls then
+      AutoCentreCtls()
+    end
+    update_gfx = true
+    
+  end
+  
   ------------------------------------------------------------    
 
   function run()  
@@ -3583,12 +3752,12 @@
     end
     
     if show_settings then
-      if MOUSE_click(obj.sections[19]) then
+      --if MOUSE_click(obj.sections[19]) then
         --settings
-        show_settings = false
-        SaveSettings()
-        update_gfx = true
-      elseif mouse.LB and not mouse.last_LB and not MOUSE_click(obj.sections[70]) then
+      --  show_settings = false
+      --  SaveSettings()
+      --  update_gfx = true
+      if mouse.LB and not mouse.last_LB and not MOUSE_click(obj.sections[70]) then
         show_settings = false
         SaveSettings()
         update_gfx = true      
@@ -3690,7 +3859,11 @@
       update_gfx = true
     else
     
-    if MOUSE_click(obj.sections[11]) then
+    if (obj.sections[17].x <= obj.sections[20].x+obj.sections[20].w) and MOUSE_click(obj.sections[21]) then
+    
+      TopMenu()
+    
+    elseif MOUSE_click(obj.sections[11]) then
       gfx3_select = nil
       gfx2_select = nil
       ctl_select = nil
@@ -3704,80 +3877,41 @@
       update_gfx = true
 
     elseif MOUSE_click(obj.sections[18]) then
-      if mode == 0 then
-        show_editbar = not show_editbar
-        if show_editbar then
-          plist_w = 140
-        else
-          plist_w = 0
-        end
-        force_resize = true
-        --update_gfx = true
-      end    
-    elseif MOUSE_click(obj.sections[12]) then
+      ToggleSidebar()
+    
+    --elseif MOUSE_click(obj.sections[12]) then
       --centre
-      AutoCentreCtls()
-    elseif MOUSE_click(obj.sections[19]) then
+    --  AutoCentreCtls()
+    elseif (obj.sections[17].x > obj.sections[20].x+obj.sections[20].w) and MOUSE_click(obj.sections[19]) then
       --settings
       show_settings = not show_settings
       update_gfx = true
 
-    elseif MOUSE_click(obj.sections[17]) then
+    elseif (obj.sections[17].x > obj.sections[20].x+obj.sections[20].w) and MOUSE_click(obj.sections[17]) then
       SaveData()
       infomsg = "*** DATA SAVED ***"
+      OpenMsgBox(1,'Data Saved.',1)
       update_gfx = true
     
-    elseif MOUSE_click(obj.sections[14]) then
+    elseif (obj.sections[17].x > obj.sections[20].x+obj.sections[20].w) and MOUSE_click(obj.sections[14]) then
       --page
-      page = F_limit(math.ceil((mouse.mx-obj.sections[14].x)/(obj.sections[14].w/4)),1,4)
-      ctl_select = nil
-      gfx2_select = nil
-      gfx3_select = nil
-      
-      if strips and tracks[track_select] and strips[tracks[track_select].strip] then
-        strips[tracks[track_select].strip].page = page
-        surface_offset.x = tonumber(strips[tracks[track_select].strip][page].surface_x)
-        surface_offset.y = tonumber(strips[tracks[track_select].strip][page].surface_y)
-      else
-        surface_offset.x = 0
-        surface_offset.y = 0       
-      end
-      
-      if settings_autocentrectls then
-        AutoCentreCtls()
-      end
-      update_gfx = true
-      
+      local page = F_limit(math.ceil((mouse.mx-obj.sections[14].x)/(obj.sections[14].w/4)),1,4)
+      SetPage(page)
+            
     elseif MOUSE_click(obj.sections[20]) then
       local butt = F_limit(math.ceil((mouse.mx-obj.sections[20].x)/(obj.sections[20].w/4)),1,4)
       if butt == 1 then
-        lockx = not lockx
-        if lockx then
-          surface_offset.x = 0
-        end
-        obj = GetObjects()
+        LockX()
+        
       elseif butt == 2 then
-        locky = not locky
-        if locky then
-          surface_offset.y = 0
-        end
-        obj = GetObjects()
+        LockY()
+        
       elseif butt == 3 then
-        if surface_offset.y > 0 then
-          if lockh > 0 then
-            surface_offset.y = surface_offset.y - lockh
-          else
-            surface_offset.y = surface_offset.y - math.floor(obj.sections[10].h/settings_gridsize)*settings_gridsize
-          end
-        end
+        ScrollUp()
+        
       elseif butt == 4 then
-        if surface_offset.y < surface_size.h-obj.sections[10].h then
-          if lockh > 0 then
-            surface_offset.y = surface_offset.y + lockh
-          else
-            surface_offset.y = surface_offset.y + math.floor(obj.sections[10].h/settings_gridsize)*settings_gridsize
-          end
-        end
+        ScrollDown()
+        
       end
       update_gfx = true
     end
@@ -4903,29 +5037,31 @@
     end
     
     if gfx.mouse_wheel ~= 0 then
-      local v = gfx.mouse_wheel/120
-      if mouse.mx > obj.sections[10].x and MOUSE_over(obj.sections[10]) then
-        if ctl_select then
-          ctl_select = nil
-          update_gfx = true
+      if lockx == false or locky == false then
+        local v = gfx.mouse_wheel/120
+        if mouse.mx > obj.sections[10].x and MOUSE_over(obj.sections[10]) then
+          if ctl_select then
+            ctl_select = nil
+            update_gfx = true
+          end
+          if locky then
+            surface_offset.x = F_limit(surface_offset.x - v * 50,0,surface_size.w - obj.sections[10].w)
+          elseif lockx then
+            surface_offset.y = F_limit(surface_offset.y - v * 50,0,surface_size.h - obj.sections[10].h)        
+          else
+            surface_offset.y = F_limit(surface_offset.y - v * 50,0-math.ceil(obj.sections[10].h*0.25),surface_size.h - math.ceil(obj.sections[10].h*0.75))
+          end
+          if strips and tracks[track_select] and strips[tracks[track_select].strip] then
+            strips[tracks[track_select].strip][page].surface_x = surface_offset.x
+            strips[tracks[track_select].strip][page].surface_y = surface_offset.y
+          end
+          if surface_offset.x < 0 or surface_offset.y < 0 
+              or surface_offset.x > surface_size.w-obj.sections[10].w 
+              or surface_offset.y > surface_size.h-obj.sections[10].h then 
+            update_surfaceedge = true 
+          end
+          update_surface = true
         end
-        if locky then
-          surface_offset.x = F_limit(surface_offset.x - v * 50,0,surface_size.w - obj.sections[10].w)
-        elseif lockx then
-          surface_offset.y = F_limit(surface_offset.y - v * 50,0,surface_size.h - obj.sections[10].h)        
-        else
-          surface_offset.y = F_limit(surface_offset.y - v * 50,0-math.ceil(obj.sections[10].h*0.25),surface_size.h - math.ceil(obj.sections[10].h*0.75))
-        end
-        if strips and tracks[track_select] and strips[tracks[track_select].strip] then
-          strips[tracks[track_select].strip][page].surface_x = surface_offset.x
-          strips[tracks[track_select].strip][page].surface_y = surface_offset.y
-        end
-        if surface_offset.x < 0 or surface_offset.y < 0 
-            or surface_offset.x > surface_size.w-obj.sections[10].w 
-            or surface_offset.y > surface_size.h-obj.sections[10].h then 
-          update_surfaceedge = true 
-        end
-        update_surface = true
       end
       gfx.mouse_wheel = 0
     end
