@@ -511,7 +511,7 @@
         else
           gfx.x, gfx.y = xywh.x+(xywh.w-text_len)/2,xywh.y+(xywh.h-gfx.texth)/2 + 1
         end
-        gfx.drawstr(string.sub(text,1,newlen-1))
+        gfx.drawstr(string.sub(text,1,newlen))
   end
   
   ------------------------------------------------------------
@@ -1008,7 +1008,8 @@
                       w = obj.sections[42].w,
                       h = butt_h}  
         local c = gui.color.white
-        if trackfxparam_select == i + plist_offset then
+        --if trackfxparam_select == i + plist_offset then
+        if tfxp_sel and tfxp_sel[i + plist_offset] then  
           f_Get_SSV(gui.color.white)
           gfx.rect(xywh.x,
                    xywh.y, 
@@ -1493,6 +1494,16 @@
     local mult = 10^(idp or 0)
     return math.floor(num * mult + 0.5) / mult
   end
+
+  function roundX(num, idp)
+    local n = tonumber(num)
+    if n then
+      local mult = 10^(idp or 0)
+      return math.floor(num * mult + 0.5) / mult
+    else
+      return num
+    end
+  end
   
   function nz(val, d)
     if val == nil then return d else return val end
@@ -1623,6 +1634,7 @@
                   Disp_Name = ctlnmov
                 end
                 _, Disp_ParamV = reaper.TrackFX_GetFormattedParamValue(track, fxnum, param, "")
+                --Disp_ParamV = roundX(Disp_ParamV, 0)
               end
 
               local mid = x+(w/2)
@@ -1630,13 +1642,13 @@
               local text_len1x, text_len1y = gfx.measurestr(Disp_Name)
               local text_len2x, text_len2y = gfx.measurestr(Disp_ParamV)
 
-              local xywh1 = {x = mid-(text_len1x/2), y = y+(h/2)-toff-1, w = text_len1x, h = th_a+2}
-              local xywh2 = {x = mid-(text_len2x/2), y = y+(h/2)-to+toff+toffv-1, w = text_len2x, h = th_a+2}
+              local xywh1 = {x = math.floor(mid-(text_len1x/2)), y = math.floor(y+(h/2)-toff-1), w = text_len1x, h = th_a+2}
+              local xywh2 = {x = math.floor(mid-(text_len2x/2)), y = math.floor(y+(h/2)-to+toff+toffv-1), w = text_len2x, h = th_a+2}
               
               local tl1 = nz(strips[tracks[track_select].strip][page].controls[i].tl1,text_len1x)
               local tl2 = nz(strips[tracks[track_select].strip][page].controls[i].tl2,text_len2x)
-              local tx1, tx2, th = mid-(tl1/2),
-                                   mid-(tl2/2),gui.fontsz_knob+tsz-4
+              local tx1, tx2, th = math.ceil(mid-(tl1/2)),
+                                   math.ceil(mid-(tl2/2)),gui.fontsz_knob+tsz-4
               if not update_gfx and not update_bg and surface_size.limit then
                 gfx.blit(1004,1,0, px,
                                    py,
@@ -4641,6 +4653,22 @@
             update_gfx = true
           elseif trackfxparams[i + plist_offset] then
             trackfxparam_select = i + plist_offset
+            if mouse.ctrl then
+              if tfxp_sel == nil then
+                tfxp_sel = {}
+                tfxp_sel[i + plist_offset] = true
+              elseif tfxp_sel[i + plist_offset] then
+                --remove
+                tfxp_sel[i + plist_offset] = nil
+              else
+                tfxp_sel[i + plist_offset] = true
+              end
+            elseif tfxp_sel and tfxp_sel[i + plist_offset] then
+              --do nothing but drag
+            else
+              tfxp_sel = {}
+              tfxp_sel[i + plist_offset] = true            
+            end
             ctl_select = nil
             update_gfx = true
 
@@ -4689,21 +4717,49 @@
           --Dropped
           if reass_param == nil then
             if dragparam.x+ksel_size.w > obj.sections[10].x and dragparam.x+ksel_size.w < obj.sections[10].x+obj.sections[10].w and dragparam.y+ksel_size.h > obj.sections[10].y and dragparam.y+ksel_size.h < obj.sections[10].y+obj.sections[10].h then
-              Strip_AddParam()
+              local i
+              local cnt = 0
+              local dpx, dpy = dragparam.x, dragparam.y
+              for i = 0, #trackfxparams do
+                if tfxp_sel[i] then
+                  trackfxparam_select = i
+                  Strip_AddParam()
+                  cnt = cnt + 1
+                  dragparam.x = math.floor(dpx + ((ksel_size.w*2+settings_gridsize) * (cnt % 8)))
+                  dragparam.y = math.floor(dpy + (ksel_size.h*2+(2*settings_gridsize)) * math.floor(cnt/8))
+                end
+              end
+              tfxp_sel = nil
+              
             end
           else
-            strips[tracks[track_select].strip][page].controls[reass_param].fxname=trackfx[trackfx_select].name
-            strips[tracks[track_select].strip][page].controls[reass_param].fxguid=trackfx[trackfx_select].guid
-            strips[tracks[track_select].strip][page].controls[reass_param].fxnum=trackfx[trackfx_select].fxnum
-            strips[tracks[track_select].strip][page].controls[reass_param].fxfound = true
-            strips[tracks[track_select].strip][page].controls[reass_param].param = trackfxparam_select
-            strips[tracks[track_select].strip][page].controls[reass_param].param_info = trackfxparams[trackfxparam_select]
-            strips[tracks[track_select].strip][page].controls[reass_param].val = GetParamValue(tracks[track_select].tracknum,
-                                                                                               trackfx[trackfx_select].fxnum,
-                                                                                               trackfxparam_select)
-            strips[tracks[track_select].strip][page].controls[reass_param].defval = GetParamValue(tracks[track_select].tracknum,
-                                                                                               trackfx[trackfx_select].fxnum,
-                                                                                               trackfxparam_select)
+            if dragparam.x+ksel_size.w > obj.sections[10].x and dragparam.x+ksel_size.w < obj.sections[10].x+obj.sections[10].w and dragparam.y+ksel_size.h > obj.sections[10].y and dragparam.y+ksel_size.h < obj.sections[10].y+obj.sections[10].h then
+            
+              local i
+              local cnt = 0
+              for i = 1, #trackfxparams do
+                if tfxp_sel[i] then
+                  cnt = cnt + 1
+                end
+              end
+              if cnt <= 1 then
+                strips[tracks[track_select].strip][page].controls[reass_param].fxname=trackfx[trackfx_select].name
+                strips[tracks[track_select].strip][page].controls[reass_param].fxguid=trackfx[trackfx_select].guid
+                strips[tracks[track_select].strip][page].controls[reass_param].fxnum=trackfx[trackfx_select].fxnum
+                strips[tracks[track_select].strip][page].controls[reass_param].fxfound = true
+                strips[tracks[track_select].strip][page].controls[reass_param].param = trackfxparam_select
+                strips[tracks[track_select].strip][page].controls[reass_param].param_info = trackfxparams[trackfxparam_select]
+                strips[tracks[track_select].strip][page].controls[reass_param].val = GetParamValue(tracks[track_select].tracknum,
+                                                                                                   trackfx[trackfx_select].fxnum,
+                                                                                                   trackfxparam_select)
+                strips[tracks[track_select].strip][page].controls[reass_param].defval = GetParamValue(tracks[track_select].tracknum,
+                                                                                                   trackfx[trackfx_select].fxnum,
+                                                                                                   trackfxparam_select)
+              else
+                OpenMsgBox(1, 'You cannot reassign multiple controls at once.', 1)
+              end
+              tfxp_sel = nil
+            end
           end
           
           reass_param = nil
@@ -5173,7 +5229,7 @@
   
   function editbox_draw(gui, e)
   
-    f_Get_SSV(e.bc)
+    f_Get_SSV('0 0 0')
     gfx.a = 1
     gfx.rect(obj.sections[8].x,obj.sections[8].y,obj.sections[8].w,obj.sections[8].h,true)
   
