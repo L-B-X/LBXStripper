@@ -214,7 +214,7 @@
                           y = 0,
                           w = 100,
                           h = butt_h}
-      obj.sections[21] = {x = gfx1.main_w - 25,
+      obj.sections[21] = {x = gfx1.main_w - 125,
                           y = 0,
                           w = 25,
                           h = butt_h}
@@ -2320,25 +2320,6 @@
     --end
 
     --if obj.sections[14].x > obj.sections[20].x+obj.sections[20].w then
-      local c
-      for i = 0, 3 do
-        local xywh = {x = obj.sections[14].x+2 + i*(obj.sections[14].w/4),
-                      y = obj.sections[14].y, 
-                      w = obj.sections[14].w/4-2,
-                      h = obj.sections[14].h}
-        if page == i+1 then
-          f_Get_SSV(gui.color.white)
-          c = gui.color.black
-        else
-          f_Get_SSV(gui.color.black)
-          c = gui.color.white
-        end
-        gfx.rect(xywh.x,
-                 xywh.y, 
-                 xywh.w,
-                 xywh.h, 1, 1)
-        GUI_textC(gui,xywh,i+1,c,-2)
-      end
     else
       f_Get_SSV(gui.color.white)
       gfx.rect(obj.sections[21].x,
@@ -2352,6 +2333,32 @@
                2,
                obj.sections[21].h, 1, 1)
       
+    end
+
+    local c
+    f_Get_SSV(gui.color.black)
+    gfx.rect(obj.sections[14].x,
+             obj.sections[14].y, 
+             obj.sections[14].w,
+             obj.sections[14].h, 1, 1)
+    
+    for i = 0, 3 do
+      local xywh = {x = obj.sections[14].x+2 + i*(obj.sections[14].w/4),
+                    y = obj.sections[14].y, 
+                    w = obj.sections[14].w/4-2,
+                    h = obj.sections[14].h}
+      if page == i+1 then
+        f_Get_SSV(gui.color.white)
+        c = gui.color.black
+      else
+        f_Get_SSV(gui.color.black)
+        c = gui.color.white
+      end
+      gfx.rect(xywh.x,
+               xywh.y, 
+               xywh.w,
+               xywh.h, 1, 1)
+      GUI_textC(gui,xywh,i+1,c,-2)
     end
       
   end
@@ -3905,6 +3912,11 @@
     if (obj.sections[17].x <= obj.sections[20].x+obj.sections[20].w) and MOUSE_click(obj.sections[21]) then
     
       TopMenu()
+
+    elseif MOUSE_click(obj.sections[14]) then
+      --page
+      local page = F_limit(math.ceil((mouse.mx-obj.sections[14].x)/(obj.sections[14].w/4)),1,4)
+      SetPage(page)            
     
     elseif MOUSE_click(obj.sections[11]) then
       gfx3_select = nil
@@ -3936,11 +3948,6 @@
       OpenMsgBox(1,'Data Saved.',1)
       update_gfx = true
     
-    elseif (obj.sections[17].x > obj.sections[20].x+obj.sections[20].w) and MOUSE_click(obj.sections[14]) then
-      --page
-      local page = F_limit(math.ceil((mouse.mx-obj.sections[14].x)/(obj.sections[14].w/4)),1,4)
-      SetPage(page)
-            
     elseif MOUSE_click(obj.sections[20]) then
       local butt = F_limit(math.ceil((mouse.mx-obj.sections[20].x)/(obj.sections[20].w/4)),1,4)
       if butt == 1 then
