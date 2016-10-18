@@ -243,9 +243,9 @@
 
       --CONTROL OPTIONS
       obj.sections[45] = {x = gfx1.main_w - plist_w - 20,
-                          y = gfx1.main_h - 400 -20,
+                          y = gfx1.main_h - 440 -20,
                           w = plist_w,
-                          h = 400}                           
+                          h = 440}                           
       local sf_h = 140
       --STRIP FOLDERS
       obj.sections[47] = {x = 0,
@@ -310,6 +310,10 @@
                           y = obj.sections[45].y+150+butt_h+10 + (butt_h/2+4 + 10) * 5,
                           w = obj.sections[45].w-60,
                           h = butt_h/2+4}                           
+      obj.sections[66] = {x = obj.sections[45].x+50,
+                          y = obj.sections[45].y+150+butt_h+10 + (butt_h/2+4 + 10) * 10,
+                          w = obj.sections[45].w-100,
+                          h = butt_h/2+4}
 
       local binh = 45
       obj.sections[60] = {x = plist_w + 10,
@@ -645,6 +649,7 @@
                                               defval = GetParamValue(tracks[track_select].tracknum,
                                                                   trackfx[trackfx_select].fxnum,
                                                                   trackfxparam_select),
+                                              maxdp = maxdp_select,
                                               id = nil
                                               }
                                               
@@ -1401,6 +1406,11 @@
     GUI_DrawSliderH(gui, 'DEF VAL', obj.sections[57], gui.color.black, gui.color.white, defval_select)
     GUI_DrawButton(gui, 'SET', obj.sections[51], gui.color.white, gui.color.black, true)
     GUI_DrawButton(gui, 'EDIT NAME', obj.sections[59], gui.color.white, gui.color.black, true)
+    local mdptxt = maxdp_select
+    if maxdp_select < 0 then
+      mdptxt = 'OFF'
+    end
+    GUI_DrawButton(gui, mdptxt, obj.sections[66], gui.color.white, gui.color.black, true, 'MAX DP')
     
   end
  
@@ -1427,8 +1437,13 @@
     
   end
 
-  function GUI_DrawButton(gui, t, b, colb, colt, v)
-  
+  function GUI_DrawButton(gui, t, b, colb, colt, v, opttxt)
+
+    if opttxt then
+      local xywh = {x=b.x-10,y=b.y-2,w=1,h=b.h}
+      GUI_textsm_RJ(gui,xywh,opttxt,colb,-4)
+    end
+      
     local f = 1
     if v == nil or v == false then
       f = 0
@@ -1496,10 +1511,19 @@
   end
 
   function roundX(num, idp)
-    local n = tonumber(num)
-    if n then
-      local mult = 10^(idp or 0)
-      return math.floor(num * mult + 0.5) / mult
+    local s, e = string.find(num,'%d+.%d+')
+    if s and e then  
+      local n = string.sub(num,s,e)
+      if n then
+        local mult = 10^(idp or 0)
+        local res = math.floor(n * mult + 0.5) / mult
+        if idp == 0 then
+          res = string.match(tostring(res),'%d+')
+        end
+        return string.sub(num,1,s-1) .. res .. string.sub(num,e+1)
+      else
+        return num
+      end
     else
       return num
     end
@@ -1595,6 +1619,7 @@
               local ctltype = strips[tracks[track_select].strip][page].controls[i].ctltype
               local ctlnmov = strips[tracks[track_select].strip][page].controls[i].ctlname_override
               local found = strips[tracks[track_select].strip][page].controls[i].fxfound
+              local maxdp = strips[tracks[track_select].strip][page].controls[i].maxdp
               
               if fxnum == nil then return end
     
@@ -1634,7 +1659,9 @@
                   Disp_Name = ctlnmov
                 end
                 _, Disp_ParamV = reaper.TrackFX_GetFormattedParamValue(track, fxnum, param, "")
-                --Disp_ParamV = roundX(Disp_ParamV, 0)
+                if maxdp > -1 then
+                  Disp_ParamV = roundX(Disp_ParamV, maxdp)                  
+                end
               end
 
               local mid = x+(w/2)
@@ -4252,6 +4279,24 @@
           
           end
 
+          if MOUSE_click(obj.sections[66]) then
+          
+            maxdp_select = F_limit(maxdp_select + 1, -1, 3)
+            for i = 1, #ctl_select do
+              strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].maxdp = maxdp_select
+            end            
+            update_gfx = true
+          
+          elseif MOUSE_click_RB(obj.sections[66]) then
+
+            maxdp_select = F_limit(maxdp_select - 1, -1, 3)
+            for i = 1, #ctl_select do
+              strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].maxdp = maxdp_select
+            end            
+            update_gfx = true
+          
+          end
+
           if MOUSE_click(obj.sections[52]) then
             show_paramname = not show_paramname
             for i = 1, #ctl_select do
@@ -4395,6 +4440,7 @@
                   textoff_select = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].textoff
                   textsize_select = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].textsize
                   defval_select = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].defval
+                  maxdp_select = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].maxdp                  
                   
                   dragoff = {x = mouse.mx - strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].x - 0.5*strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].w - surface_offset.x,
                              y = mouse.my - strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].y - 0.5*strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].ctl_info.cellh - surface_offset.y}
@@ -4564,6 +4610,7 @@
               textoff_select = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].textoff
               textsize_select = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].textsize
               defval_select = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].defval
+              maxdp_select = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].maxdp                  
             end
             update_ctls = true
           end
@@ -5220,6 +5267,7 @@
                  textsize = strips[tracks[track_select].strip][page].controls[c].textsize,
                  val = strips[tracks[track_select].strip][page].controls[c].val,
                  defval = strips[tracks[track_select].strip][page].controls[c].defval,
+                 maxdp = strips[tracks[track_select].strip][page].controls[c].maxdp,
                  id = strips[tracks[track_select].strip][page].controls[c].id
                  }
     return tbl
@@ -5512,6 +5560,7 @@
                                                 textsize = tonumber(nz(GPES(key..'textsize'),0)),
                                                 val = tonumber(GPES(key..'val')),
                                                 defval = tonumber(GPES(key..'defval')),
+                                                maxdp = tonumber(nz(GPES(key..'maxdp',true),-1)),
                                                 id = deconvnum(GPES(key..'id',true))
                                                 --enabled = tobool(nz(GPES(key..'enabled',true),true))
                                                }
@@ -5746,7 +5795,9 @@
                 reaper.SetProjExtState(0,SCRIPT,key..'textoffval',strips[s][p].controls[c].textoffval)
                 reaper.SetProjExtState(0,SCRIPT,key..'textsize',nz(strips[s][p].controls[c].textsize,0))
                 reaper.SetProjExtState(0,SCRIPT,key..'val',strips[s][p].controls[c].val)
-                reaper.SetProjExtState(0,SCRIPT,key..'defval',strips[s][p].controls[c].defval)              
+                reaper.SetProjExtState(0,SCRIPT,key..'defval',strips[s][p].controls[c].defval)   
+                reaper.SetProjExtState(0,SCRIPT,key..'maxdp',strips[s][p].controls[c].maxdp)   
+                           
                 reaper.SetProjExtState(0,SCRIPT,key..'id',convnum(strips[s][p].controls[c].id))
           
               end
@@ -5860,6 +5911,7 @@
     defval_select = 0
     strip_select = 0
     stripfol_select = 0
+    maxdp_select = -1
     
     plist_w = 140
     
