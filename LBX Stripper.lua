@@ -1619,7 +1619,7 @@
               local ctltype = strips[tracks[track_select].strip][page].controls[i].ctltype
               local ctlnmov = strips[tracks[track_select].strip][page].controls[i].ctlname_override
               local found = strips[tracks[track_select].strip][page].controls[i].fxfound
-              local maxdp = strips[tracks[track_select].strip][page].controls[i].maxdp
+              local maxdp = nz(strips[tracks[track_select].strip][page].controls[i].maxdp,-1)
               
               if fxnum == nil then return end
     
@@ -2628,7 +2628,7 @@
              obj.sections[61].y, 
              obj.sections[61].w,
              obj.sections[61].h, 1)
-    f_Get_SSV(gui.color.blue)
+    f_Get_SSV(gui.color.white)
     gfx.rect(obj.sections[61].x,
              obj.sections[61].y, 
              obj.sections[61].w,
