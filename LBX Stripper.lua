@@ -158,9 +158,9 @@
                          h = 20}
       
       --surface
-      obj.sections[10] = {x = plist_w+2 + sb_size + 4,
+      obj.sections[10] = {x = plist_w+2 + sb_size + 2,
                           y = butt_h+2 + sb_size + 2,
-                          w = gfx1.main_w-(plist_w+2+(sb_size+4)*2),
+                          w = gfx1.main_w-(plist_w+2+(sb_size+2)*2),
                           h = gfx1.main_h-(butt_h+2+(sb_size+2)*2)}
       if lockx then
         obj.sections[10].x = math.max(obj.sections[10].x, obj.sections[10].x+(obj.sections[10].w/2-lockw/2))
@@ -2404,7 +2404,7 @@
   
   function GUI_DrawBars(gui, obj)
   
-    local ww = gfx1.main_w - (plist_w+2)
+    local ww = gfx1.main_w - (plist_w)
     local bw = F_limit((obj.sections[10].w / surface_size.w),0,1)*(ww-4)
     local bx = F_limit(F_limit(((surface_offset.x) / surface_size.w),0,1)*(ww-4),0,ww-4-bw)
 
@@ -2412,7 +2412,7 @@
     local bh = F_limit((obj.sections[10].h / surface_size.h),0,1)*(hh-4)
     local by = F_limit(F_limit(((surface_offset.y) / surface_size.h),0,1)*(hh-4),0,hh-4-bh)
 
-    local xywh = {x = plist_w+2,
+    local xywh = {x = plist_w,
                   y = butt_h+2,
                   w = ww,
                   h = sb_size+2}
@@ -2425,7 +2425,7 @@
 
     local xywh = {x = (plist_w),
                   y = (butt_h+2),
-                  w = sb_size+6,
+                  w = sb_size+4,
                   h = hh}
     f_Get_SSV(gui.color.black)
     gfx.a = 1
@@ -2445,7 +2445,7 @@
              xywh.w,
              xywh.h, 1 )
 
-    local xywh = {x = (plist_w+4),
+    local xywh = {x = (plist_w+2),
                   y = (butt_h+4) + by,
                   w = sb_size,
                   h = bh}
@@ -4021,6 +4021,7 @@
     if mouse.context and mouse.context == 'dragsidebar' then
     
       plist_w = math.max(mouse.mx-offx,0)
+      plist_w = math.min(plist_w, obj.sections[19].x-2)
       oplist_w = math.max(plist_w,100)
       if plist_w <= 4 then
         show_editbar = false
