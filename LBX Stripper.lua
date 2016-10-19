@@ -1921,7 +1921,7 @@
         end
         
         if plist_w > 0 then                  
-          gfx.blit(1001,1,0,0,0,obj.sections[43].w+2,obj.sections[43].h,0,butt_h)
+          gfx.blit(1001,1,0,0,0,obj.sections[43].w,obj.sections[43].h,0,butt_h)
         end
         
         f_Get_SSV(gui.color.black)
@@ -1963,7 +1963,7 @@
                             obj.sections[10].h,
                             obj.sections[10].x,
                             obj.sections[10].y)
-          gfx.blit(1001,1,0,0,0,obj.sections[43].w+2,obj.sections[43].h,0,butt_h+2)
+          gfx.blit(1001,1,0,0,0,obj.sections[43].w,obj.sections[43].h,0,butt_h+2)
           
           if dragparam ~= nil then
             if reass_param == nil then
@@ -2055,7 +2055,7 @@
                             obj.sections[10].x,
                             obj.sections[10].y)
           
-          gfx.blit(1001,1,0,0,0,obj.sections[43].w+2,obj.sections[43].h,0,butt_h)
+          gfx.blit(1001,1,0,0,0,obj.sections[43].w,obj.sections[43].h,0,butt_h)
 
           if draggfx ~= nil then
             local x, y = draggfx.x, draggfx.y
@@ -2230,7 +2230,7 @@
       f_Get_SSV(gui.color.white)
       gfx.rect(obj.sections[13].x,
                obj.sections[13].y, 
-               obj.sections[13].w,
+               obj.sections[13].w-1,
                obj.sections[13].h, 1, 1)
       GUI_textC(gui,obj.sections[13],submode_table[submode+1],gui.color.black,-2)        
     end
