@@ -337,7 +337,7 @@
                           w = msgwinw,
                           h = butt_h}
       --settings
-      local setw, seth = 300, 215                            
+      local setw, seth = 300, 230                            
       obj.sections[70] = {x = gfx1.main_w/2-setw/2,
                           y = gfx1.main_h/2-seth/2,
                           w = setw,
@@ -381,6 +381,10 @@
                                 h = bh}
       obj.sections[80] = {x = obj.sections[70].x+xofft,
                                 y = obj.sections[70].y+yoff + yoffm*6,
+                                w = bw,
+                                h = bh}
+      obj.sections[81] = {x = obj.sections[70].x+xofft,
+                                y = obj.sections[70].y+yoff + yoffm*7,
                                 w = bw,
                                 h = bh}
     return obj
@@ -576,7 +580,9 @@
                                         y = y,
                                         w = w,
                                         h = h,
-                                        scale = 1
+                                        scale = 1,
+                                        stretchw = w,
+                                        stretchh = h
                                        }
     end  
 
@@ -1310,25 +1316,27 @@
           end
           local w = strips[tracks[track_select].strip][page].graphics[i].w
           local h = strips[tracks[track_select].strip][page].graphics[i].h
+          local sw = strips[tracks[track_select].strip][page].graphics[i].stretchw
+          local sh = strips[tracks[track_select].strip][page].graphics[i].stretchh
           local imageidx = strips[tracks[track_select].strip][page].graphics[i].imageidx
           
           local yoff = 0
           local xoff = 0
           if not surface_size.limit then
-            if x+w > obj.sections[10].x + obj.sections[10].w then
-              w = obj.sections[10].x + obj.sections[10].w - x
+            if x+sw > obj.sections[10].x + obj.sections[10].w then
+              sw = obj.sections[10].x + obj.sections[10].w - x
             end
             if x < obj.sections[10].x then
               xoff = obj.sections[10].x - x
             end
-            if y+h > obj.sections[10].y + obj.sections[10].h then
-              h = obj.sections[10].y + obj.sections[10].h - y
+            if y+sh > obj.sections[10].y + obj.sections[10].h then
+              sh = obj.sections[10].y + obj.sections[10].h - y
             end
             if y < obj.sections[10].y then
               yoff = obj.sections[10].y - y
             end
           end
-          gfx.blit(imageidx,1,0, xoff, yoff, w, h-yoff, x+xoff, y+yoff)
+          gfx.blit(imageidx,1,0, xoff, yoff, w, h-yoff, x+xoff, y+yoff, sw, sh)
 
         end
       end      
@@ -1393,7 +1401,13 @@
       end
       local w, _ = gfx.getimgdim(iidx)
       gfx.a = 1
-      gfx.blit(iidx,scale_select,0, 0, 0, w, ctl_files[knob_select].cellh, xywh.x + (xywh.w/2-(w*scale_select)/2), xywh.y + (62.5 - (ctl_files[knob_select].cellh*scale_select)/2))
+      gfx.blit(iidx,scale_select,0, 0, ctl_files[knob_select].cellh*math.floor(ctl_files[knob_select].frames*0.75), w, ctl_files[knob_select].cellh, xywh.x + (xywh.w/2-(w*scale_select)/2), xywh.y + (62.5 - (ctl_files[knob_select].cellh*scale_select)/2))
+      xywh = {x = obj.sections[45].x,
+              y = obj.sections[45].y+butt_h,
+              w = obj.sections[45].w,
+              h = butt_h}
+      GUI_textC(gui,xywh,ctl_files[knob_select].fn,gui.color.white,-5)
+
     end
         
     GUI_DrawSliderH(gui, 'SCALE', obj.sections[50], gui.color.black, gui.color.white, (scale_select-0.5)*2)
@@ -1852,6 +1866,26 @@
     return rect     
   end
 
+  function CalcGFXSelRect()
+
+    if strips and tracks[track_select] and strips[tracks[track_select].strip] and strips[tracks[track_select].strip][page] then
+      if #strips[tracks[track_select].strip][page].graphics > 0 then
+
+        local i = gfx2_select
+        local x = strips[tracks[track_select].strip][page].graphics[i].x 
+        local y = strips[tracks[track_select].strip][page].graphics[i].y
+        local w = strips[tracks[track_select].strip][page].graphics[i].stretchw
+        local h = strips[tracks[track_select].strip][page].graphics[i].stretchh
+        local rx, ry = x+w, y+h
+        local selrect = {x = x-4, y = y-4, w = w+8, h = h+8}
+        return selrect
+      end
+    end
+
+    return nil
+      
+  end
+
   function GUI_drawpeak(obj, gui)
     
     if track_select == nil then return end
@@ -2069,6 +2103,23 @@
             if lockh > 0 or lockw > 0 then
               UpdateLEdges()
             end
+          end
+
+          if gfx2_select ~= nil then
+          
+            selrect = CalcGFXSelRect()
+            if selrect then
+              f_Get_SSV(gui.color.yellow)
+              gfx.a = 1
+              selrect.x = selrect.x - surface_offset.x + obj.sections[10].x
+              selrect.y = selrect.y - surface_offset.y + obj.sections[10].y
+              
+              gfx.roundrect(selrect.x, selrect.y, selrect.w, selrect.h, 8, 1, 0)
+              gfx.circle(selrect.x+selrect.w,selrect.y+selrect.h/2,4,1,1)
+              gfx.circle(selrect.x+selrect.w,selrect.y+selrect.h,4,1,1)
+              gfx.circle(selrect.x+selrect.w/2,selrect.y+selrect.h,4,1,1)              
+            end            
+          
           end
 
           if gfx_select ~= nil then
@@ -2483,6 +2534,7 @@
     
     GUI_DrawTick(gui, 'Show grid / grid size', obj.sections[80], gui.color.white, settings_showgrid)
     GUI_DrawButton(gui, settings_gridsize, obj.sections[79], gui.color.white, gui.color.black, true)
+    GUI_DrawTick(gui, 'Can mousewheel on knob', obj.sections[81], gui.color.white, settings_mousewheelknob)
                
   end
   
@@ -3153,8 +3205,12 @@
         stripdata.strip.graphics[j].y = stripdata.strip.graphics[j].y + offsety + y - surface_offset.y
       end
       stripdata.strip.graphics[j].id = stripid
+      --compatibility
+      if stripdata.strip.graphics[j].stretchw == nil then stripdata.strip.graphics[j].stretchw = w end
+      if stripdata.strip.graphics[j].stretchh == nil then stripdata.strip.graphics[j].stretchh = h end      
       
       strips[strip][page].graphics[#strips[strip][page].graphics + 1] = stripdata.strip.graphics[j]    
+
     end
     
     PopulateTrackFX()
@@ -3839,6 +3895,9 @@
       elseif MOUSE_click(obj.sections[73]) then
         settings_saveallfxinstrip = not settings_saveallfxinstrip
         update_settings = true
+      elseif MOUSE_click(obj.sections[81]) then
+        settings_mousewheelknob = not settings_mousewheelknob
+        update_settings = true
       elseif mouse.context == nil and MOUSE_click(obj.sections[74]) then
         mouse.context = 'updatefreq'
         oval = settings_updatefreq
@@ -4045,7 +4104,7 @@
         end
       end
       
-      if mouse.context == nil and (MOUSE_click(obj.sections[10]) or MOUSE_click_RB(obj.sections[10])) then
+      if mouse.context == nil and (MOUSE_click(obj.sections[10]) or MOUSE_click_RB(obj.sections[10]) or gfx.mouse_wheel ~= 0) then
         if mouse.mx > obj.sections[10].x then
           if strips and tracks[track_select] and strips[tracks[track_select].strip] then
             for i = 1, #strips[tracks[track_select].strip][page].controls do
@@ -4106,6 +4165,18 @@
                   SetParam()
                   strips[tracks[track_select].strip][page].controls[i].dirty = true
                   update_ctls = true
+                  break
+                
+                elseif settings_mousewheelknob and gfx.mouse_wheel ~= 0 and MOUSE_over(ctlxywh) then
+                  local ctltype = strips[tracks[track_select].strip][page].controls[i].ctltype
+                  if ctltype == 1 then
+                    trackfxparam_select = i
+                    local v = gfx.mouse_wheel/120 * 0.003
+                    strips[tracks[track_select].strip][page].controls[i].val = F_limit(strips[tracks[track_select].strip][page].controls[i].val+v,0,1)
+                    SetParam()
+                    update_ctls = true
+                    gfx.mouse_wheel = 0
+                  end
                   break
                 end
 
@@ -4918,24 +4989,80 @@
           update_gfx = true
         end
       
-        if strips and tracks[track_select] and strips[tracks[track_select].strip] then
-          for i = 1, #strips[tracks[track_select].strip][page].graphics do
-            local xywh
-            xywh = {x = strips[tracks[track_select].strip][page].graphics[i].x - surface_offset.x + obj.sections[10].x, 
-                    y = strips[tracks[track_select].strip][page].graphics[i].y - surface_offset.y + obj.sections[10].y, 
-                    w = strips[tracks[track_select].strip][page].graphics[i].w, 
-                    h = strips[tracks[track_select].strip][page].graphics[i].h}
-            if MOUSE_click(xywh) then
-              mouse.context = 'draggfx2'
-              gfx2_select = i              
-              draggfx2 = 'draggfx'
-              dragoff = {x = mouse.mx - strips[tracks[track_select].strip][page].graphics[gfx2_select].x - surface_offset.x,
-                         y = mouse.my - strips[tracks[track_select].strip][page].graphics[gfx2_select].y - surface_offset.y}
-              update_gfx = true
+        if mouse.mx > obj.sections[10].x then
+          if strips and tracks[track_select] and strips[tracks[track_select].strip] then
+          
+            if gfx2_select ~= nil then
+            
+              local selrect = CalcGFXSelRect()
+              selrect.x = selrect.x - surface_offset.x + obj.sections[10].x
+              selrect.y = selrect.y - surface_offset.y + obj.sections[10].y
+              local xywh = {x = selrect.x+selrect.w-3,
+                            y = selrect.y+selrect.h/2-3,
+                            w = 6,
+                            h = 6}
+              if mouse.context == nil and MOUSE_click(xywh) then
+                mouse.context = 'stretch_x'
+                gfx2_stretch = {mx = mouse.mx, sw = strips[tracks[track_select].strip][page].graphics[gfx2_select].stretchw}
+              end
+
+              local xywh = {x = selrect.x+selrect.w/2-3,
+                            y = selrect.y+selrect.h-3,
+                            w = 6,
+                            h = 6}
+              if mouse.context == nil and MOUSE_click(xywh) then
+                mouse.context = 'stretch_y'
+                gfx2_stretch = {my = mouse.my, sh = strips[tracks[track_select].strip][page].graphics[gfx2_select].stretchh}
+              end
+
+              local xywh = {x = selrect.x+selrect.w-3,
+                            y = selrect.y+selrect.h-3,
+                            w = 6,
+                            h = 6}
+              if mouse.context == nil and MOUSE_click(xywh) then
+                mouse.context = 'stretch_xy'
+                gfx2_stretch = {mx = mouse.mx, my = mouse.my, sw = strips[tracks[track_select].strip][page].graphics[gfx2_select].stretchw,
+                                                              sh = strips[tracks[track_select].strip][page].graphics[gfx2_select].stretchh}
+              end
+            
+              if mouse.context and mouse.context == 'stretch_x' then
+              
+                strips[tracks[track_select].strip][page].graphics[gfx2_select].stretchw = math.floor((gfx2_stretch.sw + (mouse.mx-gfx2_stretch.mx))/settings_gridsize)*settings_gridsize
+                update_gfx = true
+              
+              elseif mouse.context and mouse.context == 'stretch_y' then
+              
+                strips[tracks[track_select].strip][page].graphics[gfx2_select].stretchh =  math.floor((gfx2_stretch.sh + (mouse.my-gfx2_stretch.my))/settings_gridsize)*settings_gridsize
+                update_gfx = true
+                
+              elseif mouse.context and mouse.context == 'stretch_xy' then
+              
+                strips[tracks[track_select].strip][page].graphics[gfx2_select].stretchw = math.floor((gfx2_stretch.sw + (mouse.mx-gfx2_stretch.mx))/settings_gridsize)*settings_gridsize
+                strips[tracks[track_select].strip][page].graphics[gfx2_select].stretchh = math.floor((gfx2_stretch.sh + (mouse.my-gfx2_stretch.my))/settings_gridsize)*settings_gridsize
+                update_gfx = true
+
+              end            
+            
+            end
+          
+            for i = 1, #strips[tracks[track_select].strip][page].graphics do
+              local xywh
+              xywh = {x = strips[tracks[track_select].strip][page].graphics[i].x - surface_offset.x + obj.sections[10].x, 
+                      y = strips[tracks[track_select].strip][page].graphics[i].y - surface_offset.y + obj.sections[10].y, 
+                      w = strips[tracks[track_select].strip][page].graphics[i].stretchw, 
+                      h = strips[tracks[track_select].strip][page].graphics[i].stretchh}
+              if MOUSE_click(xywh) then
+                mouse.context = 'draggfx2'
+                gfx2_select = i              
+                draggfx2 = 'draggfx'
+                dragoff = {x = mouse.mx - strips[tracks[track_select].strip][page].graphics[gfx2_select].x - surface_offset.x,
+                           y = mouse.my - strips[tracks[track_select].strip][page].graphics[gfx2_select].y - surface_offset.y}
+                update_gfx = true
+              end
             end
           end
         end
-          
+                  
         if mouse.context and mouse.context == 'draggfx2' then
           if math.floor(mouse.mx/settings_gridsize) ~= math.floor(mouse.last_x/settings_gridsize) or math.floor(mouse.my/settings_gridsize) ~= math.floor(mouse.last_y/settings_gridsize) then
             local i
@@ -5138,6 +5265,7 @@
       
       if MOUSE_click(obj.sections[13]) then
         ctl_select = nil
+        gfx2_select = nil
         gfx3_select = nil
         submode = submode + 1
         if submode+1 > #submode_table then
@@ -5147,6 +5275,7 @@
 
       elseif MOUSE_click_RB(obj.sections[13]) then
         ctl_select = nil
+        gfx2_select = nil
         gfx3_select = nil
         submode = submode - 1
         if submode < 0 then
@@ -5169,7 +5298,9 @@
           mmx = mouse.mx
           mmy = mouse.my
           ctl_select = nil
+          gfx2_select = nil
           gfx3_select = nil
+          update_gfx = true
         end
 
       end    
@@ -5218,7 +5349,7 @@
       end
     end
     
-    if gfx.mouse_wheel ~= 0 then
+    if settings_mousewheelknob == false and gfx.mouse_wheel ~= 0 then
       if lockx == false or locky == false then
         local v = gfx.mouse_wheel/120
         if mouse.mx > obj.sections[10].x and MOUSE_over(obj.sections[10]) then
@@ -5661,6 +5792,9 @@
                                                 scale = tonumber(GPES(key..'scale')),
                                                 id = deconvnum(GPES(key..'id',true))
                                                }
+                    strips[ss][p].graphics[g].stretchw = tonumber(nz(GPES(key..'stretchw',true),strips[ss][p].graphics[g].w))
+                    strips[ss][p].graphics[g].stretchh = tonumber(nz(GPES(key..'stretchh',true),strips[ss][p].graphics[g].h))
+
                     --load graphics images
                     local iidx
                     local gfx_sel = -1
@@ -5743,6 +5877,7 @@
     settings_followselectedtrack = tobool(nz(GES('followselectedtrack',true),settings_followselectedtrack))
     settings_autocentrectls = tobool(nz(GES('autocentrectls',true),settings_autocentrectls))
     settings_updatefreq = tonumber(nz(GES('updatefreq',true),settings_updatefreq))
+    settings_mousewheelknob = tobool(nz(GES('mousewheelknob',true),settings_mousewheelknob))
     dockstate = nz(GES('dockstate',true),0)
     lockx = tobool(nz(GES('lockx',true),false))
     locky = tobool(nz(GES('locky',true),false))
@@ -5755,6 +5890,7 @@
     reaper.SetExtState(SCRIPT,'followselectedtrack',tostring(settings_followselectedtrack), true)
     reaper.SetExtState(SCRIPT,'autocentrectls',tostring(settings_autocentrectls), true)
     reaper.SetExtState(SCRIPT,'updatefreq',settings_updatefreq, true)
+    reaper.SetExtState(SCRIPT,'mousewheelknob',tostring(settings_mousewheelknob), true)
     local d = gfx.dock(-1)
     reaper.SetExtState(SCRIPT,'dockstate',d, true)
     reaper.SetExtState(SCRIPT,'lockx',tostring(lockx), true)
@@ -5858,6 +5994,8 @@
                 reaper.SetProjExtState(0,SCRIPT,key..'y',strips[s][p].graphics[g].y)
                 reaper.SetProjExtState(0,SCRIPT,key..'w',strips[s][p].graphics[g].w)
                 reaper.SetProjExtState(0,SCRIPT,key..'h',strips[s][p].graphics[g].h)
+                reaper.SetProjExtState(0,SCRIPT,key..'stretchw',nz(strips[s][p].graphics[g].stretchw,strips[s][p].graphics[g].w))
+                reaper.SetProjExtState(0,SCRIPT,key..'stretchh',nz(strips[s][p].graphics[g].stretchh,strips[s][p].graphics[g].h))
                 reaper.SetProjExtState(0,SCRIPT,key..'scale',strips[s][p].graphics[g].scale)
                 reaper.SetProjExtState(0,SCRIPT,key..'id',convnum(strips[s][p].graphics[g].id))
               
@@ -6022,6 +6160,7 @@
   settings_saveallfxinststrip = false
   settings_updatefreq = 0.05
   settings_showbars = true
+  settings_mousewheelknob = false
   
   dockstate = 0
   
