@@ -3307,9 +3307,11 @@
           local y = strip.graphics[i].y+offsety
           local w = strip.graphics[i].w
           local h = strip.graphics[i].h
+          local sw = strip.graphics[i].stretchw
+          local sh = strip.graphics[i].stretchh
           local imageidx = strip.graphics[i].imageidx
           
-          gfx.blit(imageidx,1,0, 0, 0, w, h, x, y)
+          gfx.blit(imageidx,1,0, 0, 0, w, h, x, y, sw, sh)
       
         end
       end      
