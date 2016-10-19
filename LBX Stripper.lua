@@ -5799,7 +5799,7 @@
                 reaper.SetProjExtState(0,SCRIPT,key..'textsize',nz(strips[s][p].controls[c].textsize,0))
                 reaper.SetProjExtState(0,SCRIPT,key..'val',strips[s][p].controls[c].val)
                 reaper.SetProjExtState(0,SCRIPT,key..'defval',strips[s][p].controls[c].defval)   
-                reaper.SetProjExtState(0,SCRIPT,key..'maxdp',strips[s][p].controls[c].maxdp)   
+                reaper.SetProjExtState(0,SCRIPT,key..'maxdp',nz(strips[s][p].controls[c].maxdp,-1))   
                            
                 reaper.SetProjExtState(0,SCRIPT,key..'id',convnum(strips[s][p].controls[c].id))
           
