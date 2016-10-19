@@ -163,13 +163,14 @@
                           w = gfx1.main_w-(plist_w+2+(sb_size+4)*2),
                           h = gfx1.main_h-(butt_h+2+(sb_size+2)*2)}
       if lockx then
-        obj.sections[10].x = obj.sections[10].x+(obj.sections[10].w/2-lockw/2)
+        obj.sections[10].x = math.max(obj.sections[10].x, obj.sections[10].x+(obj.sections[10].w/2-lockw/2))
         obj.sections[10].w = math.min(lockw,gfx1.main_w-(plist_w+2+(sb_size+4)*2))
       end
       if locky then
-        obj.sections[10].y = obj.sections[10].y+(obj.sections[10].h/2-lockh/2)
+        obj.sections[10].y = math.max(obj.sections[10].y, obj.sections[10].y+(obj.sections[10].h/2-lockh/2))
         obj.sections[10].h = math.min(lockh,gfx1.main_h-(butt_h+2+(sb_size+2)*2))
       end
+
       --mode
       obj.sections[11] = {x = 0,
                           y = 0,
@@ -1641,9 +1642,9 @@
                 gfx.a = 0.2
               end
 
-              local to = 10
               gfx.setfont(1, gui.fontname, gui.fontsz_knob +tsz-4)
               local _, th_a = gfx.measurestr('|')
+              local to = th_a
 
               local Disp_ParamV
               local Disp_Name
@@ -1675,7 +1676,7 @@
               local tl1 = nz(strips[tracks[track_select].strip][page].controls[i].tl1,text_len1x)
               local tl2 = nz(strips[tracks[track_select].strip][page].controls[i].tl2,text_len2x)
               local tx1, tx2, th = math.ceil(mid-(tl1/2)),
-                                   math.ceil(mid-(tl2/2)),gui.fontsz_knob+tsz-4
+                                   math.ceil(mid-(tl2/2)),th_a --gui.fontsz_knob+tsz-4
               if not update_gfx and not update_bg and surface_size.limit then
                 gfx.blit(1004,1,0, px,
                                    py,
