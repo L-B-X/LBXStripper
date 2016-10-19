@@ -3111,6 +3111,9 @@
                                                                             - stripdata.strip.controls[j].ctl_info.cellh*stripdata.strip.controls[j].scale/2)
       strips[strip][page].controls[cc].wsc = stripdata.strip.controls[j].w*stripdata.strip.controls[j].scale
       strips[strip][page].controls[cc].hsc = stripdata.strip.controls[j].ctl_info.cellh*stripdata.strip.controls[j].scale
+      
+      --compatibility
+      if strips[strip][page].controls[cc].maxdp == nil then strips[strip][page].controls[cc].maxdp = -1 end
     end
     
     local lctl = GetLeftControlInStrip(strips[strip][page].controls, stripid)
