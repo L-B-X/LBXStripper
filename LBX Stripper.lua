@@ -2234,7 +2234,16 @@
                obj.sections[13].h, 1, 1)
       GUI_textC(gui,obj.sections[13],submode_table[submode+1],gui.color.black,-2)        
     end
-            
+    f_Get_SSV(gui.color.black)
+    gfx.rect(obj.sections[11].x+obj.sections[11].w-6,
+             obj.sections[11].y,
+             2,
+             obj.sections[11].h,1)        
+    f_Get_SSV(gui.color.white)
+    gfx.rect(obj.sections[11].x+obj.sections[11].w-4,
+             obj.sections[11].y,
+             4,
+             obj.sections[11].h,1)        
     
     --[[local c = gui.color.black
     if mode == 0 then
@@ -2270,6 +2279,8 @@
       else
         GUI_textC(gui,obj.sections[18],'>',gui.color.black,-2)      
       end
+    else
+      GUI_textC(gui,obj.sections[18],'<>',gui.color.black,-2)
     end    
     
     local t
@@ -3595,7 +3606,7 @@
     if mode == 0 then
       show_editbar = not show_editbar
       if show_editbar then
-        plist_w = 140
+        plist_w = oplist_w
       else
         plist_w = 0
       end
@@ -3950,20 +3961,30 @@
       SetPage(page)            
     
     elseif MOUSE_click(obj.sections[11]) then
-      gfx3_select = nil
-      gfx2_select = nil
-      ctl_select = nil
-      if mode == 0 then
-        mode = 1
-        PopulateTrackFX()
+      if mouse.mx > obj.sections[11].w-6 then
+        mouse.context = 'dragsidebar'
+        offx = 0
+        --DBG(obj.sections[11].x-10 ..'  '..mouse.mx)
       else
-        SaveData()
-        mode = 0
+        gfx3_select = nil
+        gfx2_select = nil
+        ctl_select = nil
+        if mode == 0 then
+          mode = 1
+          PopulateTrackFX()
+        else
+          SaveData()
+          mode = 0
+        end
+        update_gfx = true
       end
-      update_gfx = true
-
+      
     elseif MOUSE_click(obj.sections[18]) then
       ToggleSidebar()
+      if mode == 1 then
+        mouse.context = 'dragsidebar'
+        offx = mouse.mx-plist_w
+      end
     
     --elseif MOUSE_click(obj.sections[12]) then
       --centre
@@ -3995,6 +4016,21 @@
         
       end
       update_gfx = true
+    end
+    
+    if mouse.context and mouse.context == 'dragsidebar' then
+    
+      plist_w = math.max(mouse.mx-offx,0)
+      oplist_w = math.max(plist_w,100)
+      if plist_w <= 4 then
+        show_editbar = false
+      else
+        show_editbar = true
+      end
+      obj = GetObjects()
+      resize_display = true
+      update_gfx = true
+    
     end
     
     if mode == 0 then
@@ -5667,7 +5703,7 @@
       PopulateTracks() --must be called to link tracks to strips
       
       if show_editbar then
-        plist_w = 140
+        plist_w = oplist_w
       else
         plist_w = 0
       end
@@ -5921,6 +5957,7 @@
     maxdp_select = -1
     
     plist_w = 140
+    oplist_w = 140
     
     time_nextupdate = 0
     
