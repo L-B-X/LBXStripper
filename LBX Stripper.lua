@@ -4440,7 +4440,7 @@
                   textoff_select = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].textoff
                   textsize_select = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].textsize
                   defval_select = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].defval
-                  maxdp_select = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].maxdp                  
+                  maxdp_select = nz(strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].maxdp,-1)                  
                   
                   dragoff = {x = mouse.mx - strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].x - 0.5*strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].w - surface_offset.x,
                              y = mouse.my - strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].y - 0.5*strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].ctl_info.cellh - surface_offset.y}
@@ -4610,7 +4610,7 @@
               textoff_select = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].textoff
               textsize_select = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].textsize
               defval_select = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].defval
-              maxdp_select = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].maxdp                  
+              maxdp_select = nz(strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].maxdp,-1)                  
             end
             update_ctls = true
           end
@@ -5564,6 +5564,9 @@
                                                 id = deconvnum(GPES(key..'id',true))
                                                 --enabled = tobool(nz(GPES(key..'enabled',true),true))
                                                }
+                    if strips[ss][p].controls[c].maxdp == nil or (strips[ss][p].controls[c].maxdp and strips[ss][p].controls[c].maxdp == '') then
+                      strips[ss][p].controls[c].maxdp = -1
+                    end
                     strips[ss][p].controls[c].xsc = strips[ss][p].controls[c].x + strips[ss][p].controls[c].w/2 - (strips[ss][p].controls[c].w*strips[ss][p].controls[c].scale)/2
                     strips[ss][p].controls[c].ysc = strips[ss][p].controls[c].y + strips[ss][p].controls[c].ctl_info.cellh/2 - (strips[ss][p].controls[c].ctl_info.cellh*strips[ss][p].controls[c].scale)/2
                     strips[ss][p].controls[c].wsc = strips[ss][p].controls[c].w*strips[ss][p].controls[c].scale
