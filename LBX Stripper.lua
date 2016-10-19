@@ -4720,9 +4720,9 @@
             update_gfx = true
           end
         elseif MOUSE_click_RB(obj.sections[41]) then
-          local i = math.floor((mouse.my - obj.sections[41].y) / butt_h)-1
+          local i = math.floor((mouse.my - obj.sections[41].y) / butt_h)-2
           if i == -1 then
-          elseif i >= F_butt_cnt-1 then
+          elseif i >= F_butt_cnt then
           elseif trackfx[i + flist_offset] then
             local track = GetTrack(tracks[track_select].tracknum)
             if not reaper.TrackFX_GetOpen(track, i + flist_offset) then
