@@ -3739,7 +3739,7 @@
     else
       mstr = '#Toggle Sidebar||Lock X|Lock Y|Scroll Up|Scroll Down||Save Script State|Open Settings||Page 1|Page 2|Page 3|Page 4||'..ds
     end
-    gfx.x, gfx.y = mouse.mx, mouse.my
+    gfx.x, gfx.y = mouse.mx, butt_h
     res = OpenMenu(mstr)
     if res ~= 0 then
       if res == 1 then
@@ -4555,8 +4555,8 @@
           end
 
           if ctltype_select == 4 and MOUSE_click(obj.sections[67]) then
-            show_cycleoptions = true
-            update_gfx = true
+            --show_cycleoptions = true
+            --update_gfx = true
           else
             show_cycleoptions = false          
           end
