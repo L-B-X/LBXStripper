@@ -315,6 +315,10 @@
                           y = obj.sections[45].y+150+butt_h+10 + (butt_h/2+4 + 10) * 10,
                           w = obj.sections[45].w-100,
                           h = butt_h/2+4}
+      obj.sections[67] = {x = obj.sections[45].x+10,
+                          y = obj.sections[45].y+150+butt_h+10 + (butt_h/2+4 + 10) * 8,
+                          w = 35,
+                          h = butt_h/2+8}
 
       local binh = 45
       obj.sections[60] = {x = plist_w + 10,
@@ -387,6 +391,25 @@
                                 y = obj.sections[70].y+yoff + yoffm*7,
                                 w = bw,
                                 h = bh}
+                                
+      --Cycle
+      local cw, ch = 200, 260
+      obj.sections[100] = {x = obj.sections[45].x - cw - 10,
+                           y = obj.sections[45].y + obj.sections[45].h - ch,
+                           w = cw,
+                           h = ch}
+
+      local kw,_ = gfx.getimgdim(0)
+      local kh = ctl_files[def_knob].cellh
+      obj.sections[101] = {x = obj.sections[100].x+butt_h,
+                           y = obj.sections[100].y+butt_h,
+                           w = kw,
+                           h = kh}
+      obj.sections[102] = {x = obj.sections[100].x+butt_h+40,
+                           y = obj.sections[101].y+obj.sections[101].h+butt_h,
+                           w = 40,
+                           h = bh}
+      
     return obj
   end
   
@@ -400,6 +423,7 @@
       gui.fontname = 'Calibri'
       gui.fontsize_tab = 20    
       gui.fontsz_knob = 18
+      --DBG(OS)
       if OS == "OSX32" or OS == "OSX64" then gui.fontsize_tab = gui.fontsize_tab - 5 end
       if OS == "OSX32" or OS == "OSX64" then gui.fontsz_knob = gui.fontsz_knob - 5 end
       if OS == "OSX32" or OS == "OSX64" then gui.fontsz_get = gui.fontsz_get - 5 end
@@ -736,7 +760,8 @@
          --= --{fn = kf, imageidx = nil, cellh = 100, frames = 101}
         if kf == '__default.knb' then
           ctl_files[c].imageidx = 0
-          knob_select = c    
+          knob_select = c
+          def_knob = c
         end
         c = c + 1
       end
@@ -1360,6 +1385,29 @@
 
   ------------------------------------------------------------
 
+  function GUI_DrawCycleOptions(obj, gui)
+  
+    gfx.dest = 1
+
+    f_Get_SSV('0 0 0')
+    gfx.a = 1  
+    gfx.rect(obj.sections[100].x,
+             obj.sections[100].y, 
+             obj.sections[100].w,
+             obj.sections[100].h, 1 )
+  
+    local p = 0
+    local kw, _ = gfx.getimgdim(0)
+    local kh = ctl_files[def_knob].cellh
+    gfx.blit(0,1,0,0,p*kh,kw,kh,obj.sections[101].x,obj.sections[101].y)
+    
+    GUI_DrawButton(gui, cycle_select.statecnt, obj.sections[102], gui.color.white, gui.color.black, true, 'STATES')
+    
+    
+  end
+
+  ------------------------------------------------------------
+
   function GUI_DrawCtlOptions(obj, gui)
 
     gfx.dest = 1
@@ -1421,6 +1469,11 @@
     GUI_DrawSliderH(gui, 'DEF VAL', obj.sections[57], gui.color.black, gui.color.white, defval_select)
     GUI_DrawButton(gui, 'SET', obj.sections[51], gui.color.white, gui.color.black, true)
     GUI_DrawButton(gui, 'EDIT NAME', obj.sections[59], gui.color.white, gui.color.black, true)
+    
+    if ctltype_select == 4 then
+      GUI_DrawButton(gui, '<<', obj.sections[67], gui.color.white, gui.color.black, true)  
+    end
+    
     local mdptxt = maxdp_select
     if maxdp_select < 0 then
       mdptxt = 'OFF'
@@ -2063,7 +2116,10 @@
             local w,h = gfx.getimgdim(1021)
             gfx.a = 0.5
             gfx.blit(1021,1,0,0,0,w,h,obj.sections[60].x,obj.sections[60].y)
-            GUI_DrawCtlOptions(obj, gui)            
+            GUI_DrawCtlOptions(obj, gui)
+            if show_cycleoptions then
+              GUI_DrawCycleOptions(obj, gui)
+            end            
           end
                   
         
@@ -2391,6 +2447,12 @@
       end
     end  
 
+    f_Get_SSV(gui.color.white)
+    gfx.rect(obj.sections[21].x,
+             obj.sections[21].y, 
+             obj.sections[21].w,
+             obj.sections[21].h, 1, 1)
+    GUI_textC(gui,obj.sections[21],'...',gui.color.black,-2)
     if obj.sections[17].x > obj.sections[20].x+obj.sections[20].w then
       f_Get_SSV(gui.color.white)
       gfx.rect(obj.sections[17].x,
@@ -2401,22 +2463,16 @@
     --end
         
     --if obj.sections[19].x > obj.sections[20].x+obj.sections[20].w then
-      f_Get_SSV(gui.color.white)
+--[[      f_Get_SSV(gui.color.white)
       gfx.rect(obj.sections[19].x,
                obj.sections[19].y, 
                obj.sections[19].w,
                obj.sections[19].h, 1, 1)
       GUI_textC(gui,obj.sections[19],'*',gui.color.black,-2)
-    --end
+    --end]]
 
     --if obj.sections[14].x > obj.sections[20].x+obj.sections[20].w then
     else
-      f_Get_SSV(gui.color.white)
-      gfx.rect(obj.sections[21].x,
-               obj.sections[21].y, 
-               obj.sections[21].w,
-               obj.sections[21].h, 1, 1)
-      GUI_textC(gui,obj.sections[21],'...',gui.color.black,-2)
       f_Get_SSV(gui.color.black)
       gfx.rect(obj.sections[21].x-2,
                obj.sections[21].y, 
@@ -2538,7 +2594,7 @@
                
   end
   
-  function UpdateLEdges()
+  --[[function UpdateLEdges()
 
     local winw, winh = obj.sections[10].w , obj.sections[10].h
     if lockh > 0 then
@@ -2566,7 +2622,7 @@
     
     end
         
-  end
+  end]]
   
   function UpdateLEdges()
 
@@ -3622,13 +3678,66 @@
     
   end
   
+  function GFXMenu()
+    local mstr = 'Bring to front|Send to back'
+    gfx.x, gfx.y = mouse.mx, mouse.my
+    res = OpenMenu(mstr)
+    if res ~= 0 then
+      if res == 1 then
+        --to front
+        if gfx2_select then
+          local cnt = #strips[tracks[track_select].strip][page].graphics          
+          local tbl = {}
+          local tbl2 = {}
+          table.insert(tbl2, strips[tracks[track_select].strip][page].graphics[gfx2_select])
+          strips[tracks[track_select].strip][page].graphics[gfx2_select] = nil
+          
+          for i = 1, cnt do
+            if strips[tracks[track_select].strip][page].graphics[i] ~= nil then
+              table.insert(tbl, strips[tracks[track_select].strip][page].graphics[i])
+            end
+          end
+          table.insert(tbl,tbl2[1])
+          strips[tracks[track_select].strip][page].graphics = tbl
+          gfx2_select = #strips[tracks[track_select].strip][page].graphics
+        end  
+          
+      elseif res == 2 then
+        --to back
+        if gfx2_select then
+          local cnt = #strips[tracks[track_select].strip][page].graphics          
+          local tbl = {}
+          table.insert(tbl, strips[tracks[track_select].strip][page].graphics[gfx2_select])
+          strips[tracks[track_select].strip][page].graphics[gfx2_select] = nil
+          
+          for i = 1, cnt do
+            if strips[tracks[track_select].strip][page].graphics[i] ~= nil then
+              table.insert(tbl, strips[tracks[track_select].strip][page].graphics[i])
+            end
+          end
+          strips[tracks[track_select].strip][page].graphics = tbl
+          gfx2_select = 1
+        end  
+
+      end
+    end
+    update_gfx = true    
+  end
+  
   function TopMenu()
   
     local mstr
-    if mode == 0 then
-      mstr = 'Toggle Sidebar||Lock X|Lock Y|Scroll Up|Scroll Down||Save Script State|Open Settings||Page 1|Page 2|Page 3|Page 4'
+    local ds
+    local d = gfx.dock(-1)
+    if d%256 == 0 then
+      ds = 'Dock Window'
     else
-      mstr = '#Toggle Sidebar||Lock X|Lock Y|Scroll Up|Scroll Down||Save Script State|Open Settings||Page 1|Page 2|Page 3|Page 4'
+      ds = 'Undock Window'
+    end
+    if mode == 0 then
+      mstr = 'Toggle Sidebar||Lock X|Lock Y|Scroll Up|Scroll Down||Save Script State|Open Settings||Page 1|Page 2|Page 3|Page 4||'..ds
+    else
+      mstr = '#Toggle Sidebar||Lock X|Lock Y|Scroll Up|Scroll Down||Save Script State|Open Settings||Page 1|Page 2|Page 3|Page 4||'..ds
     end
     gfx.x, gfx.y = mouse.mx, mouse.my
     res = OpenMenu(mstr)
@@ -3653,6 +3762,9 @@
         update_gfx = true
       elseif res >= 8 and res <= 11 then
         SetPage(res-7)
+      elseif res == 12 then
+        if d%256 == 0 then d=d+1 else d=d-1 end
+        gfx.dock(d)
       end
       update_gfx = true
     end
@@ -3755,6 +3867,7 @@
         last_gfx_w = gfx.w
         last_gfx_h = gfx.h
         
+        gui = GetGUI_vars()
         obj = GetObjects()
         
         if settings_autocentrectls then
@@ -3779,7 +3892,6 @@
       otrkcnt = ct
     end    
     
-    local gui = GetGUI_vars()
     GUI_draw(obj, gui)
     
     mouse.mx, mouse.my = gfx.mouse_x, gfx.mouse_y  
@@ -3877,11 +3989,6 @@
     end
     
     if show_settings then
-      --if MOUSE_click(obj.sections[19]) then
-        --settings
-      --  show_settings = false
-      --  SaveSettings()
-      --  update_gfx = true
       if mouse.LB and not mouse.last_LB and not MOUSE_click(obj.sections[70]) then
         show_settings = false
         SaveSettings()
@@ -4012,7 +4119,7 @@
       update_gfx = true
     else
     
-    if (obj.sections[17].x <= obj.sections[20].x+obj.sections[20].w) and MOUSE_click(obj.sections[21]) then
+    if MOUSE_click(obj.sections[21]) then
     
       TopMenu()
 
@@ -4050,10 +4157,10 @@
     --elseif MOUSE_click(obj.sections[12]) then
       --centre
     --  AutoCentreCtls()
-    elseif (obj.sections[17].x > obj.sections[20].x+obj.sections[20].w) and MOUSE_click(obj.sections[19]) then
+    --elseif (obj.sections[17].x > obj.sections[20].x+obj.sections[20].w) and MOUSE_click(obj.sections[19]) then
       --settings
-      show_settings = not show_settings
-      update_gfx = true
+   --   show_settings = not show_settings
+   --   update_gfx = true
 
     elseif (obj.sections[17].x > obj.sections[20].x+obj.sections[20].w) and MOUSE_click(obj.sections[17]) then
       SaveData()
@@ -4447,6 +4554,13 @@
             update_gfx = true
           end
 
+          if ctltype_select == 4 and MOUSE_click(obj.sections[67]) then
+            show_cycleoptions = true
+            update_gfx = true
+          else
+            show_cycleoptions = false          
+          end
+          
           if MOUSE_click(obj.sections[59]) then
             if ctl_select and #ctl_select > 0 then
               EditCtlName()
@@ -4488,6 +4602,9 @@
           elseif mouse.context == nil and MOUSE_click(obj.sections[65]) then mouse.context = 'valoffsetslider' 
           elseif mouse.context == nil and MOUSE_click(obj.sections[57]) then omx = -1 ctlpos = defval_select mouse.context = 'defvalslider' 
           elseif mouse.context == nil and MOUSE_click(obj.sections[58]) then mouse.context = 'textsizeslider' end
+        
+        elseif ctl_select ~= nil and (MOUSE_click(obj.sections[100]) or MOUSE_click_RB(obj.sections[100])) then
+        
         
         elseif mouse.mx > obj.sections[10].x then
         
@@ -4999,28 +5116,28 @@
               local selrect = CalcGFXSelRect()
               selrect.x = selrect.x - surface_offset.x + obj.sections[10].x
               selrect.y = selrect.y - surface_offset.y + obj.sections[10].y
-              local xywh = {x = selrect.x+selrect.w-3,
-                            y = selrect.y+selrect.h/2-3,
-                            w = 6,
-                            h = 6}
+              local xywh = {x = selrect.x+selrect.w-5,
+                            y = selrect.y+selrect.h/2-5,
+                            w = 10,
+                            h = 10}
               if mouse.context == nil and MOUSE_click(xywh) then
                 mouse.context = 'stretch_x'
                 gfx2_stretch = {mx = mouse.mx, sw = strips[tracks[track_select].strip][page].graphics[gfx2_select].stretchw}
               end
 
-              local xywh = {x = selrect.x+selrect.w/2-3,
-                            y = selrect.y+selrect.h-3,
-                            w = 6,
-                            h = 6}
+              local xywh = {x = selrect.x+selrect.w/2-5,
+                            y = selrect.y+selrect.h-5,
+                            w = 10,
+                            h = 10}
               if mouse.context == nil and MOUSE_click(xywh) then
                 mouse.context = 'stretch_y'
                 gfx2_stretch = {my = mouse.my, sh = strips[tracks[track_select].strip][page].graphics[gfx2_select].stretchh}
               end
 
-              local xywh = {x = selrect.x+selrect.w-3,
-                            y = selrect.y+selrect.h-3,
-                            w = 6,
-                            h = 6}
+              local xywh = {x = selrect.x+selrect.w-5,
+                            y = selrect.y+selrect.h-5,
+                            w = 10,
+                            h = 10}
               if mouse.context == nil and MOUSE_click(xywh) then
                 mouse.context = 'stretch_xy'
                 gfx2_stretch = {mx = mouse.mx, my = mouse.my, sw = strips[tracks[track_select].strip][page].graphics[gfx2_select].stretchw,
@@ -5029,30 +5146,40 @@
             
               if mouse.context and mouse.context == 'stretch_x' then
               
-                strips[tracks[track_select].strip][page].graphics[gfx2_select].stretchw = math.floor((gfx2_stretch.sw + (mouse.mx-gfx2_stretch.mx))/settings_gridsize)*settings_gridsize
+                strips[tracks[track_select].strip][page].graphics[gfx2_select].stretchw = math.max(math.floor((gfx2_stretch.sw + (mouse.mx-gfx2_stretch.mx))/settings_gridsize)*settings_gridsize,2)
                 update_gfx = true
               
               elseif mouse.context and mouse.context == 'stretch_y' then
               
-                strips[tracks[track_select].strip][page].graphics[gfx2_select].stretchh =  math.floor((gfx2_stretch.sh + (mouse.my-gfx2_stretch.my))/settings_gridsize)*settings_gridsize
+                strips[tracks[track_select].strip][page].graphics[gfx2_select].stretchh =  math.max(math.floor((gfx2_stretch.sh + (mouse.my-gfx2_stretch.my))/settings_gridsize)*settings_gridsize,2)
                 update_gfx = true
                 
               elseif mouse.context and mouse.context == 'stretch_xy' then
               
-                strips[tracks[track_select].strip][page].graphics[gfx2_select].stretchw = math.floor((gfx2_stretch.sw + (mouse.mx-gfx2_stretch.mx))/settings_gridsize)*settings_gridsize
-                strips[tracks[track_select].strip][page].graphics[gfx2_select].stretchh = math.floor((gfx2_stretch.sh + (mouse.my-gfx2_stretch.my))/settings_gridsize)*settings_gridsize
+                strips[tracks[track_select].strip][page].graphics[gfx2_select].stretchw = math.max(math.floor((gfx2_stretch.sw + (mouse.mx-gfx2_stretch.mx))/settings_gridsize)*settings_gridsize,2)
+                strips[tracks[track_select].strip][page].graphics[gfx2_select].stretchh = math.max(math.floor((gfx2_stretch.sh + (mouse.my-gfx2_stretch.my))/settings_gridsize)*settings_gridsize,2)
                 update_gfx = true
 
               end            
             
             end
           
-            for i = 1, #strips[tracks[track_select].strip][page].graphics do
+            for i = #strips[tracks[track_select].strip][page].graphics,1,-1 do
               local xywh
               xywh = {x = strips[tracks[track_select].strip][page].graphics[i].x - surface_offset.x + obj.sections[10].x, 
                       y = strips[tracks[track_select].strip][page].graphics[i].y - surface_offset.y + obj.sections[10].y, 
                       w = strips[tracks[track_select].strip][page].graphics[i].stretchw, 
                       h = strips[tracks[track_select].strip][page].graphics[i].stretchh}
+              
+              if xywh.w < 16 then
+                xywh.x = xywh.x - 8
+                xywh.w = 16
+              end
+              if xywh.h < 16 then 
+                xywh.y = xywh.y - 8
+                xywh.h = 16
+              end
+              
               if MOUSE_click(xywh) then
                 mouse.context = 'draggfx2'
                 gfx2_select = i              
@@ -5060,6 +5187,12 @@
                 dragoff = {x = mouse.mx - strips[tracks[track_select].strip][page].graphics[gfx2_select].x - surface_offset.x,
                            y = mouse.my - strips[tracks[track_select].strip][page].graphics[gfx2_select].y - surface_offset.y}
                 update_gfx = true
+                break
+              elseif MOUSE_click_RB(xywh) then
+                gfx2_select = i
+                GFXMenu()
+                --update_gfx = true
+                break
               end
             end
           end
@@ -5290,7 +5423,7 @@
     end
     
     if mouse.context == nil then
-      if ctl_select ~= nil and MOUSE_click(obj.sections[45]) then
+      if ctl_select ~= nil and (MOUSE_click(obj.sections[45]) or MOUSE_click(obj.sections[100])) then
       elseif mouse.mx > obj.sections[10].x then
       
         if MOUSE_click(obj.sections[10]) then
@@ -5300,6 +5433,7 @@
           mmx = mouse.mx
           mmy = mouse.my
           ctl_select = nil
+          show_cycleoptions = false
           gfx2_select = nil
           gfx3_select = nil
           update_gfx = true
@@ -6096,6 +6230,7 @@
     strip_select = 0
     stripfol_select = 0
     maxdp_select = -1
+    cycle_select = {statecnt = 2}
     
     plist_w = 140
     oplist_w = 140
@@ -6105,6 +6240,7 @@
     show_ctloptions = false
     show_editbar = true
     show_settings = false
+    show_cycleoptions = false
     
     show_paramname = true
     show_paramval = true
