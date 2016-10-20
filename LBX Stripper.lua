@@ -5163,37 +5163,42 @@
               end            
             
             end
-          
-            for i = #strips[tracks[track_select].strip][page].graphics,1,-1 do
-              local xywh
-              xywh = {x = strips[tracks[track_select].strip][page].graphics[i].x - surface_offset.x + obj.sections[10].x, 
-                      y = strips[tracks[track_select].strip][page].graphics[i].y - surface_offset.y + obj.sections[10].y, 
-                      w = strips[tracks[track_select].strip][page].graphics[i].stretchw, 
-                      h = strips[tracks[track_select].strip][page].graphics[i].stretchh}
-              
-              if xywh.w < 16 then
-                xywh.x = xywh.x - 8
-                xywh.w = 16
+            
+            if mouse.context == nil then
+              for i = #strips[tracks[track_select].strip][page].graphics,1,-1 do
+                local xywh
+                xywh = {x = strips[tracks[track_select].strip][page].graphics[i].x - surface_offset.x + obj.sections[10].x, 
+                        y = strips[tracks[track_select].strip][page].graphics[i].y - surface_offset.y + obj.sections[10].y, 
+                        w = strips[tracks[track_select].strip][page].graphics[i].stretchw, 
+                        h = strips[tracks[track_select].strip][page].graphics[i].stretchh}
+                
+                if xywh.w < 16 then
+                  xywh.x = xywh.x - 8
+                  xywh.w = 16
+                end
+                if xywh.h < 16 then 
+                  xywh.y = xywh.y - 8
+                  xywh.h = 16
+                end
+                
+                if MOUSE_click(xywh) then
+                  mouse.context = 'draggfx2'
+                  gfx2_select = i              
+                  draggfx2 = 'draggfx'
+                  dragoff = {x = mouse.mx - strips[tracks[track_select].strip][page].graphics[gfx2_select].x - surface_offset.x,
+                             y = mouse.my - strips[tracks[track_select].strip][page].graphics[gfx2_select].y - surface_offset.y}
+                  update_gfx = true
+                  break
+                elseif gfx2_select and MOUSE_click_RB(xywh) then
+                  --gfx2_select = i
+                  --update_gfx = true
+                  --GUI_draw(obj,gui)
+                  GFXMenu()
+                  --update_gfx = true
+                  break
+                end
               end
-              if xywh.h < 16 then 
-                xywh.y = xywh.y - 8
-                xywh.h = 16
-              end
-              
-              if MOUSE_click(xywh) then
-                mouse.context = 'draggfx2'
-                gfx2_select = i              
-                draggfx2 = 'draggfx'
-                dragoff = {x = mouse.mx - strips[tracks[track_select].strip][page].graphics[gfx2_select].x - surface_offset.x,
-                           y = mouse.my - strips[tracks[track_select].strip][page].graphics[gfx2_select].y - surface_offset.y}
-                update_gfx = true
-                break
-              elseif MOUSE_click_RB(xywh) then
-                gfx2_select = i
-                GFXMenu()
-                --update_gfx = true
-                break
-              end
+
             end
           end
         end
