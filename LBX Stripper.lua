@@ -2050,6 +2050,17 @@
                             obj.sections[10].h,
                             obj.sections[10].x,
                             obj.sections[10].y)
+          --gfx.blit(1001,1,0,0,0,obj.sections[43].w,obj.sections[43].h,0,butt_h+2)
+          
+          if ctl_select ~= nil then
+            selrect = CalcSelRect()
+            if selrect then
+              f_Get_SSV(gui.color.yellow)
+              gfx.a = 1
+              gfx.roundrect(selrect.x - surface_offset.x + obj.sections[10].x, selrect.y - surface_offset.y + obj.sections[10].y, selrect.w, selrect.h, 8, 1, 0)
+            end
+          end
+                    
           gfx.blit(1001,1,0,0,0,obj.sections[43].w,obj.sections[43].h,0,butt_h+2)
           
           if dragparam ~= nil then
@@ -2096,16 +2107,7 @@
                      l.b-l.t, 1, 1)
           end
           
-          if ctl_select ~= nil then
-            selrect = CalcSelRect()
-            if selrect then
-              f_Get_SSV(gui.color.yellow)
-              gfx.a = 1
-              gfx.roundrect(selrect.x - surface_offset.x + obj.sections[10].x, selrect.y - surface_offset.y + obj.sections[10].y, selrect.w, selrect.h, 8, 1, 0)
-            end
-          end
-          
-          if update_gfx then
+          if update_gfx or update_surface then
             if lockh > 0 or lockw > 0 then
               UpdateLEdges()
             end
@@ -2145,7 +2147,7 @@
                             obj.sections[10].x,
                             obj.sections[10].y)
           
-          gfx.blit(1001,1,0,0,0,obj.sections[43].w,obj.sections[43].h,0,butt_h)
+          --gfx.blit(1001,1,0,0,0,obj.sections[43].w,obj.sections[43].h,0,butt_h)
 
           if draggfx ~= nil then
             local x, y = draggfx.x, draggfx.y
@@ -2153,12 +2155,6 @@
             gfx.a = 0.5
             
             gfx.blit(1023,1,0,0,0,w,h,x,y)          
-          end
-
-          if update_gfx then
-            if lockh > 0 or lockw > 0 then
-              UpdateLEdges()
-            end
           end
 
           if gfx2_select ~= nil then
@@ -2176,6 +2172,13 @@
               gfx.circle(selrect.x+selrect.w/2,selrect.y+selrect.h,4,1,1)              
             end            
           
+          end
+          gfx.blit(1001,1,0,0,0,obj.sections[43].w,obj.sections[43].h,0,butt_h)
+
+          if update_gfx or update_surface then
+            if lockh > 0 or lockw > 0 then
+              UpdateLEdges()
+            end
           end
 
           if gfx_select ~= nil then
@@ -2202,7 +2205,7 @@
                             obj.sections[10].h,
                             obj.sections[10].x,
                             obj.sections[10].y)
-          gfx.blit(1001,1,0,0,0,obj.sections[43].w,obj.sections[43].h,0,butt_h)          
+          --gfx.blit(1001,1,0,0,0,obj.sections[43].w,obj.sections[43].h,0,butt_h)          
           
           if dragstrip ~= nil then
             local x, y = dragstrip.x, dragstrip.y
@@ -2221,6 +2224,8 @@
             end
           end
 
+          gfx.blit(1001,1,0,0,0,obj.sections[43].w,obj.sections[43].h,0,butt_h)          
+
           gfx.a=1
           f_Get_SSV(gui.color.white)
           gfx.rect(obj.sections[15].x,
@@ -2229,7 +2234,7 @@
                    obj.sections[15].h, 1, 1)
           GUI_textC(gui,obj.sections[15],'SAVE STRIP',gui.color.black,-2)        
 
-          if update_gfx then
+          if update_gfx or update_surface then
             if lockh > 0 or lockw > 0 then
               UpdateLEdges()
             end
@@ -2642,7 +2647,7 @@
                  xywh.w,
                  xywh.h, 1 )
         
-        xx = obj.sections[10].x + obj.sections[10].w+1
+        xx = obj.sections[10].x + obj.sections[10].w
         local xywh = {x = xx,
                       y = obj.sections[10].y,
                       w = gfx1.main_w - xx,
@@ -2671,7 +2676,7 @@
                  xywh.w,
                  xywh.h, 1 )
         
-        yy = obj.sections[10].y + obj.sections[10].h+1
+        yy = obj.sections[10].y + obj.sections[10].h
         local xywh = {x = obj.sections[10].x,
                       y = yy,
                       w = obj.sections[10].w,
@@ -3728,16 +3733,20 @@
   
     local mstr
     local ds
+    local ls = ''
     local d = gfx.dock(-1)
     if d%256 == 0 then
       ds = 'Dock Window'
     else
       ds = 'Undock Window'
     end
+    if settings_locksurface then
+      ls = '!'
+    end
     if mode == 0 then
-      mstr = 'Toggle Sidebar||Lock X|Lock Y|Scroll Up|Scroll Down||Save Script State|Open Settings||Page 1|Page 2|Page 3|Page 4||'..ds
+      mstr = 'Toggle Sidebar||Lock X|Lock Y|Scroll Up|Scroll Down||Save Script State|Open Settings||Page 1|Page 2|Page 3|Page 4||'..ds..'||'..ls..'Lock Surface'
     else
-      mstr = '#Toggle Sidebar||Lock X|Lock Y|Scroll Up|Scroll Down||Save Script State|Open Settings||Page 1|Page 2|Page 3|Page 4||'..ds
+      mstr = '#Toggle Sidebar||Lock X|Lock Y|Scroll Up|Scroll Down||Save Script State|Open Settings||Page 1|Page 2|Page 3|Page 4||'..ds..'||'..ls..'Lock Surface'
     end
     gfx.x, gfx.y = mouse.mx, butt_h
     res = OpenMenu(mstr)
@@ -3765,6 +3774,8 @@
       elseif res == 12 then
         if d%256 == 0 then d=d+1 else d=d-1 end
         gfx.dock(d)
+      elseif res == 13 then
+        settings_locksurface = not settings_locksurface
       end
       update_gfx = true
     end
@@ -3802,21 +3813,25 @@
   end
   
   function ScrollUp()
-    if surface_offset.y > 0 then
-      if lockh > 0 then
-        surface_offset.y = surface_offset.y - lockh
-      else
-        surface_offset.y = surface_offset.y - math.floor(obj.sections[10].h/settings_gridsize)*settings_gridsize
+    if settings_locksurface == false then
+      if surface_offset.y > 0 then
+        if lockh > 0 then
+          surface_offset.y = surface_offset.y - lockh
+        else
+          surface_offset.y = surface_offset.y - math.floor(obj.sections[10].h/settings_gridsize)*settings_gridsize
+        end
       end
     end
   end
   
   function ScrollDown()
-    if surface_offset.y < surface_size.h-obj.sections[10].h then
-      if lockh > 0 then
-        surface_offset.y = surface_offset.y + lockh
-      else
-        surface_offset.y = surface_offset.y + math.floor(obj.sections[10].h/settings_gridsize)*settings_gridsize
+    if settings_locksurface == false then
+      if surface_offset.y < surface_size.h-obj.sections[10].h then
+        if lockh > 0 then
+          surface_offset.y = surface_offset.y + lockh
+        else
+          surface_offset.y = surface_offset.y + math.floor(obj.sections[10].h/settings_gridsize)*settings_gridsize
+        end
       end
     end
   end
@@ -5088,6 +5103,7 @@
             
             --load temp image
             gfx.loadimg(1023,graphics_path..graphics_files[gfx_select].fn)
+            draggfx_w, draggfx_h = gfx.getimgdim(1023)
             
             update_gfx = true
             mouse.context = 'draggfx'
@@ -5096,11 +5112,12 @@
         end
         
         if mouse.context and mouse.context == 'draggfx' then
-          draggfx = {x = mouse.mx - 50, y = mouse.my - 50}
+          draggfx = {x = mouse.mx - draggfx_w/2, y = mouse.my - draggfx_h/2}
           update_gfx = true
         elseif draggfx ~= nil then
           --Dropped
-          if draggfx.x+50 > obj.sections[10].x and draggfx.x+50 < obj.sections[10].w and draggfx.y+50 > obj.sections[10].y and draggfx.y+50 < obj.sections[10].h then
+          if mouse.mx > obj.sections[10].x and mouse.mx < obj.sections[10].x+obj.sections[10].w and mouse.my > obj.sections[10].y and mouse.my < obj.sections[10].y+obj.sections[10].h then
+            DBG('adding')
             Strip_AddGFX()
           end
           
@@ -5428,15 +5445,17 @@
     end
     
     if mouse.context == nil then
-      if ctl_select ~= nil and (MOUSE_click(obj.sections[45]) or MOUSE_click(obj.sections[100])) then
+      if ctl_select ~= nil and (MOUSE_click(obj.sections[45]) or (MOUSE_click(obj.sections[100]) and show_cycleoptions)) then
       elseif mouse.mx > obj.sections[10].x then
       
         if MOUSE_click(obj.sections[10]) then
-          mouse.context = "dragsurface"
-          surx = surface_offset.x
-          sury = surface_offset.y
-          mmx = mouse.mx
-          mmy = mouse.my
+          if settings_locksurface == false then
+            mouse.context = "dragsurface"
+            surx = surface_offset.x
+            sury = surface_offset.y
+            mmx = mouse.mx
+            mmy = mouse.my
+          end
           ctl_select = nil
           show_cycleoptions = false
           gfx2_select = nil
@@ -5447,64 +5466,38 @@
       end    
     end
     if mouse.context and mouse.context == "dragsurface" then
-      local offx, offy
-      if lockx == false then
-        offx = MOUSE_surfaceX(obj.sections[10])
-      end
-      if locky == false then  
-        offy = MOUSE_surfaceY(obj.sections[10])
-      end
+      if settings_locksurface == false then
       
-      if surface_size.w < obj.sections[10].w then
-        surface_offset.x = -math.floor((obj.sections[10].w - surface_size.w)/2)
-      elseif offx ~= nil then
-        if locky == false then
-          surface_offset.x = F_limit(surx + offx,0-math.ceil(obj.sections[10].w*0.25),surface_size.w - math.ceil(obj.sections[10].w*0.75))
-        else
-          surface_offset.x = F_limit(surx + offx,0,surface_size.w - obj.sections[10].w)        
-        end
-      end
-      
-      if offy ~= nil then
+        local offx, offy
         if lockx == false then
-          surface_offset.y = F_limit(sury + offy,0-math.ceil(obj.sections[10].h*0.25),surface_size.h - math.ceil(obj.sections[10].h*0.75))
-        else
-          surface_offset.y = F_limit(sury + offy,0,surface_size.h - obj.sections[10].h)        
+          offx = MOUSE_surfaceX(obj.sections[10])
         end
-      end
-
-      if surface_offset.oldx ~= surface_offset.x or surface_offset.oldy ~= surface_offset.y or (ctls and not ctl_select) then
-        surface_offset.oldx = surface_offset.x
-        surface_offset.oldy = surface_offset.y
+        if locky == false then  
+          offy = MOUSE_surfaceY(obj.sections[10])
+        end
         
-        if strips and tracks[track_select] and strips[tracks[track_select].strip] then
-          strips[tracks[track_select].strip][page].surface_x = surface_offset.x
-          strips[tracks[track_select].strip][page].surface_y = surface_offset.y
-        end
-        if surface_offset.x < 0 or surface_offset.y < 0 
-            or surface_offset.x > surface_size.w-obj.sections[10].w 
-            or surface_offset.y > surface_size.h-obj.sections[10].h then 
-          update_surfaceedge = true 
-        end
-        update_surface = true
-      end
-    end
-    
-    if settings_mousewheelknob == false and gfx.mouse_wheel ~= 0 then
-      if lockx == false or locky == false then
-        local v = gfx.mouse_wheel/120
-        if mouse.mx > obj.sections[10].x and MOUSE_over(obj.sections[10]) then
-          if ctl_select then
-            ctl_select = nil
-            update_gfx = true
-          end
-          if locky then
-            surface_offset.x = F_limit(surface_offset.x - v * 50,0,surface_size.w - obj.sections[10].w)
-          elseif lockx then
-            surface_offset.y = F_limit(surface_offset.y - v * 50,0,surface_size.h - obj.sections[10].h)        
+        if surface_size.w < obj.sections[10].w then
+          surface_offset.x = -math.floor((obj.sections[10].w - surface_size.w)/2)
+        elseif offx ~= nil then
+          if locky == false then
+            surface_offset.x = F_limit(surx + offx,0-math.ceil(obj.sections[10].w*0.25),surface_size.w - math.ceil(obj.sections[10].w*0.75))
           else
-            surface_offset.y = F_limit(surface_offset.y - v * 50,0-math.ceil(obj.sections[10].h*0.25),surface_size.h - math.ceil(obj.sections[10].h*0.75))
+            surface_offset.x = F_limit(surx + offx,0,surface_size.w - obj.sections[10].w)        
           end
+        end
+        
+        if offy ~= nil then
+          if lockx == false then
+            surface_offset.y = F_limit(sury + offy,0-math.ceil(obj.sections[10].h*0.25),surface_size.h - math.ceil(obj.sections[10].h*0.75))
+          else
+            surface_offset.y = F_limit(sury + offy,0,surface_size.h - obj.sections[10].h)        
+          end
+        end
+  
+        if surface_offset.oldx ~= surface_offset.x or surface_offset.oldy ~= surface_offset.y or (ctls and not ctl_select) then
+          surface_offset.oldx = surface_offset.x
+          surface_offset.oldy = surface_offset.y
+          
           if strips and tracks[track_select] and strips[tracks[track_select].strip] then
             strips[tracks[track_select].strip][page].surface_x = surface_offset.x
             strips[tracks[track_select].strip][page].surface_y = surface_offset.y
@@ -5516,6 +5509,43 @@
           end
           update_surface = true
         end
+      end
+    end
+    
+    if settings_mousewheelknob == false and gfx.mouse_wheel ~= 0 then
+      if settings_locksurface == false then
+        if lockx == false or locky == false then
+          local v = gfx.mouse_wheel/120
+          if mouse.mx > obj.sections[10].x and MOUSE_over(obj.sections[10]) then
+            if ctl_select then
+              ctl_select = nil
+              update_gfx = true
+            end
+            if locky then
+              surface_offset.x = F_limit(surface_offset.x - v * 50,0,surface_size.w - obj.sections[10].w)
+            elseif lockx then
+              surface_offset.y = F_limit(surface_offset.y - v * 50,0,surface_size.h - obj.sections[10].h)        
+            else
+              surface_offset.y = F_limit(surface_offset.y - v * 50,0-math.ceil(obj.sections[10].h*0.25),surface_size.h - math.ceil(obj.sections[10].h*0.75))
+            end
+            if strips and tracks[track_select] and strips[tracks[track_select].strip] then
+              strips[tracks[track_select].strip][page].surface_x = surface_offset.x
+              strips[tracks[track_select].strip][page].surface_y = surface_offset.y
+            end
+            if surface_offset.x < 0 or surface_offset.y < 0 
+                or surface_offset.x > surface_size.w-obj.sections[10].w 
+                or surface_offset.y > surface_size.h-obj.sections[10].h then 
+              update_surfaceedge = true 
+            end
+            update_surface = true
+          end
+        end
+      else
+        if ctl_select then
+          ctl_select = nil
+          update_gfx = true
+        end
+      
       end
       gfx.mouse_wheel = 0
     end
@@ -6304,6 +6334,7 @@
   settings_updatefreq = 0.05
   settings_showbars = true
   settings_mousewheelknob = false
+  settings_locksurface = false
   
   dockstate = 0
   
