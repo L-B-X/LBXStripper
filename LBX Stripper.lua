@@ -2608,7 +2608,7 @@
 
     GUI_DrawTick(gui, 'Follow selected track', obj.sections[71], gui.color.white, settings_followselectedtrack)             
     GUI_DrawTick(gui, 'Auto centre controls', obj.sections[72], gui.color.white, settings_autocentrectls)             
-    GUI_DrawTick(gui, 'Save all track fx with strip', obj.sections[73], gui.color.white, settings_saveallfxinstrip)
+    GUI_DrawTick(gui, 'Save all track fx with strip', obj.sections[73], gui.color.white, settings_saveallfxinststrip)
     GUI_DrawSliderH(gui, 'Control refresh rate', obj.sections[74], gui.color.black, gui.color.white, (1-(settings_updatefreq*10)))
     GUI_DrawTick(gui, 'Lock control window width', obj.sections[75], gui.color.white, lockx)
     GUI_DrawTick(gui, 'Lock control window height', obj.sections[76], gui.color.white, locky)
@@ -3089,8 +3089,15 @@
       for i = 0, reaper.TrackFX_GetCount(tr)-1 do
         if settings_saveallfxinststrip then 
           local _, fxname = reaper.TrackFX_GetFXName(tr, i, '')
-          fxtbl[i+1] = {fxname = string.match(fxname, '.*: (.*) %('),
-                        fxchunk = GetChunkPresetData(chunk, i),
+          local fxchunk = GetChunkPresetData(chunk, i)
+          local fxn
+          if string.sub(fxname,1,3) == 'VST' then
+            fxn = string.match(fxname, '.*: (.*) %(')
+          elseif string.sub(fxname,1,3) == 'JS:' then
+            fxn = string.match(fxchunk, 'JS.*%/+(.*) \"')
+          end
+          fxtbl[i+1] = {fxname = fxn,
+                        fxchunk = fxchunk,
                         fxguid = convertguid(reaper.TrackFX_GetFXGUID(tr, i)),
                         fxenabled = reaper.TrackFX_GetEnabled(tr, i)
                         }
@@ -3105,8 +3112,16 @@
           end
           if instrip then
             local _, fxname = reaper.TrackFX_GetFXName(tr, i, '')
-            fxtbl[fxcnt] = {fxname = string.match(fxname, '.*: (.*) %('),
-                            fxchunk = GetChunkPresetData(chunk, i),
+            local fxchunk = GetChunkPresetData(chunk, i)
+            local fxn
+            if string.sub(fxname,1,3) == 'VST' then
+              fxn = string.match(fxname, '.*: (.*) %(')
+            elseif string.sub(fxname,1,3) == 'JS:' then
+              fxn = string.match(fxchunk, 'JS.*%/+(.*) \"')
+            end
+
+            fxtbl[fxcnt] = {fxname = fxn,
+                            fxchunk = fxchunk,
                             fxguid = convertguid(reaper.TrackFX_GetFXGUID(tr, i)),
                             fxenabled = reaper.TrackFX_GetEnabled(tr, i)
                             }          
@@ -4038,7 +4053,7 @@
         settings_autocentrectls = not settings_autocentrectls
         update_settings = true
       elseif MOUSE_click(obj.sections[73]) then
-        settings_saveallfxinstrip = not settings_saveallfxinstrip
+        settings_saveallfxinststrip = not settings_saveallfxinststrip
         update_settings = true
       elseif MOUSE_click(obj.sections[81]) then
         settings_mousewheelknob = not settings_mousewheelknob
