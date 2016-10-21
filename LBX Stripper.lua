@@ -15,6 +15,28 @@
   submode_table = {'FX PARAMS','GRAPHICS','STRIPS'}
   ctltype_table = {'KNOB/SLIDER','BUTTON','BUTTON INV','CYCLE BUTTON','METER'}
 
+  contexts = {updatefreq = 0,
+              lockw = 1,
+              lockh = 2,
+              gridslider = 3,
+              dragsidebar = 4,
+              sliderctl = 5,
+              scaleslider = 6,
+              offsetslider = 7,
+              valoffsetslider = 8,
+              defvalslider = 9,
+              textsizeslider = 10,
+              dragctl = 11,
+              draglasso = 12,
+              dragparam = 13,
+              draggfx = 14,
+              stretch_x = 15,
+              stretch_y = 16,
+              stretch_xy = 17,
+              draggfx2 = 18,
+              dragstrip = 19
+              }
+              
   ---------------------------------------------
   -- Pickle.lua
   -- A table serialization utility for lua
@@ -3891,7 +3913,6 @@
         
         resize_display = true
         update_gfx = true
-        --update_surface = true
         force_resize = false
         
         if surface_size.w < obj.sections[10].w then
@@ -4023,7 +4044,7 @@
         settings_mousewheelknob = not settings_mousewheelknob
         update_settings = true
       elseif mouse.context == nil and MOUSE_click(obj.sections[74]) then
-        mouse.context = 'updatefreq'
+        mouse.context = contexts.updatefreq
         oval = settings_updatefreq
       elseif mouse.context == nil and MOUSE_click(obj.sections[75]) then
         lockx = not lockx
@@ -4034,10 +4055,10 @@
         obj = GetObjects()
         update_gfx = true
       elseif mouse.context == nil and MOUSE_click(obj.sections[77]) then
-        mouse.context = 'lockw'
+        mouse.context = contexts.lockw
         ctlpos = lockw
       elseif mouse.context == nil and MOUSE_click(obj.sections[78]) then
-        mouse.context = 'lockh'
+        mouse.context = contexts.lockh
         ctlpos = lockh
       elseif mouse.context == nil and MOUSE_click(obj.sections[80]) then
         settings_showgrid = not settings_showgrid
@@ -4047,11 +4068,11 @@
         end
         update_gfx = true
       elseif mouse.context == nil and MOUSE_click(obj.sections[79]) then
-        mouse.context = 'gridslider'
+        mouse.context = contexts.gridslider
         ctlpos = settings_gridsize
       end
       
-      if mouse.context and mouse.context == 'updatefreq' then
+      if mouse.context and mouse.context == contexts.updatefreq then
         local val = F_limit(MOUSE_sliderHBar(obj.sections[74]),0,1)
         if val ~= nil then
           settings_updatefreq = (1-val)/10
@@ -4060,7 +4081,7 @@
           end 
           oval = settings_updatefreq          
         end
-      elseif mouse.context and mouse.context == 'lockw' then
+      elseif mouse.context and mouse.context == contexts.lockw then
         local val = F_limit(MOUSE_slider(obj.sections[77]),0,1)
         if val ~= nil then
           val = 1-val
@@ -4068,7 +4089,7 @@
           obj = GetObjects()
           update_gfx = true
         end
-      elseif mouse.context and mouse.context == 'lockh' then
+      elseif mouse.context and mouse.context == contexts.lockh then
         local val = F_limit(MOUSE_slider(obj.sections[78]),0,1)
         if val ~= nil then
           val = 1-val
@@ -4076,7 +4097,7 @@
           obj = GetObjects()
           update_gfx = true
         end
-      elseif mouse.context and mouse.context == 'gridslider' then
+      elseif mouse.context and mouse.context == contexts.gridslider then
         local val = F_limit(MOUSE_slider(obj.sections[79]),0,1)
         if val ~= nil then
           val = 1-val
@@ -4145,9 +4166,8 @@
     
     elseif MOUSE_click(obj.sections[11]) then
       if mouse.mx > obj.sections[11].w-6 then
-        mouse.context = 'dragsidebar'
+        mouse.context = contexts.dragsidebar
         offx = 0
-        --DBG(obj.sections[11].x-10 ..'  '..mouse.mx)
       else
         gfx3_select = nil
         gfx2_select = nil
@@ -4165,18 +4185,10 @@
     elseif MOUSE_click(obj.sections[18]) then
       ToggleSidebar()
       if mode == 1 then
-        mouse.context = 'dragsidebar'
+        mouse.context = contexts.dragsidebar
         offx = mouse.mx-plist_w
       end
     
-    --elseif MOUSE_click(obj.sections[12]) then
-      --centre
-    --  AutoCentreCtls()
-    --elseif (obj.sections[17].x > obj.sections[20].x+obj.sections[20].w) and MOUSE_click(obj.sections[19]) then
-      --settings
-   --   show_settings = not show_settings
-   --   update_gfx = true
-
     elseif (obj.sections[17].x > obj.sections[20].x+obj.sections[20].w) and MOUSE_click(obj.sections[17]) then
       SaveData()
       infomsg = "*** DATA SAVED ***"
@@ -4201,7 +4213,7 @@
       update_gfx = true
     end
     
-    if mouse.context and mouse.context == 'dragsidebar' then
+    if mouse.context and mouse.context == contexts.dragsidebar then
     
       plist_w = math.max(mouse.mx-offx,0)
       plist_w = math.min(plist_w, obj.sections[19].x-2)
@@ -4242,7 +4254,7 @@
                   local ctltype = strips[tracks[track_select].strip][page].controls[i].ctltype
                   if ctltype == 1 then
                     --knob/slider
-                    mouse.context = 'sliderctl'
+                    mouse.context = contexts.sliderctl
                     --knobslider = 'ks'
                     ctlpos = strips[tracks[track_select].strip][page].controls[i].val
                     trackfxparam_select = i
@@ -4310,7 +4322,7 @@
         end
       end
 
-      if mouse.context and mouse.context == 'sliderctl' then
+      if mouse.context and mouse.context == contexts.sliderctl then
         local val = MOUSE_slider(ctlxywh,mouse.slideoff)
         --gfx.mouse_y = 0
         if val ~= nil then
@@ -4612,11 +4624,11 @@
             update_gfx = true
           end
           
-          if mouse.context == nil and MOUSE_click(obj.sections[50]) then mouse.context = 'scaleslider' 
-          elseif mouse.context == nil and MOUSE_click(obj.sections[56]) then mouse.context = 'offsetslider' 
-          elseif mouse.context == nil and MOUSE_click(obj.sections[65]) then mouse.context = 'valoffsetslider' 
-          elseif mouse.context == nil and MOUSE_click(obj.sections[57]) then omx = -1 ctlpos = defval_select mouse.context = 'defvalslider' 
-          elseif mouse.context == nil and MOUSE_click(obj.sections[58]) then mouse.context = 'textsizeslider' end
+          if mouse.context == nil and MOUSE_click(obj.sections[50]) then mouse.context = contexts.scaleslider 
+          elseif mouse.context == nil and MOUSE_click(obj.sections[56]) then mouse.context = contexts.offsetslider
+          elseif mouse.context == nil and MOUSE_click(obj.sections[65]) then mouse.context = contexts.valoffsetslider 
+          elseif mouse.context == nil and MOUSE_click(obj.sections[57]) then omx = -1 ctlpos = defval_select mouse.context = contexts.defvalslider
+          elseif mouse.context == nil and MOUSE_click(obj.sections[58]) then mouse.context = contexts.textsizeslider end
         
         elseif ctl_select ~= nil and (MOUSE_click(obj.sections[100]) or MOUSE_click_RB(obj.sections[100])) then
         
@@ -4635,7 +4647,7 @@
                         w = strips[tracks[track_select].strip][page].controls[i].w, 
                         h = strips[tracks[track_select].strip][page].controls[i].ctl_info.cellh}
                 if MOUSE_click(xywh) then
-                  mouse.context = 'dragctl'
+                  mouse.context = contexts.dragctl
                   dragctl = 'dragctl'
                   
                   local found = false
@@ -4697,12 +4709,12 @@
               end
             end
           elseif mouse.context == nil and MOUSE_click_RB(obj.sections[10]) then
-            mouse.context = 'draglasso'
+            mouse.context = contexts.draglasso
             lasso = {l = mouse.mx, t = mouse.my, r = mouse.mx+5, b = mouse.my+5}
           end
         end
         
-        if mouse.context and mouse.context == 'scaleslider' then
+        if mouse.context and mouse.context == contexts.scaleslider then
           local val = F_limit(MOUSE_sliderHBar(obj.sections[50]),0,1)
           if val ~= nil then
             scale_select = val*0.5 + 0.5
@@ -4722,7 +4734,7 @@
           end
         end
 
-        if mouse.context and mouse.context == 'offsetslider' then
+        if mouse.context and mouse.context == contexts.offsetslider then
           local val = F_limit(MOUSE_sliderHBar(obj.sections[56]),0,1)
           if val ~= nil then
             textoff_select = val*300 - 150
@@ -4734,7 +4746,7 @@
           end
         end
 
-        if mouse.context and mouse.context == 'valoffsetslider' then
+        if mouse.context and mouse.context == contexts.valoffsetslider then
           local val = F_limit(MOUSE_sliderHBar(obj.sections[65]),0,1)
           if val ~= nil then
             textoffval_select = val*100 - 50
@@ -4745,7 +4757,7 @@
           end
         end
 
-        if mouse.context and mouse.context == 'textsizeslider' then
+        if mouse.context and mouse.context == contexts.textsizeslider then
           local val = F_limit(MOUSE_sliderHBar(obj.sections[58]),0,1)
           if val ~= nil then
             textsize_select = (val*35)-2
@@ -4756,7 +4768,7 @@
           end
         end
 
-        if mouse.context and mouse.context == 'defvalslider' then
+        if mouse.context and mouse.context == contexts.defvalslider then
           local val = F_limit(MOUSE_sliderHBar(obj.sections[57]),0,1)
           local upd = false
           if mouse.ctrl then
@@ -4784,7 +4796,7 @@
           end
         end
             
-        if mouse.context and mouse.context == 'dragctl' then
+        if mouse.context and mouse.context == contexts.dragctl then
           if math.floor(mouse.mx/settings_gridsize) ~= math.floor(mouse.last_x/settings_gridsize) or math.floor(mouse.my/settings_gridsize) ~= math.floor(mouse.last_y/settings_gridsize) then
             local i
             local scale = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].scale
@@ -4841,7 +4853,7 @@
           end
         end      
   
-        if mouse.context and mouse.context == 'draglasso' then
+        if mouse.context and mouse.context == contexts.draglasso then
           if (mouse.mx ~= mouse.last_x or mouse.my ~= mouse.last_y) then
             lasso.r = mouse.mx
             lasso.b = mouse.my
@@ -4983,11 +4995,11 @@
             else 
               ksel_size = {w = 50, h = 50}
             end
-            mouse.context = 'dragparam'
+            mouse.context = contexts.dragparam
           end
         end
         
-        if mouse.context and mouse.context == 'dragparam' then
+        if mouse.context and mouse.context == contexts.dragparam then
           dragparam = {x = mouse.mx-ksel_size.w, y = mouse.my-ksel_size.h}
           reass_param = nil
           if tracks[track_select] and tracks[track_select].strip ~= -1 then
@@ -5106,12 +5118,12 @@
             draggfx_w, draggfx_h = gfx.getimgdim(1023)
             
             update_gfx = true
-            mouse.context = 'draggfx'
+            mouse.context = contexts.draggfx
           end
           
         end
         
-        if mouse.context and mouse.context == 'draggfx' then
+        if mouse.context and mouse.context == contexts.draggfx then
           draggfx = {x = mouse.mx - draggfx_w/2, y = mouse.my - draggfx_h/2}
           update_gfx = true
         elseif draggfx ~= nil then
@@ -5138,7 +5150,7 @@
                             w = 10,
                             h = 10}
               if mouse.context == nil and MOUSE_click(xywh) then
-                mouse.context = 'stretch_x'
+                mouse.context = contexts.stretch_x
                 gfx2_stretch = {mx = mouse.mx, sw = strips[tracks[track_select].strip][page].graphics[gfx2_select].stretchw}
               end
 
@@ -5147,7 +5159,7 @@
                             w = 10,
                             h = 10}
               if mouse.context == nil and MOUSE_click(xywh) then
-                mouse.context = 'stretch_y'
+                mouse.context = contexts.stretch_y
                 gfx2_stretch = {my = mouse.my, sh = strips[tracks[track_select].strip][page].graphics[gfx2_select].stretchh}
               end
 
@@ -5156,22 +5168,22 @@
                             w = 10,
                             h = 10}
               if mouse.context == nil and MOUSE_click(xywh) then
-                mouse.context = 'stretch_xy'
+                mouse.context = contexts.stretch_xy
                 gfx2_stretch = {mx = mouse.mx, my = mouse.my, sw = strips[tracks[track_select].strip][page].graphics[gfx2_select].stretchw,
                                                               sh = strips[tracks[track_select].strip][page].graphics[gfx2_select].stretchh}
               end
             
-              if mouse.context and mouse.context == 'stretch_x' then
+              if mouse.context and mouse.context == contexts.stretch_x then
               
                 strips[tracks[track_select].strip][page].graphics[gfx2_select].stretchw = math.max(math.floor((gfx2_stretch.sw + (mouse.mx-gfx2_stretch.mx))/settings_gridsize)*settings_gridsize,2)
                 update_gfx = true
               
-              elseif mouse.context and mouse.context == 'stretch_y' then
+              elseif mouse.context and mouse.context == contexts.stretch_y then
               
                 strips[tracks[track_select].strip][page].graphics[gfx2_select].stretchh =  math.max(math.floor((gfx2_stretch.sh + (mouse.my-gfx2_stretch.my))/settings_gridsize)*settings_gridsize,2)
                 update_gfx = true
                 
-              elseif mouse.context and mouse.context == 'stretch_xy' then
+              elseif mouse.context and mouse.context == contexts.stretch_xy then
               
                 strips[tracks[track_select].strip][page].graphics[gfx2_select].stretchw = math.max(math.floor((gfx2_stretch.sw + (mouse.mx-gfx2_stretch.mx))/settings_gridsize)*settings_gridsize,2)
                 strips[tracks[track_select].strip][page].graphics[gfx2_select].stretchh = math.max(math.floor((gfx2_stretch.sh + (mouse.my-gfx2_stretch.my))/settings_gridsize)*settings_gridsize,2)
@@ -5199,7 +5211,7 @@
                 end
                 
                 if MOUSE_click(xywh) then
-                  mouse.context = 'draggfx2'
+                  mouse.context = contexts.draggfx2
                   gfx2_select = i              
                   draggfx2 = 'draggfx'
                   dragoff = {x = mouse.mx - strips[tracks[track_select].strip][page].graphics[gfx2_select].x - surface_offset.x,
@@ -5220,7 +5232,7 @@
           end
         end
                   
-        if mouse.context and mouse.context == 'draggfx2' then
+        if mouse.context and mouse.context == contexts.draggfx2 then
           if math.floor(mouse.mx/settings_gridsize) ~= math.floor(mouse.last_x/settings_gridsize) or math.floor(mouse.my/settings_gridsize) ~= math.floor(mouse.last_y/settings_gridsize) then
             local i
             strips[tracks[track_select].strip][page].graphics[gfx2_select].x = math.floor((mouse.mx - surface_offset.x)/settings_gridsize)*settings_gridsize 
@@ -5275,7 +5287,7 @@
                   local stripid = strips[tracks[track_select].strip][page].controls[i].id
                   if stripid ~= nil then
                     SelectStripElements(stripid)
-                    mouse.context = 'dragctl'
+                    mouse.context = contexts.dragctl
                     dragctl = 'dragctl'
                     dragoff = {x = mouse.mx - strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].x - 0.5*strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].w - surface_offset.x,
                                y = mouse.my - strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].y - 0.5*strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].ctl_info.cellh - surface_offset.y}
@@ -5292,7 +5304,7 @@
           end  
         end
         
-        if mouse.context and mouse.context == 'dragctl' then
+        if mouse.context and mouse.context == contexts.dragctl then
           if math.floor(mouse.mx/settings_gridsize) ~= math.floor(mouse.last_x/settings_gridsize) or math.floor(mouse.my/settings_gridsize) ~= math.floor(mouse.last_y/settings_gridsize) then
             local i
             local mx = mouse.mx
@@ -5388,14 +5400,14 @@
             if loadstrip then
               GenStripPreview(gui, loadstrip.strip)
                         
-              mouse.context = 'dragstrip'
+              mouse.context = contexts.dragstrip
             end
             update_gfx = true
           end
           
         end
         
-        if mouse.context and mouse.context == 'dragstrip' then
+        if mouse.context and mouse.context == contexts.dragstrip then
           if mouse.mx ~= mouse.last_x or mouse.my ~= mouse.last_y then
             dragstrip = {x = mouse.mx, y = mouse.my}
             update_gfx = true
@@ -5563,6 +5575,7 @@
     mouse.last_RB = mouse.RB
     mouse.last_x = mouse.mx
     mouse.last_y = mouse.my
+    gfx.mouse_wheel = 0
     if ctl_select then ctls = true else ctls = false end
       
   end
