@@ -1657,7 +1657,7 @@
             local scale = strips[tracks[track_select].strip][page].controls[i].scale
             local x = strips[tracks[track_select].strip][page].controls[i].x 
             local y = strips[tracks[track_select].strip][page].controls[i].y
-            local px = strips[tracks[track_select].strip][page].controls[i].xsc 
+            local px = strips[tracks[track_select].strip][page].controls[i].xsc
             local py = strips[tracks[track_select].strip][page].controls[i].ysc
             local w = strips[tracks[track_select].strip][page].controls[i].w
             local h = strips[tracks[track_select].strip][page].controls[i].ctl_info.cellh
@@ -1742,8 +1742,8 @@
               
               local tl1 = nz(strips[tracks[track_select].strip][page].controls[i].tl1,text_len1x)
               local tl2 = nz(strips[tracks[track_select].strip][page].controls[i].tl2,text_len2x)
-              local tx1, tx2, th = math.ceil(mid-(tl1/2)),
-                                   math.ceil(mid-(tl2/2)),th_a --gui.fontsz_knob+tsz-4
+              local tx1, tx2, th = math.floor(mid-(tl1/2)),
+                                   math.floor(mid-(tl2/2)),th_a --gui.fontsz_knob+tsz-4
               if not update_gfx and not update_bg and surface_size.limit then
                 gfx.blit(1004,1,0, px,
                                    py,
