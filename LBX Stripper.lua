@@ -3223,16 +3223,7 @@
         if settings_saveallfxinststrip then 
           --local _, fxname = reaper.TrackFX_GetFXName(tr, i, '')
           local fxchunk = GetChunkPresetData(chunk, i)
-          local fxn
-          if string.sub(fxchunk,1,3) == 'VST' then
-              fxn = string.match(fxchunk, '.*: (.-) %(')
-          elseif string.sub(fxchunk,1,2) == 'JS' then
-            fxn = string.match(fxchunk, 'JS.*%/+(.-) \"')
-            if fxn == nil then
-              fxn = string.match(fxchunk, 'JS%s(.-)%s')  -- gets full path of effect
-              fxn = string.match(fxn, '([^/]+)$') -- gets filename  
-            end
-          end
+          local fxn = GetPlugNameFromChunk(fxchunk)
           fxtbl[i+1] = {fxname = fxn,
                         fxchunk = fxchunk,
                         fxguid = convertguid(reaper.TrackFX_GetFXGUID(tr, i)),
@@ -3250,17 +3241,7 @@
           if instrip then
             --local _, fxname = reaper.TrackFX_GetFXName(tr, i, '')
             local fxchunk = GetChunkPresetData(chunk, i)
-            local fxn
-            if string.sub(fxchunk,1,3) == 'VST' then
-              fxn = string.match(fxchunk, '.*: (.-) %(')
-            elseif string.sub(fxchunk,1,2) == 'JS' then
-              fxn = string.match(fxchunk, 'JS.*%/+(.-) \"')
-              if fxn == nil then
-                fxn = string.match(fxchunk, 'JS%s(.-)%s')  -- gets full path of effect
-                fxn = string.match(fxn, '([^/]+)$') -- gets filename  
-              end
-            end
-            --DBG(fxn)
+            local fxn = GetPlugNameFromChunk(fxchunk)
             fxtbl[fxcnt] = {fxname = fxn,
                             fxchunk = fxchunk,
                             fxguid = convertguid(reaper.TrackFX_GetFXGUID(tr, i)),
@@ -3306,6 +3287,23 @@
 
     end
     PopulateStrips()
+    
+  end
+  
+  function GetPlugNameFromChunk(fxchunk)
+
+    local fxn
+    if string.sub(fxchunk,1,3) == 'VST' then
+      fxn = string.match(fxchunk, '.*: (.-) %(')
+    elseif string.sub(fxchunk,1,2) == 'JS' then
+      fxn = string.match(fxchunk, 'JS.*%/+(.-) \"')
+      if fxn == nil then
+        fxn = string.match(fxchunk, 'JS%s(.-)%s')  -- gets full path of effect
+        fxn = string.match(fxn, '([^/]+)$') -- gets filename  
+      end
+    end
+  
+    return fxn
     
   end
   
@@ -3355,8 +3353,18 @@
     local missing = 0
     for i = 1, #stripdata.fx do
   
-      retfx = reaper.TrackFX_AddByName(tr, stripdata.fx[i].fxname, 0, -1)
-
+      local fxn
+      if stripdata.fx[i].fxname then
+        fxn = stripdata.fx[i].fxname
+      else
+        fxn = GetPlugNameFromChunk(stripdata.fx[i].fxchunk)
+      end
+      if fxn then
+        retfx = reaper.TrackFX_AddByName(tr, fxn, 0, -1)
+      else
+        retfx = -1
+      end
+      
       if retfx ~= -1 then      
         --set guid in stripdata.strip
         nguid = reaper.TrackFX_GetFXGUID(tr, fxcnt+i-1+missing)
