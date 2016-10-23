@@ -424,8 +424,8 @@
 
       local kw,_ = gfx.getimgdim(0)
       local kh = ctl_files[def_knob].cellh
-      obj.sections[101] = {x = obj.sections[100].x+butt_h,
-                           y = obj.sections[100].y+butt_h,
+      obj.sections[101] = {x = obj.sections[100].x+obj.sections[100].w/2-kw/2,
+                           y = obj.sections[100].y+butt_h/2,
                            w = kw,
                            h = kh}
       obj.sections[102] = {x = obj.sections[100].x+butt_h+40,
@@ -434,9 +434,23 @@
                            h = bh}
 
       obj.sections[103] = {x = obj.sections[100].x+8,
-                           y = obj.sections[102].y+bh+20,
+                           y = obj.sections[102].y+bh+20+butt_h,
                            w = obj.sections[100].w-16,
                            h = butt_h*8}
+
+      obj.sections[104] = {x = obj.sections[102].x,
+                           y = obj.sections[102].y-bh-2,
+                           w = 40,
+                           h = obj.sections[102].h}
+      
+      obj.sections[105] = {x = obj.sections[103].x,
+                           y = obj.sections[103].y-butt_h,
+                           w = obj.sections[103].w,
+                           h = butt_h}
+      obj.sections[106] = {x = obj.sections[103].x,
+                           y = obj.sections[103].y+obj.sections[103].h+2,
+                           w = obj.sections[103].w,
+                           h = butt_h}
       
     return obj
   end
@@ -1427,6 +1441,19 @@
              obj.sections[100].y, 
              obj.sections[100].w,
              obj.sections[100].h, 1 )
+    f_Get_SSV('0 0 0')
+    
+    f_Get_SSV(gui.color.white)
+    local xywh = {x = obj.sections[100].x,
+                  y = obj.sections[100].y-butt_h,
+                  w = obj.sections[100].w,
+                  h = butt_h}
+            
+    gfx.rect(xywh.x,
+             xywh.y, 
+             xywh.w,
+             xywh.h, 1 )
+    GUI_textC(gui,xywh,'CYCLE OPTS',gui.color.black,-2)
   
     local p = math.floor(cycle_select.val*(ctl_files[def_knob].frames-1))
     local kw, _ = gfx.getimgdim(0)
@@ -1434,6 +1461,8 @@
     gfx.blit(0,1,0,0,p*kh,kw,kh,obj.sections[101].x,obj.sections[101].y)
     
     GUI_DrawButton(gui, cycle_select.statecnt, obj.sections[102], gui.color.white, gui.color.black, true, 'STATES')
+    GUI_DrawButton(gui, 'AUTO', obj.sections[104], gui.color.white, gui.color.black, true)
+    GUI_DrawButton(gui, 'SAVE', obj.sections[106], gui.color.white, gui.color.black, true)
 
     local c
 
@@ -1442,6 +1471,27 @@
              obj.sections[103].y-2, 
              obj.sections[103].w+4,
              obj.sections[103].h+4, 1 )
+
+    f_Get_SSV('64 64 64')
+    gfx.rect(obj.sections[105].x-2,
+             obj.sections[105].y, 
+             obj.sections[105].w+4,
+             obj.sections[105].h, 1 )
+
+    f_Get_SSV('0 0 0')
+    local xywh = {x = obj.sections[105].x,
+                  y = obj.sections[105].y,
+                  w = obj.sections[105].w/2,
+                  h = butt_h}
+    gfx.triangle(xywh.x+xywh.w/2,xywh.y+4,xywh.x+xywh.w/2-6,xywh.y+xywh.h-4,xywh.x+xywh.w/2+6,xywh.y+xywh.h-4,1)
+    xywh.x = obj.sections[105].x+obj.sections[105].w/2
+    gfx.triangle(xywh.x+xywh.w/2,xywh.y+xywh.h-4,xywh.x+xywh.w/2-6,xywh.y+4,xywh.x+xywh.w/2+6,xywh.y+4,1)
+
+    f_Get_SSV('0 0 0')
+    gfx.rect(obj.sections[105].x+obj.sections[105].w/2,
+             obj.sections[105].y, 
+             2,
+             obj.sections[105].h, 1 )
     
     if cycle_select.statecnt > 0 then
       
@@ -1457,19 +1507,22 @@
                  obj.sections[103].w,
                  butt_h, 1)
       end
-      for i = 1, cycle_select.statecnt do
+      for i = 1, 8 do
       
         xywh = {x = obj.sections[103].x,
                 y = obj.sections[103].y+(i-1)*butt_h,
                 w = obj.sections[103].w,
                 h = butt_h}
-        c = gui.color.white
-        if cycle_select.selected and cycle_select.selected == i then
-          c = gui.color.black
+        if cycle_select[i+cyclist_offset] and i+cyclist_offset <= cycle_select.statecnt then
+          c = gui.color.white
+          if cycle_select.selected and cycle_select.selected == i+cyclist_offset then
+            c = gui.color.black
+          end
+          
+          GUI_textsm_LJ(gui,xywh,i+cyclist_offset,c,-5)
+          GUI_textC(gui,xywh,cycle_select[i+cyclist_offset].dispval,c,-5)
         end
-        
-        GUI_textC(gui,xywh,cycle_select[i].dispval,c,-5)
-        
+                
       end
     end  
   end
@@ -3704,7 +3757,7 @@
           xs,x = string.find(string.sub(chunk, xe), '<')
           if x == nil then break end
           --look for JS or VST
-          if string.upper(string.sub(chunk,xe+xs,xe+xs+2)) == 'VST' or string.upper(string.sub(chunk,xe+xs,xe+xs+1)) == 'JS' then
+          if string.upper(string.sub(chunk,xe+xs,xe+xs+2)) == 'VST' or string.upper(string.sub(chunk,xe+xs,xe+xs+2)) == 'JS ' then
             cont = false
           end
           xe = xe + x
@@ -4735,11 +4788,11 @@
         elseif ctl_select ~= nil and (MOUSE_click(obj.sections[100]) or MOUSE_click_RB(obj.sections[100])) then
         
           if MOUSE_click(obj.sections[102]) then
-            cycle_select.statecnt = F_limit(cycle_select.statecnt+1,0,8)
+            cycle_select.statecnt = F_limit(cycle_select.statecnt+1,0,32)
             Cycle_InitData()
             update_gfx = true
           elseif MOUSE_click_RB(obj.sections[102]) then
-            cycle_select.statecnt = F_limit(cycle_select.statecnt-1,0,8)
+            cycle_select.statecnt = F_limit(cycle_select.statecnt-1,0,32)
             Cycle_InitData()
             update_gfx = true
           end
@@ -4754,9 +4807,36 @@
           
           if MOUSE_click(obj.sections[103]) then
             local i = math.floor((mouse.my - obj.sections[103].y) / butt_h)+1
-            cycle_select.selected = F_limit(i,1,cycle_select.statecnt)
+            cycle_select.selected = F_limit(i+cyclist_offset,1,cycle_select.statecnt)
             update_gfx = true
           end          
+
+          if MOUSE_click(obj.sections[104]) then
+            Cycle_Auto()
+            cyclist_offset = 0
+            update_gfx = true            
+          end
+        
+          if MOUSE_click(obj.sections[105]) then
+            local i = math.floor((mouse.mx-obj.sections[105].x)/(obj.sections[105].w/2))
+            if #cycle_select < 8 then
+              cyclist_offset = 0
+            else
+              if i >= 1 then
+                cyclist_offset = F_limit(cyclist_offset+1,0,math.max(#cycle_select-8,0))
+              else
+                cyclist_offset = F_limit(cyclist_offset-1,0,math.max(#cycle_select-8,0))            
+              end
+            end
+            update_gfx = true            
+          end
+          
+          if MOUSE_click(obj.sections[106]) then
+            trackfxparam_select = ctl_select[1].ctl
+            strips[tracks[track_select].strip][page].controls[trackfxparam_select].cycledata = Cycle_CopySelectOut()
+            show_cycleoptions = false
+            update_gfx = true
+          end
         
         elseif mouse.mx > obj.sections[10].x then
         
@@ -4825,7 +4905,8 @@
                   textsize_select = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].textsize
                   defval_select = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].defval
                   maxdp_select = nz(strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].maxdp,-1)                  
-                  
+                  cycle_select = Cycle_CopySelectIn(ctl_select[1].ctl)
+                   
                   dragoff = {x = mouse.mx - strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].x - 0.5*strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].w - surface_offset.x,
                              y = mouse.my - strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].y - 0.5*strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].ctl_info.cellh - surface_offset.y}
                              
@@ -4867,7 +4948,8 @@
                   cycle_select[cycle_select.selected].dispval = dispval
                 end
                 octlval = val
-                SetParam()
+                --SetParam()
+                strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].dirty = true
                 update_gfx = true
               end
             end
@@ -5028,7 +5110,8 @@
               textoff_select = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].textoff
               textsize_select = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].textsize
               defval_select = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].defval
-              maxdp_select = nz(strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].maxdp,-1)                  
+              maxdp_select = nz(strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].maxdp,-1)
+              cycle_select = Cycle_CopySelectIn(ctl_select[1].ctl)
             end
             update_ctls = true
           end
@@ -5741,8 +5824,6 @@
   
     if cycle_select.statecnt > 0 then
 
-      --if ctl_select and #ctl_select > 0 then
-      --  for c = 1, #ctl_select
       trackfxparam_select = ctl_select[1].ctl
       local tracknum = strips[tracks[track_select].strip].track.tracknum
       local fxnum = strips[tracks[track_select].strip][page].controls[trackfxparam_select].fxnum
@@ -5756,13 +5837,88 @@
         end
       end
       SetParam()
-      --[[if cycle_select.statecnt < 8 then
-        for i = cycle_select.statecnt, 8 do
-        
-        end
-      end]]
     
     end
+  
+  end
+  
+  function Cycle_CopySelectIn(ctl)
+  
+    local cd = {}
+    if strips[tracks[track_select].strip][page].controls[ctl].cycledata then
+      cd = strips[tracks[track_select].strip][page].controls[ctl].cycledata
+      local co = {statecnt = cd.statecnt,
+                  selected = cd.selected,
+                  val = 0,
+                  {}}
+      for i = 1, 32 do
+        if cd[i] then
+          co[i] = {val = cd[i].val, dispval = cd[i].dispval}
+        end
+      end
+      return co
+    else
+      return {statecnt = 0,val = 0,nil}
+    end    
+  end
+  
+  function Cycle_CopySelectOut()
+  
+    local cd = {}
+    if cycle_select then
+      cd = cycle_select
+      local co = {statecnt = cd.statecnt,
+                  selected = cd.selected,
+                  {}}
+      for i = 1, 32 do
+        if cd[i] then
+          co[i] = {val = cd[i].val, dispval = cd[i].dispval}
+        end
+      end
+      return co
+    else
+      return {statecnt = 0,{}}
+    end    
+  end
+  
+  function Cycle_Auto()
+  
+    trackfxparam_select = ctl_select[1].ctl
+    local v, v2 = 0
+
+    local tracknum = strips[tracks[track_select].strip].track.tracknum
+    local fxnum = strips[tracks[track_select].strip][page].controls[trackfxparam_select].fxnum
+    local param = strips[tracks[track_select].strip][page].controls[trackfxparam_select].param
+    
+    SetParam3(v)
+    local dval = GetParamDisp(tracknum, fxnum, param)
+    local stcnt = 1
+    local ndval
+    
+    cycle_temp = {}
+    cycle_temp[1] = {val = 0, dispval = dval}
+    
+    for v = 0.01, 1, 0.01 do
+      
+      SetParam3(v)
+      ndval = GetParamDisp(tracknum, fxnum, param)
+      if ndval ~= dval then
+        dval = ndval
+        cycle_temp[#cycle_temp+1] = {val = v, dispval = dval}
+        stcnt = stcnt + 1
+      end
+    
+    end
+  
+    if stcnt > 32 then
+      OpenMsgBox(1, 'Too many values (> 32).', 1)
+    else
+      for i = 1, 32 do
+        cycle_select[i] = cycle_temp[i]
+      end
+      cycle_select.statecnt = stcnt
+    end
+    SetParam()
   
   end
   
@@ -6439,6 +6595,7 @@
     SF_butt_cnt = 0
     tlist_offset = 0
     sflist_offset = 0
+    cyclist_offset = 0
     
     strips = {}
     surface_offset = {x = 0, y = 0}
