@@ -1499,11 +1499,11 @@
       gfx.rect(obj.sections[103].x,
                obj.sections[103].y, 
                obj.sections[103].w,
-               butt_h*cycle_select.statecnt, 1 )
-      if cycle_select.selected then
+               butt_h*F_limit(cycle_select.statecnt,0,8), 1 )
+      if cycle_select.selected and cycle_select.selected-cyclist_offset <= 8 and cycle_select.selected-cyclist_offset > 0 then
         f_Get_SSV(gui.color.white)
         gfx.rect(obj.sections[103].x,
-                 obj.sections[103].y+(cycle_select.selected-1)*butt_h, 
+                 obj.sections[103].y+(cycle_select.selected-cyclist_offset-1)*butt_h, 
                  obj.sections[103].w,
                  butt_h, 1)
       end
@@ -1519,8 +1519,9 @@
             c = gui.color.black
           end
           
-          GUI_textsm_LJ(gui,xywh,i+cyclist_offset,c,-5)
-          GUI_textC(gui,xywh,cycle_select[i+cyclist_offset].dispval,c,-5)
+          GUI_textsm_LJ(gui,xywh,math.floor(i+cyclist_offset),c,-5)
+          xywh.x = xywh.x + 20
+          GUI_textsm_LJ(gui,xywh,cycle_select[i+cyclist_offset].dispval,c,-5)
         end
                 
       end
@@ -3416,6 +3417,9 @@
       
       --compatibility
       if strips[strip][page].controls[cc].maxdp == nil then strips[strip][page].controls[cc].maxdp = -1 end
+      if strips[strip][page].controls[cc].cycledata == nil then
+        strips[strip][page].controls[cc].cycledata = {statecnt = 0, {}}
+      end
     end
     
     local lctl = GetLeftControlInStrip(strips[strip][page].controls, stripid)
@@ -4777,13 +4781,23 @@
           elseif mouse.context == nil and MOUSE_click(obj.sections[57]) then omx = -1 ctlpos = defval_select mouse.context = contexts.defvalslider
           elseif mouse.context == nil and MOUSE_click(obj.sections[58]) then mouse.context = contexts.textsizeslider end
         
+        elseif ctl_select ~= nil and show_cycleoptions and gfx.mouse_wheel ~= 0 and MOUSE_over(obj.sections[103]) then
+        
+          local v = gfx.mouse_wheel/120
+          cyclist_offset = F_limit(cyclist_offset - v, 0, 24)
+          update_gfx = true
+          gfx.mouse_wheel = 0
+        
         elseif ctl_select ~= nil and show_cycleoptions and (MOUSE_click(obj.sections[100]) or MOUSE_click_RB(obj.sections[100])) then
         
+          
           if MOUSE_click(obj.sections[102]) then
+            cyclist_offset = 0
             cycle_select.statecnt = F_limit(cycle_select.statecnt+1,0,32)
             Cycle_InitData()
             update_gfx = true
           elseif MOUSE_click_RB(obj.sections[102]) then
+            cyclist_offset = 0
             cycle_select.statecnt = F_limit(cycle_select.statecnt-1,0,32)
             Cycle_InitData()
             update_gfx = true
@@ -5820,10 +5834,8 @@
       local tracknum = strips[tracks[track_select].strip].track.tracknum
       local fxnum = strips[tracks[track_select].strip][page].controls[trackfxparam_select].fxnum
       local param = strips[tracks[track_select].strip][page].controls[trackfxparam_select].param
-      
-      for i = 1, cycle_select.statecnt do
-      
-        if cycle_select[i] == nil then
+      for i = 1, cycle_select.statecnt do      
+        if cycle_select[i] == nil or (cycle_select[i] and cycle_select[i].dispval == nil) then
           SetParam3(cycle_select.val)
           cycle_select[i] = {val = 0, dispval = GetParamDisp(tracknum, fxnum, param)}
         end
@@ -6512,13 +6524,17 @@
                            
                 reaper.SetProjExtState(0,SCRIPT,key..'id',convnum(strips[s][p].controls[c].id))
 
-                reaper.SetProjExtState(0,SCRIPT,key..'cycledata_statecnt',nz(strips[s][p].controls[c].cycledata.statecnt,0))   
-                if nz(strips[s][p].controls[c].cycledata.statecnt,0) > 0 then
-                  for i = 1, strips[s][p].controls[c].cycledata.statecnt do
-                    local key = 'strips_'..s..'_'..p..'_controls_'..c..'_cycledata_'..i..'_'
-                    reaper.SetProjExtState(0,SCRIPT,key..'val',nz(strips[s][p].controls[c].cycledata[i].val,0))   
-                    reaper.SetProjExtState(0,SCRIPT,key..'dispval',nz(strips[s][p].controls[c].cycledata[i].dispval,''))   
+                if strips[s][p].controls[c].cycledata.statecnt then
+                  reaper.SetProjExtState(0,SCRIPT,key..'cycledata_statecnt',nz(strips[s][p].controls[c].cycledata.statecnt,0))   
+                  if nz(strips[s][p].controls[c].cycledata.statecnt,0) > 0 then
+                    for i = 1, strips[s][p].controls[c].cycledata.statecnt do
+                      local key = 'strips_'..s..'_'..p..'_controls_'..c..'_cycledata_'..i..'_'
+                      reaper.SetProjExtState(0,SCRIPT,key..'val',nz(strips[s][p].controls[c].cycledata[i].val,0))   
+                      reaper.SetProjExtState(0,SCRIPT,key..'dispval',nz(strips[s][p].controls[c].cycledata[i].dispval,''))   
+                    end
                   end
+                else
+                  reaper.SetProjExtState(0,SCRIPT,key..'cycledata_statecnt',0)                   
                 end     
               end
             end        
