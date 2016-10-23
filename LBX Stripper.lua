@@ -6524,7 +6524,7 @@
                            
                 reaper.SetProjExtState(0,SCRIPT,key..'id',convnum(strips[s][p].controls[c].id))
 
-                if strips[s][p].controls[c].cycledata.statecnt then
+                if strips[s][p].controls[c].cycledata and strips[s][p].controls[c].cycledata.statecnt then
                   reaper.SetProjExtState(0,SCRIPT,key..'cycledata_statecnt',nz(strips[s][p].controls[c].cycledata.statecnt,0))   
                   if nz(strips[s][p].controls[c].cycledata.statecnt,0) > 0 then
                     for i = 1, strips[s][p].controls[c].cycledata.statecnt do
