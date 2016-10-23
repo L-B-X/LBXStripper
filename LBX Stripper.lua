@@ -2060,28 +2060,6 @@
       
   end
 
-  function GUI_drawpeak(obj, gui)
-    
-    if track_select == nil then return end
-  
-    gfx.dest = 1
-    local tr = GetTrack(tracks[track_select].tracknum)
-    local lc = F_limit((reaper.Track_GetPeakInfo(tr,0)),0,1)
-    local rc = F_limit(reaper.Track_GetPeakInfo(tr,1),0,1)
-    
-    w, _ = gfx.getimgdim(1020)
-    local h = 200
-    gfx.blit(1020,1,0,0,math.ceil(lc*99) *h,w,h,gfx1.main_w - w*2+4,gfx1.main_h - h - 2)          
-    gfx.blit(1020,1,0,0,math.ceil(rc*99) *h,w,h,gfx1.main_w - w-2,gfx1.main_h - h - 2)          
-    gfx.dest = -1
-    gfx.a = 1
-    gfx.blit(1, 1, 0, 
-    gfx1.main_w - w*2+4,gfx1.main_h - h - 2, w*2,h,
-    gfx1.main_w - w*2+4,gfx1.main_h - h - 2, w*2,h)
-    gfx.dest = 1
-  
-  end
-
   ------------------------------------------------------------
   
   function GUI_draw(obj, gui)
@@ -3301,6 +3279,19 @@
         fxn = string.match(fxchunk, 'JS%s(.-)%s')  -- gets full path of effect
         fxn = string.match(fxn, '([^/]+)$') -- gets filename  
       end
+      --remove final " if exists
+      if string.sub(fxn,string.len(fxn)) == '"' then
+        fxn = string.sub(fxn,1,string.len(fxn)-1)
+      end
+      
+      --[[DBG(fxn)
+      if fxn == nil then
+        --JS \"AB Level Matching JSFX [2.5]/AB_LMLT_cntrl\" \"MSTR /B\"\
+        fxn = string.match(fxchunk, 'JS.*%/(.-)%"%\"')
+        fxn = string.sub(fxn,1,string.len(fxn)-2)
+        DBG(string.len(fxn))
+        DBG(fxn)
+      end]]
     end
   
     return fxn
@@ -4441,6 +4432,25 @@
                     update_ctls = true
                   elseif ctltype == 4 then
                     --cycle
+                    if strips[tracks[track_select].strip][page].controls[i].cycledata.pos == nil then
+                      strips[tracks[track_select].strip][page].controls[i].cycledata.pos = 1
+                    else
+                      strips[tracks[track_select].strip][page].controls[i].cycledata.pos = 
+                                  strips[tracks[track_select].strip][page].controls[i].cycledata.pos +1
+                      if strips[tracks[track_select].strip][page].controls[i].cycledata.pos > 
+                              strips[tracks[track_select].strip][page].controls[i].cycledata.statecnt then
+                        strips[tracks[track_select].strip][page].controls[i].cycledata.pos = 1
+                      end
+                    end
+                    if strips[tracks[track_select].strip][page].controls[i].cycledata.pos <=     
+                              strips[tracks[track_select].strip][page].controls[i].cycledata.statecnt then
+                      trackfxparam_select = i
+                      strips[tracks[track_select].strip][page].controls[i].val = 
+                          strips[tracks[track_select].strip][page].controls[i].cycledata[strips[tracks[track_select].strip][page].controls[i].cycledata.pos].val
+                      SetParam()
+                      strips[tracks[track_select].strip][page].controls[i].dirty = true
+                      update_ctls = true
+                    end
                   end
                   break
                   
@@ -4573,32 +4583,6 @@
         end
       end
     
-      --[[if mouse.context == nil and MOUSE_click(obj.sections[16]) then 
-        settings_showgrid = not settings_showgrid
-        osg = settings_showgrid
-        if settings_gridsize < 16 then
-          settings_showgrid = false
-        end
-        update_gfx = true
-      elseif mouse.context == nil and MOUSE_click_RB(obj.sections[16]) then 
-        mouse.context = 'gridslider' 
-        ctlpos = settings_gridsize
-         
-      elseif mouse.context and mouse.context == 'gridslider' then
-        local val = F_limit(MOUSE_sliderRB(obj.sections[16]),0,1)
-        if val ~= nil then
-          val = 1-val
-          settings_gridsize = F_limit(ctlpos + math.floor((val-0.5)*200),1,120)
-          ogrid = settings_gridsize
-          if settings_gridsize < 16 then
-            settings_showgrid = false
-          else
-            settings_showgrid = nz(osg,true)
-          end
-          update_gfx = true
-        end
-      end]]
-            
       if mouse.shift then
         settings_gridsize = 1
       else
@@ -4793,7 +4777,7 @@
           elseif mouse.context == nil and MOUSE_click(obj.sections[57]) then omx = -1 ctlpos = defval_select mouse.context = contexts.defvalslider
           elseif mouse.context == nil and MOUSE_click(obj.sections[58]) then mouse.context = contexts.textsizeslider end
         
-        elseif ctl_select ~= nil and (MOUSE_click(obj.sections[100]) or MOUSE_click_RB(obj.sections[100])) then
+        elseif ctl_select ~= nil and show_cycleoptions and (MOUSE_click(obj.sections[100]) or MOUSE_click_RB(obj.sections[100])) then
         
           if MOUSE_click(obj.sections[102]) then
             cycle_select.statecnt = F_limit(cycle_select.statecnt+1,0,32)
@@ -5974,6 +5958,7 @@
                  val = strips[tracks[track_select].strip][page].controls[c].val,
                  defval = strips[tracks[track_select].strip][page].controls[c].defval,
                  maxdp = strips[tracks[track_select].strip][page].controls[c].maxdp,
+                 cycledata = strips[tracks[track_select].strip][page].controls[c].cycledata,
                  id = strips[tracks[track_select].strip][page].controls[c].id
                  }
     return tbl
@@ -6267,6 +6252,7 @@
                                                 val = tonumber(GPES(key..'val')),
                                                 defval = tonumber(GPES(key..'defval')),
                                                 maxdp = tonumber(nz(GPES(key..'maxdp',true),-1)),
+                                                cycledata = {statecnt = 0,{}},
                                                 id = deconvnum(GPES(key..'id',true))
                                                 --enabled = tobool(nz(GPES(key..'enabled',true),true))
                                                }
@@ -6278,11 +6264,23 @@
                     strips[ss][p].controls[c].wsc = strips[ss][p].controls[c].w*strips[ss][p].controls[c].scale
                     strips[ss][p].controls[c].hsc = strips[ss][p].controls[c].ctl_info.cellh*strips[ss][p].controls[c].scale
                     
-    
+                    strips[ss][p].controls[c].cycledata.statecnt = tonumber(nz(GPES(key..'cycledata_statecnt',true),0))
+                    strips[ss][p].controls[c].cycledata.pos = 1
+                    strips[ss][p].controls[c].cycledata.val = 0
+                    if nz(strips[ss][p].controls[c].cycledata.statecnt,0) > 0 then
+                      for i = 1, strips[ss][p].controls[c].cycledata.statecnt do
+                        local key = 'strips_'..s..'_'..p..'_controls_'..c..'_cycledata_'..i..'_'
+                      
+                        strips[ss][p].controls[c].cycledata[i] = {val = tonumber(nz(GPES(key..'val',true),0)),
+                                                                  dispval = nz(GPES(key..'dispval',true),'no disp val')
+                                                                  }                    
+                      end
+                    end
+                                        
                     --load control images - reshuffled to ensure no wasted slots between sessions
                     local iidx
                     local knob_sel = -1
-                    for k = 1, #ctl_files do
+                    for k = 0, #ctl_files do
                       if ctl_files[k].fn == strips[ss][p].controls[c].ctl_info.fn then
                         knob_sel = k
                         break
@@ -6513,7 +6511,15 @@
                 reaper.SetProjExtState(0,SCRIPT,key..'maxdp',nz(strips[s][p].controls[c].maxdp,-1))   
                            
                 reaper.SetProjExtState(0,SCRIPT,key..'id',convnum(strips[s][p].controls[c].id))
-          
+
+                reaper.SetProjExtState(0,SCRIPT,key..'cycledata_statecnt',nz(strips[s][p].controls[c].cycledata.statecnt,0))   
+                if nz(strips[s][p].controls[c].cycledata.statecnt,0) > 0 then
+                  for i = 1, strips[s][p].controls[c].cycledata.statecnt do
+                    local key = 'strips_'..s..'_'..p..'_controls_'..c..'_cycledata_'..i..'_'
+                    reaper.SetProjExtState(0,SCRIPT,key..'val',nz(strips[s][p].controls[c].cycledata[i].val,0))   
+                    reaper.SetProjExtState(0,SCRIPT,key..'dispval',nz(strips[s][p].controls[c].cycledata[i].dispval,''))   
+                  end
+                end     
               end
             end        
 
@@ -6715,6 +6721,8 @@
   LoadSettings()
   LoadData()  
   Lokasenna_Window_At_Center(gfx1.main_w,gfx1.main_h) 
+--test jsfx plug name in quotes
+--DBG(GetPlugNameFromChunk('JS \"AB Level Matching JSFX [2.5]/AB_LMLT_cntrl\" \"MSTR /B\"\10.000000 0.000000 300.000000 0.000000 - - - - - 0.000000 - - - - - - - - - -14.600000 -11.600000 -7.000000 7.000000 -4.800000 - - - - - -14.500000 -11.800000 -4.100000 10.000000 -4.100000 - - - - - 0.000000 1.000000 0.000000 - 0.000000 0.000000 - - - - 7681.000000 1.000000 - - - - - - - - - - - - - '))
 
   gfx.dock(dockstate)
   run()
