@@ -1847,7 +1847,20 @@
                 --cycle button
                 if strips[tracks[track_select].strip][page].controls[i].cycledata.mapptof then
                   --override val2
-                  val2 = F_limit(nz(strips[tracks[track_select].strip][page].controls[i].cycledata.pos,0),0,frames-1)
+                  --prelim code for single state notify
+                  if strips[tracks[track_select].strip][page].controls[i].cycledata.statecnt == 1 then
+                    local v3 = strips[tracks[track_select].strip][page].controls[i].val
+                    --must convert to string to compare for some weird reason                
+                    if tostring(v3) ~= tostring(strips[tracks[track_select].strip][page].controls[i].cycledata[1].val) then
+                      --not selected
+                      val2 = frames-1
+                    else
+                      --selected
+                      val2 = 0
+                    end
+                  else
+                    val2 = F_limit(nz(strips[tracks[track_select].strip][page].controls[i].cycledata.pos,0),0,frames-1)
+                  end
                 end
               end
               
@@ -5025,12 +5038,14 @@
               if val < 0 then val = 0 end
               if val > 1 then val = 1 end
               if val ~= octlval then
-                cycle_select.val = val
                 SetParam3(val)
+                local t = strips[tracks[track_select].strip].track.tracknum
+                local f = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].fxnum
+                local p = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].param
+                val = GetParamValue(t,f,p)
+                cycle_select.val = val
+                
                 if cycle_select.selected then
-                  local t = strips[tracks[track_select].strip].track.tracknum
-                  local f = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].fxnum
-                  local p = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].param
                   local dispval = GetParamDisp(t, f, p)
                   cycle_select[cycle_select.selected].val = val                  
                   cycle_select[cycle_select.selected].dispval = dispval
