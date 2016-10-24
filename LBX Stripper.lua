@@ -470,7 +470,7 @@
       gui.fontname = 'Calibri'
       gui.fontsize_tab = 20    
       gui.fontsz_knob = 18
-      --DBG(OS)
+
       if OS == "OSX32" or OS == "OSX64" then gui.fontsize_tab = gui.fontsize_tab - 5 end
       if OS == "OSX32" or OS == "OSX64" then gui.fontsz_knob = gui.fontsz_knob - 5 end
       if OS == "OSX32" or OS == "OSX64" then gui.fontsz_get = gui.fontsz_get - 5 end
@@ -2081,9 +2081,7 @@
     
     if update_gfx or update_surface or update_sidebar or update_topbar or update_ctlopts or update_ctls or update_bg or update_settings then    
       local p = 0
-    
-      --DBG(tostring(update_gfx)..tostring(update_surface)..tostring(update_sidebar)..tostring(update_topbar)..tostring(update_ctlopts)..tostring(update_ctls)..tostring(update_bg)..tostring(update_settings))
-    
+        
       gfx.dest = 1
       if update_gfx then
         gfx.setimgdim(1, -1, -1)  
@@ -2976,14 +2974,12 @@
     track = GetTrack(tracknum)
     --return reaper.TrackFX_GetParamNormalized(track, fxnum, paramnum)
     local v, min, max = reaper.TrackFX_GetParam(track, fxnum, paramnum)
-    --DBG(v..'  '..min..'  '..max)
     return normalize(min, max, v)
   end
 
   function GetParamValue2(track,fxnum,paramnum)
     --return reaper.TrackFX_GetParamNormalized(track, fxnum, paramnum)
     local v, min, max = reaper.TrackFX_GetParam(track, fxnum, paramnum)
-    --DBG(v..'  '..min..'  '..max)
     return normalize(min, max, v)
   end
   
@@ -3298,13 +3294,10 @@
         fxn = string.sub(fxn,1,string.len(fxn)-1)
       end
       
-      --[[DBG(fxn)
-      if fxn == nil then
+      --[[if fxn == nil then
         --JS \"AB Level Matching JSFX [2.5]/AB_LMLT_cntrl\" \"MSTR /B\"\
         fxn = string.match(fxchunk, 'JS.*%/(.-)%"%\"')
         fxn = string.sub(fxn,1,string.len(fxn)-2)
-        DBG(string.len(fxn))
-        DBG(fxn)
       end]]
     end
   
@@ -3399,7 +3392,6 @@
     
     local _, chunk = reaper.GetTrackStateChunk(tr,'',false)
     missing = 0
-    --DBG(chunk)
     for i = 1, #stripdata.fx do
       if stripdata.fx[i].nfxguid ~= '' then
         chunk = ReplaceChunkPresetData(chunk, i-1+fxcnt-missing, stripdata.fx[i].fxchunk)
@@ -3737,14 +3729,10 @@
   function testchunk(tr)
     _, statechunk = reaper.GetTrackStateChunk(tr,'',false)
     reaper.ClearConsole()
-    DBG(statechunk)
     
     local fxidx = 1
     local r, s, e = GetChunkPresetData(statechunk,fxidx)
-    DBG(s..'  '..e..'  ')
-    DBG(r)
     local t = string.sub(statechunk,s,e)
-    DBG(t)
   end
   
   function ReplaceChunkPresetData(trackchunk, fxidx, newdata)
@@ -4583,7 +4571,7 @@
           end
           update_gfx = true
         elseif tracks[i-1 + tlist_offset] then
-          if strips[tracks[track_select].strip] then
+          if tracks[track_select] and strips[tracks[track_select].strip] then
             strips[tracks[track_select].strip].page = page
           end
           track_select = i-1 + tlist_offset
@@ -5246,7 +5234,6 @@
       
         if MOUSE_click(obj.sections[42]) then
           local i = math.floor((mouse.my - obj.sections[42].y) / butt_h)-2
-          --DBG(i)
           if i == -1 then
             plist_offset = plist_offset - P_butt_cnt
             if plist_offset < 0 then
