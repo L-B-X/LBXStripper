@@ -417,7 +417,7 @@
                                 h = bh}
                                 
       --Cycle
-      local cw, ch = 140, 340
+      local cw, ch = 140, 360
       obj.sections[100] = {x = obj.sections[45].x - cw - 10,
                            y = obj.sections[45].y + obj.sections[45].h - ch,
                            w = cw,
@@ -429,13 +429,13 @@
                            y = obj.sections[100].y+butt_h/2,
                            w = kw,
                            h = kh}
-      obj.sections[102] = {x = obj.sections[100].x+butt_h+40,
+      obj.sections[102] = {x = obj.sections[100].x+obj.sections[100].w-40-10,
                            y = obj.sections[101].y+obj.sections[101].h+butt_h,
                            w = 40,
                            h = bh}
 
       obj.sections[103] = {x = obj.sections[100].x+8,
-                           y = obj.sections[102].y+bh+20+butt_h,
+                           y = obj.sections[102].y+bh+40+butt_h,
                            w = obj.sections[100].w-16,
                            h = butt_h*8}
 
@@ -448,10 +448,14 @@
                            y = obj.sections[103].y-butt_h,
                            w = obj.sections[103].w,
                            h = butt_h}
-      obj.sections[106] = {x = obj.sections[103].x,
+      obj.sections[106] = {x = obj.sections[103].x-2,
                            y = obj.sections[103].y+obj.sections[103].h+2,
-                           w = obj.sections[103].w,
+                           w = obj.sections[103].w+4,
                            h = butt_h}
+      obj.sections[107] = {x = obj.sections[102].x,
+                           y = obj.sections[102].y+obj.sections[102].h+4,
+                           w = bh,
+                           h = bh}
       
     return obj
   end
@@ -724,7 +728,7 @@
                                                                   trackfx[trackfx_select].fxnum,
                                                                   trackfxparam_select),
                                               maxdp = maxdp_select,
-                                              cycledata = {statecnt = 0,{}},
+                                              cycledata = {statecnt = 0, mapptof = false,{}},
                                               id = nil
                                               }
                                               
@@ -1463,6 +1467,7 @@
     
     GUI_DrawButton(gui, cycle_select.statecnt, obj.sections[102], gui.color.white, gui.color.black, true, 'STATES')
     GUI_DrawButton(gui, 'AUTO', obj.sections[104], gui.color.white, gui.color.black, true)
+    GUI_DrawTick(gui, 'POS TO FRAME', obj.sections[107], gui.color.white, nz(cycle_select.mapptof, false))
     GUI_DrawButton(gui, 'SAVE', obj.sections[106], gui.color.white, gui.color.black, true)
 
     local c
@@ -1827,7 +1832,13 @@
               if ctltype == 3 then
                 --invert button
                 val2 = 1-val2
+              elseif ctltype == 4 then
+                --cycle button
+                if strips[tracks[track_select].strip][page].controls[i].cycledata.mapptof then
+                  val2 = nz(strips[tracks[track_select].strip][page].controls[i].cycledata.pos,0)
+                end
               end
+              
               if not found then
                 gfx.a = 0.2
               end
@@ -1891,9 +1902,10 @@
                                      xywh2.y)
                 end
               end
+
               if not reaper.TrackFX_GetEnabled(track, fxnum) and pname ~= 'Bypass' then
                 gfx.a = 0.5
-              end              
+              end
               gfx.blit(iidx,scale,0, 0, (val2)*gh, w, h, px, py)
               
               strips[tracks[track_select].strip][page].controls[i].tl1 = text_len1x
@@ -4090,6 +4102,8 @@
     
     GUI_draw(obj, gui)
     
+    local noscroll = settings_locksurface
+    
     mouse.mx, mouse.my = gfx.mouse_x, gfx.mouse_y  
     mouse.LB = gfx.mouse_cap&1==1
     mouse.RB = gfx.mouse_cap&2==2
@@ -4434,6 +4448,7 @@
                     if strips[tracks[track_select].strip][page].controls[i].param_info.paramname == 'Bypass' then
                       SetCtlEnabled(strips[tracks[track_select].strip][page].controls[i].fxnum) 
                     end
+                    noscroll = true
                     update_ctls = true
                   elseif ctltype == 4 then
                     --cycle
@@ -4456,6 +4471,7 @@
                       strips[tracks[track_select].strip][page].controls[i].dirty = true
                       update_ctls = true
                     end
+                    noscroll = true
                   end
                   break
                   
@@ -4480,6 +4496,7 @@
                   SetParam()
                   strips[tracks[track_select].strip][page].controls[i].dirty = true
                   update_ctls = true
+                  noscroll = true
                   break
                 
                 elseif settings_mousewheelknob and gfx.mouse_wheel ~= 0 and MOUSE_over(ctlxywh) then
@@ -4491,6 +4508,31 @@
                     SetParam()
                     update_ctls = true
                     gfx.mouse_wheel = 0
+                  elseif ctltype == 4 then
+                    local v = gfx.mouse_wheel/120
+                    if strips[tracks[track_select].strip][page].controls[i].cycledata.pos == nil then
+                      strips[tracks[track_select].strip][page].controls[i].cycledata.pos = 1
+                    else
+                      strips[tracks[track_select].strip][page].controls[i].cycledata.pos = 
+                                  strips[tracks[track_select].strip][page].controls[i].cycledata.pos + v
+                      if strips[tracks[track_select].strip][page].controls[i].cycledata.pos < 1 then
+                        strips[tracks[track_select].strip][page].controls[i].cycledata.pos = strips[tracks[track_select].strip][page].controls[i].cycledata.statecnt
+                      elseif strips[tracks[track_select].strip][page].controls[i].cycledata.pos > 
+                              strips[tracks[track_select].strip][page].controls[i].cycledata.statecnt then
+                        strips[tracks[track_select].strip][page].controls[i].cycledata.pos = 1
+                      end
+                    end
+                    if strips[tracks[track_select].strip][page].controls[i].cycledata.pos <=     
+                              strips[tracks[track_select].strip][page].controls[i].cycledata.statecnt then
+                      trackfxparam_select = i
+                      strips[tracks[track_select].strip][page].controls[i].val = 
+                          strips[tracks[track_select].strip][page].controls[i].cycledata[strips[tracks[track_select].strip][page].controls[i].cycledata.pos].val
+                      SetParam()
+                      strips[tracks[track_select].strip][page].controls[i].dirty = true
+                      update_ctls = true
+                    end
+                    noscroll = true
+                    gfx.mouse_wheel = 0                  
                   end
                   break
                 end
@@ -4844,6 +4886,11 @@
             show_cycleoptions = false
             update_gfx = true
           end
+
+          if MOUSE_click(obj.sections[107]) then
+            cycle_select.mapptof = not cycle_select.mapptof
+            update_gfx = true
+          end          
         
         elseif mouse.mx > obj.sections[10].x then
         
@@ -5708,7 +5755,7 @@
       elseif mouse.mx > obj.sections[10].x then
       
         if MOUSE_click(obj.sections[10]) then
-          if settings_locksurface == false then
+          if noscroll == false then
             mouse.context = "dragsurface"
             surx = surface_offset.x
             sury = surface_offset.y
@@ -5725,7 +5772,7 @@
       end    
     end
     if mouse.context and mouse.context == "dragsurface" then
-      if settings_locksurface == false then
+      if noscroll == false then
       
         local offx, offy
         if lockx == false then
@@ -5772,7 +5819,7 @@
     end
     
     if settings_mousewheelknob == false and gfx.mouse_wheel ~= 0 then
-      if settings_locksurface == false then
+      if noscroll == false then
         if lockx == false or locky == false then
           local v = gfx.mouse_wheel/120
           if mouse.mx > obj.sections[10].x and MOUSE_over(obj.sections[10]) then
@@ -5854,6 +5901,7 @@
       cd = strips[tracks[track_select].strip][page].controls[ctl].cycledata
       local co = {statecnt = cd.statecnt,
                   selected = cd.selected,
+                  mapptof = cd.mapptof,
                   val = 0,
                   {}}
       for i = 1, 32 do
@@ -5863,7 +5911,7 @@
       end
       return co
     else
-      return {statecnt = 0,val = 0,nil}
+      return {statecnt = 0,mapptof = false,val = 0,nil}
     end    
   end
   
@@ -5874,6 +5922,7 @@
       cd = cycle_select
       local co = {statecnt = cd.statecnt,
                   selected = cd.selected,
+                  mapptof = cd.mapptof,
                   {}}
       for i = 1, 32 do
         if cd[i] then
@@ -5882,7 +5931,7 @@
       end
       return co
     else
-      return {statecnt = 0,{}}
+      return {statecnt = 0,mapptof = false,pos = 1,{}}
     end    
   end
   
@@ -6278,6 +6327,7 @@
                     strips[ss][p].controls[c].hsc = strips[ss][p].controls[c].ctl_info.cellh*strips[ss][p].controls[c].scale
                     
                     strips[ss][p].controls[c].cycledata.statecnt = tonumber(nz(GPES(key..'cycledata_statecnt',true),0))
+                    strips[ss][p].controls[c].cycledata.mapptof = tobool(nz(GPES(key..'cycledata_mapptof',true),false))
                     strips[ss][p].controls[c].cycledata.pos = 1
                     strips[ss][p].controls[c].cycledata.val = 0
                     if nz(strips[ss][p].controls[c].cycledata.statecnt,0) > 0 then
@@ -6526,7 +6576,8 @@
                 reaper.SetProjExtState(0,SCRIPT,key..'id',convnum(strips[s][p].controls[c].id))
 
                 if strips[s][p].controls[c].cycledata and strips[s][p].controls[c].cycledata.statecnt then
-                  reaper.SetProjExtState(0,SCRIPT,key..'cycledata_statecnt',nz(strips[s][p].controls[c].cycledata.statecnt,0))   
+                  reaper.SetProjExtState(0,SCRIPT,key..'cycledata_statecnt',nz(strips[s][p].controls[c].cycledata.statecnt,0))
+                  reaper.SetProjExtState(0,SCRIPT,key..'cycledata_mapptof',tostring(nz(strips[s][p].controls[c].cycledata.mapptof,false)))
                   if nz(strips[s][p].controls[c].cycledata.statecnt,0) > 0 then
                     for i = 1, strips[s][p].controls[c].cycledata.statecnt do
                       local key = 'strips_'..s..'_'..p..'_controls_'..c..'_cycledata_'..i..'_'
@@ -6652,7 +6703,7 @@
     strip_select = 0
     stripfol_select = 0
     maxdp_select = -1
-    cycle_select = {statecnt = 0,val = 0,nil}
+    cycle_select = {statecnt = 0,val = 0,mapptof = false,nil}
     
     plist_w = 140
     oplist_w = 140
