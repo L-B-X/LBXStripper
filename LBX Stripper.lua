@@ -1582,6 +1582,13 @@
               y = obj.sections[45].y+butt_h,
               w = obj.sections[45].w,
               h = butt_h}
+      gfx.a = 0.75
+      
+      f_Get_SSV('0 0 0')
+      gfx.rect(xywh.x,
+               xywh.y,
+               xywh.w,
+               xywh.h,1)        
       GUI_textC(gui,xywh,ctl_files[knob_select].fn,gui.color.white,-5)
 
     end
@@ -1591,15 +1598,19 @@
     GUI_DrawTick(gui, 'SHOW VALUE', obj.sections[53], gui.color.white, show_paramval)
     GUI_DrawColorBox(gui, 'TEXT COL', obj.sections[54], gui.color.white, textcol_select)
     GUI_DrawButton(gui, ctltype_table[ctltype_select], obj.sections[55], gui.color.white, gui.color.black, true)
-    GUI_DrawSliderH(gui, 'OFFSET', obj.sections[56], gui.color.black, gui.color.white, (textoff_select+150)/300)
-    GUI_DrawSliderH(gui, 'VAL OFF', obj.sections[65], gui.color.black, gui.color.white, (textoffval_select+50)/100)
+    GUI_DrawSliderH(gui, 'OFFSET', obj.sections[56], gui.color.black, gui.color.white, F_limit((textoff_select+150)/300,0,1))
+    GUI_DrawSliderH(gui, 'VAL OFF', obj.sections[65], gui.color.black, gui.color.white, F_limit((textoffval_select+50)/100,0,1))
     GUI_DrawSliderH(gui, 'F SIZE', obj.sections[58], gui.color.black, gui.color.white, (textsize_select+2)/35)
     GUI_DrawSliderH(gui, 'DEF VAL', obj.sections[57], gui.color.black, gui.color.white, defval_select)
     GUI_DrawButton(gui, 'SET', obj.sections[51], gui.color.white, gui.color.black, true)
     GUI_DrawButton(gui, 'EDIT NAME', obj.sections[59], gui.color.white, gui.color.black, true)
     
     if ctltype_select == 4 then
-      GUI_DrawButton(gui, '<<', obj.sections[67], gui.color.white, gui.color.black, true)  
+      if show_cycleoptions then
+        GUI_DrawButton(gui, '>>', obj.sections[67], gui.color.white, gui.color.black, true)
+      else
+        GUI_DrawButton(gui, '<<', obj.sections[67], gui.color.white, gui.color.black, true)
+      end  
     end
     
     local mdptxt = maxdp_select
@@ -4700,6 +4711,16 @@
               update_gfx = true
               gfx.mouse_wheel = 0
             end
+            
+            if MOUSE_over(obj.sections[55]) then
+              ctltype_select = F_limit(ctltype_select + v,1,#ctltype_table)
+              for i = 1, #ctl_select do
+                strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctltype = ctltype_select
+              end
+              update_gfx = true
+              gfx.mouse_wheel = 0
+            end
+                        
           end
         end
           
@@ -4777,11 +4798,20 @@
               strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctltype = ctltype_select
             end
             update_gfx = true
+          elseif MOUSE_click_RB(obj.sections[55]) then
+            ctltype_select = ctltype_select - 1
+            if ctltype_select < 1 then ctltype_select = #ctltype_table end
+            for i = 1, #ctl_select do
+              strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctltype = ctltype_select
+            end
+            update_gfx = true
           end
 
           if ctltype_select == 4 and MOUSE_click(obj.sections[67]) then
-            show_cycleoptions = true
-            cycle_select.val = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].val
+            show_cycleoptions = not show_cycleoptions
+            if show_cycleoptions then
+              cycle_select.val = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].val
+            end
             update_gfx = true
           else
             show_cycleoptions = false          
