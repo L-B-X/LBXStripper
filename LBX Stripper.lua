@@ -1710,7 +1710,7 @@
     local s, e = string.find(num,'%d+.%d+')
     if s and e then  
       local n = string.sub(num,s,e)
-      if n then
+      if n and tonumber(n) then
         local mult = 10^(idp or 0)
         local res = math.floor(n * mult + 0.5) / mult
         if idp == 0 then
