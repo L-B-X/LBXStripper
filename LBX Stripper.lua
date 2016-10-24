@@ -4730,6 +4730,7 @@
               for i = 1, #ctl_select do
                 strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctltype = ctltype_select
               end
+              show_cycleoptions = false
               update_gfx = true
               gfx.mouse_wheel = 0
             end
