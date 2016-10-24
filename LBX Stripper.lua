@@ -4481,10 +4481,25 @@
                 elseif MOUSE_click(ctlxywh) and mouse.ctrl then --make double_click?
                   --default val
                   trackfxparam_select = i
-                  strips[tracks[track_select].strip][page].controls[i].val = strips[tracks[track_select].strip][page].controls[i].defval
-                  SetParam()
-                  strips[tracks[track_select].strip][page].controls[i].dirty = true
-                  update_ctls = true
+                  local ctltype = strips[tracks[track_select].strip][page].controls[i].ctltype
+                  if ctltype == 1 then                  
+                    strips[tracks[track_select].strip][page].controls[i].val = strips[tracks[track_select].strip][page].controls[i].defval
+                    SetParam()
+                    strips[tracks[track_select].strip][page].controls[i].dirty = true
+                    update_ctls = true
+                  elseif ctltype == 4 then
+                  
+                    strips[tracks[track_select].strip][page].controls[i].cycledata.pos = 1
+                    if strips[tracks[track_select].strip][page].controls[i].cycledata.pos <=     
+                              strips[tracks[track_select].strip][page].controls[i].cycledata.statecnt then
+                      trackfxparam_select = i
+                      strips[tracks[track_select].strip][page].controls[i].val = 
+                          strips[tracks[track_select].strip][page].controls[i].cycledata[strips[tracks[track_select].strip][page].controls[i].cycledata.pos].val
+                      SetParam()
+                      strips[tracks[track_select].strip][page].controls[i].dirty = true
+                    end                  
+                    update_ctls = true
+                  end
                   noscroll = true
                   break
                 
@@ -4817,7 +4832,7 @@
         elseif ctl_select ~= nil and show_cycleoptions and gfx.mouse_wheel ~= 0 and MOUSE_over(obj.sections[103]) then
         
           local v = gfx.mouse_wheel/120
-          cyclist_offset = F_limit(cyclist_offset - v, 0, 24)
+          cyclist_offset = F_limit(cyclist_offset - v, 0, max_cycle-8)
           update_gfx = true
           gfx.mouse_wheel = 0
         
@@ -4825,12 +4840,12 @@
         
           if MOUSE_click(obj.sections[102]) then
             cyclist_offset = 0
-            cycle_select.statecnt = F_limit(cycle_select.statecnt+1,0,32)
+            cycle_select.statecnt = F_limit(cycle_select.statecnt+1,0,max_cycle)
             Cycle_InitData()
             update_gfx = true
           elseif MOUSE_click_RB(obj.sections[102]) then
             cyclist_offset = 0
-            cycle_select.statecnt = F_limit(cycle_select.statecnt-1,0,32)
+            cycle_select.statecnt = F_limit(cycle_select.statecnt-1,0,max_cycle)
             Cycle_InitData()
             update_gfx = true
           end
@@ -5893,7 +5908,7 @@
                   mapptof = cd.mapptof,
                   val = 0,
                   {}}
-      for i = 1, 32 do
+      for i = 1, max_cycle do
         if cd[i] then
           co[i] = {val = cd[i].val, dispval = cd[i].dispval}
         end
@@ -5913,7 +5928,7 @@
                   selected = cd.selected,
                   mapptof = cd.mapptof,
                   {}}
-      for i = 1, 32 do
+      for i = 1, max_cycle do
         if cd[i] then
           co[i] = {val = cd[i].val, dispval = cd[i].dispval}
         end
@@ -5953,10 +5968,10 @@
     
     end
   
-    if stcnt > 32 then
-      OpenMsgBox(1, 'Too many values (> 32).', 1)
+    if stcnt > max_cycle then
+      OpenMsgBox(1, 'Too many values.', 1)
     else
-      for i = 1, 32 do
+      for i = 1, max_cycle do
         cycle_select[i] = cycle_temp[i]
       end
       cycle_select.statecnt = stcnt
@@ -6670,6 +6685,8 @@
     
     strips = {}
     surface_offset = {x = 0, y = 0}
+    
+    max_cycle = 64
     
     image_count = 1
     knob_select = 0
