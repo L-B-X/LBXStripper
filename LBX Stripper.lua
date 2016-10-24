@@ -266,9 +266,10 @@
                           h = gfx1.main_h - (obj.sections[13].y+obj.sections[13].h+2)}                           
 
       --CONTROL OPTIONS
-      obj.sections[45] = {x = gfx1.main_w - plist_w - 20,
+      local cow = 140
+      obj.sections[45] = {x = gfx1.main_w - cow - 20,
                           y = gfx1.main_h - 440 -20,
-                          w = plist_w,
+                          w = cow,
                           h = 440}                           
       local sf_h = 140
       --STRIP FOLDERS
@@ -1521,7 +1522,7 @@
           
           GUI_textsm_LJ(gui,xywh,math.floor(i+cyclist_offset),c,-5)
           xywh.x = xywh.x + 20
-          GUI_textsm_LJ(gui,xywh,cycle_select[i+cyclist_offset].dispval,c,-5)
+          GUI_textsm_LJ(gui,xywh,cycle_select[i+cyclist_offset].dispval,c,-5,xywh.w-20)
         end
                 
       end
@@ -4734,6 +4735,7 @@
 
           if ctltype_select == 4 and MOUSE_click(obj.sections[67]) then
             show_cycleoptions = true
+            cycle_select.val = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].val
             update_gfx = true
           else
             show_cycleoptions = false          
@@ -4790,7 +4792,6 @@
         
         elseif ctl_select ~= nil and show_cycleoptions and (MOUSE_click(obj.sections[100]) or MOUSE_click_RB(obj.sections[100])) then
         
-          
           if MOUSE_click(obj.sections[102]) then
             cyclist_offset = 0
             cycle_select.statecnt = F_limit(cycle_select.statecnt+1,0,32)
@@ -4944,6 +4945,7 @@
               if val > 1 then val = 1 end
               if val ~= octlval then
                 cycle_select.val = val
+                DBG(cycle_select.val)
                 SetParam3(val)
                 if cycle_select.selected then
                   local t = strips[tracks[track_select].strip].track.tracknum
@@ -5837,7 +5839,7 @@
       for i = 1, cycle_select.statecnt do      
         if cycle_select[i] == nil or (cycle_select[i] and cycle_select[i].dispval == nil) then
           SetParam3(cycle_select.val)
-          cycle_select[i] = {val = 0, dispval = GetParamDisp(tracknum, fxnum, param)}
+          cycle_select[i] = {val = cycle_select.val, dispval = GetParamDisp(tracknum, fxnum, param)}
         end
       end
       SetParam()
