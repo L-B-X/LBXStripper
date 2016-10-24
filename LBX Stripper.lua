@@ -5850,8 +5850,9 @@
     
     local char = gfx.getchar() 
     if char == 32 then reaper.Main_OnCommandEx(40044, 0,0) end
-    if char == 27 then quit() end     
-    if char ~= -1 then reaper.defer(run) else quit() end
+    --if char == 27 then quit() end     
+    --if char ~= -1 then reaper.defer(run) else quit() end
+    if char>=0 and char~=27 then reaper.defer(run) end
     gfx.update()
     mouse.last_LB = mouse.LB
     mouse.last_RB = mouse.RB
@@ -6741,6 +6742,16 @@
   end
   
   ------------------------------------------------------------
+  
+  function quit()
+  
+    SaveData()
+    SaveSettings()
+    gfx.quit()
+    
+  end
+  
+  ------------------------------------------------------------
 
   SCRIPT = 'LBX_STRIPPER'
   VERSION = 0.91
@@ -6783,14 +6794,5 @@
   gfx.dock(dockstate)
   run()
   
-  reaper.atexit()
+  reaper.atexit(quit)
   
-  ------------------------------------------------------------
-  
-  function quit()
-  
-    SaveData()
-    SaveSettings()
-    gfx.quit()
-    
-  end
