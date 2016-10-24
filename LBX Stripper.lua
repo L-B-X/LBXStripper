@@ -4945,7 +4945,6 @@
               if val > 1 then val = 1 end
               if val ~= octlval then
                 cycle_select.val = val
-                DBG(cycle_select.val)
                 SetParam3(val)
                 if cycle_select.selected then
                   local t = strips[tracks[track_select].strip].track.tracknum
