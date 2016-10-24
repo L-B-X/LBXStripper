@@ -1835,7 +1835,8 @@
               elseif ctltype == 4 then
                 --cycle button
                 if strips[tracks[track_select].strip][page].controls[i].cycledata.mapptof then
-                  val2 = nz(strips[tracks[track_select].strip][page].controls[i].cycledata.pos,0)
+                  --override val2
+                  val2 = F_limit(nz(strips[tracks[track_select].strip][page].controls[i].cycledata.pos,0),0,frames-1)
                 end
               end
               
