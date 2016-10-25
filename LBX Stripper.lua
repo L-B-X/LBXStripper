@@ -35,7 +35,8 @@
               stretch_xy = 17,
               draggfx2 = 18,
               dragstrip = 19,
-              cycleknob = 20
+              cycleknob = 20,
+              dragparamlrn = 21
               }
               
   ---------------------------------------------
@@ -457,6 +458,30 @@
                            w = bh,
                            h = bh}
       
+      obj.sections[115] = {x = obj.sections[43].x+obj.sections[43].w+20,
+                           y = obj.sections[43].y+20,
+                           w = 140,
+                           h = 200}
+      obj.sections[116] = {x = obj.sections[115].x,
+                           y = obj.sections[115].y+butt_h*4,
+                           w = obj.sections[115].w,
+                           h = obj.sections[115].h-(obj.sections[115].y+butt_h*4)}
+      --learn track
+      obj.sections[117] = {x = obj.sections[115].x,
+                           y = obj.sections[115].y+butt_h,
+                           w = obj.sections[115].w,
+                           h = butt_h}
+      --learn fx
+      obj.sections[118] = {x = obj.sections[115].x,
+                           y = obj.sections[115].y+butt_h*2,
+                           w = obj.sections[115].w,
+                           h = butt_h}
+      --learn param
+      obj.sections[119] = {x = obj.sections[115].x,
+                           y = obj.sections[115].y+butt_h*3,
+                           w = obj.sections[115].w,
+                           h = butt_h}
+      
     return obj
   end
   
@@ -694,43 +719,86 @@
           + round(surface_offset.y/settings_gridsize)*settings_gridsize - round((obj.sections[10].y)/settings_gridsize)*settings_gridsize
       local w, h = gfx.getimgdim(ctl_files[knob_select].imageidx)
       ctlnum = #strips[strip][page].controls + 1
-      strips[strip][page].controls[ctlnum] = {fxname=trackfx[trackfx_select].name,
-                                              fxguid=trackfx[trackfx_select].guid, 
-                                              fxnum=trackfx[trackfx_select].fxnum, 
-                                              fxfound = true,
-                                              param = trackfxparam_select,
-                                              param_info = trackfxparams[trackfxparam_select],
-                                              ctltype = ctltype_select,
-                                              knob_select = knob_select,
-                                              ctl_info = {fn = ctl_files[knob_select].fn,
-                                                          frames = ctl_files[knob_select].frames,
-                                                          imageidx = ctl_files[knob_select].imageidx, 
-                                                          cellh = ctl_files[knob_select].cellh},
-                                              x = x,
-                                              y = y,
-                                              w = w,
-                                              scale = scale_select,
-                                              xsc = x + math.floor(w/2 - (w*scale_select)/2),
-                                              ysc = y + math.floor(ctl_files[knob_select].cellh/2 - (ctl_files[knob_select].cellh*scale_select)/2),
-                                              wsc = w*scale_select,
-                                              hsc = ctl_files[knob_select].cellh*scale_select,
-                                              show_paramname = show_paramname,
-                                              show_paramval = show_paramval,
-                                              ctlname_override = '',
-                                              textcol = textcol_select,
-                                              textoff = textoff_select,
-                                              textoffval = textoffval_select,
-                                              textsize = textsize_select,
-                                              val = GetParamValue(tracks[track_select].tracknum,
-                                                                  trackfx[trackfx_select].fxnum,
-                                                                  trackfxparam_select),
-                                              defval = GetParamValue(tracks[track_select].tracknum,
-                                                                  trackfx[trackfx_select].fxnum,
-                                                                  trackfxparam_select),
-                                              maxdp = maxdp_select,
-                                              cycledata = {statecnt = 0, mapptof = false,{}},
-                                              id = nil
-                                              }
+      if dragparam.type == 'track' then
+        strips[strip][page].controls[ctlnum] = {fxname=trackfx[trackfx_select].name,
+                                                fxguid=trackfx[trackfx_select].guid, 
+                                                fxnum=trackfx[trackfx_select].fxnum, 
+                                                fxfound = true,
+                                                param = trackfxparam_select,
+                                                param_info = trackfxparams[trackfxparam_select],
+                                                ctltype = ctltype_select,
+                                                knob_select = knob_select,
+                                                ctl_info = {fn = ctl_files[knob_select].fn,
+                                                            frames = ctl_files[knob_select].frames,
+                                                            imageidx = ctl_files[knob_select].imageidx, 
+                                                            cellh = ctl_files[knob_select].cellh},
+                                                x = x,
+                                                y = y,
+                                                w = w,
+                                                scale = scale_select,
+                                                xsc = x + math.floor(w/2 - (w*scale_select)/2),
+                                                ysc = y + math.floor(ctl_files[knob_select].cellh/2 - (ctl_files[knob_select].cellh*scale_select)/2),
+                                                wsc = w*scale_select,
+                                                hsc = ctl_files[knob_select].cellh*scale_select,
+                                                show_paramname = show_paramname,
+                                                show_paramval = show_paramval,
+                                                ctlname_override = '',
+                                                textcol = textcol_select,
+                                                textoff = textoff_select,
+                                                textoffval = textoffval_select,
+                                                textsize = textsize_select,
+                                                val = GetParamValue(tracks[track_select].tracknum,
+                                                                    trackfx[trackfx_select].fxnum,
+                                                                    trackfxparam_select),
+                                                defval = GetParamValue(tracks[track_select].tracknum,
+                                                                    trackfx[trackfx_select].fxnum,
+                                                                    trackfxparam_select),
+                                                maxdp = maxdp_select,
+                                                cycledata = {statecnt = 0, mapptof = false,{}},
+                                                id = nil
+                                                }
+      else
+        strips[strip][page].controls[ctlnum] = {fxname=last_touch_fx.fxname,
+                                                fxguid=last_touch_fx.fxguid, 
+                                                fxnum=last_touch_fx.fxnum, 
+                                                fxfound = true,
+                                                param = last_touch_fx.paramnum,
+                                                param_info = {paramname = last_touch_fx.prname,
+                                                              paramnum = last_touch_fx.paramnum},
+                                                ctltype = ctltype_select,
+                                                knob_select = knob_select,
+                                                ctl_info = {fn = ctl_files[knob_select].fn,
+                                                            frames = ctl_files[knob_select].frames,
+                                                            imageidx = ctl_files[knob_select].imageidx, 
+                                                            cellh = ctl_files[knob_select].cellh},
+                                                x = x,
+                                                y = y,
+                                                w = w,
+                                                scale = scale_select,
+                                                xsc = x + math.floor(w/2 - (w*scale_select)/2),
+                                                ysc = y + math.floor(ctl_files[knob_select].cellh/2 - (ctl_files[knob_select].cellh*scale_select)/2),
+                                                wsc = w*scale_select,
+                                                hsc = ctl_files[knob_select].cellh*scale_select,
+                                                show_paramname = show_paramname,
+                                                show_paramval = show_paramval,
+                                                ctlname_override = '',
+                                                textcol = textcol_select,
+                                                textoff = textoff_select,
+                                                textoffval = textoffval_select,
+                                                textsize = textsize_select,
+                                                val = GetParamValue(tracks[track_select].tracknum,
+                                                                    trackfx[trackfx_select].fxnum,
+                                                                    trackfxparam_select),
+                                                defval = GetParamValue(tracks[track_select].tracknum,
+                                                                    trackfx[trackfx_select].fxnum,
+                                                                    trackfxparam_select),
+                                                maxdp = maxdp_select,
+                                                cycledata = {statecnt = 0, mapptof = false,{}},
+                                                id = nil,
+                                                tracknum = last_touch_fx.tracknum,
+                                                trackguid = last_touch_fx.trackguid
+                                                }      
+      end
                                               
     end  
   
@@ -1779,10 +1847,10 @@
     
       if #strips[tracks[track_select].strip][page].controls > 0 then
 
-        local track = GetTrack(strips[tracks[track_select].strip].track.tracknum)
-        if track == nil then 
+        local trackM = GetTrack(strips[tracks[track_select].strip].track.tracknum)
+        if trackM == nil then 
           if CheckTrack(strips[tracks[track_select].strip].track, tracks[track_select].strip) then
-            track = GetTrack(strips[tracks[track_select].strip].track.tracknum)
+            trackM = GetTrack(strips[tracks[track_select].strip].track.tracknum)
           else
             return 
           end 
@@ -1828,7 +1896,15 @@
               local found = strips[tracks[track_select].strip][page].controls[i].fxfound
               local maxdp = nz(strips[tracks[track_select].strip][page].controls[i].maxdp,-1)
               
+              local tnum = strips[tracks[track_select].strip][page].controls[i].tracknum
+
               if fxnum == nil then return end
+    
+              local track = trackM
+              if tnum ~= nil then
+                track = GetTrack(tnum)
+                if track == nil then return end
+              end
     
               local v2 = GetParamValue2(track,fxnum,param)
               
@@ -2098,6 +2174,74 @@
     return nil
       
   end
+  
+  ------------------------------------------------------------
+  
+    function GUI_DrawParamLearn(obj, gui)
+    
+      gfx.a=1
+      f_Get_SSV(gui.color.black)
+      gfx.rect(obj.sections[115].x,
+               obj.sections[115].y, 
+               obj.sections[115].w,
+               obj.sections[115].h, 1, 1)
+      f_Get_SSV('64 64 64')
+      gfx.rect(obj.sections[115].x,
+               obj.sections[115].y, 
+               obj.sections[115].w,
+               obj.sections[115].h, 0, 1)
+      
+      xywh = {x = obj.sections[115].x,
+              y = obj.sections[115].y,
+              w = obj.sections[115].w,
+              h = butt_h}
+      
+      f_Get_SSV(gui.color.white)
+      gfx.a = 1 
+      gfx.rect(xywh.x,
+               xywh.y, 
+               xywh.w,
+               butt_h, 1 )
+      
+      GUI_textC(gui,xywh,'PARAM LEARN',gui.color.black,-2)
+      
+      xywh.y = obj.sections[116].y
+      local iidx = 1023
+      
+      if knob_select > -1 then
+        if ctl_files[knob_select].imageidx ~= nil then
+          iidx = ctl_files[knob_select].imageidx
+        else
+          gfx.loadimg(1023, controls_path..ctl_files[knob_select].fn)
+        end
+        local w, _ = gfx.getimgdim(iidx)
+        gfx.a = 1
+        local sx,sy = 1,1
+        if w > obj.sections[115].w then
+          sx = obj.sections[115].w/w
+        end
+        if ctl_files[knob_select].cellh > 128 then
+          sy = 128/ctl_files[knob_select].cellh
+        end
+        local sc = F_limit(math.min(sx, sy),0,1)
+        gfx.blit(iidx,sc,0, 0, 
+                            ctl_files[knob_select].cellh*math.floor(ctl_files[knob_select].frames*0.75), 
+                            w, 
+                            ctl_files[knob_select].cellh, xywh.x + (xywh.w/2-(w*sc)/2), 
+                            xywh.y + (62.5 - (ctl_files[knob_select].cellh*sc)/2))
+        
+      end
+      
+      if last_touch_fx then
+      
+        GUI_textsm_LJ(gui,obj.sections[117],last_touch_fx.tracknum..': '..last_touch_fx.trname,gui.color.white,-5,obj.sections[117].w)
+        GUI_textsm_LJ(gui,obj.sections[118],last_touch_fx.fxname,gui.color.white,-5,obj.sections[117].w)
+        GUI_textsm_LJ(gui,obj.sections[119],last_touch_fx.prname,gui.color.white,-5,obj.sections[117].w)    
+      
+      end
+      
+    end
+    
 
   ------------------------------------------------------------
   
@@ -2199,31 +2343,6 @@
                     
           gfx.blit(1001,1,0,0,0,obj.sections[43].w,obj.sections[43].h,0,butt_h+2)
           
-          if dragparam ~= nil then
-            if reass_param == nil then
-              local x, y = dragparam.x, dragparam.y
-              gfx.a = 0.7
-              local iidx = ctl_files[knob_select].imageidx
-              if iidx == nil or ksel_loaded == false then
-                ksel_loaded = true
-                gfx.loadimg(1023, controls_path..ctl_files[knob_select].fn)
-                iidx = 1023
-              elseif iidx == nil then
-                iidx = 1023
-              end
-              local w, _ = gfx.getimgdim(iidx)
-              local h = ctl_files[knob_select].cellh
-              gfx.blit(iidx,scale_select,0,0,p*h,w,ctl_files[knob_select].cellh,x+ w/2-w*scale_select/2,y+ h/2-h*scale_select/2 )
-              f_Get_SSV(gui.color.yellow)
-              gfx.a = 1
-              if surface_size.limit then
-                gfx.roundrect(x, y ,w, h, 8, 1, 0)
-              else
-                gfx.roundrect(x + surface_offset.x, y + surface_offset.y, w, h, 8, 1, 0)              
-              end
-            end
-          end
-          
           if lasso ~= nil then
             gfx.a = 0.2
             f_Get_SSV(gui.color.blue)
@@ -2258,7 +2377,35 @@
               GUI_DrawCycleOptions(obj, gui)
             end            
           end
-                  
+          
+          if show_paramlearn then
+            GUI_DrawParamLearn(obj,gui)
+          end        
+
+          if dragparam ~= nil then
+            if reass_param == nil then
+              local x, y = dragparam.x, dragparam.y
+              gfx.a = 0.7
+              local iidx = ctl_files[knob_select].imageidx
+              if iidx == nil or ksel_loaded == false then
+                ksel_loaded = true
+                gfx.loadimg(1023, controls_path..ctl_files[knob_select].fn)
+                iidx = 1023
+              elseif iidx == nil then
+                iidx = 1023
+              end
+              local w, _ = gfx.getimgdim(iidx)
+              local h = ctl_files[knob_select].cellh
+              gfx.blit(iidx,scale_select,0,0,p*h,w,ctl_files[knob_select].cellh,x+ w/2-w*scale_select/2,y+ h/2-h*scale_select/2 )
+              f_Get_SSV(gui.color.yellow)
+              gfx.a = 1
+              if surface_size.limit then
+                gfx.roundrect(x, y ,w, h, 8, 1, 0)
+              else
+                gfx.roundrect(x + surface_offset.x, y + surface_offset.y, w, h, 8, 1, 0)              
+              end
+            end
+          end        
         
         elseif submode == 1 then
         
@@ -2479,7 +2626,20 @@
                obj.sections[13].y, 
                obj.sections[13].w-1,
                obj.sections[13].h, 1, 1)
-      GUI_textC(gui,obj.sections[13],submode_table[submode+1],gui.color.black,-2)        
+      GUI_textC(gui,obj.sections[13],submode_table[submode+1],gui.color.black,-2)
+      if submode == 0 then
+        f_Get_SSV(gui.color.black)
+        local xywh = {x = obj.sections[13].x+obj.sections[13].w - 20,
+                      y = obj.sections[13].y, 
+                      w = 20,
+                      h = obj.sections[13].h}
+        gfx.rect(xywh.x,
+                 xywh.y, 
+                 2,
+                 xywh.h, 1, 1)
+        GUI_textC(gui,xywh,'L',gui.color.black,-2)
+                         
+      end        
     end
     f_Get_SSV(gui.color.black)
     gfx.rect(obj.sections[11].x+obj.sections[11].w-6,
@@ -3008,21 +3168,40 @@
     return normalize(min, max, v)
   end
   
+  function GetParamMinMax(track,fxnum,paramnum)
+    local _, min, max = reaper.TrackFX_GetParam(track, fxnum, paramnum)
+    return min, max  
+  end
+  
   function normalize(min, max, val)
     return (val - min)/(max - min)
   end
+  
+  --nv*(max - min) + min = val
+  function DenormalizeValue(track, fxnum, paramnum, val)
+    local min, max = GetParamMinMax(track,fxnum,paramnum)
+    return val*(max - min) + min
+  end
+  
   ------------------------------------------------------------
   
   function SetParam()
   
     if strips and strips[tracks[track_select].strip] and strips[tracks[track_select].strip][page].controls[trackfxparam_select] then
       local val = strips[tracks[track_select].strip][page].controls[trackfxparam_select].val
-      local track = GetTrack(strips[tracks[track_select].strip].track.tracknum)
+      local track 
+      if strips[tracks[track_select].strip][page].controls[trackfxparam_select].tracknum == nil then
+        track = GetTrack(strips[tracks[track_select].strip].track.tracknum)
+      else
+        track = GetTrack(strips[tracks[track_select].strip][page].controls[trackfxparam_select].tracknum)
+      end
       local fxnum = strips[tracks[track_select].strip][page].controls[trackfxparam_select].fxnum
       local param = strips[tracks[track_select].strip][page].controls[trackfxparam_select].param
       strips[tracks[track_select].strip][page].controls[trackfxparam_select].dirty = true
-      reaper.TrackFX_SetParamNormalized(track, nz(fxnum,-1), param, 
-                            val)
+      --reaper.TrackFX_SetParamNormalized(track, nz(fxnum,-1), param, 
+      --                      val)
+      
+      reaper.TrackFX_SetParam(track, nz(fxnum,-1), param, DenormalizeValue(track, nz(fxnum,-1), param, val))
     end
       
   end
@@ -3033,16 +3212,23 @@
   
     if strips and strips[tracks[track_select].strip] and strips[tracks[track_select].strip][page].controls[trackfxparam_select] then
       local val = strips[tracks[track_select].strip][page].controls[trackfxparam_select].val
-      local track = GetTrack(strips[tracks[track_select].strip].track.tracknum)
+      if strips[tracks[track_select].strip][page].controls[trackfxparam_select].tracknum == nil then
+        track = GetTrack(strips[tracks[track_select].strip].track.tracknum)
+      else
+        track = GetTrack(strips[tracks[track_select].strip][page].controls[trackfxparam_select].tracknum)
+      end
       local fxnum = strips[tracks[track_select].strip][page].controls[trackfxparam_select].fxnum
       local param = strips[tracks[track_select].strip][page].controls[trackfxparam_select].param
       strips[tracks[track_select].strip][page].controls[trackfxparam_select].dirty = true
       if force and force == true then
-        reaper.TrackFX_SetParamNormalized(track, nz(fxnum,-1), param, 
-                              1-math.abs(val-0.1))      
+--        reaper.TrackFX_SetParamNormalized(track, nz(fxnum,-1), param, 
+--                              1-math.abs(val-0.1))      
+        reaper.TrackFX_SetParam(track, nz(fxnum,-1), param, DenormalizeValue(track, nz(fxnum,-1), param, 1-math.abs(val-0.1)))
       end
-      reaper.TrackFX_SetParamNormalized(track, nz(fxnum,-1), param, 
-                            val)
+      --reaper.TrackFX_SetParamNormalized(track, nz(fxnum,-1), param, 
+      --                      val)
+      reaper.TrackFX_SetParam(track, nz(fxnum,-1), param, DenormalizeValue(track, nz(fxnum,-1), param, val))
+
     end
       
   end
@@ -3052,13 +3238,19 @@
   function SetParam3(v)
   
     if strips and strips[tracks[track_select].strip] and strips[tracks[track_select].strip][page].controls[trackfxparam_select] then
-      local val = strips[tracks[track_select].strip][page].controls[trackfxparam_select].val
-      local track = GetTrack(strips[tracks[track_select].strip].track.tracknum)
+      --local val = strips[tracks[track_select].strip][page].controls[trackfxparam_select].val
+      if strips[tracks[track_select].strip][page].controls[trackfxparam_select].tracknum == nil then
+        track = GetTrack(strips[tracks[track_select].strip].track.tracknum)
+      else
+        track = GetTrack(strips[tracks[track_select].strip][page].controls[trackfxparam_select].tracknum)
+      end
       local fxnum = strips[tracks[track_select].strip][page].controls[trackfxparam_select].fxnum
       local param = strips[tracks[track_select].strip][page].controls[trackfxparam_select].param
       --strips[tracks[track_select].strip][page].controls[trackfxparam_select].dirty = true
-      reaper.TrackFX_SetParamNormalized(track, nz(fxnum,-1), param, 
-                            v)      
+      --reaper.TrackFX_SetParamNormalized(track, nz(fxnum,-1), param, 
+      --                      v)      
+      reaper.TrackFX_SetParam(track, nz(fxnum,-1), param, DenormalizeValue(track, nz(fxnum,-1), param, v))
+    
     end
       
   end
@@ -3653,6 +3845,7 @@
 
   function CheckStripControls()
 
+    --if true == true then return end
     if strips and tracks[track_select] and strips[tracks[track_select].strip] then
       local tr_found = false
       
@@ -3667,14 +3860,19 @@
           
             for c = 1, #strips[tracks[track_select].strip][p].controls do
             
-              if strips[tracks[track_select].strip][p].controls[c].fxguid == reaper.TrackFX_GetFXGUID(tr, nz(strips[tracks[track_select].strip][p].controls[c].fxnum,-1)) then
+              local tr2 = tr
+              if strips[tracks[track_select].strip][p].controls[c].tracknum ~= nil then
+                tr2 = GetTrack(strips[tracks[track_select].strip][p].controls[c].tracknum)
+              end
+            
+              if strips[tracks[track_select].strip][p].controls[c].fxguid == reaper.TrackFX_GetFXGUID(tr2, nz(strips[tracks[track_select].strip][p].controls[c].fxnum,-1)) then
                 --fx found
                 strips[tracks[track_select].strip][p].controls[c].fxfound = true
               else
                 --find fx by guid
                 local fx_found = false
-                for f = 0, reaper.TrackFX_GetCount(tr) do
-                  if strips[tracks[track_select].strip][p].controls[c].fxguid == reaper.TrackFX_GetFXGUID(tr, f) then
+                for f = 0, reaper.TrackFX_GetCount(tr2) do
+                  if strips[tracks[track_select].strip][p].controls[c].fxguid == reaper.TrackFX_GetFXGUID(tr2, f) then
                     fx_found = true
                     strips[tracks[track_select].strip][p].controls[c].fxnum = f
                     break
@@ -4186,29 +4384,36 @@
       if strips and tracks[track_select] and strips[tracks[track_select].strip] and #strips[tracks[track_select].strip][page].controls > 0 then
         --check track
         if CheckTrack(strips[tracks[track_select].strip].track, tracks[track_select].strip) then
-          local tr = GetTrack(strips[tracks[track_select].strip].track.tracknum)
-          if tr ~= nil then
+          local tr2 = GetTrack(strips[tracks[track_select].strip].track.tracknum)
+          if tr2 ~= nil then
             if strips and strips[tracks[track_select].strip] then
               for i = 1, #strips[tracks[track_select].strip][page].controls do
                 --check fx
-                local fxguid = reaper.TrackFX_GetFXGUID(tr, strips[tracks[track_select].strip][page].controls[i].fxnum)
-                if strips[tracks[track_select].strip][page].controls[i].fxguid == fxguid then
-                  local v = GetParamValue2(tr,
-                                                             strips[tracks[track_select].strip][page].controls[i].fxnum,
-                                                             strips[tracks[track_select].strip][page].controls[i].param)
-                  if strips[tracks[track_select].strip][page].controls[i].val ~= v then
-                    strips[tracks[track_select].strip][page].controls[i].val = v
-                    strips[tracks[track_select].strip][page].controls[i].dirty = true
-                    if strips[tracks[track_select].strip][page].controls[i].param_info.paramname == 'Bypass' then
-                      SetCtlEnabled(strips[tracks[track_select].strip][page].controls[i].fxnum) 
-                    end                                                                                                           
-                    update_ctls = true
-                  end
-                else
-                  if strips[tracks[track_select].strip][page].controls[i].fxfound then
-                    CheckStripControls()
-                  end
+                
+                tr = tr2
+                if strips[tracks[track_select].strip][page].controls[i].tracknum ~= nil then
+                  tr = GetTrack(strips[tracks[track_select].strip][page].controls[i].tracknum)
                 end
+                
+                  local fxguid = reaper.TrackFX_GetFXGUID(tr, strips[tracks[track_select].strip][page].controls[i].fxnum)
+                  if strips[tracks[track_select].strip][page].controls[i].fxguid == fxguid then
+                    local v = GetParamValue2(tr,
+                                             strips[tracks[track_select].strip][page].controls[i].fxnum,
+                                             strips[tracks[track_select].strip][page].controls[i].param)
+                    if strips[tracks[track_select].strip][page].controls[i].val ~= v then
+                      strips[tracks[track_select].strip][page].controls[i].val = v
+                      strips[tracks[track_select].strip][page].controls[i].dirty = true
+                      if strips[tracks[track_select].strip][page].controls[i].param_info.paramname == 'Bypass' then
+                        SetCtlEnabled(strips[tracks[track_select].strip][page].controls[i].fxnum) 
+                      end                                                                                                           
+                      update_ctls = true
+                    end
+                  else
+                    if strips[tracks[track_select].strip][page].controls[i].fxfound then
+                      CheckStripControls()
+                    end
+                  end
+
               end
             end
           end
@@ -4741,6 +4946,35 @@
             end
                         
           end
+        end
+        
+        if show_paramlearn then
+          --DBG('running')
+          last_touch_fx = GetLastTouchedFX(last_touch_fx)        
+        end
+        
+        if show_paramlearn and (MOUSE_click(obj.sections[115]) or MOUSE_click_RB(obj.sections[115])) then
+        
+          --LEARN
+          
+          if MOUSE_click(obj.sections[115]) then
+            ctl_select = nil
+            update_gfx = true
+            
+            if ctl_files[knob_select].imageidx ~= nil then
+              local w,_ = gfx.getimgdim(ctl_files[knob_select].imageidx)
+              local h = ctl_files[knob_select].cellh
+              if w == 0 or h == 0 then
+                ksel_size = {w = 50, h = 50}
+              else
+               ksel_size = {w = w/2, h = h/2}
+             end
+            else 
+              ksel_size = {w = 50, h = 50}
+            end
+            mouse.context = contexts.dragparamlrn
+          end          
+        
         end
           
         if ctl_select ~= nil and (MOUSE_click(obj.sections[45]) or MOUSE_click_RB(obj.sections[45])) then
@@ -5349,7 +5583,7 @@
         end
         
         if mouse.context and mouse.context == contexts.dragparam then
-          dragparam = {x = mouse.mx-ksel_size.w, y = mouse.my-ksel_size.h}
+          dragparam = {x = mouse.mx-ksel_size.w, y = mouse.my-ksel_size.h, type = 'track'}
           reass_param = nil
           if tracks[track_select] and tracks[track_select].strip ~= -1 then
             for i = 1, #strips[tracks[track_select].strip][page].controls do
@@ -5371,56 +5605,85 @@
                 break
               end
             end
-          end
-                    
+          end                    
           update_gfx = true
+        
+        elseif mouse.context and mouse.context == contexts.dragparamlrn then
+          dragparam = {x = mouse.mx-ksel_size.w, y = mouse.my-ksel_size.h, type = 'learn'}
+          reass_param = nil
+          if tracks[track_select] and tracks[track_select].strip ~= -1 then
+            for i = 1, #strips[tracks[track_select].strip][page].controls do
+            
+              local xywh 
+              xywh = {x = strips[tracks[track_select].strip][page].controls[i].x - surface_offset.x +obj.sections[10].x, 
+                      y = strips[tracks[track_select].strip][page].controls[i].y - surface_offset.y +obj.sections[10].y, 
+                      w = strips[tracks[track_select].strip][page].controls[i].w, 
+                      h = strips[tracks[track_select].strip][page].controls[i].ctl_info.cellh}    
+              if MOUSE_over(xywh) then
+                reass_param = i
+                break
+              end
+            end
+          end                    
+          update_gfx = true
+        
         elseif dragparam ~= nil then
           --Dropped
-          if reass_param == nil then
-            if dragparam.x+ksel_size.w > obj.sections[10].x and dragparam.x+ksel_size.w < obj.sections[10].x+obj.sections[10].w and dragparam.y+ksel_size.h > obj.sections[10].y and dragparam.y+ksel_size.h < obj.sections[10].y+obj.sections[10].h then
-              local i
-              local cnt = 0
-              local dpx, dpy = dragparam.x, dragparam.y
-              for i = 0, #trackfxparams do
-                if tfxp_sel[i] then
-                  trackfxparam_select = i
-                  Strip_AddParam()
-                  cnt = cnt + 1
-                  dragparam.x = math.floor(dpx + ((ksel_size.w*2+settings_gridsize) * (cnt % 8)))
-                  dragparam.y = math.floor(dpy + (ksel_size.h*2+(2*settings_gridsize)) * math.floor(cnt/8))
+          if dragparam.type == 'track' then
+            if reass_param == nil then
+              if dragparam.x+ksel_size.w > obj.sections[10].x and dragparam.x+ksel_size.w < obj.sections[10].x+obj.sections[10].w and dragparam.y+ksel_size.h > obj.sections[10].y and dragparam.y+ksel_size.h < obj.sections[10].y+obj.sections[10].h then
+                local i
+                local cnt = 0
+                local dpx, dpy = dragparam.x, dragparam.y
+                for i = 0, #trackfxparams do
+                  if tfxp_sel[i] then
+                    trackfxparam_select = i
+                    Strip_AddParam()
+                    cnt = cnt + 1
+                    dragparam.x = math.floor(dpx + ((ksel_size.w*2+settings_gridsize) * (cnt % 8)))
+                    dragparam.y = math.floor(dpy + (ksel_size.h*2+(2*settings_gridsize)) * math.floor(cnt/8))
+                  end
                 end
+                tfxp_sel = nil
+                
               end
-              tfxp_sel = nil
+            else
+              if dragparam.x+ksel_size.w > obj.sections[10].x and dragparam.x+ksel_size.w < obj.sections[10].x+obj.sections[10].w and dragparam.y+ksel_size.h > obj.sections[10].y and dragparam.y+ksel_size.h < obj.sections[10].y+obj.sections[10].h then
               
-            end
-          else
-            if dragparam.x+ksel_size.w > obj.sections[10].x and dragparam.x+ksel_size.w < obj.sections[10].x+obj.sections[10].w and dragparam.y+ksel_size.h > obj.sections[10].y and dragparam.y+ksel_size.h < obj.sections[10].y+obj.sections[10].h then
-            
-              local i
-              local cnt = 0
-              for i = 1, #trackfxparams do
-                if tfxp_sel[i] then
-                  cnt = cnt + 1
+                local i
+                local cnt = 0
+                for i = 1, #trackfxparams do
+                  if tfxp_sel[i] then
+                    cnt = cnt + 1
+                  end
                 end
+                if cnt <= 1 then
+                  strips[tracks[track_select].strip][page].controls[reass_param].fxname=trackfx[trackfx_select].name
+                  strips[tracks[track_select].strip][page].controls[reass_param].fxguid=trackfx[trackfx_select].guid
+                  strips[tracks[track_select].strip][page].controls[reass_param].fxnum=trackfx[trackfx_select].fxnum
+                  strips[tracks[track_select].strip][page].controls[reass_param].fxfound = true
+                  strips[tracks[track_select].strip][page].controls[reass_param].param = trackfxparam_select
+                  strips[tracks[track_select].strip][page].controls[reass_param].param_info = trackfxparams[trackfxparam_select]
+                  strips[tracks[track_select].strip][page].controls[reass_param].val = GetParamValue(tracks[track_select].tracknum,
+                                                                                                     trackfx[trackfx_select].fxnum,
+                                                                                                     trackfxparam_select)
+                  strips[tracks[track_select].strip][page].controls[reass_param].defval = GetParamValue(tracks[track_select].tracknum,
+                                                                                                     trackfx[trackfx_select].fxnum,
+                                                                                                     trackfxparam_select)
+                else
+                  OpenMsgBox(1, 'You cannot reassign multiple controls at once.', 1)
+                end
+                tfxp_sel = nil
               end
-              if cnt <= 1 then
-                strips[tracks[track_select].strip][page].controls[reass_param].fxname=trackfx[trackfx_select].name
-                strips[tracks[track_select].strip][page].controls[reass_param].fxguid=trackfx[trackfx_select].guid
-                strips[tracks[track_select].strip][page].controls[reass_param].fxnum=trackfx[trackfx_select].fxnum
-                strips[tracks[track_select].strip][page].controls[reass_param].fxfound = true
-                strips[tracks[track_select].strip][page].controls[reass_param].param = trackfxparam_select
-                strips[tracks[track_select].strip][page].controls[reass_param].param_info = trackfxparams[trackfxparam_select]
-                strips[tracks[track_select].strip][page].controls[reass_param].val = GetParamValue(tracks[track_select].tracknum,
-                                                                                                   trackfx[trackfx_select].fxnum,
-                                                                                                   trackfxparam_select)
-                strips[tracks[track_select].strip][page].controls[reass_param].defval = GetParamValue(tracks[track_select].tracknum,
-                                                                                                   trackfx[trackfx_select].fxnum,
-                                                                                                   trackfxparam_select)
-              else
-                OpenMsgBox(1, 'You cannot reassign multiple controls at once.', 1)
-              end
-              tfxp_sel = nil
             end
+          elseif dragparam.type == 'learn' then
+            if reass_param == nil then
+              if dragparam.x+ksel_size.w > obj.sections[10].x and dragparam.x+ksel_size.w < obj.sections[10].x+obj.sections[10].w and dragparam.y+ksel_size.h > obj.sections[10].y and dragparam.y+ksel_size.h < obj.sections[10].y+obj.sections[10].h then
+                Strip_AddParam()
+              end
+            else
+
+            end      
           end
           
           reass_param = nil
@@ -5781,14 +6044,21 @@
       end
       
       if MOUSE_click(obj.sections[13]) then
-        ctl_select = nil
-        gfx2_select = nil
-        gfx3_select = nil
-        submode = submode + 1
-        if submode+1 > #submode_table then
-          submode = 0
+        if submode ~= 0 or (submode == 0 and mouse.mx < obj.sections[13].x + obj.sections[13].w - 20) then
+          ctl_select = nil
+          gfx2_select = nil
+          gfx3_select = nil
+          submode = submode + 1
+          if submode+1 > #submode_table then
+            submode = 0
+          end
+          update_gfx = true
+        elseif submode == 0 then
+         
+          show_paramlearn = not show_paramlearn
+          update_gfx = true
+           
         end
-        update_gfx = true
 
       elseif MOUSE_click_RB(obj.sections[13]) then
         ctl_select = nil
@@ -5839,19 +6109,19 @@
         if surface_size.w < obj.sections[10].w then
           surface_offset.x = -math.floor((obj.sections[10].w - surface_size.w)/2)
         elseif offx ~= nil then
-          if locky == false then
-            surface_offset.x = F_limit(surx + offx,0-math.ceil(obj.sections[10].w*0.25),surface_size.w - math.ceil(obj.sections[10].w*0.75))
-          else
+          --if locky == false then
+          --  surface_offset.x = F_limit(surx + offx,0-math.ceil(obj.sections[10].w*0.25),surface_size.w - math.ceil(obj.sections[10].w*0.75))
+          --else
             surface_offset.x = F_limit(surx + offx,0,surface_size.w - obj.sections[10].w)        
-          end
+          --end
         end
         
         if offy ~= nil then
-          if lockx == false then
-            surface_offset.y = F_limit(sury + offy,0-math.ceil(obj.sections[10].h*0.25),surface_size.h - math.ceil(obj.sections[10].h*0.75))
-          else
+          --if lockx == false then
+          --  surface_offset.y = F_limit(sury + offy,0-math.ceil(obj.sections[10].h*0.25),surface_size.h - math.ceil(obj.sections[10].h*0.75))
+          --else
             surface_offset.y = F_limit(sury + offy,0,surface_size.h - obj.sections[10].h)        
-          end
+          --end
         end
   
         if surface_offset.oldx ~= surface_offset.x or surface_offset.oldy ~= surface_offset.y or (ctls and not ctl_select) then
@@ -5886,7 +6156,8 @@
             elseif lockx then
               surface_offset.y = F_limit(surface_offset.y - v * 50,0,surface_size.h - obj.sections[10].h)        
             else
-              surface_offset.y = F_limit(surface_offset.y - v * 50,0-math.ceil(obj.sections[10].h*0.25),surface_size.h - math.ceil(obj.sections[10].h*0.75))
+              --surface_offset.y = F_limit(surface_offset.y - v * 50,0-math.ceil(obj.sections[10].h*0.25),surface_size.h - math.ceil(obj.sections[10].h*0.75))
+              surface_offset.y = F_limit(surface_offset.y - v * 50,0,surface_size.h - obj.sections[10].h)        
             end
             if strips and tracks[track_select] and strips[tracks[track_select].strip] then
               strips[tracks[track_select].strip][page].surface_x = surface_offset.x
@@ -5927,6 +6198,37 @@
     gfx.mouse_wheel = 0
     if ctl_select then ctls = true else ctls = false end
       
+  end
+  
+  function GetLastTouchedFX(lastfx)
+    
+    local rt, tr, fx, pr = reaper.GetLastTouchedFX()
+    --DBG(tr..' '..fx..' '..pr)
+    if rt == true then
+      if lastfx == nil or (lastfx ~= nil and (tr-1 ~= lastfx.tracknum or fx ~= lastfx.fxnum or pr ~= lastfx.paramnum)) then
+        local track = GetTrack(tr-1)
+        if track ~= nil then
+          local tn = reaper.GetTrackState(track)
+          local trg = reaper.GetTrackGUID(track)
+          local _, fxn = reaper.TrackFX_GetFXName(track, fx, '')
+          local fxg = reaper.TrackFX_GetFXGUID(track, fx)
+          local _, prn = reaper.TrackFX_GetParamName(track, fx, pr, '')
+          lastfx = {tracknum = tr-1,
+                    trguid = trg,
+                    fxnum = fx,
+                    paramnum = pr,
+                    trname = tn,
+                    fxname = fxn,
+                    fxguid = fxg,
+                    prname = prn}
+          update_gfx = true
+        end
+      end
+      return lastfx
+    else
+      return lastfx
+    end
+  
   end
   
   function Cycle_InitData()
@@ -6381,6 +6683,9 @@
                     strips[ss][p].controls[c].wsc = strips[ss][p].controls[c].w*strips[ss][p].controls[c].scale
                     strips[ss][p].controls[c].hsc = strips[ss][p].controls[c].ctl_info.cellh*strips[ss][p].controls[c].scale
                     
+                    strips[ss][p].controls[c].tracknum = GPES(key..'tracknum',true)
+                    strips[ss][p].controls[c].trackguid = GPES(key..'trackguid')
+                    
                     strips[ss][p].controls[c].cycledata.statecnt = tonumber(nz(GPES(key..'cycledata_statecnt',true),0))
                     strips[ss][p].controls[c].cycledata.mapptof = tobool(nz(GPES(key..'cycledata_mapptof',true),false))
                     strips[ss][p].controls[c].cycledata.pos = 1
@@ -6630,6 +6935,9 @@
                            
                 reaper.SetProjExtState(0,SCRIPT,key..'id',convnum(strips[s][p].controls[c].id))
 
+                reaper.SetProjExtState(0,SCRIPT,key..'tracknum',nz(strips[s][p].controls[c].tracknum,''))
+                reaper.SetProjExtState(0,SCRIPT,key..'trackguid',nz(strips[s][p].controls[c].trackguid,''))
+
                 if strips[s][p].controls[c].cycledata and strips[s][p].controls[c].cycledata.statecnt then
                   reaper.SetProjExtState(0,SCRIPT,key..'cycledata_statecnt',nz(strips[s][p].controls[c].cycledata.statecnt,0))
                   reaper.SetProjExtState(0,SCRIPT,key..'cycledata_mapptof',tostring(nz(strips[s][p].controls[c].cycledata.mapptof,false)))
@@ -6771,6 +7079,7 @@
     show_editbar = true
     show_settings = false
     show_cycleoptions = false
+    show_paramlearn = false
     
     show_paramname = true
     show_paramval = true
