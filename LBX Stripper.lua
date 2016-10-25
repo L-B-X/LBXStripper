@@ -796,7 +796,7 @@
                                                 cycledata = {statecnt = 0, mapptof = false,{}},
                                                 id = nil,
                                                 tracknum = last_touch_fx.tracknum,
-                                                trackguid = last_touch_fx.trackguid
+                                                trackguid = last_touch_fx.trguid
                                                 }      
       end
                                               
@@ -3862,38 +3862,77 @@
             
               local tr2 = tr
               if strips[tracks[track_select].strip][p].controls[c].tracknum ~= nil then
-                tr2 = GetTrack(strips[tracks[track_select].strip][p].controls[c].tracknum)
-              end
-            
-              if strips[tracks[track_select].strip][p].controls[c].fxguid == reaper.TrackFX_GetFXGUID(tr2, nz(strips[tracks[track_select].strip][p].controls[c].fxnum,-1)) then
-                --fx found
-                strips[tracks[track_select].strip][p].controls[c].fxfound = true
-              else
-                --find fx by guid
-                local fx_found = false
-                for f = 0, reaper.TrackFX_GetCount(tr2) do
-                  if strips[tracks[track_select].strip][p].controls[c].fxguid == reaper.TrackFX_GetFXGUID(tr2, f) then
-                    fx_found = true
-                    strips[tracks[track_select].strip][p].controls[c].fxnum = f
-                    break
+                --tr2 = GetTrack(strips[tracks[track_select].strip][p].controls[c].tracknum)
+                tr_found = CheckTrack(strips[tracks[track_select].strip][p].controls[c].tracknum,
+                                      tracks[track_select].strip, page, c)                      
+                if tr_found then
+                  tr2 = GetTrack(strips[tracks[track_select].strip][p].controls[c].tracknum)
+                  if strips[tracks[track_select].strip][p].controls[c].fxguid == reaper.TrackFX_GetFXGUID(tr2, nz(strips[tracks[track_select].strip][p].controls[c].fxnum,-1)) then
+                    --fx found
+                    strips[tracks[track_select].strip][p].controls[c].fxfound = true
+                  else
+                    --find fx by guid
+                    local fx_found = false
+                    for f = 0, reaper.TrackFX_GetCount(tr2) do
+                      if strips[tracks[track_select].strip][p].controls[c].fxguid == reaper.TrackFX_GetFXGUID(tr2, f) then
+                        fx_found = true
+                        strips[tracks[track_select].strip][p].controls[c].fxnum = f
+                        break
+                      end
+                    end
+                    
+                    if not fx_found then
+                      --find by name?
+                                      
+                    end
+                    
+                    PopulateTrackFX()
+                    update_gfx = true
+                    
+                    if fx_found then
+                      strips[tracks[track_select].strip][p].controls[c].fxfound = true
+                    else
+                      --FX not found
+                      strips[tracks[track_select].strip][p].controls[c].fxfound = false
+                    end
                   end
-                end
-                
-                if not fx_found then
-                  --find by name?
-                                  
-                end
-                
-                PopulateTrackFX()
-                update_gfx = true
-                
-                if fx_found then
+                else
+                  --track not found
+                end              
+              else
+            
+                if strips[tracks[track_select].strip][p].controls[c].fxguid == reaper.TrackFX_GetFXGUID(tr2, nz(strips[tracks[track_select].strip][p].controls[c].fxnum,-1)) then
+                  --fx found
                   strips[tracks[track_select].strip][p].controls[c].fxfound = true
                 else
-                  --FX not found
-                  strips[tracks[track_select].strip][p].controls[c].fxfound = false
-                end
-              end            
+                  --find fx by guid
+                  local fx_found = false
+                  for f = 0, reaper.TrackFX_GetCount(tr2) do
+                    if strips[tracks[track_select].strip][p].controls[c].fxguid == reaper.TrackFX_GetFXGUID(tr2, f) then
+                      fx_found = true
+                      strips[tracks[track_select].strip][p].controls[c].fxnum = f
+                      break
+                    end
+                  end
+                  
+                  if not fx_found then
+                    --find by name?
+                                    
+                  end
+                  
+                  PopulateTrackFX()
+                  update_gfx = true
+                  
+                  if fx_found then
+                    strips[tracks[track_select].strip][p].controls[c].fxfound = true
+                  else
+                    --FX not found
+                    strips[tracks[track_select].strip][p].controls[c].fxfound = false
+                  end
+                end            
+
+              end
+
             end
           end
         end
@@ -3905,15 +3944,31 @@
     
   end
 
-  function CheckTrack(track, strip)
+  function CheckTrack(track, strip, p, c)
   
-    local found = false
-    local trx = GetTrack(track.tracknum)
-    if trx then
-      if track.guid == reaper.GetTrackGUID(trx) then
-        return true
+    if c == nil then
+      local found = false
+      local trx = GetTrack(track.tracknum)
+      if trx then
+        if track.guid == reaper.GetTrackGUID(trx) then
+          return true
+        else
+          --Find track and update tracknum
+          for i = 0, reaper.CountTracks(0) do
+            local tr = GetTrack(i)
+            if tr ~= nil then
+              if strips[strip].track.guid == reaper.GetTrackGUID(tr) then
+                --found
+                found = true
+                strips[strip].track.tracknum = i
+                update_gfx = true
+                break 
+              end
+            end
+          end
+          PopulateTracks()
+        end
       else
-        --Find track and update tracknum
         for i = 0, reaper.CountTracks(0) do
           local tr = GetTrack(i)
           if tr ~= nil then
@@ -3925,26 +3980,52 @@
               break 
             end
           end
-        end
-        PopulateTracks()
+        end    
+        PopulateTracks()    
       end
+      return found
     else
-      for i = 0, reaper.CountTracks(0) do
-        local tr = GetTrack(i)
-        if tr ~= nil then
-          if strips[strip].track.guid == reaper.GetTrackGUID(tr) then
-            --found
-            found = true
-            strips[strip].track.tracknum = i
-            update_gfx = true
-            break 
+      --external track ctl
+      local found = false
+      local trx = GetTrack(nz(strips[strip][p].controls[c].tracknum,-2))
+      if trx then
+        if strips[strip][p].controls[c].trackguid == reaper.GetTrackGUID(trx) then
+          return true
+        else
+          --Find track and update tracknum
+          for i = 0, reaper.CountTracks(0) do
+            local tr = GetTrack(i)
+            if tr ~= nil then
+              if strips[strip][p].controls[c].trackguid == reaper.GetTrackGUID(tr) then
+                --found
+                found = true
+                strips[strip][p].controls[c].tracknum = i
+                update_gfx = true
+                break 
+              end
+            end
           end
+          PopulateTracks()
         end
-      end    
-      PopulateTracks()    
+      else
+        for i = 0, reaper.CountTracks(0) do
+          local tr = GetTrack(i)
+          if tr ~= nil then
+            if strips[strip][p].controls[c].trackguid == reaper.GetTrackGUID(tr) then
+              --found
+              found = true
+              strips[strip][p].controls[c].tracknum = i
+              update_gfx = true
+              break 
+            end
+          end
+        end    
+        PopulateTracks()    
+      end
+      return found
+      
     end
-    return found
-    
+        
   end
   
   ------------------------------------------------------------    
