@@ -4111,6 +4111,11 @@
       PopulateTracks()
       update_gfx = true
       otrkcnt = ct
+      local st = reaper.GetSelectedTrack(0,0)
+      if st == nil then
+        track_select = -1
+        update_gfx = true
+      end
     end    
     
     GUI_draw(obj, gui)
