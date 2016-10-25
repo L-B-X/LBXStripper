@@ -719,7 +719,7 @@
           + round(surface_offset.y/settings_gridsize)*settings_gridsize - round((obj.sections[10].y)/settings_gridsize)*settings_gridsize
       local w, h = gfx.getimgdim(ctl_files[knob_select].imageidx)
       ctlnum = #strips[strip][page].controls + 1
-      if dragparam.type == 'track' then
+      if dragparam.type == 'track' or last_touch_fx.tracknum == strips[strip].track.tracknum then
         strips[strip][page].controls[ctlnum] = {fxname=trackfx[trackfx_select].name,
                                                 fxguid=trackfx[trackfx_select].guid, 
                                                 fxnum=trackfx[trackfx_select].fxnum, 
@@ -2553,9 +2553,9 @@
         editbox_draw(gui, editbox)
       end
       
-      if update_surfaceedge then
-        UpdateEdges()
-      end
+      --if update_surfaceedge then
+      --  UpdateEdges()
+      --end
       
       if settings_showbars and (update_gfx or update_surface) then
         GUI_DrawBars(gui, obj)
@@ -2652,23 +2652,6 @@
              4,
              obj.sections[11].h,1)        
     
-    --[[local c = gui.color.black
-    if mode == 0 then
-      f_Get_SSV(gui.color.white)
-    elseif settings_showgrid then
-      f_Get_SSV(gui.color.white)
-    else
-      f_Get_SSV(gui.color.black)
-      c = gui.color.white        
-    end
-    gfx.rect(obj.sections[16].x,
-             obj.sections[16].y, 
-             obj.sections[16].w,
-             obj.sections[16].h, 1, 1)
-    if mode ~= 0 then
-      GUI_textC(gui,obj.sections[16],'GRID: '..settings_gridsize,c,-2)
-    end]]    
-    
     f_Get_SSV(gui.color.white)
     gfx.rect(obj.sections[12].x,
              obj.sections[12].y, 
@@ -2760,18 +2743,6 @@
                obj.sections[17].w,
                obj.sections[17].h, 1, 1)
       GUI_textC(gui,obj.sections[17],'SAVE',gui.color.black,-2)
-    --end
-        
-    --if obj.sections[19].x > obj.sections[20].x+obj.sections[20].w then
---[[      f_Get_SSV(gui.color.white)
-      gfx.rect(obj.sections[19].x,
-               obj.sections[19].y, 
-               obj.sections[19].w,
-               obj.sections[19].h, 1, 1)
-      GUI_textC(gui,obj.sections[19],'*',gui.color.black,-2)
-    --end]]
-
-    --if obj.sections[14].x > obj.sections[20].x+obj.sections[20].w then
     else
       f_Get_SSV(gui.color.black)
       gfx.rect(obj.sections[21].x-2,
@@ -2893,36 +2864,6 @@
     GUI_DrawTick(gui, 'Can mousewheel on knob', obj.sections[81], gui.color.white, settings_mousewheelknob)
                
   end
-  
-  --[[function UpdateLEdges()
-
-    local winw, winh = obj.sections[10].w , obj.sections[10].h
-    if lockh > 0 then
-      f_Get_SSV('0 0 0')
-    
-      local xywh = {x = obj.sections[10].x,
-                    y = obj.sections[10].y,
-                    w = obj.sections[10].w,
-                    h = obj.sections[10].h}
-      gfx.a = 1 
-      gfx.rect(xywh.x,
-               xywh.y, 
-               xywh.w,
-               xywh.h, 1 )
-      local xywh = {x = obj.sections[10].x,
-                    y = obj.sections[10].y,
-                    w = obj.sections[10].w,
-                    h = obj.sections[10].h}
-      gfx.a = 1 
-      gfx.rect(xywh.x,
-               xywh.y, 
-               xywh.w,
-               xywh.h, 1 )
-    
-    
-    end
-        
-  end]]
   
   function UpdateLEdges()
 
@@ -4472,10 +4413,16 @@
                 --check fx
                 
                 tr = tr2
+                local tr_found = true
                 if strips[tracks[track_select].strip][page].controls[i].tracknum ~= nil then
-                  tr = GetTrack(strips[tracks[track_select].strip][page].controls[i].tracknum)
+                  --tr = GetTrack(strips[tracks[track_select].strip][page].controls[i].tracknum)
+                  tr_found = CheckTrack(strips[tracks[track_select].strip][page].controls[i].tracknum, tracks[track_select].strip, page, i)
+                  if tr_found then
+                    tr = GetTrack(strips[tracks[track_select].strip][page].controls[i].tracknum)
+                  end 
                 end
                 
+                if tr_found then
                   local fxguid = reaper.TrackFX_GetFXGUID(tr, strips[tracks[track_select].strip][page].controls[i].fxnum)
                   if strips[tracks[track_select].strip][page].controls[i].fxguid == fxguid then
                     local v = GetParamValue2(tr,
@@ -4494,7 +4441,7 @@
                       CheckStripControls()
                     end
                   end
-
+                end
               end
             end
           end
@@ -4780,7 +4727,7 @@
                   break
                   
                 elseif MOUSE_click_RB(ctlxywh) then
-                  local mstr = 'MIDI Learn|Modulation'
+                  local mstr = 'MIDI Learn|Modulation||Open FX Window'
                   trackfxparam_select = i
                   SetParam2(true)
                   gfx.x, gfx.y = mouse.mx, mouse.my
@@ -4789,7 +4736,18 @@
                     if res == 1 then
                       reaper.Main_OnCommand(41144,0)
                     elseif res == 2 then
-                      reaper.Main_OnCommand(41143,0)                  
+                      reaper.Main_OnCommand(41143,0)
+                    elseif res == 3 then
+                      local track
+                      if strips[tracks[track_select].strip][page].controls[i].tracknum == nil then
+                        track = GetTrack(tracks[track_select].tracknum)
+                      else
+                        track = GetTrack(strips[tracks[track_select].strip][page].controls[i].tracknum)                      
+                      end
+                      local fxnum = strips[tracks[track_select].strip][page].controls[i].fxnum
+                      if not reaper.TrackFX_GetOpen(track, fxnum) then
+                        reaper.TrackFX_Show(track, fxnum, 3)
+                      end
                     end
                   end
                   break
@@ -5361,6 +5319,9 @@
               if val ~= octlval then
                 SetParam3(val)
                 local t = strips[tracks[track_select].strip].track.tracknum
+                if strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].tracknum ~= nil then
+                  t = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].tracknum
+                end
                 local f = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].fxnum
                 local p = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].param
                 val = GetParamValue(t,f,p)
@@ -6318,6 +6279,9 @@
 
       trackfxparam_select = ctl_select[1].ctl
       local tracknum = strips[tracks[track_select].strip].track.tracknum
+      if strips[tracks[track_select].strip][page].controls[trackfxparam_select].tracknum ~= nil then
+        tracknum = strips[tracks[track_select].strip][page].controls[trackfxparam_select].tracknum
+      end
       local fxnum = strips[tracks[track_select].strip][page].controls[trackfxparam_select].fxnum
       local param = strips[tracks[track_select].strip][page].controls[trackfxparam_select].param
       for i = 1, cycle_select.statecnt do      
@@ -6379,6 +6343,9 @@
     local v, v2 = 0
 
     local tracknum = strips[tracks[track_select].strip].track.tracknum
+    if strips[tracks[track_select].strip][page].controls[trackfxparam_select].tracknum ~= nil then
+      tracknum = strips[tracks[track_select].strip][page].controls[trackfxparam_select].tracknum
+    end
     local fxnum = strips[tracks[track_select].strip][page].controls[trackfxparam_select].fxnum
     local param = strips[tracks[track_select].strip][page].controls[trackfxparam_select].param
     
@@ -6459,7 +6426,9 @@
                  defval = strips[tracks[track_select].strip][page].controls[c].defval,
                  maxdp = strips[tracks[track_select].strip][page].controls[c].maxdp,
                  cycledata = strips[tracks[track_select].strip][page].controls[c].cycledata,
-                 id = strips[tracks[track_select].strip][page].controls[c].id
+                 id = strips[tracks[track_select].strip][page].controls[c].id,
+                 tracknum = strips[tracks[track_select].strip][page].controls[c].tracknum,
+                 trackguid = strips[tracks[track_select].strip][page].controls[c].trackguid
                  }
     return tbl
   end
@@ -7170,12 +7139,7 @@
     
     octlval = -1
     otrkcnt = -1
-    ofxcnt = -1
-    
-    lockx = false
-    locky = false
-    lockw, olockw = 0, 0
-    lockh, olockh = 0, 0
+    ofxcnt = -1    
   
     PopulateGFX()
     PopulateControls()
@@ -7213,6 +7177,11 @@
 
   SCRIPT = 'LBX_STRIPPER'
   VERSION = 0.91
+
+  lockx = false
+  locky = false
+  lockw, olockw = 0, 0
+  lockh, olockh = 0, 0
 
   resource_path = reaper.GetResourcePath().."/Scripts/LBX/LBXCS_resources/"
   controls_path = resource_path.."controls/"
