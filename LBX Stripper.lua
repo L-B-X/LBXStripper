@@ -1669,7 +1669,7 @@
     GUI_DrawSliderH(gui, 'OFFSET', obj.sections[56], gui.color.black, gui.color.white, F_limit((textoff_select+150)/300,0,1))
     GUI_DrawSliderH(gui, 'VAL OFF', obj.sections[65], gui.color.black, gui.color.white, F_limit((textoffval_select+50)/100,0,1))
     GUI_DrawSliderH(gui, 'F SIZE', obj.sections[58], gui.color.black, gui.color.white, (textsize_select+2)/35)
-    GUI_DrawSliderH(gui, 'DEF VAL', obj.sections[57], gui.color.black, gui.color.white, defval_select)
+    GUI_DrawSliderH(gui, 'DEF VAL', obj.sections[57], gui.color.black, gui.color.white, F_limit(defval_select,0,1))
     GUI_DrawButton(gui, 'SET', obj.sections[51], gui.color.white, gui.color.black, true)
     GUI_DrawButton(gui, 'EDIT NAME', obj.sections[59], gui.color.white, gui.color.black, true)
     
@@ -3121,6 +3121,7 @@
   --nv*(max - min) + min = val
   function DenormalizeValue(track, fxnum, paramnum, val)
     local min, max = GetParamMinMax(track,fxnum,paramnum)
+    --DBG(min..'  '..max)
     return val*(max - min) + min
   end
   
@@ -5282,6 +5283,7 @@
                   show_paramname = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].show_paramname
                   show_paramval = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].show_paramval
                   textoff_select = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].textoff
+                  textoffval_select = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].textoffval
                   textsize_select = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].textsize
                   defval_select = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].defval
                   maxdp_select = nz(strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].maxdp,-1)                  
@@ -5493,6 +5495,7 @@
               show_paramname = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].show_paramname
               show_paramval = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].show_paramval
               textoff_select = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].textoff
+              textoffval_select = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].textoffval
               textsize_select = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].textsize
               defval_select = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].defval
               maxdp_select = nz(strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].maxdp,-1)
