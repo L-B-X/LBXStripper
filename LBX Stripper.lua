@@ -13,7 +13,7 @@
   --------------------------------------------
         
   submode_table = {'FX PARAMS','GRAPHICS','STRIPS'}
-  ctltype_table = {'KNOB/SLIDER','BUTTON','BUTTON INV','CYCLE BUTTON','METER'}
+  ctltype_table = {'KNOB/SLIDER','BUTTON','BUTTON INV','CYCLE BUTTON','METER','MEM BUTTON'}
 
   contexts = {updatefreq = 0,
               lockw = 1,
@@ -787,6 +787,8 @@
                                                                     trackfxparam_select, nil),
                                                 maxdp = maxdp_select,
                                                 cycledata = {statecnt = 0, mapptof = false,{}},
+                                                membtn = {state = false,
+                                                          mem = nil},
                                                 id = nil
                                                 }
       else
@@ -826,6 +828,8 @@
                                                                     last_touch_fx.paramnum, nil),
                                                 maxdp = maxdp_select,
                                                 cycledata = {statecnt = 0, mapptof = false,{}},
+                                                membtn = {state = false,
+                                                          mem = nil},
                                                 id = nil,
                                                 tracknum = last_touch_fx.tracknum,
                                                 trackguid = last_touch_fx.trguid
@@ -2060,6 +2064,20 @@
                     val2 = F_limit(nz(strips[tracks[track_select].strip][page].controls[i].cycledata.pos,0),0,frames-1)
                   end
                 end
+              elseif ctltype == 6 then
+                --mem button
+                if strips[tracks[track_select].strip][page].controls[i].membtn == nil then
+                  strips[tracks[track_select].strip][page].controls[i].membtn = {state = false, mem = 0}
+                end
+                local v3 = strips[tracks[track_select].strip][page].controls[i].val
+                if v3 ~= strips[tracks[track_select].strip][page].controls[i].defval then
+                  strips[tracks[track_select].strip][page].controls[i].membtn = {state = false, mem = v3}
+                end
+                if strips[tracks[track_select].strip][page].controls[i].membtn.state == true then
+                  val2 = frames-1
+                else
+                  val2 = 0                
+                end
               end
               
               if not found then
@@ -3234,6 +3252,29 @@
       d = dvaloffset(d, dvoff)
     end
     return d
+  end
+
+  function GetParamValue_Ctl(c)
+    if c then
+      local t = strips[tracks[track_select].strip].track.tracknum
+      if strips[tracks[track_select].strip][page].controls[c].tracknum ~= nil then
+        t = strips[tracks[track_select].strip][page].controls[c].tracknum
+      end
+      local f = strips[tracks[track_select].strip][page].controls[c].fxnum
+      local p = strips[tracks[track_select].strip][page].controls[c].param
+      track = GetTrack(t)
+      
+      local v, min, max = reaper.TrackFX_GetParam(track, f, p)
+      if strips[tracks[track_select].strip][page].controls[c].minov then
+        min = strips[tracks[track_select].strip][page].controls[c].minov
+      end
+      if strips[tracks[track_select].strip][page].controls[c].maxov then
+        max = strips[tracks[track_select].strip][page].controls[c].maxov
+      end
+      return normalize(min, max, v)
+    else
+      return 0
+    end
   end
     
   function GetParamValue(tracknum,fxnum,paramnum,c)
@@ -5020,6 +5061,22 @@
                       update_ctls = true
                     end
                     noscroll = true
+                  elseif ctltype == 6 then
+                    --mem button
+                    trackfxparam_select = i
+                    if strips[tracks[track_select].strip][page].controls[i].membtn.state == nil then
+                      strips[tracks[track_select].strip][page].controls[i].membtn.state = false
+                    end
+                    strips[tracks[track_select].strip][page].controls[i].membtn.state = not strips[tracks[track_select].strip][page].controls[i].membtn.state
+                    if strips[tracks[track_select].strip][page].controls[i].membtn.state == true then
+                      strips[tracks[track_select].strip][page].controls[i].membtn.mem = strips[tracks[track_select].strip][page].controls[i].val
+                      strips[tracks[track_select].strip][page].controls[i].val = strips[tracks[track_select].strip][page].controls[i].defval
+                      SetParam()
+                    else
+                      strips[tracks[track_select].strip][page].controls[i].val = strips[tracks[track_select].strip][page].controls[i].membtn.mem
+                      SetParam()
+                    end
+                    update_ctls = true                    
                   end
                   break
                   
@@ -5425,6 +5482,14 @@
                 EditCtlName()
                 update_gfx = true
               end
+            end
+            
+            if MOUSE_click_RB(obj.sections[57]) then
+              defval_select = GetParamValue_Ctl(ctl_select[1].ctl)
+              for i = 1, #ctl_select do
+                strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].defval = GetParamValue_Ctl(ctl_select[i].ctl)
+              end
+              update_gfx = true
             end
           
             if MOUSE_click(obj.sections[51]) then
@@ -6873,7 +6938,9 @@
                  trackguid = strips[tracks[track_select].strip][page].controls[c].trackguid,
                  dvaloffset = strips[tracks[track_select].strip][page].controls[c].dvaloffset,
                  minov = strips[tracks[track_select].strip][page].controls[c].minov,
-                 maxov = strips[tracks[track_select].strip][page].controls[c].maxov
+                 maxov = strips[tracks[track_select].strip][page].controls[c].maxov,
+                 membtn = {state = strips[tracks[track_select].strip][page].controls[c].membtn.state,
+                           mem = strips[tracks[track_select].strip][page].controls[c].membtn.mem}
                  }
     return tbl
   end
@@ -7184,6 +7251,9 @@
                     strips[ss][p].controls[c].dvaloffset = GPES(key..'dvaloffset',true)
                     strips[ss][p].controls[c].minov = GPES(key..'minov',true)
                     strips[ss][p].controls[c].maxov = GPES(key..'maxov',true)
+                    strips[ss][p].controls[c].membtn = {state = tobool(nz(GPES(key..'memstate',true),false)),
+                                                        mem = tonumber(nz(GPES(key..'memmem'),0))
+                                                        }
                     
                     strips[ss][p].controls[c].cycledata.statecnt = tonumber(nz(GPES(key..'cycledata_statecnt',true),0))
                     strips[ss][p].controls[c].cycledata.mapptof = tobool(nz(GPES(key..'cycledata_mapptof',true),false))
@@ -7440,6 +7510,8 @@
 
                 reaper.SetProjExtState(0,SCRIPT,key..'tracknum',nz(strips[s][p].controls[c].tracknum,''))
                 reaper.SetProjExtState(0,SCRIPT,key..'trackguid',nz(strips[s][p].controls[c].trackguid,''))
+                reaper.SetProjExtState(0,SCRIPT,key..'memstate',tostring(nz(strips[s][p].controls[c].membtn.state,false)))
+                reaper.SetProjExtState(0,SCRIPT,key..'memmem',nz(strips[s][p].controls[c].membtn.mem,0))
 
                 if strips[s][p].controls[c].cycledata and strips[s][p].controls[c].cycledata.statecnt then
                   reaper.SetProjExtState(0,SCRIPT,key..'cycledata_statecnt',nz(strips[s][p].controls[c].cycledata.statecnt,0))
