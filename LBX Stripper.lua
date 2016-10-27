@@ -1863,7 +1863,7 @@
       if s and e then  
         local n = string.sub(num,s,e)
         if n and tonumber(n) then
-          res = num + dvoff
+          res = tonumber(n) + dvoff
           return string.sub(num,1,s-1) .. res .. string.sub(num,e+1)
         else
           return num
@@ -1873,7 +1873,7 @@
         if s and e then  
           local n = string.sub(num,s,e)
           if n and tonumber(n) then
-            res = num + dvoff
+            res = tonumber(n) + dvoff
             return string.sub(num,1,s-1) .. res .. string.sub(num,e+1)
           else
             return num
