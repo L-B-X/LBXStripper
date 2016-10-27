@@ -2069,8 +2069,8 @@
                 if strips[tracks[track_select].strip][page].controls[i].membtn == nil then
                   strips[tracks[track_select].strip][page].controls[i].membtn = {state = false, mem = 0}
                 end
-                local v3 = strips[tracks[track_select].strip][page].controls[i].val
-                if v3 ~= strips[tracks[track_select].strip][page].controls[i].defval then
+                local v3 = GetParamValue_Ctl(i)--strips[tracks[track_select].strip][page].controls[i].val
+                if tostring(v3) ~= tostring(strips[tracks[track_select].strip][page].controls[i].defval) then
                   strips[tracks[track_select].strip][page].controls[i].membtn = {state = false, mem = v3}
                 end
                 if strips[tracks[track_select].strip][page].controls[i].membtn.state == true then
@@ -5084,7 +5084,7 @@
                   end
                   break
                   
-                elseif MOUSE_click_RB(ctlxywh) then
+                elseif MOUSE_click_RB(ctlxywh) and mouse.ctrl == false then
                   local mstr = 'MIDI Learn|Modulation||Open FX Window'
                   trackfxparam_select = i
                   SetParam2(true)
@@ -5118,8 +5118,7 @@
                     SetParam()
                     strips[tracks[track_select].strip][page].controls[i].dirty = true
                     update_ctls = true
-                  elseif ctltype == 4 then
-                  
+                  elseif ctltype == 4 then                  
                     strips[tracks[track_select].strip][page].controls[i].cycledata.pos = 1
                     if strips[tracks[track_select].strip][page].controls[i].cycledata.pos <=     
                               strips[tracks[track_select].strip][page].controls[i].cycledata.statecnt then
@@ -5130,6 +5129,8 @@
                       strips[tracks[track_select].strip][page].controls[i].dirty = true
                     end                  
                     update_ctls = true
+                  elseif ctltype == 6 then
+                    strips[tracks[track_select].strip][page].controls[i].defval = GetParamValue_Ctl(i)                                    
                   end
                   noscroll = true
                   break
@@ -7256,7 +7257,7 @@
                     strips[ss][p].controls[c].minov = GPES(key..'minov',true)
                     strips[ss][p].controls[c].maxov = GPES(key..'maxov',true)
                     strips[ss][p].controls[c].membtn = {state = tobool(nz(GPES(key..'memstate',true),false)),
-                                                        mem = tonumber(nz(GPES(key..'memmem'),0))
+                                                        mem = tonumber(nz(GPES(key..'memmem',true),0))
                                                         }
                     
                     strips[ss][p].controls[c].cycledata.statecnt = tonumber(nz(GPES(key..'cycledata_statecnt',true),0))
@@ -7516,7 +7517,6 @@
                 reaper.SetProjExtState(0,SCRIPT,key..'trackguid',nz(strips[s][p].controls[c].trackguid,''))
                 reaper.SetProjExtState(0,SCRIPT,key..'memstate',tostring(nz(strips[s][p].controls[c].membtn.state,false)))
                 reaper.SetProjExtState(0,SCRIPT,key..'memmem',nz(strips[s][p].controls[c].membtn.mem,0))
-
                 if strips[s][p].controls[c].cycledata and strips[s][p].controls[c].cycledata.statecnt then
                   reaper.SetProjExtState(0,SCRIPT,key..'cycledata_statecnt',nz(strips[s][p].controls[c].cycledata.statecnt,0))
                   reaper.SetProjExtState(0,SCRIPT,key..'cycledata_mapptof',tostring(nz(strips[s][p].controls[c].cycledata.mapptof,false)))
