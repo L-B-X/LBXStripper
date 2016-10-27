@@ -3888,10 +3888,14 @@
       strips[strip][page].controls[cc].wsc = stripdata.strip.controls[j].w*stripdata.strip.controls[j].scale
       strips[strip][page].controls[cc].hsc = stripdata.strip.controls[j].ctl_info.cellh*stripdata.strip.controls[j].scale
       
+      
       --compatibility
       if strips[strip][page].controls[cc].maxdp == nil then strips[strip][page].controls[cc].maxdp = -1 end
       if strips[strip][page].controls[cc].cycledata == nil then
         strips[strip][page].controls[cc].cycledata = {statecnt = 0, {}}
+      end
+      if strips[strip][page].controls[cc].membtn == nil then
+        strips[strip][page].controls[cc].membtn = {state = false, mem = 0}
       end
     end
     
