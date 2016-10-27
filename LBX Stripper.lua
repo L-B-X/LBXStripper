@@ -734,7 +734,7 @@
           + round(surface_offset.y/settings_gridsize)*settings_gridsize - round((obj.sections[10].y)/settings_gridsize)*settings_gridsize
       local w, h = gfx.getimgdim(ctl_files[knob_select].imageidx)
       ctlnum = #strips[strip][page].controls + 1
-      if dragparam.type == 'track' or last_touch_fx.tracknum == strips[strip].track.tracknum then
+      if dragparam.type == 'track' then
         strips[strip][page].controls[ctlnum] = {fxname=trackfx[trackfx_select].name,
                                                 fxguid=trackfx[trackfx_select].guid, 
                                                 fxnum=trackfx[trackfx_select].fxnum, 
@@ -812,7 +812,11 @@
                                                 id = nil,
                                                 tracknum = last_touch_fx.tracknum,
                                                 trackguid = last_touch_fx.trguid
-                                                }      
+                                                }
+        if last_touch_fx.tracknum == strips[strip].track.tracknum then
+          strips[strip][page].controls[ctlnum].tracknum = nil
+          strips[strip][page].controls[ctlnum].trackguid = nil 
+        end      
       end
                                               
     end  
