@@ -36,7 +36,9 @@
               draggfx2 = 18,
               dragstrip = 19,
               cycleknob = 20,
-              dragparamlrn = 21
+              dragparamlrn = 21,
+              minov = 22,
+              maxov = 23
               }
               
   ---------------------------------------------
@@ -425,7 +427,7 @@
                            h = ch}
 
       local kw,_ = gfx.getimgdim(0)
-      local kh = ctl_files[def_knob].cellh
+      local kh = defctls[def_knob].cellh
       obj.sections[101] = {x = obj.sections[100].x+obj.sections[100].w/2-kw/2,
                            y = obj.sections[100].y+butt_h/2,
                            w = kw,
@@ -489,13 +491,26 @@
                           h = butt_h/2+8}
 
       obj.sections[126] = {x = obj.sections[45].x+60,
-                          y = obj.sections[45].y+butt_h+10 + (butt_h/2+4 + 10) * 4,
-                          w = obj.sections[45].w-70,
-                          h = butt_h/2+8}
-      obj.sections[127] = {x = obj.sections[45].x+60,
                           y = obj.sections[45].y+butt_h+10 + (butt_h/2+4 + 10) * 5,
                           w = obj.sections[45].w-70,
                           h = butt_h/2+8}
+      obj.sections[127] = {x = obj.sections[45].x+60,
+                          y = obj.sections[45].y+butt_h+10 + (butt_h/2+4 + 10) * 6,
+                          w = obj.sections[45].w-70,
+                          h = butt_h/2+8}
+      local kwh = defctls[def_knobsm].cellh
+      obj.sections[128] = {x = obj.sections[45].x+15,
+                           y = obj.sections[45].y+butt_h+20 + (butt_h/2+4 + 10) * 1,
+                          w = kwh,
+                          h = kwh}
+      obj.sections[129] = {x = obj.sections[45].x+10 + kwh+20,
+                           y = obj.sections[45].y+butt_h+20 + (butt_h/2+4 + 10) * 1,
+                          w = kwh,
+                          h = kwh}
+      obj.sections[130] = {x = obj.sections[45].x+20,
+                          y = obj.sections[45].y+butt_h+10 + (butt_h/2+4 + 10) * 4,
+                          w = obj.sections[45].w-40,
+                          h = butt_h/2+4}
       
     return obj
   end
@@ -582,6 +597,7 @@
   end
   
   function GUI_textsm_LJ(gui, xywh, text, c, offs, limitx)
+        text = nz(text,'')
         f_Get_SSV(c)  
         gfx.a = 1 
         gfx.setfont(1, gui.fontname, gui.fontsz_knob + offs)
@@ -615,6 +631,7 @@
   end
 
   function GUI_textC_LIM(gui, xywh, text, color, offs)
+        text = nz(text,'')
         f_Get_SSV(color)  
         gfx.a = 1 
         gfx.setfont(1, gui.fontname, gui.fontsz_knob + offs)
@@ -764,10 +781,10 @@
                                                 textsize = textsize_select,
                                                 val = GetParamValue(tracks[track_select].tracknum,
                                                                     trackfx[trackfx_select].fxnum,
-                                                                    trackfxparam_select),
+                                                                    trackfxparam_select, nil),
                                                 defval = GetParamValue(tracks[track_select].tracknum,
                                                                     trackfx[trackfx_select].fxnum,
-                                                                    trackfxparam_select),
+                                                                    trackfxparam_select, nil),
                                                 maxdp = maxdp_select,
                                                 cycledata = {statecnt = 0, mapptof = false,{}},
                                                 id = nil
@@ -803,10 +820,10 @@
                                                 textsize = textsize_select,
                                                 val = GetParamValue(last_touch_fx.tracknum,
                                                                     last_touch_fx.fxnum,
-                                                                    last_touch_fx.paramnum),
+                                                                    last_touch_fx.paramnum, nil),
                                                 defval = GetParamValue(last_touch_fx.tracknum,
                                                                     last_touch_fx.fxnum,
-                                                                    last_touch_fx.paramnum),
+                                                                    last_touch_fx.paramnum, nil),
                                                 maxdp = maxdp_select,
                                                 cycledata = {statecnt = 0, mapptof = false,{}},
                                                 id = nil,
@@ -896,15 +913,27 @@
         if kf == '__default.knb' then
           ctl_files[c].imageidx = 0
           knob_select = c
-          def_knob = c
-          --def_knob = {}
-          --table.insert(def_knob,ctl_files[c])
-          --def_knob[1].imageidx = 1019
+          --def_knob = c
         end
         c = c + 1
       end
       i=i+1
       kf = reaper.EnumerateFiles(controls_path,i)
+    end
+    
+  end
+
+  function LoadControl(iidx, fn)
+
+    if string.sub(fn,string.len(fn)-3) == '.knb' then
+      local file
+      file=io.open(controls_path..fn,"r")
+      local content=file:read("*a")
+      file:close()
+      
+      defctls[iidx] = unpickle(content)
+      gfx.loadimg(iidx,controls_path..defctls[iidx].fn)
+      return iidx
     end
     
   end
@@ -1554,10 +1583,10 @@
              xywh.h, 1 )
     GUI_textC(gui,xywh,'CYCLE OPTS',gui.color.black,-2)
   
-    local p = math.floor(cycle_select.val*(ctl_files[def_knob].frames-1))
+    local p = F_limit(math.floor(cycle_select.val*(defctls[def_knob].frames-1)),0,defctls[def_knob].frames-1)
     local kw, _ = gfx.getimgdim(0)
-    local kh = ctl_files[def_knob].cellh
-    gfx.blit(0,1,0,0,p*kh,kw,kh,obj.sections[101].x,obj.sections[101].y)
+    local kh = defctls[def_knob].cellh
+    gfx.blit(def_knob,1,0,0,p*kh,kw,kh,obj.sections[101].x,obj.sections[101].y)
     
     GUI_DrawButton(gui, cycle_select.statecnt, obj.sections[102], gui.color.white, gui.color.black, true, 'STATES')
     GUI_DrawButton(gui, 'AUTO', obj.sections[104], gui.color.white, gui.color.black, true)
@@ -1682,7 +1711,7 @@
         end
         local w, _ = gfx.getimgdim(iidx)
         gfx.a = 1
-        gfx.blit(iidx,scale_select,0, 0, ctl_files[knob_select].cellh*math.floor(ctl_files[knob_select].frames*0.75), w, ctl_files[knob_select].cellh, xywh.x + (xywh.w/2-(w*scale_select)/2), xywh.y + (62.5 - (ctl_files[knob_select].cellh*scale_select)/2))
+        gfx.blit(iidx,scale_select,0, 0, ctl_files[knob_select].cellh*math.floor((ctl_files[knob_select].frames-1)*0.75), w, ctl_files[knob_select].cellh, xywh.x + (xywh.w/2-(w*scale_select)/2), xywh.y + (62.5 - (ctl_files[knob_select].cellh*scale_select)/2))
         xywh = {x = obj.sections[45].x,
                 y = obj.sections[45].y+butt_h,
                 w = obj.sections[45].w,
@@ -1735,8 +1764,15 @@
       if maxov_select == nil then
         maxov_select = max
       end
-      GUI_DrawButton(gui, minov_select, obj.sections[126], gui.color.white, gui.color.black, true, 'MIN OV')
-      GUI_DrawButton(gui, maxov_select, obj.sections[127], gui.color.white, gui.color.black, true, 'MAX OV')
+      GUI_DrawButton(gui, minov_select, obj.sections[126], gui.color.white, gui.color.black, true, 'MIN OV', true)
+      GUI_DrawButton(gui, maxov_select, obj.sections[127], gui.color.white, gui.color.black, true, 'MAX OV', true)
+      GUI_DrawButton(gui, nz(ov_disp,''), obj.sections[130], gui.color.black, gui.color.white, true, '')
+
+      local pmin = normalize(min, max, minov_select)
+      local pmax = normalize(min, max, maxov_select)
+      local w, _ = gfx.getimgdim(def_knobsm)
+      gfx.blit(def_knobsm,1,0, 0, defctls[def_knobsm].cellh*math.floor((defctls[def_knobsm].frames-1)*pmin), w, defctls[def_knobsm].cellh, obj.sections[128].x, obj.sections[128].y)
+      gfx.blit(def_knobsm,1,0, 0, defctls[def_knobsm].cellh*math.floor((defctls[def_knobsm].frames-1)*pmax), w, defctls[def_knobsm].cellh, obj.sections[129].x, obj.sections[129].y)
     
     end
         
@@ -1765,7 +1801,7 @@
     
   end
 
-  function GUI_DrawButton(gui, t, b, colb, colt, v, opttxt)
+  function GUI_DrawButton(gui, t, b, colb, colt, v, opttxt, limit)
 
     if opttxt then
       local xywh = {x=b.x-10,y=b.y-2,w=1,h=b.h}
@@ -1786,8 +1822,11 @@
       colt = colb
     end
     local xywh = {x=b.x,y=b.y-1,w=b.w,h=b.h}
-    GUI_textC(gui,xywh,t,colt,-4)
-  
+    if limit~=nil and limit==true then
+      GUI_textsm_LJ(gui,xywh,t,colt,-4,b.w)
+    else
+      GUI_textC(gui,xywh,t,colt,-4)
+    end
   end
   
   function GUI_DrawTick(gui, t, b, col, v)
@@ -1989,7 +2028,7 @@
                 if track == nil then return end
               end
     
-              local v2 = GetParamValue2(track,fxnum,param)
+              local v2 = GetParamValue2(track,fxnum,param,i)
               
               local val2 = F_limit(round(frames*v2),0,frames-1)
               
@@ -3176,6 +3215,18 @@
       
   ------------------------------------------------------------
 
+  function GetParamDisp_Ctl(c)
+    local t = strips[tracks[track_select].strip].track.tracknum
+    if strips[tracks[track_select].strip][page].controls[c].tracknum ~= nil then
+      t = strips[tracks[track_select].strip][page].controls[c].tracknum
+    end
+    local f = strips[tracks[track_select].strip][page].controls[c].fxnum
+    local p = strips[tracks[track_select].strip][page].controls[c].param
+    local dvoff = strips[tracks[track_select].strip][page].controls[c].dvaloffset
+    local dval = GetParamDisp(t, f, p, dvoff)
+    return dval
+  end
+    
   function GetParamDisp(tracknum,fxnum,paramnum, dvoff)
     track = GetTrack(tracknum)
     local _, d = reaper.TrackFX_GetFormattedParamValue(track, fxnum, paramnum, "")
@@ -3185,16 +3236,32 @@
     return d
   end
     
-  function GetParamValue(tracknum,fxnum,paramnum)
+  function GetParamValue(tracknum,fxnum,paramnum,c)
     track = GetTrack(tracknum)
     --return reaper.TrackFX_GetParamNormalized(track, fxnum, paramnum)
     local v, min, max = reaper.TrackFX_GetParam(track, fxnum, paramnum)
+    if c then
+      if strips[tracks[track_select].strip][page].controls[c].minov then
+        min = strips[tracks[track_select].strip][page].controls[c].minov
+      end
+      if strips[tracks[track_select].strip][page].controls[c].maxov then
+        max = strips[tracks[track_select].strip][page].controls[c].maxov
+      end
+    end
     return normalize(min, max, v)
   end
 
-  function GetParamValue2(track,fxnum,paramnum)
+  function GetParamValue2(track,fxnum,paramnum,c)
     --return reaper.TrackFX_GetParamNormalized(track, fxnum, paramnum)
     local v, min, max = reaper.TrackFX_GetParam(track, fxnum, paramnum)
+    if c then
+      if strips[tracks[track_select].strip][page].controls[c].minov then
+        min = strips[tracks[track_select].strip][page].controls[c].minov
+      end
+      if strips[tracks[track_select].strip][page].controls[c].maxov then
+        max = strips[tracks[track_select].strip][page].controls[c].maxov
+      end
+    end  
     return normalize(min, max, v)
   end
   
@@ -3222,14 +3289,30 @@
     end
   end
   
+  function GetParamMinMax_ctl(c)
+    local t = strips[tracks[track_select].strip].track.tracknum
+    if strips[tracks[track_select].strip][page].controls[c].tracknum ~= nil then
+      t = strips[tracks[track_select].strip][page].controls[c].tracknum
+    end
+    local f = strips[tracks[track_select].strip][page].controls[c].fxnum
+    local p = strips[tracks[track_select].strip][page].controls[c].param
+    local track = GetTrack(t)
+    local min, max = GetParamMinMax(track,nz(f,-1),p)
+    if strips[tracks[track_select].strip][page].controls[c].minov then
+      min = strips[tracks[track_select].strip][page].controls[c].minov
+    end
+    if strips[tracks[track_select].strip][page].controls[c].maxov then
+      max = strips[tracks[track_select].strip][page].controls[c].maxov
+    end
+    return min, max
+  end
+  
   function normalize(min, max, val)
     return (val - min)/(max - min)
   end
   
   --nv*(max - min) + min = val
-  function DenormalizeValue(track, fxnum, paramnum, val)
-    local min, max = GetParamMinMax(track,fxnum,paramnum)
-    --DBG(min..'  '..max)
+  function DenormalizeValue(min, max, val)
     return val*(max - min) + min
   end
   
@@ -3250,8 +3333,14 @@
       strips[tracks[track_select].strip][page].controls[trackfxparam_select].dirty = true
       --reaper.TrackFX_SetParamNormalized(track, nz(fxnum,-1), param, 
       --                      val)
-      
-      reaper.TrackFX_SetParam(track, nz(fxnum,-1), param, DenormalizeValue(track, nz(fxnum,-1), param, val))
+      local min, max = GetParamMinMax(track,nz(fxnum,-1),param)
+      if strips[tracks[track_select].strip][page].controls[trackfxparam_select].minov then
+        min = strips[tracks[track_select].strip][page].controls[trackfxparam_select].minov
+      end
+      if strips[tracks[track_select].strip][page].controls[trackfxparam_select].maxov then
+        max = strips[tracks[track_select].strip][page].controls[trackfxparam_select].maxov
+      end
+      reaper.TrackFX_SetParam(track, nz(fxnum,-1), param, DenormalizeValue(min, max, val))
     end
       
   end
@@ -3270,15 +3359,21 @@
       local fxnum = strips[tracks[track_select].strip][page].controls[trackfxparam_select].fxnum
       local param = strips[tracks[track_select].strip][page].controls[trackfxparam_select].param
       strips[tracks[track_select].strip][page].controls[trackfxparam_select].dirty = true
+      local min, max = GetParamMinMax(track,nz(fxnum,-1),param)
+      if strips[tracks[track_select].strip][page].controls[trackfxparam_select].minov then
+        min = strips[tracks[track_select].strip][page].controls[trackfxparam_select].minov
+      end
+      if strips[tracks[track_select].strip][page].controls[trackfxparam_select].maxov then
+        max = strips[tracks[track_select].strip][page].controls[trackfxparam_select].maxov
+      end
       if force and force == true then
 --        reaper.TrackFX_SetParamNormalized(track, nz(fxnum,-1), param, 
 --                              1-math.abs(val-0.1))      
-        reaper.TrackFX_SetParam(track, nz(fxnum,-1), param, DenormalizeValue(track, nz(fxnum,-1), param, 1-math.abs(val-0.1)))
+        reaper.TrackFX_SetParam(track, nz(fxnum,-1), param, DenormalizeValue(min, max, 1-math.abs(val-0.1)))
       end
       --reaper.TrackFX_SetParamNormalized(track, nz(fxnum,-1), param, 
       --                      val)
-      reaper.TrackFX_SetParam(track, nz(fxnum,-1), param, DenormalizeValue(track, nz(fxnum,-1), param, val))
-
+      reaper.TrackFX_SetParam(track, nz(fxnum,-1), param, DenormalizeValue(min, max, val))
     end
       
   end
@@ -3296,15 +3391,48 @@
       end
       local fxnum = strips[tracks[track_select].strip][page].controls[trackfxparam_select].fxnum
       local param = strips[tracks[track_select].strip][page].controls[trackfxparam_select].param
+      local min, max = GetParamMinMax(track,nz(fxnum,-1),param)
+      if strips[tracks[track_select].strip][page].controls[trackfxparam_select].minov then
+        min = strips[tracks[track_select].strip][page].controls[trackfxparam_select].minov
+      end
+      if strips[tracks[track_select].strip][page].controls[trackfxparam_select].maxov then
+        max = strips[tracks[track_select].strip][page].controls[trackfxparam_select].maxov
+      end
       --strips[tracks[track_select].strip][page].controls[trackfxparam_select].dirty = true
       --reaper.TrackFX_SetParamNormalized(track, nz(fxnum,-1), param, 
       --                      v)      
-      reaper.TrackFX_SetParam(track, nz(fxnum,-1), param, DenormalizeValue(track, nz(fxnum,-1), param, v))
+      reaper.TrackFX_SetParam(track, nz(fxnum,-1), param, DenormalizeValue(min, max, v))
     
     end
       
   end
   
+  function SetParam4(v)
+    
+    if strips and strips[tracks[track_select].strip] and strips[tracks[track_select].strip][page].controls[trackfxparam_select] then
+      if strips[tracks[track_select].strip][page].controls[trackfxparam_select].tracknum == nil then
+        track = GetTrack(strips[tracks[track_select].strip].track.tracknum)
+      else
+        track = GetTrack(strips[tracks[track_select].strip][page].controls[trackfxparam_select].tracknum)
+      end
+      local fxnum = strips[tracks[track_select].strip][page].controls[trackfxparam_select].fxnum
+      local param = strips[tracks[track_select].strip][page].controls[trackfxparam_select].param
+      local min, max = GetParamMinMax(track,nz(fxnum,-1),param)
+      --[[if strips[tracks[track_select].strip][page].controls[trackfxparam_select].minov then
+        min = strips[tracks[track_select].strip][page].controls[trackfxparam_select].minov
+      end
+      if strips[tracks[track_select].strip][page].controls[trackfxparam_select].maxov then
+        max = strips[tracks[track_select].strip][page].controls[trackfxparam_select].maxov
+      end]]
+      --strips[tracks[track_select].strip][page].controls[trackfxparam_select].dirty = true
+      --reaper.TrackFX_SetParamNormalized(track, nz(fxnum,-1), param, 
+      --                      v)
+      reaper.TrackFX_SetParam(track, nz(fxnum,-1), param, DenormalizeValue(min, max, v))
+    
+    end
+      
+  end
+    
   ------------------------------------------------------------    
 
   function Lasso_Select()
@@ -4441,6 +4569,15 @@
     maxdp_select = nz(strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].maxdp,-1)                  
     dvaloff_select = nz(strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].dvaloffset,'')                  
     cycle_select = Cycle_CopySelectIn(ctl_select[1].ctl)
+    local min, max = GetParamMinMax_ctl(ctl_select[1].ctl)
+    if strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].minov then
+      min = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].minov
+    end
+    if strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].maxov then
+      max = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].maxov
+    end
+    minov_select = min
+    maxov_select = max
   end
     
   ------------------------------------------------------------    
@@ -4584,7 +4721,7 @@
                   if strips[tracks[track_select].strip][page].controls[i].fxguid == fxguid then
                     local v = GetParamValue2(tr,
                                              strips[tracks[track_select].strip][page].controls[i].fxnum,
-                                             strips[tracks[track_select].strip][page].controls[i].param)
+                                             strips[tracks[track_select].strip][page].controls[i].param, i)
                     if strips[tracks[track_select].strip][page].controls[i].val ~= v then
                       strips[tracks[track_select].strip][page].controls[i].val = v
                       strips[tracks[track_select].strip][page].controls[i].dirty = true
@@ -5148,7 +5285,6 @@
         end
         
         if show_paramlearn then
-          --DBG('running')
           last_touch_fx = GetLastTouchedFX(last_touch_fx)        
         end
         
@@ -5172,6 +5308,10 @@
               ksel_size = {w = 50, h = 50}
             end
             mouse.context = contexts.dragparamlrn
+          elseif MOUSE_click_RB(obj.sections[115]) then
+            show_paramlearn = false
+            ctl_select = nil
+            update_gfx = true
           end          
         
         end
@@ -5328,6 +5468,35 @@
               EditDValOffset()
             end
           
+            if mouse.context == nil and MOUSE_click(obj.sections[128]) then
+              mouse.context = contexts.minov
+              trackfxparam_select = ctl_select[1].ctl
+              ctlpos = minov_select
+              mouse.slideoff = obj.sections[128].y+obj.sections[128].h/2 - mouse.my
+              oms = mouse.shift
+              for i = 1, #ctl_select do
+                local min, max = GetParamMinMax_ctl(ctl_select[i].ctl)
+                ctl_select[i].denorm_defval = DenormalizeValue(min,
+                                                               max,
+                                                               strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].defval)
+              end
+              minov_act = 'minov'
+              
+            elseif mouse.context == nil and MOUSE_click(obj.sections[129]) then 
+              mouse.context = contexts.maxov 
+              trackfxparam_select = ctl_select[1].ctl
+              ctlpos = maxov_select
+              mouse.slideoff = obj.sections[129].y+obj.sections[129].h/2 - mouse.my
+              oms = mouse.shift
+              for i = 1, #ctl_select do
+                local min, max = GetParamMinMax_ctl(ctl_select[i].ctl)
+                ctl_select[i].denorm_defval = DenormalizeValue(min,
+                                                               max,
+                                                               strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].defval)
+              end
+              maxov_act = 'maxov'
+
+            end
           
           end
         
@@ -5471,7 +5640,87 @@
           end
         end
         
-        if mouse.context and mouse.context == contexts.cycleknob then
+        if mouse.context and mouse.context == contexts.minov then
+          local val = MOUSE_slider(obj.sections[128],mouse.slideoff)
+          if val ~= nil then
+            if oms ~= mouse.shift then
+              oms = mouse.shift
+              ctlpos = minov_select
+              mouse.slideoff = obj.sections[128].y+obj.sections[128].h/2 - mouse.my
+            else
+              if mouse.shift then
+                val = ctlpos + ((0.5-val)*2)*0.1
+              else
+                val = ctlpos + (0.5-val)*2
+              end
+              if val < 0 then val = 0 end
+              if val > 1 then val = 1 end
+              if val ~= octlval then
+                val = math.min(val,nz(maxov_select-0.05,1))
+                SetParam4(val)
+                local dval = GetParamDisp_Ctl(ctl_select[1].ctl)
+                minov_select = val
+                ov_disp = dval
+                SetParam()                
+                octlval = val
+                update_gfx = true
+              end
+            end
+          elseif minov_act ~= nil then
+            minov_act = nil
+            
+            for i = 1, #ctl_select do
+              strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].minov = minov_select
+              strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].dirty = true
+              trackfxparam_select = ctl_select[i].ctl
+
+              local min, max = GetParamMinMax_ctl(ctl_select[i].ctl)
+              strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].defval = normalize(min, max, ctl_select[i].denorm_defval)
+              SetParam3(strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].defval)
+            end
+          end
+          
+        elseif mouse.context and mouse.context == contexts.maxov then
+          local val = MOUSE_slider(obj.sections[129],mouse.slideoff)
+          if val ~= nil then
+            if oms ~= mouse.shift then
+              oms = mouse.shift
+              ctlpos = minov_select
+              mouse.slideoff = obj.sections[129].y+obj.sections[129].h/2 - mouse.my
+            else
+              if mouse.shift then
+                val = ctlpos + ((0.5-val)*2)*0.1
+              else
+                val = ctlpos + (0.5-val)*2
+              end
+              if val < 0 then val = 0 end
+              if val > 1 then val = 1 end
+              if val ~= octlval then
+                val = math.max(val,nz(minov_select+0.05,0))
+                SetParam4(val)
+                local dval = GetParamDisp_Ctl(ctl_select[1].ctl)
+                maxov_select = val
+                ov_disp = dval
+                SetParam()
+                octlval = val
+                update_gfx = true
+              end
+            end
+          elseif maxov_act ~= nil then
+            maxov_act = nil
+            
+            for i = 1, #ctl_select do
+              strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].maxov = maxov_select
+              strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].dirty = true
+              trackfxparam_select = ctl_select[i].ctl
+
+              local min, max = GetParamMinMax_ctl(ctl_select[i].ctl)
+              strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].defval = normalize(min, max, ctl_select[i].denorm_defval)
+              SetParam3(strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].defval)
+            end
+          end
+        
+        elseif mouse.context and mouse.context == contexts.cycleknob then
           local val = MOUSE_slider(obj.sections[101],mouse.slideoff)
           if val ~= nil then
             if oms ~= mouse.shift then
@@ -5495,7 +5744,7 @@
                 local f = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].fxnum
                 local p = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].param
                 local dvoff = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].dvaloffset
-                val = GetParamValue(t,f,p)
+                val = GetParamValue(t,f,p,ctl_select[1].ctl)
                 cycle_select.val = val
                 
                 if cycle_select.selected then
@@ -5663,7 +5912,9 @@
           end
         elseif lasso ~= nil then
           --Dropped
-          if lasso.l == mouse.mx and lasso.t == mouse.my then
+          --DBG(lasso.l..'  '..lasso.r)
+          if math.abs(lasso.l-lasso.r) < 10 and math.abs(lasso.t-lasso.b) < 10 then
+          -- == mouse.mx and lasso.t == mouse.my then
             if ctl_select ~= nil then
               local mstr = 'Duplicate'
               gfx.x, gfx.y = mouse.mx, mouse.my
@@ -5869,10 +6120,10 @@
                   strips[tracks[track_select].strip][page].controls[reass_param].param_info = trackfxparams[trackfxparam_select]
                   strips[tracks[track_select].strip][page].controls[reass_param].val = GetParamValue(tracks[track_select].tracknum,
                                                                                                      trackfx[trackfx_select].fxnum,
-                                                                                                     trackfxparam_select)
+                                                                                                     trackfxparam_select, reass_param)
                   strips[tracks[track_select].strip][page].controls[reass_param].defval = GetParamValue(tracks[track_select].tracknum,
                                                                                                      trackfx[trackfx_select].fxnum,
-                                                                                                     trackfxparam_select)
+                                                                                                     trackfxparam_select, reass_param)
                 else
                   OpenMsgBox(1, 'You cannot reassign multiple controls at once.', 1)
                 end
@@ -5906,10 +6157,10 @@
                                                                                                paramnum = last_touch_fx.paramnum}
                   strips[tracks[track_select].strip][page].controls[reass_param].val = GetParamValue(last_touch_fx.tracknum,
                                                                                                      last_touch_fx.fxnum,
-                                                                                                     last_touch_fx.paramnum)
+                                                                                                     last_touch_fx.paramnum, reass_param)
                   strips[tracks[track_select].strip][page].controls[reass_param].defval = GetParamValue(last_touch_fx.tracknum,
                                                                                                      last_touch_fx.fxnum,
-                                                                                                     last_touch_fx.paramnum)
+                                                                                                     last_touch_fx.paramnum, reass_param)
                   
                 end
               end
@@ -6620,7 +6871,9 @@
                  id = strips[tracks[track_select].strip][page].controls[c].id,
                  tracknum = strips[tracks[track_select].strip][page].controls[c].tracknum,
                  trackguid = strips[tracks[track_select].strip][page].controls[c].trackguid,
-                 dvaloffset = strips[tracks[track_select].strip][page].controls[c].dvaloffset
+                 dvaloffset = strips[tracks[track_select].strip][page].controls[c].dvaloffset,
+                 minov = strips[tracks[track_select].strip][page].controls[c].minov,
+                 maxov = strips[tracks[track_select].strip][page].controls[c].maxov
                  }
     return tbl
   end
@@ -6929,6 +7182,8 @@
                     strips[ss][p].controls[c].tracknum = GPES(key..'tracknum',true)
                     strips[ss][p].controls[c].trackguid = GPES(key..'trackguid')                    
                     strips[ss][p].controls[c].dvaloffset = GPES(key..'dvaloffset',true)
+                    strips[ss][p].controls[c].minov = GPES(key..'minov',true)
+                    strips[ss][p].controls[c].maxov = GPES(key..'maxov',true)
                     
                     strips[ss][p].controls[c].cycledata.statecnt = tonumber(nz(GPES(key..'cycledata_statecnt',true),0))
                     strips[ss][p].controls[c].cycledata.mapptof = tobool(nz(GPES(key..'cycledata_mapptof',true),false))
@@ -7178,6 +7433,8 @@
                 reaper.SetProjExtState(0,SCRIPT,key..'defval',strips[s][p].controls[c].defval)   
                 reaper.SetProjExtState(0,SCRIPT,key..'maxdp',nz(strips[s][p].controls[c].maxdp,-1))   
                 reaper.SetProjExtState(0,SCRIPT,key..'dvaloffset',nz(strips[s][p].controls[c].dvaloffset,''))   
+                reaper.SetProjExtState(0,SCRIPT,key..'minov',nz(strips[s][p].controls[c].minov,''))   
+                reaper.SetProjExtState(0,SCRIPT,key..'maxov',nz(strips[s][p].controls[c].maxov,''))   
                            
                 reaper.SetProjExtState(0,SCRIPT,key..'id',convnum(strips[s][p].controls[c].id))
 
@@ -7408,9 +7665,16 @@
   gfx.loadimg(0,controls_path.."__default.png") -- default control
   --gfx.loadimg(1010,controls_path.."__default.png")
   
-  def_knob = 0  
+  --def_knob = 0  
   gfx.loadimg(1021,icon_path.."bin.png")
-  gfx.loadimg(1020,controls_path.."ledstrip4.png")
+  
+  defctls = {}
+  
+  --gfx.loadimg(1020,controls_path.."missing.png") --update to missing png
+  def_knob = LoadControl(1019, '__default.knb')
+  def_knobsm = LoadControl(1018, 'SimpleFlat_48.knb')
+  
+  
   
   INIT()
   LoadSettings()
