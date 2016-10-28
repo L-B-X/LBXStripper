@@ -1900,6 +1900,38 @@
     end
   end
 
+  function GetNumericPart(num)
+    local s, e = string.find(num,'%-%d+.%d+')
+    if s == nil then
+      s, e = string.find(num,'%d+.%d+')
+    end
+    if s and e then  
+      local n = string.sub(num,s,e)
+      if n and tonumber(n) then
+        res = tonumber(n)
+        return res
+      else
+        return num
+      end
+    else
+      local s, e = string.find(num,'%-%d+')
+      if s == nil then
+        s, e = string.find(num,'%d+')
+      end
+      if s and e then  
+        local n = string.sub(num,s,e)
+        if n and tonumber(n) then
+          res = tonumber(n)
+          return res
+        else
+          return num
+        end
+      else
+        return num
+      end
+    end
+  end
+
   function dvaloffset(num, dvoff)
     if dvoff and dvoff ~= 0 then
       local s, e = string.find(num,'%d+.%d+')
@@ -3568,6 +3600,64 @@
 
   ------------------------------------------------------------    
 
+  function EditValue()
+  
+    local sizex,sizey = 400,200
+    editbox={title = 'Please enter value:',
+      x=400, y=100, w=120, h=20, l=4, maxlen=20,
+      fgcol=0x000000, fgfcol=0x00FF00, bgcol=0x808080,
+      txtcol=0x000000, curscol=0x000000,
+      font=1, fontsz=14, caret=0, sel=0, cursstate=0,
+      text="", 
+      hasfocus=true
+    }
+    
+    EB_Open = 5  
+  
+  end
+
+  function EditValue2(txt)
+
+    local mo = tonumber(txt)
+    if mo then
+      local nval = GetValFromDVal(trackfxparam_select,txt)
+      --DBG(trackfxparam_select..'  '..nval)
+      --for i = 1, #ctl_select do 
+      strips[tracks[track_select].strip][page].controls[trackfxparam_select].val = nval
+      strips[tracks[track_select].strip][page].controls[trackfxparam_select].dirty = true
+      SetParam()
+      --end
+    end  
+  end
+
+  function EditMinDVal()
+  
+    local sizex,sizey = 400,200
+    editbox={title = 'Please enter a min value:',
+      x=400, y=100, w=120, h=20, l=4, maxlen=20,
+      fgcol=0x000000, fgfcol=0x00FF00, bgcol=0x808080,
+      txtcol=0x000000, curscol=0x000000,
+      font=1, fontsz=14, caret=0, sel=0, cursstate=0,
+      text="", 
+      hasfocus=true
+    }
+    
+    EB_Open = 4  
+  
+  end
+
+  function EditMinDVal2(txt)
+
+    local mo = tonumber(txt)
+    if mo then
+      local test = GetValFromDVal(ctl_select[1].ctl,txt)
+      minov_select = mo
+      --for i = 1, #ctl_select do 
+      --  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].minov = mo
+      --end
+    end  
+  end
+
   function EditDValOffset()
   
     local sizex,sizey = 400,200
@@ -4624,6 +4714,70 @@
     minov_select = min
     maxov_select = max
   end
+  
+  function GetValFromDVal(c, dv)
+  
+    if c then
+      local t = strips[tracks[track_select].strip].track.tracknum
+      if strips[tracks[track_select].strip][page].controls[c].tracknum ~= nil then
+        t = strips[tracks[track_select].strip][page].controls[c].tracknum
+      end
+      local f = strips[tracks[track_select].strip][page].controls[c].fxnum
+      local p = strips[tracks[track_select].strip][page].controls[c].param
+      track = GetTrack(t)
+      
+      local v, min, max = reaper.TrackFX_GetParam(track, f, p)
+      if strips[tracks[track_select].strip][page].controls[c].minov then
+        min = strips[tracks[track_select].strip][page].controls[c].minov
+      end
+      if strips[tracks[track_select].strip][page].controls[c].maxov then
+        max = strips[tracks[track_select].strip][page].controls[c].maxov
+      end
+      trackfxparam_select = c
+    
+      local pinc = 0
+      local found = false
+      local mdp = 50
+      local nval, dval, dval2, rval = 0, '', '', 0
+      for j = 0, mdp do
+        for i = 0, 9 do
+          local inc = (1/(10^j))*i
+          nval = rval + inc
+          SetParam3(nval)
+          dval2 = GetParamDisp(t,f,p,0)
+          dval = GetNumericPart(dval2)
+          if tonumber(dval) then
+            if tonumber(dval) == tonumber(dv) then
+              found = true
+              rval = nval
+              break
+            elseif tonumber(dval) < tonumber(dv) then
+              if i ==9 then
+                rval = rval + inc
+              else
+                pinc = inc
+              end
+            elseif tonumber(dval) > tonumber(dv) then
+              rval = rval + pinc
+              break
+            end
+          else
+            pinc = inc
+            rval = rval + inc
+          end        
+        end
+
+        if found then
+          break
+        end
+      end
+      SetParam()    
+      --DBG(tostring(found)..'  '..rval..'  '..tostring(dval2))
+      return rval
+    end
+  
+  end
+  
     
   ------------------------------------------------------------    
 
@@ -4910,6 +5064,13 @@
         elseif EB_Open == 3 then
           EditDValOffset2(editbox.text)
           update_gfx = true
+        elseif EB_Open == 4 then
+          EditMinDVal2(editbox.text)
+          --DBG(editbox.text)
+          update_gfx = true
+        elseif EB_Open == 5 then
+          EditValue2(editbox.text)
+          --update_ctls = true
         end
         EB_Open = 0
       
@@ -5018,6 +5179,15 @@
                          h = strips[tracks[track_select].strip][page].controls[i].hsc}
               if strips[tracks[track_select].strip][page].controls[i].fxfound then
                 if MOUSE_click(ctlxywh) and not mouse.ctrl then
+                
+                  if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.15 then
+                    --double-click
+                    trackfxparam_select = i
+                    EditValue()
+                    break
+                  end
+                  
+                
                   local ctltype = strips[tracks[track_select].strip][page].controls[i].ctltype
                   if ctltype == 1 then
                     --knob/slider
@@ -5085,7 +5255,7 @@
                   break
                   
                 elseif MOUSE_click_RB(ctlxywh) and mouse.ctrl == false then
-                  local mstr = 'MIDI Learn|Modulation||Open FX Window'
+                  local mstr = 'MIDI Learn|Modulation||Enter Value||Open FX Window'
                   trackfxparam_select = i
                   SetParam2(true)
                   gfx.x, gfx.y = mouse.mx, mouse.my
@@ -5096,6 +5266,9 @@
                     elseif res == 2 then
                       reaper.Main_OnCommand(41143,0)
                     elseif res == 3 then
+                      EditValue()
+                    
+                    elseif res == 4 then
                       local track
                       if strips[tracks[track_select].strip][page].controls[i].tracknum == nil then
                         track = GetTrack(tracks[track_select].tracknum)
@@ -5109,6 +5282,11 @@
                     end
                   end
                   break
+                --elseif MOUSE_click_RB(ctlxywh) and mouse.ctrl then
+                
+                --  trackfxparam_select = i
+                --  EditValue()
+                
                 elseif MOUSE_click(ctlxywh) and mouse.ctrl then --make double_click?
                   --default val
                   trackfxparam_select = i
@@ -5533,6 +5711,12 @@
             elseif mouse.context == nil and MOUSE_click(obj.sections[58]) then mouse.context = contexts.textsizeslider end
     
           elseif ctl_page == 1 then
+            
+            if MOUSE_click(obj.sections[126]) then
+            
+              --EditMinDVal()
+            
+            end
             
             if MOUSE_click(obj.sections[125]) then
               EditDValOffset()
@@ -6747,6 +6931,9 @@
     mouse.last_RB = mouse.RB
     mouse.last_x = mouse.mx
     mouse.last_y = mouse.my
+    if mouse.LB then
+      mouse.lastLBclicktime = rt
+    end
     gfx.mouse_wheel = 0
     if ctl_select then ctls = true else ctls = false end
       
