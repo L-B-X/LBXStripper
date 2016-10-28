@@ -1934,7 +1934,10 @@
 
   function dvaloffset(num, dvoff)
     if dvoff and dvoff ~= 0 then
-      local s, e = string.find(num,'%d+.%d+')
+      local s, e = string.find(num,'%-%d+.%d+')
+      if s == nil then
+        s, e = string.find(num,'%d+.%d+')
+      end
       if s and e then  
         local n = string.sub(num,s,e)
         if n and tonumber(n) then
@@ -1944,7 +1947,10 @@
           return num
         end
       else
-        local s, e = string.find(num,'%d+')
+        local s, e = string.find(num,'%-%d+')
+        if s == nil then
+          s, e = string.find(num,'%d+')
+        end
         if s and e then  
           local n = string.sub(num,s,e)
           if n and tonumber(n) then
@@ -4733,6 +4739,7 @@
       if strips[tracks[track_select].strip][page].controls[c].maxov then
         max = strips[tracks[track_select].strip][page].controls[c].maxov
       end
+      local dvoff = strips[tracks[track_select].strip][page].controls[c].dvaloffset
       trackfxparam_select = c
     
       local pinc = 0
@@ -4744,7 +4751,7 @@
           local inc = (1/(10^j))*i
           nval = rval + inc
           SetParam3(nval)
-          dval2 = GetParamDisp(t,f,p,0)
+          dval2 = GetParamDisp(t,f,p,dvoff)
           dval = GetNumericPart(dval2)
           if tonumber(dval) then
             if tonumber(dval) == tonumber(dv) then
