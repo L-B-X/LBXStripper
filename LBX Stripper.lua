@@ -258,12 +258,12 @@
       obj.sections[41] = {x = 0,
                           y = butt_h + 2,
                           w = plist_w,
-                          h = fx_h+butt_h}
+                          h = fx_h}
       --PARAMS
       obj.sections[42] = {x = 0,
-                          y = obj.sections[41].y + obj.sections[41].h + 10 - butt_h,
+                          y = obj.sections[41].y + obj.sections[41].h + 10,
                           w = plist_w,
-                          h = gfx1.main_h - (obj.sections[41].y + obj.sections[41].h + 10 - butt_h)}
+                          h = gfx1.main_h - (obj.sections[41].y + obj.sections[41].h + 10)}
       --TRACKS                    
       obj.sections[43] = {x = 0,
                           y = butt_h+2,
@@ -293,6 +293,12 @@
                           y = obj.sections[47].y+obj.sections[47].h+10,
                           w = plist_w,
                           h = gfx1.main_h - (obj.sections[47].y+obj.sections[47].h+10)}                           
+
+      --LEARN+TRX
+      obj.sections[48] = {x = 0,
+                          y = obj.sections[41].y+obj.sections[41].h+8,
+                          w = plist_w,
+                          h = butt_h}                           
 
       --scale
       obj.sections[50] = {x = obj.sections[45].x+50,
@@ -1114,9 +1120,13 @@
     gfx.a = 0.5
     f_Get_SSV(gui.color.black)
     gfx.a = 1
-    gfx.triangle(xywh.x+xywh.w/2,xywh.y+4,xywh.x+xywh.w/2-6,xywh.y+xywh.h-4,xywh.x+xywh.w/2+6,xywh.y+xywh.h-4,1)
+    gfx.rect(xywh.x+xywh.w/2,
+     xywh.y, 
+     2,
+     xywh.h, 1 )
+    gfx.triangle(xywh.x+xywh.w/4,xywh.y+4,xywh.x+xywh.w/4-6,xywh.y+xywh.h-4,xywh.x+xywh.w/4+6,xywh.y+xywh.h-4,1)
      
-    local xywh = {x = obj.sections[43].x,
+    --[[local xywh = {x = obj.sections[43].x,
                   y = obj.sections[43].h - butt_h,
                   w = obj.sections[43].w,
                   h = butt_h}
@@ -1128,8 +1138,8 @@
      xywh.h, 1 )
     gfx.a = 0.5
     f_Get_SSV(gui.color.black)
-    gfx.a = 1
-    gfx.triangle(xywh.x+xywh.w/2,xywh.y+xywh.h-4,xywh.x+xywh.w/2-6,xywh.y+4,xywh.x+xywh.w/2+6,xywh.y+4,1)
+    gfx.a = 1]]
+    gfx.triangle(xywh.x+xywh.w*0.75,xywh.y+xywh.h-4,xywh.x+xywh.w*0.75-6,xywh.y+4,xywh.x+xywh.w*0.75+6,xywh.y+4,1)
 
   end
 
@@ -1162,7 +1172,7 @@
       gfx.setimgdim(1001,obj.sections[43].w+2, obj.sections[43].h)
     end
     
-    F_butt_cnt = math.floor(obj.sections[41].h / butt_h) - 3
+    F_butt_cnt = math.floor(obj.sections[41].h / butt_h) - 1
     
     local xywh = {x = obj.sections[43].x,
                   y = 0,
@@ -1219,10 +1229,15 @@
      xywh.h, 1)
     gfx.a = 0.5
     f_Get_SSV(gui.color.black)
+    gfx.rect(xywh.x+xywh.w/2,
+     xywh.y, 
+     2,
+     xywh.h, 1)
+    
     gfx.a = 1
-    gfx.triangle(xywh.x+xywh.w/2,xywh.y+4,xywh.x+xywh.w/2-6,xywh.y+xywh.h-4,xywh.x+xywh.w/2+6,xywh.y+xywh.h-4,1)
+    gfx.triangle(xywh.x+xywh.w/4,xywh.y+4,xywh.x+xywh.w/4-6,xywh.y+xywh.h-4,xywh.x+xywh.w/4+6,xywh.y+xywh.h-4,1)
      
-    local xywh = {x = obj.sections[41].x,
+    --[[local xywh = {x = obj.sections[41].x,
                   y = obj.sections[41].y + obj.sections[41].h - butt_h*2,
                   w = obj.sections[41].w,
                   h = butt_h}
@@ -1233,9 +1248,9 @@
      xywh.w,
      xywh.h, 1 )
     gfx.a = 0.5
-    f_Get_SSV(gui.color.black)
+    f_Get_SSV(gui.color.black)]]
     gfx.a = 1
-    gfx.triangle(xywh.x+xywh.w/2,xywh.y+xywh.h-4,xywh.x+xywh.w/2-6,xywh.y+4,xywh.x+xywh.w/2+6,xywh.y+4,1)
+    gfx.triangle(xywh.x+xywh.w*0.75,xywh.y+xywh.h-4,xywh.x+xywh.w*0.75-6,xywh.y+4,xywh.x+xywh.w*0.75+6,xywh.y+4,1)
 
     --Params
     P_butt_cnt = math.floor(obj.sections[42].h / butt_h) - 3
@@ -1276,10 +1291,14 @@
      xywh.h, 1 )
     gfx.a = 0.5
     f_Get_SSV(gui.color.black)
+    gfx.rect(xywh.x+xywh.w/2,
+     xywh.y, 
+     2,
+     xywh.h, 1 )
     gfx.a = 1
-    gfx.triangle(xywh.x+xywh.w/2,xywh.y+4,xywh.x+xywh.w/2-6,xywh.y+xywh.h-4,xywh.x+xywh.w/2+6,xywh.y+xywh.h-4,1)
+    gfx.triangle(xywh.x+xywh.w/4,xywh.y+4,xywh.x+xywh.w/4-6,xywh.y+xywh.h-4,xywh.x+xywh.w/4+6,xywh.y+xywh.h-4,1)
      
-    local xywh = {x = obj.sections[42].x,
+    --[[local xywh = {x = obj.sections[42].x,
                   y = obj.sections[43].h-butt_h-2,
                   w = obj.sections[42].w,
                   h = butt_h}
@@ -1291,8 +1310,45 @@
      xywh.h, 1 )
     gfx.a = 0.5
     f_Get_SSV(gui.color.black)
-    gfx.a = 1
-    gfx.triangle(xywh.x+xywh.w/2,xywh.y+xywh.h-4,xywh.x+xywh.w/2-6,xywh.y+4,xywh.x+xywh.w/2+6,xywh.y+4,1)
+    gfx.a = 1]]
+    gfx.triangle(xywh.x+xywh.w*0.75,xywh.y+xywh.h-4,xywh.x+xywh.w*0.75-6,xywh.y+4,xywh.x+xywh.w*0.75+6,xywh.y+4,1)
+
+    f_Get_SSV(gui.color.white)
+    gfx.a = 1  
+    gfx.rect(obj.sections[48].x,
+             obj.sections[48].y-butt_h, 
+             obj.sections[48].w,
+             obj.sections[48].h, 1)
+             
+    f_Get_SSV(gui.color.black)
+    local xywh = {x = obj.sections[48].x+obj.sections[48].w - 40,
+                  y = obj.sections[48].y-butt_h, 
+                  w = 40,
+                  h = obj.sections[48].h}
+    
+    gfx.rect(xywh.x,
+             xywh.y, 
+             2,
+             xywh.h, 1)
+    GUI_textC(gui,xywh,'LRN',gui.color.black,-2)
+
+    local xywh = {x = obj.sections[48].x,
+                  y = obj.sections[48].y-butt_h, 
+                  w = obj.sections[48].w-40,
+                  h = obj.sections[48].h}
+    if trackedit_select ~= track_select then
+      f_Get_SSV(gui.color.red)
+      gfx.rect(xywh.x,
+               xywh.y, 
+               xywh.w,
+               xywh.h, 1, 1)        
+    end
+    f_Get_SSV(gui.color.black)
+    if trackedit_select >= 0 then
+      GUI_textsm_CJ(gui,xywh,'TR'..trackedit_select+1 ..':'..tracks[trackedit_select].name,gui.color.black,-2,xywh.w)
+    else
+      GUI_textsm_CJ(gui,xywh,'TR: Master',gui.color.black,-2,xywh.w)        
+    end                 
 
   end
 
@@ -1354,9 +1410,13 @@
     gfx.a = 0.5
     f_Get_SSV(gui.color.black)
     gfx.a = 1
-    gfx.triangle(xywh.x+xywh.w/2,xywh.y+4,xywh.x+xywh.w/2-6,xywh.y+xywh.h-4,xywh.x+xywh.w/2+6,xywh.y+xywh.h-4,1)
+    gfx.rect(xywh.x+xywh.w/2,
+             xywh.y, 
+             2,
+             xywh.h, 1 )
+    gfx.triangle(xywh.x+xywh.w/4,xywh.y+4,xywh.x+xywh.w/4-6,xywh.y+xywh.h-4,xywh.x+xywh.w/4+6,xywh.y+xywh.h-4,1)
      
-    local xywh = {x = obj.sections[44].x,
+    --[[local xywh = {x = obj.sections[44].x,
                   y = obj.sections[43].h-butt_h,
                   w = obj.sections[44].w,
                   h = butt_h}
@@ -1368,8 +1428,8 @@
      xywh.h, 1 )
     gfx.a = 0.5
     f_Get_SSV(gui.color.black)
-    gfx.a = 1
-    gfx.triangle(xywh.x+xywh.w/2,xywh.y+xywh.h-4,xywh.x+xywh.w/2-6,xywh.y+4,xywh.x+xywh.w/2+6,xywh.y+4,1)
+    gfx.a = 1]]
+    gfx.triangle(xywh.x+xywh.w*0.75,xywh.y+xywh.h-4,xywh.x+xywh.w*0.75-6,xywh.y+4,xywh.x+xywh.w*0.75+6,xywh.y+4,1)
   
   end
 
@@ -1428,10 +1488,14 @@
      xywh.h, 1 )
     gfx.a = 0.5
     f_Get_SSV(gui.color.black)
+    gfx.rect(xywh.x+xywh.w/2,
+             xywh.y, 
+             2,
+             xywh.h, 1 )
     gfx.a = 1
-    gfx.triangle(xywh.x+xywh.w/2,xywh.y+4,xywh.x+xywh.w/2-6,xywh.y+xywh.h-4,xywh.x+xywh.w/2+6,xywh.y+xywh.h-4,1)
+    gfx.triangle(xywh.x+xywh.w/4,xywh.y+4,xywh.x+xywh.w/4-6,xywh.y+xywh.h-4,xywh.x+xywh.w/4+6,xywh.y+xywh.h-4,1)
      
-    local xywh = {x = obj.sections[47].x,
+    --[[local xywh = {x = obj.sections[47].x,
                   y = obj.sections[47].y+obj.sections[47].h-butt_h,
                   w = obj.sections[47].w,
                   h = butt_h}
@@ -1443,8 +1507,8 @@
      xywh.h, 1 )
     gfx.a = 0.5
     f_Get_SSV(gui.color.black)
-    gfx.a = 1
-    gfx.triangle(xywh.x+xywh.w/2,xywh.y+xywh.h-4,xywh.x+xywh.w/2-6,xywh.y+4,xywh.x+xywh.w/2+6,xywh.y+4,1)
+    gfx.a = 1]]
+    gfx.triangle(xywh.x+xywh.w*0.75,xywh.y+xywh.h-4,xywh.x+xywh.w*0.75-6,xywh.y+4,xywh.x+xywh.w*0.75+6,xywh.y+4,1)
 
     S_butt_cnt = math.floor(obj.sections[46].h / butt_h) - 2
     for i = 0, S_butt_cnt-1 do
@@ -1482,9 +1546,13 @@
     gfx.a = 0.5
     f_Get_SSV(gui.color.black)
     gfx.a = 1
-    gfx.triangle(xywh.x+xywh.w/2,xywh.y+4,xywh.x+xywh.w/2-6,xywh.y+xywh.h-4,xywh.x+xywh.w/2+6,xywh.y+xywh.h-4,1)
+    gfx.rect(xywh.x+xywh.w/2,
+             xywh.y, 
+             2,
+             xywh.h, 1 )
+    gfx.triangle(xywh.x+xywh.w/4,xywh.y+4,xywh.x+xywh.w/4-6,xywh.y+xywh.h-4,xywh.x+xywh.w/4+6,xywh.y+xywh.h-4,1)
      
-    local xywh = {x = obj.sections[46].x,
+    --[[local xywh = {x = obj.sections[46].x,
                   y = obj.sections[43].h-butt_h,
                   w = obj.sections[46].w,
                   h = butt_h}
@@ -1496,8 +1564,8 @@
      xywh.h, 1 )
     gfx.a = 0.5
     f_Get_SSV(gui.color.black)
-    gfx.a = 1
-    gfx.triangle(xywh.x+xywh.w/2,xywh.y+xywh.h-4,xywh.x+xywh.w/2-6,xywh.y+4,xywh.x+xywh.w/2+6,xywh.y+4,1)
+    gfx.a = 1]]
+    gfx.triangle(xywh.x+xywh.w*0.75,xywh.y+xywh.h-4,xywh.x+xywh.w*0.75-6,xywh.y+4,xywh.x+xywh.w*0.75+6,xywh.y+4,1)
 
   end
       
@@ -2857,16 +2925,16 @@
                obj.sections[13].y, 
                obj.sections[13].w-1,
                obj.sections[13].h, 1, 1)
-      if mode == 1 and submode == 0 then
-        local xywh = {x = obj.sections[13].x+30,
-                      y = obj.sections[13].y, 
-                      w = obj.sections[13].x+obj.sections[13].w-30-20,
-                      h = obj.sections[13].h}
-        GUI_textsm_CJ(gui,xywh,submode_table[submode+1],gui.color.black,-2,xywh.w)
-      else
+--      if mode == 1 and submode == 0 then
+--        local xywh = {x = obj.sections[13].x+30,
+--                      y = obj.sections[13].y, 
+--                      w = obj.sections[13].x+obj.sections[13].w-30-20,
+--                      h = obj.sections[13].h}
+--        GUI_textsm_CJ(gui,xywh,submode_table[submode+1],gui.color.black,-2,xywh.w)
+--      else
         GUI_textC(gui,obj.sections[13],submode_table[submode+1],gui.color.black,-2)
-      end
-      if submode == 0 then
+--      end
+--[[      if submode == 0 then
         f_Get_SSV(gui.color.black)
         local xywh = {x = obj.sections[13].x+obj.sections[13].w - 20,
                       y = obj.sections[13].y, 
@@ -2899,7 +2967,7 @@
         else
           GUI_textC(gui,xywh,'Mst',gui.color.black,-2)        
         end                 
-      end        
+      end]]        
     end
     f_Get_SSV(gui.color.black)
     gfx.rect(obj.sections[11].x+obj.sections[11].w-6,
@@ -5536,14 +5604,15 @@
       if MOUSE_click(obj.sections[43]) then
         local i = math.floor((mouse.my - obj.sections[43].y) / butt_h)-1
         if i == -1 then
-          tlist_offset = tlist_offset - T_butt_cnt
-          if tlist_offset < 0 then
-            tlist_offset = 0
-          end
-          update_gfx = true
-        elseif i >= T_butt_cnt then
-          if tlist_offset + T_butt_cnt < #tracks then
-            tlist_offset = tlist_offset + T_butt_cnt
+          if mouse.mx < obj.sections[43].w/2 then
+            tlist_offset = tlist_offset - T_butt_cnt
+            if tlist_offset < 0 then
+              tlist_offset = 0
+            end
+          else
+            if tlist_offset + T_butt_cnt < #tracks then
+              tlist_offset = tlist_offset + T_butt_cnt
+            end
           end
           update_gfx = true
         elseif tracks[i-1 + tlist_offset] then
@@ -6362,17 +6431,40 @@
           update_ctls = true
         end
       
+        if MOUSE_click(obj.sections[48]) then
+          --DBG('yy')
+          if mouse.mx > obj.sections[48].w-40 then
+            show_paramlearn = not show_paramlearn
+            update_gfx = true
+          else           
+            trackedit_select = trackedit_select + 1 
+            if trackedit_select > #tracks then
+              trackedit_select = -1
+            end
+            PopulateTrackFX()
+            update_gfx = true 
+          end
+        elseif MOUSE_click_RB(obj.sections[48]) then
+          trackedit_select = trackedit_select - 1 
+          if trackedit_select < -1 then
+            trackedit_select = #tracks
+          end
+          PopulateTrackFX()
+          update_gfx = true    
+        end
+        
         if MOUSE_click(obj.sections[41]) then
           local i = math.floor((mouse.my - obj.sections[41].y) / butt_h)-2
           if i == -1 then
-            flist_offset = flist_offset - F_butt_cnt
-            if flist_offset < 0 then
-              flist_offset = 0
-            end
-            update_gfx = true
-          elseif i >= F_butt_cnt then
-            if flist_offset + F_butt_cnt < #trackfx then
-              flist_offset = flist_offset + F_butt_cnt-1
+            if mouse.mx < obj.sections[41].w/2 then
+              flist_offset = flist_offset - F_butt_cnt
+              if flist_offset < 0 then
+                flist_offset = 0
+              end
+            else
+              if flist_offset + F_butt_cnt < #trackfx then
+                flist_offset = flist_offset + F_butt_cnt-1
+              end          
             end
             update_gfx = true
           elseif trackfx[i + flist_offset] then
@@ -6395,14 +6487,15 @@
         if MOUSE_click(obj.sections[42]) then
           local i = math.floor((mouse.my - obj.sections[42].y) / butt_h)-2
           if i == -1 then
-            plist_offset = plist_offset - P_butt_cnt
-            if plist_offset < 0 then
-              plist_offset = 0
-            end
-            update_gfx = true
-          elseif i >= P_butt_cnt then
-            if plist_offset + P_butt_cnt < #trackfxparams then
-              plist_offset = plist_offset + P_butt_cnt
+            if mouse.mx < obj.sections[42].w/2 then
+              plist_offset = plist_offset - P_butt_cnt
+              if plist_offset < 0 then
+                plist_offset = 0
+              end
+            else
+              if plist_offset + P_butt_cnt < #trackfxparams then
+                plist_offset = plist_offset + P_butt_cnt
+              end          
             end
             update_gfx = true
           elseif trackfxparams[i + plist_offset] then
@@ -6606,14 +6699,15 @@
           local i = math.floor((mouse.my - obj.sections[44].y) / butt_h)-1
           
           if i == -1 then
-            glist_offset = glist_offset - G_butt_cnt
-            if glist_offset < 0 then
-              glist_offset = 0
-            end
-            update_gfx = true
-          elseif i >= G_butt_cnt then
-            if glist_offset + G_butt_cnt < #graphics_files then
-              glist_offset = glist_offset + G_butt_cnt
+            if mouse.mx < obj.sections[44].w/2 then
+              glist_offset = glist_offset - G_butt_cnt
+              if glist_offset < 0 then
+                glist_offset = 0
+              end
+            else
+              if glist_offset + G_butt_cnt < #graphics_files then
+                glist_offset = glist_offset + G_butt_cnt
+              end
             end
             update_gfx = true
           elseif graphics_files[i + glist_offset] then
@@ -6867,14 +6961,15 @@
         if MOUSE_click(obj.sections[47]) then
           local i = math.floor(((mouse.my - obj.sections[47].y)) / butt_h)-1
           if i == -1 then
-            sflist_offset = sflist_offset - SF_butt_cnt
-            if sflist_offset < 0 then
-              sflist_offset = 0
-            end
-            update_gfx = true
-          elseif i >= SF_butt_cnt then
-            if sflist_offset + SF_butt_cnt-1 < #strip_folders then
-              sflist_offset = sflist_offset + SF_butt_cnt
+            if mouse.mx < obj.sections[47].w/2 then
+              sflist_offset = sflist_offset - SF_butt_cnt
+              if sflist_offset < 0 then
+                sflist_offset = 0
+              end
+            else
+              if sflist_offset + SF_butt_cnt-1 < #strip_folders then
+                sflist_offset = sflist_offset + SF_butt_cnt
+              end
             end
             update_gfx = true
           elseif strip_folders[i + sflist_offset] then
@@ -6888,14 +6983,15 @@
         if MOUSE_click(obj.sections[46]) then
           local i = math.floor(((mouse.my - obj.sections[46].y)) / butt_h)-1
           if i == 0 then
-            slist_offset = slist_offset - S_butt_cnt
-            if slist_offset < 0 then
-              slist_offset = 0
-            end
-            update_gfx = true
-          elseif i >= S_butt_cnt then
-            if slist_offset + S_butt_cnt-1 < #strip_files then
-              slist_offset = slist_offset + S_butt_cnt-1
+            if mouse.mx < obj.sections[46].w/2 then
+              slist_offset = slist_offset - S_butt_cnt
+              if slist_offset < 0 then
+                slist_offset = 0
+              end
+            else
+              if slist_offset + S_butt_cnt-1 < #strip_files then
+                slist_offset = slist_offset + S_butt_cnt-1
+              end
             end
             update_gfx = true
           elseif strip_files[i-1 + slist_offset] then
@@ -6938,7 +7034,7 @@
       end
       
       if MOUSE_click(obj.sections[13]) then
-        if submode ~= 0 or (submode == 0 and mouse.mx > 30 and mouse.mx < obj.sections[13].x + obj.sections[13].w - 20) then
+        --if submode ~= 0 or (submode == 0 and mouse.mx > 30 and mouse.mx < obj.sections[13].x + obj.sections[13].w - 20) then
           ctl_select = nil
           gfx2_select = nil
           gfx3_select = nil
@@ -6947,7 +7043,7 @@
             submode = 0
           end
           update_gfx = true
-        elseif submode == 0 and mouse.mx > obj.sections[13].x + obj.sections[13].w - 20 then
+        --[[elseif submode == 0 and mouse.mx > obj.sections[13].x + obj.sections[13].w - 20 then
          
           show_paramlearn = not show_paramlearn
           update_gfx = true
@@ -6960,10 +7056,10 @@
           end
           PopulateTrackFX()
           update_gfx = true 
-        end
+        end]]
 
       elseif MOUSE_click_RB(obj.sections[13]) then
-        if submode ~= 0 or (submode == 0 and mouse.mx > 30) then
+        --if submode ~= 0 or (submode == 0 and mouse.mx > 30) then
           ctl_select = nil
           gfx2_select = nil
           gfx3_select = nil
@@ -6972,14 +7068,14 @@
             submode = #submode_table-1
           end
           update_gfx = true
-        else
+        --[[else
           trackedit_select = trackedit_select - 1 
           if trackedit_select < -1 then
             trackedit_select = #tracks
           end
           PopulateTrackFX()
           update_gfx = true    
-        end
+        end]]
       end          
     end
     
@@ -7267,7 +7363,8 @@
   
   function GetControlTable(c)
   
-    local tbl = {fxname=strips[tracks[track_select].strip][page].controls[c].fxname,
+    local tbl = {ctlcat=strips[tracks[track_select].strip][page].controls[c].ctlcat,
+                 fxname=strips[tracks[track_select].strip][page].controls[c].fxname,
                  fxguid=strips[tracks[track_select].strip][page].controls[c].fxguid, 
                  fxnum=strips[tracks[track_select].strip][page].controls[c].fxnum, 
                  fxfound = strips[tracks[track_select].strip][page].controls[c].fxfound,
