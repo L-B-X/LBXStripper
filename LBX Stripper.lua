@@ -4227,7 +4227,7 @@
       elseif cc == ctlcats.trackparam then
         local param = strips[tracks[track_select].strip][page].controls[trackfxparam_select].param
         return trctls_table[param].min, trctls_table[param].max
-      elseif cc == ctlcats.tracksends then
+      elseif cc == ctlcats.tracksend then
         local param = strips[tracks[track_select].strip][page].controls[trackfxparam_select].param
         local idx = math.floor((param-1) % 3)+1
         return trsends_mmtable[idx].min, trsends_mmtable[idx].max
