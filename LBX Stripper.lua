@@ -2797,7 +2797,11 @@
                     end
                   end
                 elseif ctlcat == ctlcats.trackparam or ctlcat == ctlcats.tracksend then
-                  Disp_Name = pname
+                  if nz(ctlnmov,'') == '' then
+                    Disp_Name = pname
+                  else
+                    Disp_Name = ctlnmov                  
+                  end
                   Disp_ParamV = GetParamDisp(ctlcat, tnum, nil, param, dvoff,i)                  
                 end
 
@@ -5655,19 +5659,22 @@
         t = strips[tracks[track_select].strip][page].controls[c].tracknum
       end
       local cc = strips[tracks[track_select].strip][page].controls[c].ctlcat
-      if cc == ctlcats.fxparam then
+      if cc == ctlcats.fxparam or cc == ctlcats.trackparam or cc == ctlcats.tracksend then
 
         local f = strips[tracks[track_select].strip][page].controls[c].fxnum
         local p = strips[tracks[track_select].strip][page].controls[c].param
         track = GetTrack(t)
         
-        local v, min, max = reaper.TrackFX_GetParam(track, f, p)
-        if strips[tracks[track_select].strip][page].controls[c].minov then
+        --local v, min, max = reaper.TrackFX_GetParam(track, f, p)
+        local v = GetParamValue_Ctl(c)
+        local min, max = GetParamMinMax_ctl(c)
+        
+        --[[if strips[tracks[track_select].strip][page].controls[c].minov then
           min = strips[tracks[track_select].strip][page].controls[c].minov
         end
         if strips[tracks[track_select].strip][page].controls[c].maxov then
           max = strips[tracks[track_select].strip][page].controls[c].maxov
-        end
+        end]]
         local dvoff = strips[tracks[track_select].strip][page].controls[c].dvaloffset
         trackfxparam_select = c
         SetParam3(min)
@@ -5681,7 +5688,7 @@
         for i = 1, 100 do i=i end
         mav = tonumber(GetParamDisp(cc,t,f,p,dvoff,c))
         --DBG(miv..' '..mav)
-        if (miv == nil or mav == nil) or (miv and mav and mav >= miv) then
+        if (miv == nil or mav == nil) or (miv and mav and mav > miv) then
         
           local pinc = 0
           local found = false
@@ -7609,6 +7616,7 @@
                     strips[tracks[track_select].strip][page].controls[reass_param].tracknum=nil
                     strips[tracks[track_select].strip][page].controls[reass_param].trackguid=nil                  
                   end
+                  strips[tracks[track_select].strip][page].controls[reass_param].ctlcat = ctlcats.fxparam
                   strips[tracks[track_select].strip][page].controls[reass_param].fxname=trackfx[trackfx_select].name
                   strips[tracks[track_select].strip][page].controls[reass_param].fxguid=trackfx[trackfx_select].guid
                   strips[tracks[track_select].strip][page].controls[reass_param].fxnum=trackfx[trackfx_select].fxnum
@@ -7647,6 +7655,7 @@
                     strips[tracks[track_select].strip][page].controls[reass_param].tracknum=nil
                     strips[tracks[track_select].strip][page].controls[reass_param].trackguid=nil                  
                   end
+                  strips[tracks[track_select].strip][page].controls[reass_param].ctlcat = ctlcats.fxparam
                   strips[tracks[track_select].strip][page].controls[reass_param].fxname=last_touch_fx.fxname
                   strips[tracks[track_select].strip][page].controls[reass_param].fxguid=last_touch_fx.fxguid
                   strips[tracks[track_select].strip][page].controls[reass_param].fxnum=last_touch_fx.fxnum
@@ -7674,8 +7683,53 @@
                 Strip_AddParam()              
               end
             else
-            
-            
+              local cnt = 1
+              if cnt <= 1 then
+                if tracks[trackedit_select].tracknum ~= tracks[track_select].tracknum then
+                  strips[tracks[track_select].strip][page].controls[reass_param].tracknum=tracks[trackedit_select].tracknum
+                  strips[tracks[track_select].strip][page].controls[reass_param].trackguid=tracks[trackedit_select].guid
+                else
+                  strips[tracks[track_select].strip][page].controls[reass_param].tracknum=nil
+                  strips[tracks[track_select].strip][page].controls[reass_param].trackguid=nil                  
+                end
+
+                strips[tracks[track_select].strip][page].controls[reass_param].fxguid=nil
+                strips[tracks[track_select].strip][page].controls[reass_param].fxnum=nil
+                strips[tracks[track_select].strip][page].controls[reass_param].fxfound = true
+                strips[tracks[track_select].strip][page].controls[reass_param].param = trctl_select
+
+                if dragparam.type == 'trctl' then
+                  strips[tracks[track_select].strip][page].controls[reass_param].ctlcat = ctlcats.trackparam
+                  strips[tracks[track_select].strip][page].controls[reass_param].fxname='Track Parameter'
+                  strips[tracks[track_select].strip][page].controls[reass_param].param_info = {paramname = 'Track '..trctls_table[trctl_select].name,
+                                                                                               paramnum = trctl_select}
+                  strips[tracks[track_select].strip][page].controls[reass_param].val = GetParamValue(ctlcats.trackparam,
+                                                                                                      tracks[trackedit_select].tracknum,
+                                                                                                      nil,
+                                                                                                      trctl_select, nil)
+                  strips[tracks[track_select].strip][page].controls[reass_param].defval = strips[tracks[track_select].strip][page].controls[reass_param].val 
+                  
+                elseif dragparam.type == 'trsnd' then
+                  local sidx = math.floor((trctl_select-1) / 3)
+                  local pidx = (trctl_select-1) % 3 +1
+                  strips[tracks[track_select].strip][page].controls[reass_param].ctlcat = ctlcats.tracksend
+                  strips[tracks[track_select].strip][page].controls[reass_param].fxname='Track Send'
+                  strips[tracks[track_select].strip][page].controls[reass_param].param_info = {paramname = trsends_table[sidx][pidx].name,
+                                                                                               paramnum = trctl_select,
+                                                                                               paramidx = trsends_table[sidx].idx,
+                                                                                               paramstr = trsends_table[sidx][pidx].parmname,
+                                                                                               paramdesttrnum = trsends_table[sidx].desttracknum,
+                                                                                               paramdestguid = trsends_table[sidx].desttrackguid,
+                                                                                               paramdestchan = trsends_table[sidx].dstchan}
+                  strips[tracks[track_select].strip][page].controls[reass_param].val = GetParamValue(ctlcats.tracksend,
+                                                                                                      tracks[trackedit_select].tracknum,
+                                                                                                      nil,
+                                                                                                      trctl_select, reass_param)
+                  strips[tracks[track_select].strip][page].controls[reass_param].defval = strips[tracks[track_select].strip][page].controls[reass_param].val
+                end
+              else
+                OpenMsgBox(1, 'You cannot reassign multiple controls at once.', 1)
+              end
             end            
           end
           
