@@ -4191,7 +4191,7 @@
           max = strips[tracks[track_select].strip][page].controls[c].maxov
         end      
       end
-      return min, max  
+      return tonumber(min), tonumber(max)  
       
     elseif ctlcat == ctlcats.tracksend then
       local idx = math.floor((paramnum-1) % 3)+1
@@ -4204,7 +4204,7 @@
           max = strips[tracks[track_select].strip][page].controls[c].maxov
         end      
       end
-      return min, max  
+      return tonumber(min), tonumber(max)  
     end
   end
 
@@ -4226,11 +4226,11 @@
         return min, max
       elseif cc == ctlcats.trackparam then
         local param = strips[tracks[track_select].strip][page].controls[trackfxparam_select].param
-        return trctls_table[param].min, trctls_table[param].max
+        return tonumber(trctls_table[param].min), tonumber(trctls_table[param].max)
       elseif cc == ctlcats.tracksend then
         local param = strips[tracks[track_select].strip][page].controls[trackfxparam_select].param
         local idx = math.floor((param-1) % 3)+1
-        return trsends_mmtable[idx].min, trsends_mmtable[idx].max
+        return tonumber(trsends_mmtable[idx].min), tonumber(trsends_mmtable[idx].max)
       end
     else
       return nil, nil
@@ -4262,7 +4262,7 @@
       if strips[tracks[track_select].strip][page].controls[c].maxov then
         max = strips[tracks[track_select].strip][page].controls[c].maxov
       end
-      return min, max
+      return tonumber(min), tonumber(max)
 
     elseif cc == ctlcats.tracksend then
       local param = strips[tracks[track_select].strip][page].controls[c].param
@@ -4276,7 +4276,7 @@
           max = strips[tracks[track_select].strip][page].controls[c].maxov
         end      
       end
-      return min, max  
+      return tonumber(min), tonumber(max)  
     end
   end
   
