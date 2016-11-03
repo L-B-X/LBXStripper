@@ -5734,19 +5734,39 @@
   function GFXMenu()
     local mstr
     if gfx2_select then
-      local mm = '#Copy Formatting|#Paste Formatting'
+      local mm = '#Copy formatting|#Paste formatting'
       if strips[tracks[track_select].strip][page].graphics[gfx2_select].gfxtype == gfxtype.txt then
-        mm = 'Copy Formatting|Paste Formatting'
+        mm = 'Copy formatting|Paste formatting'
       end
-      mstr = 'Bring to front|Send to back||Insert Label||'..mm
+      mstr = 'Move up|Move down|Bring to front|Send to back||Insert label||'..mm
     else
-      mstr = '#Bring to front|#Send to back||Insert Label||#Copy Formatting|#Paste Formatting'    
+      mstr = '#Move up|#Move down|#Bring to front|#Send to back||Insert label||#Copy formatting|#Paste formatting'    
     end
     gfx.x, gfx.y = mouse.mx, mouse.my
     local mx, my = mouse.mx, mouse.my
     res = OpenMenu(mstr)
     if res ~= 0 then
       if res == 1 then
+        if gfx2_select < #strips[tracks[track_select].strip][page].graphics then
+          local tbl = {}
+          table.insert(tbl, strips[tracks[track_select].strip][page].graphics[gfx2_select])
+          table.insert(tbl, strips[tracks[track_select].strip][page].graphics[gfx2_select+1])
+          strips[tracks[track_select].strip][page].graphics[gfx2_select] = tbl[2]
+          strips[tracks[track_select].strip][page].graphics[gfx2_select+1] = tbl[1]
+          gfx2_select = gfx2_select +1
+        end
+              
+      elseif res == 2 then
+        if gfx2_select > 1 then
+          local tbl = {}
+          table.insert(tbl, strips[tracks[track_select].strip][page].graphics[gfx2_select])
+          table.insert(tbl, strips[tracks[track_select].strip][page].graphics[gfx2_select-1])
+          strips[tracks[track_select].strip][page].graphics[gfx2_select] = tbl[2]
+          strips[tracks[track_select].strip][page].graphics[gfx2_select-1] = tbl[1]
+          gfx2_select = gfx2_select -1
+        end      
+      
+      elseif res == 3 then
         --to front
         if gfx2_select then
           local cnt = #strips[tracks[track_select].strip][page].graphics          
@@ -5765,7 +5785,7 @@
           gfx2_select = #strips[tracks[track_select].strip][page].graphics
         end  
           
-      elseif res == 2 then
+      elseif res == 4 then
         --to back
         if gfx2_select then
           local cnt = #strips[tracks[track_select].strip][page].graphics          
@@ -5782,17 +5802,17 @@
           gfx2_select = 1
         end  
 
-      elseif res == 3 then
+      elseif res == 5 then
       
         InsertLabel(mx,my)
 
-      elseif res == 4 then
+      elseif res == 6 then
 
         local tbl = {}     
         table.insert(tbl, strips[tracks[track_select].strip][page].graphics[gfx2_select])
         gfx_lblformat_copy = tbl[1]
       
-      elseif res == 5 then
+      elseif res == 7 then
       
         if gfx_lblformat_copy then
         
@@ -6729,7 +6749,7 @@
                     break
                     
                   elseif MOUSE_click_RB(ctlxywh) and mouse.ctrl == false then
-                    local mstr = 'MIDI Learn|Modulation||Enter Value||Open FX Window'
+                    local mstr = 'MIDI learn|Modulation||Enter value||Open FX window'
                     trackfxparam_select = i
                     SetParam2(true)
                     gfx.x, gfx.y = mouse.mx, mouse.my
