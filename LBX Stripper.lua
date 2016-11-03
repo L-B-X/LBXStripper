@@ -1294,7 +1294,7 @@
     if tsends == nil then
       tsends = {}
     end
-    if track_select and strips[tracks[track_select].strip] then
+    if track_select and tracks[track_select] and strips[tracks[track_select].strip] then
     
       local tn = strips[tracks[track_select].strip].track.tracknum
       if tsends[tn] == nil then
@@ -5219,7 +5219,7 @@
           end
           local fnd = false
           for j = 0, #graphics_files do
-            if strip.graphics[i].gfxtype == gfxtype.img then
+            if nz(strip.graphics[i].gfxtype,gfxtype.img) == gfxtype.img then
               if graphics_files[j].fn == strip.graphics[i].fn then
                 if graphics_files[j].imageidx ~= nil then
                   fnd = true
@@ -5284,7 +5284,7 @@
       
         for i = 1, #strip.graphics do
         
-          if strip.graphics[i].gfxtype == gfxtype.img then
+          if nz(strip.graphics[i].gfxtype, gfxtype.img) == gfxtype.img then
 
             local x = strip.graphics[i].x+offsetx 
             local y = strip.graphics[i].y+offsety
