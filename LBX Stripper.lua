@@ -46,7 +46,10 @@
               minov = 22,
               maxov = 23,
               dragparam_tr = 24,
-              dragparam_snd = 25
+              dragparam_snd = 25,
+              shadxslider = 26,
+              shadyslider = 27,
+              shadaslider = 28
               }
   
   ctlcats = {fxparam = 0,
@@ -54,6 +57,10 @@
              tracksend = 2,
              trackrecv = 3,
              trackhwout = 4}
+             
+  gfxtype = {img = 0,
+             txt = 1
+             }
                         
   ---------------------------------------------
   -- Pickle.lua
@@ -313,6 +320,11 @@
                           w = plist_w,
                           h = butt_h}                           
 
+      --LABEL OPTS
+      obj.sections[49] = {x = gfx1.main_w - cow - 20,
+                          y = gfx1.main_h - 300 -20,
+                          w = cow,
+                          h = 300}                           
       --scale
       obj.sections[50] = {x = obj.sections[45].x+50,
                           y = obj.sections[45].y+150+butt_h+10,
@@ -537,6 +549,58 @@
                           y = obj.sections[45].y+butt_h+10 + (butt_h/2+4 + 10) * 4,
                           w = obj.sections[45].w-40,
                           h = butt_h/2+4}
+
+      --LBL OPTIONS 
+      --EDIT
+      obj.sections[140] = {x = obj.sections[49].x+20,
+                          y = obj.sections[49].y+butt_h+10 + (butt_h/2+4 + 10) * 0,
+                          w = obj.sections[49].w-40,
+                          h = butt_h/2+8}                       
+
+      local yo = 5
+      obj.sections[141] = {x = obj.sections[49].x+50,
+                          y = obj.sections[49].y+butt_h+10 + (butt_h/2+4 + 10) * 2 + yo,
+                          w = obj.sections[49].w-60,
+                          h = butt_h/2+4}                           
+
+      obj.sections[142] = {x = obj.sections[49].x+obj.sections[49].w-40-butt_h/2+4,
+                          y = obj.sections[49].y+butt_h+10 + (butt_h/2+4 + 10) * 3 + yo,
+                          w = butt_h/2+4,
+                          h = butt_h/2+4}                           
+      obj.sections[143] = {x = obj.sections[49].x+obj.sections[49].w-40-butt_h/2+4,
+                          y = obj.sections[49].y+butt_h+10 + (butt_h/2+4 + 10) * 4 + yo,
+                          w = butt_h/2+4,
+                          h = butt_h/2+4}                           
+      obj.sections[144] = {x = obj.sections[49].x+obj.sections[49].w-40-butt_h/2+4,
+                          y = obj.sections[49].y+butt_h+10 + (butt_h/2+4 + 10) * 5 + yo,
+                          w = butt_h/2+4,
+                          h = butt_h/2+4}                           
+      obj.sections[145] = {x = obj.sections[49].x+obj.sections[49].w-40-butt_h/2+4,
+                          y = obj.sections[49].y+butt_h+10 + (butt_h/2+4 + 10) * 6 + yo,
+                          w = butt_h/2+4,
+                          h = butt_h/2+4}                           
+      obj.sections[146] = {x = obj.sections[49].x+obj.sections[49].w-40-butt_h/2+4,
+                          y = obj.sections[49].y+butt_h+10 + (butt_h/2+4 + 10) * 7 + yo,
+                          w = butt_h/2+4,
+                          h = butt_h/2+4}                           
+
+      obj.sections[147] = {x = obj.sections[49].x+20,
+                          y = obj.sections[49].y+butt_h+10 + (butt_h/2+4 + 10) * 1,
+                          w = obj.sections[49].w-40,
+                          h = butt_h/2+8}                       
+
+      obj.sections[148] = {x = obj.sections[49].x+50,
+                          y = obj.sections[49].y+butt_h+10 + (butt_h/2+4 + 10) * 8 + yo,
+                          w = obj.sections[49].w-60,
+                          h = butt_h/2+4}                           
+      obj.sections[149] = {x = obj.sections[49].x+50,
+                          y = obj.sections[49].y+butt_h+10 + (butt_h/2+4 + 10) * 9 + yo,
+                          w = obj.sections[49].w-60,
+                          h = butt_h/2+4}                           
+      obj.sections[150] = {x = obj.sections[49].x+50,
+                          y = obj.sections[49].y+butt_h+10 + (butt_h/2+4 + 10) * 10 + yo,
+                          w = obj.sections[49].w-60,
+                          h = butt_h/2+4}                           
       
     return obj
   end
@@ -548,9 +612,9 @@
     
     local gui = {}
       gui.aa = 1
-      gui.fontname = 'Calibri'
+      gui.fontname = fontname_def
       gui.fontsize_tab = 20    
-      gui.fontsz_knob = 18
+      gui.fontsz_knob = fontsize_def
 
       if OS == "OSX32" or OS == "OSX64" then gui.fontsize_tab = gui.fontsize_tab - 5 end
       if OS == "OSX32" or OS == "OSX64" then gui.fontsz_knob = gui.fontsz_knob - 5 end
@@ -712,7 +776,7 @@
   
 ------------------------------------------------------------    
 
-  function Strip_AddGFX()
+  function Strip_AddGFX(type)
 
     --loadimg and set imageidx in graphics_files and strip.graphics
     if tracks[track_select] then
@@ -733,27 +797,71 @@
         strip = tracks[track_select].strip
       end
       
-      if graphics_files[gfx_select].imageidx == nil then  
-        image_count = image_count + 1
-        gfx.loadimg(image_count, graphics_path..graphics_files[gfx_select].fn)
-        graphics_files[gfx_select].imageidx = image_count
+      if type == gfxtype.img then
+        if graphics_files[gfx_select].imageidx == nil then  
+          image_count = image_count + 1
+          gfx.loadimg(image_count, graphics_path..graphics_files[gfx_select].fn)
+          graphics_files[gfx_select].imageidx = image_count
+        end
+  
+        local x,y
+        x = math.floor((draggfx.x)/settings_gridsize)*settings_gridsize + math.floor(surface_offset.x/settings_gridsize)*settings_gridsize - math.floor((obj.sections[10].x)/settings_gridsize)*settings_gridsize
+        y = math.floor((draggfx.y)/settings_gridsize)*settings_gridsize + math.floor(surface_offset.y/settings_gridsize)*settings_gridsize - math.floor((obj.sections[10].y)/settings_gridsize)*settings_gridsize
+        local w, h = gfx.getimgdim(graphics_files[gfx_select].imageidx)      
+        gfxnum = #strips[strip][page].graphics + 1
+        strips[strip][page].graphics[gfxnum] = {gfxtype = type,
+                                          fn = graphics_files[gfx_select].fn,
+                                          imageidx = graphics_files[gfx_select].imageidx,
+                                          x = x,
+                                          y = y,
+                                          w = w,
+                                          h = h,
+                                          scale = 1,
+                                          stretchw = w,
+                                          stretchh = h,
+                                          font = {idx = nil,
+                                                  name = nil,
+                                                  size = nil,
+                                                  bold = nil,
+                                                  italics = nil,
+                                                  underline = nil,
+                                                  shadow = nil
+                                                  },
+                                          text = nil,
+                                          text_col = nil
+                                         }
+      elseif type == gfxtype.txt then
+        local x,y
+        x = math.floor((label_add.x)/settings_gridsize)*settings_gridsize + math.floor(surface_offset.x/settings_gridsize)*settings_gridsize - math.floor((obj.sections[10].x)/settings_gridsize)*settings_gridsize
+        y = math.floor((label_add.y)/settings_gridsize)*settings_gridsize + math.floor(surface_offset.y/settings_gridsize)*settings_gridsize - math.floor((obj.sections[10].y)/settings_gridsize)*settings_gridsize
+        local w, h = 50, 50--gfx.getimgdim(graphics_files[gfx_select].imageidx)      
+        gfxnum = #strips[strip][page].graphics + 1
+        strips[strip][page].graphics[gfxnum] = {gfxtype = type,
+                                          fn = '',
+                                          imageidx = -1,
+                                          x = x,
+                                          y = y,
+                                          w = w,
+                                          h = h,
+                                          scale = 1,
+                                          stretchw = w,
+                                          stretchh = h,
+                                          font = {idx = gfx_font_select.idx,
+                                                  name = gfx_font_select.name,
+                                                  size = gfx_font_select.size,
+                                                  bold = gfx_font_select.bold,
+                                                  italics = gfx_font_select.italics,
+                                                  underline = gfx_font_select.underline,
+                                                  shadow = gfx_font_select.shadow,
+                                                  shadow_x = gfx_font_select.shadow_x,
+                                                  shadow_y = gfx_font_select.shadow_y,
+                                                  shadow_a = gfx_font_select.shadow_a
+                                                  },
+                                          text = gfx_text_select,
+                                          text_col = gfx_textcol_select
+                                         }
+      
       end
-
-      local x,y
-      x = math.floor((draggfx.x)/settings_gridsize)*settings_gridsize + math.floor(surface_offset.x/settings_gridsize)*settings_gridsize - math.floor((obj.sections[10].x)/settings_gridsize)*settings_gridsize
-      y = math.floor((draggfx.y)/settings_gridsize)*settings_gridsize + math.floor(surface_offset.y/settings_gridsize)*settings_gridsize - math.floor((obj.sections[10].y)/settings_gridsize)*settings_gridsize
-      local w, h = gfx.getimgdim(graphics_files[gfx_select].imageidx)      
-      gfxnum = #strips[strip][page].graphics + 1
-      strips[strip][page].graphics[gfxnum] = {fn = graphics_files[gfx_select].fn,
-                                        imageidx = graphics_files[gfx_select].imageidx,
-                                        x = x,
-                                        y = y,
-                                        w = w,
-                                        h = h,
-                                        scale = 1,
-                                        stretchw = w,
-                                        stretchh = h
-                                       }
     end  
 
   end
@@ -962,7 +1070,8 @@
                                                                 paramstr = trsends_table[sidx][pidx].parmname,
                                                                 paramdesttrnum = trsends_table[sidx].desttracknum,
                                                                 paramdestguid = trsends_table[sidx].desttrackguid,
-                                                                paramdestchan = trsends_table[sidx].dstchan},
+                                                                paramdestchan = trsends_table[sidx].dstchan,
+                                                                paramsrcchan = trsends_table[sidx].srcchan},
                                                   ctltype = ctltype_select,
                                                   knob_select = knob_select,
                                                   ctl_info = {fn = ctl_files[knob_select].fn,
@@ -1203,7 +1312,7 @@
             elseif tsends[tnl] == nil then
               tsends[tnl] = PopSendInfoFromChunk(tnl)
             end
-            local sidx = math.floor((paramnum) / 3)
+            local sidx = math.floor((paramnum-1) / 3)
             local pidx = (paramnum-1) % 3 +1
             --local found = false
             if tsends[tnl] and tsends[tnl][sidx] and strips[tracks[track_select].strip][page].controls[c].param_info.paramdestguid ==
@@ -1212,7 +1321,8 @@
               for i = 0, #tsends[tnl] do
                 
                 if tsends[tnl][i] and tsends[tnl][i].desttrackguid == strips[tracks[track_select].strip][page].controls[c].param_info.paramdestguid and
-                   tsends[tnl][i].dstchan == strips[tracks[track_select].strip][page].controls[c].param_info.paramdestchan then
+                   tsends[tnl][i].dstchan == strips[tracks[track_select].strip][page].controls[c].param_info.paramdestchan and
+                   tsends[tnl][i].srcchan == strips[tracks[track_select].strip][page].controls[c].param_info.paramsrcchan then
                   strips[tracks[track_select].strip][page].controls[c].param_info.paramnum = i*3+pidx-1
                   strips[tracks[track_select].strip][page].controls[c].param_info.param = i*3+pidx-1
                   strips[tracks[track_select].strip][page].controls[c].param_info.paramidx = tsends[tnl][i].idx
@@ -1233,17 +1343,23 @@
     return tsends
   end
   
-  function CheckSendGUID(tr, dtracknum, paramnum, guid, chan, sendinfo)
+  function CheckSendGUID(tr, dtracknum, paramnum, guid, dstchan, srcchan, sendinfo)
  
     local check = false
-    local sidx = math.floor((paramnum) / 3)
+    local sidx = math.floor((paramnum-1) / 3)
     local pidx = (paramnum-1) % 3 +1
     if sendinfo == nil then
       sendinfo = PopSendInfoFromChunk(tr)
     end
-    if sendinfo[sidx] and sendinfo[sidx].desttrackguid == guid and sendinfo[sidx].dstchan == chan then
+    if sendinfo[sidx] and sendinfo[sidx].desttrackguid == guid and sendinfo[sidx].dstchan == dstchan and sendinfo[sidx].srcchan == srcchan then
       check = true
     end
+    --if check == false then
+    --[[  DBG('check'..tostring(check)..sidx)
+      DBG(sendinfo[sidx].desttrackguid..'  '..guid)
+      DBG(sendinfo[sidx].dstchan..'  '..dstchan)
+      DBG(sendinfo[sidx].srcchan..'  '..srcchan)]]
+    --end
     return check, sendinfo
     
   end
@@ -1268,6 +1384,7 @@
           auxrcv = string.sub(chunk,ns,le-1)
           local tx = split(auxrcv, ' ')
           src_tr = tonumber(tx[2])
+          src = tonumber(tx[9])
           dst = tonumber(tx[10])
           
           if tonumber(src_tr) == tr then        
@@ -1277,7 +1394,9 @@
                           sendname = sname,
                           desttracknum = t,
                           desttrackguid = guid,
-                          dstchan = dst,{}}
+                          dstchan = dst,
+                          srcchan = src,
+                          {}}
             tbl[sidx][1] = {
                                   name = tostring(sname)..' Send Vol',
                                   parmname = 'D_VOL'
@@ -1410,7 +1529,7 @@
                        name = 'Solo',
                        parmname = 'I_SOLO',
                        min = 0,
-                       max = 1,
+                       max = 2,
                        }
     trctls_table[8] = {idx = 8,
                        name = 'Pan Mode',
@@ -2148,36 +2267,84 @@
       
         for i = 1, #strips[tracks[track_select].strip][page].graphics do
         
+          local gtype = strips[tracks[track_select].strip][page].graphics[i].gfxtype
           local x = strips[tracks[track_select].strip][page].graphics[i].x
           local y = strips[tracks[track_select].strip][page].graphics[i].y
           if not surface_size.limit then
             x = x + surface_offset.x 
             y = y + surface_offset.y 
           end
-          local w = strips[tracks[track_select].strip][page].graphics[i].w
-          local h = strips[tracks[track_select].strip][page].graphics[i].h
-          local sw = strips[tracks[track_select].strip][page].graphics[i].stretchw
-          local sh = strips[tracks[track_select].strip][page].graphics[i].stretchh
-          local imageidx = strips[tracks[track_select].strip][page].graphics[i].imageidx
           
-          local yoff = 0
-          local xoff = 0
-          if not surface_size.limit then
-            if x+sw > obj.sections[10].x + obj.sections[10].w then
-              sw = obj.sections[10].x + obj.sections[10].w - x
+          if gtype == gfxtype.img then
+            local w = strips[tracks[track_select].strip][page].graphics[i].w
+            local h = strips[tracks[track_select].strip][page].graphics[i].h
+            local sw = strips[tracks[track_select].strip][page].graphics[i].stretchw
+            local sh = strips[tracks[track_select].strip][page].graphics[i].stretchh
+            local imageidx = strips[tracks[track_select].strip][page].graphics[i].imageidx
+            
+            local yoff = 0
+            local xoff = 0
+            if not surface_size.limit then
+              if x+sw > obj.sections[10].x + obj.sections[10].w then
+                sw = obj.sections[10].x + obj.sections[10].w - x
+              end
+              if x < obj.sections[10].x then
+                xoff = obj.sections[10].x - x
+              end
+              if y+sh > obj.sections[10].y + obj.sections[10].h then
+                sh = obj.sections[10].y + obj.sections[10].h - y
+              end
+              if y < obj.sections[10].y then
+                yoff = obj.sections[10].y - y
+              end
             end
-            if x < obj.sections[10].x then
-              xoff = obj.sections[10].x - x
+            gfx.blit(imageidx,1,0, xoff, yoff, w, h-yoff, x+xoff, y+yoff, sw, sh)
+          
+          elseif gtype == gfxtype.txt then
+            --local w = strips[tracks[track_select].strip][page].graphics[i].w
+            --local h = strips[tracks[track_select].strip][page].graphics[i].h
+            local text = strips[tracks[track_select].strip][page].graphics[i].text
+            local textcol = strips[tracks[track_select].strip][page].graphics[i].text_col
+            
+            local flagb,flagi,flagu = 0,0,0
+            if strips[tracks[track_select].strip][page].graphics[i].font.bold then
+              flagb = 98
             end
-            if y+sh > obj.sections[10].y + obj.sections[10].h then
-              sh = obj.sections[10].y + obj.sections[10].h - y
+            if strips[tracks[track_select].strip][page].graphics[i].font.italics then
+              flagi = 105
             end
-            if y < obj.sections[10].y then
-              yoff = obj.sections[10].y - y
+            if strips[tracks[track_select].strip][page].graphics[i].font.underline then
+              flagu = 117
             end
+            local flags = flagb + (flagi*256) + (flagu*(256^2))
+            gfx.setfont(1,strips[tracks[track_select].strip][page].graphics[i].font.name,
+                          strips[tracks[track_select].strip][page].graphics[i].font.size,flags)
+            local w, h = gfx.measurestr(text)
+            strips[tracks[track_select].strip][page].graphics[i].w = w
+            strips[tracks[track_select].strip][page].graphics[i].h = h            
+            strips[tracks[track_select].strip][page].graphics[i].stretchw = w
+            strips[tracks[track_select].strip][page].graphics[i].stretchh = h            
+            if strips[tracks[track_select].strip][page].graphics[i].font.shadow then
+            
+              local shada = nz(strips[tracks[track_select].strip][page].graphics[i].font.shadow_a,0.6)
+              local shadx = nz(strips[tracks[track_select].strip][page].graphics[i].font.shadow_x,1)
+              local shady = nz(strips[tracks[track_select].strip][page].graphics[i].font.shadow_y,1)
+              --local shadoff = F_limit(math.ceil((strips[tracks[track_select].strip][page].graphics[i].font.size/250)*10),1,15)
+            
+              f_Get_SSV(gui.color.black)
+              gfx.a = shada
+              gfx.x, gfx.y = x+shadx,y+shady
+              gfx.drawstr(text)
+            end
+            
+            gfx.a = 1
+            gfx.x, gfx.y = x,y
+            f_Get_SSV(textcol)
+            
+            gfx.drawstr(text)
+          
           end
-          gfx.blit(imageidx,1,0, xoff, yoff, w, h-yoff, x+xoff, y+yoff, sw, sh)
-
+          
         end
       end      
     end
@@ -2305,6 +2472,55 @@
     end  
   end
 
+  ------------------------------------------------------------
+
+  function GUI_DrawLblOptions(obj, gui)
+
+    gfx.dest = 1
+
+    local xywh = {x = obj.sections[49].x,
+                  y = obj.sections[49].y,
+                  w = obj.sections[49].w,
+                  h = obj.sections[49].h}
+    
+    f_Get_SSV('0 0 0')
+    gfx.a = 1  
+    gfx.rect(xywh.x,
+     xywh.y, 
+     xywh.w,
+     xywh.h, 1 )
+
+    f_Get_SSV('64 64 64')
+    gfx.a = 1  
+    gfx.rect(xywh.x,
+     xywh.y, 
+     xywh.w,
+     xywh.h, 0 )
+    
+    xywh.h = butt_h     
+    f_Get_SSV(gui.color.white)
+    gfx.a = 1 
+    gfx.rect(xywh.x,
+     xywh.y, 
+     xywh.w,
+     xywh.h, 1 )
+
+    GUI_textC(gui,xywh,'LABEL OPTS',gui.color.black,-2)
+
+    GUI_DrawButton(gui, 'EDIT LABEL', obj.sections[140], gui.color.white, gui.color.black, true)
+    GUI_DrawButton(gui, gfx_font_select.name, obj.sections[147], gui.color.white, gui.color.black, true)
+    GUI_DrawSliderH(gui, 'F SIZE', obj.sections[141], gui.color.black, gui.color.white, F_limit(gfx_font_select.size/250,0,1))
+    GUI_DrawColorBox(gui, 'LBL COL', obj.sections[142], gui.color.white, gfx_textcol_select)
+    GUI_DrawTick(gui, 'BOLD', obj.sections[143], gui.color.white, gfx_font_select.bold)
+    GUI_DrawTick(gui, 'ITALIC', obj.sections[144], gui.color.white, gfx_font_select.italics)
+    GUI_DrawTick(gui, 'U/LINE', obj.sections[145], gui.color.white, gfx_font_select.underline)
+    GUI_DrawTick(gui, 'SHADOW', obj.sections[146], gui.color.white, gfx_font_select.shadow)
+    GUI_DrawSliderH(gui, 'SHAD X', obj.sections[148], gui.color.black, gui.color.white, F_limit((gfx_font_select.shadow_x+15)/30,0,1))
+    GUI_DrawSliderH(gui, 'SHAD Y', obj.sections[149], gui.color.black, gui.color.white, F_limit((gfx_font_select.shadow_y+15)/30,0,1))
+    GUI_DrawSliderH(gui, 'SHAD A', obj.sections[150], gui.color.black, gui.color.white, F_limit(gfx_font_select.shadow_a,0,1))
+
+  end
+  
   ------------------------------------------------------------
 
   function GUI_DrawCtlOptions(obj, gui)
@@ -3297,13 +3513,19 @@
               selrect.y = selrect.y - surface_offset.y + obj.sections[10].y
               
               gfx.roundrect(selrect.x, selrect.y, selrect.w, selrect.h, 8, 1, 0)
-              gfx.circle(selrect.x+selrect.w,selrect.y+selrect.h/2,4,1,1)
-              gfx.circle(selrect.x+selrect.w,selrect.y+selrect.h,4,1,1)
-              gfx.circle(selrect.x+selrect.w/2,selrect.y+selrect.h,4,1,1)              
+              if show_lbloptions == false then
+                gfx.circle(selrect.x+selrect.w,selrect.y+selrect.h/2,4,1,1)
+                gfx.circle(selrect.x+selrect.w,selrect.y+selrect.h,4,1,1)
+                gfx.circle(selrect.x+selrect.w/2,selrect.y+selrect.h,4,1,1)              
+              end
             end            
           
           end
           gfx.blit(1001,1,0,0,0,obj.sections[43].w,obj.sections[43].h,0,butt_h)
+
+          if show_lbloptions and gfx2_select ~= nil then            
+            GUI_DrawLblOptions(obj, gui)
+          end
 
           if update_gfx or update_surface then
             if lockh > 0 or lockw > 0 then
@@ -4950,6 +5172,8 @@
       --compatibility
       if stripdata.strip.graphics[j].stretchw == nil then stripdata.strip.graphics[j].stretchw = w end
       if stripdata.strip.graphics[j].stretchh == nil then stripdata.strip.graphics[j].stretchh = h end      
+
+      if stripdata.strip.graphics[j].gfxtype == nil then stripdata.strip.graphics[j].gfxtype = gfxtype.img end
       
       strips[strip][page].graphics[#strips[strip][page].graphics + 1] = stripdata.strip.graphics[j]    
 
@@ -4972,27 +5196,29 @@
           if minx == nil then
             minx = strip.graphics[i].x
             miny = strip.graphics[i].y
-            maxx = strip.graphics[i].x + strip.graphics[i].w
-            maxy = strip.graphics[i].y + strip.graphics[i].h
+            maxx = strip.graphics[i].x + strip.graphics[i].stretchw
+            maxy = strip.graphics[i].y + strip.graphics[i].stretchh
           else
             minx = math.min(minx, strip.graphics[i].x)
             miny = math.min(miny, strip.graphics[i].y)
-            maxx = math.max(maxx, strip.graphics[i].x + strip.graphics[i].w)
-            maxy = math.max(maxy, strip.graphics[i].y + strip.graphics[i].h)
+            maxx = math.max(maxx, strip.graphics[i].x + strip.graphics[i].stretchw)
+            maxy = math.max(maxy, strip.graphics[i].y + strip.graphics[i].stretchh)
           end
           local fnd = false
           for j = 0, #graphics_files do
-            if graphics_files[j].fn == strip.graphics[i].fn then
-              if graphics_files[j].imageidx ~= nil then
-                fnd = true
-                strip.graphics[i].imageidx = graphics_files[j].imageidx
-              else
-                fnd = true
-                image_count_add = image_count_add + 1
-                gfx.loadimg(image_count_add, graphics_path..strip.graphics[i].fn)
-                strip.graphics[i].imageidx = image_count_add
+            if strip.graphics[i].gfxtype == gfxtype.img then
+              if graphics_files[j].fn == strip.graphics[i].fn then
+                if graphics_files[j].imageidx ~= nil then
+                  fnd = true
+                  strip.graphics[i].imageidx = graphics_files[j].imageidx
+                else
+                  fnd = true
+                  image_count_add = image_count_add + 1
+                  gfx.loadimg(image_count_add, graphics_path..strip.graphics[i].fn)
+                  strip.graphics[i].imageidx = image_count_add
+                end
+                break
               end
-              break
             end
           end
           if not fnd then
@@ -5045,15 +5271,51 @@
       
         for i = 1, #strip.graphics do
         
-          local x = strip.graphics[i].x+offsetx 
-          local y = strip.graphics[i].y+offsety
-          local w = strip.graphics[i].w
-          local h = strip.graphics[i].h
-          local sw = strip.graphics[i].stretchw
-          local sh = strip.graphics[i].stretchh
-          local imageidx = strip.graphics[i].imageidx
+          if strip.graphics[i].gfxtype == gfxtype.img then
+
+            local x = strip.graphics[i].x+offsetx 
+            local y = strip.graphics[i].y+offsety
+            local w = strip.graphics[i].w
+            local h = strip.graphics[i].h
+            local sw = strip.graphics[i].stretchw
+            local sh = strip.graphics[i].stretchh
+            local imageidx = strip.graphics[i].imageidx
+            
+            gfx.blit(imageidx,1,0, 0, 0, w, h, x, y, sw, sh)
           
-          gfx.blit(imageidx,1,0, 0, 0, w, h, x, y, sw, sh)
+          elseif strip.graphics[i].gfxtype == gfxtype.txt then
+          
+            local x = strip.graphics[i].x+offsetx 
+            local y = strip.graphics[i].y+offsety
+          
+            local text = strip.graphics[i].text
+            local textcol = strip.graphics[i].text_col
+            
+            local flagb,flagi,flagu = 0,0,0
+            if strip.graphics[i].font.bold then flagb = 98 end
+            if strip.graphics[i].font.italics then flagi = 105 end
+            if strip.graphics[i].font.underline then flagu = 117 end
+            local flags = flagb + (flagi*256) + (flagu*(256^2))
+            gfx.setfont(1,strip.graphics[i].font.name,
+                          strip.graphics[i].font.size,flags)
+            if strip.graphics[i].font.shadow then
+            
+              local shadx = nz(strip.graphics[i].font.shadow_x,1)
+              local shady = nz(strip.graphics[i].font.shadow_y,1)
+            
+              f_Get_SSV(gui.color.black)
+              gfx.a = 0.5
+              gfx.x, gfx.y = x+shadx,y+shady
+              gfx.drawstr(text)
+            end
+            
+            gfx.a = 1
+            gfx.x, gfx.y = x,y
+            f_Get_SSV(textcol)
+            
+            gfx.drawstr(text)
+          
+          end
       
         end
       end      
@@ -5457,8 +5719,18 @@
   end
   
   function GFXMenu()
-    local mstr = 'Bring to front|Send to back'
+    local mstr
+    if gfx2_select then
+      local mm = '#Copy Formatting|#Paste Formatting'
+      if strips[tracks[track_select].strip][page].graphics[gfx2_select].gfxtype == gfxtype.txt then
+        mm = 'Copy Formatting|Paste Formatting'
+      end
+      mstr = 'Bring to front|Send to back||Insert Label||'..mm
+    else
+      mstr = '#Bring to front|#Send to back||Insert Label||#Copy Formatting|#Paste Formatting'    
+    end
     gfx.x, gfx.y = mouse.mx, mouse.my
+    local mx, my = mouse.mx, mouse.my
     res = OpenMenu(mstr)
     if res ~= 0 then
       if res == 1 then
@@ -5497,11 +5769,116 @@
           gfx2_select = 1
         end  
 
+      elseif res == 3 then
+      
+        InsertLabel(mx,my)
+
+      elseif res == 4 then
+
+        local tbl = {}     
+        table.insert(tbl, strips[tracks[track_select].strip][page].graphics[gfx2_select])
+        gfx_lblformat_copy = tbl[1]
+      
+      elseif res == 5 then
+      
+        if gfx_lblformat_copy then
+        
+          strips[tracks[track_select].strip][page].graphics[gfx2_select].font.name = gfx_lblformat_copy.font.name
+          strips[tracks[track_select].strip][page].graphics[gfx2_select].font.size = gfx_lblformat_copy.font.size
+          strips[tracks[track_select].strip][page].graphics[gfx2_select].font.bold = gfx_lblformat_copy.font.bold
+          strips[tracks[track_select].strip][page].graphics[gfx2_select].font.italics = gfx_lblformat_copy.font.italics
+          strips[tracks[track_select].strip][page].graphics[gfx2_select].font.underline = gfx_lblformat_copy.font.underline
+          strips[tracks[track_select].strip][page].graphics[gfx2_select].font.shadow = gfx_lblformat_copy.font.shadow
+          strips[tracks[track_select].strip][page].graphics[gfx2_select].font.shadow_x = gfx_lblformat_copy.font.shadow_x
+          strips[tracks[track_select].strip][page].graphics[gfx2_select].font.shadow_y = gfx_lblformat_copy.font.shadow_y
+          strips[tracks[track_select].strip][page].graphics[gfx2_select].font.shadow_a = gfx_lblformat_copy.font.shadow_a
+          strips[tracks[track_select].strip][page].graphics[gfx2_select].text_col = gfx_lblformat_copy.text_col
+          
+        end
+      
       end
     end
     update_gfx = true    
   end
   
+  function InsertLabel(x,y)
+  
+    label_add = {x = x, y = y}
+    EditLabel(6)
+  
+  end
+  
+  function InsertLabel2(txt)
+  
+    if txt and txt ~= '' then
+    
+      gfx_text_select = txt
+      Strip_AddGFX(gfxtype.txt)
+    
+    end
+    
+  end
+  
+  function EditLabel(eb,txt)
+  
+    if strips and strips[tracks[track_select].strip] then
+    
+      if txt == nil then txt = "" end
+      local sizex,sizey = 400,200
+      editbox={title = 'Please enter text for label:',
+        x=400, y=100, w=120, h=20, l=4, maxlen=40,
+        fgcol=0x000000, fgfcol=0x00FF00, bgcol=0x808080,
+        txtcol=0x000000, curscol=0x000000,
+        font=1, fontsz=14, caret=string.len(txt), sel=0, cursstate=0,
+        text=txt, 
+        hasfocus=true
+      }
+      
+      EB_Open = eb
+    end
+    
+  end
+  
+  function EditLabel2(txt)
+  
+    --for i = 1, #ctl_select do
+    if string.len(txt) > 0 then
+      gfx_text_select = txt
+      strips[tracks[track_select].strip][page].graphics[gfx2_select].text = txt
+    end
+    --end
+    
+  end
+
+  function EditFont()
+  
+    if strips and strips[tracks[track_select].strip] then
+    
+      local txt = gfx_font_select.name
+      local sizex,sizey = 400,200
+      editbox={title = 'Please enter font name:',
+        x=400, y=100, w=120, h=20, l=4, maxlen=40,
+        fgcol=0x000000, fgfcol=0x00FF00, bgcol=0x808080,
+        txtcol=0x000000, curscol=0x000000,
+        font=1, fontsz=14, caret=string.len(txt), sel=0, cursstate=0,
+        text=txt, 
+        hasfocus=true
+      }
+      
+      EB_Open = 8
+    end
+    
+  end
+
+  function EditFont2(font)
+
+    gfx.setfont(1,font)
+    local f2,f3 = gfx.getfont()
+    gfx_font_select.name = f3
+    strips[tracks[track_select].strip][page].graphics[gfx2_select].font.name = f3
+
+  end
+    
   function TopMenu()
   
     local mstr
@@ -5649,6 +6026,20 @@
     local min, max = GetParamMinMax_ctl(ctl_select[1].ctl)
     minov_select = min
     maxov_select = max
+  end
+
+  function SetGfxSelectVals()
+    gfx_font_select.name = strips[tracks[track_select].strip][page].graphics[gfx2_select].font.name
+    gfx_font_select.size = strips[tracks[track_select].strip][page].graphics[gfx2_select].font.size
+    gfx_font_select.bold = strips[tracks[track_select].strip][page].graphics[gfx2_select].font.bold
+    gfx_font_select.italic = strips[tracks[track_select].strip][page].graphics[gfx2_select].font.italic
+    gfx_font_select.underline = strips[tracks[track_select].strip][page].graphics[gfx2_select].font.underline
+    gfx_font_select.shadow = strips[tracks[track_select].strip][page].graphics[gfx2_select].font.shadow
+    gfx_font_select.shadow_x = strips[tracks[track_select].strip][page].graphics[gfx2_select].font.shadow_x
+    gfx_font_select.shadow_y = strips[tracks[track_select].strip][page].graphics[gfx2_select].font.shadow_y
+    gfx_font_select.shadow_a = strips[tracks[track_select].strip][page].graphics[gfx2_select].font.shadow_a
+    gfx_textcol_select = strips[tracks[track_select].strip][page].graphics[gfx2_select].text_col
+    gfx_text_select = strips[tracks[track_select].strip][page].graphics[gfx2_select].text
   end
   
   function GetValFromDVal(c, dv)
@@ -5974,7 +6365,8 @@
                       
                       chk, chktbl[tt] = CheckSendGUID(tt,nil,strips[tracks[track_select].strip][page].controls[i].param_info.paramnum,
                                                             strips[tracks[track_select].strip][page].controls[i].param_info.paramdestguid,
-                                                            strips[tracks[track_select].strip][page].controls[i].param_info.paramdestchan, 
+                                                            strips[tracks[track_select].strip][page].controls[i].param_info.paramdestchan,
+                                                            strips[tracks[track_select].strip][page].controls[i].param_info.paramsrcchan,
                                                             chktbl[tt])
                       if chk == false then
                         chktbl = CheckStripSends(chktbl)
@@ -6124,20 +6516,27 @@
           update_gfx = true
         elseif EB_Open == 4 then
           EditMinDVal2(editbox.text)
-          --DBG(editbox.text)
           update_gfx = true
         elseif EB_Open == 5 then
           EditValue2(editbox.text)
           --update_ctls = true
+        elseif EB_Open == 6 then
+          InsertLabel2(editbox.text)
+        elseif EB_Open == 7 then
+          EditLabel2(editbox.text)
+        elseif EB_Open == 8 then
+          EditFont2(editbox.text)        
         end
+        editbox = nil
         EB_Open = 0
       
       elseif MOUSE_click(obj.sections[7]) then
+        editbox = nil
         EB_Open = 0
       end
           
       local c=gfx.getchar()  
-      if editbox.hasfocus then editbox_onchar(editbox, c) end  
+      if editbox and editbox.hasfocus then editbox_onchar(editbox, c) end  
       update_gfx = true
     else
     
@@ -7720,7 +8119,8 @@
                                                                                                paramstr = trsends_table[sidx][pidx].parmname,
                                                                                                paramdesttrnum = trsends_table[sidx].desttracknum,
                                                                                                paramdestguid = trsends_table[sidx].desttrackguid,
-                                                                                               paramdestchan = trsends_table[sidx].dstchan}
+                                                                                               paramdestchan = trsends_table[sidx].dstchan,
+                                                                                               paramsrcchan = trsends_table[sidx].srcchan}
                   strips[tracks[track_select].strip][page].controls[reass_param].val = GetParamValue(ctlcats.tracksend,
                                                                                                       tracks[trackedit_select].tracknum,
                                                                                                       nil,
@@ -7758,6 +8158,96 @@
           end
         end
       
+        if gfx2_select ~= nil and show_lbloptions and (MOUSE_click(obj.sections[49]) or MOUSE_click_RB(obj.sections[49])) then
+          
+          -- LBL OPTIONS
+        
+          if MOUSE_click(obj.sections[140]) then
+            EditLabel(7,gfx_text_select)
+          end          
+
+          if MOUSE_click(obj.sections[147]) then
+            EditFont()
+          end          
+        
+          if MOUSE_click(obj.sections[142]) then
+            local retval, c = reaper.GR_SelectColor(_,ConvertColorString(gfx_textcol_select))
+            if retval ~= 0 then
+              gfx_textcol_select = ConvertColor(c)
+              strips[tracks[track_select].strip][page].graphics[gfx2_select].text_col = gfx_textcol_select
+              update_gfx = true
+            end
+          end
+          
+          if MOUSE_click(obj.sections[143]) then
+            gfx_font_select.bold = not gfx_font_select.bold
+            strips[tracks[track_select].strip][page].graphics[gfx2_select].font.bold = gfx_font_select.bold
+            update_gfx = true
+          end
+
+          if MOUSE_click(obj.sections[144]) then
+            gfx_font_select.italics = not gfx_font_select.italics
+            strips[tracks[track_select].strip][page].graphics[gfx2_select].font.italics = gfx_font_select.italics
+            update_gfx = true
+          end
+
+          if MOUSE_click(obj.sections[145]) then
+            gfx_font_select.underline = not gfx_font_select.underline
+            strips[tracks[track_select].strip][page].graphics[gfx2_select].font.underline = gfx_font_select.underline
+            update_gfx = true
+          end
+
+          if MOUSE_click(obj.sections[146]) then
+            gfx_font_select.shadow = not gfx_font_select.shadow
+            strips[tracks[track_select].strip][page].graphics[gfx2_select].font.shadow = gfx_font_select.shadow
+            update_gfx = true
+          end
+          
+          if mouse.context == nil and MOUSE_click(obj.sections[141]) then mouse.context = contexts.textsizeslider 
+          elseif mouse.context == nil and MOUSE_click(obj.sections[148]) then mouse.context = contexts.shadxslider
+          elseif mouse.context == nil and MOUSE_click(obj.sections[149]) then mouse.context = contexts.shadyslider
+          elseif mouse.context == nil and MOUSE_click(obj.sections[150]) then mouse.context = contexts.shadaslider end
+          
+        end
+      
+        if mouse.context and mouse.context == contexts.textsizeslider then
+          local val = F_limit(MOUSE_sliderHBar(obj.sections[141]),0,1)
+          if val ~= nil then
+            gfx_font_select.size = F_limit((val*250),8,250)
+            --for i = 1, #ctl_select do
+            strips[tracks[track_select].strip][page].graphics[gfx2_select].font.size = gfx_font_select.size
+            --end            
+            update_gfx = true
+          end
+        elseif mouse.context and mouse.context == contexts.shadxslider then
+          local val = F_limit(MOUSE_sliderHBar(obj.sections[148]),0,1)
+          if val ~= nil then
+            gfx_font_select.shadow_x = math.floor((val*30)-15)
+            --for i = 1, #ctl_select do
+            strips[tracks[track_select].strip][page].graphics[gfx2_select].font.shadow_x = gfx_font_select.shadow_x
+            --end            
+            update_gfx = true
+          end
+        elseif mouse.context and mouse.context == contexts.shadyslider then
+          local val = F_limit(MOUSE_sliderHBar(obj.sections[149]),0,1)
+          if val ~= nil then
+            gfx_font_select.shadow_y = math.floor((val*30)-15)
+            --for i = 1, #ctl_select do
+            strips[tracks[track_select].strip][page].graphics[gfx2_select].font.shadow_y = gfx_font_select.shadow_y
+            --end            
+            update_gfx = true
+          end
+        elseif mouse.context and mouse.context == contexts.shadaslider then
+          local val = F_limit(MOUSE_sliderHBar(obj.sections[150]),0,1)
+          if val ~= nil then
+            gfx_font_select.shadow_a = val
+            --for i = 1, #ctl_select do
+            strips[tracks[track_select].strip][page].graphics[gfx2_select].font.shadow_a = gfx_font_select.shadow_a
+            --end            
+            update_gfx = true
+          end
+        end
+        
         if MOUSE_click(obj.sections[44]) then
           local i = math.floor((mouse.my - obj.sections[44].y) / butt_h)-1
           
@@ -7792,7 +8282,7 @@
         elseif draggfx ~= nil then
           --Dropped
           if mouse.mx > obj.sections[10].x and mouse.mx < obj.sections[10].x+obj.sections[10].w and mouse.my > obj.sections[10].y and mouse.my < obj.sections[10].y+obj.sections[10].h then
-            Strip_AddGFX()
+            Strip_AddGFX(gfxtype.img)
           end
           
           draggfx = nil
@@ -7855,6 +8345,7 @@
             
             end
             
+            local clickxywh = false
             if mouse.context == nil then
               for i = #strips[tracks[track_select].strip][page].graphics,1,-1 do
                 local xywh
@@ -7878,19 +8369,27 @@
                   draggfx2 = 'draggfx'
                   dragoff = {x = mouse.mx - strips[tracks[track_select].strip][page].graphics[gfx2_select].x - surface_offset.x,
                              y = mouse.my - strips[tracks[track_select].strip][page].graphics[gfx2_select].y - surface_offset.y}
+                  if strips[tracks[track_select].strip][page].graphics[gfx2_select].gfxtype == gfxtype.txt then
+                    show_lbloptions = true
+                    SetGfxSelectVals()
+                  else
+                    show_lbloptions = false
+                  end
                   update_gfx = true
+                  clickxywh = true
                   break
-                elseif gfx2_select and MOUSE_click_RB(xywh) then
-                  --gfx2_select = i
-                  --update_gfx = true
-                  --GUI_draw(obj,gui)
+                elseif MOUSE_click_RB(xywh) then
                   GFXMenu()
-                  --update_gfx = true
+                  clickxywh = true
                   break
                 end
               end
 
+              if clickxywh == false and MOUSE_click_RB(obj.sections[10]) then
+                GFXMenu()
+              end
             end
+            
           end
         end
                   
@@ -8135,7 +8634,8 @@
     end
     
     if mouse.context == nil then
-      if ctl_select ~= nil and (MOUSE_click(obj.sections[45]) or (MOUSE_click(obj.sections[100]) and show_cycleoptions)) then
+      if ((submode == 0 and ctl_select ~= nil) and (MOUSE_click(obj.sections[45]) or (MOUSE_click(obj.sections[100]) and show_cycleoptions))) or 
+         ((submode == 1 and gfx2_select ~= nil) and (MOUSE_click(obj.sections[49]) and show_lbloptions)) then
       elseif mouse.mx > obj.sections[10].x then
       
         if MOUSE_click(obj.sections[10]) then
@@ -8511,7 +9011,7 @@
     local ox,oy=e.x+e.l,e.y+(e.h-h)/2
     gfx.x,gfx.y=ox,oy
     gfx.drawstr(e.text)
-    if e.sel ~= 0 then
+    --[[if e.sel ~= 0 then
       local sc,ec=e.caret,e.caret+e.sel
       if sc > ec then sc,ec=ec,sc end
       local sx=gfx.measurestr(string.sub(e.text, 0, sc))
@@ -8521,8 +9021,8 @@
       setcolor(e.bgcol)
       gfx.x,gfx.y=ox+sx,oy
       gfx.drawstr(string.sub(e.text, sc+1, ec))
-    end 
-    if e.hasfocus then
+    end]]
+    if e.hasfocus == true then
       if e.cursstate < 8 then   
         w=gfx.measurestr(string.sub(e.text, 0, e.caret))    
         setcolor(e.curscol)
@@ -8542,9 +9042,9 @@
   end
   
   function editbox_onmousedown(e)
-    e.hasfocus=
-      gfx.mouse_x >= editbox.x and gfx.mouse_x < editbox.x+editbox.w and
-      gfx.mouse_y >= editbox.y and gfx.mouse_y < editbox.y+editbox.h    
+    --e.hasfocus=
+    --  gfx.mouse_x >= editbox.x and gfx.mouse_x < editbox.x+editbox.w and
+    --  gfx.mouse_y >= editbox.y and gfx.mouse_y < editbox.y+editbox.h    
     if e.hasfocus then
       e.caret=editbox_getcaret(e) 
       e.cursstate=0
@@ -8554,7 +9054,7 @@
   
   function editbox_onmousedoubleclick(e)
     local len=string.len(e.text)
-    e.caret=len ; e.sel=-len
+    e.caret=len ; --e.sel=-len
   end
   
   function editbox_onmousemove(e)
@@ -8562,12 +9062,13 @@
   end
   
   function editbox_onchar(e, c)
-    if e.sel ~= 0 then
+    --DBG(e.sel..' '..e.text)
+    --[[if e.sel ~= 0 then
       local sc,ec=e.caret,e.caret+e.sel
       if sc > ec then sc,ec=ec,sc end
       e.text=string.sub(e.text,1,sc)..string.sub(e.text,ec+1)
       e.sel=0
-    end
+    end]]
     if c == 0x6C656674 then -- left arrow
       if e.caret > 0 then e.caret=e.caret-1 end
     elseif c == 0x72676874 then -- right arrow
@@ -8582,6 +9083,7 @@
         string.sub(e.text,1,e.caret), c, string.sub(e.text,e.caret+1))
       e.caret=e.caret+1
     end
+    --DBG('e'..e.text)
   end
   
   ---- generic mouse handling ----
@@ -8745,7 +9247,8 @@
                                                               paramidx = GPES(key..'param_info_idx',true),
                                                               paramstr = GPES(key..'param_info_str',true),
                                                               paramdestguid = GPES(key..'param_info_guid',true),
-                                                              paramdestchan = tonumber(GPES(key..'param_info_chan',true))
+                                                              paramdestchan = tonumber(GPES(key..'param_info_chan',true)),
+                                                              paramsrcchan = tonumber(GPES(key..'param_info_srcchan',true))
                                                              },
                                                 ctltype = tonumber(GPES(key..'ctltype')),
                                                 knob_select = tonumber(GPES(key..'knob_select')),
@@ -8849,7 +9352,21 @@
                                                 w = tonumber(GPES(key..'w')),
                                                 h = tonumber(GPES(key..'h')),
                                                 scale = tonumber(GPES(key..'scale')),
-                                                id = deconvnum(GPES(key..'id',true))
+                                                id = deconvnum(GPES(key..'id',true)),
+                                                gfxtype = tonumber(nz(GPES(key..'gfxtype',true),gfxtype.img)),
+                                                font = {idx = tonumber(GPES(key..'font_idx',true)),
+                                                        name = GPES(key..'font_name',true),
+                                                        size = tonumber(GPES(key..'font_size',true)),
+                                                        bold = tobool(GPES(key..'font_bold',true)),
+                                                        italics = tobool(GPES(key..'font_italics',true)),
+                                                        underline = tobool(GPES(key..'font_underline',true)),
+                                                        shadow = tobool(nz(GPES(key..'font_shadow',true),true)),
+                                                        shadow_x = tonumber(nz(GPES(key..'font_shadowx',true),1)),
+                                                        shadow_y = tonumber(nz(GPES(key..'font_shadowy',true),1)),
+                                                        shadow_a = tonumber(nz(GPES(key..'font_shadowa',true),0.6))
+                                                        },
+                                                text = GPES(key..'text',true),
+                                                text_col = GPES(key..'text_col',true)
                                                }
                     strips[ss][p].graphics[g].stretchw = tonumber(nz(GPES(key..'stretchw',true),strips[ss][p].graphics[g].w))
                     strips[ss][p].graphics[g].stretchh = tonumber(nz(GPES(key..'stretchh',true),strips[ss][p].graphics[g].h))
@@ -9021,6 +9538,7 @@
                 reaper.SetProjExtState(0,SCRIPT,key..'param_info_str',nz(strips[s][p].controls[c].param_info.paramstr,''))
                 reaper.SetProjExtState(0,SCRIPT,key..'param_info_guid',nz(strips[s][p].controls[c].param_info.paramdestguid,''))
                 reaper.SetProjExtState(0,SCRIPT,key..'param_info_chan',nz(strips[s][p].controls[c].param_info.paramdestchan,''))
+                reaper.SetProjExtState(0,SCRIPT,key..'param_info_srcchan',nz(strips[s][p].controls[c].param_info.paramsrcchan,''))
                 reaper.SetProjExtState(0,SCRIPT,key..'ctltype',strips[s][p].controls[c].ctltype)
                 reaper.SetProjExtState(0,SCRIPT,key..'knob_select',strips[s][p].controls[c].knob_select)
                 reaper.SetProjExtState(0,SCRIPT,key..'ctl_info_fn',strips[s][p].controls[c].ctl_info.fn)
@@ -9083,6 +9601,20 @@
                 reaper.SetProjExtState(0,SCRIPT,key..'stretchh',nz(strips[s][p].graphics[g].stretchh,strips[s][p].graphics[g].h))
                 reaper.SetProjExtState(0,SCRIPT,key..'scale',strips[s][p].graphics[g].scale)
                 reaper.SetProjExtState(0,SCRIPT,key..'id',convnum(strips[s][p].graphics[g].id))
+              
+                reaper.SetProjExtState(0,SCRIPT,key..'gfxtype',nz(strips[s][p].graphics[g].gfxtype, gfxtype.img))
+                reaper.SetProjExtState(0,SCRIPT,key..'font_idx',nz(strips[s][p].graphics[g].font.idx, ''))
+                reaper.SetProjExtState(0,SCRIPT,key..'font_name',nz(strips[s][p].graphics[g].font.name, ''))
+                reaper.SetProjExtState(0,SCRIPT,key..'font_size',nz(strips[s][p].graphics[g].font.size, ''))
+                reaper.SetProjExtState(0,SCRIPT,key..'font_bold',nz(tostring(strips[s][p].graphics[g].font.bold), ''))
+                reaper.SetProjExtState(0,SCRIPT,key..'font_italics',nz(tostring(strips[s][p].graphics[g].font.italics), ''))
+                reaper.SetProjExtState(0,SCRIPT,key..'font_underline',nz(tostring(strips[s][p].graphics[g].font.underline), ''))
+                reaper.SetProjExtState(0,SCRIPT,key..'font_shadow',nz(tostring(strips[s][p].graphics[g].font.shadow), ''))
+                reaper.SetProjExtState(0,SCRIPT,key..'font_shadowx',nz(strips[s][p].graphics[g].font.shadow_x), '')
+                reaper.SetProjExtState(0,SCRIPT,key..'font_shadowy',nz(strips[s][p].graphics[g].font.shadow_y), '')
+                reaper.SetProjExtState(0,SCRIPT,key..'font_shadowa',nz(strips[s][p].graphics[g].font.shadow_a), '')
+                reaper.SetProjExtState(0,SCRIPT,key..'text',nz(strips[s][p].graphics[g].text, ''))
+                reaper.SetProjExtState(0,SCRIPT,key..'text_col',nz(strips[s][p].graphics[g].text_col, ''))
               
               end
             end
@@ -9192,6 +9724,18 @@
     dvaloff_select = 0
     trctltype_select = 0
     trctl_select = 1
+    gfx_font_select = {idx = 1,
+                         name = fontname_def,
+                         size = fontsize_def,
+                         bold = false,
+                         italic = false,
+                         underline = false,
+                         shadow = true,
+                         shadow_x = 1,
+                         shadow_y = 1,
+                         shadow_a = 0.6}
+    gfx_textcol_select = '255 255 255'
+    gfx_text_select = ''
     
     plist_w = 140
     oplist_w = 140
@@ -9200,6 +9744,7 @@
     time_checksend = 0
     
     show_ctloptions = false
+    show_lbloptions = false
     show_editbar = true
     show_settings = false
     show_cycleoptions = false
@@ -9280,6 +9825,9 @@
   settings_locksurface = false
   
   dockstate = 0
+  
+  fontname_def = 'Calibri'
+  fontsize_def  = 18
   
   surface_size = {w = 2048, h = 2048, limit = true}
   
