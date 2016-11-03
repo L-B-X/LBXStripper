@@ -5174,8 +5174,21 @@
       if stripdata.strip.graphics[j].stretchh == nil then stripdata.strip.graphics[j].stretchh = h end      
 
       if stripdata.strip.graphics[j].gfxtype == nil then stripdata.strip.graphics[j].gfxtype = gfxtype.img end
+      if stripdata.strip.graphics[j].font == nil then
+        stripdata.strip.graphics[j].font = {idx = nil,
+                                            name = nil,
+                                            size = nil,
+                                            bold = nil,
+                                            italics = nil,
+                                            underline = nil,
+                                            shadow = nil
+                                            }
+        stripdata.strip.graphics[j].text = nil
+        stripdata.strip.graphics[j].text_col = nil
+      end
       
-      strips[strip][page].graphics[#strips[strip][page].graphics + 1] = stripdata.strip.graphics[j]    
+      strips[strip][page].graphics[#strips[strip][page].graphics + 1] = stripdata.strip.graphics[j]
+          
 
     end
     
@@ -9610,9 +9623,9 @@
                 reaper.SetProjExtState(0,SCRIPT,key..'font_italics',nz(tostring(strips[s][p].graphics[g].font.italics), ''))
                 reaper.SetProjExtState(0,SCRIPT,key..'font_underline',nz(tostring(strips[s][p].graphics[g].font.underline), ''))
                 reaper.SetProjExtState(0,SCRIPT,key..'font_shadow',nz(tostring(strips[s][p].graphics[g].font.shadow), ''))
-                reaper.SetProjExtState(0,SCRIPT,key..'font_shadowx',nz(strips[s][p].graphics[g].font.shadow_x), '')
-                reaper.SetProjExtState(0,SCRIPT,key..'font_shadowy',nz(strips[s][p].graphics[g].font.shadow_y), '')
-                reaper.SetProjExtState(0,SCRIPT,key..'font_shadowa',nz(strips[s][p].graphics[g].font.shadow_a), '')
+                reaper.SetProjExtState(0,SCRIPT,key..'font_shadowx',nz(strips[s][p].graphics[g].font.shadow_x, ''))
+                reaper.SetProjExtState(0,SCRIPT,key..'font_shadowy',nz(strips[s][p].graphics[g].font.shadow_y, ''))
+                reaper.SetProjExtState(0,SCRIPT,key..'font_shadowa',nz(strips[s][p].graphics[g].font.shadow_a, ''))
                 reaper.SetProjExtState(0,SCRIPT,key..'text',nz(strips[s][p].graphics[g].text, ''))
                 reaper.SetProjExtState(0,SCRIPT,key..'text_col',nz(strips[s][p].graphics[g].text_col, ''))
               
@@ -9791,8 +9804,12 @@
   
   function quit()
   
-    SaveData()
-    SaveSettings()
+    --local res = reaper.MB('Save data and project?', 'Save data',4) 
+    --if res == 1 then  
+    --  DBG('ok')
+      SaveData()
+      SaveSettings()
+    --end
     gfx.quit()
     
   end
