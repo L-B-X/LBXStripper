@@ -4890,7 +4890,7 @@
       
           local sizex,sizey = 400,200
           editbox={title = 'Please enter a filename for the strip:',
-            x=400, y=100, w=120, h=20, l=4, maxlen=20,
+            x=400, y=100, w=120, h=20, l=4, maxlen=40,
             fgcol=0x000000, fgfcol=0x00FF00, bgcol=0x808080,
             txtcol=0x000000, curscol=0x000000,
             font=1, fontsz=14, caret=0, sel=0, cursstate=0,
@@ -6670,187 +6670,182 @@
                          
               --if strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.fxparam then
               
-                if strips[tracks[track_select].strip][page].controls[i].fxfound then
-                  if MOUSE_click(ctlxywh) and not mouse.ctrl then
-                    local ctltype = strips[tracks[track_select].strip][page].controls[i].ctltype
-                  
-                    if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.15 then
-                      --double-click
-                      if ctltype == 1 then
-                        trackfxparam_select = i
-                        EditValue()
-                        break
-                      end
-                    end
-                  
+              if strips[tracks[track_select].strip][page].controls[i].fxfound then
+                if MOUSE_click(ctlxywh) and not mouse.ctrl then
+                  local ctltype = strips[tracks[track_select].strip][page].controls[i].ctltype
+                
+                  if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.15 then
+                    --double-click
                     if ctltype == 1 then
-                      --knob/slider
-                      mouse.context = contexts.sliderctl
-                      --knobslider = 'ks'
-                      ctlpos = strips[tracks[track_select].strip][page].controls[i].val
                       trackfxparam_select = i
-                      mouse.slideoff = ctlxywh.y+ctlxywh.h/2 - mouse.my
-                      oms = mouse.shift
-                      
-                    elseif ctltype == 2 or ctltype == 3 then
-                      --button/button inverse
-                      trackfxparam_select = i
-                      if strips[tracks[track_select].strip][page].controls[i].val < 0.5 then
-                        strips[tracks[track_select].strip][page].controls[i].val = 1
-                      else
-                        strips[tracks[track_select].strip][page].controls[i].val = 0
-                      end
-                      SetParam()
-                      strips[tracks[track_select].strip][page].controls[i].dirty = true
-                      if strips[tracks[track_select].strip][page].controls[i].param_info.paramname == 'Bypass' then
-                        SetCtlEnabled(strips[tracks[track_select].strip][page].controls[i].fxnum) 
-                      end
-                      noscroll = true
-                      update_ctls = true
-                    elseif ctltype == 4 then
-                      --cycle
-                      if strips[tracks[track_select].strip][page].controls[i].cycledata.pos == nil then
-                        strips[tracks[track_select].strip][page].controls[i].cycledata.pos = 1
-                      else
-                        strips[tracks[track_select].strip][page].controls[i].cycledata.pos = 
-                                    strips[tracks[track_select].strip][page].controls[i].cycledata.pos +1
-                        if strips[tracks[track_select].strip][page].controls[i].cycledata.pos > 
-                                strips[tracks[track_select].strip][page].controls[i].cycledata.statecnt then
-                          strips[tracks[track_select].strip][page].controls[i].cycledata.pos = 1
-                        end
-                      end
-                      if strips[tracks[track_select].strip][page].controls[i].cycledata.pos <=     
-                                strips[tracks[track_select].strip][page].controls[i].cycledata.statecnt then
-                        trackfxparam_select = i
-                        strips[tracks[track_select].strip][page].controls[i].val = 
-                            strips[tracks[track_select].strip][page].controls[i].cycledata[strips[tracks[track_select].strip][page].controls[i].cycledata.pos].val
-                        SetParam()
-                        strips[tracks[track_select].strip][page].controls[i].dirty = true
-                        update_ctls = true
-                      end
-                      noscroll = true
-                    elseif ctltype == 6 then
-                      --mem button
-                      trackfxparam_select = i
-                      if strips[tracks[track_select].strip][page].controls[i].membtn.state == nil then
-                        strips[tracks[track_select].strip][page].controls[i].membtn.state = false
-                      end
-                      strips[tracks[track_select].strip][page].controls[i].membtn.state = not strips[tracks[track_select].strip][page].controls[i].membtn.state
-                      if strips[tracks[track_select].strip][page].controls[i].membtn.state == true then
-                        strips[tracks[track_select].strip][page].controls[i].membtn.mem = strips[tracks[track_select].strip][page].controls[i].val
-                        strips[tracks[track_select].strip][page].controls[i].val = strips[tracks[track_select].strip][page].controls[i].defval
-                        SetParam()
-                      else
-                        strips[tracks[track_select].strip][page].controls[i].val = strips[tracks[track_select].strip][page].controls[i].membtn.mem
-                        SetParam()
-                      end
-                      update_ctls = true                    
+                      EditValue()
+                      break
                     end
-                    break
+                  end
+                
+                  if ctltype == 1 then
+                    --knob/slider
+                    mouse.context = contexts.sliderctl
+                    --knobslider = 'ks'
+                    ctlpos = strips[tracks[track_select].strip][page].controls[i].val
+                    trackfxparam_select = i
+                    mouse.slideoff = ctlxywh.y+ctlxywh.h/2 - mouse.my
+                    oms = mouse.shift
                     
-                  elseif MOUSE_click_RB(ctlxywh) and mouse.ctrl == false then
-                    local mstr = 'MIDI learn|Modulation||Enter value||Open FX window'
+                  elseif ctltype == 2 or ctltype == 3 then
+                    --button/button inverse
                     trackfxparam_select = i
-                    SetParam2(true)
-                    gfx.x, gfx.y = mouse.mx, mouse.my
-                    res = OpenMenu(mstr)
-                    if res ~= 0 then
-                      if res == 1 then
-                        reaper.Main_OnCommand(41144,0)
-                      elseif res == 2 then
-                        reaper.Main_OnCommand(41143,0)
-                      elseif res == 3 then
-                        EditValue()
-                      
-                      elseif res == 4 then
-                        local track
-                        if strips[tracks[track_select].strip][page].controls[i].tracknum == nil then
-                          track = GetTrack(tracks[track_select].tracknum)
-                        else
-                          track = GetTrack(strips[tracks[track_select].strip][page].controls[i].tracknum)                      
-                        end
-                        local fxnum = strips[tracks[track_select].strip][page].controls[i].fxnum
-                        if not reaper.TrackFX_GetOpen(track, fxnum) then
-                          reaper.TrackFX_Show(track, fxnum, 3)
-                        end
-                      end
+                    if strips[tracks[track_select].strip][page].controls[i].val < 0.5 then
+                      strips[tracks[track_select].strip][page].controls[i].val = 1
+                    else
+                      strips[tracks[track_select].strip][page].controls[i].val = 0
                     end
-                    break
-                  --elseif MOUSE_click_RB(ctlxywh) and mouse.ctrl then
-                  
-                  --  trackfxparam_select = i
-                  --  EditValue()
-                  
-                  elseif MOUSE_click(ctlxywh) and mouse.ctrl then --make double_click?
-                    --default val
-                    trackfxparam_select = i
-                    local ctltype = strips[tracks[track_select].strip][page].controls[i].ctltype
-                    if ctltype == 1 then                  
-                      strips[tracks[track_select].strip][page].controls[i].val = strips[tracks[track_select].strip][page].controls[i].defval
-                      SetParam()
-                      strips[tracks[track_select].strip][page].controls[i].dirty = true
-                      update_ctls = true
-                    elseif ctltype == 4 then                  
-                      strips[tracks[track_select].strip][page].controls[i].cycledata.pos = 1
-                      if strips[tracks[track_select].strip][page].controls[i].cycledata.pos <=     
-                                strips[tracks[track_select].strip][page].controls[i].cycledata.statecnt then
-                        trackfxparam_select = i
-                        strips[tracks[track_select].strip][page].controls[i].val = 
-                            strips[tracks[track_select].strip][page].controls[i].cycledata[strips[tracks[track_select].strip][page].controls[i].cycledata.pos].val
-                        SetParam()
-                        strips[tracks[track_select].strip][page].controls[i].dirty = true
-                      end                  
-                      update_ctls = true
-                    elseif ctltype == 6 then
-                      strips[tracks[track_select].strip][page].controls[i].defval = GetParamValue_Ctl(i)                                    
+                    SetParam()
+                    strips[tracks[track_select].strip][page].controls[i].dirty = true
+                    if strips[tracks[track_select].strip][page].controls[i].param_info.paramname == 'Bypass' then
+                      SetCtlEnabled(strips[tracks[track_select].strip][page].controls[i].fxnum) 
                     end
                     noscroll = true
-                    break
-                  
-                  elseif settings_mousewheelknob and gfx.mouse_wheel ~= 0 and MOUSE_over(ctlxywh) then
-                    local ctltype = strips[tracks[track_select].strip][page].controls[i].ctltype
-                    if ctltype == 1 then
-                      trackfxparam_select = i
-                      local v = gfx.mouse_wheel/120 * 0.003
-                      strips[tracks[track_select].strip][page].controls[i].val = F_limit(strips[tracks[track_select].strip][page].controls[i].val+v,0,1)
-                      SetParam()
-                      update_ctls = true
-                      gfx.mouse_wheel = 0
-                    elseif ctltype == 4 then
-                      local v = gfx.mouse_wheel/120
-                      if strips[tracks[track_select].strip][page].controls[i].cycledata.pos == nil then
+                    update_ctls = true
+                  elseif ctltype == 4 then
+                    --cycle
+                    if strips[tracks[track_select].strip][page].controls[i].cycledata.pos == nil then
+                      strips[tracks[track_select].strip][page].controls[i].cycledata.pos = 1
+                    else
+                      strips[tracks[track_select].strip][page].controls[i].cycledata.pos = 
+                                  strips[tracks[track_select].strip][page].controls[i].cycledata.pos +1
+                      if strips[tracks[track_select].strip][page].controls[i].cycledata.pos > 
+                              strips[tracks[track_select].strip][page].controls[i].cycledata.statecnt then
                         strips[tracks[track_select].strip][page].controls[i].cycledata.pos = 1
-                      else
-                        strips[tracks[track_select].strip][page].controls[i].cycledata.pos = 
-                                    strips[tracks[track_select].strip][page].controls[i].cycledata.pos + v
-                        if strips[tracks[track_select].strip][page].controls[i].cycledata.pos < 1 then
-                          strips[tracks[track_select].strip][page].controls[i].cycledata.pos = strips[tracks[track_select].strip][page].controls[i].cycledata.statecnt
-                        elseif strips[tracks[track_select].strip][page].controls[i].cycledata.pos > 
-                                strips[tracks[track_select].strip][page].controls[i].cycledata.statecnt then
-                          strips[tracks[track_select].strip][page].controls[i].cycledata.pos = 1
-                        end
                       end
-                      if strips[tracks[track_select].strip][page].controls[i].cycledata.pos <=     
-                                strips[tracks[track_select].strip][page].controls[i].cycledata.statecnt then
-                        trackfxparam_select = i
-                        strips[tracks[track_select].strip][page].controls[i].val = 
-                            strips[tracks[track_select].strip][page].controls[i].cycledata[strips[tracks[track_select].strip][page].controls[i].cycledata.pos].val
-                        SetParam()
-                        strips[tracks[track_select].strip][page].controls[i].dirty = true
-                        update_ctls = true
-                      end
-                      noscroll = true
-                      gfx.mouse_wheel = 0                  
                     end
-                    break
+                    if strips[tracks[track_select].strip][page].controls[i].cycledata.pos <=     
+                              strips[tracks[track_select].strip][page].controls[i].cycledata.statecnt then
+                      trackfxparam_select = i
+                      strips[tracks[track_select].strip][page].controls[i].val = 
+                          strips[tracks[track_select].strip][page].controls[i].cycledata[strips[tracks[track_select].strip][page].controls[i].cycledata.pos].val
+                      SetParam()
+                      strips[tracks[track_select].strip][page].controls[i].dirty = true
+                      update_ctls = true
+                    end
+                    noscroll = true
+                  elseif ctltype == 6 then
+                    --mem button
+                    trackfxparam_select = i
+                    if strips[tracks[track_select].strip][page].controls[i].membtn.state == nil then
+                      strips[tracks[track_select].strip][page].controls[i].membtn.state = false
+                    end
+                    strips[tracks[track_select].strip][page].controls[i].membtn.state = not strips[tracks[track_select].strip][page].controls[i].membtn.state
+                    if strips[tracks[track_select].strip][page].controls[i].membtn.state == true then
+                      strips[tracks[track_select].strip][page].controls[i].membtn.mem = strips[tracks[track_select].strip][page].controls[i].val
+                      strips[tracks[track_select].strip][page].controls[i].val = strips[tracks[track_select].strip][page].controls[i].defval
+                      SetParam()
+                    else
+                      strips[tracks[track_select].strip][page].controls[i].val = strips[tracks[track_select].strip][page].controls[i].membtn.mem
+                      SetParam()
+                    end
+                    update_ctls = true                    
                   end
-  
+                  break
+                  
+                elseif MOUSE_click_RB(ctlxywh) and mouse.ctrl == false then
+                  local mstr = 'MIDI learn|Modulation||Enter value||Open FX window'
+                  trackfxparam_select = i
+                  SetParam2(true)
+                  gfx.x, gfx.y = mouse.mx, mouse.my
+                  res = OpenMenu(mstr)
+                  if res ~= 0 then
+                    if res == 1 then
+                      reaper.Main_OnCommand(41144,0)
+                    elseif res == 2 then
+                      reaper.Main_OnCommand(41143,0)
+                    elseif res == 3 then
+                      EditValue()
+                    
+                    elseif res == 4 then
+                      local track
+                      if strips[tracks[track_select].strip][page].controls[i].tracknum == nil then
+                        track = GetTrack(tracks[track_select].tracknum)
+                      else
+                        track = GetTrack(strips[tracks[track_select].strip][page].controls[i].tracknum)                      
+                      end
+                      local fxnum = strips[tracks[track_select].strip][page].controls[i].fxnum
+                      if not reaper.TrackFX_GetOpen(track, fxnum) then
+                        reaper.TrackFX_Show(track, fxnum, 3)
+                      end
+                    end
+                  end
+                  break
+                --elseif MOUSE_click_RB(ctlxywh) and mouse.ctrl then
+                
+                --  trackfxparam_select = i
+                --  EditValue()
+                
+                elseif MOUSE_click(ctlxywh) and mouse.ctrl then --make double_click?
+                  --default val
+                  trackfxparam_select = i
+                  local ctltype = strips[tracks[track_select].strip][page].controls[i].ctltype
+                  if ctltype == 1 then                  
+                    strips[tracks[track_select].strip][page].controls[i].val = strips[tracks[track_select].strip][page].controls[i].defval
+                    SetParam()
+                    strips[tracks[track_select].strip][page].controls[i].dirty = true
+                    update_ctls = true
+                  elseif ctltype == 4 then                  
+                    strips[tracks[track_select].strip][page].controls[i].cycledata.pos = 1
+                    if strips[tracks[track_select].strip][page].controls[i].cycledata.pos <=     
+                              strips[tracks[track_select].strip][page].controls[i].cycledata.statecnt then
+                      trackfxparam_select = i
+                      strips[tracks[track_select].strip][page].controls[i].val = 
+                          strips[tracks[track_select].strip][page].controls[i].cycledata[strips[tracks[track_select].strip][page].controls[i].cycledata.pos].val
+                      SetParam()
+                      strips[tracks[track_select].strip][page].controls[i].dirty = true
+                    end                  
+                    update_ctls = true
+                  elseif ctltype == 6 then
+                    strips[tracks[track_select].strip][page].controls[i].defval = GetParamValue_Ctl(i)                                    
+                  end
+                  noscroll = true
+                  break
+                
+                elseif settings_mousewheelknob and gfx.mouse_wheel ~= 0 and MOUSE_over(ctlxywh) then
+                  local ctltype = strips[tracks[track_select].strip][page].controls[i].ctltype
+                  if ctltype == 1 then
+                    trackfxparam_select = i
+                    local v = gfx.mouse_wheel/120 * 0.003
+                    strips[tracks[track_select].strip][page].controls[i].val = F_limit(strips[tracks[track_select].strip][page].controls[i].val+v,0,1)
+                    SetParam()
+                    update_ctls = true
+                    gfx.mouse_wheel = 0
+                  elseif ctltype == 4 then
+                    local v = gfx.mouse_wheel/120
+                    if strips[tracks[track_select].strip][page].controls[i].cycledata.pos == nil then
+                      strips[tracks[track_select].strip][page].controls[i].cycledata.pos = 1
+                    else
+                      strips[tracks[track_select].strip][page].controls[i].cycledata.pos = 
+                                  strips[tracks[track_select].strip][page].controls[i].cycledata.pos + v
+                      if strips[tracks[track_select].strip][page].controls[i].cycledata.pos < 1 then
+                        strips[tracks[track_select].strip][page].controls[i].cycledata.pos = strips[tracks[track_select].strip][page].controls[i].cycledata.statecnt
+                      elseif strips[tracks[track_select].strip][page].controls[i].cycledata.pos > 
+                              strips[tracks[track_select].strip][page].controls[i].cycledata.statecnt then
+                        strips[tracks[track_select].strip][page].controls[i].cycledata.pos = 1
+                      end
+                    end
+                    if strips[tracks[track_select].strip][page].controls[i].cycledata.pos <=     
+                              strips[tracks[track_select].strip][page].controls[i].cycledata.statecnt then
+                      trackfxparam_select = i
+                      strips[tracks[track_select].strip][page].controls[i].val = 
+                          strips[tracks[track_select].strip][page].controls[i].cycledata[strips[tracks[track_select].strip][page].controls[i].cycledata.pos].val
+                      SetParam()
+                      strips[tracks[track_select].strip][page].controls[i].dirty = true
+                      update_ctls = true
+                    end
+                    noscroll = true
+                    gfx.mouse_wheel = 0                  
+                  end
+                  break
                 end
-              --elseif strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.trackparam then
-              
-              
-              
-              --end
+
+              end
             end
           end
         end
@@ -6957,6 +6952,12 @@
       end
             
       if submode == 0 then
+        
+        if mouse.context == nil and fxmode == 1 and trctltype_select == 1 and rt > time_sendupdate then
+          time_sendupdate = rt + 1
+          PopulateTrackSendsInfo()
+          update_gfx = true
+        end
         
         if gfx.mouse_wheel ~= 0 then
           local v = gfx.mouse_wheel/120
@@ -9775,6 +9776,7 @@
     
     time_nextupdate = 0
     time_checksend = 0
+    time_sendupdate = 0
     
     show_ctloptions = false
     show_lbloptions = false
