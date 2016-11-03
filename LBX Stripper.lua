@@ -3954,7 +3954,7 @@
              obj.sections[70].h, 0)
 
     GUI_DrawTick(gui, 'Follow selected track', obj.sections[71], gui.color.white, settings_followselectedtrack)             
-    GUI_DrawTick(gui, 'Auto centre controls', obj.sections[72], gui.color.white, settings_autocentrectls)             
+    GUI_DrawTick(gui, 'Disable send checks', obj.sections[72], gui.color.white, settings_disablesendchecks)             
     GUI_DrawTick(gui, 'Save all track fx with strip', obj.sections[73], gui.color.white, settings_saveallfxinststrip)
     GUI_DrawSliderH(gui, 'Control refresh rate', obj.sections[74], gui.color.black, gui.color.white, (1-(settings_updatefreq*10)))
     GUI_DrawTick(gui, 'Lock control window width', obj.sections[75], gui.color.white, lockx)
@@ -6233,9 +6233,9 @@
         gui = GetGUI_vars()
         obj = GetObjects()
         
-        if settings_autocentrectls then
-          AutoCentreCtls()
-        end
+       -- if settings_autocentrectls then
+       --   AutoCentreCtls()
+       -- end
         
         resize_display = true
         update_gfx = true
@@ -6324,7 +6324,7 @@
     end
     
     local checksends = false
-    if rt >= time_checksend then
+    if settings_disablesendchecks and rt >= time_checksend then
       time_checksend = rt + 2
       checksends = true
     end
@@ -6389,7 +6389,7 @@
                     
                   elseif strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.tracksend then
 
-                    if checksends == true then
+                    if settings_disablesendchecks and checksends == true then
                       local tt = strips[tracks[track_select].strip][page].controls[i].tracknum
                       if tt == nil then
                         tt = strips[tracks[track_select].strip].track.tracknum
@@ -6436,7 +6436,7 @@
         settings_followselectedtrack = not settings_followselectedtrack
         update_settings = true
       elseif MOUSE_click(obj.sections[72]) then
-        settings_autocentrectls = not settings_autocentrectls
+        settings_disablesendchecks = not settings_disablesendchecks
         update_settings = true
       elseif MOUSE_click(obj.sections[73]) then
         settings_saveallfxinststrip = not settings_saveallfxinststrip
@@ -6918,9 +6918,9 @@
             surface_offset.y = 0 
           end
           CheckStripControls()
-          if settings_autocentrectls then
-            AutoCentreCtls()
-          end                
+          --if settings_autocentrectls then
+          --  AutoCentreCtls()
+          --end                
           update_gfx = true 
         end
       end
@@ -9485,7 +9485,7 @@
   function LoadSettings()
     settings_saveallfxinststrip = tobool(nz(GES('saveallfxinststrip',true),settings_saveallfxinststrip))
     settings_followselectedtrack = tobool(nz(GES('followselectedtrack',true),settings_followselectedtrack))
-    settings_autocentrectls = tobool(nz(GES('autocentrectls',true),settings_autocentrectls))
+    settings_autocentrectls = tobool(nz(GES('disablesendchecks',false),settings_disablesendchecks))
     settings_updatefreq = tonumber(nz(GES('updatefreq',true),settings_updatefreq))
     settings_mousewheelknob = tobool(nz(GES('mousewheelknob',true),settings_mousewheelknob))
     dockstate = nz(GES('dockstate',true),0)
@@ -9498,7 +9498,7 @@
   function SaveSettings()
     reaper.SetExtState(SCRIPT,'saveallfxinststrip',tostring(settings_saveallfxinststrip), true)
     reaper.SetExtState(SCRIPT,'followselectedtrack',tostring(settings_followselectedtrack), true)
-    reaper.SetExtState(SCRIPT,'autocentrectls',tostring(settings_autocentrectls), true)
+    reaper.SetExtState(SCRIPT,'disablesendchecks',tostring(settings_disablesendchecks), false)
     reaper.SetExtState(SCRIPT,'updatefreq',settings_updatefreq, true)
     reaper.SetExtState(SCRIPT,'mousewheelknob',tostring(settings_mousewheelknob), true)
     local d = gfx.dock(-1)
@@ -9853,7 +9853,8 @@
   strips_path = resource_path.."strips/"
 
   settings_followselectedtrack = true
-  settings_autocentrectls = true
+  settings_autocentrectls = false
+  settings_disablesendchecks = false
   settings_gridsize = 16
   settings_showgrid = true
   osg = settings_showgrid
