@@ -5421,7 +5421,7 @@
               local tr2 = tr
               if strips[tracks[track_select].strip][p].controls[c].tracknum ~= nil then
                 tr_found = CheckTrack(strips[tracks[track_select].strip][p].controls[c].tracknum,
-                                      tracks[track_select].strip, page, c)                      
+                                      tracks[track_select].strip, p, c)                      
                 if tr_found then
                   tr2 = GetTrack(strips[tracks[track_select].strip][p].controls[c].tracknum)
 
