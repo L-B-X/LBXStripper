@@ -5554,13 +5554,29 @@
       return found
     else
       --external track ctl
-      local found = false
-      local trx = GetTrack(nz(strips[strip][p].controls[c].tracknum,-2))
-      if trx then
-        if strips[strip][p].controls[c].trackguid == reaper.GetTrackGUID(trx) then
-          return true
+      if strip and strips[strip] and strips[strip][p] and strips[strip][p].controls[c] then --temp
+        local found = false
+        local trx = GetTrack(nz(strips[strip][p].controls[c].tracknum,-2))
+        if trx then
+          if strips[strip][p].controls[c].trackguid == reaper.GetTrackGUID(trx) then
+            return true
+          else
+            --Find track and update tracknum
+            for i = 0, reaper.CountTracks(0) do
+              local tr = GetTrack(i)
+              if tr ~= nil then
+                if strips[strip][p].controls[c].trackguid == reaper.GetTrackGUID(tr) then
+                  --found
+                  found = true
+                  strips[strip][p].controls[c].tracknum = i
+                  update_gfx = true
+                  break 
+                end
+              end
+            end
+            PopulateTracks()
+          end
         else
-          --Find track and update tracknum
           for i = 0, reaper.CountTracks(0) do
             local tr = GetTrack(i)
             if tr ~= nil then
@@ -5572,26 +5588,13 @@
                 break 
               end
             end
-          end
-          PopulateTracks()
+          end    
+          PopulateTracks()    
         end
+        return found
       else
-        for i = 0, reaper.CountTracks(0) do
-          local tr = GetTrack(i)
-          if tr ~= nil then
-            if strips[strip][p].controls[c].trackguid == reaper.GetTrackGUID(tr) then
-              --found
-              found = true
-              strips[strip][p].controls[c].tracknum = i
-              update_gfx = true
-              break 
-            end
-          end
-        end    
-        PopulateTracks()    
-      end
-      return found
-      
+        return true --temp
+      end      
     end
         
   end
