@@ -1302,7 +1302,6 @@
       end
       
       if tsends and tsends[tn] then
-      
         for c = 1, #strips[tracks[track_select].strip][page].controls do
           if strips[tracks[track_select].strip][page].controls[c].ctlcat == ctlcats.tracksend then
             local paramnum = strips[tracks[track_select].strip][page].controls[c].param_info.paramnum
@@ -1316,7 +1315,9 @@
             local pidx = (paramnum-1) % 3 +1
             --local found = false
             if tsends[tnl] and tsends[tnl][sidx] and strips[tracks[track_select].strip][page].controls[c].param_info.paramdestguid ==
-               tsends[tnl][sidx].desttrackguid then
+               tsends[tnl][sidx].desttrackguid and
+                   tsends[tnl][sidx].dstchan == strips[tracks[track_select].strip][page].controls[c].param_info.paramdestchan and
+                   tsends[tnl][sidx].srcchan == strips[tracks[track_select].strip][page].controls[c].param_info.paramsrcchan then
             else   
               for i = 0, #tsends[tnl] do
                 
@@ -1327,7 +1328,9 @@
                   strips[tracks[track_select].strip][page].controls[c].param_info.param = i*3+pidx-1
                   strips[tracks[track_select].strip][page].controls[c].param_info.paramidx = tsends[tnl][i].idx
                   --found = true
-                  break
+                  --[[DBG(tsends[tnl][i].desttrackguid ..'  '.. strips[tracks[track_select].strip][page].controls[c].param_info.paramdestguid )
+                  DBG(tsends[tnl][i].dstchan .. '  '.. strips[tracks[track_select].strip][page].controls[c].param_info.paramdestchan)
+                  DBG(tsends[tnl][i].srcchan ..'  '.. strips[tracks[track_select].strip][page].controls[c].param_info.paramsrcchan)]]
                 end 
               end
               --DBG(#tsends..' '..tostring(found))
@@ -1386,6 +1389,8 @@
           src_tr = tonumber(tx[2])
           src = tonumber(tx[9])
           dst = tonumber(tx[10])
+          --DBG('src='..src)
+          --DBG('dst='..dst)
           
           if tonumber(src_tr) == tr then        
             tbl[sidx] = {}
@@ -1585,6 +1590,7 @@
         end
       end  
     end
+    CheckStripSends()
     
   end
   
@@ -6257,7 +6263,20 @@
         track_select = -1
         --update_gfx = true
       end
+      --CheckStripSends()
       PopulateTrackSendsInfo()
+    --else
+      --check track
+      --[[checktr = checktr + 1
+      if checktr > reaper.CountTracks(0)-1 then
+        checktr = 0
+      end
+      local mt = reaper.GetTrack(0,checktr)
+      if tracks[checktr].guid ~= reaper.GetTrackGUID(mt) 
+         or tracks[checktr].tracknum ~= checktr then
+      
+      end
+      ]]
     end    
     
     GUI_draw(obj, gui)
@@ -6307,15 +6326,16 @@
                   end
                 end
               end
-              CheckStripControls()          
+              CheckStripControls()
+              CheckStripSends()          
               PopulateTrackSendsInfo()
               PopulateTrackFX()
               ctl_select = nil
               gfx2_select = nil
               gfx3_select = nil
-              if settings_autocentrectls then
-                AutoCentreCtls()
-              end
+              --if settings_autocentrectls then
+              --  AutoCentreCtls()
+              --end
               update_gfx = true
             end
           end 
@@ -6324,7 +6344,7 @@
     end
     
     local checksends = false
-    if settings_disablesendchecks and rt >= time_checksend then
+    if settings_disablesendchecks == false and rt >= time_checksend then
       time_checksend = rt + 2
       checksends = true
     end
@@ -6389,7 +6409,7 @@
                     
                   elseif strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.tracksend then
 
-                    if settings_disablesendchecks and checksends == true then
+                    if settings_disablesendchecks == false and checksends == true then
                       local tt = strips[tracks[track_select].strip][page].controls[i].tracknum
                       if tt == nil then
                         tt = strips[tracks[track_select].strip].track.tracknum
@@ -9485,7 +9505,7 @@
   function LoadSettings()
     settings_saveallfxinststrip = tobool(nz(GES('saveallfxinststrip',true),settings_saveallfxinststrip))
     settings_followselectedtrack = tobool(nz(GES('followselectedtrack',true),settings_followselectedtrack))
-    settings_autocentrectls = tobool(nz(GES('disablesendchecks',false),settings_disablesendchecks))
+    settings_disablesendchecks = tobool(nz(GES('disablesendchecks',false),settings_disablesendchecks))
     settings_updatefreq = tonumber(nz(GES('updatefreq',true),settings_updatefreq))
     settings_mousewheelknob = tobool(nz(GES('mousewheelknob',true),settings_mousewheelknob))
     dockstate = nz(GES('dockstate',true),0)
@@ -9795,7 +9815,8 @@
     
     octlval = -1
     otrkcnt = -1
-    ofxcnt = -1    
+    ofxcnt = -1
+    checktr = 0    
   
     PopulateTracks()
     PopulateGFX()
