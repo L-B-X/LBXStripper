@@ -15,6 +15,7 @@
   submode_table = {'FX PARAMS','GRAPHICS','STRIPS'}
   ctltype_table = {'KNOB/SLIDER','BUTTON','BUTTON INV','CYCLE BUTTON','METER','MEM BUTTON'}
   trctltype_table = {'Track Controls','Track Sends'}
+  scalemode_table = {'NORMAL','REAPER VOL'}
   trctltypeidx_table = {tr_ctls = 1,
                         tr_sends = 2,
                         tr_rcvs = 3,
@@ -550,6 +551,11 @@
                           w = obj.sections[45].w-40,
                           h = butt_h/2+4}
 
+      obj.sections[131] = {x = obj.sections[45].x+70,
+                          y = obj.sections[45].y+butt_h+10 + (butt_h/2+4 + 10) * 8,
+                          w = obj.sections[45].w-80,
+                          h = butt_h/2+8}
+
       --LBL OPTIONS 
       --EDIT
       obj.sections[140] = {x = obj.sections[49].x+20,
@@ -944,7 +950,8 @@
                                                           mem = nil},
                                                 id = nil,
                                                 tracknum = tracks[trackedit_select].tracknum,
-                                                trackguid = tracks[trackedit_select].guid
+                                                trackguid = tracks[trackedit_select].guid,
+                                                scalemode = 1
                                                 }
         if track_select == trackedit_select then
           strips[strip][page].controls[ctlnum].tracknum = nil
@@ -994,7 +1001,8 @@
                                                           mem = nil},
                                                 id = nil,
                                                 tracknum = last_touch_fx.tracknum,
-                                                trackguid = last_touch_fx.trguid
+                                                trackguid = last_touch_fx.trguid,
+                                                scalemode = 1
                                                 }
         if last_touch_fx.tracknum == strips[strip].track.tracknum then
           strips[strip][page].controls[ctlnum].tracknum = nil
@@ -1045,7 +1053,8 @@
                                                           mem = nil},
                                                 id = nil,
                                                 tracknum = tracks[trackedit_select].tracknum,
-                                                trackguid = tracks[trackedit_select].guid
+                                                trackguid = tracks[trackedit_select].guid,
+                                                scalemode = 1
                                                 }
         if track_select == trackedit_select then
           strips[strip][page].controls[ctlnum].tracknum = nil
@@ -1101,7 +1110,8 @@
                                                             mem = nil},
                                                   id = nil,
                                                   tracknum = tracks[trackedit_select].tracknum,
-                                                  trackguid = tracks[trackedit_select].guid
+                                                  trackguid = tracks[trackedit_select].guid,
+                                                  scalemode = 1
                                                   }
           
           if track_select == trackedit_select then
@@ -2637,6 +2647,7 @@
       GUI_DrawButton(gui, minov_select, obj.sections[126], gui.color.white, gui.color.black, true, 'MIN OV', true)
       GUI_DrawButton(gui, maxov_select, obj.sections[127], gui.color.white, gui.color.black, true, 'MAX OV', true)
       GUI_DrawButton(gui, nz(ov_disp,''), obj.sections[130], gui.color.black, gui.color.white, true, '')
+      GUI_DrawButton(gui, scalemode_table[knob_scalemode_select], obj.sections[131], gui.color.white, gui.color.black, true, 'SCALE MODE')
 
       local pmin = normalize(min, max, minov_select)
       local pmax = normalize(min, max, maxov_select)
@@ -2876,6 +2887,11 @@ function outExpo(t, b, c, d)
   end
 end
 
+function outCirc(t, b, c, d)
+  t = t - 1
+  return(math.sqrt(1 - t^2)) 
+end
+
   function GUI_DrawControls(obj, gui)
 
     gfx.dest = 1000
@@ -2989,11 +3005,8 @@ end
               local v2, val2
 
               --if ctlcat == ctlcats.fxparam then
-                v2 = GetParamValue2(ctlcat,track,fxnum,param,i)
-                --DBG(v2)
-                --if v2 < 0.25 then
-                  --v2 = outQuart(v2,0,1,1)
-                --end
+                v2 = frameScale(strips[tracks[track_select].strip][page].controls[i].scalemode, GetParamValue2(ctlcat,track,fxnum,param,i))
+                --v2 = outCirc(v2)
                 val2 = F_limit(round(frames*v2),0,frames-1)
                               
                 if ctltype == 3 then
@@ -6107,6 +6120,7 @@ end
     defval_select = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].defval
     maxdp_select = nz(strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].maxdp,-1)                  
     dvaloff_select = nz(strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].dvaloffset,'')                  
+    knob_scalemode_select = nz(strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].scalemode,1)                  
     cycle_select = Cycle_CopySelectIn(ctl_select[1].ctl)
     local min, max = GetParamMinMax_ctl(ctl_select[1].ctl)
     minov_select = min
@@ -6753,7 +6767,8 @@ end
                     --knob/slider
                     mouse.context = contexts.sliderctl
                     --knobslider = 'ks'
-                    ctlpos = strips[tracks[track_select].strip][page].controls[i].val
+                    ctlpos = ctlScaleInv(strips[tracks[track_select].strip][page].controls[i].scalemode,
+                                         strips[tracks[track_select].strip][page].controls[i].val)
                     trackfxparam_select = i
                     mouse.slideoff = ctlxywh.y+ctlxywh.h/2 - mouse.my
                     oms = mouse.shift
@@ -6932,6 +6947,7 @@ end
             end
             if val < 0 then val = 0 end
             if val > 1 then val = 1 end
+            val = ctlScale(strips[tracks[track_select].strip][page].controls[trackfxparam_select].scalemode, val)
             if val ~= octlval then
               strips[tracks[track_select].strip][page].controls[trackfxparam_select].val = val
               SetParam()
@@ -7308,6 +7324,15 @@ end
             
             if MOUSE_click(obj.sections[125]) then
               EditDValOffset()
+            end
+
+            if MOUSE_click(obj.sections[131]) then
+              knob_scalemode_select = knob_scalemode_select + 1
+              if knob_scalemode_select > #scalemode_table then knob_scalemode_select = 1 end
+              for i = 1, #ctl_select do
+                strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].scalemode = knob_scalemode_select
+              end
+              update_gfx = true                        
             end
           
             if mouse.context == nil and MOUSE_click(obj.sections[128]) then
@@ -8258,9 +8283,11 @@ end
           end
         end
       
+        local clicklblopts = false
         if gfx2_select ~= nil and show_lbloptions and (MOUSE_click(obj.sections[49]) or MOUSE_click_RB(obj.sections[49])) then
           
           -- LBL OPTIONS
+          clicklblopts = true
         
           if MOUSE_click(obj.sections[140]) then
             EditLabel(7,gfx_text_select)
@@ -8389,7 +8416,7 @@ end
           update_gfx = true
         end
       
-        if mouse.mx > obj.sections[10].x then
+        if mouse.mx > obj.sections[10].x and clicklblopts == false then
           if strips and tracks[track_select] and strips[tracks[track_select].strip] then
           
             if gfx2_select ~= nil then
@@ -9373,7 +9400,8 @@ end
                                                 defval = tonumber(GPES(key..'defval')),
                                                 maxdp = tonumber(nz(GPES(key..'maxdp',true),-1)),
                                                 cycledata = {statecnt = 0,{}},
-                                                id = deconvnum(GPES(key..'id',true))
+                                                id = deconvnum(GPES(key..'id',true)),
+                                                scalemode = tonumber(nz(GPES(key..'scalemode',true),1))
                                                 --enabled = tobool(nz(GPES(key..'enabled',true),true))
                                                }
                     if strips[ss][p].controls[c].maxdp == nil or (strips[ss][p].controls[c].maxdp and strips[ss][p].controls[c].maxdp == '') then
@@ -9662,6 +9690,7 @@ end
                 reaper.SetProjExtState(0,SCRIPT,key..'dvaloffset',nz(strips[s][p].controls[c].dvaloffset,''))   
                 reaper.SetProjExtState(0,SCRIPT,key..'minov',nz(strips[s][p].controls[c].minov,''))   
                 reaper.SetProjExtState(0,SCRIPT,key..'maxov',nz(strips[s][p].controls[c].maxov,''))   
+                reaper.SetProjExtState(0,SCRIPT,key..'scalemode',nz(strips[s][p].controls[c].scalemode,1))   
                            
                 reaper.SetProjExtState(0,SCRIPT,key..'id',convnum(strips[s][p].controls[c].id))
 
@@ -9836,6 +9865,7 @@ end
                          shadow_a = 0.6}
     gfx_textcol_select = '255 255 255'
     gfx_text_select = ''
+    knob_scalemode_select = 1
     
     plist_w = 140
     oplist_w = 140
@@ -9890,6 +9920,50 @@ end
   end
   
   ------------------------------------------------------------
+  
+  function frameScale(m, v)
+    
+    if m == 1 then
+      return v
+    elseif m == 2 then
+      return outCirc(v)
+    else
+      return v
+    end
+  
+  end
+  
+  function ctlScale(m, v)
+  
+    if m == 1 then
+      return v
+    elseif m == 2 then
+      return inQuint(v)
+    else
+      return v
+    end
+  
+  end
+
+  function ctlScaleInv(m, v)
+  
+    if m == 1 then
+      return v
+    elseif m == 2 then
+      return inQuintInv(v)
+    else
+      return v
+    end
+  
+  end
+  
+  function inQuint(t)
+    return t^5
+  end
+
+  function inQuintInv(v)
+    return v^0.2
+  end
   
   function quit()
   
@@ -9950,7 +10024,7 @@ end
   def_knob = LoadControl(1019, '__default.knb')
   def_knobsm = LoadControl(1018, 'SimpleFlat_48.knb')
   
-  
+ --DBG(32^0.2)
   
   INIT()
   LoadSettings()
