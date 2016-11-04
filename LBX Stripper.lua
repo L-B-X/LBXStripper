@@ -9098,7 +9098,8 @@ end
                  minov = strips[tracks[track_select].strip][page].controls[c].minov,
                  maxov = strips[tracks[track_select].strip][page].controls[c].maxov,
                  membtn = {state = strips[tracks[track_select].strip][page].controls[c].membtn.state,
-                           mem = strips[tracks[track_select].strip][page].controls[c].membtn.mem}
+                           mem = strips[tracks[track_select].strip][page].controls[c].membtn.mem},
+                 scalemode = strips[tracks[track_select].strip][page].controls[c].scalemode
                  }
     return tbl
   end
@@ -9412,7 +9413,7 @@ end
                     strips[ss][p].controls[c].wsc = strips[ss][p].controls[c].w*strips[ss][p].controls[c].scale
                     strips[ss][p].controls[c].hsc = strips[ss][p].controls[c].ctl_info.cellh*strips[ss][p].controls[c].scale
                     
-                    strips[ss][p].controls[c].tracknum = GPES(key..'tracknum',true)
+                    strips[ss][p].controls[c].tracknum = tonumber(GPES(key..'tracknum',true))
                     strips[ss][p].controls[c].trackguid = GPES(key..'trackguid')                    
                     strips[ss][p].controls[c].dvaloffset = GPES(key..'dvaloffset',true)
                     strips[ss][p].controls[c].minov = GPES(key..'minov',true)
