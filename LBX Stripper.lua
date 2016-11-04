@@ -2840,6 +2840,42 @@
   
   ------------------------------------------------------------
 
+local function inQuart(t, b, c, d)
+  t = t / d
+  return c * t^4 + b
+end
+
+function outCubic(t, b, c, d)
+  t = t / d - 1
+  return c * ((t^3) + 1) + b
+end
+
+function outQuart(t, b, c, d)
+  t = t / d - 1
+  return -c * (t^4 - 1) + b
+end
+
+function outQuint(t, b, c, d)
+  t = t / d - 1
+  return c * ((t^5) + 1) + b
+end
+
+function inExpo(t, b, c, d)
+  if t == 0 then
+    return b
+  else
+    return c * 2^(10 * (t / d - 1)) + b - c * 0.001
+  end
+end
+
+function outExpo(t, b, c, d)
+  if t == d then
+    return b + c
+  else
+    return c * 1.001 * -2^((-10 * t / d) + 1) + b
+  end
+end
+
   function GUI_DrawControls(obj, gui)
 
     gfx.dest = 1000
@@ -2954,6 +2990,10 @@
 
               --if ctlcat == ctlcats.fxparam then
                 v2 = GetParamValue2(ctlcat,track,fxnum,param,i)
+                --DBG(v2)
+                --if v2 < 0.25 then
+                  --v2 = outQuart(v2,0,1,1)
+                --end
                 val2 = F_limit(round(frames*v2),0,frames-1)
                               
                 if ctltype == 3 then
@@ -3024,7 +3064,10 @@
                   else
                     Disp_Name = ctlnmov                  
                   end
-                  Disp_ParamV = GetParamDisp(ctlcat, tnum, nil, param, dvoff,i)                  
+                  Disp_ParamV = GetParamDisp(ctlcat, tnum, nil, param, dvoff, i)
+                  if maxdp > -1 then
+                    Disp_ParamV = roundX(Disp_ParamV, maxdp)                  
+                  end                  
                 end
 
               local mid = x+(w/2)
