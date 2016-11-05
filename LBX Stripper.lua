@@ -6830,7 +6830,12 @@ end
                   break
                   
                 elseif MOUSE_click_RB(ctlxywh) and mouse.ctrl == false then
-                  local mstr = 'MIDI learn|Modulation||Enter value||Open FX window'
+                  local mstr
+                  if strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.fxparam then
+                    mstr = 'MIDI learn|Modulation||Enter value||Open FX window'
+                  else
+                    mstr = '#MIDI learn|#Modulation||Enter value||#Open FX window'                  
+                  end
                   trackfxparam_select = i
                   SetParam2(true)
                   gfx.x, gfx.y = mouse.mx, mouse.my
