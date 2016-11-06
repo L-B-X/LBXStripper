@@ -3588,7 +3588,11 @@ end
           
             selrect = CalcGFXSelRect()
             if selrect then
-              f_Get_SSV(gui.color.yellow)
+              if poslock_select == true then
+                f_Get_SSV(gui.color.red)
+              else
+                f_Get_SSV(gui.color.yellow)
+              end
               gfx.a = 1
               selrect.x = selrect.x - surface_offset.x + obj.sections[10].x
               selrect.y = selrect.y - surface_offset.y + obj.sections[10].y
@@ -5827,9 +5831,13 @@ end
       if strips[tracks[track_select].strip][page].graphics[gfx2_select].gfxtype == gfxtype.txt then
         mm = 'Copy formatting|Paste formatting'
       end
-      mstr = 'Move up|Move down|Bring to front|Send to back||Insert label||'..mm
+      local mm2 = 'Lock position'
+      if nz(strips[tracks[track_select].strip][page].graphics[gfx2_select].poslock,false) == true then
+        mm2 = '!'..mm2
+      end
+      mstr = 'Move up|Move down|Bring to front|Send to back||Insert label||'..mm..'||'..mm2
     else
-      mstr = '#Move up|#Move down|#Bring to front|#Send to back||Insert label||#Copy formatting|#Paste formatting'    
+      mstr = '#Move up|#Move down|#Bring to front|#Send to back||Insert label||#Copy formatting|#Paste formatting||#Lock position'    
     end
     gfx.x, gfx.y = mouse.mx, mouse.my
     local mx, my = mouse.mx, mouse.my
@@ -5917,7 +5925,13 @@ end
           strips[tracks[track_select].strip][page].graphics[gfx2_select].text_col = gfx_lblformat_copy.text_col
           
         end
-      
+
+      elseif res == 8 then
+
+        strips[tracks[track_select].strip][page].graphics[gfx2_select].poslock = not strips[tracks[track_select].strip][page].graphics[gfx2_select].poslock
+        poslock_select = strips[tracks[track_select].strip][page].graphics[gfx2_select].poslock
+        update_gfx = true
+        
       end
     end
     update_gfx = true    
@@ -6178,6 +6192,7 @@ end
     gfx_font_select.shadow_a = strips[tracks[track_select].strip][page].graphics[gfx2_select].font.shadow_a
     gfx_textcol_select = strips[tracks[track_select].strip][page].graphics[gfx2_select].text_col
     gfx_text_select = strips[tracks[track_select].strip][page].graphics[gfx2_select].text
+    poslock_select = strips[tracks[track_select].strip][page].graphics[gfx2_select].poslock
   end
   
   function GetValFromDVal(c, dv)
@@ -7814,7 +7829,6 @@ end
             local i
             local scale = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].scale
             local zx, zy = 0.5*strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].w, 0.5*strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].ctl_info.cellh
-            --strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].dirty = true
             strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].x = math.floor((mouse.mx-zx - surface_offset.x)/settings_gridsize)*settings_gridsize 
                                                                                - math.floor((dragoff.x)/settings_gridsize)*settings_gridsize
             strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].y = math.floor((mouse.my-zy - surface_offset.y)/settings_gridsize)*settings_gridsize 
@@ -7828,7 +7842,6 @@ end
             if #ctl_select > 1 then
               for i = 2, #ctl_select do
                 scale = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].scale
-                --strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].dirty = true
                 strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].x = math.floor((mouse.mx-zx - surface_offset.x)/settings_gridsize)*settings_gridsize 
                                                                                    - math.floor((dragoff.x)/settings_gridsize)*settings_gridsize 
                                                                                    - ctl_select[i].relx
@@ -7844,7 +7857,6 @@ end
               end
             end
             if gfx3_select and #gfx3_select > 0 then
-              --update_gfx = true
               for i = 1, #gfx3_select do
                 strips[tracks[track_select].strip][page].graphics[gfx3_select[i].ctl].x = math.floor((mouse.mx-zx - surface_offset.x)/settings_gridsize)*settings_gridsize 
                                                                                    - math.floor((dragoff.x)/settings_gridsize)*settings_gridsize 
@@ -8546,8 +8558,10 @@ end
                             w = 10,
                             h = 10}
               if mouse.context == nil and MOUSE_click(xywh) then
-                mouse.context = contexts.stretch_x
-                gfx2_stretch = {mx = mouse.mx, sw = strips[tracks[track_select].strip][page].graphics[gfx2_select].stretchw}
+                if poslock_select == false then
+                  mouse.context = contexts.stretch_x
+                  gfx2_stretch = {mx = mouse.mx, sw = strips[tracks[track_select].strip][page].graphics[gfx2_select].stretchw}
+                end
               end
 
               local xywh = {x = selrect.x+selrect.w/2-5,
@@ -8555,8 +8569,10 @@ end
                             w = 10,
                             h = 10}
               if mouse.context == nil and MOUSE_click(xywh) then
-                mouse.context = contexts.stretch_y
-                gfx2_stretch = {my = mouse.my, sh = strips[tracks[track_select].strip][page].graphics[gfx2_select].stretchh}
+                if poslock_select == false then
+                  mouse.context = contexts.stretch_y
+                  gfx2_stretch = {my = mouse.my, sh = strips[tracks[track_select].strip][page].graphics[gfx2_select].stretchh}
+                end
               end
 
               local xywh = {x = selrect.x+selrect.w-5,
@@ -8564,9 +8580,11 @@ end
                             w = 10,
                             h = 10}
               if mouse.context == nil and MOUSE_click(xywh) then
-                mouse.context = contexts.stretch_xy
-                gfx2_stretch = {mx = mouse.mx, my = mouse.my, sw = strips[tracks[track_select].strip][page].graphics[gfx2_select].stretchw,
-                                                              sh = strips[tracks[track_select].strip][page].graphics[gfx2_select].stretchh}
+                if poslock_select == false then
+                  mouse.context = contexts.stretch_xy
+                  gfx2_stretch = {mx = mouse.mx, my = mouse.my, sw = strips[tracks[track_select].strip][page].graphics[gfx2_select].stretchw,
+                                                                sh = strips[tracks[track_select].strip][page].graphics[gfx2_select].stretchh}
+                end
               end
             
               if mouse.context and mouse.context == contexts.stretch_x then
@@ -8608,11 +8626,15 @@ end
                 end
                 
                 if MOUSE_click(xywh) then
-                  mouse.context = contexts.draggfx2
                   gfx2_select = i              
+
+                  poslock_select = nz(strips[tracks[track_select].strip][page].graphics[gfx2_select].poslock,false)
+                  
+                  mouse.context = contexts.draggfx2
                   draggfx2 = 'draggfx'
                   dragoff = {x = mouse.mx - strips[tracks[track_select].strip][page].graphics[gfx2_select].x - surface_offset.x,
                              y = mouse.my - strips[tracks[track_select].strip][page].graphics[gfx2_select].y - surface_offset.y}
+                  
                   if strips[tracks[track_select].strip][page].graphics[gfx2_select].gfxtype == gfxtype.txt then
                     show_lbloptions = true
                     SetGfxSelectVals()
@@ -8640,10 +8662,13 @@ end
         if mouse.context and mouse.context == contexts.draggfx2 then
           if math.floor(mouse.mx/settings_gridsize) ~= math.floor(mouse.last_x/settings_gridsize) or math.floor(mouse.my/settings_gridsize) ~= math.floor(mouse.last_y/settings_gridsize) then
             local i
-            strips[tracks[track_select].strip][page].graphics[gfx2_select].x = math.floor((mouse.mx - surface_offset.x)/settings_gridsize)*settings_gridsize 
-                                                                               - math.floor((dragoff.x)/settings_gridsize)*settings_gridsize
-            strips[tracks[track_select].strip][page].graphics[gfx2_select].y = math.floor((mouse.my - surface_offset.y)/settings_gridsize)*settings_gridsize 
-                                                                               - math.floor((dragoff.y)/settings_gridsize)*settings_gridsize
+            if poslock_select == false then
+            
+              strips[tracks[track_select].strip][page].graphics[gfx2_select].x = math.floor((mouse.mx - surface_offset.x)/settings_gridsize)*settings_gridsize 
+                                                                                 - math.floor((dragoff.x)/settings_gridsize)*settings_gridsize
+              strips[tracks[track_select].strip][page].graphics[gfx2_select].y = math.floor((mouse.my - surface_offset.y)/settings_gridsize)*settings_gridsize 
+                                                                                 - math.floor((dragoff.y)/settings_gridsize)*settings_gridsize
+            end
             update_gfx = true
           end
         elseif draggfx2 ~= nil then
@@ -9631,7 +9656,8 @@ end
                                                         shadow_a = tonumber(nz(GPES(key..'font_shadowa',true),0.6))
                                                         },
                                                 text = GPES(key..'text',true),
-                                                text_col = GPES(key..'text_col',true)
+                                                text_col = GPES(key..'text_col',true),
+                                                poslock = tobool(nz(GPES(key..'poslock',true),false))
                                                }
                     strips[ss][p].graphics[g].stretchw = tonumber(nz(GPES(key..'stretchw',true),strips[ss][p].graphics[g].w))
                     strips[ss][p].graphics[g].stretchh = tonumber(nz(GPES(key..'stretchh',true),strips[ss][p].graphics[g].h))
@@ -9706,9 +9732,10 @@ end
       end    
         
     end
-    surface_offset.x = tonumber(strips[tracks[track_select].strip][page].surface_x)
-    surface_offset.y = tonumber(strips[tracks[track_select].strip][page].surface_y)
-    
+    if tracks[track_select].strip and strips[tracks[track_select].strip] then
+      surface_offset.x = tonumber(strips[tracks[track_select].strip][page].surface_x)
+      surface_offset.y = tonumber(strips[tracks[track_select].strip][page].surface_y)
+    end    
     --[[local ww = gfx1.main_w-(plist_w+2)
     if surface_size.w < ww then
       surface_offset.x = -math.floor((ww - surface_size.w)/2)
@@ -9885,6 +9912,7 @@ end
                 reaper.SetProjExtState(0,SCRIPT,key..'font_shadowa',nz(strips[s][p].graphics[g].font.shadow_a, ''))
                 reaper.SetProjExtState(0,SCRIPT,key..'text',nz(strips[s][p].graphics[g].text, ''))
                 reaper.SetProjExtState(0,SCRIPT,key..'text_col',nz(strips[s][p].graphics[g].text_col, ''))
+                reaper.SetProjExtState(0,SCRIPT,key..'poslock',nz(tostring(strips[s][p].graphics[g].poslock), false))
               
               end
             end
