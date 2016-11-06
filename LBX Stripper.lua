@@ -15,7 +15,12 @@
   submode_table = {'FX PARAMS','GRAPHICS','STRIPS'}
   ctltype_table = {'KNOB/SLIDER','BUTTON','BUTTON INV','CYCLE BUTTON','METER','MEM BUTTON'}
   trctltype_table = {'Track Controls','Track Sends'}
-  scalemode_table = {'NORMAL','REAPER VOL'}
+  scalemode_preset_table = {'','NORMAL','REAPER VOL'}
+  scalemode_table = {1/8,1/7,1/6,1/5,1/4,1/3,1/2,1,2,3,4,5,6,7,8}
+  scalemode_dtable = {'1/8','1/7','1/6','1/5','1/4','1/3','1/2','1','2','3','4','5','6','7','8'}
+  
+  framemode_table = {'NORMAL','CIRC'}
+  
   trctltypeidx_table = {tr_ctls = 1,
                         tr_sends = 2,
                         tr_rcvs = 3,
@@ -555,6 +560,14 @@
                           y = obj.sections[45].y+butt_h+10 + (butt_h/2+4 + 10) * 8,
                           w = obj.sections[45].w-80,
                           h = butt_h/2+8}
+      obj.sections[132] = {x = obj.sections[45].x+70,
+                          y = obj.sections[45].y+butt_h+10 + (butt_h/2+4 + 10) * 9,
+                          w = obj.sections[45].w-80,
+                          h = butt_h/2+8}
+      obj.sections[133] = {x = obj.sections[45].x+70,
+                          y = obj.sections[45].y+butt_h+10 + (butt_h/2+4 + 10) * 10,
+                          w = obj.sections[45].w-80,
+                          h = butt_h/2+8}
 
       --LBL OPTIONS 
       --EDIT
@@ -951,7 +964,8 @@
                                                 id = nil,
                                                 tracknum = tracks[trackedit_select].tracknum,
                                                 trackguid = tracks[trackedit_select].guid,
-                                                scalemode = 1
+                                                scalemode = 8,
+                                                framemode = 1
                                                 }
         if track_select == trackedit_select then
           strips[strip][page].controls[ctlnum].tracknum = nil
@@ -1002,7 +1016,8 @@
                                                 id = nil,
                                                 tracknum = last_touch_fx.tracknum,
                                                 trackguid = last_touch_fx.trguid,
-                                                scalemode = 1
+                                                scalemode = 8,
+                                                framemode = 1
                                                 }
         if last_touch_fx.tracknum == strips[strip].track.tracknum then
           strips[strip][page].controls[ctlnum].tracknum = nil
@@ -1054,7 +1069,8 @@
                                                 id = nil,
                                                 tracknum = tracks[trackedit_select].tracknum,
                                                 trackguid = tracks[trackedit_select].guid,
-                                                scalemode = 1
+                                                scalemode = 8,
+                                                framemode = 1
                                                 }
         if track_select == trackedit_select then
           strips[strip][page].controls[ctlnum].tracknum = nil
@@ -1111,7 +1127,8 @@
                                                   id = nil,
                                                   tracknum = tracks[trackedit_select].tracknum,
                                                   trackguid = tracks[trackedit_select].guid,
-                                                  scalemode = 1
+                                                  scalemode = 8,
+                                                  framemode = 1
                                                   }
           
           if track_select == trackedit_select then
@@ -2647,7 +2664,9 @@
       GUI_DrawButton(gui, minov_select, obj.sections[126], gui.color.white, gui.color.black, true, 'MIN OV', true)
       GUI_DrawButton(gui, maxov_select, obj.sections[127], gui.color.white, gui.color.black, true, 'MAX OV', true)
       GUI_DrawButton(gui, nz(ov_disp,''), obj.sections[130], gui.color.black, gui.color.white, true, '')
-      GUI_DrawButton(gui, scalemode_table[knob_scalemode_select], obj.sections[131], gui.color.white, gui.color.black, true, 'SCALE MODE')
+      GUI_DrawButton(gui, scalemode_preset_table[knob_scalemode_select], obj.sections[131], gui.color.white, gui.color.black, true, 'SCALE PSET')
+      GUI_DrawButton(gui, scalemode_dtable[scalemode_select], obj.sections[132], gui.color.white, gui.color.black, true, 'SCALE MOD')
+      GUI_DrawButton(gui, framemode_table[framemode_select], obj.sections[133], gui.color.white, gui.color.black, true, 'FRAME MOD')
 
       local pmin = normalize(min, max, minov_select)
       local pmax = normalize(min, max, maxov_select)
@@ -3005,7 +3024,7 @@ end
               local v2, val2
 
               --if ctlcat == ctlcats.fxparam then
-                v2 = frameScale(strips[tracks[track_select].strip][page].controls[i].scalemode, GetParamValue2(ctlcat,track,fxnum,param,i))
+                v2 = frameScale(strips[tracks[track_select].strip][page].controls[i].framemode, GetParamValue2(ctlcat,track,fxnum,param,i))
                 --v2 = outCirc(v2)
                 val2 = F_limit(round(frames*v2),0,frames-1)
                               
@@ -4521,7 +4540,10 @@ end
     end
   end
   
-  function GetParamMinMax_ctl(c)
+  function GetParamMinMax_ctl(c, checkov)
+    
+    if checkov == nil then checkov = true end
+    
     local t = strips[tracks[track_select].strip].track.tracknum
     if strips[tracks[track_select].strip][page].controls[c].tracknum ~= nil then
       t = strips[tracks[track_select].strip][page].controls[c].tracknum
@@ -4534,17 +4556,19 @@ end
       local cc = strips[tracks[track_select].strip][page].controls[c].ctlcat
       
       local track = GetTrack(t)
-      local min, max = GetParamMinMax(cc,track,nz(f,-1),p,true,c)
+      local min, max = GetParamMinMax(cc,track,nz(f,-1),p,checkov,c)
       return min, max
 
     elseif cc == ctlcats.trackparam then
       local param = strips[tracks[track_select].strip][page].controls[c].param
-      local min, max = trctls_table[param].min, trctls_table[param].max    
-      if strips[tracks[track_select].strip][page].controls[c].minov then
-        min = strips[tracks[track_select].strip][page].controls[c].minov
-      end
-      if strips[tracks[track_select].strip][page].controls[c].maxov then
-        max = strips[tracks[track_select].strip][page].controls[c].maxov
+      local min, max = trctls_table[param].min, trctls_table[param].max
+      if checkov then    
+        if strips[tracks[track_select].strip][page].controls[c].minov then
+          min = strips[tracks[track_select].strip][page].controls[c].minov
+        end
+        if strips[tracks[track_select].strip][page].controls[c].maxov then
+          max = strips[tracks[track_select].strip][page].controls[c].maxov
+        end
       end
       return tonumber(min), tonumber(max)
 
@@ -4552,7 +4576,7 @@ end
       local param = strips[tracks[track_select].strip][page].controls[c].param
       local idx = math.floor((param-1) % 3)+1
       local min, max = trsends_mmtable[idx].min, trsends_mmtable[idx].max
-      if checkov and checkov == true and c then
+      if checkov then
         if strips[tracks[track_select].strip][page].controls[c].minov then
           min = strips[tracks[track_select].strip][page].controls[c].minov
         end
@@ -6100,9 +6124,9 @@ end
       surface_offset.y = 0       
     end
     
-    if settings_autocentrectls then
-      AutoCentreCtls()
-    end
+    --if settings_autocentrectls then
+    --  AutoCentreCtls()
+    --end
     update_gfx = true
     
   end
@@ -6120,11 +6144,26 @@ end
     defval_select = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].defval
     maxdp_select = nz(strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].maxdp,-1)                  
     dvaloff_select = nz(strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].dvaloffset,'')                  
-    knob_scalemode_select = nz(strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].scalemode,1)                  
+    --knob_scalemode_select = nz(strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].scalemode,1)                  
+    scalemode_select = nz(strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].scalemode,8)
+    framemode_select = nz(strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].framemode,1)
+    SetKnobScaleMode()
     cycle_select = Cycle_CopySelectIn(ctl_select[1].ctl)
     local min, max = GetParamMinMax_ctl(ctl_select[1].ctl)
     minov_select = min
     maxov_select = max
+  end
+
+  function SetKnobScaleMode()
+  
+    if scalemode_select == 8 and framemode_select == 1 then
+      knob_scalemode_select = 2
+    elseif scalemode_select == 12 and framemode_select == 2 then
+      knob_scalemode_select = 3
+    else
+      knob_scalemode_select = 1
+    end
+  
   end
 
   function SetGfxSelectVals()
@@ -7333,11 +7372,56 @@ end
 
             if MOUSE_click(obj.sections[131]) then
               knob_scalemode_select = knob_scalemode_select + 1
-              if knob_scalemode_select > #scalemode_table then knob_scalemode_select = 1 end
+              if knob_scalemode_select > #scalemode_preset_table then knob_scalemode_select = 2 end
+              if knob_scalemode_select == 2 then
+                scalemode_select = 8
+                framemode_select = 1
+              elseif knob_scalemode_select == 3 then
+                scalemode_select = 12
+                framemode_select = 2              
+              end
+              
               for i = 1, #ctl_select do
-                strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].scalemode = knob_scalemode_select
+                strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].scalemode = scalemode_select
+                strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].framemode = framemode_select                
               end
               update_gfx = true                        
+            end
+
+            if MOUSE_click(obj.sections[132]) then
+              scalemode_select = scalemode_select + 1
+              if scalemode_select > #scalemode_table then scalemode_select = 1 end
+              for i = 1, #ctl_select do
+                strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].scalemode = scalemode_select
+              end
+              SetKnobScaleMode()
+              update_gfx = true                                      
+            elseif MOUSE_click_RB(obj.sections[132]) then
+              scalemode_select = scalemode_select - 1
+              if scalemode_select < 1 then scalemode_select = #scalemode_table end
+              for i = 1, #ctl_select do
+                strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].scalemode = scalemode_select
+              end
+              SetKnobScaleMode()
+              update_gfx = true                                      
+            end
+          
+            if MOUSE_click(obj.sections[133]) then
+              framemode_select = framemode_select + 1
+              if framemode_select > #framemode_table then framemode_select = 1 end
+              for i = 1, #ctl_select do
+                strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].framemode = framemode_select
+              end
+              SetKnobScaleMode()
+              update_gfx = true                                      
+            elseif MOUSE_click_RB(obj.sections[133]) then
+              framemode_select = framemode_select - 1
+              if framemode_select < 1 then framemode_select = #framemode_table end
+              for i = 1, #ctl_select do
+                strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].framemode = framemode_select
+              end
+              SetKnobScaleMode()
+              update_gfx = true                                      
             end
           
             if mouse.context == nil and MOUSE_click(obj.sections[128]) then
@@ -7527,7 +7611,7 @@ end
                 val = ctlpos + (0.5-val)*2
               end
               local p = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].param
-              local min, max = trctls_table[p].min, trctls_table[p].max
+              local min, max = GetParamMinMax_ctl(ctl_select[1].ctl, false) --trctls_table[p].min, trctls_table[p].max
               
               if val < min then val = min end
               if val > max then val = max end
@@ -7570,7 +7654,7 @@ end
                 val = ctlpos + (0.5-val)*2
               end
               local p = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].param
-              local min, max = trctls_table[p].min, trctls_table[p].max
+              local min, max = GetParamMinMax_ctl(ctl_select[1].ctl, false) --trctls_table[p].min, trctls_table[p].max
               
               if val < min then val = min end
               if val > max then val = max end
@@ -7798,7 +7882,7 @@ end
           if math.abs(lasso.l-lasso.r) < 10 and math.abs(lasso.t-lasso.b) < 10 then
           -- == mouse.mx and lasso.t == mouse.my then
             if ctl_select ~= nil then
-              local mstr = 'Duplicate'
+              local mstr = 'Duplicate||Align Top|Align Left'
               gfx.x, gfx.y = mouse.mx, mouse.my
               local res = OpenMenu(mstr)
               if res == 1 then
@@ -7829,6 +7913,34 @@ end
                   end
                 end                
                 update_gfx = true
+              elseif res == 2 then
+                if #ctl_select > 1 then
+                  local y = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].y
+                  --DBG(#ctl_select)
+                  for i = 1, #ctl_select do
+                    strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].y = y
+                    local scale = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].scale
+                    strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ysc = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].y
+                                                                               + math.floor(strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctl_info.cellh/2
+                                                                               - (strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctl_info.cellh*scale)/2)
+                    --DBG(i..' '..y..'  '..strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].y)
+                  end
+                  ReselectSelection()
+                  update_gfx = true
+                end
+              elseif res == 3 then
+                if #ctl_select > 1 then
+                  local x = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].x
+                  for i = 1, #ctl_select do
+                    strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].x = x
+                    local scale = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].scale
+                    strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].xsc = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].x
+                                                                               + math.floor(strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].w/2
+                                                                               - (strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].w*scale)/2)
+                  end
+                  ReselectSelection()
+                  update_gfx = true
+                end
               end
             
             end
@@ -8895,6 +9007,23 @@ end
       
   end
   
+  function ReselectSelection()
+  
+    local tbl = {}
+    tbl[1] = {ctl = ctl_select[1].ctl}
+    for i = 2, #ctl_select do
+    
+      tbl[i] = {}
+      tbl[i].ctl = ctl_select[i].ctl
+      tbl[i].relx = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].x - strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].x    
+      tbl[i].rely = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].y - strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].y
+    
+    end
+    
+    ctl_select = tbl
+      
+  end
+  
   function GetLastTouchedFX(lastfx)
     
     local rt, tr, fx, pr = reaper.GetLastTouchedFX()
@@ -9104,7 +9233,8 @@ end
                  maxov = strips[tracks[track_select].strip][page].controls[c].maxov,
                  membtn = {state = strips[tracks[track_select].strip][page].controls[c].membtn.state,
                            mem = strips[tracks[track_select].strip][page].controls[c].membtn.mem},
-                 scalemode = strips[tracks[track_select].strip][page].controls[c].scalemode
+                 scalemode = strips[tracks[track_select].strip][page].controls[c].scalemode,
+                 framemode = strips[tracks[track_select].strip][page].controls[c].framemode
                  }
     return tbl
   end
@@ -9407,7 +9537,8 @@ end
                                                 maxdp = tonumber(nz(GPES(key..'maxdp',true),-1)),
                                                 cycledata = {statecnt = 0,{}},
                                                 id = deconvnum(GPES(key..'id',true)),
-                                                scalemode = tonumber(nz(GPES(key..'scalemode',true),1))
+                                                scalemode = tonumber(nz(GPES(key..'scalemodex',true),8)),
+                                                framemode = tonumber(nz(GPES(key..'framemodex',true),1))
                                                 --enabled = tobool(nz(GPES(key..'enabled',true),true))
                                                }
                     if strips[ss][p].controls[c].maxdp == nil or (strips[ss][p].controls[c].maxdp and strips[ss][p].controls[c].maxdp == '') then
@@ -9575,6 +9706,9 @@ end
       end    
         
     end
+    surface_offset.x = tonumber(strips[tracks[track_select].strip][page].surface_x)
+    surface_offset.y = tonumber(strips[tracks[track_select].strip][page].surface_y)
+    
     --[[local ww = gfx1.main_w-(plist_w+2)
     if surface_size.w < ww then
       surface_offset.x = -math.floor((ww - surface_size.w)/2)
@@ -9696,7 +9830,8 @@ end
                 reaper.SetProjExtState(0,SCRIPT,key..'dvaloffset',nz(strips[s][p].controls[c].dvaloffset,''))   
                 reaper.SetProjExtState(0,SCRIPT,key..'minov',nz(strips[s][p].controls[c].minov,''))   
                 reaper.SetProjExtState(0,SCRIPT,key..'maxov',nz(strips[s][p].controls[c].maxov,''))   
-                reaper.SetProjExtState(0,SCRIPT,key..'scalemode',nz(strips[s][p].controls[c].scalemode,1))   
+                reaper.SetProjExtState(0,SCRIPT,key..'scalemodex',nz(strips[s][p].controls[c].scalemode,8))   
+                reaper.SetProjExtState(0,SCRIPT,key..'framemodex',nz(strips[s][p].controls[c].framemode,1))   
                            
                 reaper.SetProjExtState(0,SCRIPT,key..'id',convnum(strips[s][p].controls[c].id))
 
@@ -9872,6 +10007,8 @@ end
     gfx_textcol_select = '255 255 255'
     gfx_text_select = ''
     knob_scalemode_select = 1
+    scalemode_select = 8
+    framemode_select = 1
     
     plist_w = 140
     oplist_w = 140
@@ -9941,25 +10078,15 @@ end
   
   function ctlScale(m, v)
   
-    if m == 1 then
-      return v
-    elseif m == 2 then
-      return inQuint(v)
-    else
-      return v
-    end
+    local mm = scalemode_table[m]
+    return v^mm
   
   end
 
   function ctlScaleInv(m, v)
   
-    if m == 1 then
-      return v
-    elseif m == 2 then
-      return inQuintInv(v)
-    else
-      return v
-    end
+    local mm = 1/scalemode_table[m]
+    return v^mm
   
   end
   
