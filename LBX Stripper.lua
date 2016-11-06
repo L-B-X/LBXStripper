@@ -6328,6 +6328,21 @@ end
   
   end
   
+  function SetPosLockCtl()
+  
+    if ctl_select and #ctl_select > 0 then
+      poslockctl_select = true
+      for i = 1, #ctl_select do
+        if nz(strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].poslock,false) == false then
+          poslockctl_select = false
+          break
+        end    
+      end
+    else
+      poslockctl_select = false
+    end
+      
+  end
     
   ------------------------------------------------------------    
 
@@ -7553,6 +7568,7 @@ end
                         w = strips[tracks[track_select].strip][page].controls[i].w, 
                         h = strips[tracks[track_select].strip][page].controls[i].ctl_info.cellh}
                 if MOUSE_click(xywh) then
+                
                   mouse.context = contexts.dragctl
                   dragctl = 'dragctl'
                   show_cycleoptions = false
@@ -7597,6 +7613,7 @@ end
                   end
                   
                   SetCtlSelectVals()
+                  SetPosLockCtl()
                                                        
                   dragoff = {x = mouse.mx - strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].x - 0.5*strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].w - surface_offset.x,
                              y = mouse.my - strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].y - 0.5*strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].ctl_info.cellh - surface_offset.y}
@@ -7829,31 +7846,36 @@ end
             local i
             local scale = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].scale
             local zx, zy = 0.5*strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].w, 0.5*strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].ctl_info.cellh
-            strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].x = math.floor((mouse.mx-zx - surface_offset.x)/settings_gridsize)*settings_gridsize 
-                                                                               - math.floor((dragoff.x)/settings_gridsize)*settings_gridsize
-            strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].y = math.floor((mouse.my-zy - surface_offset.y)/settings_gridsize)*settings_gridsize 
-                                                                               - math.floor((dragoff.y)/settings_gridsize)*settings_gridsize
-            strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].xsc = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].x
-                                                                                       + math.floor(strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].w/2
-                                                                                       - (strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].w*scale)/2)
-            strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].ysc = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].y
-                                                                                       + math.floor(strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].ctl_info.cellh/2
-                                                                                       - (strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].ctl_info.cellh*scale)/2)
+            
+            if nz(strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].poslock,false) == false then
+              strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].x = math.floor((mouse.mx-zx - surface_offset.x)/settings_gridsize)*settings_gridsize 
+                                                                                 - math.floor((dragoff.x)/settings_gridsize)*settings_gridsize
+              strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].y = math.floor((mouse.my-zy - surface_offset.y)/settings_gridsize)*settings_gridsize 
+                                                                                 - math.floor((dragoff.y)/settings_gridsize)*settings_gridsize
+              strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].xsc = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].x
+                                                                                         + math.floor(strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].w/2
+                                                                                         - (strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].w*scale)/2)
+              strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].ysc = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].y
+                                                                                         + math.floor(strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].ctl_info.cellh/2
+                                                                                         - (strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].ctl_info.cellh*scale)/2)
+            end
             if #ctl_select > 1 then
               for i = 2, #ctl_select do
-                scale = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].scale
-                strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].x = math.floor((mouse.mx-zx - surface_offset.x)/settings_gridsize)*settings_gridsize 
-                                                                                   - math.floor((dragoff.x)/settings_gridsize)*settings_gridsize 
-                                                                                   - ctl_select[i].relx
-                strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].y = math.floor((mouse.my-zy - surface_offset.y)/settings_gridsize)*settings_gridsize 
-                                                                                   - math.floor((dragoff.y)/settings_gridsize)*settings_gridsize
-                                                                                   - ctl_select[i].rely
-                strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].xsc = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].x
-                                                                                           + math.floor(strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].w/2
-                                                                                           - (strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].w*scale)/2)
-                strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ysc = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].y
-                                                                                           + math.floor(strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctl_info.cellh/2
-                                                                                           - (strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctl_info.cellh*scale)/2)
+                if nz(strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].poslock,false) == false then
+                  scale = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].scale
+                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].x = math.floor((mouse.mx-zx - surface_offset.x)/settings_gridsize)*settings_gridsize 
+                                                                                     - math.floor((dragoff.x)/settings_gridsize)*settings_gridsize 
+                                                                                     - ctl_select[i].relx
+                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].y = math.floor((mouse.my-zy - surface_offset.y)/settings_gridsize)*settings_gridsize 
+                                                                                     - math.floor((dragoff.y)/settings_gridsize)*settings_gridsize
+                                                                                     - ctl_select[i].rely
+                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].xsc = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].x
+                                                                                             + math.floor(strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].w/2
+                                                                                             - (strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].w*scale)/2)
+                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ysc = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].y
+                                                                                             + math.floor(strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctl_info.cellh/2
+                                                                                             - (strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctl_info.cellh*scale)/2)
+                end
               end
             end
             if gfx3_select and #gfx3_select > 0 then
@@ -7886,6 +7908,7 @@ end
             if ctl_select ~= nil then
               SetCtlSelectVals()
             end
+            SetPosLockCtl()
             update_ctls = true
           end
         elseif lasso ~= nil then
@@ -7894,7 +7917,12 @@ end
           if math.abs(lasso.l-lasso.r) < 10 and math.abs(lasso.t-lasso.b) < 10 then
           -- == mouse.mx and lasso.t == mouse.my then
             if ctl_select ~= nil then
-              local mstr = 'Duplicate||Align Top|Align Left'
+              if poslockctl_select then
+                mm = '!Lock position'
+              else
+                mm = 'Lock position'              
+              end
+              local mstr = 'Duplicate||Align Top|Align Left||'..mm
               gfx.x, gfx.y = mouse.mx, mouse.my
               local res = OpenMenu(mstr)
               if res == 1 then
@@ -7929,13 +7957,14 @@ end
                 if #ctl_select > 1 then
                   local y = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].y
                   --DBG(#ctl_select)
-                  for i = 1, #ctl_select do
-                    strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].y = y
-                    local scale = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].scale
-                    strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ysc = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].y
-                                                                               + math.floor(strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctl_info.cellh/2
-                                                                               - (strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctl_info.cellh*scale)/2)
-                    --DBG(i..' '..y..'  '..strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].y)
+                  for i = 2, #ctl_select do
+                    if nz(strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].poslock, false) == false then
+                      strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].y = y
+                      local scale = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].scale
+                      strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ysc = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].y
+                                                                                 + math.floor(strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctl_info.cellh/2
+                                                                                 - (strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctl_info.cellh*scale)/2)
+                    end
                   end
                   ReselectSelection()
                   update_gfx = true
@@ -7943,16 +7972,23 @@ end
               elseif res == 3 then
                 if #ctl_select > 1 then
                   local x = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].x
-                  for i = 1, #ctl_select do
-                    strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].x = x
-                    local scale = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].scale
-                    strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].xsc = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].x
-                                                                               + math.floor(strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].w/2
-                                                                               - (strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].w*scale)/2)
+                  for i = 2, #ctl_select do
+                    if nz(strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].poslock, false) == false then
+                      strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].x = x
+                      local scale = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].scale
+                      strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].xsc = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].x
+                                                                                 + math.floor(strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].w/2
+                                                                                 - (strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].w*scale)/2)
+                    end
                   end
                   ReselectSelection()
                   update_gfx = true
                 end
+              elseif res == 4 then
+                for i = 1, #ctl_select do
+                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].poslock = not poslockctl_select
+                end
+                SetPosLockCtl()
               end
             
             end
@@ -9563,8 +9599,8 @@ end
                                                 cycledata = {statecnt = 0,{}},
                                                 id = deconvnum(GPES(key..'id',true)),
                                                 scalemode = tonumber(nz(GPES(key..'scalemodex',true),8)),
-                                                framemode = tonumber(nz(GPES(key..'framemodex',true),1))
-                                                --enabled = tobool(nz(GPES(key..'enabled',true),true))
+                                                framemode = tonumber(nz(GPES(key..'framemodex',true),1)),
+                                                poslock = tobool(nz(GPES(key..'poslock',true),false))
                                                }
                     if strips[ss][p].controls[c].maxdp == nil or (strips[ss][p].controls[c].maxdp and strips[ss][p].controls[c].maxdp == '') then
                       strips[ss][p].controls[c].maxdp = -1
@@ -9859,6 +9895,7 @@ end
                 reaper.SetProjExtState(0,SCRIPT,key..'maxov',nz(strips[s][p].controls[c].maxov,''))   
                 reaper.SetProjExtState(0,SCRIPT,key..'scalemodex',nz(strips[s][p].controls[c].scalemode,8))   
                 reaper.SetProjExtState(0,SCRIPT,key..'framemodex',nz(strips[s][p].controls[c].framemode,1))   
+                reaper.SetProjExtState(0,SCRIPT,key..'poslock',nz(tostring(strips[s][p].controls[c].poslock),false))   
                            
                 reaper.SetProjExtState(0,SCRIPT,key..'id',convnum(strips[s][p].controls[c].id))
 
