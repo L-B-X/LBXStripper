@@ -847,7 +847,8 @@
                                                   shadow = nil
                                                   },
                                           text = nil,
-                                          text_col = nil
+                                          text_col = nil,
+                                          poslock = false
                                          }
       elseif type == gfxtype.txt then
         local x,y
@@ -877,7 +878,8 @@
                                                   shadow_a = gfx_font_select.shadow_a
                                                   },
                                           text = gfx_text_select,
-                                          text_col = gfx_textcol_select
+                                          text_col = gfx_textcol_select,
+                                          poslock = false
                                          }
       
       end
