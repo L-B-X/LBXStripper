@@ -3109,7 +3109,7 @@ end
                   end                  
                 end
 
-                if ctltype == 4 and DVOV then
+                if ctltype == 4 and DVOV and DVOV ~= '' then
                 
                   Disp_ParamV = DVOV             
                 
@@ -4869,15 +4869,36 @@ end
 
   function EditValue2(txt)
 
-    local mo = tonumber(txt)
-    if mo then
-      local nval = GetValFromDVal(trackfxparam_select,txt)
-      --for i = 1, #ctl_select do 
-      strips[tracks[track_select].strip][page].controls[trackfxparam_select].val = nval
-      strips[tracks[track_select].strip][page].controls[trackfxparam_select].dirty = true
-      SetParam()
-      --end
-    end  
+    if strips[tracks[track_select].strip][page].controls[trackfxparam_select].ctltype == 4 then
+      --cycle
+      if strips[tracks[track_select].strip][page].controls[trackfxparam_select].cycledata.statecnt > 0 then
+        for i = 1, strips[tracks[track_select].strip][page].controls[trackfxparam_select].cycledata.statecnt do
+        
+          if string.upper(txt) == string.sub(string.upper(strips[tracks[track_select].strip][page].controls[trackfxparam_select].cycledata[i].dispval),1,string.len(txt)) then
+          
+            strips[tracks[track_select].strip][page].controls[trackfxparam_select].cycledata.pos = i
+            strips[tracks[track_select].strip][page].controls[trackfxparam_select].val = 
+                strips[tracks[track_select].strip][page].controls[trackfxparam_select].cycledata[i].val
+            SetParam()
+            strips[tracks[track_select].strip][page].controls[trackfxparam_select].dirty = true
+            update_ctls = true
+            break
+          end
+        
+        end
+      
+      end
+    else
+      local mo = tonumber(txt)
+      if mo then
+        local nval = GetValFromDVal(trackfxparam_select,txt)
+        --for i = 1, #ctl_select do 
+        strips[tracks[track_select].strip][page].controls[trackfxparam_select].val = nval
+        strips[tracks[track_select].strip][page].controls[trackfxparam_select].dirty = true
+        SetParam()
+        --end
+      end  
+    end
   end
 
   function EditCycleDV(txt)
