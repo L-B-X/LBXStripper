@@ -55,7 +55,8 @@
               dragparam_snd = 25,
               shadxslider = 26,
               shadyslider = 27,
-              shadaslider = 28
+              shadaslider = 28,
+              movesnapwindow = 29
               }
   
   ctlcats = {fxparam = 0,
@@ -619,7 +620,13 @@
       obj.sections[150] = {x = obj.sections[49].x+50,
                           y = obj.sections[49].y+butt_h+10 + (butt_h/2+4 + 10) * 10 + yo,
                           w = obj.sections[49].w-60,
-                          h = butt_h/2+4}                           
+                          h = butt_h/2+4}
+                          
+      --SNAPSHOTS
+      obj.sections[160] = {x = gfx1.main_w - cow - 20,
+                          y = gfx1.main_h - 300 -20,
+                          w = cow,
+                          h = 300}                            
       
     return obj
   end
@@ -3402,13 +3409,51 @@ end
       
     end
     
+  ------------------------------------------------------------
 
+  function GUI_DrawSnapshots(obj, gui)
+    
+    gfx.dest = 1003
+    
+    gfx.a=1
+    f_Get_SSV(gui.color.black)
+    gfx.rect(0,
+             0, 
+             obj.sections[160].w,
+             obj.sections[160].h, 1, 1)
+    f_Get_SSV('64 64 64')
+    gfx.rect(0,
+             0, 
+             obj.sections[160].w,
+             obj.sections[160].h, 0, 1)
+    
+    xywh = {x = 0,
+            y = 0,
+            w = obj.sections[160].w,
+            h = butt_h}
+    
+    f_Get_SSV(gui.color.white)
+    gfx.a = 1 
+    gfx.rect(xywh.x,
+             xywh.y, 
+             xywh.w,
+             butt_h, 1 )
+    
+    GUI_textC(gui,xywh,'SNAPSHOTS',gui.color.black,-2)
+    
+    
+    
+    
+    
+    gfx.dest = 1    
+  end
+  
   ------------------------------------------------------------
   
   function GUI_draw(obj, gui)
     gfx.mode =4
     
-    if update_gfx or update_surface or update_sidebar or update_topbar or update_ctlopts or update_ctls or update_bg or update_settings then    
+    if update_gfx or update_surface or update_sidebar or update_topbar or update_ctlopts or update_ctls or update_bg or update_settings or update_snaps or update_msnaps then    
       local p = 0
         
       gfx.dest = 1
@@ -3419,6 +3464,7 @@ end
             
       if resize_display then
         gfx.setimgdim(1002,obj.sections[45].w, obj.sections[45].h)
+        gfx.setimgdim(1003,obj.sections[160].w, obj.sections[160].h)
       end
       
       if mode == 0 then
@@ -3426,6 +3472,11 @@ end
         if update_gfx or (surface_size.limit == false and update_surface) then
           GUI_DrawControlBackG(obj, gui)
           GUI_DrawControls(obj, gui)
+          if show_snapshots then
+            GUI_DrawSnapshots(obj, gui)
+          end
+        elseif update_snaps then        
+          GUI_DrawSnapshots(obj, gui)
         elseif update_ctls then        
           GUI_DrawControls(obj, gui)
         end
@@ -3435,7 +3486,7 @@ end
         
         gfx.dest = 1
         
-        if update_gfx or update_surface or update_bg then
+        if update_gfx or update_surface or update_bg or update_msnaps then
           --local w, h = obj.sections[10].w, lockh
           --local x, y = obj.sections[10].x + obj.sections[10].w/2 - w/2, obj.sections[10].y + (obj.sections[10].h/2) - h/2
           gfx.blit(1000,1,0,surface_offset.x,
@@ -3461,6 +3512,11 @@ end
           if lockh > 0 or lockw > 0 then
             UpdateLEdges()
           end
+        end
+        
+        if show_snapshots then
+        --DBG(obj.sections[160].x..'  '..obj.sections[160].y..'  '..obj.sections[160].w..'  '..obj.sections[160].h)
+          gfx.blit(1003,1,0,0,0,obj.sections[160].w,obj.sections[160].h,obj.sections[160].x,obj.sections[160].y)        
         end
         
       elseif mode == 1 then        
@@ -3733,8 +3789,7 @@ end
 
       if show_settings then
         GUI_DrawSettings(gui, obj)
-      end
-      
+      end      
       
       --[[if lockw > 0 or lockh > 0 then
         UpdateLEdges()
@@ -3758,6 +3813,8 @@ end
     update_ctls = false
     update_bg = false
     update_settings = false
+    update_snaps = false
+    update_msnaps = false
     
   end
   
@@ -6847,7 +6904,22 @@ end
         end
       end
       
-      if mouse.context == nil and (MOUSE_click(obj.sections[10]) or MOUSE_click_RB(obj.sections[10]) or gfx.mouse_wheel ~= 0) then
+      if mouse.context == nil and show_snapshots and (MOUSE_click(obj.sections[160]) or MOUSE_click_RB(obj.sections[160])) then
+      
+        xywh = {x = obj.sections[160].x,
+                y = obj.sections[160].y,
+                w = obj.sections[160].w,
+                h = butt_h}
+        if MOUSE_click(xywh) then 
+          mouse.context = contexts.movesnapwindow
+          movesnapwin = {offx = mouse.mx - obj.sections[160].x,
+                         offy = mouse.my - obj.sections[160].y}
+        end
+        
+        
+      
+        noscroll = true
+      elseif mouse.context == nil and (MOUSE_click(obj.sections[10]) or MOUSE_click_RB(obj.sections[10]) or gfx.mouse_wheel ~= 0) then
         if mouse.mx > obj.sections[10].x then
           if strips and tracks[track_select] and strips[tracks[track_select].strip] then
             for i = 1, #strips[tracks[track_select].strip][page].controls do
@@ -6940,19 +7012,24 @@ end
                   
                 elseif MOUSE_click_RB(ctlxywh) and mouse.ctrl == false then
                   local mstr
+                  mm = ''
+                  if show_snapshots then
+                    mm = '!'
+                  end
                   if strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.fxparam then
-                    mstr = 'MIDI learn|Modulation||Enter value||Open FX window'
+                    mstr = 'MIDI learn|Modulation||Enter value||Open FX window||'..mm..'Snapshots'
                   else
-                    mstr = '#MIDI learn|#Modulation||Enter value||#Open FX window'                  
+                    mstr = '#MIDI learn|#Modulation||Enter value||#Open FX window||'..mm..'Snapshots'                  
                   end
                   trackfxparam_select = i
-                  SetParam2(true)
                   gfx.x, gfx.y = mouse.mx, mouse.my
                   res = OpenMenu(mstr)
                   if res ~= 0 then
                     if res == 1 then
+                      SetParam2(true)
                       reaper.Main_OnCommand(41144,0)
                     elseif res == 2 then
+                      SetParam2(true)
                       reaper.Main_OnCommand(41143,0)
                     elseif res == 3 then
                       EditValue(5)
@@ -6968,8 +7045,12 @@ end
                       if not reaper.TrackFX_GetOpen(track, fxnum) then
                         reaper.TrackFX_Show(track, fxnum, 3)
                       end
+                    elseif res == 5 then
+                      show_snapshots = not show_snapshots
+                      update_gfx = true
                     end
                   end
+                  noscroll = true
                   break
                 --elseif MOUSE_click_RB(ctlxywh) and mouse.ctrl then
                 
@@ -7040,6 +7121,22 @@ end
                   break
                 end
 
+              end
+            end
+            
+            if noscroll == false and MOUSE_click_RB(obj.sections[10]) then
+              mm = ''
+              if show_snapshots then
+                mm = '!'
+              end
+              mstr = '#MIDI learn|#Modulation||#Enter value||#Open FX window||'..mm..'Snapshots'
+              gfx.x, gfx.y = mouse.mx, mouse.my
+              res = OpenMenu(mstr)
+              if res ~= 0 then
+                if res == 5 then
+                  show_snapshots = not show_snapshots
+                  update_gfx = true
+                end
               end
             end
           end
@@ -7125,6 +7222,15 @@ end
         end
       end
     
+      if mouse.context and mouse.context == contexts.movesnapwindow then
+        
+        obj.sections[160].x = F_limit(mouse.mx - movesnapwin.offx, obj.sections[10].x, obj.sections[10].x+obj.sections[10].w-obj.sections[160].w)
+        obj.sections[160].y = F_limit(mouse.my - movesnapwin.offy, obj.sections[10].y, obj.sections[10].y+obj.sections[10].h-obj.sections[160].h)
+        
+        update_msnaps = true
+      
+      end
+      
     elseif mode == 1 then
       
       if ct == 0 then
@@ -7566,14 +7672,14 @@ end
             cycle_select.selected = F_limit(i+cyclist_offset,1,cycle_select.statecnt)
             update_gfx = true
           elseif MOUSE_click_RB(obj.sections[103]) then
-                        
-            local mstr = 'Rename'
-            gfx.x, gfx.y = mouse.mx, mouse.my
-            local res = OpenMenu(mstr)
-            if res == 1 then
-              txt = EditValue(10)
-            end
-            
+            if cycle_select and cycle_select.selected then
+              local mstr = 'Rename'
+              gfx.x, gfx.y = mouse.mx, mouse.my
+              local res = OpenMenu(mstr)
+              if res == 1 then
+                txt = EditValue(10)
+              end
+            end            
           end          
 
           if MOUSE_click(obj.sections[104]) then
@@ -10058,6 +10164,38 @@ end
   
   ------------------------------------------------------------
     
+  function Snapshots_CREATE(strip, page)
+
+    if snapshots == nil then
+      snapshots = {}
+    end
+    if snapshots[strip] == nil then
+      snapshots[strip] = {}
+    end
+    if snapshots[strip][page] == nil then
+      snapshots[strip][page] = {}
+    end
+    snapcnt = #snapshots[strip][page] + 1
+    snapshots[strip][page][snapcnt] = {name = 'Snapshot '..snapcnt,
+                                       data = {}} 
+    
+    local sscnt = 1
+    for c = 1, #strips[strip][page].controls do
+    
+      if strips[strip][page].controls[c].ctlcat == ctlcats.fxparam or
+         strips[strip][page].controls[c].ctlcat == ctlcats.trparam or
+         strips[strip][page].controls[c].ctlcat == ctlcats.trsends then
+        if strips[strip][page].controls[c].ctltype ~= 5 then 
+           snapshots[strip][page][snapcnt].data[sscnt] = {ctl = c,
+                                                          val = strips[strip][page].controls[c].val}
+        end
+      end
+    end
+
+  end
+  
+  ------------------------------------------------------------
+    
   function INIT()
 
     PROJECTID = math.ceil((math.abs(math.sin( -1 + (os.clock() % 2)))) * 0xFFFFFFFF)
@@ -10144,6 +10282,7 @@ end
     show_settings = false
     show_cycleoptions = false
     show_paramlearn = false
+    show_snapshots = false
     
     show_paramname = true
     show_paramval = true
