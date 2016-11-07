@@ -5828,9 +5828,9 @@ end
       if nz(strips[tracks[track_select].strip][page].graphics[gfx2_select].poslock,false) == true then
         mm2 = '!'..mm2
       end
-      mstr = 'Move up|Move down|Bring to front|Send to back||Insert label||'..mm..'||'..mm2
+      mstr = 'Move up|Move down|Bring to front|Send to back||Insert label||'..mm..'||'..mm2..'||Delete'
     else
-      mstr = '#Move up|#Move down|#Bring to front|#Send to back||Insert label||#Copy formatting|#Paste formatting||#Lock position'    
+      mstr = '#Move up|#Move down|#Bring to front|#Send to back||Insert label||#Copy formatting|#Paste formatting||#Lock position||#Delete'    
     end
     gfx.x, gfx.y = mouse.mx, mouse.my
     local mx, my = mouse.mx, mouse.my
@@ -5925,6 +5925,9 @@ end
         poslock_select = strips[tracks[track_select].strip][page].graphics[gfx2_select].poslock
         update_gfx = true
         
+      elseif res == 9 then
+        DeleteSelectedCtls()
+        update_gfx = true
       end
     end
     update_gfx = true    
@@ -7913,7 +7916,7 @@ end
               else
                 mm = 'Lock position'              
               end
-              local mstr = 'Duplicate||Align Top|Align Left||'..mm..'||Delete selected'
+              local mstr = 'Duplicate||Align Top|Align Left||'..mm..'||Delete'
               gfx.x, gfx.y = mouse.mx, mouse.my
               local res = OpenMenu(mstr)
               if res == 1 then
