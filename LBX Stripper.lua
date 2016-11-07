@@ -3024,7 +3024,8 @@ end
                 v2 = frameScale(strips[tracks[track_select].strip][page].controls[i].framemode, GetParamValue2(ctlcat,track,fxnum,param,i))
                 --v2 = outCirc(v2)
                 val2 = F_limit(round(frames*v2),0,frames-1)
-                              
+                
+                local DVOV
                 if ctltype == 3 then
                   --invert button
                   val2 = 1-val2
@@ -3045,7 +3046,16 @@ end
                       end
                     else
                       val2 = F_limit(nz(strips[tracks[track_select].strip][page].controls[i].cycledata.pos,0),0,frames-1)
+                      if strips[tracks[track_select].strip][page].controls[i].cycledata and 
+                         strips[tracks[track_select].strip][page].controls[i].cycledata[nz(strips[tracks[track_select].strip][page].controls[i].cycledata.pos,0)] then
+                        DVOV = nz(strips[tracks[track_select].strip][page].controls[i].cycledata[nz(strips[tracks[track_select].strip][page].controls[i].cycledata.pos,0)].dispval,'')
+                      end
                     end
+                  else
+                    if strips[tracks[track_select].strip][page].controls[i].cycledata and 
+                       strips[tracks[track_select].strip][page].controls[i].cycledata[nz(strips[tracks[track_select].strip][page].controls[i].cycledata.pos,0)] then
+                      DVOV = nz(strips[tracks[track_select].strip][page].controls[i].cycledata[nz(strips[tracks[track_select].strip][page].controls[i].cycledata.pos,0)].dispval,'')
+                    end                  
                   end
                 elseif ctltype == 6 then
                   --mem button
@@ -3097,6 +3107,12 @@ end
                   if maxdp > -1 then
                     Disp_ParamV = roundX(Disp_ParamV, maxdp)                  
                   end                  
+                end
+
+                if ctltype == 4 and DVOV then
+                
+                  Disp_ParamV = DVOV             
+                
                 end
 
               local mid = x+(w/2)
@@ -4835,7 +4851,7 @@ end
 
   ------------------------------------------------------------    
 
-  function EditValue()
+  function EditValue(eb)
   
     local sizex,sizey = 400,200
     editbox={title = 'Please enter value:',
@@ -4847,7 +4863,7 @@ end
       hasfocus=true
     }
     
-    EB_Open = 5  
+    EB_Open = eb  
   
   end
 
@@ -4862,6 +4878,12 @@ end
       SetParam()
       --end
     end  
+  end
+
+  function EditCycleDV(txt)
+
+    cycle_select[cycle_select.selected].dispval = txt
+
   end
 
   function EditMinDVal()
@@ -6699,7 +6721,9 @@ end
         elseif EB_Open == 7 then
           EditLabel2(editbox.text)
         elseif EB_Open == 8 then
-          EditFont2(editbox.text)        
+          EditFont2(editbox.text)
+        elseif EB_Open == 10 then
+          EditCycleDV(editbox.text)        
         end
         editbox = nil
         EB_Open = 0
@@ -6819,7 +6843,7 @@ end
                     --double-click
                     if ctltype == 1 then
                       trackfxparam_select = i
-                      EditValue()
+                      EditValue(5)
                       break
                     end
                   end
@@ -6907,7 +6931,7 @@ end
                     elseif res == 2 then
                       reaper.Main_OnCommand(41143,0)
                     elseif res == 3 then
-                      EditValue()
+                      EditValue(5)
                     
                     elseif res == 4 then
                       local track
@@ -7491,6 +7515,8 @@ end
         
         elseif ctl_select ~= nil and show_cycleoptions and (MOUSE_click(obj.sections[100]) or MOUSE_click_RB(obj.sections[100])) then
         
+          -- CYCLE OPTS
+        
           if MOUSE_click(obj.sections[102]) then
             cyclist_offset = 0
             cycle_select.statecnt = F_limit(cycle_select.statecnt+1,0,max_cycle)
@@ -7515,6 +7541,15 @@ end
             local i = math.floor((mouse.my - obj.sections[103].y) / butt_h)+1
             cycle_select.selected = F_limit(i+cyclist_offset,1,cycle_select.statecnt)
             update_gfx = true
+          elseif MOUSE_click_RB(obj.sections[103]) then
+                        
+            local mstr = 'Rename'
+            gfx.x, gfx.y = mouse.mx, mouse.my
+            local res = OpenMenu(mstr)
+            if res == 1 then
+              txt = EditValue(10)
+            end
+            
           end          
 
           if MOUSE_click(obj.sections[104]) then
@@ -7540,6 +7575,8 @@ end
           if MOUSE_click(obj.sections[106]) then
             trackfxparam_select = ctl_select[1].ctl
             strips[tracks[track_select].strip][page].controls[trackfxparam_select].cycledata = Cycle_CopySelectOut()
+            strips[tracks[track_select].strip][page].controls[trackfxparam_select].cycledata.pos = cycle_select.selected
+            strips[tracks[track_select].strip][page].controls[trackfxparam_select].dirty = true
             show_cycleoptions = false
             update_gfx = true
           end
@@ -9613,7 +9650,7 @@ end
                     
                     strips[ss][p].controls[c].cycledata.statecnt = tonumber(nz(GPES(key..'cycledata_statecnt',true),0))
                     strips[ss][p].controls[c].cycledata.mapptof = tobool(nz(GPES(key..'cycledata_mapptof',true),false))
-                    strips[ss][p].controls[c].cycledata.pos = 1
+                    strips[ss][p].controls[c].cycledata.pos = tonumber(nz(GPES(key..'cycledata_pos',true),1))
                     strips[ss][p].controls[c].cycledata.val = 0
                     if nz(strips[ss][p].controls[c].cycledata.statecnt,0) > 0 then
                       for i = 1, strips[ss][p].controls[c].cycledata.statecnt do
@@ -9899,6 +9936,7 @@ end
                 if strips[s][p].controls[c].cycledata and strips[s][p].controls[c].cycledata.statecnt then
                   reaper.SetProjExtState(0,SCRIPT,key..'cycledata_statecnt',nz(strips[s][p].controls[c].cycledata.statecnt,0))
                   reaper.SetProjExtState(0,SCRIPT,key..'cycledata_mapptof',tostring(nz(strips[s][p].controls[c].cycledata.mapptof,false)))
+                  reaper.SetProjExtState(0,SCRIPT,key..'cycledata_pos',tostring(nz(strips[s][p].controls[c].cycledata.pos,1)))
                   if nz(strips[s][p].controls[c].cycledata.statecnt,0) > 0 then
                     for i = 1, strips[s][p].controls[c].cycledata.statecnt do
                       local key = 'strips_'..s..'_'..p..'_controls_'..c..'_cycledata_'..i..'_'
