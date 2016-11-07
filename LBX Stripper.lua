@@ -5224,6 +5224,8 @@ end
       
       
       --compatibility
+      if strips[strip][page].controls[cc].scalemode == nil then strips[strip][page].controls[cc].scalemode = 8 end
+      if strips[strip][page].controls[cc].framemode == nil then strips[strip][page].controls[cc].framemode = 1 end      
       if strips[strip][page].controls[cc].ctlcat == nil then strips[strip][page].controls[cc].ctlcat = ctlcats.fxparam end
       if strips[strip][page].controls[cc].maxdp == nil then strips[strip][page].controls[cc].maxdp = -1 end
       if strips[strip][page].controls[cc].cycledata == nil then
@@ -6836,7 +6838,7 @@ end
                     --knob/slider
                     mouse.context = contexts.sliderctl
                     --knobslider = 'ks'
-                    ctlpos = ctlScaleInv(strips[tracks[track_select].strip][page].controls[i].scalemode,
+                    ctlpos = ctlScaleInv(nz(strips[tracks[track_select].strip][page].controls[i].scalemode,8),
                                          strips[tracks[track_select].strip][page].controls[i].val)
                     trackfxparam_select = i
                     mouse.slideoff = ctlxywh.y+ctlxywh.h/2 - mouse.my
@@ -7111,7 +7113,7 @@ end
         
         if mouse.context == nil and fxmode == 1 and trctltype_select == 1 and rt > time_sendupdate then
           time_sendupdate = rt + 1
-          PopulateTrackSendsInfo()
+         -- PopulateTrackSendsInfo()
           update_gfx = true
         end
         
