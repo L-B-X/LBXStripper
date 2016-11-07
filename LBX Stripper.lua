@@ -7107,7 +7107,7 @@ end
         
         if mouse.context == nil and fxmode == 1 and trctltype_select == 1 and rt > time_sendupdate then
           time_sendupdate = rt + 1
-         -- PopulateTrackSendsInfo()
+          PopulateTrackSendsInfo()
           update_gfx = true
         end
         
@@ -9787,7 +9787,7 @@ end
   function SaveSettings()
     reaper.SetExtState(SCRIPT,'saveallfxinststrip',tostring(settings_saveallfxinststrip), true)
     reaper.SetExtState(SCRIPT,'followselectedtrack',tostring(settings_followselectedtrack), true)
-    reaper.SetExtState(SCRIPT,'disablesendchecks',tostring(settings_disablesendchecks), false)
+    reaper.SetExtState(SCRIPT,'disablesendchecks',tostring(settings_disablesendchecks), true)
     reaper.SetExtState(SCRIPT,'updatefreq',settings_updatefreq, true)
     reaper.SetExtState(SCRIPT,'mousewheelknob',tostring(settings_mousewheelknob), true)
     local d = gfx.dock(-1)
