@@ -1325,22 +1325,22 @@
     
       local tn = strips[tracks[track_select].strip].track.tracknum
       if tsends[tn] == nil then
-        tsends[tn] = PopSendInfoFromChunk(tn)
+        tsends[tn] = PopSendInfo(tn)
       end
       
       if tsends and tsends[tn] then
         for c = 1, #strips[tracks[track_select].strip][page].controls do
           if strips[tracks[track_select].strip][page].controls[c].ctlcat == ctlcats.tracksend then
+                  
             local paramnum = strips[tracks[track_select].strip][page].controls[c].param_info.paramnum
             local tnl = strips[tracks[track_select].strip][page].controls[c].tracknum
             if tnl == nil then
               tnl = tn
             elseif tsends[tnl] == nil then
-              tsends[tnl] = PopSendInfoFromChunk(tnl)
+              tsends[tnl] = PopSendInfo(tnl)
             end
             local sidx = math.floor((paramnum-1) / 3)
             local pidx = (paramnum-1) % 3 +1
-            --local found = false
             if tsends[tnl] and tsends[tnl][sidx] and strips[tracks[track_select].strip][page].controls[c].param_info.paramdestguid ==
                tsends[tnl][sidx].desttrackguid and
                    tsends[tnl][sidx].dstchan == strips[tracks[track_select].strip][page].controls[c].param_info.paramdestchan and
@@ -1354,15 +1354,10 @@
                   strips[tracks[track_select].strip][page].controls[c].param_info.paramnum = i*3+pidx-1
                   strips[tracks[track_select].strip][page].controls[c].param_info.param = i*3+pidx-1
                   strips[tracks[track_select].strip][page].controls[c].param_info.paramidx = tsends[tnl][i].idx
-                  --found = true
-                  --[[DBG(tsends[tnl][i].desttrackguid ..'  '.. strips[tracks[track_select].strip][page].controls[c].param_info.paramdestguid )
-                  DBG(tsends[tnl][i].dstchan .. '  '.. strips[tracks[track_select].strip][page].controls[c].param_info.paramdestchan)
-                  DBG(tsends[tnl][i].srcchan ..'  '.. strips[tracks[track_select].strip][page].controls[c].param_info.paramsrcchan)]]
+                  break
                 end 
               end
-              --DBG(#tsends..' '..tostring(found))
             end
- --           end
           end
       
         end
@@ -1379,21 +1374,63 @@
     local sidx = math.floor((paramnum-1) / 3)
     local pidx = (paramnum-1) % 3 +1
     if sendinfo == nil then
-      sendinfo = PopSendInfoFromChunk(tr)
+      sendinfo = PopSendInfo(tr)
     end
     if sendinfo[sidx] and sendinfo[sidx].desttrackguid == guid and sendinfo[sidx].dstchan == dstchan and sendinfo[sidx].srcchan == srcchan then
       check = true
     end
-    --if check == false then
-    --[[  DBG('check'..tostring(check)..sidx)
-      DBG(sendinfo[sidx].desttrackguid..'  '..guid)
-      DBG(sendinfo[sidx].dstchan..'  '..dstchan)
-      DBG(sendinfo[sidx].srcchan..'  '..srcchan)]]
-    --end
     return check, sendinfo
     
   end
   
+  function PopSendInfo(tr)
+  
+    if settings_ExtendedAPI == false then
+      return PopSendInfoFromChunk(tr)
+    else
+    
+      tbl = {}
+
+      local track = GetTrack(tr)
+
+      local sndcnt = reaper.GetTrackNumSends(track,0)
+      for i = 0, sndcnt-1 do
+        local dsttrack = reaper.BR_GetMediaTrackSendInfo_Track(track, 0, i, 1)
+        if dsttrack then
+          local guid = reaper.GetTrackGUID(dsttrack)
+          local dst = reaper.GetTrackSendInfo_Value(track, 0, i, 'I_DSTCHAN')
+          local src = reaper.GetTrackSendInfo_Value(track, 0, i, 'I_SRCCHAN')
+  
+          tbl[i] = {}
+          local sname, _ = reaper.GetTrackState(dsttrack)
+          
+          t = -1 --not used
+          tbl[i] = {idx = i,
+                        sendname = sname,
+                        desttracknum = t,
+                        desttrackguid = guid,
+                        dstchan = dst,
+                        srcchan = src,
+                        {}}
+          tbl[i][1] = {
+                                name = tostring(sname)..' Send Vol',
+                                parmname = 'D_VOL'
+                               }
+          tbl[i][2] = {
+                                name = tostring(sname)..' Send Pan',
+                                parmname = 'D_PAN'
+                               }
+          tbl[i][3] = {
+                                name = tostring(sname)..' Send Mute',
+                                parmname = 'B_MUTE'
+                               }
+        end
+      end    
+    
+      return tbl
+    end
+      
+  end
     
   function PopSendInfoFromChunk(tr)
   
@@ -1416,8 +1453,6 @@
           src_tr = tonumber(tx[2])
           src = tonumber(tx[9])
           dst = tonumber(tx[10])
-          --DBG('src='..src)
-          --DBG('dst='..dst)
           
           if tonumber(src_tr) == tr then        
             tbl[sidx] = {}
@@ -1456,10 +1491,9 @@
 
   function PopulateTrackSendsInfo()
   
-    CheckStripSends()
-    
+    --CheckStripSends()
     if tracks[trackedit_select] then
-      trsends_table = PopSendInfoFromChunk(tracks[trackedit_select].tracknum)
+      trsends_table = PopSendInfo(tracks[trackedit_select].tracknum)
     end
     
     trsends_mmtable = {}
@@ -1468,52 +1502,6 @@
     trsends_mmtable[2] = {paramstr = 'D_PAN', min = -1, max = 1}
     trsends_mmtable[3] = {paramstr = 'B_MUTE', min = 0, max = 1}
     
---[[    if trackedit_select and tracks[trackedit_select] then
-      
-      local track = GetTrack(tracks[trackedit_select].tracknum)
-
-      tr_numhwouts = reaper.GetTrackNumSends(track,1)
-      tr_numsends = reaper.GetTrackNumSends(track,0)
-    
-      if tr_numsends > 0 then
-        local i
-        for i = 0, tr_numsends-1 do 
-      
-          local _, sname = reaper.GetTrackSendName(track, tr_numhwouts+i, '')
-          local dst = reaper.GetTrackSendInfo_Value(track,0,i,'I_DSTCHAN')
-          
-          --DBG(reaper.GetTrackSendInfo_Value(track,0,i,'D_VOL'))
-          trsends_table[i*3+1] = {idx = i,
-                                hwouts = tr_numhwouts,
-                                sendname = sname,
-                                dstchan = dst,
-                                name = tostring(sname)..' Vol',
-                                parmname = 'D_VOL',
-                                min = 0,
-                                max = 4,
-                               }
-          trsends_table[i*3+2] = {idx = i,
-                                hwouts = tr_numhwouts,
-                                sendname = sname,
-                                dstchan = dst,
-                                name = tostring(sname)..' Pan',
-                                parmname = 'D_PAN',
-                                min = -1,
-                                max = 1,
-                               }
-          trsends_table[i*3+3] = {idx = i,
-                                hwouts = tr_numhwouts,
-                                sendname = sname,
-                                dstchan = dst,
-                                name = tostring(sname)..' Mute',
-                                parmname = 'B_MUTE',
-                                min = 0,
-                                max = 1,
-                               }
-        end
-      end
-    end
-    ]]
   end
 
   -------------------------------------------------------
@@ -1595,30 +1583,39 @@
   -------------------------------------------------------
 
   function PopulateTracks()
-  
-    tracks = {}
+    local tracks_tmp = {}
+    local sendsdirty = false
     for i = -1, reaper.CountTracks(0) do
       local track = GetTrack(i)
       if track ~= nil then
         local trname, _ = reaper.GetTrackState(track)
   
-        tracks[i] = {name = trname,
-                     guid = reaper.GetTrackGUID(track),
-                     tracknum = i,
-                     strip = -1
-                     }
+        tracks_tmp[i] = {name = trname,
+                         guid = reaper.GetTrackGUID(track),
+                         tracknum = i,
+                         strip = -1
+                        }
+        
+        --if tracks then
+          --if tracks_tmp[i].guid ~= tracks[i].guid then
+          --  sendsdirty = true
+          --end
+        --end
         if #strips > 0 then
           for j = 1, #strips do
-            if strips[j].track.guid == tracks[i].guid then
-              tracks[i].strip = j
+            
+            if strips[j].track.guid == tracks_tmp[i].guid then
+              tracks_tmp[i].strip = j
               break
             end 
           end
         end
       end  
     end
-    CheckStripSends()
-    
+    tracks = tracks_tmp
+    --if sendsdirty == true then
+      --CheckStripSends()
+    --end
   end
   
   function PopulateTrackFX()
@@ -4424,10 +4421,8 @@ end
   end
     
   function GetParamValue(ctlcat,tracknum,fxnum,paramnum,c)
-    --DBG('X1')
     track = GetTrack(tracknum)
     if ctlcat == ctlcats.fxparam then
-      --return reaper.TrackFX_GetParamNormalized(track, fxnum, paramnum)
       local v, min, max = reaper.TrackFX_GetParam(track, fxnum, paramnum)
       if c then
         if strips[tracks[track_select].strip][page].controls[c].minov then
@@ -4450,8 +4445,6 @@ end
   end
 
   function GetParamValue2(ctlcat,track,fxnum,paramnum,c)
-    --return reaper.TrackFX_GetParamNormalized(track, fxnum, paramnum)
-    --DBG('X2')
     if ctlcat == ctlcats.fxparam then
       local v, min, max = reaper.TrackFX_GetParam(track, fxnum, paramnum)
       if c then
@@ -4863,7 +4856,6 @@ end
     local mo = tonumber(txt)
     if mo then
       local nval = GetValFromDVal(trackfxparam_select,txt)
-      --DBG(trackfxparam_select..'  '..nval)
       --for i = 1, #ctl_select do 
       strips[tracks[track_select].strip][page].controls[trackfxparam_select].val = nval
       strips[tracks[track_select].strip][page].controls[trackfxparam_select].dirty = true
@@ -5489,7 +5481,6 @@ end
   ------------------------------------------------------------    
 
   function CheckStripControls()
-
     if strips and tracks[track_select] and strips[tracks[track_select].strip] then
       local tr_found = false
       
@@ -6224,16 +6215,13 @@ end
         local dvoff = strips[tracks[track_select].strip][page].controls[c].dvaloffset
         trackfxparam_select = c
         SetParam3(min)
-        --DBG('setmin'..min)
         for i = 1, 100 do i=i end
         miv = tonumber(GetParamDisp(cc,t,f,p,dvoff,c))
         --for i = 1, 10 do i=i end
         
         SetParam3(max)
-        --DBG('setmax'..max)
         for i = 1, 100 do i=i end
         mav = tonumber(GetParamDisp(cc,t,f,p,dvoff,c))
-        --DBG(miv..' '..mav)
         if (miv == nil or mav == nil) or (miv and mav and mav > miv) then
         
           local pinc = 0
@@ -6394,18 +6382,17 @@ end
         track_select = -1
         --update_gfx = true
       end
-      --CheckStripSends()
+      CheckStripSends()
       PopulateTrackSendsInfo()
-    --else
+    --[[else
       --check track
-      --[[checktr = checktr + 1
+      checktr = checktr + 1
       if checktr > reaper.CountTracks(0)-1 then
         checktr = 0
       end
       local mt = reaper.GetTrack(0,checktr)
       if tracks[checktr].guid ~= reaper.GetTrackGUID(mt) 
          or tracks[checktr].tracknum ~= checktr then
-      
       end
       ]]
     end    
@@ -6435,8 +6422,8 @@ end
               PopulateTracks()
               for i = -1, reaper.CountTracks(0) do
                 tr = GetTrack(i)
-                tracks[i].name = reaper.GetTrackState(tr)
                 if tr ~= nil then
+                  tracks[i].name = reaper.GetTrackState(tr)
                   if reaper.GetTrackGUID(st) == reaper.GetTrackGUID(tr) then
                     if strips[tracks[track_select].strip] then
                       strips[tracks[track_select].strip].page = page
@@ -7055,7 +7042,6 @@ end
           end
           track_select = i-1 + tlist_offset
           trackedit_select = track_select
-          PopulateTrackSendsInfo()
           
           if settings_followselectedtrack then
             --Select track
@@ -7065,7 +7051,12 @@ end
             if tr ~= nil then
               reaper.SetOnlyTrackSelected(tr)
             end
+          
           end
+
+          CheckStripSends()
+          PopulateTrackSendsInfo()
+
           if strips and strips[tracks[track_select].strip] then
             page = strips[tracks[track_select].strip].page
             surface_offset.x = strips[tracks[track_select].strip][page].surface_x
@@ -7514,7 +7505,6 @@ end
             trackfxparam_select = ctl_select[1].ctl
             ctlpos = cycle_select.val
             mouse.slideoff = obj.sections[101].y+obj.sections[101].h/2 - mouse.my
-            --DBG(mouse.slideoff..'  '..ctlpos)
             oms = mouse.shift
           end
           
@@ -7915,7 +7905,6 @@ end
           end
         elseif lasso ~= nil then
           --Dropped
-          --DBG(lasso.l..'  '..lasso.r)
           if math.abs(lasso.l-lasso.r) < 10 and math.abs(lasso.t-lasso.b) < 10 then
           -- == mouse.mx and lasso.t == mouse.my then
             if ctl_select ~= nil then
@@ -7924,7 +7913,7 @@ end
               else
                 mm = 'Lock position'              
               end
-              local mstr = 'Duplicate||Align Top|Align Left||'..mm
+              local mstr = 'Duplicate||Align Top|Align Left||'..mm..'||Delete selected'
               gfx.x, gfx.y = mouse.mx, mouse.my
               local res = OpenMenu(mstr)
               if res == 1 then
@@ -7958,7 +7947,6 @@ end
               elseif res == 2 then
                 if #ctl_select > 1 then
                   local y = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].y
-                  --DBG(#ctl_select)
                   for i = 2, #ctl_select do
                     if nz(strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].poslock, false) == false then
                       strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].y = y
@@ -7991,6 +7979,9 @@ end
                   strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].poslock = not poslockctl_select
                 end
                 SetPosLockCtl()
+              elseif res == 5 then
+                DeleteSelectedCtls()
+                update_gfx = true
               end
             
             end
@@ -8002,7 +7993,6 @@ end
         end
       
         if MOUSE_click(obj.sections[48]) then
-          --DBG('yy')
           if mouse.mx > obj.sections[48].w-40 then
             show_paramlearn = not show_paramlearn
             update_gfx = true
@@ -9090,7 +9080,6 @@ end
   function GetLastTouchedFX(lastfx)
     
     local rt, tr, fx, pr = reaper.GetLastTouchedFX()
-    --DBG(tr..' '..fx..' '..pr)
     if rt == true then
       if lastfx == nil or (lastfx ~= nil and (tr-1 ~= lastfx.tracknum or fx ~= lastfx.fxnum or pr ~= lastfx.paramnum)) then
         local track = GetTrack(tr-1)
@@ -9388,7 +9377,6 @@ end
   end
   
   function editbox_onchar(e, c)
-    --DBG(e.sel..' '..e.text)
     --[[if e.sel ~= 0 then
       local sc,ec=e.caret,e.caret+e.sel
       if sc > ec then sc,ec=ec,sc end
@@ -9409,7 +9397,6 @@ end
         string.sub(e.text,1,e.caret), c, string.sub(e.text,e.caret+1))
       e.caret=e.caret+1
     end
-    --DBG('e'..e.text)
   end
   
   ---- generic mouse handling ----
@@ -10169,7 +10156,6 @@ end
   
     --local res = reaper.MB('Save data and project?', 'Save data',4) 
     --if res == 1 then  
-    --  DBG('ok')
       SaveData()
       SaveSettings()
     --end
@@ -10204,6 +10190,7 @@ end
   settings_showbars = true
   settings_mousewheelknob = false
   settings_locksurface = false
+  settings_ExtendedAPI = reaper.APIExists('BR_GetMediaTrackSendInfo_Track')
   
   dockstate = 0
   
@@ -10223,8 +10210,6 @@ end
   --gfx.loadimg(1020,controls_path.."missing.png") --update to missing png
   def_knob = LoadControl(1019, '__default.knb')
   def_knobsm = LoadControl(1018, 'SimpleFlat_48.knb')
-  
- --DBG(32^0.2)
   
   INIT()
   LoadSettings()
