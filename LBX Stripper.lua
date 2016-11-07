@@ -6722,8 +6722,9 @@ end
         OnMouseUp() 
       end
       
-      if MOUSE_click(obj.sections[6]) then
+      if MOUSE_click(obj.sections[6]) or EB_Enter then
         --OK
+        EB_Enter = false
         if EB_Open == 1 then
           SaveStrip2(editbox.text)
         elseif EB_Open == 2 then
@@ -9453,6 +9454,8 @@ end
         e.text=string.sub(e.text,1,e.caret-1)..string.sub(e.text,e.caret+1)
         e.caret=e.caret-1
       end
+    elseif c == 13 then
+      EB_Enter = true
     elseif c >= 32 and c <= 125 and string.len(e.text) < e.maxlen then
       e.text=string.format("%s%c%s", 
         string.sub(e.text,1,e.caret), c, string.sub(e.text,e.caret+1))
@@ -10162,6 +10165,8 @@ end
     PopulateTrackSendsInfo()
     
     EB_Open = 0
+    EB_Enter = false
+    
     MS_Open = 0
     
     update_gfx = true
