@@ -7125,7 +7125,7 @@ end
 
               end
             end
-            DBG(noscroll)
+            --DBG(noscroll)
             if noscroll == false and MOUSE_click_RB(obj.sections[10]) then
               mm = ''
               if show_snapshots then
