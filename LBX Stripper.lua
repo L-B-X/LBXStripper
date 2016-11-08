@@ -9974,7 +9974,8 @@ end
       end    
         
     end
-    if tracks[track_select].strip and strips[tracks[track_select].strip] then
+    if tracks and tracks[track_select] and tracks[track_select].strip and strips[tracks[track_select].strip] then
+    --if tracks[track_select].strip and strips[tracks[track_select].strip] then
       surface_offset.x = tonumber(strips[tracks[track_select].strip][page].surface_x)
       surface_offset.y = tonumber(strips[tracks[track_select].strip][page].surface_y)
     end    
