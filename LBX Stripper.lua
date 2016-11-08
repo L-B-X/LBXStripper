@@ -3120,9 +3120,9 @@ end
                 end
 
                 if ctltype == 4 and DVOV and DVOV ~= '' and cycle_editmode == false then
-                
-                  Disp_ParamV = DVOV             
-                
+                  if strips[tracks[track_select].strip][page].controls[i].cycledata.posdirty == false then 
+                  Disp_ParamV = DVOV
+                  end
                 end
 
               local mid = x+(w/2)
@@ -6606,13 +6606,25 @@ end
                                                tr,
                                                strips[tracks[track_select].strip][page].controls[i].fxnum,
                                                strips[tracks[track_select].strip][page].controls[i].param, i)
-                      if strips[tracks[track_select].strip][page].controls[i].val ~= v then
-                        strips[tracks[track_select].strip][page].controls[i].val = v
-                        strips[tracks[track_select].strip][page].controls[i].dirty = true
-                        if strips[tracks[track_select].strip][page].controls[i].param_info.paramname == 'Bypass' then
-                          SetCtlEnabled(strips[tracks[track_select].strip][page].controls[i].fxnum) 
-                        end                                                                                                           
-                        update_ctls = true
+                      if strips[tracks[track_select].strip][page].controls[i].ctltype == 4 then
+                        if tostring(strips[tracks[track_select].strip][page].controls[i].val) ~= tostring(v) then
+                          strips[tracks[track_select].strip][page].controls[i].val = v
+                          strips[tracks[track_select].strip][page].controls[i].dirty = true
+                          if strips[tracks[track_select].strip][page].controls[i].param_info.paramname == 'Bypass' then
+                            SetCtlEnabled(strips[tracks[track_select].strip][page].controls[i].fxnum) 
+                          end
+                          strips[tracks[track_select].strip][page].controls[i].cycledata.posdirty = true 
+                          update_ctls = true
+                        end
+                      else
+                        if strips[tracks[track_select].strip][page].controls[i].val ~= v then
+                          strips[tracks[track_select].strip][page].controls[i].val = v
+                          strips[tracks[track_select].strip][page].controls[i].dirty = true
+                          if strips[tracks[track_select].strip][page].controls[i].param_info.paramname == 'Bypass' then
+                            SetCtlEnabled(strips[tracks[track_select].strip][page].controls[i].fxnum) 
+                          end
+                          update_ctls = true
+                        end                      
                       end
                     else
                       if strips[tracks[track_select].strip][page].controls[i].fxfound then
@@ -6620,17 +6632,24 @@ end
                       end
                     end
                   elseif strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.trackparam then
-
                     local v = GetParamValue2(strips[tracks[track_select].strip][page].controls[i].ctlcat,
                                              tr,
                                              nil,
                                              strips[tracks[track_select].strip][page].controls[i].param, i)
-                    if strips[tracks[track_select].strip][page].controls[i].val ~= v then
-                      strips[tracks[track_select].strip][page].controls[i].val = v
-                      strips[tracks[track_select].strip][page].controls[i].dirty = true
-                      update_ctls = true
-                    end
-                    
+                    if strips[tracks[track_select].strip][page].controls[i].ctltype == 4 then
+                      if tostring(strips[tracks[track_select].strip][page].controls[i].val) ~= tostring(v) then
+                        strips[tracks[track_select].strip][page].controls[i].val = v
+                        strips[tracks[track_select].strip][page].controls[i].dirty = true
+                        strips[tracks[track_select].strip][page].controls[i].cycledata.posdirty = true 
+                        update_ctls = true
+                      end
+                    else
+                      if strips[tracks[track_select].strip][page].controls[i].val ~= v then
+                        strips[tracks[track_select].strip][page].controls[i].val = v
+                        strips[tracks[track_select].strip][page].controls[i].dirty = true
+                        update_ctls = true
+                      end
+                    end                    
                   elseif strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.tracksend then
 
                     if settings_disablesendchecks == false and checksends == true then
@@ -6654,10 +6673,20 @@ end
                                              tr,
                                              nil,
                                              strips[tracks[track_select].strip][page].controls[i].param, i)
-                    if strips[tracks[track_select].strip][page].controls[i].val ~= v then
-                      strips[tracks[track_select].strip][page].controls[i].val = v
-                      strips[tracks[track_select].strip][page].controls[i].dirty = true
-                      update_ctls = true
+
+                    if strips[tracks[track_select].strip][page].controls[i].ctltype == 4 then
+                      if tostring(strips[tracks[track_select].strip][page].controls[i].val) ~= tostring(v) then
+                        strips[tracks[track_select].strip][page].controls[i].val = v
+                        strips[tracks[track_select].strip][page].controls[i].dirty = true
+                        strips[tracks[track_select].strip][page].controls[i].cycledata.posdirty = true 
+                        update_ctls = true                    
+                      end
+                    else
+                      if strips[tracks[track_select].strip][page].controls[i].val ~= v then
+                        strips[tracks[track_select].strip][page].controls[i].val = v
+                        strips[tracks[track_select].strip][page].controls[i].dirty = true
+                        update_ctls = true
+                      end
                     end
                   end
                 end
@@ -6989,6 +7018,7 @@ end
                           strips[tracks[track_select].strip][page].controls[i].cycledata[strips[tracks[track_select].strip][page].controls[i].cycledata.pos].val
                       SetParam()
                       strips[tracks[track_select].strip][page].controls[i].dirty = true
+                      strips[tracks[track_select].strip][page].controls[i].cycledata.posdirty = false
                       update_ctls = true
                     end
                     noscroll = true
