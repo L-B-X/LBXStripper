@@ -6505,7 +6505,7 @@ end
     
     GUI_draw(obj, gui)
     
-    local noscroll = settings_locksurface
+    local noscroll = false
     
     mouse.mx, mouse.my = gfx.mouse_x, gfx.mouse_y  
     mouse.LB = gfx.mouse_cap&1==1
@@ -6905,7 +6905,7 @@ end
         end
       end
       
-      if mouse.context == nil and show_snapshots and (MOUSE_click(obj.sections[160]) or MOUSE_click_RB(obj.sections[160])) then
+      if mouse.context == nil and show_snapshots == true and (MOUSE_click(obj.sections[160]) or MOUSE_click_RB(obj.sections[160])) then
       
         xywh = {x = obj.sections[160].x,
                 y = obj.sections[160].y,
@@ -7081,6 +7081,7 @@ end
                   elseif ctltype == 6 then
                     strips[tracks[track_select].strip][page].controls[i].defval = GetParamValue_Ctl(i)                                    
                   end
+
                   noscroll = true
                   break
                 
@@ -7124,7 +7125,7 @@ end
 
               end
             end
-            
+            DBG(noscroll)
             if noscroll == false and MOUSE_click_RB(obj.sections[10]) then
               mm = ''
               if show_snapshots then
@@ -9130,7 +9131,7 @@ end
       end    
     end
     if mouse.context and mouse.context == "dragsurface" then
-      if noscroll == false then
+      if noscroll == false and settings_locksurface == false then
       
         local offx, offy
         if lockx == false then
