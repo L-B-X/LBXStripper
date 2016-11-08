@@ -2437,7 +2437,8 @@
              xywh.h, 1 )
     GUI_textC(gui,xywh,'CYCLE OPTS',gui.color.black,-2)
   
-    local p = F_limit(math.floor(Cycle_Norm(cycle_select.val,ctl_select[1].ctl)*(defctls[def_knob].frames-1)),0,defctls[def_knob].frames-1)
+    --local p = F_limit(math.floor(Cycle_Norm(cycle_select.val,ctl_select[1].ctl)*(defctls[def_knob].frames-1)),0,defctls[def_knob].frames-1)
+    local p = F_limit(math.floor(cycle_select.val*(defctls[def_knob].frames-1)),0,defctls[def_knob].frames-1)
     local kw, _ = gfx.getimgdim(0)
     local kh = defctls[def_knob].cellh
     gfx.blit(def_knob,1,0,0,p*kh,kw,kh,obj.sections[101].x,obj.sections[101].y)
@@ -3118,7 +3119,7 @@ end
                   end                  
                 end
 
-                if ctltype == 4 and DVOV and DVOV ~= '' then
+                if ctltype == 4 and DVOV and DVOV ~= '' and cycle_editmode == false then
                 
                   Disp_ParamV = DVOV             
                 
@@ -7660,7 +7661,8 @@ end
           end
           
           if mouse.context == nil and MOUSE_click(obj.sections[101]) then 
-            mouse.context = contexts.cycleknob 
+            mouse.context = contexts.cycleknob
+            cycle_editmode = true 
             trackfxparam_select = ctl_select[1].ctl
             ctlpos = cycle_select.val
             mouse.slideoff = obj.sections[101].y+obj.sections[101].h/2 - mouse.my
@@ -7670,6 +7672,7 @@ end
           if MOUSE_click(obj.sections[103]) then
             local i = math.floor((mouse.my - obj.sections[103].y) / butt_h)+1
             cycle_select.selected = F_limit(i+cyclist_offset,1,cycle_select.statecnt)
+            --strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].cycledata.pos = cycle_select.selected
             update_gfx = true
           elseif MOUSE_click_RB(obj.sections[103]) then
             if cycle_select and cycle_select.selected then
@@ -7708,6 +7711,7 @@ end
             strips[tracks[track_select].strip][page].controls[trackfxparam_select].cycledata.pos = cycle_select.selected
             strips[tracks[track_select].strip][page].controls[trackfxparam_select].dirty = true
             show_cycleoptions = false
+            cycle_editmode = false
             update_gfx = true
           end
 
@@ -7817,7 +7821,7 @@ end
                 ov_disp = dval
                 SetParam()                
                 octlval = val
-                update_gfx = true
+                update_ctls = true
               end
             end
           elseif minov_act ~= nil then
@@ -7860,7 +7864,7 @@ end
                 ov_disp = dval
                 SetParam()
                 octlval = val
-                update_gfx = true
+                update_ctls = true
               end
             end
           elseif maxov_act ~= nil then
@@ -7890,7 +7894,10 @@ end
               else
                 val = ctlpos + (0.5-val)*2
               end
-              local min, max = GetParamMinMax_ctl(ctl_select[1].ctl)
+              local min,max = 0,1
+              if strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].ctlcats == ctlcats.fxparam then
+                min, max = GetParamMinMax_ctl(ctl_select[1].ctl)
+              end
               if val < min then val = min end
               if val > max then val = max end
               if val ~= octlval then
@@ -7914,7 +7921,7 @@ end
                 octlval = val
                 --SetParam()
                 strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].dirty = true
-                update_gfx = true
+                update_ctls = true
               end
             end
           end
@@ -9211,6 +9218,7 @@ end
     end
 
     if not mouse.LB and not mouse.RB then mouse.context = nil end
+    if show_cycleoptions == false then cycle_editmode = false end
     
     local char = gfx.getchar() 
     if char == 32 then reaper.Main_OnCommandEx(40044, 0,0) end
@@ -9296,6 +9304,7 @@ end
           cycle_select[i] = {val = cycle_select.val, dispval = GetParamDisp(cc, tracknum, fxnum, param, dvoff,trackfxparam_select)}
         end
       end
+      cycle_select.selected = cycle_select.statecnt
       SetParam()
     
     end
@@ -9347,9 +9356,14 @@ end
   
     if c then
     
-      --local cc = strips[tracks[track_select].strip][page].controls[c].ctlcat
-      local min, max = GetParamMinMax_ctl(c)
-      return normalize(min, max, v)
+      local cc = strips[tracks[track_select].strip][page].controls[c].ctlcat
+      if cc == ctlcats.fxparam then
+        local min, max = GetParamMinMax_ctl(c)
+        return normalize(min, max, v)
+      else
+        local min, max = GetParamMinMax_ctl(c)
+        return F_limit(v,min,max)
+      end
     
     end
   
@@ -10288,6 +10302,7 @@ end
     show_paramval = true
     
     ctl_page = 0
+    cycle_editmode = false
     
     last_gfx_w = 0
     last_gfx_h = 0
