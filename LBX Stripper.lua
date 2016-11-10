@@ -623,10 +623,28 @@
                           h = butt_h/2+4}
                           
       --SNAPSHOTS
-      obj.sections[160] = {x = gfx1.main_w - cow - 20,
+      local ssh = 9*butt_h+4
+      obj.sections[160] = {x = gfx1.main_w - 160 - 20,
                           y = gfx1.main_h - 300 -20,
-                          w = cow,
+                          w = 160,
                           h = 300}                            
+      obj.sections[161] = {x = 20,
+                          y = butt_h+10 + (butt_h/2+4 + 10) * 0,
+                          w = obj.sections[160].w-40,
+                          h = butt_h/2+8}                       
+      obj.sections[162] = {x = 20,
+                          y = butt_h+10 + (butt_h/2+4 + 10) * 1,
+                          w = obj.sections[160].w-40,
+                          h = butt_h/2+8}                       
+      obj.sections[163] = {x = 10,
+                          y = butt_h+10 + (butt_h/2+4 + 10) * 3,
+                          w = obj.sections[160].w-20,
+                          h = ssh}                       
+      --dummy for locating
+      obj.sections[164] = {x = obj.sections[160].x+10,
+                          y = obj.sections[160].y+butt_h+10 + (butt_h/2+4 + 10) * 3,
+                          w = obj.sections[160].w-20,
+                          h = ssh}                       
       
     return obj
   end
@@ -930,7 +948,8 @@
       local w, h = gfx.getimgdim(ctl_files[knob_select].imageidx)
       ctlnum = #strips[strip][page].controls + 1
       if dragparam.type == 'track' then
-        strips[strip][page].controls[ctlnum] = {ctlcat = ctlcats.fxparam,
+        strips[strip][page].controls[ctlnum] = {c_id = GenID(),
+                                                ctlcat = ctlcats.fxparam,
                                                 fxname=trackfx[trackfx_select].name,
                                                 fxguid=trackfx[trackfx_select].guid, 
                                                 fxnum=trackfx[trackfx_select].fxnum, 
@@ -981,7 +1000,8 @@
           strips[strip][page].controls[ctlnum].trackguid = nil         
         end
       elseif dragparam.type == 'learn' then
-        strips[strip][page].controls[ctlnum] = {ctlcat = ctlcats.fxparam,
+        strips[strip][page].controls[ctlnum] = {c_id = GenID(),
+                                                ctlcat = ctlcats.fxparam,
                                                 fxname=last_touch_fx.fxname,
                                                 fxguid=last_touch_fx.fxguid, 
                                                 fxnum=last_touch_fx.fxnum, 
@@ -1034,7 +1054,8 @@
         end      
       
       elseif dragparam.type == 'trctl' then
-        strips[strip][page].controls[ctlnum] = {ctlcat = ctlcats.trackparam,
+        strips[strip][page].controls[ctlnum] = {c_id = GenID(),
+                                                ctlcat = ctlcats.trackparam,
                                                 fxname='Track Parameter',
                                                 fxguid=nil, 
                                                 fxnum=nil, 
@@ -1092,7 +1113,8 @@
         --if unique == true then 
           local sidx = math.floor((trctl_select-1) / 3)
           local pidx = (trctl_select-1) % 3 +1
-          strips[strip][page].controls[ctlnum] = {ctlcat = ctlcats.tracksend,
+          strips[strip][page].controls[ctlnum] = {c_id = GenID(),
+                                                  ctlcat = ctlcats.tracksend,
                                                   fxname='Track Send',
                                                   fxguid=nil, 
                                                   fxnum=nil, 
@@ -3073,8 +3095,13 @@ end
                     strips[tracks[track_select].strip][page].controls[i].membtn = {state = false, mem = 0}
                   end
                   local v3 = GetParamValue_Ctl(i)--strips[tracks[track_select].strip][page].controls[i].val
-                  if tostring(v3) ~= tostring(strips[tracks[track_select].strip][page].controls[i].defval) then
+                  --if tostring(v3) ~= tostring(strips[tracks[track_select].strip][page].controls[i].defval) then
+                  local dv = round(math.abs(v3-strips[tracks[track_select].strip][page].controls[i].defval),6)
+                    --DBG(dv)  
+                  if dv > 0 then
                     strips[tracks[track_select].strip][page].controls[i].membtn = {state = false, mem = v3}
+                  else
+                    strips[tracks[track_select].strip][page].controls[i].membtn.state = true
                   end
                   if strips[tracks[track_select].strip][page].controls[i].membtn.state == true then
                     val2 = frames-1
@@ -3442,7 +3469,61 @@ end
     
     GUI_textC(gui,xywh,'SNAPSHOTS',gui.color.black,-2)
     
+    GUI_DrawButton(gui, '', obj.sections[161], gui.color.white, gui.color.black, true, '', false)
+    GUI_DrawButton(gui, 'CAPTURE', obj.sections[162], gui.color.white, gui.color.black, true, '', false)
     
+    xywh = {x = obj.sections[163].x,
+            y = obj.sections[163].y,
+            w = obj.sections[163].w,
+            h = obj.sections[163].h}
+    f_Get_SSV('64 64 64')
+    gfx.a = 1 
+    gfx.rect(xywh.x,
+             xywh.y, 
+             xywh.w,
+             xywh.h, 0 )
+    
+    
+    xywh.h = butt_h
+    gfx.rect(xywh.x,
+     xywh.y, 
+     xywh.w,
+     xywh.h, 1 )
+    gfx.a = 0.5
+    f_Get_SSV(gui.color.black)
+    gfx.a = 1
+    gfx.rect(xywh.x+xywh.w/2,
+     xywh.y, 
+     2,
+     xywh.h, 1 )
+    gfx.triangle(xywh.x+xywh.w/4,xywh.y+4,xywh.x+xywh.w/4-6,xywh.y+xywh.h-4,xywh.x+xywh.w/4+6,xywh.y+xywh.h-4,1)     
+    gfx.triangle(xywh.x+xywh.w*0.75,xywh.y+xywh.h-4,xywh.x+xywh.w*0.75-6,xywh.y+4,xywh.x+xywh.w*0.75+6,xywh.y+4,1)
+    
+    gfx.a = 1
+    
+    local strip = tracks[track_select].strip
+    if strip and snapshots and snapshots[strip] and snapshots[strip][page][sstype_select] then
+      if #snapshots[strip][page][sstype_select] > 0 then
+        for i = 1,8 do
+        
+          xywh.y = obj.sections[163].y + i*butt_h
+          local c = gui.color.white
+          if ss_select == ssoffset+i then
+            f_Get_SSV(gui.color.white)
+            gfx.rect(xywh.x,
+             xywh.y, 
+             xywh.w,
+             xywh.h, 1 )
+            c = gui.color.black
+          end
+          if snapshots[strip][page][sstype_select][i+ssoffset] then
+            GUI_textsm_LJ(gui,xywh,roundX(i+ssoffset,0)..': '..snapshots[strip][page][sstype_select][i+ssoffset].name,c,-2,xywh.w)
+          end
+      
+        end
+    
+      end
+    end
     
     
     
@@ -4413,10 +4494,14 @@ end
       local tidx = ((paramnum-1) % 3) +1
       if paramnum % 3 == 1 then
         --volumes
-        d = reaper.mkvolstr('', reaper.GetTrackSendInfo_Value(track, 0, paramidx, paramstr))
+        --d = reaper.mkvolstr('', reaper.GetTrackSendInfo_Value(track, 0, paramidx, paramstr))
+        retval, vOut, pOut = reaper.GetTrackSendUIVolPan(track, paramidx)
+        d = reaper.mkvolstr('', vOut)
       elseif paramnum % 3 == 2 then
         --pan
-        d = reaper.mkpanstr('', reaper.GetTrackSendInfo_Value(track, 0, paramidx, paramstr))
+        --d = reaper.mkpanstr('', reaper.GetTrackSendInfo_Value(track, 0, paramidx, paramstr))
+        retval, vOut, pOut = reaper.GetTrackSendUIVolPan(track, paramidx)
+        d = reaper.mkpanstr('', pOut)
       else
         d = round(reaper.GetTrackSendInfo_Value(track, 0, paramidx, paramstr),2)
       end
@@ -4475,15 +4560,31 @@ end
     local idx = strips[tracks[track_select].strip][page].controls[c].param_info.paramidx
     local paramstr = strips[tracks[track_select].strip][page].controls[c].param_info.paramstr
 
-    return normalize(min,max,reaper.GetTrackSendInfo_Value(track, 0, idx, paramstr))
-      
+    if track == nil then
+      track = GetTrack(nz(strips[tracks[track_select].strip][page].controls[c].tracknum,strips[tracks[track_select].strip].track.tracknum))
+    end
+    
+    if paramstr == 'D_VOL' then
+      retval, vOut, pOut = reaper.GetTrackSendUIVolPan(track, idx)
+      return normalize(min, max, vOut)
+    elseif paramstr == 'D_PAN' then
+      retval, vOut, pOut = reaper.GetTrackSendUIVolPan(track, idx)
+      return normalize(min, max, pOut)
+    else    
+      return normalize(min,max,reaper.GetTrackSendInfo_Value(track, 0, idx, paramstr))
+    end
+    
   end
 
   function SMTI_norm(track,trctl_idx,v,min,max)
   
     local val = DenormalizeValue(min,max,v)
-    reaper.SetMediaTrackInfo_Value(track, trctls_table[trctl_idx].parmname, val)
-  
+    --if trctl_idx == 1 then
+    --  reaper.SetUIVol(track, trctls_table[trctl_idx].parmname, val)      
+    --else
+      reaper.SetMediaTrackInfo_Value(track, trctls_table[trctl_idx].parmname, val)
+    --end
+    
   end
 
   function STSI_norm(track,trctl_idx,v,min,max,c)
@@ -4492,8 +4593,13 @@ end
     local paramstr = strips[tracks[track_select].strip][page].controls[c].param_info.paramstr
 
     local val = DenormalizeValue(min,max,v)
-    reaper.SetTrackSendInfo_Value(track, 0, idx, paramstr, val)
-  
+    if paramstr == 'D_VOL' then
+      reaper.SetTrackSendUIVol(track, idx, val, -1)
+    elseif paramstr == 'D_PAN' then
+      reaper.SetTrackSendUIPan(track, idx, val, -1)
+    else
+      reaper.SetTrackSendInfo_Value(track, 0, idx, paramstr, val)
+    end
   end
     
   function GetParamValue(ctlcat,tracknum,fxnum,paramnum,c)
@@ -4876,6 +4982,9 @@ end
         end
       end
       strips[tracks[track_select].strip][page].controls = tbl
+      
+      Snapshots_Check(tracks[track_select].strip,page)
+      
       ctl_select = nil
     end  
     
@@ -4909,6 +5018,50 @@ end
 
   end
 
+  ------------------------------------------------------------    
+
+  function EditSSName(eb)
+  
+    local sizex,sizey = 400,200
+    editbox={title = 'Please enter new snapshot name:',
+      x=400, y=100, w=120, h=20, l=4, maxlen=20,
+      fgcol=0x000000, fgfcol=0x00FF00, bgcol=0x808080,
+      txtcol=0x000000, curscol=0x000000,
+      font=1, fontsz=14, caret=0, sel=0, cursstate=0,
+      text="", 
+      hasfocus=true
+    }
+    
+    EB_Open = eb  
+  
+  end
+
+  function EditSSName2(txt)
+
+    if ss_select and snapshots and snapshots[tracks[track_select].strip] and snapshots[tracks[track_select].strip][page][sstype_select][ss_select] then
+      snapshots[tracks[track_select].strip][page][sstype_select][ss_select].name = txt
+    end
+  end
+  
+  function DeleteSS()
+  
+    if ss_select and snapshots and snapshots[tracks[track_select].strip] and snapshots[tracks[track_select].strip][page][sstype_select][ss_select] then
+    
+      local cnt = #snapshots[tracks[track_select].strip][page][sstype_select]
+      snapshots[tracks[track_select].strip][page][sstype_select][ss_select] = nil
+      local tbl = {}
+      for i = 1, cnt do
+        if snapshots[tracks[track_select].strip][page][sstype_select][i] ~= nil then
+          table.insert(tbl, snapshots[tracks[track_select].strip][page][sstype_select][i])
+        end
+      end
+      snapshots[tracks[track_select].strip][page][sstype_select] = tbl
+      ss_select = nil
+      
+    end
+    
+  end
+  
   ------------------------------------------------------------    
 
   function EditValue(eb)
@@ -5202,6 +5355,12 @@ end
     
   end
   
+  function GenID()
+  
+    return math.floor(math.random() * 0xFFFFFFFF)
+    
+  end
+  
   function LoadStrip(strip_select)
   
     local stripdata = nil
@@ -5300,8 +5459,8 @@ end
       reaper.SetTrackStateChunk(tr, chunk, false)
     end
     
-    time = math.abs(math.sin( -1 + (os.clock() % 2)))
-    stripid = math.floor(time * 0xFFFFFF)
+    --time = math.abs(math.sin( -1 + (os.clock() % 2)))
+    stripid = GenID()
     
     for j = 1, #stripdata.strip.controls do
       stripdata.strip.controls[j].x = stripdata.strip.controls[j].x + offsetx + x + surface_offset.x     
@@ -5316,7 +5475,7 @@ end
                                                                             - stripdata.strip.controls[j].ctl_info.cellh*stripdata.strip.controls[j].scale/2)
       strips[strip][page].controls[cc].wsc = stripdata.strip.controls[j].w*stripdata.strip.controls[j].scale
       strips[strip][page].controls[cc].hsc = stripdata.strip.controls[j].ctl_info.cellh*stripdata.strip.controls[j].scale
-      
+      strips[strip][page].controls[cc].c_id = GenID() --give a new control id
       
       --compatibility
       if strips[strip][page].controls[cc].scalemode == nil then strips[strip][page].controls[cc].scalemode = 8 end
@@ -6227,6 +6386,7 @@ end
     ctl_select = nil
     gfx2_select = nil
     gfx3_select = nil
+    ss_select = nil
     
     if strips and tracks[track_select] and strips[tracks[track_select].strip] then
       strips[tracks[track_select].strip].page = page
@@ -6557,6 +6717,7 @@ end
               ctl_select = nil
               gfx2_select = nil
               gfx3_select = nil
+              ss_select = nil
               --if settings_autocentrectls then
               --  AutoCentreCtls()
               --end
@@ -6608,6 +6769,7 @@ end
                                                strips[tracks[track_select].strip][page].controls[i].param, i)
                       if strips[tracks[track_select].strip][page].controls[i].ctltype == 4 then
                         if tostring(strips[tracks[track_select].strip][page].controls[i].val) ~= tostring(v) then
+                        --DBG(tostring(strips[tracks[track_select].strip][page].controls[i].val)..'  '..tostring(v))
                           strips[tracks[track_select].strip][page].controls[i].val = v
                           strips[tracks[track_select].strip][page].controls[i].dirty = true
                           if strips[tracks[track_select].strip][page].controls[i].param_info.paramname == 'Bypass' then
@@ -6835,6 +6997,9 @@ end
           EditFont2(editbox.text)
         elseif EB_Open == 10 then
           EditCycleDV(editbox.text)        
+        elseif EB_Open == 11 then
+          EditSSName2(editbox.text)
+          update_snaps = true
         end
         editbox = nil
         EB_Open = 0
@@ -6932,6 +7097,13 @@ end
           update_gfx = true
           gfx.mouse_wheel = 0
         end
+
+        if MOUSE_over(obj.sections[164]) then
+          ssoffset = F_limit(ssoffset - v, 0, #snapshots[tracks[track_select].strip][page][sstype_select]-1)
+          update_snaps = true
+        
+          gfx.mouse_wheel = 0
+        end
       end
       
       if mouse.context == nil and show_snapshots == true and (MOUSE_click(obj.sections[160]) or MOUSE_click_RB(obj.sections[160])) then
@@ -6946,8 +7118,61 @@ end
                          offy = mouse.my - obj.sections[160].y}
         end
         
+        local snapmx, snapmy = mouse.mx, mouse.my
+        mouse.mx = mouse.mx - obj.sections[160].x
+        mouse.my = mouse.my - obj.sections[160].y
         
+        if mouse.context == nil and MOUSE_click(obj.sections[162]) then
+        
+          Snapshots_CREATE(tracks[track_select].strip, page, sstype_select)
+          update_snaps = true
+        end
       
+        if MOUSE_click(obj.sections[163]) then
+          if snapshots and snapshots[tracks[track_select].strip] then
+            local i = math.floor((mouse.my-obj.sections[163].y)/butt_h)
+        
+            if i == 0 then
+              local ix = math.floor((mouse.mx-obj.sections[163].x)/(obj.sections[160].w/2))
+              if ix == 0 then
+                ssoffset = ssoffset-1
+                if ssoffset < 0 then ssoffset = 0 end
+              else
+                ssoffset = F_limit(ssoffset+1,0,math.max(0,#snapshots[tracks[track_select].strip][page][sstype_select]-8))
+              end
+              update_snaps = true
+            else
+              if snapshots and snapshots[tracks[track_select].strip] then
+                ss_select = F_limit(ssoffset+i,1,#snapshots[tracks[track_select].strip][page][sstype_select])
+                if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.20 then
+                
+                  Snapshot_Set(tracks[track_select].strip, page)
+                
+                end
+                update_snaps = true          
+              end
+            end
+          end
+        elseif MOUSE_click_RB(obj.sections[163]) then
+          if ss_select then
+            mstr = 'Rename||Delete||Capture (Overwrite)'
+            gfx.x, gfx.y = snapmx, snapmy
+            res = OpenMenu(mstr)
+            if res ~= 0 then
+              if res == 1 then
+                EditSSName(11)
+              elseif res == 2 then
+                DeleteSS()
+                update_snaps = true
+              elseif res == 3 then
+                Snapshots_CREATE(tracks[track_select].strip, page, sstype_select, ss_select)
+              end
+            end
+          end        
+        end
+        
+        mouse.mx = snapmx
+        mouse.my = snapmy
         noscroll = true
       elseif mouse.context == nil and (MOUSE_click(obj.sections[10]) or MOUSE_click_RB(obj.sections[10]) or gfx.mouse_wheel ~= 0) then
         if mouse.mx > obj.sections[10].x then
@@ -7007,7 +7232,8 @@ end
                       strips[tracks[track_select].strip][page].controls[i].cycledata.pos = 
                                   strips[tracks[track_select].strip][page].controls[i].cycledata.pos +1
                       if strips[tracks[track_select].strip][page].controls[i].cycledata.pos > 
-                              strips[tracks[track_select].strip][page].controls[i].cycledata.statecnt then
+                              strips[tracks[track_select].strip][page].controls[i].cycledata.statecnt 
+                         or strips[tracks[track_select].strip][page].controls[i].cycledata.pos < 1 then
                         strips[tracks[track_select].strip][page].controls[i].cycledata.pos = 1
                       end
                     end
@@ -7222,6 +7448,7 @@ end
           end
           track_select = i-1 + tlist_offset
           trackedit_select = track_select
+          ss_select = nil
           
           if settings_followselectedtrack then
             --Select track
@@ -8498,6 +8725,7 @@ end
                   end
                 end
                 if cnt <= 1 then
+                  strips[tracks[track_select].strip][page].controls[reass_param].c_id = GenID()
                   if tracks[trackedit_select].tracknum ~= tracks[track_select].tracknum then
                     strips[tracks[track_select].strip][page].controls[reass_param].tracknum=tracks[trackedit_select].tracknum
                     strips[tracks[track_select].strip][page].controls[reass_param].trackguid=tracks[trackedit_select].guid
@@ -8536,7 +8764,7 @@ end
             else
               if dragparam.x+ksel_size.w > obj.sections[10].x and dragparam.x+ksel_size.w < obj.sections[10].x+obj.sections[10].w and dragparam.y+ksel_size.h > obj.sections[10].y and dragparam.y+ksel_size.h < obj.sections[10].y+obj.sections[10].h then
                 if not MOUSE_over(obj.sections[115]) then
-
+                
                   if last_touch_fx.tracknum ~= tracks[track_select].tracknum then
                     strips[tracks[track_select].strip][page].controls[reass_param].tracknum=last_touch_fx.tracknum
                     strips[tracks[track_select].strip][page].controls[reass_param].trackguid=last_touch_fx.trguid
@@ -8544,6 +8772,7 @@ end
                     strips[tracks[track_select].strip][page].controls[reass_param].tracknum=nil
                     strips[tracks[track_select].strip][page].controls[reass_param].trackguid=nil                  
                   end
+                  strips[tracks[track_select].strip][page].controls[reass_param].c_id = GenID()
                   strips[tracks[track_select].strip][page].controls[reass_param].ctlcat = ctlcats.fxparam
                   strips[tracks[track_select].strip][page].controls[reass_param].fxname=last_touch_fx.fxname
                   strips[tracks[track_select].strip][page].controls[reass_param].fxguid=last_touch_fx.fxguid
@@ -8581,7 +8810,7 @@ end
                   strips[tracks[track_select].strip][page].controls[reass_param].tracknum=nil
                   strips[tracks[track_select].strip][page].controls[reass_param].trackguid=nil                  
                 end
-
+                strips[tracks[track_select].strip][page].controls[reass_param].c_id = GenID()
                 strips[tracks[track_select].strip][page].controls[reass_param].fxguid=nil
                 strips[tracks[track_select].strip][page].controls[reass_param].fxnum=nil
                 strips[tracks[track_select].strip][page].controls[reass_param].fxfound = true
@@ -9501,7 +9730,8 @@ end
                  membtn = {state = strips[tracks[track_select].strip][page].controls[c].membtn.state,
                            mem = strips[tracks[track_select].strip][page].controls[c].membtn.mem},
                  scalemode = strips[tracks[track_select].strip][page].controls[c].scalemode,
-                 framemode = strips[tracks[track_select].strip][page].controls[c].framemode
+                 framemode = strips[tracks[track_select].strip][page].controls[c].framemode,
+                 c_id = strips[tracks[track_select].strip][page].controls[c].c_id
                  }
     return tbl
   end
@@ -9765,6 +9995,7 @@ end
     
                     local key = 'strips_'..s..'_'..p..'_controls_'..c..'_'
                     strips[ss][p].controls[c] = {
+                                                c_id = tonumber(nz(GPES(key..'cid',true),GenID() )),
                                                 ctlcat = tonumber(nz(GPES(key..'ctlcat',true),0)),
                                                 fxname = GPES(key..'fxname'),
                                                 fxguid = GPES(key..'fxguid'),
@@ -9828,6 +10059,7 @@ end
                     strips[ss][p].controls[c].cycledata.statecnt = tonumber(nz(GPES(key..'cycledata_statecnt',true),0))
                     strips[ss][p].controls[c].cycledata.mapptof = tobool(nz(GPES(key..'cycledata_mapptof',true),false))
                     strips[ss][p].controls[c].cycledata.pos = tonumber(nz(GPES(key..'cycledata_pos',true),1))
+                    strips[ss][p].controls[c].cycledata.posdirty = tobool(nz(GPES(key..'cycledata_posdirty',true),false))
                     strips[ss][p].controls[c].cycledata.val = 0
                     if nz(strips[ss][p].controls[c].cycledata.statecnt,0) > 0 then
                       for i = 1, strips[ss][p].controls[c].cycledata.statecnt do
@@ -9941,6 +10173,56 @@ end
             end
           end
         end
+        
+        local scnt = tonumber(nz(GPES('snapshots_count'),0))
+        if scnt and scnt > 0 then
+          snapshots = {}
+            
+          for s = 1, scnt do
+
+            snapshots[s] = {}
+          
+            for p = 1, 4 do
+            
+              snapshots[s][p] = {}
+
+              local key = 'snap_strip_'..s..'_'..p..'_'
+              local sstcnt = tonumber(nz(GPES(key..'sstype_count',true),0))
+              
+              if sstcnt > 0 then
+                
+                for sst = 1, sstcnt do
+                
+                  snapshots[s][p][sst] = {}
+                
+                  local key = 'snap_strip_'..s..'_'..p..'_type_'..sst..'_'
+                  local sscnt = tonumber(nz(GPES(key..'ss_count',true),0))
+                  
+                  if sscnt > 0 then
+              
+                    for ss = 1, sscnt do
+                      local key = 'snap_strip_'..s..'_'..p..'_type_'..sst..'_snapshot_'..ss..'_'
+                      local dcnt = tonumber(GPES(key..'data_count'))
+                      snapshots[s][p][sst][ss] = {name = GPES(key..'name'),
+                                             data = {}}
+                      for d = 1, dcnt do
+    
+                        local key = 'snap_strip_'..s..'_'..p..'_type_'..sst..'_snapshot_'..ss..'_data_'..d..'_'
+                      
+                        snapshots[s][p][sst][ss].data[d] = {c_id = tonumber(GPES(key..'cid')),
+                                                           ctl = tonumber(GPES(key..'ctl')),
+                                                           val = tonumber(GPES(key..'val'))}
+                      end
+                    end
+                    
+                    Snapshots_Check(s,p)          
+                  end
+                end
+              end
+            end
+          end
+        end
+        
       else
         SaveData()
       end
@@ -10064,7 +10346,7 @@ end
               for c = 1, #strips[s][p].controls do
   
                 local key = 'strips_'..s..'_'..p..'_controls_'..c..'_'
-  
+                reaper.SetProjExtState(0,SCRIPT,key..'cid',strips[s][p].controls[c].c_id)
                 reaper.SetProjExtState(0,SCRIPT,key..'fxname',strips[s][p].controls[c].fxname)
                 reaper.SetProjExtState(0,SCRIPT,key..'fxguid',nz(strips[s][p].controls[c].fxguid,''))
                 reaper.SetProjExtState(0,SCRIPT,key..'fxnum',nz(strips[s][p].controls[c].fxnum,''))
@@ -10115,6 +10397,7 @@ end
                   reaper.SetProjExtState(0,SCRIPT,key..'cycledata_statecnt',nz(strips[s][p].controls[c].cycledata.statecnt,0))
                   reaper.SetProjExtState(0,SCRIPT,key..'cycledata_mapptof',tostring(nz(strips[s][p].controls[c].cycledata.mapptof,false)))
                   reaper.SetProjExtState(0,SCRIPT,key..'cycledata_pos',tostring(nz(strips[s][p].controls[c].cycledata.pos,1)))
+                  reaper.SetProjExtState(0,SCRIPT,key..'cycledata_posdirty',tostring(nz(strips[s][p].controls[c].cycledata.posdirty,false)))
                   if nz(strips[s][p].controls[c].cycledata.statecnt,0) > 0 then
                     for i = 1, strips[s][p].controls[c].cycledata.statecnt do
                       local key = 'strips_'..s..'_'..p..'_controls_'..c..'_cycledata_'..i..'_'
@@ -10175,6 +10458,51 @@ end
       reaper.SetProjExtState(0,SCRIPT,'strips_count',0)    
     end
   
+    --DBG(#snapshots)
+    if snapshots and #snapshots > 0 then
+      reaper.SetProjExtState(0,SCRIPT,'snapshots_count',#snapshots)
+    
+      for s = 1, #snapshots do
+        for p = 1, #snapshots[s] do
+
+          local key = 'snap_strip_'..s..'_'..p..'_'          
+          reaper.SetProjExtState(0,SCRIPT,key..'sstype_count',#snapshots[s][p])
+        
+          for sst = 1, #snapshots[s][p] do
+        
+            local key = 'snap_strip_'..s..'_'..p..'_type_'..sst..'_'          
+            reaper.SetProjExtState(0,SCRIPT,key..'ss_count',#snapshots[s][p][sst])
+          
+            if #snapshots[s][p][sst] > 0 then
+  
+              for ss = 1, #snapshots[s][p][sst] do
+  
+                local key = 'snap_strip_'..s..'_'..p..'_type_'..sst..'_snapshot_'..ss..'_'
+              
+                reaper.SetProjExtState(0,SCRIPT,key..'name',snapshots[s][p][sst][ss].name)
+                reaper.SetProjExtState(0,SCRIPT,key..'data_count',#snapshots[s][p][sst][ss].data)
+            
+                if #snapshots[s][p][sst][ss].data > 0 then
+                  for d = 1, #snapshots[s][p][sst][ss].data do
+    
+                    local key = 'snap_strip_'..s..'_'..p..'_type_'..sst..'_snapshot_'..ss..'_data_'..d..'_'
+              
+                    reaper.SetProjExtState(0,SCRIPT,key..'cid',snapshots[s][p][sst][ss].data[d].c_id)                
+                    reaper.SetProjExtState(0,SCRIPT,key..'ctl',snapshots[s][p][sst][ss].data[d].ctl)                
+                    reaper.SetProjExtState(0,SCRIPT,key..'val',snapshots[s][p][sst][ss].data[d].val)
+              
+                  end
+                end
+              end
+            end      
+          end
+        end
+      end
+    
+    else
+      reaper.SetProjExtState(0,SCRIPT,'snapshots_count',0)        
+    end
+  
     reaper.SetProjExtState(0,SCRIPT,'savedok',tostring(true))
   
   end
@@ -10209,37 +10537,170 @@ end
   end
   
   ------------------------------------------------------------
-    
-  function Snapshots_CREATE(strip, page)
 
-    if snapshots == nil then
-      snapshots = {}
-    end
-    if snapshots[strip] == nil then
-      snapshots[strip] = {}
-    end
-    if snapshots[strip][page] == nil then
-      snapshots[strip][page] = {}
-    end
-    snapcnt = #snapshots[strip][page] + 1
-    snapshots[strip][page][snapcnt] = {name = 'Snapshot '..snapcnt,
-                                       data = {}} 
+  function Snapshots_Check(strip, page)
+  
+    if snapshots and snapshots[strip] then
+      if #snapshots[strip][page] > 0 then    
     
-    local sscnt = 1
-    for c = 1, #strips[strip][page].controls do
+        for sst = 1, #snapshots[strip][page] do
+        
+          if #snapshots[strip][page][sst] > 0 then
+        
+            for ss = 1, #snapshots[strip][page][sst] do
+              local ss_entry_deleted = false
+              local dcnt = #snapshots[strip][page][sst][ss].data    
+              if dcnt > 0 then
+                local notfoundcnt = 0
+                for d = 1, dcnt do
+                
+                  if strips[strip][page].controls[snapshots[strip][page][sst][ss].data[d].ctl] == nil or
+                     snapshots[strip][page][sst][ss].data[d].c_id ~= strips[strip][page].controls[snapshots[strip][page][sst][ss].data[d].ctl].c_id then
+                    --control numbers not match - a control has been deleted
+                      local found = false
+                      for c = snapshots[strip][page][sst][ss].data[d].ctl-notfoundcnt, #strips[strip][page].controls do
+                        if strips[strip][page].controls[c] then
+                          if snapshots[strip][page][sst][ss].data[d].c_id == strips[strip][page].controls[c].c_id then
+                            found = true
+                            snapshots[strip][page][sst][ss].data[d].ctl = c
+                            break
+                          end
+                        end
+                      end
+                      if found == false then
+                        --snapshot entry not found
+                        notfoundcnt = notfoundcnt + 1
+                        snapshots[strip][page][sst][ss].data[d] = nil
+                        ss_entry_deleted = true
+                      end
+                  end
+                end
+                
+                if ss_entry_deleted == true then
+                  snapshots[strip][page][sst][ss].data = Table_RemoveNils(snapshots[strip][page][sst][ss].data, dcnt)
+                end
+              end
+            end
+          end
+        end
+      end
+    end  
+  
+  end
+
+  ------------------------------------------------------------
+
+  function Table_RemoveNils(srctbl, dcnt)
+  
+    local tbl = {}
     
-      if strips[strip][page].controls[c].ctlcat == ctlcats.fxparam or
-         strips[strip][page].controls[c].ctlcat == ctlcats.trparam or
-         strips[strip][page].controls[c].ctlcat == ctlcats.trsends then
-        if strips[strip][page].controls[c].ctltype ~= 5 then 
-           snapshots[strip][page][snapcnt].data[sscnt] = {ctl = c,
-                                                          val = strips[strip][page].controls[c].val}
+    if dcnt > 0 then
+      for i = 1, dcnt do
+        if srctbl[i] ~= nil then
+          table.insert(tbl, srctbl[i])
         end
       end
     end
-
+    return tbl
+      
   end
   
+  ------------------------------------------------------------
+
+  function Snapshot_Set(strip, page)
+  
+    if snapshots[strip][page][sstype_select][ss_select] then
+      for ss = 1, #snapshots[strip][page][sstype_select][ss_select].data do
+        local c = snapshots[strip][page][sstype_select][ss_select].data[ss].ctl
+        local v = snapshots[strip][page][sstype_select][ss_select].data[ss].val
+        if c and v then
+        
+          trackfxparam_select = c
+          --strips[strip][page].controls[c].val = v
+          --strips[strip][page].controls[c].dirty = true
+          SetParam3(v)
+        
+        end
+      
+      end
+    end    
+    --update_ctls = true
+  end
+  
+  function Snapshots_CREATE(strip, page, sstype, ss_ovr)
+
+    if strips and strips[strip] and strips[strip][page] and #strips[strip][page].controls > 0 then
+
+      if snapshots == nil then
+        snapshots = {}
+      end
+      for s = 1, reaper.CountTracks(0) do
+        if snapshots[s] == nil then
+          snapshots[s] = {}
+          for p = 1, 4 do
+            snapshots[s][p] = {}
+          end
+        end
+      end
+      if snapshots[strip][page] == nil then
+        snapshots[strip][page] = {}
+      end
+      if snapshots[strip][page][sstype] == nil then
+        snapshots[strip][page][sstype] = {}
+      end
+      if ss_ovr then
+        snappos = ss_ovr
+        if snapshots[strip][page][sstype][snappos] then
+          snapshots[strip][page][sstype][snappos].data = {}
+        else
+          return false
+        end
+      else
+        snappos = #snapshots[strip][page][sstype] + 1
+        snapshots[strip][page][sstype][snappos] = {name = 'Snapshot '..snapcnt,
+                                                   data = {}} 
+      end
+      
+      local sscnt = 1
+      for c = 1, #strips[strip][page].controls do
+      
+        if strips[strip][page].controls[c].ctlcat == ctlcats.fxparam or
+           strips[strip][page].controls[c].ctlcat == ctlcats.trackparam or
+           strips[strip][page].controls[c].ctlcat == ctlcats.tracksend then
+          if strips[strip][page].controls[c].ctltype ~= 5 then 
+             snapshots[strip][page][sstype][snappos].data[sscnt] = {c_id = strips[strip][page].controls[c].c_id,
+                                                                    ctl = c,
+                                                                    val = strips[strip][page].controls[c].val}
+            sscnt = sscnt + 1
+          end
+        end
+      end
+    end
+    
+  end
+  
+  ------------------------------------------------------------
+  
+  function EnableLatch(c)
+  
+    if strips[tracks[track_select].strip][page].controls[c].ctlcat == ctlcats.fxparam then
+      local trn = nz(strips[tracks[track_select].strip][page].controls[c].tracknum, strips[tracks[track_select].strip].track.tracknum)
+      local track = GetTrack(trn)
+      local env = reaper.GetFXEnvelope(track,strips[tracks[track_select].strip][page].controls[c].fxnum,strips[tracks[track_select].strip][page].controls[c].param, false)
+      if env then
+        local retval, envchunk = reaper.GetEnvelopeStateChunk(env,'',true)
+        --DBG(retval)
+        --DBG(envchunk)
+        local s, e = string.find(envchunk,'ACT 1')
+        if s and e then
+          nchunk = string.sub(envchunk,1,s-1) .. 'ACT 0' .. string.sub(envchunk,e+1)
+          reaper.SetEnvelopeStateChunk(env, nchunk, true)
+        end
+      end
+    end
+    
+  end
+    
   ------------------------------------------------------------
     
   function INIT()
@@ -10265,6 +10726,7 @@ end
     cyclist_offset = 0
     trctltypelist_offset = 0
     trctlslist_offset = 0
+    ssoffset = 0
     
     strips = {}
     surface_offset = {x = 0, y = 0}
@@ -10314,6 +10776,7 @@ end
     knob_scalemode_select = 1
     scalemode_select = 8
     framemode_select = 1
+    sstype_select = 1
     
     plist_w = 140
     oplist_w = 140
@@ -10423,6 +10886,10 @@ end
   SCRIPT = 'LBX_STRIPPER'
   VERSION = 0.91
 
+  OS = reaper.GetOS()
+  
+  math.randomseed(os.clock())
+  
   lockx = false
   locky = false
   lockw, olockw = 0, 0
