@@ -10634,7 +10634,8 @@ end
       if snapshots == nil then
         snapshots = {}
       end
-      for s = 1, reaper.CountTracks(0) do
+      --DBG(reaper.CountTracks(0))
+      for s = 1, reaper.CountTracks(0)+1 do
         if snapshots[s] == nil then
           snapshots[s] = {}
           for p = 1, 4 do
