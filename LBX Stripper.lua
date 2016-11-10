@@ -6287,10 +6287,14 @@ end
     if settings_locksurface then
       ls = '!'
     end
+    local dt = ''
+    if (strips and tracks[track_select].strip and strips[tracks[track_select].strip] and #strips[tracks[track_select].strip][page].controls > 0) or strip_default == nil then
+      dt = '#'      
+    end
     if mode == 0 then
-      mstr = 'Toggle Sidebar||Lock X|Lock Y|Scroll Up|Scroll Down||Save Script State|Open Settings||Page 1|Page 2|Page 3|Page 4||'..ds..'||'..ls..'Lock Surface'
+      mstr = 'Toggle Sidebar||Lock X|Lock Y|Scroll Up|Scroll Down||Save Script State|Open Settings||Page 1|Page 2|Page 3|Page 4||'..ds..'||'..ls..'Lock Surface||'..dt..'Insert Default Strip'
     else
-      mstr = '#Toggle Sidebar||Lock X|Lock Y|Scroll Up|Scroll Down||Save Script State|Open Settings||Page 1|Page 2|Page 3|Page 4||'..ds..'||'..ls..'Lock Surface'
+      mstr = '#Toggle Sidebar||Lock X|Lock Y|Scroll Up|Scroll Down||Save Script State|Open Settings||Page 1|Page 2|Page 3|Page 4||'..ds..'||'..ls..'Lock Surface||'..dt..'Insert Default Strip'
     end
     gfx.x, gfx.y = mouse.mx, butt_h
     res = OpenMenu(mstr)
@@ -6320,6 +6324,13 @@ end
         gfx.dock(d)
       elseif res == 13 then
         settings_locksurface = not settings_locksurface
+      elseif res == 14 then
+        stripfol_select = strip_default.stripfol_select
+        strip_select = strip_default.strip_select
+        loadstrip = LoadStrip(strip_select)
+        GenStripPreview(gui, loadstrip.strip)
+        Strip_AddStrip(loadstrip,0,0)
+        loadstrip = nil
       end
       update_gfx = true
     end
@@ -6950,12 +6961,16 @@ end
       
     elseif MS_Open > 0 then
     
-      if MOUSE_click(obj.sections[62]) then
+      local c=gfx.getchar()  
+      mb_onchar(c)
+      
+      if MOUSE_click(obj.sections[62]) or MB_Enter then
         --OK
         if MS_Open == 1 then
           msgbox = nil
         end
         MS_Open = 0
+        MB_Enter = false 
         update_gfx = true
       end
       
@@ -7144,11 +7159,11 @@ end
             else
               if snapshots and snapshots[tracks[track_select].strip] then
                 ss_select = F_limit(ssoffset+i,1,#snapshots[tracks[track_select].strip][page][sstype_select])
-                if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.20 then
+                --if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.20 then
                 
                   Snapshot_Set(tracks[track_select].strip, page)
                 
-                end
+                --end
                 update_snaps = true          
               end
             end
@@ -9302,6 +9317,23 @@ end
             update_gfx = true
           end
           
+        elseif MOUSE_click_RB(obj.sections[46]) then
+        
+          if strip_select then
+            mstr = 'Set Default'
+            gfx.x, gfx.y = mouse.mx, mouse.my
+            res = OpenMenu(mstr)
+            if res ~= 0 then
+              if res == 1 then
+                
+                strip_default = {strip_select = strip_select,
+                                 stripfol_select = stripfol_select}
+                                 
+              end
+            end
+          end        
+          
+        
         end
         
         if mouse.context and mouse.context == contexts.dragstrip then
@@ -9313,11 +9345,7 @@ end
           --Dropped
           image_count = image_count_add
           if dragstrip.x > obj.sections[10].x and dragstrip.x < obj.sections[10].w and dragstrip.y > obj.sections[10].y and dragstrip.y < obj.sections[10].h then
-            if surface_size.limit then
-              Strip_AddStrip(loadstrip, dragstrip.x-obj.sections[10].x, dragstrip.y-obj.sections[10].y)
-            else            
-              Strip_AddStrip(loadstrip, dragstrip.x, dragstrip.y)
-            end
+            Strip_AddStrip(loadstrip, dragstrip.x-obj.sections[10].x, dragstrip.y-obj.sections[10].y)
           end
           
           --loadstrip = nil
@@ -9846,6 +9874,14 @@ end
     end
   end
   
+  function mb_onchar(c)
+  
+    if c == 13 then
+      MB_Enter = true
+    end
+    
+  end
+  
   ---- generic mouse handling ----
   
   mouse={}
@@ -10279,6 +10315,15 @@ end
     locky = tobool(nz(GES('locky',true),false))
     lockw = tonumber(nz(GES('lockw',true),128))
     lockh = tonumber(nz(GES('lockh',true),128))
+
+    
+    local sd = tonumber(GES('strip_default',true))
+    local sdf = tonumber(GES('stripfol_default',true))
+    
+    if sd and sdf then
+      strip_default = {stripfol_select = sdf, strip_select = sd}
+    end
+    
   end
   
   function SaveSettings()
@@ -10293,6 +10338,10 @@ end
     reaper.SetExtState(SCRIPT,'locky',tostring(locky), true)
     reaper.SetExtState(SCRIPT,'lockw',tostring(lockw), true)
     reaper.SetExtState(SCRIPT,'lockh',tostring(lockh), true)
+    
+    reaper.SetExtState(SCRIPT,'strip_default',tostring(strip_default.strip_select), true)
+    reaper.SetExtState(SCRIPT,'stripfol_default',tostring(strip_default.stripfol_select), true)
+    
   end
   
   function SaveData()
@@ -10820,6 +10869,7 @@ end
     EB_Enter = false
     
     MS_Open = 0
+    MB_Enter = false
     
     update_gfx = true
     update_surface = true
