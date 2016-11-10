@@ -10339,8 +10339,10 @@ end
     reaper.SetExtState(SCRIPT,'lockw',tostring(lockw), true)
     reaper.SetExtState(SCRIPT,'lockh',tostring(lockh), true)
     
-    reaper.SetExtState(SCRIPT,'strip_default',tostring(strip_default.strip_select), true)
-    reaper.SetExtState(SCRIPT,'stripfol_default',tostring(strip_default.stripfol_select), true)
+    if strip_default then
+      reaper.SetExtState(SCRIPT,'strip_default',tostring(strip_default.strip_select), true)
+      reaper.SetExtState(SCRIPT,'stripfol_default',tostring(strip_default.stripfol_select), true)
+    end
     
   end
   
