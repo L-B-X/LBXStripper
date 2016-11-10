@@ -10657,7 +10657,7 @@ end
         end
       else
         snappos = #snapshots[strip][page][sstype] + 1
-        snapshots[strip][page][sstype][snappos] = {name = 'Snapshot '..snapcnt,
+        snapshots[strip][page][sstype][snappos] = {name = 'Snapshot '..snappos,
                                                    data = {}} 
       end
       
