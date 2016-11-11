@@ -10616,7 +10616,7 @@ end
                     reaper.SetProjExtState(0,SCRIPT,key..'cid',snapshots[s][p][sst][ss].data[d].c_id)                
                     reaper.SetProjExtState(0,SCRIPT,key..'ctl',snapshots[s][p][sst][ss].data[d].ctl)                
                     reaper.SetProjExtState(0,SCRIPT,key..'val',snapshots[s][p][sst][ss].data[d].val)
-                    reaper.SetProjExtState(0,SCRIPT,key..'dval',snapshots[s][p][sst][ss].data[d].dval)
+                    reaper.SetProjExtState(0,SCRIPT,key..'dval',tostring(snapshots[s][p][sst][ss].data[d].dval))
               
                   end
                 end
