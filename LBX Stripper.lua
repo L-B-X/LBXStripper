@@ -10283,7 +10283,7 @@ end
             end
           end
         end
-        
+        PopulateTracks()
         local scnt = tonumber(nz(GPES('snapshots_count'),0))
         if scnt and scnt > 0 then
           snapshots = {}
@@ -10323,10 +10323,22 @@ end
                                                            ctl = tonumber(GPES(key..'ctl')),
                                                            val = tonumber(GPES(key..'val')),
                                                            dval = tonumber(GPES(key..'dval',true))}
+                        --if snapshots[s][p][sst][ss].data[d].dval == nil then
+                          
+                        --  local min,max = GetParamMinMax_ctl(snapshots[s][p][sst][ss].data[d].ctl,true)
+                        --  snapshots[s][p][sst][ss].data[d].dval = DenormalizeValue(min,max,snapshots[s][p][sst][ss].data[d].val)
+                        --end  
                       end
                     end
                     
-                    Snapshots_Check(s,p)          
+                    Snapshots_Check(s,p)
+                    --for ss = 1, sscnt do
+                      --for d = 1, #snapshots[s][p][sst][ss].data do
+                      
+                        
+                      
+                      --end
+                    --end
                   end
                 end
               end
