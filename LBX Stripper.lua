@@ -56,7 +56,8 @@
               shadxslider = 26,
               shadyslider = 27,
               shadaslider = 28,
-              movesnapwindow = 29
+              movesnapwindow = 29,
+              resizesnapwindow = 30
               }
   
   ctlcats = {fxparam = 0,
@@ -623,11 +624,11 @@
                           h = butt_h/2+4}
                           
       --SNAPSHOTS
-      local ssh = 9*butt_h+4
-      obj.sections[160] = {x = gfx1.main_w - 160 - 20,
-                          y = gfx1.main_h - 300 -20,
+      local ssh = snaph-116
+      obj.sections[160] = {x = gfx1.main_w - 160 - (sb_size+2),
+                          y = gfx1.main_h - snaph - (sb_size+2),
                           w = 160,
-                          h = 300}                            
+                          h = snaph}                            
       obj.sections[161] = {x = 20,
                           y = butt_h+10 + (butt_h/2+4 + 10) * 0,
                           w = obj.sections[160].w-40,
@@ -641,10 +642,15 @@
                           w = obj.sections[160].w-20,
                           h = ssh}                       
       --dummy for locating
-      obj.sections[164] = {x = obj.sections[160].x+10,
-                          y = obj.sections[160].y+butt_h+10 + (butt_h/2+4 + 10) * 3,
-                          w = obj.sections[160].w-20,
-                          h = ssh}                       
+      --obj.sections[164] = {x = obj.sections[160].x+10,
+      --                    y = obj.sections[160].y+butt_h+10 + (butt_h/2+4 + 10) * 3,
+      --                    w = obj.sections[160].w-20,
+      --                    h = ssh}                       
+
+      obj.sections[165] = {x = 0,
+                          y = obj.sections[160].h-6,
+                          w = obj.sections[160].w,
+                          h = 6}                       
       
     return obj
   end
@@ -3466,6 +3472,10 @@ end
              xywh.y, 
              xywh.w,
              butt_h, 1 )
+    gfx.rect(obj.sections[165].x,
+             obj.sections[165].y, 
+             obj.sections[165].w,
+             obj.sections[165].h, 1 )
     
     GUI_textC(gui,xywh,'SNAPSHOTS',gui.color.black,-2)
     
@@ -3501,10 +3511,12 @@ end
     
     gfx.a = 1
     
+    SS_butt_cnt = math.floor(obj.sections[163].h / butt_h) - 1
+    
     local strip = tracks[track_select].strip
     if strip and snapshots and snapshots[strip] and snapshots[strip][page][sstype_select] then
       if #snapshots[strip][page][sstype_select] > 0 then
-        for i = 1,8 do
+        for i = 1,SS_butt_cnt do
         
           xywh.y = obj.sections[163].y + i*butt_h
           local c = gui.color.white
@@ -3547,6 +3559,8 @@ end
       if resize_display then
         gfx.setimgdim(1002,obj.sections[45].w, obj.sections[45].h)
         gfx.setimgdim(1003,obj.sections[160].w, obj.sections[160].h)
+      elseif resize_snaps then
+        gfx.setimgdim(1003,obj.sections[160].w, obj.sections[160].h)      
       end
       
       if mode == 0 then
@@ -3557,7 +3571,7 @@ end
           if show_snapshots then
             GUI_DrawSnapshots(obj, gui)
           end
-        elseif update_snaps then        
+        elseif update_snaps or (update_msnaps and resize_snaps) then        
           GUI_DrawSnapshots(obj, gui)
         elseif update_ctls then        
           GUI_DrawControls(obj, gui)
@@ -3897,6 +3911,7 @@ end
     update_settings = false
     update_snaps = false
     update_msnaps = false
+    resize_snaps = false
     
   end
   
@@ -7113,7 +7128,7 @@ end
           gfx.mouse_wheel = 0
         end
 
-        if MOUSE_over(obj.sections[164]) then
+        if MOUSE_over(obj.sections[160]) then
           ssoffset = F_limit(ssoffset - v, 0, #snapshots[tracks[track_select].strip][page][sstype_select]-1)
           update_snaps = true
         
@@ -7137,6 +7152,12 @@ end
         mouse.mx = mouse.mx - obj.sections[160].x
         mouse.my = mouse.my - obj.sections[160].y
         
+        if mouse.context == nil and MOUSE_click(obj.sections[165]) then
+          mouse.context = contexts.resizesnapwindow
+          resizesnapwin = {origh = obj.sections[160].h,
+                           offy = mouse.my}          
+        end        
+        
         if mouse.context == nil and MOUSE_click(obj.sections[162]) then
         
           Snapshots_CREATE(tracks[track_select].strip, page, sstype_select)
@@ -7153,7 +7174,7 @@ end
                 ssoffset = ssoffset-1
                 if ssoffset < 0 then ssoffset = 0 end
               else
-                ssoffset = F_limit(ssoffset+1,0,math.max(0,#snapshots[tracks[track_select].strip][page][sstype_select]-8))
+                ssoffset = F_limit(ssoffset+1,0,math.max(0,#snapshots[tracks[track_select].strip][page][sstype_select]-SS_butt_cnt))
               end
               update_snaps = true
             else
@@ -7504,7 +7525,19 @@ end
         update_msnaps = true
       
       end
-      
+
+      if mouse.context and mouse.context == contexts.resizesnapwindow then
+
+        local ly = obj.sections[10].h - obj.sections[160].y + butt_h
+        obj.sections[160].h = F_limit(resizesnapwin.origh + (mouse.my - resizesnapwin.offy) - obj.sections[160].y, 180, ly)
+        obj.sections[163].h = obj.sections[160].h - 116
+        obj.sections[165].y = obj.sections[160].h - 6
+        snaph = obj.sections[160].h
+        update_msnaps = true
+        resize_snaps = true
+        --update_gfx = true
+      end
+            
     elseif mode == 1 then
       
       if ct == 0 then
@@ -10764,6 +10797,7 @@ end
     fxmode = 0
     butt_h = 20
     fx_h = 160
+    snaph = 300
   
     ogrid = settings_gridsize
     sb_size = 3
