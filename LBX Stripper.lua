@@ -4594,12 +4594,14 @@ end
   function SMTI_norm(track,trctl_idx,v,min,max)
   
     local val = DenormalizeValue(min,max,v)
-    --if trctl_idx == 1 then
-    --  reaper.SetUIVol(track, trctls_table[trctl_idx].parmname, val)      
-    --else
-      reaper.SetMediaTrackInfo_Value(track, trctls_table[trctl_idx].parmname, val)
-    --end
+    reaper.SetMediaTrackInfo_Value(track, trctls_table[trctl_idx].parmname, val)
     
+  end
+
+  function SMTI_denorm(track,trctl_idx,v)
+  
+      reaper.SetMediaTrackInfo_Value(track, trctls_table[trctl_idx].parmname, v)
+
   end
 
   function STSI_norm(track,trctl_idx,v,min,max,c)
@@ -4608,6 +4610,20 @@ end
     local paramstr = strips[tracks[track_select].strip][page].controls[c].param_info.paramstr
 
     local val = DenormalizeValue(min,max,v)
+    if paramstr == 'D_VOL' then
+      reaper.SetTrackSendUIVol(track, idx, val, -1)
+    elseif paramstr == 'D_PAN' then
+      reaper.SetTrackSendUIPan(track, idx, val, -1)
+    else
+      reaper.SetTrackSendInfo_Value(track, 0, idx, paramstr, val)
+    end
+  end
+
+  function STSI_denorm(track,trctl_idx,val,c)
+  
+    local idx = strips[tracks[track_select].strip][page].controls[c].param_info.paramidx
+    local paramstr = strips[tracks[track_select].strip][page].controls[c].param_info.paramstr
+
     if paramstr == 'D_VOL' then
       reaper.SetTrackSendUIVol(track, idx, val, -1)
     elseif paramstr == 'D_PAN' then
@@ -4842,7 +4858,7 @@ end
       if cc == ctlcats.fxparam then
         local fxnum = strips[tracks[track_select].strip][page].controls[trackfxparam_select].fxnum
         local param = strips[tracks[track_select].strip][page].controls[trackfxparam_select].param
-        local cc = strips[tracks[track_select].strip][page].controls[trackfxparam_select].ctlcat
+        --local cc = strips[tracks[track_select].strip][page].controls[trackfxparam_select].ctlcat
         strips[tracks[track_select].strip][page].controls[trackfxparam_select].dirty = true
         local min, max = GetParamMinMax(cc,track,nz(fxnum,-1),param,true,trackfxparam_select)
         if force and force == true then
@@ -4886,7 +4902,6 @@ end
       if cc == ctlcats.fxparam then
         local fxnum = strips[tracks[track_select].strip][page].controls[trackfxparam_select].fxnum
         local param = strips[tracks[track_select].strip][page].controls[trackfxparam_select].param
-        local cc = strips[tracks[track_select].strip][page].controls[trackfxparam_select].ctlcat
         local min, max = GetParamMinMax(cc,track,nz(fxnum,-1),param,true,trackfxparam_select)
         reaper.TrackFX_SetParam(track, nz(fxnum,-1), param, DenormalizeValue(min, max, v))
 
@@ -4901,6 +4916,30 @@ end
         strips[tracks[track_select].strip][page].controls[trackfxparam_select].dirty = true
         local min, max = GetParamMinMax(cc,track,nil,param,true,trackfxparam_select)
         STSI_norm(track,param,v,min,max,trackfxparam_select)
+      end    
+    end
+      
+  end
+
+  function SetParam3_Denorm(trnum, v)
+  
+    if strips and strips[tracks[track_select].strip] and strips[tracks[track_select].strip][page].controls[trackfxparam_select] then
+      local track = GetTrack(trnum)
+      local cc = strips[tracks[track_select].strip][page].controls[trackfxparam_select].ctlcat
+      if cc == ctlcats.fxparam then
+        local fxnum = strips[tracks[track_select].strip][page].controls[trackfxparam_select].fxnum
+        local param = strips[tracks[track_select].strip][page].controls[trackfxparam_select].param
+        reaper.TrackFX_SetParam(track, nz(fxnum,-1), param, v)
+
+      elseif cc == ctlcats.trackparam then
+        local param = strips[tracks[track_select].strip][page].controls[trackfxparam_select].param
+        strips[tracks[track_select].strip][page].controls[trackfxparam_select].dirty = true
+        SMTI_denorm(track,param,v)
+
+      elseif cc == ctlcats.tracksend then
+        local param = strips[tracks[track_select].strip][page].controls[trackfxparam_select].param
+        strips[tracks[track_select].strip][page].controls[trackfxparam_select].dirty = true
+        STSI_denorm(track,param,v,trackfxparam_select)
       end    
     end
       
@@ -7129,9 +7168,11 @@ end
         end
 
         if MOUSE_over(obj.sections[160]) then
-          ssoffset = F_limit(ssoffset - v, 0, #snapshots[tracks[track_select].strip][page][sstype_select]-1)
-          update_snaps = true
-        
+          if snapshots and snapshots[tracks[track_select].strip] and
+             snapshots[tracks[track_select].strip][page][sstype_select] then
+            ssoffset = F_limit(ssoffset - v, 0, #snapshots[tracks[track_select].strip][page][sstype_select]-1)
+            update_snaps = true
+          end     
           gfx.mouse_wheel = 0
         end
       end
@@ -10273,14 +10314,15 @@ end
                       local key = 'snap_strip_'..s..'_'..p..'_type_'..sst..'_snapshot_'..ss..'_'
                       local dcnt = tonumber(GPES(key..'data_count'))
                       snapshots[s][p][sst][ss] = {name = GPES(key..'name'),
-                                             data = {}}
+                                                  data = {}}
                       for d = 1, dcnt do
     
                         local key = 'snap_strip_'..s..'_'..p..'_type_'..sst..'_snapshot_'..ss..'_data_'..d..'_'
                       
                         snapshots[s][p][sst][ss].data[d] = {c_id = tonumber(GPES(key..'cid')),
                                                            ctl = tonumber(GPES(key..'ctl')),
-                                                           val = tonumber(GPES(key..'val'))}
+                                                           val = tonumber(GPES(key..'val')),
+                                                           dval = tonumber(GPES(key..'dval'))}
                       end
                     end
                     
@@ -10574,6 +10616,7 @@ end
                     reaper.SetProjExtState(0,SCRIPT,key..'cid',snapshots[s][p][sst][ss].data[d].c_id)                
                     reaper.SetProjExtState(0,SCRIPT,key..'ctl',snapshots[s][p][sst][ss].data[d].ctl)                
                     reaper.SetProjExtState(0,SCRIPT,key..'val',snapshots[s][p][sst][ss].data[d].val)
+                    reaper.SetProjExtState(0,SCRIPT,key..'dval',snapshots[s][p][sst][ss].data[d].dval)
               
                   end
                 end
@@ -10696,19 +10739,14 @@ end
     if snapshots[strip][page][sstype_select][ss_select] then
       for ss = 1, #snapshots[strip][page][sstype_select][ss_select].data do
         local c = snapshots[strip][page][sstype_select][ss_select].data[ss].ctl
-        local v = snapshots[strip][page][sstype_select][ss_select].data[ss].val
+        local v = snapshots[strip][page][sstype_select][ss_select].data[ss].dval
         if c and v then
-        
           trackfxparam_select = c
-          --strips[strip][page].controls[c].val = v
-          --strips[strip][page].controls[c].dirty = true
-          SetParam3(v)
-        
+          local trnum = nz(strips[strip][page].controls[c].tracknum,strips[strip].track.tracknum)
+          SetParam3_Denorm(trnum, v)        
         end
-      
       end
     end    
-    --update_ctls = true
   end
   
   function Snapshots_CREATE(strip, page, sstype, ss_ovr)
@@ -10718,7 +10756,6 @@ end
       if snapshots == nil then
         snapshots = {}
       end
-      --DBG(reaper.CountTracks(0))
       for s = 1, reaper.CountTracks(0)+1 do
         if snapshots[s] == nil then
           snapshots[s] = {}
@@ -10752,10 +10789,17 @@ end
         if strips[strip][page].controls[c].ctlcat == ctlcats.fxparam or
            strips[strip][page].controls[c].ctlcat == ctlcats.trackparam or
            strips[strip][page].controls[c].ctlcat == ctlcats.tracksend then
-          if strips[strip][page].controls[c].ctltype ~= 5 then 
-             snapshots[strip][page][sstype][snappos].data[sscnt] = {c_id = strips[strip][page].controls[c].c_id,
+          if strips[strip][page].controls[c].ctltype ~= 5 then
+            local track = GetTrack(nz(strips[strip][page].controls[c].tracknum,strips[strip].track.tracknum))
+            local cc = strips[strip][page].controls[c].ctlcat
+            local fxnum = strips[strip][page].controls[c].fxnum
+            local param = strips[strip][page].controls[c].param
+            local min, max = GetParamMinMax(cc,track,nz(fxnum,-1),param,true,c)
+            local dval = DenormalizeValue(min,max,strips[strip][page].controls[c].val)
+            snapshots[strip][page][sstype][snappos].data[sscnt] = {c_id = strips[strip][page].controls[c].c_id,
                                                                     ctl = c,
-                                                                    val = strips[strip][page].controls[c].val}
+                                                                    val = strips[strip][page].controls[c].val,
+                                                                    dval = dval}
             sscnt = sscnt + 1
           end
         end
