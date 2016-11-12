@@ -3128,117 +3128,117 @@ end
 
               local Disp_ParamV
               local Disp_Name
-              local v2, val2
+              local v2, val2 = 0, 0
 
-              --if ctlcat == ctlcats.fxparam then
+              if ctlcat == ctlcats.fxparam or ctlcat == ctlcats.trackparam or ctlcat == ctlcats.tracksend then
                 v2 = frameScale(strips[tracks[track_select].strip][page].controls[i].framemode, GetParamValue2(ctlcat,track,fxnum,param,i))
-                --v2 = outCirc(v2)
                 val2 = F_limit(round(frames*v2),0,frames-1)
+              end
                 
-                local DVOV
-                if ctltype == 3 then
-                  --invert button
-                  val2 = 1-val2
-                elseif ctltype == 4 then
-                  --cycle button
-                  if strips[tracks[track_select].strip][page].controls[i].cycledata.mapptof then
-                    --override val2
-                    --prelim code for single state notify
-                    if strips[tracks[track_select].strip][page].controls[i].cycledata.statecnt == 1 then
-                      local v3 = strips[tracks[track_select].strip][page].controls[i].val
-                      --must convert to string to compare for some weird reason                
-                      if tostring(v3) ~= tostring(strips[tracks[track_select].strip][page].controls[i].cycledata[1].val) then
-                        --not selected
-                        val2 = frames-1
-                      else
-                        --selected
-                        val2 = 0
-                      end
+              local DVOV
+              if ctltype == 3 then
+                --invert button
+                val2 = 1-val2
+              elseif ctltype == 4 then
+                --cycle button
+                if strips[tracks[track_select].strip][page].controls[i].cycledata.mapptof then
+                  --override val2
+                  --prelim code for single state notify
+                  if strips[tracks[track_select].strip][page].controls[i].cycledata.statecnt == 1 then
+                    local v3 = strips[tracks[track_select].strip][page].controls[i].val
+                    --must convert to string to compare               
+                    if tostring(v3) ~= tostring(strips[tracks[track_select].strip][page].controls[i].cycledata[1].val) then
+                      --not selected
+                      val2 = frames-1
                     else
-                      val2 = F_limit(nz(strips[tracks[track_select].strip][page].controls[i].cycledata.pos,0)-1,0,frames-1)
-                      if strips[tracks[track_select].strip][page].controls[i].cycledata and 
-                         strips[tracks[track_select].strip][page].controls[i].cycledata[nz(strips[tracks[track_select].strip][page].controls[i].cycledata.pos,0)] then
-                        DVOV = nz(strips[tracks[track_select].strip][page].controls[i].cycledata[nz(strips[tracks[track_select].strip][page].controls[i].cycledata.pos,0)].dispval,'')
-                      end
+                      --selected
+                      val2 = 0
                     end
                   else
+                    val2 = F_limit(nz(strips[tracks[track_select].strip][page].controls[i].cycledata.pos,0)-1,0,frames-1)
                     if strips[tracks[track_select].strip][page].controls[i].cycledata and 
                        strips[tracks[track_select].strip][page].controls[i].cycledata[nz(strips[tracks[track_select].strip][page].controls[i].cycledata.pos,0)] then
                       DVOV = nz(strips[tracks[track_select].strip][page].controls[i].cycledata[nz(strips[tracks[track_select].strip][page].controls[i].cycledata.pos,0)].dispval,'')
-                    end                  
-                  end
-                elseif ctltype == 6 then
-                  --mem button
-                  if strips[tracks[track_select].strip][page].controls[i].membtn == nil then
-                    strips[tracks[track_select].strip][page].controls[i].membtn = {state = false, mem = 0}
-                  end
-                  local v3 = GetParamValue_Ctl(i)--strips[tracks[track_select].strip][page].controls[i].val
-                  if tostring(v3) ~= tostring(strips[tracks[track_select].strip][page].controls[i].defval) then
-                  --local dv = round(math.abs(v3-strips[tracks[track_select].strip][page].controls[i].defval),6)
-                    --DBG(dv)  
-                  --if dv > 0 then
-                    strips[tracks[track_select].strip][page].controls[i].membtn = {state = false, mem = v3}
-                  else
-                    strips[tracks[track_select].strip][page].controls[i].membtn.state = true
-                  end
-                  if strips[tracks[track_select].strip][page].controls[i].membtn.state == true then
-                    val2 = frames-1
-                  else
-                    val2 = 0                
-                  end
-                end
-                
-                if not found then
-                  gfx.a = 0.2
-                end
-  
-                if ctlcat == ctlcats.fxparam then
-                  if not found then
-                    Disp_Name = CropFXName(strips[tracks[track_select].strip][page].controls[i].fxname)
-                    Disp_ParamV = 'PLUGIN NOT FOUND'
-                    tc = gui.color.red
-                    val2 = 0
-                  else
-                    if nz(ctlnmov,'') == '' then
-                      _, Disp_Name = reaper.TrackFX_GetParamName(track, fxnum, param, "")
-                    else
-                      Disp_Name = ctlnmov
-                    end
-                    _, Disp_ParamV = reaper.TrackFX_GetFormattedParamValue(track, fxnum, param, "")
-                    if dvoff and dvoff ~= 0 then
-                      Disp_ParamV = dvaloffset(Disp_ParamV, strips[tracks[track_select].strip][page].controls[i].dvaloffset)  
-                    end
-                    if maxdp > -1 then
-                      Disp_ParamV = roundX(Disp_ParamV, maxdp)                  
                     end
                   end
-                elseif ctlcat == ctlcats.trackparam or ctlcat == ctlcats.tracksend then
-                  if nz(ctlnmov,'') == '' then
-                    Disp_Name = pname
-                  else
-                    Disp_Name = ctlnmov                  
-                  end
-                  Disp_ParamV = GetParamDisp(ctlcat, tnum, nil, param, dvoff, i)
-                  if maxdp > -1 then
-                    Disp_ParamV = roundX(Disp_ParamV, maxdp)                  
+                else
+                  if strips[tracks[track_select].strip][page].controls[i].cycledata and 
+                     strips[tracks[track_select].strip][page].controls[i].cycledata[nz(strips[tracks[track_select].strip][page].controls[i].cycledata.pos,0)] then
+                    DVOV = nz(strips[tracks[track_select].strip][page].controls[i].cycledata[nz(strips[tracks[track_select].strip][page].controls[i].cycledata.pos,0)].dispval,'')
                   end                  
-                elseif ctlcat == ctlcats.action then
+                end
+              elseif ctltype == 6 then
+                --mem button
+                if strips[tracks[track_select].strip][page].controls[i].membtn == nil then
+                  strips[tracks[track_select].strip][page].controls[i].membtn = {state = false, mem = 0}
+                end
+                local v3 = GetParamValue_Ctl(i)--strips[tracks[track_select].strip][page].controls[i].val
+                if tostring(v3) ~= tostring(strips[tracks[track_select].strip][page].controls[i].defval) then
+                --local dv = round(math.abs(v3-strips[tracks[track_select].strip][page].controls[i].defval),6)
+                  --DBG(dv)  
+                --if dv > 0 then
+                  strips[tracks[track_select].strip][page].controls[i].membtn = {state = false, mem = v3}
+                --else
+                  --strips[tracks[track_select].strip][page].controls[i].membtn.state = true
+                end
+                if strips[tracks[track_select].strip][page].controls[i].membtn.state == true then
+                  val2 = frames-1
+                else
+                  val2 = 0                
+                end
+              end
+              
+              if not found then
+                gfx.a = 0.2
+              end
+
+              if ctlcat == ctlcats.fxparam then
+                if not found then
+                  Disp_Name = CropFXName(strips[tracks[track_select].strip][page].controls[i].fxname)
+                  Disp_ParamV = 'PLUGIN NOT FOUND'
+                  tc = gui.color.red
+                  val2 = 0
+                else
                   if nz(ctlnmov,'') == '' then
-                    Disp_Name = pname
+                    _, Disp_Name = reaper.TrackFX_GetParamName(track, fxnum, param, "")
                   else
                     Disp_Name = ctlnmov
                   end
-                  if DVOV and DVOV ~= '' and cycle_editmode == false then
-                  else
-                    spv = false  
+                  _, Disp_ParamV = reaper.TrackFX_GetFormattedParamValue(track, fxnum, param, "")
+                  if dvoff and dvoff ~= 0 then
+                    Disp_ParamV = dvaloffset(Disp_ParamV, strips[tracks[track_select].strip][page].controls[i].dvaloffset)  
+                  end
+                  if maxdp > -1 then
+                    Disp_ParamV = roundX(Disp_ParamV, maxdp)                  
                   end
                 end
+              elseif ctlcat == ctlcats.trackparam or ctlcat == ctlcats.tracksend then
+                if nz(ctlnmov,'') == '' then
+                  Disp_Name = pname
+                else
+                  Disp_Name = ctlnmov                  
+                end
+                Disp_ParamV = GetParamDisp(ctlcat, tnum, nil, param, dvoff, i)
+                if maxdp > -1 then
+                  Disp_ParamV = roundX(Disp_ParamV, maxdp)                  
+                end                  
+              elseif ctlcat == ctlcats.action then
+                if nz(ctlnmov,'') == '' then
+                  Disp_Name = pname
+                else
+                  Disp_Name = ctlnmov
+                end
+                if DVOV and DVOV ~= '' and cycle_editmode == false then
+                else
+                  spv = false  
+                end
+              end
 
-                if ctltype == 4 and DVOV and DVOV ~= '' and cycle_editmode == false then
-                  if strips[tracks[track_select].strip][page].controls[i].cycledata.posdirty == false then 
-                    Disp_ParamV = DVOV
-                  end
+              if ctltype == 4 and DVOV and DVOV ~= '' and cycle_editmode == false then
+                if strips[tracks[track_select].strip][page].controls[i].cycledata.posdirty == false then 
+                  Disp_ParamV = DVOV
                 end
+              end
 
               local mid = x+(w/2)
 
@@ -4671,11 +4671,16 @@ end
     end
     
     if paramstr == 'D_VOL' then
-      retval, vOut, pOut = reaper.GetTrackSendUIVolPan(track, idx)
+      local retval, vOut, pOut = reaper.GetTrackSendUIVolPan(track, idx)
       return normalize(min, max, vOut)
     elseif paramstr == 'D_PAN' then
-      retval, vOut, pOut = reaper.GetTrackSendUIVolPan(track, idx)
+      local retval, vOut, pOut = reaper.GetTrackSendUIVolPan(track, idx)
       return normalize(min, max, pOut)
+    elseif paramstr == 'B_MUTE' then
+      local retval, muteOut = reaper.GetTrackSendUIMute(track, idx)
+      local mo
+      if muteOut then mo = 1 else mo = 0 end
+      return mo
     else    
       return normalize(min,max,reaper.GetTrackSendInfo_Value(track, 0, idx, paramstr))
     end
@@ -4705,6 +4710,8 @@ end
       reaper.SetTrackSendUIVol(track, idx, val, -1)
     elseif paramstr == 'D_PAN' then
       reaper.SetTrackSendUIPan(track, idx, val, -1)
+    elseif paramstr == 'B_MUTE' then
+      reaper.ToggleTrackSendUIMute(track, idx)
     else
       reaper.SetTrackSendInfo_Value(track, 0, idx, paramstr, val)
     end
@@ -4714,11 +4721,15 @@ end
   
     local idx = strips[tracks[track_select].strip][page].controls[c].param_info.paramidx
     local paramstr = strips[tracks[track_select].strip][page].controls[c].param_info.paramstr
-
     if paramstr == 'D_VOL' then
       reaper.SetTrackSendUIVol(track, idx, val, -1)
     elseif paramstr == 'D_PAN' then
       reaper.SetTrackSendUIPan(track, idx, val, -1)
+    elseif paramstr == 'B_MUTE' then
+      local v = strips[tracks[track_select].strip][page].controls[c].val
+      if v ~= val then
+        reaper.ToggleTrackSendUIMute(track, idx)
+      end
     else
       reaper.SetTrackSendInfo_Value(track, 0, idx, paramstr, val)
     end
@@ -11296,6 +11307,11 @@ end
     return v^0.2
   end
   
+  function testfunc(txt1)
+    DBG(txt1)
+    return 'return'..txt1
+  end
+  
   function quit()
   
     --local res = reaper.MB('Save data and project?', 'Save data',4) 
@@ -11359,6 +11375,8 @@ end
   def_knob = LoadControl(1019, '__default.knb')
   def_knobsm = LoadControl(1018, 'SimpleFlat_48.knb')
   
+  --DBG(_G['testfunc']('testtext'))
+  --DBG(clipboard)
   INIT()
   LoadSettings()
   LoadData()  
