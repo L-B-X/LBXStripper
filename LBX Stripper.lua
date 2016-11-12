@@ -7751,6 +7751,7 @@ end
             
             if tr ~= nil then
               reaper.SetOnlyTrackSelected(tr)
+              reaper.SetTrackSelected(tr, true)
             end
           
           end
