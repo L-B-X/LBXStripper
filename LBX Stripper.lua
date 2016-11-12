@@ -5236,7 +5236,6 @@ end
   function OpenEB(eb, t)
 
     local sizex,sizey = 400,200
-    local t
     
     editbox={title = t,
       x=400, y=100, w=120, h=20, l=4, maxlen=99,
@@ -8699,7 +8698,7 @@ end
                 OpenEB(12,'Please enter action name:')
               elseif res == 7 then
                 trackfxparam_select = ctl_select[1].ctl
-                OpenEB(13,'Please enter action number:')
+                OpenEB(13,'Please enter action command ID:')
               end
             
             end
