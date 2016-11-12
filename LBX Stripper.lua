@@ -3173,13 +3173,13 @@ end
                     strips[tracks[track_select].strip][page].controls[i].membtn = {state = false, mem = 0}
                   end
                   local v3 = GetParamValue_Ctl(i)--strips[tracks[track_select].strip][page].controls[i].val
-                  --if tostring(v3) ~= tostring(strips[tracks[track_select].strip][page].controls[i].defval) then
-                  local dv = round(math.abs(v3-strips[tracks[track_select].strip][page].controls[i].defval),6)
+                  if tostring(v3) ~= tostring(strips[tracks[track_select].strip][page].controls[i].defval) then
+                  --local dv = round(math.abs(v3-strips[tracks[track_select].strip][page].controls[i].defval),6)
                     --DBG(dv)  
-                  if dv > 0 then
+                  --if dv > 0 then
                     strips[tracks[track_select].strip][page].controls[i].membtn = {state = false, mem = v3}
-                  else
-                    strips[tracks[track_select].strip][page].controls[i].membtn.state = true
+                  --else
+                    --strips[tracks[track_select].strip][page].controls[i].membtn.state = true
                   end
                   if strips[tracks[track_select].strip][page].controls[i].membtn.state == true then
                     val2 = frames-1
