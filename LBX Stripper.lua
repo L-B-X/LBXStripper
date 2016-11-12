@@ -2772,8 +2772,11 @@
       GUI_DrawButton(gui, scalemode_dtable[scalemode_select], obj.sections[132], gui.color.white, gui.color.black, true, 'SCALE MOD')
       GUI_DrawButton(gui, framemode_table[framemode_select], obj.sections[133], gui.color.white, gui.color.black, true, 'FRAME MOD')
 
-      local pmin = normalize(min, max, minov_select)
-      local pmax = normalize(min, max, maxov_select)
+      local pmin, pmax = 0, 0
+      if min and max then
+        pmin = normalize(min, max, minov_select)
+        pmax = normalize(min, max, maxov_select)
+      end
       local w, _ = gfx.getimgdim(def_knobsm)
       gfx.blit(def_knobsm,1,0, 0, defctls[def_knobsm].cellh*math.floor((defctls[def_knobsm].frames-1)*pmin), w, defctls[def_knobsm].cellh, obj.sections[128].x, obj.sections[128].y)
       gfx.blit(def_knobsm,1,0, 0, defctls[def_knobsm].cellh*math.floor((defctls[def_knobsm].frames-1)*pmax), w, defctls[def_knobsm].cellh, obj.sections[129].x, obj.sections[129].y)
@@ -4812,6 +4815,8 @@ end
         end      
       end
       return tonumber(min), tonumber(max)  
+    else 
+      return 0, 0
     end
   end
 
@@ -4838,6 +4843,8 @@ end
         local param = strips[tracks[track_select].strip][page].controls[trackfxparam_select].param
         local idx = math.floor((param-1) % 3)+1
         return tonumber(trsends_mmtable[idx].min), tonumber(trsends_mmtable[idx].max)
+      else 
+        return 0, 0
       end
     else
       return nil, nil
@@ -4889,16 +4896,26 @@ end
         end      
       end
       return tonumber(min), tonumber(max)  
+    else 
+      return 0, 0
     end
   end
   
   function normalize(min, max, val)
-    return (val - min)/(max - min)
+    if min and max and val then
+      return (val - min)/(max - min)
+    else
+      return 0
+    end
   end
   
   --nv*(max - min) + min = val
   function DenormalizeValue(min, max, val)
-    return val*(max - min) + min
+    if min and max and val then
+      return val*(max - min) + min
+    else
+      return 0
+    end
   end
   
   ------------------------------------------------------------
@@ -10773,8 +10790,8 @@ end
                 reaper.SetProjExtState(0,SCRIPT,key..'textoff',strips[s][p].controls[c].textoff)
                 reaper.SetProjExtState(0,SCRIPT,key..'textoffval',strips[s][p].controls[c].textoffval)
                 reaper.SetProjExtState(0,SCRIPT,key..'textsize',nz(strips[s][p].controls[c].textsize,0))
-                reaper.SetProjExtState(0,SCRIPT,key..'val',strips[s][p].controls[c].val)
-                reaper.SetProjExtState(0,SCRIPT,key..'defval',strips[s][p].controls[c].defval)   
+                reaper.SetProjExtState(0,SCRIPT,key..'val',nz(strips[s][p].controls[c].val,0))
+                reaper.SetProjExtState(0,SCRIPT,key..'defval',nz(strips[s][p].controls[c].defval,0))   
                 reaper.SetProjExtState(0,SCRIPT,key..'maxdp',nz(strips[s][p].controls[c].maxdp,-1))   
                 reaper.SetProjExtState(0,SCRIPT,key..'dvaloffset',nz(strips[s][p].controls[c].dvaloffset,''))   
                 reaper.SetProjExtState(0,SCRIPT,key..'minov',nz(strips[s][p].controls[c].minov,''))   
