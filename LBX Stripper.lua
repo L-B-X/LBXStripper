@@ -3221,12 +3221,15 @@ end
                   end                  
                 elseif ctlcat == ctlcats.action then
                   Disp_Name = pname
-                  spv = false
+                  if DVOV and DVOV ~= '' and cycle_editmode == false then
+                  else
+                    spv = false  
+                  end
                 end
 
                 if ctltype == 4 and DVOV and DVOV ~= '' and cycle_editmode == false then
                   if strips[tracks[track_select].strip][page].controls[i].cycledata.posdirty == false then 
-                  Disp_ParamV = DVOV
+                    Disp_ParamV = DVOV
                   end
                 end
 
@@ -4636,6 +4639,9 @@ end
         local p = strips[tracks[track_select].strip][page].controls[c].param
         local min, max = GetParamMinMax(cc,nil,nil,p,true,c)
         return GTSI_norm(track, p, min, max,c)
+        
+      elseif cc == ctlcats.action then
+        return 0
       end
     else
       return 0
@@ -9899,13 +9905,18 @@ end
       local dvoff = strips[tracks[track_select].strip][page].controls[trackfxparam_select].dvaloffset
       for i = 1, cycle_select.statecnt do      
         if cycle_select[i] == nil or (cycle_select[i] and cycle_select[i].dispval == nil) then
-          SetParam3(cycle_select.val)
+          if cc ~= ctlcats.action then
+            SetParam3(cycle_select.val)
+          end
           cycle_select[i] = {val = cycle_select.val, dispval = GetParamDisp(cc, tracknum, fxnum, param, dvoff,trackfxparam_select)}
         end
       end
       cycle_select.selected = cycle_select.statecnt
-      SetParam()
-    
+      
+      if cc ~= ctlcats.action then
+        SetParam()
+      end
+      
     end
   
   end
@@ -9959,7 +9970,7 @@ end
       if cc == ctlcats.fxparam then
         local min, max = GetParamMinMax_ctl(c)
         return normalize(min, max, v)
-      else
+      elseif cc ~= ctlcats.action then 
         local min, max = GetParamMinMax_ctl(c)
         return F_limit(v,min,max)
       end
@@ -10991,13 +11002,13 @@ end
   ------------------------------------------------------------
 
   function Snapshot_Set(strip, page)
-  
     if snapshots[strip][page][sstype_select][ss_select] then
       local gtrack = GetTrack(strips[strip].track.tracknum)
       for ss = 1, #snapshots[strip][page][sstype_select][ss_select].data do
         local c = snapshots[strip][page][sstype_select][ss_select].data[ss].ctl
         local v = snapshots[strip][page][sstype_select][ss_select].data[ss].dval
-        if c and v then
+        local nv = snapshots[strip][page][sstype_select][ss_select].data[ss].val
+        if c and v and tostring(nv) ~= tostring(strips[strip][page].controls[c].val) then
           trackfxparam_select = c
       --    local trnum = nz(strips[strip][page].controls[c].tracknum,strips[strip].track.tracknum)
           local trnum = nz(strips[strip][page].controls[c].tracknum,strips[strip].track.tracknum)
