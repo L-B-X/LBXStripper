@@ -3152,7 +3152,7 @@ end
                         val2 = 0
                       end
                     else
-                      val2 = F_limit(nz(strips[tracks[track_select].strip][page].controls[i].cycledata.pos,0),0,frames-1)
+                      val2 = F_limit(nz(strips[tracks[track_select].strip][page].controls[i].cycledata.pos,0)-1,0,frames-1)
                       if strips[tracks[track_select].strip][page].controls[i].cycledata and 
                          strips[tracks[track_select].strip][page].controls[i].cycledata[nz(strips[tracks[track_select].strip][page].controls[i].cycledata.pos,0)] then
                         DVOV = nz(strips[tracks[track_select].strip][page].controls[i].cycledata[nz(strips[tracks[track_select].strip][page].controls[i].cycledata.pos,0)].dispval,'')
@@ -3220,7 +3220,11 @@ end
                     Disp_ParamV = roundX(Disp_ParamV, maxdp)                  
                   end                  
                 elseif ctlcat == ctlcats.action then
-                  Disp_Name = pname
+                  if nz(ctlnmov,'') == '' then
+                    Disp_Name = pname
+                  else
+                    Disp_Name = ctlnmov
+                  end
                   if DVOV and DVOV ~= '' and cycle_editmode == false then
                   else
                     spv = false  
