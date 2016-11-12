@@ -3178,8 +3178,8 @@ end
                     --DBG(dv)  
                   --if dv > 0 then
                     strips[tracks[track_select].strip][page].controls[i].membtn = {state = false, mem = v3}
-                  --else
-                    --strips[tracks[track_select].strip][page].controls[i].membtn.state = true
+                  else
+                    strips[tracks[track_select].strip][page].controls[i].membtn.state = true
                   end
                   if strips[tracks[track_select].strip][page].controls[i].membtn.state == true then
                     val2 = frames-1
