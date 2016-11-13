@@ -10910,7 +10910,7 @@ end
                 reaper.SetProjExtState(0,SCRIPT,key..'scalemodex',nz(strips[s][p].controls[c].scalemode,8))   
                 reaper.SetProjExtState(0,SCRIPT,key..'framemodex',nz(strips[s][p].controls[c].framemode,1))   
                 reaper.SetProjExtState(0,SCRIPT,key..'poslock',nz(tostring(strips[s][p].controls[c].poslock),false))   
-                reaper.SetProjExtState(0,SCRIPT,key..'horiz',nz(tostring(strips[s][p].controls[c].horiz),false))   
+                reaper.SetProjExtState(0,SCRIPT,key..'horiz',tostring(nz(strips[s][p].controls[c].horiz,false)))   
                            
                 reaper.SetProjExtState(0,SCRIPT,key..'id',convnum(strips[s][p].controls[c].id))
 
@@ -11081,25 +11081,27 @@ end
                 local notfoundcnt = 0
                 for d = 1, dcnt do
                 
-                  if strips[strip][page].controls[snapshots[strip][page][sst][ss].data[d].ctl] == nil or
-                     snapshots[strip][page][sst][ss].data[d].c_id ~= strips[strip][page].controls[snapshots[strip][page][sst][ss].data[d].ctl].c_id then
-                    --control numbers not match - a control has been deleted
-                      local found = false
-                      for c = snapshots[strip][page][sst][ss].data[d].ctl-notfoundcnt, #strips[strip][page].controls do
-                        if strips[strip][page].controls[c] then
-                          if snapshots[strip][page][sst][ss].data[d].c_id == strips[strip][page].controls[c].c_id then
-                            found = true
-                            snapshots[strip][page][sst][ss].data[d].ctl = c
-                            break
+                  if snapshots[strip][page][sst][ss].data[d].ctl then
+                    if strips[strip][page].controls[snapshots[strip][page][sst][ss].data[d].ctl] == nil or
+                       snapshots[strip][page][sst][ss].data[d].c_id ~= strips[strip][page].controls[snapshots[strip][page][sst][ss].data[d].ctl].c_id then
+                      --control numbers not match - a control has been deleted
+                        local found = false
+                        for c = snapshots[strip][page][sst][ss].data[d].ctl-notfoundcnt, #strips[strip][page].controls do
+                          if strips[strip][page].controls[c] then
+                            if snapshots[strip][page][sst][ss].data[d].c_id == strips[strip][page].controls[c].c_id then
+                              found = true
+                              snapshots[strip][page][sst][ss].data[d].ctl = c
+                              break
+                            end
                           end
                         end
-                      end
-                      if found == false then
-                        --snapshot entry not found
-                        notfoundcnt = notfoundcnt + 1
-                        snapshots[strip][page][sst][ss].data[d] = nil
-                        ss_entry_deleted = true
-                      end
+                        if found == false then
+                          --snapshot entry not found
+                          notfoundcnt = notfoundcnt + 1
+                          snapshots[strip][page][sst][ss].data[d] = nil
+                          ss_entry_deleted = true
+                        end
+                    end
                   end
                 end
                 
