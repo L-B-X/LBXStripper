@@ -4685,6 +4685,8 @@ end
     local idx = strips[tracks[track_select].strip][page].controls[c].param_info.paramidx
     local paramstr = strips[tracks[track_select].strip][page].controls[c].param_info.paramstr
 
+    --if paramstr == nil then return 0 end
+    
     if track == nil then
       track = GetTrack(nz(strips[tracks[track_select].strip][page].controls[c].tracknum,strips[tracks[track_select].strip].track.tracknum))
     end
@@ -11081,7 +11083,7 @@ end
                 local notfoundcnt = 0
                 for d = 1, dcnt do
                 
-                  if snapshots[strip][page][sst][ss].data[d].ctl then
+                  --if snapshots[strip][page][sst][ss].data[d].ctl then
                     if strips[strip][page].controls[snapshots[strip][page][sst][ss].data[d].ctl] == nil or
                        snapshots[strip][page][sst][ss].data[d].c_id ~= strips[strip][page].controls[snapshots[strip][page][sst][ss].data[d].ctl].c_id then
                       --control numbers not match - a control has been deleted
@@ -11102,7 +11104,7 @@ end
                           ss_entry_deleted = true
                         end
                     end
-                  end
+                  --end
                 end
                 
                 if ss_entry_deleted == true then
@@ -11268,6 +11270,8 @@ end
     ssoffset = 0
     
     strips = {}
+    snapshots = {}
+    
     surface_offset = {x = 0, y = 0}
     
     max_cycle = 64
