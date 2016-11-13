@@ -11270,7 +11270,7 @@ end
     ssoffset = 0
     
     strips = {}
-    snapshots = {}
+    snapshots = nil
     
     surface_offset = {x = 0, y = 0}
     
