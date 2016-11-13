@@ -59,7 +59,8 @@
               shadaslider = 28,
               movesnapwindow = 29,
               resizesnapwindow = 30,
-              dragparam_spec = 31
+              dragparam_spec = 31,
+              sliderctl_h = 32
               }
   
   ctlcats = {fxparam = 0,
@@ -573,6 +574,10 @@
                           y = obj.sections[45].y+butt_h+10 + (butt_h/2+4 + 10) * 10,
                           w = obj.sections[45].w-80,
                           h = butt_h/2+8}
+      obj.sections[134] = {x = obj.sections[45].x+obj.sections[45].w-40-butt_h/2+4,
+                          y = obj.sections[45].y+butt_h+10 + (butt_h/2+4 + 10) * 12,
+                          w = butt_h/2+4,
+                          h = butt_h/2+4}                           
 
       --LBL OPTIONS 
       --EDIT
@@ -1002,7 +1007,8 @@
                                                 tracknum = tracks[trackedit_select].tracknum,
                                                 trackguid = tracks[trackedit_select].guid,
                                                 scalemode = 8,
-                                                framemode = 1
+                                                framemode = 1,
+                                                horiz = horiz_select
                                                 }
         if track_select == trackedit_select then
           strips[strip][page].controls[ctlnum].tracknum = nil
@@ -1055,7 +1061,8 @@
                                                 tracknum = last_touch_fx.tracknum,
                                                 trackguid = last_touch_fx.trguid,
                                                 scalemode = 8,
-                                                framemode = 1
+                                                framemode = 1,
+                                                horiz = horiz_select
                                                 }
         if last_touch_fx.tracknum == strips[strip].track.tracknum then
           strips[strip][page].controls[ctlnum].tracknum = nil
@@ -1109,7 +1116,8 @@
                                                 tracknum = tracks[trackedit_select].tracknum,
                                                 trackguid = tracks[trackedit_select].guid,
                                                 scalemode = 8,
-                                                framemode = 1
+                                                framemode = 1,
+                                                horiz = horiz_select
                                                 }
         if track_select == trackedit_select then
           strips[strip][page].controls[ctlnum].tracknum = nil
@@ -1168,7 +1176,8 @@
                                                   tracknum = tracks[trackedit_select].tracknum,
                                                   trackguid = tracks[trackedit_select].guid,
                                                   scalemode = 8,
-                                                  framemode = 1
+                                                  framemode = 1,
+                                                  horiz = horiz_select
                                                   }
           
           if track_select == trackedit_select then
@@ -1226,8 +1235,9 @@
                                                 tracknum = nil,
                                                 trackguid = nil,
                                                 scalemode = 8,
-                                                framemode = 1
-                                                }
+                                                framemode = 1,
+                                                horiz = horiz_select
+                                               }
 
       end                                              
     end  
@@ -2771,6 +2781,7 @@
       GUI_DrawButton(gui, scalemode_preset_table[knob_scalemode_select], obj.sections[131], gui.color.white, gui.color.black, true, 'SCALE PSET')
       GUI_DrawButton(gui, scalemode_dtable[scalemode_select], obj.sections[132], gui.color.white, gui.color.black, true, 'SCALE MOD')
       GUI_DrawButton(gui, framemode_table[framemode_select], obj.sections[133], gui.color.white, gui.color.black, true, 'FRAME MOD')
+      GUI_DrawTick(gui, 'HORIZ SLIDER', obj.sections[134], gui.color.white, horiz_select)
 
       local pmin, pmax = 0, 0
       if min and max then
@@ -4481,6 +4492,14 @@ end
      return (my) / (b.h+400)
     end 
   end
+  function MOUSE_slider_horiz(b,xoff)
+    if mouse.LB then
+      if xoff == nil then xoff = 0 end
+      local mx = mouse.mx - (b.x-200) + xoff
+     return (mx) / (b.w+400)
+    end 
+  end
+
   function MOUSE_sliderRB(b)
     if mouse.RB then
       local my = mouse.my - (b.y-200)
@@ -6657,6 +6676,8 @@ end
     --knob_scalemode_select = nz(strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].scalemode,1)                  
     scalemode_select = nz(strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].scalemode,8)
     framemode_select = nz(strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].framemode,1)
+    horiz_select = nz(strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].horiz,false)
+    
     SetKnobScaleMode()
     cycle_select = Cycle_CopySelectIn(ctl_select[1].ctl)
     local min, max = GetParamMinMax_ctl(ctl_select[1].ctl)
@@ -6856,6 +6877,44 @@ end
       end
     end
   end
+
+
+  function LoadActionIDs()
+    
+    kb_table = {}
+    filename = reaper.GetResourcePath()..'/'..'reaper-kb.ini'
+    file = io.open(filename, "r")
+    content = file:read("*all")
+    for line in io.lines(filename) do table.insert(kb_table, line) end
+    file:close()
+  
+    for i = 1, #kb_table do
+    --DBG(kb_table[i])
+      temp_t = {}
+      for word in string.gmatch(kb_table[i], '.-[%s]') do table.insert(temp_t, word) end
+      local actnm = string.match(kb_table[i], '"(.-)"')
+      DBG('_'..string.sub(temp_t[4],0,-2)..': '..nz(actnm,''))
+    end
+    
+    kb_table = {}
+    filename = reaper.GetResourcePath()..'/'..'reaper-kb.ini'
+    file = io.open(filename, "r")
+    content = file:read("*all")
+    for line in io.lines(filename) do table.insert(kb_table, line) end
+    file:close()
+  
+    for i = 1, #kb_table do
+    --DBG(kb_table[i])
+      temp_t = {}
+      for word in string.gmatch(kb_table[i], '.-[%s]') do table.insert(temp_t, word) end
+      local actnm = string.match(kb_table[i], '"(.-)"')
+      DBG('_'..string.sub(temp_t[4],0,-2)..': '..nz(actnm,''))
+    end
+    
+    
+  end
+
+
       
   function AssActionByName(txt)
   
@@ -7495,12 +7554,17 @@ end
                 
                   if ctltype == 1 then
                     --knob/slider
-                    mouse.context = contexts.sliderctl
+                    if strips[tracks[track_select].strip][page].controls[i].horiz then
+                      mouse.context = contexts.sliderctl_h
+                      mouse.slideoff = ctlxywh.x+ctlxywh.w/2 - mouse.mx
+                    else
+                      mouse.context = contexts.sliderctl
+                      mouse.slideoff = ctlxywh.y+ctlxywh.h/2 - mouse.my
+                    end
                     --knobslider = 'ks'
                     ctlpos = ctlScaleInv(nz(strips[tracks[track_select].strip][page].controls[i].scalemode,8),
                                          strips[tracks[track_select].strip][page].controls[i].val)
                     trackfxparam_select = i
-                    mouse.slideoff = ctlxywh.y+ctlxywh.h/2 - mouse.my
                     oms = mouse.shift
                     
                   elseif ctltype == 2 or ctltype == 3 then
@@ -7707,6 +7771,31 @@ end
               val = ctlpos + ((0.5-val)*2)*0.1
             else
               val = ctlpos + (0.5-val)*2
+            end
+            if val < 0 then val = 0 end
+            if val > 1 then val = 1 end
+            val = ctlScale(strips[tracks[track_select].strip][page].controls[trackfxparam_select].scalemode, val)
+            if val ~= octlval then
+              strips[tracks[track_select].strip][page].controls[trackfxparam_select].val = val
+              SetParam()
+              strips[tracks[track_select].strip][page].controls[trackfxparam_select].dirty = true
+              octlval = val
+              update_ctls = true
+            end
+          end
+        end
+      elseif mouse.context and mouse.context == contexts.sliderctl_h then
+        local val = MOUSE_slider_horiz(ctlxywh,mouse.slideoff)
+        if val ~= nil then
+          if oms ~= mouse.shift then
+            oms = mouse.shift
+            ctlpos = strips[tracks[track_select].strip][page].controls[trackfxparam_select].val
+            mouse.slideoff = ctlxywh.y+ctlxywh.h/2 - mouse.my
+          else
+            if mouse.shift then
+              val = ctlpos - ((0.5-val)*2)*0.1
+            else
+              val = ctlpos - (0.5-val)*2
             end
             if val < 0 then val = 0 end
             if val > 1 then val = 1 end
@@ -8115,6 +8204,14 @@ end
             if MOUSE_click(obj.sections[125]) then
               EditDValOffset()
             end
+
+            if MOUSE_click(obj.sections[134]) then
+              horiz_select = not horiz_select
+              for i = 1, #ctl_select do
+                strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].horiz = horiz_select
+              end
+              update_gfx = true              
+            end            
 
             if MOUSE_click(obj.sections[131]) then
               knob_scalemode_select = knob_scalemode_select + 1
@@ -10121,6 +10218,7 @@ end
                            mem = strips[tracks[track_select].strip][page].controls[c].membtn.mem},
                  scalemode = strips[tracks[track_select].strip][page].controls[c].scalemode,
                  framemode = strips[tracks[track_select].strip][page].controls[c].framemode,
+                 horiz = strips[tracks[track_select].strip][page].controls[c].horiz,
                  c_id = GenID()
                  }
     return tbl
@@ -10435,7 +10533,8 @@ end
                                                 id = deconvnum(GPES(key..'id',true)),
                                                 scalemode = tonumber(nz(GPES(key..'scalemodex',true),8)),
                                                 framemode = tonumber(nz(GPES(key..'framemodex',true),1)),
-                                                poslock = tobool(nz(GPES(key..'poslock',true),false))
+                                                poslock = tobool(nz(GPES(key..'poslock',true),false)),
+                                                horiz = tobool(nz(GPES(key..'horiz',true),false))
                                                }
                     if strips[ss][p].controls[c].maxdp == nil or (strips[ss][p].controls[c].maxdp and strips[ss][p].controls[c].maxdp == '') then
                       strips[ss][p].controls[c].maxdp = -1
@@ -10811,6 +10910,7 @@ end
                 reaper.SetProjExtState(0,SCRIPT,key..'scalemodex',nz(strips[s][p].controls[c].scalemode,8))   
                 reaper.SetProjExtState(0,SCRIPT,key..'framemodex',nz(strips[s][p].controls[c].framemode,1))   
                 reaper.SetProjExtState(0,SCRIPT,key..'poslock',nz(tostring(strips[s][p].controls[c].poslock),false))   
+                reaper.SetProjExtState(0,SCRIPT,key..'horiz',nz(tostring(strips[s][p].controls[c].horiz),false))   
                            
                 reaper.SetProjExtState(0,SCRIPT,key..'id',convnum(strips[s][p].controls[c].id))
 
@@ -11214,6 +11314,7 @@ end
     scalemode_select = 8
     framemode_select = 1
     sstype_select = 1
+    horiz_select = false
     
     plist_w = 140
     oplist_w = 140
@@ -11384,6 +11485,7 @@ end
   Lokasenna_Window_At_Center(gfx1.main_w,gfx1.main_h) 
 --test jsfx plug name in quotes
 --DBG(GetPlugNameFromChunk('JS \"AB Level Matching JSFX [2.5]/AB_LMLT_cntrl\" \"MSTR /B\"\10.000000 0.000000 300.000000 0.000000 - - - - - 0.000000 - - - - - - - - - -14.600000 -11.600000 -7.000000 7.000000 -4.800000 - - - - - -14.500000 -11.800000 -4.100000 10.000000 -4.100000 - - - - - 0.000000 1.000000 0.000000 - 0.000000 0.000000 - - - - 7681.000000 1.000000 - - - - - - - - - - - - - '))
+--LoadActionIDs()
 
   gfx.dock(dockstate)
   run()
