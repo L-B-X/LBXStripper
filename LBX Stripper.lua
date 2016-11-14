@@ -3234,7 +3234,8 @@ end
                     end
                     
                     if strips[tracks[track_select].strip][page].controls[i].cycledata.spread then
-                      val2 = math.floor(((nz(strips[tracks[track_select].strip][page].controls[i].cycledata.pos,0)-1) / (strips[tracks[track_select].strip][page].controls[i].cycledata.statecnt-1)) * (frames-1))
+                      val2 = F_limit(math.floor(((nz(strips[tracks[track_select].strip][page].controls[i].cycledata.pos,0)-1) / 
+                                (strips[tracks[track_select].strip][page].controls[i].cycledata.statecnt-1)) * (frames-1)),0,frames-1)
                     else
                       val2 = F_limit(nz(strips[tracks[track_select].strip][page].controls[i].cycledata.pos,0)-1,0,frames-1)
                     end
@@ -3435,6 +3436,7 @@ end
         
         if not update_gfx and not update_bg and update_ctls then
           --loop through blit area table - blit to backbuffer
+          gfx.a=1
           local ox, oy = 0,0
           if surface_offset.x < 0 then ox=-1 end
           if surface_offset.y < 0 then oy=-1 end
@@ -10689,7 +10691,7 @@ end
   function Cycle_Auto()
   
     trackfxparam_select = ctl_select[1].ctl
-    local v, v2 = 0
+    local v, v2 = 0.0,0.0
 
     local tracknum = strips[tracks[track_select].strip].track.tracknum
     if strips[tracks[track_select].strip][page].controls[trackfxparam_select].tracknum ~= nil then
@@ -10706,7 +10708,7 @@ end
     local ndval
     
     cycle_temp = {}
-    cycle_temp[1] = {val = 0, dispval = dval}
+    cycle_temp[1] = {val = v, dispval = dval}
     
     for v = 0.01, 1, 0.01 do
       
