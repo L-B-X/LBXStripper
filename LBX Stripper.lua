@@ -60,7 +60,8 @@
               movesnapwindow = 29,
               resizesnapwindow = 30,
               dragparam_spec = 31,
-              sliderctl_h = 32
+              sliderctl_h = 32,
+              dragcycle = 33
               }
   
   ctlcats = {fxparam = 0,
@@ -470,7 +471,7 @@
                                 h = bh}
                                 
       --Cycle
-      local cw, ch = 140, 360
+      local cw, ch = 140, 380
       obj.sections[100] = {x = obj.sections[45].x - cw - 10,
                            y = obj.sections[45].y + obj.sections[45].h - ch,
                            w = cw,
@@ -488,7 +489,7 @@
                            h = bh}
 
       obj.sections[103] = {x = obj.sections[100].x+8,
-                           y = obj.sections[102].y+bh+40+butt_h,
+                           y = obj.sections[102].y+bh+60+butt_h,
                            w = obj.sections[100].w-16,
                            h = butt_h*8}
 
@@ -507,6 +508,14 @@
                            h = butt_h}
       obj.sections[107] = {x = obj.sections[102].x,
                            y = obj.sections[102].y+obj.sections[102].h+4,
+                           w = bh,
+                           h = bh}
+      obj.sections[109] = {x = obj.sections[107].x,
+                           y = obj.sections[107].y+obj.sections[107].h+4,
+                           w = bh,
+                           h = bh}
+      obj.sections[108] = {x = obj.sections[107].x,
+                           y = obj.sections[109].y+obj.sections[107].h+4,
                            w = bh,
                            h = bh}
       
@@ -663,12 +672,12 @@
       --Action chooser
       obj.sections[170] = {x = obj.sections[10].x+20,
                            y = obj.sections[10].y+20,
-                           w = obj.sections[10].w-40,
+                           w = math.min(obj.sections[10].w-40,750),
                            h = obj.sections[10].h-40}
-      obj.sections[171] = {x = obj.sections[10].x+30,
-                           y = obj.sections[10].y+30+butt_h,
-                           w = obj.sections[10].w-60,
-                           h = obj.sections[10].h-100-butt_h}
+      obj.sections[171] = {x = obj.sections[170].x+10,
+                           y = obj.sections[170].y+10+butt_h,
+                           w = obj.sections[170].w-20,
+                           h = obj.sections[170].h-60-butt_h}
       obj.sections[172] = {x = obj.sections[171].x,
                            y = obj.sections[171].y+obj.sections[171].h + 15,
                            w = 150,
@@ -2580,6 +2589,8 @@
     GUI_DrawButton(gui, cycle_select.statecnt, obj.sections[102], gui.color.white, gui.color.black, true, 'STATES')
     GUI_DrawButton(gui, 'AUTO', obj.sections[104], gui.color.white, gui.color.black, true)
     GUI_DrawTick(gui, 'POS TO FRAME', obj.sections[107], gui.color.white, nz(cycle_select.mapptof, false))
+    GUI_DrawTick(gui, 'DRAGGABLE', obj.sections[108], gui.color.white, nz(cycle_select.draggable, false))
+    GUI_DrawTick(gui, 'EVEN SPREAD', obj.sections[109], gui.color.white, nz(cycle_select.spread, false))
     GUI_DrawButton(gui, 'SAVE', obj.sections[106], gui.color.white, gui.color.black, true)
 
     local c
@@ -3193,7 +3204,40 @@ end
                       val2 = 0
                     end
                   else
-                    val2 = F_limit(nz(strips[tracks[track_select].strip][page].controls[i].cycledata.pos,0)-1,0,frames-1)
+                  
+                    Disp_ParamV = GetParamDisp(ctlcat, tnum, fxnum, param, dvoff, i)
+                    local p = strips[tracks[track_select].strip][page].controls[i].cycledata.pos
+                    
+                    if strips[tracks[track_select].strip][page].controls[i].cycledata[p] and
+                       Disp_ParamV ~= strips[tracks[track_select].strip][page].controls[i].cycledata[p].dispval then
+                       --DBG(' ')
+                      for p = 1, strips[tracks[track_select].strip][page].controls[i].cycledata.statecnt do
+                        local vc = strips[tracks[track_select].strip][page].controls[i].cycledata[p].val
+                        --local vc1 = vc
+                        if p < strips[tracks[track_select].strip][page].controls[i].cycledata.statecnt then
+                          --vc2 = strips[tracks[track_select].strip][page].controls[i].cycledata[p+1].val
+                          vc = vc + (strips[tracks[track_select].strip][page].controls[i].cycledata[p+1].val - vc)/2
+                        --else
+                          --DBG('yy')
+                          --vc = vc - (vc - strips[tracks[track_select].strip][page].controls[i].cycledata[p-1].val)/2
+                        end
+                        if Disp_ParamV == strips[tracks[track_select].strip][page].controls[i].cycledata[p].dispval or 
+                           strips[tracks[track_select].strip][page].controls[i].val <= vc then
+                        --DBG(vc1..'  '..vc2..'  '..vc..'  '..strips[tracks[track_select].strip][page].controls[i].val..' ***')
+                          strips[tracks[track_select].strip][page].controls[i].cycledata.pos = p
+                          break
+                        --else
+                        --DBG(vc..'  '..strips[tracks[track_select].strip][page].controls[i].val)
+                        
+                        end
+                      end
+                    end
+                    
+                    if strips[tracks[track_select].strip][page].controls[i].cycledata.spread then
+                      val2 = math.floor(((nz(strips[tracks[track_select].strip][page].controls[i].cycledata.pos,0)-1) / (strips[tracks[track_select].strip][page].controls[i].cycledata.statecnt-1)) * (frames-1))
+                    else
+                      val2 = F_limit(nz(strips[tracks[track_select].strip][page].controls[i].cycledata.pos,0)-1,0,frames-1)
+                    end
                     if strips[tracks[track_select].strip][page].controls[i].cycledata and 
                        strips[tracks[track_select].strip][page].controls[i].cycledata[nz(strips[tracks[track_select].strip][page].controls[i].cycledata.pos,0)] then
                       DVOV = nz(strips[tracks[track_select].strip][page].controls[i].cycledata[nz(strips[tracks[track_select].strip][page].controls[i].cycledata.pos,0)].dispval,'')
@@ -3272,10 +3316,21 @@ end
                 end
               end
 
-              if ctltype == 4 and DVOV and DVOV ~= '' and cycle_editmode == false then
-                if strips[tracks[track_select].strip][page].controls[i].cycledata.posdirty == false then 
-                  Disp_ParamV = DVOV
+              if ctltype == 4 and cycle_editmode == false then
+                --DBG(DVOV)
+                if DVOV and DVOV ~= '' then
+                --DBG(strips[tracks[track_select].strip][page].controls[i].cycledata.posdirty)
+                --DBG(tostring(strips[tracks[track_select].strip][page].controls[i].val)..'  '..tostring(tonumber(strips[tracks[track_select].strip][page].controls[i].cycledata[strips[tracks[track_select].strip][page].controls[i].cycledata.pos].val)))
+                  if strips[tracks[track_select].strip][page].controls[i].cycledata.posdirty == false then 
+                  --if tostring(strips[tracks[track_select].strip][page].controls[i].val) ==
+                  --   tostring(strips[tracks[track_select].strip][page].controls[i].cycledata[
+                  --          strips[tracks[track_select].strip][page].controls[i].cycledata.pos].val) then
+                    Disp_ParamV = DVOV
+                  end
+                --else
+                --DBG('sf')
                 end
+                  --DBG(DVOV)
               end
 
               local mid = x+(w/2)
@@ -3323,15 +3378,28 @@ end
               strips[tracks[track_select].strip][page].controls[i].tl1 = text_len1x
               strips[tracks[track_select].strip][page].controls[i].tl2 = text_len2x
               
-              if w > strips[tracks[track_select].strip][page].controls[i].w/2 then
-                if spn and h > 10 then
+              --if w > strips[tracks[track_select].strip][page].controls[i].w/2 then
+                --if spn and h > 10 then
+                if spn then
                   GUI_textC(gui,xywh1, Disp_Name,tc,-4 + tsz)
                 end
-                if spv and h > gh-10 then
+                --if spv and h > gh-10 then
+                if spv then
                   GUI_textC(gui,xywh2, Disp_ParamV,tc,-4 + tsz)          
                 end
+              --end
+
+              if ctltype == 4 and DVOV and DVOV ~= '' and cycle_editmode == false then
+                if strips[tracks[track_select].strip][page].controls[i].cycledata.posdirty == true then 
+                --if tostring(strips[tracks[track_select].strip][page].controls[i].val) ~= 
+                --   tostring(strips[tracks[track_select].strip][page].controls[i].cycledata[
+                --            strips[tracks[track_select].strip][page].controls[i].cycledata.pos].val) then                                  
+                  gfx.a = 0.8
+                  f_Get_SSV(gui.color.red)
+                  gfx.circle(x+4,y+4,2,1,1)              
+                end
               end
-            
+                          
               if reass_param == i then
                 f_Get_SSV(gui.color.red)
                 gfx.a = 0.8
@@ -3737,7 +3805,7 @@ end
   function GUI_draw(obj, gui)
     gfx.mode =4
     
-    if update_gfx or update_surface or update_sidebar or update_topbar or update_ctlopts or update_ctls or update_bg or update_settings or update_snaps or update_msnaps then    
+    if update_gfx or update_surface or update_sidebar or update_topbar or update_ctlopts or update_ctls or update_bg or update_settings or update_snaps or update_msnaps or update_actcho then    
       local p = 0
         
       gfx.dest = 1
@@ -4105,6 +4173,7 @@ end
     update_settings = false
     update_snaps = false
     update_msnaps = false
+    update_actcho = false
     resize_snaps = false
     
   end
@@ -5349,7 +5418,7 @@ end
 
   ------------------------------------------------------------    
 
-  function EditSSName(eb)
+  --[[function EditSSName(eb)
   
     local sizex,sizey = 400,200
     editbox={title = 'Please enter new snapshot name:',
@@ -5363,7 +5432,7 @@ end
     
     EB_Open = eb  
   
-  end
+  end]]
 
   function EditSSName2(txt)
 
@@ -5393,16 +5462,20 @@ end
   
   ------------------------------------------------------------    
   
-  function OpenEB(eb, t)
+  function OpenEB(eb, t, def)
 
     local sizex,sizey = 400,200
+    
+    if def == nil then
+      def = ""
+    end
     
     editbox={title = t,
       x=400, y=100, w=120, h=20, l=4, maxlen=99,
       fgcol=0x000000, fgfcol=0x00FF00, bgcol=0x808080,
       txtcol=0x000000, curscol=0x000000,
       font=1, fontsz=14, caret=0, sel=0, cursstate=0,
-      text="", 
+      text=def, 
       hasfocus=true
     }
     
@@ -5412,7 +5485,7 @@ end
   
   ------------------------------------------------------------    
   
-  function EditValue(eb)
+  --[[function EditValue(eb)
   
     local sizex,sizey = 400,200
     editbox={title = 'Please enter value:',
@@ -5426,7 +5499,7 @@ end
     
     EB_Open = eb  
   
-  end
+  end]]
 
   function EditValue2(txt)
 
@@ -5468,7 +5541,7 @@ end
 
   end
 
-  function EditMinDVal()
+  --[[function EditMinDVal()
   
     local sizex,sizey = 400,200
     editbox={title = 'Please enter a min value:',
@@ -5482,7 +5555,7 @@ end
     
     EB_Open = 4  
   
-  end
+  end]]
 
   function EditMinDVal2(txt)
 
@@ -5496,7 +5569,7 @@ end
     end  
   end
 
-  function EditDValOffset()
+--[[  function EditDValOffset()
   
     local sizex,sizey = 400,200
     editbox={title = 'Please enter a display offset value:',
@@ -5510,7 +5583,7 @@ end
     
     EB_Open = 3  
   
-  end
+  end]]
 
   function EditDValOffset2(txt)
 
@@ -5528,7 +5601,7 @@ end
     end  
   end
 
-  function EditCtlName()
+  --[[function EditCtlName()
   
     if strips and strips[tracks[track_select].strip] then
     
@@ -5545,7 +5618,7 @@ end
       EB_Open = 2  
     end
     
-  end
+  end]]
 
   function EditCtlName2(txt)
 
@@ -5574,7 +5647,8 @@ end
           
         else
       
-          local sizex,sizey = 400,200
+          OpenEB(1,'Please enter a filename for the strip:')
+          --[[local sizex,sizey = 400,200
           editbox={title = 'Please enter a filename for the strip:',
             x=400, y=100, w=120, h=20, l=4, maxlen=40,
             fgcol=0x000000, fgfcol=0x00FF00, bgcol=0x808080,
@@ -5584,7 +5658,7 @@ end
             hasfocus=true
           }
           
-          EB_Open = 1  
+          EB_Open = 1]]  
         end
       else
         OpenMsgBox(1, 'No controls on strip.', 1)
@@ -6546,7 +6620,10 @@ end
   function InsertLabel(x,y)
   
     label_add = {x = x, y = y}
-    EditLabel(6)
+    --EditLabel(6)
+    if strips and strips[tracks[track_select].strip] then
+      OpenEB(6,'Please enter text for label:')
+    end
   
   end
   
@@ -6561,7 +6638,7 @@ end
     
   end
   
-  function EditLabel(eb,txt)
+--[[  function EditLabel(eb,txt)
   
     if strips and strips[tracks[track_select].strip] then
     
@@ -6579,7 +6656,7 @@ end
       EB_Open = eb
     end
     
-  end
+  end]]
   
   function EditLabel2(txt)
   
@@ -6592,7 +6669,7 @@ end
     
   end
 
-  function EditFont()
+ --[[ function EditFont()
   
     if strips and strips[tracks[track_select].strip] then
     
@@ -6610,7 +6687,7 @@ end
       EB_Open = 8
     end
     
-  end
+  end]]
 
   function EditFont2(font)
 
@@ -6746,6 +6823,7 @@ end
     gfx2_select = nil
     gfx3_select = nil
     ss_select = nil
+    CloseActChooser()
     
     if strips and tracks[track_select] and strips[tracks[track_select].strip] then
       strips[tracks[track_select].strip].page = page
@@ -6988,10 +7066,6 @@ end
 
     local temp_t = {}
     for word in string.gmatch(txt, '(.-)[%s]') do table.insert(temp_t, word) end
-    --if #temp_t == 0 then
-    --  temp_t[1] = txt
-   -- end
-    --DBG(#temp_t)
     for i = 1, #action_tbl do
     
       local cd = string.upper(action_tbl[i].command_desc)
@@ -6999,7 +7073,6 @@ end
       local match = true
       for w = 1, #temp_t do
         local m = string.match(cd,temp_t[w])
-        --DBG(m)
         if m == nil then
           match = false
           break
@@ -7007,7 +7080,6 @@ end
       end
     
       if match then
-        --DBG(action_tbl[i])
         table.insert(tbl, action_tbl[i])
       end
     end
@@ -7018,13 +7090,6 @@ end
   function LoadActionIDs()
     
     local actcnt = 0
-    
-    --[[for i = 1, 55000 do
-      local actnm = reaper.ReverseNamedCommandLookup(i)
-      if actnm then
-        DBG(actnm)
-      end
-    end]]
     
     local action_tbl = {}
     
@@ -7139,13 +7204,6 @@ end
       
   function AssActionByName(txt)
   
-    --[[local actid, actnm = Get_ID_By_Name(txt)
-    if actid then
-      strips[tracks[track_select].strip][page].controls[trackfxparam_select].param_info.paramname = actnm
-      strips[tracks[track_select].strip][page].controls[trackfxparam_select].param_info.paramidx = actid
-    else
-      OpenMsgBox(1,'Action not found')
-    end ]] 
   end
 
   function AssActionByID(txt)
@@ -7161,7 +7219,62 @@ end
     for k, v in pairs(t) do u[k] = v end
     return setmetatable(u, getmetatable(t))
   end
+  
+  function cycledata_slowsort(tbl)
+  
+    local dtbl = {}
+    if tbl.statecnt > 0 then  
+      for st = 1, tbl.statecnt do
+        if st == 1 then
+          --insert 
+          table.insert(dtbl, tbl[st])
+        else
+          local inserted = false
+          local dcnt = #dtbl
+          for dt = 1, dcnt do
+            if dtbl[dt].val then
+              if tbl[st].val > dtbl[dt].val then
+                table.insert(dtbl, dt, tbl[st])
+                inserted = true
+                break
+              end
+            else
+              break
+            end
+          end 
+          if inserted == false then
+            table.insert(dtbl, tbl[st])
+          end
+        end
+      end    
+    end
+    
+    local otbl = {statecnt = tbl.statecnt,
+                  selected = tbl.selected,
+                  mapptof = tbl.mapptof,
+                  draggable = tbl.draggable,
+                  spread = tbl.spread,
+                  pos = 1,
+                  {}}
+    local dcnt = #dtbl
+    for i = 1, dcnt do
+      otbl[i] = {val = dtbl[dcnt-(i-1)].val, dispval = dtbl[dcnt-(i-1)].dispval}
+    end
+                  
+    return otbl    
+    
+  end
       
+  function CloseActChooser()
+  
+    show_actionchooser = false
+    action_tbl = {}
+    action_tblF = {}
+    al_select = 0
+    update_actcho = true
+    
+  end
+  
   ------------------------------------------------------------    
 
   function run()  
@@ -7279,6 +7392,7 @@ end
               ctl_select = nil
               gfx2_select = nil
               gfx3_select = nil
+              CloseActChooser()
               ss_select = nil
               --if settings_autocentrectls then
               --  AutoCentreCtls()
@@ -7334,9 +7448,9 @@ end
                         --DBG(tostring(strips[tracks[track_select].strip][page].controls[i].val)..'  '..tostring(v))
                           strips[tracks[track_select].strip][page].controls[i].val = v
                           strips[tracks[track_select].strip][page].controls[i].dirty = true
-                          if strips[tracks[track_select].strip][page].controls[i].param_info.paramname == 'Bypass' then
-                            SetCtlEnabled(strips[tracks[track_select].strip][page].controls[i].fxnum) 
-                          end
+                          --if strips[tracks[track_select].strip][page].controls[i].param_info.paramname == 'Bypass' then
+                          --  SetCtlEnabled(strips[tracks[track_select].strip][page].controls[i].fxnum) 
+                          --end
                           strips[tracks[track_select].strip][page].controls[i].cycledata.posdirty = true 
                           update_ctls = true
                         end
@@ -7607,6 +7721,7 @@ end
         gfx3_select = nil
         gfx2_select = nil
         ctl_select = nil
+        CloseActChooser()
         if mode == 0 then
           mode = 1
           PopulateTrackFX()
@@ -7744,7 +7859,8 @@ end
             res = OpenMenu(mstr)
             if res ~= 0 then
               if res == 1 then
-                EditSSName(11)
+                --EditSSName(11)
+                OpenEB(11,'Please enter new snapshot name:')
               elseif res == 2 then
                 DeleteSS()
                 update_snaps = true
@@ -7776,14 +7892,35 @@ end
                 
                   if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.15 then
                     --double-click
-                    if ctltype == 1 then
+                    --[[if ctltype == 1 then
                       trackfxparam_select = i
-                      EditValue(5)
+                      --EditValue(5)
+                      OpenEB(5,'Please enter value:')
                       break
+                    end]]
+                    local ctltype = strips[tracks[track_select].strip][page].controls[i].ctltype
+                    if ctltype == 1 then                  
+                      strips[tracks[track_select].strip][page].controls[i].val = strips[tracks[track_select].strip][page].controls[i].defval
+                      SetParam()
+                      strips[tracks[track_select].strip][page].controls[i].dirty = true
+                      update_ctls = true
+                    elseif ctltype == 4 then                  
+                      strips[tracks[track_select].strip][page].controls[i].cycledata.pos = 1
+                      if strips[tracks[track_select].strip][page].controls[i].cycledata.pos <=     
+                                strips[tracks[track_select].strip][page].controls[i].cycledata.statecnt then
+                        trackfxparam_select = i
+                        strips[tracks[track_select].strip][page].controls[i].val = 
+                            strips[tracks[track_select].strip][page].controls[i].cycledata[strips[tracks[track_select].strip][page].controls[i].cycledata.pos].val
+                        SetParam()
+                        strips[tracks[track_select].strip][page].controls[i].dirty = true
+                      end                  
+                      update_ctls = true
+                    --elseif ctltype == 6 then
+                    --  strips[tracks[track_select].strip][page].controls[i].defval = GetParamValue_Ctl(i)                                    
                     end
-                  end
-                
-                  if ctltype == 1 then
+  
+                    noscroll = true
+                  elseif ctltype == 1 then
                     --knob/slider
                     if strips[tracks[track_select].strip][page].controls[i].horiz then
                       mouse.context = contexts.sliderctl_h
@@ -7815,26 +7952,41 @@ end
                     update_ctls = true
                   elseif ctltype == 4 then
                     --cycle
-                    if strips[tracks[track_select].strip][page].controls[i].cycledata.pos == nil then
-                      strips[tracks[track_select].strip][page].controls[i].cycledata.pos = 1
-                    else
-                      strips[tracks[track_select].strip][page].controls[i].cycledata.pos = 
-                                  strips[tracks[track_select].strip][page].controls[i].cycledata.pos +1
-                      if strips[tracks[track_select].strip][page].controls[i].cycledata.pos > 
-                              strips[tracks[track_select].strip][page].controls[i].cycledata.statecnt 
-                         or strips[tracks[track_select].strip][page].controls[i].cycledata.pos < 1 then
-                        strips[tracks[track_select].strip][page].controls[i].cycledata.pos = 1
+                    if strips[tracks[track_select].strip][page].controls[i].cycledata.draggable then
+                      if strips[tracks[track_select].strip][page].controls[i].horiz then
+                        mouse.context = contexts.dragcycle
+                        mouse.slideoff = ctlxywh.x+ctlxywh.w/2 - mouse.mx
+                      else
+                        mouse.context = contexts.dragcycle
+                        mouse.slideoff = ctlxywh.y+ctlxywh.h/2 - mouse.my
                       end
-                    end
-                    if strips[tracks[track_select].strip][page].controls[i].cycledata.pos <=     
-                              strips[tracks[track_select].strip][page].controls[i].cycledata.statecnt then
+                      ctlpos = normalize(0, strips[tracks[track_select].strip][page].controls[i].cycledata.statecnt,
+                                         strips[tracks[track_select].strip][page].controls[i].cycledata.pos)
                       trackfxparam_select = i
-                      strips[tracks[track_select].strip][page].controls[i].val = 
-                          strips[tracks[track_select].strip][page].controls[i].cycledata[strips[tracks[track_select].strip][page].controls[i].cycledata.pos].val
-                      SetParam()
-                      strips[tracks[track_select].strip][page].controls[i].dirty = true
                       strips[tracks[track_select].strip][page].controls[i].cycledata.posdirty = false
-                      update_ctls = true
+                      oms = mouse.shift
+                    else
+                      if strips[tracks[track_select].strip][page].controls[i].cycledata.pos == nil then
+                        strips[tracks[track_select].strip][page].controls[i].cycledata.pos = 1
+                      else
+                        strips[tracks[track_select].strip][page].controls[i].cycledata.pos = 
+                                    strips[tracks[track_select].strip][page].controls[i].cycledata.pos +1
+                        if strips[tracks[track_select].strip][page].controls[i].cycledata.pos > 
+                                strips[tracks[track_select].strip][page].controls[i].cycledata.statecnt 
+                           or strips[tracks[track_select].strip][page].controls[i].cycledata.pos < 1 then
+                          strips[tracks[track_select].strip][page].controls[i].cycledata.pos = 1
+                        end
+                      end
+                      if strips[tracks[track_select].strip][page].controls[i].cycledata.pos <=     
+                                strips[tracks[track_select].strip][page].controls[i].cycledata.statecnt then
+                        trackfxparam_select = i
+                        strips[tracks[track_select].strip][page].controls[i].val = 
+                            strips[tracks[track_select].strip][page].controls[i].cycledata[strips[tracks[track_select].strip][page].controls[i].cycledata.pos].val
+                        SetParam()
+                        strips[tracks[track_select].strip][page].controls[i].dirty = true
+                        strips[tracks[track_select].strip][page].controls[i].cycledata.posdirty = false
+                        update_ctls = true
+                      end
                     end
                     noscroll = true
                   elseif ctltype == 6 then
@@ -7878,8 +8030,8 @@ end
                       SetParam2(true)
                       reaper.Main_OnCommand(41143,0)
                     elseif res == 3 then
-                      EditValue(5)
-                    
+                      --EditValue(5)
+                      OpenEB(5,'Please enter value:')
                     elseif res == 4 then
                       local track
                       if strips[tracks[track_select].strip][page].controls[i].tracknum == nil then
@@ -7907,26 +8059,13 @@ end
                   --default val
                   trackfxparam_select = i
                   local ctltype = strips[tracks[track_select].strip][page].controls[i].ctltype
-                  if ctltype == 1 then                  
-                    strips[tracks[track_select].strip][page].controls[i].val = strips[tracks[track_select].strip][page].controls[i].defval
-                    SetParam()
-                    strips[tracks[track_select].strip][page].controls[i].dirty = true
-                    update_ctls = true
-                  elseif ctltype == 4 then                  
-                    strips[tracks[track_select].strip][page].controls[i].cycledata.pos = 1
-                    if strips[tracks[track_select].strip][page].controls[i].cycledata.pos <=     
-                              strips[tracks[track_select].strip][page].controls[i].cycledata.statecnt then
-                      trackfxparam_select = i
-                      strips[tracks[track_select].strip][page].controls[i].val = 
-                          strips[tracks[track_select].strip][page].controls[i].cycledata[strips[tracks[track_select].strip][page].controls[i].cycledata.pos].val
-                      SetParam()
-                      strips[tracks[track_select].strip][page].controls[i].dirty = true
-                    end                  
-                    update_ctls = true
+                  if ctltype == 1 then
+                    trackfxparam_select = i
+                    OpenEB(5,'Please enter value:')
+                    break
                   elseif ctltype == 6 then
                     strips[tracks[track_select].strip][page].controls[i].defval = GetParamValue_Ctl(i)                                    
                   end
-
                   noscroll = true
                   break
                 
@@ -8033,6 +8172,34 @@ end
             val = ctlScale(strips[tracks[track_select].strip][page].controls[trackfxparam_select].scalemode, val)
             if val ~= octlval then
               strips[tracks[track_select].strip][page].controls[trackfxparam_select].val = val
+              SetParam()
+              strips[tracks[track_select].strip][page].controls[trackfxparam_select].dirty = true
+              octlval = val
+              update_ctls = true
+            end
+          end
+        end
+      elseif mouse.context and mouse.context == contexts.dragcycle then
+        local val = MOUSE_slider(ctlxywh,mouse.slideoff)
+        if val ~= nil then
+          if oms ~= mouse.shift then
+            oms = mouse.shift
+            ctlpos = normalize(0, strips[tracks[track_select].strip][page].controls[i].cycledata.statecnt,
+                               strips[tracks[track_select].strip][page].controls[i].cycledata.pos)
+            mouse.slideoff = ctlxywh.y+ctlxywh.h/2 - mouse.my
+          else
+            if mouse.shift then
+              val = ctlpos + ((0.5-val)*2)*0.1
+            else
+              val = ctlpos + (0.5-val)*2
+            end
+            if val < 0 then val = 0 end
+            if val > 1 then val = 1 end
+            if val ~= octlval then
+              local pos = F_limit(math.floor(val*strips[tracks[track_select].strip][page].controls[trackfxparam_select].cycledata.statecnt),1,
+                                  strips[tracks[track_select].strip][page].controls[trackfxparam_select].cycledata.statecnt)
+              strips[tracks[track_select].strip][page].controls[trackfxparam_select].cycledata.pos = pos
+              strips[tracks[track_select].strip][page].controls[trackfxparam_select].val = strips[tracks[track_select].strip][page].controls[trackfxparam_select].cycledata[pos].val
               SetParam()
               strips[tracks[track_select].strip][page].controls[trackfxparam_select].dirty = true
               octlval = val
@@ -8150,19 +8317,27 @@ end
           if gfx.mouse_wheel ~= 0 then
             local v = (gfx.mouse_wheel/120)*3
             if MOUSE_over(obj.sections[171]) then
-                al_offset = F_limit(al_offset - v, 0, #action_tblF)
-                update_gfx = true
+                al_offset = F_limit(al_offset - v, 0, #action_tblF-1)
+                update_actcho = true
                 gfx.mouse_wheel = 0
             end
           end
           
           if mouse.context == nil and MOUSE_click(obj.sections[171]) then
             local i = math.floor((mouse.my-obj.sections[171].y)/butt_h) +1
-          
-            if action_tblF[i + al_offset] then
+            if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.15 then
+              --double-click
+              if al_select and action_tblF[al_select] then
+                strips[tracks[track_select].strip][page].controls[trackfxparam_select].param_info.paramname = action_tblF[al_select].command_desc
+                strips[tracks[track_select].strip][page].controls[trackfxparam_select].param_info.paramidx = action_tblF[al_select].command_id
+                CloseActChooser()
+              end
+              
+            elseif action_tblF[i + al_offset] then
               al_select = i + al_offset
             end
-          
+            update_actcho = true
+            
           elseif mouse.context == nil and MOUSE_click(obj.sections[172]) then
           
             OpenEB(14,'Please enter action command filter:')
@@ -8171,7 +8346,8 @@ end
           
             action_tblF = table.copy(action_tbl)
             al_offset = 0
-            update_gfx = true
+            al_select = 0
+            update_actcho = true
           
           elseif mouse.context == nil and MOUSE_click(obj.sections[174]) then
           
@@ -8180,18 +8356,17 @@ end
             if al_select and action_tblF[al_select] then
               strips[tracks[track_select].strip][page].controls[trackfxparam_select].param_info.paramname = action_tblF[al_select].command_desc
               strips[tracks[track_select].strip][page].controls[trackfxparam_select].param_info.paramidx = action_tblF[al_select].command_id
-              show_actionchooser = false
-              action_tbl = {}
-              action_tblF = {}
-              update_gfx = true
+              CloseActChooser()
             end
                     
           elseif mouse.context == nil and MOUSE_click(obj.sections[175]) then
 
-            show_actionchooser = false
+            CloseActChooser()
+            --[[show_actionchooser = false
             action_tbl = {}
             action_tblF = {}
-            update_gfx = true
+            al_select = 0
+            update_actcho = true]]
           
           end
 
@@ -8320,8 +8495,65 @@ end
             end          
           
           end
-            
-          if ctl_select ~= nil and (MOUSE_click(obj.sections[45]) or MOUSE_click_RB(obj.sections[45])) then
+          
+          local char=gfx.getchar()
+          if ctl_select ~= nil and char ~= 0 then
+            --DBG(string.format("%x",char))
+            if char == 0x6C656674 then -- left arrow
+              for i = 1,#ctl_select do
+                if strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].poslock == false then
+                  local scale = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].scale
+                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].x = 
+                                strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].x - 1
+                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].xsc = 
+                                                                      strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].x
+                                                                       + math.floor(strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].w/2
+                                                                       - (strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].w*scale)/2)
+                end
+              end
+              update_gfx = true
+            elseif char == 0x72676874 then -- right arrow
+              for i = 1,#ctl_select do
+                if strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].poslock == false then
+                  local scale = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].scale
+                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].x = 
+                                strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].x + 1
+                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].xsc = 
+                                                                      strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].x
+                                                                       + math.floor(strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].w/2
+                                                                       - (strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].w*scale)/2)
+                end
+              end
+              update_gfx = true
+            elseif char == 0x7570 then -- up arrow
+              for i = 1,#ctl_select do
+                if strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].poslock == false then
+                  local scale = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].scale
+                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].y = 
+                                strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].y - 1
+                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ysc = 
+                                                                      strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].y
+                                                                       + math.floor(strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctl_info.cellh/2
+                                                                       - (strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctl_info.cellh*scale)/2)
+                end
+              end
+              update_gfx = true
+            elseif char == 0x646F776E then -- down arrow
+              for i = 1,#ctl_select do
+                if strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].poslock == false then
+                  local scale = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].scale
+                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].y = 
+                                strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].y + 1
+                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ysc = 
+                                                                      strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].y
+                                                                       + math.floor(strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctl_info.cellh/2
+                                                                       - (strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctl_info.cellh*scale)/2)
+                end
+              end
+              update_gfx = true
+            end
+                        
+          elseif ctl_select ~= nil and (MOUSE_click(obj.sections[45]) or MOUSE_click_RB(obj.sections[45])) then
             
             --CONTROL OPTIONS
             
@@ -8427,8 +8659,11 @@ end
               
               if MOUSE_click(obj.sections[59]) then
                 if ctl_select and #ctl_select > 0 then
-                  EditCtlName()
-                  update_gfx = true
+                  --EditCtlName()
+                  if strips and strips[tracks[track_select].strip] then
+                    OpenEB(2,'Please enter a name for the selected controls:',strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].param_info.paramname)
+                    update_gfx = true
+                  end
                 end
               end
               
@@ -8484,7 +8719,8 @@ end
               end
               
               if MOUSE_click(obj.sections[125]) then
-                EditDValOffset()
+                --EditDValOffset()
+                OpenEB(3,'Please enter a display offset value:',strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].dvaloffset)
               end
   
               if MOUSE_click(obj.sections[134]) then
@@ -8624,7 +8860,8 @@ end
                 gfx.x, gfx.y = mouse.mx, mouse.my
                 local res = OpenMenu(mstr)
                 if res == 1 then
-                  txt = EditValue(10)
+                  --txt = EditValue(10)
+                  OpenEB(10,'Please enter value:')
                 end
               end            
             end          
@@ -8661,6 +8898,12 @@ end
   
             if MOUSE_click(obj.sections[107]) then
               cycle_select.mapptof = not cycle_select.mapptof
+              update_gfx = true
+            elseif MOUSE_click(obj.sections[108]) then
+              cycle_select.draggable = not cycle_select.draggable
+              update_gfx = true
+            elseif MOUSE_click(obj.sections[109]) then
+              cycle_select.spread = not cycle_select.spread
               update_gfx = true
             end          
           
@@ -9632,17 +9875,53 @@ end
         end
       
         local clicklblopts = false
-        if gfx2_select ~= nil and show_lbloptions and (MOUSE_click(obj.sections[49]) or MOUSE_click_RB(obj.sections[49])) then
+        
+        local char=gfx.getchar()
+        if gfx2_select ~= nil and char ~= 0 then
+          --DBG(string.format("%x",char))
+          if char == 0x6C656674 then -- left arrow
+            if strips[tracks[track_select].strip][page].graphics[gfx2_select].poslock == false then
+              strips[tracks[track_select].strip][page].graphics[gfx2_select].x = 
+                            strips[tracks[track_select].strip][page].graphics[gfx2_select].x - 1
+            end
+            update_gfx = true
+          elseif char == 0x72676874 then -- right arrow
+            if strips[tracks[track_select].strip][page].graphics[gfx2_select].poslock == false then
+              strips[tracks[track_select].strip][page].graphics[gfx2_select].x = 
+                            strips[tracks[track_select].strip][page].graphics[gfx2_select].x + 1
+            end
+            update_gfx = true
+          elseif char == 0x7570 then -- up arrow
+            if strips[tracks[track_select].strip][page].graphics[gfx2_select].poslock == false then
+              strips[tracks[track_select].strip][page].graphics[gfx2_select].y = 
+                            strips[tracks[track_select].strip][page].graphics[gfx2_select].y - 1
+            end
+            update_gfx = true
+          elseif char == 0x646F776E then -- down arrow
+            if strips[tracks[track_select].strip][page].graphics[gfx2_select].poslock == false then
+              strips[tracks[track_select].strip][page].graphics[gfx2_select].y = 
+                            strips[tracks[track_select].strip][page].graphics[gfx2_select].y + 1
+            end
+            update_gfx = true
+          end
+        
+        elseif gfx2_select ~= nil and show_lbloptions and (MOUSE_click(obj.sections[49]) or MOUSE_click_RB(obj.sections[49])) then
           
           -- LBL OPTIONS
           clicklblopts = true
         
           if MOUSE_click(obj.sections[140]) then
-            EditLabel(7,gfx_text_select)
+            --EditLabel(7,gfx_text_select)
+            if strips and strips[tracks[track_select].strip] then
+              OpenEB(7,'Please enter text for label:',gfx_text_select)
+            end
           end          
 
           if MOUSE_click(obj.sections[147]) then
-            EditFont()
+            --EditFont()
+            if strips and strips[tracks[track_select].strip] then
+              OpenEB(8,'Please enter font name:')
+            end
           end          
         
           if MOUSE_click(obj.sections[142]) then
@@ -10099,13 +10378,14 @@ end
           ctl_select = nil
           gfx2_select = nil
           gfx3_select = nil
+          CloseActChooser()
           submode = submode + 1
           if submode+1 > #submode_table then
             submode = 0
           end
           update_gfx = true
         elseif submode == 0 and mouse.mx > obj.sections[13].x + obj.sections[13].w - 30 then
-         
+          CloseActChooser()
           fxmode = (fxmode + 1) % 2
           update_gfx = true
          
@@ -10116,6 +10396,7 @@ end
           ctl_select = nil
           gfx2_select = nil
           gfx3_select = nil
+          CloseActChooser()
           submode = submode - 1
           if submode < 0 then
             submode = #submode_table-1
@@ -10135,7 +10416,7 @@ end
     if mouse.context == nil then
       if ((submode == 0 and ctl_select ~= nil) and (MOUSE_click(obj.sections[45]) or (MOUSE_click(obj.sections[100]) and show_cycleoptions))) or 
          ((submode == 1 and gfx2_select ~= nil) and (MOUSE_click(obj.sections[49]) and show_lbloptions)) then
-      elseif mouse.mx > obj.sections[10].x then
+      elseif mouse.mx > obj.sections[10].x and show_actionchooser == false then
       
         if MOUSE_click(obj.sections[10]) then
           if noscroll == false then
@@ -10149,6 +10430,7 @@ end
           show_cycleoptions = false
           gfx2_select = nil
           gfx3_select = nil
+          --CloseActChooser()
           update_gfx = true
         end
 
@@ -10349,6 +10631,8 @@ end
       local co = {statecnt = cd.statecnt,
                   selected = cd.selected,
                   mapptof = cd.mapptof,
+                  draggable = cd.draggable,
+                  spread = cd.spread,
                   val = 0,
                   {}}
       for i = 1, max_cycle do
@@ -10358,7 +10642,7 @@ end
       end
       return co
     else
-      return {statecnt = 0,mapptof = false,val = 0,nil}
+      return {statecnt = 0,mapptof = false,draggable = false,spread = false,val = 0,nil}
     end    
   end
   
@@ -10370,15 +10654,18 @@ end
       local co = {statecnt = cd.statecnt,
                   selected = cd.selected,
                   mapptof = cd.mapptof,
+                  draggable = cd.draggable,
+                  spread = cd.spread,
                   {}}
       for i = 1, max_cycle do
         if cd[i] then
-          co[i] = {val = cd[i].val, dispval = cd[i].dispval}
+          co[i] = {val = tonumber(cd[i].val), dispval = cd[i].dispval}
         end
       end
+      co = cycledata_slowsort(cd)
       return co
     else
-      return {statecnt = 0,mapptof = false,pos = 1,{}}
+      return {statecnt = 0,mapptof = false,draggable = false,spread = false,pos = 1,{}}
     end    
   end
   
@@ -10427,7 +10714,8 @@ end
       ndval = GetParamDisp(cc, tracknum, fxnum, param, dvoff,trackfxparam_select)
       if ndval ~= dval then
         dval = ndval
-        cycle_temp[#cycle_temp+1] = {val = v, dispval = dval}
+        local v2 = GetParamValue(cc, tracknum, fxnum, param, trackfxparam_select)
+        cycle_temp[#cycle_temp+1] = {val = v2, dispval = dval}
         stcnt = stcnt + 1
       end
     
@@ -10845,6 +11133,8 @@ end
                     
                     strips[ss][p].controls[c].cycledata.statecnt = tonumber(nz(GPES(key..'cycledata_statecnt',true),0))
                     strips[ss][p].controls[c].cycledata.mapptof = tobool(nz(GPES(key..'cycledata_mapptof',true),false))
+                    strips[ss][p].controls[c].cycledata.draggable = tobool(nz(GPES(key..'cycledata_draggable',true),false))
+                    strips[ss][p].controls[c].cycledata.spread = tobool(nz(GPES(key..'cycledata_spread',true),false))
                     strips[ss][p].controls[c].cycledata.pos = tonumber(nz(GPES(key..'cycledata_pos',true),1))
                     strips[ss][p].controls[c].cycledata.posdirty = tobool(nz(GPES(key..'cycledata_posdirty',true),false))
                     strips[ss][p].controls[c].cycledata.val = 0
@@ -11212,6 +11502,8 @@ end
                 if strips[s][p].controls[c].cycledata and strips[s][p].controls[c].cycledata.statecnt then
                   reaper.SetProjExtState(0,SCRIPT,key..'cycledata_statecnt',nz(strips[s][p].controls[c].cycledata.statecnt,0))
                   reaper.SetProjExtState(0,SCRIPT,key..'cycledata_mapptof',tostring(nz(strips[s][p].controls[c].cycledata.mapptof,false)))
+                  reaper.SetProjExtState(0,SCRIPT,key..'cycledata_draggable',tostring(nz(strips[s][p].controls[c].cycledata.draggable,false)))
+                  reaper.SetProjExtState(0,SCRIPT,key..'cycledata_spread',tostring(nz(strips[s][p].controls[c].cycledata.spread,false)))
                   reaper.SetProjExtState(0,SCRIPT,key..'cycledata_pos',tostring(nz(strips[s][p].controls[c].cycledata.pos,1)))
                   reaper.SetProjExtState(0,SCRIPT,key..'cycledata_posdirty',tostring(nz(strips[s][p].controls[c].cycledata.posdirty,false)))
                   if nz(strips[s][p].controls[c].cycledata.statecnt,0) > 0 then
@@ -11587,7 +11879,7 @@ end
     strip_select = 0
     stripfol_select = 0
     maxdp_select = -1
-    cycle_select = {statecnt = 0,val = 0,mapptof = false,nil}
+    cycle_select = {statecnt = 0,val = 0,mapptof = false,draggable = false,spread = false,nil}
     minov_select = nil
     maxov_select = nil
     dvaloff_select = 0
@@ -11662,6 +11954,7 @@ end
     update_sidebar = true
     update_topbar = true
     update_ctlopts = true
+    update_actcho = false
     force_gfx_update = true
     
     mouse = {}
