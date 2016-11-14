@@ -8176,14 +8176,16 @@ end
           elseif mouse.context == nil and MOUSE_click(obj.sections[174]) then
           
             --actcommid_select = action_tblF[al_select].command_id
-            DBG(action_tblF[al_select].command_id)
-            strips[tracks[track_select].strip][page].controls[trackfxparam_select].param_info.paramname = action_tblF[al_select].command_desc
-            strips[tracks[track_select].strip][page].controls[trackfxparam_select].param_info.paramidx = action_tblF[al_select].command_id
-            show_actionchooser = false
-            action_tbl = {}
-            action_tblF = {}
-            update_gfx = true
-          
+           -- DBG(action_tblF[al_select].command_id)
+            if al_select and action_tblF[al_select] then
+              strips[tracks[track_select].strip][page].controls[trackfxparam_select].param_info.paramname = action_tblF[al_select].command_desc
+              strips[tracks[track_select].strip][page].controls[trackfxparam_select].param_info.paramidx = action_tblF[al_select].command_id
+              show_actionchooser = false
+              action_tbl = {}
+              action_tblF = {}
+              update_gfx = true
+            end
+                    
           elseif mouse.context == nil and MOUSE_click(obj.sections[175]) then
 
             show_actionchooser = false
