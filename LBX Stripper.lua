@@ -1036,7 +1036,7 @@
                                                                     trackfx[trackfx_select].fxnum,
                                                                     trackfxparam_select, nil),
                                                 maxdp = maxdp_select,
-                                                cycledata = {statecnt = 0, mapptof = false,{}},
+                                                cycledata = {statecnt = 0,val = 0,mapptof = false,draggable = false,spread = false, {}},
                                                 membtn = {state = false,
                                                           mem = nil},
                                                 id = nil,
@@ -1090,7 +1090,7 @@
                                                                     last_touch_fx.fxnum,
                                                                     last_touch_fx.paramnum, nil),
                                                 maxdp = maxdp_select,
-                                                cycledata = {statecnt = 0, mapptof = false,{}},
+                                                cycledata = {statecnt = 0,val = 0,mapptof = false,draggable = false,spread = false, {}},
                                                 membtn = {state = false,
                                                           mem = nil},
                                                 id = nil,
@@ -1145,7 +1145,7 @@
                                                                     nil,
                                                                     trctl_select, nil),
                                                 maxdp = maxdp_select,
-                                                cycledata = {statecnt = 0, mapptof = false,{}},
+                                                cycledata = {statecnt = 0,val = 0,mapptof = false,draggable = false,spread = false, {}},
                                                 membtn = {state = false,
                                                           mem = nil},
                                                 id = nil,
@@ -1205,7 +1205,7 @@
                                                   val = 0,
                                                   defval = 0,
                                                   maxdp = maxdp_select,
-                                                  cycledata = {statecnt = 0, mapptof = false,{}},
+                                                  cycledata = {statecnt = 0,val = 0,mapptof = false,draggable = false,spread = false, {}},
                                                   membtn = {state = false,
                                                             mem = nil},
                                                   id = nil,
@@ -1264,7 +1264,7 @@
                                                 val = 0,
                                                 defval = 0,
                                                 maxdp = maxdp_select,
-                                                cycledata = {statecnt = 0, mapptof = false,{}},
+                                                cycledata = {statecnt = 0,val = 0,mapptof = false,draggable = false,spread = false, {}},
                                                 membtn = {state = false,
                                                           mem = nil},
                                                 id = nil,
@@ -3209,26 +3209,16 @@ end
                     local p = strips[tracks[track_select].strip][page].controls[i].cycledata.pos
                     
                     if strips[tracks[track_select].strip][page].controls[i].cycledata[p] and
-                       Disp_ParamV ~= strips[tracks[track_select].strip][page].controls[i].cycledata[p].dispval then
-                       --DBG(' ')
+                       Disp_ParamV ~= strips[tracks[track_select].strip][page].controls[i].cycledata[p].dv then
                       for p = 1, strips[tracks[track_select].strip][page].controls[i].cycledata.statecnt do
                         local vc = strips[tracks[track_select].strip][page].controls[i].cycledata[p].val
-                        --local vc1 = vc
                         if p < strips[tracks[track_select].strip][page].controls[i].cycledata.statecnt then
-                          --vc2 = strips[tracks[track_select].strip][page].controls[i].cycledata[p+1].val
                           vc = vc + (strips[tracks[track_select].strip][page].controls[i].cycledata[p+1].val - vc)/2
-                        --else
-                          --DBG('yy')
-                          --vc = vc - (vc - strips[tracks[track_select].strip][page].controls[i].cycledata[p-1].val)/2
                         end
-                        if Disp_ParamV == strips[tracks[track_select].strip][page].controls[i].cycledata[p].dispval or 
+                        if Disp_ParamV == strips[tracks[track_select].strip][page].controls[i].cycledata[p].dv or 
                            strips[tracks[track_select].strip][page].controls[i].val <= vc then
-                        --DBG(vc1..'  '..vc2..'  '..vc..'  '..strips[tracks[track_select].strip][page].controls[i].val..' ***')
                           strips[tracks[track_select].strip][page].controls[i].cycledata.pos = p
                           break
-                        --else
-                        --DBG(vc..'  '..strips[tracks[track_select].strip][page].controls[i].val)
-                        
                         end
                       end
                     end
@@ -5907,8 +5897,18 @@ end
       if strips[strip][page].controls[cc].ctlcat == nil then strips[strip][page].controls[cc].ctlcat = ctlcats.fxparam end
       if strips[strip][page].controls[cc].maxdp == nil then strips[strip][page].controls[cc].maxdp = -1 end
       if strips[strip][page].controls[cc].cycledata == nil then
-        strips[strip][page].controls[cc].cycledata = {statecnt = 0, {}}
+        strips[strip][page].controls[cc].cycledata = {statecnt = 0,val = 0,mapptof = false,draggable = false,spread = false, {}}
       end
+      if strips[strip][page].controls[cc].cycledata.mapptof == nil then strips[strip][page].controls[cc].cycledata.mapptof = false end      
+      if strips[strip][page].controls[cc].cycledata.draggable == nil then strips[strip][page].controls[cc].cycledata.draggable = false end
+      if strips[strip][page].controls[cc].cycledata.spread == nil then strips[strip][page].controls[cc].cycledata.spread = false end
+      
+      for k = 1, #strips[strip][page].controls[cc].cycledata do
+        if strips[strip][page].controls[cc].cycledata[k].dv == nil then
+          strips[strip][page].controls[cc].cycledata[k].dv = strips[strip][page].controls[cc].cycledata[k].dispval
+        end
+      end
+       
       if strips[strip][page].controls[cc].membtn == nil then
         strips[strip][page].controls[cc].membtn = {state = false, mem = 0}
       end
@@ -5959,7 +5959,6 @@ end
       
       strips[strip][page].graphics[#strips[strip][page].graphics + 1] = stripdata.strip.graphics[j]
           
-
     end
     
     PopulateTrackFX()
@@ -7260,7 +7259,7 @@ end
                   {}}
     local dcnt = #dtbl
     for i = 1, dcnt do
-      otbl[i] = {val = dtbl[dcnt-(i-1)].val, dispval = dtbl[dcnt-(i-1)].dispval}
+      otbl[i] = {val = dtbl[dcnt-(i-1)].val, dispval = dtbl[dcnt-(i-1)].dispval, dv = dtbl[dcnt-(i-1)].dv}
     end
                   
     return otbl    
@@ -8858,12 +8857,15 @@ end
               update_gfx = true
             elseif MOUSE_click_RB(obj.sections[103]) then
               if cycle_select and cycle_select.selected then
-                local mstr = 'Rename'
+                local mstr = 'Rename||Delete'
                 gfx.x, gfx.y = mouse.mx, mouse.my
                 local res = OpenMenu(mstr)
                 if res == 1 then
                   --txt = EditValue(10)
                   OpenEB(10,'Please enter value:')
+                elseif res == 2 then
+                  cycle_select = Cycle_DeleteStep(cycle_select.selected)
+                  update_gfx = true
                 end
               end            
             end          
@@ -9106,6 +9108,7 @@ end
                     local dispval = GetParamDisp(cc, t, f, p, dvoff,ctl_select[1].ctl)
                     cycle_select[cycle_select.selected].val = v2                  
                     cycle_select[cycle_select.selected].dispval = dispval
+                    cycle_select[cycle_select.selected].dv = dispval
                   end
                   octlval = val
                   --SetParam()
@@ -10612,7 +10615,8 @@ end
           if cc ~= ctlcats.action then
             SetParam3(cycle_select.val)
           end
-          cycle_select[i] = {val = cycle_select.val, dispval = GetParamDisp(cc, tracknum, fxnum, param, dvoff,trackfxparam_select)}
+          local dv = GetParamDisp(cc, tracknum, fxnum, param, dvoff,trackfxparam_select)
+          cycle_select[i] = {val = cycle_select.val, dispval = dv, dv = dv}
         end
       end
       cycle_select.selected = cycle_select.statecnt
@@ -10639,7 +10643,7 @@ end
                   {}}
       for i = 1, max_cycle do
         if cd[i] then
-          co[i] = {val = cd[i].val, dispval = cd[i].dispval}
+          co[i] = {val = cd[i].val, dispval = cd[i].dispval, dv = cd[i].dv}
         end
       end
       return co
@@ -10661,7 +10665,7 @@ end
                   {}}
       for i = 1, max_cycle do
         if cd[i] then
-          co[i] = {val = tonumber(cd[i].val), dispval = cd[i].dispval}
+          co[i] = {val = tonumber(cd[i].val), dispval = cd[i].dispval, dv = cd[i].dv}
         end
       end
       co = cycledata_slowsort(cd)
@@ -10688,6 +10692,33 @@ end
   
   end
   
+  function Cycle_DeleteStep(step)
+    
+    local cd = {}
+    if cycle_select then
+      cd = cycle_select
+      local co = {statecnt = cd.statecnt,
+                  selected = nil,
+                  mapptof = cd.mapptof,
+                  draggable = cd.draggable,
+                  spread = cd.spread,
+                  val = 0,
+                  {}}
+      cd[step] = nil
+      local ins = 0
+      for i = 1, max_cycle do
+        if cd[i] then
+          ins = ins + 1
+          co[ins] = {val = tonumber(cd[i].val), dispval = cd[i].dispval, dv = cd[i].dv}
+        end
+      end
+      co.statecnt = ins
+      return co
+    else
+      return {statecnt = 0,mapptof = false,draggable = false,spread = false,pos = 1,{}}
+    end    
+  end
+  
   function Cycle_Auto()
   
     trackfxparam_select = ctl_select[1].ctl
@@ -10708,7 +10739,7 @@ end
     local ndval
     
     cycle_temp = {}
-    cycle_temp[1] = {val = v, dispval = dval}
+    cycle_temp[1] = {val = v, dispval = dval, dv = dval}
     
     for v = 0.01, 1, 0.01 do
       
@@ -10717,7 +10748,7 @@ end
       if ndval ~= dval then
         dval = ndval
         local v2 = GetParamValue(cc, tracknum, fxnum, param, trackfxparam_select)
-        cycle_temp[#cycle_temp+1] = {val = v2, dispval = dval}
+        cycle_temp[#cycle_temp+1] = {val = v2, dispval = dval, dv = dval}
         stcnt = stcnt + 1
       end
     
@@ -11145,8 +11176,11 @@ end
                         local key = 'strips_'..s..'_'..p..'_controls_'..c..'_cycledata_'..i..'_'
                       
                         strips[ss][p].controls[c].cycledata[i] = {val = tonumber(nz(GPES(key..'val',true),0)),
-                                                                  dispval = nz(GPES(key..'dispval',true),'no disp val')
-                                                                  }                    
+                                                                  dispval = nz(GPES(key..'dispval',true),'no disp val'),
+                                                                  dv = GPES(key..'dispval',true)}
+                        if strips[ss][p].controls[c].cycledata[i].dv == nil then
+                          strips[ss][p].controls[c].cycledata[i].dv = strips[ss][p].controls[c].cycledata[i].dispval
+                        end 
                       end
                     end
                                         
@@ -11513,6 +11547,7 @@ end
                       local key = 'strips_'..s..'_'..p..'_controls_'..c..'_cycledata_'..i..'_'
                       reaper.SetProjExtState(0,SCRIPT,key..'val',nz(strips[s][p].controls[c].cycledata[i].val,0))   
                       reaper.SetProjExtState(0,SCRIPT,key..'dispval',nz(strips[s][p].controls[c].cycledata[i].dispval,''))   
+                      reaper.SetProjExtState(0,SCRIPT,key..'dv',nz(strips[s][p].controls[c].cycledata[i].dv,''))   
                     end
                   end
                 else
