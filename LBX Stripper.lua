@@ -1098,7 +1098,8 @@
                                                 trackguid = last_touch_fx.trguid,
                                                 scalemode = 8,
                                                 framemode = 1,
-                                                horiz = horiz_select
+                                                horiz = horiz_select,
+                                                poslock = false
                                                 }
         if last_touch_fx.tracknum == strips[strip].track.tracknum then
           strips[strip][page].controls[ctlnum].tracknum = nil
@@ -1153,7 +1154,8 @@
                                                 trackguid = tracks[trackedit_select].guid,
                                                 scalemode = 8,
                                                 framemode = 1,
-                                                horiz = horiz_select
+                                                horiz = horiz_select,
+                                                poslock = false
                                                 }
         if track_select == trackedit_select then
           strips[strip][page].controls[ctlnum].tracknum = nil
@@ -1213,7 +1215,8 @@
                                                   trackguid = tracks[trackedit_select].guid,
                                                   scalemode = 8,
                                                   framemode = 1,
-                                                  horiz = horiz_select
+                                                  horiz = horiz_select,
+                                                  poslock = false
                                                   }
           
           if track_select == trackedit_select then
@@ -1272,7 +1275,8 @@
                                                 trackguid = nil,
                                                 scalemode = 8,
                                                 framemode = 1,
-                                                horiz = horiz_select
+                                                horiz = horiz_select,
+                                                poslock = false
                                                }
 
       end                                              
@@ -5892,6 +5896,7 @@ end
       strips[strip][page].controls[cc].c_id = GenID() --give a new control id
       
       --compatibility
+      if strips[strip][page].controls[cc].poslock == nil then strips[strip][page].controls[cc].poslock = false end
       if strips[strip][page].controls[cc].scalemode == nil then strips[strip][page].controls[cc].scalemode = 8 end
       if strips[strip][page].controls[cc].framemode == nil then strips[strip][page].controls[cc].framemode = 1 end      
       if strips[strip][page].controls[cc].ctlcat == nil then strips[strip][page].controls[cc].ctlcat = ctlcats.fxparam end
@@ -5940,6 +5945,7 @@ end
       end
       stripdata.strip.graphics[j].id = stripid
       --compatibility
+      if stripdata.strip.graphics[j].poslock == nil then stripdata.strip.graphics[j].poslock = false end
       if stripdata.strip.graphics[j].stretchw == nil then stripdata.strip.graphics[j].stretchw = w end
       if stripdata.strip.graphics[j].stretchh == nil then stripdata.strip.graphics[j].stretchh = h end      
 
@@ -11795,43 +11801,96 @@ end
       if snapshots[strip][page] == nil then
         snapshots[strip][page] = {}
       end
-      if snapshots[strip][page][sstype] == nil then
-        snapshots[strip][page][sstype] = {}
-      end
-      if ss_ovr then
-        snappos = ss_ovr
-        if snapshots[strip][page][sstype][snappos] then
-          snapshots[strip][page][sstype][snappos].data = {}
-        else
-          return false
+      
+      
+      if sstype == 1 then
+
+        if snapshots[strip][page][sstype] == nil then
+          snapshots[strip][page][sstype] = {}
         end
-      else
-        snappos = #snapshots[strip][page][sstype] + 1
-        snapshots[strip][page][sstype][snappos] = {name = 'Snapshot '..snappos,
-                                                   data = {}} 
-      end
       
-      local sscnt = 1
-      for c = 1, #strips[strip][page].controls do
-      
-        if strips[strip][page].controls[c].ctlcat == ctlcats.fxparam or
-           strips[strip][page].controls[c].ctlcat == ctlcats.trackparam or
-           strips[strip][page].controls[c].ctlcat == ctlcats.tracksend then
-          if strips[strip][page].controls[c].ctltype ~= 5 then
-            local track = GetTrack(nz(strips[strip][page].controls[c].tracknum,strips[strip].track.tracknum))
-            local cc = strips[strip][page].controls[c].ctlcat
-            local fxnum = strips[strip][page].controls[c].fxnum
-            local param = strips[strip][page].controls[c].param
-            local min, max = GetParamMinMax(cc,track,nz(fxnum,-1),param,true,c)
-            local dval = DenormalizeValue(min,max,strips[strip][page].controls[c].val)
-            snapshots[strip][page][sstype][snappos].data[sscnt] = {c_id = strips[strip][page].controls[c].c_id,
-                                                                    ctl = c,
-                                                                    val = strips[strip][page].controls[c].val,
-                                                                    dval = dval}
-            sscnt = sscnt + 1
+        if ss_ovr then
+          snappos = ss_ovr
+          if snapshots[strip][page][sstype][snappos] then
+            snapshots[strip][page][sstype][snappos].data = {}
+          else
+            return false
+          end
+        else
+          snappos = #snapshots[strip][page][sstype] + 1
+          snapshots[strip][page][sstype][snappos] = {name = 'Snapshot '..snappos,
+                                                     data = {}} 
+        end
+        
+        local sscnt = 1
+        for c = 1, #strips[strip][page].controls do
+        
+          if strips[strip][page].controls[c].ctlcat == ctlcats.fxparam or
+             strips[strip][page].controls[c].ctlcat == ctlcats.trackparam or
+             strips[strip][page].controls[c].ctlcat == ctlcats.tracksend then
+            if strips[strip][page].controls[c].ctltype ~= 5 then
+              local track = GetTrack(nz(strips[strip][page].controls[c].tracknum,strips[strip].track.tracknum))
+              local cc = strips[strip][page].controls[c].ctlcat
+              local fxnum = strips[strip][page].controls[c].fxnum
+              local param = strips[strip][page].controls[c].param
+              local min, max = GetParamMinMax(cc,track,nz(fxnum,-1),param,true,c)
+              local dval = DenormalizeValue(min,max,strips[strip][page].controls[c].val)
+              snapshots[strip][page][sstype][snappos].data[sscnt] = {c_id = strips[strip][page].controls[c].c_id,
+                                                                      ctl = c,
+                                                                      val = strips[strip][page].controls[c].val,
+                                                                      dval = dval}
+              sscnt = sscnt + 1
+            end
           end
         end
+      elseif sstype > 1 then
+      
+        if snapshots[strip][page][sstype] == nil then
+          snapshots[strip][page][sstype] = {subsetname = 'Subset'..sstype-1, snappos = {}, ctls = {}}
+        end
+
+        local sctls = #snapshots[strip][page][sstype].ctls
+        if sctls > 0 then
+
+          if ss_ovr then
+            snappos = ss_ovr
+            if snapshots[strip][page][sstype].snappos[snappos] then
+              snapshots[strip][page][sstype].snappos[snappos].data = {}
+            else
+              return false
+            end
+          else
+            snappos = #snapshots[strip][page][sstype].snappos + 1
+            snapshots[strip][page][sstype].snappos[snappos] = {name = 'Snapshot '..snappos,
+                                                               data = {}} 
+          end
+    
+          local sscnt = 1
+          for cc = 1, sctls do
+            local c = snapshots[strip][page][sstype].ctls[cc].ctl
+            if strips[strip][page].controls[c].ctlcat == ctlcats.fxparam or
+               strips[strip][page].controls[c].ctlcat == ctlcats.trackparam or
+               strips[strip][page].controls[c].ctlcat == ctlcats.tracksend then
+              if strips[strip][page].controls[c].ctltype ~= 5 then
+                local track = GetTrack(nz(strips[strip][page].controls[c].tracknum,strips[strip].track.tracknum))
+                local cc = strips[strip][page].controls[c].ctlcat
+                local fxnum = strips[strip][page].controls[c].fxnum
+                local param = strips[strip][page].controls[c].param
+                local min, max = GetParamMinMax(cc,track,nz(fxnum,-1),param,true,c)
+                local dval = DenormalizeValue(min,max,strips[strip][page].controls[c].val)
+                snapshots[strip][page][sstype].snappos[snappos].data[sscnt] = {c_id = strips[strip][page].controls[c].c_id,
+                                                                              ctl = c,
+                                                                              val = strips[strip][page].controls[c].val,
+                                                                              dval = dval}
+                sscnt = sscnt + 1
+              end
+            end
+
+          end
+        
+        end      
       end
+
     end
     
   end
