@@ -7646,6 +7646,7 @@ end
                     end
                     track_select = i
                     trackedit_select = track_select
+                    trctlslist_offset = 0
                     
                     if strips and tracks[track_select] and strips[tracks[track_select].strip] then
                       page = strips[tracks[track_select].strip].page
@@ -9893,6 +9894,7 @@ end
               end
               PopulateTrackFX()
               PopulateTrackSendsInfo()
+              trctlslist_offset = 0
               update_gfx = true 
             end
           elseif MOUSE_click_RB(obj.sections[48]) then
@@ -10003,6 +10005,7 @@ end
                 update_gfx = true
               elseif trctltype_table[i + trctltypelist_offset+1] then
                 trctltype_select = i + trctltypelist_offset
+                trctlslist_offset = 0
                 update_gfx = true
               end
             end
