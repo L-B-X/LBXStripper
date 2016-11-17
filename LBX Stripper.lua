@@ -62,7 +62,8 @@
               resizesnapwindow = 30,
               dragparam_spec = 31,
               sliderctl_h = 32,
-              dragcycle = 33
+              dragcycle = 33,
+              addsnapctl = 34
               }
   
   ctlcats = {fxparam = 0,
@@ -70,7 +71,8 @@
              tracksend = 2,
              trackrecv = 3,
              trackhwout = 4,
-             action = 5}
+             action = 5,
+             snapshot = 6}
              
   gfxtype = {img = 0,
              txt = 1
@@ -647,9 +649,9 @@
                           y = gfx1.main_h - snaph - (sb_size+2),
                           w = 160,
                           h = snaph}                            
-      obj.sections[161] = {x = 10,
+      obj.sections[161] = {x = 30,
                           y = butt_h+10 + (butt_h/2+2 + 10) * 0,
-                          w = obj.sections[160].w-20,
+                          w = obj.sections[160].w-20-20,
                           h = butt_h/2+8}                       
       obj.sections[162] = {x = 10,
                           y = butt_h+10 + (butt_h/2+2 + 10) * 3,
@@ -676,6 +678,10 @@
                           y = butt_h+10 + (butt_h/2+2 + 10) * 1,
                           w = (obj.sections[160].w-20)/2 - 3,
                           h = butt_h+20}                       
+      obj.sections[168] = {x = 10,
+                          y = butt_h+10 + (butt_h/2+2 + 10) * 0,
+                          w = 18,
+                          h = butt_h/2+8}                       
       
       --Action chooser
       obj.sections[170] = {x = obj.sections[10].x+20,
@@ -1286,7 +1292,56 @@
                                                 horiz = horiz_select,
                                                 poslock = false
                                                }
-
+      elseif dragparam.type == 'snapctl' then
+        local pname = 'Page Snapshots'
+        if sstype_select > 1 then
+          pname = snapshots[strip][page][sstype_select].subsetname .. ' SNAPSHOTS'
+        end
+        
+        strips[strip][page].controls[ctlnum] = {c_id = GenID(),
+                                                ctlcat = ctlcats.snapshot,
+                                                fxname='Snapshot Selector',
+                                                fxguid=nil, 
+                                                fxnum=nil, 
+                                                fxfound = true,
+                                                param = sstype_select,
+                                                param_info = {paramname = pname,
+                                                              paramidx = sstype_select},
+                                                ctltype = 5,
+                                                knob_select = knob_select,
+                                                ctl_info = {fn = ctl_files[knob_select].fn,
+                                                            frames = ctl_files[knob_select].frames,
+                                                            imageidx = ctl_files[knob_select].imageidx, 
+                                                            cellh = ctl_files[knob_select].cellh},
+                                                x = x,
+                                                y = y,
+                                                w = w,
+                                                scale = 1,
+                                                xsc = x + math.floor(w/2 - (w*1)/2),
+                                                ysc = y + math.floor(ctl_files[knob_select].cellh/2 - (ctl_files[knob_select].cellh*1)/2),
+                                                wsc = w*1,
+                                                hsc = ctl_files[knob_select].cellh*1,
+                                                show_paramname = show_paramname,
+                                                show_paramval = show_paramval,
+                                                ctlname_override = '',
+                                                textcol = textcol_select,
+                                                textoff = 22.25,
+                                                textoffval = -6.0,
+                                                textsize = textsize_select,
+                                                val = 0,
+                                                defval = 0,
+                                                maxdp = maxdp_select,
+                                                cycledata = {statecnt = 0,val = 0,mapptof = false,draggable = false,spread = false, {}},
+                                                membtn = {state = false,
+                                                          mem = nil},
+                                                id = nil,
+                                                tracknum = nil,
+                                                trackguid = nil,
+                                                scalemode = 8,
+                                                framemode = 1,
+                                                horiz = horiz_select,
+                                                poslock = false
+                                               }
       end                                              
     end  
   
@@ -1365,7 +1420,9 @@
         if kf == '__default.knb' then
           ctl_files[c].imageidx = 0
           knob_select = c
-          --def_knob = c
+        elseif kf == '__Snapshot.knb' then
+          ctl_files[c].imageidx = def_snapshot
+          def_snapshotctl = c
         end
         c = c + 1
       end
@@ -1378,14 +1435,18 @@
   function LoadControl(iidx, fn)
 
     if string.sub(fn,string.len(fn)-3) == '.knb' then
-      local file
-      file=io.open(controls_path..fn,"r")
-      local content=file:read("*a")
-      file:close()
-      
-      defctls[iidx] = unpickle(content)
-      gfx.loadimg(iidx,controls_path..defctls[iidx].fn)
-      return iidx
+      if reaper.file_exists(controls_path..fn) then
+        local file
+        file=io.open(controls_path..fn,"r")
+        local content=file:read("*a")
+        file:close()
+        
+        defctls[iidx] = unpickle(content)
+        gfx.loadimg(iidx,controls_path..defctls[iidx].fn)
+        return iidx
+      else
+        return -1
+      end
     end
     
   end
@@ -3127,9 +3188,11 @@ end
           end 
         end
       
-        for i = 1, #strips[tracks[track_select].strip][page].controls do
-        
-          if update_gfx or strips[strip][page].controls[i].dirty or force_gfx_update then
+        for i = 1, #strips[strip][page].controls do
+
+          local ctlcat = strips[strip][page].controls[i].ctlcat
+          
+          if update_gfx or strips[strip][page].controls[i].dirty or force_gfx_update or (ctlcat == ctlcats.snapshot and update_snaps) then
             strips[strip][page].controls[i].dirty = false
             
             local scale = strips[strip][page].controls[i].scale
@@ -3150,7 +3213,6 @@ end
             if visible then
               local gh = h
               local val = math.floor(100*nz(strips[strip][page].controls[i].val,0))
-              local ctlcat = strips[strip][page].controls[i].ctlcat
               local fxnum = nz(strips[strip][page].controls[i].fxnum,-1)
               local param = strips[strip][page].controls[i].param
               local pname = strips[strip][page].controls[i].param_info.paramname
@@ -3278,7 +3340,7 @@ end
               if not found then
                 gfx.a = 0.2
               end
-
+--DBG(update_gfx)
               if ctlcat == ctlcats.fxparam then
                 if not found then
                   Disp_Name = CropFXName(strips[strip][page].controls[i].fxname)
@@ -3318,6 +3380,29 @@ end
                 if DVOV and DVOV ~= '' and cycle_editmode == false then
                 else
                   spv = false  
+                end
+              elseif ctlcat == ctlcats.snapshot then
+                if nz(ctlnmov,'') == '' then
+                  Disp_Name = pname
+                else
+                  Disp_Name = ctlnmov
+                end
+                local v = nz(strips[strip][page].controls[i].val,-1)
+                Disp_ParamV = ''
+                if v > -1 then
+                  if param == 1 then
+                    if snapshots[strip][page][param].selected then
+                      if snapshots[strip][page][param][snapshots[strip][page][param].selected] then
+                        Disp_ParamV = snapshots[strip][page][param][snapshots[strip][page][param].selected].name
+                      end
+                    end
+                  else
+                    if snapshots[strip][page][param].selected then
+                      if snapshots[strip][page][param].snapshot[snapshots[strip][page][param].selected] then
+                        Disp_ParamV = snapshots[strip][page][param].snapshot[snapshots[strip][page][param].selected].name
+                      end
+                    end
+                  end
                 end
               end
 
@@ -3695,6 +3780,7 @@ end
     end
       
     GUI_DrawButton(gui, sstypestr, obj.sections[161], gui.color.white, gui.color.black, true, '', false)
+    GUI_DrawButton(gui, '*', obj.sections[168], gui.color.white, gui.color.black, true, '', false)
     GUI_DrawButton(gui, 'CAPTURE', obj.sections[162], gui.color.white, gui.color.black, true, '', false)
     GUI_DrawButton(gui, 'NEW SUBSET', obj.sections[166], gui.color.white, gui.color.black, true, '', false)
     local bc, bc2 = gui.color.white, gui.color.white
@@ -3900,6 +3986,9 @@ end
           end
         elseif update_snaps or (update_msnaps and resize_snaps) then        
           GUI_DrawSnapshots(obj, gui)
+          if update_ctls then
+            GUI_DrawControls(obj, gui)          
+          end
         elseif update_ctls then        
           GUI_DrawControls(obj, gui)
         end
@@ -3940,8 +4029,27 @@ end
         if show_snapshots then
         --DBG(obj.sections[160].x..'  '..obj.sections[160].y..'  '..obj.sections[160].w..'  '..obj.sections[160].h)
           gfx.blit(1003,1,0,0,0,obj.sections[160].w,obj.sections[160].h,obj.sections[160].x,obj.sections[160].y)        
-        end
         
+          if dragparam ~= nil then
+            local x, y = dragparam.x, dragparam.y
+            gfx.a = 0.7
+            local iidx = ctl_files[knob_select].imageidx
+            if iidx == nil or ksel_loaded == false then
+              ksel_loaded = true
+              gfx.loadimg(1023, controls_path..ctl_files[knob_select].fn)
+              iidx = 1023
+            elseif iidx == nil then
+              iidx = 1023
+            end
+            local w, _ = gfx.getimgdim(iidx)
+            local h = ctl_files[knob_select].cellh
+            gfx.blit(iidx,scale_select,0,0,p*h,w,ctl_files[knob_select].cellh,x+ w/2-w*scale_select/2,y+ h/2-h*scale_select/2 )
+            f_Get_SSV(gui.color.yellow)
+            gfx.a = 1
+            gfx.roundrect(x, y ,w, h, 8, 1, 0)
+          end        
+        end
+                
       elseif mode == 1 then        
         --Edit
         
@@ -4038,11 +4146,7 @@ end
               gfx.blit(iidx,scale_select,0,0,p*h,w,ctl_files[knob_select].cellh,x+ w/2-w*scale_select/2,y+ h/2-h*scale_select/2 )
               f_Get_SSV(gui.color.yellow)
               gfx.a = 1
-              if surface_size.limit then
-                gfx.roundrect(x, y ,w, h, 8, 1, 0)
-              else
-                gfx.roundrect(x + surface_offset.x, y + surface_offset.y, w, h, 8, 1, 0)              
-              end
+              gfx.roundrect(x, y ,w, h, 8, 1, 0)
             end
           end        
         
@@ -7568,6 +7672,7 @@ end
               CloseActChooser()
               ss_select = nil
               sstype_select = 1
+              ssoffset = 0
               update_gfx = true
             end
           end 
@@ -7984,7 +8089,7 @@ end
                 y = obj.sections[160].y,
                 w = obj.sections[160].w,
                 h = butt_h}
-        if mouse.context == nil and MOUSE_click(xywh) then 
+        if mouse.context == nil and MOUSE_click(xywh) then
           mouse.context = contexts.movesnapwindow
           movesnapwin = {offx = mouse.mx - obj.sections[160].x,
                          offy = mouse.my - obj.sections[160].y}
@@ -7996,7 +8101,23 @@ end
         
         if snaplrn_mode == false then
         
-          if mouse.context == nil and MOUSE_click(obj.sections[165]) then
+          if mouse.context == nil and MOUSE_click(obj.sections[168]) then
+            --update_gfx = true
+            knob_select = def_snapshotctl
+            if ctl_files[knob_select].imageidx ~= nil then
+              local w,_ = gfx.getimgdim(ctl_files[knob_select].imageidx)
+              local h = ctl_files[knob_select].cellh
+              if w == 0 or h == 0 then
+                ksel_size = {w = 50, h = 50}
+              else
+               ksel_size = {w = w/2, h = h/2}
+              end
+            else 
+              ksel_size = {w = 50, h = 50}
+            end
+            mouse.context = contexts.addsnapctl          
+          
+          elseif mouse.context == nil and MOUSE_click(obj.sections[165]) then
             mouse.context = contexts.resizesnapwindow
             resizesnapwin = {origh = obj.sections[160].h,
                              offy = mouse.my}          
@@ -8010,6 +8131,7 @@ end
               sstype_select = 1
             end
             ss_select = nil
+            ssoffset = 0
             update_snaps = true
   
           elseif mouse.context == nil and MOUSE_click_RB(obj.sections[161]) then
@@ -8021,6 +8143,7 @@ end
               sstype_select = 1
             end
             ss_select = nil
+            ssoffset = 0
             update_snaps = true
   
           elseif mouse.context == nil and MOUSE_click(obj.sections[162]) then
@@ -8036,6 +8159,7 @@ end
             else
               Snapshots_INIT()
               sstype_select = 1
+              ssoffset = 0
             end
             Snapshots_CREATE(tracks[track_select].strip, page, sstype_select)
             update_snaps = true
@@ -8045,7 +8169,7 @@ end
             if sstype_select > 1 then
               snaplrn_mode = true
               navigate = false
-              update_snaps = true
+              update_gfx = true
             end
 
           elseif mouse.context == nil and MOUSE_click(obj.sections[164]) then
@@ -8081,8 +8205,9 @@ end
                   --if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.20 then
                   
                     Snapshot_Set(tracks[track_select].strip, page)
-                  
+                  --DBG('1'..tostring(update_gfx))
                   --end
+                  update_ctls = true --to update snapshot ctls
                   update_snaps = true          
                 end
               end
@@ -8112,7 +8237,7 @@ end
           Snap_RemoveDeletedSS(tracks[track_select].strip,page,sstype_select)
           navigate = true
           
-          update_snaps = true
+          update_gfx = true
         
         end
                 
@@ -8180,7 +8305,7 @@ end
                 if MOUSE_click(ctlxywh) and not mouse.ctrl then
                   local ctltype = strips[tracks[track_select].strip][page].controls[i].ctltype
                 
-                  if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.15 then
+                  if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.15 and ctltype ~= 5 then
                     --double-click
                     --[[if ctltype == 1 then
                       trackfxparam_select = i
@@ -8295,6 +8420,77 @@ end
                       SetParam()
                     end
                     update_ctls = true                    
+                  elseif ctltype == 5 then
+                    if strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.snapshot then
+                      --SNAPSHOTS
+                      local mmx = mouse.mx - ctlxywh.x
+                      local mmy = mouse.my - ctlxywh.y
+                      if mmy < ctlxywh.h/2 then
+                        sstype_select = strips[tracks[track_select].strip][page].controls[i].param
+                        show_snapshots = true
+                        update_snaps = true
+                      
+                      elseif mmx < 20 then
+                        sstype_select = strips[tracks[track_select].strip][page].controls[i].param
+                        if snapshots[tracks[track_select].strip][page][sstype_select].selected then
+                          if sstype_select == 1 then
+                            ss_select = snapshots[tracks[track_select].strip][page][sstype_select].selected-1
+                            if ss_select < 1 then
+                              ss_select = #snapshots[tracks[track_select].strip][page][sstype_select]
+                            end
+                          else
+                            ss_select = snapshots[tracks[track_select].strip][page][sstype_select].selected-1
+                            if ss_select < 1 then                            
+                              ss_select = #snapshots[tracks[track_select].strip][page][sstype_select].snapshot
+                            end
+                          end
+                        else
+                          if sstype_select == 1 then
+                            if #snapshots[tracks[track_select].strip][page][sstype_select] > 0 then
+                              ss_select = 1
+                            end
+                          else
+                            if #snapshots[tracks[track_select].strip][page][sstype_select].snapshot > 0 then
+                              ss_select = 1                            
+                            end
+                          end
+                        end
+                        if ss_select then
+                          Snapshot_Set(tracks[track_select].strip, page)                          
+                        end
+                                            
+                      elseif mmx > ctlxywh.w-20 then
+                        sstype_select = strips[tracks[track_select].strip][page].controls[i].param
+                        if snapshots[tracks[track_select].strip][page][sstype_select].selected then
+                          if sstype_select == 1 then
+                            ss_select = snapshots[tracks[track_select].strip][page][sstype_select].selected+1
+                            if ss_select > #snapshots[tracks[track_select].strip][page][sstype_select] then
+                              ss_select = 1
+                            end
+                          else
+                            ss_select = snapshots[tracks[track_select].strip][page][sstype_select].selected+1
+                            if ss_select > #snapshots[tracks[track_select].strip][page][sstype_select].snapshot then
+                              ss_select = 1
+                            end
+                          end
+                        else
+                          if sstype_select == 1 then
+                            if #snapshots[tracks[track_select].strip][page][sstype_select] > 0 then
+                              ss_select = 1
+                            end
+                          else
+                            if #snapshots[tracks[track_select].strip][page][sstype_select].snapshot > 0 then
+                              ss_select = 1                            
+                            end
+                          end
+                        end
+                        if ss_select then
+                          Snapshot_Set(tracks[track_select].strip, page)                          
+                        end
+                      
+                      end
+                                        
+                    end
                   end
                   break
                   
@@ -8521,6 +8717,7 @@ end
           trackedit_select = track_select
           ss_select = nil
           sstype_select = 1
+          ssoffset = 0
           
           if settings_followselectedtrack then
             --Select track
@@ -8558,9 +8755,12 @@ end
         
         update_msnaps = true
       
-      end
-
-      if mouse.context and mouse.context == contexts.resizesnapwindow then
+      elseif mouse.context and mouse.context == contexts.addsnapctl then
+        dragparam = {x = mouse.mx-ksel_size.w, y = mouse.my-ksel_size.h, type = 'snapctl'}
+        update_gfx = true
+        --DBG('2'..tostring(update_gfx))
+      
+      elseif mouse.context and mouse.context == contexts.resizesnapwindow then
 
         local ly = obj.sections[10].h - obj.sections[160].y + butt_h
         obj.sections[160].h = F_limit(resizesnapwin.origh + (mouse.my - resizesnapwin.offy) - obj.sections[160].y, 180, ly)
@@ -8570,6 +8770,16 @@ end
         update_msnaps = true
         resize_snaps = true
         --update_gfx = true
+      
+      elseif dragparam ~= nil then
+      
+        if mouse.mx > obj.sections[10].x and not MOUSE_over(obj.sections[160]) then
+          Strip_AddParam()
+        end
+        
+        dragparam = nil
+        update_gfx = true
+        --DBG('3'..tostring(update_gfx))
       end
             
     elseif mode == 1 then
@@ -10721,13 +10931,17 @@ end
             sury = surface_offset.y
             mmx = mouse.mx
             mmy = mouse.my
+            update_gfx = true
           end
           ctl_select = nil
           show_cycleoptions = false
           gfx2_select = nil
           gfx3_select = nil
           --CloseActChooser()
-          update_gfx = true
+          if mode ~= 0 then
+            update_gfx = true
+          end
+          --DBG('4'..tostring(update_gfx))
         end
 
       end    
@@ -11662,6 +11876,12 @@ end
                      
                     --Snapshots_Check(s,p)
                   end
+                  
+                  local key = 'snap_strip_'..s..'_'..p..'_type_'..sst..'_'
+                  if snapshots[s][p][sst] then
+                    snapshots[s][p][sst].selected = tonumber(GPES(key..'ss_selected',true))
+                  end
+                  
                 end
                 
                 Snapshots_Check(s,p)
@@ -11937,6 +12157,7 @@ end
           for sst = 1, #snapshots[s][p] do
         
             local key = 'snap_strip_'..s..'_'..p..'_type_'..sst..'_'
+            reaper.SetProjExtState(0,SCRIPT,key..'ss_selected',nz(snapshots[s][p][sst].selected,''))
             
             if sst == 1 then          
               reaper.SetProjExtState(0,SCRIPT,key..'ss_count',#snapshots[s][p][sst])
@@ -12270,6 +12491,7 @@ end
       end    
     
     end
+    snapshots[strip][page][sstype_select].selected = ss_select
 
   end
 
@@ -12679,18 +12901,28 @@ end
   --gfx.loadimg(1020,controls_path.."missing.png") --update to missing png
   def_knob = LoadControl(1019, '__default.knb')
   def_knobsm = LoadControl(1018, 'SimpleFlat_48.knb')
+  def_snapshot = LoadControl(1017, '__Snapshot.knb')
   
-  --DBG(_G['testfunc']('testtext'))
-  --DBG(clipboard)
-  INIT()
-  LoadSettings()
-  LoadData()  
-  Lokasenna_Window_At_Center(gfx1.main_w,gfx1.main_h) 
---test jsfx plug name in quotes
---DBG(GetPlugNameFromChunk('JS \"AB Level Matching JSFX [2.5]/AB_LMLT_cntrl\" \"MSTR /B\"\10.000000 0.000000 300.000000 0.000000 - - - - - 0.000000 - - - - - - - - - -14.600000 -11.600000 -7.000000 7.000000 -4.800000 - - - - - -14.500000 -11.800000 -4.100000 10.000000 -4.100000 - - - - - 0.000000 1.000000 0.000000 - 0.000000 0.000000 - - - - 7681.000000 1.000000 - - - - - - - - - - - - - '))
+  if def_knob == -1 or def_knobsm == -1 or def_snapshot == -1 then
+    DBG("Please ensure you have the '__default', 'SimpleFlat_48', and '__Snapshot' files in your LBXCS_resources/controls/ folder.")
+    DBG("You can get these files from the LBX Stripper project on github - in the LBXCS_resources zip file")
+    reaper.atexit()
+  else
+    def_snapshotctl = -1
+        
+    --DBG(_G['testfunc']('testtext'))
+    --DBG(clipboard)
+    INIT()
+    LoadSettings()
+    LoadData()  
+    Lokasenna_Window_At_Center(gfx1.main_w,gfx1.main_h) 
+  --test jsfx plug name in quotes
+  --DBG(GetPlugNameFromChunk('JS \"AB Level Matching JSFX [2.5]/AB_LMLT_cntrl\" \"MSTR /B\"\10.000000 0.000000 300.000000 0.000000 - - - - - 0.000000 - - - - - - - - - -14.600000 -11.600000 -7.000000 7.000000 -4.800000 - - - - - -14.500000 -11.800000 -4.100000 10.000000 -4.100000 - - - - - 0.000000 1.000000 0.000000 - 0.000000 0.000000 - - - - 7681.000000 1.000000 - - - - - - - - - - - - - '))
+  
+    gfx.dock(dockstate)
+    run()
 
-  gfx.dock(dockstate)
-  run()
-  
-  reaper.atexit(quit)
+    reaper.atexit(quit)
+  end
+    
   
