@@ -8767,7 +8767,10 @@ end
                           end
                         end
                         if ss_select then
-                          Snapshot_Set(tracks[track_select].strip, page, sstype_select, ss_select)                          
+                          Snapshot_Set(tracks[track_select].strip, page, sstype_select, ss_select)
+                          update_ctls = true
+                          update_snaps = true
+                          update_fsnaps = true                       
                         end
                                             
                       elseif mmx > ctlxywh.w-20 then
@@ -8797,6 +8800,9 @@ end
                         end
                         if ss_select then
                           Snapshot_Set(tracks[track_select].strip, page, sstype_select, ss_select)                          
+                          update_ctls = true
+                          update_snaps = true
+                          update_fsnaps = true                       
                         end
                       
                       else
