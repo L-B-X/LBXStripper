@@ -7802,7 +7802,7 @@ end
        -- if settings_autocentrectls then
        --   AutoCentreCtls()
        -- end
-        
+        show_fsnapshots = false
         resize_display = true
         update_gfx = true
         force_resize = false
