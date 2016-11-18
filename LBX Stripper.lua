@@ -63,7 +63,8 @@
               dragparam_spec = 31,
               sliderctl_h = 32,
               dragcycle = 33,
-              addsnapctl = 34
+              addsnapctl = 34,
+              resizefsnapwindow = 35
               }
   
   ctlcats = {fxparam = 0,
@@ -708,6 +709,19 @@
                            y = obj.sections[172].y,
                            w = 150,
                            h = butt_h}
+      --FLOATING SNAPS
+      obj.sections[180] = {x = 0,
+                          y = 0,
+                          w = 160,
+                          h = fsnaph}                            
+      obj.sections[181] = {x = 10,
+                          y = 10,
+                          w = obj.sections[180].w-20,
+                          h = obj.sections[180].h-20}                       
+      obj.sections[182] = {x = 0,
+                          y = obj.sections[180].h-6,
+                          w = obj.sections[180].w,
+                          h = 6}                       
                            
       
     return obj
@@ -3192,7 +3206,7 @@ end
 
           local ctlcat = strips[strip][page].controls[i].ctlcat
           
-          if update_gfx or strips[strip][page].controls[i].dirty or force_gfx_update or (ctlcat == ctlcats.snapshot and update_snaps) then
+          if update_gfx or strips[strip][page].controls[i].dirty or force_gfx_update or (ctlcat == ctlcats.snapshot and (update_snaps or update_fsnaps)) then
             strips[strip][page].controls[i].dirty = false
             
             local scale = strips[strip][page].controls[i].scale
@@ -3884,6 +3898,115 @@ end
     
     gfx.dest = 1    
   end
+
+  function GUI_DrawFSnapshots(obj, gui)
+    
+    gfx.dest = 1005
+    
+    gfx.a=1
+    f_Get_SSV(gui.color.black)
+    gfx.rect(0,
+             0, 
+             obj.sections[180].w,
+             obj.sections[180].h, 1, 1)
+    f_Get_SSV('64 64 64')
+    gfx.rect(0,
+             0, 
+             obj.sections[180].w,
+             obj.sections[180].h, 0, 1)
+    
+    f_Get_SSV(fsstype_color)
+    gfx.a = 1 
+    gfx.rect(obj.sections[182].x,
+             obj.sections[182].y, 
+             obj.sections[182].w,
+             obj.sections[182].h, 1 )
+    
+          
+    xywh = {x = obj.sections[181].x,
+            y = obj.sections[181].y,
+            w = obj.sections[181].w,
+            h = obj.sections[181].h}
+    f_Get_SSV('64 64 64')
+    gfx.a = 1 
+    gfx.rect(xywh.x,
+             xywh.y, 
+             xywh.w,
+             xywh.h, 0 )
+    
+    xywh.h = butt_h
+    gfx.rect(xywh.x,
+     xywh.y, 
+     xywh.w,
+     xywh.h, 1 )
+    gfx.a = 0.5
+    f_Get_SSV(gui.color.black)
+    gfx.a = 1
+    gfx.rect(xywh.x+xywh.w/2,
+     xywh.y, 
+     2,
+     xywh.h, 1 )
+    gfx.triangle(xywh.x+xywh.w/4,xywh.y+4,xywh.x+xywh.w/4-6,xywh.y+xywh.h-4,xywh.x+xywh.w/4+6,xywh.y+xywh.h-4,1)     
+    gfx.triangle(xywh.x+xywh.w*0.75,xywh.y+xywh.h-4,xywh.x+xywh.w*0.75-6,xywh.y+4,xywh.x+xywh.w*0.75+6,xywh.y+4,1)
+    
+    gfx.a = 1
+    
+    FSS_butt_cnt = math.floor(obj.sections[181].h / butt_h) - 1
+    if snaplrn_mode == false then
+      
+      local strip = tracks[track_select].strip
+      if strip and snapshots and snapshots[strip] and snapshots[strip][page][fsstype_select] then
+
+        if fsstype_select == 1 then
+          if #snapshots[strip][page][fsstype_select] > 0 then
+            for i = 1,FSS_butt_cnt do
+            
+              xywh.y = obj.sections[181].y + i*butt_h
+              local c = fsstype_color
+              if fss_select == fssoffset+i then
+                f_Get_SSV(fsstype_color)
+                gfx.rect(xywh.x,
+                 xywh.y, 
+                 xywh.w,
+                 xywh.h, 1 )
+                c = gui.color.black
+              end
+              if snapshots[strip][page][fsstype_select][i+fssoffset] then
+                GUI_textsm_LJ(gui,xywh,roundX(i+fssoffset,0)..': '..snapshots[strip][page][fsstype_select][i+fssoffset].name,c,-2,xywh.w)
+              end
+          
+            end
+        
+          end
+        elseif fsstype_select > 1 then
+          if #snapshots[strip][page][fsstype_select].snapshot > 0 then
+            for i = 1,FSS_butt_cnt do
+            
+              xywh.y = obj.sections[181].y + i*butt_h
+              local c = fsstype_color
+              if fss_select == fssoffset+i then
+                f_Get_SSV(fsstype_color)
+                gfx.rect(xywh.x,
+                 xywh.y, 
+                 xywh.w,
+                 xywh.h, 1 )
+                c = gui.color.black
+              end
+              if snapshots[strip][page][fsstype_select].snapshot[i+fssoffset] then
+                GUI_textsm_LJ(gui,xywh,roundX(i+fssoffset,0)..': '..snapshots[strip][page][fsstype_select].snapshot[i+fssoffset].name,c,-2,xywh.w)
+              end
+          
+            end
+        
+          end
+        
+        end
+
+      end
+    end        
+    
+    gfx.dest = 1    
+  end
   
   ------------------------------------------------------------
 
@@ -3960,7 +4083,8 @@ end
   function GUI_draw(obj, gui)
     gfx.mode =4
     
-    if update_gfx or update_surface or update_sidebar or update_topbar or update_ctlopts or update_ctls or update_bg or update_settings or update_snaps or update_msnaps or update_actcho then    
+    if update_gfx or update_surface or update_sidebar or update_topbar or update_ctlopts or update_ctls or update_bg or 
+       update_settings or update_snaps or update_msnaps or update_actcho or update_fsnaps or update_mfsnaps then    
       local p = 0
         
       gfx.dest = 1
@@ -3972,8 +4096,11 @@ end
       if resize_display then
         gfx.setimgdim(1002,obj.sections[45].w, obj.sections[45].h)
         gfx.setimgdim(1003,obj.sections[160].w, obj.sections[160].h)
+        gfx.setimgdim(1005,obj.sections[180].w, obj.sections[180].h)
       elseif resize_snaps then
         gfx.setimgdim(1003,obj.sections[160].w, obj.sections[160].h)      
+      elseif resize_fsnaps then
+        gfx.setimgdim(1005,obj.sections[180].w, obj.sections[180].h)      
       end
       
       if mode == 0 then
@@ -3984,8 +4111,20 @@ end
           if show_snapshots then
             GUI_DrawSnapshots(obj, gui)
           end
-        elseif update_snaps or (update_msnaps and resize_snaps) then        
+          if show_fsnapshots then
+            --DBG('z'..fsstype_select)
+            GUI_DrawFSnapshots(obj, gui)
+          end
+        elseif update_snaps or (update_msnaps and resize_snaps) then  
           GUI_DrawSnapshots(obj, gui)
+          if update_fsnaps then
+            GUI_DrawFSnapshots(obj, gui)        
+          end
+          if update_ctls then
+            GUI_DrawControls(obj, gui)          
+          end
+        elseif update_fsnaps or (update_mfsnaps and resize_fsnaps) then        
+          GUI_DrawFSnapshots(obj, gui)
           if update_ctls then
             GUI_DrawControls(obj, gui)          
           end
@@ -3998,7 +4137,7 @@ end
         
         gfx.dest = 1
         
-        if update_gfx or update_surface or update_bg or update_msnaps then
+        if update_gfx or update_surface or update_bg or update_msnaps or update_mfsnaps then
           --local w, h = obj.sections[10].w, lockh
           --local x, y = obj.sections[10].x + obj.sections[10].w/2 - w/2, obj.sections[10].y + (obj.sections[10].h/2) - h/2
           gfx.blit(1000,1,0,surface_offset.x,
@@ -4049,7 +4188,12 @@ end
             gfx.roundrect(x, y ,w, h, 8, 1, 0)
           end        
         end
-                
+        
+        if show_fsnapshots then
+          --DBG(obj.sections[180].x..'  '..obj.sections[180].y)
+          gfx.blit(1005,1,0,0,0,obj.sections[180].w,obj.sections[180].h,obj.sections[180].x,obj.sections[180].y)                
+        end
+        
       elseif mode == 1 then        
         --Edit
         
@@ -4346,8 +4490,11 @@ end
     update_settings = false
     update_snaps = false
     update_msnaps = false
+    update_fsnaps = false
+    update_fmsnaps = false
     update_actcho = false
     resize_snaps = false
+    resize_fsnaps = false
     
   end
   
@@ -5713,36 +5860,109 @@ end
 
   function EditValue2(txt)
 
-    if strips[tracks[track_select].strip][page].controls[trackfxparam_select].ctltype == 4 then
-      --cycle
-      if strips[tracks[track_select].strip][page].controls[trackfxparam_select].cycledata.statecnt > 0 then
-        for i = 1, strips[tracks[track_select].strip][page].controls[trackfxparam_select].cycledata.statecnt do
-        
-          if string.upper(txt) == string.sub(string.upper(strips[tracks[track_select].strip][page].controls[trackfxparam_select].cycledata[i].dispval),1,string.len(txt)) then
+    if strips[tracks[track_select].strip][page].controls[trackfxparam_select].ctlcat == ctlcats.snapshot then
+    
+      local sst = strips[tracks[track_select].strip][page].controls[trackfxparam_select].param
+      
+      txt = string.upper(txt)..' '
+  
+      local temp_t = {}
+      for word in string.gmatch(txt, '(.-)[%s]') do table.insert(temp_t, word) end
+      local fnd_ss = -1
+      if sst == 1 then
+        if snapshots[tracks[track_select].strip][page][sst] and #snapshots[tracks[track_select].strip][page][sst] > 0 then
+          for i = 1, #snapshots[tracks[track_select].strip][page][sst] do
+
+            local nm = string.upper(snapshots[tracks[track_select].strip][page][sst][i].name)
+            local match = true
+            for w = 1, #temp_t do            
+              local m = string.match(nm,temp_t[w])
+              if m == nil then
+                match = false
+                break
+              end
+            end
+                      
+            if match then
+              fnd_ss = i
+              break
+            end
           
-            strips[tracks[track_select].strip][page].controls[trackfxparam_select].cycledata.pos = i
-            strips[tracks[track_select].strip][page].controls[trackfxparam_select].val = 
-                strips[tracks[track_select].strip][page].controls[trackfxparam_select].cycledata[i].val
-            SetParam()
-            strips[tracks[track_select].strip][page].controls[trackfxparam_select].dirty = true
-            update_ctls = true
-            break
           end
-        
+          if fnd_ss > -1 then
+            if sst == sstype_select then 
+              sstype_select = sst
+              ss_select = fnd_ss
+            end
+            Snapshot_Set(tracks[track_select].strip, page, sst, fnd_ss)
+            update_gfx = true
+          end
+        end
+      elseif sst > 1 then
+        if snapshots[tracks[track_select].strip][page][sst] and #snapshots[tracks[track_select].strip][page][sst].snapshot > 0 then
+          for i = 1, #snapshots[tracks[track_select].strip][page][sst].snapshot do
+
+            local nm = string.upper(snapshots[tracks[track_select].strip][page][sst].snapshot[i].name)
+            local match = true
+            for w = 1, #temp_t do
+              local m = string.match(nm,temp_t[w])
+              if m == nil then
+                match = false
+                break
+              end
+            end
+                      
+            if match then
+              fnd_ss = i
+              break
+            end
+          
+          end
+          if fnd_ss > -1 then
+            if sst == sstype_select then 
+              sstype_select = sst
+              ss_select = fnd_ss
+            end
+            Snapshot_Set(tracks[track_select].strip, page, sst, fnd_ss)
+            update_gfx = true
+          end
         end
       
       end
+    
     else
-      local mo = tonumber(txt)
-      if mo then
-        local nval = GetValFromDVal(trackfxparam_select,txt)
-        --for i = 1, #ctl_select do 
-        strips[tracks[track_select].strip][page].controls[trackfxparam_select].val = nval
-        strips[tracks[track_select].strip][page].controls[trackfxparam_select].dirty = true
-        SetParam()
-        --end
-      end  
+      if strips[tracks[track_select].strip][page].controls[trackfxparam_select].ctltype == 4 then
+        --cycle
+        if strips[tracks[track_select].strip][page].controls[trackfxparam_select].cycledata.statecnt > 0 then
+          for i = 1, strips[tracks[track_select].strip][page].controls[trackfxparam_select].cycledata.statecnt do
+          
+            if string.upper(txt) == string.sub(string.upper(strips[tracks[track_select].strip][page].controls[trackfxparam_select].cycledata[i].dispval),1,string.len(txt)) then
+            
+              strips[tracks[track_select].strip][page].controls[trackfxparam_select].cycledata.pos = i
+              strips[tracks[track_select].strip][page].controls[trackfxparam_select].val = 
+                  strips[tracks[track_select].strip][page].controls[trackfxparam_select].cycledata[i].val
+              SetParam()
+              strips[tracks[track_select].strip][page].controls[trackfxparam_select].dirty = true
+              update_ctls = true
+              break
+            end
+          
+          end
+        
+        end
+      else
+        local mo = tonumber(txt)
+        if mo then
+          local nval = GetValFromDVal(trackfxparam_select,txt)
+          --for i = 1, #ctl_select do 
+          strips[tracks[track_select].strip][page].controls[trackfxparam_select].val = nval
+          strips[tracks[track_select].strip][page].controls[trackfxparam_select].dirty = true
+          SetParam()
+          --end
+        end  
+      end
     end
+
   end
 
   function EditCycleDV(txt)
@@ -7039,6 +7259,11 @@ end
   
   function SetPage(lpage)
     
+    if show_fsnapshots then
+      show_fsnapshots = false
+      update_surface = true
+    end
+    
     page = lpage
     ctl_select = nil
     gfx2_select = nil
@@ -8082,10 +8307,86 @@ end
           end     
           gfx.mouse_wheel = 0
         end
+
+        if MOUSE_over(obj.sections[180]) then
+          if snapshots and snapshots[tracks[track_select].strip] and
+             snapshots[tracks[track_select].strip][page][fsstype_select] then
+            if fsstype_select == 1 then
+              fssoffset = F_limit(fssoffset - v, 0, #snapshots[tracks[track_select].strip][page][fsstype_select]-1)
+            elseif fsstype_select > 1 then
+              fssoffset = F_limit(fssoffset - v, 0, #snapshots[tracks[track_select].strip][page][fsstype_select].snapshot-1)
+            end
+            update_fsnaps = true
+          end     
+          gfx.mouse_wheel = 0
+        end
       end
       
-      if mouse.context == nil and show_snapshots == true and (MOUSE_click(obj.sections[160]) or MOUSE_click_RB(obj.sections[160])) then
+      if mouse.context == nil and show_fsnapshots == true and (MOUSE_click(obj.sections[180]) or MOUSE_click_RB(obj.sections[180])) then
+
+        if mouse.context == nil and MOUSE_click_RB(obj.sections[180]) then
+          show_fsnapshots = false
+          update_surface = true
+        end
+
+        local snapmx, snapmy = mouse.mx, mouse.my
+        mouse.mx = mouse.mx - obj.sections[180].x
+        mouse.my = mouse.my - obj.sections[180].y
+
+        if mouse.context == nil and MOUSE_click(obj.sections[182]) then
+          mouse.context = contexts.resizefsnapwindow
+          resizesnapwin = {origh = obj.sections[180].h,
+                           offy = mouse.my}          
+        
+        elseif mouse.context == nil and MOUSE_click(obj.sections[181]) then
+          if snapshots and snapshots[tracks[track_select].strip] then
+            local i = math.floor((mouse.my-obj.sections[181].y)/butt_h)
+        
+            if i == 0 then
+              local ix = math.floor((mouse.mx-obj.sections[181].x)/(obj.sections[180].w/2))
+              if ix == 0 then
+                fssoffset = fssoffset-FSS_butt_cnt
+                if fssoffset < 0 then fssoffset = 0 end
+              else
+                if fsstype_select == 1 then
+                  fssoffset = F_limit(fssoffset+FSS_butt_cnt,0,math.max(0,#snapshots[tracks[track_select].strip][page][fsstype_select]-FSS_butt_cnt))
+                elseif fsstype_select > 1 then
+                  fssoffset = F_limit(fssoffset+FSS_butt_cnt,0,math.max(0,#snapshots[tracks[track_select].strip][page][fsstype_select].snapshot-FSS_butt_cnt))                  
+                end
+              end
+              update_ctls = true
+              update_fsnaps = true
+            else
+              if snapshots and snapshots[tracks[track_select].strip] then
+                if fsstype_select == 1 then
+                  fss_select = F_limit(fssoffset+i,1,#snapshots[tracks[track_select].strip][page][fsstype_select])
+                else
+                  fss_select = F_limit(fssoffset+i,1,#snapshots[tracks[track_select].strip][page][fsstype_select].snapshot)                  
+                end
+                Snapshot_Set(tracks[track_select].strip, page, fsstype_select, fss_select)
+                update_ctls = true --to update snapshot ctls
+                update_fsnaps = true          
+                if sstype_select == fsstype_select then
+                  ss_select = fss_select
+                  update_snaps = true       
+                end
+              end
+            end
+          end
+        end
+        
+
+        mouse.mx = snapmx
+        mouse.my = snapmy
+        noscroll = true
+
+      elseif mouse.context == nil and show_snapshots == true and (MOUSE_click(obj.sections[160]) or MOUSE_click_RB(obj.sections[160])) then
       
+        if show_fsnapshots then
+          show_fsnapshots = false
+          update_surface = true
+        end
+        
         xywh = {x = obj.sections[160].x,
                 y = obj.sections[160].y,
                 w = obj.sections[160].w,
@@ -8186,15 +8487,16 @@ end
               if i == 0 then
                 local ix = math.floor((mouse.mx-obj.sections[163].x)/(obj.sections[160].w/2))
                 if ix == 0 then
-                  ssoffset = ssoffset-1
+                  ssoffset = ssoffset-SS_butt_cnt
                   if ssoffset < 0 then ssoffset = 0 end
                 else
                   if sstype_select == 1 then
-                    ssoffset = F_limit(ssoffset+1,0,math.max(0,#snapshots[tracks[track_select].strip][page][sstype_select]-SS_butt_cnt))
+                    ssoffset = F_limit(ssoffset+SS_butt_cnt,0,math.max(0,#snapshots[tracks[track_select].strip][page][sstype_select]-SS_butt_cnt))
                   elseif sstype_select > 1 then
-                    ssoffset = F_limit(ssoffset+1,0,math.max(0,#snapshots[tracks[track_select].strip][page][sstype_select].snapshot-SS_butt_cnt))                  
+                    ssoffset = F_limit(ssoffset+SS_butt_cnt,0,math.max(0,#snapshots[tracks[track_select].strip][page][sstype_select].snapshot-SS_butt_cnt))                  
                   end
                 end
+                update_ctls = true
                 update_snaps = true
               else
                 if snapshots and snapshots[tracks[track_select].strip] then
@@ -8205,7 +8507,7 @@ end
                   end
                   --if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.20 then
                   
-                    Snapshot_Set(tracks[track_select].strip, page)
+                    Snapshot_Set(tracks[track_select].strip, page, sstype_select, ss_select)
                   --DBG('1'..tostring(update_gfx))
                   --end
                   update_ctls = true --to update snapshot ctls
@@ -8248,6 +8550,11 @@ end
       
       elseif mouse.context == nil and snaplrn_mode == true then
       
+        if show_fsnapshots then
+          show_fsnapshots = false
+          update_surface = true
+        end
+        
         if sstype_select > 1 then
           if mouse.context == nil and (MOUSE_click(obj.sections[10]) or MOUSE_click_RB(obj.sections[10])) then
             if mouse.mx > obj.sections[10].x then
@@ -8291,6 +8598,9 @@ end
         end
          
       elseif mouse.context == nil and (MOUSE_click(obj.sections[10]) or MOUSE_click_RB(obj.sections[10]) or gfx.mouse_wheel ~= 0) then
+        
+        local togfsnap = false
+        
         if mouse.mx > obj.sections[10].x then
           if strips and tracks[track_select] and strips[tracks[track_select].strip] then
             for i = 1, #strips[tracks[track_select].strip][page].controls do
@@ -8457,7 +8767,7 @@ end
                           end
                         end
                         if ss_select then
-                          Snapshot_Set(tracks[track_select].strip, page)                          
+                          Snapshot_Set(tracks[track_select].strip, page, sstype_select, ss_select)                          
                         end
                                             
                       elseif mmx > ctlxywh.w-20 then
@@ -8486,13 +8796,35 @@ end
                           end
                         end
                         if ss_select then
-                          Snapshot_Set(tracks[track_select].strip, page)                          
+                          Snapshot_Set(tracks[track_select].strip, page, sstype_select, ss_select)                          
                         end
                       
+                      else
+                        --open fss
+                        togfsnap = true
+                        if fsstype_select == strips[tracks[track_select].strip][page].controls[i].param then
+                          show_fsnapshots = not show_fsnapshots
+                        else
+                          show_fsnapshots = true
+                        end
+                        fsstype_select = strips[tracks[track_select].strip][page].controls[i].param
+                        fsstype_color = strips[tracks[track_select].strip][page].controls[i].textcol
+                        if show_fsnapshots then
+                          fss_select = snapshots[tracks[track_select].strip][page][fsstype_select].selected
+                          obj.sections[180].x = F_limit(strips[tracks[track_select].strip][page].controls[i].x - surface_offset.x + obj.sections[10].x + 
+                                                        math.floor((strips[tracks[track_select].strip][page].controls[i].w - obj.sections[180].w)/2),
+                                                        obj.sections[10].x,obj.sections[10].x+obj.sections[10].w-obj.sections[180].w)
+                          obj.sections[180].y = F_limit(strips[tracks[track_select].strip][page].controls[i].y+strips[tracks[track_select].strip][page].controls[i].ctl_info.cellh 
+                                                        - surface_offset.y  + obj.sections[10].y,
+                                                        obj.sections[10].y,obj.sections[10].y+obj.sections[10].h-obj.sections[180].h)
+                        end
+                        update_fsnaps = true
+                        update_surface = true
                       end
                                         
                     end
                   end
+                  noscroll = true
                   break
                   
                 elseif MOUSE_click_RB(ctlxywh) and mouse.ctrl == false then
@@ -8614,9 +8946,17 @@ end
             end
           end
         end
+      
+      if show_fsnapshots and togfsnap == false then
+        show_fsnapshots = false
+        update_surface = true
+      end
+      
+      
       end
 
       if mouse.context and mouse.context == contexts.sliderctl then
+        
         local val = MOUSE_slider(ctlxywh,mouse.slideoff)
         if val ~= nil then
           if oms ~= mouse.shift then
@@ -8697,6 +9037,11 @@ end
       end
       
       if MOUSE_click(obj.sections[43]) and navigate then
+        if show_fsnapshots then
+          show_fsnapshots = false
+          update_surface = true
+        end
+        
         local i = math.floor((mouse.my - obj.sections[43].y) / butt_h)-1
         if i == -1 then
           if mouse.mx < obj.sections[43].w/2 then
@@ -8770,6 +9115,17 @@ end
         snaph = obj.sections[160].h
         update_msnaps = true
         resize_snaps = true
+        --update_gfx = true
+
+      elseif mouse.context and mouse.context == contexts.resizefsnapwindow then
+
+        local ly = obj.sections[10].h - obj.sections[180].y + butt_h
+        obj.sections[180].h = F_limit(resizesnapwin.origh + (mouse.my - resizesnapwin.offy) - obj.sections[180].y, 180, ly)
+        obj.sections[181].h = obj.sections[180].h - 20
+        obj.sections[182].y = obj.sections[180].h - 6
+        fsnaph = obj.sections[180].h
+        update_mfsnaps = true
+        resize_fsnaps = true
         --update_gfx = true
       
       elseif dragparam ~= nil then
@@ -10941,6 +11297,7 @@ end
           gfx2_select = nil
           gfx3_select = nil
           --CloseActChooser()
+          
           if mode ~= 0 then
             update_gfx = true
           end
@@ -12450,7 +12807,7 @@ end
   
   end
 
-  function Snapshot_Set(strip, page)
+  function Snapshot_Set(strip, page, sstype_select, ss_select)
   
     if sstype_select == 1 then
       if snapshots[strip][page][sstype_select][ss_select] then
@@ -12667,6 +13024,7 @@ end
     butt_h = 20
     fx_h = 160
     snaph = 300
+    fsnaph = 300
   
     ogrid = settings_gridsize
     sb_size = 3
@@ -12676,12 +13034,15 @@ end
     G_butt_cnt = 0
     S_butt_cnt = 0
     SF_butt_cnt = 0
+    SS_butt_cnt = 0
+    FSS_butt_cnt = 0
     tlist_offset = 0
     sflist_offset = 0
     cyclist_offset = 0
     trctltypelist_offset = 0
     trctlslist_offset = 0
     ssoffset = 0
+    fssoffset = 0
     al_offset = 0
     
     strips = {}
@@ -12736,6 +13097,7 @@ end
     scalemode_select = 8
     framemode_select = 1
     sstype_select = 1
+    fsstype_select = 1
     horiz_select = false
     al_select = 0
     
@@ -12753,6 +13115,7 @@ end
     show_cycleoptions = false
     show_paramlearn = false
     show_snapshots = false
+    show_fsnapshots = false
     show_actionchooser = false
     
     show_paramname = true
