@@ -712,12 +712,12 @@
       --FLOATING SNAPS
       obj.sections[180] = {x = 0,
                           y = 0,
-                          w = 160,
+                          w = 138,
                           h = fsnaph}                            
-      obj.sections[181] = {x = 10,
-                          y = 10,
-                          w = obj.sections[180].w-20,
-                          h = obj.sections[180].h-20}                       
+      obj.sections[181] = {x = 3,
+                          y = 2,
+                          w = obj.sections[180].w-6,
+                          h = obj.sections[180].h-12}                       
       obj.sections[182] = {x = 0,
                           y = obj.sections[180].h-6,
                           w = obj.sections[180].w,
@@ -3909,12 +3909,12 @@ end
              0, 
              obj.sections[180].w,
              obj.sections[180].h, 1, 1)
-    f_Get_SSV('64 64 64')
-    gfx.rect(0,
+    f_Get_SSV('8 8 8')
+    --[[gfx.rect(0,
              0, 
              obj.sections[180].w,
              obj.sections[180].h, 0, 1)
-    
+    ]]
     f_Get_SSV(fsstype_color)
     gfx.a = 1 
     gfx.rect(obj.sections[182].x,
@@ -3936,14 +3936,14 @@ end
     
     xywh.h = butt_h
     gfx.rect(xywh.x,
-     xywh.y, 
+     xywh.y-1, 
      xywh.w,
      xywh.h, 1 )
     gfx.a = 0.5
     f_Get_SSV(gui.color.black)
     gfx.a = 1
     gfx.rect(xywh.x+xywh.w/2,
-     xywh.y, 
+     xywh.y-1, 
      2,
      xywh.h, 1 )
     gfx.triangle(xywh.x+xywh.w/4,xywh.y+4,xywh.x+xywh.w/4-6,xywh.y+xywh.h-4,xywh.x+xywh.w/4+6,xywh.y+xywh.h-4,1)     
@@ -8829,8 +8829,8 @@ end
                           obj.sections[180].x = F_limit(strips[tracks[track_select].strip][page].controls[i].x - surface_offset.x + obj.sections[10].x + 
                                                         math.floor((strips[tracks[track_select].strip][page].controls[i].w - obj.sections[180].w)/2),
                                                         obj.sections[10].x,obj.sections[10].x+obj.sections[10].w-obj.sections[180].w)
-                          obj.sections[180].y = F_limit(strips[tracks[track_select].strip][page].controls[i].y+strips[tracks[track_select].strip][page].controls[i].ctl_info.cellh 
-                                                        - surface_offset.y  + obj.sections[10].y,
+                          obj.sections[180].y = F_limit(strips[tracks[track_select].strip][page].controls[i].y+strips[tracks[track_select].strip][page].controls[i].ctl_info.cellh
+                                                        - surface_offset.y  + obj.sections[10].y - 3,
                                                         obj.sections[10].y,obj.sections[10].y+obj.sections[10].h-obj.sections[180].h)
                         end
                         update_fsnaps = true
@@ -9136,7 +9136,7 @@ end
 
         local ly = obj.sections[10].h - obj.sections[180].y + butt_h
         obj.sections[180].h = F_limit(resizesnapwin.origh + (mouse.my - resizesnapwin.offy) - obj.sections[180].y, 180, ly)
-        obj.sections[181].h = obj.sections[180].h - 20
+        obj.sections[181].h = obj.sections[180].h - 12
         obj.sections[182].y = obj.sections[180].h - 6
         fsnaph = obj.sections[180].h
         update_mfsnaps = true
