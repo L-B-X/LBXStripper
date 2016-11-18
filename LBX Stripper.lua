@@ -8738,71 +8738,80 @@ end
                       local mmy = mouse.my - ctlxywh.y
                       if mmy < ctlxywh.h/2 then
                         sstype_select = strips[tracks[track_select].strip][page].controls[i].param
+                        ss_select = snapshots[tracks[track_select].strip][page][sstype_select].selected
                         show_snapshots = true
                         update_snaps = true
                       
                       elseif mmx < 20 then
-                        sstype_select = strips[tracks[track_select].strip][page].controls[i].param
-                        if snapshots[tracks[track_select].strip][page][sstype_select].selected then
-                          if sstype_select == 1 then
-                            ss_select = snapshots[tracks[track_select].strip][page][sstype_select].selected-1
-                            if ss_select < 1 then
-                              ss_select = #snapshots[tracks[track_select].strip][page][sstype_select]
+                        local xsstype_select,xss_select
+                        xsstype_select = strips[tracks[track_select].strip][page].controls[i].param
+                        if snapshots[tracks[track_select].strip][page][xsstype_select].selected then
+                          if xsstype_select == 1 then
+                            xss_select = snapshots[tracks[track_select].strip][page][xsstype_select].selected-1
+                            if xss_select < 1 then
+                              xss_select = #snapshots[tracks[track_select].strip][page][xsstype_select]
                             end
                           else
-                            ss_select = snapshots[tracks[track_select].strip][page][sstype_select].selected-1
-                            if ss_select < 1 then                            
-                              ss_select = #snapshots[tracks[track_select].strip][page][sstype_select].snapshot
+                            xss_select = snapshots[tracks[track_select].strip][page][xsstype_select].selected-1
+                            if xss_select < 1 then                            
+                              xss_select = #snapshots[tracks[track_select].strip][page][xsstype_select].snapshot
                             end
                           end
                         else
-                          if sstype_select == 1 then
-                            if #snapshots[tracks[track_select].strip][page][sstype_select] > 0 then
-                              ss_select = 1
+                          if xsstype_select == 1 then
+                            if #snapshots[tracks[track_select].strip][page][xsstype_select] > 0 then
+                              xss_select = 1
                             end
                           else
-                            if #snapshots[tracks[track_select].strip][page][sstype_select].snapshot > 0 then
-                              ss_select = 1                            
+                            if #snapshots[tracks[track_select].strip][page][xsstype_select].snapshot > 0 then
+                              xss_select = 1                            
                             end
                           end
                         end
-                        if ss_select then
-                          Snapshot_Set(tracks[track_select].strip, page, sstype_select, ss_select)
+                        if xss_select then
+                          Snapshot_Set(tracks[track_select].strip, page, xsstype_select, xss_select)
+                          if xsstype_select == sstype_select then
+                            ss_select = xss_select
+                          end
                           update_ctls = true
                           update_snaps = true
-                          update_fsnaps = true                       
+                          --update_fsnaps = true                       
                         end
                                             
                       elseif mmx > ctlxywh.w-20 then
-                        sstype_select = strips[tracks[track_select].strip][page].controls[i].param
-                        if snapshots[tracks[track_select].strip][page][sstype_select].selected then
-                          if sstype_select == 1 then
-                            ss_select = snapshots[tracks[track_select].strip][page][sstype_select].selected+1
-                            if ss_select > #snapshots[tracks[track_select].strip][page][sstype_select] then
-                              ss_select = 1
+                        local xsstype_select,xss_select
+                        xsstype_select = strips[tracks[track_select].strip][page].controls[i].param
+                        if snapshots[tracks[track_select].strip][page][xsstype_select].selected then
+                          if xsstype_select == 1 then
+                            xss_select = snapshots[tracks[track_select].strip][page][xsstype_select].selected+1
+                            if xss_select > #snapshots[tracks[track_select].strip][page][xsstype_select] then
+                              xss_select = 1
                             end
                           else
-                            ss_select = snapshots[tracks[track_select].strip][page][sstype_select].selected+1
-                            if ss_select > #snapshots[tracks[track_select].strip][page][sstype_select].snapshot then
-                              ss_select = 1
+                            xss_select = snapshots[tracks[track_select].strip][page][xsstype_select].selected+1
+                            if xss_select > #snapshots[tracks[track_select].strip][page][xsstype_select].snapshot then
+                              xss_select = 1
                             end
                           end
                         else
-                          if sstype_select == 1 then
-                            if #snapshots[tracks[track_select].strip][page][sstype_select] > 0 then
-                              ss_select = 1
+                          if xsstype_select == 1 then
+                            if #snapshots[tracks[track_select].strip][page][xsstype_select] > 0 then
+                              xss_select = 1
                             end
                           else
-                            if #snapshots[tracks[track_select].strip][page][sstype_select].snapshot > 0 then
-                              ss_select = 1                            
+                            if #snapshots[tracks[track_select].strip][page][xsstype_select].snapshot > 0 then
+                              xss_select = 1                            
                             end
                           end
                         end
-                        if ss_select then
-                          Snapshot_Set(tracks[track_select].strip, page, sstype_select, ss_select)                          
+                        if xss_select then
+                          Snapshot_Set(tracks[track_select].strip, page, xsstype_select, xss_select)                          
+                          if xsstype_select == sstype_select then
+                            ss_select = xss_select
+                          end
                           update_ctls = true
                           update_snaps = true
-                          update_fsnaps = true                       
+                          --update_fsnaps = true                       
                         end
                       
                       else
