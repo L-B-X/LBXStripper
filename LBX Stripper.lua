@@ -3507,11 +3507,11 @@ end
                 end
               end
                           
-              if reass_param == i then
+              --[[if reass_param == i then
                 f_Get_SSV(gui.color.red)
                 gfx.a = 0.8
                 gfx.roundrect(x, y, w, h, 8, 1, 0)
-              end
+              end]]
               
               if mode == 1 and submode == 2 then
                 if tnum and tnum ~= tracks[track_select].tracknum then
@@ -4294,6 +4294,21 @@ end
               f_Get_SSV(gui.color.yellow)
               gfx.a = 1
               gfx.roundrect(x, y ,w, h, 8, 1, 0)
+            else
+              local x, y = dragparam.x, dragparam.y
+              local iidx = ctl_files[knob_select].imageidx
+              if iidx == nil or ksel_loaded == false then
+                ksel_loaded = true
+                gfx.loadimg(1023, controls_path..ctl_files[knob_select].fn)
+                iidx = 1023
+              elseif iidx == nil then
+                iidx = 1023
+              end
+              local w, _ = gfx.getimgdim(iidx)
+              local h = ctl_files[knob_select].cellh
+              f_Get_SSV(gui.color.red)
+              gfx.a = 1
+              gfx.roundrect(x, y ,w, h, 8, 1, 0)              
             end
           end        
         
@@ -10464,6 +10479,7 @@ end
         
             if MOUSE_click(obj.sections[42]) then
               local i = math.floor((mouse.my - obj.sections[42].y) / butt_h)-2
+              local dp = true
               if i == -1 then
                 if mouse.mx < obj.sections[42].w/2 then
                   plist_offset = plist_offset - P_butt_cnt
@@ -10482,17 +10498,45 @@ end
                   if tfxp_sel == nil then
                     tfxp_sel = {}
                     tfxp_sel[i + plist_offset] = true
+                    tfxp_last = i + plist_offset
                   elseif tfxp_sel[i + plist_offset] then
                     --remove
                     tfxp_sel[i + plist_offset] = nil
                   else
                     tfxp_sel[i + plist_offset] = true
+                    tfxp_last = i + plist_offset
                   end
+                  dp = false
+                elseif mouse.shift then
+                  if tfxp_sel == nil then
+                    tfxp_sel = {}
+                    tfxp_sel[i + plist_offset] = true
+                    tfxp_last = i + plist_offset
+                  else
+                    if tfxp_last == nil then
+                    
+                    else
+                      local it = 1
+                      if tfxp_last > i + plist_offset then
+                        it = -1
+                      end
+                      tfxp_sel = {}
+                      for p = tfxp_last, i + plist_offset, it do
+                        tfxp_sel[p] = true  
+                      end
+                      tfxp_last = i + plist_offset
+                    end
+                    dp = false
+                  end
+                
                 elseif tfxp_sel and tfxp_sel[i + plist_offset] then
                   --do nothing but drag
+                  tfxp_last = i + plist_offset
+                  
                 else
                   tfxp_sel = {}
                   tfxp_sel[i + plist_offset] = true            
+                  tfxp_last = i + plist_offset
                 end
                 ctl_select = nil
                 update_gfx = true
@@ -10508,7 +10552,9 @@ end
                 else 
                   ksel_size = {w = 50, h = 50}
                 end
-                mouse.context = contexts.dragparam
+                if dp then
+                  mouse.context = contexts.dragparam
+                end
               end
             end
           elseif fxmode == 1 then
@@ -10634,7 +10680,7 @@ end
                 end
               end
             end                    
-            update_gfx = true
+            update_surface = true
           
           elseif mouse.context and mouse.context == contexts.dragparamlrn then
             dragparam = {x = mouse.mx-ksel_size.w, y = mouse.my-ksel_size.h, type = 'learn'}
@@ -10653,7 +10699,7 @@ end
                 end
               end
             end                    
-            update_gfx = true
+            update_surface = true
           
           elseif mouse.context and mouse.context == contexts.dragparam_tr then
             dragparam = {x = mouse.mx-ksel_size.w, y = mouse.my-ksel_size.h, type = 'trctl'}
@@ -10672,7 +10718,7 @@ end
                 end
               end
             end                    
-            update_gfx = true
+            update_surface = true
   
           elseif mouse.context and mouse.context == contexts.dragparam_snd then
             dragparam = {x = mouse.mx-ksel_size.w, y = mouse.my-ksel_size.h, type = 'trsnd'}
@@ -10691,7 +10737,7 @@ end
                 end
               end
             end                    
-            update_gfx = true
+            update_surface = true
   
           elseif mouse.context and mouse.context == contexts.dragparam_spec then
             dragparam = {x = mouse.mx-ksel_size.w, y = mouse.my-ksel_size.h, type = 'action'}
@@ -10710,7 +10756,7 @@ end
                 end
               end
             end                    
-            update_gfx = true
+            update_surface = true
             
           elseif dragparam ~= nil then
             --Dropped
@@ -10879,6 +10925,13 @@ end
               end
             end
             
+            --if mouse.mx > obj.sections[10].x then
+              tfxp_sel = nil
+              if tfxp_last then
+                tfxp_sel = {}
+                tfxp_sel[tfxp_last] = true
+              end
+            --end
             reass_param = nil
             dragparam = nil
             update_gfx = true
@@ -11064,7 +11117,7 @@ end
         
         if mouse.context and mouse.context == contexts.draggfx then
           draggfx = {x = mouse.mx - draggfx_w/2, y = mouse.my - draggfx_h/2}
-          update_gfx = true
+          update_surface = true
         elseif draggfx ~= nil then
           --Dropped
           if mouse.mx > obj.sections[10].x and mouse.mx < obj.sections[10].x+obj.sections[10].w and mouse.my > obj.sections[10].y and mouse.my < obj.sections[10].y+obj.sections[10].h then
@@ -11387,7 +11440,7 @@ end
         if mouse.context and mouse.context == contexts.dragstrip then
           if mouse.mx ~= mouse.last_x or mouse.my ~= mouse.last_y then
             dragstrip = {x = mouse.mx, y = mouse.my}
-            update_gfx = true
+            update_surface = true
           end
         elseif dragstrip ~= nil then
           --Dropped
