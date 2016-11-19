@@ -6146,7 +6146,10 @@ end
       savestrip = {}
       savestrip.strip = strips[tracks[track_select].strip][page]
       savestrip.fx = fxtbl
-    
+      if snapshots and snapshots[tracks[track_select].strip] then
+        savestrip.snapshots = snapshots[tracks[track_select].strip][page]
+      end
+      
       --Pickle doesn't like {} in strings (much) - remove before pickling
       for i = 1, #savestrip.strip.controls do
         savestrip.strip.controls[i].fxguid = convertguid(savestrip.strip.controls[i].fxguid)
@@ -6316,7 +6319,8 @@ end
     
     --time = math.abs(math.sin( -1 + (os.clock() % 2)))
     stripid = GenID()
-    
+    local cidtrack = {}
+    local cstart = #strips[strip][page].controls + 1
     for j = 1, #stripdata.strip.controls do
       stripdata.strip.controls[j].x = stripdata.strip.controls[j].x + offsetx + x + surface_offset.x     
       stripdata.strip.controls[j].y = stripdata.strip.controls[j].y + offsety + y + surface_offset.y
@@ -6330,8 +6334,14 @@ end
                                                                             - stripdata.strip.controls[j].ctl_info.cellh*stripdata.strip.controls[j].scale/2)
       strips[strip][page].controls[cc].wsc = stripdata.strip.controls[j].w*stripdata.strip.controls[j].scale
       strips[strip][page].controls[cc].hsc = stripdata.strip.controls[j].ctl_info.cellh*stripdata.strip.controls[j].scale
-      strips[strip][page].controls[cc].c_id = GenID() --give a new control id
       
+      local ocid = strips[strip][page].controls[cc].c_id
+      strips[strip][page].controls[cc].c_id = GenID() --give a new control id
+      if ocid then
+        cidtrack[ocid] = {c_id = strips[strip][page].controls[cc].c_id,
+                          ctl = cc}
+      end
+            
       --compatibility
       if strips[strip][page].controls[cc].poslock == nil then strips[strip][page].controls[cc].poslock = false end
       if strips[strip][page].controls[cc].scalemode == nil then strips[strip][page].controls[cc].scalemode = 8 end
@@ -6404,6 +6414,131 @@ end
           
     end
     
+    Snapshots_INIT()
+    if stripdata.snapshots and #stripdata.snapshots > 0 then
+      local paramchange = {}
+      for i = 1, #stripdata.snapshots do
+
+        if stripdata.snapshots[i] then
+          if i == 1 then
+            --page - convert to subset
+            if #stripdata.snapshots[i] > 0 then
+              local sstcnt = #snapshots[strip][page] + 1
+              if sstcnt == 1 then 
+                --skip page snapshots
+                sstcnt = 2 
+              end
+              paramchange[i] = sstcnt 
+              snapshots[strip][page][sstcnt] = {subsetname = '##Page Snapshots',
+                                                snapshot = {},
+                                                ctls = {}}
+              for ss = 1, #stripdata.snapshots[i] do
+              
+                snapshots[strip][page][sstcnt].snapshot[ss] = stripdata.snapshots[i][ss]
+                snapshots[strip][page][sstcnt].selected = stripdata.snapshots[i].selected
+                
+                if snapshots[strip][page][sstcnt].snapshot[ss] then
+                  if #snapshots[strip][page][sstcnt].snapshot[ss].data > 0 then
+                    for d = 1, #snapshots[strip][page][sstcnt].snapshot[ss].data do
+                      local ocid = snapshots[strip][page][sstcnt].snapshot[ss].data[d].c_id
+                      if cidtrack[ocid] then
+                        snapshots[strip][page][sstcnt].snapshot[ss].data[d].c_id = cidtrack[ocid].c_id
+                        snapshots[strip][page][sstcnt].snapshot[ss].data[d].ctl = cidtrack[ocid].ctl
+                      else
+                        DBG('Erk')
+                      end            
+                    end
+                  end
+                
+                  if ss == 1 then
+                    --do just once
+                    if #snapshots[strip][page][sstcnt].snapshot[ss].data > 0 then
+                      for d = 1, #snapshots[strip][page][sstcnt].snapshot[ss].data do
+                        snapshots[strip][page][sstcnt].ctls[d] = {c_id = snapshots[strip][page][sstcnt].snapshot[ss].data[d].c_id,
+                                                                  ctl = snapshots[strip][page][sstcnt].snapshot[ss].data[d].ctl}
+                      end
+                    end            
+                    --[[for j = cstart, #strips[strip][page].controls do
+                      if strips[strip][page].controls[j].ctlcat == ctlcats.snapshot then
+                        if strips[strip][page].controls[j].param == i then
+                          strips[strip][page].controls[j].param = sstcnt
+                        end
+                      end
+                    end]]
+                  end
+                end
+                                       
+                --[[snapshots[strip][page][1][sscnt] = stripdata.snapshots[i][ss]  
+                snapshots[strip][page][1].selected = stripdata.snapshots[i].selected
+                
+                for d = 1, #snapshots[strip][page][1][sscnt].data do
+                  local ocid = snapshots[strip][page][1][sscnt].data[d].c_id
+                  if cidtrack[ocid] then
+                    snapshots[strip][page][1][sscnt].data[d].c_id = cidtrack[ocid].c_id
+                    snapshots[strip][page][1][sscnt].data[d].ctl = cidtrack[ocid].ctl
+                  else
+                    DBG('Erk')
+                  end            
+                end
+    
+                sscnt = sscnt + 1]]
+              
+              end
+            end            
+          else
+            --subset
+            local sstcnt = #snapshots[strip][page] + 1
+            paramchange[i] = sstcnt 
+            snapshots[strip][page][sstcnt] = stripdata.snapshots[i]
+            if snapshots[strip][page][sstcnt] and #snapshots[strip][page][sstcnt].ctls > 0 then
+              for ctl = 1, #snapshots[strip][page][sstcnt].ctls do
+                local ocid = snapshots[strip][page][sstcnt].ctls[ctl].c_id
+                if cidtrack[ocid] then
+                  snapshots[strip][page][sstcnt].ctls[ctl].c_id = cidtrack[ocid].c_id
+                  snapshots[strip][page][sstcnt].ctls[ctl].ctl = cidtrack[ocid].ctl
+                else
+                  DBG('Erk')
+                end            
+              end
+            end
+        
+            if snapshots[strip][page][sstcnt] and #snapshots[strip][page][sstcnt].snapshot > 0 then
+              for ss = 1, #snapshots[strip][page][sstcnt].snapshot do
+                if #snapshots[strip][page][sstcnt].snapshot[ss].data > 0 then
+                  for d = 1, #snapshots[strip][page][sstcnt].snapshot[ss].data do
+                    local ocid = snapshots[strip][page][sstcnt].snapshot[ss].data[d].c_id
+                    if cidtrack[ocid] then
+                      snapshots[strip][page][sstcnt].snapshot[ss].data[d].c_id = cidtrack[ocid].c_id
+                      snapshots[strip][page][sstcnt].snapshot[ss].data[d].ctl = cidtrack[ocid].ctl
+                    else
+                      DBG('Erk')
+                    end            
+                  end
+                end
+              end
+            end
+                  
+            --[[for j = cstart, #strips[strip][page].controls do
+              if strips[strip][page].controls[j].ctlcat == ctlcats.snapshot then
+                if strips[strip][page].controls[j].param == i then
+                  strips[strip][page].controls[j].param = sstcnt
+                end
+              end
+            end]]
+        
+          end
+        end
+      end
+      
+      for j = cstart, #strips[strip][page].controls do
+        if strips[strip][page].controls[j].ctlcat == ctlcats.snapshot then
+          --if strips[strip][page].controls[j].param == i then
+            strips[strip][page].controls[j].param = paramchange[strips[strip][page].controls[j].param]
+          --end
+        end
+      end
+    end  
+      
     PopulateTrackFX()
     return stripid
     
@@ -8827,7 +8962,7 @@ end
                       else
                         --open fss
                         togfsnap = true
-                        
+                        --DBG(strips[tracks[track_select].strip][page].controls[i].param..'  '..fsstype_select)
                         if fsstype_select == strips[tracks[track_select].strip][page].controls[i].param then
                           show_fsnapshots = not show_fsnapshots
                         else
