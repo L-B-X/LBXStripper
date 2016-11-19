@@ -13,7 +13,7 @@
   --------------------------------------------
         
   submode_table = {'FX PARAMS','GRAPHICS','STRIPS'}
-  ctltype_table = {'KNOB/SLIDER','BUTTON','BUTTON INV','CYCLE BUTTON','METER','MEM BUTTON','HOLD BUTTON'}
+  ctltype_table = {'KNOB/SLIDER','BUTTON','BUTTON INV','CYCLE BUTTON','METER','MEM BUTTON','HOLD BUTTON','FLASH BUTTON'}
   trctltype_table = {'Track Controls','Track Sends','Actions'}
   special_table = {'Action Trigger'}
   scalemode_preset_table = {'','NORMAL','REAPER VOL'}
@@ -3355,6 +3355,8 @@ end
                   else
                     val2 = 0                
                   end
+                elseif ctltype == 7 or ctltype == 8 then
+                  val2 = 1-strips[strip][page].controls[i].val
                 end
                 
                 if not found then
@@ -9322,7 +9324,7 @@ end
                       end
                                         
                     end
-                  elseif ctltype == 7 then
+                  elseif ctltype == 7 or ctltype == 8 then
                     --hold button
                     holdbtn = 'holdbtn'
                     trackfxparam_select = i
@@ -9547,7 +9549,9 @@ end
         holdbtn = nil
         strips[tracks[track_select].strip][page].controls[trackfxparam_select].val = 0
         strips[tracks[track_select].strip][page].controls[trackfxparam_select].dirty = true
-        SetParam()
+        if strips[tracks[track_select].strip][page].controls[trackfxparam_select].ctltype == 7 then
+          SetParam()
+        end
         update_ctls = true
       end
       
