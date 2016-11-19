@@ -13,7 +13,7 @@
   --------------------------------------------
         
   submode_table = {'FX PARAMS','GRAPHICS','STRIPS'}
-  ctltype_table = {'KNOB/SLIDER','BUTTON','BUTTON INV','CYCLE BUTTON','METER','MEM BUTTON'}
+  ctltype_table = {'KNOB/SLIDER','BUTTON','BUTTON INV','CYCLE BUTTON','METER','MEM BUTTON','HOLD BUTTON'}
   trctltype_table = {'Track Controls','Track Sends','Actions'}
   special_table = {'Action Trigger'}
   scalemode_preset_table = {'','NORMAL','REAPER VOL'}
@@ -65,6 +65,7 @@
               dragcycle = 33,
               addsnapctl = 34,
               resizefsnapwindow = 35,
+              hold = 36,
               dummy = 99
               }
   
@@ -9113,7 +9114,9 @@ end
                     end
   
                     noscroll = true
-                  elseif ctltype == 1 then
+                  end
+                  
+                  if ctltype == 1 then
                     --knob/slider
                     if strips[tracks[track_select].strip][page].controls[i].horiz then
                       mouse.context = contexts.sliderctl_h
@@ -9319,6 +9322,15 @@ end
                       end
                                         
                     end
+                  elseif ctltype == 7 then
+                    --hold button
+                    holdbtn = 'holdbtn'
+                    trackfxparam_select = i
+                    mouse.context = contexts.hold
+                    strips[tracks[track_select].strip][page].controls[i].val = 1
+                    strips[tracks[track_select].strip][page].controls[i].dirty = true
+                    SetParam()
+                    update_ctls = true
                   end
                   noscroll = true
                   break
@@ -9530,6 +9542,13 @@ end
             end
           end
         end
+      elseif mouse.context and mouse.context == contexts.hold then
+      elseif mouse.context == nil and holdbtn ~= nil then
+        holdbtn = nil
+        strips[tracks[track_select].strip][page].controls[trackfxparam_select].val = 0
+        strips[tracks[track_select].strip][page].controls[trackfxparam_select].dirty = true
+        SetParam()
+        update_ctls = true
       end
       
       if MOUSE_click(obj.sections[43]) and navigate then
