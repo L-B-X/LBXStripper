@@ -64,7 +64,8 @@
               sliderctl_h = 32,
               dragcycle = 33,
               addsnapctl = 34,
-              resizefsnapwindow = 35
+              resizefsnapwindow = 35,
+              dummy = 99
               }
   
   ctlcats = {fxparam = 0,
@@ -737,10 +738,11 @@
       gui.fontname = fontname_def
       gui.fontsize_tab = 20    
       gui.fontsz_knob = fontsize_def
+      --gui.fontsz_get = fontsize_def
 
       if OS == "OSX32" or OS == "OSX64" then gui.fontsize_tab = gui.fontsize_tab - 5 end
       if OS == "OSX32" or OS == "OSX64" then gui.fontsz_knob = gui.fontsz_knob - 5 end
-      if OS == "OSX32" or OS == "OSX64" then gui.fontsz_get = gui.fontsz_get - 5 end
+      --if OS == "OSX32" or OS == "OSX64" then gui.fontsz_get = gui.fontsz_get - 5 end
       
       gui.color = {['back'] = '71 71 71 ',
                  ['back2'] = '51 63 56',
@@ -1271,7 +1273,7 @@
                                                 param = trctl_select,
                                                 param_info = {paramname = 'Unassigned Action',
                                                               paramidx = nil},
-                                                ctltype = ctltype_select,
+                                                ctltype = 2,
                                                 knob_select = knob_select,
                                                 ctl_info = {fn = ctl_files[knob_select].fn,
                                                             frames = ctl_files[knob_select].frames,
@@ -2536,84 +2538,85 @@
       
         for i = 1, #strips[tracks[track_select].strip][page].graphics do
         
-          local gtype = strips[tracks[track_select].strip][page].graphics[i].gfxtype
-          local x = strips[tracks[track_select].strip][page].graphics[i].x
-          local y = strips[tracks[track_select].strip][page].graphics[i].y
-          if not surface_size.limit then
-            x = x + surface_offset.x 
-            y = y + surface_offset.y 
-          end
-          
-          if gtype == gfxtype.img then
-            local w = strips[tracks[track_select].strip][page].graphics[i].w
-            local h = strips[tracks[track_select].strip][page].graphics[i].h
-            local sw = strips[tracks[track_select].strip][page].graphics[i].stretchw
-            local sh = strips[tracks[track_select].strip][page].graphics[i].stretchh
-            local imageidx = strips[tracks[track_select].strip][page].graphics[i].imageidx
-            
-            local yoff = 0
-            local xoff = 0
+          if strips[tracks[track_select].strip][page].graphics[i].hide == nil then
+            local gtype = strips[tracks[track_select].strip][page].graphics[i].gfxtype
+            local x = strips[tracks[track_select].strip][page].graphics[i].x
+            local y = strips[tracks[track_select].strip][page].graphics[i].y
             if not surface_size.limit then
-              if x+sw > obj.sections[10].x + obj.sections[10].w then
-                sw = obj.sections[10].x + obj.sections[10].w - x
-              end
-              if x < obj.sections[10].x then
-                xoff = obj.sections[10].x - x
-              end
-              if y+sh > obj.sections[10].y + obj.sections[10].h then
-                sh = obj.sections[10].y + obj.sections[10].h - y
-              end
-              if y < obj.sections[10].y then
-                yoff = obj.sections[10].y - y
-              end
+              x = x + surface_offset.x 
+              y = y + surface_offset.y 
             end
-            gfx.blit(imageidx,1,0, xoff, yoff, w, h-yoff, x+xoff, y+yoff, sw, sh)
-          
-          elseif gtype == gfxtype.txt then
-            --local w = strips[tracks[track_select].strip][page].graphics[i].w
-            --local h = strips[tracks[track_select].strip][page].graphics[i].h
-            local text = strips[tracks[track_select].strip][page].graphics[i].text
-            local textcol = strips[tracks[track_select].strip][page].graphics[i].text_col
             
-            local flagb,flagi,flagu = 0,0,0
-            if strips[tracks[track_select].strip][page].graphics[i].font.bold then
-              flagb = 98
-            end
-            if strips[tracks[track_select].strip][page].graphics[i].font.italics then
-              flagi = 105
-            end
-            if strips[tracks[track_select].strip][page].graphics[i].font.underline then
-              flagu = 117
-            end
-            local flags = flagb + (flagi*256) + (flagu*(256^2))
-            gfx.setfont(1,strips[tracks[track_select].strip][page].graphics[i].font.name,
-                          strips[tracks[track_select].strip][page].graphics[i].font.size,flags)
-            local w, h = gfx.measurestr(text)
-            strips[tracks[track_select].strip][page].graphics[i].w = w
-            strips[tracks[track_select].strip][page].graphics[i].h = h            
-            strips[tracks[track_select].strip][page].graphics[i].stretchw = w
-            strips[tracks[track_select].strip][page].graphics[i].stretchh = h            
-            if strips[tracks[track_select].strip][page].graphics[i].font.shadow then
+            if gtype == gfxtype.img then
+              local w = strips[tracks[track_select].strip][page].graphics[i].w
+              local h = strips[tracks[track_select].strip][page].graphics[i].h
+              local sw = strips[tracks[track_select].strip][page].graphics[i].stretchw
+              local sh = strips[tracks[track_select].strip][page].graphics[i].stretchh
+              local imageidx = strips[tracks[track_select].strip][page].graphics[i].imageidx
+              
+              local yoff = 0
+              local xoff = 0
+              if not surface_size.limit then
+                if x+sw > obj.sections[10].x + obj.sections[10].w then
+                  sw = obj.sections[10].x + obj.sections[10].w - x
+                end
+                if x < obj.sections[10].x then
+                  xoff = obj.sections[10].x - x
+                end
+                if y+sh > obj.sections[10].y + obj.sections[10].h then
+                  sh = obj.sections[10].y + obj.sections[10].h - y
+                end
+                if y < obj.sections[10].y then
+                  yoff = obj.sections[10].y - y
+                end
+              end
+              gfx.blit(imageidx,1,0, xoff, yoff, w, h-yoff, x+xoff, y+yoff, sw, sh)
             
-              local shada = nz(strips[tracks[track_select].strip][page].graphics[i].font.shadow_a,0.6)
-              local shadx = nz(strips[tracks[track_select].strip][page].graphics[i].font.shadow_x,1)
-              local shady = nz(strips[tracks[track_select].strip][page].graphics[i].font.shadow_y,1)
-              --local shadoff = F_limit(math.ceil((strips[tracks[track_select].strip][page].graphics[i].font.size/250)*10),1,15)
-            
-              f_Get_SSV(gui.color.black)
-              gfx.a = shada
-              gfx.x, gfx.y = x+shadx,y+shady
+            elseif gtype == gfxtype.txt then
+              --local w = strips[tracks[track_select].strip][page].graphics[i].w
+              --local h = strips[tracks[track_select].strip][page].graphics[i].h
+              local text = strips[tracks[track_select].strip][page].graphics[i].text
+              local textcol = strips[tracks[track_select].strip][page].graphics[i].text_col
+              
+              local flagb,flagi,flagu = 0,0,0
+              if strips[tracks[track_select].strip][page].graphics[i].font.bold then
+                flagb = 98
+              end
+              if strips[tracks[track_select].strip][page].graphics[i].font.italics then
+                flagi = 105
+              end
+              if strips[tracks[track_select].strip][page].graphics[i].font.underline then
+                flagu = 117
+              end
+              local flags = flagb + (flagi*256) + (flagu*(256^2))
+              gfx.setfont(1,strips[tracks[track_select].strip][page].graphics[i].font.name,
+                            strips[tracks[track_select].strip][page].graphics[i].font.size,flags)
+              local w, h = gfx.measurestr(text)
+              strips[tracks[track_select].strip][page].graphics[i].w = w
+              strips[tracks[track_select].strip][page].graphics[i].h = h            
+              strips[tracks[track_select].strip][page].graphics[i].stretchw = w
+              strips[tracks[track_select].strip][page].graphics[i].stretchh = h            
+              if strips[tracks[track_select].strip][page].graphics[i].font.shadow then
+              
+                local shada = nz(strips[tracks[track_select].strip][page].graphics[i].font.shadow_a,0.6)
+                local shadx = nz(strips[tracks[track_select].strip][page].graphics[i].font.shadow_x,1)
+                local shady = nz(strips[tracks[track_select].strip][page].graphics[i].font.shadow_y,1)
+                --local shadoff = F_limit(math.ceil((strips[tracks[track_select].strip][page].graphics[i].font.size/250)*10),1,15)
+              
+                f_Get_SSV(gui.color.black)
+                gfx.a = shada
+                gfx.x, gfx.y = x+shadx,y+shady
+                gfx.drawstr(text)
+              end
+              
+              gfx.a = 1
+              gfx.x, gfx.y = x,y
+              f_Get_SSV(textcol)
+              
               gfx.drawstr(text)
+            
             end
-            
-            gfx.a = 1
-            gfx.x, gfx.y = x,y
-            f_Get_SSV(textcol)
-            
-            gfx.drawstr(text)
-          
-          end
-          
+          end          
         end
       end      
     end
@@ -3204,348 +3207,351 @@ end
       
         for i = 1, #strips[strip][page].controls do
 
-          local ctlcat = strips[strip][page].controls[i].ctlcat
-          
-          if update_gfx or strips[strip][page].controls[i].dirty or force_gfx_update or (ctlcat == ctlcats.snapshot and (update_snaps or update_fsnaps)) then
-            strips[strip][page].controls[i].dirty = false
+          if not strips[strip][page].controls[i].hide then
+
+            local ctlcat = strips[strip][page].controls[i].ctlcat
             
-            local scale = strips[strip][page].controls[i].scale
-            local x = strips[strip][page].controls[i].x 
-            local y = strips[strip][page].controls[i].y
-            local px = strips[strip][page].controls[i].xsc
-            local py = strips[strip][page].controls[i].ysc
-            local w = strips[strip][page].controls[i].w
-            local h = strips[strip][page].controls[i].ctl_info.cellh
+            if update_gfx or strips[strip][page].controls[i].dirty or force_gfx_update or (ctlcat == ctlcats.snapshot and (update_snaps or update_fsnaps)) then
+              strips[strip][page].controls[i].dirty = false
+              
+              local scale = strips[strip][page].controls[i].scale
+              local x = strips[strip][page].controls[i].x 
+              local y = strips[strip][page].controls[i].y
+              local px = strips[strip][page].controls[i].xsc
+              local py = strips[strip][page].controls[i].ysc
+              local w = strips[strip][page].controls[i].w
+              local h = strips[strip][page].controls[i].ctl_info.cellh
+    
+              local visible = true
+              if surface_size.limit == false then
+                if x+w < obj.sections[10].x or x > obj.sections[10].x + obj.sections[10].w or y+h < obj.sections[10].y or y > obj.sections[10].y + obj.sections[10].h then
+                  visible = false
+                end
+              end
+              
+              if visible then
+                local gh = h
+                local val = math.floor(100*nz(strips[strip][page].controls[i].val,0))
+                local fxnum = nz(strips[strip][page].controls[i].fxnum,-1)
+                local param = strips[strip][page].controls[i].param
+                local pname = strips[strip][page].controls[i].param_info.paramname
+                local iidx = strips[strip][page].controls[i].ctl_info.imageidx
+                local spn = strips[strip][page].controls[i].show_paramname
+                local spv = strips[strip][page].controls[i].show_paramval
+                local tc = strips[strip][page].controls[i].textcol
+                local toff = math.floor(strips[strip][page].controls[i].textoff)
+                local toffv = math.floor(strips[strip][page].controls[i].textoffval)
+                local tsz = nz(strips[strip][page].controls[i].textsize,0)
+                local frames = math.floor(strips[strip][page].controls[i].ctl_info.frames)
+                local ctltype = strips[strip][page].controls[i].ctltype
+                local ctlnmov = strips[strip][page].controls[i].ctlname_override
+                local found = strips[strip][page].controls[i].fxfound
+                local maxdp = nz(strips[strip][page].controls[i].maxdp,-1)
+                local dvoff = strips[strip][page].controls[i].dvaloffset
+                local tnum = strips[strip][page].controls[i].tracknum
   
-            local visible = true
-            if surface_size.limit == false then
-              if x+w < obj.sections[10].x or x > obj.sections[10].x + obj.sections[10].w or y+h < obj.sections[10].y or y > obj.sections[10].y + obj.sections[10].h then
-                visible = false
-              end
-            end
-            
-            if visible then
-              local gh = h
-              local val = math.floor(100*nz(strips[strip][page].controls[i].val,0))
-              local fxnum = nz(strips[strip][page].controls[i].fxnum,-1)
-              local param = strips[strip][page].controls[i].param
-              local pname = strips[strip][page].controls[i].param_info.paramname
-              local iidx = strips[strip][page].controls[i].ctl_info.imageidx
-              local spn = strips[strip][page].controls[i].show_paramname
-              local spv = strips[strip][page].controls[i].show_paramval
-              local tc = strips[strip][page].controls[i].textcol
-              local toff = math.floor(strips[strip][page].controls[i].textoff)
-              local toffv = math.floor(strips[strip][page].controls[i].textoffval)
-              local tsz = nz(strips[strip][page].controls[i].textsize,0)
-              local frames = math.floor(strips[strip][page].controls[i].ctl_info.frames)
-              local ctltype = strips[strip][page].controls[i].ctltype
-              local ctlnmov = strips[strip][page].controls[i].ctlname_override
-              local found = strips[strip][page].controls[i].fxfound
-              local maxdp = nz(strips[strip][page].controls[i].maxdp,-1)
-              local dvoff = strips[strip][page].controls[i].dvaloffset
-              local tnum = strips[strip][page].controls[i].tracknum
-
-              if fxnum == nil then return end
-    
-              local track = trackM
-              if tnum ~= nil then
-                track = GetTrack(tnum)
-                if track == nil then return end
-              else
-                tnum = strips[strip].track.tracknum
-              end
-    
-              if mode == 1 and submode == 1 then
-                gfx.a = 0.5
-              else
-                gfx.a = 1
-              end
-
-              gfx.setfont(1, gui.fontname, gui.fontsz_knob +tsz-4)
-              local _, th_a = gfx.measurestr('|')
-              local to = th_a
-
-              local Disp_ParamV
-              local Disp_Name
-              local v2, val2 = 0, 0
-
-              if ctlcat == ctlcats.fxparam or ctlcat == ctlcats.trackparam or ctlcat == ctlcats.tracksend then
-                v2 = frameScale(strips[strip][page].controls[i].framemode, GetParamValue2(ctlcat,track,fxnum,param,i))
-                val2 = F_limit(round(frames*v2),0,frames-1)
-              end
-                
-              local DVOV
-              if ctltype == 3 then
-                --invert button
-                val2 = 1-val2
-              elseif ctltype == 4 then
-                --cycle button
-                if strips[strip][page].controls[i].cycledata.mapptof then
-                  --override val2
-                  --prelim code for single state notify
-                  if strips[strip][page].controls[i].cycledata.statecnt == 1 then
-                    local v3 = strips[strip][page].controls[i].val
-                    --must convert to string to compare               
-                    if tostring(v3) ~= tostring(strips[strip][page].controls[i].cycledata[1].val) then
-                      --not selected
-                      val2 = frames-1
-                    else
-                      --selected
-                      val2 = 0
-                    end
-                  else
+                if fxnum == nil then return end
+      
+                local track = trackM
+                if tnum ~= nil then
+                  track = GetTrack(tnum)
+                  if track == nil then return end
+                else
+                  tnum = strips[strip].track.tracknum
+                end
+      
+                if mode == 1 and submode == 1 then
+                  gfx.a = 0.5
+                else
+                  gfx.a = 1
+                end
+  
+                gfx.setfont(1, gui.fontname, gui.fontsz_knob +tsz-4)
+                local _, th_a = gfx.measurestr('|')
+                local to = th_a
+  
+                local Disp_ParamV
+                local Disp_Name
+                local v2, val2 = 0, 0
+  
+                if ctlcat == ctlcats.fxparam or ctlcat == ctlcats.trackparam or ctlcat == ctlcats.tracksend then
+                  v2 = frameScale(strips[strip][page].controls[i].framemode, GetParamValue2(ctlcat,track,fxnum,param,i))
+                  val2 = F_limit(round(frames*v2),0,frames-1)
+                end
                   
-                    Disp_ParamV = GetParamDisp(ctlcat, tnum, fxnum, param, dvoff, i)
-                    local p = strips[strip][page].controls[i].cycledata.pos
+                local DVOV
+                if ctltype == 3 then
+                  --invert button
+                  val2 = 1-val2
+                elseif ctltype == 4 then
+                  --cycle button
+                  if strips[strip][page].controls[i].cycledata.mapptof then
+                    --override val2
+                    --prelim code for single state notify
+                    if strips[strip][page].controls[i].cycledata.statecnt == 1 then
+                      local v3 = strips[strip][page].controls[i].val
+                      --must convert to string to compare               
+                      if tostring(v3) ~= tostring(strips[strip][page].controls[i].cycledata[1].val) then
+                        --not selected
+                        val2 = frames-1
+                      else
+                        --selected
+                        val2 = 0
+                      end
+                    else
                     
-                    if strips[strip][page].controls[i].cycledata[p] and
-                       Disp_ParamV ~= strips[strip][page].controls[i].cycledata[p].dv then
-                      for p = 1, strips[strip][page].controls[i].cycledata.statecnt do
-                        local vc = strips[strip][page].controls[i].cycledata[p].val
-                        if p < strips[strip][page].controls[i].cycledata.statecnt then
-                          vc = vc + (strips[strip][page].controls[i].cycledata[p+1].val - vc)/2
-                        end
-                        if Disp_ParamV == strips[strip][page].controls[i].cycledata[p].dv or 
-                           strips[strip][page].controls[i].val <= vc then
-                          strips[strip][page].controls[i].cycledata.pos = p
-                          break
+                      Disp_ParamV = GetParamDisp(ctlcat, tnum, fxnum, param, dvoff, i)
+                      local p = strips[strip][page].controls[i].cycledata.pos
+                      
+                      if strips[strip][page].controls[i].cycledata[p] and
+                         Disp_ParamV ~= strips[strip][page].controls[i].cycledata[p].dv then
+                        for p = 1, strips[strip][page].controls[i].cycledata.statecnt do
+                          local vc = strips[strip][page].controls[i].cycledata[p].val
+                          if p < strips[strip][page].controls[i].cycledata.statecnt then
+                            vc = vc + (strips[strip][page].controls[i].cycledata[p+1].val - vc)/2
+                          end
+                          if Disp_ParamV == strips[strip][page].controls[i].cycledata[p].dv or 
+                             strips[strip][page].controls[i].val <= vc then
+                            strips[strip][page].controls[i].cycledata.pos = p
+                            break
+                          end
                         end
                       end
+                      
+                      if strips[strip][page].controls[i].cycledata.spread then
+                        val2 = F_limit(math.floor(((nz(strips[strip][page].controls[i].cycledata.pos,0)-1) / 
+                                  (strips[strip][page].controls[i].cycledata.statecnt-1)) * (frames-1)),0,frames-1)
+                      else
+                        val2 = F_limit(nz(strips[strip][page].controls[i].cycledata.pos,0)-1,0,frames-1)
+                      end
+                      if strips[strip][page].controls[i].cycledata and 
+                         strips[strip][page].controls[i].cycledata[nz(strips[strip][page].controls[i].cycledata.pos,0)] then
+                        DVOV = nz(strips[strip][page].controls[i].cycledata[nz(strips[strip][page].controls[i].cycledata.pos,0)].dispval,'')
+                      end
                     end
-                    
-                    if strips[strip][page].controls[i].cycledata.spread then
-                      val2 = F_limit(math.floor(((nz(strips[strip][page].controls[i].cycledata.pos,0)-1) / 
-                                (strips[strip][page].controls[i].cycledata.statecnt-1)) * (frames-1)),0,frames-1)
-                    else
-                      val2 = F_limit(nz(strips[strip][page].controls[i].cycledata.pos,0)-1,0,frames-1)
-                    end
+                  else
                     if strips[strip][page].controls[i].cycledata and 
                        strips[strip][page].controls[i].cycledata[nz(strips[strip][page].controls[i].cycledata.pos,0)] then
                       DVOV = nz(strips[strip][page].controls[i].cycledata[nz(strips[strip][page].controls[i].cycledata.pos,0)].dispval,'')
+                    end                  
+                  end
+                elseif ctltype == 6 then
+                  --mem button
+                  if strips[strip][page].controls[i].membtn == nil then
+                    strips[strip][page].controls[i].membtn = {state = false, mem = 0}
+                  end
+                  local v3 = GetParamValue_Ctl(i)--strips[strip][page].controls[i].val
+                  if tostring(v3) ~= tostring(strips[strip][page].controls[i].defval) then
+                  --local dv = round(math.abs(v3-strips[strip][page].controls[i].defval),6)
+                    --DBG(dv)  
+                  --if dv > 0 then
+                    strips[strip][page].controls[i].membtn = {state = false, mem = v3}
+                  --else
+                    --strips[strip][page].controls[i].membtn.state = true
+                  end
+                  if strips[strip][page].controls[i].membtn.state == true then
+                    val2 = frames-1
+                  else
+                    val2 = 0                
+                  end
+                end
+                
+                if not found then
+                  gfx.a = 0.2
+                end
+  --DBG(update_gfx)
+                if ctlcat == ctlcats.fxparam then
+                  if not found then
+                    Disp_Name = CropFXName(strips[strip][page].controls[i].fxname)
+                    Disp_ParamV = 'PLUGIN NOT FOUND'
+                    tc = gui.color.red
+                    val2 = 0
+                  else
+                    if nz(ctlnmov,'') == '' then
+                      _, Disp_Name = reaper.TrackFX_GetParamName(track, fxnum, param, "")
+                    else
+                      Disp_Name = ctlnmov
+                    end
+                    _, Disp_ParamV = reaper.TrackFX_GetFormattedParamValue(track, fxnum, param, "")
+                    if dvoff and dvoff ~= 0 then
+                      Disp_ParamV = dvaloffset(Disp_ParamV, strips[strip][page].controls[i].dvaloffset)  
+                    end
+                    if maxdp > -1 then
+                      Disp_ParamV = roundX(Disp_ParamV, maxdp)                  
                     end
                   end
-                else
-                  if strips[strip][page].controls[i].cycledata and 
-                     strips[strip][page].controls[i].cycledata[nz(strips[strip][page].controls[i].cycledata.pos,0)] then
-                    DVOV = nz(strips[strip][page].controls[i].cycledata[nz(strips[strip][page].controls[i].cycledata.pos,0)].dispval,'')
-                  end                  
-                end
-              elseif ctltype == 6 then
-                --mem button
-                if strips[strip][page].controls[i].membtn == nil then
-                  strips[strip][page].controls[i].membtn = {state = false, mem = 0}
-                end
-                local v3 = GetParamValue_Ctl(i)--strips[strip][page].controls[i].val
-                if tostring(v3) ~= tostring(strips[strip][page].controls[i].defval) then
-                --local dv = round(math.abs(v3-strips[strip][page].controls[i].defval),6)
-                  --DBG(dv)  
-                --if dv > 0 then
-                  strips[strip][page].controls[i].membtn = {state = false, mem = v3}
-                --else
-                  --strips[strip][page].controls[i].membtn.state = true
-                end
-                if strips[strip][page].controls[i].membtn.state == true then
-                  val2 = frames-1
-                else
-                  val2 = 0                
-                end
-              end
-              
-              if not found then
-                gfx.a = 0.2
-              end
---DBG(update_gfx)
-              if ctlcat == ctlcats.fxparam then
-                if not found then
-                  Disp_Name = CropFXName(strips[strip][page].controls[i].fxname)
-                  Disp_ParamV = 'PLUGIN NOT FOUND'
-                  tc = gui.color.red
-                  val2 = 0
-                else
+                elseif ctlcat == ctlcats.trackparam or ctlcat == ctlcats.tracksend then
                   if nz(ctlnmov,'') == '' then
-                    _, Disp_Name = reaper.TrackFX_GetParamName(track, fxnum, param, "")
+                    Disp_Name = pname
+                  else
+                    Disp_Name = ctlnmov                  
+                  end
+                  Disp_ParamV = GetParamDisp(ctlcat, tnum, nil, param, dvoff, i)
+                  if maxdp > -1 then
+                    Disp_ParamV = roundX(Disp_ParamV, maxdp)                  
+                  end                  
+                elseif ctlcat == ctlcats.action then
+                  if nz(ctlnmov,'') == '' then
+                    Disp_Name = pname
                   else
                     Disp_Name = ctlnmov
                   end
-                  _, Disp_ParamV = reaper.TrackFX_GetFormattedParamValue(track, fxnum, param, "")
-                  if dvoff and dvoff ~= 0 then
-                    Disp_ParamV = dvaloffset(Disp_ParamV, strips[strip][page].controls[i].dvaloffset)  
+                  if DVOV and DVOV ~= '' and cycle_editmode == false then
+                  else
+                    spv = false  
                   end
-                  if maxdp > -1 then
-                    Disp_ParamV = roundX(Disp_ParamV, maxdp)                  
+                elseif ctlcat == ctlcats.snapshot then
+                  if nz(ctlnmov,'') == '' then
+                    Disp_Name = pname
+                  else
+                    Disp_Name = ctlnmov
                   end
-                end
-              elseif ctlcat == ctlcats.trackparam or ctlcat == ctlcats.tracksend then
-                if nz(ctlnmov,'') == '' then
-                  Disp_Name = pname
-                else
-                  Disp_Name = ctlnmov                  
-                end
-                Disp_ParamV = GetParamDisp(ctlcat, tnum, nil, param, dvoff, i)
-                if maxdp > -1 then
-                  Disp_ParamV = roundX(Disp_ParamV, maxdp)                  
-                end                  
-              elseif ctlcat == ctlcats.action then
-                if nz(ctlnmov,'') == '' then
-                  Disp_Name = pname
-                else
-                  Disp_Name = ctlnmov
-                end
-                if DVOV and DVOV ~= '' and cycle_editmode == false then
-                else
-                  spv = false  
-                end
-              elseif ctlcat == ctlcats.snapshot then
-                if nz(ctlnmov,'') == '' then
-                  Disp_Name = pname
-                else
-                  Disp_Name = ctlnmov
-                end
-                local v = nz(strips[strip][page].controls[i].val,-1)
-                Disp_ParamV = ''
-                if v > -1 then
-                  if snapshots and snapshots[strip] and snapshots[strip][page][param] and snapshots[strip][page][param].selected then
-                    if param == 1 then
-                    
-                      --if snapshots and snapshots[strip] and snapshots[strip][page][param] and snapshots[strip][page][param].selected then
-                        if snapshots[strip][page][param][snapshots[strip][page][param].selected] then
-                          Disp_ParamV = snapshots[strip][page][param][snapshots[strip][page][param].selected].name
-                        end
-                      --end
-                    else
-                      --if snapshots[strip][page][param].selected then
-                        if snapshots[strip][page][param].snapshot[snapshots[strip][page][param].selected] then
-                          Disp_ParamV = snapshots[strip][page][param].snapshot[snapshots[strip][page][param].selected].name
-                        end
-                      --end
+                  local v = nz(strips[strip][page].controls[i].val,-1)
+                  Disp_ParamV = ''
+                  if v > -1 then
+                    if snapshots and snapshots[strip] and snapshots[strip][page][param] and snapshots[strip][page][param].selected then
+                      if param == 1 then
+                      
+                        --if snapshots and snapshots[strip] and snapshots[strip][page][param] and snapshots[strip][page][param].selected then
+                          if snapshots[strip][page][param][snapshots[strip][page][param].selected] then
+                            Disp_ParamV = snapshots[strip][page][param][snapshots[strip][page][param].selected].name
+                          end
+                        --end
+                      else
+                        --if snapshots[strip][page][param].selected then
+                          if snapshots[strip][page][param].snapshot[snapshots[strip][page][param].selected] then
+                            Disp_ParamV = snapshots[strip][page][param].snapshot[snapshots[strip][page][param].selected].name
+                          end
+                        --end
+                      end
                     end
                   end
                 end
-              end
-
-              if ctltype == 4 and cycle_editmode == false then
-                --DBG(DVOV)
-                if DVOV and DVOV ~= '' then
-                --DBG(strips[strip][page].controls[i].cycledata.posdirty)
-                --DBG(tostring(strips[strip][page].controls[i].val)..'  '..tostring(tonumber(strips[strip][page].controls[i].cycledata[strips[strip][page].controls[i].cycledata.pos].val)))
-                  if strips[strip][page].controls[i].cycledata.posdirty == false then 
-                  --if tostring(strips[strip][page].controls[i].val) ==
-                  --   tostring(strips[strip][page].controls[i].cycledata[
-                  --          strips[strip][page].controls[i].cycledata.pos].val) then
-                    Disp_ParamV = DVOV
-                  end
-                --else
-                --DBG('sf')
-                end
+  
+                if ctltype == 4 and cycle_editmode == false then
                   --DBG(DVOV)
-              end
-
-              local mid = x+(w/2)
-
-              local text_len1x, text_len1y = gfx.measurestr(Disp_Name)
-              local text_len2x, text_len2y = gfx.measurestr(Disp_ParamV)
-
-              local xywh1 = {x = math.floor(mid-(text_len1x/2)), y = math.floor(y+(h/2)-toff-1), w = text_len1x, h = th_a+2}
-              local xywh2 = {x = math.floor(mid-(text_len2x/2)), y = math.floor(y+(h/2)-to+toff+toffv-1), w = text_len2x, h = th_a+2}
-              
-              local tl1 = nz(strips[strip][page].controls[i].tl1,text_len1x)
-              local tl2 = nz(strips[strip][page].controls[i].tl2,text_len2x)
-              local tx1, tx2, th = math.floor(mid-(tl1/2)),
-                                   math.floor(mid-(tl2/2)),th_a --gui.fontsz_knob+tsz-4
-              if not update_gfx and not update_bg and surface_size.limit then
-                gfx.blit(1004,1,0, px,
-                                   py,
-                                   w*scale,
-                                   (h)*scale,
-                                   px,
-                                   py)
-                if spn and h > 10 then                   
-                  gfx.blit(1004,1,0, tx1,
-                                     xywh1.y,
-                                     tl1,
-                                     th_a,
-                                     mid-(tl1/2),
-                                     xywh1.y)
-                end
-                if spv and h > gh-10 then                
-                  gfx.blit(1004,1,0, tx2-5,
-                                     xywh2.y,
-                                     tl2+10,
-                                     th_a,
-                                     mid-(tl2/2)-5,
-                                     xywh2.y)
-                end
-              end
-
-              if ctlcat == ctlcats.fxparam and not reaper.TrackFX_GetEnabled(track, fxnum) and pname ~= 'Bypass' then
-                gfx.a = 0.5
-              end
-              gfx.blit(iidx,scale,0, 0, (val2)*gh, w, h, px, py)
-              
-              strips[strip][page].controls[i].tl1 = text_len1x
-              strips[strip][page].controls[i].tl2 = text_len2x
-              
-              --if w > strips[strip][page].controls[i].w/2 then
-                --if spn and h > 10 then
-                if spn then
-                  GUI_textC(gui,xywh1, Disp_Name,tc,-4 + tsz)
-                end
-                --if spv and h > gh-10 then
-                if spv then
-                  GUI_textC(gui,xywh2, Disp_ParamV,tc,-4 + tsz)          
-                end
-              --end
-
-              if ctltype == 4 and DVOV and DVOV ~= '' and cycle_editmode == false then
-                if strips[strip][page].controls[i].cycledata.posdirty == true then 
-                --if tostring(strips[strip][page].controls[i].val) ~= 
-                --   tostring(strips[strip][page].controls[i].cycledata[
-                --            strips[strip][page].controls[i].cycledata.pos].val) then                                  
-                  gfx.a = 0.8
-                  f_Get_SSV(gui.color.red)
-                  gfx.circle(x+4,y+4,2,1,1)              
-                end
-              end
-                          
-              --[[if reass_param == i then
-                f_Get_SSV(gui.color.red)
-                gfx.a = 0.8
-                gfx.roundrect(x, y, w, h, 8, 1, 0)
-              end]]
-              
-              if mode == 1 and submode == 2 then
-                if tnum and tnum ~= tracks[track_select].tracknum then
-                
-                  gfx.a = 0.8
-                  f_Get_SSV(gui.color.red)
-                  gfx.circle(x,y,2,1,1)              
-                
-                end
-              end
-              
-              if mode == 0 and snaplrn_mode == true then
-                local ctl = GetSnapshotCtlIdx(strip, page, sstype_select, i)
-                if ctl then
-                  if nz(snapshots[strip][page][sstype_select].ctls[ctl].delete,false) == false then
-                    f_Get_SSV(gui.color.green)
-                    gfx.a = 0.2
-                    gfx.rect(x, y, w, h, 1, 1)
+                  if DVOV and DVOV ~= '' then
+                  --DBG(strips[strip][page].controls[i].cycledata.posdirty)
+                  --DBG(tostring(strips[strip][page].controls[i].val)..'  '..tostring(tonumber(strips[strip][page].controls[i].cycledata[strips[strip][page].controls[i].cycledata.pos].val)))
+                    if strips[strip][page].controls[i].cycledata.posdirty == false then 
+                    --if tostring(strips[strip][page].controls[i].val) ==
+                    --   tostring(strips[strip][page].controls[i].cycledata[
+                    --          strips[strip][page].controls[i].cycledata.pos].val) then
+                      Disp_ParamV = DVOV
+                    end
+                  --else
+                  --DBG('sf')
                   end
-                end           
-              end
-              
-              if not update_gfx and not update_bg and update_ctls then
-              
-                --just blit control area to main backbuffer - create area table
-                local al = math.min(px, xywh1.x)
-                al = math.min(al, xywh2.x)
-                local ar = math.max(px+w*scale, tx1+tl1)
-                ar = math.max(ar, tx2+tl2)
-                local at = math.min(py, xywh1.y)
-                at = math.min(at, xywh2.y)
-                local ab = math.max(py+(h)*scale,xywh1.y+th)
-                ab = math.max(ab, xywh2.y+th)
-                xywharea[#xywharea+1] = {x=al,y=at,w=ar-al,h=ab-at,r=ar,b=ab}
+                    --DBG(DVOV)
+                end
+  
+                local mid = x+(w/2)
+  
+                local text_len1x, text_len1y = gfx.measurestr(Disp_Name)
+                local text_len2x, text_len2y = gfx.measurestr(Disp_ParamV)
+  
+                local xywh1 = {x = math.floor(mid-(text_len1x/2)), y = math.floor(y+(h/2)-toff-1), w = text_len1x, h = th_a+2}
+                local xywh2 = {x = math.floor(mid-(text_len2x/2)), y = math.floor(y+(h/2)-to+toff+toffv-1), w = text_len2x, h = th_a+2}
+                
+                local tl1 = nz(strips[strip][page].controls[i].tl1,text_len1x)
+                local tl2 = nz(strips[strip][page].controls[i].tl2,text_len2x)
+                local tx1, tx2, th = math.floor(mid-(tl1/2)),
+                                     math.floor(mid-(tl2/2)),th_a --gui.fontsz_knob+tsz-4
+                if not update_gfx and not update_bg and surface_size.limit then
+                  gfx.blit(1004,1,0, px,
+                                     py,
+                                     w*scale,
+                                     (h)*scale,
+                                     px,
+                                     py)
+                  if spn and h > 10 then                   
+                    gfx.blit(1004,1,0, tx1,
+                                       xywh1.y,
+                                       tl1,
+                                       th_a,
+                                       mid-(tl1/2),
+                                       xywh1.y)
+                  end
+                  if spv and h > gh-10 then                
+                    gfx.blit(1004,1,0, tx2-5,
+                                       xywh2.y,
+                                       tl2+10,
+                                       th_a,
+                                       mid-(tl2/2)-5,
+                                       xywh2.y)
+                  end
+                end
+  
+                if ctlcat == ctlcats.fxparam and not reaper.TrackFX_GetEnabled(track, fxnum) and pname ~= 'Bypass' then
+                  gfx.a = 0.5
+                end
+                gfx.blit(iidx,scale,0, 0, (val2)*gh, w, h, px, py)
+                
+                strips[strip][page].controls[i].tl1 = text_len1x
+                strips[strip][page].controls[i].tl2 = text_len2x
+                
+                --if w > strips[strip][page].controls[i].w/2 then
+                  --if spn and h > 10 then
+                  if spn then
+                    GUI_textC(gui,xywh1, Disp_Name,tc,-4 + tsz)
+                  end
+                  --if spv and h > gh-10 then
+                  if spv then
+                    GUI_textC(gui,xywh2, Disp_ParamV,tc,-4 + tsz)          
+                  end
+                --end
+  
+                if ctltype == 4 and DVOV and DVOV ~= '' and cycle_editmode == false then
+                  if strips[strip][page].controls[i].cycledata.posdirty == true then 
+                  --if tostring(strips[strip][page].controls[i].val) ~= 
+                  --   tostring(strips[strip][page].controls[i].cycledata[
+                  --            strips[strip][page].controls[i].cycledata.pos].val) then                                  
+                    gfx.a = 0.8
+                    f_Get_SSV(gui.color.red)
+                    gfx.circle(x+4,y+4,2,1,1)              
+                  end
+                end
+                            
+                --[[if reass_param == i then
+                  f_Get_SSV(gui.color.red)
+                  gfx.a = 0.8
+                  gfx.roundrect(x, y, w, h, 8, 1, 0)
+                end]]
+                
+                if mode == 1 and submode == 2 then
+                  if tnum and tnum ~= tracks[track_select].tracknum then
+                  
+                    gfx.a = 0.8
+                    f_Get_SSV(gui.color.red)
+                    gfx.circle(x,y,2,1,1)              
+                  
+                  end
+                end
+                
+                if mode == 0 and snaplrn_mode == true then
+                  local ctl = GetSnapshotCtlIdx(strip, page, sstype_select, i)
+                  if ctl then
+                    if nz(snapshots[strip][page][sstype_select].ctls[ctl].delete,false) == false then
+                      f_Get_SSV(gui.color.green)
+                      gfx.a = 0.2
+                      gfx.rect(x, y, w, h, 1, 1)
+                    end
+                  end           
+                end
+                
+                if not update_gfx and not update_bg and update_ctls then
+                
+                  --just blit control area to main backbuffer - create area table
+                  local al = math.min(px, xywh1.x)
+                  al = math.min(al, xywh2.x)
+                  local ar = math.max(px+w*scale, tx1+tl1)
+                  ar = math.max(ar, tx2+tl2)
+                  local at = math.min(py, xywh1.y)
+                  at = math.min(at, xywh2.y)
+                  local ab = math.max(py+(h)*scale,xywh1.y+th)
+                  ab = math.max(ab, xywh2.y+th)
+                  xywharea[#xywharea+1] = {x=al,y=at,w=ar-al,h=ab-at,r=ar,b=ab}
+                end
               end
             end
           end
@@ -3625,6 +3631,18 @@ end
             
           end
         end
+        if gfx3_select and #gfx3_select > 0 then
+          for i = 1, #gfx3_select do
+            j = gfx3_select[i].ctl
+    
+            x = math.min(x, strips[tracks[track_select].strip][page].graphics[j].x)
+            y = math.min(y, strips[tracks[track_select].strip][page].graphics[j].y)
+            rx = math.max(rx, strips[tracks[track_select].strip][page].graphics[j].x + strips[tracks[track_select].strip][page].graphics[j].stretchw)
+            ry = math.max(ry, strips[tracks[track_select].strip][page].graphics[j].y + strips[tracks[track_select].strip][page].graphics[j].stretchh)
+            
+          end
+        end
+
         local selrect = {x = x, y = y, w = rx-x, h = ry-y}
         return selrect
       end
@@ -4225,9 +4243,18 @@ end
                             obj.sections[10].x,
                             obj.sections[10].y)
           --gfx.blit(1001,1,0,0,0,obj.sections[43].w,obj.sections[43].h,0,butt_h+2)
-          
           if ctl_select ~= nil then
             selrect = CalcSelRect()
+            if dragctl ~= nil then 
+              local x, y = selrect.x - surface_offset.x + obj.sections[10].x -b_sz, selrect.y - surface_offset.y + obj.sections[10].y-b_sz
+              local w, h = gfx.getimgdim(1022)
+              gfx.a = 1
+              
+              gfx.blit(1022,1,0,0,0,w,h,x,y) 
+
+            end
+          
+            --selrect = CalcSelRect()
             if selrect then
               f_Get_SSV(gui.color.yellow)
               gfx.a = 1
@@ -4352,6 +4379,13 @@ end
           
             selrect = CalcGFXSelRect()
             if selrect then
+              if draggfx2 ~= nil then 
+                local x, y = selrect.x - surface_offset.x + obj.sections[10].x+4, selrect.y - surface_offset.y + obj.sections[10].y+4
+                local w, h = gfx.getimgdim(1022)
+                gfx.a = 1
+                gfx.blit(1022,1,0,0,0,w,h,x,y) 
+              end
+
               if poslock_select == true then
                 f_Get_SSV(gui.color.red)
               else
@@ -4769,6 +4803,28 @@ end
              xywh.y, 
              xywh.w,
              xywh.h, 1 )
+
+    local xywh = {x = obj.sections[10].x+obj.sections[10].w,
+                      y = butt_h+2,
+                      w = 5,
+                      h = hh}
+    gfx.a = 1
+    gfx.rect(xywh.x,
+             xywh.y, 
+             xywh.w,
+             xywh.h, 1 )
+
+    local xywh = {x = plist_w,
+                      y = obj.sections[10].y+obj.sections[10].h,
+                      w = ww,
+                      h = 5}
+    gfx.a = 1
+    gfx.rect(xywh.x,
+             xywh.y, 
+             xywh.w,
+             xywh.h, 1 )
+                      
+                      
 
     local xywh = {x = (plist_w+2)+2 +bx,
                   y = butt_h+2,
@@ -6562,7 +6618,6 @@ end
   function GenStripPreview(gui, strip)
   
     if strip then
-      
       local i,j
       image_count_add = image_count    
       local minx, miny, maxx, maxy = nil,nil,nil,nil 
@@ -6752,6 +6807,265 @@ end
       end
     
     end
+    gfx.dest = 1
+  
+  end
+    
+  ------------------------------------------------------------    
+
+  function GenGFXDragPreview(gui)
+
+    local strip = tracks[track_select].strip
+    local i,j
+    local minx, miny, maxx, maxy = nil,nil,nil,nil 
+    if gfx2_select then
+      --for ii = 1, #gfx3_select do
+        local i = gfx2_select
+        if minx == nil then
+          minx = strips[strip][page].graphics[i].x
+          miny = strips[strip][page].graphics[i].y
+          maxx = strips[strip][page].graphics[i].x + strips[strip][page].graphics[i].stretchw
+          maxy = strips[strip][page].graphics[i].y + strips[strip][page].graphics[i].stretchh
+        else
+          minx = math.min(minx, strips[strip][page].graphics[i].x)
+          miny = math.min(miny, strips[strip][page].graphics[i].y)
+          maxx = math.max(maxx, strips[strip][page].graphics[i].x + strips[strip][page].graphics[i].stretchw)
+          maxy = math.max(maxy, strips[strip][page].graphics[i].y + strips[strip][page].graphics[i].stretchh)
+        end
+      --end
+    end
+
+    offsetx = -minx
+    offsety = -miny
+    
+    gfx.dest = 1022
+    gfx.setimgdim(1022,-1,-1)
+    gfx.setimgdim(1022,maxx+offsetx,maxy+offsety)
+
+    --draw gfx
+    if gfx2_select then
+    
+      local i = gfx2_select
+      if nz(strips[strip][page].graphics[i].gfxtype, gfxtype.img) == gfxtype.img then
+
+        local x = strips[strip][page].graphics[i].x+offsetx 
+        local y = strips[strip][page].graphics[i].y+offsety
+        local w = strips[strip][page].graphics[i].w
+        local h = strips[strip][page].graphics[i].h
+        local sw = strips[strip][page].graphics[i].stretchw
+        local sh = strips[strip][page].graphics[i].stretchh
+        local imageidx = strips[strip][page].graphics[i].imageidx
+        
+        gfx.a = 0.8
+        gfx.blit(imageidx,1,0, 0, 0, w, h, x, y, sw, sh)
+      
+      elseif strips[strip][page].graphics[i].gfxtype == gfxtype.txt then
+      
+        local x = strips[strip][page].graphics[i].x+offsetx 
+        local y = strips[strip][page].graphics[i].y+offsety
+      
+        local text = strips[strip][page].graphics[i].text
+        local textcol = strips[strip][page].graphics[i].text_col
+        
+        local flagb,flagi,flagu = 0,0,0
+        if strips[strip][page].graphics[i].font.bold then flagb = 98 end
+        if strips[strip][page].graphics[i].font.italics then flagi = 105 end
+        if strips[strip][page].graphics[i].font.underline then flagu = 117 end
+        local flags = flagb + (flagi*256) + (flagu*(256^2))
+        gfx.setfont(1,strips[strip][page].graphics[i].font.name,
+                      strips[strip][page].graphics[i].font.size,flags)
+        if strips[strip][page].graphics[i].font.shadow then
+        
+          local shadx = nz(strips[strip][page].graphics[i].font.shadow_x,1)
+          local shady = nz(strips[strip][page].graphics[i].font.shadow_y,1)
+        
+          f_Get_SSV(gui.color.black)
+          gfx.a = 0.4
+          gfx.x, gfx.y = x+shadx,y+shady
+          gfx.drawstr(text)
+        end
+        
+        gfx.a = 0.8
+        gfx.x, gfx.y = x,y
+        f_Get_SSV(textcol)
+        
+        gfx.drawstr(text)
+      
+      end
+    
+    end      
+
+
+  end
+  
+  ------------------------------------------------------------    
+
+  function GenCtlDragPreview(gui)
+  
+    local strip = tracks[track_select].strip
+    local i,j
+    local minx, miny, maxx, maxy = nil,nil,nil,nil 
+    if gfx3_select and #gfx3_select > 0 then
+      for ii = 1, #gfx3_select do
+        local i = gfx3_select[ii].ctl
+        if minx == nil then
+          minx = strips[strip][page].graphics[i].x
+          miny = strips[strip][page].graphics[i].y
+          maxx = strips[strip][page].graphics[i].x + strips[strip][page].graphics[i].stretchw
+          maxy = strips[strip][page].graphics[i].y + strips[strip][page].graphics[i].stretchh
+        else
+          minx = math.min(minx, strips[strip][page].graphics[i].x)
+          miny = math.min(miny, strips[strip][page].graphics[i].y)
+          maxx = math.max(maxx, strips[strip][page].graphics[i].x + strips[strip][page].graphics[i].stretchw)
+          maxy = math.max(maxy, strips[strip][page].graphics[i].y + strips[strip][page].graphics[i].stretchh)
+        end
+      end
+    end
+    if #ctl_select > 0 then      
+      for ii = 1, #ctl_select do
+        local i = ctl_select[ii].ctl
+        if minx == nil then
+          minx = strips[strip][page].controls[i].x
+          miny = strips[strip][page].controls[i].y
+          maxx = strips[strip][page].controls[i].x + strips[strip][page].controls[i].w
+          maxy = strips[strip][page].controls[i].y + strips[strip][page].controls[i].ctl_info.cellh
+        else
+          minx = math.min(minx, strips[strip][page].controls[i].x)
+          miny = math.min(miny, strips[strip][page].controls[i].y)
+          maxx = math.max(maxx, strips[strip][page].controls[i].x + strips[strip][page].controls[i].w)
+          maxy = math.max(maxy, strips[strip][page].controls[i].y + strips[strip][page].controls[i].ctl_info.cellh)
+        end
+      end
+    end
+    offsetx = -minx
+    offsety = -miny
+    
+    gfx.dest = 1022
+    gfx.setimgdim(1022,-1,-1)
+    gfx.setimgdim(1022,maxx+offsetx+b_sz*2,maxy+offsety+b_sz*2)
+
+      --draw gfx
+      if gfx3_select and #gfx3_select > 0 then
+      
+        for ii = 1, #gfx3_select do
+          local i = gfx3_select[ii].ctl
+          if nz(strips[strip][page].graphics[i].gfxtype, gfxtype.img) == gfxtype.img then
+
+            local x = strips[strip][page].graphics[i].x+offsetx 
+            local y = strips[strip][page].graphics[i].y+offsety
+            local w = strips[strip][page].graphics[i].w
+            local h = strips[strip][page].graphics[i].h
+            local sw = strips[strip][page].graphics[i].stretchw
+            local sh = strips[strip][page].graphics[i].stretchh
+            local imageidx = strips[strip][page].graphics[i].imageidx
+            
+            gfx.a = 0.3
+            gfx.blit(imageidx,1,0, 0, 0, w, h, x+b_sz, y+b_sz, sw, sh)
+          
+          elseif strips[strip][page].graphics[i].gfxtype == gfxtype.txt then
+          
+            local x = strips[strip][page].graphics[i].x+offsetx 
+            local y = strips[strip][page].graphics[i].y+offsety
+          
+            local text = strips[strip][page].graphics[i].text
+            local textcol = strips[strip][page].graphics[i].text_col
+            
+            local flagb,flagi,flagu = 0,0,0
+            if strips[strip][page].graphics[i].font.bold then flagb = 98 end
+            if strips[strip][page].graphics[i].font.italics then flagi = 105 end
+            if strips[strip][page].graphics[i].font.underline then flagu = 117 end
+            local flags = flagb + (flagi*256) + (flagu*(256^2))
+            gfx.setfont(1,strips[strip][page].graphics[i].font.name,
+                          strips[strip][page].graphics[i].font.size,flags)
+            if strips[strip][page].graphics[i].font.shadow then
+            
+              local shadx = nz(strips[strip][page].graphics[i].font.shadow_x,1)
+              local shady = nz(strips[strip][page].graphics[i].font.shadow_y,1)
+            
+              f_Get_SSV(gui.color.black)
+              gfx.a = 0.15
+              gfx.x, gfx.y = x+shadx+b_sz,y+shady+b_sz
+              gfx.drawstr(text)
+            end
+            
+            gfx.a = 0.3
+            gfx.x, gfx.y = x+b_sz,y+b_sz
+            f_Get_SSV(textcol)
+            
+            gfx.drawstr(text)
+          
+          end
+      
+        end
+      end      
+
+    --draw controls    
+    if #strips[strip][page].controls > 0 then
+    
+      for ii = 1, #ctl_select do
+        local i = ctl_select[ii].ctl
+        local scale = strips[strip][page].controls[i].scale
+        local x = strips[strip][page].controls[i].x+offsetx 
+        local y = strips[strip][page].controls[i].y+offsety
+        local w = strips[strip][page].controls[i].w
+        local h = strips[strip][page].controls[i].ctl_info.cellh
+        local gh = h
+        local val = math.floor(100*strips[strip][page].controls[i].val)
+        local fxnum = strips[strip][page].controls[i].fxnum
+        local param = strips[strip][page].controls[i].param
+        local iidx = strips[strip][page].controls[i].ctl_info.imageidx
+        local spn = strips[strip][page].controls[i].show_paramname
+        local spv = strips[strip][page].controls[i].show_paramval
+        local ctlnmov = nz(strips[strip][page].controls[i].ctlname_override,'')
+        local tc = strips[strip][page].controls[i].textcol
+        local toff = strips[strip][page].controls[i].textoff
+        local tsze = nz(strips[strip][page].controls[i].textsize,0)
+        local frames = strips[strip][page].controls[i].ctl_info.frames
+        local ctltype = strips[strip][page].controls[i].ctltype
+        local found = strips[strip][page].controls[i].fxfound
+  
+        local v2 = strips[strip][page].controls[i].val
+        local val2 = F_limit(round(frames*v2,0),0,frames-1)
+        
+        gfx.a = 1
+        
+        if ctltype == 3 then
+          --invert button
+          val2 = 1-val2
+        end
+        
+        gfx.setfont(1, gui.fontname, gui.fontsz_knob +tsze-4)
+        local _, th_a = gfx.measurestr('|')
+        local to = th_a
+        
+        --load image
+        gfx.blit(iidx,scale,0, 0, (val2)*gh, w, h, x + w/2-w*scale/2 +b_sz, y + h/2-h*scale/2 +b_sz)
+        
+        --xywh = {x = x+b_sz, y = math.floor(y+(h/2)-toff-1)+b_sz, w = w, h = th_a}
+        if w > strips[strip][page].controls[i].w/2 then
+          local Disp_ParamV
+          local Disp_Name
+          if ctlnmov == '' then
+            Disp_Name = strips[strip][page].controls[i].param_info.paramname
+          else
+            Disp_Name = ctlnmov
+          end
+          Disp_ParamV = ''
+          
+          local mid = x+(w/2)
+          local text_len1x, text_len1y = gfx.measurestr(Disp_Name)
+          --local text_len2x, text_len2y = gfx.measurestr(Disp_ParamV)
+          local xywh1 = {x = math.floor(mid-(text_len1x/2))+b_sz, y = math.floor(y+(h/2)-toff-1)+b_sz, w = text_len1x, h = th_a+2}
+          
+          if spn then
+            GUI_textC(gui,xywh1, tostring(Disp_Name),tc,-4+tsze)
+          end
+        end
+        
+      end
+        
+    end
+    
     gfx.dest = 1
   
   end
@@ -9965,9 +10279,6 @@ end
                           w = strips[tracks[track_select].strip][page].controls[i].w, 
                           h = strips[tracks[track_select].strip][page].controls[i].ctl_info.cellh}
                   if MOUSE_click(xywh) then
-                  
-                    mouse.context = contexts.dragctl
-                    dragctl = 'dragctl'
                     show_cycleoptions = false
                     
                     local found = false
@@ -9980,10 +10291,12 @@ end
                         end
                       end
                     end
-                    
+
                     if mouse.alt then
                       local stripid = strips[tracks[track_select].strip][page].controls[i].id
                       if stripid ~= nil then
+                        ctl_select = nil
+                        gfx3_select = nil
                         SelectStripElements(stripid)
                       else
                         if ctl_select == nil then
@@ -10008,13 +10321,26 @@ end
                       ctl_select = {} 
                       ctl_select[1] = {ctl = i}
                     end
-                    
+
                     SetCtlSelectVals()
                     SetPosLockCtl()
-                                                         
+
                     dragoff = {x = mouse.mx - strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].x - 0.5*strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].w - surface_offset.x,
                                y = mouse.my - strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].y - 0.5*strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].ctl_info.cellh - surface_offset.y}
-                               
+                    mouse.context = contexts.dummy
+                    if ctl_select ~= nil and not mouse.ctrl then --and not mouse.alt then
+                      dragctl = 'dragctl'
+                      mouse.context = contexts.dragctl
+                      GenCtlDragPreview(gui)
+                      for i = 1, #ctl_select do
+                        strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].hide = true
+                      end
+                      if gfx3_select and #gfx3_select > 0 then
+                        for i = 1, #gfx3_select do
+                          strips[tracks[track_select].strip][page].graphics[gfx3_select[i].ctl].hide = true  
+                        end                    
+                      end
+                    end
                     update_gfx = true
                     break
                   end
@@ -10243,6 +10569,8 @@ end
           end
               
           if mouse.context and mouse.context == contexts.dragctl then
+            --dragctl = {x = mouse.mx+offsetx-obj.sections[10].x-surface_offset.x, y = mouse.my+offsety-obj.sections[10].y-surface_offset.y, type = 'ctls'}
+            
             if math.floor(mouse.mx/settings_gridsize) ~= math.floor(mouse.last_x/settings_gridsize) or math.floor(mouse.my/settings_gridsize) ~= math.floor(mouse.last_y/settings_gridsize) then
               local i
               local scale = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].scale
@@ -10290,13 +10618,25 @@ end
                 end            
               end
               --update_ctls = true
-              update_gfx = true
+              --update_gfx = true
+              --dragctl = {x = mouse.mx+offsetx-obj.sections[10].x-surface_offset.x, y = mouse.my+offsety-obj.sections[10].y-surface_offset.y, type = 'ctls'}
+              update_surface = true
             end
           elseif dragctl ~= nil then
             dragctl = nil
             if MOUSE_over(obj.sections[60]) then
               --delete
               DeleteSelectedCtls()
+              update_gfx = true
+            else
+              for i = 1, #ctl_select do
+                strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].hide = nil
+              end
+              if gfx3_select and #gfx3_select > 0 then
+                for i = 1, #gfx3_select do
+                  strips[tracks[track_select].strip][page].graphics[gfx3_select[i].ctl].hide = nil
+                end                    
+              end
               update_gfx = true
             end
           end      
@@ -11224,6 +11564,10 @@ end
                   else
                     show_lbloptions = false
                   end
+                  
+                  GenGFXDragPreview(gui)
+                  strips[tracks[track_select].strip][page].graphics[i].hide = true
+                  
                   update_gfx = true
                   clickxywh = true
                   break
@@ -11252,7 +11596,7 @@ end
               strips[tracks[track_select].strip][page].graphics[gfx2_select].y = math.floor((mouse.my - surface_offset.y)/settings_gridsize)*settings_gridsize 
                                                                                  - math.floor((dragoff.y)/settings_gridsize)*settings_gridsize
             end
-            update_gfx = true
+            update_surface = true
           end
         elseif draggfx2 ~= nil then
           draggfx2 = nil
@@ -11260,6 +11604,9 @@ end
             --delete
             ctl_select = nil
             DeleteSelectedCtls()
+            update_gfx = true
+          else
+            strips[tracks[track_select].strip][page].graphics[gfx2_select].hide = nil
             update_gfx = true
           end
         end             
@@ -13444,6 +13791,7 @@ end
   
   math.randomseed(os.clock())
   
+  b_sz = 100
   lockx = false
   locky = false
   lockw, olockw = 0, 0
