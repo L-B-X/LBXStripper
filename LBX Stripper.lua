@@ -8854,17 +8854,27 @@ end
               update_fsnaps = true
             else
               if snapshots and snapshots[tracks[track_select].strip] then
-                if fsstype_select == 1 then
+                --[[if fsstype_select == 1 then
                   fss_select = F_limit(fssoffset+i,1,#snapshots[tracks[track_select].strip][page][fsstype_select])
                 else
                   fss_select = F_limit(fssoffset+i,1,#snapshots[tracks[track_select].strip][page][fsstype_select].snapshot)                  
+                end]]
+                local maxss
+                if fsstype_select == 1 then
+                  maxss = #snapshots[tracks[track_select].strip][page][fsstype_select]
+                else
+                  maxss = #snapshots[tracks[track_select].strip][page][fsstype_select].snapshot
                 end
-                Snapshot_Set(tracks[track_select].strip, page, fsstype_select, fss_select)
-                update_ctls = true --to update snapshot ctls
-                update_fsnaps = true          
-                if sstype_select == fsstype_select then
-                  ss_select = fss_select
-                  update_snaps = true       
+                
+                if fssoffset+i <= maxss then
+                  fss_select = fssoffset+i
+                  Snapshot_Set(tracks[track_select].strip, page, fsstype_select, fss_select)
+                  update_ctls = true --to update snapshot ctls
+                  update_fsnaps = true          
+                  if sstype_select == fsstype_select then
+                    ss_select = fss_select
+                    update_snaps = true       
+                  end
                 end
               end
             end
@@ -8997,18 +9007,23 @@ end
                 update_snaps = true
               elseif i > 0 then
                 if snapshots and snapshots[tracks[track_select].strip] then
+                  local maxss
                   if sstype_select == 1 then
-                    ss_select = F_limit(ssoffset+i,1,#snapshots[tracks[track_select].strip][page][sstype_select])
+                    maxss = #snapshots[tracks[track_select].strip][page][sstype_select]
+                    --ss_select = F_limit(ssoffset+i,1,#snapshots[tracks[track_select].strip][page][sstype_select])
                   else
-                    ss_select = F_limit(ssoffset+i,1,#snapshots[tracks[track_select].strip][page][sstype_select].snapshot)                  
+                    maxss = #snapshots[tracks[track_select].strip][page][sstype_select].snapshot
+                    --ss_select = F_limit(ssoffset+i,1,#snapshots[tracks[track_select].strip][page][sstype_select].snapshot)                  
                   end
+                  if ssoffset+i <= maxss then
                   --if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.20 then
-                  
+                    ss_select = ssoffset+i
                     Snapshot_Set(tracks[track_select].strip, page, sstype_select, ss_select)
                   --DBG('1'..tostring(update_gfx))
                   --end
-                  update_ctls = true --to update snapshot ctls
-                  update_snaps = true          
+                    update_ctls = true --to update snapshot ctls
+                    update_snaps = true          
+                  end
                 end
               end
             end
