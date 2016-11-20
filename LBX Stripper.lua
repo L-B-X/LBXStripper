@@ -4731,7 +4731,7 @@ end
         if trn == '' then
           trn = '[unnamed track]'
         end
-        GUI_textC_LIM(gui,obj.sections[12],'TRACK: ' .. tracks[track_select].tracknum+1 .. ' - '.. trn,gui.color.black,-2)
+        GUI_textC_LIM(gui,obj.sections[12],STRIPSET..' - TRACK: ' .. tracks[track_select].tracknum+1 .. ' - '.. trn,gui.color.black,-2)
       end
     end  
 
@@ -7637,13 +7637,16 @@ end
     if (strips and tracks[track_select].strip and strips[tracks[track_select].strip] and #strips[tracks[track_select].strip][page].controls > 0) or strip_default == nil then
       dt = '#'      
     end
+    local sub = '||>Strip Set|Set 1|Set 2|Set 3|Set 4|Set 5|Set 6|Set 7|<Set 8'
     if mode == 0 then
       mstr = 'Toggle Sidebar||Lock X|Lock Y|Scroll Up|Scroll Down||Save Script State|Open Settings||Page 1|Page 2|Page 3|Page 4||'..ds..'||'..ls..'Lock Surface||'..dt..'Insert Default Strip'
     else
       mstr = '#Toggle Sidebar||Lock X|Lock Y|Scroll Up|Scroll Down||Save Script State|Open Settings||Page 1|Page 2|Page 3|Page 4||'..ds..'||'..ls..'Lock Surface||'..dt..'Insert Default Strip'
     end
+    mstr = mstr .. sub
     gfx.x, gfx.y = mouse.mx, butt_h
     res = OpenMenu(mstr)
+    --DBG(res)
     if res ~= 0 then
       if res == 1 then
         ToggleSidebar()
@@ -7677,6 +7680,18 @@ end
         GenStripPreview(gui, loadstrip.strip)
         Strip_AddStrip(loadstrip,0,0)
         loadstrip = nil
+      elseif res >= 15 and res <= 22 then
+        local oscript = SCRIPT
+        if res == 15 then
+          SCRIPT = 'LBX_STRIPPER'
+          STRIPSET = 'STRIP SET 1'
+        else
+          SCRIPT = 'LBX_STRIPPER_'..res-14        
+          STRIPSET = 'STRIP SET '..string.match(tostring(res-14),'(.-)%.')
+        end
+        if oscript ~= SCRIPT then
+          newloc = true
+        end
       end
       update_gfx = true
     end
@@ -8260,7 +8275,8 @@ end
   function run()  
 
     local rt = reaper.time_precise()
-    if PROJECTID ~= tonumber(GPES('projectid')) then
+    if PROJECTID ~= tonumber(GPES('projectid')) or newloc then
+      newloc = nil
       INIT()
       LoadData()
     end
@@ -12923,6 +12939,7 @@ end
         end
         
       else
+        DBG('saving')
         SaveData()
       end
       PopulateTracks() --must be called to link tracks to strips
@@ -13891,6 +13908,7 @@ end
 
   SCRIPT = 'LBX_STRIPPER'
   VERSION = 0.91
+  STRIPSET = 'STRIP SET 1'
 
   OS = reaper.GetOS()
   
