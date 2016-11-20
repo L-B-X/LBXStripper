@@ -13,7 +13,7 @@
   --------------------------------------------
         
   submode_table = {'FX PARAMS','GRAPHICS','STRIPS'}
-  ctltype_table = {'KNOB/SLIDER','BUTTON','BUTTON INV','CYCLE BUTTON','METER','MEM BUTTON','MOMENT BTN','FLASH BUTTON'}
+  ctltype_table = {'KNOB/SLIDER','BUTTON','BUTTON INV','CYCLE BUTTON','METER','MEM BUTTON','MOMENT BTN','MOMENT INV','FLASH BUTTON','FLASH INV'}
   trctltype_table = {'Track Controls','Track Sends','Actions'}
   special_table = {'Action Trigger'}
   scalemode_preset_table = {'','NORMAL','REAPER VOL'}
@@ -1274,7 +1274,7 @@
                                                 param = trctl_select,
                                                 param_info = {paramname = 'Unassigned Action',
                                                               paramidx = nil},
-                                                ctltype = 2,
+                                                ctltype = 9,
                                                 knob_select = knob_select,
                                                 ctl_info = {fn = ctl_files[knob_select].fn,
                                                             frames = ctl_files[knob_select].frames,
@@ -3355,7 +3355,9 @@ end
                   else
                     val2 = 0                
                   end
-                elseif ctltype == 7 or ctltype == 8 then
+                elseif ctltype == 7 or ctltype == 9 then
+                  val2 = strips[strip][page].controls[i].val
+                elseif ctltype == 8 or ctltype == 10 then
                   val2 = 1-strips[strip][page].controls[i].val
                 end
                 
@@ -9332,7 +9334,7 @@ end
                       end
                                         
                     end
-                  elseif ctltype == 7 or ctltype == 8 then
+                  elseif ctltype == 7 or ctltype == 8 or ctltype == 9 or ctltype == 10 then
                     --hold button
                     holdbtn = 'holdbtn'
                     trackfxparam_select = i
@@ -9557,7 +9559,8 @@ end
         holdbtn = nil
         strips[tracks[track_select].strip][page].controls[trackfxparam_select].val = 0
         strips[tracks[track_select].strip][page].controls[trackfxparam_select].dirty = true
-        if strips[tracks[track_select].strip][page].controls[trackfxparam_select].ctltype == 7 then
+        if strips[tracks[track_select].strip][page].controls[trackfxparam_select].ctltype == 7 or 
+           strips[tracks[track_select].strip][page].controls[trackfxparam_select].ctltype == 8 then
           SetParam()
         end
         update_ctls = true
