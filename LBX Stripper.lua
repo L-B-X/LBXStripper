@@ -8948,6 +8948,7 @@ end
           
             Snapshots_CREATE(tracks[track_select].strip, page, sstype_select)
             update_snaps = true
+            update_ctls = true --to update snapshot ctls
   
           elseif mouse.context == nil and MOUSE_click(obj.sections[166]) then
           
@@ -8994,7 +8995,7 @@ end
                 end
                 update_ctls = true
                 update_snaps = true
-              else
+              elseif i > 0 then
                 if snapshots and snapshots[tracks[track_select].strip] then
                   if sstype_select == 1 then
                     ss_select = F_limit(ssoffset+i,1,#snapshots[tracks[track_select].strip][page][sstype_select])
@@ -9686,6 +9687,7 @@ end
       end
             
     elseif mode == 1 then
+      show_fsnapshots = false
       
       if ct == 0 then
         track_select = -1
@@ -11891,15 +11893,22 @@ end
         elseif MOUSE_click_RB(obj.sections[46]) then
         
           if strip_select then
-            mstr = 'Set Default'
-            gfx.x, gfx.y = mouse.mx, mouse.my
-            res = OpenMenu(mstr)
-            if res ~= 0 then
-              if res == 1 then
+            local i = math.floor(((mouse.my - obj.sections[46].y)) / butt_h)-1
+            if strip_select == i-1 + slist_offset then
+              mstr = 'Set Default||Overwrite'
+              gfx.x, gfx.y = mouse.mx, mouse.my
+              res = OpenMenu(mstr)
+              if res ~= 0 then
+                if res == 1 then
+                  
+                  strip_default = {strip_select = strip_select,
+                                   stripfol_select = stripfol_select}
+                elseif res == 2 then
                 
-                strip_default = {strip_select = strip_select,
-                                 stripfol_select = stripfol_select}
-                                 
+                  local ostoff = slist_offset
+                  SaveStrip2(string.sub(strip_files[strip_select].fn,1,string.len(strip_files[strip_select].fn)-6))
+                  slist_offset = ostoff
+                end
               end
             end
           end        
@@ -13673,7 +13682,7 @@ end
           ss_select = snappos
         end      
       end
-
+      snapshots[strip][page][sstype].selected = ss_select
     end
     
   end
@@ -13893,6 +13902,37 @@ end
     return 'return'..txt1
   end
   
+  function testchunkcopy(srctrn, dsttrn)
+  
+    local str = GetTrack(srctrn)
+    local dtr = GetTrack(dsttrn)
+    
+    local _, chunk = reaper.GetTrackStateChunk(str,'',false)
+    DBG('')
+    DBG('SOURCE')
+    DBG('')
+    DBG(chunk)
+    reaper.SetTrackStateChunk(dtr, chunk, false)
+    
+    local ret, chunk = reaper.GetTrackStateChunk(dtr,'',false)
+    DBG('ret: '..tostring(ret))
+    DBG('DEST')
+    DBG('')
+    DBG(chunk)
+    DBG('')
+    DBG('')
+    DBG(reaper.genGuid(''))  
+    DBG(reaper.genGuid(''))  
+    local guid = reaper.genGuid('')
+    
+    local p = {}
+    p[guid] = reaper.genGuid('')
+    DBG(guid..'  p[guid]='..p[guid])
+    
+    
+  end
+  
+  
   function quit()
   
     --local res = reaper.MB('Save data and project?', 'Save data',4) 
@@ -13959,6 +13999,8 @@ end
   def_knob = LoadControl(1019, '__default.knb')
   def_knobsm = LoadControl(1018, 'SimpleFlat_48.knb')
   def_snapshot = LoadControl(1017, '__Snapshot.knb')
+  
+  --testchunkcopy(2,3)
   
   if def_knob == -1 or def_knobsm == -1 or def_snapshot == -1 then
     DBG("Please ensure you have the '__default', 'SimpleFlat_48', and '__Snapshot' files in your LBXCS_resources/controls/ folder.")
