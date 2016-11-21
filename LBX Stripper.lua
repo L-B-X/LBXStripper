@@ -425,7 +425,7 @@
                           w = msgwinw,
                           h = butt_h}
       --settings
-      local setw, seth = 300, 230                            
+      local setw, seth = 300, 250                            
       obj.sections[70] = {x = gfx1.main_w/2-setw/2,
                           y = gfx1.main_h/2-seth/2,
                           w = setw,
@@ -473,6 +473,10 @@
                                 h = bh}
       obj.sections[81] = {x = obj.sections[70].x+xofft,
                                 y = obj.sections[70].y+yoff + yoffm*7,
+                                w = bw,
+                                h = bh}
+      obj.sections[82] = {x = obj.sections[70].x+xofft,
+                                y = obj.sections[70].y+yoff + yoffm*8,
                                 w = bw,
                                 h = bh}
                                 
@@ -4889,6 +4893,7 @@ end
     GUI_DrawTick(gui, 'Show grid / grid size', obj.sections[80], gui.color.white, settings_showgrid)
     GUI_DrawButton(gui, settings_gridsize, obj.sections[79], gui.color.white, gui.color.black, true)
     GUI_DrawTick(gui, 'Can mousewheel on knob', obj.sections[81], gui.color.white, settings_mousewheelknob)
+    GUI_DrawTick(gui, 'Swap ctrl click and dbl click actions', obj.sections[82], gui.color.white, settings_swapctrlclick)
                
   end
   
@@ -8269,7 +8274,45 @@ end
     end
     return idx
   end
+  
+  
+  function SetParam_ToDef(i)
+  
+    local ctltype = strips[tracks[track_select].strip][page].controls[i].ctltype
+    trackfxparam_select = i
+    if ctltype == 1 then                  
+      strips[tracks[track_select].strip][page].controls[i].val = strips[tracks[track_select].strip][page].controls[i].defval
+      SetParam()
+      strips[tracks[track_select].strip][page].controls[i].dirty = true
+      update_ctls = true
+      
+    elseif ctltype == 4 then                  
+      strips[tracks[track_select].strip][page].controls[i].cycledata.pos = 1
+      if strips[tracks[track_select].strip][page].controls[i].cycledata.pos <=     
+                strips[tracks[track_select].strip][page].controls[i].cycledata.statecnt then
+        strips[tracks[track_select].strip][page].controls[i].val = 
+            strips[tracks[track_select].strip][page].controls[i].cycledata[strips[tracks[track_select].strip][page].controls[i].cycledata.pos].val
+        SetParam()
+        strips[tracks[track_select].strip][page].controls[i].dirty = true
+      end                  
+      update_ctls = true
+      
+    end  
+  end
+  
+  function SetParam_EnterVal(i)
+  
+    local ctltype = strips[tracks[track_select].strip][page].controls[i].ctltype
+    if ctltype == 1 then
+      trackfxparam_select = i
+      OpenEB(5,'Please enter value:')
+    elseif ctltype == 6 then
+      trackfxparam_select = i
+      strips[tracks[track_select].strip][page].controls[i].defval = GetParamValue_Ctl(i)                                    
+    end
     
+  end
+  
   ------------------------------------------------------------    
 
   function run()  
@@ -8552,6 +8595,9 @@ end
         update_settings = true
       elseif MOUSE_click(obj.sections[81]) then
         settings_mousewheelknob = not settings_mousewheelknob
+        update_settings = true
+      elseif MOUSE_click(obj.sections[82]) then
+        settings_swapctrlclick = not settings_swapctrlclick
         update_settings = true
       elseif mouse.context == nil and MOUSE_click(obj.sections[74]) then
         mouse.context = contexts.updatefreq
@@ -9129,35 +9175,14 @@ end
                   local ctltype = strips[tracks[track_select].strip][page].controls[i].ctltype
                 
                   if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.15 and ctltype ~= 5 then
-                    --double-click
-                    --[[if ctltype == 1 then
-                      trackfxparam_select = i
-                      --EditValue(5)
-                      OpenEB(5,'Please enter value:')
-                      break
-                    end]]
-                    local ctltype = strips[tracks[track_select].strip][page].controls[i].ctltype
-                    if ctltype == 1 then                  
-                      strips[tracks[track_select].strip][page].controls[i].val = strips[tracks[track_select].strip][page].controls[i].defval
-                      SetParam()
-                      strips[tracks[track_select].strip][page].controls[i].dirty = true
-                      update_ctls = true
-                    elseif ctltype == 4 then                  
-                      strips[tracks[track_select].strip][page].controls[i].cycledata.pos = 1
-                      if strips[tracks[track_select].strip][page].controls[i].cycledata.pos <=     
-                                strips[tracks[track_select].strip][page].controls[i].cycledata.statecnt then
-                        trackfxparam_select = i
-                        strips[tracks[track_select].strip][page].controls[i].val = 
-                            strips[tracks[track_select].strip][page].controls[i].cycledata[strips[tracks[track_select].strip][page].controls[i].cycledata.pos].val
-                        SetParam()
-                        strips[tracks[track_select].strip][page].controls[i].dirty = true
-                      end                  
-                      update_ctls = true
-                    --elseif ctltype == 6 then
-                    --  strips[tracks[track_select].strip][page].controls[i].defval = GetParamValue_Ctl(i)                                    
+                    if settings_swapctrlclick == false then
+                      SetParam_ToDef(i)
+                    else
+                      SetParam_EnterVal(i)
                     end
-  
+                        
                     noscroll = true
+                    break
                   end
                   
                   if ctltype == 1 then
@@ -9427,19 +9452,14 @@ end
                 --  EditValue()
                 
                 elseif MOUSE_click(ctlxywh) and mouse.ctrl then --make double_click?
-                  --default val
-                  trackfxparam_select = i
-                  local ctltype = strips[tracks[track_select].strip][page].controls[i].ctltype
-                  if ctltype == 1 then
-                    trackfxparam_select = i
-                    OpenEB(5,'Please enter value:')
-                    break
-                  elseif ctltype == 6 then
-                    strips[tracks[track_select].strip][page].controls[i].defval = GetParamValue_Ctl(i)                                    
+                  if settings_swapctrlclick == true then
+                    SetParam_ToDef(i)
+                  else
+                    SetParam_EnterVal(i)
                   end
                   noscroll = true
-                  break
-                
+                  break     
+                             
                 elseif settings_mousewheelknob and gfx.mouse_wheel ~= 0 and MOUSE_over(ctlxywh) then
                   local ctltype = strips[tracks[track_select].strip][page].controls[i].ctltype
                   if ctltype == 1 then
@@ -9499,11 +9519,10 @@ end
           end
         end
       
-      if show_fsnapshots and togfsnap == false then
-        show_fsnapshots = false
-        update_surface = true
-      end
-      
+        if show_fsnapshots and togfsnap == false then
+          show_fsnapshots = false
+          update_surface = true
+        end
       
       end
 
@@ -13019,7 +13038,7 @@ end
     locky = tobool(nz(GES('locky',true),false))
     lockw = tonumber(nz(GES('lockw',true),128))
     lockh = tonumber(nz(GES('lockh',true),128))
-
+    settings_swapctrlclick = tobool(nz(GES('swapctrlclick',true),settings_swapctrlclick))
     
     local sd = tonumber(GES('strip_default',true))
     local sdf = tonumber(GES('stripfol_default',true))
@@ -13042,6 +13061,7 @@ end
     reaper.SetExtState(SCRIPT,'locky',tostring(locky), true)
     reaper.SetExtState(SCRIPT,'lockw',tostring(lockw), true)
     reaper.SetExtState(SCRIPT,'lockh',tostring(lockh), true)
+    reaper.SetExtState(SCRIPT,'swapctrlclick',tostring(settings_swapctrlclick), true)
     
     if strip_default then
       reaper.SetExtState(SCRIPT,'strip_default',tostring(strip_default.strip_select), true)
@@ -13994,6 +14014,7 @@ end
   settings_mousewheelknob = false
   settings_locksurface = false
   settings_ExtendedAPI = reaper.APIExists('BR_GetMediaTrackSendInfo_Track')
+  settings_swapctrlclick = false
   
   dockstate = 0
   
