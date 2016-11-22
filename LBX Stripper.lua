@@ -1620,40 +1620,41 @@
 
       local track = GetTrack(tr)
 
-      local sndcnt = reaper.GetTrackNumSends(track,0)
-      for i = 0, sndcnt-1 do
-        local dsttrack = reaper.BR_GetMediaTrackSendInfo_Track(track, 0, i, 1)
-        if dsttrack then
-          local guid = reaper.GetTrackGUID(dsttrack)
-          local dst = reaper.GetTrackSendInfo_Value(track, 0, i, 'I_DSTCHAN')
-          local src = reaper.GetTrackSendInfo_Value(track, 0, i, 'I_SRCCHAN')
-  
-          tbl[i] = {}
-          local sname, _ = reaper.GetTrackState(dsttrack)
-          
-          t = -1 --not used
-          tbl[i] = {idx = i,
-                        sendname = sname,
-                        desttracknum = t,
-                        desttrackguid = guid,
-                        dstchan = dst,
-                        srcchan = src,
-                        {}}
-          tbl[i][1] = {
-                                name = tostring(sname)..' Send Vol',
-                                parmname = 'D_VOL'
-                               }
-          tbl[i][2] = {
-                                name = tostring(sname)..' Send Pan',
-                                parmname = 'D_PAN'
-                               }
-          tbl[i][3] = {
-                                name = tostring(sname)..' Send Mute',
-                                parmname = 'B_MUTE'
-                               }
-        end
-      end    
+      if track then
+        local sndcnt = reaper.GetTrackNumSends(track,0)
+        for i = 0, sndcnt-1 do
+          local dsttrack = reaper.BR_GetMediaTrackSendInfo_Track(track, 0, i, 1)
+          if dsttrack then
+            local guid = reaper.GetTrackGUID(dsttrack)
+            local dst = reaper.GetTrackSendInfo_Value(track, 0, i, 'I_DSTCHAN')
+            local src = reaper.GetTrackSendInfo_Value(track, 0, i, 'I_SRCCHAN')
     
+            tbl[i] = {}
+            local sname, _ = reaper.GetTrackState(dsttrack)
+            
+            t = -1 --not used
+            tbl[i] = {idx = i,
+                          sendname = sname,
+                          desttracknum = t,
+                          desttrackguid = guid,
+                          dstchan = dst,
+                          srcchan = src,
+                          {}}
+            tbl[i][1] = {
+                                  name = tostring(sname)..' Send Vol',
+                                  parmname = 'D_VOL'
+                                 }
+            tbl[i][2] = {
+                                  name = tostring(sname)..' Send Pan',
+                                  parmname = 'D_PAN'
+                                 }
+            tbl[i][3] = {
+                                  name = tostring(sname)..' Send Mute',
+                                  parmname = 'B_MUTE'
+                                 }
+          end
+        end    
+      end
       return tbl
     end
       
