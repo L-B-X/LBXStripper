@@ -1444,6 +1444,9 @@
         elseif kf == '__Snapshot.knb' then
           ctl_files[c].imageidx = def_snapshot
           def_snapshotctl = c
+        elseif kf == 'SimpleFlat_48.knb' then
+          ctl_files[c].imageidx = def_knobsm
+          def_knobsmctl = c
         end
         c = c + 1
       end
@@ -1919,6 +1922,21 @@
                    xywh.h, 1, 1)
 
           c = gui.color.black        
+        else
+          local s = tracks[i-1+tlist_offset].strip
+          if strips and strips[s] then
+            if #strips[s][1].controls > 0 or 
+               #strips[s][2].controls > 0 or 
+               #strips[s][3].controls > 0 or 
+               #strips[s][4].controls > 0 or
+               #strips[s][1].graphics > 0 or  
+               #strips[s][2].graphics > 0 or  
+               #strips[s][3].graphics > 0 or  
+               #strips[s][4].graphics > 0 then
+              c = '0 192 0' 
+            end  
+          end 
+        
         end
         local nm = tracks[i-1 + tlist_offset].name
         if nm == '' then
@@ -3158,6 +3176,7 @@ function outExpo(t, b, c, d)
 end
 
 function outCirc(t, b, c, d)
+  if t < 0 then t = 0 end
   t = t - 1
   return(math.sqrt(1 - t^2)) 
 end
@@ -3280,7 +3299,7 @@ end
                 local v2, val2 = 0, 0
   
                 if ctlcat == ctlcats.fxparam or ctlcat == ctlcats.trackparam or ctlcat == ctlcats.tracksend then
-                  v2 = frameScale(strips[strip][page].controls[i].framemode, GetParamValue2(ctlcat,track,fxnum,param,i))
+                  v2 = nz(frameScale(strips[strip][page].controls[i].framemode, GetParamValue2(ctlcat,track,fxnum,param,i)),0)
                   val2 = F_limit(round(frames*v2),0,frames-1)
                 end
                   
@@ -5284,8 +5303,9 @@ end
       local mo
       if muteOut then mo = 1 else mo = 0 end
       return mo
-    else    
-      return normalize(min,max,reaper.GetTrackSendInfo_Value(track, 0, idx, paramstr))
+    --else    
+    --DBG(idx)
+    --  return normalize(min,max,reaper.GetTrackSendInfo_Value(track, 0, idx, paramstr))
     end
     
   end
@@ -7639,10 +7659,28 @@ end
       ls = '!'
     end
     local dt = ''
+    
     if (strips and tracks[track_select].strip and strips[tracks[track_select].strip] and #strips[tracks[track_select].strip][page].controls > 0) or strip_default == nil then
       dt = '#'      
     end
-    local sub = '||>Strip Set|Set 1|Set 2|Set 3|Set 4|Set 5|Set 6|Set 7|<Set 8'
+    local sub = '||>Strip Set'
+    local cs = tonumber(string.match(STRIPSET,'%d'))
+    for i = 1, 8 do
+      if i < 8 then
+        if cs and cs == i then
+          sub = sub .. '|!Set '..string.format('%i',i)      
+        else
+          sub = sub .. '|Set '..string.format('%i',i)
+        end
+      else
+        if cs and cs == i then
+          sub = sub .. '|<!Set '..string.format('%i',i)      
+        else
+          sub = sub .. '|<Set '..string.format('%i',i)
+        end      
+      end
+    end
+    sub = sub .. '||Load Set|Save Set||Clear Set'
     if mode == 0 then
       mstr = 'Toggle Sidebar||Lock X|Lock Y|Scroll Up|Scroll Down||Save Script State|Open Settings||Page 1|Page 2|Page 3|Page 4||'..ds..'||'..ls..'Lock Surface||'..dt..'Insert Default Strip'
     else
@@ -7686,6 +7724,7 @@ end
         Strip_AddStrip(loadstrip,0,0)
         loadstrip = nil
       elseif res >= 15 and res <= 22 then
+        SaveData()
         local oscript = SCRIPT
         if res == 15 then
           SCRIPT = 'LBX_STRIPPER'
@@ -7697,6 +7736,12 @@ end
         if oscript ~= SCRIPT then
           newloc = true
         end
+      elseif res == 23 then
+        --load set
+        loadset_fn = LoadSet()
+      elseif res == 24 then
+        --save set
+        OpenEB(20,'Please enter name of strip set:')
       end
       update_gfx = true
     end
@@ -8319,9 +8364,19 @@ end
 
     local rt = reaper.time_precise()
     if PROJECTID ~= tonumber(GPES('projectid')) or newloc then
-      newloc = nil
-      INIT()
+      if newloc then
+        --SaveData()
+        newloc = nil
+        INIT()
+      else
+        INIT()                
+      end
       LoadData()
+    elseif loadset_fn then
+      SaveData()
+      INIT(true)
+      LoadSet2(loadset_fn)      
+      loadset_fn = nil
     end
     
     if gfx.w ~= last_gfx_w or gfx.h ~= last_gfx_h or force_resize then
@@ -8737,7 +8792,8 @@ end
         elseif EB_Open == 15 then
           EditSubName(editbox.text)
           update_snaps = true          
-        
+        elseif EB_Open == 20 then
+          SaveSet(editbox.text)
         end
         editbox = nil
         EB_Open = 0
@@ -12656,6 +12712,7 @@ end
         ogrid = settings_gridsize
         osg = settings_showgrid
         settings_locksurface = tobool(nz(GPES('locksurface',true),false))
+        track_select = tonumber(nz(GPES('lasttrack',true),0))
       
         local scnt = tonumber(nz(GPES('strips_count'),0))
   
@@ -12982,7 +13039,7 @@ end
         end
         
       else
-        DBG('saving')
+        --DBG('saving')
         SaveData()
       end
       PopulateTracks() --must be called to link tracks to strips
@@ -13017,6 +13074,10 @@ end
     end
     if tracks and tracks[track_select] and tracks[track_select].strip and strips[tracks[track_select].strip] then
     --if tracks[track_select].strip and strips[tracks[track_select].strip] then
+      if settings_followselectedtrack then
+        local tr = GetTrack(track_select)
+        reaper.SetOnlyTrackSelected(tr)
+      end
       surface_offset.x = tonumber(strips[tracks[track_select].strip][page].surface_x)
       surface_offset.y = tonumber(strips[tracks[track_select].strip][page].surface_y)
     end    
@@ -13083,6 +13144,7 @@ end
     reaper.SetProjExtState(0,SCRIPT,'showgrid',tostring(settings_showgrid))
     reaper.SetProjExtState(0,SCRIPT,'showeditbar',tostring(show_editbar))
     reaper.SetProjExtState(0,SCRIPT,'locksurface',tostring(settings_locksurface))
+    reaper.SetProjExtState(0,SCRIPT,'lasttrack',track_select)
     
     if gfx1 then
       reaper.SetProjExtState(0,SCRIPT,'win_w',nz(gfx1.main_w,800))
@@ -13745,10 +13807,246 @@ end
   end
     
   ------------------------------------------------------------
-    
-  function INIT()
+  -- STRIP SETS    
+  ------------------------------------------------------------
 
-    PROJECTID = math.ceil((math.abs(math.sin( -1 + (os.clock() % 2)))) * 0xFFFFFFFF)
+  function SaveSet(fn)
+  
+    if fn and string.len(fn)>0 then
+    
+      local savedata = {trackdata = {},
+                        stripdata = {},
+                        snapdata = {}}
+      for t = 0, reaper.CountTracks(0)-1 do
+      
+        local tr = GetTrack(t)
+        local r, chunk = reaper.GetTrackStateChunk(tr, '', false)
+        savedata.trackdata[t] = {track = t,
+                                 guid = reaper.GetTrackGUID(tr),
+                                 chunkdata = chunk}
+      end
+      savedata.stripdata = strips
+      savedata.snapdata = snapshots
+      
+      --Pickle doesn't like {} in strings (much) - remove before pickling
+      --[[for i = 1, #savedata.strip.controls do
+        savedata.strip.controls[i].fxguid = convertguid(savedata.strip.controls[i].fxguid)
+      end]]
+      
+      local save_path=sets_path
+      local fn=save_path..fn..".stripset"
+      
+      local DELETE=true
+      local file
+      
+      if reaper.file_exists(fn) then
+      
+      end
+      
+      if DELETE then
+        file=io.open(fn,"w")
+        local pickled_table=pickle(savedata)
+        file:write(pickled_table)
+        file:close()
+      end
+      
+      --reinstate {} after pickling
+      --[[for i = 1, #savedata.strip.controls do
+        if savedata.strip.controls[i].fxguid then
+          savedata.strip.controls[i].fxguid = '{'..savestrip.strip.controls[i].fxguid..'}'
+        end
+      end]]
+      
+      OpenMsgBox(1,'Strip set saved.',1)
+    
+    end  
+  
+  end
+
+  function LoadSet()
+  
+    local retval, fn = reaper.GetUserFileNameForRead(sets_path..'*', 'Load Strip Set', '.stripset')
+    if retval then
+    
+      local loaddata = nil
+      if reaper.file_exists(fn) then
+      
+        return fn
+              
+      else
+        OpenMsgBox(1,'File not found.',1)
+      end
+    
+    end
+    
+  end
+
+  function LoadSet2(fn)
+
+    local file
+    file=io.open(fn,"r")
+    local content=file:read("*a")
+    file:close()
+    
+    local loaddata = unpickle(content)
+
+    guids = {}
+    --INIT()
+    local t_offset = reaper.CountTracks(0)
+    
+    for i = 0, #loaddata.trackdata do
+      loaddata.trackdata[i].chunkdata = string.gsub(loaddata.trackdata[i].chunkdata,
+                                                    '({%x%x%x%x%x%x%x%x%-%x%x%x%x%-%x%x%x%x%-%x%x%x%x%-%x%x%x%x%x%x%x%x%x%x%x%x})',
+                                                    function(d) if guids[d] == nil then guids[d]=reaper.genGuid('') end return guids[d] end)
+      loaddata.trackdata[i].chunkdata = ReplaceRCVs(loaddata.trackdata[i].chunkdata, t_offset)
+    end    
+        
+    for i = 0, #loaddata.trackdata do
+    
+      reaper.InsertTrackAtIndex(t_offset+i+1, false)
+    
+    end
+    
+    for i = 0, #loaddata.trackdata do
+
+      local tr = GetTrack(t_offset+i)
+      reaper.SetTrackStateChunk(tr, loaddata.trackdata[i].chunkdata, false) 
+
+    end        
+    
+    --update tracknums and guids
+    for s = 1, #loaddata.stripdata do
+    
+      if loaddata.stripdata and loaddata.stripdata[s] then
+    
+        loaddata.stripdata[s].track.tracknum = loaddata.stripdata[s].track.tracknum + t_offset
+        loaddata.stripdata[s].track.guid = guids[loaddata.stripdata[s].track.guid]
+    
+        for p = 1, 4 do
+    
+          if loaddata.stripdata[s][p] then
+            if #loaddata.stripdata[s][p].controls > 0 then
+            
+              for c = 1, #loaddata.stripdata[s][p].controls do
+              
+                if loaddata.stripdata[s][p].controls[c].tracknum then
+                  loaddata.stripdata[s][p].controls[c].tracknum = loaddata.stripdata[s][p].controls[c].tracknum + t_offset
+                  loaddata.stripdata[s][p].controls[c].trackguid = guids[loaddata.stripdata[s][p].controls[c].trackguid]
+                end
+                if loaddata.stripdata[s][p].controls[c].fxguid then
+                  loaddata.stripdata[s][p].controls[c].fxguid = guids[loaddata.stripdata[s][p].controls[c].fxguid]
+                end
+                if loaddata.stripdata[s][p].controls[c].param_info.paramdesttrnum then
+                  loaddata.stripdata[s][p].controls[c].param_info.paramdesttrnum = loaddata.stripdata[s][p].controls[c].param_info.paramdesttrnum + t_offset
+                  loaddata.stripdata[s][p].controls[c].param_info.paramdestguid = guids[loaddata.stripdata[s][p].controls[c].param_info.paramdestguid]
+                end
+              end
+            
+            end
+          end
+    
+        end
+      end
+      
+    end
+
+    image_count_add = image_count    
+    if #loaddata.stripdata > 0 then
+      for s = 1, #loaddata.stripdata do
+        for p = 1, 4 do
+          if #loaddata.stripdata[s][p].graphics > 0 then
+            for i = 1, #loaddata.stripdata[s][p].graphics do
+      
+              local fnd = false
+              for j = 0, #graphics_files do
+                if nz(loaddata.stripdata[s][p].graphics[i].gfxtype,gfxtype.img) == gfxtype.img then
+                  if graphics_files[j].fn == loaddata.stripdata[s][p].graphics[i].fn then
+                    if graphics_files[j].imageidx ~= nil then
+                      fnd = true
+                      loaddata.stripdata[s][p].graphics[i].imageidx = graphics_files[j].imageidx
+                    else
+                      fnd = true
+                      image_count_add = image_count_add + 1
+                      gfx.loadimg(image_count_add, graphics_path..loaddata.stripdata[s][p].graphics[i].fn)
+                      loaddata.stripdata[s][p].graphics[i].imageidx = image_count_add
+                    end
+                    break
+                  end
+                end
+              end
+              if not fnd then
+              end
+            end
+          end
+        end
+      end
+
+      for s = 1, #loaddata.stripdata do
+        for p = 1, 4 do
+
+          if #loaddata.stripdata[s][p].controls > 0 then      
+            for i = 1, #loaddata.stripdata[s][p].controls do
+              local fnd = false
+              for j = 1, #ctl_files do
+                if ctl_files[j].fn == loaddata.stripdata[s][p].controls[i].ctl_info.fn then
+                  if ctl_files[j].imageidx ~= nil then
+                    fnd = true
+                    loaddata.stripdata[s][p].controls[i].ctl_info.imageidx = ctl_files[j].imageidx
+                    loaddata.stripdata[s][p].controls[i].knob_select = j
+                  else
+                    fnd = true
+                    image_count_add = image_count_add + 1
+                    gfx.loadimg(image_count_add, controls_path..loaddata.stripdata[s][p].controls[i].ctl_info.fn)
+                    loaddata.stripdata[s][p].controls[i].ctl_info.imageidx = image_count_add
+                    loaddata.stripdata[s][p].controls[i].knob_select = j
+                  end
+                  break
+                end
+              end
+              if not fnd then
+              end
+            end
+          end
+        end
+      end
+
+    end
+    image_count = image_count_add
+
+    if strips == nil then    
+      strips = {}
+    end
+    
+    --snapshots = {}    
+    Snapshots_INIT()
+    
+    for s = 1, #loaddata.stripdata do    
+      if loaddata.stripdata and loaddata.stripdata[s] then
+        local sc = #strips + 1 
+        strips[sc] = loaddata.stripdata[s]
+        snapshots[sc] = loaddata.snapdata[s]
+      end
+    end
+    
+    PopulateTracks()
+    
+  end
+  
+  function ReplaceRCVs(chunk, t_offset)
+  
+    local ch = string.gsub(chunk,'AUXRECV (%d-) ',function(d) return 'AUXRECV '..string.format('%i',t_offset+d)..' ' end)
+    return ch
+    
+  end
+  
+  ------------------------------------------------------------
+
+  function INIT(keepprojid)
+
+    if keepprojid then
+    else
+      PROJECTID = math.ceil((math.abs(math.sin( -1 + (os.clock() % 2)))) * 0xFFFFFFFF)
+    end
     
     mode = 0
     submode = 2
@@ -13937,19 +14235,38 @@ end
     return 'return'..txt1
   end
   
+  function tablelength(T)
+    local count = 0
+    for _ in pairs(T) do count = count + 1 end
+    return count
+  end
+  
   function testchunkcopy(srctrn, dsttrn)
   
     local str = GetTrack(srctrn)
-    local dtr = GetTrack(dsttrn)
+    --local dtr = GetTrack(dsttrn)
     
     local _, chunk = reaper.GetTrackStateChunk(str,'',false)
     DBG('')
     DBG('SOURCE')
     DBG('')
     DBG(chunk)
-    reaper.SetTrackStateChunk(dtr, chunk, false)
+    local guids = {}
+    local ch = string.gsub(chunk,'({%x%x%x%x%x%x%x%x%-%x%x%x%x%-%x%x%x%x%-%x%x%x%x%-%x%x%x%x%x%x%x%x%x%x%x%x})',
+                           function(d) if guids[d] == nil then guids[d]=reaper.genGuid('') end DBG(d..'  '..guids[d]) return guids[d] end)
+    DBG('')
+    DBG('RESULT')
+    DBG('')
+    DBG(ch)
+    DBG('')
+    DBG('Total guids swapped = '..tablelength(guids))
+
+    --DBG(string.match(chunk,'{.-}'))
+    --DBG(string.match(chunk,'{%x%x%x%x%x%x%x%x%-%x%x%x%x%-%x%x%x%x%-%x%x%x%x%-%x%x%x%x%x%x%x%x%x%x%x%x}'))
     
-    local ret, chunk = reaper.GetTrackStateChunk(dtr,'',false)
+    --reaper.SetTrackStateChunk(dtr, chunk, false)
+    
+    --[[local ret, chunk = reaper.GetTrackStateChunk(dtr,'',false)
     DBG('ret: '..tostring(ret))
     DBG('DEST')
     DBG('')
@@ -13963,7 +14280,7 @@ end
     local p = {}
     p[guid] = reaper.genGuid('')
     DBG(guid..'  p[guid]='..p[guid])
-    
+    ]]
     
   end
   
@@ -14001,6 +14318,7 @@ end
   actiondump_path = resource_path.."actiondumps/"    
   icon_path = resource_path.."icons/"
   strips_path = resource_path.."strips/"
+  sets_path = resource_path.."sets/"
 
   settings_followselectedtrack = true
   settings_autocentrectls = false
@@ -14036,7 +14354,7 @@ end
   def_knobsm = LoadControl(1018, 'SimpleFlat_48.knb')
   def_snapshot = LoadControl(1017, '__Snapshot.knb')
   
-  --testchunkcopy(2,3)
+  --testchunkcopy(0,3)
   
   if def_knob == -1 or def_knobsm == -1 or def_snapshot == -1 then
     DBG("Please ensure you have the '__default', 'SimpleFlat_48', and '__Snapshot' files in your LBXCS_resources/controls/ folder.")
