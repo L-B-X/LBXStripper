@@ -6568,31 +6568,9 @@ end
                                                                   ctl = snapshots[strip][page][sstcnt].snapshot[ss].data[d].ctl}
                       end
                     end            
-                    --[[for j = cstart, #strips[strip][page].controls do
-                      if strips[strip][page].controls[j].ctlcat == ctlcats.snapshot then
-                        if strips[strip][page].controls[j].param == i then
-                          strips[strip][page].controls[j].param = sstcnt
-                        end
-                      end
-                    end]]
                   end
                 end
                                        
-                --[[snapshots[strip][page][1][sscnt] = stripdata.snapshots[i][ss]  
-                snapshots[strip][page][1].selected = stripdata.snapshots[i].selected
-                
-                for d = 1, #snapshots[strip][page][1][sscnt].data do
-                  local ocid = snapshots[strip][page][1][sscnt].data[d].c_id
-                  if cidtrack[ocid] then
-                    snapshots[strip][page][1][sscnt].data[d].c_id = cidtrack[ocid].c_id
-                    snapshots[strip][page][1][sscnt].data[d].ctl = cidtrack[ocid].ctl
-                  else
-                    DBG('Erk')
-                  end            
-                end
-    
-                sscnt = sscnt + 1]]
-              
               end
             end            
           else
@@ -7681,7 +7659,7 @@ end
         end      
       end
     end
-    sub = sub .. '||Load Set|Save Set||Clear Set'
+    sub = sub .. '||Load Set|Merge Set|Save Set||Clear Set'
     if mode == 0 then
       mstr = 'Toggle Sidebar||Lock X|Lock Y|Scroll Up|Scroll Down||Save Script State|Open Settings||Page 1|Page 2|Page 3|Page 4||'..ds..'||'..ls..'Lock Surface||'..dt..'Insert Default Strip'
     else
@@ -7739,8 +7717,11 @@ end
         end
       elseif res == 23 then
         --load set
-        loadset_fn = LoadSet()
+        loadset_fn = LoadSet(false)
       elseif res == 24 then
+        --merge set
+        loadset_fn = LoadSet(true)
+      elseif res == 25 then
         --save set
         OpenEB(20,'Please enter name of strip set:')
       end
@@ -8375,8 +8356,12 @@ end
       LoadData()
     elseif loadset_fn then
       SaveData()
-      INIT(true)
-      LoadSet2(loadset_fn)      
+      if lsmerge == true then
+        LoadSet2(loadset_fn, true)      
+      else
+        INIT(true)
+        LoadSet2(loadset_fn)
+      end
       loadset_fn = nil
     end
     
@@ -12965,7 +12950,6 @@ end
                   
                     local key = 'snap_strip_'..s..'_'..p..'_type_'..sst..'_'
                     local sscnt = tonumber(nz(GPES(key..'ss_count',true),0))
-                    
                     if sscnt > 0 then
                 
                       for ss = 1, sscnt do
@@ -13033,7 +13017,7 @@ end
                   
                 end
                 
-                Snapshots_Check(s,p)
+                --Snapshots_Check(s,p)
               end
             end
           end
@@ -13165,7 +13149,7 @@ end
         key = 'strips_'..s..'_track_'
         
         reaper.SetProjExtState(0,SCRIPT,key..'name',strips[s].track.name)
-        reaper.SetProjExtState(0,SCRIPT,key..'guid',strips[s].track.guid)
+        reaper.SetProjExtState(0,SCRIPT,key..'guid',nz(strips[s].track.guid,''))
         reaper.SetProjExtState(0,SCRIPT,key..'tracknum',strips[s].track.tracknum)
         reaper.SetProjExtState(0,SCRIPT,key..'strip',strips[s].track.strip)
         
@@ -13424,7 +13408,6 @@ end
   ------------------------------------------------------------
 
   function Snapshots_Check(strip, page)
-  
     if snapshots and snapshots[strip] then
       if #snapshots[strip][page] > 0 then    
     
@@ -13441,11 +13424,12 @@ end
                   for d = 1, dcnt do
                   
                     --if snapshots[strip][page][sst][ss].data[d].ctl then
+                      --if strips[strip] and strips[strip][page] then
                       if strips[strip][page].controls[snapshots[strip][page][sst][ss].data[d].ctl] == nil or
                          snapshots[strip][page][sst][ss].data[d].c_id ~= strips[strip][page].controls[snapshots[strip][page][sst][ss].data[d].ctl].c_id then
                         --control numbers not match - a control has been deleted
                         local found = false
-                        for c = snapshots[strip][page][sst][ss].data[d].ctl-notfoundcnt, #strips[strip][page].controls do
+                        for c = 1, #strips[strip][page].controls do
                           if strips[strip][page].controls[c] then
                             if snapshots[strip][page][sst][ss].data[d].c_id == strips[strip][page].controls[c].c_id then
                               found = true
@@ -13461,6 +13445,7 @@ end
                           ss_entry_deleted = true
                         end
                       end
+                      --end
                     --end
                   end
                   
@@ -13479,6 +13464,7 @@ end
               local ctl_entry_deleted = false
               for ctl = 1, ctlcnt do
           
+                --if strips[strip] and  strips[strip][page] then
                 if strips[strip][page].controls[snapshots[strip][page][sst].ctls[ctl].ctl] == nil or
                    snapshots[strip][page][sst].ctls[ctl].c_id ~= strips[strip][page].controls[snapshots[strip][page][sst].ctls[ctl].ctl].c_id then
                   --control numbers not match - a control has been deleted
@@ -13499,8 +13485,10 @@ end
                     ctl_entry_deleted = true
                   end
                 end
+                --else
+                --  DBG('notfound')
+                --end
               end
-
               if ctl_entry_deleted == true then
                 snapshots[strip][page][sst].ctls = Table_RemoveNils(snapshots[strip][page][sst].ctls, ctlcnt)
               end
@@ -13516,11 +13504,12 @@ end
                   for d = 1, dcnt do
                   
                     --if snapshots[strip][page][sst][ss].data[d].ctl then
+                      --if strips[strip] and strips[strip][page] then
                       if strips[strip][page].controls[snapshots[strip][page][sst].snapshot[ss].data[d].ctl] == nil or
                          snapshots[strip][page][sst].snapshot[ss].data[d].c_id ~= strips[strip][page].controls[snapshots[strip][page][sst].snapshot[ss].data[d].ctl].c_id then
                         --control numbers not match - a control has been deleted
                         local found = false
-                        for c = snapshots[strip][page][sst].snapshot[ss].data[d].ctl-notfoundcnt, #strips[strip][page].controls do
+                        for c = 1, #strips[strip][page].controls do
                           if strips[strip][page].controls[c] then
                             if snapshots[strip][page][sst].snapshot[ss].data[d].c_id == strips[strip][page].controls[c].c_id then
                               found = true
@@ -13536,6 +13525,10 @@ end
                           ss_entry_deleted = true
                         end
                       end
+                      --else
+                      --  DBG('notfound')
+                      
+                      --end
                     --end
                   end
                   
@@ -13864,14 +13857,15 @@ end
   
   end
 
-  function LoadSet()
+  function LoadSet(merge)
   
     local retval, fn = reaper.GetUserFileNameForRead(sets_path..'*', 'Load Strip Set', '.stripset')
     if retval then
     
       local loaddata = nil
       if reaper.file_exists(fn) then
-      
+        if merge == nil then merge = false end
+        lsmerge = merge
         return fn
               
       else
@@ -13882,8 +13876,10 @@ end
     
   end
 
-  function LoadSet2(fn)
+  function LoadSet2(fn, merge)
 
+    if merge == nil then merge = false end
+    
     local file
     file=io.open(fn,"r")
     local content=file:read("*a")
@@ -13915,7 +13911,9 @@ end
 
     end        
     
-    --update tracknums and guids
+    local cids = {}
+    
+    --update tracknums and guids, and cids
     for s = 1, #loaddata.stripdata do
     
       if loaddata.stripdata and loaddata.stripdata[s] then
@@ -13941,6 +13939,12 @@ end
                   loaddata.stripdata[s][p].controls[c].param_info.paramdesttrnum = loaddata.stripdata[s][p].controls[c].param_info.paramdesttrnum + t_offset
                   loaddata.stripdata[s][p].controls[c].param_info.paramdestguid = guids[loaddata.stripdata[s][p].controls[c].param_info.paramdestguid]
                 end
+                if merge then
+                  if cids[loaddata.stripdata[s][p].controls[c].c_id] == nil then
+                    cids[loaddata.stripdata[s][p].controls[c].c_id] = GenID()
+                    loaddata.stripdata[s][p].controls[c].c_id = cids[loaddata.stripdata[s][p].controls[c].c_id]
+                  end
+                end
               end
             
             end
@@ -13951,6 +13955,55 @@ end
       
     end
 
+    if merge then
+      if #loaddata.snapdata > 0 then
+        for s = 1, #loaddata.snapdata do
+          for p = 1, 4 do
+          
+            if loaddata.snapdata[s][p] and #loaddata.snapdata[s][p] > 0 then
+              for sst = 1, #loaddata.snapdata[s][p] do
+          
+                if sst == 1 then
+                  if loaddata.snapdata[s][p][sst] and #loaddata.snapdata[s][p][sst] > 0 then
+                
+                    for ss = 1, #loaddata.snapdata[s][p][sst] do
+                      if loaddata.snapdata[s][p][sst][ss].data and #loaddata.snapdata[s][p][sst][ss].data > 0 then
+                        for d = 1, #loaddata.snapdata[s][p][sst][ss].data do 
+                          if cids[loaddata.snapdata[s][p][sst][ss].data[d].c_id] then
+                            loaddata.snapdata[s][p][sst][ss].data[d].c_id = cids[loaddata.snapdata[s][p][sst][ss].data[d].c_id]
+                          end
+                        end
+                      end
+                    end
+                  end
+                else
+                  if loaddata.snapdata[s][p][sst].ctls and #loaddata.snapdata[s][p][sst].ctls > 0 then
+                    for ctl = 1, #loaddata.snapdata[s][p][sst].ctls do
+                      if cids[loaddata.snapdata[s][p][sst].ctls[ctl].c_id] then
+                        loaddata.snapdata[s][p][sst].ctls[ctl].c_id = cids[loaddata.snapdata[s][p][sst].ctls[ctl].c_id]
+                      end                
+                    end
+                  end
+                
+                  if loaddata.snapdata[s][p][sst].snapshot and #loaddata.snapdata[s][p][sst].snapshot > 0 then
+                    for ss = 1, #loaddata.snapdata[s][p][sst].snapshot do
+                      if loaddata.snapdata[s][p][sst].snapshot[ss].data and #loaddata.snapdata[s][p][sst].snapshot[ss].data > 0 then
+                        for d = 1, #loaddata.snapdata[s][p][sst].snapshot[ss].data do
+                          if cids[loaddata.snapdata[s][p][sst].snapshot[ss].data[d].c_id] then
+                            loaddata.snapdata[s][p][sst].snapshot[ss].data[d].c_id = cids[loaddata.snapdata[s][p][sst].snapshot[ss].data[d].c_id]
+                          end
+                        end
+                      end
+                    end
+                  end
+                end
+              end
+            end
+          end
+        end
+      end
+    end
+        
     image_count_add = image_count    
     if #loaddata.stripdata > 0 then
       for s = 1, #loaddata.stripdata do
@@ -14018,8 +14071,10 @@ end
       strips = {}
     end
     
-    --snapshots = {}    
-    Snapshots_INIT()
+    --snapshots = {}
+    if merge then    
+      Snapshots_INIT()
+    end
     
     for s = 1, #loaddata.stripdata do    
       if loaddata.stripdata and loaddata.stripdata[s] then
