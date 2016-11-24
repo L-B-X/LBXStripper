@@ -5593,6 +5593,9 @@ end
         else
           local cmd = strips[tracks[track_select].strip][page].controls[trackfxparam_select].param_info.paramidx
           if cmd ~= nil then
+            if string.sub(cmd,1,1) ~= '_' then
+              cmd = '_'..cmd
+            end
             reaper.Main_OnCommand(reaper.NamedCommandLookup(cmd), 0)
           end
         end        
@@ -8172,7 +8175,6 @@ end
       content = file:read("*all")
       for line in io.lines(filename) do table.insert(kb_table, line) end
       file:close()
-  
       local readacts = false
       for i = 1, #kb_table do
         local l = string.match(kb_table[i], '%[(.*)%]')
@@ -8183,7 +8185,7 @@ end
             readacts = false
           end
         elseif readacts then
-          local l = string.match(kb_table[i], 'S&M_.-=(%d)')
+          local l = string.match(kb_table[i], 'S&M_.-=(%d+) ')
           if l then
             local aid = string.match(kb_table[i], '(S&M_.-)=')
             local an = string.match(kb_table[i], '; (.*)')
@@ -8191,7 +8193,6 @@ end
             if s then
               an = string.sub(an,1,s-1)
             end
-            
             for j = 1, l do
   
               actcnt = actcnt + 1          
