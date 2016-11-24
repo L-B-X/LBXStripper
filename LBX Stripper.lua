@@ -1891,7 +1891,7 @@
     trackfxparam_select = 0
     plist_offset = 0
     
-    if trackedit_select then
+    if trackedit_select and tracks[trackedit_select] then
       local track = GetTrack(tracks[trackedit_select].tracknum)
       for i = 0, reaper.TrackFX_GetNumParams(track, trackfx_select)-1 do
         local _, name = reaper.TrackFX_GetParamName(track, trackfx_select, i, '')
@@ -2319,7 +2319,7 @@
                xywh.h, 1, 1)        
     end
     f_Get_SSV(gui.color.black)
-    if trackedit_select >= 0 then
+    if trackedit_select >= 0 and tracks[trackedit_select] then
       GUI_textsm_CJ(gui,xywh,'TR'..trackedit_select+1 ..':'..tracks[trackedit_select].name,gui.color.black,-2,xywh.w)
     else
       GUI_textsm_CJ(gui,xywh,'TR: Master',gui.color.black,-2,xywh.w)        
@@ -13159,10 +13159,16 @@ end
     if strip_default then
       reaper.SetExtState(SCRIPT,'strip_default',tostring(strip_default.strip_select), true)
       reaper.SetExtState(SCRIPT,'stripfol_default',tostring(strip_default.stripfol_select), true)
+    else
+      reaper.SetExtState(SCRIPT,'strip_default','',true)
+      reaper.SetExtState(SCRIPT,'stripfol_default','',true)
     end
     if strip_default_mast then
       reaper.SetExtState(SCRIPT,'strip_default_mast',tostring(strip_default_mast.strip_select), true)
       reaper.SetExtState(SCRIPT,'stripfol_default_mast',tostring(strip_default_mast.stripfol_select), true)
+    else
+      reaper.SetExtState(SCRIPT,'strip_default_mast', '', true)
+      reaper.SetExtState(SCRIPT,'stripfol_default_mast', '', true)    
     end
     
   end
@@ -14276,6 +14282,9 @@ end
     cyclist_offset = 0
     trctltypelist_offset = 0
     trctlslist_offset = 0
+    plist_offset = 0
+    flist_offset = 0
+    slist_offset = 0
     ssoffset = 0
     fssoffset = 0
     al_offset = 0
@@ -14295,8 +14304,8 @@ end
     navigate = true
     
     gfx_select = 0
-    track_select = 0
-    trackedit_select = 0
+    track_select = -1
+    trackedit_select = -1
     trackfx_select = 0
     trackfxparam_select = 0
     ctl_select = nil
@@ -14374,7 +14383,9 @@ end
     PopulateStrips()
     PopulateMediaItemInfo()
     PopulateTrackSendsInfo()
-    
+    PopulateTrackFX()
+    PopulateTrackFXParams()
+        
     EB_Open = 0
     EB_Enter = false
     
