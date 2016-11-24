@@ -3368,7 +3368,6 @@ end
                   local v3 = GetParamValue_Ctl(i)--strips[strip][page].controls[i].val
                   if tostring(v3) ~= tostring(strips[strip][page].controls[i].defval) then
                   --local dv = round(math.abs(v3-strips[strip][page].controls[i].defval),6)
-                    --DBG(dv)  
                   --if dv > 0 then
                     strips[strip][page].controls[i].membtn = {state = false, mem = v3}
                   --else
@@ -3388,7 +3387,6 @@ end
                 if not found then
                   gfx.a = 0.2
                 end
-  --DBG(update_gfx)
                 if ctlcat == ctlcats.fxparam then
                   if not found then
                     Disp_Name = CropFXName(strips[strip][page].controls[i].fxname)
@@ -3458,10 +3456,7 @@ end
                 end
   
                 if ctltype == 4 and cycle_editmode == false then
-                  --DBG(DVOV)
                   if DVOV and DVOV ~= '' then
-                  --DBG(strips[strip][page].controls[i].cycledata.posdirty)
-                  --DBG(tostring(strips[strip][page].controls[i].val)..'  '..tostring(tonumber(strips[strip][page].controls[i].cycledata[strips[strip][page].controls[i].cycledata.pos].val)))
                     if strips[strip][page].controls[i].cycledata.posdirty == false then 
                     --if tostring(strips[strip][page].controls[i].val) ==
                     --   tostring(strips[strip][page].controls[i].cycledata[
@@ -3469,9 +3464,7 @@ end
                       Disp_ParamV = DVOV
                     end
                   --else
-                  --DBG('sf')
                   end
-                    --DBG(DVOV)
                 end
   
                 local mid = x+(w/2)
@@ -4162,7 +4155,6 @@ end
             GUI_DrawSnapshots(obj, gui)
           end
           if show_fsnapshots then
-            --DBG('z'..fsstype_select)
             GUI_DrawFSnapshots(obj, gui)
           end
         elseif update_snaps or (update_msnaps and resize_snaps) then  
@@ -4216,7 +4208,6 @@ end
         end
         
         if show_snapshots then
-        --DBG(obj.sections[160].x..'  '..obj.sections[160].y..'  '..obj.sections[160].w..'  '..obj.sections[160].h)
           gfx.blit(1003,1,0,0,0,obj.sections[160].w,obj.sections[160].h,obj.sections[160].x,obj.sections[160].y)        
         
           if dragparam ~= nil then
@@ -4240,7 +4231,6 @@ end
         end
         
         if show_fsnapshots then
-          --DBG(obj.sections[180].x..'  '..obj.sections[180].y)
           gfx.blit(1005,1,0,0,0,obj.sections[180].w,obj.sections[180].h,obj.sections[180].x,obj.sections[180].y)                
         end
         
@@ -5305,7 +5295,6 @@ end
       if muteOut then mo = 1 else mo = 0 end
       return mo
     --else    
-    --DBG(idx)
     --  return normalize(min,max,reaper.GetTrackSendInfo_Value(track, 0, idx, paramstr))
     end
     
@@ -7671,7 +7660,6 @@ end
     mstr = mstr .. sub
     gfx.x, gfx.y = mouse.mx, butt_h
     res = OpenMenu(mstr)
-    --DBG(res)
     if res ~= 0 then
       if res == 1 then
         ToggleSidebar()
@@ -7701,7 +7689,9 @@ end
       elseif res == 14 then
         stripfol_select = strip_default.stripfol_select
         strip_select = strip_default.strip_select
+        PopulateStrips()
         loadstrip = LoadStrip(strip_select)
+      
         GenStripPreview(gui, loadstrip.strip)
         Strip_AddStrip(loadstrip,0,0)
         loadstrip = nil
@@ -8026,7 +8016,6 @@ end
     file:close()
   
     for i = 1, #kb_table do
-    --DBG(kb_table[i])
       if string.find(kb_table[i], name) ~= nil then
         temp_t = {}
         for word in string.gmatch(kb_table[i], '.-[%s]') do table.insert(temp_t, word) end
@@ -8528,7 +8517,6 @@ end
                                                strips[tracks[track_select].strip][page].controls[i].param, i)
                       if strips[tracks[track_select].strip][page].controls[i].ctltype == 4 then
                         if tostring(strips[tracks[track_select].strip][page].controls[i].val) ~= tostring(v) then
-                        --DBG(tostring(strips[tracks[track_select].strip][page].controls[i].val)..'  '..tostring(v))
                           strips[tracks[track_select].strip][page].controls[i].val = v
                           strips[tracks[track_select].strip][page].controls[i].dirty = true
                           --if strips[tracks[track_select].strip][page].controls[i].param_info.paramname == 'Bypass' then
@@ -9108,7 +9096,6 @@ end
                   --if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.20 then
                     ss_select = ssoffset+i
                     Snapshot_Set(tracks[track_select].strip, page, sstype_select, ss_select)
-                  --DBG('1'..tostring(update_gfx))
                   --end
                     update_ctls = true --to update snapshot ctls
                     update_snaps = true          
@@ -9179,14 +9166,12 @@ end
                         else
                           snapshots[strip][page][sstype_select].ctls[ctlidx].delete = true
                         end
-                        --DBG('found '..i..'  delete: '..tostring(snapshots[strip][page][sstype_select].ctls[ctlidx].delete))
                       
                       else
                         --add
                         local ctlidx = #snapshots[strip][page][sstype_select].ctls + 1
                         snapshots[strip][page][sstype_select].ctls[ctlidx] = {c_id = strips[tracks[track_select].strip][page].controls[i].c_id,
                                                                               ctl = i}
-                        --DBG('adding '..i)
                       end
           
           
@@ -9406,7 +9391,6 @@ end
                       else
                         --open fss
                         togfsnap = true
-                        --DBG(strips[tracks[track_select].strip][page].controls[i].param..'  '..fsstype_select)
                         if fsstype_select == strips[tracks[track_select].strip][page].controls[i].param then
                           show_fsnapshots = not show_fsnapshots
                         else
@@ -9728,7 +9712,6 @@ end
       elseif mouse.context and mouse.context == contexts.addsnapctl then
         dragparam = {x = mouse.mx-ksel_size.w, y = mouse.my-ksel_size.h, type = 'snapctl'}
         update_gfx = true
-        --DBG('2'..tostring(update_gfx))
       
       elseif mouse.context and mouse.context == contexts.resizesnapwindow then
 
@@ -9760,7 +9743,6 @@ end
         
         dragparam = nil
         update_gfx = true
-        --DBG('3'..tostring(update_gfx))
       end
             
     elseif mode == 1 then
@@ -9834,7 +9816,6 @@ end
           elseif mouse.context == nil and MOUSE_click(obj.sections[174]) then
           
             --actcommid_select = action_tblF[al_select].command_id
-           -- DBG(action_tblF[al_select].command_id)
             if al_select and action_tblF[al_select] then
               strips[tracks[track_select].strip][page].controls[trackfxparam_select].param_info.paramname = action_tblF[al_select].command_desc
               strips[tracks[track_select].strip][page].controls[trackfxparam_select].param_info.paramidx = action_tblF[al_select].command_id
@@ -9982,7 +9963,6 @@ end
           
           local char=gfx.getchar()
           if ctl_select ~= nil and char ~= 0 then
-            --DBG(string.format("%x",char))
             if char == 0x6C656674 then -- left arrow
               for i = 1,#ctl_select do
                 if strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].poslock == false then
@@ -11432,7 +11412,6 @@ end
         
         local char=gfx.getchar()
         if gfx2_select ~= nil and char ~= 0 then
-          --DBG(string.format("%x",char))
           if char == 0x6C656674 then -- left arrow
             if strips[tracks[track_select].strip][page].graphics[gfx2_select].poslock == false then
               strips[tracks[track_select].strip][page].graphics[gfx2_select].x = 
@@ -12075,7 +12054,6 @@ end
           if mode ~= 0 then
             update_gfx = true
           end
-          --DBG('4'..tostring(update_gfx))
         end
 
       end    
@@ -12974,7 +12952,6 @@ end
                   elseif sst > 1 then
                   
                     local key = 'snap_strip_'..s..'_'..p..'_type_'..sst..'_'
-                    --DBG(GPES(key..'subsetname'))
                     snapshots[s][p][sst] = {subsetname = GPES(key..'subsetname'), snapshot = {}, ctls = {}}
                     
                     snapsubsets_table[sst] = snapshots[s][p][sst].subsetname
@@ -13025,7 +13002,6 @@ end
         end
         
       else
-        --DBG('saving')
         SaveData()
       end
       PopulateTracks() --must be called to link tracks to strips
@@ -13285,7 +13261,6 @@ end
       reaper.SetProjExtState(0,SCRIPT,'strips_count',0)    
     end
   
-    --DBG(#snapshots)
     if snapshots and #snapshots > 0 then
       reaper.SetProjExtState(0,SCRIPT,'snapshots_count',#snapshots)
     
@@ -13487,7 +13462,6 @@ end
                   end
                 end
                 --else
-                --  DBG('notfound')
                 --end
               end
               if ctl_entry_deleted == true then
@@ -13527,7 +13501,6 @@ end
                         end
                       end
                       --else
-                      --  DBG('notfound')
                       
                       --end
                     --end
@@ -13789,8 +13762,6 @@ end
       local env = reaper.GetFXEnvelope(track,strips[tracks[track_select].strip][page].controls[c].fxnum,strips[tracks[track_select].strip][page].controls[c].param, false)
       if env then
         local retval, envchunk = reaper.GetEnvelopeStateChunk(env,'',true)
-        --DBG(retval)
-        --DBG(envchunk)
         local s, e = string.find(envchunk,'ACT 1')
         if s and e then
           nchunk = string.sub(envchunk,1,s-1) .. 'ACT 0' .. string.sub(envchunk,e+1)
@@ -14421,13 +14392,11 @@ end
     def_snapshotctl = -1
         
     --DBG(_G['testfunc']('testtext'))
-    --DBG(clipboard)
     INIT()
     LoadSettings()
     LoadData()  
     Lokasenna_Window_At_Center(gfx1.main_w,gfx1.main_h) 
   --test jsfx plug name in quotes
-  --DBG(GetPlugNameFromChunk('JS \"AB Level Matching JSFX [2.5]/AB_LMLT_cntrl\" \"MSTR /B\"\10.000000 0.000000 300.000000 0.000000 - - - - - 0.000000 - - - - - - - - - -14.600000 -11.600000 -7.000000 7.000000 -4.800000 - - - - - -14.500000 -11.800000 -4.100000 10.000000 -4.100000 - - - - - 0.000000 1.000000 0.000000 - 0.000000 0.000000 - - - - 7681.000000 1.000000 - - - - - - - - - - - - - '))
   
     gfx.dock(dockstate)
     run()
