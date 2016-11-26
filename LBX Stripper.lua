@@ -13362,144 +13362,145 @@ end
   
     local key = 'strips_'..s..'_'
     
-    reaper.SetProjExtState(0,SCRIPT,key..'page',nz(strips[s].page,1))
-    
-    key = 'strips_'..s..'_track_'
-    
-    reaper.SetProjExtState(0,SCRIPT,key..'name',strips[s].track.name)
-    reaper.SetProjExtState(0,SCRIPT,key..'guid',nz(strips[s].track.guid,''))
-    reaper.SetProjExtState(0,SCRIPT,key..'tracknum',strips[s].track.tracknum)
-    reaper.SetProjExtState(0,SCRIPT,key..'strip',strips[s].track.strip)
-    
-    for p = 1, 4 do
-    
-      local key = 'strips_'..s..'_'..p..'_'
-    
-      if strips[s][p] then
+    if strips[s] then
+      reaper.SetProjExtState(0,SCRIPT,key..'page',nz(strips[s].page,1))
       
-        reaper.SetProjExtState(0,SCRIPT,key..'surface_x',strips[s][p].surface_x)
-        reaper.SetProjExtState(0,SCRIPT,key..'surface_y',strips[s][p].surface_y)
-        reaper.SetProjExtState(0,SCRIPT,key..'controls_count',#strips[s][p].controls)
-        reaper.SetProjExtState(0,SCRIPT,key..'graphics_count',#strips[s][p].graphics)
-    
-        if #strips[s][p].controls > 0 then
-          for c = 1, #strips[s][p].controls do
-    
-            local key = 'strips_'..s..'_'..p..'_controls_'..c..'_'
-            reaper.SetProjExtState(0,SCRIPT,key..'cid',strips[s][p].controls[c].c_id)
-            reaper.SetProjExtState(0,SCRIPT,key..'fxname',strips[s][p].controls[c].fxname)
-            reaper.SetProjExtState(0,SCRIPT,key..'fxguid',nz(strips[s][p].controls[c].fxguid,''))
-            reaper.SetProjExtState(0,SCRIPT,key..'fxnum',nz(strips[s][p].controls[c].fxnum,''))
-            reaper.SetProjExtState(0,SCRIPT,key..'fxfound',tostring(strips[s][p].controls[c].fxfound))
-            reaper.SetProjExtState(0,SCRIPT,key..'param',strips[s][p].controls[c].param)
-            reaper.SetProjExtState(0,SCRIPT,key..'param_info_name',strips[s][p].controls[c].param_info.paramname)
-            reaper.SetProjExtState(0,SCRIPT,key..'param_info_paramnum',nz(strips[s][p].controls[c].param_info.paramnum,''))
-            reaper.SetProjExtState(0,SCRIPT,key..'param_info_idx',nz(strips[s][p].controls[c].param_info.paramidx,''))
-            reaper.SetProjExtState(0,SCRIPT,key..'param_info_str',nz(strips[s][p].controls[c].param_info.paramstr,''))
-            reaper.SetProjExtState(0,SCRIPT,key..'param_info_guid',nz(strips[s][p].controls[c].param_info.paramdestguid,''))
-            reaper.SetProjExtState(0,SCRIPT,key..'param_info_chan',nz(strips[s][p].controls[c].param_info.paramdestchan,''))
-            reaper.SetProjExtState(0,SCRIPT,key..'param_info_srcchan',nz(strips[s][p].controls[c].param_info.paramsrcchan,''))
-            reaper.SetProjExtState(0,SCRIPT,key..'ctltype',strips[s][p].controls[c].ctltype)
-            reaper.SetProjExtState(0,SCRIPT,key..'knob_select',strips[s][p].controls[c].knob_select)
-            reaper.SetProjExtState(0,SCRIPT,key..'ctl_info_fn',strips[s][p].controls[c].ctl_info.fn)
-            reaper.SetProjExtState(0,SCRIPT,key..'ctl_info_frames',strips[s][p].controls[c].ctl_info.frames)
-            reaper.SetProjExtState(0,SCRIPT,key..'ctl_info_imageidx',strips[s][p].controls[c].ctl_info.imageidx)
-            reaper.SetProjExtState(0,SCRIPT,key..'ctl_info_cellh',strips[s][p].controls[c].ctl_info.cellh)
-            reaper.SetProjExtState(0,SCRIPT,key..'x',strips[s][p].controls[c].x)
-            reaper.SetProjExtState(0,SCRIPT,key..'y',strips[s][p].controls[c].y)
-            reaper.SetProjExtState(0,SCRIPT,key..'w',strips[s][p].controls[c].w)
-            reaper.SetProjExtState(0,SCRIPT,key..'scale',strips[s][p].controls[c].scale)
-            reaper.SetProjExtState(0,SCRIPT,key..'show_paramname',tostring(strips[s][p].controls[c].show_paramname))
-            reaper.SetProjExtState(0,SCRIPT,key..'show_paramval',tostring(strips[s][p].controls[c].show_paramval))
-            reaper.SetProjExtState(0,SCRIPT,key..'ctlname_override',nz(strips[s][p].controls[c].ctlname_override,''))
-            reaper.SetProjExtState(0,SCRIPT,key..'textcol',strips[s][p].controls[c].textcol)
-            reaper.SetProjExtState(0,SCRIPT,key..'textoff',strips[s][p].controls[c].textoff)
-            reaper.SetProjExtState(0,SCRIPT,key..'textoffval',strips[s][p].controls[c].textoffval)
-            reaper.SetProjExtState(0,SCRIPT,key..'textoffx',strips[s][p].controls[c].textoffx)
-            reaper.SetProjExtState(0,SCRIPT,key..'textoffvalx',strips[s][p].controls[c].textoffvalx)
-            reaper.SetProjExtState(0,SCRIPT,key..'textsize',nz(strips[s][p].controls[c].textsize,0))
-            reaper.SetProjExtState(0,SCRIPT,key..'val',nz(strips[s][p].controls[c].val,0))
-            reaper.SetProjExtState(0,SCRIPT,key..'defval',nz(strips[s][p].controls[c].defval,0))   
-            reaper.SetProjExtState(0,SCRIPT,key..'maxdp',nz(strips[s][p].controls[c].maxdp,-1))   
-            reaper.SetProjExtState(0,SCRIPT,key..'dvaloffset',nz(strips[s][p].controls[c].dvaloffset,''))   
-            reaper.SetProjExtState(0,SCRIPT,key..'minov',nz(strips[s][p].controls[c].minov,''))   
-            reaper.SetProjExtState(0,SCRIPT,key..'maxov',nz(strips[s][p].controls[c].maxov,''))   
-            reaper.SetProjExtState(0,SCRIPT,key..'scalemodex',nz(strips[s][p].controls[c].scalemode,8))   
-            reaper.SetProjExtState(0,SCRIPT,key..'framemodex',nz(strips[s][p].controls[c].framemode,1))   
-            reaper.SetProjExtState(0,SCRIPT,key..'poslock',nz(tostring(strips[s][p].controls[c].poslock),false))   
-            reaper.SetProjExtState(0,SCRIPT,key..'horiz',tostring(nz(strips[s][p].controls[c].horiz,false)))   
-                       
-            reaper.SetProjExtState(0,SCRIPT,key..'id',convnum(strips[s][p].controls[c].id))
-    
-            reaper.SetProjExtState(0,SCRIPT,key..'ctlcat',nz(strips[s][p].controls[c].ctlcat,''))
-            reaper.SetProjExtState(0,SCRIPT,key..'tracknum',nz(strips[s][p].controls[c].tracknum,''))
-            reaper.SetProjExtState(0,SCRIPT,key..'trackguid',nz(strips[s][p].controls[c].trackguid,''))
-            reaper.SetProjExtState(0,SCRIPT,key..'memstate',tostring(nz(strips[s][p].controls[c].membtn.state,false)))
-            reaper.SetProjExtState(0,SCRIPT,key..'memmem',nz(strips[s][p].controls[c].membtn.mem,0))
-            if strips[s][p].controls[c].cycledata and strips[s][p].controls[c].cycledata.statecnt then
-              reaper.SetProjExtState(0,SCRIPT,key..'cycledata_statecnt',nz(strips[s][p].controls[c].cycledata.statecnt,0))
-              reaper.SetProjExtState(0,SCRIPT,key..'cycledata_mapptof',tostring(nz(strips[s][p].controls[c].cycledata.mapptof,false)))
-              reaper.SetProjExtState(0,SCRIPT,key..'cycledata_draggable',tostring(nz(strips[s][p].controls[c].cycledata.draggable,false)))
-              reaper.SetProjExtState(0,SCRIPT,key..'cycledata_spread',tostring(nz(strips[s][p].controls[c].cycledata.spread,false)))
-              reaper.SetProjExtState(0,SCRIPT,key..'cycledata_pos',tostring(nz(strips[s][p].controls[c].cycledata.pos,1)))
-              reaper.SetProjExtState(0,SCRIPT,key..'cycledata_posdirty',tostring(nz(strips[s][p].controls[c].cycledata.posdirty,false)))
-              if nz(strips[s][p].controls[c].cycledata.statecnt,0) > 0 then
-                for i = 1, strips[s][p].controls[c].cycledata.statecnt do
-                  local key = 'strips_'..s..'_'..p..'_controls_'..c..'_cycledata_'..i..'_'
-                  reaper.SetProjExtState(0,SCRIPT,key..'val',nz(strips[s][p].controls[c].cycledata[i].val,0))   
-                  reaper.SetProjExtState(0,SCRIPT,key..'dispval',nz(strips[s][p].controls[c].cycledata[i].dispval,''))   
-                  reaper.SetProjExtState(0,SCRIPT,key..'dv',nz(strips[s][p].controls[c].cycledata[i].dv,''))   
-                end
-              end
-            else
-              reaper.SetProjExtState(0,SCRIPT,key..'cycledata_statecnt',0)                   
-            end     
-          end
-        end        
-    
-        if #strips[s][p].graphics > 0 then
-          for g = 1, #strips[s][p].graphics do
+      key = 'strips_'..s..'_track_'
+      
+      reaper.SetProjExtState(0,SCRIPT,key..'name',strips[s].track.name)
+      reaper.SetProjExtState(0,SCRIPT,key..'guid',nz(strips[s].track.guid,''))
+      reaper.SetProjExtState(0,SCRIPT,key..'tracknum',strips[s].track.tracknum)
+      reaper.SetProjExtState(0,SCRIPT,key..'strip',strips[s].track.strip)
+      
+      for p = 1, 4 do
+      
+        local key = 'strips_'..s..'_'..p..'_'
+      
+        if strips[s][p] then
         
-            local key = 'strips_'..s..'_'..p..'_graphics_'..g..'_'
+          reaper.SetProjExtState(0,SCRIPT,key..'surface_x',strips[s][p].surface_x)
+          reaper.SetProjExtState(0,SCRIPT,key..'surface_y',strips[s][p].surface_y)
+          reaper.SetProjExtState(0,SCRIPT,key..'controls_count',#strips[s][p].controls)
+          reaper.SetProjExtState(0,SCRIPT,key..'graphics_count',#strips[s][p].graphics)
+      
+          if #strips[s][p].controls > 0 then
+            for c = 1, #strips[s][p].controls do
+      
+              local key = 'strips_'..s..'_'..p..'_controls_'..c..'_'
+              reaper.SetProjExtState(0,SCRIPT,key..'cid',strips[s][p].controls[c].c_id)
+              reaper.SetProjExtState(0,SCRIPT,key..'fxname',strips[s][p].controls[c].fxname)
+              reaper.SetProjExtState(0,SCRIPT,key..'fxguid',nz(strips[s][p].controls[c].fxguid,''))
+              reaper.SetProjExtState(0,SCRIPT,key..'fxnum',nz(strips[s][p].controls[c].fxnum,''))
+              reaper.SetProjExtState(0,SCRIPT,key..'fxfound',tostring(strips[s][p].controls[c].fxfound))
+              reaper.SetProjExtState(0,SCRIPT,key..'param',strips[s][p].controls[c].param)
+              reaper.SetProjExtState(0,SCRIPT,key..'param_info_name',strips[s][p].controls[c].param_info.paramname)
+              reaper.SetProjExtState(0,SCRIPT,key..'param_info_paramnum',nz(strips[s][p].controls[c].param_info.paramnum,''))
+              reaper.SetProjExtState(0,SCRIPT,key..'param_info_idx',nz(strips[s][p].controls[c].param_info.paramidx,''))
+              reaper.SetProjExtState(0,SCRIPT,key..'param_info_str',nz(strips[s][p].controls[c].param_info.paramstr,''))
+              reaper.SetProjExtState(0,SCRIPT,key..'param_info_guid',nz(strips[s][p].controls[c].param_info.paramdestguid,''))
+              reaper.SetProjExtState(0,SCRIPT,key..'param_info_chan',nz(strips[s][p].controls[c].param_info.paramdestchan,''))
+              reaper.SetProjExtState(0,SCRIPT,key..'param_info_srcchan',nz(strips[s][p].controls[c].param_info.paramsrcchan,''))
+              reaper.SetProjExtState(0,SCRIPT,key..'ctltype',strips[s][p].controls[c].ctltype)
+              reaper.SetProjExtState(0,SCRIPT,key..'knob_select',strips[s][p].controls[c].knob_select)
+              reaper.SetProjExtState(0,SCRIPT,key..'ctl_info_fn',strips[s][p].controls[c].ctl_info.fn)
+              reaper.SetProjExtState(0,SCRIPT,key..'ctl_info_frames',strips[s][p].controls[c].ctl_info.frames)
+              reaper.SetProjExtState(0,SCRIPT,key..'ctl_info_imageidx',strips[s][p].controls[c].ctl_info.imageidx)
+              reaper.SetProjExtState(0,SCRIPT,key..'ctl_info_cellh',strips[s][p].controls[c].ctl_info.cellh)
+              reaper.SetProjExtState(0,SCRIPT,key..'x',strips[s][p].controls[c].x)
+              reaper.SetProjExtState(0,SCRIPT,key..'y',strips[s][p].controls[c].y)
+              reaper.SetProjExtState(0,SCRIPT,key..'w',strips[s][p].controls[c].w)
+              reaper.SetProjExtState(0,SCRIPT,key..'scale',strips[s][p].controls[c].scale)
+              reaper.SetProjExtState(0,SCRIPT,key..'show_paramname',tostring(strips[s][p].controls[c].show_paramname))
+              reaper.SetProjExtState(0,SCRIPT,key..'show_paramval',tostring(strips[s][p].controls[c].show_paramval))
+              reaper.SetProjExtState(0,SCRIPT,key..'ctlname_override',nz(strips[s][p].controls[c].ctlname_override,''))
+              reaper.SetProjExtState(0,SCRIPT,key..'textcol',strips[s][p].controls[c].textcol)
+              reaper.SetProjExtState(0,SCRIPT,key..'textoff',strips[s][p].controls[c].textoff)
+              reaper.SetProjExtState(0,SCRIPT,key..'textoffval',strips[s][p].controls[c].textoffval)
+              reaper.SetProjExtState(0,SCRIPT,key..'textoffx',strips[s][p].controls[c].textoffx)
+              reaper.SetProjExtState(0,SCRIPT,key..'textoffvalx',strips[s][p].controls[c].textoffvalx)
+              reaper.SetProjExtState(0,SCRIPT,key..'textsize',nz(strips[s][p].controls[c].textsize,0))
+              reaper.SetProjExtState(0,SCRIPT,key..'val',nz(strips[s][p].controls[c].val,0))
+              reaper.SetProjExtState(0,SCRIPT,key..'defval',nz(strips[s][p].controls[c].defval,0))   
+              reaper.SetProjExtState(0,SCRIPT,key..'maxdp',nz(strips[s][p].controls[c].maxdp,-1))   
+              reaper.SetProjExtState(0,SCRIPT,key..'dvaloffset',nz(strips[s][p].controls[c].dvaloffset,''))   
+              reaper.SetProjExtState(0,SCRIPT,key..'minov',nz(strips[s][p].controls[c].minov,''))   
+              reaper.SetProjExtState(0,SCRIPT,key..'maxov',nz(strips[s][p].controls[c].maxov,''))   
+              reaper.SetProjExtState(0,SCRIPT,key..'scalemodex',nz(strips[s][p].controls[c].scalemode,8))   
+              reaper.SetProjExtState(0,SCRIPT,key..'framemodex',nz(strips[s][p].controls[c].framemode,1))   
+              reaper.SetProjExtState(0,SCRIPT,key..'poslock',nz(tostring(strips[s][p].controls[c].poslock),false))   
+              reaper.SetProjExtState(0,SCRIPT,key..'horiz',tostring(nz(strips[s][p].controls[c].horiz,false)))   
+                         
+              reaper.SetProjExtState(0,SCRIPT,key..'id',convnum(strips[s][p].controls[c].id))
+      
+              reaper.SetProjExtState(0,SCRIPT,key..'ctlcat',nz(strips[s][p].controls[c].ctlcat,''))
+              reaper.SetProjExtState(0,SCRIPT,key..'tracknum',nz(strips[s][p].controls[c].tracknum,''))
+              reaper.SetProjExtState(0,SCRIPT,key..'trackguid',nz(strips[s][p].controls[c].trackguid,''))
+              reaper.SetProjExtState(0,SCRIPT,key..'memstate',tostring(nz(strips[s][p].controls[c].membtn.state,false)))
+              reaper.SetProjExtState(0,SCRIPT,key..'memmem',nz(strips[s][p].controls[c].membtn.mem,0))
+              if strips[s][p].controls[c].cycledata and strips[s][p].controls[c].cycledata.statecnt then
+                reaper.SetProjExtState(0,SCRIPT,key..'cycledata_statecnt',nz(strips[s][p].controls[c].cycledata.statecnt,0))
+                reaper.SetProjExtState(0,SCRIPT,key..'cycledata_mapptof',tostring(nz(strips[s][p].controls[c].cycledata.mapptof,false)))
+                reaper.SetProjExtState(0,SCRIPT,key..'cycledata_draggable',tostring(nz(strips[s][p].controls[c].cycledata.draggable,false)))
+                reaper.SetProjExtState(0,SCRIPT,key..'cycledata_spread',tostring(nz(strips[s][p].controls[c].cycledata.spread,false)))
+                reaper.SetProjExtState(0,SCRIPT,key..'cycledata_pos',tostring(nz(strips[s][p].controls[c].cycledata.pos,1)))
+                reaper.SetProjExtState(0,SCRIPT,key..'cycledata_posdirty',tostring(nz(strips[s][p].controls[c].cycledata.posdirty,false)))
+                if nz(strips[s][p].controls[c].cycledata.statecnt,0) > 0 then
+                  for i = 1, strips[s][p].controls[c].cycledata.statecnt do
+                    local key = 'strips_'..s..'_'..p..'_controls_'..c..'_cycledata_'..i..'_'
+                    reaper.SetProjExtState(0,SCRIPT,key..'val',nz(strips[s][p].controls[c].cycledata[i].val,0))   
+                    reaper.SetProjExtState(0,SCRIPT,key..'dispval',nz(strips[s][p].controls[c].cycledata[i].dispval,''))   
+                    reaper.SetProjExtState(0,SCRIPT,key..'dv',nz(strips[s][p].controls[c].cycledata[i].dv,''))   
+                  end
+                end
+              else
+                reaper.SetProjExtState(0,SCRIPT,key..'cycledata_statecnt',0)                   
+              end     
+            end
+          end        
+      
+          if #strips[s][p].graphics > 0 then
+            for g = 1, #strips[s][p].graphics do
+          
+              local key = 'strips_'..s..'_'..p..'_graphics_'..g..'_'
+              
+              reaper.SetProjExtState(0,SCRIPT,key..'fn',strips[s][p].graphics[g].fn)
+              reaper.SetProjExtState(0,SCRIPT,key..'imageidx',strips[s][p].graphics[g].imageidx)
+              reaper.SetProjExtState(0,SCRIPT,key..'x',strips[s][p].graphics[g].x)
+              reaper.SetProjExtState(0,SCRIPT,key..'y',strips[s][p].graphics[g].y)
+              reaper.SetProjExtState(0,SCRIPT,key..'w',strips[s][p].graphics[g].w)
+              reaper.SetProjExtState(0,SCRIPT,key..'h',strips[s][p].graphics[g].h)
+              reaper.SetProjExtState(0,SCRIPT,key..'stretchw',nz(strips[s][p].graphics[g].stretchw,strips[s][p].graphics[g].w))
+              reaper.SetProjExtState(0,SCRIPT,key..'stretchh',nz(strips[s][p].graphics[g].stretchh,strips[s][p].graphics[g].h))
+              reaper.SetProjExtState(0,SCRIPT,key..'scale',strips[s][p].graphics[g].scale)
+              reaper.SetProjExtState(0,SCRIPT,key..'id',convnum(strips[s][p].graphics[g].id))
             
-            reaper.SetProjExtState(0,SCRIPT,key..'fn',strips[s][p].graphics[g].fn)
-            reaper.SetProjExtState(0,SCRIPT,key..'imageidx',strips[s][p].graphics[g].imageidx)
-            reaper.SetProjExtState(0,SCRIPT,key..'x',strips[s][p].graphics[g].x)
-            reaper.SetProjExtState(0,SCRIPT,key..'y',strips[s][p].graphics[g].y)
-            reaper.SetProjExtState(0,SCRIPT,key..'w',strips[s][p].graphics[g].w)
-            reaper.SetProjExtState(0,SCRIPT,key..'h',strips[s][p].graphics[g].h)
-            reaper.SetProjExtState(0,SCRIPT,key..'stretchw',nz(strips[s][p].graphics[g].stretchw,strips[s][p].graphics[g].w))
-            reaper.SetProjExtState(0,SCRIPT,key..'stretchh',nz(strips[s][p].graphics[g].stretchh,strips[s][p].graphics[g].h))
-            reaper.SetProjExtState(0,SCRIPT,key..'scale',strips[s][p].graphics[g].scale)
-            reaper.SetProjExtState(0,SCRIPT,key..'id',convnum(strips[s][p].graphics[g].id))
-          
-            reaper.SetProjExtState(0,SCRIPT,key..'gfxtype',nz(strips[s][p].graphics[g].gfxtype, gfxtype.img))
-            reaper.SetProjExtState(0,SCRIPT,key..'font_idx',nz(strips[s][p].graphics[g].font.idx, ''))
-            reaper.SetProjExtState(0,SCRIPT,key..'font_name',nz(strips[s][p].graphics[g].font.name, ''))
-            reaper.SetProjExtState(0,SCRIPT,key..'font_size',nz(strips[s][p].graphics[g].font.size, ''))
-            reaper.SetProjExtState(0,SCRIPT,key..'font_bold',nz(tostring(strips[s][p].graphics[g].font.bold), ''))
-            reaper.SetProjExtState(0,SCRIPT,key..'font_italics',nz(tostring(strips[s][p].graphics[g].font.italics), ''))
-            reaper.SetProjExtState(0,SCRIPT,key..'font_underline',nz(tostring(strips[s][p].graphics[g].font.underline), ''))
-            reaper.SetProjExtState(0,SCRIPT,key..'font_shadow',nz(tostring(strips[s][p].graphics[g].font.shadow), ''))
-            reaper.SetProjExtState(0,SCRIPT,key..'font_shadowx',nz(strips[s][p].graphics[g].font.shadow_x, ''))
-            reaper.SetProjExtState(0,SCRIPT,key..'font_shadowy',nz(strips[s][p].graphics[g].font.shadow_y, ''))
-            reaper.SetProjExtState(0,SCRIPT,key..'font_shadowa',nz(strips[s][p].graphics[g].font.shadow_a, ''))
-            reaper.SetProjExtState(0,SCRIPT,key..'text',nz(strips[s][p].graphics[g].text, ''))
-            reaper.SetProjExtState(0,SCRIPT,key..'text_col',nz(strips[s][p].graphics[g].text_col, ''))
-            reaper.SetProjExtState(0,SCRIPT,key..'poslock',nz(tostring(strips[s][p].graphics[g].poslock), false))
-          
+              reaper.SetProjExtState(0,SCRIPT,key..'gfxtype',nz(strips[s][p].graphics[g].gfxtype, gfxtype.img))
+              reaper.SetProjExtState(0,SCRIPT,key..'font_idx',nz(strips[s][p].graphics[g].font.idx, ''))
+              reaper.SetProjExtState(0,SCRIPT,key..'font_name',nz(strips[s][p].graphics[g].font.name, ''))
+              reaper.SetProjExtState(0,SCRIPT,key..'font_size',nz(strips[s][p].graphics[g].font.size, ''))
+              reaper.SetProjExtState(0,SCRIPT,key..'font_bold',nz(tostring(strips[s][p].graphics[g].font.bold), ''))
+              reaper.SetProjExtState(0,SCRIPT,key..'font_italics',nz(tostring(strips[s][p].graphics[g].font.italics), ''))
+              reaper.SetProjExtState(0,SCRIPT,key..'font_underline',nz(tostring(strips[s][p].graphics[g].font.underline), ''))
+              reaper.SetProjExtState(0,SCRIPT,key..'font_shadow',nz(tostring(strips[s][p].graphics[g].font.shadow), ''))
+              reaper.SetProjExtState(0,SCRIPT,key..'font_shadowx',nz(strips[s][p].graphics[g].font.shadow_x, ''))
+              reaper.SetProjExtState(0,SCRIPT,key..'font_shadowy',nz(strips[s][p].graphics[g].font.shadow_y, ''))
+              reaper.SetProjExtState(0,SCRIPT,key..'font_shadowa',nz(strips[s][p].graphics[g].font.shadow_a, ''))
+              reaper.SetProjExtState(0,SCRIPT,key..'text',nz(strips[s][p].graphics[g].text, ''))
+              reaper.SetProjExtState(0,SCRIPT,key..'text_col',nz(strips[s][p].graphics[g].text_col, ''))
+              reaper.SetProjExtState(0,SCRIPT,key..'poslock',nz(tostring(strips[s][p].graphics[g].poslock), false))
+            
+            end
           end
+      
+        else
+          reaper.SetProjExtState(0,SCRIPT,key..'surface_x',0)
+          reaper.SetProjExtState(0,SCRIPT,key..'surface_y',0)
+          reaper.SetProjExtState(0,SCRIPT,key..'controls_count',0)
+          reaper.SetProjExtState(0,SCRIPT,key..'graphics_count',0)          
         end
-    
-      else
-        reaper.SetProjExtState(0,SCRIPT,key..'surface_x',0)
-        reaper.SetProjExtState(0,SCRIPT,key..'surface_y',0)
-        reaper.SetProjExtState(0,SCRIPT,key..'controls_count',0)
-        reaper.SetProjExtState(0,SCRIPT,key..'graphics_count',0)          
-      end
-                        
+                          
+      end    
     end    
-    
   end
   
   function SaveEditedData()
