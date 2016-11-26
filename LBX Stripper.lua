@@ -230,19 +230,34 @@
                          h = 20}
       
       --surface
-      obj.sections[10] = {x = plist_w+2 + sb_size + 2,
-                          y = butt_h+2 + sb_size + 2,
-                          w = gfx1.main_w-(plist_w+2+(sb_size+2)*2),
-                          h = gfx1.main_h-(butt_h+2+(sb_size+2)*2)}
-      if lockx then
-        obj.sections[10].x = math.max(obj.sections[10].x, obj.sections[10].x+(obj.sections[10].w/2-lockw/2))
-        obj.sections[10].w = math.min(lockw,gfx1.main_w-(plist_w+2+(sb_size+4)*2))
+      if settings_showbars then
+        obj.sections[10] = {x = plist_w+2 + sb_size + 2,
+                            y = butt_h+2 + sb_size + 2,
+                            w = gfx1.main_w-(plist_w+2+(sb_size+2)*2),
+                            h = gfx1.main_h-(butt_h+2+(sb_size+2)*2)}
+        if lockx then
+          obj.sections[10].x = math.max(obj.sections[10].x, obj.sections[10].x+(obj.sections[10].w/2-lockw/2))
+          obj.sections[10].w = math.min(lockw,gfx1.main_w-(plist_w+2+(sb_size+4)*2))
+        end
+        if locky then
+          obj.sections[10].y = math.max(obj.sections[10].y, obj.sections[10].y+(obj.sections[10].h/2-lockh/2))
+          obj.sections[10].h = math.min(lockh,gfx1.main_h-(butt_h+2+(sb_size+2)*2))
+        end
+      else
+        obj.sections[10] = {x = plist_w+2,
+                            y = butt_h+2,
+                            w = gfx1.main_w-(plist_w+2),
+                            h = gfx1.main_h-(butt_h+2)}
+        if lockx then
+          obj.sections[10].x = math.max(obj.sections[10].x, obj.sections[10].x+(obj.sections[10].w/2-lockw/2))
+          obj.sections[10].w = math.min(lockw,gfx1.main_w-(plist_w+2))
+        end
+        if locky then
+          obj.sections[10].y = math.max(obj.sections[10].y, obj.sections[10].y+(obj.sections[10].h/2-lockh/2))
+          obj.sections[10].h = math.min(lockh,gfx1.main_h-(butt_h+2))
+        end      
       end
-      if locky then
-        obj.sections[10].y = math.max(obj.sections[10].y, obj.sections[10].y+(obj.sections[10].h/2-lockh/2))
-        obj.sections[10].h = math.min(lockh,gfx1.main_h-(butt_h+2+(sb_size+2)*2))
-      end
-
+      
       --mode
       obj.sections[11] = {x = 0,
                           y = 0,
@@ -315,7 +330,7 @@
                           h = gfx1.main_h - (obj.sections[13].y+obj.sections[13].h+2)}                           
 
       --CONTROL OPTIONS
-      local cow = 140
+      local cow = 160
       obj.sections[45] = {x = gfx1.main_w - cow - 20,
                           y = gfx1.main_h - 440 -20,
                           w = cow,
@@ -376,7 +391,7 @@
                           h = butt_h/2+8}
       obj.sections[56] = {x = obj.sections[45].x+50,
                           y = obj.sections[45].y+150+butt_h+10 + (butt_h/2+4 + 10) * 4,
-                          w = obj.sections[45].w-60,
+                          w = obj.sections[45].w-80,
                           h = butt_h/2+4}                           
       obj.sections[57] = {x = obj.sections[45].x+50,
                           y = obj.sections[45].y+150+butt_h+10 + (butt_h/2+4 + 10) * 9,
@@ -393,8 +408,14 @@
                           h = butt_h/2+8}
       obj.sections[65] = {x = obj.sections[45].x+50,
                           y = obj.sections[45].y+150+butt_h+10 + (butt_h/2+4 + 10) * 5,
-                          w = obj.sections[45].w-60,
+                          w = obj.sections[45].w-80,
                           h = butt_h/2+4}                           
+
+      obj.sections[68] = {x = obj.sections[45].x+50+obj.sections[45].w-74,
+                          y = obj.sections[45].y+150+butt_h+10 + (butt_h/2+4 + 10) * 4.5,
+                          w = butt_h/2+4,
+                          h = butt_h/2+4}                           
+
       obj.sections[66] = {x = obj.sections[45].x+50,
                           y = obj.sections[45].y+150+butt_h+10 + (butt_h/2+4 + 10) * 10,
                           w = obj.sections[45].w-100,
@@ -425,7 +446,7 @@
                           w = msgwinw,
                           h = butt_h}
       --settings
-      local setw, seth = 300, 300                            
+      local setw, seth = 300, 325                            
       obj.sections[70] = {x = gfx1.main_w/2-setw/2,
                           y = gfx1.main_h/2-seth/2,
                           w = setw,
@@ -485,6 +506,10 @@
                                 h = bh}
       obj.sections[84] = {x = obj.sections[70].x+xofft,
                                 y = obj.sections[70].y+yoff + yoffm*10,
+                                w = bw,
+                                h = bh}
+      obj.sections[85] = {x = obj.sections[70].x+xofft,
+                                y = obj.sections[70].y+yoff + yoffm*11,
                                 w = bw,
                                 h = bh}
                                 
@@ -1077,6 +1102,8 @@
                                                 textcol = textcol_select,
                                                 textoff = textoff_select,
                                                 textoffval = textoffval_select,
+                                                textoffx = textoff_selectx,
+                                                textoffvalx = textoffval_selectx,
                                                 textsize = textsize_select,
                                                 val = GetParamValue(ctlcats.fxparam,
                                                                     tracks[trackedit_select].tracknum,
@@ -1131,6 +1158,8 @@
                                                 textcol = textcol_select,
                                                 textoff = textoff_select,
                                                 textoffval = textoffval_select,
+                                                textoffx = textoff_selectx,
+                                                textoffvalx = textoffval_selectx,
                                                 textsize = textsize_select,
                                                 val = GetParamValue(ctlcats.fxparam,
                                                                     last_touch_fx.tracknum,
@@ -1187,6 +1216,8 @@
                                                 textcol = textcol_select,
                                                 textoff = textoff_select,
                                                 textoffval = textoffval_select,
+                                                textoffx = textoff_selectx,
+                                                textoffvalx = textoffval_selectx,
                                                 textsize = textsize_select,
                                                 val = GetParamValue(ctlcats.trackparam,
                                                                     tracks[trackedit_select].tracknum,
@@ -1254,6 +1285,8 @@
                                                   textcol = textcol_select,
                                                   textoff = textoff_select,
                                                   textoffval = textoffval_select,
+                                                  textoffx = textoff_selectx,
+                                                  textoffvalx = textoffval_selectx,
                                                   textsize = textsize_select,
                                                   val = 0,
                                                   defval = 0,
@@ -1314,6 +1347,8 @@
                                                 textcol = textcol_select,
                                                 textoff = textoff_select,
                                                 textoffval = textoffval_select,
+                                                textoffx = textoff_selectx,
+                                                textoffvalx = textoffval_selectx,
                                                 textsize = textsize_select,
                                                 val = 0,
                                                 defval = 0,
@@ -1364,6 +1399,8 @@
                                                 textcol = textcol_select,
                                                 textoff = 22.25,
                                                 textoffval = -6.0,
+                                                textoffx = textoff_selectx,
+                                                textoffvalx = textoffval_selectx,
                                                 textsize = textsize_select,
                                                 val = 0,
                                                 defval = 0,
@@ -1379,7 +1416,7 @@
                                                 horiz = horiz_select,
                                                 poslock = false
                                                }
-      end                                              
+      end
     end  
   
   end
@@ -1828,6 +1865,7 @@
 
   function PopulateTracks()
     local tracks_tmp = {}
+    local guid_tr = {}
     local sendsdirty = false
     for i = -1, reaper.CountTracks(0) do
       local track = GetTrack(i)
@@ -1839,24 +1877,24 @@
                          tracknum = i,
                          strip = -1
                         }
-        
+        guid_tr[tracks_tmp[i].guid] = i
         --if tracks then
           --if tracks_tmp[i].guid ~= tracks[i].guid then
           --  sendsdirty = true
           --end
         --end
-        if #strips > 0 then
-          for j = 1, #strips do
-            
-            if strips[j].track.guid == tracks_tmp[i].guid then
-              tracks_tmp[i].strip = j
-              break
-            end 
-          end
-        end
       end  
     end
     tracks = tracks_tmp
+
+    if #strips > 0 then
+      for j = 1, #strips do
+        
+        if guid_tr[strips[j].track.guid] then --== tracks_tmp[i].guid then
+          tracks_tmp[guid_tr[strips[j].track.guid]].strip = j
+        end 
+      end
+    end
     --if sendsdirty == true then
       --CheckStripSends()
     --end
@@ -2911,12 +2949,25 @@
       GUI_DrawTick(gui, 'SHOW VALUE', obj.sections[53], gui.color.white, show_paramval)
       GUI_DrawColorBox(gui, 'TEXT COL', obj.sections[54], gui.color.white, textcol_select)
       GUI_DrawButton(gui, ctltype_table[ctltype_select], obj.sections[55], gui.color.white, gui.color.black, true)
-      GUI_DrawSliderH(gui, 'OFFSET', obj.sections[56], gui.color.black, gui.color.white, F_limit((textoff_select+150)/300,0,1))
-      GUI_DrawSliderH(gui, 'VAL OFF', obj.sections[65], gui.color.black, gui.color.white, F_limit((textoffval_select+50)/100,0,1))
+
+      local off, valoff
+      if toffY then 
+        off = textoff_select
+        valoff = textoffval_select
+      else
+        off = textoff_selectx
+        valoff = textoffval_selectx      
+      end
+      GUI_DrawSliderH(gui, 'OFFSET', obj.sections[56], gui.color.black, gui.color.white, F_limit((off+150)/300,0,1))
+      GUI_DrawSliderH(gui, 'VAL OFF', obj.sections[65], gui.color.black, gui.color.white, F_limit((valoff+50)/100,0,1))
+
       GUI_DrawSliderH(gui, 'F SIZE', obj.sections[58], gui.color.black, gui.color.white, (textsize_select+2)/35)
       GUI_DrawSliderH(gui, 'DEF VAL', obj.sections[57], gui.color.black, gui.color.white, F_limit(defval_select,0,1))
       GUI_DrawButton(gui, 'SET', obj.sections[51], gui.color.white, gui.color.black, true)
       GUI_DrawButton(gui, 'EDIT NAME', obj.sections[59], gui.color.white, gui.color.black, true)
+      local dir
+      if toffY then dir = 'Y' else dir = 'X' end
+      GUI_DrawButton(gui, dir, obj.sections[68], gui.color.white, gui.color.black, true)
       
       if ctltype_select == 4 then
         if show_cycleoptions then
@@ -3282,6 +3333,8 @@ end
                 local tc = strips[strip][page].controls[i].textcol
                 local toff = math.floor(strips[strip][page].controls[i].textoff)
                 local toffv = math.floor(strips[strip][page].controls[i].textoffval)
+                local toffx = math.floor(strips[strip][page].controls[i].textoffx)
+                local toffvx = math.floor(strips[strip][page].controls[i].textoffvalx)
                 local tsz = nz(strips[strip][page].controls[i].textsize,0)
                 local frames = math.floor(strips[strip][page].controls[i].ctl_info.frames)
                 local ctltype = strips[strip][page].controls[i].ctltype
@@ -3488,35 +3541,43 @@ end
                 local text_len1x, text_len1y = gfx.measurestr(Disp_Name)
                 local text_len2x, text_len2y = gfx.measurestr(Disp_ParamV)
   
-                local xywh1 = {x = math.floor(mid-(text_len1x/2)), y = math.floor(y+(h/2)-toff-1), w = text_len1x, h = th_a+2}
-                local xywh2 = {x = math.floor(mid-(text_len2x/2)), y = math.floor(y+(h/2)-to+toff+toffv-1), w = text_len2x, h = th_a+2}
+                local xywh1 = {x = math.floor(mid-(text_len1x/2))-toffx, y = math.floor(y+(h/2)-toff-1), w = text_len1x, h = th_a+2}
+                local xywh2 = {x = math.floor(mid-(text_len2x/2))+toffx+toffvx, y = math.floor(y+(h/2)-to+toff+toffv-1), w = text_len2x, h = th_a+2}
                 
                 local tl1 = nz(strips[strip][page].controls[i].tl1,text_len1x)
                 local tl2 = nz(strips[strip][page].controls[i].tl2,text_len2x)
-                local tx1, tx2, th = math.floor(mid-(tl1/2)),
-                                     math.floor(mid-(tl2/2)),th_a --gui.fontsz_knob+tsz-4
-                if not update_gfx and not update_bg and surface_size.limit then
+                local tx1, tx2, th = math.floor(mid-(tl1/2))-toffx,
+                                     math.floor(mid-(tl2/2))+toffx+toffvx,th_a --gui.fontsz_knob+tsz-4
+                                     
+                
+                if not update_gfx and not update_bg then
                   gfx.blit(1004,1,0, px,
                                      py,
                                      w*scale,
                                      (h)*scale,
                                      px,
                                      py)
-                  if spn and h > 10 then                   
+                  if spn then                   
                     gfx.blit(1004,1,0, tx1,
                                        xywh1.y,
                                        tl1,
                                        th_a,
-                                       mid-(tl1/2),
+                                       tx1,
                                        xywh1.y)
                   end
-                  if spv and h > gh-10 then                
-                    gfx.blit(1004,1,0, tx2-5,
+                  if spv then                
+                    --DBG(tx2..'  '..tl2)
+                    --gfx.a = 1
+                    gfx.blit(1004,1,0, tx2,
                                        xywh2.y,
-                                       tl2+10,
+                                       tl2,
                                        th_a,
-                                       mid-(tl2/2)-5,
+                                       tx2,
                                        xywh2.y)
+                    --f_Get_SSV(gui.color.black)
+                    --gfx.rect(tx2-5,xywh2.y,tl2+20,th_a,1)
+                    --f_Get_SSV(gui.color.red)
+                    --gfx.rect(tx2,xywh2.y,tl2+10,th_a,1)
                   end
                 end
   
@@ -3582,8 +3643,10 @@ end
                   --just blit control area to main backbuffer - create area table
                   local al = math.min(px, xywh1.x)
                   al = math.min(al, xywh2.x)
+                  al = math.min(al, tx2)
                   local ar = math.max(px+w*scale, tx1+tl1)
                   ar = math.max(ar, tx2+tl2)
+                  ar = math.max(ar, xywh2.x+xywh2.w)
                   local at = math.min(py, xywh1.y)
                   at = math.min(at, xywh2.y)
                   local ab = math.max(py+(h)*scale,xywh1.y+th)
@@ -4772,7 +4835,12 @@ end
              obj.sections[21].h, 1, 1)
     GUI_textC(gui,obj.sections[21],'...',gui.color.black,-2)
     if obj.sections[17].x > obj.sections[20].x+obj.sections[20].w then
-      f_Get_SSV(gui.color.white)
+      --local c = gui.color.black
+      if g_savedirty then
+        f_Get_SSV(gui.color.red)
+      else
+        f_Get_SSV(gui.color.white)
+      end
       gfx.rect(obj.sections[17].x,
                obj.sections[17].y, 
                obj.sections[17].w,
@@ -4922,6 +4990,7 @@ end
     GUI_DrawTick(gui, 'Swap ctrl click and dbl click actions', obj.sections[82], gui.color.white, settings_swapctrlclick)
     GUI_DrawTick(gui, 'Insert default strip on every track', obj.sections[83], gui.color.white, settings_insertdefaultoneverytrack)
     GUI_DrawTick(gui, '...and on every page', obj.sections[84], gui.color.white, settings_insertdefaultoneverypage)
+    GUI_DrawTick(gui, 'Display scroll bars', obj.sections[85], gui.color.white, settings_showbars)
                
   end
   
@@ -6335,7 +6404,16 @@ end
   
   function GenID()
   
-    return math.floor(math.random() * 0xFFFFFFFF)
+    local l = false
+    local id
+    while l == false do
+      id = math.floor(math.random() * 0xFFFFFFFF)
+      if g_cids[id] == nil then
+        g_cids[id] = true
+        l = true
+      end
+    end
+    return id
     
   end
   
@@ -6467,6 +6545,8 @@ end
       end
             
       --compatibility
+      if strips[strip][page].controls[cc].textoffx == nil then strips[strip][page].controls[cc].textoffx = 0 end
+      if strips[strip][page].controls[cc].textoffvalx == nil then strips[strip][page].controls[cc].textoffvalx = 0 end      
       if strips[strip][page].controls[cc].poslock == nil then strips[strip][page].controls[cc].poslock = false end
       if strips[strip][page].controls[cc].scalemode == nil then strips[strip][page].controls[cc].scalemode = 8 end
       if strips[strip][page].controls[cc].framemode == nil then strips[strip][page].controls[cc].framemode = 1 end      
@@ -7848,6 +7928,8 @@ end
     show_paramval = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].show_paramval
     textoff_select = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].textoff
     textoffval_select = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].textoffval
+    textoff_selectx = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].textoffx
+    textoffval_selectx = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].textoffvalx
     textsize_select = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].textsize
     defval_select = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].defval
     maxdp_select = nz(strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].maxdp,-1)                  
@@ -8675,6 +8757,10 @@ end
       elseif MOUSE_click(obj.sections[84]) then
         settings_insertdefaultoneverypage = not settings_insertdefaultoneverypage
         update_settings = true
+      elseif MOUSE_click(obj.sections[85]) then
+        settings_showbars = not settings_showbars
+        obj = GetObjects()
+        update_gfx = true
       elseif mouse.context == nil and MOUSE_click(obj.sections[74]) then
         mouse.context = contexts.updatefreq
         oval = settings_updatefreq
@@ -8848,10 +8934,12 @@ end
         ctl_select = nil
         CloseActChooser()
         if mode == 0 then
+          g_edstrips = {}
           mode = 1
           PopulateTrackFX()
         else
-          SaveData()
+          --SaveData()
+          SaveEditedData()
           mode = 0
         end
         update_gfx = true
@@ -9818,7 +9906,8 @@ end
       if strips and tracks[track_select] and strips[tracks[track_select].strip] and #strips[tracks[track_select].strip][page].controls > 0 then
         CheckTrack(strips[tracks[track_select].strip].track, tracks[track_select].strip)
       end
-            
+      
+      g_edstrips[track_select] = true
       if submode == 0 then
         
         if show_actionchooser then
@@ -9928,18 +10017,32 @@ end
                 gfx.mouse_wheel = 0
               end
               if MOUSE_over(obj.sections[56]) then
-                textoff_select = textoff_select + v*2
-                for i = 1, #ctl_select do
-                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].textoff = textoff_select
-                end            
+                if toffY then
+                  textoff_select = textoff_select + v*2
+                  for i = 1, #ctl_select do
+                    strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].textoff = textoff_select
+                  end            
+                else
+                  textoff_selectx = textoff_selectx + v*2
+                  for i = 1, #ctl_select do
+                    strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].textoffx = textoff_selectx
+                  end                            
+                end
                 update_gfx = true
                 gfx.mouse_wheel = 0
               end
               if MOUSE_over(obj.sections[65]) then
-                textoffval_select = textoffval_select + v*2
-                for i = 1, #ctl_select do
-                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].textoffval = textoffval_select
-                end            
+                if toffY then
+                  textoffval_select = textoffval_select + v*2
+                  for i = 1, #ctl_select do
+                    strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].textoffval = textoffval_select
+                  end            
+                else
+                  textoffval_selectx = textoffval_selectx + v*2
+                  for i = 1, #ctl_select do
+                    strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].textoffvalx = textoffval_selectx
+                  end                            
+                end
                 update_gfx = true
                 gfx.mouse_wheel = 0
               end
@@ -10177,7 +10280,12 @@ end
                   end
                 end
               end
-              
+
+              if MOUSE_click(obj.sections[68]) then
+                toffY = not toffY
+                update_gfx = true
+              end
+                            
               if MOUSE_click_RB(obj.sections[57]) then
                 defval_select = GetParamValue_Ctl(ctl_select[1].ctl)
                 for i = 1, #ctl_select do
@@ -10665,11 +10773,17 @@ end
           if mouse.context and mouse.context == contexts.offsetslider then
             local val = F_limit(MOUSE_sliderHBar(obj.sections[56]),0,1)
             if val ~= nil then
-              textoff_select = val*300 - 150
-              for i = 1, #ctl_select do
-                strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].textoff = textoff_select
-                --strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].dirty = true
-              end            
+              if toffY then
+                textoff_select = val*300 - 150
+                for i = 1, #ctl_select do
+                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].textoff = textoff_select
+                end            
+              else
+                textoff_selectx = val*300 - 150
+                for i = 1, #ctl_select do
+                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].textoffx = textoff_selectx
+                end                          
+              end
               update_gfx = true
             end
           end
@@ -10677,10 +10791,17 @@ end
           if mouse.context and mouse.context == contexts.valoffsetslider then
             local val = F_limit(MOUSE_sliderHBar(obj.sections[65]),0,1)
             if val ~= nil then
-              textoffval_select = val*100 - 50
-              for i = 1, #ctl_select do
-                strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].textoffval = textoffval_select
-              end            
+              if toffY then
+                textoffval_select = val*100 - 50
+                for i = 1, #ctl_select do
+                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].textoffval = textoffval_select
+                end            
+              else
+                textoffval_selectx = val*100 - 50
+                for i = 1, #ctl_select do
+                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].textoffvalx = textoffval_selectx
+                end                          
+              end
               update_gfx = true
             end
           end
@@ -11834,49 +11955,6 @@ end
         end
         
         if mouse.context and mouse.context == contexts.dragctl then
-          --[[if math.floor(mouse.mx/settings_gridsize) ~= math.floor(mouse.last_x/settings_gridsize) or math.floor(mouse.my/settings_gridsize) ~= math.floor(mouse.last_y/settings_gridsize) then
-            local i
-            local mx = mouse.mx
-            local my = mouse.my
-            local scale = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].scale
-            strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].x = math.floor((mx - surface_offset.x)/settings_gridsize)*settings_gridsize 
-                                                                               - math.floor((dragoff.x)/settings_gridsize)*settings_gridsize
-            strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].y = math.floor((my - surface_offset.y)/settings_gridsize)*settings_gridsize 
-                                                                               - math.floor((dragoff.y)/settings_gridsize)*settings_gridsize
-            strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].xsc = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].x
-                                                                                       + math.floor(strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].w/2
-                                                                                       - (strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].w*scale)/2)
-            strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].ysc = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].y
-                                                                                       + math.floor(strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].ctl_info.cellh/2
-                                                                                       - (strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].ctl_info.cellh*scale)/2)
-            if #ctl_select > 1 then
-              for i = 2, #ctl_select do
-                scale = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].scale
-                strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].x = math.floor((mx - surface_offset.x)/settings_gridsize)*settings_gridsize 
-                                                                                   - math.floor((dragoff.x)/settings_gridsize)*settings_gridsize 
-                                                                                   - ctl_select[i].relx
-                strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].y = math.floor((mouse.my - surface_offset.y)/settings_gridsize)*settings_gridsize 
-                                                                                   - math.floor((dragoff.y)/settings_gridsize)*settings_gridsize
-                                                                                   - ctl_select[i].rely
-                strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].xsc = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].x
-                                                                                           + math.floor(strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].w/2
-                                                                                           - (strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].w*scale)/2)
-                strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ysc = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].y
-                                                                                           + math.floor(strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctl_info.cellh/2
-                                                                                           - (strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctl_info.cellh*scale)/2)
-              end
-            end
-            if gfx3_select and #gfx3_select > 0 then
-              for i = 1, #gfx3_select do
-                strips[tracks[track_select].strip][page].graphics[gfx3_select[i].ctl].x = math.floor((mx - surface_offset.x)/settings_gridsize)*settings_gridsize 
-                                                                                   - math.floor((dragoff.x)/settings_gridsize)*settings_gridsize 
-                                                                                   - gfx3_select[i].relx
-                strips[tracks[track_select].strip][page].graphics[gfx3_select[i].ctl].y = math.floor((my - surface_offset.y)/settings_gridsize)*settings_gridsize 
-                                                                                   - math.floor((dragoff.y)/settings_gridsize)*settings_gridsize
-                                                                                   - gfx3_select[i].rely
-              end            
-            end]]
-
           if math.floor(mouse.mx/settings_gridsize) ~= math.floor(mouse.last_x/settings_gridsize) or math.floor(mouse.my/settings_gridsize) ~= math.floor(mouse.last_y/settings_gridsize) then
             local i
             local scale = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].scale
@@ -12487,6 +12565,8 @@ end
                  textcol = strips[tracks[track_select].strip][page].controls[c].textcol,
                  textoff = strips[tracks[track_select].strip][page].controls[c].textoff,
                  textoffval = strips[tracks[track_select].strip][page].controls[c].textoffval,
+                 textoffx = strips[tracks[track_select].strip][page].controls[c].textoffx,
+                 textoffvalx = strips[tracks[track_select].strip][page].controls[c].textoffvalx,
                  textsize = strips[tracks[track_select].strip][page].controls[c].textsize,
                  val = strips[tracks[track_select].strip][page].controls[c].val,
                  defval = strips[tracks[track_select].strip][page].controls[c].defval,
@@ -12810,6 +12890,8 @@ end
                                                 textcol = GPES(key..'textcol'),
                                                 textoff = tonumber(GPES(key..'textoff')),
                                                 textoffval = tonumber(nz(GPES(key..'textoffval',true),0)),
+                                                textoffx = tonumber(nz(GPES(key..'textoffx',true),0)),
+                                                textoffvalx = tonumber(nz(GPES(key..'textoffvalx',true),0)),
                                                 textsize = tonumber(nz(GPES(key..'textsize'),0)),
                                                 val = tonumber(GPES(key..'val')),
                                                 defval = tonumber(GPES(key..'defval')),
@@ -12821,6 +12903,7 @@ end
                                                 poslock = tobool(nz(GPES(key..'poslock',true),false)),
                                                 horiz = tobool(nz(GPES(key..'horiz',true),false))
                                                }
+                    g_cids[strips[ss][p].controls[c].c_id] = true
                     if strips[ss][p].controls[c].maxdp == nil or (strips[ss][p].controls[c].maxdp and strips[ss][p].controls[c].maxdp == '') then
                       strips[ss][p].controls[c].maxdp = -1
                     end
@@ -13123,6 +13206,7 @@ end
     lockw = tonumber(nz(GES('lockw',true),128))
     lockh = tonumber(nz(GES('lockh',true),128))
     settings_swapctrlclick = tobool(nz(GES('swapctrlclick',true),settings_swapctrlclick))
+    settings_showbars = tobool(nz(GES('showbars',true),settings_showbars))
     settings_insertdefaultoneverytrack = tobool(nz(GES('insertdefstripontrack',true),settings_insertdefaultoneverytrack))
     settings_insertdefaultoneverypage = tobool(nz(GES('insertdefstriponpage',true),settings_insertdefaultoneverypage))
     
@@ -13153,6 +13237,7 @@ end
     reaper.SetExtState(SCRIPT,'lockw',tostring(lockw), true)
     reaper.SetExtState(SCRIPT,'lockh',tostring(lockh), true)
     reaper.SetExtState(SCRIPT,'swapctrlclick',tostring(settings_swapctrlclick), true)
+    reaper.SetExtState(SCRIPT,'showbars',tostring(settings_showbars), true)
     reaper.SetExtState(SCRIPT,'insertdefstripontrack',tostring(settings_insertdefaultoneverytrack), true)
     reaper.SetExtState(SCRIPT,'insertdefstriponpage',tostring(settings_insertdefaultoneverypage), true)
     
@@ -13330,6 +13415,8 @@ end
             reaper.SetProjExtState(0,SCRIPT,key..'textcol',strips[s][p].controls[c].textcol)
             reaper.SetProjExtState(0,SCRIPT,key..'textoff',strips[s][p].controls[c].textoff)
             reaper.SetProjExtState(0,SCRIPT,key..'textoffval',strips[s][p].controls[c].textoffval)
+            reaper.SetProjExtState(0,SCRIPT,key..'textoffx',strips[s][p].controls[c].textoffx)
+            reaper.SetProjExtState(0,SCRIPT,key..'textoffvalx',strips[s][p].controls[c].textoffvalx)
             reaper.SetProjExtState(0,SCRIPT,key..'textsize',nz(strips[s][p].controls[c].textsize,0))
             reaper.SetProjExtState(0,SCRIPT,key..'val',nz(strips[s][p].controls[c].val,0))
             reaper.SetProjExtState(0,SCRIPT,key..'defval',nz(strips[s][p].controls[c].defval,0))   
@@ -13415,10 +13502,18 @@ end
     
   end
   
+  function SaveEditedData()
+    for i, v in pairs(g_edstrips) do 
+      SaveStripData(tracks[i].strip) 
+    end
+  
+  end
+  
   function SaveData()
   
     SaveSettings()
     
+    PopulateTracks()
     CleanData()
     
     local s, p, c, g
@@ -13462,6 +13557,8 @@ end
   
     reaper.SetProjExtState(0,SCRIPT,'savedok',tostring(true))
   
+    g_savedirty = false
+    
   end
   
   function convnum(val)
@@ -13678,6 +13775,8 @@ end
         end
         snapshots[strip][page][sstype].ctls = Table_RemoveNils(snapshots[strip][page][sstype].ctls,ctlcnt)
       end
+
+      g_savedirty = true
     end
   
   end
@@ -13865,6 +13964,8 @@ end
         end      
       end
       snapshots[strip][page][sstype].selected = ss_select
+      
+      g_savedirty = true
     end
     
   end
@@ -14258,6 +14359,12 @@ end
       PROJECTID = math.ceil((math.abs(math.sin( -1 + (os.clock() % 2)))) * 0xFFFFFFFF)
     end
     
+    g_cids = {}
+    g_edstrips = {}
+    g_savedirty = false
+    
+    toffY = true
+    
     mode = 0
     submode = 2
     fxmode = 0
@@ -14314,6 +14421,8 @@ end
     ctltype_select = 1
     textoff_select = 45
     textoffval_select = 0
+    textoff_selectx = 0
+    textoffval_selectx = 0
     textsize_select = 0
     defval_select = 0
     strip_select = 0
@@ -14543,7 +14652,7 @@ end
   osg = settings_showgrid
   settings_saveallfxinststrip = false
   settings_updatefreq = 0.05
-  settings_showbars = true
+  settings_showbars = false
   settings_mousewheelknob = false
   settings_locksurface = false
   settings_ExtendedAPI = reaper.APIExists('BR_GetMediaTrackSendInfo_Track')
