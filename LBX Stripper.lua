@@ -66,6 +66,7 @@
               addsnapctl = 34,
               resizefsnapwindow = 35,
               hold = 36,
+              insertstrip = 37,
               dummy = 99
               }
   
@@ -244,7 +245,7 @@
           obj.sections[10].h = math.min(lockh,gfx1.main_h-(butt_h+2+(sb_size+2)*2))
         end
       else
-        obj.sections[10] = {x = plist_w+2,
+        obj.sections[10] = {x = plist_w,
                             y = butt_h+2,
                             w = gfx1.main_w-(plist_w+2),
                             h = gfx1.main_h-(butt_h+2)}
@@ -965,7 +966,7 @@
       
       if type == gfxtype.img then
         if graphics_files[gfx_select].imageidx == nil then  
-          image_count = image_count + 1
+          image_count = F_limit(image_count + 1,0,image_max)
           gfx.loadimg(image_count, graphics_path..graphics_files[gfx_select].fn)
           graphics_files[gfx_select].imageidx = image_count
         end
@@ -1061,7 +1062,7 @@
       end
 
       if ctl_files[knob_select].imageidx == nil then  
-        image_count = image_count + 1
+        image_count = F_limit(image_count + 1,0,image_max)
         gfx.loadimg(image_count, controls_path..ctl_files[knob_select].fn)
         ctl_files[knob_select].imageidx = image_count
       end
@@ -2466,7 +2467,7 @@
      xywh.w,
      xywh.h, 1 )
 
-    SF_butt_cnt = math.floor(obj.sections[47].h / butt_h) - 2
+    SF_butt_cnt = math.floor(obj.sections[47].h / butt_h) 
     for i = 0, SF_butt_cnt-1 do
     
       if strip_folders[i + sflist_offset] then
@@ -2588,7 +2589,7 @@
 
     gfx.dest = 1004
     if resize_display then
-      if surface_size.x == -1 then
+      if surface_size.w == -1 then
         gfx.setimgdim(1000,obj.sections[10].w, obj.sections[10].h)
         gfx.setimgdim(1004,obj.sections[10].w, obj.sections[10].h)
         --f_Get_SSV('0 0 0')
@@ -3566,25 +3567,22 @@ end
                                        xywh1.y)
                   end
                   if spv then                
-                    --DBG(tx2..'  '..tl2)
-                    --gfx.a = 1
                     gfx.blit(1004,1,0, tx2,
                                        xywh2.y,
                                        tl2,
                                        th_a,
                                        tx2,
                                        xywh2.y)
-                    --f_Get_SSV(gui.color.black)
-                    --gfx.rect(tx2-5,xywh2.y,tl2+20,th_a,1)
-                    --f_Get_SSV(gui.color.red)
-                    --gfx.rect(tx2,xywh2.y,tl2+10,th_a,1)
                   end
                 end
   
                 if ctlcat == ctlcats.fxparam and not reaper.TrackFX_GetEnabled(track, fxnum) and pname ~= 'Bypass' then
                   gfx.a = 0.5
                 end
-                gfx.blit(iidx,scale,0, 0, (val2)*gh, w, h, px, py)
+                --DBG(val2*gh)
+                --scale = 0.5
+                --local fpos = F_limit(val2*gh,0,32768)
+                gfx.blit(iidx,scale,0, 0, val2*gh, w, h, px, py)
                 
                 strips[strip][page].controls[i].tl1 = text_len1x
                 strips[strip][page].controls[i].tl2 = text_len2x
@@ -4284,6 +4282,14 @@ end
           if lockh > 0 or lockw > 0 then
             UpdateLEdges()
           end
+        end
+
+        if insertstrip ~= nil then
+          local x, y = insertstrip.x, insertstrip.y+math.floor(insertstrip.dy/settings_gridsize)*settings_gridsize
+          local w, h = gfx.getimgdim(1022)
+          gfx.a = 0.5
+          
+          gfx.blit(1022,1,0,0,0,w,h,x,y)          
         end
         
         if show_snapshots then
@@ -6436,10 +6442,31 @@ end
     return stripdata
   
   end
+
+  function LoadStripFN(sfn)
   
-  function Strip_AddStrip(stripdata, x, y)
+    local stripdata = nil
+    local load_path=strips_path
+    local fn=load_path..sfn
+    if reaper.file_exists(fn) then
+    
+      local file
+      file=io.open(fn,"r")
+      local content=file:read("*a")
+      file:close()
+      
+      stripdata = unpickle(content)
+    else
+      OpenMsgBox(1,'File not found.',1)
+    end
+    return stripdata
+  
+  end
+  
+  function Strip_AddStrip(stripdata, x, y, ignoregrid)
     if track_select == nil then return end
-  
+    if ignoregrid == nil then ignoregrid = false end
+    
     local strip, i, j
     if tracks[track_select].strip == -1 then
       strip = #strips+1
@@ -6573,9 +6600,11 @@ end
     local lctl = GetLeftControlInStrip(strips[strip][page].controls, stripid)
     local dx, dy = 0, 0
     if lctl ~= -1 then
-      local nx, ny = round(strips[strip][page].controls[lctl].x/settings_gridsize)*settings_gridsize,
-                     round(strips[strip][page].controls[lctl].y/settings_gridsize)*settings_gridsize   
-      dx, dy = strips[strip][page].controls[lctl].x-nx,strips[strip][page].controls[lctl].y-ny
+      if ignoregrid == false then
+        local nx, ny = round(strips[strip][page].controls[lctl].x/settings_gridsize)*settings_gridsize,
+                       round(strips[strip][page].controls[lctl].y/settings_gridsize)*settings_gridsize
+        dx, dy = strips[strip][page].controls[lctl].x-nx,strips[strip][page].controls[lctl].y-ny
+      end
       for j = 1, #strips[strip][page].controls do
         if strips[strip][page].controls[j].id == stripid then
           strips[strip][page].controls[j].x = strips[strip][page].controls[j].x - dx
@@ -6585,6 +6614,24 @@ end
         end
       end
     end
+
+    --[[local xx, yy = GetLeftControlInStrip2(strips[strip][page])--, stripid)
+    local dx, dy = 0, 0
+    if lctl ~= -1 then
+      if ignoregrid == false then
+        local nx, ny = round(xx/settings_gridsize)*settings_gridsize,
+                       round(yy/settings_gridsize)*settings_gridsize
+        dx, dy = xx-nx,yy-ny
+      end
+      for j = 1, #strips[strip][page].controls do
+        if strips[strip][page].controls[j].id == stripid then
+          strips[strip][page].controls[j].x = strips[strip][page].controls[j].x - dx
+          strips[strip][page].controls[j].y = strips[strip][page].controls[j].y - dy
+          strips[strip][page].controls[j].xsc = strips[strip][page].controls[j].xsc -dx
+          strips[strip][page].controls[j].ysc = strips[strip][page].controls[j].ysc -dy
+        end
+      end
+    end]]
     
     for j = 1, #stripdata.strip.graphics do
       if surface_size.limit then
@@ -6747,16 +6794,20 @@ end
             maxy = math.max(maxy, strip.graphics[i].y + strip.graphics[i].stretchh)
           end
           local fnd = false
-          for j = 0, #graphics_files do
-            if nz(strip.graphics[i].gfxtype,gfxtype.img) == gfxtype.img then
+          --DBG('looking for: '..strip.graphics[i].fn)
+          if nz(strip.graphics[i].gfxtype,gfxtype.img) == gfxtype.img then
+            for j = 0, #graphics_files do
               if graphics_files[j].fn == strip.graphics[i].fn then
                 if graphics_files[j].imageidx ~= nil then
+            --DBG('found: '..graphics_files[j].fn)
                   fnd = true
                   strip.graphics[i].imageidx = graphics_files[j].imageidx
                 else
+            --DBG('found LOADING: '..graphics_files[j].fn)
                   fnd = true
-                  image_count_add = image_count_add + 1
+                  image_count_add = F_limit(image_count_add + 1,0,image_max)
                   gfx.loadimg(image_count_add, graphics_path..strip.graphics[i].fn)
+                  graphics_files[j].imageidx = image_count_add
                   strip.graphics[i].imageidx = image_count_add
                 end
                 break
@@ -6764,6 +6815,7 @@ end
             end
           end
           if not fnd then
+            --DBG('gfx not found')
           end
         end
       end
@@ -6781,16 +6833,20 @@ end
             maxy = math.max(maxy, strip.controls[i].y + strip.controls[i].ctl_info.cellh)
           end
           local fnd = false
+          --DBG('looking for: '..strip.controls[i].ctl_info.fn)
           for j = 1, #ctl_files do
             if ctl_files[j].fn == strip.controls[i].ctl_info.fn then
               if ctl_files[j].imageidx ~= nil then
+            --DBG('found: '..ctl_files[j].fn)
                 fnd = true
                 strip.controls[i].ctl_info.imageidx = ctl_files[j].imageidx
                 strip.controls[i].knob_select = j
               else
+            --DBG('found LOADING: '..ctl_files[j].fn)
                 fnd = true
-                image_count_add = image_count_add + 1
+                image_count_add = F_limit(image_count_add + 1,0,image_max)
                 gfx.loadimg(image_count_add, controls_path..strip.controls[i].ctl_info.fn)
+                ctl_files[j].imageidx = image_count_add
                 strip.controls[i].ctl_info.imageidx = image_count_add
                 strip.controls[i].knob_select = j
               end
@@ -6798,9 +6854,12 @@ end
             end
           end
           if not fnd then
+            --DBG('cgfx not found')
           end
         end
       end
+      --DBG(image_count..'  '..image_count_add)
+      image_count = image_count_add
       offsetx = -minx
       offsety = -miny
 
@@ -7448,9 +7507,19 @@ end
   
     local minx,x = 2048,2048
     local lctl = -1
-    for j = 1, #strips[tracks[track_select].strip][page].controls do
-      if strips[tracks[track_select].strip][page].controls[j].id == stripid then
+    --[[for j = 1, #strips[tracks[track_select].strip][page].controls do
+      if strips[tracks[track_select].strip][page].controls[j].id == stripid or stripid == nil then
         local x = math.min(x,strips[tracks[track_select].strip][page].controls[j].x)
+        if x < minx then
+          minx = x
+          lctl = j
+        end
+      end
+    end]]
+
+    for j = 1, #controls do
+      if controls[j].id == stripid or stripid == nil then
+        local x = math.min(x,controls[j].x)
         if x < minx then
           minx = x
           lctl = j
@@ -7459,6 +7528,57 @@ end
     end
     return lctl
     
+  end
+
+  --with respect to gfx
+  function GetLeftControlInStrip2(strip)
+  
+    local minx,gminx,miny,gminy,x,y = 2048,2048,2048,2048,2048,2048
+    for j = 1, #strip.controls do
+      local x,y = math.min(x,strip.controls[j].x),strip.controls[j].y
+      if x < minx then minx = x ly = y end
+      if y < miny then miny = y end
+    end
+    x,y=2048,2048
+    if #strip.graphics > 0 then
+      for j = 1, #strip.graphics do
+        local x,y = math.min(x,strip.graphics[j].x),math.min(y,strip.graphics[j].y)
+        if x < gminx then gminx = x end
+        if y < miny then miny = y end
+      end
+    end
+    
+    local rx, ry = 0,0
+    if gminx < 2048 then
+      rx = math.max(minx - gminx,0)
+    end
+    if miny < 2048 then
+      ry = ly - miny
+    end
+    return rx, ry
+  end
+  
+  function GetXSpaceInGrid()
+
+    local maxx,x = 0,0
+    if strips[tracks[track_select].strip] then
+      for j = 1, #strips[tracks[track_select].strip][page].controls do
+        local x = math.max(x,strips[tracks[track_select].strip][page].controls[j].x+strips[tracks[track_select].strip][page].controls[j].w)
+        if x > maxx then
+          maxx = x
+        end
+      end
+      if #strips[tracks[track_select].strip][page].graphics > 0 then
+        for j = 1, #strips[tracks[track_select].strip][page].graphics do
+          local x = math.max(x,strips[tracks[track_select].strip][page].graphics[j].x+strips[tracks[track_select].strip][page].graphics[j].w)
+          if x > maxx then
+            maxx = x
+          end
+        end
+      end
+    end
+    return maxx
+  
   end
   
   function SelectStripElements(stripid)
@@ -7800,10 +7920,13 @@ end
         strip_select = strip_default.strip_select
         PopulateStrips()
         loadstrip = LoadStrip(strip_select)
-        GenStripPreview(gui, loadstrip.strip)
-        Strip_AddStrip(loadstrip,0,0)
-        image_count = image_count_add
-        loadstrip = nil
+        if loadstrip then
+          GenStripPreview(gui, loadstrip.strip)
+          Strip_AddStrip(loadstrip,0,0,true)
+          --image_count = image_count_add
+          loadstrip = nil
+          --SaveSingleStrip(strip)
+        end
       elseif res >= 15 and res <= 22 then
         SaveData()
         local oscript = SCRIPT
@@ -8448,6 +8571,7 @@ end
   function ChangeTrack(t)
   
     track_select = t
+    trackedit_select = t
     InsertDefaultStrip()
   
   end
@@ -8562,7 +8686,7 @@ end
                       strips[tracks[track_select].strip].page = page
                     end
                     ChangeTrack(i)
-                    trackedit_select = track_select
+                    --trackedit_select = track_select
                     trctlslist_offset = 0
                     
                     if strips and tracks[track_select] and strips[tracks[track_select].strip] then
@@ -9029,7 +9153,35 @@ end
         end
       end
       
-      if mouse.context == nil and show_fsnapshots == true and (MOUSE_click(obj.sections[180]) or MOUSE_click_RB(obj.sections[180])) then
+      if insertstrip then
+      
+        insertstrip.x = mouse.mx
+        insertstrip.y = mouse.my
+        
+        if not mouse.shift then
+          nx = surface_offset.x - (math.floor(surface_offset.x/settings_gridsize)*settings_gridsize)
+          ny = surface_offset.y - (math.floor(surface_offset.y/settings_gridsize)*settings_gridsize)
+          insertstrip.x = math.floor((insertstrip.x-obj.sections[10].x+surface_offset.x+nx)/settings_gridsize)*settings_gridsize -surface_offset.x+obj.sections[10].x-insertstrip.dx 
+          insertstrip.y = math.floor((insertstrip.y-obj.sections[10].y+surface_offset.y+ny)/settings_gridsize)*settings_gridsize -surface_offset.y+obj.sections[10].y-insertstrip.dy
+        end
+        
+        if MOUSE_click(obj.sections[10]) then
+          --drop
+          local dx, dy = insertstrip.x-obj.sections[10].x, insertstrip.y-obj.sections[10].y+math.floor(insertstrip.dy/settings_gridsize)*settings_gridsize
+          Strip_AddStrip(loadstrip,dx,dy,true)
+          
+          update_gfx = true
+          SaveSingleStrip(tracks[track_select].strip)
+          
+          insertstrip = nil
+        elseif MOUSE_click_RB(obj.sections[10]) then
+          --cancel
+          insertstrip = nil
+        end
+        
+        update_surface = true
+      
+      elseif mouse.context == nil and show_fsnapshots == true and (MOUSE_click(obj.sections[180]) or MOUSE_click_RB(obj.sections[180])) then
 
         if mouse.context == nil and MOUSE_click_RB(obj.sections[180]) then
           show_fsnapshots = false
@@ -9116,7 +9268,7 @@ end
         
         local snapmx, snapmy = mouse.mx, mouse.my
         mouse.mx = mouse.mx - obj.sections[160].x
-        mouse.my = mouse.my - obj.sections[160].y
+        mouse.my = mouse.my - obj.sections[160].y        
         
         if snaplrn_mode == false then
         
@@ -9576,6 +9728,18 @@ end
                   else
                     mstr = '#MIDI learn|#Modulation||Enter value||#Open FX window||'..mm..'Snapshots'                  
                   end
+                  if #strip_favs > 0 then
+                   --[[ mstr = mstr .. '||>Insert Strip'
+                    for fvs = 1, #strip_favs do
+                      if fvs == #strip_favs then
+                        mstr = mstr .. '|<' .. string.match(strip_favs[fvs],'.+%/(.-)%.')
+                      else
+                        mstr = mstr .. '|' .. string.match(strip_favs[fvs],'.+%/(.-)%.')
+                      end
+                    end]]
+                  else
+                    mstr = mstr .. '||#>Insert strip (favorites)'                  
+                  end
                   trackfxparam_select = i
                   gfx.x, gfx.y = mouse.mx, mouse.my
                   res = OpenMenu(mstr)
@@ -9662,22 +9826,61 @@ end
               end
             end
 
+          end
+
+          if tracks[track_select] then          
             if noscroll == false and MOUSE_click_RB(obj.sections[10]) then
               mm = ''
               if show_snapshots then
                 mm = '!'
               end
-              mstr = '#MIDI learn|#Modulation||#Enter value||#Open FX window||'..mm..'Snapshots'
+              local mstr = ''
+              local sfcnt = #strip_favs
+              if sfcnt > 0 then
+                mstr = mstr .. '>Insert strip (favorites)'
+                for fvs = 1, sfcnt do
+                  if fvs == sfcnt then
+                    mstr = mstr .. '|<' .. string.match(strip_favs[fvs],'.+/(.-).strip')
+                  else
+                    mstr = mstr .. '|' .. string.match(strip_favs[fvs],'.+/(.-).strip')
+                  end
+                end
+              else
+                mstr = mstr .. '#Insert strip (favorites)'                  
+              end
+
+              mstr = mstr .. '||#MIDI learn|#Modulation||#Enter value||#Open FX window||'..mm..'Snapshots'
+              
               gfx.x, gfx.y = mouse.mx, mouse.my
               res = OpenMenu(mstr)
               if res ~= 0 then
-                if res == 5 then
+                if res == sfcnt + 5 then
                   show_snapshots = not show_snapshots
                   update_gfx = true
+                elseif res <= sfcnt then
+                  local fn = strip_favs[res]
+                  --PopulateStrips()
+                  loadstrip = LoadStripFN(fn)
+                  if loadstrip then                  
+                    GenStripPreview(gui, loadstrip.strip)
+                    --image_count = image_count_add
+                    
+                    local dx, dy = GetLeftControlInStrip2(loadstrip.strip)
+                    --local xp = GetXSpaceInGrid()+2
+                    --if xp < surface_size.w then
+                    --  Strip_AddStrip(loadstrip,xp-surface_offset.x,0-surface_offset.y,true)
+                    --end
+                    --update_gfx = true
+                    --SaveSingleStrip(tracks[track_select].strip)
+                    insertstrip = {x = mouse.mx, y = mouse.my, dx = dx, dy = dy}
+                  end
+                  --loadstrip = nil
                 end
               end
             end
-          end
+          end    
+                
+          
         end
       
         if show_fsnapshots and togfsnap == false then
@@ -9802,7 +10005,7 @@ end
             strips[tracks[track_select].strip].page = page
           end
           ChangeTrack(i-1 + tlist_offset)
-          trackedit_select = track_select
+          --trackedit_select = track_select
           ss_select = nil
           sstype_select = 1
           ssoffset = 0
@@ -10297,7 +10500,7 @@ end
               if MOUSE_click(obj.sections[51]) then
                 --apply
                 if ctl_files[knob_select].imageidx == nil then  
-                  image_count = image_count + 1
+                  image_count = F_limit(image_count + 1,0,image_max)
                   gfx.loadimg(image_count, controls_path..ctl_files[knob_select].fn)
                   ctl_files[knob_select].imageidx = image_count
                 end
@@ -12076,9 +12279,9 @@ end
           if strip_select then
             local i = math.floor(((mouse.my - obj.sections[46].y)) / butt_h)-1
             if strip_select == i-1 + slist_offset then
-              mstr = 'Set Default (Track)|Set Default (Master)||Clear Default (Track)|Clear Default (Master)||Save (Overwrite)'
+              mstr = 'Set Default (Track)|Set Default (Master)||Clear Default (Track)|Clear Default (Master)||Save (Overwrite)||Add to favorites'
             else
-              mstr = '#Set Default (Track)|#Set Default (Master)||Clear Default (Track)|Clear Default (Master)||#Save (Overwrite)'            
+              mstr = '#Set Default (Track)|#Set Default (Master)||Clear Default (Track)|Clear Default (Master)||#Save (Overwrite)||#Add to favorites'            
             end
             gfx.x, gfx.y = mouse.mx, mouse.my
             res = OpenMenu(mstr)
@@ -12099,26 +12302,31 @@ end
                 local ostoff = slist_offset
                 SaveStrip2(string.sub(strip_files[strip_select].fn,1,string.len(strip_files[strip_select].fn)-6))
                 slist_offset = ostoff
+              elseif res == 6 then
+                strip_favs[#strip_favs+1] = strip_folders[stripfol_select].fn..'/'..strip_files[strip_select].fn
               end
             end
           end        
         end
         
         if mouse.context and mouse.context == contexts.dragstrip then
+          dragstripx = true --to force dropped action even if not 
           if mouse.mx ~= mouse.last_x or mouse.my ~= mouse.last_y then
             dragstrip = {x = mouse.mx, y = mouse.my}
             update_surface = true
           end
-        elseif dragstrip ~= nil then
+        elseif dragstripx ~= nil then
           --Dropped
-          image_count = image_count_add
-          if dragstrip.x > obj.sections[10].x and dragstrip.x < obj.sections[10].w and dragstrip.y > obj.sections[10].y and dragstrip.y < obj.sections[10].h then
-            Strip_AddStrip(loadstrip, dragstrip.x-obj.sections[10].x, dragstrip.y-obj.sections[10].y)
+          --image_count = image_count_add
+          if dragstrip then
+            if dragstrip.x > obj.sections[10].x and dragstrip.x < obj.sections[10].w and dragstrip.y > obj.sections[10].y and dragstrip.y < obj.sections[10].h then
+              Strip_AddStrip(loadstrip, dragstrip.x-obj.sections[10].x, dragstrip.y-obj.sections[10].y)
+            end
           end
-          
-          --loadstrip = nil
+                    
           loadstrip = nil
           dragstrip = nil
+          dragstripx = nil
           ctl_select = nil
           update_gfx = true
         end
@@ -12954,7 +13162,7 @@ end
                       strips[ss][p].controls[c].knob_select = knob_sel
     
                       if ctl_files[knob_sel].imageidx == nil then
-                        image_count = image_count + 1
+                        image_count = F_limit(image_count + 1,0,image_max)
                         gfx.loadimg(image_count, controls_path..ctl_files[knob_sel].fn)
                         iidx = image_count
                         
@@ -13018,7 +13226,7 @@ end
                     if gfx_sel ~= -1 then
                       
                       if graphics_files[gfx_sel].imageidx == nil then
-                        image_count = image_count + 1
+                        image_count = F_limit(image_count + 1,0,image_max)
                         gfx.loadimg(image_count, graphics_path..graphics_files[gfx_sel].fn)
                         iidx = image_count
                         
@@ -13046,6 +13254,7 @@ end
         PopulateTracks()
         Snapshots_INIT()
         local scnt = tonumber(nz(GPES('snapshots_count'),0))
+        --DBG(scnt)
         if scnt and scnt > 0 then
             
           for s = 1, scnt do
@@ -13222,6 +13431,8 @@ end
       strip_default_mast = {stripfol_select = sdf, strip_select = sd}
     end
     
+    LoadFavStrips()
+    
   end
   
   function SaveSettings()
@@ -13256,8 +13467,47 @@ end
       reaper.SetExtState(SCRIPT,'stripfol_default_mast', '', true)    
     end
     
+    SaveFavStrips()
   end
   
+  function SaveFavStrips()
+  
+    local save_path=strips_path
+    local fn=save_path.."favs.txt"
+    
+    local DELETE=true
+    local file
+    
+    if reaper.file_exists(fn) then
+    
+    end
+    
+    if DELETE then
+      file=io.open(fn,"w")
+      local pickled_table=pickle(strip_favs)
+      file:write(pickled_table)
+      file:close()
+    end
+  
+  end
+
+  function LoadFavStrips()
+
+    local load_path=strips_path
+    local fn=load_path.."favs.txt"
+    
+    strip_favs = {}
+    if reaper.file_exists(fn) then
+      local file
+      file=io.open(fn,"r")
+      local content=file:read("*a")
+      file:close()
+      
+      strip_favs = unpickle(content)
+    end
+  
+  end
+    
   function SaveSingleStrip(s)
   
     if strips then
@@ -14211,7 +14461,7 @@ end
                       loaddata.stripdata[s][p].graphics[i].imageidx = graphics_files[j].imageidx
                     else
                       fnd = true
-                      image_count_add = image_count_add + 1
+                      image_count_add = F_limit(image_count_add + 1,0,image_max)
                       gfx.loadimg(image_count_add, graphics_path..loaddata.stripdata[s][p].graphics[i].fn)
                       loaddata.stripdata[s][p].graphics[i].imageidx = image_count_add
                     end
@@ -14240,7 +14490,7 @@ end
                     loaddata.stripdata[s][p].controls[i].knob_select = j
                   else
                     fnd = true
-                    image_count_add = image_count_add + 1
+                    image_count_add = F_limit(image_count_add + 1,0,image_max)
                     gfx.loadimg(image_count_add, controls_path..loaddata.stripdata[s][p].controls[i].ctl_info.fn)
                     loaddata.stripdata[s][p].controls[i].ctl_info.imageidx = image_count_add
                     loaddata.stripdata[s][p].controls[i].knob_select = j
@@ -14313,7 +14563,7 @@ end
               end
               GenStripPreview(gui, loadstrip.strip)
               local _, strip = Strip_AddStrip(loadstrip,0,0)
-              image_count = image_count_add
+              --image_count = image_count_add
               loadstrip = nil
               
               SaveSingleStrip(strip)
@@ -14631,6 +14881,7 @@ end
   
   math.randomseed(os.clock())
   
+  image_max = 990
   b_sz = 100
   lockx = false
   locky = false
@@ -14660,6 +14911,8 @@ end
   settings_swapctrlclick = false
   settings_insertdefaultoneverytrack = false
   settings_insertdefaultoneverypage = false
+  
+  strip_favs = {}
   
   dockstate = 0
   
