@@ -1891,7 +1891,9 @@
     if #strips > 0 then
       for j = 1, #strips do
         
-        if guid_tr[strips[j].track.guid] then --== tracks_tmp[i].guid then
+        if strips[j].track.tracknum == -1 then
+          tracks_tmp[-1].strip = j
+        elseif guid_tr[strips[j].track.guid] then --== tracks_tmp[i].guid then
           tracks_tmp[guid_tr[strips[j].track.guid]].strip = j
         end 
       end
@@ -3579,7 +3581,6 @@ end
                 if ctlcat == ctlcats.fxparam and not reaper.TrackFX_GetEnabled(track, fxnum) and pname ~= 'Bypass' then
                   gfx.a = 0.5
                 end
-                --DBG(val2*gh)
                 --scale = 0.5
                 --local fpos = F_limit(val2*gh,0,32768)
                 gfx.blit(iidx,scale,0, 0, val2*gh, w, h, px, py)
@@ -6716,7 +6717,6 @@ end
             end            
           else
             --subset
-            --DBG(strip..'  '..page)
             local sstcnt = #snapshots[strip][page] + 1
             paramchange[i] = sstcnt 
             snapshots[strip][page][sstcnt] = stripdata.snapshots[i]
@@ -6794,16 +6794,13 @@ end
             maxy = math.max(maxy, strip.graphics[i].y + strip.graphics[i].stretchh)
           end
           local fnd = false
-          --DBG('looking for: '..strip.graphics[i].fn)
           if nz(strip.graphics[i].gfxtype,gfxtype.img) == gfxtype.img then
             for j = 0, #graphics_files do
               if graphics_files[j].fn == strip.graphics[i].fn then
                 if graphics_files[j].imageidx ~= nil then
-            --DBG('found: '..graphics_files[j].fn)
                   fnd = true
                   strip.graphics[i].imageidx = graphics_files[j].imageidx
                 else
-            --DBG('found LOADING: '..graphics_files[j].fn)
                   fnd = true
                   image_count_add = F_limit(image_count_add + 1,0,image_max)
                   gfx.loadimg(image_count_add, graphics_path..strip.graphics[i].fn)
@@ -6833,16 +6830,13 @@ end
             maxy = math.max(maxy, strip.controls[i].y + strip.controls[i].ctl_info.cellh)
           end
           local fnd = false
-          --DBG('looking for: '..strip.controls[i].ctl_info.fn)
           for j = 1, #ctl_files do
             if ctl_files[j].fn == strip.controls[i].ctl_info.fn then
               if ctl_files[j].imageidx ~= nil then
-            --DBG('found: '..ctl_files[j].fn)
                 fnd = true
                 strip.controls[i].ctl_info.imageidx = ctl_files[j].imageidx
                 strip.controls[i].knob_select = j
               else
-            --DBG('found LOADING: '..ctl_files[j].fn)
                 fnd = true
                 image_count_add = F_limit(image_count_add + 1,0,image_max)
                 gfx.loadimg(image_count_add, controls_path..strip.controls[i].ctl_info.fn)
@@ -6858,7 +6852,6 @@ end
           end
         end
       end
-      --DBG(image_count..'  '..image_count_add)
       image_count = image_count_add
       offsetx = -minx
       offsety = -miny
@@ -7253,7 +7246,9 @@ end
     if strips and tracks[track_select] and strips[tracks[track_select].strip] then
       local tr_found = false
       
-      --Check track guid
+      --Check track guid - none for master
+      if strips[tracks[track_select].strip].track.tracknum == -1 then return end
+      
       tr_found = CheckTrack(strips[tracks[track_select].strip].track, tracks[track_select].strip)
         
       if tr_found and strips and strips[tracks[track_select].strip] then
@@ -7360,6 +7355,9 @@ end
 
   function CheckTrack(track, strip, p, c)
   
+    --master channel
+    if track.tracknum == -1 then return true end
+    
     if c == nil then
       local found = false
       local trx = GetTrack(track.tracknum)
@@ -12944,12 +12942,14 @@ end
   --reaper.defer(runloop)  
   
   function CheckTrackExists(s)
+    if strips[s].track.tracknum == -1 then return true end
+    
     local found = false
     local trx = GetTrack(strips[s].track.tracknum)
     if trx then
       if strips[s].track.guid ~= reaper.GetTrackGUID(trx) then
         --Find track and update tracknum
-        for i = 0, reaper.CountTracks(0) do
+        for i = -1, reaper.CountTracks(0) do
           local tr = GetTrack(i)
           if tr ~= nil then
             if strips[s].track.guid == reaper.GetTrackGUID(tr) then
@@ -13006,7 +13006,7 @@ end
   end
     
   function LoadData()
-  
+    
     local s, p, c, g, k
   
     if GPES('savedok') ~= '' then
@@ -13024,7 +13024,6 @@ end
         track_select = tonumber(nz(GPES('lasttrack',true),0))
       
         local scnt = tonumber(nz(GPES('strips_count'),0))
-  
         strips = {}
         local ss = 1
         if scnt > 0 then
@@ -13058,7 +13057,7 @@ end
               
                 local ccnt = tonumber(GPES(key..'controls_count'))
                 local gcnt = tonumber(GPES(key..'graphics_count'))
-              
+                            
                 if ccnt > 0 then
                   for c = 1, ccnt do
     
@@ -13251,10 +13250,12 @@ end
             end
           end
         end
+        
+        
         PopulateTracks()
         Snapshots_INIT()
         local scnt = tonumber(nz(GPES('snapshots_count'),0))
-        --DBG(scnt)
+
         if scnt and scnt > 0 then
             
           for s = 1, scnt do
@@ -13400,7 +13401,6 @@ end
     if surface_size.w < ww then
       surface_offset.x = -math.floor((ww - surface_size.w)/2)
     end]]
-    
   end
   
   function LoadSettings()
@@ -14580,7 +14580,6 @@ end
     local snaptbl = {}
   
     for t = -1, reaper.CountTracks(0)-1 do
-     -- DBG('tr: '..t..'  strip'..tracks[t].strip)
       if tracks[t].strip then
         if strips[tracks[t].strip] then
 
@@ -14590,14 +14589,12 @@ end
           striptbl[tblpos].track.strip = tblpos
           tracks[t].strip = tblpos
     
-          --DBG('copied '..tblpos)
         end
       end
     end
     strips = striptbl
     snapshots = snaptbl
   
-   -- DBG(#strips..'  '..#snapshots)
   end
   
   
