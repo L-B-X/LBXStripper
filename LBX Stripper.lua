@@ -5361,8 +5361,10 @@ end
   end
   
   function GMTI_norm(track,trctl_idx,min,max)
-  
-    return normalize(min,max,reaper.GetMediaTrackInfo_Value(track, trctls_table[trctl_idx].parmname))
+--  DBG()
+  --track = GetTrack(-1)
+  --DBG(trctls_table[trctl_idx].parmname..'  '..reaper.GetMediaTrackInfo_Value(track, 'B_MUTE'))
+      return normalize(min,max,reaper.GetMediaTrackInfo_Value(track, trctls_table[trctl_idx].parmname))
   
   end
 
@@ -5397,6 +5399,7 @@ end
   function SMTI_norm(track,trctl_idx,v,min,max)
   
     local val = DenormalizeValue(min,max,v)
+  --DBG(trctls_table[trctl_idx].parmname..'  '..val)
     reaper.SetMediaTrackInfo_Value(track, trctls_table[trctl_idx].parmname, val)
     
   end
@@ -7261,7 +7264,7 @@ end
             
               local tr2 = tr
               if strips[tracks[track_select].strip][p].controls[c].tracknum ~= nil then
-                tr_found = CheckTrack(strips[tracks[track_select].strip][p].controls[c].tracknum,
+                tr_found = CheckTrack(tracks[strips[tracks[track_select].strip][p].controls[c].tracknum],
                                       tracks[track_select].strip, p, c)                      
                 if tr_found then
                   tr2 = GetTrack(strips[tracks[track_select].strip][p].controls[c].tracknum)
@@ -7356,6 +7359,7 @@ end
   function CheckTrack(track, strip, p, c)
   
     --master channel
+    --DBG(track)
     if track.tracknum == -1 then return true end
     
     if c == nil then
@@ -8745,7 +8749,7 @@ end
                 local tr_found = true
                 if strips[tracks[track_select].strip][page].controls[i].tracknum ~= nil then
                   --tr = GetTrack(strips[tracks[track_select].strip][page].controls[i].tracknum)
-                  tr_found = CheckTrack(strips[tracks[track_select].strip][page].controls[i].tracknum, tracks[track_select].strip, page, i)
+                  tr_found = CheckTrack(tracks[strips[tracks[track_select].strip][page].controls[i].tracknum], tracks[track_select].strip, page, i)
                   if tr_found then
                     tr = GetTrack(strips[tracks[track_select].strip][page].controls[i].tracknum)
                   end 
@@ -14933,6 +14937,7 @@ end
   
   --testchunkcopy(0,3)
   
+  
   if def_knob == -1 or def_knobsm == -1 or def_snapshot == -1 then
     DBG("Please ensure you have the '__default', 'SimpleFlat_48', and '__Snapshot' files in your LBXCS_resources/controls/ folder.")
     DBG("You can get these files from the LBX Stripper project on github - in the LBXCS_resources zip file")
@@ -14948,6 +14953,7 @@ end
   --test jsfx plug name in quotes
   
     gfx.dock(dockstate)
+   
     run()
 
     reaper.atexit(quit)
