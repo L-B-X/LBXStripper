@@ -5362,8 +5362,26 @@ end
   
   function GMTI_norm(track,trctl_idx,min,max)
   
-    return normalize(min,max,reaper.GetMediaTrackInfo_Value(track, trctls_table[trctl_idx].parmname))
-  
+    if trctls_table[trctl_idx].parmname == 'B_MUTE' then
+      local retval, muteOut = reaper.GetTrackUIMute(track)
+      local mo
+      if muteOut then mo = 1 else mo = 0 end
+      return mo
+    elseif trctls_table[trctl_idx].parmname == 'I_SOLO' then
+      local trn = reaper.GetMediaTrackInfo_Value(track, 'IP_TRACKNUMBER')
+      if trn == -1 then
+        local flags = reaper.GetMasterMuteSoloFlags()
+        local soloOut = flags&2==2
+        if soloOut then so = 1 else so = 0 end
+        return so
+      else
+        return normalize(min,max,reaper.GetMediaTrackInfo_Value(track, trctls_table[trctl_idx].parmname))
+      end
+    
+    else
+      return normalize(min,max,reaper.GetMediaTrackInfo_Value(track, trctls_table[trctl_idx].parmname))
+    end
+    
   end
 
   function GTSI_norm(track,trctl_idx,min,max,c)
@@ -14865,6 +14883,7 @@ end
       SaveData()
       SaveSettings()
     --end
+      reaper.MarkProjectDirty(0)
     gfx.quit()
     
   end
