@@ -14,8 +14,8 @@
         
   submode_table = {'FX PARAMS','GRAPHICS','STRIPS'}
   ctltype_table = {'KNOB/SLIDER','BUTTON','BUTTON INV','CYCLE BUTTON','METER','MEM BUTTON','MOMENT BTN','MOMENT INV','FLASH BUTTON','FLASH INV'}
-  trctltype_table = {'Track Controls','Track Sends','Actions'}
-  special_table = {'Action Trigger'}
+  trctltype_table = {'Track Controls','Track Sends','Actions & Meters'}
+  special_table = {'Action Trigger','Peak Meter L','Peak Meter R','Clip Indicator L','Clip Indicator R'}
   scalemode_preset_table = {'','NORMAL','REAPER VOL'}
   scalemode_table = {1/8,1/7,1/6,1/5,1/4,1/3,1/2,1,2,3,4,5,6,7,8}
   scalemode_dtable = {'1/8','1/7','1/6','1/5','1/4','1/3','1/2','1','2','3','4','5','6','7','8'}
@@ -76,13 +76,42 @@
              trackrecv = 3,
              trackhwout = 4,
              action = 5,
-             snapshot = 6}
+             snapshot = 6,
+             pkmeter = 7}
              
   gfxtype = {img = 0,
              txt = 1
              }
                         
-  ---------------------------------------------
+  local log10 = function(x) return math.log(x, 10) end
+  
+  function get_peak_info(trn)
+  
+    local pk1, pk2 = 0, 0
+    local tr = reaper.GetTrack(0, trn)
+    local peak_info_channel_1 = reaper.Track_GetPeakInfo(tr, 0)
+    local peak_info_channel_2 = reaper.Track_GetPeakInfo(tr, 1)
+    local peak_info_dB_ch_1 = 20*log10(peak_info_channel_1)
+    local peak_info_dB_ch_2 = 20*log10(peak_info_channel_2)
+      
+    --DBG(peak_info_channel_1)
+    if peak_info_dB_ch_1 > 0 then
+      pk1 = 1
+    end
+    if peak_info_dB_ch_2 > 0 then
+      pk2 = 1
+    end
+    --peak_info_dB_ch_1 = F_limit(peak_info_dB_ch_1,-60,0)
+    --DBG('norm: '..normalize(-60,0,F_limit(peak_info_dB_ch_1,-60,0)))
+    peak_info[trn] = {ch_1 = normalize(-60,0,F_limit(peak_info_dB_ch_1,-60,0)),
+                      ch_2 = normalize(-60,0,F_limit(peak_info_dB_ch_2,-60,0)),
+                      pk_1 = pk1,
+                      pk_2 = pk2,
+                      ch_1d = peak_info_dB_ch_1,
+                      ch_2d = peak_info_dB_ch_2}
+  end
+  
+  ------------------------------------------- --
   -- Pickle.lua
   -- A table serialization utility for lua
   -- Steve Dekorte, http://www.dekorte.com, Apr 2000
@@ -1360,6 +1389,63 @@
                                                 id = nil,
                                                 tracknum = nil,
                                                 trackguid = nil,
+                                                scalemode = 8,
+                                                framemode = 1,
+                                                horiz = horiz_select,
+                                                poslock = false
+                                               }
+      elseif dragparam.type == 'pkmeter' then
+        local pname = 'Tr' .. tracks[trackedit_select].tracknum .. ' '
+        if trctl_select == 2 or trctl_select == 4 then
+          pname = pname .. 'L'
+        elseif trctl_select == 3 or trctl_select == 5 then
+          pname = pname .. 'R'        
+        end
+        if trctl_select >=4 then
+          pname = pname .. ' Clip'
+        end
+        strips[strip][page].controls[ctlnum] = {c_id = GenID(),
+                                                ctlcat = ctlcats.pkmeter,
+                                                fxname='Peak Meter',
+                                                fxguid=nil, 
+                                                fxnum=nil, 
+                                                fxfound = true,
+                                                param = trctl_select,
+                                                param_info = {paramname = pname,
+                                                              paramnum = trctl_select,
+                                                              paramidx = nil},
+                                                ctltype = 5,
+                                                knob_select = knob_select,
+                                                ctl_info = {fn = ctl_files[knob_select].fn,
+                                                            frames = ctl_files[knob_select].frames,
+                                                            imageidx = ctl_files[knob_select].imageidx, 
+                                                            cellh = ctl_files[knob_select].cellh},
+                                                x = x,
+                                                y = y,
+                                                w = w,
+                                                scale = scale_select,
+                                                xsc = x + math.floor(w/2 - (w*scale_select)/2),
+                                                ysc = y + math.floor(ctl_files[knob_select].cellh/2 - (ctl_files[knob_select].cellh*scale_select)/2),
+                                                wsc = w*scale_select,
+                                                hsc = ctl_files[knob_select].cellh*scale_select,
+                                                show_paramname = show_paramname,
+                                                show_paramval = show_paramval,
+                                                ctlname_override = '',
+                                                textcol = textcol_select,
+                                                textoff = textoff_select,
+                                                textoffval = textoffval_select,
+                                                textoffx = textoff_selectx,
+                                                textoffvalx = textoffval_selectx,
+                                                textsize = textsize_select,
+                                                val = 0,
+                                                defval = 0,
+                                                maxdp = maxdp_select,
+                                                cycledata = {statecnt = 0,val = 0,mapptof = false,draggable = false,spread = false, {}},
+                                                membtn = {state = false,
+                                                          mem = nil},
+                                                id = nil,
+                                                tracknum = tracks[trackedit_select].tracknum,
+                                                trackguid = tracks[trackedit_select].guid,
                                                 scalemode = 8,
                                                 framemode = 1,
                                                 horiz = horiz_select,
@@ -3113,8 +3199,13 @@
     
   ------------------------------------------------------------
   function round(num, idp)
-    local mult = 10^(idp or 0)
-    return math.floor(num * mult + 0.5) / mult
+    --num = tonumber(num)
+    --if num then
+      local mult = 10^(idp or 0)
+      return math.floor(num * mult + 0.5) / mult
+    --else
+    --  return nz(num,'')
+    --end
   end
 
   function roundX(num, idp)
@@ -3371,7 +3462,7 @@ end
                 local Disp_Name
                 local v2, val2 = 0, 0
   
-                if ctlcat == ctlcats.fxparam or ctlcat == ctlcats.trackparam or ctlcat == ctlcats.tracksend then
+                if ctlcat == ctlcats.fxparam or ctlcat == ctlcats.trackparam or ctlcat == ctlcats.tracksend or ctlcat == ctlcats.pkmeter then
                   v2 = nz(frameScale(strips[strip][page].controls[i].framemode, GetParamValue2(ctlcat,track,fxnum,param,i)),0)
                   val2 = F_limit(round(frames*v2),0,frames-1)
                 end
@@ -3498,6 +3589,20 @@ end
                   if DVOV and DVOV ~= '' and cycle_editmode == false then
                   else
                     spv = false  
+                  end
+                elseif ctlcat == ctlcats.pkmeter then
+                  if nz(ctlnmov,'') == '' then
+                    Disp_Name = pname
+                  else
+                    Disp_Name = ctlnmov
+                  end
+                  if param <= 3 then
+                    Disp_ParamV = GetParamDisp(ctlcat, tnum, nil, param, dvoff, i)
+                    if tonumber(Disp_ParamV) < -120 then
+                      Disp_ParamV = '-inf'
+                    end
+                  else
+                    Disp_ParamV = ''
                   end
                 elseif ctlcat == ctlcats.snapshot then
                   if nz(ctlnmov,'') == '' then
@@ -5318,6 +5423,14 @@ end
 
     elseif ctlcat == ctlcats.action then
       return ''
+    elseif ctlcat == ctlcats.pkmeter then
+      if paramnum == 2 then
+        return round(peak_info[tracknum].ch_1d,1)
+      elseif paramnum == 3 then
+        return round(peak_info[tracknum].ch_2d,1)
+      else
+        return '-inf' 
+      end
     end
   end
 
@@ -5354,6 +5467,14 @@ end
         
       elseif cc == ctlcats.action then
         return 0
+      elseif cc == ctlcats.pkmeter then
+        local tracknum = strips[tracks[track_select].strip][page].controls[c].tracknum
+        local p = strips[tracks[track_select].strip][page].controls[c].param
+        if p == 2 then
+          return peak_info[tracknum].ch_1
+        elseif p == 3 then
+          return peak_info[tracknum].ch_2      
+        end
       end
     else
       return 0
@@ -5484,6 +5605,16 @@ end
 
     elseif ctlcat == ctlcats.action then
       return 0
+    elseif ctlcat == ctlcats.pkmeter then
+      if paramnum == 2 then
+        return peak_info[tracknum].ch_1
+      elseif paramnum == 3 then
+        return peak_info[tracknum].ch_2      
+      elseif paramnum == 4 then
+        return peak_info[tracknum].pk_1
+      elseif paramnum == 5 then
+        return peak_info[tracknum].pk_2      
+      end
     end
   end
 
@@ -5510,6 +5641,17 @@ end
       
     elseif ctlcat == ctlcats.action then
       return 0
+    elseif ctlcat == ctlcats.pkmeter then
+      local tracknum = strips[tracks[track_select].strip][page].controls[c].tracknum
+      if paramnum == 2 then
+        return peak_info[tracknum].ch_1
+      elseif paramnum == 3 then
+        return peak_info[tracknum].ch_2      
+      elseif paramnum == 4 then
+        return peak_info[tracknum].pk_1
+      elseif paramnum == 5 then
+        return peak_info[tracknum].pk_2      
+      end
     end
   end
   
@@ -8484,7 +8626,9 @@ end
           local dcnt = #dtbl
           for dt = 1, dcnt do
             if dtbl[dt].val then
-              if tbl[st].val > dtbl[dt].val then
+            --DBG(st)
+            --DBG(tbl[st].val)
+              if nz(tonumber(tbl[st].val),0) > nz(tonumber(dtbl[dt].val),0) then
                 table.insert(dtbl, dt, tbl[st])
                 inserted = true
                 break
@@ -8645,6 +8789,10 @@ end
       end
     end
     
+    for tr = 0, reaper.CountTracks(0)-1 do
+      get_peak_info(tr)
+    end
+    
     local ct = reaper.CountTracks(0)
     if ct ~= otrkcnt then
       PopulateTracks()
@@ -8756,6 +8904,7 @@ end
           if tr2 ~= nil then
             if strips and strips[tracks[track_select].strip] then
               local chktbl = {}
+              local pkmts = false
               for i = 1, #strips[tracks[track_select].strip][page].controls do
                 --check fx
                 
@@ -8859,10 +9008,28 @@ end
                         update_ctls = true
                       end
                     end
+                  elseif strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.pkmeter then
+                    if rt >= time_nextupdate_pkmeter then
+                      pkmts = true
+                      local trn = strips[tracks[track_select].strip][page].controls[i].tracknum
+                      local v = GetParamValue2(strips[tracks[track_select].strip][page].controls[i].ctlcat,
+                                               tr,
+                                               nil,
+                                               strips[tracks[track_select].strip][page].controls[i].param, i)
+                      --DBG(strips[tracks[track_select].strip][page].controls[i].tracknum..'  '..v..'  '..tostring(strips[tracks[track_select].strip][page].controls[i].val))
+                      if tostring(strips[tracks[track_select].strip][page].controls[i].val) ~= tostring(peak_info[trn].ch_1d) then
+                        strips[tracks[track_select].strip][page].controls[i].val = peak_info[trn].ch_1d
+                        strips[tracks[track_select].strip][page].controls[i].dirty = true
+                        update_ctls = true
+                      end
+                    end
                   end
                 end
               end
               chktbl = nil
+              if pkmts then
+                time_nextupdate_pkmeter = rt + settings_updatefreq_pkmeter
+              end
             end
           end
         end
@@ -9038,7 +9205,13 @@ end
           update_gfx = true
         elseif EB_Open == 15 then
           EditSubName(editbox.text)
-          update_snaps = true          
+          update_snaps = true
+        elseif EB_Open == 17 then
+          local sc = tonumber(editbox.text)
+          if sc then
+            cycle_select.statecnt = F_limit(sc,0,max_cycle)
+          end
+          update_surface = true
         elseif EB_Open == 20 then
           SaveSet(editbox.text)
         end
@@ -9962,8 +10135,8 @@ end
         if val ~= nil then
           if oms ~= mouse.shift then
             oms = mouse.shift
-            ctlpos = normalize(0, strips[tracks[track_select].strip][page].controls[i].cycledata.statecnt,
-                               strips[tracks[track_select].strip][page].controls[i].cycledata.pos)
+            ctlpos = normalize(0, strips[tracks[track_select].strip][page].controls[trackfxparam_select].cycledata.statecnt,
+                               strips[tracks[track_select].strip][page].controls[trackfxparam_select].cycledata.pos)
             mouse.slideoff = ctlxywh.y+ctlxywh.h/2 - mouse.my
           else
             if mouse.shift then
@@ -10665,8 +10838,8 @@ end
           elseif ctl_select ~= nil and show_cycleoptions and (MOUSE_click(obj.sections[100]) or MOUSE_click_RB(obj.sections[100])) then
           
             -- CYCLE OPTS
-          
-            if MOUSE_click(obj.sections[102]) then
+            
+            if MOUSE_click(obj.sections[102]) and mouse.ctrl == false then
               cyclist_offset = 0
               cycle_select.statecnt = F_limit(cycle_select.statecnt+1,0,max_cycle)
               Cycle_InitData()
@@ -10676,6 +10849,10 @@ end
               cycle_select.statecnt = F_limit(cycle_select.statecnt-1,0,max_cycle)
               Cycle_InitData()
               update_gfx = true
+            elseif MOUSE_click(obj.sections[102]) and (mouse.ctrl == true or mouse.shift == true) then
+            
+              OpenEB(17,'Enter number of cycle states:')
+            
             end
             
             if mouse.context == nil and MOUSE_click(obj.sections[101]) then 
@@ -11576,7 +11753,11 @@ end
             update_surface = true
   
           elseif mouse.context and mouse.context == contexts.dragparam_spec then
-            dragparam = {x = mouse.mx-ksel_size.w, y = mouse.my-ksel_size.h, type = 'action'}
+            if trctl_select == 1 then
+              dragparam = {x = mouse.mx-ksel_size.w, y = mouse.my-ksel_size.h, type = 'action'}
+            elseif trctl_select >= 2 and trctl_select <= 5 then
+              dragparam = {x = mouse.mx-ksel_size.w, y = mouse.my-ksel_size.h, type = 'pkmeter'}            
+            end
             reass_param = nil
             if tracks[track_select] and tracks[track_select].strip ~= -1 then
               for i = 1, #strips[tracks[track_select].strip][page].controls do
@@ -11751,6 +11932,15 @@ end
                 end
               end            
             elseif dragparam.type == 'action' then
+              if reass_param == nil then
+                if dragparam.x+ksel_size.w > obj.sections[10].x and dragparam.x+ksel_size.w < obj.sections[10].x+obj.sections[10].w and dragparam.y+ksel_size.h > obj.sections[10].y and dragparam.y+ksel_size.h < obj.sections[10].y+obj.sections[10].h then
+                  trackfxparam_select = i
+                  Strip_AddParam()              
+                end
+              else
+              
+              end
+            elseif dragparam.type == 'pkmeter' then
               if reass_param == nil then
                 if dragparam.x+ksel_size.w > obj.sections[10].x and dragparam.x+ksel_size.w < obj.sections[10].x+obj.sections[10].w and dragparam.y+ksel_size.h > obj.sections[10].y and dragparam.y+ksel_size.h < obj.sections[10].y+obj.sections[10].h then
                   trackfxparam_select = i
@@ -12696,48 +12886,96 @@ end
   
   function Cycle_Auto()
   
-    trackfxparam_select = ctl_select[1].ctl
-    local v, v2 = 0.0,0.0
-
-    local tracknum = strips[tracks[track_select].strip].track.tracknum
-    if strips[tracks[track_select].strip][page].controls[trackfxparam_select].tracknum ~= nil then
-      tracknum = strips[tracks[track_select].strip][page].controls[trackfxparam_select].tracknum
-    end
-    local cc = strips[tracks[track_select].strip][page].controls[trackfxparam_select].ctlcat
-    local fxnum = strips[tracks[track_select].strip][page].controls[trackfxparam_select].fxnum
-    local param = strips[tracks[track_select].strip][page].controls[trackfxparam_select].param
-    local dvoff = strips[tracks[track_select].strip][page].controls[trackfxparam_select].dvaloffset
+    if cycle_select.statecnt == 0 then
     
-    SetParam3(v)
-    local dval = GetParamDisp(cc, tracknum, fxnum, param, dvoff,trackfxparam_select)
-    local stcnt = 1
-    local ndval
-    
-    cycle_temp = {}
-    cycle_temp[1] = {val = v, dispval = dval, dv = dval}
-    
-    for v = 0.01, 1, 0.01 do
+      trackfxparam_select = ctl_select[1].ctl
+      local v, v2 = 0.0,0.0
+  
+      local tracknum = strips[tracks[track_select].strip].track.tracknum
+      if strips[tracks[track_select].strip][page].controls[trackfxparam_select].tracknum ~= nil then
+        tracknum = strips[tracks[track_select].strip][page].controls[trackfxparam_select].tracknum
+      end
+      local cc = strips[tracks[track_select].strip][page].controls[trackfxparam_select].ctlcat
+      local fxnum = strips[tracks[track_select].strip][page].controls[trackfxparam_select].fxnum
+      local param = strips[tracks[track_select].strip][page].controls[trackfxparam_select].param
+      local dvoff = strips[tracks[track_select].strip][page].controls[trackfxparam_select].dvaloffset
       
       SetParam3(v)
-      ndval = GetParamDisp(cc, tracknum, fxnum, param, dvoff,trackfxparam_select)
-      if ndval ~= dval then
-        dval = ndval
-        local v2 = GetParamValue(cc, tracknum, fxnum, param, trackfxparam_select)
-        cycle_temp[#cycle_temp+1] = {val = v2, dispval = dval, dv = dval}
-        stcnt = stcnt + 1
+      local dval = GetParamDisp(cc, tracknum, fxnum, param, dvoff,trackfxparam_select)
+      local stcnt = 1
+      local ndval
+      
+      cycle_temp = {}
+      cycle_temp[1] = {val = v, dispval = dval, dv = dval}
+      
+      for v = 0.01, 1, 0.01 do
+        
+        SetParam3(v)
+        ndval = GetParamDisp(cc, tracknum, fxnum, param, dvoff,trackfxparam_select)
+        if ndval ~= dval then
+          dval = ndval
+          local v2 = GetParamValue(cc, tracknum, fxnum, param, trackfxparam_select)
+          cycle_temp[#cycle_temp+1] = {val = v2, dispval = dval, dv = dval}
+          stcnt = stcnt + 1
+        end
+      
       end
     
-    end
+      if stcnt > max_cycle then
+        OpenMsgBox(1, 'Too many values.', 1)
+      else
+        for i = 1, max_cycle do
+          cycle_select[i] = cycle_temp[i]
+        end
+        cycle_select.statecnt = stcnt
+      end
+      SetParam()
   
-    if stcnt > max_cycle then
-      OpenMsgBox(1, 'Too many values.', 1)
     else
-      for i = 1, max_cycle do
+    
+      trackfxparam_select = ctl_select[1].ctl
+      local min, max = GetParamMinMax_ctl(trackfxparam_select, true)
+      local step = (max-min)/(cycle_select.statecnt-1)
+
+      local v, v2 = min,0.0
+  
+      local tracknum = strips[tracks[track_select].strip].track.tracknum
+      if strips[tracks[track_select].strip][page].controls[trackfxparam_select].tracknum ~= nil then
+        tracknum = strips[tracks[track_select].strip][page].controls[trackfxparam_select].tracknum
+      end
+      local cc = strips[tracks[track_select].strip][page].controls[trackfxparam_select].ctlcat
+      local fxnum = strips[tracks[track_select].strip][page].controls[trackfxparam_select].fxnum
+      local param = strips[tracks[track_select].strip][page].controls[trackfxparam_select].param
+      local dvoff = strips[tracks[track_select].strip][page].controls[trackfxparam_select].dvaloffset
+      
+      SetParam3(v)
+      local dval = GetParamDisp(cc, tracknum, fxnum, param, dvoff,trackfxparam_select)
+      local stcnt = 1
+      local ndval
+
+      cycle_temp = {}
+      cycle_temp[1] = {val = v, dispval = dval, dv = dval}
+
+      for v = min, max, step do
+      
+        SetParam3(v)
+        ndval = GetParamDisp(cc, tracknum, fxnum, param, dvoff, trackfxparam_select)
+        if ndval ~= dval then
+          dval = ndval
+          local v2 = GetParamValue(cc, tracknum, fxnum, param, trackfxparam_select)
+          cycle_temp[#cycle_temp+1] = {val = v2, dispval = dval, dv = dval}
+          stcnt = stcnt + 1
+        end
+      
+      end
+      
+      for i = 1, stcnt do
         cycle_select[i] = cycle_temp[i]
       end
       cycle_select.statecnt = stcnt
+      SetParam()
+    
     end
-    SetParam()
   
   end
   
@@ -14668,7 +14906,7 @@ end
     
     surface_offset = {x = 0, y = 0}
     
-    max_cycle = 64
+    max_cycle = 256
     
     image_count = 1
     knob_select = 0
@@ -14725,6 +14963,7 @@ end
     oplist_w = 140
     
     time_nextupdate = 0
+    time_nextupdate_pkmeter = 0
     time_checksend = 0
     time_sendupdate = 0
     
@@ -14921,6 +15160,7 @@ end
   osg = settings_showgrid
   settings_saveallfxinststrip = false
   settings_updatefreq = 0.05
+  settings_updatefreq_pkmeter = 0.05
   settings_showbars = false
   settings_mousewheelknob = false
   settings_locksurface = false
@@ -14930,6 +15170,7 @@ end
   settings_insertdefaultoneverypage = false
   
   strip_favs = {}
+  peak_info = {}
   
   dockstate = 0
   
