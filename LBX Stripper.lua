@@ -6848,7 +6848,7 @@ end
             maxy = math.max(maxy, strip.controls[i].y + strip.controls[i].ctl_info.cellh)
           end
           local fnd = false
-          for j = 1, #ctl_files do
+          for j = 0, #ctl_files do
             if ctl_files[j].fn == strip.controls[i].ctl_info.fn then
               if ctl_files[j].imageidx ~= nil then
                 fnd = true
