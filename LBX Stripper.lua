@@ -5606,14 +5606,18 @@ end
     elseif ctlcat == ctlcats.action then
       return 0
     elseif ctlcat == ctlcats.pkmeter then
-      if paramnum == 2 then
-        return peak_info[tracknum].ch_1
-      elseif paramnum == 3 then
-        return peak_info[tracknum].ch_2      
-      elseif paramnum == 4 then
-        return peak_info[tracknum].pk_1
-      elseif paramnum == 5 then
-        return peak_info[tracknum].pk_2      
+      if peak_info[tracknum] then
+        if paramnum == 2 then
+          return peak_info[tracknum].ch_1
+        elseif paramnum == 3 then
+          return peak_info[tracknum].ch_2      
+        elseif paramnum == 4 then
+          return peak_info[tracknum].pk_1
+        elseif paramnum == 5 then
+          return peak_info[tracknum].pk_2      
+        end
+      else
+        return 0
       end
     end
   end
@@ -5643,14 +5647,18 @@ end
       return 0
     elseif ctlcat == ctlcats.pkmeter then
       local tracknum = strips[tracks[track_select].strip][page].controls[c].tracknum
-      if paramnum == 2 then
-        return peak_info[tracknum].ch_1
-      elseif paramnum == 3 then
-        return peak_info[tracknum].ch_2      
-      elseif paramnum == 4 then
-        return peak_info[tracknum].pk_1
-      elseif paramnum == 5 then
-        return peak_info[tracknum].pk_2      
+      if peak_info[tracknum] then
+        if paramnum == 2 then
+          return peak_info[tracknum].ch_1
+        elseif paramnum == 3 then
+          return peak_info[tracknum].ch_2      
+        elseif paramnum == 4 then
+          return peak_info[tracknum].pk_1
+        elseif paramnum == 5 then
+          return peak_info[tracknum].pk_2      
+        end
+      else
+        return 0
       end
     end
   end
