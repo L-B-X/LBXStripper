@@ -5424,12 +5424,16 @@ end
     elseif ctlcat == ctlcats.action then
       return ''
     elseif ctlcat == ctlcats.pkmeter then
-      if paramnum == 2 then
-        return round(peak_info[tracknum].ch_1d,1)
-      elseif paramnum == 3 then
-        return round(peak_info[tracknum].ch_2d,1)
+      if peak_info[tracknum] then
+        if paramnum == 2 then
+          return round(peak_info[tracknum].ch_1d,1)
+        elseif paramnum == 3 then
+          return round(peak_info[tracknum].ch_2d,1)
+        else
+          return '-inf' 
+        end
       else
-        return '-inf' 
+        return '-inf'       
       end
     end
   end
@@ -5470,10 +5474,14 @@ end
       elseif cc == ctlcats.pkmeter then
         local tracknum = strips[tracks[track_select].strip][page].controls[c].tracknum
         local p = strips[tracks[track_select].strip][page].controls[c].param
-        if p == 2 then
-          return peak_info[tracknum].ch_1
-        elseif p == 3 then
-          return peak_info[tracknum].ch_2      
+        if peak_info[tracknum] then
+          if p == 2 then
+            return peak_info[tracknum].ch_1
+          elseif p == 3 then
+            return peak_info[tracknum].ch_2      
+          end
+        else
+          return 0
         end
       end
     else
@@ -9025,8 +9033,13 @@ end
                                                nil,
                                                strips[tracks[track_select].strip][page].controls[i].param, i)
                       --DBG(strips[tracks[track_select].strip][page].controls[i].tracknum..'  '..v..'  '..tostring(strips[tracks[track_select].strip][page].controls[i].val))
-                      if tostring(strips[tracks[track_select].strip][page].controls[i].val) ~= tostring(peak_info[trn].ch_1d) then
-                        strips[tracks[track_select].strip][page].controls[i].val = peak_info[trn].ch_1d
+                      if peak_info[trn] then
+                        ch1d = peak_info[trn].ch_1d
+                      else
+                        ch1d = -150
+                      end
+                      if tostring(strips[tracks[track_select].strip][page].controls[i].val) ~= tostring(ch1d) then
+                        strips[tracks[track_select].strip][page].controls[i].val = ch1d
                         strips[tracks[track_select].strip][page].controls[i].dirty = true
                         update_ctls = true
                       end
