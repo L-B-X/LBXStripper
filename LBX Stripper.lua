@@ -7279,7 +7279,7 @@ end
             
               local tr2 = tr
               if strips[tracks[track_select].strip][p].controls[c].tracknum ~= nil then
-                tr_found = CheckTrack(strips[tracks[track_select].strip][p].controls[c].tracknum,
+                tr_found = CheckTrack(tracks[strips[tracks[track_select].strip][p].controls[c].tracknum],
                                       tracks[track_select].strip, p, c)                      
                 if tr_found then
                   tr2 = GetTrack(strips[tracks[track_select].strip][p].controls[c].tracknum)
@@ -8763,7 +8763,7 @@ end
                 local tr_found = true
                 if strips[tracks[track_select].strip][page].controls[i].tracknum ~= nil then
                   --tr = GetTrack(strips[tracks[track_select].strip][page].controls[i].tracknum)
-                  tr_found = CheckTrack(strips[tracks[track_select].strip][page].controls[i].tracknum, tracks[track_select].strip, page, i)
+                  tr_found = CheckTrack(tracks[strips[tracks[track_select].strip][page].controls[i].tracknum], tracks[track_select].strip, page, i)
                   if tr_found then
                     tr = GetTrack(strips[tracks[track_select].strip][page].controls[i].tracknum)
                   end 
