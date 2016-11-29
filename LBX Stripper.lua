@@ -8677,7 +8677,7 @@ end
             if dtbl[dt].val then
             --DBG(st)
             --DBG(tbl[st].val)
-              if nz(tonumber(tbl[st].val),0) > nz(tonumber(dtbl[dt].val),0) then
+              if tbl[st] and dtbl[dt] and nz(tonumber(tbl[st].val),0) > nz(tonumber(dtbl[dt].val),0) then
                 table.insert(dtbl, dt, tbl[st])
                 inserted = true
                 break
@@ -9279,6 +9279,7 @@ end
           local sc = tonumber(editbox.text)
           if sc then
             cycle_select.statecnt = F_limit(sc,0,max_cycle)
+            Cycle_InitData()
           end
           update_surface = true
         elseif EB_Open == 20 then
