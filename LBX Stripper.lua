@@ -15,7 +15,8 @@
   submode_table = {'FX PARAMS','GRAPHICS','STRIPS'}
   ctltype_table = {'KNOB/SLIDER','BUTTON','BUTTON INV','CYCLE BUTTON','METER','MEM BUTTON','MOMENT BTN','MOMENT INV','FLASH BUTTON','FLASH INV'}
   trctltype_table = {'Track Controls','Track Sends','Actions & Meters'}
-  special_table = {'Action Trigger','Peak Meter L','Peak Meter R','Clip Indicator L','Clip Indicator R'}
+  --special_table = {'Action Trigger','Peak Meter L','Peak Meter R','Clip Indicator L','Clip Indicator R'}
+  special_table = {'Action Trigger'}
   scalemode_preset_table = {'','NORMAL','REAPER VOL'}
   scalemode_table = {1/8,1/7,1/6,1/5,1/4,1/3,1/2,1,2,3,4,5,6,7,8}
   scalemode_dtable = {'1/8','1/7','1/6','1/5','1/4','1/3','1/2','1','2','3','4','5','6','7','8'}
@@ -86,29 +87,27 @@
   local log10 = function(x) return math.log(x, 10) end
   
   function get_peak_info(trn)
-  
-    local pk1, pk2 = 0, 0
-    local tr = reaper.GetTrack(0, trn)
-    local peak_info_channel_1 = reaper.Track_GetPeakInfo(tr, 0)
-    local peak_info_channel_2 = reaper.Track_GetPeakInfo(tr, 1)
-    local peak_info_dB_ch_1 = 20*log10(peak_info_channel_1)
-    local peak_info_dB_ch_2 = 20*log10(peak_info_channel_2)
-      
-    --DBG(peak_info_channel_1)
-    if peak_info_dB_ch_1 > 0 then
-      pk1 = 1
+
+    local tr
+    if trn == -1 then
+      tr = reaper.GetMasterTrack(0)
+    else  
+      tr = reaper.GetTrack(0, trn)
     end
-    if peak_info_dB_ch_2 > 0 then
-      pk2 = 1
+    local nchan = reaper.GetMediaTrackInfo_Value(tr, 'I_NCHAN')
+    peak_info[trn] = {}
+    local pk, peak_info_ch, peak_info_dB = 0
+    for i = 0, nchan-1 do
+      local peak_info_ch = reaper.Track_GetPeakInfo(tr, i)
+      local peak_info_dB = 20*log10(peak_info_ch)
+      local pk = 0
+      if peak_info_dB > 0 then
+        pk = 1
+      end
+      peak_info[trn][i] = {ch = normalize(-60,0,F_limit(peak_info_dB,-60,0)),
+                           pk = pk,
+                           ch_d = peak_info_dB}
     end
-    --peak_info_dB_ch_1 = F_limit(peak_info_dB_ch_1,-60,0)
-    --DBG('norm: '..normalize(-60,0,F_limit(peak_info_dB_ch_1,-60,0)))
-    peak_info[trn] = {ch_1 = normalize(-60,0,F_limit(peak_info_dB_ch_1,-60,0)),
-                      ch_2 = normalize(-60,0,F_limit(peak_info_dB_ch_2,-60,0)),
-                      pk_1 = pk1,
-                      pk_2 = pk2,
-                      ch_1d = peak_info_dB_ch_1,
-                      ch_2d = peak_info_dB_ch_2}
   end
   
   ------------------------------------------- --
@@ -1395,13 +1394,16 @@
                                                 poslock = false
                                                }
       elseif dragparam.type == 'pkmeter' then
+        trctl_select = trctl_select - 2
         local pname = 'Tr' .. tracks[trackedit_select].tracknum .. ' '
-        if trctl_select == 2 or trctl_select == 4 then
-          pname = pname .. 'L'
-        elseif trctl_select == 3 or trctl_select == 5 then
-          pname = pname .. 'R'        
-        end
-        if trctl_select >=4 then
+        if trctl_select >= special_table_chans then
+          pname = pname .. 'Ch' .. string.format('%i',trctl_select+1-special_table_chans)
+          trctl_select = trctl_select - special_table_chans + 64
+        else
+          pname = pname .. 'Ch' .. string.format('%i',trctl_select+1)
+        end 
+        --DBG(trctl_select)
+        if trctl_select >= 64 then
           pname = pname .. ' Clip'
         end
         strips[strip][page].controls[ctlnum] = {c_id = GenID(),
@@ -1870,6 +1872,25 @@
     trsends_mmtable[2] = {paramstr = 'D_PAN', min = -1, max = 1}
     trsends_mmtable[3] = {paramstr = 'B_MUTE', min = 0, max = 1}
     
+  end
+
+  function PopulateSpecial()
+  
+    special_table = {'Action Trigger'}
+    local trn = trackedit_select
+    local tr
+    if trn == -1 then
+      tr = reaper.GetMasterTrack(0)
+    else  
+      tr = reaper.GetTrack(0, trn)
+    end
+    local nchan = reaper.GetMediaTrackInfo_Value(tr, 'I_NCHAN')
+    for i = 0, nchan-1 do
+      special_table[i+2] = 'Peak Meter Ch'..i+1
+      special_table[i+2+nchan] = 'Clip Indicator Ch'..i+1
+    end
+    special_table_chans = nchan
+  
   end
 
   -------------------------------------------------------
@@ -3596,9 +3617,9 @@ end
                   else
                     Disp_Name = ctlnmov
                   end
-                  if param <= 3 then
+                  if param < 64 then
                     Disp_ParamV = GetParamDisp(ctlcat, tnum, nil, param, dvoff, i)
-                    if tonumber(Disp_ParamV) < -120 then
+                    if tonumber(Disp_ParamV) ~= nil and tonumber(Disp_ParamV) < -120 then
                       Disp_ParamV = '-inf'
                     end
                   else
@@ -5424,14 +5445,10 @@ end
     elseif ctlcat == ctlcats.action then
       return ''
     elseif ctlcat == ctlcats.pkmeter then
-      if peak_info[tracknum] then
-        if paramnum == 2 then
-          return round(peak_info[tracknum].ch_1d,1)
-        elseif paramnum == 3 then
-          return round(peak_info[tracknum].ch_2d,1)
-        else
-          return '-inf' 
-        end
+      if paramnum <=64 and peak_info[tracknum] and peak_info[tracknum][paramnum] then
+        return round(peak_info[tracknum][paramnum].ch_d,1)
+      elseif paramnum > 64 then
+        return ''
       else
         return '-inf'       
       end
@@ -5474,12 +5491,8 @@ end
       elseif cc == ctlcats.pkmeter then
         local tracknum = strips[tracks[track_select].strip][page].controls[c].tracknum
         local p = strips[tracks[track_select].strip][page].controls[c].param
-        if peak_info[tracknum] then
-          if p == 2 then
-            return peak_info[tracknum].ch_1
-          elseif p == 3 then
-            return peak_info[tracknum].ch_2      
-          end
+        if p <= 64 and peak_info[tracknum] and peak_info[tracknum][p] then
+          return peak_info[tracknum][p].ch
         else
           return 0
         end
@@ -5614,15 +5627,11 @@ end
     elseif ctlcat == ctlcats.action then
       return 0
     elseif ctlcat == ctlcats.pkmeter then
-      if peak_info[tracknum] then
-        if paramnum == 2 then
-          return peak_info[tracknum].ch_1
-        elseif paramnum == 3 then
-          return peak_info[tracknum].ch_2      
-        elseif paramnum == 4 then
-          return peak_info[tracknum].pk_1
-        elseif paramnum == 5 then
-          return peak_info[tracknum].pk_2      
+      if peak_info[tracknum] and peak_info[tracknum][paramnum % 64] then
+        if paramnum < 64 then
+          return peak_info[tracknum][paramnum].ch
+        else
+          return peak_info[tracknum][paramnum-64].pk
         end
       else
         return 0
@@ -5655,15 +5664,11 @@ end
       return 0
     elseif ctlcat == ctlcats.pkmeter then
       local tracknum = strips[tracks[track_select].strip][page].controls[c].tracknum
-      if peak_info[tracknum] then
-        if paramnum == 2 then
-          return peak_info[tracknum].ch_1
-        elseif paramnum == 3 then
-          return peak_info[tracknum].ch_2      
-        elseif paramnum == 4 then
-          return peak_info[tracknum].pk_1
-        elseif paramnum == 5 then
-          return peak_info[tracknum].pk_2      
+      if peak_info[tracknum] and peak_info[tracknum][paramnum % 64] then
+        if paramnum < 64 then
+          return peak_info[tracknum][paramnum].ch
+        else
+          return peak_info[tracknum][paramnum-64].pk
         end
       else
         return 0
@@ -7356,7 +7361,7 @@ end
         local w = strips[strip][page].controls[i].w
         local h = strips[strip][page].controls[i].ctl_info.cellh
         local gh = h
-        local val = math.floor(100*strips[strip][page].controls[i].val)
+        local val = math.floor(100*nz(strips[strip][page].controls[i].val,0))
         local fxnum = strips[strip][page].controls[i].fxnum
         local param = strips[strip][page].controls[i].param
         local iidx = strips[strip][page].controls[i].ctl_info.imageidx
@@ -7370,7 +7375,7 @@ end
         local ctltype = strips[strip][page].controls[i].ctltype
         local found = strips[strip][page].controls[i].fxfound
   
-        local v2 = strips[strip][page].controls[i].val
+        local v2 = nz(strips[strip][page].controls[i].val,0)
         local val2 = F_limit(round(frames*v2,0),0,frames-1)
         
         gfx.a = 1
@@ -8805,10 +8810,12 @@ end
       end
     end
     
-    for tr = 0, reaper.CountTracks(0)-1 do
-      get_peak_info(tr)
-    end
-    
+    if rt >= time_nextupdate_pkmeter then
+      for tr = -1, reaper.CountTracks(0)-1 do
+        get_peak_info(tr)
+      end
+    end 
+        
     local ct = reaper.CountTracks(0)
     if ct ~= otrkcnt then
       PopulateTracks()
@@ -8888,6 +8895,7 @@ end
               CheckStripSends()          
               PopulateTrackSendsInfo()
               PopulateTrackFX()
+              PopulateSpecial()
               ctl_select = nil
               gfx2_select = nil
               gfx3_select = nil
@@ -9027,19 +9035,21 @@ end
                   elseif strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.pkmeter then
                     if rt >= time_nextupdate_pkmeter then
                       pkmts = true
+                      local chd = 0
                       local trn = strips[tracks[track_select].strip][page].controls[i].tracknum
+                      local p = strips[tracks[track_select].strip][page].controls[i].param
                       local v = GetParamValue2(strips[tracks[track_select].strip][page].controls[i].ctlcat,
                                                tr,
                                                nil,
-                                               strips[tracks[track_select].strip][page].controls[i].param, i)
+                                               p, i)
                       --DBG(strips[tracks[track_select].strip][page].controls[i].tracknum..'  '..v..'  '..tostring(strips[tracks[track_select].strip][page].controls[i].val))
-                      if peak_info[trn] then
-                        ch1d = peak_info[trn].ch_1d
+                      if peak_info[trn] and peak_info[trn][p % 64] then
+                        chd = peak_info[trn][p % 64].ch_d
                       else
-                        ch1d = -150
+                        chd = -150
                       end
-                      if tostring(strips[tracks[track_select].strip][page].controls[i].val) ~= tostring(ch1d) then
-                        strips[tracks[track_select].strip][page].controls[i].val = ch1d
+                      if tostring(strips[tracks[track_select].strip][page].controls[i].val) ~= tostring(chd) then
+                        strips[tracks[track_select].strip][page].controls[i].val = chd
                         strips[tracks[track_select].strip][page].controls[i].dirty = true
                         update_ctls = true
                       end
@@ -10234,6 +10244,7 @@ end
 
           CheckStripSends()
           PopulateTrackSendsInfo()
+          PopulateSpecial()
 
           if strips and strips[tracks[track_select].strip] then
             page = strips[tracks[track_select].strip].page
@@ -11466,6 +11477,7 @@ end
               end
               PopulateTrackFX()
               PopulateTrackSendsInfo()
+              PopulateSpecial()
               trctlslist_offset = 0
               update_gfx = true 
             end
@@ -11476,6 +11488,7 @@ end
             end
             PopulateTrackFX()
             PopulateTrackSendsInfo()
+            PopulateSpecial()
             update_gfx = true    
           end
           
@@ -11609,6 +11622,9 @@ end
               elseif trctltype_table[i + trctltypelist_offset+1] then
                 trctltype_select = i + trctltypelist_offset
                 trctlslist_offset = 0
+                if i + trctltypelist_offset == 2 then
+                  PopulateSpecial()
+                end
                 update_gfx = true
               end
             end
@@ -11622,7 +11638,7 @@ end
               elseif trctltype_select == 2 then
                 pcnt = #special_table              
               end
-            
+            --DBG(pcnt)
               local i = math.floor((mouse.my - obj.sections[42].y) / butt_h)-2
               if i == -1 then
                 if mouse.mx < obj.sections[42].w/2 then
@@ -11776,7 +11792,7 @@ end
           elseif mouse.context and mouse.context == contexts.dragparam_spec then
             if trctl_select == 1 then
               dragparam = {x = mouse.mx-ksel_size.w, y = mouse.my-ksel_size.h, type = 'action'}
-            elseif trctl_select >= 2 and trctl_select <= 5 then
+            elseif trctl_select >= 2 then
               dragparam = {x = mouse.mx-ksel_size.w, y = mouse.my-ksel_size.h, type = 'pkmeter'}            
             end
             reass_param = nil
