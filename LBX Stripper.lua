@@ -9296,6 +9296,7 @@ end
         CloseActChooser()
         if mode == 0 then
           g_edstrips = {}
+          trackedit_select = track_select
           mode = 1
           PopulateTrackFX()
         else
