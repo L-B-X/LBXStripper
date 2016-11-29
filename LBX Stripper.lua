@@ -6630,10 +6630,7 @@ end
       file=io.open(fn,"r")
       local content=file:read("*a")
       file:close()
-      DBG(content)
       stripdata = unpickle(content)
-      DBG(fn)
-      DBG(stripdata)
     else
       OpenMsgBox(1,'File not found.',1)
     end
@@ -6972,10 +6969,8 @@ end
   end
   
   function GenStripPreview(gui, strip)
-    DBG('0')
   
     if strip then
-    DBG('1')
       local i,j
       image_count_add = image_count    
       local minx, miny, maxx, maxy = nil,nil,nil,nil 
@@ -7147,7 +7142,6 @@ end
     
           local v2 = nz(strip.controls[i].val,0)
           local val2 = F_limit(round(frames*v2,0),0,frames-1)
-          DBG(i..'  '..v2..'  '..val2)
           gfx.a = 1
           
           if ctltype == 3 then
