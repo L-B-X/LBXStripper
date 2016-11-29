@@ -1395,7 +1395,8 @@
                                                }
       elseif dragparam.type == 'pkmeter' then
         trctl_select = trctl_select - 2
-        local pname = 'Tr' .. tracks[trackedit_select].tracknum .. ' '
+        --local pname = 'Tr' .. tracks[trackedit_select].tracknum .. ' '
+        local pname = ''
         if trctl_select >= special_table_chans then
           pname = pname .. 'Ch' .. string.format('%i',trctl_select+1-special_table_chans)
           trctl_select = trctl_select - special_table_chans + 64
@@ -14573,7 +14574,21 @@ end
       savedata.stripdata = strips
       savedata.snapdata = snapshots
       
-      --Pickle doesn't like {} in strings (much) - remove before pickling
+      --Pickle doesn't like {} and -1#INF in strings (much) - remove before pickling
+      if savedata.stripdata and #savedata.stripdata > 0 then
+        for s = 1, #savedata.stripdata do
+          for p = 1, 4 do
+            if #savedata.stripdata[s][p].controls > 0 then
+              for c = 1, #savedata.stripdata[s][p].controls do
+                if savedata.stripdata[s][p].controls[c].ctlcat == ctlcats.pkmeter then
+                  savedata.stripdata[s][p].controls[c].val = -150
+                end
+              end
+            end
+          end
+        end
+      end
+            
       --[[for i = 1, #savedata.strip.controls do
         savedata.strip.controls[i].fxguid = convertguid(savedata.strip.controls[i].fxguid)
       end]]
