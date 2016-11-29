@@ -2382,7 +2382,7 @@
       elseif trctltype_select == 2 then
         for i = 1, #tbl do
           --local ii = i-1 + trctlslist_offset
-          if tbl[i] then
+          if tbl[i + trctlslist_offset] then
             local xywh = {x = obj.sections[42].x,
                           y = obj.sections[42].y +2 + (i) * butt_h,
                           w = obj.sections[42].w,
@@ -2396,7 +2396,7 @@
                        xywh.h, 1, 1)
               c = gui.color.black        
             end
-            GUI_textsm_LJ(gui, xywh, tbl[i], c, -4, plist_w)
+            GUI_textsm_LJ(gui, xywh, tbl[i + trctlslist_offset], c, -4, plist_w)
           else
             break
           end
@@ -10446,6 +10446,10 @@ end
                   trctlslist_offset = F_limit(trctlslist_offset - v, 0, #trsends_table*3+2)
                   update_gfx = true
                   gfx.mouse_wheel = 0              
+                elseif trctltype_select == 2 then
+                  trctlslist_offset = F_limit(trctlslist_offset - v, 0, #special_table-1)
+                  update_gfx = true
+                  gfx.mouse_wheel = 0              
                 end
               end          
             end
@@ -11666,8 +11670,8 @@ end
                 else
                   if trctlslist_offset + P_butt_cnt < #trctls_table-1 then
                     trctlslist_offset = trctlslist_offset + P_butt_cnt
-                    if trctlslist_offset > #trctls_table-1 then
-                      trctlslist_offset = #trctls_table-1
+                    if trctlslist_offset > pcnt-1 then
+                      trctlslist_offset = pcnt-1
                     end
                   end          
                 end
