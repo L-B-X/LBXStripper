@@ -1394,17 +1394,17 @@
                                                 poslock = false
                                                }
       elseif dragparam.type == 'pkmeter' then
-        trctl_select = trctl_select - 2
+        local tcs = trctl_select - 2
         --local pname = 'Tr' .. tracks[trackedit_select].tracknum .. ' '
         local pname = ''
-        if trctl_select >= special_table_chans then
-          pname = pname .. 'Ch' .. string.format('%i',trctl_select+1-special_table_chans)
-          trctl_select = trctl_select - special_table_chans + 64
+        if tcs >= special_table_chans then
+          pname = pname .. 'Ch' .. string.format('%i',tcs+1-special_table_chans)
+          tcs = tcs - special_table_chans + 64
         else
-          pname = pname .. 'Ch' .. string.format('%i',trctl_select+1)
+          pname = pname .. 'Ch' .. string.format('%i',tcs+1)
         end 
         --DBG(trctl_select)
-        if trctl_select >= 64 then
+        if tcs >= 64 then
           pname = pname .. ' Clip'
         end
         strips[strip][page].controls[ctlnum] = {c_id = GenID(),
@@ -1413,9 +1413,9 @@
                                                 fxguid=nil, 
                                                 fxnum=nil, 
                                                 fxfound = true,
-                                                param = trctl_select,
+                                                param = tcs,
                                                 param_info = {paramname = pname,
-                                                              paramnum = trctl_select,
+                                                              paramnum = tcs,
                                                               paramidx = nil},
                                                 ctltype = 5,
                                                 knob_select = knob_select,
