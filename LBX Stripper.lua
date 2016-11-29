@@ -1453,6 +1453,11 @@
                                                 horiz = horiz_select,
                                                 poslock = false
                                                }
+        if track_select == trackedit_select then
+          strips[strip][page].controls[ctlnum].tracknum = nil
+          strips[strip][page].controls[ctlnum].trackguid = nil         
+        end
+
       elseif dragparam.type == 'snapctl' then
         local pname = 'Page Snapshots'
         if sstype_select > 1 then
@@ -5489,7 +5494,10 @@ end
       elseif cc == ctlcats.action then
         return 0
       elseif cc == ctlcats.pkmeter then
-        local tracknum = strips[tracks[track_select].strip][page].controls[c].tracknum
+        local tracknum = strips[tracks[track_select].strip].track.tracknum
+        if strips[tracks[track_select].strip][page].controls[c].tracknum ~= nil then
+          tracknum = strips[tracks[track_select].strip][page].controls[c].tracknum
+        end
         local p = strips[tracks[track_select].strip][page].controls[c].param
         if p <= 64 and peak_info[tracknum] and peak_info[tracknum][p] then
           return peak_info[tracknum][p].ch
@@ -5663,7 +5671,10 @@ end
     elseif ctlcat == ctlcats.action then
       return 0
     elseif ctlcat == ctlcats.pkmeter then
-      local tracknum = strips[tracks[track_select].strip][page].controls[c].tracknum
+      local tracknum = strips[tracks[track_select].strip].track.tracknum
+      if strips[tracks[track_select].strip][page].controls[c].tracknum ~= nil then
+        tracknum = strips[tracks[track_select].strip][page].controls[c].tracknum
+      end
       if peak_info[tracknum] and peak_info[tracknum][paramnum % 64] then
         if paramnum < 64 then
           return peak_info[tracknum][paramnum].ch
@@ -9036,7 +9047,10 @@ end
                     if rt >= time_nextupdate_pkmeter then
                       pkmts = true
                       local chd = 0
-                      local trn = strips[tracks[track_select].strip][page].controls[i].tracknum
+                      local trn = strips[tracks[track_select].strip].track.tracknum
+                      if strips[tracks[track_select].strip][page].controls[i].tracknum ~= nil then
+                        trn = strips[tracks[track_select].strip][page].controls[i].tracknum
+                      end
                       local p = strips[tracks[track_select].strip][page].controls[i].param
                       local v = GetParamValue2(strips[tracks[track_select].strip][page].controls[i].ctlcat,
                                                tr,
