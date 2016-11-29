@@ -3525,8 +3525,9 @@ end
                           if p < strips[strip][page].controls[i].cycledata.statecnt then
                             vc = vc + (strips[strip][page].controls[i].cycledata[p+1].val - vc)/2
                           end
+                          
                           if Disp_ParamV == strips[strip][page].controls[i].cycledata[p].dv or 
-                             strips[strip][page].controls[i].val <= vc then
+                             (strips[strip][page].controls[i].val and strips[strip][page].controls[i].val <= vc) then
                             strips[strip][page].controls[i].cycledata.pos = p
                             break
                           end
@@ -6383,11 +6384,23 @@ end
 
     local mo = tonumber(txt)
     if mo then
-      local test = GetValFromDVal(ctl_select[1].ctl,txt)
+      --local test = GetValFromDVal(ctl_select[1].ctl,txt,true)
       minov_select = mo
-      --for i = 1, #ctl_select do 
-      --  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].minov = mo
-      --end
+      for i = 1, #ctl_select do 
+        strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].minov = minov_select
+      end
+    end  
+  end
+
+  function EditMaxDVal2(txt)
+
+    local mo = tonumber(txt)
+    if mo then
+      --local test = GetValFromDVal(ctl_select[1].ctl,txt,false)
+      maxov_select = mo
+      for i = 1, #ctl_select do 
+        strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].maxov = maxov_select
+      end
     end  
   end
 
@@ -8289,7 +8302,8 @@ end
     poslock_select = strips[tracks[track_select].strip][page].graphics[gfx2_select].poslock
   end
   
-  function GetValFromDVal(c, dv)
+  function GetValFromDVal(c, dv, checkov)
+    if checkov == nil then checkov = true end
   
     if c then
       local t = strips[tracks[track_select].strip].track.tracknum
@@ -8304,8 +8318,8 @@ end
         track = GetTrack(t)
         
         --local v, min, max = reaper.TrackFX_GetParam(track, f, p)
+        local min, max = GetParamMinMax_ctl(c, checkov)
         local v = GetParamValue_Ctl(c)
-        local min, max = GetParamMinMax_ctl(c)
         
         --[[if strips[tracks[track_select].strip][page].controls[c].minov then
           min = strips[tracks[track_select].strip][page].controls[c].minov
@@ -8316,12 +8330,12 @@ end
         local dvoff = strips[tracks[track_select].strip][page].controls[c].dvaloffset
         trackfxparam_select = c
         SetParam3(min)
-        for i = 1, 100 do i=i end
+        --for i = 1, 100 do i=i end
         miv = tonumber(GetParamDisp(cc,t,f,p,dvoff,c))
         --for i = 1, 10 do i=i end
         
         SetParam3(max)
-        for i = 1, 100 do i=i end
+        --for i = 1, 100 do i=i end
         mav = tonumber(GetParamDisp(cc,t,f,p,dvoff,c))
         if (miv == nil or mav == nil) or (miv and mav and mav > miv) then
         
@@ -8735,14 +8749,18 @@ end
       update_ctls = true
       
     elseif ctltype == 4 then                  
-      strips[tracks[track_select].strip][page].controls[i].cycledata.pos = 1
-      if strips[tracks[track_select].strip][page].controls[i].cycledata.pos <=     
-                strips[tracks[track_select].strip][page].controls[i].cycledata.statecnt then
-        strips[tracks[track_select].strip][page].controls[i].val = 
-            strips[tracks[track_select].strip][page].controls[i].cycledata[strips[tracks[track_select].strip][page].controls[i].cycledata.pos].val
-        SetParam()
-        strips[tracks[track_select].strip][page].controls[i].dirty = true
-      end                  
+      strips[tracks[track_select].strip][page].controls[i].cycledata.pos = round(strips[tracks[track_select].strip][page].controls[i].cycledata.statecnt *
+                                                                           strips[tracks[track_select].strip][page].controls[i].defval)
+      if strips[tracks[track_select].strip][page].controls[i].cycledata.pos < 1 then strips[tracks[track_select].strip][page].controls[i].cycledata.pos = 1 
+      elseif strips[tracks[track_select].strip][page].controls[i].cycledata.pos > strips[tracks[track_select].strip][page].controls[i].cycledata.statecnt then
+        strips[tracks[track_select].strip][page].controls[i].cycledata.pos = strips[tracks[track_select].strip][page].controls[i].cycledata.statecnt
+      end
+            
+      strips[tracks[track_select].strip][page].controls[i].val = 
+          strips[tracks[track_select].strip][page].controls[i].cycledata[strips[tracks[track_select].strip][page].controls[i].cycledata.pos].val
+      SetParam()
+      strips[tracks[track_select].strip][page].controls[i].dirty = true
+
       update_ctls = true
       
     end  
@@ -8824,11 +8842,11 @@ end
       end
     end
     
-    --if rt >= time_nextupdate_pkmeter then
+    if rt >= time_nextupdate_pkmeter then
       for tr = -1, reaper.CountTracks(0)-1 do
         get_peak_info(tr)
       end
-   -- end 
+    end 
         
     local ct = reaper.CountTracks(0)
     if ct ~= otrkcnt then
@@ -9226,6 +9244,9 @@ end
           update_gfx = true
         elseif EB_Open == 4 then
           EditMinDVal2(editbox.text)
+          update_gfx = true
+        elseif EB_Open == 16 then
+          EditMaxDVal2(editbox.text)
           update_gfx = true
         elseif EB_Open == 5 then
           EditValue2(editbox.text)
@@ -10456,72 +10477,131 @@ end
             end
   
             if MOUSE_over(obj.sections[45]) then
-              local xywh = {x = obj.sections[45].x, y = obj.sections[45].y, w = obj.sections[45].w, h = 150}
-              if MOUSE_over(xywh) then
-                knob_select = (knob_select - v) % #ctl_files
-                update_gfx = true
-                gfx.mouse_wheel = 0
-              end
-              if MOUSE_over(obj.sections[56]) then
-                if toffY then
-                  textoff_select = textoff_select + v*2
-                  for i = 1, #ctl_select do
-                    strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].textoff = textoff_select
-                  end            
-                else
-                  textoff_selectx = textoff_selectx + v*2
-                  for i = 1, #ctl_select do
-                    strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].textoffx = textoff_selectx
-                  end                            
+
+              if ctl_page == 0 then
+
+                local xywh = {x = obj.sections[45].x, y = obj.sections[45].y, w = obj.sections[45].w, h = 150}
+                if MOUSE_over(xywh) then
+                  knob_select = (knob_select - v) % #ctl_files
+                  update_gfx = true
+                  gfx.mouse_wheel = 0
                 end
-                update_gfx = true
-                gfx.mouse_wheel = 0
-              end
-              if MOUSE_over(obj.sections[65]) then
-                if toffY then
-                  textoffval_select = textoffval_select + v*2
-                  for i = 1, #ctl_select do
-                    strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].textoffval = textoffval_select
-                  end            
-                else
-                  textoffval_selectx = textoffval_selectx + v*2
-                  for i = 1, #ctl_select do
-                    strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].textoffvalx = textoffval_selectx
-                  end                            
+                if MOUSE_over(obj.sections[56]) then
+                  if toffY then
+                    textoff_select = textoff_select + v*2
+                    for i = 1, #ctl_select do
+                      strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].textoff = textoff_select
+                    end            
+                  else
+                    textoff_selectx = textoff_selectx + v*2
+                    for i = 1, #ctl_select do
+                      strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].textoffx = textoff_selectx
+                    end                            
+                  end
+                  update_gfx = true
+                  gfx.mouse_wheel = 0
                 end
-                update_gfx = true
-                gfx.mouse_wheel = 0
-              end
-              if MOUSE_over(obj.sections[58]) then
-                textsize_select = F_limit(textsize_select + v,-2,35)
-                for i = 1, #ctl_select do
-                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].textsize = textsize_select
-                end            
-                update_gfx = true
-                gfx.mouse_wheel = 0
-              end
-  
-              if MOUSE_over(obj.sections[57]) then
-                defval_select = F_limit(defval_select + v/200,0,1)
-                for i = 1, #ctl_select do
-                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].val = defval_select
-                  trackfxparam_select = ctl_select[i].ctl
-                  SetParam()
-                end            
-                update_gfx = true
-                gfx.mouse_wheel = 0
+                if MOUSE_over(obj.sections[65]) then
+                  if toffY then
+                    textoffval_select = textoffval_select + v*2
+                    for i = 1, #ctl_select do
+                      strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].textoffval = textoffval_select
+                    end            
+                  else
+                    textoffval_selectx = textoffval_selectx + v*2
+                    for i = 1, #ctl_select do
+                      strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].textoffvalx = textoffval_selectx
+                    end                            
+                  end
+                  update_gfx = true
+                  gfx.mouse_wheel = 0
+                end
+                if MOUSE_over(obj.sections[58]) then
+                  textsize_select = F_limit(textsize_select + v,-2,35)
+                  for i = 1, #ctl_select do
+                    strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].textsize = textsize_select
+                  end            
+                  update_gfx = true
+                  gfx.mouse_wheel = 0
+                end
+    
+                if MOUSE_over(obj.sections[57]) then
+                  defval_select = F_limit(defval_select + v/200,0,1)
+                  for i = 1, #ctl_select do
+                    strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].val = defval_select
+                    trackfxparam_select = ctl_select[i].ctl
+                    SetParam()
+                  end            
+                  update_gfx = true
+                  gfx.mouse_wheel = 0
+                end
+                
+                if MOUSE_over(obj.sections[55]) then
+                  ctltype_select = F_limit(ctltype_select + v,1,#ctltype_table)
+                  for i = 1, #ctl_select do
+                    strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctltype = ctltype_select
+                  end
+                  show_cycleoptions = false
+                  update_gfx = true
+                  gfx.mouse_wheel = 0
+                end
+                
+              elseif ctl_page == 1 then              
+
+                if MOUSE_over(obj.sections[128]) then
+                  val = minov_select + v*0.00125
+                  
+                  local p = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].param
+                  local min, max = GetParamMinMax_ctl(ctl_select[1].ctl, false) --trctls_table[p].min, trctls_table[p].max
+                  
+                  if val < min then val = min end
+                  if val > max then val = max end
+                  if val ~= octlval then
+                    val = math.min(val,nz(maxov_select-0.05,1))
+                    SetParam4(val)
+                    local dval = GetParamDisp_Ctl(ctl_select[1].ctl)
+                    minov_select = val
+                    ov_disp = dval
+                    SetParam()                
+                    octlval = val
+                    update_ctls = true
+                  end
+                  
+                  for i = 1, #ctl_select do
+                    strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].minov = minov_select
+                  end            
+                  update_gfx = true
+                  gfx.mouse_wheel = 0
+                end              
+
+                if MOUSE_over(obj.sections[129]) then
+                  val = maxov_select + v*0.00125
+                  
+                  local p = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].param
+                  local min, max = GetParamMinMax_ctl(ctl_select[1].ctl, false) --trctls_table[p].min, trctls_table[p].max
+                  
+                  if val < min then val = min end
+                  if val > max then val = max end
+                  if val ~= octlval then
+                    val = math.max(val,nz(minov_select+0.05,0))
+                    SetParam4(val)
+                    local dval = GetParamDisp_Ctl(ctl_select[1].ctl)
+                    maxov_select = val
+                    ov_disp = dval
+                    SetParam()                
+                    octlval = val
+                    update_ctls = true
+                  end
+                  
+                  for i = 1, #ctl_select do
+                    strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].maxov = maxov_select
+                  end            
+                  update_gfx = true
+                  gfx.mouse_wheel = 0
+                end              
+
               end
               
-              if MOUSE_over(obj.sections[55]) then
-                ctltype_select = F_limit(ctltype_select + v,1,#ctltype_table)
-                for i = 1, #ctl_select do
-                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctltype = ctltype_select
-                end
-                show_cycleoptions = false
-                update_gfx = true
-                gfx.mouse_wheel = 0
-              end
-                          
             end
           end
           
@@ -10778,9 +10858,10 @@ end
             elseif ctl_page == 1 then
               
               if MOUSE_click(obj.sections[126]) then
+                OpenEB(4,'Please enter normalized min value:')
               
-                --EditMinDVal()
-              
+              elseif MOUSE_click(obj.sections[127]) then
+                OpenEB(16,'Please enter normalized max value:')
               end
               
               if MOUSE_click(obj.sections[125]) then
@@ -11075,9 +11156,9 @@ end
                 mouse.slideoff = obj.sections[128].y+obj.sections[128].h/2 - mouse.my
               else
                 if mouse.shift then
-                  val = ctlpos + ((0.5-val)*2)*0.1
+                  val = ctlpos + ((0.5-val)*2)*0.0125
                 else
-                  val = ctlpos + (0.5-val)*2
+                  val = ctlpos + (0.5-val)*1
                 end
                 local p = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].param
                 local min, max = GetParamMinMax_ctl(ctl_select[1].ctl, false) --trctls_table[p].min, trctls_table[p].max
@@ -11286,10 +11367,14 @@ end
               defval_select = val
               octlval = val
               for i = 1, #ctl_select do
-                strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].val = defval_select
-                strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].defval = defval_select
+                if strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctltype == 4 then
+                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].defval = defval_select
+                else
+                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].val = defval_select
+                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].defval = defval_select
+                end
                 trackfxparam_select = ctl_select[i].ctl
-                SetParam()
+                SetParam_ToDef(trackfxparam_select)
               end
               update_ctls = true
             end
@@ -12995,8 +13080,9 @@ end
       trackfxparam_select = ctl_select[1].ctl
       local min, max = GetParamMinMax_ctl(trackfxparam_select, true)
       local step = (max-min)/(cycle_select.statecnt-1)
-
-      local v, v2 = min,0.0
+      local min2, max2 = GetParamMinMax_ctl(trackfxparam_select, false)
+      local md = (max2-min2)/(max-min)
+      local v, v2 = min2,0.0
   
       local tracknum = strips[tracks[track_select].strip].track.tracknum
       if strips[tracks[track_select].strip][page].controls[trackfxparam_select].tracknum ~= nil then
@@ -13015,8 +13101,9 @@ end
       cycle_temp = {}
       cycle_temp[1] = {val = v, dispval = dval, dv = dval}
 
-      for v = min, max, step do
+      for i = 1, cycle_select.statecnt-1 do
       
+        v = min2+(i*step*md)
         SetParam3(v)
         ndval = GetParamDisp(cc, tracknum, fxnum, param, dvoff, trackfxparam_select)
         if ndval ~= dval then
