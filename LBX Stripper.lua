@@ -3075,7 +3075,7 @@
         valoff = textoffval_selectx      
       end
       GUI_DrawSliderH(gui, 'OFFSET', obj.sections[56], gui.color.black, gui.color.white, F_limit((off+150)/300,0,1))
-      GUI_DrawSliderH(gui, 'VAL OFF', obj.sections[65], gui.color.black, gui.color.white, F_limit((valoff+50)/100,0,1))
+      GUI_DrawSliderH(gui, 'VAL OFF', obj.sections[65], gui.color.black, gui.color.white, F_limit((valoff+150)/300,0,1))
 
       GUI_DrawSliderH(gui, 'F SIZE', obj.sections[58], gui.color.black, gui.color.white, (textsize_select+2)/35)
       GUI_DrawSliderH(gui, 'DEF VAL', obj.sections[57], gui.color.black, gui.color.white, F_limit(defval_select,0,1))
@@ -8824,11 +8824,11 @@ end
       end
     end
     
-    if rt >= time_nextupdate_pkmeter then
+    --if rt >= time_nextupdate_pkmeter then
       for tr = -1, reaper.CountTracks(0)-1 do
         get_peak_info(tr)
       end
-    end 
+   -- end 
         
     local ct = reaper.CountTracks(0)
     if ct ~= otrkcnt then
@@ -11241,12 +11241,12 @@ end
             local val = F_limit(MOUSE_sliderHBar(obj.sections[65]),0,1)
             if val ~= nil then
               if toffY then
-                textoffval_select = val*100 - 50
+                textoffval_select = val*300 - 150
                 for i = 1, #ctl_select do
                   strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].textoffval = textoffval_select
                 end            
               else
-                textoffval_selectx = val*100 - 50
+                textoffval_selectx = val*300 - 150
                 for i = 1, #ctl_select do
                   strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].textoffvalx = textoffval_selectx
                 end                          
