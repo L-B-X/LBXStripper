@@ -6541,6 +6541,9 @@ end
       --Pickle doesn't like {} in strings (much) - remove before pickling
       for i = 1, #savestrip.strip.controls do
         savestrip.strip.controls[i].fxguid = convertguid(savestrip.strip.controls[i].fxguid)
+        if savestrip.strip.controls[i].ctlcat == ctlcats.pkmeter then
+          savestrip.strip.controls[i].val = -150
+        end
       end
   
       local save_path=strips_path..strip_folders[stripfol_select].fn..'/'
@@ -6627,8 +6630,10 @@ end
       file=io.open(fn,"r")
       local content=file:read("*a")
       file:close()
-      
+      DBG(content)
       stripdata = unpickle(content)
+      DBG(fn)
+      DBG(stripdata)
     else
       OpenMsgBox(1,'File not found.',1)
     end
@@ -6967,8 +6972,10 @@ end
   end
   
   function GenStripPreview(gui, strip)
+    DBG('0')
   
     if strip then
+    DBG('1')
       local i,j
       image_count_add = image_count    
       local minx, miny, maxx, maxy = nil,nil,nil,nil 
@@ -7113,6 +7120,7 @@ end
       end      
       
       --draw controls    
+      --DBG(#strip.controls)
       if #strip.controls > 0 then
       
         for i = 1, #strip.controls do
@@ -7123,7 +7131,7 @@ end
           local w = strip.controls[i].w
           local h = strip.controls[i].ctl_info.cellh
           local gh = h
-          local val = math.floor(100*strip.controls[i].val)
+          local val = math.floor(100*nz(strip.controls[i].val,0))
           local fxnum = strip.controls[i].fxnum
           local param = strip.controls[i].param
           local iidx = strip.controls[i].ctl_info.imageidx
@@ -7137,9 +7145,9 @@ end
           local ctltype = strip.controls[i].ctltype
           local found = strip.controls[i].fxfound
     
-          local v2 = strip.controls[i].val
+          local v2 = nz(strip.controls[i].val,0)
           local val2 = F_limit(round(frames*v2,0),0,frames-1)
-          
+          DBG(i..'  '..v2..'  '..val2)
           gfx.a = 1
           
           if ctltype == 3 then
