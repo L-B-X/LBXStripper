@@ -13786,14 +13786,14 @@ end
       end    
         
     end
-    if settings_followselectedtrack then
-      if track_select then
-        ChangeTrack(track_select)
+    if track_select then
+      ChangeTrack(track_select)
+      --if settings_followselectedtrack then
         local tr = GetTrack(track_select)
         if tr then
           reaper.SetOnlyTrackSelected(tr)
         end 
-      end 
+      --end 
     end
     if tracks and tracks[track_select] and tracks[track_select].strip and strips[tracks[track_select].strip] then
     --if tracks[track_select].strip and strips[tracks[track_select].strip] then
