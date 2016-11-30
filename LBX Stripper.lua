@@ -1403,7 +1403,6 @@
         else
           pname = pname .. 'Ch' .. string.format('%i',tcs+1)
         end 
-        --DBG(trctl_select)
         if tcs >= 64 then
           pname = pname .. ' Clip'
         end
@@ -1970,7 +1969,12 @@
                        min = 0,
                        max = 1,
                        }
-    
+    trctls_table[12] = {idx = 12,
+                       name = 'Monitor',
+                       parmname = 'I_RECMON',
+                       min = 0,
+                       max = 2,
+                       }
     
     
   end
@@ -7020,7 +7024,6 @@ end
             end
           end
           if not fnd then
-            --DBG('gfx not found')
           end
         end
       end
@@ -7056,7 +7059,6 @@ end
             end
           end
           if not fnd then
-            --DBG('cgfx not found')
           end
         end
       end
@@ -7129,7 +7131,6 @@ end
       end      
       
       --draw controls    
-      --DBG(#strip.controls)
       if #strip.controls > 0 then
       
         for i = 1, #strip.controls do
@@ -8379,7 +8380,7 @@ end
           return rval
         else
           OpenMsgBox(1, 'Currently unavailable for this parameter.', 1)
-  --[[DBG('bw')
+  --[[
                   local pinc = 0
                   local found = false
                   local mdp = 50
@@ -8393,7 +8394,6 @@ end
                       for x = 1,20 do x=x end
                       dval2 = GetParamDisp(t,f,p,dvoff)
                       dval = GetNumericPart(dval2)
-                      DBG(nval..'  '..dval)        
                       if tonumber(dval) then
                         if tonumber(dval) == tonumber(dv) then
                           found = true
@@ -8406,7 +8406,6 @@ end
                             pinc = inc
                           end
                         elseif tonumber(dval) < tonumber(dv) then
-                          DBG('brk'..pinc)
                           rval = rval + pinc - inc
                           break
                         end
@@ -8421,7 +8420,6 @@ end
                     end
                   end
                   SetParam()    
-                  DBG('1nd')
                   return rval
        ]]
           return 0
@@ -8652,8 +8650,14 @@ end
   
     local actnm = 'Action: '..txt
     strips[tracks[track_select].strip][page].controls[trackfxparam_select].param_info.paramname = actnm
-    strips[tracks[track_select].strip][page].controls[trackfxparam_select].param_info.paramidx = txt
-
+    if tonumber(txt) == nil then
+      strips[tracks[track_select].strip][page].controls[trackfxparam_select].param_info.paramidx = txt
+      strips[tracks[track_select].strip][page].controls[trackfxparam_select].param_info.paramnum = nil
+    else
+      strips[tracks[track_select].strip][page].controls[trackfxparam_select].param_info.paramidx = nil
+      strips[tracks[track_select].strip][page].controls[trackfxparam_select].param_info.paramnum = tonumber(txt)
+    end
+    
   end
 
   function table.copy(t)
@@ -8675,8 +8679,6 @@ end
           local dcnt = #dtbl
           for dt = 1, dcnt do
             if dtbl[dt].val then
-            --DBG(st)
-            --DBG(tbl[st].val)
               if tbl[st] and dtbl[dt] and nz(tonumber(tbl[st].val),0) > nz(tonumber(dtbl[dt].val),0) then
                 table.insert(dtbl, dt, tbl[st])
                 inserted = true
@@ -9077,7 +9079,6 @@ end
                                                tr,
                                                nil,
                                                p, i)
-                      --DBG(strips[tracks[track_select].strip][page].controls[i].tracknum..'  '..v..'  '..tostring(strips[tracks[track_select].strip][page].controls[i].val))
                       if peak_info[trn] and peak_info[trn][p % 64] then
                         chd = peak_info[trn][p % 64].ch_d
                       else
@@ -10232,11 +10233,13 @@ end
       elseif mouse.context and mouse.context == contexts.hold then
       elseif mouse.context == nil and holdbtn ~= nil then
         holdbtn = nil
-        strips[tracks[track_select].strip][page].controls[trackfxparam_select].val = 0
-        strips[tracks[track_select].strip][page].controls[trackfxparam_select].dirty = true
-        if strips[tracks[track_select].strip][page].controls[trackfxparam_select].ctltype == 7 or 
-           strips[tracks[track_select].strip][page].controls[trackfxparam_select].ctltype == 8 then
-          SetParam()
+        if tracks[track_select] and strips[tracks[track_select].strip] and strips[tracks[track_select].strip][page].controls[trackfxparam_select] then
+          strips[tracks[track_select].strip][page].controls[trackfxparam_select].val = 0
+          strips[tracks[track_select].strip][page].controls[trackfxparam_select].dirty = true
+          if strips[tracks[track_select].strip][page].controls[trackfxparam_select].ctltype == 7 or 
+             strips[tracks[track_select].strip][page].controls[trackfxparam_select].ctltype == 8 then
+            SetParam()
+          end
         end
         update_ctls = true
       end
@@ -11746,7 +11749,6 @@ end
               elseif trctltype_select == 2 then
                 pcnt = #special_table              
               end
-            --DBG(pcnt)
               local i = math.floor((mouse.my - obj.sections[42].y) / butt_h)-2
               if i == -1 then
                 if mouse.mx < obj.sections[42].w/2 then
