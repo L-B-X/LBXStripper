@@ -4498,8 +4498,58 @@ end
           
             --selrect = CalcSelRect()
             if selrect then
-              f_Get_SSV(gui.color.yellow)
+              f_Get_SSV(gui.color.blue)
+              
+              gfx.a = 0.8
+              local ls = 4
+              for c = 1, #ctl_select do
+                local cx = ctl_select[c].ctl
+                local x = strips[tracks[track_select].strip][page].controls[cx].x+4
+                local y = strips[tracks[track_select].strip][page].controls[cx].y+4
+                local w = strips[tracks[track_select].strip][page].controls[cx].w-8
+                local h = strips[tracks[track_select].strip][page].controls[cx].ctl_info.cellh-8
+                x=x+surface_offset.x+obj.sections[10].x
+                y=y+surface_offset.y+obj.sections[10].y
+                gfx.line(x,y,x+ls,y,1)
+                gfx.line(x,y,x,y+ls,1)
+
+                gfx.line(x+w,y,x+w-ls,y,1)
+                gfx.line(x+w,y,x+w,y+ls,1)
+
+                gfx.line(x+w,y+h-ls,x+w,y+h,1)
+                gfx.line(x+w,y+h,x+w-ls,y+h,1)
+                
+                gfx.line(x,y+h-ls,x,y+h,1)
+                gfx.line(x,y+h,x+ls,y+h,1)
+                
+              end
+
+              if gfx3_select then
+                for c = 1, #gfx3_select do
+                  local cx = gfx3_select[c].ctl
+                  local x = strips[tracks[track_select].strip][page].graphics[cx].x+4
+                  local y = strips[tracks[track_select].strip][page].graphics[cx].y+4
+                  local w = strips[tracks[track_select].strip][page].graphics[cx].w-8
+                  local h = strips[tracks[track_select].strip][page].graphics[cx].h-8
+                  x=x+surface_offset.x+obj.sections[10].x
+                  y=y+surface_offset.y+obj.sections[10].y
+                  gfx.line(x,y,x+ls,y,1)
+                  gfx.line(x,y,x,y+ls,1)
+  
+                  gfx.line(x+w,y,x+w-ls,y,1)
+                  gfx.line(x+w,y,x+w,y+ls,1)
+  
+                  gfx.line(x+w,y+h-ls,x+w,y+h,1)
+                  gfx.line(x+w,y+h,x+w-ls,y+h,1)
+                  
+                  gfx.line(x,y+h-ls,x,y+h,1)
+                  gfx.line(x,y+h,x+ls,y+h,1)
+                  
+                end
+              end
+                            
               gfx.a = 1
+              f_Get_SSV(gui.color.yellow)
               gfx.roundrect(selrect.x - surface_offset.x + obj.sections[10].x, selrect.y - surface_offset.y + obj.sections[10].y, selrect.w, selrect.h, 8, 1, 0)
             end
           end
@@ -6044,7 +6094,7 @@ end
     
   ------------------------------------------------------------    
 
-  function Lasso_Select()
+  function Lasso_Select(shift)
   
     ctl_select = nil
     gfx3_select = nil
@@ -6081,6 +6131,35 @@ end
             end
           end
         end
+      end
+      
+      if shift and ctl_select then
+
+        if #strips[tracks[track_select].strip][page].graphics > 0 then
+        
+          for i = 1, #strips[tracks[track_select].strip][page].graphics do
+            local g 
+            g = {x = strips[tracks[track_select].strip][page].graphics[i].x - surface_offset.x + obj.sections[10].x,
+                       y = strips[tracks[track_select].strip][page].graphics[i].y - surface_offset.y + obj.sections[10].y,
+                       w = strips[tracks[track_select].strip][page].graphics[i].w,
+                       h = strips[tracks[track_select].strip][page].graphics[i].h}
+            if ((l.l <= g.x and l.r >= g.x+g.w) or (l.l <= g.x+g.w and l.r >= g.x)) and ((l.t <= g.y and l.b >= g.y+g.h) or (l.t <= g.y+g.h and l.b >= g.y)) then 
+              if gfx3_select == nil then
+                gfx3_select = {}
+              end 
+              --  gfx3_select[1] = {ctl = i}
+              --else
+                local cs = #gfx3_select+1
+                gfx3_select[cs] = {}
+                gfx3_select[cs].ctl = i
+                gfx3_select[cs].relx = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].x - strips[tracks[track_select].strip][page].graphics[i].x
+                gfx3_select[cs].rely = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].y - strips[tracks[track_select].strip][page].graphics[i].y
+              --end
+            end
+          end
+        end
+      
+      
       end
     end
   end
@@ -8193,7 +8272,7 @@ end
   end
   
   function ScrollUp()
-    if settings_locksurface == false then
+    --if settings_locksurface == false then
       if surface_offset.y > 0 then
         if lockh > 0 then
           surface_offset.y = surface_offset.y - lockh
@@ -8201,18 +8280,18 @@ end
           surface_offset.y = surface_offset.y - math.floor(obj.sections[10].h/settings_gridsize)*settings_gridsize
         end
       end
-    end
+    --end
   end
   
   function ScrollDown()
-    if settings_locksurface == false then
+    --if settings_locksurface == false then
       if surface_offset.y < surface_size.h-obj.sections[10].h then
         if lockh > 0 then
           surface_offset.y = surface_offset.y + lockh
         else
           surface_offset.y = surface_offset.y + math.floor(obj.sections[10].h/settings_gridsize)*settings_gridsize
         end
-      end
+      --end
     end
   end
   
@@ -11118,6 +11197,7 @@ end
                       ctl_select[cs].rely = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].y - strips[tracks[track_select].strip][page].controls[i].y
                     elseif ctl_select == nil or found == false then
                       ctl_select = {} 
+                      gfx3_select = nil
                       ctl_select[1] = {ctl = i}
                     end
 
@@ -11461,7 +11541,7 @@ end
             if (mouse.mx ~= mouse.last_x or mouse.my ~= mouse.last_y) then
               lasso.r = mouse.mx
               lasso.b = mouse.my
-              Lasso_Select()
+              Lasso_Select(mouse.shift)
               if ctl_select ~= nil then
                 SetCtlSelectVals()
               end
