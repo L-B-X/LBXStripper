@@ -68,6 +68,8 @@
               resizefsnapwindow = 35,
               hold = 36,
               insertstrip = 37,
+              addxyctl = 38,
+              dragxy = 39,
               dummy = 99
               }
   
@@ -78,7 +80,8 @@
              trackhwout = 4,
              action = 5,
              snapshot = 6,
-             pkmeter = 7}
+             pkmeter = 7,
+             xy = 8}
              
   gfxtype = {img = 0,
              txt = 1
@@ -1144,6 +1147,7 @@
                                                                     trackfxparam_select, nil),
                                                 maxdp = maxdp_select,
                                                 cycledata = {statecnt = 0,val = 0,mapptof = false,draggable = false,spread = false, {}},
+                                                xydata = {snapa = 1, snapb = 1, snapc = 1, snapd = 1, x = 0.5, y = 0.5},
                                                 membtn = {state = false,
                                                           mem = nil},
                                                 id = nil,
@@ -1200,6 +1204,7 @@
                                                                     last_touch_fx.paramnum, nil),
                                                 maxdp = maxdp_select,
                                                 cycledata = {statecnt = 0,val = 0,mapptof = false,draggable = false,spread = false, {}},
+                                                xydata = {snapa = 1, snapb = 1, snapc = 1, snapd = 1, x = 0.5, y = 0.5},
                                                 membtn = {state = false,
                                                           mem = nil},
                                                 id = nil,
@@ -1258,6 +1263,7 @@
                                                                     trctl_select, nil),
                                                 maxdp = maxdp_select,
                                                 cycledata = {statecnt = 0,val = 0,mapptof = false,draggable = false,spread = false, {}},
+                                                xydata = {snapa = 1, snapb = 1, snapc = 1, snapd = 1, x = 0.5, y = 0.5},
                                                 membtn = {state = false,
                                                           mem = nil},
                                                 id = nil,
@@ -1321,6 +1327,7 @@
                                                   defval = 0,
                                                   maxdp = maxdp_select,
                                                   cycledata = {statecnt = 0,val = 0,mapptof = false,draggable = false,spread = false, {}},
+                                                  xydata = {snapa = 1, snapb = 1, snapc = 1, snapd = 1, x = 0.5, y = 0.5},
                                                   membtn = {state = false,
                                                             mem = nil},
                                                   id = nil,
@@ -1383,6 +1390,7 @@
                                                 defval = 0,
                                                 maxdp = maxdp_select,
                                                 cycledata = {statecnt = 0,val = 0,mapptof = false,draggable = false,spread = false, {}},
+                                                xydata = {snapa = 1, snapb = 1, snapc = 1, snapd = 1, x = 0.5, y = 0.5},
                                                 membtn = {state = false,
                                                           mem = nil},
                                                 id = nil,
@@ -1443,6 +1451,7 @@
                                                 defval = 0,
                                                 maxdp = maxdp_select,
                                                 cycledata = {statecnt = 0,val = 0,mapptof = false,draggable = false,spread = false, {}},
+                                                xydata = {snapa = 1, snapb = 1, snapc = 1, snapd = 1, x = 0.5, y = 0.5},
                                                 membtn = {state = false,
                                                           mem = nil},
                                                 id = nil,
@@ -1500,6 +1509,60 @@
                                                 defval = 0,
                                                 maxdp = maxdp_select,
                                                 cycledata = {statecnt = 0,val = 0,mapptof = false,draggable = false,spread = false, {}},
+                                                xydata = {snapa = 1, snapb = 1, snapc = 1, snapd = 1, x = 0.5, y = 0.5},
+                                                membtn = {state = false,
+                                                          mem = nil},
+                                                id = nil,
+                                                tracknum = nil,
+                                                trackguid = nil,
+                                                scalemode = 8,
+                                                framemode = 1,
+                                                horiz = horiz_select,
+                                                poslock = false
+                                               }
+
+      elseif dragparam.type == 'xyctl' then
+        local pname = 'XY'
+        if snapshots[strip][page][sstype_select] then
+          pname = snapshots[strip][page][sstype_select].subsetname
+        end
+        strips[strip][page].controls[ctlnum] = {c_id = GenID(),
+                                                ctlcat = ctlcats.xy,
+                                                fxname='XY Pad',
+                                                fxguid=nil, 
+                                                fxnum=nil, 
+                                                fxfound = true,
+                                                param = sstype_select,
+                                                param_info = {paramname = pname,
+                                                              paramidx = sstype_select},
+                                                ctltype = 5,
+                                                knob_select = knob_select,
+                                                ctl_info = {fn = ctl_files[knob_select].fn,
+                                                            frames = ctl_files[knob_select].frames,
+                                                            imageidx = ctl_files[knob_select].imageidx, 
+                                                            cellh = ctl_files[knob_select].cellh},
+                                                x = x,
+                                                y = y,
+                                                w = w,
+                                                scale = 1,
+                                                xsc = x + math.floor(w/2 - (w*1)/2),
+                                                ysc = y + math.floor(ctl_files[knob_select].cellh/2 - (ctl_files[knob_select].cellh*1)/2),
+                                                wsc = w*1,
+                                                hsc = ctl_files[knob_select].cellh*1,
+                                                show_paramname = show_paramname,
+                                                show_paramval = false,
+                                                ctlname_override = '',
+                                                textcol = textcol_select,
+                                                textoff = 90.25,
+                                                textoffval = -6.0,
+                                                textoffx = textoff_selectx,
+                                                textoffvalx = textoffval_selectx,
+                                                textsize = textsize_select,
+                                                val = 0,
+                                                defval = 0,
+                                                maxdp = maxdp_select,
+                                                cycledata = {statecnt = 0,val = 0,mapptof = false,draggable = false,spread = false, {}},
+                                                xydata = {snapa = 1, snapb = 1, snapc = 1, snapd = 1, x = 0.5, y = 0.5},
                                                 membtn = {state = false,
                                                           mem = nil},
                                                 id = nil,
@@ -1591,6 +1654,12 @@
         elseif kf == '__Snapshot.knb' then
           ctl_files[c].imageidx = def_snapshot
           def_snapshotctl = c
+        elseif kf == '__XY.knb' then
+          ctl_files[c].imageidx = def_XY
+          def_xyctl = c
+        elseif kf == '__XYTarget.knb' then
+          ctl_files[c].imageidx = def_xytarget
+          def_xytargetctl = c
         elseif kf == 'SimpleFlat_48.knb' then
           ctl_files[c].imageidx = def_knobsm
           def_knobsmctl = c
@@ -3662,6 +3731,12 @@ end
                       end
                     end
                   end
+                elseif ctlcat == ctlcats.xy then
+                  if nz(ctlnmov,'') == '' then
+                    Disp_Name = pname
+                  else
+                    Disp_Name = ctlnmov
+                  end                
                 end
   
                 if ctltype == 4 and cycle_editmode == false then
@@ -3690,7 +3765,7 @@ end
                                      math.floor(mid-(tl2/2))+toffx+toffvx,th_a --gui.fontsz_knob+tsz-4
                                      
                 
-                if not update_gfx and not update_bg then
+                if not update_gfx and not update_bg and ctlcat ~= ctlcats.xy then
                   gfx.blit(1004,1,0, px,
                                      py,
                                      w*scale,
@@ -3721,6 +3796,18 @@ end
                 --scale = 0.5
                 --local fpos = F_limit(val2*gh,0,32768)
                 gfx.blit(iidx,scale,0, 0, val2*gh, w, h, px, py)
+                if ctlcat == ctlcats.xy then
+                
+                  --draw pos
+                  local ppw, pph = gfx.getimgdim(def_xytarget)
+                  local ppx = 12+px+math.floor(strips[strip][page].controls[i].xydata.x * (w-24)) - math.floor(ppw/2)
+                  local ppy = 12+py+math.floor(strips[strip][page].controls[i].xydata.y * (h-34-24)) - math.floor(pph/2)
+
+                  gfx.blit(def_xytarget,1,0, 0, 0, ppw, pph, ppx, ppy)
+                  --f_Get_SSV(gui.color.red)
+                  --gfx.circle(ppx,ppy,8,0,1)
+                
+                end
                 
                 strips[strip][page].controls[i].tl1 = text_len1x
                 strips[strip][page].controls[i].tl2 = text_len2x
@@ -4369,7 +4456,7 @@ end
           if show_snapshots then
             GUI_DrawSnapshots(obj, gui)
           end
-          if show_fsnapshots then
+          if show_fsnapshots or show_xysnapshots then
             GUI_DrawFSnapshots(obj, gui)
           end
         elseif update_snaps or (update_msnaps and resize_snaps) then  
@@ -4453,7 +4540,7 @@ end
           end        
         end
         
-        if show_fsnapshots then
+        if show_fsnapshots or show_xysnapshots then
           gfx.blit(1005,1,0,0,0,obj.sections[180].w,obj.sections[180].h,obj.sections[180].x,obj.sections[180].y)                
         end
         
@@ -6059,6 +6146,29 @@ end
     end
       
   end
+
+--[[  function SetParam3_norm2(track, v)
+  
+    if strips and strips[tracks[track_select].strip] and strips[tracks[track_select].strip][page].controls[trackfxparam_select] then
+      local cc = strips[tracks[track_select].strip][page].controls[trackfxparam_select].ctlcat
+      if cc == ctlcats.fxparam then
+        local fxnum = strips[tracks[track_select].strip][page].controls[trackfxparam_select].fxnum
+        local param = strips[tracks[track_select].strip][page].controls[trackfxparam_select].param
+        reaper.TrackFX_SetParamNormalized(track, nz(fxnum,-1), param, v)
+
+      elseif cc == ctlcats.trackparam then
+        local param = strips[tracks[track_select].strip][page].controls[trackfxparam_select].param
+        strips[tracks[track_select].strip][page].controls[trackfxparam_select].dirty = true
+        SMTI_norm(track,param,v)
+
+      elseif cc == ctlcats.tracksend then
+        local param = strips[tracks[track_select].strip][page].controls[trackfxparam_select].param
+        strips[tracks[track_select].strip][page].controls[trackfxparam_select].dirty = true
+        STSI_denorm(track,param,v,trackfxparam_select)
+      end    
+    end
+      
+  end]]
   
   function SetParam4(v)
     
@@ -8299,6 +8409,7 @@ end
     
     if show_fsnapshots then
       show_fsnapshots = false
+      show_xysnapshots = false
       update_surface = true
     end
     
@@ -8913,6 +9024,7 @@ end
        --   AutoCentreCtls()
        -- end
         show_fsnapshots = false
+        show_xysnapshots = false
         resize_display = true
         update_gfx = true
         force_resize = false
@@ -9521,6 +9633,75 @@ end
         
         update_surface = true
       
+      elseif mouse.context == nil and show_xysnapshots == true and (MOUSE_click(obj.sections[180]) or MOUSE_click_RB(obj.sections[180])) then
+      
+        if mouse.context == nil and MOUSE_click_RB(obj.sections[180]) then
+          show_xysnapshots = false
+          update_surface = true
+        end
+      
+        local snapmx, snapmy = mouse.mx, mouse.my
+        mouse.mx = mouse.mx - obj.sections[180].x
+        mouse.my = mouse.my - obj.sections[180].y
+
+        if mouse.context == nil and MOUSE_click(obj.sections[182]) then
+          mouse.context = contexts.resizefsnapwindow
+          resizesnapwin = {origh = obj.sections[180].h,
+                           offy = mouse.my}          
+
+        elseif mouse.context == nil and MOUSE_click(obj.sections[181]) then
+          if snapshots and snapshots[tracks[track_select].strip] then
+            local i = math.floor((mouse.my-obj.sections[181].y)/butt_h)
+        
+            if i == 0 then
+              local ix = math.floor((mouse.mx-obj.sections[181].x)/(obj.sections[180].w/2))
+              if ix == 0 then
+                fssoffset = fssoffset-FSS_butt_cnt
+                if fssoffset < 0 then fssoffset = 0 end
+              else
+                if fsstype_select == 1 then
+                  fssoffset = F_limit(fssoffset+FSS_butt_cnt,0,math.max(0,#snapshots[tracks[track_select].strip][page][fsstype_select]-FSS_butt_cnt))
+                elseif fsstype_select > 1 then
+                  fssoffset = F_limit(fssoffset+FSS_butt_cnt,0,math.max(0,#snapshots[tracks[track_select].strip][page][fsstype_select].snapshot-FSS_butt_cnt))                  
+                end
+              end
+              update_ctls = true
+              update_fsnaps = true
+            else
+              if snapshots and snapshots[tracks[track_select].strip] then
+                local maxss
+                if fsstype_select == 1 then
+                  maxss = #snapshots[tracks[track_select].strip][page][fsstype_select]
+                else
+                  maxss = #snapshots[tracks[track_select].strip][page][fsstype_select].snapshot
+                end
+                
+                if fssoffset+i <= maxss then
+                  fss_select = fssoffset+i
+
+                  if xysnap_select == 1 then
+                    strips[tracks[track_select].strip][page].controls[xy_select].xydata.snapa = fss_select
+                  elseif xysnap_select == 2 then
+                    strips[tracks[track_select].strip][page].controls[xy_select].xydata.snapb = fss_select
+                  elseif xysnap_select == 3 then
+                    strips[tracks[track_select].strip][page].controls[xy_select].xydata.snapc = fss_select
+                  elseif xysnap_select == 4 then
+                    strips[tracks[track_select].strip][page].controls[xy_select].xydata.snapd = fss_select
+                  end
+                  
+                  g_savedirty = true
+                  show_xysnapshots = false
+                  update_surface = true
+                end
+              end
+            end
+          end
+        end
+        
+        mouse.mx = snapmx
+        mouse.my = snapmy
+        noscroll = true
+        
       elseif mouse.context == nil and show_fsnapshots == true and (MOUSE_click(obj.sections[180]) or MOUSE_click_RB(obj.sections[180])) then
 
         if mouse.context == nil and MOUSE_click_RB(obj.sections[180]) then
@@ -9583,7 +9764,6 @@ end
             end
           end
         end
-        
 
         mouse.mx = snapmx
         mouse.my = snapmy
@@ -9591,8 +9771,9 @@ end
 
       elseif mouse.context == nil and show_snapshots == true and (MOUSE_click(obj.sections[160]) or MOUSE_click_RB(obj.sections[160])) then
       
-        if show_fsnapshots then
+        if show_fsnapshots or show_xysnapshots then
           show_fsnapshots = false
+          show_xysnapshots = false
           update_surface = true
         end
         
@@ -9612,7 +9793,7 @@ end
         
         if snaplrn_mode == false then
         
-          if mouse.context == nil and MOUSE_click(obj.sections[168]) then
+          if mouse.context == nil and MOUSE_click(obj.sections[168]) and mouse.shift == false then
             --update_gfx = true
             knob_select = def_snapshotctl
             if ctl_files[knob_select].imageidx ~= nil then
@@ -9628,6 +9809,24 @@ end
             end
             mouse.context = contexts.addsnapctl          
           
+          elseif mouse.context == nil and MOUSE_click(obj.sections[168]) and mouse.shift == true then
+          
+            if sstype_select > 1 then
+              knob_select = def_xyctl
+              if ctl_files[knob_select].imageidx ~= nil then
+                local w,_ = gfx.getimgdim(ctl_files[knob_select].imageidx)
+                local h = ctl_files[knob_select].cellh
+                if w == 0 or h == 0 then
+                  ksel_size = {w = 50, h = 50}
+                else
+                 ksel_size = {w = w/2, h = h/2}
+                end
+              else 
+                ksel_size = {w = 50, h = 50}
+              end
+              mouse.context = contexts.addxyctl          
+            end
+                      
           elseif mouse.context == nil and MOUSE_click(obj.sections[165]) then
             mouse.context = contexts.resizesnapwindow
             resizesnapwin = {origh = obj.sections[160].h,
@@ -9764,8 +9963,9 @@ end
       
       elseif mouse.context == nil and snaplrn_mode == true then
       
-        if show_fsnapshots then
+        if show_fsnapshots or show_xysnapshots then
           show_fsnapshots = false
+          show_xysnapshots = false
           update_surface = true
         end
         
@@ -9925,7 +10125,53 @@ end
                     end
                     update_ctls = true                    
                   elseif ctltype == 5 then
-                    if strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.snapshot then
+                    if strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.xy then
+                      if mouse.my - obj.sections[10].y - strips[tracks[track_select].strip][page].controls[i].y < strips[tracks[track_select].strip][page].controls[i].ctl_info.cellh - 38 then
+                        mouse.context = contexts.dragxy
+                        xy_select = i
+                      else
+                        local xp = math.floor((mouse.mx-12 - obj.sections[10].x - strips[tracks[track_select].strip][page].controls[i].x)/((strips[tracks[track_select].strip][page].controls[i].w-24)/4))+1
+                        xysnap_select = xp
+                        xy_select = i
+                        
+                        --open fss
+                        togfsnap = true
+                        if fsstype_select == strips[tracks[track_select].strip][page].controls[i].param then
+                          show_xysnapshots = not show_xysnapshots
+                          show_fsnapshots = false
+                        else
+                          show_xysnapshots = true
+                          show_fsnapshots = false
+                        end
+                        fsstype_select = strips[tracks[track_select].strip][page].controls[i].param
+                        fsstype_color = strips[tracks[track_select].strip][page].controls[i].textcol
+                        if show_xysnapshots then
+                          if snapshots and snapshots[tracks[track_select].strip] and snapshots[tracks[track_select].strip][page][fsstype_select] then
+                          
+                            if xysnap_select == 1 then
+                              fss_select = strips[tracks[track_select].strip][page].controls[i].xydata.snapa
+                            elseif xysnap_select == 2 then
+                              fss_select = strips[tracks[track_select].strip][page].controls[i].xydata.snapb
+                            elseif xysnap_select == 3 then
+                              fss_select = strips[tracks[track_select].strip][page].controls[i].xydata.snapc
+                            elseif xysnap_select == 4 then
+                              fss_select = strips[tracks[track_select].strip][page].controls[i].xydata.snapd
+                            end
+                            obj.sections[180].x = F_limit(strips[tracks[track_select].strip][page].controls[i].x - surface_offset.x + obj.sections[10].x + 
+                                                          math.floor((strips[tracks[track_select].strip][page].controls[i].w - obj.sections[180].w)/2),
+                                                          obj.sections[10].x,obj.sections[10].x+obj.sections[10].w-obj.sections[180].w)
+                            obj.sections[180].y = F_limit(strips[tracks[track_select].strip][page].controls[i].y+strips[tracks[track_select].strip][page].controls[i].ctl_info.cellh
+                                                          - surface_offset.y  + obj.sections[10].y - 3,
+                                                          obj.sections[10].y,obj.sections[10].y+obj.sections[10].h-obj.sections[180].h)
+                          else
+                            show_xysnapshots = false
+                          end
+                        end
+                        update_fsnaps = true
+                        update_surface = true
+                      end
+                      
+                    elseif strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.snapshot then
                       --SNAPSHOTS
                       local mmx = mouse.mx - ctlxywh.x
                       local mmy = mouse.my - ctlxywh.y
@@ -10019,8 +10265,10 @@ end
                         togfsnap = true
                         if fsstype_select == strips[tracks[track_select].strip][page].controls[i].param then
                           show_fsnapshots = not show_fsnapshots
+                          show_xysnapshots = false
                         else
                           show_fsnapshots = true
+                          show_xysnapshots = false
                         end
                         fsstype_select = strips[tracks[track_select].strip][page].controls[i].param
                         fsstype_color = strips[tracks[track_select].strip][page].controls[i].textcol
@@ -10321,6 +10569,22 @@ end
           end
         end
         update_ctls = true
+      elseif mouse.context and mouse.context == contexts.dragxy then
+      
+        local xy_x = F_limit((mouse.mx - obj.sections[10].x-12 
+                              - strips[tracks[track_select].strip][page].controls[xy_select].x + surface_offset.x) 
+                              / (strips[tracks[track_select].strip][page].controls[xy_select].w-24),0,1)
+        local xy_y = F_limit((mouse.my - obj.sections[10].y-12 
+                              - strips[tracks[track_select].strip][page].controls[xy_select].y + surface_offset.y) 
+                              / (strips[tracks[track_select].strip][page].controls[xy_select].ctl_info.cellh - 58),0,1)
+        if xy_x ~= strips[tracks[track_select].strip][page].controls[xy_select].xydata.x or 
+           xy_y ~= strips[tracks[track_select].strip][page].controls[xy_select].xydata.y then
+          strips[tracks[track_select].strip][page].controls[xy_select].xydata.x = xy_x
+          strips[tracks[track_select].strip][page].controls[xy_select].xydata.y = xy_y
+          XY_Set(tracks[track_select].strip,page,strips[tracks[track_select].strip][page].controls[xy_select].param,xy_select)
+          strips[tracks[track_select].strip][page].controls[xy_select].dirty = true        
+          update_ctls = true
+        end
       end
       
       if MOUSE_click(obj.sections[43]) and navigate then
@@ -10392,6 +10656,10 @@ end
       elseif mouse.context and mouse.context == contexts.addsnapctl then
         dragparam = {x = mouse.mx-ksel_size.w, y = mouse.my-ksel_size.h, type = 'snapctl'}
         update_gfx = true
+
+      elseif mouse.context and mouse.context == contexts.addxyctl then
+        dragparam = {x = mouse.mx-ksel_size.w, y = mouse.my-ksel_size.h, type = 'xyctl'}
+        update_gfx = true
       
       elseif mouse.context and mouse.context == contexts.resizesnapwindow then
 
@@ -10419,6 +10687,7 @@ end
       
         if mouse.mx > obj.sections[10].x and not MOUSE_over(obj.sections[160]) then
           Strip_AddParam()
+          g_savedirty = true
         end
         
         dragparam = nil
@@ -11370,15 +11639,17 @@ end
             if val ~= nil then
               scale_select = val*0.5 + 0.5
               for i = 1, #ctl_select do
-                strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].scale = scale_select
-                strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].xsc = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].x
-                                                                                           + math.floor(strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].w/2
-                                                                                           - (strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].w*scale_select)/2)
-                strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ysc = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].y
-                                                                                           + math.floor(strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctl_info.cellh/2
-                                                                                           - (strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctl_info.cellh*scale_select)/2)
-                strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].wsc = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].w*scale_select
-                strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].hsc = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctl_info.cellh*scale_select
+                if strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctlcat ~= ctlcats.xy then
+                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].scale = scale_select
+                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].xsc = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].x
+                                                                                             + math.floor(strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].w/2
+                                                                                             - (strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].w*scale_select)/2)
+                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ysc = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].y
+                                                                                             + math.floor(strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctl_info.cellh/2
+                                                                                             - (strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctl_info.cellh*scale_select)/2)
+                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].wsc = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].w*scale_select
+                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].hsc = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctl_info.cellh*scale_select
+                end
               end            
               update_gfx = true
               --update_ctls = true
@@ -13589,6 +13860,12 @@ end
                                                 defval = tonumber(GPES(key..'defval')),
                                                 maxdp = tonumber(nz(GPES(key..'maxdp',true),-1)),
                                                 cycledata = {statecnt = 0,{}},
+                                                xydata = {x = tonumber(nz(GPES(key..'xydata_x',true),0.5)), 
+                                                          y = tonumber(nz(GPES(key..'xydata_y',true),0.5)), 
+                                                          snapa = tonumber(nz(GPES(key..'xydata_snapa',true),1)),
+                                                          snapb = tonumber(nz(GPES(key..'xydata_snapb',true),1)),
+                                                          snapc = tonumber(nz(GPES(key..'xydata_snapc',true),1)),
+                                                          snapd = tonumber(nz(GPES(key..'xydata_snapd',true),1))},
                                                 id = deconvnum(GPES(key..'id',true)),
                                                 scalemode = tonumber(nz(GPES(key..'scalemodex',true),8)),
                                                 framemode = tonumber(nz(GPES(key..'framemodex',true),1)),
@@ -14173,6 +14450,14 @@ end
               reaper.SetProjExtState(0,SCRIPT,key..'trackguid',nz(strips[s][p].controls[c].trackguid,''))
               reaper.SetProjExtState(0,SCRIPT,key..'memstate',tostring(nz(strips[s][p].controls[c].membtn.state,false)))
               reaper.SetProjExtState(0,SCRIPT,key..'memmem',nz(strips[s][p].controls[c].membtn.mem,0))
+              
+              reaper.SetProjExtState(0,SCRIPT,key..'xydata_x',nz(strips[s][p].controls[c].xydata.x,0.5))
+              reaper.SetProjExtState(0,SCRIPT,key..'xydata_y',nz(strips[s][p].controls[c].xydata.y,0.5))
+              reaper.SetProjExtState(0,SCRIPT,key..'xydata_snapa',nz(strips[s][p].controls[c].xydata.snapa,1))
+              reaper.SetProjExtState(0,SCRIPT,key..'xydata_snapb',nz(strips[s][p].controls[c].xydata.snapb,1))
+              reaper.SetProjExtState(0,SCRIPT,key..'xydata_snapc',nz(strips[s][p].controls[c].xydata.snapc,1))
+              reaper.SetProjExtState(0,SCRIPT,key..'xydata_snapd',nz(strips[s][p].controls[c].xydata.snapd,1))
+              
               if strips[s][p].controls[c].cycledata and strips[s][p].controls[c].cycledata.statecnt then
                 reaper.SetProjExtState(0,SCRIPT,key..'cycledata_statecnt',nz(strips[s][p].controls[c].cycledata.statecnt,0))
                 reaper.SetProjExtState(0,SCRIPT,key..'cycledata_mapptof',tostring(nz(strips[s][p].controls[c].cycledata.mapptof,false)))
@@ -14518,6 +14803,60 @@ end
   
   end
 
+  function XY_Set(strip, page, sstype_select, ctl)
+
+    if sstype_select > 1 then
+    
+      local x = strips[strip][page].controls[ctl].xydata.x
+      local y = strips[strip][page].controls[ctl].xydata.y
+      
+      local ssa = strips[strip][page].controls[ctl].xydata.snapa
+      local ssb = strips[strip][page].controls[ctl].xydata.snapb
+      local ssc = strips[strip][page].controls[ctl].xydata.snapc
+      local ssd = strips[strip][page].controls[ctl].xydata.snapd
+
+      local gtrack = GetTrack(strips[strip].track.tracknum)
+      if snapshots[strip][page][sstype_select].snapshot[ssa] then
+        for ss = 1, #snapshots[strip][page][sstype_select].snapshot[ssa].data do
+          
+          local c = snapshots[strip][page][sstype_select].snapshot[ssa].data[ss].ctl
+          local v_A, v_B, v_C, v_D = 0,0,0,0
+          if ssa then
+            v_A = snapshots[strip][page][sstype_select].snapshot[ssa].data[ss].dval
+          end
+          if ssb then
+            v_B = snapshots[strip][page][sstype_select].snapshot[ssb].data[ss].dval
+          end
+          if ssc then
+            v_C = snapshots[strip][page][sstype_select].snapshot[ssc].data[ss].dval
+          end
+          if ssd then
+            v_D = snapshots[strip][page][sstype_select].snapshot[ssd].data[ss].dval
+          end
+  
+          --local nv_A = snapshots[strip][page][sstype_select].snapshot[ssa].data[ss].val
+          --local nv_B = snapshots[strip][page][sstype_select].snapshot[ssb].data[ss].val
+          
+          local v_AB = (v_B-v_A)*x + v_A
+          local v_CD = (v_D-v_C)*x + v_C
+          
+          local v_ABCD = (v_CD-v_AB)*y + v_AB
+          
+          if c and v_ABCD and tostring(v_ABCD) ~= tostring(strips[strip][page].controls[c].val) then
+            trackfxparam_select = c
+            local trnum = nz(strips[strip][page].controls[c].tracknum,strips[strip].track.tracknum)
+            if strips[strip][page].controls[c].tracknum then
+              track = GetTrack(strips[strip][page].controls[c].tracknum)
+            else
+              track = gtrack
+            end
+            SetParam3_Denorm2(track, v_ABCD)
+          end      
+        end
+      end
+    end    
+  end
+  
   function Snapshot_Set(strip, page, sstype_select, ss_select)
   
     if sstype_select == 1 then
@@ -15434,11 +15773,13 @@ end
   def_knob = LoadControl(1019, '__default.knb')
   def_knobsm = LoadControl(1018, 'SimpleFlat_48.knb')
   def_snapshot = LoadControl(1017, '__Snapshot.knb')
+  def_xy = LoadControl(1016, '__XY.knb')
+  def_xytarget = LoadControl(1015, '__XYTarget.knb')
   
   --testchunkcopy(0,3)
   
-  if def_knob == -1 or def_knobsm == -1 or def_snapshot == -1 then
-    DBG("Please ensure you have the '__default', 'SimpleFlat_48', and '__Snapshot' files in your LBXCS_resources/controls/ folder.")
+  if def_knob == -1 or def_knobsm == -1 or def_snapshot == -1 or def_xy == -1 or def_xytarget == -1 then
+    DBG("Please ensure you have the '__default', 'SimpleFlat_48', '__Snapshot', '__XY' and '__XYTarget' files in your LBXCS_resources/controls/ folder.")
     DBG("You can get these files from the LBX Stripper project on github - in the LBXCS_resources zip file")
     reaper.atexit()
   else
