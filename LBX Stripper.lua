@@ -4508,8 +4508,8 @@ end
                 local y = strips[tracks[track_select].strip][page].controls[cx].y+4
                 local w = strips[tracks[track_select].strip][page].controls[cx].w-8
                 local h = strips[tracks[track_select].strip][page].controls[cx].ctl_info.cellh-8
-                x=x+surface_offset.x+obj.sections[10].x
-                y=y+surface_offset.y+obj.sections[10].y
+                x=x-surface_offset.x+obj.sections[10].x
+                y=y-surface_offset.y+obj.sections[10].y
                 gfx.line(x,y,x+ls,y,1)
                 gfx.line(x,y,x,y+ls,1)
 
@@ -4531,8 +4531,8 @@ end
                   local y = strips[tracks[track_select].strip][page].graphics[cx].y+4
                   local w = strips[tracks[track_select].strip][page].graphics[cx].w-8
                   local h = strips[tracks[track_select].strip][page].graphics[cx].h-8
-                  x=x+surface_offset.x+obj.sections[10].x
-                  y=y+surface_offset.y+obj.sections[10].y
+                  x=x-surface_offset.x+obj.sections[10].x
+                  y=y-surface_offset.y+obj.sections[10].y
                   gfx.line(x,y,x+ls,y,1)
                   gfx.line(x,y,x,y+ls,1)
   
