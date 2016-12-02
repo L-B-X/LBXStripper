@@ -6974,6 +6974,7 @@ end
       end
             
       --compatibility
+      if strips[strip][page].controls[cc].xydata == nil then strips[strip][page].controls[cc].xydata = {snapa = 1, snapb = 1, snapc = 1, snapd = 1, x = 0.5, y = 0.5} end
       if strips[strip][page].controls[cc].textoffx == nil then strips[strip][page].controls[cc].textoffx = 0 end
       if strips[strip][page].controls[cc].textoffvalx == nil then strips[strip][page].controls[cc].textoffvalx = 0 end      
       if strips[strip][page].controls[cc].poslock == nil then strips[strip][page].controls[cc].poslock = false end
@@ -13542,6 +13543,12 @@ end
                  maxov = strips[tracks[track_select].strip][page].controls[c].maxov,
                  membtn = {state = strips[tracks[track_select].strip][page].controls[c].membtn.state,
                            mem = strips[tracks[track_select].strip][page].controls[c].membtn.mem},
+                 xydata = {snapa = strips[tracks[track_select].strip][page].controls[c].xydata.snapa,
+                           snapb = strips[tracks[track_select].strip][page].controls[c].xydata.snapb,
+                           snapc = strips[tracks[track_select].strip][page].controls[c].xydata.snapc,
+                           snapd = strips[tracks[track_select].strip][page].controls[c].xydata.snapd,
+                           x = strips[tracks[track_select].strip][page].controls[c].xydata.x,
+                           y = strips[tracks[track_select].strip][page].controls[c].xydata.y},
                  scalemode = strips[tracks[track_select].strip][page].controls[c].scalemode,
                  framemode = strips[tracks[track_select].strip][page].controls[c].framemode,
                  horiz = strips[tracks[track_select].strip][page].controls[c].horiz,
