@@ -716,7 +716,7 @@
                           h = butt_h/2+4}
                           
       --SNAPSHOTS
-      local ssh = snaph-140
+      local ssh = snaph-160
       obj.sections[160] = {x = gfx1.main_w - 160 - (sb_size+2),
                           y = gfx1.main_h - snaph - (sb_size+2),
                           w = 160,
@@ -726,15 +726,15 @@
                           w = obj.sections[160].w-20-20,
                           h = butt_h/2+8}                       
       obj.sections[162] = {x = 10,
-                          y = butt_h+10 + (butt_h/2+2 + 10) * 3,
+                          y = butt_h+10 + (butt_h/2+2 + 10) * 4,
                           w = obj.sections[160].w-20,
                           h = butt_h/2+8}                       
       obj.sections[163] = {x = 10,
-                          y = butt_h+10 + (butt_h/2+4 + 10) * 4,
+                          y = butt_h+10 + (butt_h/2+4 + 10) * 5,
                           w = obj.sections[160].w-20,
                           h = ssh}                       
       obj.sections[164] = {x = 10,
-                          y = butt_h+10 + (butt_h/2+2 + 10) * 2,
+                          y = butt_h+10 + (butt_h/2+2 + 10) * 3,
                           w = (obj.sections[160].w-20)/2 - 1,
                           h = butt_h/2+8}                      
 
@@ -743,16 +743,20 @@
                           w = obj.sections[160].w,
                           h = 6}                       
       obj.sections[166] = {x = 10,
-                          y = butt_h+10 + (butt_h/2+2 + 10) * 1,
+                          y = butt_h+10 + (butt_h/2+2 + 10) * 2,
                           w = (obj.sections[160].w-20)/2 - 1,
                           h = butt_h/2+8}                       
       obj.sections[167] = {x = 12 + (obj.sections[160].w-20)/2 +1,
-                          y = butt_h+10 + (butt_h/2+2 + 10) * 1,
+                          y = butt_h+10 + (butt_h/2+2 + 10) * 2,
                           w = (obj.sections[160].w-20)/2 - 3,
                           h = butt_h+20}                       
       obj.sections[168] = {x = 10,
                           y = butt_h+10 + (butt_h/2+2 + 10) * 0,
                           w = 18,
+                          h = butt_h/2+8}                       
+      obj.sections[169] = {x = 12 + (obj.sections[160].w-20)/2 +1,
+                          y = butt_h+10 + (butt_h/2+2 + 10) * 1,
+                          w = (obj.sections[160].w-20)/2 - 3,
                           h = butt_h/2+8}                       
       
       --Action chooser
@@ -4140,6 +4144,7 @@ end
       
     GUI_DrawButton(gui, sstypestr, obj.sections[161], gui.color.white, gui.color.black, true, '', false)
     GUI_DrawButton(gui, '*', obj.sections[168], gui.color.white, gui.color.black, true, '', false)
+    GUI_DrawButton(gui, 'RANDOMIZE', obj.sections[169], gui.color.white, gui.color.black, true, '', false)
     GUI_DrawButton(gui, 'CAPTURE', obj.sections[162], gui.color.white, gui.color.black, true, '', false)
     GUI_DrawButton(gui, 'NEW SUBSET', obj.sections[166], gui.color.white, gui.color.black, true, '', false)
     local bc, bc2 = gui.color.white, gui.color.white
@@ -6198,6 +6203,39 @@ end
         --local min, max = trctls_table[param].min,trctls_table[param].max
         STSI_norm(track,param,v,0,1,trackfxparam_select)
       end        
+    end
+      
+  end
+
+------------------------------------------------------------
+  --ignore internal minmax 
+  function SetParam5(v)
+  
+    if strips and strips[tracks[track_select].strip] and strips[tracks[track_select].strip][page].controls[trackfxparam_select] then
+      if strips[tracks[track_select].strip][page].controls[trackfxparam_select].tracknum == nil then
+        track = GetTrack(strips[tracks[track_select].strip].track.tracknum)
+      else
+        track = GetTrack(strips[tracks[track_select].strip][page].controls[trackfxparam_select].tracknum)
+      end
+      local cc = strips[tracks[track_select].strip][page].controls[trackfxparam_select].ctlcat
+      if cc == ctlcats.fxparam then
+        local fxnum = strips[tracks[track_select].strip][page].controls[trackfxparam_select].fxnum
+        local param = strips[tracks[track_select].strip][page].controls[trackfxparam_select].param
+        local min, max = GetParamMinMax(cc,track,nz(fxnum,-1),param,false,trackfxparam_select)
+        reaper.TrackFX_SetParam(track, nz(fxnum,-1), param, DenormalizeValue(min, max, v))
+
+      elseif cc == ctlcats.trackparam then
+        local param = strips[tracks[track_select].strip][page].controls[trackfxparam_select].param
+        strips[tracks[track_select].strip][page].controls[trackfxparam_select].dirty = true
+        local min, max = GetParamMinMax(cc,track,nil,param,false,trackfxparam_select)
+        SMTI_norm(track,param,v,min,max)
+
+      elseif cc == ctlcats.tracksend then
+        local param = strips[tracks[track_select].strip][page].controls[trackfxparam_select].param
+        strips[tracks[track_select].strip][page].controls[trackfxparam_select].dirty = true
+        local min, max = GetParamMinMax(cc,track,nil,param,false,trackfxparam_select)
+        STSI_norm(track,param,v,min,max,trackfxparam_select)
+      end    
     end
       
   end
@@ -9862,7 +9900,14 @@ end
             Snapshots_CREATE(tracks[track_select].strip, page, sstype_select)
             update_snaps = true
             update_ctls = true --to update snapshot ctls
-  
+
+          elseif mouse.context == nil and MOUSE_click(obj.sections[169]) then
+            if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.15 then
+              local respectminmax = true
+              if mouse.ctrl then respectminmax = false end
+              Snapshot_RANDOMIZE(tracks[track_select].strip, page, sstype_select, respectminmax)
+              update_ctls = true --to update snapshot ctls
+            end  
           elseif mouse.context == nil and MOUSE_click(obj.sections[166]) then
           
             --if snapshots and snapshots[tracks[track_select].strip] and snapshots[tracks[track_select].strip][page] then
@@ -10127,11 +10172,11 @@ end
                     update_ctls = true                    
                   elseif ctltype == 5 then
                     if strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.xy then
-                      if mouse.my - obj.sections[10].y - strips[tracks[track_select].strip][page].controls[i].y < strips[tracks[track_select].strip][page].controls[i].ctl_info.cellh - 38 then
+                      if mouse.my - obj.sections[10].y + surface_offset.y - strips[tracks[track_select].strip][page].controls[i].y < strips[tracks[track_select].strip][page].controls[i].ctl_info.cellh - 38 then
                         mouse.context = contexts.dragxy
                         xy_select = i
                       else
-                        local xp = math.floor((mouse.mx-12 - obj.sections[10].x - strips[tracks[track_select].strip][page].controls[i].x)/((strips[tracks[track_select].strip][page].controls[i].w-24)/4))+1
+                        local xp = math.floor((mouse.mx-12 - obj.sections[10].x + surface_offset.x - strips[tracks[track_select].strip][page].controls[i].x)/((strips[tracks[track_select].strip][page].controls[i].w-24)/4))+1
                         xysnap_select = xp
                         xy_select = i
                         
@@ -10666,7 +10711,7 @@ end
 
         local ly = obj.sections[10].h - obj.sections[160].y + butt_h
         obj.sections[160].h = F_limit(resizesnapwin.origh + (mouse.my - resizesnapwin.offy) - obj.sections[160].y, 180, ly)
-        obj.sections[163].h = obj.sections[160].h - 140
+        obj.sections[163].h = obj.sections[160].h - 160
         obj.sections[165].y = obj.sections[160].h - 6
         snaph = obj.sections[160].h
         update_msnaps = true
@@ -14863,7 +14908,52 @@ end
       end
     end    
   end
+
+  function Snapshot_RANDOMIZE(strip, page, sstype_select, respectminmax)
+
+    if sstype_select == 1 then
+      --page
+      if #strips[strip][page].controls > 0 then
+        for ctl = 1, #strips[strip][page].controls do
+          if strips[strip][page].controls[ctl].ctlcat == ctlcats.fxparam or 
+             strips[strip][page].controls[ctl].ctlcat == ctlcats.trackparam or
+             strips[strip][page].controls[ctl].ctlcat == ctlcats.tracksend then
+            trackfxparam_select = ctl
+            local v = math.random()
+            if respectminmax == true then
+              --local min, max = GetParamMinMax_ctl(ctl,true)
+              --v = v*(max-min)+min            
+              SetParam3(v)
+            else
+              SetParam5(v)                          
+            end
+          end
+        end
+      end
+      
+    elseif sstype_select > 1 then
+      if snapshots[strip][page][sstype_select] then
+        if #snapshots[strip][page][sstype_select].ctls > 0 then
+          for ctl = 1, #snapshots[strip][page][sstype_select].ctls do
+            local c = snapshots[strip][page][sstype_select].ctls[ctl].ctl
   
+            trackfxparam_select = c
+            local v = math.random()
+            if respectminmax == true then
+              --local min, max = GetParamMinMax_ctl(ctl,true)
+              --v = v*(max-min)+min            
+              SetParam3(v)        
+            else
+              SetParam5(v)                          
+            end
+          end
+        end
+      end    
+    
+    end
+
+  end
+    
   function Snapshot_Set(strip, page, sstype_select, ss_select)
   
     if sstype_select == 1 then
