@@ -4621,8 +4621,8 @@ end
                   local cx = gfx3_select[c].ctl
                   local x = strips[tracks[track_select].strip][page].graphics[cx].x+4
                   local y = strips[tracks[track_select].strip][page].graphics[cx].y+4
-                  local w = strips[tracks[track_select].strip][page].graphics[cx].w-8
-                  local h = strips[tracks[track_select].strip][page].graphics[cx].h-8
+                  local w = strips[tracks[track_select].strip][page].graphics[cx].stretchw-8
+                  local h = strips[tracks[track_select].strip][page].graphics[cx].stretchh-8
                   x=x-surface_offset.x+obj.sections[10].x
                   y=y-surface_offset.y+obj.sections[10].y
                   gfx.line(x,y,x+ls,y,1)
@@ -14920,6 +14920,14 @@ end
              strips[strip][page].controls[ctl].ctlcat == ctlcats.tracksend then
             trackfxparam_select = ctl
             local v = math.random()
+            if strips[strip][page].controls[ctl].ctltype == 2 or 
+               strips[strip][page].controls[ctl].ctltype == 3 or 
+               strips[strip][page].controls[ctl].ctltype == 7 or
+               strips[strip][page].controls[ctl].ctltype == 8 or
+               strips[strip][page].controls[ctl].ctltype == 9 or
+               strips[strip][page].controls[ctl].ctltype == 10 then
+               v = round(v)
+            end
             if respectminmax == true then
               --local min, max = GetParamMinMax_ctl(ctl,true)
               --v = v*(max-min)+min            
@@ -14939,6 +14947,14 @@ end
   
             trackfxparam_select = c
             local v = math.random()
+            if strips[strip][page].controls[c].ctltype == 2 or 
+               strips[strip][page].controls[c].ctltype == 3 or 
+               strips[strip][page].controls[c].ctltype == 7 or
+               strips[strip][page].controls[c].ctltype == 8 or
+               strips[strip][page].controls[c].ctltype == 9 or
+               strips[strip][page].controls[c].ctltype == 10 then
+               v = round(v)
+            end
             if respectminmax == true then
               --local min, max = GetParamMinMax_ctl(ctl,true)
               --v = v*(max-min)+min            
