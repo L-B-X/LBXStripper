@@ -7204,7 +7204,11 @@ end
         if strips[strip][page].controls[j].ctlcat == ctlcats.snapshot then
           --if strips[strip][page].controls[j].param == i then
             strips[strip][page].controls[j].param = paramchange[strips[strip][page].controls[j].param]
+            strips[strip][page].controls[j].param_info.paramidx = paramchange[strips[strip][page].controls[j].param]
           --end
+        elseif strips[strip][page].controls[j].ctlcat == ctlcats.xy then
+            strips[strip][page].controls[j].param = paramchange[strips[strip][page].controls[j].param]
+            strips[strip][page].controls[j].param_info.paramidx = paramchange[strips[strip][page].controls[j].param]
         end
       end
     end  
