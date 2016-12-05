@@ -15342,6 +15342,12 @@ end
                     loaddata.stripdata[s][p].controls[c].c_id = cids[loaddata.stripdata[s][p].controls[c].c_id]
                   end
                 end
+                
+                --compatibility
+                if loaddata.stripdata[s][p].controls[c].xydata == nil then loaddata.stripdata[s][p].controls[c].xydata = {snapa = 1, snapb = 1, snapc = 1, snapd = 1, x = 0.5, y = 0.5} end
+                if loaddata.stripdata[s][p].controls[c].textoffx == nil then loaddata.stripdata[s][p].controls[c].textoffx = 0 end
+                if loaddata.stripdata[s][p].controls[c].textoffvalx == nil then loaddata.stripdata[s][p].controls[c].textoffvalx = 0 end      
+                
               end
             
             end
@@ -15769,6 +15775,108 @@ end
     for _ in pairs(T) do count = count + 1 end
     return count
   end
+
+  function testfx()
+  
+    --DBG('    <FXCHAIN\n      SHOW 0\n      LASTSEL 0\n      DOCKED 0\n')
+    for i = 0, reaper.CountTracks(0)-1 do
+      
+      local str = GetTrack(i)
+      --local dtr = GetTrack(dsttrn)
+      
+      local _, chunk = reaper.GetTrackStateChunk(str,'',false)
+      local fnd, fxc, s, e = testchunkfxextract(chunk,1)
+      --[[DBG('')
+      DBG('TRACK '..i+1)
+      DBG('')
+      DBG(fnd)
+      DBG('')
+      DBG(fxc)]]
+      
+    end
+  
+  end
+
+  function testfxinsert()
+  
+    local str = GetTrack(1)
+    local _, chunk = reaper.GetTrackStateChunk(str,'',false)
+    local fnd, fxc, s, e = GetFXChunkFromTrackChunk(chunk,1)
+    local trn = -1
+    local str = GetTrack(trn)
+    local _, chunk = reaper.GetTrackStateChunk(str,'',false)
+    local nchunk, nfxguid, ofxguid = InsertFXChunkAtEndOfChain(trn, chunk,fxc)
+    DBG(nchunk)
+    --DBG('guid='..nfxguid..'  '..ofxguid)
+    
+    DBG(tostring(reaper.SetTrackStateChunk(str,nchunk,false)))
+  
+  end
+
+  --returns new track chunk, new fxguid, old fxguid
+  function InsertFXChunkAtEndOfChain(trn, trchunk, insfxchunk)
+
+    guids = {}
+    local ofxid, nfxid = nil, nil
+    local rchunk = nil
+    
+    if insfxchunk then
+      insfxchunk = string.gsub(insfxchunk,
+                              'FXID ({%x%x%x%x%x%x%x%x%-%x%x%x%x%-%x%x%x%x%-%x%x%x%x%-%x%x%x%x%x%x%x%x%x%x%x%x})',
+                              function(d) if guids[d] == nil then guids[d]=reaper.genGuid('') end return 'FXID '..guids[d] end)
+    end
+    --should be just one
+    for i, v in pairs(guids) do 
+      ofxid = i
+      nfxid = v 
+    end
+    s, e = string.find(trchunk,'(BYPASS.+WAK %d)',s)
+    if s and e then 
+      rchunk = string.sub(trchunk,0,e+1)..insfxchunk..string.sub(trchunk,e+1)
+    else
+      s, e = string.find(trchunk,'(<FXCHAIN.-DOCKED %d)',s)
+      if s and e then
+        rchunk = string.sub(trchunk,0,e+1)..insfxchunk..string.sub(trchunk,e+1)      
+      else
+        if trn == -1 then
+          local ms, me = string.find(trchunk,'.+>')
+          if me then  
+            --master track -- insert at very end
+              rchunk = string.sub(trchunk,0,me-1).. '<FXCHAIN\nSHOW 0\nLASTSEL 0\nDOCKED 0\n'.. insfxchunk ..'\n>\n'..string.sub(trchunk,me)  
+          end
+        else
+          --normal track -- insert after MAINSEND
+          s, e = string.find(trchunk,'(MAINSEND %d %d)',s)
+          if e then
+            rchunk = string.sub(trchunk,0,e+1)..'<FXCHAIN\nSHOW 0\nLASTSEL 0\nDOCKED 0\n'.. insfxchunk ..'\n>\n'..string.sub(trchunk,e+2)
+          end
+        end
+      end
+    end
+    return rchunk, nfxid, ofxid
+    
+  end
+    
+  --returns success, fxchunk, start loc, end loc
+  function GetFXChunkFromTrackChunk(trchunk, fxn)
+  
+    local s,e, fnd = 0,0,nil
+    for i = 1,fxn do
+      s, e = string.find(trchunk,'(BYPASS.-WAK %d)',s)
+      if s and e then
+        fxchunk = string.sub(trchunk,s,e)
+
+        if i == fxn then fnd = true break end
+        s=e+1
+      else
+        fxchunk = nil
+        fndn = nil
+        break
+      end
+    end
+    return fnd, fxchunk, s, e  
+  
+  end
   
   function testchunkcopy(srctrn, dsttrn)
   
@@ -15894,6 +16002,7 @@ end
   def_xytarget = LoadControl(1015, '__XYTarget.knb')
   
   --testchunkcopy(0,3)
+--testfxinsert()
   
   if def_knob == -1 or def_knobsm == -1 or def_snapshot == -1 or def_xy == -1 or def_xytarget == -1 then
     DBG("Please ensure you have the '__default', 'SimpleFlat_48', '__Snapshot', '__XY' and '__XYTarget' files in your LBXCS_resources/controls/ folder.")
