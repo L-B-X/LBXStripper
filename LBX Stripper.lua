@@ -2055,6 +2055,8 @@
   -------------------------------------------------------
 
   function PopulateTracks()
+  --DBG('*** PT ***')
+  
     local tracks_tmp = {}
     local guid_tr = {}
     local sendsdirty = false
@@ -7689,7 +7691,7 @@ end
       
       --Check track guid - none for master
       if strips[tracks[track_select].strip].track.tracknum == -1 then return end
-      
+      --DBG(strips[tracks[track_select].strip].track.tracknum)
       tr_found = CheckTrack(strips[tracks[track_select].strip].track, tracks[track_select].strip)
         
       if tr_found and strips and strips[tracks[track_select].strip] then
@@ -7744,6 +7746,7 @@ end
 
                 else
                   --track not found
+                  
                 end              
               else
             
@@ -7796,9 +7799,10 @@ end
 
   function CheckTrack(track, strip, p, c)
   
-    --master channel
-    if track.tracknum == -1 then return true end
+    --if track == nil then PopulateTracks() end
     
+    --master channel
+    if track and track.tracknum == -1 then return true end
     if c == nil then
       local found = false
       local trx = GetTrack(track.tracknum)
