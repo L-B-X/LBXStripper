@@ -3562,6 +3562,7 @@ end
   
                 gfx.setfont(1, gui.fontname, gui.fontsz_knob +tsz-4)
                 local _, th_a = gfx.measurestr('|')
+                th_a=th_a+1
                 local to = th_a
   
                 local Disp_ParamV
@@ -3756,7 +3757,12 @@ end
                   --else
                   end
                 end
-  
+
+                if ctlcat == ctlcats.fxparam and strips[strip][page].controls[i].offline then
+                  Disp_Name = 'Offline'
+                  Disp_ParamV = ''
+                end
+                  
                 local mid = x+(w/2)
   
                 local text_len1x, text_len1y = gfx.measurestr(Disp_Name)
@@ -3796,7 +3802,7 @@ end
                   end
                 end
   
-                if ctlcat == ctlcats.fxparam and not reaper.TrackFX_GetEnabled(track, fxnum) and pname ~= 'Bypass' then
+                if ctlcat == ctlcats.fxparam and ((not reaper.TrackFX_GetEnabled(track, fxnum) and pname ~= 'Bypass') or strips[strip][page].controls[i].offline) then
                   gfx.a = 0.5
                 end
                 --scale = 0.5
@@ -3872,9 +3878,11 @@ end
                   --just blit control area to main backbuffer - create area table
                   local al = math.min(px, xywh1.x)
                   al = math.min(al, xywh2.x)
+                  al = math.min(al, tx1)
                   al = math.min(al, tx2)
                   local ar = math.max(px+w*scale, tx1+tl1)
                   ar = math.max(ar, tx2+tl2)
+                  ar = math.max(ar, xywh1.x+xywh1.w)
                   ar = math.max(ar, xywh2.x+xywh2.w)
                   local at = math.min(py, xywh1.y)
                   at = math.min(at, xywh2.y)
@@ -6737,6 +6745,95 @@ end
     
   end
 
+  --new version
+  function SaveStrip3(fn)
+
+    if fn and string.len(fn)>0 then
+      local tr = GetTrack(strips[tracks[track_select].strip].track.tracknum)
+      local i, j
+      local fxcnt = 1
+      local fxtbl = {}
+      local _, chunk = reaper.GetTrackStateChunk(tr,'',false)
+      for i = 0, reaper.TrackFX_GetCount(tr)-1 do
+        if settings_saveallfxinststrip then 
+          --local _, fxname = reaper.TrackFX_GetFXName(tr, i, '')
+          local _, fxchunk = GetFXChunkFromTrackChunk(chunk, i+1)
+          --local fxn = GetPlugNameFromChunk(fxchunk)
+          fxtbl[i+1] = {fxname = nil,
+                        fxchunk = fxchunk,
+                        fxguid = convertguid(reaper.TrackFX_GetFXGUID(tr, i)),
+                        fxenabled = reaper.TrackFX_GetEnabled(tr, i)
+                        }
+        else
+          --check fx has controls in strip
+          local instrip = false
+          for j = 1, #strips[tracks[track_select].strip][page].controls do
+            if reaper.TrackFX_GetFXGUID(tr, i) == strips[tracks[track_select].strip][page].controls[j].fxguid then
+              instrip = true
+              break
+            end
+          end
+          if instrip then
+            --local _, fxname = reaper.TrackFX_GetFXName(tr, i, '')
+            local _, fxchunk = GetFXChunkFromTrackChunk(chunk, i+1)
+            --local fxn = GetPlugNameFromChunk(fxchunk)
+            fxtbl[fxcnt] = {fxname = nil,
+                            fxchunk = fxchunk,
+                            fxguid = convertguid(reaper.TrackFX_GetFXGUID(tr, i)),
+                            fxenabled = reaper.TrackFX_GetEnabled(tr, i)
+                            }          
+            fxcnt = fxcnt + 1
+          end
+        end
+      end
+    
+      savestrip = {}
+      savestrip.version = 3
+      savestrip.strip = strips[tracks[track_select].strip][page]
+      savestrip.fx = fxtbl
+      if snapshots and snapshots[tracks[track_select].strip] then
+        savestrip.snapshots = snapshots[tracks[track_select].strip][page]
+      end
+      
+      --Pickle doesn't like {} in strings (much) - remove before pickling
+      for i = 1, #savestrip.strip.controls do
+        savestrip.strip.controls[i].fxguid = convertguid(savestrip.strip.controls[i].fxguid)
+        if savestrip.strip.controls[i].ctlcat == ctlcats.pkmeter then
+          savestrip.strip.controls[i].val = -150
+        end
+      end
+  
+      local save_path=strips_path..strip_folders[stripfol_select].fn..'/'
+      local fn=save_path..fn..".strip"
+    
+      local DELETE=true
+      local file
+      
+      if reaper.file_exists(fn) then
+      
+      end
+      
+      if DELETE then
+        file=io.open(fn,"w")
+        local pickled_table=pickle(savestrip)
+        file:write(pickled_table)
+        file:close()
+      end
+
+      --reinstate {} after pickling
+      for i = 1, #savestrip.strip.controls do
+        if savestrip.strip.controls[i].fxguid then
+          savestrip.strip.controls[i].fxguid = '{'..savestrip.strip.controls[i].fxguid..'}'
+        end
+      end
+
+      OpenMsgBox(1,'Strip saved.',1)
+
+    end
+    PopulateStrips()
+    
+  end
+
   function SaveStrip2(fn)
 
     if fn and string.len(fn)>0 then
@@ -6931,63 +7028,116 @@ end
     local tr = GetTrack(strips[strip].track.tracknum)
     
     local fxcnt = reaper.TrackFX_GetCount(tr)
-    local retfx
-    --create new fx
-    local missing = 0
-    for i = 1, #stripdata.fx do
-  
-      local fxn
-      if stripdata.fx[i].fxname then
-        fxn = stripdata.fx[i].fxname
-      else
-        fxn = GetPlugNameFromChunk(stripdata.fx[i].fxchunk)
-      end
-      if fxn then
-        retfx = reaper.TrackFX_AddByName(tr, fxn, 0, -1)
-      else
-        retfx = -1
+    local fxguids = {}
+    
+    
+    if stripdata.version == nil then
+      local retfx
+      --create new fx
+      local missing = 0
+      for i = 1, #stripdata.fx do
+    
+        local fxn
+        if stripdata.fx[i].fxname then
+          fxn = stripdata.fx[i].fxname
+        else
+          fxn = GetPlugNameFromChunk(stripdata.fx[i].fxchunk)
+        end
+        if fxn then
+          retfx = reaper.TrackFX_AddByName(tr, fxn, 0, -1)
+        else
+          retfx = -1
+        end
+        
+        if retfx ~= -1 then      
+          --set guid in stripdata.strip
+          nguid = reaper.TrackFX_GetFXGUID(tr, fxcnt+i-1+missing)
+          stripdata.fx[i].nfxguid = nguid
+        else
+          stripdata.fx[i].nfxguid = ''
+          missing = missing + 1
+        end
+        
+        for j = 1, #stripdata.strip.controls do
+          if stripdata.strip.controls[j].fxguid == stripdata.fx[i].fxguid then
+            stripdata.strip.controls[j].fxguid = stripdata.fx[i].nfxguid
+            if stripdata.fx[i].nfxguid == '' then
+              stripdata.strip.controls[j].fxfound = false
+              stripdata.strip.controls[j].fxnum = -1
+            else
+              stripdata.strip.controls[j].fxfound = true
+              stripdata.strip.controls[j].fxnum = fxcnt+(i-1)-missing
+            end
+          end
+        end
+        if retfx ~= -1 then
+          local fxen = nz(stripdata.fx[i].fxenabled, true)
+          reaper.TrackFX_SetEnabled(tr, fxcnt+i-1-missing, fxen)
+        end
       end
       
-      if retfx ~= -1 then      
-        --set guid in stripdata.strip
+      local _, chunk = reaper.GetTrackStateChunk(tr,'',false)
+      missing = 0
+      for i = 1, #stripdata.fx do
+        if stripdata.fx[i].nfxguid ~= '' then
+          chunk = ReplaceChunkPresetData(chunk, i-1+fxcnt-missing, stripdata.fx[i].fxchunk)
+        else
+          missing = missing + 1
+        end
+      end
+      if chunk ~= nil then
+        reaper.SetTrackStateChunk(tr, chunk, false)
+      end
+
+    elseif stripdata.version == 3 then
+    
+      local retfx
+      --create new fx
+      local missing = 0
+      for i = 1, #stripdata.fx do
+    
+        local _, chunk = reaper.GetTrackStateChunk(tr,'',false)
+        --DBG(stripdata.fx[i].fxchunk)
+        local nchunk, nfxguid, ofxguid = InsertFXChunkAtEndOfChain(strips[strip].track.tracknum, chunk, stripdata.fx[i].fxchunk)
+        if nchunk ~= nil then
+          local retval = reaper.SetTrackStateChunk(tr, nchunk, false)
+          if retval == true then
+            fxguids[ofxguid] = {guid = nfxguid, found = true, fxnum = fxcnt+i-1-missing}
+          end
+        end
+        
+        --check guid
         nguid = reaper.TrackFX_GetFXGUID(tr, fxcnt+i-1+missing)
-        stripdata.fx[i].nfxguid = nguid
-      else
-        stripdata.fx[i].nfxguid = ''
-        missing = missing + 1
+        if nguid == nil then
+          missing = missing + 1
+          fxguids[ofxguid].found = false
+          fxguids[ofxguid].fxnum = -1
+        end
+        
       end
       
       for j = 1, #stripdata.strip.controls do
-        if stripdata.strip.controls[j].fxguid == stripdata.fx[i].fxguid then
-          stripdata.strip.controls[j].fxguid = stripdata.fx[i].nfxguid
-          if stripdata.fx[i].nfxguid == '' then
-            stripdata.strip.controls[j].fxfound = false
-            stripdata.strip.controls[j].fxnum = -1
+        if stripdata.strip.controls[j].fxguid then
+          stripdata.strip.controls[j].fxguid = '{'..stripdata.strip.controls[j].fxguid..'}'
+          if fxguids[stripdata.strip.controls[j].fxguid] then
+            if fxguids[stripdata.strip.controls[j].fxguid].found then
+              stripdata.strip.controls[j].fxfound = true
+              stripdata.strip.controls[j].fxnum = fxguids[stripdata.strip.controls[j].fxguid].fxnum
+              stripdata.strip.controls[j].fxguid = fxguids[stripdata.strip.controls[j].fxguid].guid
+            else
+              stripdata.strip.controls[j].fxguid = fxguids[stripdata.strip.controls[j].fxguid].guid
+              stripdata.strip.controls[j].fxfound = false
+              stripdata.strip.controls[j].fxnum = -1          
+            end
           else
-            stripdata.strip.controls[j].fxfound = true
-            stripdata.strip.controls[j].fxnum = fxcnt+(i-1)-missing
+            stripdata.strip.controls[j].fxfound = false
+            stripdata.strip.controls[j].fxnum = -1                  
           end
         end
       end
-      if retfx ~= -1 then
-        local fxen = nz(stripdata.fx[i].fxenabled, true)
-        reaper.TrackFX_SetEnabled(tr, fxcnt+i-1-missing, fxen)
-      end
+      
     end
-    
-    local _, chunk = reaper.GetTrackStateChunk(tr,'',false)
-    missing = 0
-    for i = 1, #stripdata.fx do
-      if stripdata.fx[i].nfxguid ~= '' then
-        chunk = ReplaceChunkPresetData(chunk, i-1+fxcnt-missing, stripdata.fx[i].fxchunk)
-      else
-        missing = missing + 1
-      end
-    end
-    if chunk ~= nil then
-      reaper.SetTrackStateChunk(tr, chunk, false)
-    end
-    
+          
     --time = math.abs(math.sin( -1 + (os.clock() % 2)))
     stripid = GenID()
     local cidtrack = {}
@@ -7686,33 +7836,47 @@ end
   ------------------------------------------------------------    
 
   function CheckStripControls()
+  
     if strips and tracks[track_select] and strips[tracks[track_select].strip] then
       local tr_found = false
       
       --Check track guid - none for master
-      if strips[tracks[track_select].strip].track.tracknum == -1 then return end
+      --if strips[tracks[track_select].strip].track.tracknum == -1 then return end
       --DBG(strips[tracks[track_select].strip].track.tracknum)
-      tr_found = CheckTrack(strips[tracks[track_select].strip].track, tracks[track_select].strip)
+      if strips[tracks[track_select].strip].track.tracknum ~= -1 then 
+        tr_found = CheckTrack(strips[tracks[track_select].strip].track, tracks[track_select].strip)
+      end
         
-      if tr_found and strips and strips[tracks[track_select].strip] then
+      if (tr_found or strips[tracks[track_select].strip].track.tracknum == -1) and strips and strips[tracks[track_select].strip] then
         local tr = GetTrack(strips[tracks[track_select].strip].track.tracknum)
+
+        local fxoffline = {}
+        for fxn = 0, reaper.TrackFX_GetCount(tr)-1 do
+          local pn = reaper.TrackFX_GetNumParams(tr,fxn)
+          if pn == 2 then
+            fxoffline[fxn] = true
+          end
+        end
+  
         for p = 1, 4 do
         
           if #strips[tracks[track_select].strip][p].controls > 0 then
           
             for c = 1, #strips[tracks[track_select].strip][p].controls do
-            
+             
+              strips[tracks[track_select].strip][p].controls[c].offline = nil
+              
               local tr2 = tr
               if strips[tracks[track_select].strip][p].controls[c].tracknum ~= nil then
                 tr_found = CheckTrack(tracks[strips[tracks[track_select].strip][p].controls[c].tracknum],
                                       tracks[track_select].strip, p, c)                      
                 if tr_found then
                   tr2 = GetTrack(strips[tracks[track_select].strip][p].controls[c].tracknum)
-
                   if strips[tracks[track_select].strip][p].controls[c].ctlcat == ctlcats.fxparam then
                     if strips[tracks[track_select].strip][p].controls[c].fxguid == reaper.TrackFX_GetFXGUID(tr2, nz(strips[tracks[track_select].strip][p].controls[c].fxnum,-1)) then
                       --fx found
                       strips[tracks[track_select].strip][p].controls[c].fxfound = true
+                      
                     else
                       --find fx by guid
                       local fx_found = false
@@ -7739,6 +7903,12 @@ end
                         strips[tracks[track_select].strip][p].controls[c].fxfound = false
                       end
                     end
+                  
+                    local pn = reaper.TrackFX_GetNumParams(tr2,strips[tracks[track_select].strip][p].controls[c].fxnum)
+                    if pn == 2 then
+                      strips[tracks[track_select].strip][p].controls[c].offline = true
+                    end
+                                          
                   else
                     --other control type
                   
@@ -7749,7 +7919,6 @@ end
                   
                 end              
               else
-            
                 if strips[tracks[track_select].strip][p].controls[c].ctlcat == ctlcats.fxparam then
                   if strips[tracks[track_select].strip][p].controls[c].fxguid == reaper.TrackFX_GetFXGUID(tr2, nz(strips[tracks[track_select].strip][p].controls[c].fxnum,-1)) then
                     --fx found
@@ -7780,6 +7949,10 @@ end
                       strips[tracks[track_select].strip][p].controls[c].fxfound = false
                     end
                   end            
+
+                  if fxoffline[strips[tracks[track_select].strip][p].controls[c].fxnum] then
+                    strips[tracks[track_select].strip][p].controls[c].offline = true
+                  end
                 else
                   --other control type
                 
@@ -9218,6 +9391,20 @@ end
                   if strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.fxparam then
                     local fxguid = reaper.TrackFX_GetFXGUID(tr, strips[tracks[track_select].strip][page].controls[i].fxnum)
                     if strips[tracks[track_select].strip][page].controls[i].fxguid == fxguid then
+
+                      local pn = reaper.TrackFX_GetNumParams(tr,strips[tracks[track_select].strip][page].controls[i].fxnum)
+                      if pn ~= 2 then
+                        if strips[tracks[track_select].strip][page].controls[i].offline ~= nil then
+                          strips[tracks[track_select].strip][page].controls[i].dirty = true
+                        end
+                        strips[tracks[track_select].strip][page].controls[i].offline = nil
+                      else
+                        if strips[tracks[track_select].strip][page].controls[i].offline == nil then
+                          strips[tracks[track_select].strip][page].controls[i].dirty = true
+                        end
+                        strips[tracks[track_select].strip][page].controls[i].offline = true
+                      end
+                    
                       local v = GetParamValue2(strips[tracks[track_select].strip][page].controls[i].ctlcat,
                                                tr,
                                                strips[tracks[track_select].strip][page].controls[i].fxnum,
@@ -9475,7 +9662,7 @@ end
         --OK
         EB_Enter = false
         if EB_Open == 1 then
-          SaveStrip2(editbox.text)
+          SaveStrip3(editbox.text)
         elseif EB_Open == 2 then
           EditCtlName2(editbox.text)
         elseif EB_Open == 3 then
@@ -13058,7 +13245,7 @@ end
               elseif res == 5 then
               
                 local ostoff = slist_offset
-                SaveStrip2(string.sub(strip_files[strip_select].fn,1,string.len(strip_files[strip_select].fn)-6))
+                SaveStrip3(string.sub(strip_files[strip_select].fn,1,string.len(strip_files[strip_select].fn)-6))
                 slist_offset = ostoff
               elseif res == 6 then
                 strip_favs[#strip_favs+1] = strip_folders[stripfol_select].fn..'/'..strip_files[strip_select].fn
