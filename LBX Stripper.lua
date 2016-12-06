@@ -1113,7 +1113,7 @@
       if dragparam.type == 'track' then
         local ccats = ctlcats.fxparam
         local cts = ctltype_select
-        if trackfxparam_select == #trackfxparams then
+        if trackfxparam_select >= #trackfxparams then
           ccats = ctlcats.fxoffline
           cts = 2
         end
