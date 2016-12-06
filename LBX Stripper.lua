@@ -81,7 +81,8 @@
              action = 5,
              snapshot = 6,
              pkmeter = 7,
-             xy = 8}
+             xy = 8,
+             fxoffline = 9}
              
   gfxtype = {img = 0,
              txt = 1
@@ -1110,15 +1111,21 @@
       local w, h = gfx.getimgdim(ctl_files[knob_select].imageidx)
       ctlnum = #strips[strip][page].controls + 1
       if dragparam.type == 'track' then
+        local ccats = ctlcats.fxparam
+        local cts = ctltype_select
+        if trackfxparam_select == #trackfxparams then
+          ccats = ctlcats.fxoffline
+          cts = 2
+        end
         strips[strip][page].controls[ctlnum] = {c_id = GenID(),
-                                                ctlcat = ctlcats.fxparam,
+                                                ctlcat = ccats,
                                                 fxname=trackfx[trackfx_select].name,
                                                 fxguid=trackfx[trackfx_select].guid, 
                                                 fxnum=trackfx[trackfx_select].fxnum, 
                                                 fxfound = true,
                                                 param = trackfxparam_select,
                                                 param_info = trackfxparams[trackfxparam_select],
-                                                ctltype = ctltype_select,
+                                                ctltype = cts,
                                                 knob_select = knob_select,
                                                 ctl_info = {fn = ctl_files[knob_select].fn,
                                                             frames = ctl_files[knob_select].frames,
@@ -2132,7 +2139,10 @@
         trackfxparams[i] = {paramnum = i,
                             paramname = name}
       end
-  
+      
+      local p = #trackfxparams+1
+      trackfxparams[p] = {paramnum = p,
+                          paramname = 'Offline'}
     end
   end
   
@@ -3572,6 +3582,9 @@ end
                 if ctlcat == ctlcats.fxparam or ctlcat == ctlcats.trackparam or ctlcat == ctlcats.tracksend or ctlcat == ctlcats.pkmeter then
                   v2 = nz(frameScale(strips[strip][page].controls[i].framemode, GetParamValue2(ctlcat,track,fxnum,param,i)),0)
                   val2 = F_limit(round(frames*v2),0,frames-1)
+                elseif ctlcat == ctlcats.fxoffline then
+                  v2 = strips[strip][page].controls[i].val                  
+                  val2 = F_limit(round(frames*v2),0,frames-1)
                 end
                   
                 local DVOV
@@ -3743,7 +3756,21 @@ end
                     Disp_Name = pname
                   else
                     Disp_Name = ctlnmov
-                  end                
+                  end
+                elseif ctlcat == ctlcats.fxoffline then
+                  --val2 = 0
+                  --[[DBG(val2)
+                  Disp_ParamV = 'online'
+                  if strips[strip][page].controls[i].offline == true then
+                    --val2 = 1
+                    Disp_ParamV = 'offline'                    
+                  end]]
+                  spv = false
+                  if nz(ctlnmov,'') == '' then
+                    Disp_Name = pname
+                  else
+                    Disp_Name = ctlnmov
+                  end
                 end
   
                 if ctltype == 4 and cycle_editmode == false then
@@ -6032,6 +6059,8 @@ end
             reaper.Main_OnCommand(reaper.NamedCommandLookup(cmd), 0)
           end
         end        
+      elseif cc == ctlcats.fxoffline then
+        ToggleFXOffline()
       end
     end
       
@@ -7872,7 +7901,7 @@ end
                                       tracks[track_select].strip, p, c)                      
                 if tr_found then
                   tr2 = GetTrack(strips[tracks[track_select].strip][p].controls[c].tracknum)
-                  if strips[tracks[track_select].strip][p].controls[c].ctlcat == ctlcats.fxparam then
+                  if strips[tracks[track_select].strip][p].controls[c].ctlcat == ctlcats.fxparam or strips[tracks[track_select].strip][p].controls[c].ctlcat == ctlcats.fxoffline then
                     if strips[tracks[track_select].strip][p].controls[c].fxguid == reaper.TrackFX_GetFXGUID(tr2, nz(strips[tracks[track_select].strip][p].controls[c].fxnum,-1)) then
                       --fx found
                       strips[tracks[track_select].strip][p].controls[c].fxfound = true
@@ -7919,7 +7948,7 @@ end
                   
                 end              
               else
-                if strips[tracks[track_select].strip][p].controls[c].ctlcat == ctlcats.fxparam then
+                if strips[tracks[track_select].strip][p].controls[c].ctlcat == ctlcats.fxparam or strips[tracks[track_select].strip][p].controls[c].ctlcat == ctlcats.fxoffline then
                   if strips[tracks[track_select].strip][p].controls[c].fxguid == reaper.TrackFX_GetFXGUID(tr2, nz(strips[tracks[track_select].strip][p].controls[c].fxnum,-1)) then
                     --fx found
                     strips[tracks[track_select].strip][p].controls[c].fxfound = true
@@ -9515,6 +9544,30 @@ end
                         update_ctls = true
                       end
                     end
+                  elseif strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.fxoffline then
+                    local fxguid = reaper.TrackFX_GetFXGUID(tr, strips[tracks[track_select].strip][page].controls[i].fxnum)
+                    if strips[tracks[track_select].strip][page].controls[i].fxguid == fxguid then
+                    --DBG(fxguid..'  '..strips[tracks[track_select].strip][page].controls[i].fxguid)
+
+                      local pn = reaper.TrackFX_GetNumParams(tr,strips[tracks[track_select].strip][page].controls[i].fxnum)
+                      if pn ~= 2 then
+                        if strips[tracks[track_select].strip][page].controls[i].offline ~= nil then
+                          strips[tracks[track_select].strip][page].controls[i].dirty = true
+                        end
+                        strips[tracks[track_select].strip][page].controls[i].offline = nil
+                        strips[tracks[track_select].strip][page].controls[i].val = 0
+                      else
+                        if strips[tracks[track_select].strip][page].controls[i].offline == nil then
+                          strips[tracks[track_select].strip][page].controls[i].dirty = true
+                        end
+                        strips[tracks[track_select].strip][page].controls[i].offline = true
+                        strips[tracks[track_select].strip][page].controls[i].val = 1
+                      end
+                    else
+                      if strips[tracks[track_select].strip][page].controls[i].fxfound then
+                        CheckStripControls()
+                      end
+                    end                  
                   end
                 end
               end
@@ -16062,6 +16115,34 @@ end
       else
         fxchunk = nil
         fndn = nil
+        break
+      end
+    end
+    return fnd, fxchunk, s, e  
+  
+  end
+
+  function ToggleFXOffline()
+
+    local trn = nz(strips[tracks[track_select].strip][page].controls[trackfxparam_select].tracknum, tracks[track_select].tracknum)
+    local fxn = strips[tracks[track_select].strip][page].controls[trackfxparam_select].fxnum
+    local str = GetTrack(trn)
+    local _, chunk = reaper.GetTrackStateChunk(str,'',false)
+
+    local s,e, fnd = 0,0,nil
+    for i = 0,fxn do
+      s, e = string.find(chunk,'BYPASS %d %d %d',s)
+      if s and e then
+        if i == fxn then 
+          local byp = string.sub(chunk,s,e)
+          byp = string.gsub(byp,'(%d) (%d) (%d)', function(d,e,f) if e == '0' then return d..' 1 '..f else return d..' 0 '..f end end)
+          local nchunk = string.sub(chunk,0,s-1)..byp..string.sub(chunk,e+1)
+          reaper.SetTrackStateChunk(str,nchunk,false)
+          fnd = true 
+          break 
+        end
+        s=e+1
+      else
         break
       end
     end
