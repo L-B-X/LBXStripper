@@ -11420,8 +11420,28 @@ end
                 end
               end          
             end
+
+            if show_ctlbrowser and MOUSE_over(obj.sections[210]) then
+            
+              local v = gfx.mouse_wheel/120
+              if v > 0 then
+                cbi_offset = cbi_offset - math.min(ctl_browser_size.slots_x*ctl_browser_size.slots_y,80)
+                if cbi_offset < 0 then cbi_offset = 0 end
+                PopulateCtlBrowser_Imgs()
+                update_gfx = true
+              
+              else
+                if cbi_offset + math.min(ctl_browser_size.slots_x*ctl_browser_size.slots_y,80) < 
+                      (math.floor(cbi_cnt/(ctl_browser_size.slots_x*ctl_browser_size.slots_y))+1)*(ctl_browser_size.slots_x*ctl_browser_size.slots_y) then
+                  cbi_offset = cbi_offset + math.min(ctl_browser_size.slots_x*ctl_browser_size.slots_y,80)
+                end
+                PopulateCtlBrowser_Imgs()
+                update_gfx = true
+              
+              end
+              
   
-            if MOUSE_over(obj.sections[45]) then
+            elseif MOUSE_over(obj.sections[45]) then
 
               if ctl_page == 0 then
 
@@ -11678,6 +11698,62 @@ end
                   update_gfx = true
                 end
               end
+            elseif mouse.context == nil and MOUSE_click_RB(obj.sections[210]) then
+              local ix = math.floor((mouse.mx - obj.sections[210].x) / ctl_browser_size.slotsz)
+              local iy = math.floor((mouse.my - obj.sections[210].y) / ctl_browser_size.slotsz)
+              local i = ix + iy*ctl_browser_size.slots_x
+
+              if cbi[i] then
+                cbi_select = cbi[i].idx
+                if ctl_files[cbi_select] then
+                  update_surface = true
+                  GUI_draw(obj,gui)
+                  gfx.update()
+  
+                  local mstr = 'Knob|Slider|Button|Meter|Misc'
+                  gfx.x, gfx.y = mouse.mx, mouse.my
+                  local res = OpenMenu(mstr)
+                  if res == 1 then
+                    ctl_files[cbi_select].ctltype = 0  
+                  elseif res == 2 then
+                    ctl_files[cbi_select].ctltype = 1
+                  elseif res == 3 then
+                    ctl_files[cbi_select].ctltype = 2
+                  elseif res == 4 then
+                    ctl_files[cbi_select].ctltype = 3
+                  elseif res == 5 then
+                    ctl_files[cbi_select].ctltype = 4
+                  end
+                  if res > 0 then
+                    
+                    local save_path=controls_path
+                    local knbfn = ctl_files[cbi_select].fn
+                    
+                    local fn=save_path..string.sub(knbfn,0,string.len(knbfn)-3).. 'knb'
+
+                    local knbdata = {fn = ctl_files[cbi_select].fn,
+                                     frames = ctl_files[cbi_select].frames,
+                                     cellh = ctl_files[cbi_select].cellh,
+                                     ctltype = ctl_files[cbi_select].ctltype}
+                                     
+                    local DELETE=true
+                    local file
+                    
+                    if reaper.file_exists(fn) then
+                    
+                    end
+                    
+                    if DELETE then
+                      file=io.open(fn,"w")
+                      local pickled_table=pickle(knbdata)
+                      file:write(pickled_table)
+                      file:close()
+                    end
+                  
+                  end
+                end            
+              end            
+            
             elseif MOUSE_click(obj.sections[201]) then
               cbi_offset = 0
               cbi_filter = -1
