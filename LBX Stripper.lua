@@ -854,13 +854,13 @@
                            y = obj.sections[200].y+(butt_h+2) * 6,
                            w = cb_bw,
                            h = butt_h}
-      obj.sections[211] = {x = obj.sections[210].x + obj.sections[210].w/2 - cb_bw-1,
+      obj.sections[211] = {x = obj.sections[200].x + obj.sections[200].w - 220-1,
                            y = obj.sections[200].y + butt_h+4,
-                           w = cb_bw,
+                           w = 60,
                            h = butt_h}
-      obj.sections[212] = {x = obj.sections[210].x + obj.sections[210].w/2 +1,
+      obj.sections[212] = {x = obj.sections[200].x + obj.sections[200].w -160 +1,
                            y = obj.sections[200].y + butt_h+4,
-                           w = cb_bw,
+                           w = 60,
                            h = butt_h}
                            
     return obj
@@ -4551,7 +4551,6 @@ end
   function PopulateCtlBrowser_Imgs()
   
     cbi = {}
-    cbi_select = knob_select
     local icnt = 910
     local it = 0
     cbi_cnt = 0
@@ -4673,6 +4672,16 @@ end
 
     GUI_DrawButton(gui, '<<', obj.sections[211], gui.color.white, gui.color.black, true, '', false)
     GUI_DrawButton(gui, '>>', obj.sections[212], gui.color.white, gui.color.black, true, '', false)
+    
+    
+    xywh = {x = obj.sections[212].x+obj.sections[212].w+20,
+            y = obj.sections[212].y, 
+            w = 20,
+            h = butt_h}
+    local p = math.floor(cbi_offset / (ctl_browser_size.slots_x*ctl_browser_size.slots_y))+1
+    local p2 = math.floor(cbi_cnt / (ctl_browser_size.slots_x*ctl_browser_size.slots_y))+1 
+    GUI_textsm_LJ(gui,xywh,'PAGE '..p..'/'..p2,gui.color.white,-2)
+    
 
     for cg = 0, math.min(ctl_browser_size.slots_x*ctl_browser_size.slots_y-1,80) do
       if cbi[cg] then
@@ -8966,6 +8975,7 @@ end
     ss_select = nil
     sstype_select = 1
     CloseActChooser()
+    show_ctlbrowser = false
     
     if strips and tracks[track_select] and strips[tracks[track_select].strip] then
       strips[tracks[track_select].strip].page = page
@@ -9671,6 +9681,8 @@ end
               gfx2_select = nil
               gfx3_select = nil
               CloseActChooser()
+              show_ctlbrowser = false
+              
               ss_select = nil
               sstype_select = 1
               ssoffset = 0
@@ -10094,6 +10106,8 @@ end
         gfx2_select = nil
         ctl_select = nil
         CloseActChooser()
+        show_ctlbrowser = false
+        
         if mode == 0 then
           g_edstrips = {}
           trackedit_select = track_select
@@ -11316,6 +11330,7 @@ end
       end
       
       g_edstrips[track_select] = true
+      
       if submode == 0 then
         
         if show_actionchooser then
@@ -11428,7 +11443,7 @@ end
                 cbi_offset = cbi_offset - math.min(ctl_browser_size.slots_x*ctl_browser_size.slots_y,80)
                 if cbi_offset < 0 then cbi_offset = 0 end
                 PopulateCtlBrowser_Imgs()
-                update_gfx = true
+                update_surface = true
               
               else
                 if cbi_offset + math.min(ctl_browser_size.slots_x*ctl_browser_size.slots_y,80) < 
@@ -11436,7 +11451,7 @@ end
                   cbi_offset = cbi_offset + math.min(ctl_browser_size.slots_x*ctl_browser_size.slots_y,80)
                 end
                 PopulateCtlBrowser_Imgs()
-                update_gfx = true
+                update_surface = true
               
               end
               
@@ -11664,7 +11679,7 @@ end
               cbi_offset = cbi_offset - math.min(ctl_browser_size.slots_x*ctl_browser_size.slots_y,80)
               if cbi_offset < 0 then cbi_offset = 0 end
               PopulateCtlBrowser_Imgs()
-              update_gfx = true
+              update_surface = true
           
             elseif mouse.context == nil and MOUSE_click(obj.sections[212]) then
               if cbi_offset + math.min(ctl_browser_size.slots_x*ctl_browser_size.slots_y,80) < 
@@ -11672,7 +11687,7 @@ end
                 cbi_offset = cbi_offset + math.min(ctl_browser_size.slots_x*ctl_browser_size.slots_y,80)
               end
               PopulateCtlBrowser_Imgs()
-              update_gfx = true
+              update_surface = true
             
             elseif mouse.context == nil and MOUSE_click(obj.sections[210]) then
 
@@ -11685,7 +11700,7 @@ end
                   knob_select = cbi[i].idx
                   closectlbrowser = true
                   --show_ctlbrowser = false
-                  update_gfx = true
+                  update_surface = true
                 end
               else
                 local ix = math.floor((mouse.mx - obj.sections[210].x) / ctl_browser_size.slotsz)
@@ -11695,7 +11710,7 @@ end
                 if cbi[i] then
                   cbi_select = cbi[i].idx
                   SetCbiSelect()
-                  update_gfx = true
+                  update_surface = true
                 end
               end
             elseif mouse.context == nil and MOUSE_click_RB(obj.sections[210]) then
@@ -11758,32 +11773,32 @@ end
               cbi_offset = 0
               cbi_filter = -1
               PopulateCtlBrowser_Imgs()
-              update_gfx = true
+              update_surface = true
             elseif MOUSE_click(obj.sections[202]) then
               cbi_offset = 0
               cbi_filter = 0
               PopulateCtlBrowser_Imgs()
-              update_gfx = true
+              update_surface = true
             elseif MOUSE_click(obj.sections[203]) then
               cbi_offset = 0
               cbi_filter = 1
               PopulateCtlBrowser_Imgs()
-              update_gfx = true
+              update_surface = true
             elseif MOUSE_click(obj.sections[204]) then
               cbi_offset = 0
               cbi_filter = 2
               PopulateCtlBrowser_Imgs()
-              update_gfx = true
+              update_surface = true
             elseif MOUSE_click(obj.sections[205]) then
               cbi_offset = 0
               cbi_filter = 3
               PopulateCtlBrowser_Imgs()
-              update_gfx = true
+              update_surface = true
             elseif MOUSE_click(obj.sections[206]) then
               cbi_offset = 0
               cbi_filter = 4
               PopulateCtlBrowser_Imgs()
-              update_gfx = true
+              update_surface = true
                           
             end
             
@@ -11825,10 +11840,12 @@ end
               elseif mouse.LB and mouse.my > obj.sections[45].y+butt_h and mouse.my < obj.sections[45].y+150 then
               
                 PopulateCtlBrowser_Imgs()
+                cbi_select = knob_select
+                
                 SetCbiSelect()
                 
                 show_ctlbrowser = true
-                update_gfx = true              
+                update_surface = true              
                 
                 --[[knob_select = knob_select + 1
                 if knob_select > #ctl_files then
@@ -12816,6 +12833,8 @@ end
                   tfxp_last = i + plist_offset
                 end
                 ctl_select = nil
+                show_ctlbrowser = false
+                
                 update_gfx = true
     
                 if ctl_files[knob_select].imageidx ~= nil then
@@ -12888,6 +12907,8 @@ end
                 if trctltype_select == 0 then
                   trctl_select = i + trctlslist_offset+1
                   ctl_select = nil
+                  show_ctlbrowser = false
+                  
                   update_gfx = true
       
                   if ctl_files[knob_select].imageidx ~= nil then
@@ -12905,6 +12926,8 @@ end
                 elseif trctltype_select == 1 then
                   trctl_select = i + trctlslist_offset+1
                   ctl_select = nil
+                  show_ctlbrowser = false
+                  
                   update_gfx = true
       
                   if ctl_files[knob_select].imageidx ~= nil then
@@ -12922,6 +12945,8 @@ end
                 elseif trctltype_select == 2 then
                   trctl_select = i + trctlslist_offset+1
                   ctl_select = nil
+                  show_ctlbrowser = false
+                  
                   update_gfx = true
       
                   if ctl_files[knob_select].imageidx ~= nil then
@@ -13812,6 +13837,8 @@ end
           gfx3_select = nil
           show_paramlearn = false
           CloseActChooser()
+          show_ctlbrowser = false
+          
           submode = submode + 1
           if submode+1 > #submode_table then
             submode = 0
@@ -13819,6 +13846,7 @@ end
           update_gfx = true
         elseif submode == 0 and mouse.mx > obj.sections[13].x + obj.sections[13].w - 30 then
           CloseActChooser()
+          show_ctlbrowser = false
           show_paramlearn = false
           fxmode = (fxmode + 1) % 2
           update_gfx = true
@@ -13831,6 +13859,8 @@ end
           gfx2_select = nil
           gfx3_select = nil
           CloseActChooser()
+          show_ctlbrowser = false
+          
           submode = submode - 1
           if submode < 0 then
             submode = #submode_table-1
