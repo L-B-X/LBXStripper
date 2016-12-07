@@ -9553,12 +9553,14 @@ end
                       if pn ~= 2 then
                         if strips[tracks[track_select].strip][page].controls[i].offline ~= nil then
                           strips[tracks[track_select].strip][page].controls[i].dirty = true
+                          update_ctls = true
                         end
                         strips[tracks[track_select].strip][page].controls[i].offline = nil
                         strips[tracks[track_select].strip][page].controls[i].val = 0
                       else
                         if strips[tracks[track_select].strip][page].controls[i].offline == nil then
                           strips[tracks[track_select].strip][page].controls[i].dirty = true
+                          update_ctls = true
                         end
                         strips[tracks[track_select].strip][page].controls[i].offline = true
                         strips[tracks[track_select].strip][page].controls[i].val = 1
@@ -10322,7 +10324,7 @@ end
                 if MOUSE_click(ctlxywh) and not mouse.ctrl then
                   local ctltype = strips[tracks[track_select].strip][page].controls[i].ctltype
                 
-                  if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.15 and ctltype ~= 5 then
+                  if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.15 and ctltype ~= 5 and ctltype ~= 2 and ctltype ~= 3 then
                     if settings_swapctrlclick == false then
                       SetParam_ToDef(i)
                     else
@@ -15668,6 +15670,7 @@ end
                     else
                       fnd = true
                       image_count_add = F_limit(image_count_add + 1,0,image_max)
+                      graphics_files[j].imageidx = image_count_add
                       gfx.loadimg(image_count_add, graphics_path..loaddata.stripdata[s][p].graphics[i].fn)
                       loaddata.stripdata[s][p].graphics[i].imageidx = image_count_add
                     end
@@ -15688,7 +15691,7 @@ end
           if #loaddata.stripdata[s][p].controls > 0 then      
             for i = 1, #loaddata.stripdata[s][p].controls do
               local fnd = false
-              for j = 1, #ctl_files do
+              for j = 0, #ctl_files do
                 if ctl_files[j].fn == loaddata.stripdata[s][p].controls[i].ctl_info.fn then
                   if ctl_files[j].imageidx ~= nil then
                     fnd = true
@@ -15698,6 +15701,7 @@ end
                     fnd = true
                     image_count_add = F_limit(image_count_add + 1,0,image_max)
                     gfx.loadimg(image_count_add, controls_path..loaddata.stripdata[s][p].controls[i].ctl_info.fn)
+                    ctl_files[j].imageidx = image_count_add
                     loaddata.stripdata[s][p].controls[i].ctl_info.imageidx = image_count_add
                     loaddata.stripdata[s][p].controls[i].knob_select = j
                   end
