@@ -4554,19 +4554,24 @@ end
     local icnt = 910
     local it = 0
     cbi_cnt = 0
+    local cbof = 0
     for i = 0, #ctl_files do
       if ctl_files[i].ctltype == cbi_filter or cbi_filter == -1 then
         cbi_cnt = cbi_cnt + 1
       end
+      if cbi_cnt == cbi_offset then
+        cbof = i+1
+
+      end
     end
-    --DBG(cbi_cnt)
+    
     for i = 0, math.min(ctl_browser_size.slots_x*ctl_browser_size.slots_y-1,80) do
     
       local fnd = false
 
       repeat
         
-        local ii = cbi_offset + i + it
+        local ii = cbof + i + it
       
         if ctl_files[ii] then
 
