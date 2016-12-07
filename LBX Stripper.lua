@@ -439,6 +439,16 @@
                           y = obj.sections[45].y+150+butt_h+10 + (butt_h/2+4 + 10) * 7,
                           w = obj.sections[45].w-60,
                           h = butt_h/2+8}
+
+      obj.sections[90] = {x = obj.sections[45].x,
+                          y = obj.sections[45].y+75,
+                          w = 12,
+                          h = butt_h/2+8}                           
+      obj.sections[91] = {x = obj.sections[45].x+obj.sections[45].w-12,
+                          y = obj.sections[45].y+75,
+                          w = 12,
+                          h = butt_h/2+8}                           
+
       obj.sections[65] = {x = obj.sections[45].x+50,
                           y = obj.sections[45].y+150+butt_h+10 + (butt_h/2+4 + 10) * 5,
                           w = obj.sections[45].w-80,
@@ -797,9 +807,62 @@
       obj.sections[182] = {x = 0,
                           y = obj.sections[180].h-6,
                           w = obj.sections[180].w,
-                          h = 6}                       
-                           
+                          h = 6}
+      --CTL BROWSER
+      ctl_browser_size = {w = obj.sections[10].w - 100 - obj.sections[45].w, h = obj.sections[10].h -100}
+      local slsz = 100
+      local cb_bw = 160
+      ctl_browser_size.slotsz = slsz
+      ctl_browser_size.slots_x = math.floor((ctl_browser_size.w - 20 - cb_bw) / slsz)
+      ctl_browser_size.slots_y = math.floor((ctl_browser_size.h - (butt_h+2)*2 -20) / slsz)
+      obj.sections[200] = {x = (obj.sections[10].w-ctl_browser_size.w)/2 +obj.sections[10].x,
+                          y = (obj.sections[10].h-ctl_browser_size.h)/2 +obj.sections[10].y,
+                          w = ctl_browser_size.w,
+                          h = ctl_browser_size.h}                            
+      obj.sections[210] = {x = obj.sections[200].x + cb_bw+10,
+                           y = obj.sections[200].y + (butt_h*2)+10,
+                           w = ctl_browser_size.slots_x * slsz,
+                           h = ctl_browser_size.slots_y * slsz}
+      obj.sections[200].w = obj.sections[210].w + cb_bw+10 + 4
+      obj.sections[200].h = obj.sections[210].h + (butt_h*2)+10 + 4
+      obj.sections[213] = {x = obj.sections[200].x+4,
+                           y = obj.sections[200].y+(butt_h+2) * 13,
+                           w = cb_bw,
+                           h = obj.sections[200].h -(butt_h+2) * 13 - 6}
       
+      obj.sections[201] = {x = obj.sections[200].x,
+                           y = obj.sections[200].y+(butt_h+2) * 1,
+                           w = cb_bw,
+                           h = butt_h}
+      obj.sections[202] = {x = obj.sections[200].x,
+                           y = obj.sections[200].y+(butt_h+2) * 2,
+                           w = cb_bw,
+                           h = butt_h}
+      obj.sections[203] = {x = obj.sections[200].x,
+                           y = obj.sections[200].y+(butt_h+2) * 3,
+                           w = cb_bw,
+                           h = butt_h}
+      obj.sections[204] = {x = obj.sections[200].x,
+                           y = obj.sections[200].y+(butt_h+2) * 4,
+                           w = cb_bw,
+                           h = butt_h}
+      obj.sections[205] = {x = obj.sections[200].x,
+                           y = obj.sections[200].y+(butt_h+2) * 5,
+                           w = cb_bw,
+                           h = butt_h}
+      obj.sections[206] = {x = obj.sections[200].x,
+                           y = obj.sections[200].y+(butt_h+2) * 6,
+                           w = cb_bw,
+                           h = butt_h}
+      obj.sections[211] = {x = obj.sections[210].x + obj.sections[210].w/2 - cb_bw-1,
+                           y = obj.sections[200].y + butt_h+4,
+                           w = cb_bw,
+                           h = butt_h}
+      obj.sections[212] = {x = obj.sections[210].x + obj.sections[210].w/2 +1,
+                           y = obj.sections[200].y + butt_h+4,
+                           w = cb_bw,
+                           h = butt_h}
+                           
     return obj
   end
   
@@ -1658,6 +1721,9 @@
         file:close()
         
         ctl_files[c] = unpickle(content)
+        if ctl_files[c].ctltype == nil then
+          ctl_files[c].ctltype = 4
+        end
          --= --{fn = kf, imageidx = nil, cellh = 100, frames = 101}
         if kf == '__default.knb' then
           ctl_files[c].imageidx = 0
@@ -3132,8 +3198,21 @@
           gfx.loadimg(1023, controls_path..ctl_files[knob_select].fn)
         end
         local w, _ = gfx.getimgdim(iidx)
+        local h = ctl_files[knob_select].cellh
         gfx.a = 1
-        gfx.blit(iidx,scale_select,0, 0, ctl_files[knob_select].cellh*math.floor((ctl_files[knob_select].frames-1)*0.75), w, ctl_files[knob_select].cellh, xywh.x + (xywh.w/2-(w*scale_select)/2), xywh.y + (62.5 - (ctl_files[knob_select].cellh*scale_select)/2))
+        local scale_select = 1
+        
+        if w > h then
+          if w > 125 then
+            scale_select = 125 / w
+          end
+        else
+          if h > 125 then
+            scale_select = 125 / h
+          end        
+        end
+        
+        gfx.blit(iidx,scale_select,0, 0, h*math.ceil((ctl_files[knob_select].frames-1)*0.55), w, h, xywh.x + (xywh.w/2-(w*scale_select)/2), xywh.y + (62.5 - (h*scale_select)/2))
         xywh = {x = obj.sections[45].x,
                 y = obj.sections[45].y+butt_h,
                 w = obj.sections[45].w,
@@ -3148,6 +3227,9 @@
         GUI_textC(gui,xywh,ctl_files[knob_select].fn,gui.color.white,-5)
   
       end
+
+      GUI_DrawButton(gui, '<', obj.sections[90], gui.color.white, gui.color.black, true)
+      GUI_DrawButton(gui, '>', obj.sections[91], gui.color.white, gui.color.black, true)
           
       GUI_DrawSliderH(gui, 'SCALE', obj.sections[50], gui.color.black, gui.color.white, (scale_select-0.5)*2)
       GUI_DrawTick(gui, 'SHOW NAME', obj.sections[52], gui.color.white, show_paramname)
@@ -4466,6 +4548,217 @@ end
   end
     
   ------------------------------------------------------------
+  function PopulateCtlBrowser_Imgs()
+  
+    cbi = {}
+    cbi_select = knob_select
+    local icnt = 910
+    local it = 0
+    cbi_cnt = 0
+    for i = 0, #ctl_files do
+      if ctl_files[i].ctltype == cbi_filter or cbi_filter == -1 then
+        cbi_cnt = cbi_cnt + 1
+      end
+    end
+    --DBG(cbi_cnt)
+    for i = 0, math.min(ctl_browser_size.slots_x*ctl_browser_size.slots_y-1,80) do
+    
+      local fnd = false
+
+      repeat
+        
+        local ii = cbi_offset + i + it
+      
+        if ctl_files[ii] then
+
+
+          if cbi_filter == -1 or ctl_files[ii].ctltype == cbi_filter then
+            
+            fnd = true
+            cbi[i] = {idx = ii,
+                      fn = ctl_files[ii].fn,
+                      imageidx = ctl_files[ii].imageidx,
+                      cellh = ctl_files[ii].cellh,
+                      frames = ctl_files[ii].frames,
+                      ctltype = ctl_files[ii].ctltype}
+            
+            if cbi[i].imageidx ~= nil then
+              --iidx = cbi[i].imageidx
+            else
+              gfx.loadimg(icnt, controls_path..cbi[i].fn)
+              cbi[i].imageidx = icnt
+              icnt = icnt + 1
+            end
+          else
+            it = it + 1
+          end
+        else
+          cbi[i] = nil
+          gfx.loadimg(icnt,'')
+          fnd = true
+        end      
+
+      until fnd == true
+
+    end
+    
+    
+  end
+  
+  function SetCbiSelect()
+  
+    local ii = cbi_select
+    if ctl_files[ii] then
+    
+      cbi_select_inf = {idx = ii,
+                        fn = ctl_files[ii].fn,
+                        imageidx = ctl_files[ii].imageidx,
+                        cellh = ctl_files[ii].cellh,
+                        frames = ctl_files[ii].frames,
+                        ctltype = ctl_files[ii].ctltype}    
+      if cbi_select_inf.imageidx ~= nil then
+      else
+        gfx.loadimg(991, controls_path..ctl_files[ii].fn)
+        cbi_select_inf.imageidx = 991
+      end
+    end  
+  end
+  
+  function GUI_DrawCtlBrowser(obj, gui)
+
+    gfx.a=1
+    f_Get_SSV(gui.color.black)
+    f_Get_SSV('32 32 32')
+    gfx.rect(obj.sections[200].x,
+             obj.sections[200].y, 
+             obj.sections[200].w,
+             obj.sections[200].h, 1, 1)
+    f_Get_SSV('64 64 64')
+    gfx.rect(obj.sections[200].x,
+             obj.sections[200].y, 
+             obj.sections[200].w,
+             obj.sections[200].h, 0, 1)
+
+    f_Get_SSV('64 64 64')
+    gfx.rect(obj.sections[210].x-2,
+             obj.sections[210].y-2, 
+             obj.sections[210].w+4,
+             obj.sections[210].h+4, 1, 1)
+    f_Get_SSV('0 0 0')
+    gfx.rect(obj.sections[210].x-2,
+             obj.sections[210].y-2, 
+             obj.sections[210].w+4,
+             obj.sections[210].h+4, 0, 1)
+    
+    xywh = {x = obj.sections[200].x,
+            y = obj.sections[200].y, 
+            w = obj.sections[200].w,
+            h = butt_h}
+    
+    f_Get_SSV(gui.color.white)
+    gfx.a = 1 
+    gfx.rect(xywh.x,
+             xywh.y, 
+             xywh.w,
+             butt_h, 1)
+    
+    GUI_textC(gui,xywh,'CONTROL BROWSER',gui.color.black,-2)
+    
+    GUI_DrawButton(gui, 'ALL', obj.sections[201], gui.color.white, gui.color.black, true, '', false)
+    GUI_DrawButton(gui, 'KNOBS', obj.sections[202], gui.color.white, gui.color.black, true, '', false)
+    GUI_DrawButton(gui, 'SLIDERS', obj.sections[203], gui.color.white, gui.color.black, true, '', false)
+    GUI_DrawButton(gui, 'BUTTONS', obj.sections[204], gui.color.white, gui.color.black, true, '', false)
+    GUI_DrawButton(gui, 'METERS', obj.sections[205], gui.color.white, gui.color.black, true, '', false)
+    GUI_DrawButton(gui, 'MISC', obj.sections[206], gui.color.white, gui.color.black, true, '', false)
+
+    GUI_DrawButton(gui, '<<', obj.sections[211], gui.color.white, gui.color.black, true, '', false)
+    GUI_DrawButton(gui, '>>', obj.sections[212], gui.color.white, gui.color.black, true, '', false)
+
+    for cg = 0, math.min(ctl_browser_size.slots_x*ctl_browser_size.slots_y-1,80) do
+      if cbi[cg] then
+      
+        iidx = cbi[cg].imageidx
+          
+        local w, _ = gfx.getimgdim(iidx)
+        local h = cbi[cg].cellh
+        gfx.a = 1
+        local scale_select = 1
+        xywh = {x = obj.sections[210].x + (cg % ctl_browser_size.slots_x)*ctl_browser_size.slotsz,
+                y = obj.sections[210].y + math.floor(cg / ctl_browser_size.slots_x)*ctl_browser_size.slotsz,
+                w = ctl_browser_size.slotsz,
+                h = ctl_browser_size.slotsz}
+        if w > h then
+          if w > ctl_browser_size.slotsz then
+            scale_select = ctl_browser_size.slotsz / w
+          end
+        else
+          if h > ctl_browser_size.slotsz then
+            scale_select = ctl_browser_size.slotsz / h
+          end        
+        end
+        gfx.blit(iidx,scale_select,0, 0, h*math.ceil((cbi[cg].frames-1)*0.55), w, h,
+                 xywh.x + (xywh.w/2-(w*scale_select)/2), xywh.y + ((xywh.h - (h*scale_select))/2))
+        gfx.a = 0.75
+        
+        if cbi[cg].idx == cbi_select then
+          f_Get_SSV(gui.color.yellow)
+          gfx.roundrect(xywh.x+1,
+                   xywh.y,
+                   xywh.w-2,
+                   xywh.h,8,0,1)        
+        --GUI_textC(gui,xywh,ctl_files[cg].fn,gui.color.white,-5)]]
+        end
+        
+      else
+        break
+      end
+    end
+
+    gfx.a = 1
+    if cbi_select_inf and cbi_select_inf.imageidx then
+      local scale_selecta, scale_selectb = 1,1
+      local w, _ = gfx.getimgdim(cbi_select_inf.imageidx)
+      local h = cbi_select_inf.cellh
+      if w > obj.sections[213].w then
+        scale_selecta = obj.sections[213].w / w
+      end
+      if h > obj.sections[213].h then
+        scale_selectb = obj.sections[213].h / h
+      end
+      local scale_select = F_limit(math.min(scale_selecta,scale_selectb),0,1)    
+      
+      local xywh = {x = obj.sections[213].x,
+                    y = obj.sections[213].y,
+                    w = obj.sections[213].w,
+                    h = butt_h}
+      if xywh.y + h*scale_select > obj.sections[200].y + obj.sections[200].h then
+        xywh.y = obj.sections[200].y + obj.sections[200].h - h*scale_select-2
+      end       
+      if xywh.y < obj.sections[200].y + obj.sections[200].h then
+        gfx.blit(cbi_select_inf.imageidx,scale_select,0, 0, h*math.ceil((cbi_select_inf.frames-1)*0.55), w, h,
+                 xywh.x + (xywh.w/2-(w*scale_select)/2), xywh.y)-- + ((obj.sections[213].h/2) - (h*scale_select))/2)
+      end
+                     
+      local xywh = {x = obj.sections[213].x,
+                    y = obj.sections[213].y-butt_h*6,
+                    w = obj.sections[213].w,
+                    h = butt_h}
+      GUI_textsm_LJ(gui,xywh,cbi_select_inf.fn,gui.color.white,-5,xywh.w)
+      xywh.y = xywh.y + butt_h
+      GUI_textsm_LJ(gui,xywh,'W = '..w,gui.color.white,-5,xywh.w)
+      xywh.y = xywh.y + butt_h
+      GUI_textsm_LJ(gui,xywh,'H = '..h,gui.color.white,-5,xywh.w)
+      xywh.y = xywh.y + butt_h
+      GUI_textsm_LJ(gui,xywh,'Frames = '..cbi_select_inf.frames,gui.color.white,-5,xywh.w)
+      xywh.y = xywh.y + butt_h
+      GUI_textsm_LJ(gui,xywh,'Type = '..cbi_select_inf.ctltype,gui.color.white,-5,xywh.w)      
+      xywh.y = xywh.y + butt_h
+            
+    end
+
+  end
+
+  ------------------------------------------------------------
 
   function GUI_draw(obj, gui)
     gfx.mode =4
@@ -4764,6 +5057,10 @@ end
             GUI_DrawActionChooser(obj, gui)
           end
         
+          if show_ctlbrowser then
+            GUI_DrawCtlBrowser(obj, gui)          
+          end
+          
         elseif submode == 1 then
         
           if update_gfx or (surface_size.limit == false and update_surface) or update_bg then
@@ -11341,6 +11638,82 @@ end
               update_gfx = true
             end
                         
+          elseif ctl_select ~= nil and show_ctlbrowser and (MOUSE_click(obj.sections[200]) or MOUSE_click_RB(obj.sections[200])) then
+          
+            if mouse.context == nil and MOUSE_click(obj.sections[211]) then
+              cbi_offset = cbi_offset - math.min(ctl_browser_size.slots_x*ctl_browser_size.slots_y,80)
+              if cbi_offset < 0 then cbi_offset = 0 end
+              PopulateCtlBrowser_Imgs()
+              update_gfx = true
+          
+            elseif mouse.context == nil and MOUSE_click(obj.sections[212]) then
+              if cbi_offset + math.min(ctl_browser_size.slots_x*ctl_browser_size.slots_y,80) < 
+                    (math.floor(cbi_cnt/(ctl_browser_size.slots_x*ctl_browser_size.slots_y))+1)*(ctl_browser_size.slots_x*ctl_browser_size.slots_y) then
+                cbi_offset = cbi_offset + math.min(ctl_browser_size.slots_x*ctl_browser_size.slots_y,80)
+              end
+              PopulateCtlBrowser_Imgs()
+              update_gfx = true
+            
+            elseif mouse.context == nil and MOUSE_click(obj.sections[210]) then
+
+              if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.2 then
+                local ix = math.floor((mouse.mx - obj.sections[210].x) / ctl_browser_size.slotsz)
+                local iy = math.floor((mouse.my - obj.sections[210].y) / ctl_browser_size.slotsz)
+                local i = ix + iy*ctl_browser_size.slots_x
+                
+                if cbi[i] then
+                  knob_select = cbi[i].idx
+                  closectlbrowser = true
+                  --show_ctlbrowser = false
+                  update_gfx = true
+                end
+              else
+                local ix = math.floor((mouse.mx - obj.sections[210].x) / ctl_browser_size.slotsz)
+                local iy = math.floor((mouse.my - obj.sections[210].y) / ctl_browser_size.slotsz)
+                local i = ix + iy*ctl_browser_size.slots_x
+
+                if cbi[i] then
+                  cbi_select = cbi[i].idx
+                  SetCbiSelect()
+                  update_gfx = true
+                end
+              end
+            elseif MOUSE_click(obj.sections[201]) then
+              cbi_offset = 0
+              cbi_filter = -1
+              PopulateCtlBrowser_Imgs()
+              update_gfx = true
+            elseif MOUSE_click(obj.sections[202]) then
+              cbi_offset = 0
+              cbi_filter = 0
+              PopulateCtlBrowser_Imgs()
+              update_gfx = true
+            elseif MOUSE_click(obj.sections[203]) then
+              cbi_offset = 0
+              cbi_filter = 1
+              PopulateCtlBrowser_Imgs()
+              update_gfx = true
+            elseif MOUSE_click(obj.sections[204]) then
+              cbi_offset = 0
+              cbi_filter = 2
+              PopulateCtlBrowser_Imgs()
+              update_gfx = true
+            elseif MOUSE_click(obj.sections[205]) then
+              cbi_offset = 0
+              cbi_filter = 3
+              PopulateCtlBrowser_Imgs()
+              update_gfx = true
+            elseif MOUSE_click(obj.sections[206]) then
+              cbi_offset = 0
+              cbi_filter = 4
+              PopulateCtlBrowser_Imgs()
+              update_gfx = true
+                          
+            end
+            
+            
+            noscroll = true
+            
           elseif ctl_select ~= nil and (MOUSE_click(obj.sections[45]) or MOUSE_click_RB(obj.sections[45])) then
             
             --CONTROL OPTIONS
@@ -11356,21 +11729,44 @@ end
             end
             
             if ctl_page == 0 then
-              if mouse.LB and mouse.my > obj.sections[45].y+butt_h and mouse.my < obj.sections[45].y+150 then
+              
+              if mouse.context == nil and MOUSE_click(obj.sections[90]) then
+              
+                knob_select = knob_select - 1
+                if knob_select < 0 then
+                  knob_select = #ctl_files
+                end
+                update_gfx = true
+              
+              elseif mouse.context == nil and MOUSE_click(obj.sections[91]) then
               
                 knob_select = knob_select + 1
                 if knob_select > #ctl_files then
                   knob_select = 0
                 end
                 update_gfx = true
+
+              elseif mouse.LB and mouse.my > obj.sections[45].y+butt_h and mouse.my < obj.sections[45].y+150 then
               
-              elseif mouse.RB and mouse.my > obj.sections[45].y and mouse.my < obj.sections[45].y+150 then
+                PopulateCtlBrowser_Imgs()
+                SetCbiSelect()
+                
+                show_ctlbrowser = true
+                update_gfx = true              
+                
+                --[[knob_select = knob_select + 1
+                if knob_select > #ctl_files then
+                  knob_select = 0
+                end
+                update_gfx = true]]
+              
+              --[[elseif mouse.RB and mouse.my > obj.sections[45].y and mouse.my < obj.sections[45].y+150 then
     
                 knob_select = knob_select - 1
                 if knob_select < 0 then
                   knob_select = #ctl_files
                 end
-                update_gfx = true
+                update_gfx = true]]
               
               end
     
@@ -13338,6 +13734,7 @@ end
           ctl_select = nil
           gfx2_select = nil
           gfx3_select = nil
+          show_paramlearn = false
           CloseActChooser()
           submode = submode + 1
           if submode+1 > #submode_table then
@@ -13346,6 +13743,7 @@ end
           update_gfx = true
         elseif submode == 0 and mouse.mx > obj.sections[13].x + obj.sections[13].w - 30 then
           CloseActChooser()
+          show_paramlearn = false
           fxmode = (fxmode + 1) % 2
           update_gfx = true
          
@@ -13374,7 +13772,8 @@ end
     end
     
     if mouse.context == nil then
-      if ((submode == 0 and ctl_select ~= nil) and (MOUSE_click(obj.sections[45]) or (MOUSE_click(obj.sections[100]) and show_cycleoptions))) or 
+      if ((submode == 0 and ctl_select ~= nil) and (MOUSE_click(obj.sections[45]) or (MOUSE_click(obj.sections[100]) and show_cycleoptions) 
+          or (MOUSE_click(obj.sections[200]) and show_ctlbrowser))) or 
          ((submode == 1 and gfx2_select ~= nil) and (MOUSE_click(obj.sections[49]) and show_lbloptions)) then
       elseif mouse.mx > obj.sections[10].x and show_actionchooser == false then
       
@@ -13389,6 +13788,7 @@ end
           end
           ctl_select = nil
           show_cycleoptions = false
+          show_ctlbrowser = false
           gfx2_select = nil
           gfx3_select = nil
           --CloseActChooser()
@@ -13506,6 +13906,7 @@ end
     end
     gfx.mouse_wheel = 0
     if ctl_select then ctls = true else ctls = false end
+    if closectlbrowser then closectlbrowser = nil show_ctlbrowser = false end
       
   end
   
@@ -15835,6 +16236,8 @@ end
     ogrid = settings_gridsize
     sb_size = 3
     
+    cbi_filter = -1
+    cbi_offset = 0
     P_butt_cnt = 0
     F_butt_cnt = 0
     G_butt_cnt = 0
@@ -15920,6 +16323,7 @@ end
     time_checksend = 0
     time_sendupdate = 0
     
+    show_ctlbrowser = false
     show_ctloptions = false
     show_lbloptions = false
     show_editbar = true
@@ -16220,7 +16624,7 @@ end
   
   math.randomseed(os.clock())
   
-  image_max = 990
+  image_max = 939
   b_sz = 100
   lockx = false
   locky = false
