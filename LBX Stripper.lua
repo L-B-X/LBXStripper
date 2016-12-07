@@ -21,6 +21,8 @@
   scalemode_table = {1/8,1/7,1/6,1/5,1/4,1/3,1/2,1,2,3,4,5,6,7,8}
   scalemode_dtable = {'1/8','1/7','1/6','1/5','1/4','1/3','1/2','1','2','3','4','5','6','7','8'}
   
+  ctlfile_type_table = {'Knob','Slider','Button','Meter','Misc'}
+  
   framemode_table = {'NORMAL','CIRC'}
   snapsubsets_table = {'PAGE'}
   
@@ -4765,7 +4767,7 @@ end
       xywh.y = xywh.y + butt_h
       GUI_textsm_LJ(gui,xywh,'Frames = '..cbi_select_inf.frames,gui.color.white,-5,xywh.w)
       xywh.y = xywh.y + butt_h
-      GUI_textsm_LJ(gui,xywh,'Type = '..cbi_select_inf.ctltype,gui.color.white,-5,xywh.w)      
+      GUI_textsm_LJ(gui,xywh,'Type = '..ctlfile_type_table[cbi_select_inf.ctltype+1],gui.color.white,-5,xywh.w)      
       xywh.y = xywh.y + butt_h
             
     end
@@ -11768,7 +11770,10 @@ end
                       local pickled_table=pickle(knbdata)
                       file:write(pickled_table)
                       file:close()
+                      
                     end
+                    SetCbiSelect()
+                    update_surface = true
                   
                   end
                 end            
