@@ -3995,18 +3995,18 @@ end
                 if not update_gfx and not update_bg and update_ctls then
                 
                   --just blit control area to main backbuffer - create area table
-                  local al = math.min(px, xywh1.x)
-                  al = math.min(al, xywh2.x)
-                  al = math.min(al, tx1)
-                  al = math.min(al, tx2)
-                  local ar = math.max(px+w*scale, tx1+tl1)
-                  ar = math.max(ar, tx2+tl2)
-                  ar = math.max(ar, xywh1.x+xywh1.w)
-                  ar = math.max(ar, xywh2.x+xywh2.w)
-                  local at = math.min(py, xywh1.y)
-                  at = math.min(at, xywh2.y)
-                  local ab = math.max(py+(h)*scale,xywh1.y+th)
-                  ab = math.max(ab, xywh2.y+th)
+                  local al = math.min(px, xywh1.x, xywh2.x, tx1, tx2)
+                  --al = math.min(al, xywh2.x)
+                  --al = math.min(al, tx1)
+                  --al = math.min(al, tx2)
+                  local ar = math.max(px+w*scale, tx1+tl1, tx2+tl2, xywh1.x+xywh1.w, xywh2.x+xywh2.w)
+                  --ar = math.max(ar, tx2+tl2)
+                  --ar = math.max(ar, xywh1.x+xywh1.w)
+                  --ar = math.max(ar, xywh2.x+xywh2.w)
+                  local at = math.min(py, xywh1.y, xywh2.y)
+                  --at = math.min(at, xywh2.y)
+                  local ab = math.max(py+(h)*scale,xywh1.y+th, xywh2.y+th)
+                  --ab = math.max(ab, xywh2.y+th)
                   xywharea[#xywharea+1] = {x=al,y=at,w=ar-al,h=ab-at,r=ar,b=ab}
                 end
               end
@@ -10642,11 +10642,10 @@ end
                          y = strips[tracks[track_select].strip][page].controls[i].ysc - surface_offset.y +obj.sections[10].y, 
                          w = strips[tracks[track_select].strip][page].controls[i].wsc, 
                          h = strips[tracks[track_select].strip][page].controls[i].hsc}
-                         
               --if strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.fxparam then
               
               if strips[tracks[track_select].strip][page].controls[i].fxfound then
-                if MOUSE_click(ctlxywh) and not mouse.ctrl then
+                if MOUSE_click(ctlxywh) and not mouse.ctrl and not mouse.alt then
                   local ctltype = strips[tracks[track_select].strip][page].controls[i].ctltype
                 
                   if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.15 and ctltype ~= 5 and ctltype ~= 2 and ctltype ~= 3 then
@@ -10985,6 +10984,22 @@ end
                 --  trackfxparam_select = i
                 --  EditValue()
                 
+                elseif MOUSE_click(ctlxywh) and mouse.alt then
+                
+                  if strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.fxparam or 
+                     strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.fxoffline then
+                    local track
+                    if strips[tracks[track_select].strip][page].controls[i].tracknum == nil then
+                      track = GetTrack(tracks[track_select].tracknum)
+                    else
+                      track = GetTrack(strips[tracks[track_select].strip][page].controls[i].tracknum)                      
+                    end
+                    local fxnum = strips[tracks[track_select].strip][page].controls[i].fxnum
+                    if not reaper.TrackFX_GetOpen(track, fxnum) then
+                      reaper.TrackFX_Show(track, fxnum, 3)
+                    end
+                  end
+                                  
                 elseif MOUSE_click(ctlxywh) and mouse.ctrl then --make double_click?
                   if settings_swapctrlclick == true then
                     SetParam_ToDef(i)
