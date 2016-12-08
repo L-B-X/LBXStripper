@@ -11728,6 +11728,7 @@ end
 
               if cbi[i] then
                 cbi_select = cbi[i].idx
+                SetCbiSelect()
                 if ctl_files[cbi_select] then
                   update_surface = true
                   GUI_draw(obj,gui)
