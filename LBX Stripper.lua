@@ -11451,6 +11451,7 @@ end
                 if cbi_offset < 0 then cbi_offset = 0 end
                 PopulateCtlBrowser_Imgs()
                 update_surface = true
+                noscroll = true
               
               else
                 if cbi_offset + math.min(ctl_browser_size.slots_x*ctl_browser_size.slots_y,80) < 
@@ -11459,7 +11460,7 @@ end
                 end
                 PopulateCtlBrowser_Imgs()
                 update_surface = true
-              
+                noscroll = true
               end
               
   
@@ -13892,7 +13893,6 @@ end
           or (MOUSE_click(obj.sections[200]) and show_ctlbrowser))) or 
          ((submode == 1 and gfx2_select ~= nil) and (MOUSE_click(obj.sections[49]) and show_lbloptions)) then
       elseif mouse.mx > obj.sections[10].x and show_actionchooser == false then
-      
         if MOUSE_click(obj.sections[10]) then
           if noscroll == false then
             mouse.context = "dragsurface"
@@ -13963,7 +13963,7 @@ end
       end
     end
     
-    if settings_mousewheelknob == false and gfx.mouse_wheel ~= 0 then
+    if settings_mousewheelknob == false and gfx.mouse_wheel ~= 0 and show_ctlbrowser == false then
       if noscroll == false then
         if lockx == false or locky == false then
           local v = gfx.mouse_wheel/120
