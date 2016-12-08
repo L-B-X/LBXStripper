@@ -4561,7 +4561,7 @@ end
   function PopulateCtlBrowser_Imgs()
   
     cbi = {}
-    local icnt = 910
+    local icnt = image_max+1
     local it = 0
     cbi_cnt = 0
     local cbof = 0
@@ -4571,11 +4571,10 @@ end
       end
       if cbi_cnt == cbi_offset then
         cbof = i+1
-
       end
     end
     
-    for i = 0, math.min(ctl_browser_size.slots_x*ctl_browser_size.slots_y-1,80) do
+    for i = 0, math.min(ctl_browser_size.slots_x*ctl_browser_size.slots_y-1,maximg_browse) do
     
       local fnd = false
 
@@ -4693,12 +4692,12 @@ end
             y = obj.sections[212].y, 
             w = 20,
             h = butt_h}
-    local p = math.floor(cbi_offset / (ctl_browser_size.slots_x*ctl_browser_size.slots_y))+1
-    local p2 = math.floor(cbi_cnt / (ctl_browser_size.slots_x*ctl_browser_size.slots_y))+1 
+    local p = math.floor(cbi_offset / math.min(ctl_browser_size.slots_x*ctl_browser_size.slots_y,maximg_browse))+1
+    local p2 = math.floor(cbi_cnt / math.min(ctl_browser_size.slots_x*ctl_browser_size.slots_y,maximg_browse))+1 
     GUI_textsm_LJ(gui,xywh,'PAGE '..p..'/'..p2,gui.color.white,-2)
     
 
-    for cg = 0, math.min(ctl_browser_size.slots_x*ctl_browser_size.slots_y-1,80) do
+    for cg = 0, math.min(ctl_browser_size.slots_x*ctl_browser_size.slots_y-1,maximg_browse) do
       if cbi[cg] then
       
         iidx = cbi[cg].imageidx
@@ -11455,16 +11454,16 @@ end
             
               local v = gfx.mouse_wheel/120
               if v > 0 then
-                cbi_offset = cbi_offset - math.min(ctl_browser_size.slots_x*ctl_browser_size.slots_y,80)
+                cbi_offset = cbi_offset - math.min(ctl_browser_size.slots_x*ctl_browser_size.slots_y,maximg_browse+1)
                 if cbi_offset < 0 then cbi_offset = 0 end
                 PopulateCtlBrowser_Imgs()
                 update_surface = true
                 noscroll = true
               
               else
-                if cbi_offset + math.min(ctl_browser_size.slots_x*ctl_browser_size.slots_y,80) < 
+                if cbi_offset + math.min(ctl_browser_size.slots_x*ctl_browser_size.slots_y,maximg_browse+1) < 
                       (math.floor(cbi_cnt/(ctl_browser_size.slots_x*ctl_browser_size.slots_y))+1)*(ctl_browser_size.slots_x*ctl_browser_size.slots_y) then
-                  cbi_offset = cbi_offset + math.min(ctl_browser_size.slots_x*ctl_browser_size.slots_y,80)
+                  cbi_offset = cbi_offset + math.min(ctl_browser_size.slots_x*ctl_browser_size.slots_y,maximg_browse+1)
                 end
                 PopulateCtlBrowser_Imgs()
                 update_surface = true
@@ -11692,15 +11691,15 @@ end
           elseif ctl_select ~= nil and show_ctlbrowser and (MOUSE_click(obj.sections[200]) or MOUSE_click_RB(obj.sections[200])) then
           
             if mouse.context == nil and MOUSE_click(obj.sections[211]) then
-              cbi_offset = cbi_offset - math.min(ctl_browser_size.slots_x*ctl_browser_size.slots_y,80)
+              cbi_offset = cbi_offset - math.min(ctl_browser_size.slots_x*ctl_browser_size.slots_y,maximg_browse+1)
               if cbi_offset < 0 then cbi_offset = 0 end
               PopulateCtlBrowser_Imgs()
               update_surface = true
           
             elseif mouse.context == nil and MOUSE_click(obj.sections[212]) then
-              if cbi_offset + math.min(ctl_browser_size.slots_x*ctl_browser_size.slots_y,80) < 
+              if cbi_offset + math.min(ctl_browser_size.slots_x*ctl_browser_size.slots_y,maximg_browse+1) < 
                     (math.floor(cbi_cnt/(ctl_browser_size.slots_x*ctl_browser_size.slots_y))+1)*(ctl_browser_size.slots_x*ctl_browser_size.slots_y) then
-                cbi_offset = cbi_offset + math.min(ctl_browser_size.slots_x*ctl_browser_size.slots_y,80)
+                cbi_offset = cbi_offset + math.min(ctl_browser_size.slots_x*ctl_browser_size.slots_y,maximg_browse+1)
               end
               PopulateCtlBrowser_Imgs()
               update_surface = true
@@ -16749,7 +16748,8 @@ end
   
   math.randomseed(os.clock())
   
-  image_max = 939
+  image_max = 910
+  maximg_browse = 79
   b_sz = 100
   lockx = false
   locky = false
