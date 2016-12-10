@@ -72,6 +72,7 @@
               insertstrip = 37,
               addxyctl = 38,
               dragxy = 39,
+              auto_delayslider = 40,
               dummy = 99
               }
   
@@ -585,6 +586,11 @@
                            y = obj.sections[102].y-bh-2,
                            w = 40,
                            h = obj.sections[102].h}
+      obj.sections[110] = {x = obj.sections[100].x +45,
+                           y = obj.sections[102].y-bh-2,
+                           w = 40,
+                           h = obj.sections[102].h}
+                           
       
       obj.sections[105] = {x = obj.sections[103].x,
                            y = obj.sections[103].y-butt_h,
@@ -3037,6 +3043,9 @@
     
     GUI_DrawButton(gui, cycle_select.statecnt, obj.sections[102], gui.color.white, gui.color.black, true, 'STATES')
     GUI_DrawButton(gui, 'AUTO', obj.sections[104], gui.color.white, gui.color.black, true)
+    GUI_DrawSliderH(gui, 'SENS', obj.sections[110], gui.color.black, gui.color.white, F_limit(auto_delay/10,0,1))
+    GUI_textC(gui,obj.sections[110],auto_delay,gui.color.red,-2)
+    
     GUI_DrawTick(gui, 'POS TO FRAME', obj.sections[107], gui.color.white, nz(cycle_select.mapptof, false))
     GUI_DrawTick(gui, 'DRAGGABLE', obj.sections[108], gui.color.white, nz(cycle_select.draggable, false))
     GUI_DrawTick(gui, 'EVEN SPREAD', obj.sections[109], gui.color.white, nz(cycle_select.spread, false))
@@ -3872,6 +3881,10 @@ end
                     --   tostring(strips[strip][page].controls[i].cycledata[
                     --          strips[strip][page].controls[i].cycledata.pos].val) then
                       Disp_ParamV = DVOV
+                      
+                      if maxdp > -1 then
+                        Disp_ParamV = roundX(Disp_ParamV, maxdp)                  
+                      end
                     end
                   --else
                   end
@@ -12199,6 +12212,10 @@ end
               cyclist_offset = 0
               update_gfx = true            
             end
+
+            if MOUSE_click(obj.sections[110]) then
+              mouse.context = contexts.auto_delayslider
+            end
           
             if MOUSE_click(obj.sections[105]) then
               local i = math.floor((mouse.mx-obj.sections[105].x)/(obj.sections[105].w/2))
@@ -12320,6 +12337,14 @@ end
             elseif mouse.context == nil and MOUSE_click_RB(obj.sections[10]) then
               mouse.context = contexts.draglasso
               lasso = {l = mouse.mx, t = mouse.my, r = mouse.mx+5, b = mouse.my+5}
+            end
+          end
+
+          if mouse.context and mouse.context == contexts.auto_delayslider then
+            local val = F_limit(MOUSE_sliderHBar(obj.sections[110]),0,1)
+            if val ~= nil then
+              auto_delay = math.floor(val * 10)
+              update_gfx = true
             end
           end
           
@@ -14229,6 +14254,7 @@ end
   
   function Cycle_Auto()
   
+    local ad = auto_delay*1000000
     if cycle_select.statecnt == 0 then
     
       trackfxparam_select = ctl_select[1].ctl
@@ -14245,7 +14271,7 @@ end
       
       SetParam3(v)
       local x = 0
-      for d = 0,5000000 do x = x + 1 end
+      for d = 0,ad do x = x + 1 end
       local dval = GetParamDisp(cc, tracknum, fxnum, param, dvoff,trackfxparam_select)
       local stcnt = 1
       local ndval
@@ -14257,7 +14283,7 @@ end
         
         SetParam3(v)
         local x = 0
-        for d = 0,5000000 do x = x + 1 end
+        for d = 0,ad do x = x + 1 end
         ndval = GetParamDisp(cc, tracknum, fxnum, param, dvoff,trackfxparam_select)
         if ndval ~= dval then
           dval = ndval
@@ -14298,7 +14324,7 @@ end
       
       SetParam3(v)
       local x = 0
-      for d = 0,5000000 do x = x + 1 end
+      for d = 0,ad do x = x + 1 end
       local dval = GetParamDisp(cc, tracknum, fxnum, param, dvoff,trackfxparam_select)
       local stcnt = 1
       local ndval
@@ -14311,7 +14337,7 @@ end
         v = min2+(i*step*md)
         SetParam3(v)
         local x = 0
-        for d = 0,5000000 do x = x + 1 end
+        for d = 0,ad do x = x + 1 end
         ndval = GetParamDisp(cc, tracknum, fxnum, param, dvoff, trackfxparam_select)
         if ndval ~= dval then
           dval = ndval
@@ -14325,7 +14351,12 @@ end
       for i = 1, stcnt do
         cycle_select[i] = cycle_temp[i]
       end
-      cycle_select.statecnt = stcnt
+      if cycle_select.statecnt > stcnt then
+        for i = stcnt + 1, cycle_select.statecnt do
+          cycle_select[i] = {val = 0, dispval = '', dv = ''}
+        end
+      end
+      --cycle_select.statecnt = stcnt
       SetParam()
     
     end
@@ -15035,6 +15066,7 @@ end
     locky = tobool(nz(GES('locky',true),false))
     lockw = tonumber(nz(GES('lockw',true),128))
     lockh = tonumber(nz(GES('lockh',true),128))
+    auto_delay = tonumber(nz(GES('auto_sensitivity',true),auto_delay))    
     settings_swapctrlclick = tobool(nz(GES('swapctrlclick',true),settings_swapctrlclick))
     settings_showbars = tobool(nz(GES('showbars',true),settings_showbars))
     settings_insertdefaultoneverytrack = tobool(nz(GES('insertdefstripontrack',true),settings_insertdefaultoneverytrack))
@@ -15068,6 +15100,7 @@ end
     reaper.SetExtState(SCRIPT,'locky',tostring(locky), true)
     reaper.SetExtState(SCRIPT,'lockw',tostring(lockw), true)
     reaper.SetExtState(SCRIPT,'lockh',tostring(lockh), true)
+    reaper.SetExtState(SCRIPT,'auto_sensitivity',auto_delay, true)
     reaper.SetExtState(SCRIPT,'swapctrlclick',tostring(settings_swapctrlclick), true)
     reaper.SetExtState(SCRIPT,'showbars',tostring(settings_showbars), true)
     reaper.SetExtState(SCRIPT,'insertdefstripontrack',tostring(settings_insertdefaultoneverytrack), true)
@@ -16787,6 +16820,7 @@ end
   locky = false
   lockw, olockw = 0, 0
   lockh, olockh = 0, 0
+  auto_delay = 0
 
   resource_path = reaper.GetResourcePath().."/Scripts/LBX/LBXCS_resources/"
   controls_path = resource_path.."controls/"
