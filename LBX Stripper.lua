@@ -6351,8 +6351,9 @@ end
         local param = strips[tracks[track_select].strip][page].controls[trackfxparam_select].param
         strips[tracks[track_select].strip][page].controls[trackfxparam_select].dirty = true
         local min, max = GetParamMinMax(cc,track,nz(fxnum,-1),param,true,trackfxparam_select)
+        reaper.Undo_BeginBlock2(0)
         reaper.TrackFX_SetParam(track, nz(fxnum,-1), param, DenormalizeValue(min, max, val))
-
+        reaper.Undo_EndBlock2(0,"RRR",-1)
       elseif cc == ctlcats.trackparam then
         local param = strips[tracks[track_select].strip][page].controls[trackfxparam_select].param
         strips[tracks[track_select].strip][page].controls[trackfxparam_select].dirty = true
@@ -10674,6 +10675,9 @@ end
                     trackfxparam_select = i
                     oms = mouse.shift
                     
+                    --undotxt = 'Parameter Change'
+                    --reaper.Undo_BeginBlock2()
+                    
                   elseif ctltype == 2 or ctltype == 3 then
                     --button/button inverse
                     trackfxparam_select = i
@@ -14028,6 +14032,11 @@ end
     end
 
     if not mouse.LB and not mouse.RB then mouse.context = nil end
+    --[[if mouse.context == nil and undotxt then
+      reaper.Undo_OnStateChange2(0, undotxt)
+      reaper.Undo_EndBlock2(0,undotxt, -1)
+      undotxt = nil
+    end]]
     if show_cycleoptions == false then cycle_editmode = false end
     
     local char = gfx.getchar() 
@@ -14235,6 +14244,8 @@ end
       local dvoff = strips[tracks[track_select].strip][page].controls[trackfxparam_select].dvaloffset
       
       SetParam3(v)
+      local x = 0
+      for d = 0,5000000 do x = x + 1 end
       local dval = GetParamDisp(cc, tracknum, fxnum, param, dvoff,trackfxparam_select)
       local stcnt = 1
       local ndval
@@ -14245,6 +14256,8 @@ end
       for v = 0.01, 1, 0.01 do
         
         SetParam3(v)
+        local x = 0
+        for d = 0,5000000 do x = x + 1 end
         ndval = GetParamDisp(cc, tracknum, fxnum, param, dvoff,trackfxparam_select)
         if ndval ~= dval then
           dval = ndval
@@ -14284,6 +14297,8 @@ end
       local dvoff = strips[tracks[track_select].strip][page].controls[trackfxparam_select].dvaloffset
       
       SetParam3(v)
+      local x = 0
+      for d = 0,5000000 do x = x + 1 end
       local dval = GetParamDisp(cc, tracknum, fxnum, param, dvoff,trackfxparam_select)
       local stcnt = 1
       local ndval
@@ -14295,6 +14310,8 @@ end
       
         v = min2+(i*step*md)
         SetParam3(v)
+        local x = 0
+        for d = 0,5000000 do x = x + 1 end
         ndval = GetParamDisp(cc, tracknum, fxnum, param, dvoff, trackfxparam_select)
         if ndval ~= dval then
           dval = ndval
