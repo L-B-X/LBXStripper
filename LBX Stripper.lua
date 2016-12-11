@@ -11043,10 +11043,18 @@ end
                       strips[tracks[track_select].strip][page].controls[i].cycledata.pos = 
                                   strips[tracks[track_select].strip][page].controls[i].cycledata.pos + v
                       if strips[tracks[track_select].strip][page].controls[i].cycledata.pos < 1 then
-                        strips[tracks[track_select].strip][page].controls[i].cycledata.pos = strips[tracks[track_select].strip][page].controls[i].cycledata.statecnt
+                        if strips[tracks[track_select].strip][page].controls[i].cycledata.draggable then
+                          strips[tracks[track_select].strip][page].controls[i].cycledata.pos = 1
+                        else
+                          strips[tracks[track_select].strip][page].controls[i].cycledata.pos = strips[tracks[track_select].strip][page].controls[i].cycledata.statecnt
+                        end
                       elseif strips[tracks[track_select].strip][page].controls[i].cycledata.pos > 
                               strips[tracks[track_select].strip][page].controls[i].cycledata.statecnt then
-                        strips[tracks[track_select].strip][page].controls[i].cycledata.pos = 1
+                        if strips[tracks[track_select].strip][page].controls[i].cycledata.draggable then
+                          strips[tracks[track_select].strip][page].controls[i].cycledata.pos = strips[tracks[track_select].strip][page].controls[i].cycledata.statecnt
+                        else
+                          strips[tracks[track_select].strip][page].controls[i].cycledata.pos = 1
+                        end
                       end
                     end
                     if strips[tracks[track_select].strip][page].controls[i].cycledata.pos <=     
