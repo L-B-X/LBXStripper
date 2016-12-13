@@ -4867,7 +4867,53 @@ end
         if plist_w > 0 then                  
           gfx.blit(1001,1,0,0,0,obj.sections[43].w,obj.sections[43].h,0,butt_h)
         end
+
+        if lasso ~= nil then
+          gfx.a = 0.2
+          f_Get_SSV(gui.color.blue)
+          local l = {l = lasso.l, r = lasso.r, t = lasso.t, b = lasso.b}
+          if lasso.r < lasso.l then
+            l.l = lasso.r
+            l.r = lasso.l
+          end
+          if lasso.b < lasso.t then
+            l.b = lasso.t
+            l.t = lasso.b          
+          end
+          gfx.rect(l.l,
+                   l.t, 
+                   l.r-l.l,
+                   l.b-l.t, 1, 1)
+          if ctl_select ~= nil then
+            
+            gfx.a = 0.8
+            f_Get_SSV(gui.color.green)
+            local ls = 4
+            for c = 1, #ctl_select do
+              local cx = ctl_select[c].ctl
+              local x = strips[tracks[track_select].strip][page].controls[cx].x+4
+              local y = strips[tracks[track_select].strip][page].controls[cx].y+4
+              local w = strips[tracks[track_select].strip][page].controls[cx].w-8
+              local h = strips[tracks[track_select].strip][page].controls[cx].ctl_info.cellh-8
+              x=x-surface_offset.x+obj.sections[10].x
+              y=y-surface_offset.y+obj.sections[10].y
+              gfx.line(x,y,x+ls,y,1)
+              gfx.line(x,y,x,y+ls,1)
+
+              gfx.line(x+w,y,x+w-ls,y,1)
+              gfx.line(x+w,y,x+w,y+ls,1)
+
+              gfx.line(x+w,y+h-ls,x+w,y+h,1)
+              gfx.line(x+w,y+h,x+w-ls,y+h,1)
+              
+              gfx.line(x,y+h-ls,x,y+h,1)
+              gfx.line(x,y+h,x+ls,y+h,1)
+              
+            end
+          end
+        end
         
+        gfx.a = 1
         f_Get_SSV(gui.color.black)
         gfx.rect(0,
                  obj.sections[11].y, 
@@ -10596,8 +10642,8 @@ end
         mouse.my = snapmy
         noscroll = true
       
-      elseif mouse.context == nil and snaplrn_mode == true then
-      
+      elseif mouse.context == nil and snaplrn_mode == true then      
+        
         if show_fsnapshots or show_xysnapshots then
           show_fsnapshots = false
           show_xysnapshots = false
@@ -10605,7 +10651,7 @@ end
         end
         
         if sstype_select > 1 then
-          if mouse.context == nil and (MOUSE_click(obj.sections[10]) or MOUSE_click_RB(obj.sections[10])) then
+          if mouse.context == nil and (MOUSE_click(obj.sections[10])) then -- or MOUSE_click_RB(obj.sections[10])) then
             if mouse.mx > obj.sections[10].x then
               if strips and tracks[track_select] and strips[tracks[track_select].strip] then
                 for i = 1, #strips[tracks[track_select].strip][page].controls do
@@ -10634,16 +10680,88 @@ end
                         snapshots[strip][page][sstype_select].ctls[ctlidx] = {c_id = strips[tracks[track_select].strip][page].controls[i].c_id,
                                                                               ctl = i}
                       end
-          
-          
                     end
                   end
                 end
               end
             end      
+          elseif mouse.context == nil and (MOUSE_click_RB(obj.sections[10])) then 
+            mouse.context = contexts.draglasso
+            lasso = {l = mouse.mx, t = mouse.my, r = mouse.mx+5, b = mouse.my+5}
+          elseif lasso ~= nil then
+            --Dropped
+            
+            Lasso_Select(false)
+            if ctl_select ~= nil then
+
+              local strip = tracks[track_select].strip
+              
+              for c = 1, #ctl_select do
+                local i = ctl_select[c].ctl
+                
+                --Add / Remove
+                local ctlidx = GetSnapshotCtlIdx(strip, page, sstype_select, i)
+                if ctlidx then
+                  --re-add deleted
+                  if snapshots[strip][page][sstype_select].ctls[ctlidx].delete then
+                    snapshots[strip][page][sstype_select].ctls[ctlidx].delete = false
+                    strips[tracks[track_select].strip][page].controls[i].dirty = true                  
+                  end
+                else
+                  --add
+                  local ctlidx = #snapshots[strip][page][sstype_select].ctls + 1
+                  snapshots[strip][page][sstype_select].ctls[ctlidx] = {c_id = strips[tracks[track_select].strip][page].controls[i].c_id,
+                                                                        ctl = i}
+                  strips[tracks[track_select].strip][page].controls[i].dirty = true
+                end
+  
+              end
+            end
+            
+            lasso = nil
+            ctl_select = nil
+            update_ctls = true
+            update_surface = true
+        
           end
         end
-         
+      
+      elseif mouse.context and mouse.context == contexts.draglasso then
+        if (mouse.mx ~= mouse.last_x or mouse.my ~= mouse.last_y) then
+          lasso.r = mouse.mx
+          lasso.b = mouse.my
+
+          Lasso_Select(false)
+          --[[if ctl_select ~= nil then
+
+            local strip = tracks[track_select].strip
+            
+            for c = 1, #ctl_select do
+              local i = ctl_select[c].ctl
+              
+              --Add / Remove
+              local ctlidx = GetSnapshotCtlIdx(strip, page, sstype_select, i)
+              if ctlidx then
+                --re-add deleted
+                if snapshots[strip][page][sstype_select].ctls[ctlidx].delete then
+                  snapshots[strip][page][sstype_select].ctls[ctlidx].delete = false
+                  strips[tracks[track_select].strip][page].controls[i].dirty = true                  
+                end
+              else
+                --add
+                local ctlidx = #snapshots[strip][page][sstype_select].ctls + 1
+                snapshots[strip][page][sstype_select].ctls[ctlidx] = {c_id = strips[tracks[track_select].strip][page].controls[i].c_id,
+                                                                      ctl = i}
+                strips[tracks[track_select].strip][page].controls[i].dirty = true
+              end
+
+            end
+          end
+
+          update_ctls = true]]
+          update_surface = true
+        end
+      
       elseif mouse.context == nil and (MOUSE_click(obj.sections[10]) or MOUSE_click_RB(obj.sections[10]) or gfx.mouse_wheel ~= 0) then
         
         local togfsnap = false
