@@ -4890,25 +4890,31 @@ end
             f_Get_SSV(gui.color.green)
             local ls = 4
             for c = 1, #ctl_select do
+
               local cx = ctl_select[c].ctl
-              local x = strips[tracks[track_select].strip][page].controls[cx].x+4
-              local y = strips[tracks[track_select].strip][page].controls[cx].y+4
-              local w = strips[tracks[track_select].strip][page].controls[cx].w-8
-              local h = strips[tracks[track_select].strip][page].controls[cx].ctl_info.cellh-8
-              x=x-surface_offset.x+obj.sections[10].x
-              y=y-surface_offset.y+obj.sections[10].y
-              gfx.line(x,y,x+ls,y,1)
-              gfx.line(x,y,x,y+ls,1)
 
-              gfx.line(x+w,y,x+w-ls,y,1)
-              gfx.line(x+w,y,x+w,y+ls,1)
+              if strips[tracks[track_select].strip][page].controls[cx].ctlcat == ctlcats.fxparam or 
+                 strips[tracks[track_select].strip][page].controls[cx].ctlcat == ctlcats.trackparam or 
+                 strips[tracks[track_select].strip][page].controls[cx].ctlcat == ctlcats.tracksend then 
 
-              gfx.line(x+w,y+h-ls,x+w,y+h,1)
-              gfx.line(x+w,y+h,x+w-ls,y+h,1)
-              
-              gfx.line(x,y+h-ls,x,y+h,1)
-              gfx.line(x,y+h,x+ls,y+h,1)
-              
+                local x = strips[tracks[track_select].strip][page].controls[cx].x+4
+                local y = strips[tracks[track_select].strip][page].controls[cx].y+4
+                local w = strips[tracks[track_select].strip][page].controls[cx].w-8
+                local h = strips[tracks[track_select].strip][page].controls[cx].ctl_info.cellh-8
+                x=x-surface_offset.x+obj.sections[10].x
+                y=y-surface_offset.y+obj.sections[10].y
+                gfx.line(x,y,x+ls,y,1)
+                gfx.line(x,y,x,y+ls,1)
+  
+                gfx.line(x+w,y,x+w-ls,y,1)
+                gfx.line(x+w,y,x+w,y+ls,1)
+  
+                gfx.line(x+w,y+h-ls,x+w,y+h,1)
+                gfx.line(x+w,y+h,x+w-ls,y+h,1)
+                
+                gfx.line(x,y+h-ls,x,y+h,1)
+                gfx.line(x,y+h,x+ls,y+h,1)
+              end              
             end
           end
         end
@@ -10662,23 +10668,28 @@ end
                   if strips[tracks[track_select].strip][page].controls[i].fxfound then
                     if MOUSE_click(ctlxywh) then
           
-                      local strip = tracks[track_select].strip
-                      
-                      --Add / Remove
-                      local ctlidx = GetSnapshotCtlIdx(strip, page, sstype_select, i)
-                      if ctlidx then
-                        --already added - remove?
-                        if snapshots[strip][page][sstype_select].ctls[ctlidx].delete then
-                          snapshots[strip][page][sstype_select].ctls[ctlidx].delete = not snapshots[strip][page][sstype_select].ctls[ctlidx].delete
+                     if strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.fxparam or 
+                        strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.trackparam or 
+                        strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.tracksend then 
+                        local strip = tracks[track_select].strip
+                        
+                        --Add / Remove
+                        local ctlidx = GetSnapshotCtlIdx(strip, page, sstype_select, i)
+                        if ctlidx then
+                          --already added - remove?
+                          if snapshots[strip][page][sstype_select].ctls[ctlidx].delete then
+                            snapshots[strip][page][sstype_select].ctls[ctlidx].delete = not snapshots[strip][page][sstype_select].ctls[ctlidx].delete
+                          else
+                            snapshots[strip][page][sstype_select].ctls[ctlidx].delete = true
+                          end
+                        
                         else
-                          snapshots[strip][page][sstype_select].ctls[ctlidx].delete = true
+                          --add
+                          local ctlidx = #snapshots[strip][page][sstype_select].ctls + 1
+                          snapshots[strip][page][sstype_select].ctls[ctlidx] = {c_id = strips[tracks[track_select].strip][page].controls[i].c_id,
+                                                                                ctl = i}
                         end
-                      
-                      else
-                        --add
-                        local ctlidx = #snapshots[strip][page][sstype_select].ctls + 1
-                        snapshots[strip][page][sstype_select].ctls[ctlidx] = {c_id = strips[tracks[track_select].strip][page].controls[i].c_id,
-                                                                              ctl = i}
+
                       end
                     end
                   end
@@ -10699,22 +10710,26 @@ end
               for c = 1, #ctl_select do
                 local i = ctl_select[c].ctl
                 
-                --Add / Remove
-                local ctlidx = GetSnapshotCtlIdx(strip, page, sstype_select, i)
-                if ctlidx then
-                  --re-add deleted
-                  if snapshots[strip][page][sstype_select].ctls[ctlidx].delete then
-                    snapshots[strip][page][sstype_select].ctls[ctlidx].delete = false
-                    strips[tracks[track_select].strip][page].controls[i].dirty = true                  
+                if strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.fxparam or 
+                   strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.trackparam or 
+                   strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.tracksend then 
+                  --Add / Remove
+                  local ctlidx = GetSnapshotCtlIdx(strip, page, sstype_select, i)
+                  if ctlidx then
+                    --re-add deleted
+                    if snapshots[strip][page][sstype_select].ctls[ctlidx].delete then
+                      snapshots[strip][page][sstype_select].ctls[ctlidx].delete = false
+                      strips[tracks[track_select].strip][page].controls[i].dirty = true                  
+                    end
+                  else
+                    --add
+                    local ctlidx = #snapshots[strip][page][sstype_select].ctls + 1
+                    snapshots[strip][page][sstype_select].ctls[ctlidx] = {c_id = strips[tracks[track_select].strip][page].controls[i].c_id,
+                                                                          ctl = i}
+                    strips[tracks[track_select].strip][page].controls[i].dirty = true
                   end
-                else
-                  --add
-                  local ctlidx = #snapshots[strip][page][sstype_select].ctls + 1
-                  snapshots[strip][page][sstype_select].ctls[ctlidx] = {c_id = strips[tracks[track_select].strip][page].controls[i].c_id,
-                                                                        ctl = i}
-                  strips[tracks[track_select].strip][page].controls[i].dirty = true
                 end
-  
+                  
               end
             end
             
