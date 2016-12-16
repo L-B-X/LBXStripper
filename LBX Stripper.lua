@@ -73,6 +73,10 @@
               addxyctl = 38,
               dragxy = 39,
               auto_delayslider = 40,
+              xxy_dragsnap = 41,
+              xxy_movesnap = 42,
+              xxy_drag = 43,
+              xxy_gravityslider = 44,
               dummy = 99
               }
   
@@ -777,6 +781,10 @@
                           y = butt_h+10 + (butt_h/2+2 + 10) * 1,
                           w = (obj.sections[160].w-20)/2 - 3,
                           h = butt_h/2+8}                       
+      obj.sections[224] = {x = 10,
+                          y = butt_h+10 + (butt_h/2+2 + 10) * 1,
+                          w = (obj.sections[160].w-20)/2 - 1,
+                          h = butt_h/2+8}                       
       
       --Action chooser
       obj.sections[170] = {x = obj.sections[10].x+20,
@@ -870,7 +878,37 @@
                            y = obj.sections[200].y + butt_h+4,
                            w = 60,
                            h = butt_h}
-                           
+      
+      local margin = 4
+      
+      obj.sections[220] = {x = margin,
+                           y = obj.sections[10].y+margin,
+                           w = gfx1.main_w-160-margin*2,
+                           h = obj.sections[10].h-margin*2}                     
+      obj.sections[221] = {x = obj.sections[220].x+obj.sections[220].w+2,
+                           y = obj.sections[10].y+margin,
+                           w = 160,
+                           h = obj.sections[10].h-margin*2}                     
+      obj.sections[222] = {x = obj.sections[220].x+obj.sections[220].w+2,
+                           y = 0,
+                           w = 160,
+                           h = butt_h}                     
+
+      local ssh2 = obj.sections[221].h - (butt_h+10) - (butt_h/2+4 + 10) * 2 - 10
+      obj.sections[223] = {x = 10,
+                          y = butt_h+10 + (butt_h/2+4 + 10) * 2,
+                          w = obj.sections[221].w-20,
+                          h = ssh2}                       
+
+      obj.sections[225] = {x = 60,
+                           y = butt_h+10 + (butt_h/2+4 + 10) * 1,
+                           w = 90,
+                           h = butt_h/2+4}                     
+      obj.sections[226] = {x = 10,
+                          y = butt_h+10 + (butt_h/2+2 + 10) * 0,
+                          w = obj.sections[221].w-20,
+                          h = butt_h/2+8}                       
+      
     return obj
   end
   
@@ -4298,6 +4336,7 @@ end
     end
     GUI_DrawButton(gui, 'RENAME SUB', obj.sections[164], bc2, gui.color.black, true, '', false)
     GUI_DrawButton(gui, 'LEARN CTLS', obj.sections[167], bc, gui.color.black, true, '', false)
+    GUI_DrawButton(gui, 'META LITE XY', obj.sections[224], bc, gui.color.black, true, '', false)
     
     xywh = {x = obj.sections[163].x,
             y = obj.sections[163].y,
@@ -4386,7 +4425,6 @@ end
       --learn mode
       
     end    
-    
     
     gfx.dest = 1    
   end
@@ -4799,8 +4837,8 @@ end
   function GUI_draw(obj, gui)
     gfx.mode =4
     
-    if update_gfx or update_surface or update_sidebar or update_topbar or update_ctlopts or update_ctls or update_bg or 
-       update_settings or update_snaps or update_msnaps or update_actcho or update_fsnaps or update_mfsnaps then    
+    if show_xxy == false and (update_gfx or update_surface or update_sidebar or update_topbar or update_ctlopts or update_ctls or update_bg or 
+       update_settings or update_snaps or update_msnaps or update_actcho or update_fsnaps or update_mfsnaps) then    
       local p = 0
         
       gfx.dest = 1
@@ -4813,6 +4851,7 @@ end
         gfx.setimgdim(1002,obj.sections[45].w, obj.sections[45].h)
         gfx.setimgdim(1003,obj.sections[160].w, obj.sections[160].h)
         gfx.setimgdim(1005,obj.sections[180].w, obj.sections[180].h)
+        gfx.setimgdim(1006,obj.sections[221].w, obj.sections[221].h)
       elseif resize_snaps then
         gfx.setimgdim(1003,obj.sections[160].w, obj.sections[160].h)      
       elseif resize_fsnaps then
@@ -5336,6 +5375,36 @@ end
         UpdateLEdges()
       end]]
  
+    elseif show_xxy and (update_gfx or update_xxy or update_surface or update_snaps or update_msnaps or resize_snaps) then
+    
+      gfx.dest = 1
+      if update_gfx then
+        gfx.setimgdim(1, -1, -1)  
+        gfx.setimgdim(1, gfx1.main_w,gfx1.main_h)
+      end
+            
+      if resize_display then
+        gfx.setimgdim(1002,obj.sections[45].w, obj.sections[45].h)
+        gfx.setimgdim(1003,obj.sections[160].w, obj.sections[160].h)
+        gfx.setimgdim(1005,obj.sections[180].w, obj.sections[180].h)
+        gfx.setimgdim(1006,obj.sections[221].w, obj.sections[221].h)
+      end
+
+      GUI_DrawXXY(gui,obj)
+
+      if update_gfx or update_snaps then
+        GUI_DrawXXYSnaps(gui,obj)
+      end
+    
+      gfx.blit(1006,1,0,0,0,obj.sections[221].w,obj.sections[221].h,obj.sections[221].x,obj.sections[221].y)        
+      
+      if dragsnap ~= nil then
+      
+        local ppw, pph = gfx.getimgdim(def_xytarget)
+        gfx.blit(def_xytarget,1,0, 0, 0, ppw, pph, dragsnap.x-ppw/2, dragsnap.y-pph/2)
+      
+      end
+    
     end
     
     gfx.dest = -1
@@ -5361,7 +5430,224 @@ end
     update_actcho = false
     resize_snaps = false
     resize_fsnaps = false
+    update_xxy = false
     
+  end
+
+  function GUI_DrawXXYSnaps(gui, obj)
+    gfx.dest = 1006
+    
+    gfx.a=1
+    f_Get_SSV(gui.color.black)
+    gfx.rect(0,
+             0, 
+             obj.sections[221].w,
+             obj.sections[221].h, 1, 1)
+    f_Get_SSV('64 64 64')
+    gfx.rect(0,
+             0, 
+             obj.sections[221].w,
+             obj.sections[221].h, 0, 1)
+    
+    xywh = {x = 0,
+            y = 0,
+            w = obj.sections[221].w,
+            h = butt_h}
+    
+    f_Get_SSV(gui.color.white)
+    gfx.a = 1 
+    gfx.rect(xywh.x,
+             xywh.y, 
+             xywh.w,
+             butt_h, 1 )
+    --[[gfx.rect(obj.sections[165].x,
+             obj.sections[165].y, 
+             obj.sections[165].w,
+             obj.sections[165].h, 1 )]]
+    
+    GUI_textC(gui,xywh,'SNAPSHOTS',gui.color.black,-2)
+
+    local sstypestr = 'PAGE'
+    if sstype_select > 1 then
+      if tracks[track_select] and tracks[track_select].strip and snapshots[tracks[track_select].strip] and 
+         snapshots[tracks[track_select].strip][page][sstype_select] then
+        sstypestr = snapshots[tracks[track_select].strip][page][sstype_select].subsetname
+      else
+        sstypestr = ''
+      end
+    end
+      
+    GUI_DrawButton(gui, sstypestr, obj.sections[226], gui.color.white, gui.color.black, true, '', false)
+    GUI_DrawSliderH(gui, 'GRAVITY', obj.sections[225], gui.color.black, gui.color.white, ((xxy_gravity-1)/3))
+    
+    --GUI_DrawButton(gui, '*', obj.sections[168], gui.color.white, gui.color.black, true, '', false)
+    --GUI_DrawButton(gui, 'RANDOMIZE', obj.sections[169], gui.color.white, gui.color.black, true, '', false)
+    --GUI_DrawButton(gui, 'CAPTURE', obj.sections[162], gui.color.white, gui.color.black, true, '', false)
+    --GUI_DrawButton(gui, 'NEW SUBSET', obj.sections[166], gui.color.white, gui.color.black, true, '', false)
+    local bc, bc2 = gui.color.white, gui.color.white
+    if sstype_select == 1 then
+      bc = '64 64 64'
+      bc2 = '64 64 64'
+    elseif snaplrn_mode then
+      bc = '255 0 0'
+    end
+    --GUI_DrawButton(gui, 'RENAME SUB', obj.sections[164], bc2, gui.color.black, true, '', false)
+    --GUI_DrawButton(gui, 'LEARN CTLS', obj.sections[167], bc, gui.color.black, true, '', false)
+    
+    xywh = {x = obj.sections[223].x,
+            y = obj.sections[223].y,
+            w = obj.sections[223].w,
+            h = obj.sections[223].h}
+    f_Get_SSV('64 64 64')
+    gfx.a = 1 
+    gfx.rect(xywh.x,
+             xywh.y, 
+             xywh.w,
+             xywh.h, 0 )
+    
+    
+    xywh.h = butt_h
+    gfx.rect(xywh.x,
+     xywh.y, 
+     xywh.w,
+     xywh.h, 1 )
+    gfx.a = 0.5
+    f_Get_SSV(gui.color.black)
+    gfx.a = 1
+    gfx.rect(xywh.x+xywh.w/2,
+     xywh.y, 
+     2,
+     xywh.h, 1 )
+    gfx.triangle(xywh.x+xywh.w/4,xywh.y+4,xywh.x+xywh.w/4-6,xywh.y+xywh.h-4,xywh.x+xywh.w/4+6,xywh.y+xywh.h-4,1)     
+    gfx.triangle(xywh.x+xywh.w*0.75,xywh.y+xywh.h-4,xywh.x+xywh.w*0.75-6,xywh.y+4,xywh.x+xywh.w*0.75+6,xywh.y+4,1)
+    
+    gfx.a = 1
+    
+    SSXXY_butt_cnt = math.floor(obj.sections[223].h / butt_h) - 1
+    if snaplrn_mode == false then
+      
+      local strip = tracks[track_select].strip
+      if strip and snapshots and snapshots[strip] and snapshots[strip][page][sstype_select] then
+
+        if sstype_select == 1 then
+          if #snapshots[strip][page][sstype_select] > 0 then
+            for i = 1,SSXXY_butt_cnt do
+            
+              xywh.y = obj.sections[223].y + i*butt_h
+              local c = gui.color.white
+              if ss_select == xxylist_offset+i then
+                f_Get_SSV(gui.color.white)
+                gfx.rect(xywh.x,
+                 xywh.y, 
+                 xywh.w,
+                 xywh.h, 1 )
+                c = gui.color.black
+              end
+              if snapshots[strip][page][sstype_select][i+xxylist_offset] then
+                GUI_textsm_LJ(gui,xywh,roundX(i+xxylist_offset,0)..': '..snapshots[strip][page][sstype_select][i+xxylist_offset].name,c,-2,xywh.w)
+              end
+          
+            end
+        
+          end
+        elseif sstype_select > 1 then
+          if #snapshots[strip][page][sstype_select].snapshot > 0 then
+            for i = 1,SSXXY_butt_cnt do
+            
+              xywh.y = obj.sections[223].y + i*butt_h
+              local c = gui.color.white
+              if ss_select == xxylist_offset+i then
+                f_Get_SSV(gui.color.white)
+                gfx.rect(xywh.x,
+                 xywh.y, 
+                 xywh.w,
+                 xywh.h, 1 )
+                c = gui.color.black
+              end
+              if snapshots[strip][page][sstype_select].snapshot[i+xxylist_offset] then
+                GUI_textsm_LJ(gui,xywh,roundX(i+xxylist_offset,0)..': '..snapshots[strip][page][sstype_select].snapshot[i+xxylist_offset].name,c,-2,xywh.w)
+              end
+          
+            end
+        
+          end
+        
+        end
+
+      end
+    else
+      --learn mode
+      
+    end    
+    
+    
+    gfx.dest = 1    
+
+  end
+    
+  function GUI_DrawXXY(gui, obj)
+  
+    gfx.a=1
+    f_Get_SSV(gui.color.black)
+    gfx.rect(0,
+             0, 
+             gfx1.main_w,
+             gfx1.main_h, 1, 1)
+
+    local xywh = {x = obj.sections[222].x,
+                  y = obj.sections[222].y, 
+                  w = obj.sections[222].w,
+                  h = obj.sections[222].h}
+    f_Get_SSV(gui.color.white)
+    c = gui.color.black
+    gfx.rect(xywh.x,
+             xywh.y, 
+             xywh.w,
+             xywh.h, 1, 1)
+    GUI_textC(gui,xywh,'EXIT',c,-2)
+
+    f_Get_SSV(gui.color.white)
+    gfx.rect(obj.sections[220].x,
+             obj.sections[220].y, 
+             obj.sections[220].w,
+             obj.sections[220].h, 0, 1)
+    
+    local ppw, pph = gfx.getimgdim(def_xytarget)
+    
+    local strip = tracks[track_select].strip
+    if xxy and xxy[strip] and xxy[strip][page] and xxy[strip][page][sstype_select] then
+      if #xxy[strip][page][sstype_select].points > 0 then
+        for p = 1, #xxy[strip][page][sstype_select].points do
+          local x,y = xxy[strip][page][sstype_select].points[p].x, xxy[strip][page][sstype_select].points[p].y
+          x = obj.sections[220].x + x*obj.sections[220].w 
+          y = obj.sections[220].y + y*obj.sections[220].h 
+          gfx.blit(def_xytarget,1,0, 0, 0, ppw, pph, x-ppw/2, y-pph/2)
+          local xywh = {x = x, y = y-butt_h, w = 1, h = 1}
+          local sstxt = snapshots[strip][page][sstype_select].snapshot[xxy[strip][page][sstype_select].points[p].ss].name
+          local c = gui.color.white
+          local dist = xxy[strip][page][sstype_select].points[p].distance
+          if dist then
+          --DBG(xxy_gravity)
+            --if tostring(dist) ~= tostring(xxy_shortdist) then
+            local gx = 0
+            if tostring(dist) == tostring(xxy_shortdist) then
+              gx = F_limit((192-dist*1000),0,255)
+            end
+            dist = (dist^(1/(xxy_gravity)))^(5-xxy_gravity)
+            local rx = F_limit(255-(dist*800),0,255)
+            local bx = F_limit((dist*1000),0,255)
+            c = rx..' '..gx..' '..bx
+          end
+          GUI_textC(gui,xywh,sstxt,c,-2)
+        end
+      end
+      --POS
+      local x,y = xxy[strip][page][sstype_select].x*obj.sections[220].w + obj.sections[220].x, xxy[strip][page][sstype_select].y*obj.sections[220].h + obj.sections[220].y
+      f_Get_SSV(gui.color.yellow)
+      gfx.line(x-16,y,x+16,y,1)
+      gfx.line(x,y-16,x,y+16,1)    
+    end
+      
   end
   
   function GUI_DrawTopBar(gui, obj)
@@ -9713,127 +9999,156 @@ end
     mouse.shift = gfx.mouse_cap&8==8
     mouse.alt = gfx.mouse_cap&16==16
 
-    if settings_followselectedtrack and navigate then
-      if track_select ~= nil or ct > 0 then
-        if ct > 0 then
-          if track_select == nil then track_select = -1 end
-          local st = reaper.GetSelectedTrack(0,0)
-          if st == nil then
-            st = GetTrack(-1)
-          end
-          local tr = GetTrack(track_select)
-          if st ~= nil and tr ~= nil then
-            if reaper.GetTrackGUID(st) ~= reaper.GetTrackGUID(tr) then
-              PopulateTracks()
-              for i = -1, reaper.CountTracks(0) do
-                tr = GetTrack(i)
-                if tr ~= nil then
-                  tracks[i].name = reaper.GetTrackState(tr)
-                  if reaper.GetTrackGUID(st) == reaper.GetTrackGUID(tr) then
-                    if strips[tracks[track_select].strip] then
-                      strips[tracks[track_select].strip].page = page
+    if show_xxy == false then
+
+      if settings_followselectedtrack and navigate then
+        if track_select ~= nil or ct > 0 then
+          if ct > 0 then
+            if track_select == nil then track_select = -1 end
+            local st = reaper.GetSelectedTrack(0,0)
+            if st == nil then
+              st = GetTrack(-1)
+            end
+            local tr = GetTrack(track_select)
+            if st ~= nil and tr ~= nil then
+              if reaper.GetTrackGUID(st) ~= reaper.GetTrackGUID(tr) then
+                PopulateTracks()
+                for i = -1, reaper.CountTracks(0) do
+                  tr = GetTrack(i)
+                  if tr ~= nil then
+                    tracks[i].name = reaper.GetTrackState(tr)
+                    if reaper.GetTrackGUID(st) == reaper.GetTrackGUID(tr) then
+                      if strips[tracks[track_select].strip] then
+                        strips[tracks[track_select].strip].page = page
+                      end
+                      ChangeTrack(i)
+                      --trackedit_select = track_select
+                      trctlslist_offset = 0
+                      
+                      if strips and tracks[track_select] and strips[tracks[track_select].strip] then
+                        page = strips[tracks[track_select].strip].page
+                        surface_offset.x = strips[tracks[track_select].strip][page].surface_x
+                        surface_offset.y = strips[tracks[track_select].strip][page].surface_y
+                      else
+                        page = 1
+                        surface_offset.x = 0
+                        surface_offset.y = 0
+                      end
+                      break
                     end
-                    ChangeTrack(i)
-                    --trackedit_select = track_select
-                    trctlslist_offset = 0
-                    
-                    if strips and tracks[track_select] and strips[tracks[track_select].strip] then
-                      page = strips[tracks[track_select].strip].page
-                      surface_offset.x = strips[tracks[track_select].strip][page].surface_x
-                      surface_offset.y = strips[tracks[track_select].strip][page].surface_y
-                    else
-                      page = 1
-                      surface_offset.x = 0
-                      surface_offset.y = 0
-                    end
-                    break
                   end
                 end
+                
+                --TRK CHANGED
+                CheckStripControls()
+                CheckStripSends()          
+                PopulateTrackSendsInfo()
+                PopulateTrackFX()
+                PopulateSpecial()
+                ctl_select = nil
+                gfx2_select = nil
+                gfx3_select = nil
+                CloseActChooser()
+                show_ctlbrowser = false
+                
+                ss_select = nil
+                sstype_select = 1
+                ssoffset = 0
+                update_gfx = true
               end
-              
-              --TRK CHANGED
-              CheckStripControls()
-              CheckStripSends()          
-              PopulateTrackSendsInfo()
-              PopulateTrackFX()
-              PopulateSpecial()
-              ctl_select = nil
-              gfx2_select = nil
-              gfx3_select = nil
-              CloseActChooser()
-              show_ctlbrowser = false
-              
-              ss_select = nil
-              sstype_select = 1
-              ssoffset = 0
-              update_gfx = true
-            end
-          end 
-        end
-      end      
-    end
-    
-    local checksends = false
-    if settings_disablesendchecks == false and rt >= time_checksend then
-      time_checksend = rt + 2
-      checksends = true
-    end
-    
-    if rt >= time_nextupdate then
-      local suf = settings_updatefreq
-      if mode == 1 then suf = 0.2 end
-
-      time_nextupdate = rt + suf
-      if strips and tracks[track_select] and strips[tracks[track_select].strip] and #strips[tracks[track_select].strip][page].controls > 0 then
-        --check track
-        if CheckTrack(strips[tracks[track_select].strip].track, tracks[track_select].strip) then
-          local tr2 = GetTrack(strips[tracks[track_select].strip].track.tracknum)
-          if tr2 ~= nil then
-            if strips and strips[tracks[track_select].strip] then
-              local chktbl = {}
-              local pkmts = false
-              for i = 1, #strips[tracks[track_select].strip][page].controls do
-                --check fx
-                
-                tr = tr2
-                local tr_found = true
-                if strips[tracks[track_select].strip][page].controls[i].tracknum ~= nil then
-                  --tr = GetTrack(strips[tracks[track_select].strip][page].controls[i].tracknum)
-                  tr_found = CheckTrack(tracks[strips[tracks[track_select].strip][page].controls[i].tracknum], tracks[track_select].strip, page, i)
+            end 
+          end
+        end      
+      end
+      
+      local checksends = false
+      if settings_disablesendchecks == false and rt >= time_checksend then
+        time_checksend = rt + 2
+        checksends = true
+      end
+      
+      if rt >= time_nextupdate then
+        local suf = settings_updatefreq
+        if mode == 1 then suf = 0.2 end
+  
+        time_nextupdate = rt + suf
+        if strips and tracks[track_select] and strips[tracks[track_select].strip] and #strips[tracks[track_select].strip][page].controls > 0 then
+          --check track
+          if CheckTrack(strips[tracks[track_select].strip].track, tracks[track_select].strip) then
+            local tr2 = GetTrack(strips[tracks[track_select].strip].track.tracknum)
+            if tr2 ~= nil then
+              if strips and strips[tracks[track_select].strip] then
+                local chktbl = {}
+                local pkmts = false
+                for i = 1, #strips[tracks[track_select].strip][page].controls do
+                  --check fx
+                  
+                  tr = tr2
+                  local tr_found = true
+                  if strips[tracks[track_select].strip][page].controls[i].tracknum ~= nil then
+                    --tr = GetTrack(strips[tracks[track_select].strip][page].controls[i].tracknum)
+                    tr_found = CheckTrack(tracks[strips[tracks[track_select].strip][page].controls[i].tracknum], tracks[track_select].strip, page, i)
+                    if tr_found then
+                      tr = GetTrack(strips[tracks[track_select].strip][page].controls[i].tracknum)
+                    end 
+                  end
+                  
                   if tr_found then
-                    tr = GetTrack(strips[tracks[track_select].strip][page].controls[i].tracknum)
-                  end 
-                end
-                
-                if tr_found then
-                  if strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.fxparam then
-                    local fxguid = reaper.TrackFX_GetFXGUID(tr, strips[tracks[track_select].strip][page].controls[i].fxnum)
-                    if strips[tracks[track_select].strip][page].controls[i].fxguid == fxguid then
-
-                      local pn = reaper.TrackFX_GetNumParams(tr,strips[tracks[track_select].strip][page].controls[i].fxnum)
-                      if pn ~= 2 then
-                        if strips[tracks[track_select].strip][page].controls[i].offline ~= nil then
-                          strips[tracks[track_select].strip][page].controls[i].dirty = true
+                    if strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.fxparam then
+                      local fxguid = reaper.TrackFX_GetFXGUID(tr, strips[tracks[track_select].strip][page].controls[i].fxnum)
+                      if strips[tracks[track_select].strip][page].controls[i].fxguid == fxguid then
+  
+                        local pn = reaper.TrackFX_GetNumParams(tr,strips[tracks[track_select].strip][page].controls[i].fxnum)
+                        if pn ~= 2 then
+                          if strips[tracks[track_select].strip][page].controls[i].offline ~= nil then
+                            strips[tracks[track_select].strip][page].controls[i].dirty = true
+                          end
+                          strips[tracks[track_select].strip][page].controls[i].offline = nil
+                        else
+                          if strips[tracks[track_select].strip][page].controls[i].offline == nil then
+                            strips[tracks[track_select].strip][page].controls[i].dirty = true
+                          end
+                          strips[tracks[track_select].strip][page].controls[i].offline = true
                         end
-                        strips[tracks[track_select].strip][page].controls[i].offline = nil
+                      
+                        local v = GetParamValue2(strips[tracks[track_select].strip][page].controls[i].ctlcat,
+                                                 tr,
+                                                 strips[tracks[track_select].strip][page].controls[i].fxnum,
+                                                 strips[tracks[track_select].strip][page].controls[i].param, i)
+                        if strips[tracks[track_select].strip][page].controls[i].ctltype == 4 then
+                          if tostring(strips[tracks[track_select].strip][page].controls[i].val) ~= tostring(v) then
+                            strips[tracks[track_select].strip][page].controls[i].val = v
+                            strips[tracks[track_select].strip][page].controls[i].dirty = true
+                            --if strips[tracks[track_select].strip][page].controls[i].param_info.paramname == 'Bypass' then
+                            --  SetCtlEnabled(strips[tracks[track_select].strip][page].controls[i].fxnum) 
+                            --end
+                            strips[tracks[track_select].strip][page].controls[i].cycledata.posdirty = true 
+                            update_ctls = true
+                          end
+                        else
+                          if strips[tracks[track_select].strip][page].controls[i].val ~= v then
+                            strips[tracks[track_select].strip][page].controls[i].val = v
+                            strips[tracks[track_select].strip][page].controls[i].dirty = true
+                            if strips[tracks[track_select].strip][page].controls[i].param_info.paramname == 'Bypass' then
+                              SetCtlEnabled(strips[tracks[track_select].strip][page].controls[i].fxnum) 
+                            end
+                            update_ctls = true
+                          end                      
+                        end
                       else
-                        if strips[tracks[track_select].strip][page].controls[i].offline == nil then
-                          strips[tracks[track_select].strip][page].controls[i].dirty = true
+                        if strips[tracks[track_select].strip][page].controls[i].fxfound then
+                          CheckStripControls()
                         end
-                        strips[tracks[track_select].strip][page].controls[i].offline = true
                       end
-                    
+                    elseif strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.trackparam then
                       local v = GetParamValue2(strips[tracks[track_select].strip][page].controls[i].ctlcat,
                                                tr,
-                                               strips[tracks[track_select].strip][page].controls[i].fxnum,
+                                               nil,
                                                strips[tracks[track_select].strip][page].controls[i].param, i)
                       if strips[tracks[track_select].strip][page].controls[i].ctltype == 4 then
                         if tostring(strips[tracks[track_select].strip][page].controls[i].val) ~= tostring(v) then
                           strips[tracks[track_select].strip][page].controls[i].val = v
                           strips[tracks[track_select].strip][page].controls[i].dirty = true
-                          --if strips[tracks[track_select].strip][page].controls[i].param_info.paramname == 'Bypass' then
-                          --  SetCtlEnabled(strips[tracks[track_select].strip][page].controls[i].fxnum) 
-                          --end
                           strips[tracks[track_select].strip][page].controls[i].cycledata.posdirty = true 
                           update_ctls = true
                         end
@@ -9841,658 +10156,614 @@ end
                         if strips[tracks[track_select].strip][page].controls[i].val ~= v then
                           strips[tracks[track_select].strip][page].controls[i].val = v
                           strips[tracks[track_select].strip][page].controls[i].dirty = true
-                          if strips[tracks[track_select].strip][page].controls[i].param_info.paramname == 'Bypass' then
-                            SetCtlEnabled(strips[tracks[track_select].strip][page].controls[i].fxnum) 
-                          end
                           update_ctls = true
-                        end                      
-                      end
-                    else
-                      if strips[tracks[track_select].strip][page].controls[i].fxfound then
-                        CheckStripControls()
-                      end
-                    end
-                  elseif strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.trackparam then
-                    local v = GetParamValue2(strips[tracks[track_select].strip][page].controls[i].ctlcat,
-                                             tr,
-                                             nil,
-                                             strips[tracks[track_select].strip][page].controls[i].param, i)
-                    if strips[tracks[track_select].strip][page].controls[i].ctltype == 4 then
-                      if tostring(strips[tracks[track_select].strip][page].controls[i].val) ~= tostring(v) then
-                        strips[tracks[track_select].strip][page].controls[i].val = v
-                        strips[tracks[track_select].strip][page].controls[i].dirty = true
-                        strips[tracks[track_select].strip][page].controls[i].cycledata.posdirty = true 
-                        update_ctls = true
-                      end
-                    else
-                      if strips[tracks[track_select].strip][page].controls[i].val ~= v then
-                        strips[tracks[track_select].strip][page].controls[i].val = v
-                        strips[tracks[track_select].strip][page].controls[i].dirty = true
-                        update_ctls = true
-                      end
-                    end                    
-                  elseif strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.tracksend then
-
-                    if settings_disablesendchecks == false and checksends == true then
-                      local tt = strips[tracks[track_select].strip][page].controls[i].tracknum
-                      if tt == nil then
-                        tt = strips[tracks[track_select].strip].track.tracknum
-                      end
-                      local chk
-                      
-                      chk, chktbl[tt] = CheckSendGUID(tt,nil,strips[tracks[track_select].strip][page].controls[i].param_info.paramnum,
-                                                            strips[tracks[track_select].strip][page].controls[i].param_info.paramdestguid,
-                                                            strips[tracks[track_select].strip][page].controls[i].param_info.paramdestchan,
-                                                            strips[tracks[track_select].strip][page].controls[i].param_info.paramsrcchan,
-                                                            chktbl[tt])
-                      if chk == false then
-                        chktbl = CheckStripSends(chktbl)
-                      end
-                    end                    
-
-                    local v = GetParamValue2(strips[tracks[track_select].strip][page].controls[i].ctlcat,
-                                             tr,
-                                             nil,
-                                             strips[tracks[track_select].strip][page].controls[i].param, i)
-
-                    if strips[tracks[track_select].strip][page].controls[i].ctltype == 4 then
-                      if tostring(strips[tracks[track_select].strip][page].controls[i].val) ~= tostring(v) then
-                        strips[tracks[track_select].strip][page].controls[i].val = v
-                        strips[tracks[track_select].strip][page].controls[i].dirty = true
-                        strips[tracks[track_select].strip][page].controls[i].cycledata.posdirty = true 
-                        update_ctls = true                    
-                      end
-                    else
-                      if strips[tracks[track_select].strip][page].controls[i].val ~= v then
-                        strips[tracks[track_select].strip][page].controls[i].val = v
-                        strips[tracks[track_select].strip][page].controls[i].dirty = true
-                        update_ctls = true
-                      end
-                    end
-                  elseif strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.pkmeter then
-                    if rt >= time_nextupdate_pkmeter then
-                      pkmts = true
-                      local chd = 0
-                      local trn = strips[tracks[track_select].strip].track.tracknum
-                      if strips[tracks[track_select].strip][page].controls[i].tracknum ~= nil then
-                        trn = strips[tracks[track_select].strip][page].controls[i].tracknum
-                      end
-                      local p = strips[tracks[track_select].strip][page].controls[i].param
+                        end
+                      end                    
+                    elseif strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.tracksend then
+  
+                      if settings_disablesendchecks == false and checksends == true then
+                        local tt = strips[tracks[track_select].strip][page].controls[i].tracknum
+                        if tt == nil then
+                          tt = strips[tracks[track_select].strip].track.tracknum
+                        end
+                        local chk
+                        
+                        chk, chktbl[tt] = CheckSendGUID(tt,nil,strips[tracks[track_select].strip][page].controls[i].param_info.paramnum,
+                                                              strips[tracks[track_select].strip][page].controls[i].param_info.paramdestguid,
+                                                              strips[tracks[track_select].strip][page].controls[i].param_info.paramdestchan,
+                                                              strips[tracks[track_select].strip][page].controls[i].param_info.paramsrcchan,
+                                                              chktbl[tt])
+                        if chk == false then
+                          chktbl = CheckStripSends(chktbl)
+                        end
+                      end                    
+  
                       local v = GetParamValue2(strips[tracks[track_select].strip][page].controls[i].ctlcat,
                                                tr,
                                                nil,
-                                               p, i)
-                      if peak_info[trn] and peak_info[trn][p % 64] then
-                        chd = peak_info[trn][p % 64].ch_d
+                                               strips[tracks[track_select].strip][page].controls[i].param, i)
+  
+                      if strips[tracks[track_select].strip][page].controls[i].ctltype == 4 then
+                        if tostring(strips[tracks[track_select].strip][page].controls[i].val) ~= tostring(v) then
+                          strips[tracks[track_select].strip][page].controls[i].val = v
+                          strips[tracks[track_select].strip][page].controls[i].dirty = true
+                          strips[tracks[track_select].strip][page].controls[i].cycledata.posdirty = true 
+                          update_ctls = true                    
+                        end
                       else
-                        chd = -150
+                        if strips[tracks[track_select].strip][page].controls[i].val ~= v then
+                          strips[tracks[track_select].strip][page].controls[i].val = v
+                          strips[tracks[track_select].strip][page].controls[i].dirty = true
+                          update_ctls = true
+                        end
                       end
-                      if tostring(strips[tracks[track_select].strip][page].controls[i].val) ~= tostring(chd) then
-                        strips[tracks[track_select].strip][page].controls[i].val = chd
-                        strips[tracks[track_select].strip][page].controls[i].dirty = true
-                        update_ctls = true
+                    elseif strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.pkmeter then
+                      if rt >= time_nextupdate_pkmeter then
+                        pkmts = true
+                        local chd = 0
+                        local trn = strips[tracks[track_select].strip].track.tracknum
+                        if strips[tracks[track_select].strip][page].controls[i].tracknum ~= nil then
+                          trn = strips[tracks[track_select].strip][page].controls[i].tracknum
+                        end
+                        local p = strips[tracks[track_select].strip][page].controls[i].param
+                        local v = GetParamValue2(strips[tracks[track_select].strip][page].controls[i].ctlcat,
+                                                 tr,
+                                                 nil,
+                                                 p, i)
+                        if peak_info[trn] and peak_info[trn][p % 64] then
+                          chd = peak_info[trn][p % 64].ch_d
+                        else
+                          chd = -150
+                        end
+                        if tostring(strips[tracks[track_select].strip][page].controls[i].val) ~= tostring(chd) then
+                          strips[tracks[track_select].strip][page].controls[i].val = chd
+                          strips[tracks[track_select].strip][page].controls[i].dirty = true
+                          update_ctls = true
+                        end
                       end
+                    elseif strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.fxoffline then
+                      local fxguid = reaper.TrackFX_GetFXGUID(tr, strips[tracks[track_select].strip][page].controls[i].fxnum)
+                      if strips[tracks[track_select].strip][page].controls[i].fxguid == fxguid then
+                      --DBG(fxguid..'  '..strips[tracks[track_select].strip][page].controls[i].fxguid)
+  
+                        local pn = reaper.TrackFX_GetNumParams(tr,strips[tracks[track_select].strip][page].controls[i].fxnum)
+                        if pn ~= 2 then
+                          if strips[tracks[track_select].strip][page].controls[i].offline ~= nil then
+                            strips[tracks[track_select].strip][page].controls[i].dirty = true
+                            update_ctls = true
+                          end
+                          strips[tracks[track_select].strip][page].controls[i].offline = nil
+                          strips[tracks[track_select].strip][page].controls[i].val = 0
+                        else
+                          if strips[tracks[track_select].strip][page].controls[i].offline == nil then
+                            strips[tracks[track_select].strip][page].controls[i].dirty = true
+                            update_ctls = true
+                          end
+                          strips[tracks[track_select].strip][page].controls[i].offline = true
+                          strips[tracks[track_select].strip][page].controls[i].val = 1
+                        end
+                      else
+                        if strips[tracks[track_select].strip][page].controls[i].fxfound then
+                          CheckStripControls()
+                        end
+                      end                  
                     end
-                  elseif strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.fxoffline then
-                    local fxguid = reaper.TrackFX_GetFXGUID(tr, strips[tracks[track_select].strip][page].controls[i].fxnum)
-                    if strips[tracks[track_select].strip][page].controls[i].fxguid == fxguid then
-                    --DBG(fxguid..'  '..strips[tracks[track_select].strip][page].controls[i].fxguid)
-
-                      local pn = reaper.TrackFX_GetNumParams(tr,strips[tracks[track_select].strip][page].controls[i].fxnum)
-                      if pn ~= 2 then
-                        if strips[tracks[track_select].strip][page].controls[i].offline ~= nil then
-                          strips[tracks[track_select].strip][page].controls[i].dirty = true
-                          update_ctls = true
-                        end
-                        strips[tracks[track_select].strip][page].controls[i].offline = nil
-                        strips[tracks[track_select].strip][page].controls[i].val = 0
-                      else
-                        if strips[tracks[track_select].strip][page].controls[i].offline == nil then
-                          strips[tracks[track_select].strip][page].controls[i].dirty = true
-                          update_ctls = true
-                        end
-                        strips[tracks[track_select].strip][page].controls[i].offline = true
-                        strips[tracks[track_select].strip][page].controls[i].val = 1
-                      end
-                    else
-                      if strips[tracks[track_select].strip][page].controls[i].fxfound then
-                        CheckStripControls()
-                      end
-                    end                  
                   end
                 end
-              end
-              chktbl = nil
-              if pkmts then
-                time_nextupdate_pkmeter = rt + settings_updatefreq_pkmeter
+                chktbl = nil
+                if pkmts then
+                  time_nextupdate_pkmeter = rt + settings_updatefreq_pkmeter
+                end
               end
             end
           end
         end
       end
-    end
-    
-    if show_settings then
-      if mouse.LB and not mouse.last_LB and not MOUSE_click(obj.sections[70]) then
-        show_settings = false
-        SaveSettings()
-        update_gfx = true      
-      end
       
-      if MOUSE_click(obj.sections[71]) then
-        settings_followselectedtrack = not settings_followselectedtrack
-        update_settings = true
-      elseif MOUSE_click(obj.sections[72]) then
-        settings_disablesendchecks = not settings_disablesendchecks
-        update_settings = true
-      elseif MOUSE_click(obj.sections[73]) then
-        settings_saveallfxinststrip = not settings_saveallfxinststrip
-        update_settings = true
-      elseif MOUSE_click(obj.sections[81]) then
-        settings_mousewheelknob = not settings_mousewheelknob
-        update_settings = true
-      elseif MOUSE_click(obj.sections[82]) then
-        settings_swapctrlclick = not settings_swapctrlclick
-        update_settings = true
-      elseif MOUSE_click(obj.sections[83]) then
-        settings_insertdefaultoneverytrack = not settings_insertdefaultoneverytrack
-        update_settings = true
-      elseif MOUSE_click(obj.sections[84]) then
-        settings_insertdefaultoneverypage = not settings_insertdefaultoneverypage
-        update_settings = true
-      elseif MOUSE_click(obj.sections[85]) then
-        settings_showbars = not settings_showbars
-        obj = GetObjects()
-        update_gfx = true
-      elseif mouse.context == nil and MOUSE_click(obj.sections[74]) then
-        mouse.context = contexts.updatefreq
-        oval = settings_updatefreq
-      elseif mouse.context == nil and MOUSE_click(obj.sections[75]) then
-        lockx = not lockx
-        obj = GetObjects()
-        update_gfx = true
-      elseif mouse.context == nil and MOUSE_click(obj.sections[76]) then
-        locky = not locky
-        obj = GetObjects()
-        update_gfx = true
-      elseif mouse.context == nil and MOUSE_click(obj.sections[77]) then
-        mouse.context = contexts.lockw
-        ctlpos = lockw
-      elseif mouse.context == nil and MOUSE_click(obj.sections[78]) then
-        mouse.context = contexts.lockh
-        ctlpos = lockh
-      elseif mouse.context == nil and MOUSE_click(obj.sections[80]) then
-        settings_showgrid = not settings_showgrid
-        osg = settings_showgrid
-        if settings_gridsize < 16 then
-          settings_showgrid = false
+      if show_settings then
+        if mouse.LB and not mouse.last_LB and not MOUSE_click(obj.sections[70]) then
+          show_settings = false
+          SaveSettings()
+          update_gfx = true      
         end
-        update_gfx = true
-      elseif mouse.context == nil and MOUSE_click(obj.sections[79]) then
-        mouse.context = contexts.gridslider
-        ctlpos = settings_gridsize
-      end
-      
-      if mouse.context and mouse.context == contexts.updatefreq then
-        local val = F_limit(MOUSE_sliderHBar(obj.sections[74]),0,1)
-        if val ~= nil then
-          settings_updatefreq = (1-val)/10
-          if oval ~= settings_updatefreq then
-            update_settings = true                  
-          end 
-          oval = settings_updatefreq          
-        end
-      elseif mouse.context and mouse.context == contexts.lockw then
-        local val = F_limit(MOUSE_slider(obj.sections[77]),0,1)
-        if val ~= nil then
-          val = 1-val
-          lockw = F_limit( math.floor((val*1000)/settings_gridsize)*settings_gridsize,64,1000)
+        
+        if MOUSE_click(obj.sections[71]) then
+          settings_followselectedtrack = not settings_followselectedtrack
+          update_settings = true
+        elseif MOUSE_click(obj.sections[72]) then
+          settings_disablesendchecks = not settings_disablesendchecks
+          update_settings = true
+        elseif MOUSE_click(obj.sections[73]) then
+          settings_saveallfxinststrip = not settings_saveallfxinststrip
+          update_settings = true
+        elseif MOUSE_click(obj.sections[81]) then
+          settings_mousewheelknob = not settings_mousewheelknob
+          update_settings = true
+        elseif MOUSE_click(obj.sections[82]) then
+          settings_swapctrlclick = not settings_swapctrlclick
+          update_settings = true
+        elseif MOUSE_click(obj.sections[83]) then
+          settings_insertdefaultoneverytrack = not settings_insertdefaultoneverytrack
+          update_settings = true
+        elseif MOUSE_click(obj.sections[84]) then
+          settings_insertdefaultoneverypage = not settings_insertdefaultoneverypage
+          update_settings = true
+        elseif MOUSE_click(obj.sections[85]) then
+          settings_showbars = not settings_showbars
           obj = GetObjects()
           update_gfx = true
-        end
-      elseif mouse.context and mouse.context == contexts.lockh then
-        local val = F_limit(MOUSE_slider(obj.sections[78]),0,1)
-        if val ~= nil then
-          val = 1-val
-          lockh = F_limit( math.floor((val*1000)/settings_gridsize)*settings_gridsize,64,1000)
+        elseif mouse.context == nil and MOUSE_click(obj.sections[74]) then
+          mouse.context = contexts.updatefreq
+          oval = settings_updatefreq
+        elseif mouse.context == nil and MOUSE_click(obj.sections[75]) then
+          lockx = not lockx
           obj = GetObjects()
           update_gfx = true
-        end
-      elseif mouse.context and mouse.context == contexts.gridslider then
-        local val = F_limit(MOUSE_slider(obj.sections[79]),0,1)
-        if val ~= nil then
-          val = 1-val
-          settings_gridsize = F_limit(ctlpos + math.floor((val-0.5)*200),1,128)
-          ogrid = settings_gridsize
+        elseif mouse.context == nil and MOUSE_click(obj.sections[76]) then
+          locky = not locky
+          obj = GetObjects()
+          update_gfx = true
+        elseif mouse.context == nil and MOUSE_click(obj.sections[77]) then
+          mouse.context = contexts.lockw
+          ctlpos = lockw
+        elseif mouse.context == nil and MOUSE_click(obj.sections[78]) then
+          mouse.context = contexts.lockh
+          ctlpos = lockh
+        elseif mouse.context == nil and MOUSE_click(obj.sections[80]) then
+          settings_showgrid = not settings_showgrid
+          osg = settings_showgrid
           if settings_gridsize < 16 then
             settings_showgrid = false
-          else
-            settings_showgrid = nz(osg,true)
           end
           update_gfx = true
+        elseif mouse.context == nil and MOUSE_click(obj.sections[79]) then
+          mouse.context = contexts.gridslider
+          ctlpos = settings_gridsize
         end
-      end
-      
-    elseif MS_Open > 0 then
-    
-      local c=gfx.getchar()  
-      mb_onchar(c)
-      
-      if MOUSE_click(obj.sections[62]) or MB_Enter then
-        --OK
-        if MS_Open == 1 then
-          msgbox = nil
-        end
-        MS_Open = 0
-        MB_Enter = false 
-        update_gfx = true
-      end
-      
-    elseif EB_Open > 0 then
-      if gfx.mouse_cap&1 == 1 then
-        if not mouse.down then
-          OnMouseDown()      
-          if mouse.uptime and os.clock()-mouse.uptime < 0.25 then 
-            OnMouseDoubleClick()
+        
+        if mouse.context and mouse.context == contexts.updatefreq then
+          local val = F_limit(MOUSE_sliderHBar(obj.sections[74]),0,1)
+          if val ~= nil then
+            settings_updatefreq = (1-val)/10
+            if oval ~= settings_updatefreq then
+              update_settings = true                  
+            end 
+            oval = settings_updatefreq          
           end
-        elseif gfx.mouse_x ~= mouse.lx or gfx.mouse_y ~= mouse.ly then
-          OnMouseMove() 
-        end
-      elseif mouse.down then 
-        OnMouseUp() 
-      end
-      
-      if MOUSE_click(obj.sections[6]) or EB_Enter then
-        --OK
-        EB_Enter = false
-        if EB_Open == 1 then
-          SaveStrip3(editbox.text)
-        elseif EB_Open == 2 then
-          EditCtlName2(editbox.text)
-        elseif EB_Open == 3 then
-          EditDValOffset2(editbox.text)
-          update_gfx = true
-        elseif EB_Open == 4 then
-          EditMinDVal2(editbox.text)
-          update_gfx = true
-        elseif EB_Open == 16 then
-          EditMaxDVal2(editbox.text)
-          update_gfx = true
-        elseif EB_Open == 5 then
-          EditValue2(editbox.text)
-          --update_ctls = true
-        elseif EB_Open == 6 then
-          InsertLabel2(editbox.text)
-        elseif EB_Open == 7 then
-          EditLabel2(editbox.text)
-        elseif EB_Open == 8 then
-          EditFont2(editbox.text)
-        elseif EB_Open == 10 then
-          EditCycleDV(editbox.text)        
-        elseif EB_Open == 11 then
-          EditSSName2(editbox.text)
-          update_snaps = true
-        elseif EB_Open == 12 then
-          AssActionByName(editbox.text)
-          update_gfx = true          
-        elseif EB_Open == 13 then
-          AssActionByID(editbox.text)
-          update_gfx = true          
-        elseif EB_Open == 14 then
-          action_tblF = ActionListFilter(editbox.text)
-          al_offset = 0
-          update_gfx = true
-        elseif EB_Open == 15 then
-          EditSubName(editbox.text)
-          update_snaps = true
-        elseif EB_Open == 17 then
-          local sc = tonumber(editbox.text)
-          if sc then
-            cycle_select.statecnt = F_limit(sc,0,max_cycle)
-            Cycle_InitData()
+        elseif mouse.context and mouse.context == contexts.lockw then
+          local val = F_limit(MOUSE_slider(obj.sections[77]),0,1)
+          if val ~= nil then
+            val = 1-val
+            lockw = F_limit( math.floor((val*1000)/settings_gridsize)*settings_gridsize,64,1000)
+            obj = GetObjects()
+            update_gfx = true
           end
-          update_surface = true
-        elseif EB_Open == 20 then
-          SaveSet(editbox.text)
-        end
-        editbox = nil
-        EB_Open = 0
-      
-      elseif MOUSE_click(obj.sections[7]) then
-        editbox = nil
-        EB_Open = 0
-      end
-          
-      local c=gfx.getchar()  
-      if editbox and editbox.hasfocus then editbox_onchar(editbox, c) end  
-      update_gfx = true
-    else
-    
-    if MOUSE_click(obj.sections[21]) then
-    
-      TopMenu()
-
-    elseif MOUSE_click(obj.sections[14]) and navigate then
-      --page
-      local page = F_limit(math.ceil((mouse.mx-obj.sections[14].x)/(obj.sections[14].w/4)),1,4)
-      SetPage(page)            
-    
-    elseif MOUSE_click(obj.sections[11]) then
-      if mouse.mx > obj.sections[11].w-6 then
-        mouse.context = contexts.dragsidebar
-        offx = 0
-      elseif navigate then
-        gfx3_select = nil
-        gfx2_select = nil
-        ctl_select = nil
-        CloseActChooser()
-        show_ctlbrowser = false
-        
-        if mode == 0 then
-          g_edstrips = {}
-          trackedit_select = track_select
-          mode = 1
-          PopulateTrackFX()
-        else
-          --SaveData()
-          SaveEditedData()
-          mode = 0
-        end
-        update_gfx = true
-      end
-      
-    elseif MOUSE_click(obj.sections[18]) then
-      ToggleSidebar()
-      if mode == 1 then
-        mouse.context = contexts.dragsidebar
-        offx = mouse.mx-plist_w
-      end
-    
-    elseif (obj.sections[17].x > obj.sections[20].x+obj.sections[20].w) and MOUSE_click(obj.sections[17]) then
-      SaveData()
-      infomsg = "*** DATA SAVED ***"
-      OpenMsgBox(1,'Data Saved.',1)
-      update_gfx = true
-    
-    elseif MOUSE_click(obj.sections[20]) then
-      local butt = F_limit(math.ceil((mouse.mx-obj.sections[20].x)/(obj.sections[20].w/4)),1,4)
-      if butt == 1 then
-        LockX()
-        
-      elseif butt == 2 then
-        LockY()
-        
-      elseif butt == 3 then
-        ScrollUp()
-        
-      elseif butt == 4 then
-        ScrollDown()
-        
-      end
-      update_gfx = true
-    end
-    
-    if mouse.context and mouse.context == contexts.dragsidebar then
-    
-      plist_w = math.max(mouse.mx-offx,0)
-      plist_w = math.min(plist_w, obj.sections[19].x-2)
-      oplist_w = math.max(plist_w,100)
-      if plist_w <= 4 then
-        show_editbar = false
-      else
-        show_editbar = true
-      end
-      obj = GetObjects()
-      resize_display = true
-      update_gfx = true
-    
-    end
-    
-    if mode == 0 then
-      
-      if gfx.mouse_wheel ~= 0 then
-        local v = gfx.mouse_wheel/120
-        if MOUSE_over(obj.sections[43]) then
-          tlist_offset = F_limit(tlist_offset - v, 0, #tracks+1)
-          update_gfx = true
-          gfx.mouse_wheel = 0
-        end
-
-        if MOUSE_over(obj.sections[160]) then
-          if snapshots and snapshots[tracks[track_select].strip] and
-             snapshots[tracks[track_select].strip][page][sstype_select] then
-            if sstype_select == 1 then
-              ssoffset = F_limit(ssoffset - v, 0, #snapshots[tracks[track_select].strip][page][sstype_select]-1)
-            elseif sstype_select > 1 then
-              ssoffset = F_limit(ssoffset - v, 0, #snapshots[tracks[track_select].strip][page][sstype_select].snapshot-1)
-            end
-            update_snaps = true
-          end     
-          gfx.mouse_wheel = 0
-        end
-
-        if MOUSE_over(obj.sections[180]) then
-          if snapshots and snapshots[tracks[track_select].strip] and
-             snapshots[tracks[track_select].strip][page][fsstype_select] then
-            if fsstype_select == 1 then
-              fssoffset = F_limit(fssoffset - v, 0, #snapshots[tracks[track_select].strip][page][fsstype_select]-1)
-            elseif fsstype_select > 1 then
-              fssoffset = F_limit(fssoffset - v, 0, #snapshots[tracks[track_select].strip][page][fsstype_select].snapshot-1)
-            end
-            update_fsnaps = true
-          end     
-          gfx.mouse_wheel = 0
-        end
-      end
-      
-      if insertstrip then
-      
-        insertstrip.x = mouse.mx
-        insertstrip.y = mouse.my
-        
-        if not mouse.shift then
-          nx = surface_offset.x - (math.floor(surface_offset.x/settings_gridsize)*settings_gridsize)
-          ny = surface_offset.y - (math.floor(surface_offset.y/settings_gridsize)*settings_gridsize)
-          insertstrip.x = math.floor((insertstrip.x-obj.sections[10].x+surface_offset.x+nx)/settings_gridsize)*settings_gridsize -surface_offset.x+obj.sections[10].x-insertstrip.dx 
-          insertstrip.y = math.floor((insertstrip.y-obj.sections[10].y+surface_offset.y+ny)/settings_gridsize)*settings_gridsize -surface_offset.y+obj.sections[10].y-insertstrip.dy
-        end
-        
-        if MOUSE_click(obj.sections[10]) then
-          --drop
-          local dx, dy = insertstrip.x-obj.sections[10].x, insertstrip.y-obj.sections[10].y+math.floor(insertstrip.dy/settings_gridsize)*settings_gridsize
-          Strip_AddStrip(loadstrip,dx,dy,true)
-          
-          update_gfx = true
-          SaveSingleStrip(tracks[track_select].strip)
-          
-          insertstrip = nil
-        elseif MOUSE_click_RB(obj.sections[10]) then
-          --cancel
-          insertstrip = nil
-        end
-        
-        update_surface = true
-      
-      elseif mouse.context == nil and show_xysnapshots == true and (MOUSE_click(obj.sections[180]) or MOUSE_click_RB(obj.sections[180])) then
-      
-        if mouse.context == nil and MOUSE_click_RB(obj.sections[180]) then
-          show_xysnapshots = false
-          update_surface = true
-        end
-      
-        local snapmx, snapmy = mouse.mx, mouse.my
-        mouse.mx = mouse.mx - obj.sections[180].x
-        mouse.my = mouse.my - obj.sections[180].y
-
-        if mouse.context == nil and MOUSE_click(obj.sections[182]) then
-          mouse.context = contexts.resizefsnapwindow
-          resizesnapwin = {origh = obj.sections[180].h,
-                           offy = mouse.my}          
-
-        elseif mouse.context == nil and MOUSE_click(obj.sections[181]) then
-          if snapshots and snapshots[tracks[track_select].strip] then
-            local i = math.floor((mouse.my-obj.sections[181].y)/butt_h)
-        
-            if i == 0 then
-              local ix = math.floor((mouse.mx-obj.sections[181].x)/(obj.sections[180].w/2))
-              if ix == 0 then
-                fssoffset = fssoffset-FSS_butt_cnt
-                if fssoffset < 0 then fssoffset = 0 end
-              else
-                if fsstype_select == 1 then
-                  fssoffset = F_limit(fssoffset+FSS_butt_cnt,0,math.max(0,#snapshots[tracks[track_select].strip][page][fsstype_select]-FSS_butt_cnt))
-                elseif fsstype_select > 1 then
-                  fssoffset = F_limit(fssoffset+FSS_butt_cnt,0,math.max(0,#snapshots[tracks[track_select].strip][page][fsstype_select].snapshot-FSS_butt_cnt))                  
-                end
-              end
-              update_ctls = true
-              update_fsnaps = true
+        elseif mouse.context and mouse.context == contexts.lockh then
+          local val = F_limit(MOUSE_slider(obj.sections[78]),0,1)
+          if val ~= nil then
+            val = 1-val
+            lockh = F_limit( math.floor((val*1000)/settings_gridsize)*settings_gridsize,64,1000)
+            obj = GetObjects()
+            update_gfx = true
+          end
+        elseif mouse.context and mouse.context == contexts.gridslider then
+          local val = F_limit(MOUSE_slider(obj.sections[79]),0,1)
+          if val ~= nil then
+            val = 1-val
+            settings_gridsize = F_limit(ctlpos + math.floor((val-0.5)*200),1,128)
+            ogrid = settings_gridsize
+            if settings_gridsize < 16 then
+              settings_showgrid = false
             else
-              if snapshots and snapshots[tracks[track_select].strip] then
-                local maxss
-                if fsstype_select == 1 then
-                  maxss = #snapshots[tracks[track_select].strip][page][fsstype_select]
+              settings_showgrid = nz(osg,true)
+            end
+            update_gfx = true
+          end
+        end
+        
+      elseif MS_Open > 0 then
+      
+        local c=gfx.getchar()  
+        mb_onchar(c)
+        
+        if MOUSE_click(obj.sections[62]) or MB_Enter then
+          --OK
+          if MS_Open == 1 then
+            msgbox = nil
+          end
+          MS_Open = 0
+          MB_Enter = false 
+          update_gfx = true
+        end
+        
+      elseif EB_Open > 0 then
+        if gfx.mouse_cap&1 == 1 then
+          if not mouse.down then
+            OnMouseDown()      
+            if mouse.uptime and os.clock()-mouse.uptime < 0.25 then 
+              OnMouseDoubleClick()
+            end
+          elseif gfx.mouse_x ~= mouse.lx or gfx.mouse_y ~= mouse.ly then
+            OnMouseMove() 
+          end
+        elseif mouse.down then 
+          OnMouseUp() 
+        end
+        
+        if MOUSE_click(obj.sections[6]) or EB_Enter then
+          --OK
+          EB_Enter = false
+          if EB_Open == 1 then
+            SaveStrip3(editbox.text)
+          elseif EB_Open == 2 then
+            EditCtlName2(editbox.text)
+          elseif EB_Open == 3 then
+            EditDValOffset2(editbox.text)
+            update_gfx = true
+          elseif EB_Open == 4 then
+            EditMinDVal2(editbox.text)
+            update_gfx = true
+          elseif EB_Open == 16 then
+            EditMaxDVal2(editbox.text)
+            update_gfx = true
+          elseif EB_Open == 5 then
+            EditValue2(editbox.text)
+            --update_ctls = true
+          elseif EB_Open == 6 then
+            InsertLabel2(editbox.text)
+          elseif EB_Open == 7 then
+            EditLabel2(editbox.text)
+          elseif EB_Open == 8 then
+            EditFont2(editbox.text)
+          elseif EB_Open == 10 then
+            EditCycleDV(editbox.text)        
+          elseif EB_Open == 11 then
+            EditSSName2(editbox.text)
+            update_snaps = true
+          elseif EB_Open == 12 then
+            AssActionByName(editbox.text)
+            update_gfx = true          
+          elseif EB_Open == 13 then
+            AssActionByID(editbox.text)
+            update_gfx = true          
+          elseif EB_Open == 14 then
+            action_tblF = ActionListFilter(editbox.text)
+            al_offset = 0
+            update_gfx = true
+          elseif EB_Open == 15 then
+            EditSubName(editbox.text)
+            update_snaps = true
+          elseif EB_Open == 17 then
+            local sc = tonumber(editbox.text)
+            if sc then
+              cycle_select.statecnt = F_limit(sc,0,max_cycle)
+              Cycle_InitData()
+            end
+            update_surface = true
+          elseif EB_Open == 20 then
+            SaveSet(editbox.text)
+          end
+          editbox = nil
+          EB_Open = 0
+        
+        elseif MOUSE_click(obj.sections[7]) then
+          editbox = nil
+          EB_Open = 0
+        end
+            
+        local c=gfx.getchar()  
+        if editbox and editbox.hasfocus then editbox_onchar(editbox, c) end  
+        update_gfx = true
+      else
+      
+      if MOUSE_click(obj.sections[21]) then
+      
+        TopMenu()
+  
+      elseif MOUSE_click(obj.sections[14]) and navigate then
+        --page
+        local page = F_limit(math.ceil((mouse.mx-obj.sections[14].x)/(obj.sections[14].w/4)),1,4)
+        SetPage(page)            
+      
+      elseif MOUSE_click(obj.sections[11]) then
+        if mouse.mx > obj.sections[11].w-6 then
+          mouse.context = contexts.dragsidebar
+          offx = 0
+        elseif navigate then
+          gfx3_select = nil
+          gfx2_select = nil
+          ctl_select = nil
+          CloseActChooser()
+          show_ctlbrowser = false
+          
+          if mode == 0 then
+            g_edstrips = {}
+            trackedit_select = track_select
+            mode = 1
+            PopulateTrackFX()
+          else
+            --SaveData()
+            SaveEditedData()
+            mode = 0
+          end
+          update_gfx = true
+        end
+        
+      elseif MOUSE_click(obj.sections[18]) then
+        ToggleSidebar()
+        if mode == 1 then
+          mouse.context = contexts.dragsidebar
+          offx = mouse.mx-plist_w
+        end
+      
+      elseif (obj.sections[17].x > obj.sections[20].x+obj.sections[20].w) and MOUSE_click(obj.sections[17]) then
+        SaveData()
+        infomsg = "*** DATA SAVED ***"
+        OpenMsgBox(1,'Data Saved.',1)
+        update_gfx = true
+      
+      elseif MOUSE_click(obj.sections[20]) then
+        local butt = F_limit(math.ceil((mouse.mx-obj.sections[20].x)/(obj.sections[20].w/4)),1,4)
+        if butt == 1 then
+          LockX()
+          
+        elseif butt == 2 then
+          LockY()
+          
+        elseif butt == 3 then
+          ScrollUp()
+          
+        elseif butt == 4 then
+          ScrollDown()
+          
+        end
+        update_gfx = true
+      end
+      
+      if mouse.context and mouse.context == contexts.dragsidebar then
+      
+        plist_w = math.max(mouse.mx-offx,0)
+        plist_w = math.min(plist_w, obj.sections[19].x-2)
+        oplist_w = math.max(plist_w,100)
+        if plist_w <= 4 then
+          show_editbar = false
+        else
+          show_editbar = true
+        end
+        obj = GetObjects()
+        resize_display = true
+        update_gfx = true
+      
+      end
+      
+      if mode == 0 then
+        
+        if gfx.mouse_wheel ~= 0 then
+          local v = gfx.mouse_wheel/120
+          if MOUSE_over(obj.sections[43]) then
+            tlist_offset = F_limit(tlist_offset - v, 0, #tracks+1)
+            update_gfx = true
+            gfx.mouse_wheel = 0
+          end
+  
+          if MOUSE_over(obj.sections[160]) then
+            if snapshots and snapshots[tracks[track_select].strip] and
+               snapshots[tracks[track_select].strip][page][sstype_select] then
+              if sstype_select == 1 then
+                ssoffset = F_limit(ssoffset - v, 0, #snapshots[tracks[track_select].strip][page][sstype_select]-1)
+              elseif sstype_select > 1 then
+                ssoffset = F_limit(ssoffset - v, 0, #snapshots[tracks[track_select].strip][page][sstype_select].snapshot-1)
+              end
+              update_snaps = true
+            end     
+            gfx.mouse_wheel = 0
+          end
+  
+          if MOUSE_over(obj.sections[180]) then
+            if snapshots and snapshots[tracks[track_select].strip] and
+               snapshots[tracks[track_select].strip][page][fsstype_select] then
+              if fsstype_select == 1 then
+                fssoffset = F_limit(fssoffset - v, 0, #snapshots[tracks[track_select].strip][page][fsstype_select]-1)
+              elseif fsstype_select > 1 then
+                fssoffset = F_limit(fssoffset - v, 0, #snapshots[tracks[track_select].strip][page][fsstype_select].snapshot-1)
+              end
+              update_fsnaps = true
+            end     
+            gfx.mouse_wheel = 0
+          end
+        end
+        
+        if insertstrip then
+        
+          insertstrip.x = mouse.mx
+          insertstrip.y = mouse.my
+          
+          if not mouse.shift then
+            nx = surface_offset.x - (math.floor(surface_offset.x/settings_gridsize)*settings_gridsize)
+            ny = surface_offset.y - (math.floor(surface_offset.y/settings_gridsize)*settings_gridsize)
+            insertstrip.x = math.floor((insertstrip.x-obj.sections[10].x+surface_offset.x+nx)/settings_gridsize)*settings_gridsize -surface_offset.x+obj.sections[10].x-insertstrip.dx 
+            insertstrip.y = math.floor((insertstrip.y-obj.sections[10].y+surface_offset.y+ny)/settings_gridsize)*settings_gridsize -surface_offset.y+obj.sections[10].y-insertstrip.dy
+          end
+          
+          if MOUSE_click(obj.sections[10]) then
+            --drop
+            local dx, dy = insertstrip.x-obj.sections[10].x, insertstrip.y-obj.sections[10].y+math.floor(insertstrip.dy/settings_gridsize)*settings_gridsize
+            Strip_AddStrip(loadstrip,dx,dy,true)
+            
+            update_gfx = true
+            SaveSingleStrip(tracks[track_select].strip)
+            
+            insertstrip = nil
+          elseif MOUSE_click_RB(obj.sections[10]) then
+            --cancel
+            insertstrip = nil
+          end
+          
+          update_surface = true
+        
+        elseif mouse.context == nil and show_xysnapshots == true and (MOUSE_click(obj.sections[180]) or MOUSE_click_RB(obj.sections[180])) then
+        
+          if mouse.context == nil and MOUSE_click_RB(obj.sections[180]) then
+            show_xysnapshots = false
+            update_surface = true
+          end
+        
+          local snapmx, snapmy = mouse.mx, mouse.my
+          mouse.mx = mouse.mx - obj.sections[180].x
+          mouse.my = mouse.my - obj.sections[180].y
+  
+          if mouse.context == nil and MOUSE_click(obj.sections[182]) then
+            mouse.context = contexts.resizefsnapwindow
+            resizesnapwin = {origh = obj.sections[180].h,
+                             offy = mouse.my}          
+  
+          elseif mouse.context == nil and MOUSE_click(obj.sections[181]) then
+            if snapshots and snapshots[tracks[track_select].strip] then
+              local i = math.floor((mouse.my-obj.sections[181].y)/butt_h)
+          
+              if i == 0 then
+                local ix = math.floor((mouse.mx-obj.sections[181].x)/(obj.sections[180].w/2))
+                if ix == 0 then
+                  fssoffset = fssoffset-FSS_butt_cnt
+                  if fssoffset < 0 then fssoffset = 0 end
                 else
-                  maxss = #snapshots[tracks[track_select].strip][page][fsstype_select].snapshot
+                  if fsstype_select == 1 then
+                    fssoffset = F_limit(fssoffset+FSS_butt_cnt,0,math.max(0,#snapshots[tracks[track_select].strip][page][fsstype_select]-FSS_butt_cnt))
+                  elseif fsstype_select > 1 then
+                    fssoffset = F_limit(fssoffset+FSS_butt_cnt,0,math.max(0,#snapshots[tracks[track_select].strip][page][fsstype_select].snapshot-FSS_butt_cnt))                  
+                  end
                 end
-                
-                if fssoffset+i <= maxss then
-                  fss_select = fssoffset+i
-
-                  if xysnap_select == 1 then
-                    strips[tracks[track_select].strip][page].controls[xy_select].xydata.snapa = fss_select
-                  elseif xysnap_select == 2 then
-                    strips[tracks[track_select].strip][page].controls[xy_select].xydata.snapb = fss_select
-                  elseif xysnap_select == 3 then
-                    strips[tracks[track_select].strip][page].controls[xy_select].xydata.snapc = fss_select
-                  elseif xysnap_select == 4 then
-                    strips[tracks[track_select].strip][page].controls[xy_select].xydata.snapd = fss_select
+                update_ctls = true
+                update_fsnaps = true
+              else
+                if snapshots and snapshots[tracks[track_select].strip] then
+                  local maxss
+                  if fsstype_select == 1 then
+                    maxss = #snapshots[tracks[track_select].strip][page][fsstype_select]
+                  else
+                    maxss = #snapshots[tracks[track_select].strip][page][fsstype_select].snapshot
                   end
                   
-                  g_savedirty = true
-                  show_xysnapshots = false
-                  update_surface = true
-                end
-              end
-            end
-          end
-        end
-        
-        mouse.mx = snapmx
-        mouse.my = snapmy
-        noscroll = true
-        
-      elseif mouse.context == nil and show_fsnapshots == true and (MOUSE_click(obj.sections[180]) or MOUSE_click_RB(obj.sections[180])) then
-
-        if mouse.context == nil and MOUSE_click_RB(obj.sections[180]) then
-          show_fsnapshots = false
-          update_surface = true
-        end
-
-        local snapmx, snapmy = mouse.mx, mouse.my
-        mouse.mx = mouse.mx - obj.sections[180].x
-        mouse.my = mouse.my - obj.sections[180].y
-
-        if mouse.context == nil and MOUSE_click(obj.sections[182]) then
-          mouse.context = contexts.resizefsnapwindow
-          resizesnapwin = {origh = obj.sections[180].h,
-                           offy = mouse.my}          
-        
-        elseif mouse.context == nil and MOUSE_click(obj.sections[181]) then
-          if snapshots and snapshots[tracks[track_select].strip] then
-            local i = math.floor((mouse.my-obj.sections[181].y)/butt_h)
-        
-            if i == 0 then
-              local ix = math.floor((mouse.mx-obj.sections[181].x)/(obj.sections[180].w/2))
-              if ix == 0 then
-                fssoffset = fssoffset-FSS_butt_cnt
-                if fssoffset < 0 then fssoffset = 0 end
-              else
-                if fsstype_select == 1 then
-                  fssoffset = F_limit(fssoffset+FSS_butt_cnt,0,math.max(0,#snapshots[tracks[track_select].strip][page][fsstype_select]-FSS_butt_cnt))
-                elseif fsstype_select > 1 then
-                  fssoffset = F_limit(fssoffset+FSS_butt_cnt,0,math.max(0,#snapshots[tracks[track_select].strip][page][fsstype_select].snapshot-FSS_butt_cnt))                  
-                end
-              end
-              update_ctls = true
-              update_fsnaps = true
-            else
-              if snapshots and snapshots[tracks[track_select].strip] then
-                --[[if fsstype_select == 1 then
-                  fss_select = F_limit(fssoffset+i,1,#snapshots[tracks[track_select].strip][page][fsstype_select])
-                else
-                  fss_select = F_limit(fssoffset+i,1,#snapshots[tracks[track_select].strip][page][fsstype_select].snapshot)                  
-                end]]
-                local maxss
-                if fsstype_select == 1 then
-                  maxss = #snapshots[tracks[track_select].strip][page][fsstype_select]
-                else
-                  maxss = #snapshots[tracks[track_select].strip][page][fsstype_select].snapshot
-                end
-                
-                if fssoffset+i <= maxss then
-                  fss_select = fssoffset+i
-                  Snapshot_Set(tracks[track_select].strip, page, fsstype_select, fss_select)
-                  update_ctls = true --to update snapshot ctls
-                  update_fsnaps = true          
-                  if sstype_select == fsstype_select then
-                    ss_select = fss_select
-                    update_snaps = true       
+                  if fssoffset+i <= maxss then
+                    fss_select = fssoffset+i
+  
+                    if xysnap_select == 1 then
+                      strips[tracks[track_select].strip][page].controls[xy_select].xydata.snapa = fss_select
+                    elseif xysnap_select == 2 then
+                      strips[tracks[track_select].strip][page].controls[xy_select].xydata.snapb = fss_select
+                    elseif xysnap_select == 3 then
+                      strips[tracks[track_select].strip][page].controls[xy_select].xydata.snapc = fss_select
+                    elseif xysnap_select == 4 then
+                      strips[tracks[track_select].strip][page].controls[xy_select].xydata.snapd = fss_select
+                    end
+                    
+                    g_savedirty = true
+                    show_xysnapshots = false
+                    update_surface = true
                   end
                 end
               end
             end
           end
-        end
-
-        mouse.mx = snapmx
-        mouse.my = snapmy
-        noscroll = true
-
-      elseif mouse.context == nil and show_snapshots == true and (MOUSE_click(obj.sections[160]) or MOUSE_click_RB(obj.sections[160])) then
-      
-        if show_fsnapshots or show_xysnapshots then
-          show_fsnapshots = false
-          show_xysnapshots = false
-          update_surface = true
-        end
-        
-        xywh = {x = obj.sections[160].x,
-                y = obj.sections[160].y,
-                w = obj.sections[160].w,
-                h = butt_h}
-        if mouse.context == nil and MOUSE_click(xywh) then
-          mouse.context = contexts.movesnapwindow
-          movesnapwin = {offx = mouse.mx - obj.sections[160].x,
-                         offy = mouse.my - obj.sections[160].y}
-        end
-        
-        local snapmx, snapmy = mouse.mx, mouse.my
-        mouse.mx = mouse.mx - obj.sections[160].x
-        mouse.my = mouse.my - obj.sections[160].y        
-        
-        if snaplrn_mode == false then
-        
-          if mouse.context == nil and MOUSE_click(obj.sections[168]) and mouse.shift == false then
-            --update_gfx = true
-            knob_select = def_snapshotctl
-            if ctl_files[knob_select].imageidx ~= nil then
-              local w,_ = gfx.getimgdim(ctl_files[knob_select].imageidx)
-              local h = ctl_files[knob_select].cellh
-              if w == 0 or h == 0 then
-                ksel_size = {w = 50, h = 50}
+          
+          mouse.mx = snapmx
+          mouse.my = snapmy
+          noscroll = true
+          
+        elseif mouse.context == nil and show_fsnapshots == true and (MOUSE_click(obj.sections[180]) or MOUSE_click_RB(obj.sections[180])) then
+  
+          if mouse.context == nil and MOUSE_click_RB(obj.sections[180]) then
+            show_fsnapshots = false
+            update_surface = true
+          end
+  
+          local snapmx, snapmy = mouse.mx, mouse.my
+          mouse.mx = mouse.mx - obj.sections[180].x
+          mouse.my = mouse.my - obj.sections[180].y
+  
+          if mouse.context == nil and MOUSE_click(obj.sections[182]) then
+            mouse.context = contexts.resizefsnapwindow
+            resizesnapwin = {origh = obj.sections[180].h,
+                             offy = mouse.my}          
+          
+          elseif mouse.context == nil and MOUSE_click(obj.sections[181]) then
+            if snapshots and snapshots[tracks[track_select].strip] then
+              local i = math.floor((mouse.my-obj.sections[181].y)/butt_h)
+          
+              if i == 0 then
+                local ix = math.floor((mouse.mx-obj.sections[181].x)/(obj.sections[180].w/2))
+                if ix == 0 then
+                  fssoffset = fssoffset-FSS_butt_cnt
+                  if fssoffset < 0 then fssoffset = 0 end
+                else
+                  if fsstype_select == 1 then
+                    fssoffset = F_limit(fssoffset+FSS_butt_cnt,0,math.max(0,#snapshots[tracks[track_select].strip][page][fsstype_select]-FSS_butt_cnt))
+                  elseif fsstype_select > 1 then
+                    fssoffset = F_limit(fssoffset+FSS_butt_cnt,0,math.max(0,#snapshots[tracks[track_select].strip][page][fsstype_select].snapshot-FSS_butt_cnt))                  
+                  end
+                end
+                update_ctls = true
+                update_fsnaps = true
               else
-               ksel_size = {w = w/2, h = h/2}
+                if snapshots and snapshots[tracks[track_select].strip] then
+                  --[[if fsstype_select == 1 then
+                    fss_select = F_limit(fssoffset+i,1,#snapshots[tracks[track_select].strip][page][fsstype_select])
+                  else
+                    fss_select = F_limit(fssoffset+i,1,#snapshots[tracks[track_select].strip][page][fsstype_select].snapshot)                  
+                  end]]
+                  local maxss
+                  if fsstype_select == 1 then
+                    maxss = #snapshots[tracks[track_select].strip][page][fsstype_select]
+                  else
+                    maxss = #snapshots[tracks[track_select].strip][page][fsstype_select].snapshot
+                  end
+                  
+                  if fssoffset+i <= maxss then
+                    fss_select = fssoffset+i
+                    Snapshot_Set(tracks[track_select].strip, page, fsstype_select, fss_select)
+                    update_ctls = true --to update snapshot ctls
+                    update_fsnaps = true          
+                    if sstype_select == fsstype_select then
+                      ss_select = fss_select
+                      update_snaps = true       
+                    end
+                  end
+                end
               end
-            else 
-              ksel_size = {w = 50, h = 50}
             end
-            mouse.context = contexts.addsnapctl          
+          end
+  
+          mouse.mx = snapmx
+          mouse.my = snapmy
+          noscroll = true
+  
+        elseif mouse.context == nil and show_snapshots == true and (MOUSE_click(obj.sections[160]) or MOUSE_click_RB(obj.sections[160])) then
+        
+          if show_fsnapshots or show_xysnapshots then
+            show_fsnapshots = false
+            show_xysnapshots = false
+            update_surface = true
+          end
           
-          elseif mouse.context == nil and MOUSE_click(obj.sections[168]) and mouse.shift == true then
+          xywh = {x = obj.sections[160].x,
+                  y = obj.sections[160].y,
+                  w = obj.sections[160].w,
+                  h = butt_h}
+          if mouse.context == nil and MOUSE_click(xywh) then
+            mouse.context = contexts.movesnapwindow
+            movesnapwin = {offx = mouse.mx - obj.sections[160].x,
+                           offy = mouse.my - obj.sections[160].y}
+          end
           
-            if sstype_select > 1 then
-              knob_select = def_xyctl
+          local snapmx, snapmy = mouse.mx, mouse.my
+          mouse.mx = mouse.mx - obj.sections[160].x
+          mouse.my = mouse.my - obj.sections[160].y        
+          
+          if snaplrn_mode == false then
+          
+            if mouse.context == nil and MOUSE_click(obj.sections[168]) and mouse.shift == false then
+              --update_gfx = true
+              knob_select = def_snapshotctl
               if ctl_files[knob_select].imageidx ~= nil then
                 local w,_ = gfx.getimgdim(ctl_files[knob_select].imageidx)
                 local h = ctl_files[knob_select].cellh
@@ -10504,614 +10775,666 @@ end
               else 
                 ksel_size = {w = 50, h = 50}
               end
-              mouse.context = contexts.addxyctl          
-            end
-                      
-          elseif mouse.context == nil and MOUSE_click(obj.sections[165]) then
-            mouse.context = contexts.resizesnapwindow
-            resizesnapwin = {origh = obj.sections[160].h,
-                             offy = mouse.my}          
-          
-          elseif mouse.context == nil and MOUSE_click(obj.sections[161]) then
-          
-            if snapshots[tracks[track_select].strip] then
-              sstype_select = F_limit(sstype_select + 1, 1, #snapshots[tracks[track_select].strip][page])
-            else
-              Snapshots_INIT()
-              sstype_select = 1
-            end
-            ss_select = nil
-            ssoffset = 0
-            update_snaps = true
-  
-          elseif mouse.context == nil and MOUSE_click_RB(obj.sections[161]) then
-          
-            if snapshots[tracks[track_select].strip] then
-              sstype_select = F_limit(sstype_select - 1, 1, #snapshots[tracks[track_select].strip][page])
-            else
-              Snapshots_INIT()
-              sstype_select = 1
-            end
-            ss_select = nil
-            ssoffset = 0
-            update_snaps = true
-  
-          elseif mouse.context == nil and MOUSE_click(obj.sections[162]) then
-          
-            Snapshots_CREATE(tracks[track_select].strip, page, sstype_select)
-            update_snaps = true
-            update_ctls = true --to update snapshot ctls
-
-          elseif mouse.context == nil and MOUSE_click(obj.sections[169]) then
-            if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.15 then
-              local respectminmax = true
-              if mouse.ctrl then respectminmax = false end
-              Snapshot_RANDOMIZE(tracks[track_select].strip, page, sstype_select, respectminmax)
-              update_ctls = true --to update snapshot ctls
-            end  
-          elseif mouse.context == nil and MOUSE_click(obj.sections[166]) then
-          
-            --if snapshots and snapshots[tracks[track_select].strip] and snapshots[tracks[track_select].strip][page] then
-            if snapshots[tracks[track_select].strip] then
-              sstype_select = math.max(#snapshots[tracks[track_select].strip][page]+1,2)
-            else
-              Snapshots_INIT()
-              sstype_select = 1
-              ssoffset = 0
-            end
-            Snapshots_CREATE(tracks[track_select].strip, page, sstype_select)
-            update_snaps = true
-          
-          elseif mouse.context == nil and MOUSE_click(obj.sections[167]) then
-        
-            if sstype_select > 1 then
-              snaplrn_mode = true
-              navigate = false
-              update_gfx = true
-            end
-
-          elseif mouse.context == nil and MOUSE_click(obj.sections[164]) then
-        
-            if sstype_select > 1 then
-              OpenEB(15,'Please enter new subset name:')
-            end
-                  
-          elseif mouse.context == nil and MOUSE_click(obj.sections[163]) then
-            if snapshots and snapshots[tracks[track_select].strip] then
-              local i = math.floor((mouse.my-obj.sections[163].y)/butt_h)
-          
-              if i == 0 then
-                local ix = math.floor((mouse.mx-obj.sections[163].x)/(obj.sections[160].w/2))
-                if ix == 0 then
-                  ssoffset = ssoffset-SS_butt_cnt
-                  if ssoffset < 0 then ssoffset = 0 end
-                else
-                  if sstype_select == 1 then
-                    ssoffset = F_limit(ssoffset+SS_butt_cnt,0,math.max(0,#snapshots[tracks[track_select].strip][page][sstype_select]-SS_butt_cnt))
-                  elseif sstype_select > 1 then
-                    ssoffset = F_limit(ssoffset+SS_butt_cnt,0,math.max(0,#snapshots[tracks[track_select].strip][page][sstype_select].snapshot-SS_butt_cnt))                  
-                  end
-                end
-                update_ctls = true
-                update_snaps = true
-              elseif i > 0 then
-                if snapshots and snapshots[tracks[track_select].strip] then
-                  local maxss
-                  if sstype_select == 1 then
-                    maxss = #snapshots[tracks[track_select].strip][page][sstype_select]
-                    --ss_select = F_limit(ssoffset+i,1,#snapshots[tracks[track_select].strip][page][sstype_select])
-                  else
-                    maxss = #snapshots[tracks[track_select].strip][page][sstype_select].snapshot
-                    --ss_select = F_limit(ssoffset+i,1,#snapshots[tracks[track_select].strip][page][sstype_select].snapshot)                  
-                  end
-                  if ssoffset+i <= maxss then
-                  --if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.20 then
-                    ss_select = ssoffset+i
-                    Snapshot_Set(tracks[track_select].strip, page, sstype_select, ss_select)
-                  --end
-                    update_ctls = true --to update snapshot ctls
-                    update_snaps = true          
-                  end
-                end
-              end
-            end
+              mouse.context = contexts.addsnapctl          
             
-          elseif MOUSE_click_RB(obj.sections[163]) then
-            if ss_select then
-              mstr = 'Rename||Delete||Capture (Overwrite)'
-              gfx.x, gfx.y = snapmx, snapmy
-              res = OpenMenu(mstr)
-              if res ~= 0 then
-                if res == 1 then
-                  --EditSSName(11)
-                  OpenEB(11,'Please enter new snapshot name:')
-                elseif res == 2 then
-                  DeleteSS()
-                  update_snaps = true
-                elseif res == 3 then
-                  Snapshots_CREATE(tracks[track_select].strip, page, sstype_select, ss_select)
+            elseif mouse.context == nil and MOUSE_click(obj.sections[168]) and mouse.shift == true then
+            
+              if sstype_select > 1 then
+                knob_select = def_xyctl
+                if ctl_files[knob_select].imageidx ~= nil then
+                  local w,_ = gfx.getimgdim(ctl_files[knob_select].imageidx)
+                  local h = ctl_files[knob_select].cellh
+                  if w == 0 or h == 0 then
+                    ksel_size = {w = 50, h = 50}
+                  else
+                   ksel_size = {w = w/2, h = h/2}
+                  end
+                else 
+                  ksel_size = {w = 50, h = 50}
                 end
+                mouse.context = contexts.addxyctl          
               end
-            end        
-          end
-        elseif mouse.context == nil and MOUSE_click(obj.sections[167]) then
-        
-          snaplrn_mode = false
-          Snap_RemoveDeletedSS(tracks[track_select].strip,page,sstype_select)
-          navigate = true
-          
-          update_gfx = true
-        
-        end
-                
-        mouse.mx = snapmx
-        mouse.my = snapmy
-        noscroll = true
-      
-      elseif mouse.context == nil and snaplrn_mode == true then      
-        
-        if show_fsnapshots or show_xysnapshots then
-          show_fsnapshots = false
-          show_xysnapshots = false
-          update_surface = true
-        end
-        
-        if sstype_select > 1 then
-          if mouse.context == nil and (MOUSE_click(obj.sections[10])) then -- or MOUSE_click_RB(obj.sections[10])) then
-            if mouse.mx > obj.sections[10].x then
-              if strips and tracks[track_select] and strips[tracks[track_select].strip] then
-                for i = 1, #strips[tracks[track_select].strip][page].controls do
-                  ctlxywh = {x = strips[tracks[track_select].strip][page].controls[i].xsc - surface_offset.x +obj.sections[10].x, 
-                             y = strips[tracks[track_select].strip][page].controls[i].ysc - surface_offset.y +obj.sections[10].y, 
-                             w = strips[tracks[track_select].strip][page].controls[i].wsc, 
-                             h = strips[tracks[track_select].strip][page].controls[i].hsc}
-                  if strips[tracks[track_select].strip][page].controls[i].fxfound then
-                    if MOUSE_click(ctlxywh) then
-          
-                     if strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.fxparam or 
-                        strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.trackparam or 
-                        strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.tracksend then 
-                        local strip = tracks[track_select].strip
                         
-                        --Add / Remove
-                        local ctlidx = GetSnapshotCtlIdx(strip, page, sstype_select, i)
-                        if ctlidx then
-                          --already added - remove?
-                          if snapshots[strip][page][sstype_select].ctls[ctlidx].delete then
-                            snapshots[strip][page][sstype_select].ctls[ctlidx].delete = not snapshots[strip][page][sstype_select].ctls[ctlidx].delete
-                          else
-                            snapshots[strip][page][sstype_select].ctls[ctlidx].delete = true
-                          end
-                        
-                        else
-                          --add
-                          local ctlidx = #snapshots[strip][page][sstype_select].ctls + 1
-                          snapshots[strip][page][sstype_select].ctls[ctlidx] = {c_id = strips[tracks[track_select].strip][page].controls[i].c_id,
-                                                                                ctl = i}
-                        end
+            elseif mouse.context == nil and MOUSE_click(obj.sections[165]) then
+              mouse.context = contexts.resizesnapwindow
+              resizesnapwin = {origh = obj.sections[160].h,
+                               offy = mouse.my}          
+            
+            elseif mouse.context == nil and MOUSE_click(obj.sections[161]) then
+            
+              if snapshots[tracks[track_select].strip] then
+                sstype_select = F_limit(sstype_select + 1, 1, #snapshots[tracks[track_select].strip][page])
+              else
+                Snapshots_INIT()
+                sstype_select = 1
+              end
+              ss_select = nil
+              ssoffset = 0
+              update_snaps = true
+    
+            elseif mouse.context == nil and MOUSE_click_RB(obj.sections[161]) then
+            
+              if snapshots[tracks[track_select].strip] then
+                sstype_select = F_limit(sstype_select - 1, 1, #snapshots[tracks[track_select].strip][page])
+              else
+                Snapshots_INIT()
+                sstype_select = 1
+              end
+              ss_select = nil
+              ssoffset = 0
+              update_snaps = true
+    
+            elseif mouse.context == nil and MOUSE_click(obj.sections[162]) then
+            
+              Snapshots_CREATE(tracks[track_select].strip, page, sstype_select)
+              update_snaps = true
+              update_ctls = true --to update snapshot ctls
+  
+            elseif mouse.context == nil and MOUSE_click(obj.sections[169]) then
+              if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.15 then
+                local respectminmax = true
+                if mouse.ctrl then respectminmax = false end
+                Snapshot_RANDOMIZE(tracks[track_select].strip, page, sstype_select, respectminmax)
+                update_ctls = true --to update snapshot ctls
+              end  
 
-                      end
+            elseif mouse.context == nil and MOUSE_click(obj.sections[224]) then
+              if sstype_select > 1 then
+                show_xxy = true
+                update_gfx = true
+              end
+
+            elseif mouse.context == nil and MOUSE_click(obj.sections[166]) then
+            
+              --if snapshots and snapshots[tracks[track_select].strip] and snapshots[tracks[track_select].strip][page] then
+              if snapshots[tracks[track_select].strip] then
+                sstype_select = math.max(#snapshots[tracks[track_select].strip][page]+1,2)
+              else
+                Snapshots_INIT()
+                sstype_select = 1
+                ssoffset = 0
+              end
+              Snapshots_CREATE(tracks[track_select].strip, page, sstype_select)
+              update_snaps = true
+            
+            elseif mouse.context == nil and MOUSE_click(obj.sections[167]) then
+          
+              if sstype_select > 1 then
+                snaplrn_mode = true
+                navigate = false
+                update_gfx = true
+              end
+  
+            elseif mouse.context == nil and MOUSE_click(obj.sections[164]) then
+          
+              if sstype_select > 1 then
+                OpenEB(15,'Please enter new subset name:')
+              end
+                    
+            elseif mouse.context == nil and MOUSE_click(obj.sections[163]) then
+              if snapshots and snapshots[tracks[track_select].strip] then
+                local i = math.floor((mouse.my-obj.sections[163].y)/butt_h)
+            
+                if i == 0 then
+                  local ix = math.floor((mouse.mx-obj.sections[163].x)/(obj.sections[160].w/2))
+                  if ix == 0 then
+                    ssoffset = ssoffset-SS_butt_cnt
+                    if ssoffset < 0 then ssoffset = 0 end
+                  else
+                    if sstype_select == 1 then
+                      ssoffset = F_limit(ssoffset+SS_butt_cnt,0,math.max(0,#snapshots[tracks[track_select].strip][page][sstype_select]-SS_butt_cnt))
+                    elseif sstype_select > 1 then
+                      ssoffset = F_limit(ssoffset+SS_butt_cnt,0,math.max(0,#snapshots[tracks[track_select].strip][page][sstype_select].snapshot-SS_butt_cnt))                  
+                    end
+                  end
+                  update_ctls = true
+                  update_snaps = true
+                elseif i > 0 then
+                  if snapshots and snapshots[tracks[track_select].strip] then
+                    local maxss
+                    if sstype_select == 1 then
+                      maxss = #snapshots[tracks[track_select].strip][page][sstype_select]
+                      --ss_select = F_limit(ssoffset+i,1,#snapshots[tracks[track_select].strip][page][sstype_select])
+                    else
+                      maxss = #snapshots[tracks[track_select].strip][page][sstype_select].snapshot
+                      --ss_select = F_limit(ssoffset+i,1,#snapshots[tracks[track_select].strip][page][sstype_select].snapshot)                  
+                    end
+                    if ssoffset+i <= maxss then
+                    --if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.20 then
+                      ss_select = ssoffset+i
+                      Snapshot_Set(tracks[track_select].strip, page, sstype_select, ss_select)
+                    --end
+                      update_ctls = true --to update snapshot ctls
+                      update_snaps = true          
                     end
                   end
                 end
               end
-            end      
-          elseif mouse.context == nil and (MOUSE_click_RB(obj.sections[10])) then 
-            mouse.context = contexts.draglasso
-            lasso = {l = mouse.mx, t = mouse.my, r = mouse.mx+5, b = mouse.my+5}
-          elseif lasso ~= nil then
-            --Dropped
+              
+            elseif MOUSE_click_RB(obj.sections[163]) then
+              if ss_select then
+                mstr = 'Rename||Delete||Capture (Overwrite)'
+                gfx.x, gfx.y = snapmx, snapmy
+                res = OpenMenu(mstr)
+                if res ~= 0 then
+                  if res == 1 then
+                    --EditSSName(11)
+                    OpenEB(11,'Please enter new snapshot name:')
+                  elseif res == 2 then
+                    DeleteSS()
+                    update_snaps = true
+                  elseif res == 3 then
+                    Snapshots_CREATE(tracks[track_select].strip, page, sstype_select, ss_select)
+                  end
+                end
+              end        
+            end
+          elseif mouse.context == nil and MOUSE_click(obj.sections[167]) then
+          
+            snaplrn_mode = false
+            Snap_RemoveDeletedSS(tracks[track_select].strip,page,sstype_select)
+            CleanSS(tracks[track_select].strip, page, sstype_select)
             
+            navigate = true
+            
+            update_gfx = true
+          
+          end
+                  
+          mouse.mx = snapmx
+          mouse.my = snapmy
+          noscroll = true
+        
+        elseif mouse.context == nil and snaplrn_mode == true then      
+          
+          if show_fsnapshots or show_xysnapshots then
+            show_fsnapshots = false
+            show_xysnapshots = false
+            update_surface = true
+          end
+          
+          if sstype_select > 1 then
+            if mouse.context == nil and (MOUSE_click(obj.sections[10])) then -- or MOUSE_click_RB(obj.sections[10])) then
+              if mouse.mx > obj.sections[10].x then
+                if strips and tracks[track_select] and strips[tracks[track_select].strip] then
+                  for i = 1, #strips[tracks[track_select].strip][page].controls do
+                    ctlxywh = {x = strips[tracks[track_select].strip][page].controls[i].xsc - surface_offset.x +obj.sections[10].x, 
+                               y = strips[tracks[track_select].strip][page].controls[i].ysc - surface_offset.y +obj.sections[10].y, 
+                               w = strips[tracks[track_select].strip][page].controls[i].wsc, 
+                               h = strips[tracks[track_select].strip][page].controls[i].hsc}
+                    if strips[tracks[track_select].strip][page].controls[i].fxfound then
+                      if MOUSE_click(ctlxywh) then
+            
+                       if strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.fxparam or 
+                          strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.trackparam or 
+                          strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.tracksend then 
+                          local strip = tracks[track_select].strip
+                          
+                          --Add / Remove
+                          local ctlidx = GetSnapshotCtlIdx(strip, page, sstype_select, i)
+                          if ctlidx then
+                            --already added - remove?
+                            if snapshots[strip][page][sstype_select].ctls[ctlidx].delete then
+                              snapshots[strip][page][sstype_select].ctls[ctlidx].delete = not snapshots[strip][page][sstype_select].ctls[ctlidx].delete
+                            else
+                              snapshots[strip][page][sstype_select].ctls[ctlidx].delete = true
+                            end
+                          
+                          else
+                            --add
+                            local ctlidx = #snapshots[strip][page][sstype_select].ctls + 1
+                            snapshots[strip][page][sstype_select].ctls[ctlidx] = {c_id = strips[tracks[track_select].strip][page].controls[i].c_id,
+                                                                                  ctl = i}
+                          end
+  
+                        end
+                      end
+                    end
+                  end
+                end
+              end      
+            elseif mouse.context == nil and (MOUSE_click_RB(obj.sections[10])) then 
+              mouse.context = contexts.draglasso
+              lasso = {l = mouse.mx, t = mouse.my, r = mouse.mx+5, b = mouse.my+5}
+            elseif lasso ~= nil then
+              --Dropped
+              
+              Lasso_Select(false)
+              if ctl_select ~= nil then
+  
+                local strip = tracks[track_select].strip
+                
+                for c = 1, #ctl_select do
+                  local i = ctl_select[c].ctl
+                  
+                  if strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.fxparam or 
+                     strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.trackparam or 
+                     strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.tracksend then 
+                    --Add / Remove
+                    local ctlidx = GetSnapshotCtlIdx(strip, page, sstype_select, i)
+                    if ctlidx then
+                      --re-add deleted
+                      if snapshots[strip][page][sstype_select].ctls[ctlidx].delete then
+                        snapshots[strip][page][sstype_select].ctls[ctlidx].delete = false
+                        strips[tracks[track_select].strip][page].controls[i].dirty = true                  
+                      end
+                    else
+                      --add
+                      local ctlidx = #snapshots[strip][page][sstype_select].ctls + 1
+                      snapshots[strip][page][sstype_select].ctls[ctlidx] = {c_id = strips[tracks[track_select].strip][page].controls[i].c_id,
+                                                                            ctl = i}
+                      strips[tracks[track_select].strip][page].controls[i].dirty = true
+                    end
+                  end
+                    
+                end
+              end
+              
+              lasso = nil
+              ctl_select = nil
+              update_ctls = true
+              update_surface = true
+          
+            end
+          end
+        
+        elseif mouse.context and mouse.context == contexts.draglasso then
+          if (mouse.mx ~= mouse.last_x or mouse.my ~= mouse.last_y) then
+            lasso.r = mouse.mx
+            lasso.b = mouse.my
+  
             Lasso_Select(false)
-            if ctl_select ~= nil then
-
+            --[[if ctl_select ~= nil then
+  
               local strip = tracks[track_select].strip
               
               for c = 1, #ctl_select do
                 local i = ctl_select[c].ctl
                 
-                if strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.fxparam or 
-                   strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.trackparam or 
-                   strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.tracksend then 
-                  --Add / Remove
-                  local ctlidx = GetSnapshotCtlIdx(strip, page, sstype_select, i)
-                  if ctlidx then
-                    --re-add deleted
-                    if snapshots[strip][page][sstype_select].ctls[ctlidx].delete then
-                      snapshots[strip][page][sstype_select].ctls[ctlidx].delete = false
-                      strips[tracks[track_select].strip][page].controls[i].dirty = true                  
-                    end
-                  else
-                    --add
-                    local ctlidx = #snapshots[strip][page][sstype_select].ctls + 1
-                    snapshots[strip][page][sstype_select].ctls[ctlidx] = {c_id = strips[tracks[track_select].strip][page].controls[i].c_id,
-                                                                          ctl = i}
-                    strips[tracks[track_select].strip][page].controls[i].dirty = true
+                --Add / Remove
+                local ctlidx = GetSnapshotCtlIdx(strip, page, sstype_select, i)
+                if ctlidx then
+                  --re-add deleted
+                  if snapshots[strip][page][sstype_select].ctls[ctlidx].delete then
+                    snapshots[strip][page][sstype_select].ctls[ctlidx].delete = false
+                    strips[tracks[track_select].strip][page].controls[i].dirty = true                  
                   end
+                else
+                  --add
+                  local ctlidx = #snapshots[strip][page][sstype_select].ctls + 1
+                  snapshots[strip][page][sstype_select].ctls[ctlidx] = {c_id = strips[tracks[track_select].strip][page].controls[i].c_id,
+                                                                        ctl = i}
+                  strips[tracks[track_select].strip][page].controls[i].dirty = true
                 end
-                  
+  
               end
             end
-            
-            lasso = nil
-            ctl_select = nil
-            update_ctls = true
+  
+            update_ctls = true]]
             update_surface = true
-        
           end
-        end
-      
-      elseif mouse.context and mouse.context == contexts.draglasso then
-        if (mouse.mx ~= mouse.last_x or mouse.my ~= mouse.last_y) then
-          lasso.r = mouse.mx
-          lasso.b = mouse.my
-
-          Lasso_Select(false)
-          --[[if ctl_select ~= nil then
-
-            local strip = tracks[track_select].strip
-            
-            for c = 1, #ctl_select do
-              local i = ctl_select[c].ctl
-              
-              --Add / Remove
-              local ctlidx = GetSnapshotCtlIdx(strip, page, sstype_select, i)
-              if ctlidx then
-                --re-add deleted
-                if snapshots[strip][page][sstype_select].ctls[ctlidx].delete then
-                  snapshots[strip][page][sstype_select].ctls[ctlidx].delete = false
-                  strips[tracks[track_select].strip][page].controls[i].dirty = true                  
-                end
-              else
-                --add
-                local ctlidx = #snapshots[strip][page][sstype_select].ctls + 1
-                snapshots[strip][page][sstype_select].ctls[ctlidx] = {c_id = strips[tracks[track_select].strip][page].controls[i].c_id,
-                                                                      ctl = i}
-                strips[tracks[track_select].strip][page].controls[i].dirty = true
-              end
-
-            end
-          end
-
-          update_ctls = true]]
-          update_surface = true
-        end
-      
-      elseif mouse.context == nil and (MOUSE_click(obj.sections[10]) or MOUSE_click_RB(obj.sections[10]) or gfx.mouse_wheel ~= 0) then
         
-        local togfsnap = false
-        
-        if mouse.mx > obj.sections[10].x then
-          if strips and tracks[track_select] and strips[tracks[track_select].strip] then
-            for i = 1, #strips[tracks[track_select].strip][page].controls do
-
-              ctlxywh = {x = strips[tracks[track_select].strip][page].controls[i].xsc - surface_offset.x +obj.sections[10].x, 
-                         y = strips[tracks[track_select].strip][page].controls[i].ysc - surface_offset.y +obj.sections[10].y, 
-                         w = strips[tracks[track_select].strip][page].controls[i].wsc, 
-                         h = strips[tracks[track_select].strip][page].controls[i].hsc}
-              --if strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.fxparam then
-              
-              if strips[tracks[track_select].strip][page].controls[i].fxfound then
-                if MOUSE_click(ctlxywh) and not mouse.ctrl and not mouse.alt then
-                  local ctltype = strips[tracks[track_select].strip][page].controls[i].ctltype
+        elseif mouse.context == nil and (MOUSE_click(obj.sections[10]) or MOUSE_click_RB(obj.sections[10]) or gfx.mouse_wheel ~= 0) then
+          
+          local togfsnap = false
+          
+          if mouse.mx > obj.sections[10].x then
+            if strips and tracks[track_select] and strips[tracks[track_select].strip] then
+              for i = 1, #strips[tracks[track_select].strip][page].controls do
+  
+                ctlxywh = {x = strips[tracks[track_select].strip][page].controls[i].xsc - surface_offset.x +obj.sections[10].x, 
+                           y = strips[tracks[track_select].strip][page].controls[i].ysc - surface_offset.y +obj.sections[10].y, 
+                           w = strips[tracks[track_select].strip][page].controls[i].wsc, 
+                           h = strips[tracks[track_select].strip][page].controls[i].hsc}
+                --if strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.fxparam then
                 
-                  if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.15 and ctltype ~= 5 and ctltype ~= 2 and ctltype ~= 3 then
-                    if settings_swapctrlclick == false then
-                      SetParam_ToDef(i)
-                    else
-                      SetParam_EnterVal(i)
-                    end
-                        
-                    noscroll = true
-                    break
-                  end
+                if strips[tracks[track_select].strip][page].controls[i].fxfound then
+                  if MOUSE_click(ctlxywh) and not mouse.ctrl and not mouse.alt then
+                    local ctltype = strips[tracks[track_select].strip][page].controls[i].ctltype
                   
-                  if ctltype == 1 then
-                    --knob/slider
-                    if strips[tracks[track_select].strip][page].controls[i].horiz then
-                      mouse.context = contexts.sliderctl_h
-                      mouse.slideoff = ctlxywh.x+ctlxywh.w/2 - mouse.mx
-                    else
-                      mouse.context = contexts.sliderctl
-                      mouse.slideoff = ctlxywh.y+ctlxywh.h/2 - mouse.my
+                    if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.15 and ctltype ~= 5 and ctltype ~= 2 and ctltype ~= 3 then
+                      if settings_swapctrlclick == false then
+                        SetParam_ToDef(i)
+                      else
+                        SetParam_EnterVal(i)
+                      end
+                          
+                      noscroll = true
+                      break
                     end
-                    --knobslider = 'ks'
-                    ctlpos = ctlScaleInv(nz(strips[tracks[track_select].strip][page].controls[i].scalemode,8),
-                                         strips[tracks[track_select].strip][page].controls[i].val)
-                    trackfxparam_select = i
-                    oms = mouse.shift
                     
-                    --undotxt = 'Parameter Change'
-                    --reaper.Undo_BeginBlock2()
-                    
-                  elseif ctltype == 2 or ctltype == 3 then
-                    --button/button inverse
-                    trackfxparam_select = i
-                    if strips[tracks[track_select].strip][page].controls[i].val < 0.5 then
-                      strips[tracks[track_select].strip][page].controls[i].val = 1
-                    else
-                      strips[tracks[track_select].strip][page].controls[i].val = 0
-                    end
-                    SetParam()
-                    strips[tracks[track_select].strip][page].controls[i].dirty = true
-                    if strips[tracks[track_select].strip][page].controls[i].param_info.paramname == 'Bypass' then
-                      SetCtlEnabled(strips[tracks[track_select].strip][page].controls[i].fxnum) 
-                    end
-                    noscroll = true
-                    update_ctls = true
-                  elseif ctltype == 4 then
-                    --cycle
-                    if strips[tracks[track_select].strip][page].controls[i].cycledata.draggable then
+                    if ctltype == 1 then
+                      --knob/slider
                       if strips[tracks[track_select].strip][page].controls[i].horiz then
-                        mouse.context = contexts.dragcycle
+                        mouse.context = contexts.sliderctl_h
                         mouse.slideoff = ctlxywh.x+ctlxywh.w/2 - mouse.mx
                       else
-                        mouse.context = contexts.dragcycle
+                        mouse.context = contexts.sliderctl
                         mouse.slideoff = ctlxywh.y+ctlxywh.h/2 - mouse.my
                       end
-                      ctlpos = normalize(0, strips[tracks[track_select].strip][page].controls[i].cycledata.statecnt,
-                                         strips[tracks[track_select].strip][page].controls[i].cycledata.pos)
+                      --knobslider = 'ks'
+                      ctlpos = ctlScaleInv(nz(strips[tracks[track_select].strip][page].controls[i].scalemode,8),
+                                           strips[tracks[track_select].strip][page].controls[i].val)
                       trackfxparam_select = i
-                      strips[tracks[track_select].strip][page].controls[i].cycledata.posdirty = false
                       oms = mouse.shift
-                    else
-                      if strips[tracks[track_select].strip][page].controls[i].cycledata.pos == nil then
-                        strips[tracks[track_select].strip][page].controls[i].cycledata.pos = 1
+                      
+                      --undotxt = 'Parameter Change'
+                      --reaper.Undo_BeginBlock2()
+                      
+                    elseif ctltype == 2 or ctltype == 3 then
+                      --button/button inverse
+                      trackfxparam_select = i
+                      if strips[tracks[track_select].strip][page].controls[i].val < 0.5 then
+                        strips[tracks[track_select].strip][page].controls[i].val = 1
                       else
-                        strips[tracks[track_select].strip][page].controls[i].cycledata.pos = 
-                                    strips[tracks[track_select].strip][page].controls[i].cycledata.pos +1
-                        if strips[tracks[track_select].strip][page].controls[i].cycledata.pos > 
-                                strips[tracks[track_select].strip][page].controls[i].cycledata.statecnt 
-                           or strips[tracks[track_select].strip][page].controls[i].cycledata.pos < 1 then
+                        strips[tracks[track_select].strip][page].controls[i].val = 0
+                      end
+                      SetParam()
+                      strips[tracks[track_select].strip][page].controls[i].dirty = true
+                      if strips[tracks[track_select].strip][page].controls[i].param_info.paramname == 'Bypass' then
+                        SetCtlEnabled(strips[tracks[track_select].strip][page].controls[i].fxnum) 
+                      end
+                      noscroll = true
+                      update_ctls = true
+                    elseif ctltype == 4 then
+                      --cycle
+                      if strips[tracks[track_select].strip][page].controls[i].cycledata.draggable then
+                        if strips[tracks[track_select].strip][page].controls[i].horiz then
+                          mouse.context = contexts.dragcycle
+                          mouse.slideoff = ctlxywh.x+ctlxywh.w/2 - mouse.mx
+                        else
+                          mouse.context = contexts.dragcycle
+                          mouse.slideoff = ctlxywh.y+ctlxywh.h/2 - mouse.my
+                        end
+                        ctlpos = normalize(0, strips[tracks[track_select].strip][page].controls[i].cycledata.statecnt,
+                                           strips[tracks[track_select].strip][page].controls[i].cycledata.pos)
+                        trackfxparam_select = i
+                        strips[tracks[track_select].strip][page].controls[i].cycledata.posdirty = false
+                        oms = mouse.shift
+                      else
+                        if strips[tracks[track_select].strip][page].controls[i].cycledata.pos == nil then
                           strips[tracks[track_select].strip][page].controls[i].cycledata.pos = 1
+                        else
+                          strips[tracks[track_select].strip][page].controls[i].cycledata.pos = 
+                                      strips[tracks[track_select].strip][page].controls[i].cycledata.pos +1
+                          if strips[tracks[track_select].strip][page].controls[i].cycledata.pos > 
+                                  strips[tracks[track_select].strip][page].controls[i].cycledata.statecnt 
+                             or strips[tracks[track_select].strip][page].controls[i].cycledata.pos < 1 then
+                            strips[tracks[track_select].strip][page].controls[i].cycledata.pos = 1
+                          end
+                        end
+                        if strips[tracks[track_select].strip][page].controls[i].cycledata.pos <=     
+                                  strips[tracks[track_select].strip][page].controls[i].cycledata.statecnt then
+                          trackfxparam_select = i
+                          strips[tracks[track_select].strip][page].controls[i].val = 
+                              strips[tracks[track_select].strip][page].controls[i].cycledata[strips[tracks[track_select].strip][page].controls[i].cycledata.pos].val
+                          SetParam()
+                          strips[tracks[track_select].strip][page].controls[i].dirty = true
+                          strips[tracks[track_select].strip][page].controls[i].cycledata.posdirty = false
+                          update_ctls = true
                         end
                       end
-                      if strips[tracks[track_select].strip][page].controls[i].cycledata.pos <=     
-                                strips[tracks[track_select].strip][page].controls[i].cycledata.statecnt then
-                        trackfxparam_select = i
-                        strips[tracks[track_select].strip][page].controls[i].val = 
-                            strips[tracks[track_select].strip][page].controls[i].cycledata[strips[tracks[track_select].strip][page].controls[i].cycledata.pos].val
+                      noscroll = true
+                    elseif ctltype == 6 then
+                      --mem button
+                      trackfxparam_select = i
+                      if strips[tracks[track_select].strip][page].controls[i].membtn.state == nil then
+                        strips[tracks[track_select].strip][page].controls[i].membtn.state = false
+                      end
+                      strips[tracks[track_select].strip][page].controls[i].membtn.state = not strips[tracks[track_select].strip][page].controls[i].membtn.state
+                      if strips[tracks[track_select].strip][page].controls[i].membtn.state == true then
+                        strips[tracks[track_select].strip][page].controls[i].membtn.mem = strips[tracks[track_select].strip][page].controls[i].val
+                        strips[tracks[track_select].strip][page].controls[i].val = strips[tracks[track_select].strip][page].controls[i].defval
                         SetParam()
-                        strips[tracks[track_select].strip][page].controls[i].dirty = true
-                        strips[tracks[track_select].strip][page].controls[i].cycledata.posdirty = false
-                        update_ctls = true
+                      else
+                        strips[tracks[track_select].strip][page].controls[i].val = strips[tracks[track_select].strip][page].controls[i].membtn.mem
+                        SetParam()
+                      end
+                      update_ctls = true                    
+                    elseif ctltype == 5 then
+                      if strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.xy then
+                        if mouse.my - obj.sections[10].y + surface_offset.y - strips[tracks[track_select].strip][page].controls[i].y < strips[tracks[track_select].strip][page].controls[i].ctl_info.cellh - 38 then
+                          mouse.context = contexts.dragxy
+                          xy_select = i
+                        else
+                          local xp = math.floor((mouse.mx-12 - obj.sections[10].x + surface_offset.x - strips[tracks[track_select].strip][page].controls[i].x)/((strips[tracks[track_select].strip][page].controls[i].w-24)/4))+1
+                          xysnap_select = xp
+                          xy_select = i
+                          
+                          --open fss
+                          togfsnap = true
+                          if fsstype_select == strips[tracks[track_select].strip][page].controls[i].param then
+                            show_xysnapshots = not show_xysnapshots
+                            show_fsnapshots = false
+                          else
+                            show_xysnapshots = true
+                            show_fsnapshots = false
+                          end
+                          fsstype_select = strips[tracks[track_select].strip][page].controls[i].param
+                          fsstype_color = strips[tracks[track_select].strip][page].controls[i].textcol
+                          if show_xysnapshots then
+                            if snapshots and snapshots[tracks[track_select].strip] and snapshots[tracks[track_select].strip][page][fsstype_select] then
+                            
+                              if xysnap_select == 1 then
+                                fss_select = strips[tracks[track_select].strip][page].controls[i].xydata.snapa
+                              elseif xysnap_select == 2 then
+                                fss_select = strips[tracks[track_select].strip][page].controls[i].xydata.snapb
+                              elseif xysnap_select == 3 then
+                                fss_select = strips[tracks[track_select].strip][page].controls[i].xydata.snapc
+                              elseif xysnap_select == 4 then
+                                fss_select = strips[tracks[track_select].strip][page].controls[i].xydata.snapd
+                              end
+                              obj.sections[180].x = F_limit(strips[tracks[track_select].strip][page].controls[i].x - surface_offset.x + obj.sections[10].x + 
+                                                            math.floor((strips[tracks[track_select].strip][page].controls[i].w - obj.sections[180].w)/2),
+                                                            obj.sections[10].x,obj.sections[10].x+obj.sections[10].w-obj.sections[180].w)
+                              obj.sections[180].y = F_limit(strips[tracks[track_select].strip][page].controls[i].y+strips[tracks[track_select].strip][page].controls[i].ctl_info.cellh
+                                                            - surface_offset.y  + obj.sections[10].y - 3,
+                                                            obj.sections[10].y,obj.sections[10].y+obj.sections[10].h-obj.sections[180].h)
+                            else
+                              show_xysnapshots = false
+                            end
+                          end
+                          update_fsnaps = true
+                          update_surface = true
+                        end
+                        
+                      elseif strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.snapshot then
+                        --SNAPSHOTS
+                        local mmx = mouse.mx - ctlxywh.x
+                        local mmy = mouse.my - ctlxywh.y
+                        if mmy < ctlxywh.h/2 then
+                          sstype_select = strips[tracks[track_select].strip][page].controls[i].param
+                          if snapshots and snapshots[tracks[track_select].strip] and snapshots[tracks[track_select].strip][page][sstype_select] 
+                                                      and snapshots[tracks[track_select].strip][page][sstype_select].selected then
+                            ss_select = snapshots[tracks[track_select].strip][page][sstype_select].selected
+                            show_snapshots = true
+                            update_snaps = true
+                          end                      
+                        elseif mmx < 20 then
+                          local xsstype_select,xss_select
+                          xsstype_select = strips[tracks[track_select].strip][page].controls[i].param
+                          if snapshots and snapshots[tracks[track_select].strip] and snapshots[tracks[track_select].strip][page][xsstype_select] 
+                                                      and snapshots[tracks[track_select].strip][page][xsstype_select].selected then
+                            if snapshots[tracks[track_select].strip][page][xsstype_select].selected then
+                              if xsstype_select == 1 then
+                                xss_select = snapshots[tracks[track_select].strip][page][xsstype_select].selected-1
+                                if xss_select < 1 then
+                                  xss_select = #snapshots[tracks[track_select].strip][page][xsstype_select]
+                                end
+                              else
+                                xss_select = snapshots[tracks[track_select].strip][page][xsstype_select].selected-1
+                                if xss_select < 1 then                            
+                                  xss_select = #snapshots[tracks[track_select].strip][page][xsstype_select].snapshot
+                                end
+                              end
+                            else
+                              if xsstype_select == 1 then
+                                if #snapshots[tracks[track_select].strip][page][xsstype_select] > 0 then
+                                  xss_select = 1
+                                end
+                              else
+                                if #snapshots[tracks[track_select].strip][page][xsstype_select].snapshot > 0 then
+                                  xss_select = 1                            
+                                end
+                              end
+                            end
+                            if xss_select then
+                              Snapshot_Set(tracks[track_select].strip, page, xsstype_select, xss_select)
+                              if xsstype_select == sstype_select then
+                                ss_select = xss_select
+                              end
+                              update_ctls = true
+                              update_snaps = true
+                              --update_fsnaps = true                       
+                            end
+                          end                                            
+                        elseif mmx > ctlxywh.w-20 then
+                          local xsstype_select,xss_select
+                          xsstype_select = strips[tracks[track_select].strip][page].controls[i].param
+                          if snapshots and snapshots[tracks[track_select].strip] and snapshots[tracks[track_select].strip][page][xsstype_select] 
+                                                      and snapshots[tracks[track_select].strip][page][xsstype_select].selected then
+                            if snapshots[tracks[track_select].strip][page][xsstype_select].selected then
+                              if xsstype_select == 1 then
+                                xss_select = snapshots[tracks[track_select].strip][page][xsstype_select].selected+1
+                                if xss_select > #snapshots[tracks[track_select].strip][page][xsstype_select] then
+                                  xss_select = 1
+                                end
+                              else
+                                xss_select = snapshots[tracks[track_select].strip][page][xsstype_select].selected+1
+                                if xss_select > #snapshots[tracks[track_select].strip][page][xsstype_select].snapshot then
+                                  xss_select = 1
+                                end
+                              end
+                            else
+                              if xsstype_select == 1 then
+                                if #snapshots[tracks[track_select].strip][page][xsstype_select] > 0 then
+                                  xss_select = 1
+                                end
+                              else
+                                if #snapshots[tracks[track_select].strip][page][xsstype_select].snapshot > 0 then
+                                  xss_select = 1                            
+                                end
+                              end
+                            end
+                            if xss_select then
+                              Snapshot_Set(tracks[track_select].strip, page, xsstype_select, xss_select)                          
+                              if xsstype_select == sstype_select then
+                                ss_select = xss_select
+                              end
+                              update_ctls = true
+                              update_snaps = true
+                              --update_fsnaps = true                       
+                            end
+                          end
+                                                
+                        else
+                          --open fss
+                          togfsnap = true
+                          if fsstype_select == strips[tracks[track_select].strip][page].controls[i].param then
+                            show_fsnapshots = not show_fsnapshots
+                            show_xysnapshots = false
+                          else
+                            show_fsnapshots = true
+                            show_xysnapshots = false
+                          end
+                          fsstype_select = strips[tracks[track_select].strip][page].controls[i].param
+                          fsstype_color = strips[tracks[track_select].strip][page].controls[i].textcol
+                          if show_fsnapshots then
+                            if snapshots and snapshots[tracks[track_select].strip] and snapshots[tracks[track_select].strip][page][fsstype_select] 
+                              and snapshots[tracks[track_select].strip][page][fsstype_select].selected then
+                            
+                              fss_select = snapshots[tracks[track_select].strip][page][fsstype_select].selected
+                              obj.sections[180].x = F_limit(strips[tracks[track_select].strip][page].controls[i].x - surface_offset.x + obj.sections[10].x + 
+                                                            math.floor((strips[tracks[track_select].strip][page].controls[i].w - obj.sections[180].w)/2),
+                                                            obj.sections[10].x,obj.sections[10].x+obj.sections[10].w-obj.sections[180].w)
+                              obj.sections[180].y = F_limit(strips[tracks[track_select].strip][page].controls[i].y+strips[tracks[track_select].strip][page].controls[i].ctl_info.cellh
+                                                            - surface_offset.y  + obj.sections[10].y - 3,
+                                                            obj.sections[10].y,obj.sections[10].y+obj.sections[10].h-obj.sections[180].h)
+                            else
+                              show_fsnapshots = false
+                            end
+                          end
+                          update_fsnaps = true
+                          update_surface = true
+                        end
+                                          
+                      end
+                    elseif ctltype == 7 or ctltype == 8 or ctltype == 9 or ctltype == 10 then
+                      --hold button
+                      holdbtn = 'holdbtn'
+                      trackfxparam_select = i
+                      mouse.context = contexts.hold
+                      strips[tracks[track_select].strip][page].controls[i].val = 1
+                      strips[tracks[track_select].strip][page].controls[i].dirty = true
+                      SetParam()
+                      update_ctls = true
+                    end
+                    noscroll = true
+                    break
+                    
+                  elseif MOUSE_click_RB(ctlxywh) and mouse.ctrl == false then
+                    local mstr
+                    mm = ''
+                    if show_snapshots then
+                      mm = '!'
+                    end
+                    if strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.fxparam then
+                      mstr = 'MIDI learn|Modulation||Enter value||Open FX window||'..mm..'Snapshots'
+                    else
+                      mstr = '#MIDI learn|#Modulation||Enter value||#Open FX window||'..mm..'Snapshots'                  
+                    end
+                    if #strip_favs > 0 then
+                     --[[ mstr = mstr .. '||>Insert Strip'
+                      for fvs = 1, #strip_favs do
+                        if fvs == #strip_favs then
+                          mstr = mstr .. '|<' .. string.match(strip_favs[fvs],'.+%/(.-)%.')
+                        else
+                          mstr = mstr .. '|' .. string.match(strip_favs[fvs],'.+%/(.-)%.')
+                        end
+                      end]]
+                    else
+                      mstr = mstr .. '||#>Insert strip (favorites)'                  
+                    end
+                    trackfxparam_select = i
+                    gfx.x, gfx.y = mouse.mx, mouse.my
+                    res = OpenMenu(mstr)
+                    if res ~= 0 then
+                      if res == 1 then
+                        SetParam2(true)
+                        reaper.Main_OnCommand(41144,0,0)
+                      elseif res == 2 then
+                        SetParam2(true)
+                        reaper.Main_OnCommand(41143,0)
+                      elseif res == 3 then
+                        --EditValue(5)
+                        OpenEB(5,'Please enter value:')
+                      elseif res == 4 then
+                        local track
+                        if strips[tracks[track_select].strip][page].controls[i].tracknum == nil then
+                          track = GetTrack(tracks[track_select].tracknum)
+                        else
+                          track = GetTrack(strips[tracks[track_select].strip][page].controls[i].tracknum)                      
+                        end
+                        local fxnum = strips[tracks[track_select].strip][page].controls[i].fxnum
+                        if not reaper.TrackFX_GetOpen(track, fxnum) then
+                          reaper.TrackFX_Show(track, fxnum, 3)
+                        end
+                      elseif res == 5 then
+                        show_snapshots = not show_snapshots
+                        update_gfx = true
                       end
                     end
                     noscroll = true
-                  elseif ctltype == 6 then
-                    --mem button
-                    trackfxparam_select = i
-                    if strips[tracks[track_select].strip][page].controls[i].membtn.state == nil then
-                      strips[tracks[track_select].strip][page].controls[i].membtn.state = false
-                    end
-                    strips[tracks[track_select].strip][page].controls[i].membtn.state = not strips[tracks[track_select].strip][page].controls[i].membtn.state
-                    if strips[tracks[track_select].strip][page].controls[i].membtn.state == true then
-                      strips[tracks[track_select].strip][page].controls[i].membtn.mem = strips[tracks[track_select].strip][page].controls[i].val
-                      strips[tracks[track_select].strip][page].controls[i].val = strips[tracks[track_select].strip][page].controls[i].defval
-                      SetParam()
-                    else
-                      strips[tracks[track_select].strip][page].controls[i].val = strips[tracks[track_select].strip][page].controls[i].membtn.mem
-                      SetParam()
-                    end
-                    update_ctls = true                    
-                  elseif ctltype == 5 then
-                    if strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.xy then
-                      if mouse.my - obj.sections[10].y + surface_offset.y - strips[tracks[track_select].strip][page].controls[i].y < strips[tracks[track_select].strip][page].controls[i].ctl_info.cellh - 38 then
-                        mouse.context = contexts.dragxy
-                        xy_select = i
-                      else
-                        local xp = math.floor((mouse.mx-12 - obj.sections[10].x + surface_offset.x - strips[tracks[track_select].strip][page].controls[i].x)/((strips[tracks[track_select].strip][page].controls[i].w-24)/4))+1
-                        xysnap_select = xp
-                        xy_select = i
-                        
-                        --open fss
-                        togfsnap = true
-                        if fsstype_select == strips[tracks[track_select].strip][page].controls[i].param then
-                          show_xysnapshots = not show_xysnapshots
-                          show_fsnapshots = false
-                        else
-                          show_xysnapshots = true
-                          show_fsnapshots = false
-                        end
-                        fsstype_select = strips[tracks[track_select].strip][page].controls[i].param
-                        fsstype_color = strips[tracks[track_select].strip][page].controls[i].textcol
-                        if show_xysnapshots then
-                          if snapshots and snapshots[tracks[track_select].strip] and snapshots[tracks[track_select].strip][page][fsstype_select] then
-                          
-                            if xysnap_select == 1 then
-                              fss_select = strips[tracks[track_select].strip][page].controls[i].xydata.snapa
-                            elseif xysnap_select == 2 then
-                              fss_select = strips[tracks[track_select].strip][page].controls[i].xydata.snapb
-                            elseif xysnap_select == 3 then
-                              fss_select = strips[tracks[track_select].strip][page].controls[i].xydata.snapc
-                            elseif xysnap_select == 4 then
-                              fss_select = strips[tracks[track_select].strip][page].controls[i].xydata.snapd
-                            end
-                            obj.sections[180].x = F_limit(strips[tracks[track_select].strip][page].controls[i].x - surface_offset.x + obj.sections[10].x + 
-                                                          math.floor((strips[tracks[track_select].strip][page].controls[i].w - obj.sections[180].w)/2),
-                                                          obj.sections[10].x,obj.sections[10].x+obj.sections[10].w-obj.sections[180].w)
-                            obj.sections[180].y = F_limit(strips[tracks[track_select].strip][page].controls[i].y+strips[tracks[track_select].strip][page].controls[i].ctl_info.cellh
-                                                          - surface_offset.y  + obj.sections[10].y - 3,
-                                                          obj.sections[10].y,obj.sections[10].y+obj.sections[10].h-obj.sections[180].h)
-                          else
-                            show_xysnapshots = false
-                          end
-                        end
-                        update_fsnaps = true
-                        update_surface = true
-                      end
-                      
-                    elseif strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.snapshot then
-                      --SNAPSHOTS
-                      local mmx = mouse.mx - ctlxywh.x
-                      local mmy = mouse.my - ctlxywh.y
-                      if mmy < ctlxywh.h/2 then
-                        sstype_select = strips[tracks[track_select].strip][page].controls[i].param
-                        if snapshots and snapshots[tracks[track_select].strip] and snapshots[tracks[track_select].strip][page][sstype_select] 
-                                                    and snapshots[tracks[track_select].strip][page][sstype_select].selected then
-                          ss_select = snapshots[tracks[track_select].strip][page][sstype_select].selected
-                          show_snapshots = true
-                          update_snaps = true
-                        end                      
-                      elseif mmx < 20 then
-                        local xsstype_select,xss_select
-                        xsstype_select = strips[tracks[track_select].strip][page].controls[i].param
-                        if snapshots and snapshots[tracks[track_select].strip] and snapshots[tracks[track_select].strip][page][xsstype_select] 
-                                                    and snapshots[tracks[track_select].strip][page][xsstype_select].selected then
-                          if snapshots[tracks[track_select].strip][page][xsstype_select].selected then
-                            if xsstype_select == 1 then
-                              xss_select = snapshots[tracks[track_select].strip][page][xsstype_select].selected-1
-                              if xss_select < 1 then
-                                xss_select = #snapshots[tracks[track_select].strip][page][xsstype_select]
-                              end
-                            else
-                              xss_select = snapshots[tracks[track_select].strip][page][xsstype_select].selected-1
-                              if xss_select < 1 then                            
-                                xss_select = #snapshots[tracks[track_select].strip][page][xsstype_select].snapshot
-                              end
-                            end
-                          else
-                            if xsstype_select == 1 then
-                              if #snapshots[tracks[track_select].strip][page][xsstype_select] > 0 then
-                                xss_select = 1
-                              end
-                            else
-                              if #snapshots[tracks[track_select].strip][page][xsstype_select].snapshot > 0 then
-                                xss_select = 1                            
-                              end
-                            end
-                          end
-                          if xss_select then
-                            Snapshot_Set(tracks[track_select].strip, page, xsstype_select, xss_select)
-                            if xsstype_select == sstype_select then
-                              ss_select = xss_select
-                            end
-                            update_ctls = true
-                            update_snaps = true
-                            --update_fsnaps = true                       
-                          end
-                        end                                            
-                      elseif mmx > ctlxywh.w-20 then
-                        local xsstype_select,xss_select
-                        xsstype_select = strips[tracks[track_select].strip][page].controls[i].param
-                        if snapshots and snapshots[tracks[track_select].strip] and snapshots[tracks[track_select].strip][page][xsstype_select] 
-                                                    and snapshots[tracks[track_select].strip][page][xsstype_select].selected then
-                          if snapshots[tracks[track_select].strip][page][xsstype_select].selected then
-                            if xsstype_select == 1 then
-                              xss_select = snapshots[tracks[track_select].strip][page][xsstype_select].selected+1
-                              if xss_select > #snapshots[tracks[track_select].strip][page][xsstype_select] then
-                                xss_select = 1
-                              end
-                            else
-                              xss_select = snapshots[tracks[track_select].strip][page][xsstype_select].selected+1
-                              if xss_select > #snapshots[tracks[track_select].strip][page][xsstype_select].snapshot then
-                                xss_select = 1
-                              end
-                            end
-                          else
-                            if xsstype_select == 1 then
-                              if #snapshots[tracks[track_select].strip][page][xsstype_select] > 0 then
-                                xss_select = 1
-                              end
-                            else
-                              if #snapshots[tracks[track_select].strip][page][xsstype_select].snapshot > 0 then
-                                xss_select = 1                            
-                              end
-                            end
-                          end
-                          if xss_select then
-                            Snapshot_Set(tracks[track_select].strip, page, xsstype_select, xss_select)                          
-                            if xsstype_select == sstype_select then
-                              ss_select = xss_select
-                            end
-                            update_ctls = true
-                            update_snaps = true
-                            --update_fsnaps = true                       
-                          end
-                        end
-                                              
-                      else
-                        --open fss
-                        togfsnap = true
-                        if fsstype_select == strips[tracks[track_select].strip][page].controls[i].param then
-                          show_fsnapshots = not show_fsnapshots
-                          show_xysnapshots = false
-                        else
-                          show_fsnapshots = true
-                          show_xysnapshots = false
-                        end
-                        fsstype_select = strips[tracks[track_select].strip][page].controls[i].param
-                        fsstype_color = strips[tracks[track_select].strip][page].controls[i].textcol
-                        if show_fsnapshots then
-                          if snapshots and snapshots[tracks[track_select].strip] and snapshots[tracks[track_select].strip][page][fsstype_select] 
-                            and snapshots[tracks[track_select].strip][page][fsstype_select].selected then
-                          
-                            fss_select = snapshots[tracks[track_select].strip][page][fsstype_select].selected
-                            obj.sections[180].x = F_limit(strips[tracks[track_select].strip][page].controls[i].x - surface_offset.x + obj.sections[10].x + 
-                                                          math.floor((strips[tracks[track_select].strip][page].controls[i].w - obj.sections[180].w)/2),
-                                                          obj.sections[10].x,obj.sections[10].x+obj.sections[10].w-obj.sections[180].w)
-                            obj.sections[180].y = F_limit(strips[tracks[track_select].strip][page].controls[i].y+strips[tracks[track_select].strip][page].controls[i].ctl_info.cellh
-                                                          - surface_offset.y  + obj.sections[10].y - 3,
-                                                          obj.sections[10].y,obj.sections[10].y+obj.sections[10].h-obj.sections[180].h)
-                          else
-                            show_fsnapshots = false
-                          end
-                        end
-                        update_fsnaps = true
-                        update_surface = true
-                      end
-                                        
-                    end
-                  elseif ctltype == 7 or ctltype == 8 or ctltype == 9 or ctltype == 10 then
-                    --hold button
-                    holdbtn = 'holdbtn'
-                    trackfxparam_select = i
-                    mouse.context = contexts.hold
-                    strips[tracks[track_select].strip][page].controls[i].val = 1
-                    strips[tracks[track_select].strip][page].controls[i].dirty = true
-                    SetParam()
-                    update_ctls = true
-                  end
-                  noscroll = true
-                  break
+                    break
+                  --elseif MOUSE_click_RB(ctlxywh) and mouse.ctrl then
                   
-                elseif MOUSE_click_RB(ctlxywh) and mouse.ctrl == false then
-                  local mstr
-                  mm = ''
-                  if show_snapshots then
-                    mm = '!'
-                  end
-                  if strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.fxparam then
-                    mstr = 'MIDI learn|Modulation||Enter value||Open FX window||'..mm..'Snapshots'
-                  else
-                    mstr = '#MIDI learn|#Modulation||Enter value||#Open FX window||'..mm..'Snapshots'                  
-                  end
-                  if #strip_favs > 0 then
-                   --[[ mstr = mstr .. '||>Insert Strip'
-                    for fvs = 1, #strip_favs do
-                      if fvs == #strip_favs then
-                        mstr = mstr .. '|<' .. string.match(strip_favs[fvs],'.+%/(.-)%.')
-                      else
-                        mstr = mstr .. '|' .. string.match(strip_favs[fvs],'.+%/(.-)%.')
-                      end
-                    end]]
-                  else
-                    mstr = mstr .. '||#>Insert strip (favorites)'                  
-                  end
-                  trackfxparam_select = i
-                  gfx.x, gfx.y = mouse.mx, mouse.my
-                  res = OpenMenu(mstr)
-                  if res ~= 0 then
-                    if res == 1 then
-                      SetParam2(true)
-                      reaper.Main_OnCommand(41144,0,0)
-                    elseif res == 2 then
-                      SetParam2(true)
-                      reaper.Main_OnCommand(41143,0)
-                    elseif res == 3 then
-                      --EditValue(5)
-                      OpenEB(5,'Please enter value:')
-                    elseif res == 4 then
+                  --  trackfxparam_select = i
+                  --  EditValue()
+                  
+                  elseif MOUSE_click(ctlxywh) and mouse.alt then
+                  
+                    if strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.fxparam or 
+                       strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.fxoffline then
                       local track
                       if strips[tracks[track_select].strip][page].controls[i].tracknum == nil then
                         track = GetTrack(tracks[track_select].tracknum)
@@ -11122,603 +11445,1360 @@ end
                       if not reaper.TrackFX_GetOpen(track, fxnum) then
                         reaper.TrackFX_Show(track, fxnum, 3)
                       end
-                    elseif res == 5 then
-                      show_snapshots = not show_snapshots
-                      update_gfx = true
                     end
-                  end
-                  noscroll = true
-                  break
-                --elseif MOUSE_click_RB(ctlxywh) and mouse.ctrl then
-                
-                --  trackfxparam_select = i
-                --  EditValue()
-                
-                elseif MOUSE_click(ctlxywh) and mouse.alt then
-                
-                  if strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.fxparam or 
-                     strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.fxoffline then
-                    local track
-                    if strips[tracks[track_select].strip][page].controls[i].tracknum == nil then
-                      track = GetTrack(tracks[track_select].tracknum)
+                                    
+                  elseif MOUSE_click(ctlxywh) and mouse.ctrl then --make double_click?
+                    if settings_swapctrlclick == true then
+                      SetParam_ToDef(i)
                     else
-                      track = GetTrack(strips[tracks[track_select].strip][page].controls[i].tracknum)                      
-                    end
-                    local fxnum = strips[tracks[track_select].strip][page].controls[i].fxnum
-                    if not reaper.TrackFX_GetOpen(track, fxnum) then
-                      reaper.TrackFX_Show(track, fxnum, 3)
-                    end
-                  end
-                                  
-                elseif MOUSE_click(ctlxywh) and mouse.ctrl then --make double_click?
-                  if settings_swapctrlclick == true then
-                    SetParam_ToDef(i)
-                  else
-                    SetParam_EnterVal(i)
-                  end
-                  noscroll = true
-                  break     
-                             
-                elseif settings_mousewheelknob and gfx.mouse_wheel ~= 0 and MOUSE_over(ctlxywh) then
-                  local ctltype = strips[tracks[track_select].strip][page].controls[i].ctltype
-                  if ctltype == 1 then
-                    trackfxparam_select = i
-                    local v = gfx.mouse_wheel/120 * 0.003
-                    strips[tracks[track_select].strip][page].controls[i].val = F_limit(strips[tracks[track_select].strip][page].controls[i].val+v,0,1)
-                    SetParam()
-                    update_ctls = true
-                    gfx.mouse_wheel = 0
-                  elseif ctltype == 4 then
-                    local v = gfx.mouse_wheel/120
-                    if strips[tracks[track_select].strip][page].controls[i].cycledata.pos == nil then
-                      strips[tracks[track_select].strip][page].controls[i].cycledata.pos = 1
-                    else
-                      strips[tracks[track_select].strip][page].controls[i].cycledata.pos = 
-                                  strips[tracks[track_select].strip][page].controls[i].cycledata.pos + v
-                      if strips[tracks[track_select].strip][page].controls[i].cycledata.pos < 1 then
-                        if strips[tracks[track_select].strip][page].controls[i].cycledata.draggable then
-                          strips[tracks[track_select].strip][page].controls[i].cycledata.pos = 1
-                        else
-                          strips[tracks[track_select].strip][page].controls[i].cycledata.pos = strips[tracks[track_select].strip][page].controls[i].cycledata.statecnt
-                        end
-                      elseif strips[tracks[track_select].strip][page].controls[i].cycledata.pos > 
-                              strips[tracks[track_select].strip][page].controls[i].cycledata.statecnt then
-                        if strips[tracks[track_select].strip][page].controls[i].cycledata.draggable then
-                          strips[tracks[track_select].strip][page].controls[i].cycledata.pos = strips[tracks[track_select].strip][page].controls[i].cycledata.statecnt
-                        else
-                          strips[tracks[track_select].strip][page].controls[i].cycledata.pos = 1
-                        end
-                      end
-                    end
-                    if strips[tracks[track_select].strip][page].controls[i].cycledata.pos <=     
-                              strips[tracks[track_select].strip][page].controls[i].cycledata.statecnt then
-                      trackfxparam_select = i
-                      strips[tracks[track_select].strip][page].controls[i].val = 
-                          strips[tracks[track_select].strip][page].controls[i].cycledata[strips[tracks[track_select].strip][page].controls[i].cycledata.pos].val
-                      SetParam()
-                      strips[tracks[track_select].strip][page].controls[i].dirty = true
-                      update_ctls = true
+                      SetParam_EnterVal(i)
                     end
                     noscroll = true
-                    gfx.mouse_wheel = 0                  
+                    break     
+                               
+                  elseif settings_mousewheelknob and gfx.mouse_wheel ~= 0 and MOUSE_over(ctlxywh) then
+                    local ctltype = strips[tracks[track_select].strip][page].controls[i].ctltype
+                    if ctltype == 1 then
+                      trackfxparam_select = i
+                      local v = gfx.mouse_wheel/120 * 0.003
+                      strips[tracks[track_select].strip][page].controls[i].val = F_limit(strips[tracks[track_select].strip][page].controls[i].val+v,0,1)
+                      SetParam()
+                      update_ctls = true
+                      gfx.mouse_wheel = 0
+                    elseif ctltype == 4 then
+                      local v = gfx.mouse_wheel/120
+                      if strips[tracks[track_select].strip][page].controls[i].cycledata.pos == nil then
+                        strips[tracks[track_select].strip][page].controls[i].cycledata.pos = 1
+                      else
+                        strips[tracks[track_select].strip][page].controls[i].cycledata.pos = 
+                                    strips[tracks[track_select].strip][page].controls[i].cycledata.pos + v
+                        if strips[tracks[track_select].strip][page].controls[i].cycledata.pos < 1 then
+                          if strips[tracks[track_select].strip][page].controls[i].cycledata.draggable then
+                            strips[tracks[track_select].strip][page].controls[i].cycledata.pos = 1
+                          else
+                            strips[tracks[track_select].strip][page].controls[i].cycledata.pos = strips[tracks[track_select].strip][page].controls[i].cycledata.statecnt
+                          end
+                        elseif strips[tracks[track_select].strip][page].controls[i].cycledata.pos > 
+                                strips[tracks[track_select].strip][page].controls[i].cycledata.statecnt then
+                          if strips[tracks[track_select].strip][page].controls[i].cycledata.draggable then
+                            strips[tracks[track_select].strip][page].controls[i].cycledata.pos = strips[tracks[track_select].strip][page].controls[i].cycledata.statecnt
+                          else
+                            strips[tracks[track_select].strip][page].controls[i].cycledata.pos = 1
+                          end
+                        end
+                      end
+                      if strips[tracks[track_select].strip][page].controls[i].cycledata.pos <=     
+                                strips[tracks[track_select].strip][page].controls[i].cycledata.statecnt then
+                        trackfxparam_select = i
+                        strips[tracks[track_select].strip][page].controls[i].val = 
+                            strips[tracks[track_select].strip][page].controls[i].cycledata[strips[tracks[track_select].strip][page].controls[i].cycledata.pos].val
+                        SetParam()
+                        strips[tracks[track_select].strip][page].controls[i].dirty = true
+                        update_ctls = true
+                      end
+                      noscroll = true
+                      gfx.mouse_wheel = 0                  
+                    end
+                    break
                   end
-                  break
+  
                 end
-
               end
+  
             end
-
-          end
-
-          if tracks[track_select] then          
-            if noscroll == false and MOUSE_click_RB(obj.sections[10]) then
-              mm = ''
-              if show_snapshots then
-                mm = '!'
-              end
-              local mstr = ''
-              local sfcnt = #strip_favs
-              if sfcnt > 0 then
-                mstr = mstr .. '>Insert strip (favorites)'
-                for fvs = 1, sfcnt do
-                  if fvs == sfcnt then
-                    mstr = mstr .. '|<' .. string.match(strip_favs[fvs],'.+/(.-).strip')
-                  else
-                    mstr = mstr .. '|' .. string.match(strip_favs[fvs],'.+/(.-).strip')
-                  end
+  
+            if tracks[track_select] then          
+              if noscroll == false and MOUSE_click_RB(obj.sections[10]) then
+                mm = ''
+                if show_snapshots then
+                  mm = '!'
                 end
-              else
-                mstr = mstr .. '#Insert strip (favorites)'                  
-              end
-
-              mstr = mstr .. '||#MIDI learn|#Modulation||#Enter value||#Open FX window||'..mm..'Snapshots'
-              
-              gfx.x, gfx.y = mouse.mx, mouse.my
-              res = OpenMenu(mstr)
-              if res ~= 0 then
-                if res == sfcnt + 5 then
-                  show_snapshots = not show_snapshots
-                  update_gfx = true
-                elseif res <= sfcnt then
-                  local fn = strip_favs[res]
-                  --PopulateStrips()
-                  loadstrip = LoadStripFN(fn)
-                  if loadstrip then                  
-                    GenStripPreview(gui, loadstrip.strip)
-                    --image_count = image_count_add
-                    
-                    local dx, dy = GetLeftControlInStrip2(loadstrip.strip)
-                    --local xp = GetXSpaceInGrid()+2
-                    --if xp < surface_size.w then
-                    --  Strip_AddStrip(loadstrip,xp-surface_offset.x,0-surface_offset.y,true)
-                    --end
-                    --update_gfx = true
-                    --SaveSingleStrip(tracks[track_select].strip)
-                    insertstrip = {x = mouse.mx, y = mouse.my, dx = dx, dy = dy}
+                local mstr = ''
+                local sfcnt = #strip_favs
+                if sfcnt > 0 then
+                  mstr = mstr .. '>Insert strip (favorites)'
+                  for fvs = 1, sfcnt do
+                    if fvs == sfcnt then
+                      mstr = mstr .. '|<' .. string.match(strip_favs[fvs],'.+/(.-).strip')
+                    else
+                      mstr = mstr .. '|' .. string.match(strip_favs[fvs],'.+/(.-).strip')
+                    end
                   end
-                  --loadstrip = nil
+                else
+                  mstr = mstr .. '#Insert strip (favorites)'                  
                 end
-              end
-            end
-          end    
+  
+                mstr = mstr .. '||#MIDI learn|#Modulation||#Enter value||#Open FX window||'..mm..'Snapshots'
                 
-          
-        end
-      
-        if show_fsnapshots and togfsnap == false then
-          show_fsnapshots = false
-          update_surface = true
-        end
-      
-      end
-
-      if mouse.context and mouse.context == contexts.sliderctl then
+                gfx.x, gfx.y = mouse.mx, mouse.my
+                res = OpenMenu(mstr)
+                if res ~= 0 then
+                  if res == sfcnt + 5 then
+                    show_snapshots = not show_snapshots
+                    update_gfx = true
+                  elseif res <= sfcnt then
+                    local fn = strip_favs[res]
+                    --PopulateStrips()
+                    loadstrip = LoadStripFN(fn)
+                    if loadstrip then                  
+                      GenStripPreview(gui, loadstrip.strip)
+                      --image_count = image_count_add
+                      
+                      local dx, dy = GetLeftControlInStrip2(loadstrip.strip)
+                      --local xp = GetXSpaceInGrid()+2
+                      --if xp < surface_size.w then
+                      --  Strip_AddStrip(loadstrip,xp-surface_offset.x,0-surface_offset.y,true)
+                      --end
+                      --update_gfx = true
+                      --SaveSingleStrip(tracks[track_select].strip)
+                      insertstrip = {x = mouse.mx, y = mouse.my, dx = dx, dy = dy}
+                    end
+                    --loadstrip = nil
+                  end
+                end
+              end
+            end    
+                  
+            
+          end
         
-        local val = MOUSE_slider(ctlxywh,mouse.slideoff)
-        if val ~= nil then
-          if oms ~= mouse.shift then
-            oms = mouse.shift
-            ctlpos = strips[tracks[track_select].strip][page].controls[trackfxparam_select].val
-            mouse.slideoff = ctlxywh.y+ctlxywh.h/2 - mouse.my
-          else
-            if mouse.shift then
-              val = ctlpos + ((0.5-val)*2)*0.1
+          if show_fsnapshots and togfsnap == false then
+            show_fsnapshots = false
+            update_surface = true
+          end
+        
+        end
+  
+        if mouse.context and mouse.context == contexts.sliderctl then
+          
+          local val = MOUSE_slider(ctlxywh,mouse.slideoff)
+          if val ~= nil then
+            if oms ~= mouse.shift then
+              oms = mouse.shift
+              ctlpos = strips[tracks[track_select].strip][page].controls[trackfxparam_select].val
+              mouse.slideoff = ctlxywh.y+ctlxywh.h/2 - mouse.my
             else
-              val = ctlpos + (0.5-val)*2
-            end
-            if val < 0 then val = 0 end
-            if val > 1 then val = 1 end
-            val = ctlScale(strips[tracks[track_select].strip][page].controls[trackfxparam_select].scalemode, val)
-            if val ~= octlval then
-              strips[tracks[track_select].strip][page].controls[trackfxparam_select].val = val
-              SetParam()
-              strips[tracks[track_select].strip][page].controls[trackfxparam_select].dirty = true
-              octlval = val
-              update_ctls = true
+              if mouse.shift then
+                val = ctlpos + ((0.5-val)*2)*0.1
+              else
+                val = ctlpos + (0.5-val)*2
+              end
+              if val < 0 then val = 0 end
+              if val > 1 then val = 1 end
+              val = ctlScale(strips[tracks[track_select].strip][page].controls[trackfxparam_select].scalemode, val)
+              if val ~= octlval then
+                strips[tracks[track_select].strip][page].controls[trackfxparam_select].val = val
+                SetParam()
+                strips[tracks[track_select].strip][page].controls[trackfxparam_select].dirty = true
+                octlval = val
+                update_ctls = true
+              end
             end
           end
-        end
-      elseif mouse.context and mouse.context == contexts.sliderctl_h then
-        local val = MOUSE_slider_horiz(ctlxywh,mouse.slideoff)
-        if val ~= nil then
-          if oms ~= mouse.shift then
-            oms = mouse.shift
-            ctlpos = strips[tracks[track_select].strip][page].controls[trackfxparam_select].val
-            mouse.slideoff = ctlxywh.y+ctlxywh.h/2 - mouse.my
-          else
-            if mouse.shift then
-              val = ctlpos - ((0.5-val)*2)*0.1
+        elseif mouse.context and mouse.context == contexts.sliderctl_h then
+          local val = MOUSE_slider_horiz(ctlxywh,mouse.slideoff)
+          if val ~= nil then
+            if oms ~= mouse.shift then
+              oms = mouse.shift
+              ctlpos = strips[tracks[track_select].strip][page].controls[trackfxparam_select].val
+              mouse.slideoff = ctlxywh.y+ctlxywh.h/2 - mouse.my
             else
-              val = ctlpos - (0.5-val)*2
-            end
-            if val < 0 then val = 0 end
-            if val > 1 then val = 1 end
-            val = ctlScale(strips[tracks[track_select].strip][page].controls[trackfxparam_select].scalemode, val)
-            if val ~= octlval then
-              strips[tracks[track_select].strip][page].controls[trackfxparam_select].val = val
-              SetParam()
-              strips[tracks[track_select].strip][page].controls[trackfxparam_select].dirty = true
-              octlval = val
-              update_ctls = true
+              if mouse.shift then
+                val = ctlpos - ((0.5-val)*2)*0.1
+              else
+                val = ctlpos - (0.5-val)*2
+              end
+              if val < 0 then val = 0 end
+              if val > 1 then val = 1 end
+              val = ctlScale(strips[tracks[track_select].strip][page].controls[trackfxparam_select].scalemode, val)
+              if val ~= octlval then
+                strips[tracks[track_select].strip][page].controls[trackfxparam_select].val = val
+                SetParam()
+                strips[tracks[track_select].strip][page].controls[trackfxparam_select].dirty = true
+                octlval = val
+                update_ctls = true
+              end
             end
           end
-        end
-      elseif mouse.context and mouse.context == contexts.dragcycle then
-        local val = MOUSE_slider(ctlxywh,mouse.slideoff)
-        if val ~= nil then
-          if oms ~= mouse.shift then
-            oms = mouse.shift
-            ctlpos = normalize(0, strips[tracks[track_select].strip][page].controls[trackfxparam_select].cycledata.statecnt,
-                               strips[tracks[track_select].strip][page].controls[trackfxparam_select].cycledata.pos)
-            mouse.slideoff = ctlxywh.y+ctlxywh.h/2 - mouse.my
-          else
-            if mouse.shift then
-              val = ctlpos + ((0.5-val)*2)*0.1
+        elseif mouse.context and mouse.context == contexts.dragcycle then
+          local val = MOUSE_slider(ctlxywh,mouse.slideoff)
+          if val ~= nil then
+            if oms ~= mouse.shift then
+              oms = mouse.shift
+              ctlpos = normalize(0, strips[tracks[track_select].strip][page].controls[trackfxparam_select].cycledata.statecnt,
+                                 strips[tracks[track_select].strip][page].controls[trackfxparam_select].cycledata.pos)
+              mouse.slideoff = ctlxywh.y+ctlxywh.h/2 - mouse.my
             else
-              val = ctlpos + (0.5-val)*2
+              if mouse.shift then
+                val = ctlpos + ((0.5-val)*2)*0.1
+              else
+                val = ctlpos + (0.5-val)*2
+              end
+              if val < 0 then val = 0 end
+              if val > 1 then val = 1 end
+              if val ~= octlval then
+                local pos = F_limit(math.floor(val*strips[tracks[track_select].strip][page].controls[trackfxparam_select].cycledata.statecnt),1,
+                                    strips[tracks[track_select].strip][page].controls[trackfxparam_select].cycledata.statecnt)
+                strips[tracks[track_select].strip][page].controls[trackfxparam_select].cycledata.pos = pos
+                strips[tracks[track_select].strip][page].controls[trackfxparam_select].val = strips[tracks[track_select].strip][page].controls[trackfxparam_select].cycledata[pos].val
+                SetParam()
+                strips[tracks[track_select].strip][page].controls[trackfxparam_select].dirty = true
+                octlval = val
+                update_ctls = true
+              end
             end
-            if val < 0 then val = 0 end
-            if val > 1 then val = 1 end
-            if val ~= octlval then
-              local pos = F_limit(math.floor(val*strips[tracks[track_select].strip][page].controls[trackfxparam_select].cycledata.statecnt),1,
-                                  strips[tracks[track_select].strip][page].controls[trackfxparam_select].cycledata.statecnt)
-              strips[tracks[track_select].strip][page].controls[trackfxparam_select].cycledata.pos = pos
-              strips[tracks[track_select].strip][page].controls[trackfxparam_select].val = strips[tracks[track_select].strip][page].controls[trackfxparam_select].cycledata[pos].val
+          end
+        elseif mouse.context and mouse.context == contexts.hold then
+        elseif mouse.context == nil and holdbtn ~= nil then
+          holdbtn = nil
+          if tracks[track_select] and strips[tracks[track_select].strip] and strips[tracks[track_select].strip][page].controls[trackfxparam_select] then
+            strips[tracks[track_select].strip][page].controls[trackfxparam_select].val = 0
+            strips[tracks[track_select].strip][page].controls[trackfxparam_select].dirty = true
+            if strips[tracks[track_select].strip][page].controls[trackfxparam_select].ctltype == 7 or 
+               strips[tracks[track_select].strip][page].controls[trackfxparam_select].ctltype == 8 then
               SetParam()
-              strips[tracks[track_select].strip][page].controls[trackfxparam_select].dirty = true
-              octlval = val
-              update_ctls = true
             end
           end
-        end
-      elseif mouse.context and mouse.context == contexts.hold then
-      elseif mouse.context == nil and holdbtn ~= nil then
-        holdbtn = nil
-        if tracks[track_select] and strips[tracks[track_select].strip] and strips[tracks[track_select].strip][page].controls[trackfxparam_select] then
-          strips[tracks[track_select].strip][page].controls[trackfxparam_select].val = 0
-          strips[tracks[track_select].strip][page].controls[trackfxparam_select].dirty = true
-          if strips[tracks[track_select].strip][page].controls[trackfxparam_select].ctltype == 7 or 
-             strips[tracks[track_select].strip][page].controls[trackfxparam_select].ctltype == 8 then
-            SetParam()
-          end
-        end
-        update_ctls = true
-      elseif mouse.context and mouse.context == contexts.dragxy then
-      
-        local xy_x = F_limit((mouse.mx - obj.sections[10].x-12 
-                              - strips[tracks[track_select].strip][page].controls[xy_select].x + surface_offset.x) 
-                              / (strips[tracks[track_select].strip][page].controls[xy_select].w-24),0,1)
-        local xy_y = F_limit((mouse.my - obj.sections[10].y-12 
-                              - strips[tracks[track_select].strip][page].controls[xy_select].y + surface_offset.y) 
-                              / (strips[tracks[track_select].strip][page].controls[xy_select].ctl_info.cellh - 58),0,1)
-        if xy_x ~= strips[tracks[track_select].strip][page].controls[xy_select].xydata.x or 
-           xy_y ~= strips[tracks[track_select].strip][page].controls[xy_select].xydata.y then
-          strips[tracks[track_select].strip][page].controls[xy_select].xydata.x = xy_x
-          strips[tracks[track_select].strip][page].controls[xy_select].xydata.y = xy_y
-          XY_Set(tracks[track_select].strip,page,strips[tracks[track_select].strip][page].controls[xy_select].param,xy_select)
-          strips[tracks[track_select].strip][page].controls[xy_select].dirty = true        
           update_ctls = true
-        end
-      end
-      
-      if MOUSE_click(obj.sections[43]) and navigate then
-        if show_fsnapshots then
-          show_fsnapshots = false
-          update_surface = true
+        elseif mouse.context and mouse.context == contexts.dragxy then
+        
+          local xy_x = F_limit((mouse.mx - obj.sections[10].x-12 
+                                - strips[tracks[track_select].strip][page].controls[xy_select].x + surface_offset.x) 
+                                / (strips[tracks[track_select].strip][page].controls[xy_select].w-24),0,1)
+          local xy_y = F_limit((mouse.my - obj.sections[10].y-12 
+                                - strips[tracks[track_select].strip][page].controls[xy_select].y + surface_offset.y) 
+                                / (strips[tracks[track_select].strip][page].controls[xy_select].ctl_info.cellh - 58),0,1)
+          if xy_x ~= strips[tracks[track_select].strip][page].controls[xy_select].xydata.x or 
+             xy_y ~= strips[tracks[track_select].strip][page].controls[xy_select].xydata.y then
+            strips[tracks[track_select].strip][page].controls[xy_select].xydata.x = xy_x
+            strips[tracks[track_select].strip][page].controls[xy_select].xydata.y = xy_y
+            XY_Set(tracks[track_select].strip,page,strips[tracks[track_select].strip][page].controls[xy_select].param,xy_select)
+            strips[tracks[track_select].strip][page].controls[xy_select].dirty = true        
+            update_ctls = true
+          end
         end
         
-        local i = math.floor((mouse.my - obj.sections[43].y) / butt_h)-1
-        if i == -1 then
-          if mouse.mx < obj.sections[43].w/2 then
-            tlist_offset = tlist_offset - T_butt_cnt
-            if tlist_offset < 0 then
-              tlist_offset = 0
-            end
-          else
-            if tlist_offset + T_butt_cnt < #tracks then
-              tlist_offset = tlist_offset + T_butt_cnt
-            end
+        if MOUSE_click(obj.sections[43]) and navigate then
+          if show_fsnapshots then
+            show_fsnapshots = false
+            update_surface = true
           end
+          
+          local i = math.floor((mouse.my - obj.sections[43].y) / butt_h)-1
+          if i == -1 then
+            if mouse.mx < obj.sections[43].w/2 then
+              tlist_offset = tlist_offset - T_butt_cnt
+              if tlist_offset < 0 then
+                tlist_offset = 0
+              end
+            else
+              if tlist_offset + T_butt_cnt < #tracks then
+                tlist_offset = tlist_offset + T_butt_cnt
+              end
+            end
+            update_gfx = true
+          elseif tracks[i-1 + tlist_offset] then
+            if tracks[track_select] and strips[tracks[track_select].strip] then
+              strips[tracks[track_select].strip].page = page
+            end
+            ChangeTrack(i-1 + tlist_offset)
+            --trackedit_select = track_select
+            ss_select = nil
+            sstype_select = 1
+            ssoffset = 0
+            
+            if settings_followselectedtrack then
+              --Select track
+              local tr = GetTrack(track_select)
+              tracks[track_select].name = reaper.GetTrackState(tr)
+              
+              if tr ~= nil then
+                reaper.SetOnlyTrackSelected(tr)
+                reaper.SetTrackSelected(tr, true)
+              end
+            
+            end
+  
+            CheckStripSends()
+            PopulateTrackSendsInfo()
+            PopulateSpecial()
+  
+            if strips and strips[tracks[track_select].strip] then
+              page = strips[tracks[track_select].strip].page
+              surface_offset.x = strips[tracks[track_select].strip][page].surface_x
+              surface_offset.y = strips[tracks[track_select].strip][page].surface_y
+            else
+              page = 1
+              surface_offset.x = 0
+              surface_offset.y = 0 
+            end
+            CheckStripControls()            
+            update_gfx = true 
+          end
+        end
+      
+        if mouse.context and mouse.context == contexts.movesnapwindow then
+          
+          obj.sections[160].x = F_limit(mouse.mx - movesnapwin.offx, obj.sections[10].x, obj.sections[10].x+obj.sections[10].w-obj.sections[160].w)
+          obj.sections[160].y = F_limit(mouse.my - movesnapwin.offy, obj.sections[10].y, obj.sections[10].y+obj.sections[10].h-obj.sections[160].h)
+          
+          update_msnaps = true
+        
+        elseif mouse.context and mouse.context == contexts.addsnapctl then
+          dragparam = {x = mouse.mx-ksel_size.w, y = mouse.my-ksel_size.h, type = 'snapctl'}
           update_gfx = true
-        elseif tracks[i-1 + tlist_offset] then
-          if tracks[track_select] and strips[tracks[track_select].strip] then
-            strips[tracks[track_select].strip].page = page
+  
+        elseif mouse.context and mouse.context == contexts.addxyctl then
+          dragparam = {x = mouse.mx-ksel_size.w, y = mouse.my-ksel_size.h, type = 'xyctl'}
+          update_gfx = true
+        
+        elseif mouse.context and mouse.context == contexts.resizesnapwindow then
+  
+          local ly = obj.sections[10].h - obj.sections[160].y + butt_h
+          obj.sections[160].h = F_limit(resizesnapwin.origh + (mouse.my - resizesnapwin.offy) - obj.sections[160].y, 180, ly)
+          obj.sections[163].h = obj.sections[160].h - 160
+          obj.sections[165].y = obj.sections[160].h - 6
+          snaph = obj.sections[160].h
+          update_msnaps = true
+          resize_snaps = true
+          --update_gfx = true
+  
+        elseif mouse.context and mouse.context == contexts.resizefsnapwindow then
+  
+          local ly = obj.sections[10].h - obj.sections[180].y + butt_h
+          obj.sections[180].h = F_limit(resizesnapwin.origh + (mouse.my - resizesnapwin.offy) - obj.sections[180].y, 180, ly)
+          obj.sections[181].h = obj.sections[180].h - 12
+          obj.sections[182].y = obj.sections[180].h - 6
+          fsnaph = obj.sections[180].h
+          update_mfsnaps = true
+          resize_fsnaps = true
+          --update_gfx = true
+        
+        elseif dragparam ~= nil then
+        
+          if mouse.mx > obj.sections[10].x and not MOUSE_over(obj.sections[160]) then
+            Strip_AddParam()
+            g_savedirty = true
           end
-          ChangeTrack(i-1 + tlist_offset)
-          --trackedit_select = track_select
-          ss_select = nil
-          sstype_select = 1
-          ssoffset = 0
           
-          if settings_followselectedtrack then
-            --Select track
-            local tr = GetTrack(track_select)
-            tracks[track_select].name = reaper.GetTrackState(tr)
-            
-            if tr ~= nil then
-              reaper.SetOnlyTrackSelected(tr)
-              reaper.SetTrackSelected(tr, true)
-            end
-          
-          end
-
-          CheckStripSends()
-          PopulateTrackSendsInfo()
-          PopulateSpecial()
-
-          if strips and strips[tracks[track_select].strip] then
-            page = strips[tracks[track_select].strip].page
-            surface_offset.x = strips[tracks[track_select].strip][page].surface_x
-            surface_offset.y = strips[tracks[track_select].strip][page].surface_y
-          else
-            page = 1
-            surface_offset.x = 0
-            surface_offset.y = 0 
-          end
-          CheckStripControls()            
-          update_gfx = true 
-        end
-      end
-    
-      if mouse.context and mouse.context == contexts.movesnapwindow then
-        
-        obj.sections[160].x = F_limit(mouse.mx - movesnapwin.offx, obj.sections[10].x, obj.sections[10].x+obj.sections[10].w-obj.sections[160].w)
-        obj.sections[160].y = F_limit(mouse.my - movesnapwin.offy, obj.sections[10].y, obj.sections[10].y+obj.sections[10].h-obj.sections[160].h)
-        
-        update_msnaps = true
-      
-      elseif mouse.context and mouse.context == contexts.addsnapctl then
-        dragparam = {x = mouse.mx-ksel_size.w, y = mouse.my-ksel_size.h, type = 'snapctl'}
-        update_gfx = true
-
-      elseif mouse.context and mouse.context == contexts.addxyctl then
-        dragparam = {x = mouse.mx-ksel_size.w, y = mouse.my-ksel_size.h, type = 'xyctl'}
-        update_gfx = true
-      
-      elseif mouse.context and mouse.context == contexts.resizesnapwindow then
-
-        local ly = obj.sections[10].h - obj.sections[160].y + butt_h
-        obj.sections[160].h = F_limit(resizesnapwin.origh + (mouse.my - resizesnapwin.offy) - obj.sections[160].y, 180, ly)
-        obj.sections[163].h = obj.sections[160].h - 160
-        obj.sections[165].y = obj.sections[160].h - 6
-        snaph = obj.sections[160].h
-        update_msnaps = true
-        resize_snaps = true
-        --update_gfx = true
-
-      elseif mouse.context and mouse.context == contexts.resizefsnapwindow then
-
-        local ly = obj.sections[10].h - obj.sections[180].y + butt_h
-        obj.sections[180].h = F_limit(resizesnapwin.origh + (mouse.my - resizesnapwin.offy) - obj.sections[180].y, 180, ly)
-        obj.sections[181].h = obj.sections[180].h - 12
-        obj.sections[182].y = obj.sections[180].h - 6
-        fsnaph = obj.sections[180].h
-        update_mfsnaps = true
-        resize_fsnaps = true
-        --update_gfx = true
-      
-      elseif dragparam ~= nil then
-      
-        if mouse.mx > obj.sections[10].x and not MOUSE_over(obj.sections[160]) then
-          Strip_AddParam()
-          g_savedirty = true
-        end
-        
-        dragparam = nil
-        update_gfx = true
-      end
-            
-    elseif mode == 1 then
-      show_fsnapshots = false
-      
-      if ct == 0 then
-        --track_select = -1
-        ChangeTrack(-1)
-        update_gfx = true
-      end
-    
-      local tr = GetTrack(trackedit_select)
-      if tr then
-        local fxc = reaper.TrackFX_GetCount(tr)
-        if fxc ~= ofxcnt then
-          PopulateTrackFX()
+          dragparam = nil
           update_gfx = true
         end
-      end
-    
-      if mouse.shift then
-        settings_gridsize = 1
-      else
-        settings_gridsize = ogrid      
-      end
-
-      if strips and tracks[track_select] and strips[tracks[track_select].strip] and #strips[tracks[track_select].strip][page].controls > 0 then
-        CheckTrack(strips[tracks[track_select].strip].track, tracks[track_select].strip)
-      end
-      
-      g_edstrips[track_select] = true
-      
-      if submode == 0 then
+              
+      elseif mode == 1 then
+        show_fsnapshots = false
         
-        if show_actionchooser then
-
-          if gfx.mouse_wheel ~= 0 then
-            local v = (gfx.mouse_wheel/120)*3
-            if MOUSE_over(obj.sections[171]) then
-                al_offset = F_limit(al_offset - v, 0, #action_tblF-1)
-                update_actcho = true
-                gfx.mouse_wheel = 0
-            end
+        if ct == 0 then
+          --track_select = -1
+          ChangeTrack(-1)
+          update_gfx = true
+        end
+      
+        local tr = GetTrack(trackedit_select)
+        if tr then
+          local fxc = reaper.TrackFX_GetCount(tr)
+          if fxc ~= ofxcnt then
+            PopulateTrackFX()
+            update_gfx = true
           end
+        end
+      
+        if mouse.shift then
+          settings_gridsize = 1
+        else
+          settings_gridsize = ogrid      
+        end
+  
+        if strips and tracks[track_select] and strips[tracks[track_select].strip] and #strips[tracks[track_select].strip][page].controls > 0 then
+          CheckTrack(strips[tracks[track_select].strip].track, tracks[track_select].strip)
+        end
+        
+        g_edstrips[track_select] = true
+        
+        if submode == 0 then
           
-          if mouse.context == nil and MOUSE_click(obj.sections[171]) then
-            local i = math.floor((mouse.my-obj.sections[171].y)/butt_h) +1
-            if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.15 then
-              --double-click
+          if show_actionchooser then
+  
+            if gfx.mouse_wheel ~= 0 then
+              local v = (gfx.mouse_wheel/120)*3
+              if MOUSE_over(obj.sections[171]) then
+                  al_offset = F_limit(al_offset - v, 0, #action_tblF-1)
+                  update_actcho = true
+                  gfx.mouse_wheel = 0
+              end
+            end
+            
+            if mouse.context == nil and MOUSE_click(obj.sections[171]) then
+              local i = math.floor((mouse.my-obj.sections[171].y)/butt_h) +1
+              if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.15 then
+                --double-click
+                if al_select and action_tblF[al_select] then
+                  strips[tracks[track_select].strip][page].controls[trackfxparam_select].param_info.paramname = action_tblF[al_select].command_desc
+                  strips[tracks[track_select].strip][page].controls[trackfxparam_select].param_info.paramidx = action_tblF[al_select].command_id
+                  strips[tracks[track_select].strip][page].controls[trackfxparam_select].param_info.paramnum = action_tblF[al_select].dcommand_id
+                  
+                  CloseActChooser()
+                end
+                
+              elseif action_tblF[i + al_offset] then
+                al_select = i + al_offset
+              end
+              update_actcho = true
+              
+            elseif mouse.context == nil and MOUSE_click(obj.sections[172]) then
+            
+              OpenEB(14,'Please enter action command filter:')
+            
+            elseif mouse.context == nil and MOUSE_click(obj.sections[173]) then
+            
+              action_tblF = table.copy(action_tbl)
+              al_offset = 0
+              al_select = 0
+              update_actcho = true
+            
+            elseif mouse.context == nil and MOUSE_click(obj.sections[174]) then
+            
+              --actcommid_select = action_tblF[al_select].command_id
               if al_select and action_tblF[al_select] then
                 strips[tracks[track_select].strip][page].controls[trackfxparam_select].param_info.paramname = action_tblF[al_select].command_desc
                 strips[tracks[track_select].strip][page].controls[trackfxparam_select].param_info.paramidx = action_tblF[al_select].command_id
                 strips[tracks[track_select].strip][page].controls[trackfxparam_select].param_info.paramnum = action_tblF[al_select].dcommand_id
-                
+  
                 CloseActChooser()
               end
-              
-            elseif action_tblF[i + al_offset] then
-              al_select = i + al_offset
-            end
-            update_actcho = true
-            
-          elseif mouse.context == nil and MOUSE_click(obj.sections[172]) then
-          
-            OpenEB(14,'Please enter action command filter:')
-          
-          elseif mouse.context == nil and MOUSE_click(obj.sections[173]) then
-          
-            action_tblF = table.copy(action_tbl)
-            al_offset = 0
-            al_select = 0
-            update_actcho = true
-          
-          elseif mouse.context == nil and MOUSE_click(obj.sections[174]) then
-          
-            --actcommid_select = action_tblF[al_select].command_id
-            if al_select and action_tblF[al_select] then
-              strips[tracks[track_select].strip][page].controls[trackfxparam_select].param_info.paramname = action_tblF[al_select].command_desc
-              strips[tracks[track_select].strip][page].controls[trackfxparam_select].param_info.paramidx = action_tblF[al_select].command_id
-              strips[tracks[track_select].strip][page].controls[trackfxparam_select].param_info.paramnum = action_tblF[al_select].dcommand_id
-
+                      
+            elseif mouse.context == nil and MOUSE_click(obj.sections[175]) then
+  
               CloseActChooser()
+              --[[show_actionchooser = false
+              action_tbl = {}
+              action_tblF = {}
+              al_select = 0
+              update_actcho = true]]
+            
             end
-                    
-          elseif mouse.context == nil and MOUSE_click(obj.sections[175]) then
-
-            CloseActChooser()
-            --[[show_actionchooser = false
-            action_tbl = {}
-            action_tblF = {}
-            al_select = 0
-            update_actcho = true]]
-          
-          end
-
-        else
-          if mouse.context == nil and fxmode == 1 and trctltype_select == 1 and rt > time_sendupdate then
-            time_sendupdate = rt + 1
-            PopulateTrackSendsInfo()
-            update_gfx = true
-          end
-          
-          if gfx.mouse_wheel ~= 0 then
-            local v = gfx.mouse_wheel/120
-            if MOUSE_over(obj.sections[41]) then
-              if fxmode == 0 then
-                flist_offset = F_limit(flist_offset - v, 0, #trackfx)
-                update_gfx = true
-                gfx.mouse_wheel = 0
-              elseif fxmode == 1 then
-                trctltypelist_offset = F_limit(trctltypelist_offset - v, 0, #trctltype_table-1)
-                update_gfx = true
-                gfx.mouse_wheel = 0            
-              end
+  
+          else
+            if mouse.context == nil and fxmode == 1 and trctltype_select == 1 and rt > time_sendupdate then
+              time_sendupdate = rt + 1
+              PopulateTrackSendsInfo()
+              update_gfx = true
             end
-            if MOUSE_over(obj.sections[42]) then
-              if fxmode == 0 then
-                plist_offset = F_limit(plist_offset - v, 0, #trackfxparams)
-                update_gfx = true
-                gfx.mouse_wheel = 0
-              elseif fxmode == 1 then
-                if trctltype_select == 0 then
-                  trctlslist_offset = F_limit(trctlslist_offset - v, 0, #trctls_table-1)
+            
+            if gfx.mouse_wheel ~= 0 then
+              local v = gfx.mouse_wheel/120
+              if MOUSE_over(obj.sections[41]) then
+                if fxmode == 0 then
+                  flist_offset = F_limit(flist_offset - v, 0, #trackfx)
                   update_gfx = true
                   gfx.mouse_wheel = 0
-                elseif trctltype_select == 1 then
-                  trctlslist_offset = F_limit(trctlslist_offset - v, 0, #trsends_table*3+2)
+                elseif fxmode == 1 then
+                  trctltypelist_offset = F_limit(trctltypelist_offset - v, 0, #trctltype_table-1)
                   update_gfx = true
-                  gfx.mouse_wheel = 0              
-                elseif trctltype_select == 2 then
-                  trctlslist_offset = F_limit(trctlslist_offset - v, 0, #special_table-1)
-                  update_gfx = true
-                  gfx.mouse_wheel = 0              
+                  gfx.mouse_wheel = 0            
                 end
-              end          
+              end
+              if MOUSE_over(obj.sections[42]) then
+                if fxmode == 0 then
+                  plist_offset = F_limit(plist_offset - v, 0, #trackfxparams)
+                  update_gfx = true
+                  gfx.mouse_wheel = 0
+                elseif fxmode == 1 then
+                  if trctltype_select == 0 then
+                    trctlslist_offset = F_limit(trctlslist_offset - v, 0, #trctls_table-1)
+                    update_gfx = true
+                    gfx.mouse_wheel = 0
+                  elseif trctltype_select == 1 then
+                    trctlslist_offset = F_limit(trctlslist_offset - v, 0, #trsends_table*3+2)
+                    update_gfx = true
+                    gfx.mouse_wheel = 0              
+                  elseif trctltype_select == 2 then
+                    trctlslist_offset = F_limit(trctlslist_offset - v, 0, #special_table-1)
+                    update_gfx = true
+                    gfx.mouse_wheel = 0              
+                  end
+                end          
+              end
+  
+              if show_ctlbrowser and MOUSE_over(obj.sections[210]) then
+              
+                local v = gfx.mouse_wheel/120
+                if v > 0 then
+                  cbi_offset = cbi_offset - math.min(ctl_browser_size.slots_x*ctl_browser_size.slots_y,maximg_browse+1)
+                  if cbi_offset < 0 then cbi_offset = 0 end
+                  PopulateCtlBrowser_Imgs()
+                  update_surface = true
+                  noscroll = true
+                
+                else
+                  if cbi_offset + math.min(ctl_browser_size.slots_x*ctl_browser_size.slots_y,maximg_browse+1) < 
+                        (math.floor(cbi_cnt/(ctl_browser_size.slots_x*ctl_browser_size.slots_y))+1)*(ctl_browser_size.slots_x*ctl_browser_size.slots_y) then
+                    cbi_offset = cbi_offset + math.min(ctl_browser_size.slots_x*ctl_browser_size.slots_y,maximg_browse+1)
+                  end
+                  PopulateCtlBrowser_Imgs()
+                  update_surface = true
+                  noscroll = true
+                end
+                
+    
+              elseif MOUSE_over(obj.sections[45]) then
+  
+                if ctl_page == 0 then
+  
+                  local xywh = {x = obj.sections[45].x, y = obj.sections[45].y, w = obj.sections[45].w, h = 150}
+                  if MOUSE_over(xywh) then
+                    knob_select = (knob_select - v) % #ctl_files
+                    update_gfx = true
+                    gfx.mouse_wheel = 0
+                  end
+                  if MOUSE_over(obj.sections[56]) then
+                    if toffY then
+                      textoff_select = textoff_select + v*2
+                      for i = 1, #ctl_select do
+                        strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].textoff = textoff_select
+                      end            
+                    else
+                      textoff_selectx = textoff_selectx + v*2
+                      for i = 1, #ctl_select do
+                        strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].textoffx = textoff_selectx
+                      end                            
+                    end
+                    update_gfx = true
+                    gfx.mouse_wheel = 0
+                  end
+                  if MOUSE_over(obj.sections[65]) then
+                    if toffY then
+                      textoffval_select = textoffval_select + v*2
+                      for i = 1, #ctl_select do
+                        strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].textoffval = textoffval_select
+                      end            
+                    else
+                      textoffval_selectx = textoffval_selectx + v*2
+                      for i = 1, #ctl_select do
+                        strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].textoffvalx = textoffval_selectx
+                      end                            
+                    end
+                    update_gfx = true
+                    gfx.mouse_wheel = 0
+                  end
+                  if MOUSE_over(obj.sections[58]) then
+                    textsize_select = F_limit(textsize_select + v,-2,35)
+                    for i = 1, #ctl_select do
+                      strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].textsize = textsize_select
+                    end            
+                    update_gfx = true
+                    gfx.mouse_wheel = 0
+                  end
+      
+                  if MOUSE_over(obj.sections[57]) then
+                    defval_select = F_limit(defval_select + v/200,0,1)
+                    for i = 1, #ctl_select do
+                      strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].val = defval_select
+                      trackfxparam_select = ctl_select[i].ctl
+                      SetParam()
+                    end            
+                    update_gfx = true
+                    gfx.mouse_wheel = 0
+                  end
+                  
+                  if MOUSE_over(obj.sections[55]) then
+                    ctltype_select = F_limit(ctltype_select + v,1,#ctltype_table)
+                    for i = 1, #ctl_select do
+                      strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctltype = ctltype_select
+                    end
+                    show_cycleoptions = false
+                    update_gfx = true
+                    gfx.mouse_wheel = 0
+                  end
+                  
+                elseif ctl_page == 1 then              
+  
+                  if MOUSE_over(obj.sections[128]) then
+                    val = minov_select + v*0.00125
+                    
+                    local p = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].param
+                    local min, max = GetParamMinMax_ctl(ctl_select[1].ctl, false) --trctls_table[p].min, trctls_table[p].max
+                    
+                    if val < min then val = min end
+                    if val > max then val = max end
+                    if val ~= octlval then
+                      val = math.min(val,nz(maxov_select-0.05,1))
+                      SetParam4(val)
+                      local dval = GetParamDisp_Ctl(ctl_select[1].ctl)
+                      minov_select = val
+                      ov_disp = dval
+                      SetParam()                
+                      octlval = val
+                      update_ctls = true
+                    end
+                    
+                    for i = 1, #ctl_select do
+                      strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].minov = minov_select
+                    end            
+                    update_gfx = true
+                    gfx.mouse_wheel = 0
+                  end              
+  
+                  if MOUSE_over(obj.sections[129]) then
+                    val = maxov_select + v*0.00125
+                    
+                    local p = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].param
+                    local min, max = GetParamMinMax_ctl(ctl_select[1].ctl, false) --trctls_table[p].min, trctls_table[p].max
+                    
+                    if val < min then val = min end
+                    if val > max then val = max end
+                    if val ~= octlval then
+                      val = math.max(val,nz(minov_select+0.05,0))
+                      SetParam4(val)
+                      local dval = GetParamDisp_Ctl(ctl_select[1].ctl)
+                      maxov_select = val
+                      ov_disp = dval
+                      SetParam()                
+                      octlval = val
+                      update_ctls = true
+                    end
+                    
+                    for i = 1, #ctl_select do
+                      strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].maxov = maxov_select
+                    end            
+                    update_gfx = true
+                    gfx.mouse_wheel = 0
+                  end              
+  
+                end
+                
+              end
             end
-
-            if show_ctlbrowser and MOUSE_over(obj.sections[210]) then
             
-              local v = gfx.mouse_wheel/120
-              if v > 0 then
+            if show_paramlearn then
+              last_touch_fx = GetLastTouchedFX(last_touch_fx)        
+            end
+            
+            if show_paramlearn and (MOUSE_click(obj.sections[115]) or MOUSE_click_RB(obj.sections[115])) then
+            
+              --LEARN
+              
+              if MOUSE_click(obj.sections[115]) then
+                ctl_select = nil
+                update_gfx = true
+                
+                if ctl_files[knob_select].imageidx ~= nil then
+                  local w,_ = gfx.getimgdim(ctl_files[knob_select].imageidx)
+                  local h = ctl_files[knob_select].cellh
+                  if w == 0 or h == 0 then
+                    ksel_size = {w = 50, h = 50}
+                  else
+                   ksel_size = {w = w/2, h = h/2}
+                 end
+                else 
+                  ksel_size = {w = 50, h = 50}
+                end
+                mouse.context = contexts.dragparamlrn
+              elseif MOUSE_click_RB(obj.sections[115]) then
+                show_paramlearn = false
+                ctl_select = nil
+                update_gfx = true
+              end          
+            
+            end
+            
+            local char=gfx.getchar()
+            if ctl_select ~= nil and char ~= 0 then
+              if char == 0x6C656674 then -- left arrow
+                for i = 1,#ctl_select do
+                  if strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].poslock == false then
+                    local scale = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].scale
+                    strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].x = 
+                                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].x - 1
+                    strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].xsc = 
+                                                                        strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].x
+                                                                         + math.floor(strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].w/2
+                                                                         - (strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].w*scale)/2)
+                  end
+                end
+                update_gfx = true
+              elseif char == 0x72676874 then -- right arrow
+                for i = 1,#ctl_select do
+                  if strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].poslock == false then
+                    local scale = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].scale
+                    strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].x = 
+                                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].x + 1
+                    strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].xsc = 
+                                                                        strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].x
+                                                                         + math.floor(strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].w/2
+                                                                         - (strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].w*scale)/2)
+                  end
+                end
+                update_gfx = true
+              elseif char == 0x7570 then -- up arrow
+                for i = 1,#ctl_select do
+                  if strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].poslock == false then
+                    local scale = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].scale
+                    strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].y = 
+                                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].y - 1
+                    strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ysc = 
+                                                                        strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].y
+                                                                         + math.floor(strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctl_info.cellh/2
+                                                                         - (strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctl_info.cellh*scale)/2)
+                  end
+                end
+                update_gfx = true
+              elseif char == 0x646F776E then -- down arrow
+                for i = 1,#ctl_select do
+                  if strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].poslock == false then
+                    local scale = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].scale
+                    strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].y = 
+                                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].y + 1
+                    strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ysc = 
+                                                                        strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].y
+                                                                         + math.floor(strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctl_info.cellh/2
+                                                                         - (strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctl_info.cellh*scale)/2)
+                  end
+                end
+                update_gfx = true
+              end
+                          
+            elseif ctl_select ~= nil and show_ctlbrowser and (MOUSE_click(obj.sections[200]) or MOUSE_click_RB(obj.sections[200])) then
+            
+              if mouse.context == nil and MOUSE_click(obj.sections[211]) then
                 cbi_offset = cbi_offset - math.min(ctl_browser_size.slots_x*ctl_browser_size.slots_y,maximg_browse+1)
                 if cbi_offset < 0 then cbi_offset = 0 end
                 PopulateCtlBrowser_Imgs()
                 update_surface = true
-                noscroll = true
-              
-              else
+            
+              elseif mouse.context == nil and MOUSE_click(obj.sections[212]) then
                 if cbi_offset + math.min(ctl_browser_size.slots_x*ctl_browser_size.slots_y,maximg_browse+1) < 
                       (math.floor(cbi_cnt/(ctl_browser_size.slots_x*ctl_browser_size.slots_y))+1)*(ctl_browser_size.slots_x*ctl_browser_size.slots_y) then
                   cbi_offset = cbi_offset + math.min(ctl_browser_size.slots_x*ctl_browser_size.slots_y,maximg_browse+1)
                 end
                 PopulateCtlBrowser_Imgs()
                 update_surface = true
-                noscroll = true
+              
+              elseif mouse.context == nil and MOUSE_click(obj.sections[210]) then
+  
+                if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.2 then
+                  local ix = math.floor((mouse.mx - obj.sections[210].x) / ctl_browser_size.slotsz)
+                  local iy = math.floor((mouse.my - obj.sections[210].y) / ctl_browser_size.slotsz)
+                  local i = ix + iy*ctl_browser_size.slots_x
+                  
+                  if cbi[i] then
+                    knob_select = cbi[i].idx
+                    closectlbrowser = true
+                    --show_ctlbrowser = false
+                    update_surface = true
+                  end
+                else
+                  local ix = math.floor((mouse.mx - obj.sections[210].x) / ctl_browser_size.slotsz)
+                  local iy = math.floor((mouse.my - obj.sections[210].y) / ctl_browser_size.slotsz)
+                  local i = ix + iy*ctl_browser_size.slots_x
+  
+                  if cbi[i] then
+                    cbi_select = cbi[i].idx
+                    SetCbiSelect()
+                    update_surface = true
+                  end
+                end
+              elseif mouse.context == nil and MOUSE_click_RB(obj.sections[210]) then
+                local ix = math.floor((mouse.mx - obj.sections[210].x) / ctl_browser_size.slotsz)
+                local iy = math.floor((mouse.my - obj.sections[210].y) / ctl_browser_size.slotsz)
+                local i = ix + iy*ctl_browser_size.slots_x
+  
+                if cbi[i] then
+                  cbi_select = cbi[i].idx
+                  SetCbiSelect()
+                  if ctl_files[cbi_select] then
+                    update_surface = true
+                    GUI_draw(obj,gui)
+                    gfx.update()
+    
+                    local mstr = 'Knob|Slider|Button|Meter|Misc'
+                    gfx.x, gfx.y = mouse.mx, mouse.my
+                    local res = OpenMenu(mstr)
+                    if res == 1 then
+                      ctl_files[cbi_select].ctltype = 0  
+                    elseif res == 2 then
+                      ctl_files[cbi_select].ctltype = 1
+                    elseif res == 3 then
+                      ctl_files[cbi_select].ctltype = 2
+                    elseif res == 4 then
+                      ctl_files[cbi_select].ctltype = 3
+                    elseif res == 5 then
+                      ctl_files[cbi_select].ctltype = 4
+                    end
+                    if res > 0 then
+                      
+                      local save_path=controls_path
+                      local knbfn = ctl_files[cbi_select].fn
+                      
+                      local fn=save_path..string.sub(knbfn,0,string.len(knbfn)-3).. 'knb'
+  
+                      local knbdata = {fn = ctl_files[cbi_select].fn,
+                                       frames = ctl_files[cbi_select].frames,
+                                       cellh = ctl_files[cbi_select].cellh,
+                                       ctltype = ctl_files[cbi_select].ctltype}
+                                       
+                      local DELETE=true
+                      local file
+                      
+                      if reaper.file_exists(fn) then
+                      
+                      end
+                      
+                      if DELETE then
+                        file=io.open(fn,"w")
+                        local pickled_table=pickle(knbdata)
+                        file:write(pickled_table)
+                        file:close()
+                        
+                      end
+                      SetCbiSelect()
+                      update_surface = true
+                    
+                    end
+                  end            
+                end            
+              
+              elseif MOUSE_click(obj.sections[201]) then
+                cbi_offset = 0
+                cbi_filter = -1
+                PopulateCtlBrowser_Imgs()
+                update_surface = true
+              elseif MOUSE_click(obj.sections[202]) then
+                cbi_offset = 0
+                cbi_filter = 0
+                PopulateCtlBrowser_Imgs()
+                update_surface = true
+              elseif MOUSE_click(obj.sections[203]) then
+                cbi_offset = 0
+                cbi_filter = 1
+                PopulateCtlBrowser_Imgs()
+                update_surface = true
+              elseif MOUSE_click(obj.sections[204]) then
+                cbi_offset = 0
+                cbi_filter = 2
+                PopulateCtlBrowser_Imgs()
+                update_surface = true
+              elseif MOUSE_click(obj.sections[205]) then
+                cbi_offset = 0
+                cbi_filter = 3
+                PopulateCtlBrowser_Imgs()
+                update_surface = true
+              elseif MOUSE_click(obj.sections[206]) then
+                cbi_offset = 0
+                cbi_filter = 4
+                PopulateCtlBrowser_Imgs()
+                update_surface = true
+                            
               end
               
-  
-            elseif MOUSE_over(obj.sections[45]) then
-
-              if ctl_page == 0 then
-
-                local xywh = {x = obj.sections[45].x, y = obj.sections[45].y, w = obj.sections[45].w, h = 150}
-                if MOUSE_over(xywh) then
-                  knob_select = (knob_select - v) % #ctl_files
-                  update_gfx = true
-                  gfx.mouse_wheel = 0
-                end
-                if MOUSE_over(obj.sections[56]) then
-                  if toffY then
-                    textoff_select = textoff_select + v*2
-                    for i = 1, #ctl_select do
-                      strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].textoff = textoff_select
-                    end            
-                  else
-                    textoff_selectx = textoff_selectx + v*2
-                    for i = 1, #ctl_select do
-                      strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].textoffx = textoff_selectx
-                    end                            
-                  end
-                  update_gfx = true
-                  gfx.mouse_wheel = 0
-                end
-                if MOUSE_over(obj.sections[65]) then
-                  if toffY then
-                    textoffval_select = textoffval_select + v*2
-                    for i = 1, #ctl_select do
-                      strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].textoffval = textoffval_select
-                    end            
-                  else
-                    textoffval_selectx = textoffval_selectx + v*2
-                    for i = 1, #ctl_select do
-                      strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].textoffvalx = textoffval_selectx
-                    end                            
-                  end
-                  update_gfx = true
-                  gfx.mouse_wheel = 0
-                end
-                if MOUSE_over(obj.sections[58]) then
-                  textsize_select = F_limit(textsize_select + v,-2,35)
-                  for i = 1, #ctl_select do
-                    strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].textsize = textsize_select
-                  end            
-                  update_gfx = true
-                  gfx.mouse_wheel = 0
-                end
-    
-                if MOUSE_over(obj.sections[57]) then
-                  defval_select = F_limit(defval_select + v/200,0,1)
-                  for i = 1, #ctl_select do
-                    strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].val = defval_select
-                    trackfxparam_select = ctl_select[i].ctl
-                    SetParam()
-                  end            
-                  update_gfx = true
-                  gfx.mouse_wheel = 0
-                end
+              
+              noscroll = true
+              
+            elseif ctl_select ~= nil and (MOUSE_click(obj.sections[45]) or MOUSE_click_RB(obj.sections[45])) then
+              
+              --CONTROL OPTIONS
+              
+              if mouse.LB and mouse.my > obj.sections[45].y and mouse.my < obj.sections[45].y+butt_h then
                 
-                if MOUSE_over(obj.sections[55]) then
-                  ctltype_select = F_limit(ctltype_select + v,1,#ctltype_table)
+                show_cycleoptions = false
+                ctl_page = ctl_page + 1
+                if ctl_page > 1 then
+                  ctl_page = 0
+                end
+                update_gfx = true
+              end
+              
+              if ctl_page == 0 then
+                
+                if mouse.context == nil and MOUSE_click(obj.sections[90]) then
+                
+                  knob_select = knob_select - 1
+                  if knob_select < 0 then
+                    knob_select = #ctl_files
+                  end
+                  update_gfx = true
+                
+                elseif mouse.context == nil and MOUSE_click(obj.sections[91]) then
+                
+                  knob_select = knob_select + 1
+                  if knob_select > #ctl_files then
+                    knob_select = 0
+                  end
+                  update_gfx = true
+  
+                elseif mouse.LB and mouse.my > obj.sections[45].y+butt_h and mouse.my < obj.sections[45].y+150 then
+                
+                  PopulateCtlBrowser_Imgs()
+                  cbi_select = knob_select
+                  
+                  SetCbiSelect()
+                  
+                  show_ctlbrowser = true
+                  update_surface = true              
+                  
+                  --[[knob_select = knob_select + 1
+                  if knob_select > #ctl_files then
+                    knob_select = 0
+                  end
+                  update_gfx = true]]
+                
+                --[[elseif mouse.RB and mouse.my > obj.sections[45].y and mouse.my < obj.sections[45].y+150 then
+      
+                  knob_select = knob_select - 1
+                  if knob_select < 0 then
+                    knob_select = #ctl_files
+                  end
+                  update_gfx = true]]
+                
+                end
+      
+                if MOUSE_click(obj.sections[66]) then
+                
+                  maxdp_select = F_limit(maxdp_select + 1, -1, 3)
+                  for i = 1, #ctl_select do
+                    strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].maxdp = maxdp_select
+                  end            
+                  update_gfx = true
+                
+                elseif MOUSE_click_RB(obj.sections[66]) then
+      
+                  maxdp_select = F_limit(maxdp_select - 1, -1, 3)
+                  for i = 1, #ctl_select do
+                    strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].maxdp = maxdp_select
+                  end            
+                  update_gfx = true
+                
+                end
+      
+                if MOUSE_click(obj.sections[52]) then
+                  show_paramname = not show_paramname
+                  for i = 1, #ctl_select do
+                    strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].show_paramname = show_paramname
+                  end            
+                  update_gfx = true
+                end
+      
+                if MOUSE_click(obj.sections[53]) then
+                  show_paramval = not show_paramval
+                  for i = 1, #ctl_select do
+                    strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].show_paramval = show_paramval
+                  end            
+                  update_gfx = true
+                end
+      
+                if MOUSE_click(obj.sections[54]) then
+                  local retval, c = reaper.GR_SelectColor(_,ConvertColorString(textcol_select))
+                  if retval ~= 0 then
+                    textcol_select = ConvertColor(c)
+                    for i = 1, #ctl_select do
+                      strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].textcol = textcol_select
+                    end
+                    update_gfx = true
+                  end
+                end
+      
+                if MOUSE_click(obj.sections[55]) then
+                  ctltype_select = ctltype_select + 1
+                  if ctltype_select > #ctltype_table then ctltype_select = 1 end
                   for i = 1, #ctl_select do
                     strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctltype = ctltype_select
                   end
-                  show_cycleoptions = false
                   update_gfx = true
-                  gfx.mouse_wheel = 0
+                elseif MOUSE_click_RB(obj.sections[55]) then
+                  ctltype_select = ctltype_select - 1
+                  if ctltype_select < 1 then ctltype_select = #ctltype_table end
+                  for i = 1, #ctl_select do
+                    strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctltype = ctltype_select
+                  end
+                  update_gfx = true
+                end
+      
+                if ctltype_select == 4 and MOUSE_click(obj.sections[67]) then
+                  show_cycleoptions = not show_cycleoptions
+                  if show_cycleoptions then
+                    cycle_select.val = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].val
+                  end
+                  update_gfx = true
+                else
+                  show_cycleoptions = false          
                 end
                 
-              elseif ctl_page == 1 then              
-
-                if MOUSE_over(obj.sections[128]) then
-                  val = minov_select + v*0.00125
+                if MOUSE_click(obj.sections[59]) then
+                  if ctl_select and #ctl_select > 0 then
+                    --EditCtlName()
+                    if strips and strips[tracks[track_select].strip] then
+                      OpenEB(2,'Please enter a name for the selected controls:',strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].param_info.paramname)
+                      update_gfx = true
+                    end
+                  end
+                end
+  
+                if MOUSE_click(obj.sections[68]) then
+                  toffY = not toffY
+                  update_gfx = true
+                end
+                              
+                if MOUSE_click_RB(obj.sections[57]) then
+                  defval_select = GetParamValue_Ctl(ctl_select[1].ctl)
+                  for i = 1, #ctl_select do
+                    strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].defval = GetParamValue_Ctl(ctl_select[i].ctl)
+                  end
+                  update_gfx = true
+                end
+              
+                if MOUSE_click(obj.sections[51]) then
+                  --apply
+                  if ctl_files[knob_select].imageidx == nil then  
+                    image_count = F_limit(image_count + 1,0,image_max)
+                    gfx.loadimg(image_count, controls_path..ctl_files[knob_select].fn)
+                    ctl_files[knob_select].imageidx = image_count
+                  end
+                  local w, _ = gfx.getimgdim(ctl_files[knob_select].imageidx)
+                  for i = 1, #ctl_select do
+                    strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].knob_select = knob_select
+                    strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctl_info.fn = ctl_files[knob_select].fn
+                    strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctl_info.imageidx = ctl_files[knob_select].imageidx
+                    strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctl_info.frames = ctl_files[knob_select].frames
+                    strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].w = w
+                    strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctl_info.cellh = ctl_files[knob_select].cellh
+                    
+                    local scale = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].scale
+                    strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].xsc = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].x
+                                                                                               + math.floor(strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].w/2
+                                                                                               - (strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].w*scale)/2)
+                    strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ysc = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].y
+                                                                                               + math.floor(strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctl_info.cellh/2
+                                                                                               - (strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctl_info.cellh*scale)/2)
+                    strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].wsc = w*scale
+                    strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].hsc = ctl_files[knob_select].cellh*scale
+                  end
+                  update_gfx = true
+                end
+                
+                if mouse.context == nil and MOUSE_click(obj.sections[50]) then mouse.context = contexts.scaleslider 
+                elseif mouse.context == nil and MOUSE_click(obj.sections[56]) then mouse.context = contexts.offsetslider
+                elseif mouse.context == nil and MOUSE_click(obj.sections[65]) then mouse.context = contexts.valoffsetslider 
+                elseif mouse.context == nil and MOUSE_click(obj.sections[57]) then omx = -1 ctlpos = defval_select mouse.context = contexts.defvalslider
+                elseif mouse.context == nil and MOUSE_click(obj.sections[58]) then mouse.context = contexts.textsizeslider end
+        
+              elseif ctl_page == 1 then
+                
+                if MOUSE_click(obj.sections[126]) then
+                  OpenEB(4,'Please enter normalized min value:')
+                
+                elseif MOUSE_click(obj.sections[127]) then
+                  OpenEB(16,'Please enter normalized max value:')
+                end
+                
+                if MOUSE_click(obj.sections[125]) then
+                  --EditDValOffset()
+                  OpenEB(3,'Please enter a display offset value:',strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].dvaloffset)
+                end
+    
+                if MOUSE_click(obj.sections[134]) then
+                  horiz_select = not horiz_select
+                  for i = 1, #ctl_select do
+                    strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].horiz = horiz_select
+                  end
+                  update_gfx = true              
+                end            
+    
+                if MOUSE_click(obj.sections[131]) then
+                  knob_scalemode_select = knob_scalemode_select + 1
+                  if knob_scalemode_select > #scalemode_preset_table then knob_scalemode_select = 2 end
+                  if knob_scalemode_select == 2 then
+                    scalemode_select = 8
+                    framemode_select = 1
+                  elseif knob_scalemode_select == 3 then
+                    scalemode_select = 12
+                    framemode_select = 2              
+                  end
                   
+                  for i = 1, #ctl_select do
+                    strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].scalemode = scalemode_select
+                    strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].framemode = framemode_select                
+                  end
+                  update_gfx = true                        
+                end
+    
+                if MOUSE_click(obj.sections[132]) then
+                  scalemode_select = scalemode_select + 1
+                  if scalemode_select > #scalemode_table then scalemode_select = 1 end
+                  for i = 1, #ctl_select do
+                    strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].scalemode = scalemode_select
+                  end
+                  SetKnobScaleMode()
+                  update_gfx = true                                      
+                elseif MOUSE_click_RB(obj.sections[132]) then
+                  scalemode_select = scalemode_select - 1
+                  if scalemode_select < 1 then scalemode_select = #scalemode_table end
+                  for i = 1, #ctl_select do
+                    strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].scalemode = scalemode_select
+                  end
+                  SetKnobScaleMode()
+                  update_gfx = true                                      
+                end
+              
+                if MOUSE_click(obj.sections[133]) then
+                  framemode_select = framemode_select + 1
+                  if framemode_select > #framemode_table then framemode_select = 1 end
+                  for i = 1, #ctl_select do
+                    strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].framemode = framemode_select
+                  end
+                  SetKnobScaleMode()
+                  update_gfx = true                                      
+                elseif MOUSE_click_RB(obj.sections[133]) then
+                  framemode_select = framemode_select - 1
+                  if framemode_select < 1 then framemode_select = #framemode_table end
+                  for i = 1, #ctl_select do
+                    strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].framemode = framemode_select
+                  end
+                  SetKnobScaleMode()
+                  update_gfx = true                                      
+                end
+              
+                if mouse.context == nil and MOUSE_click(obj.sections[128]) then
+                  mouse.context = contexts.minov
+                  trackfxparam_select = ctl_select[1].ctl
+                  ctlpos = minov_select
+                  mouse.slideoff = obj.sections[128].y+obj.sections[128].h/2 - mouse.my
+                  oms = mouse.shift
+                  for i = 1, #ctl_select do
+                    local min, max = GetParamMinMax_ctl(ctl_select[i].ctl)
+                    ctl_select[i].denorm_defval = DenormalizeValue(min,
+                                                                   max,
+                                                                   strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].defval)
+                  end
+                  minov_act = 'minov'
+                  
+                elseif mouse.context == nil and MOUSE_click(obj.sections[129]) then 
+                  mouse.context = contexts.maxov 
+                  trackfxparam_select = ctl_select[1].ctl
+                  ctlpos = maxov_select
+                  mouse.slideoff = obj.sections[129].y+obj.sections[129].h/2 - mouse.my
+                  oms = mouse.shift
+                  for i = 1, #ctl_select do
+                    local min, max = GetParamMinMax_ctl(ctl_select[i].ctl)
+                    ctl_select[i].denorm_defval = DenormalizeValue(min,
+                                                                   max,
+                                                                   strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].defval)
+                  end
+                  maxov_act = 'maxov'
+    
+                end
+              
+              end
+            
+            elseif ctl_select ~= nil and show_cycleoptions and gfx.mouse_wheel ~= 0 and MOUSE_over(obj.sections[103]) then
+            
+              local v = gfx.mouse_wheel/120
+              cyclist_offset = F_limit(cyclist_offset - v, 0, max_cycle-8)
+              update_gfx = true
+              gfx.mouse_wheel = 0
+            
+            elseif ctl_select ~= nil and show_cycleoptions and (MOUSE_click(obj.sections[100]) or MOUSE_click_RB(obj.sections[100])) then
+            
+              -- CYCLE OPTS
+              
+              if MOUSE_click(obj.sections[102]) and mouse.ctrl == false then
+                cyclist_offset = 0
+                cycle_select.statecnt = F_limit(cycle_select.statecnt+1,0,max_cycle)
+                Cycle_InitData()
+                update_gfx = true
+              elseif MOUSE_click_RB(obj.sections[102]) then
+                cyclist_offset = 0
+                cycle_select.statecnt = F_limit(cycle_select.statecnt-1,0,max_cycle)
+                Cycle_InitData()
+                update_gfx = true
+              elseif MOUSE_click(obj.sections[102]) and (mouse.ctrl == true or mouse.shift == true) then
+              
+                OpenEB(17,'Enter number of cycle states:')
+              
+              end
+              
+              if mouse.context == nil and MOUSE_click(obj.sections[101]) then 
+                mouse.context = contexts.cycleknob
+                cycle_editmode = true 
+                trackfxparam_select = ctl_select[1].ctl
+                ctlpos = cycle_select.val
+                mouse.slideoff = obj.sections[101].y+obj.sections[101].h/2 - mouse.my
+                oms = mouse.shift
+              end
+              
+              if MOUSE_click(obj.sections[103]) then
+                local i = math.floor((mouse.my - obj.sections[103].y) / butt_h)+1
+                cycle_select.selected = F_limit(i+cyclist_offset,1,cycle_select.statecnt)
+                --strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].cycledata.pos = cycle_select.selected
+                update_gfx = true
+              elseif MOUSE_click_RB(obj.sections[103]) then
+                if cycle_select and cycle_select.selected then
+                  local mstr = 'Rename||Delete'
+                  gfx.x, gfx.y = mouse.mx, mouse.my
+                  local res = OpenMenu(mstr)
+                  if res == 1 then
+                    --txt = EditValue(10)
+                    OpenEB(10,'Please enter value:')
+                  elseif res == 2 then
+                    cycle_select = Cycle_DeleteStep(cycle_select.selected)
+                    update_gfx = true
+                  end
+                end            
+              end          
+    
+              if MOUSE_click(obj.sections[104]) then
+                Cycle_Auto()
+                cyclist_offset = 0
+                update_gfx = true            
+              end
+  
+              if MOUSE_click(obj.sections[110]) then
+                mouse.context = contexts.auto_delayslider
+              end
+            
+              if MOUSE_click(obj.sections[105]) then
+                local i = math.floor((mouse.mx-obj.sections[105].x)/(obj.sections[105].w/2))
+                if #cycle_select < 8 then
+                  cyclist_offset = 0
+                else
+                  if i >= 1 then
+                    cyclist_offset = F_limit(cyclist_offset+1,0,math.max(#cycle_select-8,0))
+                  else
+                    cyclist_offset = F_limit(cyclist_offset-1,0,math.max(#cycle_select-8,0))            
+                  end
+                end
+                update_gfx = true            
+              end
+              
+              if MOUSE_click(obj.sections[106]) then
+                trackfxparam_select = ctl_select[1].ctl
+                strips[tracks[track_select].strip][page].controls[trackfxparam_select].cycledata = Cycle_CopySelectOut()
+                strips[tracks[track_select].strip][page].controls[trackfxparam_select].cycledata.pos = cycle_select.selected
+                strips[tracks[track_select].strip][page].controls[trackfxparam_select].dirty = true
+                show_cycleoptions = false
+                cycle_editmode = false
+                update_gfx = true
+              end
+    
+              if MOUSE_click(obj.sections[107]) then
+                cycle_select.mapptof = not cycle_select.mapptof
+                update_gfx = true
+              elseif MOUSE_click(obj.sections[108]) then
+                cycle_select.draggable = not cycle_select.draggable
+                update_gfx = true
+              elseif MOUSE_click(obj.sections[109]) then
+                cycle_select.spread = not cycle_select.spread
+                update_gfx = true
+              end          
+            
+            elseif mouse.mx > obj.sections[10].x then
+            
+              --SURFACE
+            
+              if mouse.context == nil and MOUSE_click(obj.sections[10]) then
+                if strips and tracks[track_select] and strips[tracks[track_select].strip] then
+                  for i = 1, #strips[tracks[track_select].strip][page].controls do
+                  
+                    local xywh
+                    xywh = {x = strips[tracks[track_select].strip][page].controls[i].x - surface_offset.x +obj.sections[10].x, 
+                            y = strips[tracks[track_select].strip][page].controls[i].y - surface_offset.y +obj.sections[10].y, 
+                            w = strips[tracks[track_select].strip][page].controls[i].w, 
+                            h = strips[tracks[track_select].strip][page].controls[i].ctl_info.cellh}
+                    if MOUSE_click(xywh) then
+                      show_cycleoptions = false
+                      
+                      local found = false
+                      local j
+                      if ctl_select ~= nil then
+                        for j = 1, #ctl_select do
+                          if tonumber(ctl_select[j].ctl) == tonumber(i) then
+                            found = true
+                            break
+                          end
+                        end
+                      end
+  
+                      if mouse.alt then
+                        local stripid = strips[tracks[track_select].strip][page].controls[i].id
+                        if stripid ~= nil then
+                          ctl_select = nil
+                          gfx3_select = nil
+                          SelectStripElements(stripid)
+                        else
+                          if ctl_select == nil then
+                            ctl_select = {}
+                            ctl_select[1] = {ctl = i}
+                          else
+                            local cs = #ctl_select+1
+                            ctl_select[cs] = {}
+                            ctl_select[cs].ctl = i                      
+                            ctl_select[cs].relx = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].x - strips[tracks[track_select].strip][page].controls[i].x
+                            ctl_select[cs].rely = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].y - strips[tracks[track_select].strip][page].controls[i].y
+                          end
+                        end
+        
+                      elseif mouse.ctrl and ctl_select ~= nil and found == false then
+                        local cs = #ctl_select+1
+                        ctl_select[cs] = {}
+                        ctl_select[cs].ctl = i
+                        ctl_select[cs].relx = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].x - strips[tracks[track_select].strip][page].controls[i].x
+                        ctl_select[cs].rely = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].y - strips[tracks[track_select].strip][page].controls[i].y
+                      elseif ctl_select == nil or found == false then
+                        ctl_select = {} 
+                        gfx3_select = nil
+                        ctl_select[1] = {ctl = i}
+                      end
+  
+                      SetCtlSelectVals()
+                      SetPosLockCtl()
+  
+                      dragoff = {x = mouse.mx - strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].x - 0.5*strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].w - surface_offset.x,
+                                 y = mouse.my - strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].y - 0.5*strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].ctl_info.cellh - surface_offset.y}
+                      mouse.context = contexts.dummy
+                      if ctl_select ~= nil and not mouse.ctrl then --and not mouse.alt then
+                        dragctl = 'dragctl'
+                        mouse.context = contexts.dragctl
+                        GenCtlDragPreview(gui)
+                        for i = 1, #ctl_select do
+                          strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].hide = true
+                        end
+                        if gfx3_select and #gfx3_select > 0 then
+                          for i = 1, #gfx3_select do
+                            strips[tracks[track_select].strip][page].graphics[gfx3_select[i].ctl].hide = true  
+                          end                    
+                        end
+                      end
+                      update_gfx = true
+                      break
+                    end
+                  end
+                end
+              elseif mouse.context == nil and MOUSE_click_RB(obj.sections[10]) then
+                mouse.context = contexts.draglasso
+                lasso = {l = mouse.mx, t = mouse.my, r = mouse.mx+5, b = mouse.my+5}
+              end
+            end
+  
+            if mouse.context and mouse.context == contexts.auto_delayslider then
+              local val = F_limit(MOUSE_sliderHBar(obj.sections[110]),0,1)
+              if val ~= nil then
+                auto_delay = math.floor(val * 10)
+                update_gfx = true
+              end
+            end
+            
+            if mouse.context and mouse.context == contexts.minov then
+              local val = MOUSE_slider(obj.sections[128],mouse.slideoff)
+              if val ~= nil then
+                if oms ~= mouse.shift then
+                  oms = mouse.shift
+                  ctlpos = minov_select
+                  mouse.slideoff = obj.sections[128].y+obj.sections[128].h/2 - mouse.my
+                else
+                  if mouse.shift then
+                    val = ctlpos + ((0.5-val)*2)*0.0125
+                  else
+                    val = ctlpos + (0.5-val)*1
+                  end
                   local p = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].param
                   local min, max = GetParamMinMax_ctl(ctl_select[1].ctl, false) --trctls_table[p].min, trctls_table[p].max
                   
@@ -11734,17 +12814,34 @@ end
                     octlval = val
                     update_ctls = true
                   end
-                  
-                  for i = 1, #ctl_select do
-                    strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].minov = minov_select
-                  end            
-                  update_gfx = true
-                  gfx.mouse_wheel = 0
-                end              
-
-                if MOUSE_over(obj.sections[129]) then
-                  val = maxov_select + v*0.00125
-                  
+                end
+              elseif minov_act ~= nil then
+                minov_act = nil
+                
+                for i = 1, #ctl_select do
+                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].minov = minov_select
+                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].dirty = true
+                  trackfxparam_select = ctl_select[i].ctl
+    
+                  local min, max = GetParamMinMax_ctl(ctl_select[i].ctl)
+                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].defval = normalize(min, max, ctl_select[i].denorm_defval)
+                  SetParam3(strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].defval)
+                end
+              end
+              
+            elseif mouse.context and mouse.context == contexts.maxov then
+              local val = MOUSE_slider(obj.sections[129],mouse.slideoff)
+              if val ~= nil then
+                if oms ~= mouse.shift then
+                  oms = mouse.shift
+                  ctlpos = minov_select
+                  mouse.slideoff = obj.sections[129].y+obj.sections[129].h/2 - mouse.my
+                else
+                  if mouse.shift then
+                    val = ctlpos + ((0.5-val)*2)*0.1
+                  else
+                    val = ctlpos + (0.5-val)*2
+                  end
                   local p = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].param
                   local min, max = GetParamMinMax_ctl(ctl_select[1].ctl, false) --trctls_table[p].min, trctls_table[p].max
                   
@@ -11756,977 +12853,1309 @@ end
                     local dval = GetParamDisp_Ctl(ctl_select[1].ctl)
                     maxov_select = val
                     ov_disp = dval
-                    SetParam()                
+                    SetParam()
                     octlval = val
                     update_ctls = true
                   end
-                  
-                  for i = 1, #ctl_select do
-                    strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].maxov = maxov_select
-                  end            
-                  update_gfx = true
-                  gfx.mouse_wheel = 0
-                end              
-
-              end
-              
-            end
-          end
-          
-          if show_paramlearn then
-            last_touch_fx = GetLastTouchedFX(last_touch_fx)        
-          end
-          
-          if show_paramlearn and (MOUSE_click(obj.sections[115]) or MOUSE_click_RB(obj.sections[115])) then
-          
-            --LEARN
-            
-            if MOUSE_click(obj.sections[115]) then
-              ctl_select = nil
-              update_gfx = true
-              
-              if ctl_files[knob_select].imageidx ~= nil then
-                local w,_ = gfx.getimgdim(ctl_files[knob_select].imageidx)
-                local h = ctl_files[knob_select].cellh
-                if w == 0 or h == 0 then
-                  ksel_size = {w = 50, h = 50}
-                else
-                 ksel_size = {w = w/2, h = h/2}
-               end
-              else 
-                ksel_size = {w = 50, h = 50}
-              end
-              mouse.context = contexts.dragparamlrn
-            elseif MOUSE_click_RB(obj.sections[115]) then
-              show_paramlearn = false
-              ctl_select = nil
-              update_gfx = true
-            end          
-          
-          end
-          
-          local char=gfx.getchar()
-          if ctl_select ~= nil and char ~= 0 then
-            if char == 0x6C656674 then -- left arrow
-              for i = 1,#ctl_select do
-                if strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].poslock == false then
-                  local scale = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].scale
-                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].x = 
-                                strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].x - 1
-                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].xsc = 
-                                                                      strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].x
-                                                                       + math.floor(strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].w/2
-                                                                       - (strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].w*scale)/2)
                 end
-              end
-              update_gfx = true
-            elseif char == 0x72676874 then -- right arrow
-              for i = 1,#ctl_select do
-                if strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].poslock == false then
-                  local scale = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].scale
-                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].x = 
-                                strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].x + 1
-                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].xsc = 
-                                                                      strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].x
-                                                                       + math.floor(strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].w/2
-                                                                       - (strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].w*scale)/2)
-                end
-              end
-              update_gfx = true
-            elseif char == 0x7570 then -- up arrow
-              for i = 1,#ctl_select do
-                if strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].poslock == false then
-                  local scale = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].scale
-                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].y = 
-                                strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].y - 1
-                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ysc = 
-                                                                      strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].y
-                                                                       + math.floor(strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctl_info.cellh/2
-                                                                       - (strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctl_info.cellh*scale)/2)
-                end
-              end
-              update_gfx = true
-            elseif char == 0x646F776E then -- down arrow
-              for i = 1,#ctl_select do
-                if strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].poslock == false then
-                  local scale = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].scale
-                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].y = 
-                                strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].y + 1
-                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ysc = 
-                                                                      strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].y
-                                                                       + math.floor(strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctl_info.cellh/2
-                                                                       - (strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctl_info.cellh*scale)/2)
-                end
-              end
-              update_gfx = true
-            end
-                        
-          elseif ctl_select ~= nil and show_ctlbrowser and (MOUSE_click(obj.sections[200]) or MOUSE_click_RB(obj.sections[200])) then
-          
-            if mouse.context == nil and MOUSE_click(obj.sections[211]) then
-              cbi_offset = cbi_offset - math.min(ctl_browser_size.slots_x*ctl_browser_size.slots_y,maximg_browse+1)
-              if cbi_offset < 0 then cbi_offset = 0 end
-              PopulateCtlBrowser_Imgs()
-              update_surface = true
-          
-            elseif mouse.context == nil and MOUSE_click(obj.sections[212]) then
-              if cbi_offset + math.min(ctl_browser_size.slots_x*ctl_browser_size.slots_y,maximg_browse+1) < 
-                    (math.floor(cbi_cnt/(ctl_browser_size.slots_x*ctl_browser_size.slots_y))+1)*(ctl_browser_size.slots_x*ctl_browser_size.slots_y) then
-                cbi_offset = cbi_offset + math.min(ctl_browser_size.slots_x*ctl_browser_size.slots_y,maximg_browse+1)
-              end
-              PopulateCtlBrowser_Imgs()
-              update_surface = true
-            
-            elseif mouse.context == nil and MOUSE_click(obj.sections[210]) then
-
-              if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.2 then
-                local ix = math.floor((mouse.mx - obj.sections[210].x) / ctl_browser_size.slotsz)
-                local iy = math.floor((mouse.my - obj.sections[210].y) / ctl_browser_size.slotsz)
-                local i = ix + iy*ctl_browser_size.slots_x
+              elseif maxov_act ~= nil then
+                maxov_act = nil
                 
-                if cbi[i] then
-                  knob_select = cbi[i].idx
-                  closectlbrowser = true
-                  --show_ctlbrowser = false
-                  update_surface = true
-                end
-              else
-                local ix = math.floor((mouse.mx - obj.sections[210].x) / ctl_browser_size.slotsz)
-                local iy = math.floor((mouse.my - obj.sections[210].y) / ctl_browser_size.slotsz)
-                local i = ix + iy*ctl_browser_size.slots_x
-
-                if cbi[i] then
-                  cbi_select = cbi[i].idx
-                  SetCbiSelect()
-                  update_surface = true
+                for i = 1, #ctl_select do
+                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].maxov = maxov_select
+                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].dirty = true
+                  trackfxparam_select = ctl_select[i].ctl
+    
+                  local min, max = GetParamMinMax_ctl(ctl_select[i].ctl)
+                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].defval = normalize(min, max, ctl_select[i].denorm_defval)
+                  SetParam3(strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].defval)
                 end
               end
-            elseif mouse.context == nil and MOUSE_click_RB(obj.sections[210]) then
-              local ix = math.floor((mouse.mx - obj.sections[210].x) / ctl_browser_size.slotsz)
-              local iy = math.floor((mouse.my - obj.sections[210].y) / ctl_browser_size.slotsz)
-              local i = ix + iy*ctl_browser_size.slots_x
-
-              if cbi[i] then
-                cbi_select = cbi[i].idx
-                SetCbiSelect()
-                if ctl_files[cbi_select] then
-                  update_surface = true
-                  GUI_draw(obj,gui)
-                  gfx.update()
-  
-                  local mstr = 'Knob|Slider|Button|Meter|Misc'
+            
+            elseif mouse.context and mouse.context == contexts.cycleknob then
+              local val = MOUSE_slider(obj.sections[101],mouse.slideoff)
+              if val ~= nil then
+                if oms ~= mouse.shift then
+                  oms = mouse.shift
+                  ctlpos = cycle_select.val
+                  mouse.slideoff = obj.sections[101].y+obj.sections[101].h/2 - mouse.my
+                else
+                  if mouse.shift then
+                    val = ctlpos + ((0.5-val)*2)*0.1
+                  else
+                    val = ctlpos + (0.5-val)*2
+                  end
+                  local min,max = 0,1
+                  if strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].ctlcats == ctlcats.fxparam then
+                    min, max = GetParamMinMax_ctl(ctl_select[1].ctl)
+                  end
+                  if val < min then val = min end
+                  if val > max then val = max end
+                  if val ~= octlval then
+                    SetParam3(val)
+                    local t = strips[tracks[track_select].strip].track.tracknum
+                    if strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].tracknum ~= nil then
+                      t = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].tracknum
+                    end
+                    local cc = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].ctlcat
+                    local f = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].fxnum
+                    local p = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].param
+                    local dvoff = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].dvaloffset
+                    local v2 = GetParamValue(cc,t,f,p,ctl_select[1].ctl)
+                    cycle_select.val = val
+                    
+                    if cycle_select.selected then
+                      local dispval = GetParamDisp(cc, t, f, p, dvoff,ctl_select[1].ctl)
+                      cycle_select[cycle_select.selected].val = v2                  
+                      cycle_select[cycle_select.selected].dispval = dispval
+                      cycle_select[cycle_select.selected].dv = dispval
+                    end
+                    octlval = val
+                    --SetParam()
+                    strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].dirty = true
+                    update_ctls = true
+                  end
+                end
+              end
+            
+            end
+            
+            if mouse.context and mouse.context == contexts.scaleslider then
+              local val = F_limit(MOUSE_sliderHBar(obj.sections[50]),0,1)
+              if val ~= nil then
+                scale_select = val*0.5 + 0.5
+                for i = 1, #ctl_select do
+                  if strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctlcat ~= ctlcats.xy then
+                    strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].scale = scale_select
+                    strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].xsc = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].x
+                                                                                               + math.floor(strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].w/2
+                                                                                               - (strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].w*scale_select)/2)
+                    strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ysc = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].y
+                                                                                               + math.floor(strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctl_info.cellh/2
+                                                                                               - (strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctl_info.cellh*scale_select)/2)
+                    strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].wsc = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].w*scale_select
+                    strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].hsc = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctl_info.cellh*scale_select
+                  end
+                end            
+                update_gfx = true
+                --update_ctls = true
+              end
+            end
+    
+            if mouse.context and mouse.context == contexts.offsetslider then
+              local val = F_limit(MOUSE_sliderHBar(obj.sections[56]),0,1)
+              if val ~= nil then
+                if toffY then
+                  textoff_select = val*300 - 150
+                  for i = 1, #ctl_select do
+                    strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].textoff = textoff_select
+                  end            
+                else
+                  textoff_selectx = val*300 - 150
+                  for i = 1, #ctl_select do
+                    strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].textoffx = textoff_selectx
+                  end                          
+                end
+                update_gfx = true
+              end
+            end
+    
+            if mouse.context and mouse.context == contexts.valoffsetslider then
+              local val = F_limit(MOUSE_sliderHBar(obj.sections[65]),0,1)
+              if val ~= nil then
+                if toffY then
+                  textoffval_select = val*300 - 150
+                  for i = 1, #ctl_select do
+                    strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].textoffval = textoffval_select
+                  end            
+                else
+                  textoffval_selectx = val*300 - 150
+                  for i = 1, #ctl_select do
+                    strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].textoffvalx = textoffval_selectx
+                  end                          
+                end
+                update_gfx = true
+              end
+            end
+    
+            if mouse.context and mouse.context == contexts.textsizeslider then
+              local val = F_limit(MOUSE_sliderHBar(obj.sections[58]),0,1)
+              if val ~= nil then
+                textsize_select = (val*35)-2
+                for i = 1, #ctl_select do
+                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].textsize = textsize_select
+                end            
+                update_gfx = true
+              end
+            end
+    
+            if mouse.context and mouse.context == contexts.defvalslider then
+              local val = F_limit(MOUSE_sliderHBar(obj.sections[57]),0,1)
+              local upd = false
+              if mouse.ctrl then
+                if mouse.mx ~= omx then
+                  if mouse.mx > omx then val = 0.002 else val = -0.002 end
+                  omx = mouse.mx
+                  val = F_limit(defval_select+val, 0, 1)
+                  upd = true
+                end
+              elseif val ~= nil then
+                if mouse.shift then val = round(val*4,0)/4 end
+                upd = true            
+                val = F_limit(val, 0, 1)
+              end
+              if val ~= octlval and upd then
+                defval_select = val
+                octlval = val
+                for i = 1, #ctl_select do
+                  if strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctltype == 4 then
+                    strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].defval = defval_select
+                  else
+                    strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].val = defval_select
+                    strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].defval = defval_select
+                  end
+                  trackfxparam_select = ctl_select[i].ctl
+                  SetParam_ToDef(trackfxparam_select)
+                end
+                update_ctls = true
+              end
+            end
+                
+            if mouse.context and mouse.context == contexts.dragctl then
+              --dragctl = {x = mouse.mx+offsetx-obj.sections[10].x-surface_offset.x, y = mouse.my+offsety-obj.sections[10].y-surface_offset.y, type = 'ctls'}
+              
+              if math.floor(mouse.mx/settings_gridsize) ~= math.floor(mouse.last_x/settings_gridsize) or math.floor(mouse.my/settings_gridsize) ~= math.floor(mouse.last_y/settings_gridsize) then
+                local i
+                local scale = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].scale
+                local zx, zy = 0.5*strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].w, 0.5*strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].ctl_info.cellh
+                
+                if nz(strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].poslock,false) == false then
+                  strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].x = math.floor((mouse.mx-zx - surface_offset.x)/settings_gridsize)*settings_gridsize 
+                                                                                     - math.floor((dragoff.x)/settings_gridsize)*settings_gridsize
+                  strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].y = math.floor((mouse.my-zy - surface_offset.y)/settings_gridsize)*settings_gridsize 
+                                                                                     - math.floor((dragoff.y)/settings_gridsize)*settings_gridsize
+                  strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].xsc = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].x
+                                                                                             + math.floor(strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].w/2
+                                                                                             - (strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].w*scale)/2)
+                  strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].ysc = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].y
+                                                                                             + math.floor(strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].ctl_info.cellh/2
+                                                                                             - (strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].ctl_info.cellh*scale)/2)
+                end
+                if #ctl_select > 1 then
+                  for i = 2, #ctl_select do
+                    if nz(strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].poslock,false) == false then
+                      scale = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].scale
+                      strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].x = math.floor((mouse.mx-zx - surface_offset.x)/settings_gridsize)*settings_gridsize 
+                                                                                         - math.floor((dragoff.x)/settings_gridsize)*settings_gridsize 
+                                                                                         - ctl_select[i].relx
+                      strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].y = math.floor((mouse.my-zy - surface_offset.y)/settings_gridsize)*settings_gridsize 
+                                                                                         - math.floor((dragoff.y)/settings_gridsize)*settings_gridsize
+                                                                                         - ctl_select[i].rely
+                      strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].xsc = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].x
+                                                                                                 + math.floor(strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].w/2
+                                                                                                 - (strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].w*scale)/2)
+                      strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ysc = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].y
+                                                                                                 + math.floor(strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctl_info.cellh/2
+                                                                                                 - (strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctl_info.cellh*scale)/2)
+                    end
+                  end
+                end
+                if gfx3_select and #gfx3_select > 0 then
+                  for i = 1, #gfx3_select do
+                    strips[tracks[track_select].strip][page].graphics[gfx3_select[i].ctl].x = math.floor((mouse.mx-zx - surface_offset.x)/settings_gridsize)*settings_gridsize 
+                                                                                       - math.floor((dragoff.x)/settings_gridsize)*settings_gridsize 
+                                                                                       - gfx3_select[i].relx
+                    strips[tracks[track_select].strip][page].graphics[gfx3_select[i].ctl].y = math.floor((mouse.my-zy - surface_offset.y)/settings_gridsize)*settings_gridsize 
+                                                                                       - math.floor((dragoff.y)/settings_gridsize)*settings_gridsize
+                                                                                       - gfx3_select[i].rely
+                  end            
+                end
+                --update_ctls = true
+                --update_gfx = true
+                --dragctl = {x = mouse.mx+offsetx-obj.sections[10].x-surface_offset.x, y = mouse.my+offsety-obj.sections[10].y-surface_offset.y, type = 'ctls'}
+                update_surface = true
+              end
+            elseif dragctl ~= nil then
+              dragctl = nil
+              if MOUSE_over(obj.sections[60]) then
+                --delete
+                DeleteSelectedCtls()
+                update_gfx = true
+              else
+                for i = 1, #ctl_select do
+                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].hide = nil
+                end
+                if gfx3_select and #gfx3_select > 0 then
+                  for i = 1, #gfx3_select do
+                    strips[tracks[track_select].strip][page].graphics[gfx3_select[i].ctl].hide = nil
+                  end                    
+                end
+                update_gfx = true
+              end
+            end      
+      
+            if mouse.context and mouse.context == contexts.draglasso then
+              if (mouse.mx ~= mouse.last_x or mouse.my ~= mouse.last_y) then
+                lasso.r = mouse.mx
+                lasso.b = mouse.my
+                Lasso_Select(mouse.shift)
+                if ctl_select ~= nil then
+                  SetCtlSelectVals()
+                end
+                SetPosLockCtl()
+                update_ctls = true
+              end
+            elseif lasso ~= nil then
+              --Dropped
+              if math.abs(lasso.l-lasso.r) < 10 and math.abs(lasso.t-lasso.b) < 10 then
+              -- == mouse.mx and lasso.t == mouse.my then
+                if ctl_select ~= nil then
+                  local mm
+                  if poslockctl_select then
+                    mm = '!Lock position'
+                  else
+                    mm = 'Lock position'              
+                  end
+                  local ac
+                  if strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].ctlcat == ctlcats.action then
+                    ac = '||Assign custom action by name|Assign action by command ID'
+                  else
+                    ac = '||#Assign custom action by name|#Assign action by command ID'              
+                  end
+                  local mstr = 'Duplicate||Align Top|Align Left||'..mm..'||Delete'..ac
                   gfx.x, gfx.y = mouse.mx, mouse.my
                   local res = OpenMenu(mstr)
                   if res == 1 then
-                    ctl_files[cbi_select].ctltype = 0  
-                  elseif res == 2 then
-                    ctl_files[cbi_select].ctltype = 1
-                  elseif res == 3 then
-                    ctl_files[cbi_select].ctltype = 2
-                  elseif res == 4 then
-                    ctl_files[cbi_select].ctltype = 3
-                  elseif res == 5 then
-                    ctl_files[cbi_select].ctltype = 4
-                  end
-                  if res > 0 then
-                    
-                    local save_path=controls_path
-                    local knbfn = ctl_files[cbi_select].fn
-                    
-                    local fn=save_path..string.sub(knbfn,0,string.len(knbfn)-3).. 'knb'
-
-                    local knbdata = {fn = ctl_files[cbi_select].fn,
-                                     frames = ctl_files[cbi_select].frames,
-                                     cellh = ctl_files[cbi_select].cellh,
-                                     ctltype = ctl_files[cbi_select].ctltype}
-                                     
-                    local DELETE=true
-                    local file
-                    
-                    if reaper.file_exists(fn) then
-                    
+                    local c1 = #strips[tracks[track_select].strip][page].controls+1
+                    local dx = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].x - (mouse.mx+surface_offset.x-obj.sections[10].x) 
+                    local dy = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].y - (mouse.my+surface_offset.y-obj.sections[10].y)
+                    for i = 1, #ctl_select do
+                      local cc = c1+i-1
+                      strips[tracks[track_select].strip][page].controls[cc]=GetControlTable(ctl_select[i].ctl)
+                      --table.insert(strips[tracks[track_select].strip][page].controls[cc], strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl])
+                      strips[tracks[track_select].strip][page].controls[cc].x = strips[tracks[track_select].strip][page].controls[cc].x - dx
+                      strips[tracks[track_select].strip][page].controls[cc].y = strips[tracks[track_select].strip][page].controls[cc].y - dy
+                      strips[tracks[track_select].strip][page].controls[cc].xsc = strips[tracks[track_select].strip][page].controls[cc].xsc - dx
+                      strips[tracks[track_select].strip][page].controls[cc].ysc = strips[tracks[track_select].strip][page].controls[cc].ysc - dy
+                      strips[tracks[track_select].strip][page].controls[cc].id = nil
                     end
+                    ctl_select = nil
+                    for i = c1, #strips[tracks[track_select].strip][page].controls do
+                      if ctl_select == nil then
+                        ctl_select = {}
+                        ctl_select[1] = {ctl = i}
+                      else
+                        local cs = #ctl_select+1
+                        ctl_select[cs] = {}
+                        ctl_select[cs].ctl = i                      
+                        ctl_select[cs].relx = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].x - strips[tracks[track_select].strip][page].controls[i].x
+                        ctl_select[cs].rely = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].y - strips[tracks[track_select].strip][page].controls[i].y
+                      end
+                    end                
+                    update_gfx = true
+                  elseif res == 2 then
+                    if #ctl_select > 1 then
+                      local y = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].y
+                      for i = 2, #ctl_select do
+                        if nz(strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].poslock, false) == false then
+                          strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].y = y
+                          local scale = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].scale
+                          strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ysc = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].y
+                                                                                     + math.floor(strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctl_info.cellh/2
+                                                                                     - (strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctl_info.cellh*scale)/2)
+                        end
+                      end
+                      ReselectSelection()
+                      update_gfx = true
+                    end
+                  elseif res == 3 then
+                    if #ctl_select > 1 then
+                      local x = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].x
+                      for i = 2, #ctl_select do
+                        if nz(strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].poslock, false) == false then
+                          strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].x = x
+                          local scale = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].scale
+                          strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].xsc = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].x
+                                                                                     + math.floor(strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].w/2
+                                                                                     - (strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].w*scale)/2)
+                        end
+                      end
+                      ReselectSelection()
+                      update_gfx = true
+                    end
+                  elseif res == 4 then
+                    for i = 1, #ctl_select do
+                      strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].poslock = not poslockctl_select
+                    end
+                    SetPosLockCtl()
+                  elseif res == 5 then
+                    DeleteSelectedCtls()
+                    update_gfx = true
+                  
+                  elseif res == 6 then
+                    trackfxparam_select = ctl_select[1].ctl
+                    show_actionchooser = true
+                    action_tbl = LoadActionIDs()
+                    action_tblF = {}
+                    action_tblF = table.copy(action_tbl)
                     
-                    if DELETE then
-                      file=io.open(fn,"w")
-                      local pickled_table=pickle(knbdata)
-                      file:write(pickled_table)
-                      file:close()
+                    update_gfx = true
+                    --OpenEB(12,'Please enter action name:')
+                  elseif res == 7 then
+                    trackfxparam_select = ctl_select[1].ctl
+                    OpenEB(13,'Please enter action command ID:')
+                  end
+                
+                end
+              
+              end
+              
+              lasso = nil
+              update_ctls = true
+            end
+          
+            if MOUSE_click(obj.sections[48]) then
+              if mouse.mx > obj.sections[48].w-40 then
+                show_paramlearn = not show_paramlearn
+                update_gfx = true
+              else           
+                trackedit_select = trackedit_select + 1 
+                if trackedit_select > #tracks then
+                  trackedit_select = -1
+                end
+                PopulateTrackFX()
+                PopulateTrackSendsInfo()
+                PopulateSpecial()
+                trctlslist_offset = 0
+                update_gfx = true 
+              end
+            elseif MOUSE_click_RB(obj.sections[48]) then
+              trackedit_select = trackedit_select - 1 
+              if trackedit_select < -1 then
+                trackedit_select = #tracks
+              end
+              PopulateTrackFX()
+              PopulateTrackSendsInfo()
+              PopulateSpecial()
+              update_gfx = true    
+            end
+            
+            if fxmode == 0 then
+              if MOUSE_click(obj.sections[41]) then
+                local i = math.floor((mouse.my - obj.sections[41].y) / butt_h)-2
+                if i == -1 then
+                  if mouse.mx < obj.sections[41].w/2 then
+                    flist_offset = flist_offset - F_butt_cnt
+                    if flist_offset < 0 then
+                      flist_offset = 0
+                    end
+                  else
+                    if flist_offset + F_butt_cnt < #trackfx then
+                      flist_offset = flist_offset + F_butt_cnt-1
+                    end          
+                  end
+                  update_gfx = true
+                elseif trackfx[i + flist_offset] then
+                  trackfx_select = i + flist_offset
+                  PopulateTrackFXParams()
+                  update_gfx = true
+                end
+              elseif MOUSE_click_RB(obj.sections[41]) then
+                local i = math.floor((mouse.my - obj.sections[41].y) / butt_h)-2
+                if i == -1 then
+                elseif i >= F_butt_cnt then
+                elseif trackfx[i + flist_offset] then
+                  local track = GetTrack(tracks[track_select].tracknum)
+                  if not reaper.TrackFX_GetOpen(track, i + flist_offset) then
+                    reaper.TrackFX_Show(track, i + flist_offset, 3)
+                  end
+                end        
+              end
+          
+              if MOUSE_click(obj.sections[42]) then
+                local i = math.floor((mouse.my - obj.sections[42].y) / butt_h)-2
+                local dp = true
+                if i == -1 then
+                  if mouse.mx < obj.sections[42].w/2 then
+                    plist_offset = plist_offset - P_butt_cnt
+                    if plist_offset < 0 then
+                      plist_offset = 0
+                    end
+                  else
+                    if plist_offset + P_butt_cnt < #trackfxparams then
+                      plist_offset = plist_offset + P_butt_cnt
+                    end          
+                  end
+                  update_gfx = true
+                elseif trackfxparams[i + plist_offset] then
+                  trackfxparam_select = i + plist_offset
+                  if mouse.ctrl then
+                    if tfxp_sel == nil then
+                      tfxp_sel = {}
+                      tfxp_sel[i + plist_offset] = true
+                      tfxp_last = i + plist_offset
+                    elseif tfxp_sel[i + plist_offset] then
+                      --remove
+                      tfxp_sel[i + plist_offset] = nil
+                    else
+                      tfxp_sel[i + plist_offset] = true
+                      tfxp_last = i + plist_offset
+                    end
+                    dp = false
+                  elseif mouse.shift then
+                    if tfxp_sel == nil then
+                      tfxp_sel = {}
+                      tfxp_sel[i + plist_offset] = true
+                      tfxp_last = i + plist_offset
+                    else
+                      if tfxp_last == nil then
+                      
+                      else
+                        local it = 1
+                        if tfxp_last > i + plist_offset then
+                          it = -1
+                        end
+                        tfxp_sel = {}
+                        for p = tfxp_last, i + plist_offset, it do
+                          tfxp_sel[p] = true  
+                        end
+                        tfxp_last = i + plist_offset
+                      end
+                      dp = false
+                    end
+                  
+                  elseif tfxp_sel and tfxp_sel[i + plist_offset] then
+                    --do nothing but drag
+                    tfxp_last = i + plist_offset
+                    
+                  else
+                    tfxp_sel = {}
+                    tfxp_sel[i + plist_offset] = true            
+                    tfxp_last = i + plist_offset
+                  end
+                  ctl_select = nil
+                  show_ctlbrowser = false
+                  
+                  update_gfx = true
+      
+                  if ctl_files[knob_select].imageidx ~= nil then
+                    local w,_ = gfx.getimgdim(ctl_files[knob_select].imageidx)
+                    local h = ctl_files[knob_select].cellh
+                    if w == 0 or h == 0 then
+                      ksel_size = {w = 50, h = 50}
+                    else
+                     ksel_size = {w = w/2, h = h/2}
+                   end
+                  else 
+                    ksel_size = {w = 50, h = 50}
+                  end
+                  if dp then
+                    mouse.context = contexts.dragparam
+                  end
+                end
+              end
+            elseif fxmode == 1 then
+              if MOUSE_click(obj.sections[41]) then
+                local i = math.floor((mouse.my - obj.sections[41].y) / butt_h)-2
+                if i == -1 then
+                  if mouse.mx < obj.sections[41].w/2 then
+                    trctltypelist_offset = trctltypelist_offset - F_butt_cnt
+                    if trctltypelist_offset < 0 then
+                      trctltypelist_offset = 0
+                    end
+                  else
+                    if trctltypelist_offset + F_butt_cnt < #trctltype_table then
+                      trctltypelist_offset = trctltypelist_offset + F_butt_cnt-1
+                    end          
+                  end
+                  update_gfx = true
+                elseif trctltype_table[i + trctltypelist_offset+1] then
+                  trctltype_select = i + trctltypelist_offset
+                  trctlslist_offset = 0
+                  if i + trctltypelist_offset == 2 then
+                    PopulateSpecial()
+                  end
+                  update_gfx = true
+                end
+              end
+    
+              if MOUSE_click(obj.sections[42]) then
+                local pcnt = 0
+                if trctltype_select == 0 then
+                  pcnt = #trctls_table
+                elseif trctltype_select == 1 then            
+                  pcnt = (#trsends_table+1)*3
+                elseif trctltype_select == 2 then
+                  pcnt = #special_table              
+                end
+                local i = math.floor((mouse.my - obj.sections[42].y) / butt_h)-2
+                if i == -1 then
+                  if mouse.mx < obj.sections[42].w/2 then
+                    trctlslist_offset = trctlslist_offset - P_butt_cnt
+                    if trctlslist_offset < 0 then
+                      trctlslist_offset = 0
+                    end
+                  else
+                    if trctlslist_offset + P_butt_cnt < #trctls_table-1 then
+                      trctlslist_offset = trctlslist_offset + P_butt_cnt
+                      if trctlslist_offset > pcnt-1 then
+                        trctlslist_offset = pcnt-1
+                      end
+                    end          
+                  end
+                  update_gfx = true
+                elseif i >= 0 and i < pcnt then
+                  if trctltype_select == 0 then
+                    trctl_select = i + trctlslist_offset+1
+                    ctl_select = nil
+                    show_ctlbrowser = false
+                    
+                    update_gfx = true
+        
+                    if ctl_files[knob_select].imageidx ~= nil then
+                      local w,_ = gfx.getimgdim(ctl_files[knob_select].imageidx)
+                      local h = ctl_files[knob_select].cellh
+                      if w == 0 or h == 0 then
+                        ksel_size = {w = 50, h = 50}
+                      else
+                       ksel_size = {w = w/2, h = h/2}
+                      end
+                    else 
+                      ksel_size = {w = 50, h = 50}
+                    end
+                    mouse.context = contexts.dragparam_tr
+                  elseif trctltype_select == 1 then
+                    trctl_select = i + trctlslist_offset+1
+                    ctl_select = nil
+                    show_ctlbrowser = false
+                    
+                    update_gfx = true
+        
+                    if ctl_files[knob_select].imageidx ~= nil then
+                      local w,_ = gfx.getimgdim(ctl_files[knob_select].imageidx)
+                      local h = ctl_files[knob_select].cellh
+                      if w == 0 or h == 0 then
+                        ksel_size = {w = 50, h = 50}
+                      else
+                       ksel_size = {w = w/2, h = h/2}
+                      end
+                    else 
+                      ksel_size = {w = 50, h = 50}
+                    end
+                    mouse.context = contexts.dragparam_snd              
+                  elseif trctltype_select == 2 then
+                    trctl_select = i + trctlslist_offset+1
+                    ctl_select = nil
+                    show_ctlbrowser = false
+                    
+                    update_gfx = true
+        
+                    if ctl_files[knob_select].imageidx ~= nil then
+                      local w,_ = gfx.getimgdim(ctl_files[knob_select].imageidx)
+                      local h = ctl_files[knob_select].cellh
+                      if w == 0 or h == 0 then
+                        ksel_size = {w = 50, h = 50}
+                      else
+                       ksel_size = {w = w/2, h = h/2}
+                      end
+                    else 
+                      ksel_size = {w = 50, h = 50}
+                    end
+                    mouse.context = contexts.dragparam_spec
+                  end
+                end
+              end
+              
+            end
+                    
+            if mouse.context and mouse.context == contexts.dragparam then
+              dragparam = {x = mouse.mx-ksel_size.w, y = mouse.my-ksel_size.h, type = 'track'}
+              reass_param = nil
+              if tracks[track_select] and tracks[track_select].strip ~= -1 then
+                for i = 1, #strips[tracks[track_select].strip][page].controls do
+                
+                  local xywh 
+                  xywh = {x = strips[tracks[track_select].strip][page].controls[i].x - surface_offset.x +obj.sections[10].x, 
+                          y = strips[tracks[track_select].strip][page].controls[i].y - surface_offset.y +obj.sections[10].y, 
+                          w = strips[tracks[track_select].strip][page].controls[i].w, 
+                          h = strips[tracks[track_select].strip][page].controls[i].ctl_info.cellh}    
+                  if MOUSE_over(xywh) then
+                    reass_param = i
+                    break
+                  end
+                end
+              end                    
+              update_surface = true
+            
+            elseif mouse.context and mouse.context == contexts.dragparamlrn then
+              dragparam = {x = mouse.mx-ksel_size.w, y = mouse.my-ksel_size.h, type = 'learn'}
+              reass_param = nil
+              if tracks[track_select] and tracks[track_select].strip ~= -1 then
+                for i = 1, #strips[tracks[track_select].strip][page].controls do
+                
+                  local xywh 
+                  xywh = {x = strips[tracks[track_select].strip][page].controls[i].x - surface_offset.x +obj.sections[10].x, 
+                          y = strips[tracks[track_select].strip][page].controls[i].y - surface_offset.y +obj.sections[10].y, 
+                          w = strips[tracks[track_select].strip][page].controls[i].w, 
+                          h = strips[tracks[track_select].strip][page].controls[i].ctl_info.cellh}    
+                  if MOUSE_over(xywh) then
+                    reass_param = i
+                    break
+                  end
+                end
+              end                    
+              update_surface = true
+            
+            elseif mouse.context and mouse.context == contexts.dragparam_tr then
+              dragparam = {x = mouse.mx-ksel_size.w, y = mouse.my-ksel_size.h, type = 'trctl'}
+              reass_param = nil
+              if tracks[track_select] and tracks[track_select].strip ~= -1 then
+                for i = 1, #strips[tracks[track_select].strip][page].controls do
+                
+                  local xywh 
+                  xywh = {x = strips[tracks[track_select].strip][page].controls[i].x - surface_offset.x +obj.sections[10].x, 
+                          y = strips[tracks[track_select].strip][page].controls[i].y - surface_offset.y +obj.sections[10].y, 
+                          w = strips[tracks[track_select].strip][page].controls[i].w, 
+                          h = strips[tracks[track_select].strip][page].controls[i].ctl_info.cellh}    
+                  if MOUSE_over(xywh) then
+                    reass_param = i
+                    break
+                  end
+                end
+              end                    
+              update_surface = true
+    
+            elseif mouse.context and mouse.context == contexts.dragparam_snd then
+              dragparam = {x = mouse.mx-ksel_size.w, y = mouse.my-ksel_size.h, type = 'trsnd'}
+              reass_param = nil
+              if tracks[track_select] and tracks[track_select].strip ~= -1 then
+                for i = 1, #strips[tracks[track_select].strip][page].controls do
+                
+                  local xywh 
+                  xywh = {x = strips[tracks[track_select].strip][page].controls[i].x - surface_offset.x +obj.sections[10].x, 
+                          y = strips[tracks[track_select].strip][page].controls[i].y - surface_offset.y +obj.sections[10].y, 
+                          w = strips[tracks[track_select].strip][page].controls[i].w, 
+                          h = strips[tracks[track_select].strip][page].controls[i].ctl_info.cellh}    
+                  if MOUSE_over(xywh) then
+                    reass_param = i
+                    break
+                  end
+                end
+              end                    
+              update_surface = true
+    
+            elseif mouse.context and mouse.context == contexts.dragparam_spec then
+              if trctl_select == 1 then
+                dragparam = {x = mouse.mx-ksel_size.w, y = mouse.my-ksel_size.h, type = 'action'}
+              elseif trctl_select >= 2 then
+                dragparam = {x = mouse.mx-ksel_size.w, y = mouse.my-ksel_size.h, type = 'pkmeter'}            
+              end
+              reass_param = nil
+              if tracks[track_select] and tracks[track_select].strip ~= -1 then
+                for i = 1, #strips[tracks[track_select].strip][page].controls do
+                
+                  local xywh 
+                  xywh = {x = strips[tracks[track_select].strip][page].controls[i].x - surface_offset.x +obj.sections[10].x, 
+                          y = strips[tracks[track_select].strip][page].controls[i].y - surface_offset.y +obj.sections[10].y, 
+                          w = strips[tracks[track_select].strip][page].controls[i].w, 
+                          h = strips[tracks[track_select].strip][page].controls[i].ctl_info.cellh}    
+                  if MOUSE_over(xywh) then
+                    reass_param = i
+                    break
+                  end
+                end
+              end                    
+              update_surface = true
+              
+            elseif dragparam ~= nil then
+              --Dropped
+              if dragparam.type == 'track' then
+                if reass_param == nil then
+                  if dragparam.x+ksel_size.w > obj.sections[10].x and dragparam.x+ksel_size.w < obj.sections[10].x+obj.sections[10].w and dragparam.y+ksel_size.h > obj.sections[10].y and dragparam.y+ksel_size.h < obj.sections[10].y+obj.sections[10].h then
+                    local i
+                    local cnt = 0
+                    local dpx, dpy = dragparam.x, dragparam.y
+                    for i = 0, #trackfxparams do
+                      if tfxp_sel[i] then
+                        trackfxparam_select = i
+                        Strip_AddParam()
+                        cnt = cnt + 1
+                        dragparam.x = math.floor(dpx + ((ksel_size.w*2+settings_gridsize) * (cnt % 8)))
+                        dragparam.y = math.floor(dpy + (ksel_size.h*2+(2*settings_gridsize)) * math.floor(cnt/8))
+                      end
+                    end
+                    tfxp_sel = nil
+                    
+                  end
+                else
+                  if dragparam.x+ksel_size.w > obj.sections[10].x and dragparam.x+ksel_size.w < obj.sections[10].x+obj.sections[10].w and dragparam.y+ksel_size.h > obj.sections[10].y and dragparam.y+ksel_size.h < obj.sections[10].y+obj.sections[10].h then
+                  
+                    local i
+                    local cnt = 0
+                    for i = 1, #trackfxparams do
+                      if tfxp_sel[i] then
+                        cnt = cnt + 1
+                      end
+                    end
+                    if cnt <= 1 then
+                      strips[tracks[track_select].strip][page].controls[reass_param].c_id = GenID()
+                      if tracks[trackedit_select].tracknum ~= tracks[track_select].tracknum then
+                        strips[tracks[track_select].strip][page].controls[reass_param].tracknum=tracks[trackedit_select].tracknum
+                        strips[tracks[track_select].strip][page].controls[reass_param].trackguid=tracks[trackedit_select].guid
+                      else
+                        strips[tracks[track_select].strip][page].controls[reass_param].tracknum=nil
+                        strips[tracks[track_select].strip][page].controls[reass_param].trackguid=nil                  
+                      end
+                      strips[tracks[track_select].strip][page].controls[reass_param].ctlcat = ctlcats.fxparam
+                      strips[tracks[track_select].strip][page].controls[reass_param].fxname=trackfx[trackfx_select].name
+                      strips[tracks[track_select].strip][page].controls[reass_param].fxguid=trackfx[trackfx_select].guid
+                      strips[tracks[track_select].strip][page].controls[reass_param].fxnum=trackfx[trackfx_select].fxnum
+                      strips[tracks[track_select].strip][page].controls[reass_param].fxfound = true
+                      strips[tracks[track_select].strip][page].controls[reass_param].param = trackfxparam_select
+                      strips[tracks[track_select].strip][page].controls[reass_param].param_info = trackfxparams[trackfxparam_select]
+                      strips[tracks[track_select].strip][page].controls[reass_param].val = GetParamValue(ctlcats.fxparam,
+                                                                                                         tracks[trackedit_select].tracknum,
+                                                                                                         trackfx[trackfx_select].fxnum,
+                                                                                                         trackfxparam_select, reass_param)
+                      strips[tracks[track_select].strip][page].controls[reass_param].defval = GetParamValue(ctlcats.fxparam,
+                                                                                                         tracks[trackedit_select].tracknum,
+                                                                                                         trackfx[trackfx_select].fxnum,
+                                                                                                         trackfxparam_select, reass_param)
+                    else
+                      OpenMsgBox(1, 'You cannot reassign multiple controls at once.', 1)
+                    end
+                    tfxp_sel = nil
+                  end
+                end
+              elseif dragparam.type == 'learn' then
+                if reass_param == nil then
+                  if dragparam.x+ksel_size.w > obj.sections[10].x and dragparam.x+ksel_size.w < obj.sections[10].x+obj.sections[10].w and dragparam.y+ksel_size.h > obj.sections[10].y and dragparam.y+ksel_size.h < obj.sections[10].y+obj.sections[10].h then
+                    if not MOUSE_over(obj.sections[115]) then
+                      Strip_AddParam()
+                    end
+                  end
+                else
+                  if dragparam.x+ksel_size.w > obj.sections[10].x and dragparam.x+ksel_size.w < obj.sections[10].x+obj.sections[10].w and dragparam.y+ksel_size.h > obj.sections[10].y and dragparam.y+ksel_size.h < obj.sections[10].y+obj.sections[10].h then
+                    if not MOUSE_over(obj.sections[115]) then
+                    
+                      if last_touch_fx.tracknum ~= tracks[track_select].tracknum then
+                        strips[tracks[track_select].strip][page].controls[reass_param].tracknum=last_touch_fx.tracknum
+                        strips[tracks[track_select].strip][page].controls[reass_param].trackguid=last_touch_fx.trguid
+                      else
+                        strips[tracks[track_select].strip][page].controls[reass_param].tracknum=nil
+                        strips[tracks[track_select].strip][page].controls[reass_param].trackguid=nil                  
+                      end
+                      strips[tracks[track_select].strip][page].controls[reass_param].c_id = GenID()
+                      strips[tracks[track_select].strip][page].controls[reass_param].ctlcat = ctlcats.fxparam
+                      strips[tracks[track_select].strip][page].controls[reass_param].fxname=last_touch_fx.fxname
+                      strips[tracks[track_select].strip][page].controls[reass_param].fxguid=last_touch_fx.fxguid
+                      strips[tracks[track_select].strip][page].controls[reass_param].fxnum=last_touch_fx.fxnum
+                      strips[tracks[track_select].strip][page].controls[reass_param].fxfound = true
+                      strips[tracks[track_select].strip][page].controls[reass_param].param = last_touch_fx.paramnum
+                      strips[tracks[track_select].strip][page].controls[reass_param].param_info = {paramname = last_touch_fx.prname,
+                                                                                                   paramnum = last_touch_fx.paramnum}
+                      strips[tracks[track_select].strip][page].controls[reass_param].val = GetParamValue(ctlcats.fxparam,
+                                                                                                         last_touch_fx.tracknum,
+                                                                                                         last_touch_fx.fxnum,
+                                                                                                         last_touch_fx.paramnum, reass_param)
+                      strips[tracks[track_select].strip][page].controls[reass_param].defval = GetParamValue(ctlcats.fxparam,
+                                                                                                         last_touch_fx.tracknum,
+                                                                                                         last_touch_fx.fxnum,
+                                                                                                         last_touch_fx.paramnum, reass_param)
                       
                     end
-                    SetCbiSelect()
-                    update_surface = true
-                  
-                  end
-                end            
-              end            
-            
-            elseif MOUSE_click(obj.sections[201]) then
-              cbi_offset = 0
-              cbi_filter = -1
-              PopulateCtlBrowser_Imgs()
-              update_surface = true
-            elseif MOUSE_click(obj.sections[202]) then
-              cbi_offset = 0
-              cbi_filter = 0
-              PopulateCtlBrowser_Imgs()
-              update_surface = true
-            elseif MOUSE_click(obj.sections[203]) then
-              cbi_offset = 0
-              cbi_filter = 1
-              PopulateCtlBrowser_Imgs()
-              update_surface = true
-            elseif MOUSE_click(obj.sections[204]) then
-              cbi_offset = 0
-              cbi_filter = 2
-              PopulateCtlBrowser_Imgs()
-              update_surface = true
-            elseif MOUSE_click(obj.sections[205]) then
-              cbi_offset = 0
-              cbi_filter = 3
-              PopulateCtlBrowser_Imgs()
-              update_surface = true
-            elseif MOUSE_click(obj.sections[206]) then
-              cbi_offset = 0
-              cbi_filter = 4
-              PopulateCtlBrowser_Imgs()
-              update_surface = true
-                          
-            end
-            
-            
-            noscroll = true
-            
-          elseif ctl_select ~= nil and (MOUSE_click(obj.sections[45]) or MOUSE_click_RB(obj.sections[45])) then
-            
-            --CONTROL OPTIONS
-            
-            if mouse.LB and mouse.my > obj.sections[45].y and mouse.my < obj.sections[45].y+butt_h then
-              
-              show_cycleoptions = false
-              ctl_page = ctl_page + 1
-              if ctl_page > 1 then
-                ctl_page = 0
-              end
-              update_gfx = true
-            end
-            
-            if ctl_page == 0 then
-              
-              if mouse.context == nil and MOUSE_click(obj.sections[90]) then
-              
-                knob_select = knob_select - 1
-                if knob_select < 0 then
-                  knob_select = #ctl_files
-                end
-                update_gfx = true
-              
-              elseif mouse.context == nil and MOUSE_click(obj.sections[91]) then
-              
-                knob_select = knob_select + 1
-                if knob_select > #ctl_files then
-                  knob_select = 0
-                end
-                update_gfx = true
-
-              elseif mouse.LB and mouse.my > obj.sections[45].y+butt_h and mouse.my < obj.sections[45].y+150 then
-              
-                PopulateCtlBrowser_Imgs()
-                cbi_select = knob_select
-                
-                SetCbiSelect()
-                
-                show_ctlbrowser = true
-                update_surface = true              
-                
-                --[[knob_select = knob_select + 1
-                if knob_select > #ctl_files then
-                  knob_select = 0
-                end
-                update_gfx = true]]
-              
-              --[[elseif mouse.RB and mouse.my > obj.sections[45].y and mouse.my < obj.sections[45].y+150 then
-    
-                knob_select = knob_select - 1
-                if knob_select < 0 then
-                  knob_select = #ctl_files
-                end
-                update_gfx = true]]
-              
-              end
-    
-              if MOUSE_click(obj.sections[66]) then
-              
-                maxdp_select = F_limit(maxdp_select + 1, -1, 3)
-                for i = 1, #ctl_select do
-                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].maxdp = maxdp_select
-                end            
-                update_gfx = true
-              
-              elseif MOUSE_click_RB(obj.sections[66]) then
-    
-                maxdp_select = F_limit(maxdp_select - 1, -1, 3)
-                for i = 1, #ctl_select do
-                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].maxdp = maxdp_select
-                end            
-                update_gfx = true
-              
-              end
-    
-              if MOUSE_click(obj.sections[52]) then
-                show_paramname = not show_paramname
-                for i = 1, #ctl_select do
-                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].show_paramname = show_paramname
-                end            
-                update_gfx = true
-              end
-    
-              if MOUSE_click(obj.sections[53]) then
-                show_paramval = not show_paramval
-                for i = 1, #ctl_select do
-                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].show_paramval = show_paramval
-                end            
-                update_gfx = true
-              end
-    
-              if MOUSE_click(obj.sections[54]) then
-                local retval, c = reaper.GR_SelectColor(_,ConvertColorString(textcol_select))
-                if retval ~= 0 then
-                  textcol_select = ConvertColor(c)
-                  for i = 1, #ctl_select do
-                    strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].textcol = textcol_select
-                  end
-                  update_gfx = true
-                end
-              end
-    
-              if MOUSE_click(obj.sections[55]) then
-                ctltype_select = ctltype_select + 1
-                if ctltype_select > #ctltype_table then ctltype_select = 1 end
-                for i = 1, #ctl_select do
-                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctltype = ctltype_select
-                end
-                update_gfx = true
-              elseif MOUSE_click_RB(obj.sections[55]) then
-                ctltype_select = ctltype_select - 1
-                if ctltype_select < 1 then ctltype_select = #ctltype_table end
-                for i = 1, #ctl_select do
-                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctltype = ctltype_select
-                end
-                update_gfx = true
-              end
-    
-              if ctltype_select == 4 and MOUSE_click(obj.sections[67]) then
-                show_cycleoptions = not show_cycleoptions
-                if show_cycleoptions then
-                  cycle_select.val = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].val
-                end
-                update_gfx = true
-              else
-                show_cycleoptions = false          
-              end
-              
-              if MOUSE_click(obj.sections[59]) then
-                if ctl_select and #ctl_select > 0 then
-                  --EditCtlName()
-                  if strips and strips[tracks[track_select].strip] then
-                    OpenEB(2,'Please enter a name for the selected controls:',strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].param_info.paramname)
-                    update_gfx = true
                   end
                 end
-              end
-
-              if MOUSE_click(obj.sections[68]) then
-                toffY = not toffY
-                update_gfx = true
-              end
-                            
-              if MOUSE_click_RB(obj.sections[57]) then
-                defval_select = GetParamValue_Ctl(ctl_select[1].ctl)
-                for i = 1, #ctl_select do
-                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].defval = GetParamValue_Ctl(ctl_select[i].ctl)
-                end
-                update_gfx = true
-              end
-            
-              if MOUSE_click(obj.sections[51]) then
-                --apply
-                if ctl_files[knob_select].imageidx == nil then  
-                  image_count = F_limit(image_count + 1,0,image_max)
-                  gfx.loadimg(image_count, controls_path..ctl_files[knob_select].fn)
-                  ctl_files[knob_select].imageidx = image_count
-                end
-                local w, _ = gfx.getimgdim(ctl_files[knob_select].imageidx)
-                for i = 1, #ctl_select do
-                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].knob_select = knob_select
-                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctl_info.fn = ctl_files[knob_select].fn
-                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctl_info.imageidx = ctl_files[knob_select].imageidx
-                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctl_info.frames = ctl_files[knob_select].frames
-                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].w = w
-                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctl_info.cellh = ctl_files[knob_select].cellh
-                  
-                  local scale = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].scale
-                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].xsc = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].x
-                                                                                             + math.floor(strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].w/2
-                                                                                             - (strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].w*scale)/2)
-                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ysc = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].y
-                                                                                             + math.floor(strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctl_info.cellh/2
-                                                                                             - (strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctl_info.cellh*scale)/2)
-                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].wsc = w*scale
-                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].hsc = ctl_files[knob_select].cellh*scale
-                end
-                update_gfx = true
-              end
-              
-              if mouse.context == nil and MOUSE_click(obj.sections[50]) then mouse.context = contexts.scaleslider 
-              elseif mouse.context == nil and MOUSE_click(obj.sections[56]) then mouse.context = contexts.offsetslider
-              elseif mouse.context == nil and MOUSE_click(obj.sections[65]) then mouse.context = contexts.valoffsetslider 
-              elseif mouse.context == nil and MOUSE_click(obj.sections[57]) then omx = -1 ctlpos = defval_select mouse.context = contexts.defvalslider
-              elseif mouse.context == nil and MOUSE_click(obj.sections[58]) then mouse.context = contexts.textsizeslider end
-      
-            elseif ctl_page == 1 then
-              
-              if MOUSE_click(obj.sections[126]) then
-                OpenEB(4,'Please enter normalized min value:')
-              
-              elseif MOUSE_click(obj.sections[127]) then
-                OpenEB(16,'Please enter normalized max value:')
-              end
-              
-              if MOUSE_click(obj.sections[125]) then
-                --EditDValOffset()
-                OpenEB(3,'Please enter a display offset value:',strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].dvaloffset)
-              end
-  
-              if MOUSE_click(obj.sections[134]) then
-                horiz_select = not horiz_select
-                for i = 1, #ctl_select do
-                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].horiz = horiz_select
-                end
-                update_gfx = true              
-              end            
-  
-              if MOUSE_click(obj.sections[131]) then
-                knob_scalemode_select = knob_scalemode_select + 1
-                if knob_scalemode_select > #scalemode_preset_table then knob_scalemode_select = 2 end
-                if knob_scalemode_select == 2 then
-                  scalemode_select = 8
-                  framemode_select = 1
-                elseif knob_scalemode_select == 3 then
-                  scalemode_select = 12
-                  framemode_select = 2              
-                end
-                
-                for i = 1, #ctl_select do
-                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].scalemode = scalemode_select
-                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].framemode = framemode_select                
-                end
-                update_gfx = true                        
-              end
-  
-              if MOUSE_click(obj.sections[132]) then
-                scalemode_select = scalemode_select + 1
-                if scalemode_select > #scalemode_table then scalemode_select = 1 end
-                for i = 1, #ctl_select do
-                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].scalemode = scalemode_select
-                end
-                SetKnobScaleMode()
-                update_gfx = true                                      
-              elseif MOUSE_click_RB(obj.sections[132]) then
-                scalemode_select = scalemode_select - 1
-                if scalemode_select < 1 then scalemode_select = #scalemode_table end
-                for i = 1, #ctl_select do
-                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].scalemode = scalemode_select
-                end
-                SetKnobScaleMode()
-                update_gfx = true                                      
-              end
-            
-              if MOUSE_click(obj.sections[133]) then
-                framemode_select = framemode_select + 1
-                if framemode_select > #framemode_table then framemode_select = 1 end
-                for i = 1, #ctl_select do
-                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].framemode = framemode_select
-                end
-                SetKnobScaleMode()
-                update_gfx = true                                      
-              elseif MOUSE_click_RB(obj.sections[133]) then
-                framemode_select = framemode_select - 1
-                if framemode_select < 1 then framemode_select = #framemode_table end
-                for i = 1, #ctl_select do
-                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].framemode = framemode_select
-                end
-                SetKnobScaleMode()
-                update_gfx = true                                      
-              end
-            
-              if mouse.context == nil and MOUSE_click(obj.sections[128]) then
-                mouse.context = contexts.minov
-                trackfxparam_select = ctl_select[1].ctl
-                ctlpos = minov_select
-                mouse.slideoff = obj.sections[128].y+obj.sections[128].h/2 - mouse.my
-                oms = mouse.shift
-                for i = 1, #ctl_select do
-                  local min, max = GetParamMinMax_ctl(ctl_select[i].ctl)
-                  ctl_select[i].denorm_defval = DenormalizeValue(min,
-                                                                 max,
-                                                                 strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].defval)
-                end
-                minov_act = 'minov'
-                
-              elseif mouse.context == nil and MOUSE_click(obj.sections[129]) then 
-                mouse.context = contexts.maxov 
-                trackfxparam_select = ctl_select[1].ctl
-                ctlpos = maxov_select
-                mouse.slideoff = obj.sections[129].y+obj.sections[129].h/2 - mouse.my
-                oms = mouse.shift
-                for i = 1, #ctl_select do
-                  local min, max = GetParamMinMax_ctl(ctl_select[i].ctl)
-                  ctl_select[i].denorm_defval = DenormalizeValue(min,
-                                                                 max,
-                                                                 strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].defval)
-                end
-                maxov_act = 'maxov'
-  
-              end
-            
-            end
-          
-          elseif ctl_select ~= nil and show_cycleoptions and gfx.mouse_wheel ~= 0 and MOUSE_over(obj.sections[103]) then
-          
-            local v = gfx.mouse_wheel/120
-            cyclist_offset = F_limit(cyclist_offset - v, 0, max_cycle-8)
-            update_gfx = true
-            gfx.mouse_wheel = 0
-          
-          elseif ctl_select ~= nil and show_cycleoptions and (MOUSE_click(obj.sections[100]) or MOUSE_click_RB(obj.sections[100])) then
-          
-            -- CYCLE OPTS
-            
-            if MOUSE_click(obj.sections[102]) and mouse.ctrl == false then
-              cyclist_offset = 0
-              cycle_select.statecnt = F_limit(cycle_select.statecnt+1,0,max_cycle)
-              Cycle_InitData()
-              update_gfx = true
-            elseif MOUSE_click_RB(obj.sections[102]) then
-              cyclist_offset = 0
-              cycle_select.statecnt = F_limit(cycle_select.statecnt-1,0,max_cycle)
-              Cycle_InitData()
-              update_gfx = true
-            elseif MOUSE_click(obj.sections[102]) and (mouse.ctrl == true or mouse.shift == true) then
-            
-              OpenEB(17,'Enter number of cycle states:')
-            
-            end
-            
-            if mouse.context == nil and MOUSE_click(obj.sections[101]) then 
-              mouse.context = contexts.cycleknob
-              cycle_editmode = true 
-              trackfxparam_select = ctl_select[1].ctl
-              ctlpos = cycle_select.val
-              mouse.slideoff = obj.sections[101].y+obj.sections[101].h/2 - mouse.my
-              oms = mouse.shift
-            end
-            
-            if MOUSE_click(obj.sections[103]) then
-              local i = math.floor((mouse.my - obj.sections[103].y) / butt_h)+1
-              cycle_select.selected = F_limit(i+cyclist_offset,1,cycle_select.statecnt)
-              --strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].cycledata.pos = cycle_select.selected
-              update_gfx = true
-            elseif MOUSE_click_RB(obj.sections[103]) then
-              if cycle_select and cycle_select.selected then
-                local mstr = 'Rename||Delete'
-                gfx.x, gfx.y = mouse.mx, mouse.my
-                local res = OpenMenu(mstr)
-                if res == 1 then
-                  --txt = EditValue(10)
-                  OpenEB(10,'Please enter value:')
-                elseif res == 2 then
-                  cycle_select = Cycle_DeleteStep(cycle_select.selected)
-                  update_gfx = true
-                end
-              end            
-            end          
-  
-            if MOUSE_click(obj.sections[104]) then
-              Cycle_Auto()
-              cyclist_offset = 0
-              update_gfx = true            
-            end
-
-            if MOUSE_click(obj.sections[110]) then
-              mouse.context = contexts.auto_delayslider
-            end
-          
-            if MOUSE_click(obj.sections[105]) then
-              local i = math.floor((mouse.mx-obj.sections[105].x)/(obj.sections[105].w/2))
-              if #cycle_select < 8 then
-                cyclist_offset = 0
-              else
-                if i >= 1 then
-                  cyclist_offset = F_limit(cyclist_offset+1,0,math.max(#cycle_select-8,0))
+                      
+              elseif dragparam.type == 'trctl' or dragparam.type == 'trsnd' then
+                if reass_param == nil then
+                  if dragparam.x+ksel_size.w > obj.sections[10].x and dragparam.x+ksel_size.w < obj.sections[10].x+obj.sections[10].w and dragparam.y+ksel_size.h > obj.sections[10].y and dragparam.y+ksel_size.h < obj.sections[10].y+obj.sections[10].h then
+                    trackfxparam_select = i
+                    Strip_AddParam()              
+                  end
                 else
-                  cyclist_offset = F_limit(cyclist_offset-1,0,math.max(#cycle_select-8,0))            
+                  local cnt = 1
+                  if cnt <= 1 then
+                    if tracks[trackedit_select].tracknum ~= tracks[track_select].tracknum then
+                      strips[tracks[track_select].strip][page].controls[reass_param].tracknum=tracks[trackedit_select].tracknum
+                      strips[tracks[track_select].strip][page].controls[reass_param].trackguid=tracks[trackedit_select].guid
+                    else
+                      strips[tracks[track_select].strip][page].controls[reass_param].tracknum=nil
+                      strips[tracks[track_select].strip][page].controls[reass_param].trackguid=nil                  
+                    end
+                    strips[tracks[track_select].strip][page].controls[reass_param].c_id = GenID()
+                    strips[tracks[track_select].strip][page].controls[reass_param].fxguid=nil
+                    strips[tracks[track_select].strip][page].controls[reass_param].fxnum=nil
+                    strips[tracks[track_select].strip][page].controls[reass_param].fxfound = true
+                    strips[tracks[track_select].strip][page].controls[reass_param].param = trctl_select
+    
+                    if dragparam.type == 'trctl' then
+                      strips[tracks[track_select].strip][page].controls[reass_param].ctlcat = ctlcats.trackparam
+                      strips[tracks[track_select].strip][page].controls[reass_param].fxname='Track Parameter'
+                      strips[tracks[track_select].strip][page].controls[reass_param].param_info = {paramname = 'Track '..trctls_table[trctl_select].name,
+                                                                                                   paramnum = trctl_select}
+                      strips[tracks[track_select].strip][page].controls[reass_param].val = GetParamValue(ctlcats.trackparam,
+                                                                                                          tracks[trackedit_select].tracknum,
+                                                                                                          nil,
+                                                                                                          trctl_select, nil)
+                      strips[tracks[track_select].strip][page].controls[reass_param].defval = strips[tracks[track_select].strip][page].controls[reass_param].val 
+                      
+                    elseif dragparam.type == 'trsnd' then
+                      local sidx = math.floor((trctl_select-1) / 3)
+                      local pidx = (trctl_select-1) % 3 +1
+                      strips[tracks[track_select].strip][page].controls[reass_param].ctlcat = ctlcats.tracksend
+                      strips[tracks[track_select].strip][page].controls[reass_param].fxname='Track Send'
+                      strips[tracks[track_select].strip][page].controls[reass_param].param_info = {paramname = trsends_table[sidx][pidx].name,
+                                                                                                   paramnum = trctl_select,
+                                                                                                   paramidx = trsends_table[sidx].idx,
+                                                                                                   paramstr = trsends_table[sidx][pidx].parmname,
+                                                                                                   paramdesttrnum = trsends_table[sidx].desttracknum,
+                                                                                                   paramdestguid = trsends_table[sidx].desttrackguid,
+                                                                                                   paramdestchan = trsends_table[sidx].dstchan,
+                                                                                                   paramsrcchan = trsends_table[sidx].srcchan}
+                      strips[tracks[track_select].strip][page].controls[reass_param].val = GetParamValue(ctlcats.tracksend,
+                                                                                                          tracks[trackedit_select].tracknum,
+                                                                                                          nil,
+                                                                                                          trctl_select, reass_param)
+                      strips[tracks[track_select].strip][page].controls[reass_param].defval = strips[tracks[track_select].strip][page].controls[reass_param].val
+                    end
+                  else
+                    OpenMsgBox(1, 'You cannot reassign multiple controls at once.', 1)
+                  end
+                end            
+              elseif dragparam.type == 'action' then
+                if reass_param == nil then
+                  if dragparam.x+ksel_size.w > obj.sections[10].x and dragparam.x+ksel_size.w < obj.sections[10].x+obj.sections[10].w and dragparam.y+ksel_size.h > obj.sections[10].y and dragparam.y+ksel_size.h < obj.sections[10].y+obj.sections[10].h then
+                    trackfxparam_select = i
+                    Strip_AddParam()              
+                  end
+                else
+                
+                end
+              elseif dragparam.type == 'pkmeter' then
+                if reass_param == nil then
+                  if dragparam.x+ksel_size.w > obj.sections[10].x and dragparam.x+ksel_size.w < obj.sections[10].x+obj.sections[10].w and dragparam.y+ksel_size.h > obj.sections[10].y and dragparam.y+ksel_size.h < obj.sections[10].y+obj.sections[10].h then
+                    trackfxparam_select = i
+                    Strip_AddParam()              
+                  end
+                else
+                
                 end
               end
-              update_gfx = true            
+              
+              --if mouse.mx > obj.sections[10].x then
+                tfxp_sel = nil
+                if tfxp_last then
+                  tfxp_sel = {}
+                  tfxp_sel[tfxp_last] = true
+                end
+              --end
+              reass_param = nil
+              dragparam = nil
+              update_gfx = true
+            end
+          
+            
+          
+            if ctl_select ~= nil then
+              show_ctloptions = true
+            else
+              show_ctloptions = false
+              ctl_page = 0
+            end
+          
+          end -- show_actionchooser
+                  
+        elseif submode == 1 then
+  
+          if gfx.mouse_wheel ~= 0 then
+            local v = gfx.mouse_wheel/120
+            if MOUSE_over(obj.sections[44]) then
+              glist_offset = F_limit(glist_offset - v, 0, #graphics_files)
+              update_gfx = true
+              gfx.mouse_wheel = 0
+            end
+          end
+        
+          local clicklblopts = false
+          
+          local char=gfx.getchar()
+          if gfx2_select ~= nil and char ~= 0 then
+            if char == 0x6C656674 then -- left arrow
+              if strips[tracks[track_select].strip][page].graphics[gfx2_select].poslock == false then
+                strips[tracks[track_select].strip][page].graphics[gfx2_select].x = 
+                              strips[tracks[track_select].strip][page].graphics[gfx2_select].x - 1
+              end
+              update_gfx = true
+            elseif char == 0x72676874 then -- right arrow
+              if strips[tracks[track_select].strip][page].graphics[gfx2_select].poslock == false then
+                strips[tracks[track_select].strip][page].graphics[gfx2_select].x = 
+                              strips[tracks[track_select].strip][page].graphics[gfx2_select].x + 1
+              end
+              update_gfx = true
+            elseif char == 0x7570 then -- up arrow
+              if strips[tracks[track_select].strip][page].graphics[gfx2_select].poslock == false then
+                strips[tracks[track_select].strip][page].graphics[gfx2_select].y = 
+                              strips[tracks[track_select].strip][page].graphics[gfx2_select].y - 1
+              end
+              update_gfx = true
+            elseif char == 0x646F776E then -- down arrow
+              if strips[tracks[track_select].strip][page].graphics[gfx2_select].poslock == false then
+                strips[tracks[track_select].strip][page].graphics[gfx2_select].y = 
+                              strips[tracks[track_select].strip][page].graphics[gfx2_select].y + 1
+              end
+              update_gfx = true
+            end
+          
+          elseif gfx2_select ~= nil and show_lbloptions and (MOUSE_click(obj.sections[49]) or MOUSE_click_RB(obj.sections[49])) then
+            
+            -- LBL OPTIONS
+            clicklblopts = true
+          
+            if MOUSE_click(obj.sections[140]) then
+              --EditLabel(7,gfx_text_select)
+              if strips and strips[tracks[track_select].strip] then
+                OpenEB(7,'Please enter text for label:',gfx_text_select)
+              end
+            end          
+  
+            if MOUSE_click(obj.sections[147]) then
+              --EditFont()
+              if strips and strips[tracks[track_select].strip] then
+                OpenEB(8,'Please enter font name:')
+              end
+            end          
+          
+            if MOUSE_click(obj.sections[142]) then
+              local retval, c = reaper.GR_SelectColor(_,ConvertColorString(gfx_textcol_select))
+              if retval ~= 0 then
+                gfx_textcol_select = ConvertColor(c)
+                strips[tracks[track_select].strip][page].graphics[gfx2_select].text_col = gfx_textcol_select
+                update_gfx = true
+              end
             end
             
-            if MOUSE_click(obj.sections[106]) then
-              trackfxparam_select = ctl_select[1].ctl
-              strips[tracks[track_select].strip][page].controls[trackfxparam_select].cycledata = Cycle_CopySelectOut()
-              strips[tracks[track_select].strip][page].controls[trackfxparam_select].cycledata.pos = cycle_select.selected
-              strips[tracks[track_select].strip][page].controls[trackfxparam_select].dirty = true
-              show_cycleoptions = false
-              cycle_editmode = false
+            if MOUSE_click(obj.sections[143]) then
+              gfx_font_select.bold = not gfx_font_select.bold
+              strips[tracks[track_select].strip][page].graphics[gfx2_select].font.bold = gfx_font_select.bold
               update_gfx = true
             end
   
-            if MOUSE_click(obj.sections[107]) then
-              cycle_select.mapptof = not cycle_select.mapptof
+            if MOUSE_click(obj.sections[144]) then
+              gfx_font_select.italics = not gfx_font_select.italics
+              strips[tracks[track_select].strip][page].graphics[gfx2_select].font.italics = gfx_font_select.italics
               update_gfx = true
-            elseif MOUSE_click(obj.sections[108]) then
-              cycle_select.draggable = not cycle_select.draggable
+            end
+  
+            if MOUSE_click(obj.sections[145]) then
+              gfx_font_select.underline = not gfx_font_select.underline
+              strips[tracks[track_select].strip][page].graphics[gfx2_select].font.underline = gfx_font_select.underline
               update_gfx = true
-            elseif MOUSE_click(obj.sections[109]) then
-              cycle_select.spread = not cycle_select.spread
+            end
+  
+            if MOUSE_click(obj.sections[146]) then
+              gfx_font_select.shadow = not gfx_font_select.shadow
+              strips[tracks[track_select].strip][page].graphics[gfx2_select].font.shadow = gfx_font_select.shadow
               update_gfx = true
-            end          
+            end
+            
+            if mouse.context == nil and MOUSE_click(obj.sections[141]) then mouse.context = contexts.textsizeslider 
+            elseif mouse.context == nil and MOUSE_click(obj.sections[148]) then mouse.context = contexts.shadxslider
+            elseif mouse.context == nil and MOUSE_click(obj.sections[149]) then mouse.context = contexts.shadyslider
+            elseif mouse.context == nil and MOUSE_click(obj.sections[150]) then mouse.context = contexts.shadaslider end
+            
+          end
+        
+          if mouse.context and mouse.context == contexts.textsizeslider then
+            local val = F_limit(MOUSE_sliderHBar(obj.sections[141]),0,1)
+            if val ~= nil then
+              gfx_font_select.size = F_limit((val*250),8,250)
+              --for i = 1, #ctl_select do
+              strips[tracks[track_select].strip][page].graphics[gfx2_select].font.size = gfx_font_select.size
+              --end            
+              update_gfx = true
+            end
+          elseif mouse.context and mouse.context == contexts.shadxslider then
+            local val = F_limit(MOUSE_sliderHBar(obj.sections[148]),0,1)
+            if val ~= nil then
+              gfx_font_select.shadow_x = math.floor((val*30)-15)
+              --for i = 1, #ctl_select do
+              strips[tracks[track_select].strip][page].graphics[gfx2_select].font.shadow_x = gfx_font_select.shadow_x
+              --end            
+              update_gfx = true
+            end
+          elseif mouse.context and mouse.context == contexts.shadyslider then
+            local val = F_limit(MOUSE_sliderHBar(obj.sections[149]),0,1)
+            if val ~= nil then
+              gfx_font_select.shadow_y = math.floor((val*30)-15)
+              --for i = 1, #ctl_select do
+              strips[tracks[track_select].strip][page].graphics[gfx2_select].font.shadow_y = gfx_font_select.shadow_y
+              --end            
+              update_gfx = true
+            end
+          elseif mouse.context and mouse.context == contexts.shadaslider then
+            local val = F_limit(MOUSE_sliderHBar(obj.sections[150]),0,1)
+            if val ~= nil then
+              gfx_font_select.shadow_a = val
+              --for i = 1, #ctl_select do
+              strips[tracks[track_select].strip][page].graphics[gfx2_select].font.shadow_a = gfx_font_select.shadow_a
+              --end            
+              update_gfx = true
+            end
+          end
           
-          elseif mouse.mx > obj.sections[10].x then
+          if MOUSE_click(obj.sections[44]) then
+            local i = math.floor((mouse.my - obj.sections[44].y) / butt_h)-1
+            
+            if i == -1 then
+              if mouse.mx < obj.sections[44].w/2 then
+                glist_offset = glist_offset - G_butt_cnt
+                if glist_offset < 0 then
+                  glist_offset = 0
+                end
+              else
+                if glist_offset + G_butt_cnt < #graphics_files then
+                  glist_offset = glist_offset + G_butt_cnt
+                end
+              end
+              update_gfx = true
+            elseif graphics_files[i + glist_offset] then
+              gfx_select = i + glist_offset
+              
+              --load temp image
+              gfx.loadimg(1023,graphics_path..graphics_files[gfx_select].fn)
+              draggfx_w, draggfx_h = gfx.getimgdim(1023)
+              
+              update_gfx = true
+              mouse.context = contexts.draggfx
+            end
+            
+          end
           
-            --SURFACE
+          if mouse.context and mouse.context == contexts.draggfx then
+            draggfx = {x = mouse.mx - draggfx_w/2, y = mouse.my - draggfx_h/2}
+            update_surface = true
+          elseif draggfx ~= nil then
+            --Dropped
+            if mouse.mx > obj.sections[10].x and mouse.mx < obj.sections[10].x+obj.sections[10].w and mouse.my > obj.sections[10].y and mouse.my < obj.sections[10].y+obj.sections[10].h then
+              Strip_AddGFX(gfxtype.img)
+            end
+            
+            draggfx = nil
+            update_gfx = true
+          end
+        
+          if mouse.mx > obj.sections[10].x and clicklblopts == false then
+            if strips and tracks[track_select] and strips[tracks[track_select].strip] then
+            
+              if gfx2_select ~= nil then
+              
+                local selrect = CalcGFXSelRect()
+                selrect.x = selrect.x - surface_offset.x + obj.sections[10].x
+                selrect.y = selrect.y - surface_offset.y + obj.sections[10].y
+                local xywh = {x = selrect.x+selrect.w-5,
+                              y = selrect.y+selrect.h/2-5,
+                              w = 10,
+                              h = 10}
+                if mouse.context == nil and MOUSE_click(xywh) then
+                  if poslock_select == false then
+                    mouse.context = contexts.stretch_x
+                    gfx2_stretch = {mx = mouse.mx, sw = strips[tracks[track_select].strip][page].graphics[gfx2_select].stretchw}
+                  end
+                end
+  
+                local xywh = {x = selrect.x+selrect.w/2-5,
+                              y = selrect.y+selrect.h-5,
+                              w = 10,
+                              h = 10}
+                if mouse.context == nil and MOUSE_click(xywh) then
+                  if poslock_select == false then
+                    mouse.context = contexts.stretch_y
+                    gfx2_stretch = {my = mouse.my, sh = strips[tracks[track_select].strip][page].graphics[gfx2_select].stretchh}
+                  end
+                end
+  
+                local xywh = {x = selrect.x+selrect.w-5,
+                              y = selrect.y+selrect.h-5,
+                              w = 10,
+                              h = 10}
+                if mouse.context == nil and MOUSE_click(xywh) then
+                  if poslock_select == false then
+                    mouse.context = contexts.stretch_xy
+                    gfx2_stretch = {mx = mouse.mx, my = mouse.my, sw = strips[tracks[track_select].strip][page].graphics[gfx2_select].stretchw,
+                                                                  sh = strips[tracks[track_select].strip][page].graphics[gfx2_select].stretchh}
+                  end
+                end
+              
+                if mouse.context and mouse.context == contexts.stretch_x then
+                
+                  strips[tracks[track_select].strip][page].graphics[gfx2_select].stretchw = math.max(math.floor((gfx2_stretch.sw + (mouse.mx-gfx2_stretch.mx))/settings_gridsize)*settings_gridsize,2)
+                  update_gfx = true
+                
+                elseif mouse.context and mouse.context == contexts.stretch_y then
+                
+                  strips[tracks[track_select].strip][page].graphics[gfx2_select].stretchh =  math.max(math.floor((gfx2_stretch.sh + (mouse.my-gfx2_stretch.my))/settings_gridsize)*settings_gridsize,2)
+                  update_gfx = true
+                  
+                elseif mouse.context and mouse.context == contexts.stretch_xy then
+                
+                  strips[tracks[track_select].strip][page].graphics[gfx2_select].stretchw = math.max(math.floor((gfx2_stretch.sw + (mouse.mx-gfx2_stretch.mx))/settings_gridsize)*settings_gridsize,2)
+                  strips[tracks[track_select].strip][page].graphics[gfx2_select].stretchh = math.max(math.floor((gfx2_stretch.sh + (mouse.my-gfx2_stretch.my))/settings_gridsize)*settings_gridsize,2)
+                  update_gfx = true
+  
+                end            
+              
+              end
+              
+              local clickxywh = false
+              if mouse.context == nil then
+                for i = #strips[tracks[track_select].strip][page].graphics,1,-1 do
+                  local xywh
+                  xywh = {x = strips[tracks[track_select].strip][page].graphics[i].x - surface_offset.x + obj.sections[10].x, 
+                          y = strips[tracks[track_select].strip][page].graphics[i].y - surface_offset.y + obj.sections[10].y, 
+                          w = strips[tracks[track_select].strip][page].graphics[i].stretchw, 
+                          h = strips[tracks[track_select].strip][page].graphics[i].stretchh}
+                  
+                  if xywh.w < 16 then
+                    xywh.x = xywh.x - 8
+                    xywh.w = 16
+                  end
+                  if xywh.h < 16 then 
+                    xywh.y = xywh.y - 8
+                    xywh.h = 16
+                  end
+                  
+                  if MOUSE_click(xywh) then
+                    gfx2_select = i              
+  
+                    poslock_select = nz(strips[tracks[track_select].strip][page].graphics[gfx2_select].poslock,false)
+                    
+                    mouse.context = contexts.draggfx2
+                    draggfx2 = 'draggfx'
+                    dragoff = {x = mouse.mx - strips[tracks[track_select].strip][page].graphics[gfx2_select].x - surface_offset.x,
+                               y = mouse.my - strips[tracks[track_select].strip][page].graphics[gfx2_select].y - surface_offset.y}
+                    
+                    if strips[tracks[track_select].strip][page].graphics[gfx2_select].gfxtype == gfxtype.txt then
+                      show_lbloptions = true
+                      SetGfxSelectVals()
+                    else
+                      show_lbloptions = false
+                    end
+                    
+                    GenGFXDragPreview(gui)
+                    strips[tracks[track_select].strip][page].graphics[i].hide = true
+                    
+                    update_gfx = true
+                    clickxywh = true
+                    break
+                  elseif MOUSE_click_RB(xywh) then
+                    GFXMenu()
+                    clickxywh = true
+                    break
+                  end
+                end
+  
+                if clickxywh == false and MOUSE_click_RB(obj.sections[10]) then
+                  GFXMenu()
+                end
+              end
+              
+            end
+          end
+                    
+          if mouse.context and mouse.context == contexts.draggfx2 then
+            if math.floor(mouse.mx/settings_gridsize) ~= math.floor(mouse.last_x/settings_gridsize) or math.floor(mouse.my/settings_gridsize) ~= math.floor(mouse.last_y/settings_gridsize) then
+              local i
+              if poslock_select == false then
+              
+                strips[tracks[track_select].strip][page].graphics[gfx2_select].x = math.floor((mouse.mx - surface_offset.x)/settings_gridsize)*settings_gridsize 
+                                                                                   - math.floor((dragoff.x)/settings_gridsize)*settings_gridsize
+                strips[tracks[track_select].strip][page].graphics[gfx2_select].y = math.floor((mouse.my - surface_offset.y)/settings_gridsize)*settings_gridsize 
+                                                                                   - math.floor((dragoff.y)/settings_gridsize)*settings_gridsize
+              end
+              update_surface = true
+            end
+          elseif draggfx2 ~= nil then
+            draggfx2 = nil
+            if MOUSE_over(obj.sections[60]) then
+              --delete
+              ctl_select = nil
+              DeleteSelectedCtls()
+              update_gfx = true
+            else
+              strips[tracks[track_select].strip][page].graphics[gfx2_select].hide = nil
+              update_gfx = true
+            end
+          end             
           
+        elseif submode == 2 then
+    
+          if gfx.mouse_wheel ~= 0 then
+            local v = gfx.mouse_wheel/120
+            if MOUSE_over(obj.sections[46]) then
+              slist_offset = F_limit(slist_offset - v, 0, #strip_files)
+              update_gfx = true
+              gfx.mouse_wheel = 0
+            end
+            if MOUSE_over(obj.sections[47]) then
+              sflist_offset = F_limit(sflist_offset - v, 0, #strip_folders)
+              update_gfx = true
+              gfx.mouse_wheel = 0
+            end
+          end
+          
+          if MOUSE_click(obj.sections[15]) then
+            SaveStrip()
+            update_gfx = true
+          end
+          
+          if mouse.mx > obj.sections[10].x then
             if mouse.context == nil and MOUSE_click(obj.sections[10]) then
               if strips and tracks[track_select] and strips[tracks[track_select].strip] then
                 for i = 1, #strips[tracks[track_select].strip][page].controls do
                 
                   local xywh
-                  xywh = {x = strips[tracks[track_select].strip][page].controls[i].x - surface_offset.x +obj.sections[10].x, 
-                          y = strips[tracks[track_select].strip][page].controls[i].y - surface_offset.y +obj.sections[10].y, 
+                  xywh = {x = strips[tracks[track_select].strip][page].controls[i].x - surface_offset.x + obj.sections[10].x, 
+                          y = strips[tracks[track_select].strip][page].controls[i].y - surface_offset.y + obj.sections[10].y, 
                           w = strips[tracks[track_select].strip][page].controls[i].w, 
                           h = strips[tracks[track_select].strip][page].controls[i].ctl_info.cellh}
                   if MOUSE_click(xywh) then
-                    show_cycleoptions = false
                     
-                    local found = false
-                    local j
-                    if ctl_select ~= nil then
-                      for j = 1, #ctl_select do
-                        if tonumber(ctl_select[j].ctl) == tonumber(i) then
-                          found = true
-                          break
+                    local stripid = strips[tracks[track_select].strip][page].controls[i].id
+                    if stripid ~= nil then
+                      SelectStripElements(stripid)
+                      --mouse.context = contexts.dragctl
+                      --dragctl = 'dragctl'
+                      dragoff = {x = mouse.mx - strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].x - 0.5*strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].w - surface_offset.x,
+                                 y = mouse.my - strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].y - 0.5*strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].ctl_info.cellh - surface_offset.y}
+                      
+                      --update_gfx = true
+                      if ctl_select ~= nil and not mouse.ctrl then --and not mouse.alt then
+                        dragctl = 'dragctl'
+                        mouse.context = contexts.dragctl
+                        GenCtlDragPreview(gui)
+                        for i = 1, #ctl_select do
+                          strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].hide = true
+                        end
+                        if gfx3_select and #gfx3_select > 0 then
+                          for i = 1, #gfx3_select do
+                            strips[tracks[track_select].strip][page].graphics[gfx3_select[i].ctl].hide = true  
+                          end                    
                         end
                       end
+                      update_gfx = true
                     end
-
-                    if mouse.alt then
-                      local stripid = strips[tracks[track_select].strip][page].controls[i].id
-                      if stripid ~= nil then
-                        ctl_select = nil
-                        gfx3_select = nil
-                        SelectStripElements(stripid)
-                      else
-                        if ctl_select == nil then
-                          ctl_select = {}
-                          ctl_select[1] = {ctl = i}
-                        else
-                          local cs = #ctl_select+1
-                          ctl_select[cs] = {}
-                          ctl_select[cs].ctl = i                      
-                          ctl_select[cs].relx = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].x - strips[tracks[track_select].strip][page].controls[i].x
-                          ctl_select[cs].rely = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].y - strips[tracks[track_select].strip][page].controls[i].y
-                        end
-                      end
-      
-                    elseif mouse.ctrl and ctl_select ~= nil and found == false then
-                      local cs = #ctl_select+1
-                      ctl_select[cs] = {}
-                      ctl_select[cs].ctl = i
-                      ctl_select[cs].relx = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].x - strips[tracks[track_select].strip][page].controls[i].x
-                      ctl_select[cs].rely = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].y - strips[tracks[track_select].strip][page].controls[i].y
-                    elseif ctl_select == nil or found == false then
-                      ctl_select = {} 
-                      gfx3_select = nil
-                      ctl_select[1] = {ctl = i}
-                    end
-
-                    SetCtlSelectVals()
-                    SetPosLockCtl()
-
-                    dragoff = {x = mouse.mx - strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].x - 0.5*strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].w - surface_offset.x,
-                               y = mouse.my - strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].y - 0.5*strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].ctl_info.cellh - surface_offset.y}
-                    mouse.context = contexts.dummy
-                    if ctl_select ~= nil and not mouse.ctrl then --and not mouse.alt then
-                      dragctl = 'dragctl'
-                      mouse.context = contexts.dragctl
-                      GenCtlDragPreview(gui)
-                      for i = 1, #ctl_select do
-                        strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].hide = true
-                      end
-                      if gfx3_select and #gfx3_select > 0 then
-                        for i = 1, #gfx3_select do
-                          strips[tracks[track_select].strip][page].graphics[gfx3_select[i].ctl].hide = true  
-                        end                    
-                      end
-                    end
-                    update_gfx = true
-                    break
                   end
                 end
+                if not mouse.context then
+                  ctl_select = nil
+                  gfx3_select = nil
+                end  
               end
-            elseif mouse.context == nil and MOUSE_click_RB(obj.sections[10]) then
-              mouse.context = contexts.draglasso
-              lasso = {l = mouse.mx, t = mouse.my, r = mouse.mx+5, b = mouse.my+5}
-            end
-          end
-
-          if mouse.context and mouse.context == contexts.auto_delayslider then
-            local val = F_limit(MOUSE_sliderHBar(obj.sections[110]),0,1)
-            if val ~= nil then
-              auto_delay = math.floor(val * 10)
-              update_gfx = true
-            end
+            end  
           end
           
-          if mouse.context and mouse.context == contexts.minov then
-            local val = MOUSE_slider(obj.sections[128],mouse.slideoff)
-            if val ~= nil then
-              if oms ~= mouse.shift then
-                oms = mouse.shift
-                ctlpos = minov_select
-                mouse.slideoff = obj.sections[128].y+obj.sections[128].h/2 - mouse.my
-              else
-                if mouse.shift then
-                  val = ctlpos + ((0.5-val)*2)*0.0125
-                else
-                  val = ctlpos + (0.5-val)*1
-                end
-                local p = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].param
-                local min, max = GetParamMinMax_ctl(ctl_select[1].ctl, false) --trctls_table[p].min, trctls_table[p].max
-                
-                if val < min then val = min end
-                if val > max then val = max end
-                if val ~= octlval then
-                  val = math.min(val,nz(maxov_select-0.05,1))
-                  SetParam4(val)
-                  local dval = GetParamDisp_Ctl(ctl_select[1].ctl)
-                  minov_select = val
-                  ov_disp = dval
-                  SetParam()                
-                  octlval = val
-                  update_ctls = true
-                end
-              end
-            elseif minov_act ~= nil then
-              minov_act = nil
-              
-              for i = 1, #ctl_select do
-                strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].minov = minov_select
-                strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].dirty = true
-                trackfxparam_select = ctl_select[i].ctl
-  
-                local min, max = GetParamMinMax_ctl(ctl_select[i].ctl)
-                strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].defval = normalize(min, max, ctl_select[i].denorm_defval)
-                SetParam3(strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].defval)
-              end
-            end
-            
-          elseif mouse.context and mouse.context == contexts.maxov then
-            local val = MOUSE_slider(obj.sections[129],mouse.slideoff)
-            if val ~= nil then
-              if oms ~= mouse.shift then
-                oms = mouse.shift
-                ctlpos = minov_select
-                mouse.slideoff = obj.sections[129].y+obj.sections[129].h/2 - mouse.my
-              else
-                if mouse.shift then
-                  val = ctlpos + ((0.5-val)*2)*0.1
-                else
-                  val = ctlpos + (0.5-val)*2
-                end
-                local p = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].param
-                local min, max = GetParamMinMax_ctl(ctl_select[1].ctl, false) --trctls_table[p].min, trctls_table[p].max
-                
-                if val < min then val = min end
-                if val > max then val = max end
-                if val ~= octlval then
-                  val = math.max(val,nz(minov_select+0.05,0))
-                  SetParam4(val)
-                  local dval = GetParamDisp_Ctl(ctl_select[1].ctl)
-                  maxov_select = val
-                  ov_disp = dval
-                  SetParam()
-                  octlval = val
-                  update_ctls = true
-                end
-              end
-            elseif maxov_act ~= nil then
-              maxov_act = nil
-              
-              for i = 1, #ctl_select do
-                strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].maxov = maxov_select
-                strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].dirty = true
-                trackfxparam_select = ctl_select[i].ctl
-  
-                local min, max = GetParamMinMax_ctl(ctl_select[i].ctl)
-                strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].defval = normalize(min, max, ctl_select[i].denorm_defval)
-                SetParam3(strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].defval)
-              end
-            end
-          
-          elseif mouse.context and mouse.context == contexts.cycleknob then
-            local val = MOUSE_slider(obj.sections[101],mouse.slideoff)
-            if val ~= nil then
-              if oms ~= mouse.shift then
-                oms = mouse.shift
-                ctlpos = cycle_select.val
-                mouse.slideoff = obj.sections[101].y+obj.sections[101].h/2 - mouse.my
-              else
-                if mouse.shift then
-                  val = ctlpos + ((0.5-val)*2)*0.1
-                else
-                  val = ctlpos + (0.5-val)*2
-                end
-                local min,max = 0,1
-                if strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].ctlcats == ctlcats.fxparam then
-                  min, max = GetParamMinMax_ctl(ctl_select[1].ctl)
-                end
-                if val < min then val = min end
-                if val > max then val = max end
-                if val ~= octlval then
-                  SetParam3(val)
-                  local t = strips[tracks[track_select].strip].track.tracknum
-                  if strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].tracknum ~= nil then
-                    t = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].tracknum
-                  end
-                  local cc = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].ctlcat
-                  local f = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].fxnum
-                  local p = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].param
-                  local dvoff = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].dvaloffset
-                  local v2 = GetParamValue(cc,t,f,p,ctl_select[1].ctl)
-                  cycle_select.val = val
-                  
-                  if cycle_select.selected then
-                    local dispval = GetParamDisp(cc, t, f, p, dvoff,ctl_select[1].ctl)
-                    cycle_select[cycle_select.selected].val = v2                  
-                    cycle_select[cycle_select.selected].dispval = dispval
-                    cycle_select[cycle_select.selected].dv = dispval
-                  end
-                  octlval = val
-                  --SetParam()
-                  strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].dirty = true
-                  update_ctls = true
-                end
-              end
-            end
-          
-          end
-          
-          if mouse.context and mouse.context == contexts.scaleslider then
-            local val = F_limit(MOUSE_sliderHBar(obj.sections[50]),0,1)
-            if val ~= nil then
-              scale_select = val*0.5 + 0.5
-              for i = 1, #ctl_select do
-                if strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctlcat ~= ctlcats.xy then
-                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].scale = scale_select
-                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].xsc = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].x
-                                                                                             + math.floor(strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].w/2
-                                                                                             - (strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].w*scale_select)/2)
-                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ysc = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].y
-                                                                                             + math.floor(strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctl_info.cellh/2
-                                                                                             - (strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctl_info.cellh*scale_select)/2)
-                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].wsc = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].w*scale_select
-                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].hsc = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctl_info.cellh*scale_select
-                end
-              end            
-              update_gfx = true
-              --update_ctls = true
-            end
-          end
-  
-          if mouse.context and mouse.context == contexts.offsetslider then
-            local val = F_limit(MOUSE_sliderHBar(obj.sections[56]),0,1)
-            if val ~= nil then
-              if toffY then
-                textoff_select = val*300 - 150
-                for i = 1, #ctl_select do
-                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].textoff = textoff_select
-                end            
-              else
-                textoff_selectx = val*300 - 150
-                for i = 1, #ctl_select do
-                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].textoffx = textoff_selectx
-                end                          
-              end
-              update_gfx = true
-            end
-          end
-  
-          if mouse.context and mouse.context == contexts.valoffsetslider then
-            local val = F_limit(MOUSE_sliderHBar(obj.sections[65]),0,1)
-            if val ~= nil then
-              if toffY then
-                textoffval_select = val*300 - 150
-                for i = 1, #ctl_select do
-                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].textoffval = textoffval_select
-                end            
-              else
-                textoffval_selectx = val*300 - 150
-                for i = 1, #ctl_select do
-                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].textoffvalx = textoffval_selectx
-                end                          
-              end
-              update_gfx = true
-            end
-          end
-  
-          if mouse.context and mouse.context == contexts.textsizeslider then
-            local val = F_limit(MOUSE_sliderHBar(obj.sections[58]),0,1)
-            if val ~= nil then
-              textsize_select = (val*35)-2
-              for i = 1, #ctl_select do
-                strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].textsize = textsize_select
-              end            
-              update_gfx = true
-            end
-          end
-  
-          if mouse.context and mouse.context == contexts.defvalslider then
-            local val = F_limit(MOUSE_sliderHBar(obj.sections[57]),0,1)
-            local upd = false
-            if mouse.ctrl then
-              if mouse.mx ~= omx then
-                if mouse.mx > omx then val = 0.002 else val = -0.002 end
-                omx = mouse.mx
-                val = F_limit(defval_select+val, 0, 1)
-                upd = true
-              end
-            elseif val ~= nil then
-              if mouse.shift then val = round(val*4,0)/4 end
-              upd = true            
-              val = F_limit(val, 0, 1)
-            end
-            if val ~= octlval and upd then
-              defval_select = val
-              octlval = val
-              for i = 1, #ctl_select do
-                if strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctltype == 4 then
-                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].defval = defval_select
-                else
-                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].val = defval_select
-                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].defval = defval_select
-                end
-                trackfxparam_select = ctl_select[i].ctl
-                SetParam_ToDef(trackfxparam_select)
-              end
-              update_ctls = true
-            end
-          end
-              
           if mouse.context and mouse.context == contexts.dragctl then
-            --dragctl = {x = mouse.mx+offsetx-obj.sections[10].x-surface_offset.x, y = mouse.my+offsety-obj.sections[10].y-surface_offset.y, type = 'ctls'}
-            
             if math.floor(mouse.mx/settings_gridsize) ~= math.floor(mouse.last_x/settings_gridsize) or math.floor(mouse.my/settings_gridsize) ~= math.floor(mouse.last_y/settings_gridsize) then
               local i
               local scale = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].scale
@@ -12773,12 +14202,10 @@ end
                                                                                      - gfx3_select[i].rely
                 end            
               end
-              --update_ctls = true
-              --update_gfx = true
-              --dragctl = {x = mouse.mx+offsetx-obj.sections[10].x-surface_offset.x, y = mouse.my+offsety-obj.sections[10].y-surface_offset.y, type = 'ctls'}
+  
               update_surface = true
             end
-          elseif dragctl ~= nil then
+          elseif mouse.context == nil and dragctl ~= nil then
             dragctl = nil
             if MOUSE_over(obj.sections[60]) then
               --delete
@@ -12796,1383 +14223,222 @@ end
               update_gfx = true
             end
           end      
-    
-          if mouse.context and mouse.context == contexts.draglasso then
-            if (mouse.mx ~= mouse.last_x or mouse.my ~= mouse.last_y) then
-              lasso.r = mouse.mx
-              lasso.b = mouse.my
-              Lasso_Select(mouse.shift)
-              if ctl_select ~= nil then
-                SetCtlSelectVals()
+          
+          if MOUSE_click(obj.sections[47]) then
+            local i = math.floor(((mouse.my - obj.sections[47].y)) / butt_h)-1
+            if i == -1 then
+              if mouse.mx < obj.sections[47].w/2 then
+                sflist_offset = sflist_offset - SF_butt_cnt
+                if sflist_offset < 0 then
+                  sflist_offset = 0
+                end
+              else
+                if sflist_offset + SF_butt_cnt-1 < #strip_folders then
+                  sflist_offset = sflist_offset + SF_butt_cnt
+                end
               end
-              SetPosLockCtl()
-              update_ctls = true
-            end
-          elseif lasso ~= nil then
-            --Dropped
-            if math.abs(lasso.l-lasso.r) < 10 and math.abs(lasso.t-lasso.b) < 10 then
-            -- == mouse.mx and lasso.t == mouse.my then
-              if ctl_select ~= nil then
-                local mm
-                if poslockctl_select then
-                  mm = '!Lock position'
-                else
-                  mm = 'Lock position'              
-                end
-                local ac
-                if strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].ctlcat == ctlcats.action then
-                  ac = '||Assign custom action by name|Assign action by command ID'
-                else
-                  ac = '||#Assign custom action by name|#Assign action by command ID'              
-                end
-                local mstr = 'Duplicate||Align Top|Align Left||'..mm..'||Delete'..ac
-                gfx.x, gfx.y = mouse.mx, mouse.my
-                local res = OpenMenu(mstr)
-                if res == 1 then
-                  local c1 = #strips[tracks[track_select].strip][page].controls+1
-                  local dx = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].x - (mouse.mx+surface_offset.x-obj.sections[10].x) 
-                  local dy = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].y - (mouse.my+surface_offset.y-obj.sections[10].y)
-                  for i = 1, #ctl_select do
-                    local cc = c1+i-1
-                    strips[tracks[track_select].strip][page].controls[cc]=GetControlTable(ctl_select[i].ctl)
-                    --table.insert(strips[tracks[track_select].strip][page].controls[cc], strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl])
-                    strips[tracks[track_select].strip][page].controls[cc].x = strips[tracks[track_select].strip][page].controls[cc].x - dx
-                    strips[tracks[track_select].strip][page].controls[cc].y = strips[tracks[track_select].strip][page].controls[cc].y - dy
-                    strips[tracks[track_select].strip][page].controls[cc].xsc = strips[tracks[track_select].strip][page].controls[cc].xsc - dx
-                    strips[tracks[track_select].strip][page].controls[cc].ysc = strips[tracks[track_select].strip][page].controls[cc].ysc - dy
-                    strips[tracks[track_select].strip][page].controls[cc].id = nil
-                  end
-                  ctl_select = nil
-                  for i = c1, #strips[tracks[track_select].strip][page].controls do
-                    if ctl_select == nil then
-                      ctl_select = {}
-                      ctl_select[1] = {ctl = i}
-                    else
-                      local cs = #ctl_select+1
-                      ctl_select[cs] = {}
-                      ctl_select[cs].ctl = i                      
-                      ctl_select[cs].relx = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].x - strips[tracks[track_select].strip][page].controls[i].x
-                      ctl_select[cs].rely = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].y - strips[tracks[track_select].strip][page].controls[i].y
-                    end
-                  end                
-                  update_gfx = true
-                elseif res == 2 then
-                  if #ctl_select > 1 then
-                    local y = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].y
-                    for i = 2, #ctl_select do
-                      if nz(strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].poslock, false) == false then
-                        strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].y = y
-                        local scale = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].scale
-                        strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ysc = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].y
-                                                                                   + math.floor(strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctl_info.cellh/2
-                                                                                   - (strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctl_info.cellh*scale)/2)
-                      end
-                    end
-                    ReselectSelection()
-                    update_gfx = true
-                  end
-                elseif res == 3 then
-                  if #ctl_select > 1 then
-                    local x = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].x
-                    for i = 2, #ctl_select do
-                      if nz(strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].poslock, false) == false then
-                        strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].x = x
-                        local scale = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].scale
-                        strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].xsc = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].x
-                                                                                   + math.floor(strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].w/2
-                                                                                   - (strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].w*scale)/2)
-                      end
-                    end
-                    ReselectSelection()
-                    update_gfx = true
-                  end
-                elseif res == 4 then
-                  for i = 1, #ctl_select do
-                    strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].poslock = not poslockctl_select
-                  end
-                  SetPosLockCtl()
-                elseif res == 5 then
-                  DeleteSelectedCtls()
-                  update_gfx = true
-                
-                elseif res == 6 then
-                  trackfxparam_select = ctl_select[1].ctl
-                  show_actionchooser = true
-                  action_tbl = LoadActionIDs()
-                  action_tblF = {}
-                  action_tblF = table.copy(action_tbl)
-                  
-                  update_gfx = true
-                  --OpenEB(12,'Please enter action name:')
-                elseif res == 7 then
-                  trackfxparam_select = ctl_select[1].ctl
-                  OpenEB(13,'Please enter action command ID:')
-                end
-              
-              end
-            
-            end
-            
-            lasso = nil
-            update_ctls = true
-          end
-        
-          if MOUSE_click(obj.sections[48]) then
-            if mouse.mx > obj.sections[48].w-40 then
-              show_paramlearn = not show_paramlearn
               update_gfx = true
-            else           
-              trackedit_select = trackedit_select + 1 
-              if trackedit_select > #tracks then
-                trackedit_select = -1
-              end
-              PopulateTrackFX()
-              PopulateTrackSendsInfo()
-              PopulateSpecial()
-              trctlslist_offset = 0
-              update_gfx = true 
+            elseif strip_folders[i + sflist_offset] then
+              stripfol_select = i + sflist_offset
+              PopulateStrips()            
+              update_gfx = true
             end
-          elseif MOUSE_click_RB(obj.sections[48]) then
+            
+          end
+  
+          if MOUSE_click(obj.sections[46]) then
+            local i = math.floor(((mouse.my - obj.sections[46].y)) / butt_h)-1
+            if i == 0 then
+              if mouse.mx < obj.sections[46].w/2 then
+                slist_offset = slist_offset - S_butt_cnt
+                if slist_offset < 0 then
+                  slist_offset = 0
+                end
+              else
+                if slist_offset + S_butt_cnt-1 < #strip_files then
+                  slist_offset = slist_offset + S_butt_cnt-1
+                end
+              end
+              update_gfx = true
+            elseif strip_files[i-1 + slist_offset] then
+              strip_select = i-1 + slist_offset
+              --gen preview
+              loadstrip = LoadStrip(strip_select)
+              if loadstrip then
+                GenStripPreview(gui, loadstrip.strip)
+                          
+                mouse.context = contexts.dragstrip
+              end
+              update_gfx = true
+            end
+            
+          elseif MOUSE_click_RB(obj.sections[46]) then
+          
+            if strip_select then
+              local i = math.floor(((mouse.my - obj.sections[46].y)) / butt_h)-1
+              if strip_select == i-1 + slist_offset then
+                mstr = 'Set Default (Track)|Set Default (Master)||Clear Default (Track)|Clear Default (Master)||Save (Overwrite)||Add to favorites'
+              else
+                mstr = '#Set Default (Track)|#Set Default (Master)||Clear Default (Track)|Clear Default (Master)||#Save (Overwrite)||#Add to favorites'            
+              end
+              gfx.x, gfx.y = mouse.mx, mouse.my
+              res = OpenMenu(mstr)
+              if res ~= 0 then
+                if res == 1 then
+                  
+                  strip_default = {strip_select = strip_select,
+                                   stripfol_select = stripfol_select}
+                elseif res == 2 then
+                  strip_default_mast = {strip_select = strip_select,
+                                        stripfol_select = stripfol_select}
+                elseif res == 3 then
+                  strip_default = nil
+                elseif res == 4 then
+                  strip_default_mast = nil
+                elseif res == 5 then
+                
+                  local ostoff = slist_offset
+                  SaveStrip3(string.sub(strip_files[strip_select].fn,1,string.len(strip_files[strip_select].fn)-6))
+                  slist_offset = ostoff
+                elseif res == 6 then
+                  strip_favs[#strip_favs+1] = strip_folders[stripfol_select].fn..'/'..strip_files[strip_select].fn
+                end
+              end
+            end        
+          end
+          
+          if mouse.context and mouse.context == contexts.dragstrip then
+            dragstripx = true --to force dropped action even if not 
+            if mouse.mx ~= mouse.last_x or mouse.my ~= mouse.last_y then
+              dragstrip = {x = mouse.mx, y = mouse.my}
+              update_surface = true
+            end
+          elseif dragstripx ~= nil then
+            --Dropped
+            --image_count = image_count_add
+            if dragstrip then
+              if dragstrip.x > obj.sections[10].x and dragstrip.x < obj.sections[10].w and dragstrip.y > obj.sections[10].y and dragstrip.y < obj.sections[10].h then
+                Strip_AddStrip(loadstrip, dragstrip.x-obj.sections[10].x, dragstrip.y-obj.sections[10].y)
+              end
+            end
+                      
+            loadstrip = nil
+            dragstrip = nil
+            dragstripx = nil
+            ctl_select = nil
+            update_gfx = true
+          end
+          
+        end
+        
+        if MOUSE_click(obj.sections[13]) then
+          if submode ~= 0 or (submode == 0 and mouse.mx < obj.sections[13].x + obj.sections[13].w - 30) then
+            ctl_select = nil
+            gfx2_select = nil
+            gfx3_select = nil
+            show_paramlearn = false
+            CloseActChooser()
+            show_ctlbrowser = false
+            
+            submode = submode + 1
+            if submode+1 > #submode_table then
+              submode = 0
+            end
+            update_gfx = true
+          elseif submode == 0 and mouse.mx > obj.sections[13].x + obj.sections[13].w - 30 then
+            CloseActChooser()
+            show_ctlbrowser = false
+            show_paramlearn = false
+            fxmode = (fxmode + 1) % 2
+            update_gfx = true
+           
+          end
+  
+        elseif MOUSE_click_RB(obj.sections[13]) then
+          --if submode ~= 0 or (submode == 0 and mouse.mx > 30) then
+            ctl_select = nil
+            gfx2_select = nil
+            gfx3_select = nil
+            CloseActChooser()
+            show_ctlbrowser = false
+            
+            submode = submode - 1
+            if submode < 0 then
+              submode = #submode_table-1
+            end
+            update_gfx = true
+          --[[else
             trackedit_select = trackedit_select - 1 
             if trackedit_select < -1 then
               trackedit_select = #tracks
             end
             PopulateTrackFX()
-            PopulateTrackSendsInfo()
-            PopulateSpecial()
             update_gfx = true    
-          end
-          
-          if fxmode == 0 then
-            if MOUSE_click(obj.sections[41]) then
-              local i = math.floor((mouse.my - obj.sections[41].y) / butt_h)-2
-              if i == -1 then
-                if mouse.mx < obj.sections[41].w/2 then
-                  flist_offset = flist_offset - F_butt_cnt
-                  if flist_offset < 0 then
-                    flist_offset = 0
-                  end
-                else
-                  if flist_offset + F_butt_cnt < #trackfx then
-                    flist_offset = flist_offset + F_butt_cnt-1
-                  end          
-                end
-                update_gfx = true
-              elseif trackfx[i + flist_offset] then
-                trackfx_select = i + flist_offset
-                PopulateTrackFXParams()
-                update_gfx = true
-              end
-            elseif MOUSE_click_RB(obj.sections[41]) then
-              local i = math.floor((mouse.my - obj.sections[41].y) / butt_h)-2
-              if i == -1 then
-              elseif i >= F_butt_cnt then
-              elseif trackfx[i + flist_offset] then
-                local track = GetTrack(tracks[track_select].tracknum)
-                if not reaper.TrackFX_GetOpen(track, i + flist_offset) then
-                  reaper.TrackFX_Show(track, i + flist_offset, 3)
-                end
-              end        
-            end
-        
-            if MOUSE_click(obj.sections[42]) then
-              local i = math.floor((mouse.my - obj.sections[42].y) / butt_h)-2
-              local dp = true
-              if i == -1 then
-                if mouse.mx < obj.sections[42].w/2 then
-                  plist_offset = plist_offset - P_butt_cnt
-                  if plist_offset < 0 then
-                    plist_offset = 0
-                  end
-                else
-                  if plist_offset + P_butt_cnt < #trackfxparams then
-                    plist_offset = plist_offset + P_butt_cnt
-                  end          
-                end
-                update_gfx = true
-              elseif trackfxparams[i + plist_offset] then
-                trackfxparam_select = i + plist_offset
-                if mouse.ctrl then
-                  if tfxp_sel == nil then
-                    tfxp_sel = {}
-                    tfxp_sel[i + plist_offset] = true
-                    tfxp_last = i + plist_offset
-                  elseif tfxp_sel[i + plist_offset] then
-                    --remove
-                    tfxp_sel[i + plist_offset] = nil
-                  else
-                    tfxp_sel[i + plist_offset] = true
-                    tfxp_last = i + plist_offset
-                  end
-                  dp = false
-                elseif mouse.shift then
-                  if tfxp_sel == nil then
-                    tfxp_sel = {}
-                    tfxp_sel[i + plist_offset] = true
-                    tfxp_last = i + plist_offset
-                  else
-                    if tfxp_last == nil then
-                    
-                    else
-                      local it = 1
-                      if tfxp_last > i + plist_offset then
-                        it = -1
-                      end
-                      tfxp_sel = {}
-                      for p = tfxp_last, i + plist_offset, it do
-                        tfxp_sel[p] = true  
-                      end
-                      tfxp_last = i + plist_offset
-                    end
-                    dp = false
-                  end
-                
-                elseif tfxp_sel and tfxp_sel[i + plist_offset] then
-                  --do nothing but drag
-                  tfxp_last = i + plist_offset
-                  
-                else
-                  tfxp_sel = {}
-                  tfxp_sel[i + plist_offset] = true            
-                  tfxp_last = i + plist_offset
-                end
-                ctl_select = nil
-                show_ctlbrowser = false
-                
-                update_gfx = true
-    
-                if ctl_files[knob_select].imageidx ~= nil then
-                  local w,_ = gfx.getimgdim(ctl_files[knob_select].imageidx)
-                  local h = ctl_files[knob_select].cellh
-                  if w == 0 or h == 0 then
-                    ksel_size = {w = 50, h = 50}
-                  else
-                   ksel_size = {w = w/2, h = h/2}
-                 end
-                else 
-                  ksel_size = {w = 50, h = 50}
-                end
-                if dp then
-                  mouse.context = contexts.dragparam
-                end
-              end
-            end
-          elseif fxmode == 1 then
-            if MOUSE_click(obj.sections[41]) then
-              local i = math.floor((mouse.my - obj.sections[41].y) / butt_h)-2
-              if i == -1 then
-                if mouse.mx < obj.sections[41].w/2 then
-                  trctltypelist_offset = trctltypelist_offset - F_butt_cnt
-                  if trctltypelist_offset < 0 then
-                    trctltypelist_offset = 0
-                  end
-                else
-                  if trctltypelist_offset + F_butt_cnt < #trctltype_table then
-                    trctltypelist_offset = trctltypelist_offset + F_butt_cnt-1
-                  end          
-                end
-                update_gfx = true
-              elseif trctltype_table[i + trctltypelist_offset+1] then
-                trctltype_select = i + trctltypelist_offset
-                trctlslist_offset = 0
-                if i + trctltypelist_offset == 2 then
-                  PopulateSpecial()
-                end
-                update_gfx = true
-              end
-            end
-  
-            if MOUSE_click(obj.sections[42]) then
-              local pcnt = 0
-              if trctltype_select == 0 then
-                pcnt = #trctls_table
-              elseif trctltype_select == 1 then            
-                pcnt = (#trsends_table+1)*3
-              elseif trctltype_select == 2 then
-                pcnt = #special_table              
-              end
-              local i = math.floor((mouse.my - obj.sections[42].y) / butt_h)-2
-              if i == -1 then
-                if mouse.mx < obj.sections[42].w/2 then
-                  trctlslist_offset = trctlslist_offset - P_butt_cnt
-                  if trctlslist_offset < 0 then
-                    trctlslist_offset = 0
-                  end
-                else
-                  if trctlslist_offset + P_butt_cnt < #trctls_table-1 then
-                    trctlslist_offset = trctlslist_offset + P_butt_cnt
-                    if trctlslist_offset > pcnt-1 then
-                      trctlslist_offset = pcnt-1
-                    end
-                  end          
-                end
-                update_gfx = true
-              elseif i >= 0 and i < pcnt then
-                if trctltype_select == 0 then
-                  trctl_select = i + trctlslist_offset+1
-                  ctl_select = nil
-                  show_ctlbrowser = false
-                  
-                  update_gfx = true
+          end]]
+        end          
+      end
       
-                  if ctl_files[knob_select].imageidx ~= nil then
-                    local w,_ = gfx.getimgdim(ctl_files[knob_select].imageidx)
-                    local h = ctl_files[knob_select].cellh
-                    if w == 0 or h == 0 then
-                      ksel_size = {w = 50, h = 50}
-                    else
-                     ksel_size = {w = w/2, h = h/2}
-                    end
-                  else 
-                    ksel_size = {w = 50, h = 50}
-                  end
-                  mouse.context = contexts.dragparam_tr
-                elseif trctltype_select == 1 then
-                  trctl_select = i + trctlslist_offset+1
-                  ctl_select = nil
-                  show_ctlbrowser = false
-                  
-                  update_gfx = true
-      
-                  if ctl_files[knob_select].imageidx ~= nil then
-                    local w,_ = gfx.getimgdim(ctl_files[knob_select].imageidx)
-                    local h = ctl_files[knob_select].cellh
-                    if w == 0 or h == 0 then
-                      ksel_size = {w = 50, h = 50}
-                    else
-                     ksel_size = {w = w/2, h = h/2}
-                    end
-                  else 
-                    ksel_size = {w = 50, h = 50}
-                  end
-                  mouse.context = contexts.dragparam_snd              
-                elseif trctltype_select == 2 then
-                  trctl_select = i + trctlslist_offset+1
-                  ctl_select = nil
-                  show_ctlbrowser = false
-                  
-                  update_gfx = true
-      
-                  if ctl_files[knob_select].imageidx ~= nil then
-                    local w,_ = gfx.getimgdim(ctl_files[knob_select].imageidx)
-                    local h = ctl_files[knob_select].cellh
-                    if w == 0 or h == 0 then
-                      ksel_size = {w = 50, h = 50}
-                    else
-                     ksel_size = {w = w/2, h = h/2}
-                    end
-                  else 
-                    ksel_size = {w = 50, h = 50}
-                  end
-                  mouse.context = contexts.dragparam_spec
-                end
-              end
-            end
-            
-          end
-                  
-          if mouse.context and mouse.context == contexts.dragparam then
-            dragparam = {x = mouse.mx-ksel_size.w, y = mouse.my-ksel_size.h, type = 'track'}
-            reass_param = nil
-            if tracks[track_select] and tracks[track_select].strip ~= -1 then
-              for i = 1, #strips[tracks[track_select].strip][page].controls do
-              
-                local xywh 
-                xywh = {x = strips[tracks[track_select].strip][page].controls[i].x - surface_offset.x +obj.sections[10].x, 
-                        y = strips[tracks[track_select].strip][page].controls[i].y - surface_offset.y +obj.sections[10].y, 
-                        w = strips[tracks[track_select].strip][page].controls[i].w, 
-                        h = strips[tracks[track_select].strip][page].controls[i].ctl_info.cellh}    
-                if MOUSE_over(xywh) then
-                  reass_param = i
-                  break
-                end
-              end
-            end                    
-            update_surface = true
-          
-          elseif mouse.context and mouse.context == contexts.dragparamlrn then
-            dragparam = {x = mouse.mx-ksel_size.w, y = mouse.my-ksel_size.h, type = 'learn'}
-            reass_param = nil
-            if tracks[track_select] and tracks[track_select].strip ~= -1 then
-              for i = 1, #strips[tracks[track_select].strip][page].controls do
-              
-                local xywh 
-                xywh = {x = strips[tracks[track_select].strip][page].controls[i].x - surface_offset.x +obj.sections[10].x, 
-                        y = strips[tracks[track_select].strip][page].controls[i].y - surface_offset.y +obj.sections[10].y, 
-                        w = strips[tracks[track_select].strip][page].controls[i].w, 
-                        h = strips[tracks[track_select].strip][page].controls[i].ctl_info.cellh}    
-                if MOUSE_over(xywh) then
-                  reass_param = i
-                  break
-                end
-              end
-            end                    
-            update_surface = true
-          
-          elseif mouse.context and mouse.context == contexts.dragparam_tr then
-            dragparam = {x = mouse.mx-ksel_size.w, y = mouse.my-ksel_size.h, type = 'trctl'}
-            reass_param = nil
-            if tracks[track_select] and tracks[track_select].strip ~= -1 then
-              for i = 1, #strips[tracks[track_select].strip][page].controls do
-              
-                local xywh 
-                xywh = {x = strips[tracks[track_select].strip][page].controls[i].x - surface_offset.x +obj.sections[10].x, 
-                        y = strips[tracks[track_select].strip][page].controls[i].y - surface_offset.y +obj.sections[10].y, 
-                        w = strips[tracks[track_select].strip][page].controls[i].w, 
-                        h = strips[tracks[track_select].strip][page].controls[i].ctl_info.cellh}    
-                if MOUSE_over(xywh) then
-                  reass_param = i
-                  break
-                end
-              end
-            end                    
-            update_surface = true
-  
-          elseif mouse.context and mouse.context == contexts.dragparam_snd then
-            dragparam = {x = mouse.mx-ksel_size.w, y = mouse.my-ksel_size.h, type = 'trsnd'}
-            reass_param = nil
-            if tracks[track_select] and tracks[track_select].strip ~= -1 then
-              for i = 1, #strips[tracks[track_select].strip][page].controls do
-              
-                local xywh 
-                xywh = {x = strips[tracks[track_select].strip][page].controls[i].x - surface_offset.x +obj.sections[10].x, 
-                        y = strips[tracks[track_select].strip][page].controls[i].y - surface_offset.y +obj.sections[10].y, 
-                        w = strips[tracks[track_select].strip][page].controls[i].w, 
-                        h = strips[tracks[track_select].strip][page].controls[i].ctl_info.cellh}    
-                if MOUSE_over(xywh) then
-                  reass_param = i
-                  break
-                end
-              end
-            end                    
-            update_surface = true
-  
-          elseif mouse.context and mouse.context == contexts.dragparam_spec then
-            if trctl_select == 1 then
-              dragparam = {x = mouse.mx-ksel_size.w, y = mouse.my-ksel_size.h, type = 'action'}
-            elseif trctl_select >= 2 then
-              dragparam = {x = mouse.mx-ksel_size.w, y = mouse.my-ksel_size.h, type = 'pkmeter'}            
-            end
-            reass_param = nil
-            if tracks[track_select] and tracks[track_select].strip ~= -1 then
-              for i = 1, #strips[tracks[track_select].strip][page].controls do
-              
-                local xywh 
-                xywh = {x = strips[tracks[track_select].strip][page].controls[i].x - surface_offset.x +obj.sections[10].x, 
-                        y = strips[tracks[track_select].strip][page].controls[i].y - surface_offset.y +obj.sections[10].y, 
-                        w = strips[tracks[track_select].strip][page].controls[i].w, 
-                        h = strips[tracks[track_select].strip][page].controls[i].ctl_info.cellh}    
-                if MOUSE_over(xywh) then
-                  reass_param = i
-                  break
-                end
-              end
-            end                    
-            update_surface = true
-            
-          elseif dragparam ~= nil then
-            --Dropped
-            if dragparam.type == 'track' then
-              if reass_param == nil then
-                if dragparam.x+ksel_size.w > obj.sections[10].x and dragparam.x+ksel_size.w < obj.sections[10].x+obj.sections[10].w and dragparam.y+ksel_size.h > obj.sections[10].y and dragparam.y+ksel_size.h < obj.sections[10].y+obj.sections[10].h then
-                  local i
-                  local cnt = 0
-                  local dpx, dpy = dragparam.x, dragparam.y
-                  for i = 0, #trackfxparams do
-                    if tfxp_sel[i] then
-                      trackfxparam_select = i
-                      Strip_AddParam()
-                      cnt = cnt + 1
-                      dragparam.x = math.floor(dpx + ((ksel_size.w*2+settings_gridsize) * (cnt % 8)))
-                      dragparam.y = math.floor(dpy + (ksel_size.h*2+(2*settings_gridsize)) * math.floor(cnt/8))
-                    end
-                  end
-                  tfxp_sel = nil
-                  
-                end
-              else
-                if dragparam.x+ksel_size.w > obj.sections[10].x and dragparam.x+ksel_size.w < obj.sections[10].x+obj.sections[10].w and dragparam.y+ksel_size.h > obj.sections[10].y and dragparam.y+ksel_size.h < obj.sections[10].y+obj.sections[10].h then
-                
-                  local i
-                  local cnt = 0
-                  for i = 1, #trackfxparams do
-                    if tfxp_sel[i] then
-                      cnt = cnt + 1
-                    end
-                  end
-                  if cnt <= 1 then
-                    strips[tracks[track_select].strip][page].controls[reass_param].c_id = GenID()
-                    if tracks[trackedit_select].tracknum ~= tracks[track_select].tracknum then
-                      strips[tracks[track_select].strip][page].controls[reass_param].tracknum=tracks[trackedit_select].tracknum
-                      strips[tracks[track_select].strip][page].controls[reass_param].trackguid=tracks[trackedit_select].guid
-                    else
-                      strips[tracks[track_select].strip][page].controls[reass_param].tracknum=nil
-                      strips[tracks[track_select].strip][page].controls[reass_param].trackguid=nil                  
-                    end
-                    strips[tracks[track_select].strip][page].controls[reass_param].ctlcat = ctlcats.fxparam
-                    strips[tracks[track_select].strip][page].controls[reass_param].fxname=trackfx[trackfx_select].name
-                    strips[tracks[track_select].strip][page].controls[reass_param].fxguid=trackfx[trackfx_select].guid
-                    strips[tracks[track_select].strip][page].controls[reass_param].fxnum=trackfx[trackfx_select].fxnum
-                    strips[tracks[track_select].strip][page].controls[reass_param].fxfound = true
-                    strips[tracks[track_select].strip][page].controls[reass_param].param = trackfxparam_select
-                    strips[tracks[track_select].strip][page].controls[reass_param].param_info = trackfxparams[trackfxparam_select]
-                    strips[tracks[track_select].strip][page].controls[reass_param].val = GetParamValue(ctlcats.fxparam,
-                                                                                                       tracks[trackedit_select].tracknum,
-                                                                                                       trackfx[trackfx_select].fxnum,
-                                                                                                       trackfxparam_select, reass_param)
-                    strips[tracks[track_select].strip][page].controls[reass_param].defval = GetParamValue(ctlcats.fxparam,
-                                                                                                       tracks[trackedit_select].tracknum,
-                                                                                                       trackfx[trackfx_select].fxnum,
-                                                                                                       trackfxparam_select, reass_param)
-                  else
-                    OpenMsgBox(1, 'You cannot reassign multiple controls at once.', 1)
-                  end
-                  tfxp_sel = nil
-                end
-              end
-            elseif dragparam.type == 'learn' then
-              if reass_param == nil then
-                if dragparam.x+ksel_size.w > obj.sections[10].x and dragparam.x+ksel_size.w < obj.sections[10].x+obj.sections[10].w and dragparam.y+ksel_size.h > obj.sections[10].y and dragparam.y+ksel_size.h < obj.sections[10].y+obj.sections[10].h then
-                  if not MOUSE_over(obj.sections[115]) then
-                    Strip_AddParam()
-                  end
-                end
-              else
-                if dragparam.x+ksel_size.w > obj.sections[10].x and dragparam.x+ksel_size.w < obj.sections[10].x+obj.sections[10].w and dragparam.y+ksel_size.h > obj.sections[10].y and dragparam.y+ksel_size.h < obj.sections[10].y+obj.sections[10].h then
-                  if not MOUSE_over(obj.sections[115]) then
-                  
-                    if last_touch_fx.tracknum ~= tracks[track_select].tracknum then
-                      strips[tracks[track_select].strip][page].controls[reass_param].tracknum=last_touch_fx.tracknum
-                      strips[tracks[track_select].strip][page].controls[reass_param].trackguid=last_touch_fx.trguid
-                    else
-                      strips[tracks[track_select].strip][page].controls[reass_param].tracknum=nil
-                      strips[tracks[track_select].strip][page].controls[reass_param].trackguid=nil                  
-                    end
-                    strips[tracks[track_select].strip][page].controls[reass_param].c_id = GenID()
-                    strips[tracks[track_select].strip][page].controls[reass_param].ctlcat = ctlcats.fxparam
-                    strips[tracks[track_select].strip][page].controls[reass_param].fxname=last_touch_fx.fxname
-                    strips[tracks[track_select].strip][page].controls[reass_param].fxguid=last_touch_fx.fxguid
-                    strips[tracks[track_select].strip][page].controls[reass_param].fxnum=last_touch_fx.fxnum
-                    strips[tracks[track_select].strip][page].controls[reass_param].fxfound = true
-                    strips[tracks[track_select].strip][page].controls[reass_param].param = last_touch_fx.paramnum
-                    strips[tracks[track_select].strip][page].controls[reass_param].param_info = {paramname = last_touch_fx.prname,
-                                                                                                 paramnum = last_touch_fx.paramnum}
-                    strips[tracks[track_select].strip][page].controls[reass_param].val = GetParamValue(ctlcats.fxparam,
-                                                                                                       last_touch_fx.tracknum,
-                                                                                                       last_touch_fx.fxnum,
-                                                                                                       last_touch_fx.paramnum, reass_param)
-                    strips[tracks[track_select].strip][page].controls[reass_param].defval = GetParamValue(ctlcats.fxparam,
-                                                                                                       last_touch_fx.tracknum,
-                                                                                                       last_touch_fx.fxnum,
-                                                                                                       last_touch_fx.paramnum, reass_param)
-                    
-                  end
-                end
-              end
-                    
-            elseif dragparam.type == 'trctl' or dragparam.type == 'trsnd' then
-              if reass_param == nil then
-                if dragparam.x+ksel_size.w > obj.sections[10].x and dragparam.x+ksel_size.w < obj.sections[10].x+obj.sections[10].w and dragparam.y+ksel_size.h > obj.sections[10].y and dragparam.y+ksel_size.h < obj.sections[10].y+obj.sections[10].h then
-                  trackfxparam_select = i
-                  Strip_AddParam()              
-                end
-              else
-                local cnt = 1
-                if cnt <= 1 then
-                  if tracks[trackedit_select].tracknum ~= tracks[track_select].tracknum then
-                    strips[tracks[track_select].strip][page].controls[reass_param].tracknum=tracks[trackedit_select].tracknum
-                    strips[tracks[track_select].strip][page].controls[reass_param].trackguid=tracks[trackedit_select].guid
-                  else
-                    strips[tracks[track_select].strip][page].controls[reass_param].tracknum=nil
-                    strips[tracks[track_select].strip][page].controls[reass_param].trackguid=nil                  
-                  end
-                  strips[tracks[track_select].strip][page].controls[reass_param].c_id = GenID()
-                  strips[tracks[track_select].strip][page].controls[reass_param].fxguid=nil
-                  strips[tracks[track_select].strip][page].controls[reass_param].fxnum=nil
-                  strips[tracks[track_select].strip][page].controls[reass_param].fxfound = true
-                  strips[tracks[track_select].strip][page].controls[reass_param].param = trctl_select
-  
-                  if dragparam.type == 'trctl' then
-                    strips[tracks[track_select].strip][page].controls[reass_param].ctlcat = ctlcats.trackparam
-                    strips[tracks[track_select].strip][page].controls[reass_param].fxname='Track Parameter'
-                    strips[tracks[track_select].strip][page].controls[reass_param].param_info = {paramname = 'Track '..trctls_table[trctl_select].name,
-                                                                                                 paramnum = trctl_select}
-                    strips[tracks[track_select].strip][page].controls[reass_param].val = GetParamValue(ctlcats.trackparam,
-                                                                                                        tracks[trackedit_select].tracknum,
-                                                                                                        nil,
-                                                                                                        trctl_select, nil)
-                    strips[tracks[track_select].strip][page].controls[reass_param].defval = strips[tracks[track_select].strip][page].controls[reass_param].val 
-                    
-                  elseif dragparam.type == 'trsnd' then
-                    local sidx = math.floor((trctl_select-1) / 3)
-                    local pidx = (trctl_select-1) % 3 +1
-                    strips[tracks[track_select].strip][page].controls[reass_param].ctlcat = ctlcats.tracksend
-                    strips[tracks[track_select].strip][page].controls[reass_param].fxname='Track Send'
-                    strips[tracks[track_select].strip][page].controls[reass_param].param_info = {paramname = trsends_table[sidx][pidx].name,
-                                                                                                 paramnum = trctl_select,
-                                                                                                 paramidx = trsends_table[sidx].idx,
-                                                                                                 paramstr = trsends_table[sidx][pidx].parmname,
-                                                                                                 paramdesttrnum = trsends_table[sidx].desttracknum,
-                                                                                                 paramdestguid = trsends_table[sidx].desttrackguid,
-                                                                                                 paramdestchan = trsends_table[sidx].dstchan,
-                                                                                                 paramsrcchan = trsends_table[sidx].srcchan}
-                    strips[tracks[track_select].strip][page].controls[reass_param].val = GetParamValue(ctlcats.tracksend,
-                                                                                                        tracks[trackedit_select].tracknum,
-                                                                                                        nil,
-                                                                                                        trctl_select, reass_param)
-                    strips[tracks[track_select].strip][page].controls[reass_param].defval = strips[tracks[track_select].strip][page].controls[reass_param].val
-                  end
-                else
-                  OpenMsgBox(1, 'You cannot reassign multiple controls at once.', 1)
-                end
-              end            
-            elseif dragparam.type == 'action' then
-              if reass_param == nil then
-                if dragparam.x+ksel_size.w > obj.sections[10].x and dragparam.x+ksel_size.w < obj.sections[10].x+obj.sections[10].w and dragparam.y+ksel_size.h > obj.sections[10].y and dragparam.y+ksel_size.h < obj.sections[10].y+obj.sections[10].h then
-                  trackfxparam_select = i
-                  Strip_AddParam()              
-                end
-              else
-              
-              end
-            elseif dragparam.type == 'pkmeter' then
-              if reass_param == nil then
-                if dragparam.x+ksel_size.w > obj.sections[10].x and dragparam.x+ksel_size.w < obj.sections[10].x+obj.sections[10].w and dragparam.y+ksel_size.h > obj.sections[10].y and dragparam.y+ksel_size.h < obj.sections[10].y+obj.sections[10].h then
-                  trackfxparam_select = i
-                  Strip_AddParam()              
-                end
-              else
-              
-              end
-            end
-            
-            --if mouse.mx > obj.sections[10].x then
-              tfxp_sel = nil
-              if tfxp_last then
-                tfxp_sel = {}
-                tfxp_sel[tfxp_last] = true
-              end
-            --end
-            reass_param = nil
-            dragparam = nil
-            update_gfx = true
-          end
-        
-          
-        
-          if ctl_select ~= nil then
-            show_ctloptions = true
-          else
-            show_ctloptions = false
-            ctl_page = 0
-          end
-        
-        end -- show_actionchooser
-                
-      elseif submode == 1 then
-
-        if gfx.mouse_wheel ~= 0 then
-          local v = gfx.mouse_wheel/120
-          if MOUSE_over(obj.sections[44]) then
-            glist_offset = F_limit(glist_offset - v, 0, #graphics_files)
-            update_gfx = true
-            gfx.mouse_wheel = 0
-          end
-        end
-      
-        local clicklblopts = false
-        
-        local char=gfx.getchar()
-        if gfx2_select ~= nil and char ~= 0 then
-          if char == 0x6C656674 then -- left arrow
-            if strips[tracks[track_select].strip][page].graphics[gfx2_select].poslock == false then
-              strips[tracks[track_select].strip][page].graphics[gfx2_select].x = 
-                            strips[tracks[track_select].strip][page].graphics[gfx2_select].x - 1
-            end
-            update_gfx = true
-          elseif char == 0x72676874 then -- right arrow
-            if strips[tracks[track_select].strip][page].graphics[gfx2_select].poslock == false then
-              strips[tracks[track_select].strip][page].graphics[gfx2_select].x = 
-                            strips[tracks[track_select].strip][page].graphics[gfx2_select].x + 1
-            end
-            update_gfx = true
-          elseif char == 0x7570 then -- up arrow
-            if strips[tracks[track_select].strip][page].graphics[gfx2_select].poslock == false then
-              strips[tracks[track_select].strip][page].graphics[gfx2_select].y = 
-                            strips[tracks[track_select].strip][page].graphics[gfx2_select].y - 1
-            end
-            update_gfx = true
-          elseif char == 0x646F776E then -- down arrow
-            if strips[tracks[track_select].strip][page].graphics[gfx2_select].poslock == false then
-              strips[tracks[track_select].strip][page].graphics[gfx2_select].y = 
-                            strips[tracks[track_select].strip][page].graphics[gfx2_select].y + 1
-            end
-            update_gfx = true
-          end
-        
-        elseif gfx2_select ~= nil and show_lbloptions and (MOUSE_click(obj.sections[49]) or MOUSE_click_RB(obj.sections[49])) then
-          
-          -- LBL OPTIONS
-          clicklblopts = true
-        
-          if MOUSE_click(obj.sections[140]) then
-            --EditLabel(7,gfx_text_select)
-            if strips and strips[tracks[track_select].strip] then
-              OpenEB(7,'Please enter text for label:',gfx_text_select)
-            end
-          end          
-
-          if MOUSE_click(obj.sections[147]) then
-            --EditFont()
-            if strips and strips[tracks[track_select].strip] then
-              OpenEB(8,'Please enter font name:')
-            end
-          end          
-        
-          if MOUSE_click(obj.sections[142]) then
-            local retval, c = reaper.GR_SelectColor(_,ConvertColorString(gfx_textcol_select))
-            if retval ~= 0 then
-              gfx_textcol_select = ConvertColor(c)
-              strips[tracks[track_select].strip][page].graphics[gfx2_select].text_col = gfx_textcol_select
+      if mouse.context == nil then
+        if ((submode == 0 and ctl_select ~= nil) and (MOUSE_click(obj.sections[45]) or (MOUSE_click(obj.sections[100]) and show_cycleoptions) 
+            or (MOUSE_click(obj.sections[200]) and show_ctlbrowser))) or 
+           ((submode == 1 and gfx2_select ~= nil) and (MOUSE_click(obj.sections[49]) and show_lbloptions)) then
+        elseif mouse.mx > obj.sections[10].x and show_actionchooser == false then
+          if MOUSE_click(obj.sections[10]) then
+            if noscroll == false then
+              mouse.context = "dragsurface"
+              surx = surface_offset.x
+              sury = surface_offset.y
+              mmx = mouse.mx
+              mmy = mouse.my
               update_gfx = true
             end
-          end
-          
-          if MOUSE_click(obj.sections[143]) then
-            gfx_font_select.bold = not gfx_font_select.bold
-            strips[tracks[track_select].strip][page].graphics[gfx2_select].font.bold = gfx_font_select.bold
-            update_gfx = true
-          end
-
-          if MOUSE_click(obj.sections[144]) then
-            gfx_font_select.italics = not gfx_font_select.italics
-            strips[tracks[track_select].strip][page].graphics[gfx2_select].font.italics = gfx_font_select.italics
-            update_gfx = true
-          end
-
-          if MOUSE_click(obj.sections[145]) then
-            gfx_font_select.underline = not gfx_font_select.underline
-            strips[tracks[track_select].strip][page].graphics[gfx2_select].font.underline = gfx_font_select.underline
-            update_gfx = true
-          end
-
-          if MOUSE_click(obj.sections[146]) then
-            gfx_font_select.shadow = not gfx_font_select.shadow
-            strips[tracks[track_select].strip][page].graphics[gfx2_select].font.shadow = gfx_font_select.shadow
-            update_gfx = true
-          end
-          
-          if mouse.context == nil and MOUSE_click(obj.sections[141]) then mouse.context = contexts.textsizeslider 
-          elseif mouse.context == nil and MOUSE_click(obj.sections[148]) then mouse.context = contexts.shadxslider
-          elseif mouse.context == nil and MOUSE_click(obj.sections[149]) then mouse.context = contexts.shadyslider
-          elseif mouse.context == nil and MOUSE_click(obj.sections[150]) then mouse.context = contexts.shadaslider end
-          
-        end
-      
-        if mouse.context and mouse.context == contexts.textsizeslider then
-          local val = F_limit(MOUSE_sliderHBar(obj.sections[141]),0,1)
-          if val ~= nil then
-            gfx_font_select.size = F_limit((val*250),8,250)
-            --for i = 1, #ctl_select do
-            strips[tracks[track_select].strip][page].graphics[gfx2_select].font.size = gfx_font_select.size
-            --end            
-            update_gfx = true
-          end
-        elseif mouse.context and mouse.context == contexts.shadxslider then
-          local val = F_limit(MOUSE_sliderHBar(obj.sections[148]),0,1)
-          if val ~= nil then
-            gfx_font_select.shadow_x = math.floor((val*30)-15)
-            --for i = 1, #ctl_select do
-            strips[tracks[track_select].strip][page].graphics[gfx2_select].font.shadow_x = gfx_font_select.shadow_x
-            --end            
-            update_gfx = true
-          end
-        elseif mouse.context and mouse.context == contexts.shadyslider then
-          local val = F_limit(MOUSE_sliderHBar(obj.sections[149]),0,1)
-          if val ~= nil then
-            gfx_font_select.shadow_y = math.floor((val*30)-15)
-            --for i = 1, #ctl_select do
-            strips[tracks[track_select].strip][page].graphics[gfx2_select].font.shadow_y = gfx_font_select.shadow_y
-            --end            
-            update_gfx = true
-          end
-        elseif mouse.context and mouse.context == contexts.shadaslider then
-          local val = F_limit(MOUSE_sliderHBar(obj.sections[150]),0,1)
-          if val ~= nil then
-            gfx_font_select.shadow_a = val
-            --for i = 1, #ctl_select do
-            strips[tracks[track_select].strip][page].graphics[gfx2_select].font.shadow_a = gfx_font_select.shadow_a
-            --end            
-            update_gfx = true
-          end
-        end
-        
-        if MOUSE_click(obj.sections[44]) then
-          local i = math.floor((mouse.my - obj.sections[44].y) / butt_h)-1
-          
-          if i == -1 then
-            if mouse.mx < obj.sections[44].w/2 then
-              glist_offset = glist_offset - G_butt_cnt
-              if glist_offset < 0 then
-                glist_offset = 0
-              end
-            else
-              if glist_offset + G_butt_cnt < #graphics_files then
-                glist_offset = glist_offset + G_butt_cnt
-              end
-            end
-            update_gfx = true
-          elseif graphics_files[i + glist_offset] then
-            gfx_select = i + glist_offset
-            
-            --load temp image
-            gfx.loadimg(1023,graphics_path..graphics_files[gfx_select].fn)
-            draggfx_w, draggfx_h = gfx.getimgdim(1023)
-            
-            update_gfx = true
-            mouse.context = contexts.draggfx
-          end
-          
-        end
-        
-        if mouse.context and mouse.context == contexts.draggfx then
-          draggfx = {x = mouse.mx - draggfx_w/2, y = mouse.my - draggfx_h/2}
-          update_surface = true
-        elseif draggfx ~= nil then
-          --Dropped
-          if mouse.mx > obj.sections[10].x and mouse.mx < obj.sections[10].x+obj.sections[10].w and mouse.my > obj.sections[10].y and mouse.my < obj.sections[10].y+obj.sections[10].h then
-            Strip_AddGFX(gfxtype.img)
-          end
-          
-          draggfx = nil
-          update_gfx = true
-        end
-      
-        if mouse.mx > obj.sections[10].x and clicklblopts == false then
-          if strips and tracks[track_select] and strips[tracks[track_select].strip] then
-          
-            if gfx2_select ~= nil then
-            
-              local selrect = CalcGFXSelRect()
-              selrect.x = selrect.x - surface_offset.x + obj.sections[10].x
-              selrect.y = selrect.y - surface_offset.y + obj.sections[10].y
-              local xywh = {x = selrect.x+selrect.w-5,
-                            y = selrect.y+selrect.h/2-5,
-                            w = 10,
-                            h = 10}
-              if mouse.context == nil and MOUSE_click(xywh) then
-                if poslock_select == false then
-                  mouse.context = contexts.stretch_x
-                  gfx2_stretch = {mx = mouse.mx, sw = strips[tracks[track_select].strip][page].graphics[gfx2_select].stretchw}
-                end
-              end
-
-              local xywh = {x = selrect.x+selrect.w/2-5,
-                            y = selrect.y+selrect.h-5,
-                            w = 10,
-                            h = 10}
-              if mouse.context == nil and MOUSE_click(xywh) then
-                if poslock_select == false then
-                  mouse.context = contexts.stretch_y
-                  gfx2_stretch = {my = mouse.my, sh = strips[tracks[track_select].strip][page].graphics[gfx2_select].stretchh}
-                end
-              end
-
-              local xywh = {x = selrect.x+selrect.w-5,
-                            y = selrect.y+selrect.h-5,
-                            w = 10,
-                            h = 10}
-              if mouse.context == nil and MOUSE_click(xywh) then
-                if poslock_select == false then
-                  mouse.context = contexts.stretch_xy
-                  gfx2_stretch = {mx = mouse.mx, my = mouse.my, sw = strips[tracks[track_select].strip][page].graphics[gfx2_select].stretchw,
-                                                                sh = strips[tracks[track_select].strip][page].graphics[gfx2_select].stretchh}
-                end
-              end
-            
-              if mouse.context and mouse.context == contexts.stretch_x then
-              
-                strips[tracks[track_select].strip][page].graphics[gfx2_select].stretchw = math.max(math.floor((gfx2_stretch.sw + (mouse.mx-gfx2_stretch.mx))/settings_gridsize)*settings_gridsize,2)
-                update_gfx = true
-              
-              elseif mouse.context and mouse.context == contexts.stretch_y then
-              
-                strips[tracks[track_select].strip][page].graphics[gfx2_select].stretchh =  math.max(math.floor((gfx2_stretch.sh + (mouse.my-gfx2_stretch.my))/settings_gridsize)*settings_gridsize,2)
-                update_gfx = true
-                
-              elseif mouse.context and mouse.context == contexts.stretch_xy then
-              
-                strips[tracks[track_select].strip][page].graphics[gfx2_select].stretchw = math.max(math.floor((gfx2_stretch.sw + (mouse.mx-gfx2_stretch.mx))/settings_gridsize)*settings_gridsize,2)
-                strips[tracks[track_select].strip][page].graphics[gfx2_select].stretchh = math.max(math.floor((gfx2_stretch.sh + (mouse.my-gfx2_stretch.my))/settings_gridsize)*settings_gridsize,2)
-                update_gfx = true
-
-              end            
-            
-            end
-            
-            local clickxywh = false
-            if mouse.context == nil then
-              for i = #strips[tracks[track_select].strip][page].graphics,1,-1 do
-                local xywh
-                xywh = {x = strips[tracks[track_select].strip][page].graphics[i].x - surface_offset.x + obj.sections[10].x, 
-                        y = strips[tracks[track_select].strip][page].graphics[i].y - surface_offset.y + obj.sections[10].y, 
-                        w = strips[tracks[track_select].strip][page].graphics[i].stretchw, 
-                        h = strips[tracks[track_select].strip][page].graphics[i].stretchh}
-                
-                if xywh.w < 16 then
-                  xywh.x = xywh.x - 8
-                  xywh.w = 16
-                end
-                if xywh.h < 16 then 
-                  xywh.y = xywh.y - 8
-                  xywh.h = 16
-                end
-                
-                if MOUSE_click(xywh) then
-                  gfx2_select = i              
-
-                  poslock_select = nz(strips[tracks[track_select].strip][page].graphics[gfx2_select].poslock,false)
-                  
-                  mouse.context = contexts.draggfx2
-                  draggfx2 = 'draggfx'
-                  dragoff = {x = mouse.mx - strips[tracks[track_select].strip][page].graphics[gfx2_select].x - surface_offset.x,
-                             y = mouse.my - strips[tracks[track_select].strip][page].graphics[gfx2_select].y - surface_offset.y}
-                  
-                  if strips[tracks[track_select].strip][page].graphics[gfx2_select].gfxtype == gfxtype.txt then
-                    show_lbloptions = true
-                    SetGfxSelectVals()
-                  else
-                    show_lbloptions = false
-                  end
-                  
-                  GenGFXDragPreview(gui)
-                  strips[tracks[track_select].strip][page].graphics[i].hide = true
-                  
-                  update_gfx = true
-                  clickxywh = true
-                  break
-                elseif MOUSE_click_RB(xywh) then
-                  GFXMenu()
-                  clickxywh = true
-                  break
-                end
-              end
-
-              if clickxywh == false and MOUSE_click_RB(obj.sections[10]) then
-                GFXMenu()
-              end
-            end
-            
-          end
-        end
-                  
-        if mouse.context and mouse.context == contexts.draggfx2 then
-          if math.floor(mouse.mx/settings_gridsize) ~= math.floor(mouse.last_x/settings_gridsize) or math.floor(mouse.my/settings_gridsize) ~= math.floor(mouse.last_y/settings_gridsize) then
-            local i
-            if poslock_select == false then
-            
-              strips[tracks[track_select].strip][page].graphics[gfx2_select].x = math.floor((mouse.mx - surface_offset.x)/settings_gridsize)*settings_gridsize 
-                                                                                 - math.floor((dragoff.x)/settings_gridsize)*settings_gridsize
-              strips[tracks[track_select].strip][page].graphics[gfx2_select].y = math.floor((mouse.my - surface_offset.y)/settings_gridsize)*settings_gridsize 
-                                                                                 - math.floor((dragoff.y)/settings_gridsize)*settings_gridsize
-            end
-            update_surface = true
-          end
-        elseif draggfx2 ~= nil then
-          draggfx2 = nil
-          if MOUSE_over(obj.sections[60]) then
-            --delete
             ctl_select = nil
-            DeleteSelectedCtls()
-            update_gfx = true
-          else
-            strips[tracks[track_select].strip][page].graphics[gfx2_select].hide = nil
-            update_gfx = true
-          end
-        end             
-        
-      elseif submode == 2 then
-  
-        if gfx.mouse_wheel ~= 0 then
-          local v = gfx.mouse_wheel/120
-          if MOUSE_over(obj.sections[46]) then
-            slist_offset = F_limit(slist_offset - v, 0, #strip_files)
-            update_gfx = true
-            gfx.mouse_wheel = 0
-          end
-          if MOUSE_over(obj.sections[47]) then
-            sflist_offset = F_limit(sflist_offset - v, 0, #strip_folders)
-            update_gfx = true
-            gfx.mouse_wheel = 0
-          end
-        end
-        
-        if MOUSE_click(obj.sections[15]) then
-          SaveStrip()
-          update_gfx = true
-        end
-        
-        if mouse.mx > obj.sections[10].x then
-          if mouse.context == nil and MOUSE_click(obj.sections[10]) then
-            if strips and tracks[track_select] and strips[tracks[track_select].strip] then
-              for i = 1, #strips[tracks[track_select].strip][page].controls do
-              
-                local xywh
-                xywh = {x = strips[tracks[track_select].strip][page].controls[i].x - surface_offset.x + obj.sections[10].x, 
-                        y = strips[tracks[track_select].strip][page].controls[i].y - surface_offset.y + obj.sections[10].y, 
-                        w = strips[tracks[track_select].strip][page].controls[i].w, 
-                        h = strips[tracks[track_select].strip][page].controls[i].ctl_info.cellh}
-                if MOUSE_click(xywh) then
-                  
-                  local stripid = strips[tracks[track_select].strip][page].controls[i].id
-                  if stripid ~= nil then
-                    SelectStripElements(stripid)
-                    --mouse.context = contexts.dragctl
-                    --dragctl = 'dragctl'
-                    dragoff = {x = mouse.mx - strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].x - 0.5*strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].w - surface_offset.x,
-                               y = mouse.my - strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].y - 0.5*strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].ctl_info.cellh - surface_offset.y}
-                    
-                    --update_gfx = true
-                    if ctl_select ~= nil and not mouse.ctrl then --and not mouse.alt then
-                      dragctl = 'dragctl'
-                      mouse.context = contexts.dragctl
-                      GenCtlDragPreview(gui)
-                      for i = 1, #ctl_select do
-                        strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].hide = true
-                      end
-                      if gfx3_select and #gfx3_select > 0 then
-                        for i = 1, #gfx3_select do
-                          strips[tracks[track_select].strip][page].graphics[gfx3_select[i].ctl].hide = true  
-                        end                    
-                      end
-                    end
-                    update_gfx = true
-                  end
-                end
-              end
-              if not mouse.context then
-                ctl_select = nil
-                gfx3_select = nil
-              end  
-            end
-          end  
-        end
-        
-        if mouse.context and mouse.context == contexts.dragctl then
-          if math.floor(mouse.mx/settings_gridsize) ~= math.floor(mouse.last_x/settings_gridsize) or math.floor(mouse.my/settings_gridsize) ~= math.floor(mouse.last_y/settings_gridsize) then
-            local i
-            local scale = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].scale
-            local zx, zy = 0.5*strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].w, 0.5*strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].ctl_info.cellh
+            show_cycleoptions = false
+            show_ctlbrowser = false
+            gfx2_select = nil
+            gfx3_select = nil
+            --CloseActChooser()
             
-            if nz(strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].poslock,false) == false then
-              strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].x = math.floor((mouse.mx-zx - surface_offset.x)/settings_gridsize)*settings_gridsize 
-                                                                                 - math.floor((dragoff.x)/settings_gridsize)*settings_gridsize
-              strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].y = math.floor((mouse.my-zy - surface_offset.y)/settings_gridsize)*settings_gridsize 
-                                                                                 - math.floor((dragoff.y)/settings_gridsize)*settings_gridsize
-              strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].xsc = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].x
-                                                                                         + math.floor(strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].w/2
-                                                                                         - (strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].w*scale)/2)
-              strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].ysc = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].y
-                                                                                         + math.floor(strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].ctl_info.cellh/2
-                                                                                         - (strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].ctl_info.cellh*scale)/2)
-            end
-            if #ctl_select > 1 then
-              for i = 2, #ctl_select do
-                if nz(strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].poslock,false) == false then
-                  scale = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].scale
-                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].x = math.floor((mouse.mx-zx - surface_offset.x)/settings_gridsize)*settings_gridsize 
-                                                                                     - math.floor((dragoff.x)/settings_gridsize)*settings_gridsize 
-                                                                                     - ctl_select[i].relx
-                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].y = math.floor((mouse.my-zy - surface_offset.y)/settings_gridsize)*settings_gridsize 
-                                                                                     - math.floor((dragoff.y)/settings_gridsize)*settings_gridsize
-                                                                                     - ctl_select[i].rely
-                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].xsc = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].x
-                                                                                             + math.floor(strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].w/2
-                                                                                             - (strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].w*scale)/2)
-                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ysc = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].y
-                                                                                             + math.floor(strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctl_info.cellh/2
-                                                                                             - (strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctl_info.cellh*scale)/2)
-                end
-              end
-            end
-            if gfx3_select and #gfx3_select > 0 then
-              for i = 1, #gfx3_select do
-                strips[tracks[track_select].strip][page].graphics[gfx3_select[i].ctl].x = math.floor((mouse.mx-zx - surface_offset.x)/settings_gridsize)*settings_gridsize 
-                                                                                   - math.floor((dragoff.x)/settings_gridsize)*settings_gridsize 
-                                                                                   - gfx3_select[i].relx
-                strips[tracks[track_select].strip][page].graphics[gfx3_select[i].ctl].y = math.floor((mouse.my-zy - surface_offset.y)/settings_gridsize)*settings_gridsize 
-                                                                                   - math.floor((dragoff.y)/settings_gridsize)*settings_gridsize
-                                                                                   - gfx3_select[i].rely
-              end            
-            end
-
-            update_surface = true
-          end
-        elseif mouse.context == nil and dragctl ~= nil then
-          dragctl = nil
-          if MOUSE_over(obj.sections[60]) then
-            --delete
-            DeleteSelectedCtls()
-            update_gfx = true
-          else
-            for i = 1, #ctl_select do
-              strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].hide = nil
-            end
-            if gfx3_select and #gfx3_select > 0 then
-              for i = 1, #gfx3_select do
-                strips[tracks[track_select].strip][page].graphics[gfx3_select[i].ctl].hide = nil
-              end                    
-            end
-            update_gfx = true
-          end
-        end      
-        
-        if MOUSE_click(obj.sections[47]) then
-          local i = math.floor(((mouse.my - obj.sections[47].y)) / butt_h)-1
-          if i == -1 then
-            if mouse.mx < obj.sections[47].w/2 then
-              sflist_offset = sflist_offset - SF_butt_cnt
-              if sflist_offset < 0 then
-                sflist_offset = 0
-              end
-            else
-              if sflist_offset + SF_butt_cnt-1 < #strip_folders then
-                sflist_offset = sflist_offset + SF_butt_cnt
-              end
-            end
-            update_gfx = true
-          elseif strip_folders[i + sflist_offset] then
-            stripfol_select = i + sflist_offset
-            PopulateStrips()            
-            update_gfx = true
-          end
-          
-        end
-
-        if MOUSE_click(obj.sections[46]) then
-          local i = math.floor(((mouse.my - obj.sections[46].y)) / butt_h)-1
-          if i == 0 then
-            if mouse.mx < obj.sections[46].w/2 then
-              slist_offset = slist_offset - S_butt_cnt
-              if slist_offset < 0 then
-                slist_offset = 0
-              end
-            else
-              if slist_offset + S_butt_cnt-1 < #strip_files then
-                slist_offset = slist_offset + S_butt_cnt-1
-              end
-            end
-            update_gfx = true
-          elseif strip_files[i-1 + slist_offset] then
-            strip_select = i-1 + slist_offset
-            --gen preview
-            loadstrip = LoadStrip(strip_select)
-            if loadstrip then
-              GenStripPreview(gui, loadstrip.strip)
-                        
-              mouse.context = contexts.dragstrip
-            end
-            update_gfx = true
-          end
-          
-        elseif MOUSE_click_RB(obj.sections[46]) then
-        
-          if strip_select then
-            local i = math.floor(((mouse.my - obj.sections[46].y)) / butt_h)-1
-            if strip_select == i-1 + slist_offset then
-              mstr = 'Set Default (Track)|Set Default (Master)||Clear Default (Track)|Clear Default (Master)||Save (Overwrite)||Add to favorites'
-            else
-              mstr = '#Set Default (Track)|#Set Default (Master)||Clear Default (Track)|Clear Default (Master)||#Save (Overwrite)||#Add to favorites'            
-            end
-            gfx.x, gfx.y = mouse.mx, mouse.my
-            res = OpenMenu(mstr)
-            if res ~= 0 then
-              if res == 1 then
-                
-                strip_default = {strip_select = strip_select,
-                                 stripfol_select = stripfol_select}
-              elseif res == 2 then
-                strip_default_mast = {strip_select = strip_select,
-                                      stripfol_select = stripfol_select}
-              elseif res == 3 then
-                strip_default = nil
-              elseif res == 4 then
-                strip_default_mast = nil
-              elseif res == 5 then
-              
-                local ostoff = slist_offset
-                SaveStrip3(string.sub(strip_files[strip_select].fn,1,string.len(strip_files[strip_select].fn)-6))
-                slist_offset = ostoff
-              elseif res == 6 then
-                strip_favs[#strip_favs+1] = strip_folders[stripfol_select].fn..'/'..strip_files[strip_select].fn
-              end
-            end
-          end        
-        end
-        
-        if mouse.context and mouse.context == contexts.dragstrip then
-          dragstripx = true --to force dropped action even if not 
-          if mouse.mx ~= mouse.last_x or mouse.my ~= mouse.last_y then
-            dragstrip = {x = mouse.mx, y = mouse.my}
-            update_surface = true
-          end
-        elseif dragstripx ~= nil then
-          --Dropped
-          --image_count = image_count_add
-          if dragstrip then
-            if dragstrip.x > obj.sections[10].x and dragstrip.x < obj.sections[10].w and dragstrip.y > obj.sections[10].y and dragstrip.y < obj.sections[10].h then
-              Strip_AddStrip(loadstrip, dragstrip.x-obj.sections[10].x, dragstrip.y-obj.sections[10].y)
-            end
-          end
-                    
-          loadstrip = nil
-          dragstrip = nil
-          dragstripx = nil
-          ctl_select = nil
-          update_gfx = true
-        end
-        
-      end
-      
-      if MOUSE_click(obj.sections[13]) then
-        if submode ~= 0 or (submode == 0 and mouse.mx < obj.sections[13].x + obj.sections[13].w - 30) then
-          ctl_select = nil
-          gfx2_select = nil
-          gfx3_select = nil
-          show_paramlearn = false
-          CloseActChooser()
-          show_ctlbrowser = false
-          
-          submode = submode + 1
-          if submode+1 > #submode_table then
-            submode = 0
-          end
-          update_gfx = true
-        elseif submode == 0 and mouse.mx > obj.sections[13].x + obj.sections[13].w - 30 then
-          CloseActChooser()
-          show_ctlbrowser = false
-          show_paramlearn = false
-          fxmode = (fxmode + 1) % 2
-          update_gfx = true
-         
-        end
-
-      elseif MOUSE_click_RB(obj.sections[13]) then
-        --if submode ~= 0 or (submode == 0 and mouse.mx > 30) then
-          ctl_select = nil
-          gfx2_select = nil
-          gfx3_select = nil
-          CloseActChooser()
-          show_ctlbrowser = false
-          
-          submode = submode - 1
-          if submode < 0 then
-            submode = #submode_table-1
-          end
-          update_gfx = true
-        --[[else
-          trackedit_select = trackedit_select - 1 
-          if trackedit_select < -1 then
-            trackedit_select = #tracks
-          end
-          PopulateTrackFX()
-          update_gfx = true    
-        end]]
-      end          
-    end
-    
-    if mouse.context == nil then
-      if ((submode == 0 and ctl_select ~= nil) and (MOUSE_click(obj.sections[45]) or (MOUSE_click(obj.sections[100]) and show_cycleoptions) 
-          or (MOUSE_click(obj.sections[200]) and show_ctlbrowser))) or 
-         ((submode == 1 and gfx2_select ~= nil) and (MOUSE_click(obj.sections[49]) and show_lbloptions)) then
-      elseif mouse.mx > obj.sections[10].x and show_actionchooser == false then
-        if MOUSE_click(obj.sections[10]) then
-          if noscroll == false then
-            mouse.context = "dragsurface"
-            surx = surface_offset.x
-            sury = surface_offset.y
-            mmx = mouse.mx
-            mmy = mouse.my
-            update_gfx = true
-          end
-          ctl_select = nil
-          show_cycleoptions = false
-          show_ctlbrowser = false
-          gfx2_select = nil
-          gfx3_select = nil
-          --CloseActChooser()
-          
-          if mode ~= 0 then
-            update_gfx = true
-          end
-        end
-
-      end    
-    end
-    if mouse.context and mouse.context == "dragsurface" then
-      if noscroll == false and settings_locksurface == false then
-      
-        local offx, offy
-        if lockx == false then
-          offx = MOUSE_surfaceX(obj.sections[10])
-        end
-        if locky == false then  
-          offy = MOUSE_surfaceY(obj.sections[10])
-        end
-        
-        if surface_size.w < obj.sections[10].w then
-          surface_offset.x = -math.floor((obj.sections[10].w - surface_size.w)/2)
-        elseif offx ~= nil then
-          --if locky == false then
-          --  surface_offset.x = F_limit(surx + offx,0-math.ceil(obj.sections[10].w*0.25),surface_size.w - math.ceil(obj.sections[10].w*0.75))
-          --else
-            surface_offset.x = F_limit(surx + offx,0,surface_size.w - obj.sections[10].w)        
-          --end
-        end
-        
-        if offy ~= nil then
-          --if lockx == false then
-          --  surface_offset.y = F_limit(sury + offy,0-math.ceil(obj.sections[10].h*0.25),surface_size.h - math.ceil(obj.sections[10].h*0.75))
-          --else
-            surface_offset.y = F_limit(sury + offy,0,surface_size.h - obj.sections[10].h)        
-          --end
-        end
-  
-        if surface_offset.oldx ~= surface_offset.x or surface_offset.oldy ~= surface_offset.y or (ctls and not ctl_select) then
-          surface_offset.oldx = surface_offset.x
-          surface_offset.oldy = surface_offset.y
-          
-          if strips and tracks[track_select] and strips[tracks[track_select].strip] then
-            strips[tracks[track_select].strip][page].surface_x = surface_offset.x
-            strips[tracks[track_select].strip][page].surface_y = surface_offset.y
-          end
-          if surface_offset.x < 0 or surface_offset.y < 0 
-              or surface_offset.x > surface_size.w-obj.sections[10].w 
-              or surface_offset.y > surface_size.h-obj.sections[10].h then 
-            update_surfaceedge = true 
-          end
-          update_surface = true
-        end
-      end
-    end
-    
-    if settings_mousewheelknob == false and gfx.mouse_wheel ~= 0 and show_ctlbrowser == false then
-      if noscroll == false then
-        if lockx == false or locky == false then
-          local v = gfx.mouse_wheel/120
-          if mouse.mx > obj.sections[10].x and MOUSE_over(obj.sections[10]) then
-            if ctl_select then
-              ctl_select = nil
+            if mode ~= 0 then
               update_gfx = true
             end
-            if locky then
-              surface_offset.x = F_limit(surface_offset.x - v * 50,0,surface_size.w - obj.sections[10].w)
-            elseif lockx then
-              surface_offset.y = F_limit(surface_offset.y - v * 50,0,surface_size.h - obj.sections[10].h)        
-            else
-              --surface_offset.y = F_limit(surface_offset.y - v * 50,0-math.ceil(obj.sections[10].h*0.25),surface_size.h - math.ceil(obj.sections[10].h*0.75))
-              surface_offset.y = F_limit(surface_offset.y - v * 50,0,surface_size.h - obj.sections[10].h)        
-            end
+          end
+  
+        end    
+      end
+      if mouse.context and mouse.context == "dragsurface" then
+        if noscroll == false and settings_locksurface == false then
+        
+          local offx, offy
+          if lockx == false then
+            offx = MOUSE_surfaceX(obj.sections[10])
+          end
+          if locky == false then  
+            offy = MOUSE_surfaceY(obj.sections[10])
+          end
+          
+          if surface_size.w < obj.sections[10].w then
+            surface_offset.x = -math.floor((obj.sections[10].w - surface_size.w)/2)
+          elseif offx ~= nil then
+            --if locky == false then
+            --  surface_offset.x = F_limit(surx + offx,0-math.ceil(obj.sections[10].w*0.25),surface_size.w - math.ceil(obj.sections[10].w*0.75))
+            --else
+              surface_offset.x = F_limit(surx + offx,0,surface_size.w - obj.sections[10].w)        
+            --end
+          end
+          
+          if offy ~= nil then
+            --if lockx == false then
+            --  surface_offset.y = F_limit(sury + offy,0-math.ceil(obj.sections[10].h*0.25),surface_size.h - math.ceil(obj.sections[10].h*0.75))
+            --else
+              surface_offset.y = F_limit(sury + offy,0,surface_size.h - obj.sections[10].h)        
+            --end
+          end
+    
+          if surface_offset.oldx ~= surface_offset.x or surface_offset.oldy ~= surface_offset.y or (ctls and not ctl_select) then
+            surface_offset.oldx = surface_offset.x
+            surface_offset.oldy = surface_offset.y
+            
             if strips and tracks[track_select] and strips[tracks[track_select].strip] then
               strips[tracks[track_select].strip][page].surface_x = surface_offset.x
               strips[tracks[track_select].strip][page].surface_y = surface_offset.y
@@ -14185,16 +14451,220 @@ end
             update_surface = true
           end
         end
-      else
-        if ctl_select then
-          ctl_select = nil
+      end
+      
+      if settings_mousewheelknob == false and gfx.mouse_wheel ~= 0 and show_ctlbrowser == false then
+        if noscroll == false then
+          if lockx == false or locky == false then
+            local v = gfx.mouse_wheel/120
+            if mouse.mx > obj.sections[10].x and MOUSE_over(obj.sections[10]) then
+              if ctl_select then
+                ctl_select = nil
+                update_gfx = true
+              end
+              if locky then
+                surface_offset.x = F_limit(surface_offset.x - v * 50,0,surface_size.w - obj.sections[10].w)
+              elseif lockx then
+                surface_offset.y = F_limit(surface_offset.y - v * 50,0,surface_size.h - obj.sections[10].h)        
+              else
+                --surface_offset.y = F_limit(surface_offset.y - v * 50,0-math.ceil(obj.sections[10].h*0.25),surface_size.h - math.ceil(obj.sections[10].h*0.75))
+                surface_offset.y = F_limit(surface_offset.y - v * 50,0,surface_size.h - obj.sections[10].h)        
+              end
+              if strips and tracks[track_select] and strips[tracks[track_select].strip] then
+                strips[tracks[track_select].strip][page].surface_x = surface_offset.x
+                strips[tracks[track_select].strip][page].surface_y = surface_offset.y
+              end
+              if surface_offset.x < 0 or surface_offset.y < 0 
+                  or surface_offset.x > surface_size.w-obj.sections[10].w 
+                  or surface_offset.y > surface_size.h-obj.sections[10].h then 
+                update_surfaceedge = true 
+              end
+              update_surface = true
+            end
+          end
+        else
+          if ctl_select then
+            ctl_select = nil
+            update_gfx = true
+          end
+        
+        end
+        gfx.mouse_wheel = 0
+      end
+          
+      end
+
+    else --XXY MODE
+    
+      if gfx.mouse_wheel ~= 0 then
+        xywh = {x = obj.sections[221].x+obj.sections[223].x,
+                y = obj.sections[221].y+obj.sections[223].y,
+                w = obj.sections[223].w,
+                h = obj.sections[223].h}
+                
+        if MOUSE_over(xywh) then
+          local v = gfx.mouse_wheel/120
+          xxylist_offset = F_limit(xxylist_offset - v,0,#snapshots[tracks[track_select].strip][page][sstype_select].snapshot-1)
           update_gfx = true
         end
-      
-      end
-      gfx.mouse_wheel = 0
-    end
         
+        gfx.mouse_wheel = 0
+      end
+      
+      if mouse.context == nil and (MOUSE_click(obj.sections[220]) or MOUSE_click_RB(obj.sections[220])) then
+      
+        if mouse.LB then
+          local strip = tracks[track_select].strip
+          if xxy and xxy[strip] and xxy[strip][page] and xxy[strip][page][sstype_select] then
+            mouse.context = contexts.xxy_drag
+          end
+          
+        elseif mouse.RB then
+          local strip = tracks[track_select].strip
+          if xxy and xxy[strip] and xxy[strip][page] and xxy[strip][page][sstype_select] then
+          
+            for p = 1, #xxy[strip][page][sstype_select].points do
+            
+              xywh = {x = obj.sections[220].x + xxy[strip][page][sstype_select].points[p].x*obj.sections[220].w - 8,
+                      y = obj.sections[220].y + xxy[strip][page][sstype_select].points[p].y*obj.sections[220].h - 8,
+                      w = 16,
+                      h = 16}
+              if MOUSE_click_RB(xywh) then
+                mouse.context = contexts.xxy_movesnap
+                movesnap = {xoff = mouse.mx - xywh.x, yoff = mouse.my - xywh.y, p = p}
+                break 
+              end
+            
+            end
+        
+          end
+        
+        end
+      
+      elseif mouse.context == nil and (MOUSE_click(obj.sections[221]) or MOUSE_click_RB(obj.sections[221])) then
+        local mx,my = mouse.mx,mouse.my
+        mouse.mx = mouse.mx-obj.sections[221].x
+        mouse.my = mouse.my-obj.sections[221].y
+        
+        local strip = tracks[track_select].strip
+        --DBG(mouse.mx..'  '..mouse.my)
+        if MOUSE_click(obj.sections[223]) then
+          local i = math.floor((mouse.my - obj.sections[223].y)/butt_h)
+        
+          if i == 0 then
+            if mouse.mx < obj.sections[223].x + obj.sections[223].w/2 then
+              xxylist_offset = math.max(xxylist_offset - SSXXY_butt_cnt,0)
+              update_gfx = true
+            else
+              xxylist_offset = math.min(xxylist_offset + SSXXY_butt_cnt, math.max(#snapshots[strip][page][sstype_select].snapshot - SSXXY_butt_cnt,0))
+              update_gfx = true
+            end
+          else
+            if snapshots[strip][page][sstype_select][i+xxylist_offset] or 
+               snapshots[strip][page][sstype_select].snapshot[i+xxylist_offset] then            
+                mouse.context = contexts.xxy_dragsnap
+                ss_select = i
+                update_gfx = true
+                dragsnap = {x = mouse.mx, y = mouse.my, ss = i}
+            end
+          end
+        
+        elseif MOUSE_click(obj.sections[225]) then
+          mouse.context = contexts.xxy_gravityslider
+        
+        elseif mouse.context == nil and MOUSE_click(obj.sections[226]) then
+        
+          if snapshots[tracks[track_select].strip] then
+            sstype_select = F_limit(sstype_select + 1, 2, #snapshots[tracks[track_select].strip][page])
+          --else
+          --  Snapshots_INIT()
+          --  sstype_select = 1
+          end
+          ss_select = nil
+          xxylist_offset = 0
+          update_gfx = true
+        
+        elseif mouse.context == nil and MOUSE_click_RB(obj.sections[226]) then
+        
+          if snapshots[tracks[track_select].strip] then
+            sstype_select = F_limit(sstype_select - 1, 2, #snapshots[tracks[track_select].strip][page])
+          --else
+          --  Snapshots_INIT()
+          --  sstype_select = 1
+          end
+          ss_select = nil
+          xxylist_offset = 0
+          update_gfx = true
+        
+        end
+        
+        mouse.mx, mouse.my = mx, my
+      elseif mouse.context == nil and MOUSE_click(obj.sections[222]) then
+        show_xxy = false
+        SaveSingleStrip(tracks[track_select].strip)
+        update_gfx = true
+      end
+
+      if mouse.context and mouse.context == contexts.xxy_drag then
+        local ox, oy = xxy[tracks[track_select].strip][page][sstype_select].x, xxy[tracks[track_select].strip][page][sstype_select].y
+        xxy[tracks[track_select].strip][page][sstype_select].x = F_limit((mouse.mx - obj.sections[220].x) / obj.sections[220].w,0,1)
+        xxy[tracks[track_select].strip][page][sstype_select].y = F_limit((mouse.my - obj.sections[220].y) / obj.sections[220].h,0,1)
+        
+        if xxy[tracks[track_select].strip][page][sstype_select].x ~= ox or xxy[tracks[track_select].strip][page][sstype_select].y ~= oy then
+          XXY_Set(tracks[track_select].strip, page, sstype_select)
+          update_xxy = true        
+        end
+        
+      elseif mouse.context and mouse.context == contexts.xxy_movesnap then
+        local x = (mouse.mx - obj.sections[220].x)/obj.sections[220].w
+        local y = (mouse.my - obj.sections[220].y)/obj.sections[220].h
+        
+        xxy[tracks[track_select].strip][page][sstype_select].points[movesnap.p].x = x
+        xxy[tracks[track_select].strip][page][sstype_select].points[movesnap.p].y = y
+        
+        local strip = tracks[track_select].strip
+        if xxy and xxy[strip] and xxy[strip][page] and xxy[strip][page][sstype_select] then
+          XXY_Set(tracks[track_select].strip, page, sstype_select)
+        end
+        update_xxy = true
+      
+      elseif mouse.context and mouse.context == contexts.xxy_gravityslider then
+        local mx,my = mouse.mx,mouse.my
+        mouse.mx = mouse.mx-obj.sections[221].x
+        mouse.my = mouse.my-obj.sections[221].y
+        
+        local val = F_limit(MOUSE_sliderHBar(obj.sections[225]),0,1)
+        if val ~= nil then
+          xxy_gravity = val*3+1
+          local strip = tracks[track_select].strip
+          if xxy and xxy[strip] and xxy[strip][page] and xxy[strip][page][sstype_select] then
+            XXY_Set(tracks[track_select].strip, page, sstype_select)
+          end
+          update_gfx = true
+        end
+        mouse.mx, mouse.my = mx, my
+        
+      elseif mouse.context and mouse.context == contexts.xxy_dragsnap then
+        dragsnap.x = mouse.mx
+        dragsnap.y = mouse.my
+        update_xxy = true
+      
+      elseif dragsnap ~= nil then
+        if MOUSE_over(obj.sections[220]) then
+          local strip = tracks[track_select].strip
+          local x,y = mouse.mx - obj.sections[220].x, mouse.my - obj.sections[220].y
+          x = x/obj.sections[220].w
+          y = y/obj.sections[220].h
+
+          XXY_INIT(strip, page, sstype_select)
+          pt_cnt = #xxy[strip][page][sstype_select].points + 1
+          xxy[strip][page][sstype_select].points[pt_cnt] = {x = x, y = y, ss = dragsnap.ss}
+
+          XXY_Set(tracks[track_select].strip, page, sstype_select)
+        end
+        update_gfx = true
+        dragsnap = nil
+      end
     end
 
     if not mouse.LB and not mouse.RB then mouse.context = nil end
@@ -14222,6 +14692,62 @@ end
     if ctl_select then ctls = true else ctls = false end
     if closectlbrowser then closectlbrowser = nil show_ctlbrowser = false end
       
+  end
+  
+  function XXY_Set(strip, page, sst)
+  
+    if sstype_select > 1 then
+      xxy_shortdist = 1
+      local d = {}
+      local gtrack = GetTrack(strips[strip].track.tracknum)
+      
+      local px, py = xxy[strip][page][sst].x, xxy[strip][page][sst].y
+      for p = 1, #xxy[strip][page][sst].points do
+        d[p] = math.sqrt((px - xxy[strip][page][sst].points[p].x)^2 + (py - xxy[strip][page][sst].points[p].y)^2)^xxy_gravity
+        xxy[strip][page][sst].points[p].distance = d[p]
+        xxy_shortdist = math.min(xxy_shortdist,d[p])
+      end
+      for ctl = 1, #snapshots[strip][page][sst].ctls do
+        local num, den = 0, 0
+        for p = 1, #d do
+          local ss = xxy[strip][page][sst].points[p].ss
+          local v = snapshots[strip][page][sst].snapshot[ss].data[ctl].dval
+          if v then
+            num = num + v/d[p]
+            den = den + 1/d[p]
+          end
+        end
+        local nv = num/den
+        
+        local ss = xxy[strip][page][sst].points[1].ss
+        local c = snapshots[strip][page][sst].snapshot[ss].data[ctl].ctl
+        if c and nv and nv < 1/0 and nv > -1/0 then
+          trackfxparam_select = c
+          if strips[strip][page].controls[c].tracknum then
+            track = GetTrack(strips[strip][page].controls[c].tracknum)
+          else
+            track = gtrack
+          end
+          SetParam3_Denorm2(track, nv)        
+        end
+      end
+    end
+
+  end
+  
+  function XXY_INIT(strip, page, sst)
+    if xxy == nil then
+      xxy = {}
+    end
+    if xxy[strip] == nil then
+      xxy[strip] = {}
+    end
+    if xxy[strip][page] == nil then
+      xxy[strip][page] = {}
+    end
+    if xxy[strip][page][sst] == nil then
+      xxy[strip][page][sst] = {x = 0.5, y = 0.5, points = {}}
+    end
   end
   
   function ReselectSelection()
@@ -15143,6 +15669,36 @@ end
           end
         end
         
+        --XXY
+        for s = 1, #strips do
+        
+          for p = 1, 4 do
+        
+            for sst = 1, #snapshots[s][p] do
+            
+              local key = 'xxy_strip_'..s..'_'..p..'_type_'..sst..'_'
+              local ptcnt = tonumber(GPES(key..'pt_count',true))
+              if ptcnt then
+            
+                XXY_INIT(s, p, sst)
+                for pt = 1, ptcnt do
+                
+                  local key = 'xxy_strip_'..s..'_'..p..'_type_'..sst..'_pt_'..pt..'_'
+                  xxy[s][p][sst].points[pt] = {}
+                  xxy[s][p][sst].points[pt].x = tonumber(GPES(key..'x'))
+                  xxy[s][p][sst].points[pt].y = tonumber(GPES(key..'y'))
+                  xxy[s][p][sst].points[pt].ss = tonumber(GPES(key..'ss'))
+                
+                end
+            
+              end
+              
+            end
+        
+          end
+        
+        end
+        
       else
         SaveData()
       end
@@ -15318,9 +15874,46 @@ end
       reaper.SetProjExtState(0,SCRIPT,'snapshots_count',0)    
     end
     SaveSnapshotData(s)
+    SaveXXYData(s)
     
   end
-  
+
+  function SaveXXYData(s)
+
+    if xxy and xxy[s] then
+      for p = 1, 4 do
+    
+        if xxy[s][p] then
+        
+          for sst = 1, #snapshots[s][p] do
+            
+            if xxy[s][p][sst] then
+          
+              local key = 'xxy_strip_'..s..'_'..p..'_type_'..sst..'_'
+              reaper.SetProjExtState(0,SCRIPT,key..'x',xxy[s][p][sst].x)
+              reaper.SetProjExtState(0,SCRIPT,key..'y',xxy[s][p][sst].y)              
+              local ptcnt = #xxy[s][p][sst].points
+              reaper.SetProjExtState(0,SCRIPT,key..'pt_count',ptcnt)
+              for pt = 1, ptcnt do
+              
+                local key = 'xxy_strip_'..s..'_'..p..'_type_'..sst..'_pt_'..pt..'_'
+                reaper.SetProjExtState(0,SCRIPT,key..'x',xxy[s][p][sst].points[pt].x)              
+                reaper.SetProjExtState(0,SCRIPT,key..'y',xxy[s][p][sst].points[pt].y)              
+                reaper.SetProjExtState(0,SCRIPT,key..'ss',xxy[s][p][sst].points[pt].ss)              
+              
+              end
+              
+            end
+            
+          end
+        
+        end
+    
+      end
+    end
+
+  end
+    
   function SaveSnapshotData(s)
   
     for p = 1, #snapshots[s] do
@@ -15604,6 +16197,7 @@ end
     
       for s = 1, #snapshots do
         SaveSnapshotData(s)
+        SaveXXYData(s)
       end
     
     else
@@ -15834,6 +16428,72 @@ end
       g_savedirty = true
     end
   
+  end
+  
+  function CleanSS(strip, page, sstype)
+  
+    if sstype > 1 then
+      if snapshots[strip][page][sstype] then
+  
+        if #snapshots[strip][page][sstype].ctls > 0 then
+  
+          local ctlcnt = #snapshots[strip][page][sstype].ctls
+          for ctl = 1, ctlcnt do
+  
+            local c = snapshots[strip][page][sstype].ctls[ctl].ctl
+            
+            --check ctl in each snapshot
+            if #snapshots[strip][page][sstype].snapshot > 0 then
+              for ss = 1, #snapshots[strip][page][sstype].snapshot do
+    
+                if #snapshots[strip][page][sstype].snapshot[ss].data > 0 then
+                  local fnd = false
+                  for d = 1, #snapshots[strip][page][sstype].snapshot[ss].data do
+                    if snapshots[strip][page][sstype].snapshot[ss].data[d].ctl == c then
+                      fnd = true
+                      break
+                    end
+                  end
+                  if fnd == false then 
+                    --add to data  
+                    AddCtlValToSS(strip,page,sstype,ss,c)
+                  end
+                else
+                  --add to data
+                  AddCtlValToSS(strip,page,sstype,ss,c)  
+                end
+              end  
+
+            end
+          end
+          
+        end  
+  
+      end
+    end      
+  end
+
+  function AddCtlValToSS(strip, page, sstype, ss, c)
+  --DBG('adding '..c)
+    local track = GetTrack(nz(strips[strip][page].controls[c].tracknum,strips[strip].track.tracknum))
+    local cc = strips[strip][page].controls[c].ctlcat
+    local fxnum = strips[strip][page].controls[c].fxnum
+    local param = strips[strip][page].controls[c].param
+    local min, max = GetParamMinMax(cc,track,nz(fxnum,-1),param,true,c)
+    local dval = DenormalizeValue(min,max,strips[strip][page].controls[c].val)
+    if sstype == 1 then
+      local sscnt = #snapshots[strip][page][sstype][ss].data + 1
+      snapshots[strip][page][sstype][ss].data[sscnt] = {c_id = strips[strip][page].controls[c].c_id,
+                                                              ctl = c,
+                                                              val = strips[strip][page].controls[c].val,
+                                                              dval = dval}    
+    elseif sstype > 1 then
+      local sscnt = #snapshots[strip][page][sstype].snapshot[ss].data + 1
+      snapshots[strip][page][sstype].snapshot[ss].data[sscnt] = {c_id = strips[strip][page].controls[c].c_id,
+                                                              ctl = c,
+                                                              val = strips[strip][page].controls[c].val,
+                                                              dval = dval}
+    end
   end
 
   function XY_Set(strip, page, sstype_select, ctl)
@@ -16583,12 +17243,15 @@ end
     plist_offset = 0
     flist_offset = 0
     slist_offset = 0
+    xxylist_offset = 0
     ssoffset = 0
     fssoffset = 0
     al_offset = 0
     
     strips = {}
     snapshots = nil
+    xxy = nil
+    xxy_gravity = 1.5
     
     surface_offset = {x = 0, y = 0}
     
@@ -16663,6 +17326,7 @@ end
     show_snapshots = false
     show_fsnapshots = false
     show_actionchooser = false
+    show_xxy = false
     
     show_paramname = true
     show_paramval = true
@@ -16701,6 +17365,7 @@ end
     update_topbar = true
     update_ctlopts = true
     update_actcho = false
+    update_xxy = false
     force_gfx_update = true
     
     Snapshots_INIT()
