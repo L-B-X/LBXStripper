@@ -7146,12 +7146,48 @@ end
           end
         end
         snapshots[tracks[track_select].strip][page][sstype_select].snapshot = tbl
+        DeleteXXY(ss_select)
         ss_select = nil
         
       end    
     end    
   end
   
+  function DeleteXXY(ss)
+    
+      if sstype_select == 1 then
+        --[[if ss_select and snapshots and snapshots[tracks[track_select].strip] and snapshots[tracks[track_select].strip][page][sstype_select][ss_select] then
+        
+          local cnt = #snapshots[tracks[track_select].strip][page][sstype_select]
+          snapshots[tracks[track_select].strip][page][sstype_select][ss_select] = nil
+          local tbl = {}
+          for i = 1, cnt do
+            if snapshots[tracks[track_select].strip][page][sstype_select][i] ~= nil then
+              table.insert(tbl, snapshots[tracks[track_select].strip][page][sstype_select][i])
+            end
+          end
+          snapshots[tracks[track_select].strip][page][sstype_select] = tbl
+          ss_select = nil
+          
+        end]]
+      elseif sstype_select > 1 then
+        local strip = tracks[track_select].strip
+        if xxy and xxy[strip] and xxy[strip][page] and xxy[strip][page][sstype_select] then
+        
+          local cnt = #xxy[strip][page][sstype_select].points
+          local tbl = {}
+          for i = 1, cnt do
+            if xxy[strip][page][sstype_select].points[i].ss ~= ss then
+              table.insert(tbl, xxy[strip][page][sstype_select].points[i])
+            end
+          end
+          xxy[strip][page][sstype_select].points = tbl
+          ss_select = nil
+          
+        end    
+      end    
+    end
+    
   ------------------------------------------------------------    
   
   function OpenEB(eb, t, def)
