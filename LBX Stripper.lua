@@ -7187,6 +7187,41 @@ end
         end    
       end    
     end
+
+  function DeleteXXY_pt(pt)
+    
+      if sstype_select == 1 then
+        --[[if ss_select and snapshots and snapshots[tracks[track_select].strip] and snapshots[tracks[track_select].strip][page][sstype_select][ss_select] then
+        
+          local cnt = #snapshots[tracks[track_select].strip][page][sstype_select]
+          snapshots[tracks[track_select].strip][page][sstype_select][ss_select] = nil
+          local tbl = {}
+          for i = 1, cnt do
+            if snapshots[tracks[track_select].strip][page][sstype_select][i] ~= nil then
+              table.insert(tbl, snapshots[tracks[track_select].strip][page][sstype_select][i])
+            end
+          end
+          snapshots[tracks[track_select].strip][page][sstype_select] = tbl
+          ss_select = nil
+          
+        end]]
+      elseif sstype_select > 1 then
+        local strip = tracks[track_select].strip
+        if xxy and xxy[strip] and xxy[strip][page] and xxy[strip][page][sstype_select] then
+        
+          local cnt = #xxy[strip][page][sstype_select].points
+          local tbl = {}
+          for i = 1, cnt do
+            if i ~= pt then
+              table.insert(tbl, xxy[strip][page][sstype_select].points[i])
+            end
+          end
+          xxy[strip][page][sstype_select].points = tbl
+          ss_select = nil
+          
+        end    
+      end    
+    end
     
   ------------------------------------------------------------    
   
@@ -14565,10 +14600,15 @@ end
                       y = obj.sections[220].y + xxy[strip][page][sstype_select].points[p].y*obj.sections[220].h - 8,
                       w = 16,
                       h = 16}
-              if MOUSE_click_RB(xywh) then
+              if MOUSE_click_RB(xywh) and mouse.ctrl == false then
                 mouse.context = contexts.xxy_movesnap
                 movesnap = {xoff = mouse.mx - xywh.x, yoff = mouse.my - xywh.y, p = p}
                 break 
+              elseif MOUSE_click_RB(xywh) and mouse.ctrl == true then
+              
+                DeleteXXY_pt(p)
+                update_xxy = true
+                break
               end
             
             end
