@@ -14795,16 +14795,18 @@ end
         end
         local nv = num/den
         
-        local ss = xxy[strip][page][sst].points[1].ss
-        local c = snapshots[strip][page][sst].snapshot[ss].data[ctl].ctl
-        if c and nv and nv < 1/0 and nv > -1/0 then
-          trackfxparam_select = c
-          if strips[strip][page].controls[c].tracknum then
-            track = GetTrack(strips[strip][page].controls[c].tracknum)
-          else
-            track = gtrack
+        if xxy[strip][page][sst].points[1] then
+          local ss = xxy[strip][page][sst].points[1].ss
+          local c = snapshots[strip][page][sst].snapshot[ss].data[ctl].ctl
+          if c and nv and nv < 1/0 and nv > -1/0 then
+            trackfxparam_select = c
+            if strips[strip][page].controls[c].tracknum then
+              track = GetTrack(strips[strip][page].controls[c].tracknum)
+            else
+              track = gtrack
+            end
+            SetParam3_Denorm2(track, nv)        
           end
-          SetParam3_Denorm2(track, nv)        
         end
       end
     end
