@@ -7178,11 +7178,16 @@ end
           local tbl = {}
           for i = 1, cnt do
             if xxy[strip][page][sstype_select].points[i].ss ~= ss then
+              if xxy[strip][page][sstype_select].points[i].ss > ss then
+                xxy[strip][page][sstype_select].points[i].ss = xxy[strip][page][sstype_select].points[i].ss-1
+              end
               table.insert(tbl, xxy[strip][page][sstype_select].points[i])
+            else
+              --DBG('deleted')
             end
           end
           xxy[strip][page][sstype_select].points = tbl
-          ss_select = nil
+          --ss_select = nil
           
         end    
       end    
@@ -14807,7 +14812,11 @@ end
             else
               track = gtrack
             end
-            SetParam3_Denorm2(track, nv)        
+            if tostring(nv) ~= tostring(strips[strip][page].controls[c].xxydval) then
+              --DBG(nv)
+              SetParam3_Denorm2(track, nv)
+              strips[strip][page].controls[c].xxydval = nv
+            end        
           end
         end
       end
