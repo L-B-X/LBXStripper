@@ -5630,7 +5630,7 @@ end
           --DBG(xxy_gravity)
             --if tostring(dist) ~= tostring(xxy_shortdist) then
             local gx = 0
-            if tostring(dist) == tostring(xxy_shortdist) then
+            if tostring(dist) == tostring(xxy_mindist) then
               gx = F_limit((192-dist*1000),0,255)
             end
             dist = (dist^(1/(xxy_gravity)))^(5-xxy_gravity)
@@ -14639,9 +14639,9 @@ end
             if snapshots[strip][page][sstype_select][i+xxylist_offset] or 
                snapshots[strip][page][sstype_select].snapshot[i+xxylist_offset] then            
                 mouse.context = contexts.xxy_dragsnap
-                ss_select = i
+                ss_select = i+xxylist_offset
                 update_gfx = true
-                dragsnap = {x = mouse.mx, y = mouse.my, ss = i}
+                dragsnap = {x = mouse.mx, y = mouse.my, ss = i+xxylist_offset}
             end
           end
         
@@ -14773,7 +14773,8 @@ end
   function XXY_Set(strip, page, sst)
   
     if sstype_select > 1 then
-      xxy_shortdist = 1
+      xxy_mindist = 1
+      xxy_maxdist = 0
       local d = {}
       local gtrack = GetTrack(strips[strip].track.tracknum)
       
@@ -14781,7 +14782,8 @@ end
       for p = 1, #xxy[strip][page][sst].points do
         d[p] = math.sqrt((px - xxy[strip][page][sst].points[p].x)^2 + (py - xxy[strip][page][sst].points[p].y)^2)^xxy_gravity
         xxy[strip][page][sst].points[p].distance = d[p]
-        xxy_shortdist = math.min(xxy_shortdist,d[p])
+        xxy_mindist = math.min(xxy_mindist,d[p])
+        xxy_maxdist = math.max(xxy_maxdist,d[p])
       end
       for ctl = 1, #snapshots[strip][page][sst].ctls do
         local num, den = 0, 0
