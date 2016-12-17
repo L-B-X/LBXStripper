@@ -14695,8 +14695,8 @@ end
         local x = (mouse.mx - obj.sections[220].x)/obj.sections[220].w
         local y = (mouse.my - obj.sections[220].y)/obj.sections[220].h
         
-        xxy[tracks[track_select].strip][page][sstype_select].points[movesnap.p].x = x
-        xxy[tracks[track_select].strip][page][sstype_select].points[movesnap.p].y = y
+        xxy[tracks[track_select].strip][page][sstype_select].points[movesnap.p].x = F_limit(x,0,1)
+        xxy[tracks[track_select].strip][page][sstype_select].points[movesnap.p].y = F_limit(y,0,1)
         
         local strip = tracks[track_select].strip
         if xxy and xxy[strip] and xxy[strip][page] and xxy[strip][page][sstype_select] then
