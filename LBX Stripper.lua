@@ -2184,6 +2184,7 @@
   function PopulateTracks()
   --DBG('*** PT ***')
   
+    LBX_CTL_TRACK = nil
     local tracks_tmp = {}
     local guid_tr = {}
     local sendsdirty = false
@@ -2198,6 +2199,10 @@
                          strip = -1
                         }
         guid_tr[tracks_tmp[i].guid] = i
+        
+        if trname == 'LBX_CTL' then
+          LBX_CTL_TRACK = i
+        end
         --if tracks then
           --if tracks_tmp[i].guid ~= tracks[i].guid then
           --  sendsdirty = true
@@ -5588,12 +5593,15 @@ end
   function GUI_DrawXXY(gui, obj)
   
     gfx.a=1
+    
+    --gfx.a=0.5
     f_Get_SSV(gui.color.black)
     gfx.rect(0,
              0, 
              gfx1.main_w,
              gfx1.main_h, 1, 1)
 
+    --gfx.a=1
     local xywh = {x = obj.sections[222].x,
                   y = obj.sections[222].y, 
                   w = obj.sections[222].w,
@@ -6863,6 +6871,29 @@ end
       
   end
 
+  function SetParam3_Denorm2_Safe(track, v, strip, page)
+  
+    if strips and strips[strip] and strips[strip][page].controls[trackfxparam_select] then
+      local cc = strips[strip][page].controls[trackfxparam_select].ctlcat
+      if cc == ctlcats.fxparam then
+        local fxnum = strips[strip][page].controls[trackfxparam_select].fxnum
+        local param = strips[strip][page].controls[trackfxparam_select].param
+        reaper.TrackFX_SetParam(track, nz(fxnum,-1), param, v)
+
+      elseif cc == ctlcats.trackparam then
+        local param = strips[strip][page].controls[trackfxparam_select].param
+        strips[strip][page].controls[trackfxparam_select].dirty = true
+        SMTI_denorm(track,param,v)
+
+      elseif cc == ctlcats.tracksend then
+        local param = strips[strip][page].controls[trackfxparam_select].param
+        strips[strip][page].controls[trackfxparam_select].dirty = true
+        STSI_denorm(track,param,v,trackfxparam_select)
+      end    
+    end
+      
+  end
+  
 --[[  function SetParam3_norm2(track, v)
   
     if strips and strips[tracks[track_select].strip] and strips[tracks[track_select].strip][page].controls[trackfxparam_select] then
@@ -9981,6 +10012,65 @@ end
   
   ------------------------------------------------------------    
 
+  function Faders_INIT()
+
+    faders = {}
+    for f = 1, 32 do
+    
+      faders[f] = {}
+      
+    end
+
+    faders[1].targettype = 0
+    faders[1].strip = 1
+    faders[1].page = 1
+    faders[1].control = nil
+    faders[1].sstype = 3
+    faders[1].xy = 0
+    faders[2].targettype = 0
+    faders[2].strip = 1
+    faders[2].page = 1
+    faders[2].control = nil
+    faders[2].sstype = 3
+    faders[2].xy = 1
+    
+    
+  end
+
+  function ReadAutomationFaders()
+  
+    if LBX_CTL_TRACK then
+    
+      local track = GetTrack(tracks[LBX_CTL_TRACK].tracknum)
+      local fxnum = 0
+      for p = 0, 31 do
+      
+        faders[p+1].val = reaper.TrackFX_GetParam(track, fxnum, p)
+        if faders[p+1].val and tostring(faders[p+1].val) ~= tostring(faders[p+1].oval) then
+          faders[p+1].oval = faders[p+1].val
+          if faders[p+1].targettype then
+            if faders[p+1].targettype == 0 then
+              --xy test
+              if faders[p+1].xy == 0 then
+                xxy[faders[p+1].strip][faders[p+1].page][faders[p+1].sstype].x = faders[p+1].val
+              else
+                xxy[faders[p+1].strip][faders[p+1].page][faders[p+1].sstype].y = faders[p+1].val            
+              end
+              XXY_Set(faders[p+1].strip,faders[p+1].page,faders[p+1].sstype)
+              if show_xxy then
+                update_xxy = true
+              end
+            end
+          end
+        end    
+      end
+    
+    end
+  
+  end
+
+  ------------------------------------------------------------    
+
   function run()  
 
     local rt = reaper.time_precise()
@@ -10074,6 +10164,8 @@ end
     mouse.ctrl = gfx.mouse_cap&4==4
     mouse.shift = gfx.mouse_cap&8==8
     mouse.alt = gfx.mouse_cap&16==16
+
+    ReadAutomationFaders()
 
     if show_xxy == false then
 
@@ -11609,7 +11701,7 @@ end
                 gfx.x, gfx.y = mouse.mx, mouse.my
                 res = OpenMenu(mstr)
                 if res ~= 0 then
-                  if res == sfcnt + 5 then
+                  if res == sfcnt + 5 or (sfcnt == 0 and res == 6) then
                     show_snapshots = not show_snapshots
                     update_gfx = true
                   elseif res <= sfcnt then
@@ -14777,7 +14869,7 @@ end
   
   function XXY_Set(strip, page, sst)
   
-    if sstype_select > 1 then
+    if sst > 1 then
       xxy_mindist = 1
       xxy_maxdist = 0
       local d = {}
@@ -14813,8 +14905,7 @@ end
               track = gtrack
             end
             if tostring(nv) ~= tostring(strips[strip][page].controls[c].xxydval) then
-              --DBG(nv)
-              SetParam3_Denorm2(track, nv)
+              SetParam3_Denorm2_Safe(track, nv, strip, page)
               strips[strip][page].controls[c].xxydval = nv
             end        
           end
@@ -17296,6 +17387,8 @@ end
     else
       PROJECTID = math.ceil((math.abs(math.sin( -1 + (os.clock() % 2)))) * 0xFFFFFFFF)
     end
+    
+    Faders_INIT()
     
     g_cids = {}
     g_edstrips = {}
