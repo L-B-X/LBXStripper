@@ -2184,7 +2184,11 @@
   function PopulateTracks()
   --DBG('*** PT ***')
   
+    if LBX_CTL_TRACK_INF then
+      local LBX_CTL_TRACK_INF_CNT = LBX_CTL_TRACK_INF.count
+    end
     LBX_CTL_TRACK = nil
+    LBX_CTL_TRACK_INF = nil
     local tracks_tmp = {}
     local guid_tr = {}
     local sendsdirty = false
@@ -2199,9 +2203,18 @@
                          strip = -1
                         }
         guid_tr[tracks_tmp[i].guid] = i
-        
-        if trname == 'LBX_CTL' then
+        if trname == LBX_CTL_TRNAME then
           LBX_CTL_TRACK = i
+          LBX_CTL_TRACK_INF = {count = reaper.TrackFX_GetCount(track),
+                               guids = {}}
+          if LBX_CTL_TRACK_INF.count > 0 then                     
+            for f = 0, LBX_CTL_TRACK_INF.count-1 do
+              LBX_CTL_TRACK_INF.guids[f] = reaper.TrackFX_GetFXGUID(track,f)
+            end
+            if LBX_CTL_TRACK_INF_CNT ~= LBX_CTL_TRACK_INF.count then
+              Faders_INIT()
+            end
+          end
         end
         --if tracks then
           --if tracks_tmp[i].guid ~= tracks[i].guid then
@@ -3933,7 +3946,9 @@ end
                   end
                 end
 
+                local offl = false
                 if ctlcat == ctlcats.fxparam and strips[strip][page].controls[i].offline then
+                  offl = true
                   Disp_Name = 'Offline'
                   Disp_ParamV = ''
                 end
@@ -4001,6 +4016,9 @@ end
                 
                 --if w > strips[strip][page].controls[i].w/2 then
                   --if spn and h > 10 then
+                  if settings_hideofflinelabel and offl then
+                    spn = false
+                  end
                   if spn then
                     GUI_textC(gui,xywh1, Disp_Name,tc,-4 + tsz)
                   end
@@ -5634,17 +5652,26 @@ end
           local sstxt = snapshots[strip][page][sstype_select].snapshot[xxy[strip][page][sstype_select].points[p].ss].name
           local c = gui.color.white
           local dist = xxy[strip][page][sstype_select].points[p].distance
+          local dfnd = false
           if dist then
           --DBG(xxy_gravity)
             --if tostring(dist) ~= tostring(xxy_shortdist) then
             local gx = 0
             if tostring(dist) == tostring(xxy_mindist) then
               gx = F_limit((192-dist*1000),0,255)
+              dfnd = true
             end
             dist = (dist^(1/(xxy_gravity)))^(5-xxy_gravity)
             local rx = F_limit(255-(dist*800),0,255)
             local bx = F_limit((dist*1000),0,255)
             c = rx..' '..gx..' '..bx
+            
+            --[[if dfnd == true then
+              f_Get_SSV(c)
+              gfx.a=0.2
+              gfx.circle(x,y, xxy[strip][page][sstype_select].points[p].d2*obj.sections[220].w,0,1)
+              gfx.a=1
+            end  ]]          
           end
           GUI_textC(gui,xywh,sstxt,c,-2)
         end
@@ -10012,59 +10039,72 @@ end
   
   ------------------------------------------------------------    
 
-  function Faders_INIT()
+  function Faders_INIT(force)
 
-    faders = {}
-    for f = 1, 32 do
-    
-      faders[f] = {}
-      
+    if faders == nil or force then
+      faders = {}
     end
-
-    faders[1].targettype = 0
-    faders[1].strip = 1
-    faders[1].page = 1
-    faders[1].control = nil
-    faders[1].sstype = 3
-    faders[1].xy = 0
-    faders[2].targettype = 0
-    faders[2].strip = 1
-    faders[2].page = 1
-    faders[2].control = nil
-    faders[2].sstype = 3
-    faders[2].xy = 1
-    
+    if LBX_CTL_TRACK_INF then
+      for f = 1, 32*LBX_CTL_TRACK_INF.count do
+      
+        if faders[f] == nil or force then 
+          faders[f] = {}
+        end
+        
+      end
+  
+      faders[1].targettype = 0
+      faders[1].strip = 1
+      faders[1].page = 1
+      faders[1].control = nil
+      faders[1].sstype = 3
+      faders[1].xy = 0
+      faders[2].targettype = 0
+      faders[2].strip = 1
+      faders[2].page = 1
+      faders[2].control = nil
+      faders[2].sstype = 3
+      faders[2].xy = 1
+    end  
     
   end
 
   function ReadAutomationFaders()
   
-    if LBX_CTL_TRACK then
+    if LBX_CTL_TRACK then    
+    
+      local ccc = trackfxparam_select
     
       local track = GetTrack(tracks[LBX_CTL_TRACK].tracknum)
-      local fxnum = 0
-      for p = 0, 31 do
-      
-        faders[p+1].val = reaper.TrackFX_GetParam(track, fxnum, p)
-        if faders[p+1].val and tostring(faders[p+1].val) ~= tostring(faders[p+1].oval) then
-          faders[p+1].oval = faders[p+1].val
-          if faders[p+1].targettype then
-            if faders[p+1].targettype == 0 then
-              --xy test
-              if faders[p+1].xy == 0 then
-                xxy[faders[p+1].strip][faders[p+1].page][faders[p+1].sstype].x = faders[p+1].val
-              else
-                xxy[faders[p+1].strip][faders[p+1].page][faders[p+1].sstype].y = faders[p+1].val            
-              end
-              XXY_Set(faders[p+1].strip,faders[p+1].page,faders[p+1].sstype)
-              if show_xxy then
-                update_xxy = true
+      if tracks[LBX_CTL_TRACK].guid ~= reaper.GetTrackGUID(track) then
+        PopulateTracks()
+      end
+
+      for fxnum = 0, LBX_CTL_TRACK_INF.count-1 do
+        for pf = 0, 31 do
+        
+          p = fxnum * 32 + pf
+          faders[p+1].val = reaper.TrackFX_GetParam(track, fxnum, pf)
+          if faders[p+1].val and tostring(faders[p+1].val) ~= tostring(faders[p+1].oval) then
+            faders[p+1].oval = faders[p+1].val
+            if faders[p+1].targettype then
+              if faders[p+1].targettype == 0 then
+                --xy test
+                if faders[p+1].xy == 0 then
+                  xxy[faders[p+1].strip][faders[p+1].page][faders[p+1].sstype].x = faders[p+1].val
+                else
+                  xxy[faders[p+1].strip][faders[p+1].page][faders[p+1].sstype].y = faders[p+1].val            
+                end
+                XXY_Set(faders[p+1].strip,faders[p+1].page,faders[p+1].sstype)
+                if show_xxy then
+                  update_xxy = true
+                end
               end
             end
-          end
-        end    
-      end
-    
+          end    
+        end
+      end    
+      trackfxparam_select = ccc
     end
   
   end
@@ -11985,6 +12025,11 @@ end
         
         if submode == 0 then
           
+          if show_cycleoptions then
+            navigate = false
+            noscroll = true
+          end
+          
           if show_actionchooser then
   
             if gfx.mouse_wheel ~= 0 then
@@ -13002,7 +13047,7 @@ end
               if val ~= nil then
                 if oms ~= mouse.shift then
                   oms = mouse.shift
-                  ctlpos = minov_select
+                  ctlpos = maxov_select
                   mouse.slideoff = obj.sections[129].y+obj.sections[129].h/2 - mouse.my
                 else
                   if mouse.shift then
@@ -14621,7 +14666,7 @@ end
         end
       end
       
-      if settings_mousewheelknob == false and gfx.mouse_wheel ~= 0 and show_ctlbrowser == false then
+      if settings_mousewheelknob == false and gfx.mouse_wheel ~= 0 and show_ctlbrowser == false and show_cycleoptions == false and show_ctloptions == false then
         if noscroll == false then
           if lockx == false or locky == false then
             local v = gfx.mouse_wheel/120
@@ -14877,7 +14922,9 @@ end
       
       local px, py = xxy[strip][page][sst].x, xxy[strip][page][sst].y
       for p = 1, #xxy[strip][page][sst].points do
-        d[p] = math.sqrt((px - xxy[strip][page][sst].points[p].x)^2 + (py - xxy[strip][page][sst].points[p].y)^2)^xxy_gravity
+        d[p] = math.sqrt((px - xxy[strip][page][sst].points[p].x)^2 + (py - xxy[strip][page][sst].points[p].y)^2)
+        xxy[strip][page][sst].points[p].d2 = d[p]
+        d[p] = d[p]^xxy_gravity
         xxy[strip][page][sst].points[p].distance = d[p]
         xxy_mindist = math.min(xxy_mindist,d[p])
         xxy_maxdist = math.max(xxy_maxdist,d[p])
@@ -15515,6 +15562,7 @@ end
         osg = settings_showgrid
         settings_locksurface = tobool(nz(GPES('locksurface',true),false))
         track_select = tonumber(nz(GPES('lasttrack',true),0))
+        xxy_gravity = tonumber(nz(GPES('metalite_gravity',true),xxy_gravity))
       
         local scnt = tonumber(nz(GPES('strips_count'),0))
         strips = {}
@@ -16354,6 +16402,7 @@ end
     reaper.SetProjExtState(0,SCRIPT,'showeditbar',tostring(show_editbar))
     reaper.SetProjExtState(0,SCRIPT,'locksurface',tostring(settings_locksurface))
     reaper.SetProjExtState(0,SCRIPT,'lasttrack',track_select)
+    reaper.SetProjExtState(0,SCRIPT,'metalite_gravity',xxy_gravity)
     
     if gfx1 then
       reaper.SetProjExtState(0,SCRIPT,'win_w',nz(gfx1.main_w,800))
@@ -17388,8 +17437,6 @@ end
       PROJECTID = math.ceil((math.abs(math.sin( -1 + (os.clock() % 2)))) * 0xFFFFFFFF)
     end
     
-    Faders_INIT()
-    
     g_cids = {}
     g_edstrips = {}
     g_savedirty = false
@@ -17533,7 +17580,9 @@ end
     PopulateTrackSendsInfo()
     PopulateTrackFX()
     PopulateTrackFXParams()
-        
+
+    Faders_INIT(force)
+            
     EB_Open = 0
     EB_Enter = false
     
@@ -17818,6 +17867,8 @@ end
   strips_path = resource_path.."strips/"
   sets_path = resource_path.."sets/"
 
+  LBX_CTL_TRNAME='__LBX_CTL'
+
   settings_followselectedtrack = true
   settings_autocentrectls = false
   settings_disablesendchecks = false
@@ -17834,6 +17885,7 @@ end
   settings_swapctrlclick = false
   settings_insertdefaultoneverytrack = false
   settings_insertdefaultoneverypage = false
+  settings_hideofflinelabel = true
   
   strip_favs = {}
   peak_info = {}
