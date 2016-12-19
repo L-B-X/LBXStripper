@@ -1035,9 +1035,9 @@
         gfx.drawstr(text)
   end
   
-  function GUI_textC(gui, xywh, text, color, offs)
+  function GUI_textC(gui, xywh, text, color, offs, alpha)
         f_Get_SSV(color)  
-        gfx.a = 1 
+        if alpha then gfx.a = alpha else gfx.a = 1 end 
         gfx.setfont(1, gui.fontname, gui.fontsz_knob + offs)
         local text_len = gfx.measurestr(text)
         gfx.x, gfx.y = xywh.x+(xywh.w-text_len)/2,xywh.y+(xywh.h-gfx.texth)/2 + 1
@@ -3808,11 +3808,7 @@ end
                   end
                   local v3 = GetParamValue_Ctl(i)--strips[strip][page].controls[i].val
                   if tostring(v3) ~= tostring(strips[strip][page].controls[i].defval) then
-                  --local dv = round(math.abs(v3-strips[strip][page].controls[i].defval),6)
-                  --if dv > 0 then
                     strips[strip][page].controls[i].membtn = {state = false, mem = v3}
-                  --else
-                    --strips[strip][page].controls[i].membtn.state = true
                   end
                   if strips[strip][page].controls[i].membtn.state == true then
                     val2 = frames-1
@@ -3892,19 +3888,14 @@ end
                   Disp_ParamV = ''
                   if v > -1 then
                     if snapshots and snapshots[strip] and snapshots[strip][page][param] and snapshots[strip][page][param].selected then
-                      if param == 1 then
-                      
-                        --if snapshots and snapshots[strip] and snapshots[strip][page][param] and snapshots[strip][page][param].selected then
-                          if snapshots[strip][page][param][snapshots[strip][page][param].selected] then
-                            Disp_ParamV = snapshots[strip][page][param][snapshots[strip][page][param].selected].name
-                          end
-                        --end
+                      if param == 1 then                      
+                        if snapshots[strip][page][param][snapshots[strip][page][param].selected] then
+                          Disp_ParamV = snapshots[strip][page][param][snapshots[strip][page][param].selected].name
+                        end
                       else
-                        --if snapshots[strip][page][param].selected then
-                          if snapshots[strip][page][param].snapshot[snapshots[strip][page][param].selected] then
-                            Disp_ParamV = snapshots[strip][page][param].snapshot[snapshots[strip][page][param].selected].name
-                          end
-                        --end
+                        if snapshots[strip][page][param].snapshot[snapshots[strip][page][param].selected] then
+                          Disp_ParamV = snapshots[strip][page][param].snapshot[snapshots[strip][page][param].selected].name
+                        end
                       end
                     end
                   end
@@ -3915,13 +3906,6 @@ end
                     Disp_Name = ctlnmov
                   end
                 elseif ctlcat == ctlcats.fxoffline then
-                  --val2 = 0
-                  --[[DBG(val2)
-                  Disp_ParamV = 'online'
-                  if strips[strip][page].controls[i].offline == true then
-                    --val2 = 1
-                    Disp_ParamV = 'offline'                    
-                  end]]
                   spv = false
                   if nz(ctlnmov,'') == '' then
                     Disp_Name = pname
@@ -3933,9 +3917,6 @@ end
                 if ctltype == 4 and cycle_editmode == false then
                   if DVOV and DVOV ~= '' then
                     if strips[strip][page].controls[i].cycledata.posdirty == false then 
-                    --if tostring(strips[strip][page].controls[i].val) ==
-                    --   tostring(strips[strip][page].controls[i].cycledata[
-                    --          strips[strip][page].controls[i].cycledata.pos].val) then
                       Disp_ParamV = DVOV
                       
                       if maxdp > -1 then
@@ -3949,7 +3930,9 @@ end
                 local offl = false
                 if ctlcat == ctlcats.fxparam and strips[strip][page].controls[i].offline then
                   offl = true
-                  Disp_Name = 'Offline'
+                  if settings_showparamnamelabelwhenoffline == false then
+                    Disp_Name = 'Offline'
+                  end
                   Disp_ParamV = ''
                 end
                   
@@ -3995,8 +3978,6 @@ end
                 if ctlcat == ctlcats.fxparam and ((not reaper.TrackFX_GetEnabled(track, fxnum) and pname ~= 'Bypass') or strips[strip][page].controls[i].offline) then
                   gfx.a = 0.5
                 end
-                --scale = 0.5
-                --local fpos = F_limit(val2*gh,0,32768)
                 gfx.blit(iidx,scale,0, 0, val2*gh, w, h, px, py)
                 if ctlcat == ctlcats.xy then
                 
@@ -4006,45 +3987,33 @@ end
                   local ppy = 12+py+math.floor(strips[strip][page].controls[i].xydata.y * (h-34-24)) - math.floor(pph/2)
 
                   gfx.blit(def_xytarget,1,0, 0, 0, ppw, pph, ppx, ppy)
-                  --f_Get_SSV(gui.color.red)
-                  --gfx.circle(ppx,ppy,8,0,1)
                 
                 end
                 
                 strips[strip][page].controls[i].tl1 = text_len1x
                 strips[strip][page].controls[i].tl2 = text_len2x
                 
-                --if w > strips[strip][page].controls[i].w/2 then
-                  --if spn and h > 10 then
+                  local alpha = 1
                   if settings_hideofflinelabel and offl then
                     spn = false
+                  elseif offl then
+                    alpha = 0.4
                   end
                   if spn then
-                    GUI_textC(gui,xywh1, Disp_Name,tc,-4 + tsz)
+                    GUI_textC(gui,xywh1, Disp_Name,tc,-4 + tsz, alpha)
                   end
-                  --if spv and h > gh-10 then
                   if spv then
                     GUI_textC(gui,xywh2, Disp_ParamV,tc,-4 + tsz)          
                   end
-                --end
   
                 if ctltype == 4 and DVOV and DVOV ~= '' and cycle_editmode == false then
                   if strips[strip][page].controls[i].cycledata.posdirty == true then 
-                  --if tostring(strips[strip][page].controls[i].val) ~= 
-                  --   tostring(strips[strip][page].controls[i].cycledata[
-                  --            strips[strip][page].controls[i].cycledata.pos].val) then                                  
                     gfx.a = 0.8
                     f_Get_SSV(gui.color.red)
                     gfx.circle(x+4,y+4,2,1,1)              
                   end
                 end
                             
-                --[[if reass_param == i then
-                  f_Get_SSV(gui.color.red)
-                  gfx.a = 0.8
-                  gfx.roundrect(x, y, w, h, 8, 1, 0)
-                end]]
-                
                 if mode == 1 and submode == 2 then
                   if tnum and tnum ~= tracks[track_select].tracknum then
                   
@@ -4070,17 +4039,9 @@ end
                 
                   --just blit control area to main backbuffer - create area table
                   local al = math.min(px, xywh1.x, xywh2.x, tx1, tx2)
-                  --al = math.min(al, xywh2.x)
-                  --al = math.min(al, tx1)
-                  --al = math.min(al, tx2)
                   local ar = math.max(px+w*scale, tx1+tl1, tx2+tl2, xywh1.x+xywh1.w, xywh2.x+xywh2.w)
-                  --ar = math.max(ar, tx2+tl2)
-                  --ar = math.max(ar, xywh1.x+xywh1.w)
-                  --ar = math.max(ar, xywh2.x+xywh2.w)
                   local at = math.min(py, xywh1.y, xywh2.y)
-                  --at = math.min(at, xywh2.y)
                   local ab = math.max(py+(h)*scale,xywh1.y+th, xywh2.y+th)
-                  --ab = math.max(ab, xywh2.y+th)
                   xywharea[#xywharea+1] = {x=al,y=at,w=ar-al,h=ab-at,r=ar,b=ab}
                 end
               end
@@ -4102,26 +4063,22 @@ end
               if xx+xywharea[i].w < obj.sections[10].x or yy+xywharea[i].h < obj.sections[10].y
                  or yy > obj.sections[10].y+obj.sections[10].h or xx > obj.sections[10].x+obj.sections[10].w then
               else
-                --if lockw > 0 then                
-                  if xx < obj.sections[10].x then
-                    xywharea[i].x = xywharea[i].x + (obj.sections[10].x - xx)
-                    xywharea[i].w = xywharea[i].w  - (obj.sections[10].x - xx)
-                    xx = obj.sections[10].x
-                  end
-                  if xx + xywharea[i].w > obj.sections[10].x+obj.sections[10].w then
-                    xywharea[i].w = (obj.sections[10].x+obj.sections[10].w)-xx
-                  end
-                --end
-                --if lockh > 0 then
-                  if yy < obj.sections[10].y then
-                    xywharea[i].y = xywharea[i].y + (obj.sections[10].y - yy)
-                    xywharea[i].h = xywharea[i].h  - (obj.sections[10].y - yy)
-                    yy = obj.sections[10].y
-                  end
-                  if yy + xywharea[i].h > obj.sections[10].y+obj.sections[10].h then
-                    xywharea[i].h = (obj.sections[10].y+obj.sections[10].h)-yy
-                  end
-                --end
+                if xx < obj.sections[10].x then
+                  xywharea[i].x = xywharea[i].x + (obj.sections[10].x - xx)
+                  xywharea[i].w = xywharea[i].w  - (obj.sections[10].x - xx)
+                  xx = obj.sections[10].x
+                end
+                if xx + xywharea[i].w > obj.sections[10].x+obj.sections[10].w then
+                  xywharea[i].w = (obj.sections[10].x+obj.sections[10].w)-xx
+                end
+                if yy < obj.sections[10].y then
+                  xywharea[i].y = xywharea[i].y + (obj.sections[10].y - yy)
+                  xywharea[i].h = xywharea[i].h  - (obj.sections[10].y - yy)
+                  yy = obj.sections[10].y
+                end
+                if yy + xywharea[i].h > obj.sections[10].y+obj.sections[10].h then
+                  xywharea[i].h = (obj.sections[10].y+obj.sections[10].h)-yy
+                end
                 gfx.blit(1000,1,0, xywharea[i].x,
                                    xywharea[i].y,
                                    xywharea[i].w,
@@ -6617,7 +6574,7 @@ end
       end
       return tonumber(min), tonumber(max)  
     else 
-      return 0, 0
+      return 0, 1
     end
   end
 
@@ -6645,7 +6602,7 @@ end
         local idx = math.floor((param-1) % 3)+1
         return tonumber(trsends_mmtable[idx].min), tonumber(trsends_mmtable[idx].max)
       else 
-        return 0, 0
+        return 0, 1
       end
     else
       return nil, nil
@@ -6698,7 +6655,7 @@ end
       end
       return tonumber(min), tonumber(max)  
     else 
-      return 0, 0
+      return 0, 1
     end
   end
   
@@ -6767,7 +6724,7 @@ end
           end
         end        
       elseif cc == ctlcats.fxoffline then
-        ToggleFXOffline()
+        ToggleFXOffline(tracks[track_select].strip, page, trackfxparam_select, tracks[track_select].tracknum)
       end
     end
       
@@ -6893,6 +6850,8 @@ end
         local param = strips[tracks[track_select].strip][page].controls[trackfxparam_select].param
         strips[tracks[track_select].strip][page].controls[trackfxparam_select].dirty = true
         STSI_denorm(track,param,v,trackfxparam_select)
+      elseif cc == ctlcats.fxoffline then
+        SetFXOffline(tracks[track_select].strip, page, trackfxparam_select, strips[tracks[track_select].strip].track.tracknum, v)
       end    
     end
       
@@ -6916,6 +6875,8 @@ end
         local param = strips[strip][page].controls[trackfxparam_select].param
         strips[strip][page].controls[trackfxparam_select].dirty = true
         STSI_denorm(track,param,v,trackfxparam_select)
+      elseif cc == ctlcats.fxoffline then
+        SetFXOffline2(strip, page, trackfxparam_select, track, v)
       end    
     end
       
@@ -10057,13 +10018,13 @@ end
       faders[1].strip = 1
       faders[1].page = 1
       faders[1].control = nil
-      faders[1].sstype = 3
+      faders[1].sstype = 2
       faders[1].xy = 0
       faders[2].targettype = 0
       faders[2].strip = 1
       faders[2].page = 1
       faders[2].control = nil
-      faders[2].sstype = 3
+      faders[2].sstype = 2
       faders[2].xy = 1
     end  
     
@@ -11175,7 +11136,8 @@ end
             
                        if strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.fxparam or 
                           strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.trackparam or 
-                          strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.tracksend then 
+                          strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.tracksend or 
+                          strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.fxoffline then 
                           local strip = tracks[track_select].strip
                           
                           --Add / Remove
@@ -16948,12 +16910,14 @@ end
                                                      data = {}} 
         end
         
+        local offflag = false
         local sscnt = 1
         for c = 1, #strips[strip][page].controls do
         
           if strips[strip][page].controls[c].ctlcat == ctlcats.fxparam or
              strips[strip][page].controls[c].ctlcat == ctlcats.trackparam or
-             strips[strip][page].controls[c].ctlcat == ctlcats.tracksend then
+             strips[strip][page].controls[c].ctlcat == ctlcats.tracksend or 
+             strips[strip][page].controls[c].ctlcat == ctlcats.fxoffline then
             if strips[strip][page].controls[c].ctltype ~= 5 then
               local track = GetTrack(nz(strips[strip][page].controls[c].tracknum,strips[strip].track.tracknum))
               local cc = strips[strip][page].controls[c].ctlcat
@@ -16965,11 +16929,30 @@ end
                                                                       ctl = c,
                                                                       val = strips[strip][page].controls[c].val,
                                                                       dval = dval}
+              if cc == ctlcats.fxoffline then
+                offflag = true
+              end
               sscnt = sscnt + 1
             end
           end
         end
         
+        if offflag == true then
+          --place offline buttons at top of list otherwise snapshots not recalled correctly first click
+          local tmp = {}
+          --local sscnt = 1
+          for sspos = 1, #snapshots[strip][page][sstype][snappos].data do
+            if strips[strip][page].controls[snapshots[strip][page][sstype][snappos].data[sspos].ctl].ctlcat == ctlcats.fxoffline then
+              table.insert(tmp, snapshots[strip][page][sstype][snappos].data[sspos])
+            end
+          end
+          for sspos = 1, #snapshots[strip][page][sstype][snappos].data do
+            if strips[strip][page].controls[snapshots[strip][page][sstype][snappos].data[sspos].ctl].ctlcat ~= ctlcats.fxoffline then
+              table.insert(tmp, snapshots[strip][page][sstype][snappos].data[sspos])
+            end
+          end
+          snapshots[strip][page][sstype][snappos].data = tmp
+        end
         ss_select = snappos
         
       elseif sstype > 1 then
@@ -16995,13 +16978,15 @@ end
                                                                 data = {}} 
           end
     
+          local offflag = false
           local sscnt = 1
           for cctl = 1, sctls do
             local c = snapshots[strip][page][sstype].ctls[cctl].ctl
             if nz(snapshots[strip][page][sstype].ctls[cctl].delete,false) == false then
               if strips[strip][page].controls[c].ctlcat == ctlcats.fxparam or
                  strips[strip][page].controls[c].ctlcat == ctlcats.trackparam or
-                 strips[strip][page].controls[c].ctlcat == ctlcats.tracksend then
+                 strips[strip][page].controls[c].ctlcat == ctlcats.tracksend or 
+                 strips[strip][page].controls[c].ctlcat == ctlcats.fxoffline then
                 if strips[strip][page].controls[c].ctltype ~= 5 then
                   local track = GetTrack(nz(strips[strip][page].controls[c].tracknum,strips[strip].track.tracknum))
                   local cc = strips[strip][page].controls[c].ctlcat
@@ -17013,12 +16998,30 @@ end
                                                                                 ctl = c,
                                                                                 val = strips[strip][page].controls[c].val,
                                                                                 dval = dval}
+                  if cc == ctlcats.fxoffline then
+                    offflag = true
+                  end
                   sscnt = sscnt + 1
                 end
               end
             end
           end
-        
+          if offflag == true then
+            --place offline buttons at top of list otherwise snapshots not recalled correctly first click
+            local tmp = {}
+            --local sscnt = 1
+            for sspos = 1, #snapshots[strip][page][sstype].snapshot[snappos].data do
+              if strips[strip][page].controls[snapshots[strip][page][sstype].snapshot[snappos].data[sspos].ctl].ctlcat == ctlcats.fxoffline then
+                table.insert(tmp, snapshots[strip][page][sstype].snapshot[snappos].data[sspos])
+              end
+            end
+            for sspos = 1, #snapshots[strip][page][sstype].snapshot[snappos].data do
+              if strips[strip][page].controls[snapshots[strip][page][sstype].snapshot[snappos].data[sspos].ctl].ctlcat ~= ctlcats.fxoffline then
+                table.insert(tmp, snapshots[strip][page][sstype].snapshot[snappos].data[sspos])
+              end
+            end
+            snapshots[strip][page][sstype].snapshot[snappos].data = tmp
+          end
           ss_select = snappos
         end      
       end
@@ -17756,10 +17759,73 @@ end
   
   end
 
-  function ToggleFXOffline()
+  function SetFXOffline(strip, page, ctl, trn, v)
 
-    local trn = nz(strips[tracks[track_select].strip][page].controls[trackfxparam_select].tracknum, tracks[track_select].tracknum)
-    local fxn = strips[tracks[track_select].strip][page].controls[trackfxparam_select].fxnum
+    local trn = nz(strips[strip][page].controls[ctl].tracknum, trn)
+    local fxn = strips[strip][page].controls[ctl].fxnum
+    local str = GetTrack(trn)
+    local _, chunk = reaper.GetTrackStateChunk(str,'',false)
+
+    local s,e, fnd = 0,0,nil
+    for i = 0,fxn do
+      s, e = string.find(chunk,'BYPASS %d %d %d',s)
+      if s and e then
+        if i == fxn then 
+          local byp = string.sub(chunk,s,e)
+          if v == 1 then
+            byp = string.gsub(byp,'(%d) (%d) (%d)', function(d,e,f) return d..' 1 '..f end)
+          else
+            byp = string.gsub(byp,'(%d) (%d) (%d)', function(d,e,f) return d..' 0 '..f end)          
+          end
+          local nchunk = string.sub(chunk,0,s-1)..byp..string.sub(chunk,e+1)
+          reaper.SetTrackStateChunk(str,nchunk,false)
+          fnd = true 
+          break 
+        end
+        s=e+1
+      else
+        break
+      end
+    end
+    return fnd, fxchunk, s, e  
+  
+  end
+
+  function SetFXOffline2(strip, page, ctl, track, v)
+
+    local fxn = strips[strip][page].controls[ctl].fxnum
+    local str = track
+    local _, chunk = reaper.GetTrackStateChunk(str,'',false)
+
+    local s,e, fnd = 0,0,nil
+    for i = 0,fxn do
+      s, e = string.find(chunk,'BYPASS %d %d %d',s)
+      if s and e then
+        if i == fxn then 
+          local byp = string.sub(chunk,s,e)
+          if v == 1 then
+            byp = string.gsub(byp,'(%d) (%d) (%d)', function(d,e,f) return d..' 1 '..f end)
+          else
+            byp = string.gsub(byp,'(%d) (%d) (%d)', function(d,e,f) return d..' 0 '..f end)          
+          end
+          local nchunk = string.sub(chunk,0,s-1)..byp..string.sub(chunk,e+1)
+          reaper.SetTrackStateChunk(str,nchunk,false)
+          fnd = true 
+          break 
+        end
+        s=e+1
+      else
+        break
+      end
+    end
+    return fnd, fxchunk, s, e  
+  
+  end
+  
+  function ToggleFXOffline(strip, page, ctl, trn)
+
+    local trn = nz(strips[strip][page].controls[ctl].tracknum, trn)
+    local fxn = strips[strip][page].controls[ctl].fxnum
     local str = GetTrack(trn)
     local _, chunk = reaper.GetTrackStateChunk(str,'',false)
 
@@ -17885,7 +17951,8 @@ end
   settings_swapctrlclick = false
   settings_insertdefaultoneverytrack = false
   settings_insertdefaultoneverypage = false
-  settings_hideofflinelabel = true
+  settings_hideofflinelabel = false
+  settings_showparamnamelabelwhenoffline = true
   
   strip_favs = {}
   peak_info = {}
