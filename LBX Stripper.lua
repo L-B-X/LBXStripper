@@ -6879,8 +6879,8 @@ end
         local param = strips[strip][page].controls[trackfxparam_select].param
         strips[strip][page].controls[trackfxparam_select].dirty = true
         STSI_denorm(track,param,v,trackfxparam_select)
-      elseif cc == ctlcats.fxoffline then
-        SetFXOffline2(strip, page, trackfxparam_select, track, v)
+      --elseif cc == ctlcats.fxoffline then
+        --SetFXOffline2(strip, page, trackfxparam_select, track, v)
       end    
     end
       
@@ -14904,28 +14904,32 @@ end
         local num, den = 0, 0
         for p = 1, #d do
           local ss = xxy[strip][page][sst].points[p].ss
-          local v = snapshots[strip][page][sst].snapshot[ss].data[ctl].dval
-          if v then
-            num = num + v/d[p]
-            den = den + 1/d[p]
+          if snapshots[strip][page][sst].snapshot[ss].data[ctl] then
+            local v = snapshots[strip][page][sst].snapshot[ss].data[ctl].dval
+            if v then
+              num = num + v/d[p]
+              den = den + 1/d[p]
+            end
           end
         end
         local nv = num/den
         
         if xxy[strip][page][sst].points[1] then
           local ss = xxy[strip][page][sst].points[1].ss
-          local c = snapshots[strip][page][sst].snapshot[ss].data[ctl].ctl
-          if c and nv and nv < 1/0 and nv > -1/0 then
-            trackfxparam_select = c
-            if strips[strip][page].controls[c].tracknum then
-              track = GetTrack(strips[strip][page].controls[c].tracknum)
-            else
-              track = gtrack
+          if snapshots[strip][page][sst].snapshot[ss].data[ctl] then
+            local c = snapshots[strip][page][sst].snapshot[ss].data[ctl].ctl
+            if c and nv and nv < 1/0 and nv > -1/0 then
+              trackfxparam_select = c
+              if strips[strip][page].controls[c].tracknum then
+                track = GetTrack(strips[strip][page].controls[c].tracknum)
+              else
+                track = gtrack
+              end
+              if tostring(nv) ~= tostring(strips[strip][page].controls[c].xxydval) then
+                SetParam3_Denorm2_Safe(track, nv, strip, page)
+                strips[strip][page].controls[c].xxydval = nv
+              end        
             end
-            if tostring(nv) ~= tostring(strips[strip][page].controls[c].xxydval) then
-              SetParam3_Denorm2_Safe(track, nv, strip, page)
-              strips[strip][page].controls[c].xxydval = nv
-            end        
           end
         end
       end
