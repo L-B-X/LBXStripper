@@ -4412,6 +4412,10 @@ end
   function GUI_DrawFSnapshots(obj, gui)
     
     gfx.dest = 1005
+    local w, h = gfx.getimgdim(1005)
+    if obj.sections[180].w ~= w then
+      gfx.setimgdim(1005, obj.sections[180].w, h)
+    end
     
     gfx.a=1
     f_Get_SSV(gui.color.black)
@@ -11513,6 +11517,11 @@ end
                             if snapshots and snapshots[tracks[track_select].strip] and snapshots[tracks[track_select].strip][page][fsstype_select] 
                               and snapshots[tracks[track_select].strip][page][fsstype_select].selected then
                             
+                              local w = strips[tracks[track_select].strip][page].controls[i].w
+                              obj.sections[180].w = math.max(w - (170-138),138)
+                              obj.sections[181].w = obj.sections[180].w-6
+                              obj.sections[182].w = obj.sections[180].w
+                              
                               fss_select = snapshots[tracks[track_select].strip][page][fsstype_select].selected
                               obj.sections[180].x = F_limit(strips[tracks[track_select].strip][page].controls[i].x - surface_offset.x + obj.sections[10].x + 
                                                             math.floor((strips[tracks[track_select].strip][page].controls[i].w - obj.sections[180].w)/2),
