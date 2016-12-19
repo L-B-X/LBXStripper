@@ -496,7 +496,7 @@
                           w = msgwinw,
                           h = butt_h}
       --settings
-      local setw, seth = 300, 325                            
+      local setw, seth = 300, 350                            
       obj.sections[70] = {x = gfx1.main_w/2-setw/2,
                           y = gfx1.main_h/2-seth/2,
                           w = setw,
@@ -561,6 +561,10 @@
       obj.sections[85] = {x = obj.sections[70].x+xofft,
                                 y = obj.sections[70].y+yoff + yoffm*11,
                                 w = bw,
+                                h = bh}
+      obj.sections[86] = {x = obj.sections[70].x+xofft+bw+10,
+                                y = obj.sections[70].y+yoff + yoffm*12,
+                                w = 40,
                                 h = bh}
                                 
       --Cycle
@@ -4441,14 +4445,20 @@ end
             y = obj.sections[181].y,
             w = obj.sections[181].w,
             h = obj.sections[181].h}
-    f_Get_SSV('64 64 64')
+    --f_Get_SSV('64 64 64')
+    f_Get_SSV(settings_snaplistbgcol)
     gfx.a = 1 
+    gfx.rect(xywh.x,
+             xywh.y, 
+             xywh.w,
+             xywh.h, 1 )
+    f_Get_SSV('64 64 64')
     gfx.rect(xywh.x,
              xywh.y, 
              xywh.w,
              xywh.h, 0 )
     
-    xywh.h = butt_h
+    xywh.h = butt_h+1
     gfx.rect(xywh.x,
      xywh.y-1, 
      xywh.w,
@@ -4456,6 +4466,7 @@ end
     gfx.a = 0.5
     f_Get_SSV(gui.color.black)
     gfx.a = 1
+    gfx.rect(xywh.x,xywh.y+xywh.h-1,xywh.x+xywh.w,2)
     gfx.rect(xywh.x+xywh.w/2,
      xywh.y-1, 
      2,
@@ -4483,7 +4494,7 @@ end
                  xywh.y, 
                  xywh.w,
                  xywh.h, 1 )
-                c = gui.color.black
+                c = settings_snaplistbgcol
               end
               if snapshots[strip][page][fsstype_select][i+fssoffset] then
                 GUI_textsm_LJ(gui,xywh,roundX(i+fssoffset,0)..': '..snapshots[strip][page][fsstype_select][i+fssoffset].name,c,-2,xywh.w)
@@ -4504,7 +4515,7 @@ end
                  xywh.y, 
                  xywh.w,
                  xywh.h, 1 )
-                c = gui.color.black
+                c = settings_snaplistbgcol
               end
               if snapshots[strip][page][fsstype_select].snapshot[i+fssoffset] then
                 GUI_textsm_LJ(gui,xywh,roundX(i+fssoffset,0)..': '..snapshots[strip][page][fsstype_select].snapshot[i+fssoffset].name,c,-2,xywh.w)
@@ -4918,7 +4929,8 @@ end
 
               if strips[tracks[track_select].strip][page].controls[cx].ctlcat == ctlcats.fxparam or 
                  strips[tracks[track_select].strip][page].controls[cx].ctlcat == ctlcats.trackparam or 
-                 strips[tracks[track_select].strip][page].controls[cx].ctlcat == ctlcats.tracksend then 
+                 strips[tracks[track_select].strip][page].controls[cx].ctlcat == ctlcats.tracksend or 
+                 strips[tracks[track_select].strip][page].controls[cx].ctlcat == ctlcats.fxoffline then 
 
                 local x = strips[tracks[track_select].strip][page].controls[cx].x+4
                 local y = strips[tracks[track_select].strip][page].controls[cx].y+4
@@ -5981,6 +5993,8 @@ end
     GUI_DrawTick(gui, 'Insert default strip on every track', obj.sections[83], gui.color.white, settings_insertdefaultoneverytrack)
     GUI_DrawTick(gui, '...and on every page', obj.sections[84], gui.color.white, settings_insertdefaultoneverypage)
     GUI_DrawTick(gui, 'Display scroll bars', obj.sections[85], gui.color.white, settings_showbars)
+    GUI_DrawColorBox(gui, 'Snapshot list background colour', obj.sections[86], gui.color.white, settings_snaplistbgcol)
+    
                
   end
   
@@ -10492,6 +10506,12 @@ end
         elseif mouse.context == nil and MOUSE_click(obj.sections[79]) then
           mouse.context = contexts.gridslider
           ctlpos = settings_gridsize
+        elseif mouse.context == nil and MOUSE_click(obj.sections[86]) then
+          local retval, c = reaper.GR_SelectColor(_,ConvertColorString(settings_snaplistbgcol))
+          if retval ~= 0 then
+            settings_snaplistbgcol = ConvertColor(c)
+            update_gfx = true
+          end
         end
         
         if mouse.context and mouse.context == contexts.updatefreq then
@@ -11183,7 +11203,8 @@ end
                   
                   if strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.fxparam or 
                      strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.trackparam or 
-                     strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.tracksend then 
+                     strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.tracksend or 
+                     strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.fxoffline then 
                     --Add / Remove
                     local ctlidx = GetSnapshotCtlIdx(strip, page, sstype_select, i)
                     if ctlidx then
@@ -11218,33 +11239,6 @@ end
             lasso.b = mouse.my
   
             Lasso_Select(false)
-            --[[if ctl_select ~= nil then
-  
-              local strip = tracks[track_select].strip
-              
-              for c = 1, #ctl_select do
-                local i = ctl_select[c].ctl
-                
-                --Add / Remove
-                local ctlidx = GetSnapshotCtlIdx(strip, page, sstype_select, i)
-                if ctlidx then
-                  --re-add deleted
-                  if snapshots[strip][page][sstype_select].ctls[ctlidx].delete then
-                    snapshots[strip][page][sstype_select].ctls[ctlidx].delete = false
-                    strips[tracks[track_select].strip][page].controls[i].dirty = true                  
-                  end
-                else
-                  --add
-                  local ctlidx = #snapshots[strip][page][sstype_select].ctls + 1
-                  snapshots[strip][page][sstype_select].ctls[ctlidx] = {c_id = strips[tracks[track_select].strip][page].controls[i].c_id,
-                                                                        ctl = i}
-                  strips[tracks[track_select].strip][page].controls[i].dirty = true
-                end
-  
-              end
-            end
-  
-            update_ctls = true]]
             update_surface = true
           end
         
@@ -12520,20 +12514,6 @@ end
                   show_ctlbrowser = true
                   update_surface = true              
                   
-                  --[[knob_select = knob_select + 1
-                  if knob_select > #ctl_files then
-                    knob_select = 0
-                  end
-                  update_gfx = true]]
-                
-                --[[elseif mouse.RB and mouse.my > obj.sections[45].y and mouse.my < obj.sections[45].y+150 then
-      
-                  knob_select = knob_select - 1
-                  if knob_select < 0 then
-                    knob_select = #ctl_files
-                  end
-                  update_gfx = true]]
-                
                 end
       
                 if MOUSE_click(obj.sections[66]) then
@@ -15971,6 +15951,7 @@ end
     settings_showbars = tobool(nz(GES('showbars',true),settings_showbars))
     settings_insertdefaultoneverytrack = tobool(nz(GES('insertdefstripontrack',true),settings_insertdefaultoneverytrack))
     settings_insertdefaultoneverypage = tobool(nz(GES('insertdefstriponpage',true),settings_insertdefaultoneverypage))
+    settings_snaplistbgcol = tostring(nz(GES('snaplistbgcol',true),settings_snaplistbgcol))
     
     local sd = tonumber(GES('strip_default',true))
     local sdf = tonumber(GES('stripfol_default',true))
@@ -16005,6 +15986,7 @@ end
     reaper.SetExtState(SCRIPT,'showbars',tostring(settings_showbars), true)
     reaper.SetExtState(SCRIPT,'insertdefstripontrack',tostring(settings_insertdefaultoneverytrack), true)
     reaper.SetExtState(SCRIPT,'insertdefstriponpage',tostring(settings_insertdefaultoneverypage), true)
+    reaper.SetExtState(SCRIPT,'snaplistbgcol',settings_snaplistbgcol, true)
     
     if strip_default then
       reaper.SetExtState(SCRIPT,'strip_default',tostring(strip_default.strip_select), true)
@@ -17964,8 +17946,9 @@ end
   settings_swapctrlclick = false
   settings_insertdefaultoneverytrack = false
   settings_insertdefaultoneverypage = false
-  settings_hideofflinelabel = false
+  settings_hideofflinelabel = true
   settings_showparamnamelabelwhenoffline = true
+  settings_snaplistbgcol = '0 0 0'
   
   strip_favs = {}
   peak_info = {}
