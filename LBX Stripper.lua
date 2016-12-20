@@ -2327,14 +2327,14 @@
         else
           local s = tracks[i-1+tlist_offset].strip
           if strips and strips[s] then
-            if #strips[s][1].controls > 0 or 
-               #strips[s][2].controls > 0 or 
-               #strips[s][3].controls > 0 or 
-               #strips[s][4].controls > 0 or
-               #strips[s][1].graphics > 0 or  
-               #strips[s][2].graphics > 0 or  
-               #strips[s][3].graphics > 0 or  
-               #strips[s][4].graphics > 0 then
+            if (strips[s][1] and #strips[s][1].controls > 0) or --error s3 (nil)
+               (strips[s][2] and #strips[s][2].controls > 0) or 
+               (strips[s][3] and #strips[s][3].controls > 0) or 
+               (strips[s][4] and #strips[s][4].controls > 0) or
+               (strips[s][1] and #strips[s][1].graphics > 0) or  
+               (strips[s][2] and #strips[s][2].graphics > 0) or  
+               (strips[s][3] and #strips[s][3].graphics > 0) or  
+               (strips[s][4] and #strips[s][4].graphics > 0) then
               c = '0 192 0' 
             end  
           end 
@@ -10262,53 +10262,81 @@ end
         if strips and tracks[track_select] and strips[tracks[track_select].strip] and #strips[tracks[track_select].strip][page].controls > 0 then
           --check track
           if CheckTrack(strips[tracks[track_select].strip].track, tracks[track_select].strip) then
-            local tr2 = GetTrack(strips[tracks[track_select].strip].track.tracknum)
-            if tr2 ~= nil then
-              if strips and strips[tracks[track_select].strip] then
-                local chktbl = {}
-                local pkmts = false
-                for i = 1, #strips[tracks[track_select].strip][page].controls do
-                  --check fx
-                  
-                  tr = tr2
-                  local tr_found = true
-                  if strips[tracks[track_select].strip][page].controls[i].tracknum ~= nil then
-                    --tr = GetTrack(strips[tracks[track_select].strip][page].controls[i].tracknum)
-                    tr_found = CheckTrack(tracks[strips[tracks[track_select].strip][page].controls[i].tracknum], tracks[track_select].strip, page, i)
+            if tracks[track_select] and strips[tracks[track_select].strip] then
+              local tr2 = GetTrack(strips[tracks[track_select].strip].track.tracknum)
+              if tr2 ~= nil then
+                if strips and strips[tracks[track_select].strip] then
+                  local chktbl = {}
+                  local pkmts = false
+                  for i = 1, #strips[tracks[track_select].strip][page].controls do
+                    --check fx
+                    
+                    tr = tr2
+                    local tr_found = true
+                    if strips[tracks[track_select].strip][page].controls[i].tracknum ~= nil then
+                      --tr = GetTrack(strips[tracks[track_select].strip][page].controls[i].tracknum)
+                      tr_found = CheckTrack(tracks[strips[tracks[track_select].strip][page].controls[i].tracknum], tracks[track_select].strip, page, i)
+                      if tr_found then
+                        tr = GetTrack(strips[tracks[track_select].strip][page].controls[i].tracknum)
+                      end 
+                    end
+                    
                     if tr_found then
-                      tr = GetTrack(strips[tracks[track_select].strip][page].controls[i].tracknum)
-                    end 
-                  end
-                  
-                  if tr_found then
-                    if strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.fxparam then
-                      local fxguid = reaper.TrackFX_GetFXGUID(tr, strips[tracks[track_select].strip][page].controls[i].fxnum)
-                      if strips[tracks[track_select].strip][page].controls[i].fxguid == fxguid then
-  
-                        local pn = reaper.TrackFX_GetNumParams(tr,strips[tracks[track_select].strip][page].controls[i].fxnum)
-                        if pn ~= 2 then
-                          if strips[tracks[track_select].strip][page].controls[i].offline ~= nil then
-                            strips[tracks[track_select].strip][page].controls[i].dirty = true
+                      if strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.fxparam then
+                        local fxguid = reaper.TrackFX_GetFXGUID(tr, strips[tracks[track_select].strip][page].controls[i].fxnum)
+                        if strips[tracks[track_select].strip][page].controls[i].fxguid == fxguid then
+    
+                          local pn = reaper.TrackFX_GetNumParams(tr,strips[tracks[track_select].strip][page].controls[i].fxnum)
+                          if pn ~= 2 then
+                            if strips[tracks[track_select].strip][page].controls[i].offline ~= nil then
+                              strips[tracks[track_select].strip][page].controls[i].dirty = true
+                            end
+                            strips[tracks[track_select].strip][page].controls[i].offline = nil
+                          else
+                            if strips[tracks[track_select].strip][page].controls[i].offline == nil then
+                              strips[tracks[track_select].strip][page].controls[i].dirty = true
+                            end
+                            strips[tracks[track_select].strip][page].controls[i].offline = true
                           end
-                          strips[tracks[track_select].strip][page].controls[i].offline = nil
+                        
+                          local v = GetParamValue2(strips[tracks[track_select].strip][page].controls[i].ctlcat,
+                                                   tr,
+                                                   strips[tracks[track_select].strip][page].controls[i].fxnum,
+                                                   strips[tracks[track_select].strip][page].controls[i].param, i)
+                          if strips[tracks[track_select].strip][page].controls[i].ctltype == 4 then
+                            if tostring(strips[tracks[track_select].strip][page].controls[i].val) ~= tostring(v) then
+                              strips[tracks[track_select].strip][page].controls[i].val = v
+                              strips[tracks[track_select].strip][page].controls[i].dirty = true
+                              --if strips[tracks[track_select].strip][page].controls[i].param_info.paramname == 'Bypass' then
+                              --  SetCtlEnabled(strips[tracks[track_select].strip][page].controls[i].fxnum) 
+                              --end
+                              strips[tracks[track_select].strip][page].controls[i].cycledata.posdirty = true 
+                              update_ctls = true
+                            end
+                          else
+                            if strips[tracks[track_select].strip][page].controls[i].val ~= v then
+                              strips[tracks[track_select].strip][page].controls[i].val = v
+                              strips[tracks[track_select].strip][page].controls[i].dirty = true
+                              if strips[tracks[track_select].strip][page].controls[i].param_info.paramname == 'Bypass' then
+                                SetCtlEnabled(strips[tracks[track_select].strip][page].controls[i].fxnum) 
+                              end
+                              update_ctls = true
+                            end                      
+                          end
                         else
-                          if strips[tracks[track_select].strip][page].controls[i].offline == nil then
-                            strips[tracks[track_select].strip][page].controls[i].dirty = true
+                          if strips[tracks[track_select].strip][page].controls[i].fxfound then
+                            CheckStripControls()
                           end
-                          strips[tracks[track_select].strip][page].controls[i].offline = true
                         end
-                      
+                      elseif strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.trackparam then
                         local v = GetParamValue2(strips[tracks[track_select].strip][page].controls[i].ctlcat,
                                                  tr,
-                                                 strips[tracks[track_select].strip][page].controls[i].fxnum,
+                                                 nil,
                                                  strips[tracks[track_select].strip][page].controls[i].param, i)
                         if strips[tracks[track_select].strip][page].controls[i].ctltype == 4 then
                           if tostring(strips[tracks[track_select].strip][page].controls[i].val) ~= tostring(v) then
                             strips[tracks[track_select].strip][page].controls[i].val = v
                             strips[tracks[track_select].strip][page].controls[i].dirty = true
-                            --if strips[tracks[track_select].strip][page].controls[i].param_info.paramname == 'Bypass' then
-                            --  SetCtlEnabled(strips[tracks[track_select].strip][page].controls[i].fxnum) 
-                            --end
                             strips[tracks[track_select].strip][page].controls[i].cycledata.posdirty = true 
                             update_ctls = true
                           end
@@ -10316,130 +10344,104 @@ end
                           if strips[tracks[track_select].strip][page].controls[i].val ~= v then
                             strips[tracks[track_select].strip][page].controls[i].val = v
                             strips[tracks[track_select].strip][page].controls[i].dirty = true
-                            if strips[tracks[track_select].strip][page].controls[i].param_info.paramname == 'Bypass' then
-                              SetCtlEnabled(strips[tracks[track_select].strip][page].controls[i].fxnum) 
-                            end
                             update_ctls = true
-                          end                      
-                        end
-                      else
-                        if strips[tracks[track_select].strip][page].controls[i].fxfound then
-                          CheckStripControls()
-                        end
-                      end
-                    elseif strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.trackparam then
-                      local v = GetParamValue2(strips[tracks[track_select].strip][page].controls[i].ctlcat,
-                                               tr,
-                                               nil,
-                                               strips[tracks[track_select].strip][page].controls[i].param, i)
-                      if strips[tracks[track_select].strip][page].controls[i].ctltype == 4 then
-                        if tostring(strips[tracks[track_select].strip][page].controls[i].val) ~= tostring(v) then
-                          strips[tracks[track_select].strip][page].controls[i].val = v
-                          strips[tracks[track_select].strip][page].controls[i].dirty = true
-                          strips[tracks[track_select].strip][page].controls[i].cycledata.posdirty = true 
-                          update_ctls = true
-                        end
-                      else
-                        if strips[tracks[track_select].strip][page].controls[i].val ~= v then
-                          strips[tracks[track_select].strip][page].controls[i].val = v
-                          strips[tracks[track_select].strip][page].controls[i].dirty = true
-                          update_ctls = true
-                        end
-                      end                    
-                    elseif strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.tracksend then
-  
-                      if settings_disablesendchecks == false and checksends == true then
-                        local tt = strips[tracks[track_select].strip][page].controls[i].tracknum
-                        if tt == nil then
-                          tt = strips[tracks[track_select].strip].track.tracknum
-                        end
-                        local chk
-                        
-                        chk, chktbl[tt] = CheckSendGUID(tt,nil,strips[tracks[track_select].strip][page].controls[i].param_info.paramnum,
-                                                              strips[tracks[track_select].strip][page].controls[i].param_info.paramdestguid,
-                                                              strips[tracks[track_select].strip][page].controls[i].param_info.paramdestchan,
-                                                              strips[tracks[track_select].strip][page].controls[i].param_info.paramsrcchan,
-                                                              chktbl[tt])
-                        if chk == false then
-                          chktbl = CheckStripSends(chktbl)
-                        end
-                      end                    
-  
-                      local v = GetParamValue2(strips[tracks[track_select].strip][page].controls[i].ctlcat,
-                                               tr,
-                                               nil,
-                                               strips[tracks[track_select].strip][page].controls[i].param, i)
-  
-                      if strips[tracks[track_select].strip][page].controls[i].ctltype == 4 then
-                        if tostring(strips[tracks[track_select].strip][page].controls[i].val) ~= tostring(v) then
-                          strips[tracks[track_select].strip][page].controls[i].val = v
-                          strips[tracks[track_select].strip][page].controls[i].dirty = true
-                          strips[tracks[track_select].strip][page].controls[i].cycledata.posdirty = true 
-                          update_ctls = true                    
-                        end
-                      else
-                        if strips[tracks[track_select].strip][page].controls[i].val ~= v then
-                          strips[tracks[track_select].strip][page].controls[i].val = v
-                          strips[tracks[track_select].strip][page].controls[i].dirty = true
-                          update_ctls = true
-                        end
-                      end
-                    elseif strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.pkmeter then
-                      if rt >= time_nextupdate_pkmeter then
-                        pkmts = true
-                        local chd = 0
-                        local trn = strips[tracks[track_select].strip].track.tracknum
-                        if strips[tracks[track_select].strip][page].controls[i].tracknum ~= nil then
-                          trn = strips[tracks[track_select].strip][page].controls[i].tracknum
-                        end
-                        local p = strips[tracks[track_select].strip][page].controls[i].param
+                          end
+                        end                    
+                      elseif strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.tracksend then
+    
+                        if settings_disablesendchecks == false and checksends == true then
+                          local tt = strips[tracks[track_select].strip][page].controls[i].tracknum
+                          if tt == nil then
+                            tt = strips[tracks[track_select].strip].track.tracknum
+                          end
+                          local chk
+                          
+                          chk, chktbl[tt] = CheckSendGUID(tt,nil,strips[tracks[track_select].strip][page].controls[i].param_info.paramnum,
+                                                                strips[tracks[track_select].strip][page].controls[i].param_info.paramdestguid,
+                                                                strips[tracks[track_select].strip][page].controls[i].param_info.paramdestchan,
+                                                                strips[tracks[track_select].strip][page].controls[i].param_info.paramsrcchan,
+                                                                chktbl[tt])
+                          if chk == false then
+                            chktbl = CheckStripSends(chktbl)
+                          end
+                        end                    
+    
                         local v = GetParamValue2(strips[tracks[track_select].strip][page].controls[i].ctlcat,
                                                  tr,
                                                  nil,
-                                                 p, i)
-                        if peak_info[trn] and peak_info[trn][p % 64] then
-                          chd = peak_info[trn][p % 64].ch_d
+                                                 strips[tracks[track_select].strip][page].controls[i].param, i)
+    
+                        if strips[tracks[track_select].strip][page].controls[i].ctltype == 4 then
+                          if tostring(strips[tracks[track_select].strip][page].controls[i].val) ~= tostring(v) then
+                            strips[tracks[track_select].strip][page].controls[i].val = v
+                            strips[tracks[track_select].strip][page].controls[i].dirty = true
+                            strips[tracks[track_select].strip][page].controls[i].cycledata.posdirty = true 
+                            update_ctls = true                    
+                          end
                         else
-                          chd = -150
+                          if strips[tracks[track_select].strip][page].controls[i].val ~= v then
+                            strips[tracks[track_select].strip][page].controls[i].val = v
+                            strips[tracks[track_select].strip][page].controls[i].dirty = true
+                            update_ctls = true
+                          end
                         end
-                        if tostring(strips[tracks[track_select].strip][page].controls[i].val) ~= tostring(chd) then
-                          strips[tracks[track_select].strip][page].controls[i].val = chd
-                          strips[tracks[track_select].strip][page].controls[i].dirty = true
-                          update_ctls = true
+                      elseif strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.pkmeter then
+                        if rt >= time_nextupdate_pkmeter then
+                          pkmts = true
+                          local chd = 0
+                          local trn = strips[tracks[track_select].strip].track.tracknum
+                          if strips[tracks[track_select].strip][page].controls[i].tracknum ~= nil then
+                            trn = strips[tracks[track_select].strip][page].controls[i].tracknum
+                          end
+                          local p = strips[tracks[track_select].strip][page].controls[i].param
+                          local v = GetParamValue2(strips[tracks[track_select].strip][page].controls[i].ctlcat,
+                                                   tr,
+                                                   nil,
+                                                   p, i)
+                          if peak_info[trn] and peak_info[trn][p % 64] then
+                            chd = peak_info[trn][p % 64].ch_d
+                          else
+                            chd = -150
+                          end
+                          if tostring(strips[tracks[track_select].strip][page].controls[i].val) ~= tostring(chd) then
+                            strips[tracks[track_select].strip][page].controls[i].val = chd
+                            strips[tracks[track_select].strip][page].controls[i].dirty = true
+                            update_ctls = true
+                          end
                         end
+                      elseif strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.fxoffline then
+                        local fxguid = reaper.TrackFX_GetFXGUID(tr, strips[tracks[track_select].strip][page].controls[i].fxnum)
+                        if strips[tracks[track_select].strip][page].controls[i].fxguid == fxguid then
+                        --DBG(fxguid..'  '..strips[tracks[track_select].strip][page].controls[i].fxguid)
+    
+                          local pn = reaper.TrackFX_GetNumParams(tr,strips[tracks[track_select].strip][page].controls[i].fxnum)
+                          if pn ~= 2 then
+                            if strips[tracks[track_select].strip][page].controls[i].offline ~= nil then
+                              strips[tracks[track_select].strip][page].controls[i].dirty = true
+                              update_ctls = true
+                            end
+                            strips[tracks[track_select].strip][page].controls[i].offline = nil
+                            strips[tracks[track_select].strip][page].controls[i].val = 0
+                          else
+                            if strips[tracks[track_select].strip][page].controls[i].offline == nil then
+                              strips[tracks[track_select].strip][page].controls[i].dirty = true
+                              update_ctls = true
+                            end
+                            strips[tracks[track_select].strip][page].controls[i].offline = true
+                            strips[tracks[track_select].strip][page].controls[i].val = 1
+                          end
+                        else
+                          if strips[tracks[track_select].strip][page].controls[i].fxfound then
+                            CheckStripControls()
+                          end
+                        end                  
                       end
-                    elseif strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.fxoffline then
-                      local fxguid = reaper.TrackFX_GetFXGUID(tr, strips[tracks[track_select].strip][page].controls[i].fxnum)
-                      if strips[tracks[track_select].strip][page].controls[i].fxguid == fxguid then
-                      --DBG(fxguid..'  '..strips[tracks[track_select].strip][page].controls[i].fxguid)
-  
-                        local pn = reaper.TrackFX_GetNumParams(tr,strips[tracks[track_select].strip][page].controls[i].fxnum)
-                        if pn ~= 2 then
-                          if strips[tracks[track_select].strip][page].controls[i].offline ~= nil then
-                            strips[tracks[track_select].strip][page].controls[i].dirty = true
-                            update_ctls = true
-                          end
-                          strips[tracks[track_select].strip][page].controls[i].offline = nil
-                          strips[tracks[track_select].strip][page].controls[i].val = 0
-                        else
-                          if strips[tracks[track_select].strip][page].controls[i].offline == nil then
-                            strips[tracks[track_select].strip][page].controls[i].dirty = true
-                            update_ctls = true
-                          end
-                          strips[tracks[track_select].strip][page].controls[i].offline = true
-                          strips[tracks[track_select].strip][page].controls[i].val = 1
-                        end
-                      else
-                        if strips[tracks[track_select].strip][page].controls[i].fxfound then
-                          CheckStripControls()
-                        end
-                      end                  
                     end
                   end
-                end
-                chktbl = nil
-                if pkmts then
-                  time_nextupdate_pkmeter = rt + settings_updatefreq_pkmeter
+                  chktbl = nil
+                  if pkmts then
+                    time_nextupdate_pkmeter = rt + settings_updatefreq_pkmeter
+                  end
                 end
               end
             end
@@ -11990,10 +11992,10 @@ end
         
         if submode == 0 then
           
-          if show_cycleoptions then
-            navigate = false
-            noscroll = true
-          end
+          --if show_cycleoptions then
+          --  navigate = false
+          --  noscroll = true
+          --end
           
           if show_actionchooser then
   
@@ -13068,7 +13070,8 @@ end
                     local v2 = GetParamValue(cc,t,f,p,ctl_select[1].ctl)
                     cycle_select.val = val
                     
-                    if cycle_select.selected then
+                    if cycle_select.selected and cycle_select[cycle_select.selected] then
+                    --if cycle_select.selected then
                       local dispval = GetParamDisp(cc, t, f, p, dvoff,ctl_select[1].ctl)
                       cycle_select[cycle_select.selected].val = v2                  
                       cycle_select[cycle_select.selected].dispval = dispval
