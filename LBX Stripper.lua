@@ -10329,9 +10329,10 @@ end
     mouse.ctrl = gfx.mouse_cap&4==4
     mouse.shift = gfx.mouse_cap&8==8
     mouse.alt = gfx.mouse_cap&16==16
-
+    local char
+    
     if EB_Open == 0 then
-      local char = gfx.getchar() 
+      char = gfx.getchar() 
       if char ~= 0 then
         keypress(char)
       end
@@ -12419,7 +12420,7 @@ end
             
             end
             
-            local char=gfx.getchar()
+            --local char=gfx.getchar()
             if ctl_select ~= nil and char ~= 0 then
               if char == 0x6C656674 then -- left arrow
                 for i = 1,#ctl_select do
@@ -14083,7 +14084,7 @@ end
         
           local clicklblopts = false
           
-          local char=gfx.getchar()
+          --local char=gfx.getchar()
           if gfx2_select ~= nil and char ~= 0 then
             if char == 0x6C656674 then -- left arrow
               if strips[tracks[track_select].strip][page].graphics[gfx2_select].poslock == false then
