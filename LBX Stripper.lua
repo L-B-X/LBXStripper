@@ -9348,10 +9348,10 @@ end
         end
         gfx.dock(d)]]
         if d%256 == 0 then
-          if dockstate then
+          if dockstate and dockstate%256 ~= 0 then
             gfx.dock(dockstate)
           else
-            gfx.dock(257)
+            gfx.dock(d+1)
           end
         else
           dockstate = d
@@ -10210,10 +10210,10 @@ end
       elseif char == 4 then
         local d = gfx.dock(-1)
         if d%256 == 0 then
-          if dockstate then
+          if dockstate and dockstate%256 ~= 0 then
             gfx.dock(dockstate)
           else
-            gfx.dock(257)
+            gfx.dock(d+1)
           end
         else
           dockstate = d
