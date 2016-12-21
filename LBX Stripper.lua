@@ -9341,8 +9341,23 @@ end
       elseif res >= 8 and res <= 11 and navigate then
         SetPage(res-7)
       elseif res == 12 then
-        if d%256 == 0 then d=d+1 else d=d-1 end
-        gfx.dock(d)
+        --[[if d%256 == 0 then 
+          d=d+1 
+        else 
+          d=d-1 
+        end
+        gfx.dock(d)]]
+        if d%256 == 0 then
+          if dockstate then
+            gfx.dock(dockstate)
+          else
+            gfx.dock(257)
+          end
+        else
+          dockstate = d
+          gfx.dock(256)
+        end
+        
       elseif res == 13 then
         settings_locksurface = not settings_locksurface
       elseif res == 14 then
@@ -10016,6 +10031,45 @@ end
   
   end
   
+  function ChangeTrack2(t)
+  
+    if tracks[track_select] and strips[tracks[track_select].strip] then
+      strips[tracks[track_select].strip].page = page
+    end
+    ChangeTrack(t)
+    ss_select = nil
+    sstype_select = 1
+    ssoffset = 0
+    
+    if settings_followselectedtrack then
+      --Select track
+      local tr = GetTrack(track_select)
+      tracks[track_select].name = reaper.GetTrackState(tr)
+      
+      if tr ~= nil then
+        reaper.SetOnlyTrackSelected(tr)
+        reaper.SetTrackSelected(tr, true)
+      end
+    
+    end
+    
+    CheckStripSends()
+    PopulateTrackSendsInfo()
+    PopulateSpecial()
+    
+    if strips and strips[tracks[track_select].strip] then
+      page = strips[tracks[track_select].strip].page
+      surface_offset.x = strips[tracks[track_select].strip][page].surface_x
+      surface_offset.y = strips[tracks[track_select].strip][page].surface_y
+    else
+      page = 1
+      surface_offset.x = 0
+      surface_offset.y = 0 
+    end
+    CheckStripControls()            
+    update_gfx = true 
+    
+  end
   ------------------------------------------------------------    
 
   function Faders_INIT(force)
@@ -10089,6 +10143,98 @@ end
   end
 
   ------------------------------------------------------------    
+
+  function setmode(m)
+    --1=live,2=fx,3=tr,4=gfx,5=strip
+    
+    if navigate then
+    
+      ctl_select = nil
+      gfx2_select = nil
+      gfx3_select = nil
+      show_paramlearn = false
+      CloseActChooser()
+      show_ctlbrowser = false
+      if m == 1 then
+        if mode == 1 then
+          SaveEditedData()
+        end
+        mode = 0        
+      else
+        g_edstrips = {}
+        trackedit_select = track_select
+        mode = 1
+        PopulateTrackFX()
+        
+        if m == 2 then
+          submode = 0
+          fxmode = 0
+        elseif m == 3 then
+          submode = 0
+          fxmode = 1
+        elseif m == 4 then
+          submode = 1
+        elseif m == 5 then
+          submode = 2
+        end
+        
+      end
+      update_gfx = true
+    end
+    
+  end
+
+  function keypress(char)
+    --DBG(char)
+    
+    if not mouse.shift then
+      if char == 102 then
+        setmode(2)
+      elseif char == 116 then
+        setmode(3)      
+      elseif char == 103 then
+        setmode(4)      
+      elseif char == 115 then
+        setmode(5)
+      elseif char == 108 then
+        setmode(1)
+      elseif char == 46 then
+        local t = track_select + 1
+        if t > #tracks then t = -1 end
+        ChangeTrack2(t)
+        
+      elseif char == 44 then
+        local t = track_select - 1
+        if t < -1 then t = #tracks end
+        ChangeTrack2(t)
+      elseif char == 4 then
+        local d = gfx.dock(-1)
+        if d%256 == 0 then
+          if dockstate then
+            gfx.dock(dockstate)
+          else
+            gfx.dock(257)
+          end
+        else
+          dockstate = d
+          gfx.dock(256)
+        end
+      elseif char == 12 then
+        settings_locksurface = not settings_locksurface
+      elseif char == 61 then
+        if navigate then SetPage(math.min(page+1,4)) end
+      elseif char == 45 then  
+        if navigate then SetPage(math.max(page-1,1)) end
+      elseif char == 19 then
+        show_snapshots = not show_snapshots
+        update_gfx = true
+      end
+    else -- shift
+      if char == 19 then
+        ToggleSidebar()
+      end
+    end    
+  end
 
   function run()  
 
@@ -10183,6 +10329,13 @@ end
     mouse.ctrl = gfx.mouse_cap&4==4
     mouse.shift = gfx.mouse_cap&8==8
     mouse.alt = gfx.mouse_cap&16==16
+
+    if EB_Open == 0 then
+      local char = gfx.getchar() 
+      if char ~= 0 then
+        keypress(char)
+      end
+    end
 
     ReadAutomationFaders()
 
@@ -10664,8 +10817,25 @@ end
         if mouse.mx > obj.sections[11].w-6 then
           mouse.context = contexts.dragsidebar
           offx = 0
-        elseif navigate then
-          gfx3_select = nil
+        else--if navigate then
+        
+          if mode == 0 then
+            if submode == 0 then
+              if fxmode == 0 then
+                setmode(2)
+              else
+                setmode(3)
+              end
+            elseif submode == 1 then
+              setmode(4)
+            else
+              setmode(5)
+            end
+          else
+            setmode(1)
+          end
+        
+          --[[gfx3_select = nil
           gfx2_select = nil
           ctl_select = nil
           CloseActChooser()
@@ -10681,7 +10851,9 @@ end
             SaveEditedData()
             mode = 0
           end
-          update_gfx = true
+          update_gfx = true]]
+          
+          
         end
         
       elseif MOUSE_click(obj.sections[18]) then
@@ -11873,42 +12045,7 @@ end
             end
             update_gfx = true
           elseif tracks[i-1 + tlist_offset] then
-            if tracks[track_select] and strips[tracks[track_select].strip] then
-              strips[tracks[track_select].strip].page = page
-            end
-            ChangeTrack(i-1 + tlist_offset)
-            --trackedit_select = track_select
-            ss_select = nil
-            sstype_select = 1
-            ssoffset = 0
-            
-            if settings_followselectedtrack then
-              --Select track
-              local tr = GetTrack(track_select)
-              tracks[track_select].name = reaper.GetTrackState(tr)
-              
-              if tr ~= nil then
-                reaper.SetOnlyTrackSelected(tr)
-                reaper.SetTrackSelected(tr, true)
-              end
-            
-            end
-  
-            CheckStripSends()
-            PopulateTrackSendsInfo()
-            PopulateSpecial()
-  
-            if strips and strips[tracks[track_select].strip] then
-              page = strips[tracks[track_select].strip].page
-              surface_offset.x = strips[tracks[track_select].strip][page].surface_x
-              surface_offset.y = strips[tracks[track_select].strip][page].surface_y
-            else
-              page = 1
-              surface_offset.x = 0
-              surface_offset.y = 0 
-            end
-            CheckStripControls()            
-            update_gfx = true 
+            ChangeTrack2(i-1 + tlist_offset)
           end
         end
       
@@ -14497,10 +14634,10 @@ end
           end
           
         end
-        
+
         if MOUSE_click(obj.sections[13]) then
           if submode ~= 0 or (submode == 0 and mouse.mx < obj.sections[13].x + obj.sections[13].w - 30) then
-            ctl_select = nil
+            --[[ctl_select = nil
             gfx2_select = nil
             gfx3_select = nil
             show_paramlearn = false
@@ -14511,19 +14648,36 @@ end
             if submode+1 > #submode_table then
               submode = 0
             end
-            update_gfx = true
+            update_gfx = true]]
+            if submode == 0 then
+              setmode(4)
+            elseif submode == 1 then
+              setmode(5)
+            elseif submode == 2 then
+              if fxmode == 0 then
+                setmode(2)
+              else
+                setmode(3)
+              end
+            end
           elseif submode == 0 and mouse.mx > obj.sections[13].x + obj.sections[13].w - 30 then
-            CloseActChooser()
+            if fxmode == 0 then
+              setmode(3)
+            else
+              setmode(2)
+            end
+            
+            --[[CloseActChooser()
             show_ctlbrowser = false
             show_paramlearn = false
             fxmode = (fxmode + 1) % 2
-            update_gfx = true
+            update_gfx = true]]
            
           end
   
         elseif MOUSE_click_RB(obj.sections[13]) then
           --if submode ~= 0 or (submode == 0 and mouse.mx > 30) then
-            ctl_select = nil
+            --[[ctl_select = nil
             gfx2_select = nil
             gfx3_select = nil
             CloseActChooser()
@@ -14542,6 +14696,18 @@ end
             PopulateTrackFX()
             update_gfx = true    
           end]]
+          if submode == 2 then
+            setmode(4)
+          elseif submode == 0 then
+            setmode(5)
+          elseif submode == 1 then
+            if fxmode == 0 then
+              setmode(2)
+            else
+              setmode(3)
+            end
+          end
+          
         end          
       end
       
