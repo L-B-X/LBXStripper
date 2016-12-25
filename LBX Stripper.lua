@@ -12,6 +12,7 @@
     
   --------------------------------------------
         
+        
   submode_table = {'FX PARAMS','GRAPHICS','STRIPS'}
   ctltype_table = {'KNOB/SLIDER','BUTTON','BUTTON INV','CYCLE BUTTON','METER','MEM BUTTON','MOMENT BTN','MOMENT INV','FLASH BUTTON','FLASH INV'}
   trctltype_table = {'Track Controls','Track Sends','Actions & Meters'}
@@ -496,7 +497,7 @@
                           w = msgwinw,
                           h = butt_h}
       --settings
-      local setw, seth = 300, 350                            
+      local setw, seth = 300, 375                            
       obj.sections[70] = {x = gfx1.main_w/2-setw/2,
                           y = gfx1.main_h/2-seth/2,
                           w = setw,
@@ -565,6 +566,10 @@
       obj.sections[86] = {x = obj.sections[70].x+xofft+bw+10,
                                 y = obj.sections[70].y+yoff + yoffm*12,
                                 w = 40,
+                                h = bh}
+      obj.sections[87] = {x = obj.sections[70].x+xofft,
+                                y = obj.sections[70].y+yoff + yoffm*13,
+                                w = bw,
                                 h = bh}
                                 
       --Cycle
@@ -1831,7 +1836,7 @@
   function GetTrack(t)
   
     local tr
-    if t == -1 then
+    if t== nil or t == -1 then
       track = reaper.GetMasterTrack(0)
     else
       track = reaper.GetTrack(0, t)
@@ -3537,7 +3542,8 @@
   end
 
   function dvaloffset(num, dvoff)
-    if dvoff and dvoff ~= 0 then
+    dvoff = tonumber(dvoff)
+    if dvoff ~= nil and dvoff ~= 0 then
       local s, e = string.find(num,'%-%d+.%d+')
       if s == nil then
         s, e = string.find(num,'%d+.%d+')
@@ -3574,6 +3580,9 @@
   
   function nz(val, d)
     if val == nil then return d else return val end
+  end
+  function zn(val, d)
+    if val == '' or val == nil then return d else return val end
   end
   
   ------------------------------------------------------------
@@ -4828,6 +4837,72 @@ end
   end
 
   ------------------------------------------------------------
+  
+  function GUI_DrawMsgX(obj, gui, txt, c, max)
+    
+    gfx.mode =4
+    if gui == nil then
+      gui = GetGUI_vars()
+    end
+
+    local msgwinw, msgwinh = 500, 200
+    xywh1 = {x = gfx1.main_w/2-msgwinw/2,
+              y = gfx1.main_h/2-msgwinh/2,
+              w = msgwinw,
+              h = msgwinh}
+    xywh2 = {x = gfx1.main_w/2-msgwinw/2,
+              y = gfx1.main_h/2-msgwinh/2 + butt_h*2,
+              w = msgwinw,
+              h = butt_h}
+
+    xywh3 = {x = gfx1.main_w/2-msgwinw/2 + 20,
+              y = gfx1.main_h/2-msgwinh/2 + butt_h*4,
+              w = msgwinw-40,
+              h = butt_h}
+
+    gfx.dest = 1
+    f_Get_SSV('0 0 0')
+    gfx.a = 1 
+    gfx.rect(xywh1.x,
+             xywh1.y, 
+             xywh1.w,
+             xywh1.h, 1)
+    f_Get_SSV(gui.color.white)
+    gfx.rect(xywh1.x,
+             xywh1.y, 
+             xywh1.w,
+             xywh1.h, 0)
+    GUI_textC(gui,xywh2,nz(txt,''),gui.color.white,-2)         
+
+    if c and max then
+    
+      gfx.rect(xywh3.x,
+               xywh3.y, 
+               xywh3.w,
+               xywh3.h, 0)
+      xywh3.w = (c/max)*xywh3.w
+      gfx.rect(xywh3.x,
+               xywh3.y, 
+               xywh3.w,
+               xywh3.h, 1)
+      xywh3.w = msgwinw
+      GUI_textC(gui,xywh3,string.format('%i',round((c/max)*100))..'%',gui.color.black,-2)         
+      xywh3.x = xywh3.x + 1      
+      xywh3.y = xywh3.y + 1
+      GUI_textC(gui,xywh3,string.format('%i',round((c/max)*100))..'%',gui.color.white,-2)         
+
+    end
+
+    gfx.dest = -1
+    gfx.a = 1
+    gfx.blit(1, 1, 0, 
+      0,0, gfx1.main_w,gfx1.main_h,
+      0,0, gfx1.main_w,gfx1.main_h, 0,0)
+    gfx.update()
+    
+  end
+  
+  ------------------------------------------------------------
 
   function GUI_draw(obj, gui)
     gfx.mode =4
@@ -5994,6 +6069,7 @@ end
     GUI_DrawTick(gui, '...and on every page', obj.sections[84], gui.color.white, settings_insertdefaultoneverypage)
     GUI_DrawTick(gui, 'Display scroll bars', obj.sections[85], gui.color.white, settings_showbars)
     GUI_DrawColorBox(gui, 'Snapshot list background colour', obj.sections[86], gui.color.white, settings_snaplistbgcol)
+    GUI_DrawTick(gui, 'Save script data in project folder', obj.sections[87], gui.color.white, settings_savedatainprojectfolder)
     
                
   end
@@ -6712,9 +6788,9 @@ end
         local param = strips[tracks[track_select].strip][page].controls[trackfxparam_select].param
         strips[tracks[track_select].strip][page].controls[trackfxparam_select].dirty = true
         local min, max = GetParamMinMax(cc,track,nz(fxnum,-1),param,true,trackfxparam_select)
-        reaper.Undo_BeginBlock2(0)
+        --reaper.Undo_BeginBlock2(0)
         reaper.TrackFX_SetParam(track, nz(fxnum,-1), param, DenormalizeValue(min, max, val))
-        reaper.Undo_EndBlock2(0,"RRR",-1)
+        --reaper.Undo_EndBlock2(0,"RRR",-1)
       elseif cc == ctlcats.trackparam then
         local param = strips[tracks[track_select].strip][page].controls[trackfxparam_select].param
         strips[tracks[track_select].strip][page].controls[trackfxparam_select].dirty = true
@@ -7531,11 +7607,11 @@ end
             break
           end
         end
-        if not verify then
+        --if not verify then
         
-          OpenMsgBox(1, 'Please remove/reassign all missing plugin controls before saving.', 1)
+        --  OpenMsgBox(1, 'Please remove/reassign all missing plugin controls before saving.', 1)
           
-        else
+        --else
       
           OpenEB(1,'Please enter a filename for the strip:')
           --[[local sizex,sizey = 400,200
@@ -7549,7 +7625,7 @@ end
           }
           
           EB_Open = 1]]  
-        end
+        --end
       else
         OpenMsgBox(1, 'No controls on strip.', 1)
       end
@@ -7609,6 +7685,8 @@ end
         savestrip.snapshots = snapshots[tracks[track_select].strip][page]
       end
       
+      local t = reaper.time_precise()
+      
       --Pickle doesn't like {} in strings (much) - remove before pickling
       for i = 1, #savestrip.strip.controls do
         savestrip.strip.controls[i].fxguid = convertguid(savestrip.strip.controls[i].fxguid)
@@ -7641,6 +7719,7 @@ end
         end
       end
 
+      --DBG('pickke time: '..reaper.time_precise()-t)
       OpenMsgBox(1,'Strip saved.',1)
 
     end
@@ -7924,8 +8003,10 @@ end
         nguid = reaper.TrackFX_GetFXGUID(tr, fxcnt+i-1+missing)
         if nguid == nil then
           missing = missing + 1
-          fxguids[ofxguid].found = false
-          fxguids[ofxguid].fxnum = -1
+          if fxguids[ofxguid] then
+            fxguids[ofxguid].found = false
+            fxguids[ofxguid].fxnum = -1
+          end 
         end
         
       end
@@ -9312,9 +9393,9 @@ end
     end
     sub = sub .. '||Load Set|Merge Set|Save Set||Clear Set'
     if mode == 0 then
-      mstr = 'Toggle Sidebar||Lock X|Lock Y|Scroll Up|Scroll Down||Save Script State|Open Settings||Page 1|Page 2|Page 3|Page 4||'..ds..'||'..ls..'Lock Surface||'..dt..'Insert Default Strip'
+      mstr = 'Toggle Sidebar||Lock X|Lock Y|Scroll Up|Scroll Down||Save Project|Open Settings||Page 1|Page 2|Page 3|Page 4||'..ds..'||'..ls..'Lock Surface||'..dt..'Insert Default Strip'
     else
-      mstr = '#Toggle Sidebar||Lock X|Lock Y|Scroll Up|Scroll Down||Save Script State|Open Settings||Page 1|Page 2|Page 3|Page 4||'..ds..'||'..ls..'Lock Surface||'..dt..'Insert Default Strip'
+      mstr = '#Toggle Sidebar||Lock X|Lock Y|Scroll Up|Scroll Down||Save Project|Open Settings||Page 1|Page 2|Page 3|Page 4||'..ds..'||'..ls..'Lock Surface||'..dt..'Insert Default Strip'
     end
     mstr = mstr .. sub
     gfx.x, gfx.y = mouse.mx, butt_h
@@ -9331,8 +9412,9 @@ end
       elseif res == 5 then
         ScrollDown()
       elseif res == 6 then
-        SaveData()
-        infomsg = "*** DATA SAVED ***"
+        SaveProj()
+        lastprojdirty = 0
+        --infomsg = "*** DATA SAVED ***"
         OpenMsgBox(1,'Data Saved.',1)
         update_gfx = true      
       elseif res == 7 then
@@ -9371,9 +9453,10 @@ end
           --image_count = image_count_add
           loadstrip = nil
           --SaveSingleStrip(strip)
+          reaper.MarkProjectDirty(0)
         end
       elseif res >= 15 and res <= 22 then
-        SaveData()
+        --SaveProj()
         local oscript = SCRIPT
         if res == 15 then
           SCRIPT = 'LBX_STRIPPER'
@@ -10087,13 +10170,13 @@ end
       end
   
       faders[1].targettype = 0
-      faders[1].strip = 1
+      faders[1].strip = 2
       faders[1].page = 1
       faders[1].control = nil
       faders[1].sstype = 2
       faders[1].xy = 0
       faders[2].targettype = 0
-      faders[2].strip = 1
+      faders[2].strip = 2
       faders[2].page = 1
       faders[2].control = nil
       faders[2].sstype = 2
@@ -10115,7 +10198,6 @@ end
 
       for fxnum = 0, LBX_CTL_TRACK_INF.count-1 do
         for pf = 0, 31 do
-        
           p = fxnum * 32 + pf
           faders[p+1].val = reaper.TrackFX_GetParam(track, fxnum, pf)
           if faders[p+1].val and tostring(faders[p+1].val) ~= tostring(faders[p+1].oval) then
@@ -10124,7 +10206,7 @@ end
               if faders[p+1].targettype == 0 then
                 --xy test
                 if faders[p+1].xy == 0 then
-                  xxy[faders[p+1].strip][faders[p+1].page][faders[p+1].sstype].x = faders[p+1].val
+                  xxy[faders[p+1].strip][faders[p+1].page][faders[p+1].sstype].x = faders[p+1].val            
                 else
                   xxy[faders[p+1].strip][faders[p+1].page][faders[p+1].sstype].y = faders[p+1].val            
                 end
@@ -10157,9 +10239,10 @@ end
       show_ctlbrowser = false
       if m == 1 then
         if mode == 1 then
-          SaveEditedData()
+          --SaveEditedData()
         end
-        mode = 0        
+        mode = 0
+        reaper.MarkProjectDirty(0)        
       else
         g_edstrips = {}
         trackedit_select = track_select
@@ -10226,12 +10309,15 @@ end
       elseif char == 45 then  
         if navigate then SetPage(math.max(page-1,1)) end
       elseif char == 19 then
-        show_snapshots = not show_snapshots
-        update_gfx = true
+        SaveProj()
+        lastprojdirty = 0
       end
     else -- shift
       if char == 19 then
         ToggleSidebar()
+      elseif char == 83 then
+        show_snapshots = not show_snapshots
+        update_gfx = true      
       end
     end    
   end
@@ -10249,7 +10335,7 @@ end
       end
       LoadData()
     elseif loadset_fn then
-      SaveData()
+      --SaveData()
       if lsmerge == true then
         LoadSet2(loadset_fn, true)      
       else
@@ -10257,6 +10343,25 @@ end
         LoadSet2(loadset_fn)
       end
       loadset_fn = nil
+    end
+    
+    --[[local proj_change_count = reaper.GetProjectStateChangeCount(0)
+    if proj_change_count > last_proj_change_count then
+      local last_action = reaper.Undo_CanUndo2(0)
+      -- check if a project marker has been edited
+      DBG(last_action)
+      last_proj_change_count = proj_change_count
+    end]]
+    projdirty = reaper.IsProjectDirty()
+    if lastprojdirty ~= projdirty then
+      if projdirty == 0 then
+        --project saved
+        --DBG('saving data')
+        SaveProj()
+      else
+        --DBG('projmodified')
+      end
+      lastprojdirty = projdirty
     end
     
     if gfx.w ~= last_gfx_w or gfx.h ~= last_gfx_h or force_resize then
@@ -10668,6 +10773,9 @@ end
             settings_snaplistbgcol = ConvertColor(c)
             update_gfx = true
           end
+        elseif mouse.context == nil and MOUSE_click(obj.sections[87]) then
+          settings_savedatainprojectfolder = not settings_savedatainprojectfolder
+          update_gfx = true
         end
         
         if mouse.context and mouse.context == contexts.updatefreq then
@@ -10865,8 +10973,8 @@ end
         end
       
       elseif (obj.sections[17].x > obj.sections[20].x+obj.sections[20].w) and MOUSE_click(obj.sections[17]) then
-        SaveData()
-        infomsg = "*** DATA SAVED ***"
+        SaveProj()
+        lastprojdirty = 0
         OpenMsgBox(1,'Data Saved.',1)
         update_gfx = true
       
@@ -10959,8 +11067,8 @@ end
             Strip_AddStrip(loadstrip,dx,dy,true)
             
             update_gfx = true
-            SaveSingleStrip(tracks[track_select].strip)
-            
+            --SaveSingleStrip(tracks[track_select].strip)
+            reaper.MarkProjectDirty(0)
             insertstrip = nil
           elseif MOUSE_click_RB(obj.sections[10]) then
             --cancel
@@ -12099,6 +12207,7 @@ end
         end
               
       elseif mode == 1 then
+        reaper.MarkProjectDirty(0)
         show_fsnapshots = false
         
         if ct == 0 then
@@ -14940,7 +15049,8 @@ end
         mouse.mx, mouse.my = mx, my
       elseif mouse.context == nil and MOUSE_click(obj.sections[222]) then
         show_xxy = false
-        SaveSingleStrip(tracks[track_select].strip)
+        --SaveSingleStrip(tracks[track_select].strip)
+        reaper.MarkProjectDirty(0)
         update_gfx = true
       end
 
@@ -15014,7 +15124,7 @@ end
     end]]
     if show_cycleoptions == false then cycle_editmode = false end
     
-    local char = gfx.getchar() 
+    --local char = gfx.getchar() 
     if char == 32 then reaper.Main_OnCommandEx(40044, 0,0) end
     --if char == 27 then quit() end     
     --if char ~= -1 then reaper.defer(run) else quit() end
@@ -15040,7 +15150,7 @@ end
       xxy_maxdist = 0
       local d = {}
       local gtrack = GetTrack(strips[strip].track.tracknum)
-      
+      --DBG(strip..' '..page..' '..sst)
       local px, py = xxy[strip][page][sst].x, xxy[strip][page][sst].y
       for p = 1, #xxy[strip][page][sst].points do
         d[p] = math.sqrt((px - xxy[strip][page][sst].points[p].x)^2 + (py - xxy[strip][page][sst].points[p].y)^2)
@@ -15669,10 +15779,474 @@ end
     end
     return val
   end
+  
+  function readln(ln,nilallowed)
+    local v = string.match(ln,'[.-](.*)')
+    lsd_ln = lsd_ln + 1
+    if nilallowed and v == '' then
+      return nil
+    else
+      return v
+    end
+  end
+  
+  function decipher(ln)
+    return string.match(ln,'%[(.-)%](.*)')
+  end
+    
+  function LoadStripData(s, ss)
+  
+    local load_path
+    local fn = GPES('strips_datafile_'..string.format("%03d",s))
+
+    if settings_savedatainprojectfolder == true then
+      load_path=reaper.GetProjectPath('')..'/'
+      if reaper.file_exists(load_path..fn) ~= true then
+        load_path=projsave_path
+      end
+    else
+      load_path=projsave_path
+      if reaper.file_exists(load_path..fn) ~= true then
+        load_path=reaper.GetProjectPath('')..'/'
+      end      
+    end
+  
+    local ffn=load_path..fn
+    if reaper.file_exists(ffn) ~= true then
+      DBG('Missing file: '..ffn)
+      return 0
+    end    
+
+    local file
+
+    t = reaper.time_precise()
+    local ccnt
+    
+    local data = {}
+    for line in io.lines(ffn) do
+      local idx, val = string.match(line,'%[(.-)%](.*)') --decipher(line)
+      if idx then
+        data[idx] = val
+      end
+    end
+    
+    strips[ss] = {}
+              
+    strips[ss].page = tonumber(zn(data['page'],1))
+    strips[ss].track = {
+                       name = data['track_name'],
+                       guid = data['track_guid'],
+                       tracknum = tonumber(data['track_num']),
+                       strip = tonumber(data['track_strip'])
+                      }
+
+    for p = 1, 4 do
+    
+      local key = 'p'..p..'_'
+    
+      strips[ss][p] = {
+                      surface_x = tonumber(data[key..'surface_x']),
+                      surface_y = tonumber(data[key..'surface_y']),
+                      controls = {},
+                      graphics = {}
+                     }          
+    
+      local ccnt = tonumber(data[key..'controls_count'])
+      local gcnt = tonumber(data[key..'graphics_count'])
+      
+      if ccnt > 0 then
+        for c = 1, ccnt do
+
+          local key = 'p'..p..'_c_'..c..'_'
+          strips[ss][p].controls[c] = {
+                                      c_id = tonumber(zn(data[key..'cid'],GenID())),
+                                      ctlcat = tonumber(zn(data[key..'ctlcat'],0)),
+                                      fxname = data[key..'fxname'],
+                                      fxguid = data[key..'fxguid'],
+                                      fxnum = tonumber(zn(data[key..'fxnum'])),
+                                      fxfound = tobool(data[key..'fxfound']),
+                                      param = tonumber(data[key..'param']),
+                                      param_info = {
+                                                    paramname = data[key..'param_info_name'],
+                                                    paramnum = tonumber(zn(data[key..'param_info_paramnum'])),
+                                                    paramidx = zn(data[key..'param_info_idx']),
+                                                    paramstr = zn(data[key..'param_info_str']),
+                                                    paramdestguid = zn(data[key..'param_info_guid']),
+                                                    paramdestchan = tonumber(zn(data[key..'param_info_chan'])),
+                                                    paramsrcchan = tonumber(zn(data[key..'param_info_srcchan']))
+                                                   },
+                                      ctltype = tonumber(data[key..'ctltype']),
+                                      knob_select = tonumber(data[key..'knob_select']),
+                                      ctl_info = {
+                                                  fn = data[key..'ctl_info_fn'],
+                                                  frames = tonumber(data[key..'ctl_info_frames']),
+                                                  imageidx = tonumber(data[key..'ctl_info_imageidx']),
+                                                  cellh = tonumber(data[key..'ctl_info_cellh'])
+                                                 },
+                                      x = tonumber(data[key..'x']),
+                                      y = tonumber(data[key..'y']),
+                                      w = tonumber(data[key..'w']),
+                                      scale = tonumber(data[key..'scale']),
+                                      show_paramname = tobool(data[key..'show_paramname']),
+                                      show_paramval = tobool(data[key..'show_paramval']),
+                                      ctlname_override = zn(data[key..'ctlname_override'],''),
+                                      textcol = data[key..'textcol'],
+                                      textoff = tonumber(data[key..'textoff']),
+                                      textoffval = tonumber(zn(data[key..'textoffval'],0)),
+                                      textoffx = tonumber(zn(data[key..'textoffx'],0)),
+                                      textoffvalx = tonumber(zn(data[key..'textoffvalx'],0)),
+                                      textsize = tonumber(zn(data[key..'textsize'],0)),
+                                      val = tonumber(data[key..'val']),
+                                      defval = tonumber(data[key..'defval']),
+                                      maxdp = tonumber(zn(data[key..'maxdp'],-1)),
+                                      cycledata = {statecnt = 0,{}},
+                                      xydata = {x = tonumber(zn(data[key..'xydata_x'],0.5)), 
+                                                y = tonumber(zn(data[key..'xydata_y'],0.5)), 
+                                                snapa = tonumber(zn(data[key..'xydata_snapa'],1)),
+                                                snapb = tonumber(zn(data[key..'xydata_snapb'],1)),
+                                                snapc = tonumber(zn(data[key..'xydata_snapc'],1)),
+                                                snapd = tonumber(zn(data[key..'xydata_snapd'],1))},
+                                      id = deconvnum(data[key..'id'],true),
+                                      scalemode = tonumber(zn(data[key..'scalemodex'],8)),
+                                      framemode = tonumber(zn(data[key..'framemodex'],1)),
+                                      poslock = tobool(zn(data[key..'poslock'],false)),
+                                      horiz = tobool(zn(data[key..'horiz'],false))
+                                     }
+          g_cids[strips[ss][p].controls[c].c_id] = true
+          if strips[ss][p].controls[c].maxdp == nil or (strips[ss][p].controls[c].maxdp and strips[ss][p].controls[c].maxdp == '') then
+            strips[ss][p].controls[c].maxdp = -1
+          end
+          strips[ss][p].controls[c].xsc = strips[ss][p].controls[c].x + strips[ss][p].controls[c].w/2 - (strips[ss][p].controls[c].w*strips[ss][p].controls[c].scale)/2
+          strips[ss][p].controls[c].ysc = strips[ss][p].controls[c].y + strips[ss][p].controls[c].ctl_info.cellh/2 - (strips[ss][p].controls[c].ctl_info.cellh*strips[ss][p].controls[c].scale)/2
+          strips[ss][p].controls[c].wsc = strips[ss][p].controls[c].w*strips[ss][p].controls[c].scale
+          strips[ss][p].controls[c].hsc = strips[ss][p].controls[c].ctl_info.cellh*strips[ss][p].controls[c].scale
+          
+          strips[ss][p].controls[c].tracknum = tonumber(zn(data[key..'tracknum']))
+          strips[ss][p].controls[c].trackguid = data[key..'trackguid']                    
+          strips[ss][p].controls[c].dvaloffset = zn(key..'dvaloffset',0)
+          strips[ss][p].controls[c].minov = zn(data[key..'minov'])
+          strips[ss][p].controls[c].maxov = zn(data[key..'maxov'])
+          strips[ss][p].controls[c].membtn = {state = tobool(zn(data[key..'memstate'],false)),
+                                              mem = tonumber(zn(data[key..'memmem'],0))
+                                              }
+          
+          strips[ss][p].controls[c].cycledata.statecnt = tonumber(zn(data[key..'cycledata_statecnt'],0))
+          strips[ss][p].controls[c].cycledata.mapptof = tobool(zn(data[key..'cycledata_mapptof'],false))
+          strips[ss][p].controls[c].cycledata.draggable = tobool(zn(data[key..'cycledata_draggable'],false))
+          strips[ss][p].controls[c].cycledata.spread = tobool(zn(data[key..'cycledata_spread'],false))
+          strips[ss][p].controls[c].cycledata.pos = tonumber(zn(data[key..'cycledata_pos'],1))
+          strips[ss][p].controls[c].cycledata.posdirty = tobool(zn(data[key..'cycledata_posdirty'],false))
+          strips[ss][p].controls[c].cycledata.val = 0
+          if nz(strips[ss][p].controls[c].cycledata.statecnt,0) > 0 then
+            for i = 1, strips[ss][p].controls[c].cycledata.statecnt do
+              local key = 'p'..p..'_c_'..c..'_cyc_'..i..'_'
+            
+              strips[ss][p].controls[c].cycledata[i] = {val = tonumber(zn(data[key..'val'],0)),
+                                                        dispval = zn(data[key..'dispval'],'no disp val'),
+                                                        dv = zn(data[key..'dispval'])}
+              if strips[ss][p].controls[c].cycledata[i].dv == nil then
+                strips[ss][p].controls[c].cycledata[i].dv = strips[ss][p].controls[c].cycledata[i].dispval
+              end 
+            end
+          end
+
+          --load control images - reshuffled to ensure no wasted slots between sessions
+          local iidx
+          local knob_sel = -1
+          for k = 0, #ctl_files do
+            if ctl_files[k].fn == strips[ss][p].controls[c].ctl_info.fn then
+              knob_sel = k
+              break
+            end
+          end
+          if knob_sel ~= -1 then
+            strips[ss][p].controls[c].knob_select = knob_sel
+
+            if ctl_files[knob_sel].imageidx == nil then
+              image_count = F_limit(image_count + 1,0,image_max)
+              gfx.loadimg(image_count, controls_path..ctl_files[knob_sel].fn)
+              iidx = image_count
+              
+              strips[ss][p].controls[c].ctl_info.imageidx = iidx
+              ctl_files[knob_sel].imageidx = iidx                    
+            else
+              iidx = ctl_files[knob_sel].imageidx
+              strips[ss][p].controls[c].ctl_info.imageidx = iidx
+            end
+          else
+            --missing
+            strips[ss][p].controls[c].knob_select = -1
+            strips[ss][p].controls[c].ctl_info.imageidx = 1020
+          end
+        end
+      end
+      
+      if gcnt > 0 then
+      
+        for g = 1, gcnt do
+
+          local key = 'p'..p..'_g_'..g..'_'
+          
+          strips[ss][p].graphics[g] = {
+                                      fn = data[key..'fn'],
+                                      imageidx = tonumber(data[key..'imageidx']),
+                                      x = tonumber(data[key..'x']),
+                                      y = tonumber(data[key..'y']),
+                                      w = tonumber(data[key..'w']),
+                                      h = tonumber(data[key..'h']),
+                                      scale = tonumber(data[key..'scale']),
+                                      id = deconvnum(zn(data[key..'id'])),
+                                      gfxtype = tonumber(zn(data[key..'gfxtype'],gfxtype.img)),
+                                      font = {idx = tonumber(zn(data[key..'font_idx'])),
+                                              name = zn(data[key..'font_name']),
+                                              size = tonumber(zn(data[key..'font_size'])),
+                                              bold = tobool(zn(data[key..'font_bold'])),
+                                              italics = tobool(zn(data[key..'font_italics'])),
+                                              underline = tobool(zn(data[key..'font_underline'])),
+                                              shadow = tobool(zn(data[key..'font_shadow'],true)),
+                                              shadow_x = tonumber(zn(data[key..'font_shadowx'],1)),
+                                              shadow_y = tonumber(zn(data[key..'font_shadowy'],1)),
+                                              shadow_a = tonumber(zn(data[key..'font_shadowa'],0.6))
+                                              },
+                                      text = zn(data[key..'text']),
+                                      text_col = zn(data[key..'text_col']),
+                                      poslock = tobool(zn(data[key..'poslock'],false))
+                                     }
+          strips[ss][p].graphics[g].stretchw = tonumber(zn(data[key..'stretchw'],strips[ss][p].graphics[g].w))
+          strips[ss][p].graphics[g].stretchh = tonumber(zn(data[key..'stretchh'],strips[ss][p].graphics[g].h))
+
+          --load graphics images
+          local iidx
+          local gfx_sel = -1
+          for k = 0, #graphics_files do
+            if graphics_files[k].fn == strips[ss][p].graphics[g].fn then
+              gfx_sel = k
+              break
+            end
+          end
+          if gfx_sel ~= -1 then
+            
+            if graphics_files[gfx_sel].imageidx == nil then
+              image_count = F_limit(image_count + 1,0,image_max)
+              gfx.loadimg(image_count, graphics_path..graphics_files[gfx_sel].fn)
+              iidx = image_count
+              
+              strips[ss][p].graphics[g].imageidx = iidx
+              graphics_files[gfx_sel].imageidx = iidx                    
+
+            else
+              iidx = graphics_files[gfx_sel].imageidx
+              strips[ss][p].graphics[g].imageidx = iidx                                  
+            end
+          else
+            --missing
+            strips[ss][p].graphics[g].imageidx = 1020
+          end
+        end                
+      end
+    end
+    
+    --ss = ss + 1
+  --else
+    --not found
+    --strips[s] = nil
+  --end
+    --DBG('Strip load time: '..reaper.time_precise() - t)
+  end  
+  
+  
+  function LoadSnapData(s)
+  
+    local load_path
+    local fn = GPES('snaps_datafile_'..string.format("%03d",s))
+
+    if settings_savedatainprojectfolder == true then
+      load_path=reaper.GetProjectPath('')..'/'
+      if reaper.file_exists(load_path..fn) ~= true then
+        load_path=projsave_path
+      end
+    else
+      load_path=projsave_path
+      if reaper.file_exists(load_path..fn) ~= true then
+        load_path=reaper.GetProjectPath('')..'/'
+      end      
+    end
+  
+    local ffn=load_path..fn
+    if reaper.file_exists(ffn) ~= true then
+      DBG('Missing file: '..ffn)
+      return 0
+    end    
+
+    local file
+
+    t = reaper.time_precise()
+    local ccnt
+    
+    local data = {}
+    for line in io.lines(ffn) do
+      local idx, val = string.match(line,'%[(.-)%](.*)') --decipher(line)
+      if idx then
+        data[idx] = val
+      end
+    end
+    
+    snapshots[s] = {}
+  
+    for p = 1, 4 do
+    
+      snapshots[s][p] = {}
+
+      local key = 'p'..p..'_'
+      local sstcnt = tonumber(zn(data[key..'sstype_count'],0))
+      
+      if sstcnt > 0 then
+        
+        for sst = 1, sstcnt do
+
+          if sst == 1 then                
+            snapshots[s][p][sst] = {}
+          
+            local key = 'p'..p..'_sst_'..sst..'_'
+            local sscnt = tonumber(zn(data[key..'ss_count'],0))
+            if sscnt > 0 then
+        
+              for ss = 1, sscnt do
+                local key = 'p'..p..'_sst_'..sst..'_ss_'..ss..'_'
+                local dcnt = tonumber(data[key..'data_count'])
+                snapshots[s][p][sst][ss] = {name = data[key..'name'],
+                                            data = {}}
+                for d = 1, dcnt do
+
+                  local key = 'p'..p..'_sst_'..sst..'_ss_'..ss..'_d_'..d..'_'
+                
+                  snapshots[s][p][sst][ss].data[d] = {c_id = tonumber(data[key..'cid']),
+                                                     ctl = tonumber(data[key..'ctl']),
+                                                     val = tonumber(data[key..'val']),
+                                                     dval = tonumber(zn(data[key..'dval']))}
+                end
+              end
+              
+              --Snapshots_Check(s,p)
+            end
+          elseif sst > 1 then
+          
+            local key = 'p'..p..'_sst_'..sst..'_'
+            snapshots[s][p][sst] = {subsetname = data[key..'subsetname'], snapshot = {}, ctls = {}}
+            
+            snapsubsets_table[sst] = snapshots[s][p][sst].subsetname
+            
+            local sscnt = tonumber(zn(data[key..'ss_count'],0))
+            local ctlcnt = tonumber(zn(data[key..'ctl_count'],0))
+            
+            if ctlcnt > 0 then
+              for ctl = 1, ctlcnt do
+              
+                local key = 'p'..p..'_sst_'..sst..'_c_'..ctl..'_'
+                snapshots[s][p][sst].ctls[ctl] = {c_id = tonumber(data[key..'cid']),
+                                                  ctl = tonumber(data[key..'ctl'])}
+              end
+            end
+            if sscnt > 0 then
+              for ss = 1, sscnt do
+                local key = 'p'..p..'_sst_'..sst..'_ss_'..ss..'_'
+                local dcnt = tonumber(data[key..'data_count'])
+                snapshots[s][p][sst].snapshot[ss] = {name = data[key..'name'],
+                                                     data = {}}
+                for d = 1, dcnt do
+
+                  local key = 'p'..p..'_sst_'..sst..'_ss_'..ss..'_d_'..d..'_'
+                
+                  snapshots[s][p][sst].snapshot[ss].data[d] = {c_id = tonumber(data[key..'cid']),
+                                                               ctl = tonumber(data[key..'ctl']),
+                                                               val = tonumber(data[key..'val']),
+                                                               dval = tonumber(zn(data[key..'dval']))}
+                end
+              end
+            end                 
+             
+            --Snapshots_Check(s,p)
+          end
+          
+          local key = 'p'..p..'_sst_'..sst..'_'
+          if snapshots[s][p][sst] then
+            snapshots[s][p][sst].selected = tonumber(zn(data[key..'ss_selected']))
+          end
+          
+        end
+        
+        --Snapshots_Check(s,p)
+      end
+    end
+    --DBG('Snapshot load time: '..reaper.time_precise() - t)
+
+  end
+  
+  function LoadXXYData(s)
+  
+    local load_path
+    local fn = GPES('metalite_datafile_'..string.format("%03d",s))
+
+    if settings_savedatainprojectfolder == true then
+      load_path=reaper.GetProjectPath('')..'/'
+      if reaper.file_exists(load_path..fn) ~= true then
+        load_path=projsave_path
+      end
+    else
+      load_path=projsave_path
+      if reaper.file_exists(load_path..fn) ~= true then
+        load_path=reaper.GetProjectPath('')..'/'
+      end      
+    end
+  
+    local ffn=load_path..fn
+    if reaper.file_exists(ffn) ~= true then
+      DBG('Missing file: '..ffn)
+      return 0
+    end    
+  
+    local file
+  
+    local data = {}
+    for line in io.lines(ffn) do
+      local idx, val = string.match(line,'%[(.-)%](.*)') --decipher(line)
+      if idx then
+        data[idx] = val
+      end
+    end
+  
+    for p = 1, 4 do
+    
+      for sst = 1, #snapshots[s][p] do
+      
+        local key = 'xxy_p'..p..'_sst_'..sst..'_'
+        local ptcnt = tonumber(zn(data[key..'pt_count']))
+        if ptcnt then
+      
+          XXY_INIT(s, p, sst)
+          for pt = 1, ptcnt do
+          
+            local key = 'xxy_p'..p..'_sst_'..sst..'_pt_'..pt..'_'
+            xxy[s][p][sst].points[pt] = {}
+            xxy[s][p][sst].points[pt].x = tonumber(data[key..'x'])
+            xxy[s][p][sst].points[pt].y = tonumber(data[key..'y'])
+            xxy[s][p][sst].points[pt].ss = tonumber(data[key..'ss'])
+          
+          end
+      
+        end
+        
+      end
+    
+    end
+
+  end
     
   function LoadData()
     
     local s, p, c, g, k
+  
+    local t = reaper.time_precise()
   
     if GPES('savedok') ~= '' then
   
@@ -15693,236 +16267,246 @@ end
         strips = {}
         local ss = 1
         if scnt > 0 then
+          --DBG(scnt)
           for s = 1, scnt do
           
-            key = 'strips_'..s..'_'
+            if tonumber(v) >= 0.93 then
+              LoadStripData(s, ss)
+              ss=ss+1
+              --DBG(scnt..' '..s..'  '..ss..'yeah')
+              --if not CheckTrackExists(ss) then
+              --  ss = ss - 1
+              --end
+            else
             
-            strips[ss] = {}
-            
-            strips[ss].page = tonumber(nz(GPES(key..'page',true),1))
-
-            key = 'strips_'..s..'_track_'
-
-            strips[ss].track = {
-                               name = GPES(key..'name'),
-                               guid = GPES(key..'guid'),
-                               tracknum = tonumber(GPES(key..'tracknum')),
-                               strip = tonumber(GPES(key..'strip'))
-                              }
-            if CheckTrackExists(ss) then
-              for p = 1, 4 do
+              key = 'strips_'..s..'_'
               
-                local key = 'strips_'..s..'_'..p..'_'
+              strips[ss] = {}
               
-                strips[ss][p] = {
-                                surface_x = tonumber(GPES(key..'surface_x')),
-                                surface_y = tonumber(GPES(key..'surface_y')),
-                                controls = {},
-                                graphics = {}
-                               }          
-              
-                local ccnt = tonumber(GPES(key..'controls_count'))
-                local gcnt = tonumber(GPES(key..'graphics_count'))
-                            
-                if ccnt > 0 then
-                  for c = 1, ccnt do
-    
-                    local key = 'strips_'..s..'_'..p..'_controls_'..c..'_'
-                    strips[ss][p].controls[c] = {
-                                                c_id = tonumber(nz(GPES(key..'cid',true),GenID() )),
-                                                ctlcat = tonumber(nz(GPES(key..'ctlcat',true),0)),
-                                                fxname = GPES(key..'fxname'),
-                                                fxguid = GPES(key..'fxguid'),
-                                                fxnum = tonumber(GPES(key..'fxnum',true)),
-                                                fxfound = tobool(GPES(key..'fxfound')),
-                                                param = tonumber(GPES(key..'param')),
-                                                param_info = {
-                                                              paramname = GPES(key..'param_info_name'),
-                                                              paramnum = tonumber(GPES(key..'param_info_paramnum',true)),
-                                                              paramidx = GPES(key..'param_info_idx',true),
-                                                              paramstr = GPES(key..'param_info_str',true),
-                                                              paramdestguid = GPES(key..'param_info_guid',true),
-                                                              paramdestchan = tonumber(GPES(key..'param_info_chan',true)),
-                                                              paramsrcchan = tonumber(GPES(key..'param_info_srcchan',true))
+              strips[ss].page = tonumber(nz(GPES(key..'page',true),1))
+  
+              key = 'strips_'..s..'_track_'
+  
+              strips[ss].track = {
+                                 name = GPES(key..'name'),
+                                 guid = GPES(key..'guid'),
+                                 tracknum = tonumber(GPES(key..'tracknum')),
+                                 strip = tonumber(GPES(key..'strip'))
+                                }
+              if CheckTrackExists(ss) then
+                for p = 1, 4 do
+                
+                  local key = 'strips_'..s..'_'..p..'_'
+                
+                  strips[ss][p] = {
+                                  surface_x = tonumber(GPES(key..'surface_x')),
+                                  surface_y = tonumber(GPES(key..'surface_y')),
+                                  controls = {},
+                                  graphics = {}
+                                 }          
+                
+                  local ccnt = tonumber(GPES(key..'controls_count'))
+                  local gcnt = tonumber(GPES(key..'graphics_count'))
+                              
+                  if ccnt > 0 then
+                    for c = 1, ccnt do
+      
+                      local key = 'strips_'..s..'_'..p..'_controls_'..c..'_'
+                      strips[ss][p].controls[c] = {
+                                                  c_id = tonumber(nz(GPES(key..'cid',true),GenID() )),
+                                                  ctlcat = tonumber(nz(GPES(key..'ctlcat',true),0)),
+                                                  fxname = GPES(key..'fxname'),
+                                                  fxguid = GPES(key..'fxguid'),
+                                                  fxnum = tonumber(GPES(key..'fxnum',true)),
+                                                  fxfound = tobool(GPES(key..'fxfound')),
+                                                  param = tonumber(GPES(key..'param')),
+                                                  param_info = {
+                                                                paramname = GPES(key..'param_info_name'),
+                                                                paramnum = tonumber(GPES(key..'param_info_paramnum',true)),
+                                                                paramidx = GPES(key..'param_info_idx',true),
+                                                                paramstr = GPES(key..'param_info_str',true),
+                                                                paramdestguid = GPES(key..'param_info_guid',true),
+                                                                paramdestchan = tonumber(GPES(key..'param_info_chan',true)),
+                                                                paramsrcchan = tonumber(GPES(key..'param_info_srcchan',true))
+                                                               },
+                                                  ctltype = tonumber(GPES(key..'ctltype')),
+                                                  knob_select = tonumber(GPES(key..'knob_select')),
+                                                  ctl_info = {
+                                                              fn = GPES(key..'ctl_info_fn'),
+                                                              frames = tonumber(GPES(key..'ctl_info_frames')),
+                                                              imageidx = tonumber(GPES(key..'ctl_info_imageidx')),
+                                                              cellh = tonumber(GPES(key..'ctl_info_cellh'))
                                                              },
-                                                ctltype = tonumber(GPES(key..'ctltype')),
-                                                knob_select = tonumber(GPES(key..'knob_select')),
-                                                ctl_info = {
-                                                            fn = GPES(key..'ctl_info_fn'),
-                                                            frames = tonumber(GPES(key..'ctl_info_frames')),
-                                                            imageidx = tonumber(GPES(key..'ctl_info_imageidx')),
-                                                            cellh = tonumber(GPES(key..'ctl_info_cellh'))
-                                                           },
-                                                x = tonumber(GPES(key..'x')),
-                                                y = tonumber(GPES(key..'y')),
-                                                w = tonumber(GPES(key..'w')),
-                                                scale = tonumber(GPES(key..'scale')),
-                                                show_paramname = tobool(GPES(key..'show_paramname')),
-                                                show_paramval = tobool(GPES(key..'show_paramval')),
-                                                ctlname_override = nz(GPES(key..'ctlname_override'),''),
-                                                textcol = GPES(key..'textcol'),
-                                                textoff = tonumber(GPES(key..'textoff')),
-                                                textoffval = tonumber(nz(GPES(key..'textoffval',true),0)),
-                                                textoffx = tonumber(nz(GPES(key..'textoffx',true),0)),
-                                                textoffvalx = tonumber(nz(GPES(key..'textoffvalx',true),0)),
-                                                textsize = tonumber(nz(GPES(key..'textsize'),0)),
-                                                val = tonumber(GPES(key..'val')),
-                                                defval = tonumber(GPES(key..'defval')),
-                                                maxdp = tonumber(nz(GPES(key..'maxdp',true),-1)),
-                                                cycledata = {statecnt = 0,{}},
-                                                xydata = {x = tonumber(nz(GPES(key..'xydata_x',true),0.5)), 
-                                                          y = tonumber(nz(GPES(key..'xydata_y',true),0.5)), 
-                                                          snapa = tonumber(nz(GPES(key..'xydata_snapa',true),1)),
-                                                          snapb = tonumber(nz(GPES(key..'xydata_snapb',true),1)),
-                                                          snapc = tonumber(nz(GPES(key..'xydata_snapc',true),1)),
-                                                          snapd = tonumber(nz(GPES(key..'xydata_snapd',true),1))},
-                                                id = deconvnum(GPES(key..'id',true)),
-                                                scalemode = tonumber(nz(GPES(key..'scalemodex',true),8)),
-                                                framemode = tonumber(nz(GPES(key..'framemodex',true),1)),
-                                                poslock = tobool(nz(GPES(key..'poslock',true),false)),
-                                                horiz = tobool(nz(GPES(key..'horiz',true),false))
-                                               }
-                    g_cids[strips[ss][p].controls[c].c_id] = true
-                    if strips[ss][p].controls[c].maxdp == nil or (strips[ss][p].controls[c].maxdp and strips[ss][p].controls[c].maxdp == '') then
-                      strips[ss][p].controls[c].maxdp = -1
-                    end
-                    strips[ss][p].controls[c].xsc = strips[ss][p].controls[c].x + strips[ss][p].controls[c].w/2 - (strips[ss][p].controls[c].w*strips[ss][p].controls[c].scale)/2
-                    strips[ss][p].controls[c].ysc = strips[ss][p].controls[c].y + strips[ss][p].controls[c].ctl_info.cellh/2 - (strips[ss][p].controls[c].ctl_info.cellh*strips[ss][p].controls[c].scale)/2
-                    strips[ss][p].controls[c].wsc = strips[ss][p].controls[c].w*strips[ss][p].controls[c].scale
-                    strips[ss][p].controls[c].hsc = strips[ss][p].controls[c].ctl_info.cellh*strips[ss][p].controls[c].scale
-                    
-                    strips[ss][p].controls[c].tracknum = tonumber(GPES(key..'tracknum',true))
-                    strips[ss][p].controls[c].trackguid = GPES(key..'trackguid')                    
-                    strips[ss][p].controls[c].dvaloffset = GPES(key..'dvaloffset',true)
-                    strips[ss][p].controls[c].minov = GPES(key..'minov',true)
-                    strips[ss][p].controls[c].maxov = GPES(key..'maxov',true)
-                    strips[ss][p].controls[c].membtn = {state = tobool(nz(GPES(key..'memstate',true),false)),
-                                                        mem = tonumber(nz(GPES(key..'memmem',true),0))
-                                                        }
-                    
-                    strips[ss][p].controls[c].cycledata.statecnt = tonumber(nz(GPES(key..'cycledata_statecnt',true),0))
-                    strips[ss][p].controls[c].cycledata.mapptof = tobool(nz(GPES(key..'cycledata_mapptof',true),false))
-                    strips[ss][p].controls[c].cycledata.draggable = tobool(nz(GPES(key..'cycledata_draggable',true),false))
-                    strips[ss][p].controls[c].cycledata.spread = tobool(nz(GPES(key..'cycledata_spread',true),false))
-                    strips[ss][p].controls[c].cycledata.pos = tonumber(nz(GPES(key..'cycledata_pos',true),1))
-                    strips[ss][p].controls[c].cycledata.posdirty = tobool(nz(GPES(key..'cycledata_posdirty',true),false))
-                    strips[ss][p].controls[c].cycledata.val = 0
-                    if nz(strips[ss][p].controls[c].cycledata.statecnt,0) > 0 then
-                      for i = 1, strips[ss][p].controls[c].cycledata.statecnt do
-                        local key = 'strips_'..s..'_'..p..'_controls_'..c..'_cycledata_'..i..'_'
+                                                  x = tonumber(GPES(key..'x')),
+                                                  y = tonumber(GPES(key..'y')),
+                                                  w = tonumber(GPES(key..'w')),
+                                                  scale = tonumber(GPES(key..'scale')),
+                                                  show_paramname = tobool(GPES(key..'show_paramname')),
+                                                  show_paramval = tobool(GPES(key..'show_paramval')),
+                                                  ctlname_override = nz(GPES(key..'ctlname_override'),''),
+                                                  textcol = GPES(key..'textcol'),
+                                                  textoff = tonumber(GPES(key..'textoff')),
+                                                  textoffval = tonumber(nz(GPES(key..'textoffval',true),0)),
+                                                  textoffx = tonumber(nz(GPES(key..'textoffx',true),0)),
+                                                  textoffvalx = tonumber(nz(GPES(key..'textoffvalx',true),0)),
+                                                  textsize = tonumber(nz(GPES(key..'textsize'),0)),
+                                                  val = tonumber(GPES(key..'val')),
+                                                  defval = tonumber(GPES(key..'defval')),
+                                                  maxdp = tonumber(nz(GPES(key..'maxdp',true),-1)),
+                                                  cycledata = {statecnt = 0,{}},
+                                                  xydata = {x = tonumber(nz(GPES(key..'xydata_x',true),0.5)), 
+                                                            y = tonumber(nz(GPES(key..'xydata_y',true),0.5)), 
+                                                            snapa = tonumber(nz(GPES(key..'xydata_snapa',true),1)),
+                                                            snapb = tonumber(nz(GPES(key..'xydata_snapb',true),1)),
+                                                            snapc = tonumber(nz(GPES(key..'xydata_snapc',true),1)),
+                                                            snapd = tonumber(nz(GPES(key..'xydata_snapd',true),1))},
+                                                  id = deconvnum(GPES(key..'id',true)),
+                                                  scalemode = tonumber(nz(GPES(key..'scalemodex',true),8)),
+                                                  framemode = tonumber(nz(GPES(key..'framemodex',true),1)),
+                                                  poslock = tobool(nz(GPES(key..'poslock',true),false)),
+                                                  horiz = tobool(nz(GPES(key..'horiz',true),false))
+                                                 }
+                      g_cids[strips[ss][p].controls[c].c_id] = true
+                      if strips[ss][p].controls[c].maxdp == nil or (strips[ss][p].controls[c].maxdp and strips[ss][p].controls[c].maxdp == '') then
+                        strips[ss][p].controls[c].maxdp = -1
+                      end
+                      strips[ss][p].controls[c].xsc = strips[ss][p].controls[c].x + strips[ss][p].controls[c].w/2 - (strips[ss][p].controls[c].w*strips[ss][p].controls[c].scale)/2
+                      strips[ss][p].controls[c].ysc = strips[ss][p].controls[c].y + strips[ss][p].controls[c].ctl_info.cellh/2 - (strips[ss][p].controls[c].ctl_info.cellh*strips[ss][p].controls[c].scale)/2
+                      strips[ss][p].controls[c].wsc = strips[ss][p].controls[c].w*strips[ss][p].controls[c].scale
+                      strips[ss][p].controls[c].hsc = strips[ss][p].controls[c].ctl_info.cellh*strips[ss][p].controls[c].scale
                       
-                        strips[ss][p].controls[c].cycledata[i] = {val = tonumber(nz(GPES(key..'val',true),0)),
-                                                                  dispval = nz(GPES(key..'dispval',true),'no disp val'),
-                                                                  dv = GPES(key..'dispval',true)}
-                        if strips[ss][p].controls[c].cycledata[i].dv == nil then
-                          strips[ss][p].controls[c].cycledata[i].dv = strips[ss][p].controls[c].cycledata[i].dispval
-                        end 
-                      end
-                    end
-                                        
-                    --load control images - reshuffled to ensure no wasted slots between sessions
-                    local iidx
-                    local knob_sel = -1
-                    for k = 0, #ctl_files do
-                      if ctl_files[k].fn == strips[ss][p].controls[c].ctl_info.fn then
-                        knob_sel = k
-                        break
-                      end
-                    end
-                    if knob_sel ~= -1 then
-                      strips[ss][p].controls[c].knob_select = knob_sel
-    
-                      if ctl_files[knob_sel].imageidx == nil then
-                        image_count = F_limit(image_count + 1,0,image_max)
-                        gfx.loadimg(image_count, controls_path..ctl_files[knob_sel].fn)
-                        iidx = image_count
+                      strips[ss][p].controls[c].tracknum = tonumber(GPES(key..'tracknum',true))
+                      strips[ss][p].controls[c].trackguid = GPES(key..'trackguid')                    
+                      strips[ss][p].controls[c].dvaloffset = GPES(key..'dvaloffset',true)
+                      strips[ss][p].controls[c].minov = GPES(key..'minov',true)
+                      strips[ss][p].controls[c].maxov = GPES(key..'maxov',true)
+                      strips[ss][p].controls[c].membtn = {state = tobool(nz(GPES(key..'memstate',true),false)),
+                                                          mem = tonumber(nz(GPES(key..'memmem',true),0))
+                                                          }
+                      
+                      strips[ss][p].controls[c].cycledata.statecnt = tonumber(nz(GPES(key..'cycledata_statecnt',true),0))
+                      strips[ss][p].controls[c].cycledata.mapptof = tobool(nz(GPES(key..'cycledata_mapptof',true),false))
+                      strips[ss][p].controls[c].cycledata.draggable = tobool(nz(GPES(key..'cycledata_draggable',true),false))
+                      strips[ss][p].controls[c].cycledata.spread = tobool(nz(GPES(key..'cycledata_spread',true),false))
+                      strips[ss][p].controls[c].cycledata.pos = tonumber(nz(GPES(key..'cycledata_pos',true),1))
+                      strips[ss][p].controls[c].cycledata.posdirty = tobool(nz(GPES(key..'cycledata_posdirty',true),false))
+                      strips[ss][p].controls[c].cycledata.val = 0
+                      if nz(strips[ss][p].controls[c].cycledata.statecnt,0) > 0 then
+                        for i = 1, strips[ss][p].controls[c].cycledata.statecnt do
+                          local key = 'strips_'..s..'_'..p..'_controls_'..c..'_cycledata_'..i..'_'
                         
-                        strips[ss][p].controls[c].ctl_info.imageidx = iidx
-                        ctl_files[knob_sel].imageidx = iidx                    
-                      else
-                        iidx = ctl_files[knob_sel].imageidx
-                        strips[ss][p].controls[c].ctl_info.imageidx = iidx
+                          strips[ss][p].controls[c].cycledata[i] = {val = tonumber(nz(GPES(key..'val',true),0)),
+                                                                    dispval = nz(GPES(key..'dispval',true),'no disp val'),
+                                                                    dv = GPES(key..'dispval',true)}
+                          if strips[ss][p].controls[c].cycledata[i].dv == nil then
+                            strips[ss][p].controls[c].cycledata[i].dv = strips[ss][p].controls[c].cycledata[i].dispval
+                          end 
+                        end
                       end
-                    else
-                      --missing
-                      strips[ss][p].controls[c].knob_select = -1
-                      strips[ss][p].controls[c].ctl_info.imageidx = 1020
+                                          
+                      --load control images - reshuffled to ensure no wasted slots between sessions
+                      local iidx
+                      local knob_sel = -1
+                      for k = 0, #ctl_files do
+                        if ctl_files[k].fn == strips[ss][p].controls[c].ctl_info.fn then
+                          knob_sel = k
+                          break
+                        end
+                      end
+                      if knob_sel ~= -1 then
+                        strips[ss][p].controls[c].knob_select = knob_sel
+      
+                        if ctl_files[knob_sel].imageidx == nil then
+                          image_count = F_limit(image_count + 1,0,image_max)
+                          gfx.loadimg(image_count, controls_path..ctl_files[knob_sel].fn)
+                          iidx = image_count
+                          
+                          strips[ss][p].controls[c].ctl_info.imageidx = iidx
+                          ctl_files[knob_sel].imageidx = iidx                    
+                        else
+                          iidx = ctl_files[knob_sel].imageidx
+                          strips[ss][p].controls[c].ctl_info.imageidx = iidx
+                        end
+                      else
+                        --missing
+                        strips[ss][p].controls[c].knob_select = -1
+                        strips[ss][p].controls[c].ctl_info.imageidx = 1020
+                      end
                     end
                   end
-                end
-                
-                if gcnt > 0 then
-                
-                  for g = 1, gcnt do
-    
-                    local key = 'strips_'..s..'_'..p..'_graphics_'..g..'_'
-                    
-                    strips[ss][p].graphics[g] = {
-                                                fn = GPES(key..'fn'),
-                                                imageidx = tonumber(GPES(key..'imageidx')),
-                                                x = tonumber(GPES(key..'x')),
-                                                y = tonumber(GPES(key..'y')),
-                                                w = tonumber(GPES(key..'w')),
-                                                h = tonumber(GPES(key..'h')),
-                                                scale = tonumber(GPES(key..'scale')),
-                                                id = deconvnum(GPES(key..'id',true)),
-                                                gfxtype = tonumber(nz(GPES(key..'gfxtype',true),gfxtype.img)),
-                                                font = {idx = tonumber(GPES(key..'font_idx',true)),
-                                                        name = GPES(key..'font_name',true),
-                                                        size = tonumber(GPES(key..'font_size',true)),
-                                                        bold = tobool(GPES(key..'font_bold',true)),
-                                                        italics = tobool(GPES(key..'font_italics',true)),
-                                                        underline = tobool(GPES(key..'font_underline',true)),
-                                                        shadow = tobool(nz(GPES(key..'font_shadow',true),true)),
-                                                        shadow_x = tonumber(nz(GPES(key..'font_shadowx',true),1)),
-                                                        shadow_y = tonumber(nz(GPES(key..'font_shadowy',true),1)),
-                                                        shadow_a = tonumber(nz(GPES(key..'font_shadowa',true),0.6))
-                                                        },
-                                                text = GPES(key..'text',true),
-                                                text_col = GPES(key..'text_col',true),
-                                                poslock = tobool(nz(GPES(key..'poslock',true),false))
-                                               }
-                    strips[ss][p].graphics[g].stretchw = tonumber(nz(GPES(key..'stretchw',true),strips[ss][p].graphics[g].w))
-                    strips[ss][p].graphics[g].stretchh = tonumber(nz(GPES(key..'stretchh',true),strips[ss][p].graphics[g].h))
-
-                    --load graphics images
-                    local iidx
-                    local gfx_sel = -1
-                    for k = 0, #graphics_files do
-                      if graphics_files[k].fn == strips[ss][p].graphics[g].fn then
-                        gfx_sel = k
-                        break
-                      end
-                    end
-                    if gfx_sel ~= -1 then
-                      
-                      if graphics_files[gfx_sel].imageidx == nil then
-                        image_count = F_limit(image_count + 1,0,image_max)
-                        gfx.loadimg(image_count, graphics_path..graphics_files[gfx_sel].fn)
-                        iidx = image_count
-                        
-                        strips[ss][p].graphics[g].imageidx = iidx
-                        graphics_files[gfx_sel].imageidx = iidx                    
+                  
+                  if gcnt > 0 then
+                  
+                    for g = 1, gcnt do
       
-                      else
-                        iidx = graphics_files[gfx_sel].imageidx
-                        strips[ss][p].graphics[g].imageidx = iidx                                  
+                      local key = 'strips_'..s..'_'..p..'_graphics_'..g..'_'
+                      
+                      strips[ss][p].graphics[g] = {
+                                                  fn = GPES(key..'fn'),
+                                                  imageidx = tonumber(GPES(key..'imageidx')),
+                                                  x = tonumber(GPES(key..'x')),
+                                                  y = tonumber(GPES(key..'y')),
+                                                  w = tonumber(GPES(key..'w')),
+                                                  h = tonumber(GPES(key..'h')),
+                                                  scale = tonumber(GPES(key..'scale')),
+                                                  id = deconvnum(GPES(key..'id',true)),
+                                                  gfxtype = tonumber(nz(GPES(key..'gfxtype',true),gfxtype.img)),
+                                                  font = {idx = tonumber(GPES(key..'font_idx',true)),
+                                                          name = GPES(key..'font_name',true),
+                                                          size = tonumber(GPES(key..'font_size',true)),
+                                                          bold = tobool(GPES(key..'font_bold',true)),
+                                                          italics = tobool(GPES(key..'font_italics',true)),
+                                                          underline = tobool(GPES(key..'font_underline',true)),
+                                                          shadow = tobool(nz(GPES(key..'font_shadow',true),true)),
+                                                          shadow_x = tonumber(nz(GPES(key..'font_shadowx',true),1)),
+                                                          shadow_y = tonumber(nz(GPES(key..'font_shadowy',true),1)),
+                                                          shadow_a = tonumber(nz(GPES(key..'font_shadowa',true),0.6))
+                                                          },
+                                                  text = GPES(key..'text',true),
+                                                  text_col = GPES(key..'text_col',true),
+                                                  poslock = tobool(nz(GPES(key..'poslock',true),false))
+                                                 }
+                      strips[ss][p].graphics[g].stretchw = tonumber(nz(GPES(key..'stretchw',true),strips[ss][p].graphics[g].w))
+                      strips[ss][p].graphics[g].stretchh = tonumber(nz(GPES(key..'stretchh',true),strips[ss][p].graphics[g].h))
+  
+                      --load graphics images
+                      local iidx
+                      local gfx_sel = -1
+                      for k = 0, #graphics_files do
+                        if graphics_files[k].fn == strips[ss][p].graphics[g].fn then
+                          gfx_sel = k
+                          break
+                        end
                       end
-                    else
-                      --missing
-                      strips[ss][p].graphics[g].imageidx = 1020
-                    end
-                  end                
+                      if gfx_sel ~= -1 then
+                        
+                        if graphics_files[gfx_sel].imageidx == nil then
+                          image_count = F_limit(image_count + 1,0,image_max)
+                          gfx.loadimg(image_count, graphics_path..graphics_files[gfx_sel].fn)
+                          iidx = image_count
+                          
+                          strips[ss][p].graphics[g].imageidx = iidx
+                          graphics_files[gfx_sel].imageidx = iidx                    
+        
+                        else
+                          iidx = graphics_files[gfx_sel].imageidx
+                          strips[ss][p].graphics[g].imageidx = iidx                                  
+                        end
+                      else
+                        --missing
+                        strips[ss][p].graphics[g].imageidx = 1020
+                      end
+                    end                
+                  end
                 end
+                ss = ss + 1
+              else
+                --not found
+                --strips[s] = nil
               end
-              ss = ss + 1
-            else
-              --not found
-              --strips[s] = nil
             end
           end
         end
-        
         
         PopulateTracks()
         Snapshots_INIT()
@@ -15932,129 +16516,148 @@ end
             
           for s = 1, scnt do
 
-            snapshots[s] = {}
-          
-            for p = 1, 4 do
+            if tonumber(v) >= 0.93 then
             
-              snapshots[s][p] = {}
+              LoadSnapData(s)
 
-              local key = 'snap_strip_'..s..'_'..p..'_'
-              local sstcnt = tonumber(nz(GPES(key..'sstype_count',true),0))
+            else
+            
+              snapshots[s] = {}
+            
+              for p = 1, 4 do
               
-              if sstcnt > 0 then
+                snapshots[s][p] = {}
+  
+                local key = 'snap_strip_'..s..'_'..p..'_'
+                local sstcnt = tonumber(nz(GPES(key..'sstype_count',true),0))
                 
-                for sst = 1, sstcnt do
-
-                  if sst == 1 then                
-                    snapshots[s][p][sst] = {}
+                if sstcnt > 0 then
                   
-                    local key = 'snap_strip_'..s..'_'..p..'_type_'..sst..'_'
-                    local sscnt = tonumber(nz(GPES(key..'ss_count',true),0))
-                    if sscnt > 0 then
-                
-                      for ss = 1, sscnt do
-                        local key = 'snap_strip_'..s..'_'..p..'_type_'..sst..'_snapshot_'..ss..'_'
-                        local dcnt = tonumber(GPES(key..'data_count'))
-                        snapshots[s][p][sst][ss] = {name = GPES(key..'name'),
-                                                    data = {}}
-                        for d = 1, dcnt do
-      
-                          local key = 'snap_strip_'..s..'_'..p..'_type_'..sst..'_snapshot_'..ss..'_data_'..d..'_'
+                  for sst = 1, sstcnt do
+  
+                    if sst == 1 then                
+                      snapshots[s][p][sst] = {}
+                    
+                      local key = 'snap_strip_'..s..'_'..p..'_type_'..sst..'_'
+                      local sscnt = tonumber(nz(GPES(key..'ss_count',true),0))
+                      if sscnt > 0 then
+                  
+                        for ss = 1, sscnt do
+                          local key = 'snap_strip_'..s..'_'..p..'_type_'..sst..'_snapshot_'..ss..'_'
+                          local dcnt = tonumber(GPES(key..'data_count'))
+                          snapshots[s][p][sst][ss] = {name = GPES(key..'name'),
+                                                      data = {}}
+                          for d = 1, dcnt do
+        
+                            local key = 'snap_strip_'..s..'_'..p..'_type_'..sst..'_snapshot_'..ss..'_data_'..d..'_'
+                          
+                            snapshots[s][p][sst][ss].data[d] = {c_id = tonumber(GPES(key..'cid')),
+                                                               ctl = tonumber(GPES(key..'ctl')),
+                                                               val = tonumber(GPES(key..'val')),
+                                                               dval = tonumber(GPES(key..'dval',true))}
+                          end
+                        end
                         
-                          snapshots[s][p][sst][ss].data[d] = {c_id = tonumber(GPES(key..'cid')),
-                                                             ctl = tonumber(GPES(key..'ctl')),
-                                                             val = tonumber(GPES(key..'val')),
-                                                             dval = tonumber(GPES(key..'dval',true))}
+                        --Snapshots_Check(s,p)
+                      end
+                    elseif sst > 1 then
+                    
+                      local key = 'snap_strip_'..s..'_'..p..'_type_'..sst..'_'
+                      snapshots[s][p][sst] = {subsetname = GPES(key..'subsetname'), snapshot = {}, ctls = {}}
+                      
+                      snapsubsets_table[sst] = snapshots[s][p][sst].subsetname
+                      
+                      local sscnt = nz(tonumber(GPES(key..'ss_count')),0)
+                      local ctlcnt = nz(tonumber(GPES(key..'ctl_count')),0)
+                      
+                      if ctlcnt > 0 then
+                        for ctl = 1, ctlcnt do
+                        
+                          local key = 'snap_strip_'..s..'_'..p..'_type_'..sst..'_ctl_'..ctl..'_'
+                          snapshots[s][p][sst].ctls[ctl] = {c_id = tonumber(GPES(key..'cid')),
+                                                            ctl = tonumber(GPES(key..'ctl'))}
                         end
                       end
-                      
+                      if sscnt > 0 then
+                        for ss = 1, sscnt do
+                          local key = 'snap_strip_'..s..'_'..p..'_type_'..sst..'_snapshot_'..ss..'_'
+                          local dcnt = tonumber(GPES(key..'data_count'))
+                          snapshots[s][p][sst].snapshot[ss] = {name = GPES(key..'name'),
+                                                               data = {}}
+                          for d = 1, dcnt do
+        
+                            local key = 'snap_strip_'..s..'_'..p..'_type_'..sst..'_snapshot_'..ss..'_data_'..d..'_'
+                          
+                            snapshots[s][p][sst].snapshot[ss].data[d] = {c_id = tonumber(GPES(key..'cid')),
+                                                                         ctl = tonumber(GPES(key..'ctl')),
+                                                                         val = tonumber(GPES(key..'val')),
+                                                                         dval = tonumber(GPES(key..'dval',true))}
+                          end
+                        end
+                      end                 
+                       
                       --Snapshots_Check(s,p)
                     end
-                  elseif sst > 1 then
-                  
+                    
                     local key = 'snap_strip_'..s..'_'..p..'_type_'..sst..'_'
-                    snapshots[s][p][sst] = {subsetname = GPES(key..'subsetname'), snapshot = {}, ctls = {}}
-                    
-                    snapsubsets_table[sst] = snapshots[s][p][sst].subsetname
-                    
-                    local sscnt = nz(tonumber(GPES(key..'ss_count')),0)
-                    local ctlcnt = nz(tonumber(GPES(key..'ctl_count')),0)
-                    
-                    if ctlcnt > 0 then
-                      for ctl = 1, ctlcnt do
-                      
-                        local key = 'snap_strip_'..s..'_'..p..'_type_'..sst..'_ctl_'..ctl..'_'
-                        snapshots[s][p][sst].ctls[ctl] = {c_id = tonumber(GPES(key..'cid')),
-                                                          ctl = tonumber(GPES(key..'ctl'))}
-                      end
+                    if snapshots[s][p][sst] then
+                      snapshots[s][p][sst].selected = tonumber(GPES(key..'ss_selected',true))
                     end
-                    if sscnt > 0 then
-                      for ss = 1, sscnt do
-                        local key = 'snap_strip_'..s..'_'..p..'_type_'..sst..'_snapshot_'..ss..'_'
-                        local dcnt = tonumber(GPES(key..'data_count'))
-                        snapshots[s][p][sst].snapshot[ss] = {name = GPES(key..'name'),
-                                                             data = {}}
-                        for d = 1, dcnt do
-      
-                          local key = 'snap_strip_'..s..'_'..p..'_type_'..sst..'_snapshot_'..ss..'_data_'..d..'_'
-                        
-                          snapshots[s][p][sst].snapshot[ss].data[d] = {c_id = tonumber(GPES(key..'cid')),
-                                                                       ctl = tonumber(GPES(key..'ctl')),
-                                                                       val = tonumber(GPES(key..'val')),
-                                                                       dval = tonumber(GPES(key..'dval',true))}
-                        end
-                      end
-                    end                 
-                     
-                    --Snapshots_Check(s,p)
+                    
                   end
                   
-                  local key = 'snap_strip_'..s..'_'..p..'_type_'..sst..'_'
-                  if snapshots[s][p][sst] then
-                    snapshots[s][p][sst].selected = tonumber(GPES(key..'ss_selected',true))
-                  end
-                  
+                  --Snapshots_Check(s,p)
                 end
-                
-                --Snapshots_Check(s,p)
               end
             end
+            
           end
         end
         
         --XXY
+        
         for s = 1, #strips do
         
-          for p = 1, 4 do
+          if tonumber(v) >= 0.93 then
+          
+            LoadXXYData(s)
+          
+          else
         
-            for sst = 1, #snapshots[s][p] do
-            
-              local key = 'xxy_strip_'..s..'_'..p..'_type_'..sst..'_'
-              local ptcnt = tonumber(GPES(key..'pt_count',true))
-              if ptcnt then
-            
-                XXY_INIT(s, p, sst)
-                for pt = 1, ptcnt do
-                
-                  local key = 'xxy_strip_'..s..'_'..p..'_type_'..sst..'_pt_'..pt..'_'
-                  xxy[s][p][sst].points[pt] = {}
-                  xxy[s][p][sst].points[pt].x = tonumber(GPES(key..'x'))
-                  xxy[s][p][sst].points[pt].y = tonumber(GPES(key..'y'))
-                  xxy[s][p][sst].points[pt].ss = tonumber(GPES(key..'ss'))
-                
-                end
-            
-              end
+            for p = 1, 4 do
+          
+              for sst = 1, #snapshots[s][p] do
               
+                local key = 'xxy_strip_'..s..'_'..p..'_type_'..sst..'_'
+                local ptcnt = tonumber(GPES(key..'pt_count',true))
+                if ptcnt then
+              
+                  XXY_INIT(s, p, sst)
+                  for pt = 1, ptcnt do
+                  
+                    local key = 'xxy_strip_'..s..'_'..p..'_type_'..sst..'_pt_'..pt..'_'
+                    xxy[s][p][sst].points[pt] = {}
+                    xxy[s][p][sst].points[pt].x = tonumber(GPES(key..'x'))
+                    xxy[s][p][sst].points[pt].y = tonumber(GPES(key..'y'))
+                    xxy[s][p][sst].points[pt].ss = tonumber(GPES(key..'ss'))
+                  
+                  end
+              
+                end
+                
+              end
+          
             end
-        
           end
-        
+                  
         end
         
       else
         SaveData()
       end
+      
+      --DBG('Total Load Time: '..reaper.time_precise() - t)
+      infomsg = 'Total Load Time: '..round(reaper.time_precise() - t,2)..'s'
       PopulateTracks() --must be called to link tracks to strips
       
       if show_editbar then
@@ -16122,6 +16725,7 @@ end
     settings_insertdefaultoneverytrack = tobool(nz(GES('insertdefstripontrack',true),settings_insertdefaultoneverytrack))
     settings_insertdefaultoneverypage = tobool(nz(GES('insertdefstriponpage',true),settings_insertdefaultoneverypage))
     settings_snaplistbgcol = tostring(nz(GES('snaplistbgcol',true),settings_snaplistbgcol))
+    settings_savedatainprojectfolder = tobool(nz(GES('savedatainprojectfolder',true),settings_savedatainprojectfolder))
     
     local sd = tonumber(GES('strip_default',true))
     local sdf = tonumber(GES('stripfol_default',true))
@@ -16157,6 +16761,7 @@ end
     reaper.SetExtState(SCRIPT,'insertdefstripontrack',tostring(settings_insertdefaultoneverytrack), true)
     reaper.SetExtState(SCRIPT,'insertdefstriponpage',tostring(settings_insertdefaultoneverypage), true)
     reaper.SetExtState(SCRIPT,'snaplistbgcol',settings_snaplistbgcol, true)
+    reaper.SetExtState(SCRIPT,'savedatainprojectfolder',tostring(settings_savedatainprojectfolder), true)
     
     if strip_default then
       reaper.SetExtState(SCRIPT,'strip_default',tostring(strip_default.strip_select), true)
@@ -16221,19 +16826,78 @@ end
     else
       reaper.SetProjExtState(0,SCRIPT,'strips_count',0)    
     end
-    SaveStripData(s)
+    SaveStripData_FN(s)
     
     if snapshots then
       reaper.SetProjExtState(0,SCRIPT,'snapshots_count',#snapshots)
     else
       reaper.SetProjExtState(0,SCRIPT,'snapshots_count',0)    
     end
-    SaveSnapshotData(s)
-    SaveXXYData(s)
+    SaveSnapshotData_FN(s)
+    SaveXXYData_FN(s)
     
   end
 
-  function SaveXXYData(s)
+  function SaveXXYData_FN(s,fn,save_path)
+
+    local save_path=projsave_path..'/'
+    if settings_savedatainprojectfolder == true then
+      save_path=reaper.GetProjectPath('')..'/'
+    end
+    --[[local pn = reaper.GetProjectName(0,'')
+    local projname = string.sub(pn,0,string.len(pn)-4)..'_'..PROJECTID
+    reaper.RecursiveCreateDirectory(save_path..projname,1)
+    if fn == nil then
+      _, fn=reaper.GetProjExtState(0,SCRIPT,'metalite_datafile_'..string.format("%03d",s))
+    end
+    if projnamechange or fn == nil or fn == '' then
+      fn=projname..'/pmetalite'..string.format("%03d",s)..'_ss'..string.sub(STRIPSET,11)..".pxxy"
+    end]]
+    local ffn=save_path..fn
+     
+    local file
+     
+    file=io.open(ffn,"w")
+ 
+    if xxy and xxy[s] then
+      for p = 1, 4 do
+    
+        if xxy[s][p] then
+        
+          for sst = 1, #snapshots[s][p] do
+            
+            if xxy[s][p][sst] then
+          
+              local key = 'xxy_p'..p..'_sst_'..sst..'_'
+              local ptcnt = #xxy[s][p][sst].points
+              file:write('['..key..'x]'.. xxy[s][p][sst].x ..'\n')
+              file:write('['..key..'y]'.. xxy[s][p][sst].y ..'\n')
+              file:write('['..key..'pt_count]'.. ptcnt ..'\n')
+              for pt = 1, ptcnt do
+              
+                local key = 'xxy_p'..p..'_sst_'..sst..'_pt_'..pt..'_'
+                file:write('['..key..'x]'.. xxy[s][p][sst].points[pt].x ..'\n')
+                file:write('['..key..'y]'.. xxy[s][p][sst].points[pt].y ..'\n')
+                file:write('['..key..'ss]'.. xxy[s][p][sst].points[pt].ss ..'\n')
+              
+              end
+              
+            end
+            
+          end
+        
+        end
+    
+      end
+    end
+
+    file:close()
+    
+    reaper.SetProjExtState(0,SCRIPT,'metalite_datafile_'..string.format("%03d",s),fn) 
+    
+  end
+
+  --[[function SaveXXYData(s)
 
     if xxy and xxy[s] then
       for p = 1, 4 do
@@ -16267,9 +16931,9 @@ end
       end
     end
 
-  end
+  end]]
     
-  function SaveSnapshotData(s)
+  --[[function SaveSnapshotData(s)
   
     for p = 1, #snapshots[s] do
     
@@ -16349,10 +17013,301 @@ end
       end
     end
   
+  end]]
+
+  function SaveSnapshotData_FN(s,fn,save_path)
+  
+    local save_path=projsave_path..'/'
+    if settings_savedatainprojectfolder == true then
+      save_path=reaper.GetProjectPath('')..'/'
+    end
+    --[[local pn = reaper.GetProjectName(0,'')
+    local projname = string.sub(pn,0,string.len(pn)-4)..'_'..PROJECTID
+    reaper.RecursiveCreateDirectory(save_path..projname,1)
+    if fn == nil then
+      _, fn=reaper.GetProjExtState(0,SCRIPT,'snaps_datafile_'..string.format("%03d",s))
+    end
+    if projnamechange or fn == nil or fn == '' then
+      fn=projname..'/psnap'..string.format("%03d",s)..'_ss'..string.sub(STRIPSET,11)..".psnap"
+    end]]
+    local ffn=save_path..fn
+    
+    local file
+    
+    t = reaper.time_precise()
+    
+    file=io.open(ffn,"w")
+    
+    for p = 1, #snapshots[s] do
+    
+      local key = 'p'..p..'_'          
+      file:write('['..key..'sstype_count]'..#snapshots[s][p]..'\n')
+    
+      for sst = 1, #snapshots[s][p] do
+    
+        local key = 'p'..p..'_sst_'..sst..'_'
+        file:write('['..key..'ss_selected]'..nz(snapshots[s][p][sst].selected,'')..'\n')
+        
+        if sst == 1 then          
+          file:write('['..key..'ss_count]'..#snapshots[s][p][sst]..'\n')
+        
+          if #snapshots[s][p][sst] > 0 then
+
+            for ss = 1, #snapshots[s][p][sst] do
+
+              local key = 'p'..p..'_sst_'..sst..'_ss_'..ss..'_'
+            
+              file:write('['..key..'name]'.. snapshots[s][p][sst][ss].name ..'\n')
+              file:write('['..key..'data_count]'.. #snapshots[s][p][sst][ss].data ..'\n')
+          
+              if #snapshots[s][p][sst][ss].data > 0 then
+                for d = 1, #snapshots[s][p][sst][ss].data do
+  
+                  local key = 'p'..p..'_sst_'..sst..'_ss_'..ss..'_d_'..d..'_'
+
+                  file:write('['..key..'cid]'.. snapshots[s][p][sst][ss].data[d].c_id ..'\n')
+                  file:write('['..key..'ctl]'.. snapshots[s][p][sst][ss].data[d].ctl ..'\n')
+                  file:write('['..key..'val]'.. snapshots[s][p][sst][ss].data[d].val ..'\n')
+                  file:write('['..key..'dval]'.. nz(snapshots[s][p][sst][ss].data[d].dval,'') ..'\n')
+            
+                end
+              end
+            end
+          end      
+
+        elseif sst > 1 then
+        
+          file:write('['..key..'subsetname]'.. snapshots[s][p][sst].subsetname ..'\n')
+          file:write('['..key..'ss_count]'.. #snapshots[s][p][sst].snapshot ..'\n')
+          file:write('['..key..'ctl_count]'.. #snapshots[s][p][sst].ctls ..'\n')
+          
+          if #snapshots[s][p][sst].ctls > 0 then
+    
+            for ctl = 1, #snapshots[s][p][sst].ctls do
+              local key = 'p'..p..'_sst_'..sst..'_c_'..ctl..'_'
+              file:write('['..key..'cid]'.. snapshots[s][p][sst].ctls[ctl].c_id ..'\n')
+              file:write('['..key..'ctl]'.. snapshots[s][p][sst].ctls[ctl].ctl ..'\n')                            
+            end
+          end
+          if #snapshots[s][p][sst].snapshot > 0 then
+          
+            for ss = 1, #snapshots[s][p][sst].snapshot do
+            
+              local key = 'p'..p..'_sst_'..sst..'_ss_'..ss..'_'
+              file:write('['..key..'name]'.. snapshots[s][p][sst].snapshot[ss].name ..'\n')
+              file:write('['..key..'data_count]'.. #snapshots[s][p][sst].snapshot[ss].data ..'\n')
+            
+              if #snapshots[s][p][sst].snapshot[ss].data > 0 then
+                for d = 1, #snapshots[s][p][sst].snapshot[ss].data do
+  
+                  local key = 'p'..p..'_sst_'..sst..'_ss_'..ss..'_d_'..d..'_'
+            
+                  file:write('['..key..'cid]'.. snapshots[s][p][sst].snapshot[ss].data[d].c_id ..'\n')
+                  file:write('['..key..'ctl]'.. snapshots[s][p][sst].snapshot[ss].data[d].ctl ..'\n')
+                  file:write('['..key..'val]'.. snapshots[s][p][sst].snapshot[ss].data[d].val ..'\n')
+                  file:write('['..key..'dval]'.. nz(snapshots[s][p][sst].snapshot[ss].data[d].dval,'') ..'\n')
+            
+                end
+              end
+            end
+          end
+        end
+      end
+    end
+  
+    file:close()
+    
+    reaper.SetProjExtState(0,SCRIPT,'snaps_datafile_'..string.format("%03d",s),fn) 
+    
+    --DBG('Save snapshot time: '..reaper.time_precise() - t)
+    return reaper.time_precise() - t
+    
+  end
+  
+  function SaveStripData_FN(s,fn,save_path)
+  
+--[[    local pn = reaper.GetProjectName(0,'')
+    local projname = string.sub(pn,0,string.len(pn)-4)..'_'..PROJECTID
+    reaper.RecursiveCreateDirectory(save_path..projname,1)
+    if fn == nil then
+      _, fn=reaper.GetProjExtState(0,SCRIPT,'strips_datafile_'..string.format("%03d",s))
+    end
+    if projnamechange or fn == nil or fn == '' then
+      fn=projname..'/pstrip'..string.format("%03d",s)..'_ss'..string.sub(STRIPSET,11)..".pstrip"
+    end]]
+    local ffn=save_path..fn
+    local file
+
+    t = reaper.time_precise()
+    --DBG(fn)
+    --DBG(ffn)
+    
+    file=io.open(ffn,"w")
+
+    --file:write('[strips_count]'..#strips..'\n')
+    if strips[s] then
+      file:write('[page]'..nz(strips[s].page,1)..'\n')
+      file:write('[track_name]'..strips[s].track.name..'\n')
+      file:write('[track_guid]'..nz(strips[s].track.guid,'')..'\n')
+      file:write('[track_num]'..strips[s].track.tracknum..'\n')
+      file:write('[track_strip]'..strips[s].track.strip..'\n')
+    
+      for p = 1, 4 do
+      
+        local key = 'p'..p..'_'
+
+        if strips[s][p] then
+
+          file:write('['..key..'surface_x]'..strips[s][p].surface_x..'\n')
+          file:write('['..key..'surface_y]'..strips[s][p].surface_y..'\n')
+          file:write('['..key..'controls_count]'..#strips[s][p].controls..'\n')
+          file:write('['..key..'graphics_count]'..#strips[s][p].graphics..'\n')
+          
+          if #strips[s][p].controls > 0 then
+            for c = 1, #strips[s][p].controls do
+          
+              local key = 'p'..p..'_c_'..c..'_'
+              
+              file:write('['..key..'cid]'..strips[s][p].controls[c].c_id..'\n')
+              file:write('['..key..'fxname]'..strips[s][p].controls[c].fxname..'\n')
+              file:write('['..key..'fxguid]'..nz(strips[s][p].controls[c].fxguid,'')..'\n')
+              file:write('['..key..'fxnum]'..nz(strips[s][p].controls[c].fxnum,'')..'\n')
+              file:write('['..key..'fxfound]'..tostring(strips[s][p].controls[c].fxfound)..'\n')
+              file:write('['..key..'param]'..strips[s][p].controls[c].param..'\n')
+  
+              file:write('['..key..'param_info_name]'..strips[s][p].controls[c].param_info.paramname..'\n')
+              file:write('['..key..'param_info_paramnum]'..nz(strips[s][p].controls[c].param_info.paramnum,'')..'\n')
+              file:write('['..key..'param_info_idx]'..nz(strips[s][p].controls[c].param_info.paramidx,'')..'\n')
+              file:write('['..key..'param_info_str]'..nz(strips[s][p].controls[c].param_info.paramstr,'')..'\n')
+              file:write('['..key..'param_info_guid]'..nz(strips[s][p].controls[c].param_info.paramdestguid,'')..'\n')
+              file:write('['..key..'param_info_chan]'..nz(strips[s][p].controls[c].param_info.paramdestchan,'')..'\n')
+              file:write('['..key..'param_info_srcchan]'..nz(strips[s][p].controls[c].param_info.paramsrcchan,'')..'\n')
+              file:write('['..key..'ctltype]'..strips[s][p].controls[c].ctltype..'\n')
+              file:write('['..key..'knob_select]'..strips[s][p].controls[c].knob_select..'\n')
+              file:write('['..key..'ctl_info_fn]'..strips[s][p].controls[c].ctl_info.fn..'\n')
+              file:write('['..key..'ctl_info_frames]'..strips[s][p].controls[c].ctl_info.frames..'\n')
+              file:write('['..key..'ctl_info_imageidx]'..strips[s][p].controls[c].ctl_info.imageidx..'\n')
+              file:write('['..key..'ctl_info_cellh]'..strips[s][p].controls[c].ctl_info.cellh..'\n')
+              file:write('['..key..'x]'..strips[s][p].controls[c].x..'\n')
+              file:write('['..key..'y]'..strips[s][p].controls[c].y..'\n')
+              file:write('['..key..'w]'..strips[s][p].controls[c].w..'\n')
+              file:write('['..key..'scale]'..strips[s][p].controls[c].scale..'\n')
+              file:write('['..key..'show_paramname]'..tostring(strips[s][p].controls[c].show_paramname)..'\n')
+              file:write('['..key..'show_paramval]'..tostring(strips[s][p].controls[c].show_paramval)..'\n')
+              file:write('['..key..'ctlname_override]'..nz(strips[s][p].controls[c].ctlname_override,'')..'\n')
+              file:write('['..key..'textcol]'..strips[s][p].controls[c].textcol..'\n')
+              file:write('['..key..'textoff]'..strips[s][p].controls[c].textoff..'\n')
+              file:write('['..key..'textoffval]'..strips[s][p].controls[c].textoffval..'\n')
+              file:write('['..key..'textoffx]'..strips[s][p].controls[c].textoffx..'\n')
+              file:write('['..key..'textoffvalx]'..strips[s][p].controls[c].textoffvalx..'\n')
+              file:write('['..key..'textsize]'..nz(strips[s][p].controls[c].textsize,0)..'\n')
+              file:write('['..key..'val]'..nz(strips[s][p].controls[c].val,0)..'\n')
+              file:write('['..key..'defval]'..nz(strips[s][p].controls[c].defval,0)..'\n')   
+              file:write('['..key..'maxdp]'..nz(strips[s][p].controls[c].maxdp,-1)..'\n')   
+              file:write('['..key..'dvaloffset]'..nz(strips[s][p].controls[c].dvaloffset,'')..'\n')   
+              file:write('['..key..'minov]'..nz(strips[s][p].controls[c].minov,'')..'\n')   
+              file:write('['..key..'maxov]'..nz(strips[s][p].controls[c].maxov,'')..'\n')   
+              file:write('['..key..'scalemodex]'..nz(strips[s][p].controls[c].scalemode,8)..'\n')   
+              file:write('['..key..'framemodex]'..nz(strips[s][p].controls[c].framemode,1)..'\n')   
+              file:write('['..key..'poslock]'..nz(tostring(strips[s][p].controls[c].poslock),false)..'\n')   
+              file:write('['..key..'horiz]'..tostring(nz(strips[s][p].controls[c].horiz,false))..'\n')   
+  
+              file:write('['..key..'id]'..convnum(strips[s][p].controls[c].id)..'\n')
+      
+              file:write('['..key..'ctlcat]'..nz(strips[s][p].controls[c].ctlcat,'')..'\n')
+              file:write('['..key..'tracknum]'..nz(strips[s][p].controls[c].tracknum,'')..'\n')
+              file:write('['..key..'trackguid]'..nz(strips[s][p].controls[c].trackguid,'')..'\n')
+              file:write('['..key..'memstate]'..tostring(nz(strips[s][p].controls[c].membtn.state,false))..'\n')
+              file:write('['..key..'memmem]'..nz(strips[s][p].controls[c].membtn.mem,0)..'\n')
+              
+              file:write('['..key..'xydata_x]'..nz(strips[s][p].controls[c].xydata.x,0.5)..'\n')
+              file:write('['..key..'xydata_y]'..nz(strips[s][p].controls[c].xydata.y,0.5)..'\n')
+              file:write('['..key..'xydata_snapa]'..nz(strips[s][p].controls[c].xydata.snapa,1)..'\n')
+              file:write('['..key..'xydata_snapb]'..nz(strips[s][p].controls[c].xydata.snapb,1)..'\n')
+              file:write('['..key..'xydata_snapc]'..nz(strips[s][p].controls[c].xydata.snapc,1)..'\n')
+              file:write('['..key..'xydata_snapd]'..nz(strips[s][p].controls[c].xydata.snapd,1)..'\n')
+  
+              if strips[s][p].controls[c].cycledata and strips[s][p].controls[c].cycledata.statecnt then
+                file:write('['..key..'cycledata_statecnt]'..nz(strips[s][p].controls[c].cycledata.statecnt,0)..'\n')
+                file:write('['..key..'cycledata_mapptof]'..tostring(nz(strips[s][p].controls[c].cycledata.mapptof,false))..'\n')
+                file:write('['..key..'cycledata_draggable]'..tostring(nz(strips[s][p].controls[c].cycledata.draggable,false))..'\n')
+                file:write('['..key..'cycledata_spread]'..tostring(nz(strips[s][p].controls[c].cycledata.spread,false))..'\n')
+                file:write('['..key..'cycledata_pos]'..tostring(nz(strips[s][p].controls[c].cycledata.pos,1))..'\n')
+                file:write('['..key..'cycledata_posdirty]'..tostring(nz(strips[s][p].controls[c].cycledata.posdirty,false))..'\n')
+                if nz(strips[s][p].controls[c].cycledata.statecnt,0) > 0 then
+                  for i = 1, strips[s][p].controls[c].cycledata.statecnt do
+                    local key = 'p'..p..'_c_'..c..'_cyc_'..i..'_'
+                    file:write('['..key..'val]'..nz(strips[s][p].controls[c].cycledata[i].val,0)..'\n')   
+                    file:write('['..key..'dispval]'..nz(strips[s][p].controls[c].cycledata[i].dispval,'')..'\n')   
+                    file:write('['..key..'dv]'..nz(strips[s][p].controls[c].cycledata[i].dv,'')..'\n')   
+                  end
+                end
+              else
+                file:write('['..key..'cycledata_statecnt]'..0 ..'\n')                   
+              end     
+            end
+          end        
+
+          if #strips[s][p].graphics > 0 then
+            for g = 1, #strips[s][p].graphics do
+
+              local key = 'p'..p..'_g_'..g..'_'
+          
+              file:write('['..key..'fn]'..strips[s][p].graphics[g].fn..'\n')
+              file:write('['..key..'imageidx]'..strips[s][p].graphics[g].imageidx..'\n')
+              file:write('['..key..'x]'..strips[s][p].graphics[g].x..'\n')
+              file:write('['..key..'y]'..strips[s][p].graphics[g].y..'\n')
+              file:write('['..key..'w]'..strips[s][p].graphics[g].w..'\n')
+              file:write('['..key..'h]'..strips[s][p].graphics[g].h..'\n')
+              file:write('['..key..'stretchw]'..nz(strips[s][p].graphics[g].stretchw,strips[s][p].graphics[g].w)..'\n')
+              file:write('['..key..'stretchh]'..nz(strips[s][p].graphics[g].stretchh,strips[s][p].graphics[g].h)..'\n')
+              file:write('['..key..'scale]'..strips[s][p].graphics[g].scale..'\n')
+              file:write('['..key..'id]'..convnum(strips[s][p].graphics[g].id)..'\n')
+            
+              file:write('['..key..'gfxtype]'..nz(strips[s][p].graphics[g].gfxtype, gfxtype.img)..'\n')
+              file:write('['..key..'font_idx]'..nz(strips[s][p].graphics[g].font.idx, '')..'\n')
+              file:write('['..key..'font_name]'..nz(strips[s][p].graphics[g].font.name, '')..'\n')
+              file:write('['..key..'font_size]'..nz(strips[s][p].graphics[g].font.size, '')..'\n')
+              file:write('['..key..'font_bold]'..nz(tostring(strips[s][p].graphics[g].font.bold), '')..'\n')
+              file:write('['..key..'font_italics]'..nz(tostring(strips[s][p].graphics[g].font.italics), '')..'\n')
+              file:write('['..key..'font_underline]'..nz(tostring(strips[s][p].graphics[g].font.underline), '')..'\n')
+              file:write('['..key..'font_shadow]'..nz(tostring(strips[s][p].graphics[g].font.shadow), '')..'\n')
+              file:write('['..key..'font_shadowx]'..nz(strips[s][p].graphics[g].font.shadow_x, '')..'\n')
+              file:write('['..key..'font_shadowy]'..nz(strips[s][p].graphics[g].font.shadow_y, '')..'\n')
+              file:write('['..key..'font_shadowa]'..nz(strips[s][p].graphics[g].font.shadow_a, '')..'\n')
+              file:write('['..key..'text]'..nz(strips[s][p].graphics[g].text, '')..'\n')
+              file:write('['..key..'text_col]'..nz(strips[s][p].graphics[g].text_col, '')..'\n')
+              file:write('['..key..'poslock]'..nz(tostring(strips[s][p].graphics[g].poslock), false)..'\n')
+            
+            end
+          end
+      
+        else
+          file:write('['..key..'surface_x]'..0 ..'\n')
+          file:write('['..key..'surface_y]'..0 ..'\n')
+          file:write('['..key..'controls_count]'..0 ..'\n')
+          file:write('['..key..'graphics_count]'..0 ..'\n')          
+        end      
+      
+      end
+    
+    end
+
+    --file:write(pickled_table)
+    file:close()
+    
+    reaper.SetProjExtState(0,SCRIPT,'strips_count',#strips) 
+    reaper.SetProjExtState(0,SCRIPT,'strips_datafile_'..string.format("%03d",s),fn) 
+    
+    --DBG('Save strip time: '..reaper.time_precise() - t)
+    return reaper.time_precise() - t
+
   end
     
-  function SaveStripData(s)
+  --[[function SaveStripData(s)
   
+    t = reaper.time_precise()
+    
     reaper.SetProjExtState(0,SCRIPT,'strips_count',#strips) 
     local key = 'strips_'..s..'_'
     
@@ -16379,7 +17334,7 @@ end
       
           if #strips[s][p].controls > 0 then
             for c = 1, #strips[s][p].controls do
-      
+      --if s == 12 then DBG('control'..c) end
               local key = 'strips_'..s..'_'..p..'_controls_'..c..'_'
               reaper.SetProjExtState(0,SCRIPT,key..'cid',strips[s][p].controls[c].c_id)
               reaper.SetProjExtState(0,SCRIPT,key..'fxname',strips[s][p].controls[c].fxname)
@@ -16424,6 +17379,7 @@ end
               reaper.SetProjExtState(0,SCRIPT,key..'poslock',nz(tostring(strips[s][p].controls[c].poslock),false))   
               reaper.SetProjExtState(0,SCRIPT,key..'horiz',tostring(nz(strips[s][p].controls[c].horiz,false)))   
                          
+      --if s == 12 then DBG('id') end
               reaper.SetProjExtState(0,SCRIPT,key..'id',convnum(strips[s][p].controls[c].id))
       
               reaper.SetProjExtState(0,SCRIPT,key..'ctlcat',nz(strips[s][p].controls[c].ctlcat,''))
@@ -16432,6 +17388,7 @@ end
               reaper.SetProjExtState(0,SCRIPT,key..'memstate',tostring(nz(strips[s][p].controls[c].membtn.state,false)))
               reaper.SetProjExtState(0,SCRIPT,key..'memmem',nz(strips[s][p].controls[c].membtn.mem,0))
               
+      --if s == 12 then DBG('xydata') end
               reaper.SetProjExtState(0,SCRIPT,key..'xydata_x',nz(strips[s][p].controls[c].xydata.x,0.5))
               reaper.SetProjExtState(0,SCRIPT,key..'xydata_y',nz(strips[s][p].controls[c].xydata.y,0.5))
               reaper.SetProjExtState(0,SCRIPT,key..'xydata_snapa',nz(strips[s][p].controls[c].xydata.snapa,1))
@@ -16439,6 +17396,7 @@ end
               reaper.SetProjExtState(0,SCRIPT,key..'xydata_snapc',nz(strips[s][p].controls[c].xydata.snapc,1))
               reaper.SetProjExtState(0,SCRIPT,key..'xydata_snapd',nz(strips[s][p].controls[c].xydata.snapd,1))
               
+      --if s == 12 then DBG('cycledata') end
               if strips[s][p].controls[c].cycledata and strips[s][p].controls[c].cycledata.statecnt then
                 reaper.SetProjExtState(0,SCRIPT,key..'cycledata_statecnt',nz(strips[s][p].controls[c].cycledata.statecnt,0))
                 reaper.SetProjExtState(0,SCRIPT,key..'cycledata_mapptof',tostring(nz(strips[s][p].controls[c].cycledata.mapptof,false)))
@@ -16462,6 +17420,7 @@ end
       
           if #strips[s][p].graphics > 0 then
             for g = 1, #strips[s][p].graphics do
+      --if s == 12 then DBG('graphics'..g) end
           
               local key = 'strips_'..s..'_'..p..'_graphics_'..g..'_'
               
@@ -16503,25 +17462,67 @@ end
                           
       end    
     end    
-  end
+    return reaper.time_precise() - t
+  end]]
   
   function SaveEditedData()
     for i, v in pairs(g_edstrips) do 
-      SaveStripData(tracks[i].strip) 
+      SaveStripData_FN(tracks[i].strip) 
     end
-  
   end
   
-  function SaveData()
+  function SaveData(tmp)
   
     SaveSettings()
     
     PopulateTracks()
+    --DBG('cleaning')
     CleanData()
     
+    local t = reaper.time_precise()
+    
+    local fn_strips = {}
+    local fn_snaps = {}
+    local fn_xxy = {}
+    
+    local save_path=projsave_path..'/'
+    if settings_savedatainprojectfolder == true then
+      save_path=reaper.GetProjectPath('')..'/'
+    end
+    
+    local pn = reaper.GetProjectName(0,'')
+    local projname = string.sub(pn,0,string.len(pn)-4)..'_'..PROJECTID
+    reaper.RecursiveCreateDirectory(save_path..projname,1)
+    
+    local fn
+    if #strips > 0 then
+      for s = 1, #strips do
+        if tmp then
+          fn=projname..'/__pstrip'..string.format("%03d",s)..'_ss'..string.sub(STRIPSET,11)..".pstrip"
+        else
+          fn=projname..'/pstrip'..string.format("%03d",s)..'_ss'..string.sub(STRIPSET,11)..".pstrip"
+        end
+        fn_strips[s] = fn
+      end
+      for s = 1, #snapshots do
+        if tmp then
+          fn=projname..'/__psnap'..string.format("%03d",s)..'_ss'..string.sub(STRIPSET,11)..".psnap"
+        else
+          fn=projname..'/psnap'..string.format("%03d",s)..'_ss'..string.sub(STRIPSET,11)..".psnap"
+        end
+        fn_snaps[s] = fn
+        if tmp then
+          fn=projname..'/__pmeta'..string.format("%03d",s)..'_ss'..string.sub(STRIPSET,11)..".pmeta"
+        else
+          fn=projname..'/pmeta'..string.format("%03d",s)..'_ss'..string.sub(STRIPSET,11)..".pmeta"
+        end
+        fn_xxy[s] = fn
+      end
+    end
+        
     local s, p, c, g
     reaper.SetProjExtState(0,SCRIPT,"","") -- clear first
-    
+    --DBG('saving')
     reaper.SetProjExtState(0,SCRIPT,'version',VERSION)
     reaper.SetProjExtState(0,SCRIPT,'projectid',PROJECTID)
     reaper.SetProjExtState(0,SCRIPT,'gridsize',settings_gridsize)
@@ -16535,13 +17536,17 @@ end
       reaper.SetProjExtState(0,SCRIPT,'win_w',nz(gfx1.main_w,800))
       reaper.SetProjExtState(0,SCRIPT,'win_h',nz(gfx1.main_h,450))    
     end
-        
+    --DBG('saving strips')    
     if strips and #strips > 0 then
     
       reaper.SetProjExtState(0,SCRIPT,'strips_count',#strips)    
       
       for s = 1, #strips do
-        SaveStripData(s)
+        --DBG('saving strips:'..s)    
+        --DBG('time: '..SaveStripData(s))
+        --DBG('time: '..SaveStripData_FN(s))
+        GUI_DrawMsgX(obj, gui, 'Saving Strip Data...',s,#strips)
+        SaveStripData_FN(s,fn_strips[s],save_path)
       end
       
     else
@@ -16552,8 +17557,11 @@ end
       reaper.SetProjExtState(0,SCRIPT,'snapshots_count',#snapshots)
     
       for s = 1, #snapshots do
-        SaveSnapshotData(s)
-        SaveXXYData(s)
+        --DBG('saving snaps:'..s)    
+        --SaveSnapshotData(s)
+        GUI_DrawMsgX(obj, gui, 'Saving Snapshot/Metalite Data...',s,#snapshots)
+        SaveSnapshotData_FN(s,fn_snaps[s],save_path)
+        SaveXXYData_FN(s,fn_xxy[s],save_path)
       end
     
     else
@@ -16561,7 +17569,10 @@ end
     end
   
     reaper.SetProjExtState(0,SCRIPT,'savedok',tostring(true))
+    --DBG('saving finished:')    
   
+    --DBG('Total Save Time: '..reaper.time_precise() - t)
+    infomsg = 'Total Save Time: '..round(reaper.time_precise() - t,2)..'s'
     g_savedirty = false
     
   end
@@ -17563,8 +18574,8 @@ end
               local _, strip = Strip_AddStrip(loadstrip,0,0)
               --image_count = image_count_add
               loadstrip = nil
-              
-              SaveSingleStrip(strip)
+              reaper.MarkProjectDirty(0)
+              --SaveSingleStrip(strip)
             end
           end
         end
@@ -17604,6 +18615,11 @@ end
     else
       PROJECTID = math.ceil((math.abs(math.sin( -1 + (os.clock() % 2)))) * 0xFFFFFFFF)
     end
+    
+    lastprojdirty = reaper.IsProjectDirty()
+    last_proj_change_count = -1
+    projnamechange = false
+    lastprojname = reaper.GetProjectName(0,'')
     
     g_cids = {}
     g_edstrips = {}
@@ -18058,15 +19074,49 @@ end
     
   end
   
+  function SaveProj(tmp)
+    --DBG(reaper.GetProjectPath(''))
+    if #strips > 0 then
+      GUI_DrawMsgX(obj, gui, 'Saving Data...')
+      if tmp == nil then
+        local pn = reaper.GetProjectName(0,'')
+        if pn == '' then
+          reaper.Main_SaveProject(0,true)
+          pn = reaper.GetProjectName(0,'')
+        end
+        if pn ~= '' then
+          if lastprojname ~= pn then
+            projnamechange = true
+            lastprojname = pn
+          end
+  
+          local t = reaper.time_precise()
+          SaveData()
+          reaper.Main_SaveProject(0,false)
+          infomsg = "DATA SAVED (" .. round(reaper.time_precise() - t,2)..'s)'
+          projnamechange = false
+        else
+          DBG('Save failed.  Project file must be created.')
+        end
+      else
+        local t = reaper.time_precise()
+        SaveData(tmp)
+        infomsg = "DATA SAVED (" .. round(reaper.time_precise() - t,2)..'s)'
+        --projnamechange = false
+      end
+      update_surface = true      
+    end
+      
+  end
   
   function quit()
   
     --local res = reaper.MB('Save data and project?', 'Save data',4) 
     --if res == 1 then  
-      SaveData()
+      SaveProj(true)
       SaveSettings()
+      --reaper.MarkProjectDirty(0)
     --end
-      reaper.MarkProjectDirty(0)
     gfx.quit()
     
   end
@@ -18074,7 +19124,7 @@ end
   ------------------------------------------------------------
 
   SCRIPT = 'LBX_STRIPPER'
-  VERSION = 0.91
+  VERSION = 0.93
   STRIPSET = 'STRIP SET 1'
 
   OS = reaper.GetOS()
@@ -18097,9 +19147,11 @@ end
   icon_path = resource_path.."icons/"
   strips_path = resource_path.."strips/"
   sets_path = resource_path.."sets/"
+  projsave_path = resource_path.."projsave/"
 
   LBX_CTL_TRNAME='__LBX_CTL'
 
+  settings_savedatainprojectfolder = true
   settings_followselectedtrack = true
   settings_autocentrectls = false
   settings_disablesendchecks = false
