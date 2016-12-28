@@ -15368,11 +15368,15 @@ end
     end]]
     if show_cycleoptions == false then cycle_editmode = false end
     
-    --local char = gfx.getchar() 
-    if char == 32 then reaper.Main_OnCommandEx(40044, 0,0) end
-    --if char == 27 then quit() end     
-    --if char ~= -1 then reaper.defer(run) else quit() end
-    if char>=0 and char~=27 then reaper.defer(run) end
+    --local char = gfx.getchar()
+    if char then 
+      if char == 32 then reaper.Main_OnCommandEx(40044, 0,0) end
+      --if char == 27 then quit() end     
+      --if char ~= -1 then reaper.defer(run) else quit() end
+      if char>=0 and char~=27 then reaper.defer(run) end
+    else
+      reaper.defer(run)
+    end
     gfx.update()
     mouse.last_LB = mouse.LB
     mouse.last_RB = mouse.RB
