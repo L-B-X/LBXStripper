@@ -14,6 +14,7 @@
         
         
   submode_table = {'FX PARAMS','GRAPHICS','STRIPS'}
+  xxymode_table = {'SNAPSHOTS','PATHS'}
   ctltype_table = {'KNOB/SLIDER','BUTTON','BUTTON INV','CYCLE BUTTON','METER','MEM BUTTON','MOMENT BTN','MOMENT INV','FLASH BUTTON','FLASH INV'}
   trctltype_table = {'Track Controls','Track Sends','Actions & Meters'}
   --special_table = {'Action Trigger','Peak Meter L','Peak Meter R','Clip Indicator L','Clip Indicator R'}
@@ -78,6 +79,8 @@
               xxy_movesnap = 42,
               xxy_drag = 43,
               xxy_gravityslider = 44,
+              xxypath_dragcontrolpt = 45,
+              xxypath_dragpt = 46,
               dummy = 99
               }
   
@@ -95,7 +98,108 @@
   gfxtype = {img = 0,
              txt = 1
              }
-                        
+
+  pi = 3.14159265359
+
+  -----------------------------------
+  -----------------------------------  
+  
+  function cfact(n) if n == 0 then return 1 else return n * cfact(n-1) end end
+
+ -- mpl draw Bézier curve
+
+  function draw_curve(x_table, y_table, pt, last)
+    order = #x_table
+    ----------------------------
+    ----------------------------
+    function bezier_eq(n, tab_xy, dt)
+      local B = 0
+      for i = 0, n-1 do
+        B = B + 
+          ( fact[n] / ( fact[i] * fact[n-i] ) ) 
+          *  (1-dt)^(n-i)  
+          * dt ^ i
+          * tab_xy[i+1]
+      end 
+      return B
+    end  
+    ----------------------------
+    function draw_points(x,y, pt, last)
+      local point_side = 5
+      gfx.set(0,0.8,0,0.4)
+      local xx = {}
+      local yy = {}
+      for i = 1, #x do
+        xx[i] = obj.sections[220].x+(x[i]*obj.sections[220].w)        
+        yy[i] = obj.sections[220].y+(y[i]*obj.sections[220].h)
+      end
+      
+      for i = 1, #x do
+        if i == 1 or i == 4 then
+          if pt == 1 and i == 1 then
+            f_Get_SSV('0 255 0')
+          elseif pt == last and i == 4 then
+            f_Get_SSV(gui.color.red)                    
+          else
+            f_Get_SSV(gui.color.yellow)          
+          end
+          gfx.a=1
+          gfx.circle(xx[i] ,yy[i] ,point_side,1, 1)
+        else
+          gfx.a = 0.2
+          if i == 2 then
+            f_Get_SSV(gui.color.blue)          
+            gfx.line(xx[1],yy[1],xx[2],yy[2],1)
+          else
+            f_Get_SSV(gui.color.blue)          
+            gfx.line(xx[4],yy[4],xx[3],yy[3],1)          
+          end        
+          gfx.a = 1
+          f_Get_SSV('255 0 255')          
+          gfx.rect(xx[i] -point_side/2 ,yy[i] -point_side/2,point_side,point_side,1, 1)
+        end
+      end
+    end
+    ----------------------------
+    local ox,oy = nil, nil
+    f_Get_SSV(gui.color.green)          
+    for t = 0, 1, 0.01 do
+      x_point = bezier_eq(order, x_table, t)+ t^order*x_table[order]
+      y_point = bezier_eq(order, y_table, t)+ t^order*y_table[order] 
+      x = obj.sections[220].x+(x_point*obj.sections[220].w)
+      y = obj.sections[220].y+(y_point*obj.sections[220].h)
+      if ox and oy then
+        gfx.a = 0.2
+        --gfx.setpixel(1,1,1)
+        gfx.line(ox,oy,x,y,1)
+      end
+      ox,oy = x,y
+    end    
+    draw_points(x_table, y_table, pt, last)
+  end
+
+
+  -----------------------------------
+  -----------------------------------
+    
+  --[[local x_table =
+                 {10,  -- x1
+                  70,  -- x2
+                  0,  -- x3
+                  0,  -- x4
+                  --300,  -- x5
+                  }
+  local y_table =
+                 {10,  -- y1
+                  50,  -- y2
+                  100,  -- y3
+                  0,  -- y4
+                  --0,  -- y5
+                  }]]                 
+                   
+  --gfx.init('Draw Bézier curve by mpl',300, 300)                
+  --draw_curve(x_table, y_table)                        
+  
   local log10 = function(x) return math.log(x, 10) end
   
   function get_peak_info(trn)
@@ -5536,121 +5640,119 @@ end
              obj.sections[165].w,
              obj.sections[165].h, 1 )]]
     
-    GUI_textC(gui,xywh,'SNAPSHOTS',gui.color.black,-2)
+    GUI_textC(gui,xywh,xxymode_table[xxymode+1],gui.color.black,-2)
 
-    local sstypestr = 'PAGE'
-    if sstype_select > 1 then
-      if tracks[track_select] and tracks[track_select].strip and snapshots[tracks[track_select].strip] and 
-         snapshots[tracks[track_select].strip][page][sstype_select] then
-        sstypestr = snapshots[tracks[track_select].strip][page][sstype_select].subsetname
-      else
-        sstypestr = ''
-      end
-    end
-      
-    GUI_DrawButton(gui, sstypestr, obj.sections[226], gui.color.white, gui.color.black, true, '', false)
-    GUI_DrawSliderH(gui, 'GRAVITY', obj.sections[225], gui.color.black, gui.color.white, ((xxy_gravity-1)/3))
-    
-    --GUI_DrawButton(gui, '*', obj.sections[168], gui.color.white, gui.color.black, true, '', false)
-    --GUI_DrawButton(gui, 'RANDOMIZE', obj.sections[169], gui.color.white, gui.color.black, true, '', false)
-    --GUI_DrawButton(gui, 'CAPTURE', obj.sections[162], gui.color.white, gui.color.black, true, '', false)
-    --GUI_DrawButton(gui, 'NEW SUBSET', obj.sections[166], gui.color.white, gui.color.black, true, '', false)
-    local bc, bc2 = gui.color.white, gui.color.white
-    if sstype_select == 1 then
-      bc = '64 64 64'
-      bc2 = '64 64 64'
-    elseif snaplrn_mode then
-      bc = '255 0 0'
-    end
-    --GUI_DrawButton(gui, 'RENAME SUB', obj.sections[164], bc2, gui.color.black, true, '', false)
-    --GUI_DrawButton(gui, 'LEARN CTLS', obj.sections[167], bc, gui.color.black, true, '', false)
-    
-    xywh = {x = obj.sections[223].x,
-            y = obj.sections[223].y,
-            w = obj.sections[223].w,
-            h = obj.sections[223].h}
-    f_Get_SSV('64 64 64')
-    gfx.a = 1 
-    gfx.rect(xywh.x,
-             xywh.y, 
-             xywh.w,
-             xywh.h, 0 )
-    
-    
-    xywh.h = butt_h
-    gfx.rect(xywh.x,
-     xywh.y, 
-     xywh.w,
-     xywh.h, 1 )
-    gfx.a = 0.5
-    f_Get_SSV(gui.color.black)
-    gfx.a = 1
-    gfx.rect(xywh.x+xywh.w/2,
-     xywh.y, 
-     2,
-     xywh.h, 1 )
-    gfx.triangle(xywh.x+xywh.w/4,xywh.y+4,xywh.x+xywh.w/4-6,xywh.y+xywh.h-4,xywh.x+xywh.w/4+6,xywh.y+xywh.h-4,1)     
-    gfx.triangle(xywh.x+xywh.w*0.75,xywh.y+xywh.h-4,xywh.x+xywh.w*0.75-6,xywh.y+4,xywh.x+xywh.w*0.75+6,xywh.y+4,1)
-    
-    gfx.a = 1
-    
-    SSXXY_butt_cnt = math.floor(obj.sections[223].h / butt_h) - 1
-    if snaplrn_mode == false then
-      
-      local strip = tracks[track_select].strip
-      if strip and snapshots and snapshots[strip] and snapshots[strip][page][sstype_select] then
-
-        if sstype_select == 1 then
-          if #snapshots[strip][page][sstype_select] > 0 then
-            for i = 1,SSXXY_butt_cnt do
-            
-              xywh.y = obj.sections[223].y + i*butt_h
-              local c = gui.color.white
-              if ss_select == xxylist_offset+i then
-                f_Get_SSV(gui.color.white)
-                gfx.rect(xywh.x,
-                 xywh.y, 
-                 xywh.w,
-                 xywh.h, 1 )
-                c = gui.color.black
-              end
-              if snapshots[strip][page][sstype_select][i+xxylist_offset] then
-                GUI_textsm_LJ(gui,xywh,roundX(i+xxylist_offset,0)..': '..snapshots[strip][page][sstype_select][i+xxylist_offset].name,c,-2,xywh.w)
-              end
-          
-            end
-        
-          end
-        elseif sstype_select > 1 then
-          if #snapshots[strip][page][sstype_select].snapshot > 0 then
-            for i = 1,SSXXY_butt_cnt do
-            
-              xywh.y = obj.sections[223].y + i*butt_h
-              local c = gui.color.white
-              if ss_select == xxylist_offset+i then
-                f_Get_SSV(gui.color.white)
-                gfx.rect(xywh.x,
-                 xywh.y, 
-                 xywh.w,
-                 xywh.h, 1 )
-                c = gui.color.black
-              end
-              if snapshots[strip][page][sstype_select].snapshot[i+xxylist_offset] then
-                GUI_textsm_LJ(gui,xywh,roundX(i+xxylist_offset,0)..': '..snapshots[strip][page][sstype_select].snapshot[i+xxylist_offset].name,c,-2,xywh.w)
-              end
-          
-            end
-        
-          end
-        
+    if xxymode == 0 then
+      local sstypestr = 'PAGE'
+      if sstype_select > 1 then
+        if tracks[track_select] and tracks[track_select].strip and snapshots[tracks[track_select].strip] and 
+           snapshots[tracks[track_select].strip][page][sstype_select] then
+          sstypestr = snapshots[tracks[track_select].strip][page][sstype_select].subsetname
+        else
+          sstypestr = ''
         end
-
       end
-    else
-      --learn mode
+        
+      GUI_DrawButton(gui, sstypestr, obj.sections[226], gui.color.white, gui.color.black, true, '', false)
+      GUI_DrawSliderH(gui, 'GRAVITY', obj.sections[225], gui.color.black, gui.color.white, ((xxy_gravity-1)/3))
       
-    end    
+      local bc, bc2 = gui.color.white, gui.color.white
+      if sstype_select == 1 then
+        bc = '64 64 64'
+        bc2 = '64 64 64'
+      elseif snaplrn_mode then
+        bc = '255 0 0'
+      end
+      
+      xywh = {x = obj.sections[223].x,
+              y = obj.sections[223].y,
+              w = obj.sections[223].w,
+              h = obj.sections[223].h}
+      f_Get_SSV('64 64 64')
+      gfx.a = 1 
+      gfx.rect(xywh.x,
+               xywh.y, 
+               xywh.w,
+               xywh.h, 0 )
+      
+      
+      xywh.h = butt_h
+      gfx.rect(xywh.x,
+       xywh.y, 
+       xywh.w,
+       xywh.h, 1 )
+      gfx.a = 0.5
+      f_Get_SSV(gui.color.black)
+      gfx.a = 1
+      gfx.rect(xywh.x+xywh.w/2,
+       xywh.y, 
+       2,
+       xywh.h, 1 )
+      gfx.triangle(xywh.x+xywh.w/4,xywh.y+4,xywh.x+xywh.w/4-6,xywh.y+xywh.h-4,xywh.x+xywh.w/4+6,xywh.y+xywh.h-4,1)     
+      gfx.triangle(xywh.x+xywh.w*0.75,xywh.y+xywh.h-4,xywh.x+xywh.w*0.75-6,xywh.y+4,xywh.x+xywh.w*0.75+6,xywh.y+4,1)
+      
+      gfx.a = 1
+      
+      SSXXY_butt_cnt = math.floor(obj.sections[223].h / butt_h) - 1
+      --if snaplrn_mode == false then
+        
+        local strip = tracks[track_select].strip
+        if strip and snapshots and snapshots[strip] and snapshots[strip][page][sstype_select] then
+  
+          if sstype_select == 1 then
+            if #snapshots[strip][page][sstype_select] > 0 then
+              for i = 1,SSXXY_butt_cnt do
+              
+                xywh.y = obj.sections[223].y + i*butt_h
+                local c = gui.color.white
+                if ss_select == xxylist_offset+i then
+                  f_Get_SSV(gui.color.white)
+                  gfx.rect(xywh.x,
+                   xywh.y, 
+                   xywh.w,
+                   xywh.h, 1 )
+                  c = gui.color.black
+                end
+                if snapshots[strip][page][sstype_select][i+xxylist_offset] then
+                  GUI_textsm_LJ(gui,xywh,roundX(i+xxylist_offset,0)..': '..snapshots[strip][page][sstype_select][i+xxylist_offset].name,c,-2,xywh.w)
+                end
+            
+              end
+          
+            end
+          elseif sstype_select > 1 then
+            if #snapshots[strip][page][sstype_select].snapshot > 0 then
+              for i = 1,SSXXY_butt_cnt do
+              
+                xywh.y = obj.sections[223].y + i*butt_h
+                local c = gui.color.white
+                if ss_select == xxylist_offset+i then
+                  f_Get_SSV(gui.color.white)
+                  gfx.rect(xywh.x,
+                   xywh.y, 
+                   xywh.w,
+                   xywh.h, 1 )
+                  c = gui.color.black
+                end
+                if snapshots[strip][page][sstype_select].snapshot[i+xxylist_offset] then
+                  GUI_textsm_LJ(gui,xywh,roundX(i+xxylist_offset,0)..': '..snapshots[strip][page][sstype_select].snapshot[i+xxylist_offset].name,c,-2,xywh.w)
+                end
+            
+              end
+          
+            end
+          
+          end
+  
+        end
+      --else
+        --learn mode
+        
+      --end    
+      
+    elseif xxymode == 1 then
     
+    end    
     
     gfx.dest = 1    
 
@@ -5729,6 +5831,26 @@ end
       f_Get_SSV(gui.color.yellow)
       gfx.line(x-16,y,x+16,y,1)
       gfx.line(x,y-16,x,y+16,1)    
+    end
+    
+    if xxymode == 1 then
+    
+      if xxypath[xxypath_select] then
+        local pcnt = #xxypath[xxypath_select].points
+        if pcnt > 1 then
+      
+          --yyy
+          for p = 1, pcnt-1 do
+            draw_curve(xxypath[xxypath_select].points[p].x, xxypath[xxypath_select].points[p].y, p, pcnt-1)
+          end
+          
+        elseif pcnt == 1 then
+      
+          draw_curve(xxypath[xxypath_select].points[pcnt].x, xxypath[xxypath_select].points[pcnt].y, p, 1)        
+      
+        end
+
+      end
     end
       
   end
@@ -11327,7 +11449,7 @@ end
                 sstype_select = math.max(#snapshots[tracks[track_select].strip][page]+1,2)
               else
                 Snapshots_INIT()
-                sstype_select = 1
+                sstype_select = 2
                 ssoffset = 0
               end
               Snapshots_CREATE(tracks[track_select].strip, page, sstype_select)
@@ -14939,180 +15061,302 @@ end
 
     else --XXY MODE
     
-      if gfx.mouse_wheel ~= 0 then
-        xywh = {x = obj.sections[221].x+obj.sections[223].x,
-                y = obj.sections[221].y+obj.sections[223].y,
-                w = obj.sections[223].w,
-                h = obj.sections[223].h}
-                
-        if MOUSE_over(xywh) then
-          local v = gfx.mouse_wheel/120
-          xxylist_offset = F_limit(xxylist_offset - v,0,#snapshots[tracks[track_select].strip][page][sstype_select].snapshot-1)
-          update_gfx = true
-        end
+      if mouse.context == nil and (MOUSE_click(obj.sections[221])) then
+        local i = math.floor((mouse.my - obj.sections[221].y)/butt_h)
+        if i == 0 then
         
-        gfx.mouse_wheel = 0
+          xxymode = xxymode + 1
+          if xxymode > #xxymode_table-1 then
+            xxymode = 0
+          end
+          update_snaps = true
+        end
+      
       end
       
-      if mouse.context == nil and (MOUSE_click(obj.sections[220]) or MOUSE_click_RB(obj.sections[220])) then
-      
-        if mouse.LB then
-          local strip = tracks[track_select].strip
-          if xxy and xxy[strip] and xxy[strip][page] and xxy[strip][page][sstype_select] then
-            mouse.context = contexts.xxy_drag
-          end
-          
-        elseif mouse.RB then
-          local strip = tracks[track_select].strip
-          if xxy and xxy[strip] and xxy[strip][page] and xxy[strip][page][sstype_select] then
-          
-            for p = 1, #xxy[strip][page][sstype_select].points do
-            
-              xywh = {x = obj.sections[220].x + xxy[strip][page][sstype_select].points[p].x*obj.sections[220].w - 8,
-                      y = obj.sections[220].y + xxy[strip][page][sstype_select].points[p].y*obj.sections[220].h - 8,
-                      w = 16,
-                      h = 16}
-              if MOUSE_click_RB(xywh) and mouse.ctrl == false then
-                mouse.context = contexts.xxy_movesnap
-                movesnap = {xoff = mouse.mx - xywh.x, yoff = mouse.my - xywh.y, p = p}
-                break 
-              elseif MOUSE_click_RB(xywh) and mouse.ctrl == true then
-              
-                DeleteXXY_pt(p)
-                update_xxy = true
-                break
-              end
-            
-            end
-        
-          end
-        
-        end
-      
-      elseif mouse.context == nil and (MOUSE_click(obj.sections[221]) or MOUSE_click_RB(obj.sections[221])) then
-        local mx,my = mouse.mx,mouse.my
-        mouse.mx = mouse.mx-obj.sections[221].x
-        mouse.my = mouse.my-obj.sections[221].y
-        
-        local strip = tracks[track_select].strip
-        --DBG(mouse.mx..'  '..mouse.my)
-        if MOUSE_click(obj.sections[223]) then
-          local i = math.floor((mouse.my - obj.sections[223].y)/butt_h)
-        
-          if i == 0 then
-            if mouse.mx < obj.sections[223].x + obj.sections[223].w/2 then
-              xxylist_offset = math.max(xxylist_offset - SSXXY_butt_cnt,0)
-              update_gfx = true
-            else
-              xxylist_offset = math.min(xxylist_offset + SSXXY_butt_cnt, math.max(#snapshots[strip][page][sstype_select].snapshot - SSXXY_butt_cnt,0))
-              update_gfx = true
-            end
-          else
-            if snapshots[strip][page][sstype_select][i+xxylist_offset] or 
-               snapshots[strip][page][sstype_select].snapshot[i+xxylist_offset] then            
-                mouse.context = contexts.xxy_dragsnap
-                ss_select = i+xxylist_offset
-                update_gfx = true
-                dragsnap = {x = mouse.mx, y = mouse.my, ss = i+xxylist_offset}
-            end
-          end
-        
-        elseif MOUSE_click(obj.sections[225]) then
-          mouse.context = contexts.xxy_gravityslider
-        
-        elseif mouse.context == nil and MOUSE_click(obj.sections[226]) then
-        
-          if snapshots[tracks[track_select].strip] then
-            sstype_select = F_limit(sstype_select + 1, 2, #snapshots[tracks[track_select].strip][page])
-          --else
-          --  Snapshots_INIT()
-          --  sstype_select = 1
-          end
-          ss_select = nil
-          xxylist_offset = 0
-          update_gfx = true
-        
-        elseif mouse.context == nil and MOUSE_click_RB(obj.sections[226]) then
-        
-          if snapshots[tracks[track_select].strip] then
-            sstype_select = F_limit(sstype_select - 1, 2, #snapshots[tracks[track_select].strip][page])
-          --else
-          --  Snapshots_INIT()
-          --  sstype_select = 1
-          end
-          ss_select = nil
-          xxylist_offset = 0
-          update_gfx = true
-        
-        end
-        
-        mouse.mx, mouse.my = mx, my
-      elseif mouse.context == nil and MOUSE_click(obj.sections[222]) then
-        show_xxy = false
-        --SaveSingleStrip(tracks[track_select].strip)
-        reaper.MarkProjectDirty(0)
-        update_gfx = true
-      end
+      if xxymode == 0 then
 
-      if mouse.context and mouse.context == contexts.xxy_drag then
-        local ox, oy = xxy[tracks[track_select].strip][page][sstype_select].x, xxy[tracks[track_select].strip][page][sstype_select].y
-        xxy[tracks[track_select].strip][page][sstype_select].x = F_limit((mouse.mx - obj.sections[220].x) / obj.sections[220].w,0,1)
-        xxy[tracks[track_select].strip][page][sstype_select].y = F_limit((mouse.my - obj.sections[220].y) / obj.sections[220].h,0,1)
-        
-        if xxy[tracks[track_select].strip][page][sstype_select].x ~= ox or xxy[tracks[track_select].strip][page][sstype_select].y ~= oy then
-          XXY_Set(tracks[track_select].strip, page, sstype_select)
-          update_xxy = true        
+        if gfx.mouse_wheel ~= 0 then
+          xywh = {x = obj.sections[221].x+obj.sections[223].x,
+                  y = obj.sections[221].y+obj.sections[223].y,
+                  w = obj.sections[223].w,
+                  h = obj.sections[223].h}
+                  
+          if MOUSE_over(xywh) then
+            local v = gfx.mouse_wheel/120
+            xxylist_offset = F_limit(xxylist_offset - v,0,#snapshots[tracks[track_select].strip][page][sstype_select].snapshot-1)
+            update_gfx = true
+          end
+          
+          gfx.mouse_wheel = 0
         end
         
-      elseif mouse.context and mouse.context == contexts.xxy_movesnap then
-        local x = (mouse.mx - obj.sections[220].x)/obj.sections[220].w
-        local y = (mouse.my - obj.sections[220].y)/obj.sections[220].h
+        if mouse.context == nil and (MOUSE_click(obj.sections[220]) or MOUSE_click_RB(obj.sections[220])) then
         
-        xxy[tracks[track_select].strip][page][sstype_select].points[movesnap.p].x = F_limit(x,0,1)
-        xxy[tracks[track_select].strip][page][sstype_select].points[movesnap.p].y = F_limit(y,0,1)
+          if mouse.LB then
+            local strip = tracks[track_select].strip
+            if xxy and xxy[strip] and xxy[strip][page] and xxy[strip][page][sstype_select] then
+              mouse.context = contexts.xxy_drag
+            end
+            
+          elseif mouse.RB then
+            local strip = tracks[track_select].strip
+            if xxy and xxy[strip] and xxy[strip][page] and xxy[strip][page][sstype_select] then
+            
+              for p = 1, #xxy[strip][page][sstype_select].points do
+              
+                xywh = {x = obj.sections[220].x + xxy[strip][page][sstype_select].points[p].x*obj.sections[220].w - 8,
+                        y = obj.sections[220].y + xxy[strip][page][sstype_select].points[p].y*obj.sections[220].h - 8,
+                        w = 16,
+                        h = 16}
+                if MOUSE_click_RB(xywh) and mouse.ctrl == false then
+                  mouse.context = contexts.xxy_movesnap
+                  movesnap = {xoff = mouse.mx - xywh.x, yoff = mouse.my - xywh.y, p = p}
+                  break 
+                elseif MOUSE_click_RB(xywh) and mouse.ctrl == true then
+                
+                  DeleteXXY_pt(p)
+                  update_xxy = true
+                  break
+                end
+              
+              end
+          
+            end
+          
+          end
         
-        local strip = tracks[track_select].strip
-        if xxy and xxy[strip] and xxy[strip][page] and xxy[strip][page][sstype_select] then
-          XXY_Set(tracks[track_select].strip, page, sstype_select)
+        elseif mouse.context == nil and (MOUSE_click(obj.sections[221]) or MOUSE_click_RB(obj.sections[221])) then
+          local mx,my = mouse.mx,mouse.my
+          mouse.mx = mouse.mx-obj.sections[221].x
+          mouse.my = mouse.my-obj.sections[221].y
+          
+          local strip = tracks[track_select].strip
+          --DBG(mouse.mx..'  '..mouse.my)
+          if MOUSE_click(obj.sections[223]) then
+            local i = math.floor((mouse.my - obj.sections[223].y)/butt_h)
+          
+            if i == 0 then
+              if mouse.mx < obj.sections[223].x + obj.sections[223].w/2 then
+                xxylist_offset = math.max(xxylist_offset - SSXXY_butt_cnt,0)
+                update_gfx = true
+              else
+                xxylist_offset = math.min(xxylist_offset + SSXXY_butt_cnt, math.max(#snapshots[strip][page][sstype_select].snapshot - SSXXY_butt_cnt,0))
+                update_gfx = true
+              end
+            else
+              if snapshots[strip][page][sstype_select][i+xxylist_offset] or 
+                 snapshots[strip][page][sstype_select].snapshot[i+xxylist_offset] then            
+                  mouse.context = contexts.xxy_dragsnap
+                  ss_select = i+xxylist_offset
+                  update_gfx = true
+                  dragsnap = {x = mouse.mx, y = mouse.my, ss = i+xxylist_offset}
+              end
+            end
+          
+          elseif MOUSE_click(obj.sections[225]) then
+            mouse.context = contexts.xxy_gravityslider
+          
+          elseif mouse.context == nil and MOUSE_click(obj.sections[226]) then
+          
+            if snapshots[tracks[track_select].strip] then
+              sstype_select = F_limit(sstype_select + 1, 2, #snapshots[tracks[track_select].strip][page])
+            --else
+            --  Snapshots_INIT()
+            --  sstype_select = 1
+            end
+            ss_select = nil
+            xxylist_offset = 0
+            update_gfx = true
+          
+          elseif mouse.context == nil and MOUSE_click_RB(obj.sections[226]) then
+          
+            if snapshots[tracks[track_select].strip] then
+              sstype_select = F_limit(sstype_select - 1, 2, #snapshots[tracks[track_select].strip][page])
+            --else
+            --  Snapshots_INIT()
+            --  sstype_select = 1
+            end
+            ss_select = nil
+            xxylist_offset = 0
+            update_gfx = true
+          
+          end
+          
+          mouse.mx, mouse.my = mx, my
+        elseif mouse.context == nil and MOUSE_click(obj.sections[222]) then
+          show_xxy = false
+          --SaveSingleStrip(tracks[track_select].strip)
+          reaper.MarkProjectDirty(0)
+          update_gfx = true
         end
-        update_xxy = true
-      
-      elseif mouse.context and mouse.context == contexts.xxy_gravityslider then
-        local mx,my = mouse.mx,mouse.my
-        mouse.mx = mouse.mx-obj.sections[221].x
-        mouse.my = mouse.my-obj.sections[221].y
-        
-        local val = F_limit(MOUSE_sliderHBar(obj.sections[225]),0,1)
-        if val ~= nil then
-          xxy_gravity = val*3+1
+  
+        if mouse.context and mouse.context == contexts.xxy_drag then
+          local ox, oy = xxy[tracks[track_select].strip][page][sstype_select].x, xxy[tracks[track_select].strip][page][sstype_select].y
+          xxy[tracks[track_select].strip][page][sstype_select].x = F_limit((mouse.mx - obj.sections[220].x) / obj.sections[220].w,0,1)
+          xxy[tracks[track_select].strip][page][sstype_select].y = F_limit((mouse.my - obj.sections[220].y) / obj.sections[220].h,0,1)
+          
+          if xxy[tracks[track_select].strip][page][sstype_select].x ~= ox or xxy[tracks[track_select].strip][page][sstype_select].y ~= oy then
+            XXY_Set(tracks[track_select].strip, page, sstype_select)
+            update_xxy = true        
+          end
+          
+        elseif mouse.context and mouse.context == contexts.xxy_movesnap then
+          local x = (mouse.mx - obj.sections[220].x)/obj.sections[220].w
+          local y = (mouse.my - obj.sections[220].y)/obj.sections[220].h
+          
+          xxy[tracks[track_select].strip][page][sstype_select].points[movesnap.p].x = F_limit(x,0,1)
+          xxy[tracks[track_select].strip][page][sstype_select].points[movesnap.p].y = F_limit(y,0,1)
+          
           local strip = tracks[track_select].strip
           if xxy and xxy[strip] and xxy[strip][page] and xxy[strip][page][sstype_select] then
             XXY_Set(tracks[track_select].strip, page, sstype_select)
           end
-          update_gfx = true
-        end
-        mouse.mx, mouse.my = mx, my
+          update_xxy = true
         
-      elseif mouse.context and mouse.context == contexts.xxy_dragsnap then
-        dragsnap.x = mouse.mx
-        dragsnap.y = mouse.my
-        update_xxy = true
-      
-      elseif dragsnap ~= nil then
-        if MOUSE_over(obj.sections[220]) then
-          local strip = tracks[track_select].strip
-          local x,y = mouse.mx - obj.sections[220].x, mouse.my - obj.sections[220].y
-          x = x/obj.sections[220].w
-          y = y/obj.sections[220].h
-
-          XXY_INIT(strip, page, sstype_select)
-          pt_cnt = #xxy[strip][page][sstype_select].points + 1
-          xxy[strip][page][sstype_select].points[pt_cnt] = {x = x, y = y, ss = dragsnap.ss}
-
-          XXY_Set(tracks[track_select].strip, page, sstype_select)
+        elseif mouse.context and mouse.context == contexts.xxy_gravityslider then
+          local mx,my = mouse.mx,mouse.my
+          mouse.mx = mouse.mx-obj.sections[221].x
+          mouse.my = mouse.my-obj.sections[221].y
+          
+          local val = F_limit(MOUSE_sliderHBar(obj.sections[225]),0,1)
+          if val ~= nil then
+            xxy_gravity = val*3+1
+            local strip = tracks[track_select].strip
+            if xxy and xxy[strip] and xxy[strip][page] and xxy[strip][page][sstype_select] then
+              XXY_Set(tracks[track_select].strip, page, sstype_select)
+            end
+            update_gfx = true
+          end
+          mouse.mx, mouse.my = mx, my
+          
+        elseif mouse.context and mouse.context == contexts.xxy_dragsnap then
+          dragsnap.x = mouse.mx
+          dragsnap.y = mouse.my
+          update_xxy = true
+        
+        elseif dragsnap ~= nil then
+          if MOUSE_over(obj.sections[220]) then
+            local strip = tracks[track_select].strip
+            local x,y = mouse.mx - obj.sections[220].x, mouse.my - obj.sections[220].y
+            x = x/obj.sections[220].w
+            y = y/obj.sections[220].h
+  
+            XXY_INIT(strip, page, sstype_select)
+            pt_cnt = #xxy[strip][page][sstype_select].points + 1
+            xxy[strip][page][sstype_select].points[pt_cnt] = {x = x, y = y, ss = dragsnap.ss}
+  
+            XXY_Set(tracks[track_select].strip, page, sstype_select)
+          end
+          update_gfx = true
+          dragsnap = nil
         end
-        update_gfx = true
-        dragsnap = nil
+      elseif xxymode == 1 then
+      
+        if mouse.context == nil and (MOUSE_click(obj.sections[220]) or MOUSE_click_RB(obj.sections[220])) then
+        
+          if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.15 then
+          
+            --add point
+            local x = (mouse.mx - obj.sections[220].x)/obj.sections[220].w
+            local y = (mouse.my - obj.sections[220].y)/obj.sections[220].h
+            
+            XXYPATH_addpoint(x,y)
+            update_gfx = true
+          
+          elseif MOUSE_click(obj.sections[220]) then
+          
+            if xxypath[xxypath_select] then
+              local fnd = false
+              local fnd_p, fnd_sp
+              for p = 1, #xxypath[xxypath_select].points do
+              
+                for sp = 1, #xxypath[xxypath_select].points[p].x do
+                
+                  local xywh = {x = obj.sections[220].x + (xxypath[xxypath_select].points[p].x[sp] * obj.sections[220].w) - 5,
+                                y = obj.sections[220].y + (xxypath[xxypath_select].points[p].y[sp] * obj.sections[220].h) - 5,
+                                w = 10,
+                                h = 10}
+                  if MOUSE_click(xywh) then
+                    fnd = true
+                    fnd_p = p
+                    fnd_sp = sp
+                    --DBG('fnd'..p..'  '..sp)
+                    break
+                  end
+                end
+              
+                if fnd then
+                  break
+                end
+              end
+              if fnd then
+              
+                if fnd_sp == 2 or fnd_sp == 3 then
+                
+                  mouse.context = contexts.xxypath_dragcontrolpt
+                  
+                  local hyp
+                  if fnd_sp == 2 then
+                    if fnd_p > 1 then
+                      hyp = math.sqrt((xxypath[xxypath_select].points[fnd_p-1].x[4]-xxypath[xxypath_select].points[fnd_p-1].x[3])^2 + 
+                                      (xxypath[xxypath_select].points[fnd_p-1].y[4]-xxypath[xxypath_select].points[fnd_p-1].y[3])^2)
+                    end
+                  else
+                    if fnd_p < #xxypath[xxypath_select].points-1 then
+                      hyp = math.sqrt((xxypath[xxypath_select].points[fnd_p+1].x[2]-xxypath[xxypath_select].points[fnd_p+1].x[1])^2 + 
+                                      (xxypath[xxypath_select].points[fnd_p+1].y[2]-xxypath[xxypath_select].points[fnd_p+1].y[1])^2)
+                    end                  
+                  end
+                  
+                  dragcontrolpt = {p = fnd_p, sp = fnd_sp, hyp = hyp}
+
+                else
+
+                  mouse.context = contexts.xxypath_dragpt
+                
+                  local dx2,dy2,dx3,dy3
+                  if fnd_sp == 1 then
+                    dx2 = xxypath[xxypath_select].points[fnd_p].x[2]-xxypath[xxypath_select].points[fnd_p].x[1]
+                    dy2 = xxypath[xxypath_select].points[fnd_p].y[2]-xxypath[xxypath_select].points[fnd_p].y[1]                    
+                    if fnd_p > 1 then
+                      dx3 = xxypath[xxypath_select].points[fnd_p-1].x[4]-xxypath[xxypath_select].points[fnd_p-1].x[3]
+                      dy3 = xxypath[xxypath_select].points[fnd_p-1].y[4]-xxypath[xxypath_select].points[fnd_p-1].y[3]
+                    end
+                  else
+                    dx3 = xxypath[xxypath_select].points[fnd_p].x[4]-xxypath[xxypath_select].points[fnd_p].x[3]
+                    dy3 = xxypath[xxypath_select].points[fnd_p].y[4]-xxypath[xxypath_select].points[fnd_p].y[3]                    
+                    if fnd_p < #xxypath[xxypath_select].points-1 then
+                      dx2 = xxypath[xxypath_select].points[fnd_p+1].x[2]-xxypath[xxypath_select].points[fnd_p+1].x[1]
+                      dy2 = xxypath[xxypath_select].points[fnd_p+1].y[2]-xxypath[xxypath_select].points[fnd_p+1].y[1]
+                    end
+                  end                  
+                  
+                  dragpt = {p = fnd_p, sp = fnd_sp, dx2 = dx2, dy2 = dy2, dx3 = dx3, dy3 = dy3}
+                
+                end
+              
+              end
+            end
+          
+          end        
+        
+        end
+      
+        if mouse.context and mouse.context == contexts.xxypath_dragcontrolpt then
+          local x = (mouse.mx - obj.sections[220].x) / obj.sections[220].w
+          local y = (mouse.my - obj.sections[220].y) / obj.sections[220].h
+          XXYPATH_movectlpt(dragcontrolpt,x,y)
+          update_gfx = true
+        
+        elseif mouse.context and mouse.context == contexts.xxypath_dragpt then
+          local x = (mouse.mx - obj.sections[220].x) / obj.sections[220].w
+          local y = (mouse.my - obj.sections[220].y) / obj.sections[220].h
+          XXYPATH_movept(dragpt,x,y)
+          update_gfx = true        
+        
+        end
+        
       end
     end
 
@@ -15141,6 +15385,153 @@ end
     if ctl_select then ctls = true else ctls = false end
     if closectlbrowser then closectlbrowser = nil show_ctlbrowser = false end
       
+  end
+  
+  function XXYPATH_movept(pt, x, y)
+
+    if pt.sp == 1 then
+    
+      if pt.p == 1 then
+      
+        xxypath[xxypath_select].points[pt.p].x[pt.sp] = F_limit(x,0,1)
+        xxypath[xxypath_select].points[pt.p].y[pt.sp] = F_limit(y,0,1)
+        xxypath[xxypath_select].points[pt.p].x[2] = F_limit(x+pt.dx2,0,1)
+        xxypath[xxypath_select].points[pt.p].y[2] = F_limit(y+pt.dy2,0,1)
+      
+      else
+      
+        xxypath[xxypath_select].points[pt.p].x[pt.sp] = F_limit(x,0,1)
+        xxypath[xxypath_select].points[pt.p].y[pt.sp] = F_limit(y,0,1)
+        xxypath[xxypath_select].points[pt.p-1].x[4] = F_limit(x,0,1)
+        xxypath[xxypath_select].points[pt.p-1].y[4] = F_limit(y,0,1)
+        xxypath[xxypath_select].points[pt.p].x[2] = F_limit(x+pt.dx2,0,1)
+        xxypath[xxypath_select].points[pt.p].y[2] = F_limit(y+pt.dy2,0,1)
+        xxypath[xxypath_select].points[pt.p-1].x[3] = F_limit(x-pt.dx3,0,1)
+        xxypath[xxypath_select].points[pt.p-1].y[3] = F_limit(y-pt.dy3,0,1)
+      
+      end
+    
+    else
+
+      if pt.p >= #xxypath[xxypath_select].points-1  then
+      
+        xxypath[xxypath_select].points[pt.p].x[pt.sp] = F_limit(x,0,1)
+        xxypath[xxypath_select].points[pt.p].y[pt.sp] = F_limit(y,0,1)
+        xxypath[xxypath_select].points[pt.p].x[3] = F_limit(x-pt.dx3,0,1)
+        xxypath[xxypath_select].points[pt.p].y[3] = F_limit(y-pt.dy3,0,1)
+      
+      else
+      
+        xxypath[xxypath_select].points[pt.p].x[pt.sp] = F_limit(x,0,1)
+        xxypath[xxypath_select].points[pt.p].y[pt.sp] = F_limit(y,0,1)
+        xxypath[xxypath_select].points[pt.p+1].x[1] = F_limit(x,0,1)
+        xxypath[xxypath_select].points[pt.p+1].y[1] = F_limit(y,0,1)
+        xxypath[xxypath_select].points[pt.p+1].x[2] = F_limit(x+pt.dx2,0,1)
+        xxypath[xxypath_select].points[pt.p+1].y[2] = F_limit(y+pt.dy2,0,1)
+        xxypath[xxypath_select].points[pt.p].x[3] = F_limit(x-pt.dx3,0,1)
+        xxypath[xxypath_select].points[pt.p].y[3] = F_limit(y-pt.dy3,0,1)
+      
+      end
+    
+    end
+    
+  end
+  
+  function XXYPATH_movectlpt(ctlpt, x, y)
+  
+    if ctlpt.sp == 2 then
+    
+      if ctlpt.p == 1 then
+      
+        xxypath[xxypath_select].points[ctlpt.p].x[ctlpt.sp] = F_limit(x,0,1)
+        xxypath[xxypath_select].points[ctlpt.p].y[ctlpt.sp] = F_limit(y,0,1)
+        
+      else
+
+        xxypath[xxypath_select].points[ctlpt.p].x[ctlpt.sp] = F_limit(x,0,1)
+        xxypath[xxypath_select].points[ctlpt.p].y[ctlpt.sp] = F_limit(y,0,1)
+
+        local sp2_opp = xxypath[xxypath_select].points[ctlpt.p].x[2]-xxypath[xxypath_select].points[ctlpt.p].x[1]
+        local sp2_adj = xxypath[xxypath_select].points[ctlpt.p].y[2]-xxypath[xxypath_select].points[ctlpt.p].y[1]
+        local sp3_theta = math.atan(sp2_opp/sp2_adj)
+
+        local sp3_x, sp3_y                                    
+        if sp2_adj >= 0 then
+          sp3_x = xxypath[xxypath_select].points[ctlpt.p-1].x[4]-math.sin(sp3_theta)*ctlpt.hyp
+          sp3_y = xxypath[xxypath_select].points[ctlpt.p-1].y[4]-math.cos(sp3_theta)*ctlpt.hyp
+        else
+          sp3_x = xxypath[xxypath_select].points[ctlpt.p-1].x[4]+math.sin(sp3_theta)*ctlpt.hyp
+          sp3_y = xxypath[xxypath_select].points[ctlpt.p-1].y[4]+math.cos(sp3_theta)*ctlpt.hyp
+        end
+        xxypath[xxypath_select].points[ctlpt.p-1].x[3] = F_limit(sp3_x,0,1)
+        xxypath[xxypath_select].points[ctlpt.p-1].y[3] = F_limit(sp3_y,0,1)
+        
+      end
+    
+    else
+    
+      if ctlpt.p >= #xxypath[xxypath_select].points-1 then
+
+        xxypath[xxypath_select].points[ctlpt.p].x[ctlpt.sp] = F_limit(x,0,1)
+        xxypath[xxypath_select].points[ctlpt.p].y[ctlpt.sp] = F_limit(y,0,1)
+    
+      else
+
+        xxypath[xxypath_select].points[ctlpt.p].x[ctlpt.sp] = F_limit(x,0,1)
+        xxypath[xxypath_select].points[ctlpt.p].y[ctlpt.sp] = F_limit(y,0,1)
+
+        local sp3_opp = xxypath[xxypath_select].points[ctlpt.p].x[4]-xxypath[xxypath_select].points[ctlpt.p].x[3]
+        local sp3_adj = xxypath[xxypath_select].points[ctlpt.p].y[4]-xxypath[xxypath_select].points[ctlpt.p].y[3]
+        local sp2_theta = math.atan(sp3_opp/sp3_adj)
+
+        local sp2_x, sp2_y
+        if sp3_adj < 0 then
+          sp2_x = xxypath[xxypath_select].points[ctlpt.p+1].x[1]-math.sin(sp2_theta)*ctlpt.hyp
+          sp2_y = xxypath[xxypath_select].points[ctlpt.p+1].y[1]-math.cos(sp2_theta)*ctlpt.hyp
+        else
+          sp2_x = xxypath[xxypath_select].points[ctlpt.p+1].x[1]+math.sin(sp2_theta)*ctlpt.hyp
+          sp2_y = xxypath[xxypath_select].points[ctlpt.p+1].y[1]+math.cos(sp2_theta)*ctlpt.hyp
+        end
+        xxypath[xxypath_select].points[ctlpt.p+1].x[2] = F_limit(sp2_x,0,1)
+        xxypath[xxypath_select].points[ctlpt.p+1].y[2] = F_limit(sp2_y,0,1)
+      
+      end
+
+    end
+  
+  end
+  
+  function XXYPATH_addpoint(x,y)
+  
+    --[[if #xxypath == 0 then
+      xxypath = {points = {x = {}, y = {}}}
+    end]]
+    if xxypath[xxypath_select] == nil then
+      xxypath[xxypath_select] = {}
+      xxypath[xxypath_select].points = {}
+    end
+    
+    local p = #xxypath[xxypath_select].points
+    if p == 0 then
+      xxypath[xxypath_select].points[p+1] = {x={x},y={y}}
+    else
+      xxypath[xxypath_select].points[p+1] = {x={x},y={y}}
+      
+      xxypath[xxypath_select].points[p].x[4] = x
+      xxypath[xxypath_select].points[p].y[4] = y
+      
+      if p == 1 then
+        xxypath[xxypath_select].points[p].x[2] = (xxypath[xxypath_select].points[p].x[4] - xxypath[xxypath_select].points[p].x[1]) * 0.25 + xxypath[xxypath_select].points[p].x[1]
+        xxypath[xxypath_select].points[p].y[2] = (xxypath[xxypath_select].points[p].y[4] - xxypath[xxypath_select].points[p].y[1]) * 0.25 + xxypath[xxypath_select].points[p].y[1]
+      else
+        xxypath[xxypath_select].points[p].x[2] = xxypath[xxypath_select].points[p].x[1] + (xxypath[xxypath_select].points[p-1].x[4] - xxypath[xxypath_select].points[p-1].x[3])
+        xxypath[xxypath_select].points[p].y[2] = xxypath[xxypath_select].points[p].y[1] + (xxypath[xxypath_select].points[p-1].y[4] - xxypath[xxypath_select].points[p-1].y[3])     
+      end
+      xxypath[xxypath_select].points[p].x[3] = (xxypath[xxypath_select].points[p].x[4] - xxypath[xxypath_select].points[p].x[1]) * 0.75 + xxypath[xxypath_select].points[p].x[1]
+      xxypath[xxypath_select].points[p].y[3] = (xxypath[xxypath_select].points[p].y[4] - xxypath[xxypath_select].points[p].y[1]) * 0.75 + xxypath[xxypath_select].points[p].y[1]
+      
+    end
+  
   end
   
   function XXY_Set(strip, page, sst)
@@ -18744,6 +19135,10 @@ end
     show_paramname = true
     show_paramval = true
     
+    xxypath = {points = {}}
+    xxypath_select = 1
+    xxymode = 0
+    
     ctl_page = 0
     cycle_editmode = false
     
@@ -19130,6 +19525,11 @@ end
   OS = reaper.GetOS()
   
   math.randomseed(os.clock())
+  
+  fact = {}
+  for f = 0,4 do
+    fact[f] = cfact(f)  
+  end
   
   image_max = 910
   maximg_browse = 79
