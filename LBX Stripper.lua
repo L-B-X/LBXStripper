@@ -81,6 +81,7 @@
               xxy_gravityslider = 44,
               xxypath_dragcontrolpt = 45,
               xxypath_dragpt = 46,
+              xxypath_posslider = 47,
               dummy = 99
               }
   
@@ -130,8 +131,8 @@
       local xx = {}
       local yy = {}
       for i = 1, #x do
-        xx[i] = obj.sections[220].x+(x[i]*obj.sections[220].w)        
-        yy[i] = obj.sections[220].y+(y[i]*obj.sections[220].h)
+        xx[i] = (x[i]*obj.sections[220].w)        
+        yy[i] = (y[i]*obj.sections[220].h)
       end
       
       for i = 1, #x do
@@ -162,22 +163,43 @@
     end
     ----------------------------
     local ox,oy = nil, nil
-    f_Get_SSV(gui.color.green)          
+    f_Get_SSV('0 128 0')          
     for t = 0, 1, 0.01 do
       x_point = bezier_eq(order, x_table, t)+ t^order*x_table[order]
       y_point = bezier_eq(order, y_table, t)+ t^order*y_table[order] 
-      x = obj.sections[220].x+(x_point*obj.sections[220].w)
-      y = obj.sections[220].y+(y_point*obj.sections[220].h)
+      x = (x_point*obj.sections[220].w)
+      y = (y_point*obj.sections[220].h)
       if ox and oy then
-        gfx.a = 0.2
+        gfx.a = 1
         --gfx.setpixel(1,1,1)
         gfx.line(ox,oy,x,y,1)
       end
       ox,oy = x,y
-    end    
-    draw_points(x_table, y_table, pt, last)
+    end
+    if xxypath_edit then    
+      draw_points(x_table, y_table, pt, last)
+    end
   end
 
+  function curve_getxy(x_table, y_table, t)
+    order = #x_table
+    ----------------------------
+    function bezier_eq(n, tab_xy, dt)
+      local B = 0
+      for i = 0, n-1 do
+        B = B + 
+          ( fact[n] / ( fact[i] * fact[n-i] ) ) 
+          *  (1-dt)^(n-i)  
+          * dt ^ i
+          * tab_xy[i+1]
+      end 
+      return B
+    end  
+    ----------------------------
+    x_point = bezier_eq(order, x_table, t)+ t^order*x_table[order]
+    y_point = bezier_eq(order, y_table, t)+ t^order*y_table[order] 
+    return x_point, y_point
+  end
 
   -----------------------------------
   -----------------------------------
@@ -1020,6 +1042,16 @@
       obj.sections[226] = {x = 10,
                           y = butt_h+10 + (butt_h/2+2 + 10) * 0,
                           w = obj.sections[221].w-20,
+                          h = butt_h/2+8}                       
+
+      obj.sections[227] = {x = 10,
+                          y = butt_h+10 + (butt_h/2+2 + 10) * 0,
+                          w = obj.sections[221].w-20,
+                          h = butt_h/2+8}                       
+
+      obj.sections[230] = {x = obj.sections[220].x + 10,
+                          y = 2,
+                          w = obj.sections[220].w-20,
                           h = butt_h/2+8}                       
       
     return obj
@@ -5026,6 +5058,7 @@ end
         gfx.setimgdim(1003,obj.sections[160].w, obj.sections[160].h)
         gfx.setimgdim(1005,obj.sections[180].w, obj.sections[180].h)
         gfx.setimgdim(1006,obj.sections[221].w, obj.sections[221].h)
+        gfx.setimgdim(1007,obj.sections[220].w, obj.sections[220].h)        
       elseif resize_snaps then
         gfx.setimgdim(1003,obj.sections[160].w, obj.sections[160].h)      
       elseif resize_fsnaps then
@@ -5550,7 +5583,7 @@ end
         UpdateLEdges()
       end]]
  
-    elseif show_xxy and (update_gfx or update_xxy or update_surface or update_snaps or update_msnaps or resize_snaps) then
+    elseif show_xxy and (update_gfx or update_xxy or update_xxypos or update_surface or update_snaps or update_msnaps or resize_snaps) then
     
       gfx.dest = 1
       if update_gfx then
@@ -5563,15 +5596,50 @@ end
         gfx.setimgdim(1003,obj.sections[160].w, obj.sections[160].h)
         gfx.setimgdim(1005,obj.sections[180].w, obj.sections[180].h)
         gfx.setimgdim(1006,obj.sections[221].w, obj.sections[221].h)
+        gfx.setimgdim(1007,obj.sections[220].w, obj.sections[220].h)        
       end
 
-      GUI_DrawXXY(gui,obj)
+      if update_gfx then
+        local xywh = {x = obj.sections[222].x,
+                      y = obj.sections[222].y, 
+                      w = obj.sections[222].w,
+                      h = obj.sections[222].h}
+        f_Get_SSV(gui.color.white)
+        c = gui.color.black
+        gfx.rect(xywh.x,
+                 xywh.y, 
+                 xywh.w,
+                 xywh.h, 1, 1)
+        GUI_textC(gui,xywh,'EXIT',c,-2)
+  
+        f_Get_SSV(gui.color.white)
+        gfx.rect(obj.sections[230].x,
+                 obj.sections[230].y, 
+                 obj.sections[230].w,
+                 obj.sections[230].h, 0, 1)
+      end
+    
+      if update_gfx or update_xxy then
+        GUI_DrawXXY(gui,obj)
+      end
 
       if update_gfx or update_snaps then
         GUI_DrawXXYSnaps(gui,obj)
       end
     
       gfx.blit(1006,1,0,0,0,obj.sections[221].w,obj.sections[221].h,obj.sections[221].x,obj.sections[221].y)        
+      gfx.blit(1007,1,0,0,0,obj.sections[220].w,obj.sections[220].h,obj.sections[220].x,obj.sections[220].y)        
+      
+      GUI_DrawXXYSSLabels(gui,obj)
+      
+      --POS
+      local strip = tracks[track_select].strip
+      if xxy and xxy[strip] and xxy[strip][page] and xxy[strip][page][sstype_select] then
+        local x,y = xxy[strip][page][sstype_select].x*obj.sections[220].w + obj.sections[220].x, xxy[strip][page][sstype_select].y*obj.sections[220].h + obj.sections[220].y
+        f_Get_SSV(gui.color.yellow)
+        gfx.line(x-16,y,x+16,y,1)
+        gfx.line(x,y-16,x,y+16,1)    
+      end      
       
       if dragsnap ~= nil then
       
@@ -5579,6 +5647,7 @@ end
         gfx.blit(def_xytarget,1,0, 0, 0, ppw, pph, dragsnap.x-ppw/2, dragsnap.y-pph/2)
       
       end
+
     
     end
     
@@ -5606,6 +5675,7 @@ end
     resize_snaps = false
     resize_fsnaps = false
     update_xxy = false
+    update_xxypos = false
     
   end
 
@@ -5751,6 +5821,8 @@ end
       --end    
       
     elseif xxymode == 1 then
+
+      GUI_DrawButton(gui, 'EDIT', obj.sections[227], gui.color.white, gui.color.black, xxypath_edit, '', false)
     
     end    
     
@@ -5758,33 +5830,59 @@ end
 
   end
     
+  function GUI_DrawXXYSSLabels(gui, obj)
+  
+    gfx.dest = 1
+    gfx.a=1
+    
+    --gfx.a=0.5
+
+    local strip = tracks[track_select].strip
+    if xxy and xxy[strip] and xxy[strip][page] and xxy[strip][page][sstype_select] then
+      if #xxy[strip][page][sstype_select].points > 0 then
+        for p = 1, #xxy[strip][page][sstype_select].points do
+          local x,y = xxy[strip][page][sstype_select].points[p].x, xxy[strip][page][sstype_select].points[p].y
+          x = obj.sections[220].x + x*obj.sections[220].w 
+          y = obj.sections[220].y + y*obj.sections[220].h 
+          local xywh = {x = x, y = y-butt_h, w = 1, h = 1}
+          local sstxt = snapshots[strip][page][sstype_select].snapshot[xxy[strip][page][sstype_select].points[p].ss].name
+          local c = gui.color.white
+          local dist = xxy[strip][page][sstype_select].points[p].distance
+          local dfnd = false
+          if dist then
+            local gx = 0
+            if tostring(dist) == tostring(xxy_mindist) then
+              gx = F_limit((192-dist*1000),0,255)
+              dfnd = true
+            end
+            dist = (dist^(1/(xxy_gravity)))^(5-xxy_gravity)
+            local rx = F_limit(255-(dist*800),0,255)
+            local bx = F_limit((dist*1000),0,255)
+            c = rx..' '..gx..' '..bx            
+          end
+          GUI_textC(gui,xywh,sstxt,c,-2)
+        end
+      end
+    end
+      
+  end
+
   function GUI_DrawXXY(gui, obj)
   
+    gfx.dest = 1007
     gfx.a=1
     
     --gfx.a=0.5
     f_Get_SSV(gui.color.black)
     gfx.rect(0,
              0, 
-             gfx1.main_w,
-             gfx1.main_h, 1, 1)
+             obj.sections[220].w,
+             obj.sections[220].h, 1, 1)
 
     --gfx.a=1
-    local xywh = {x = obj.sections[222].x,
-                  y = obj.sections[222].y, 
-                  w = obj.sections[222].w,
-                  h = obj.sections[222].h}
     f_Get_SSV(gui.color.white)
-    c = gui.color.black
-    gfx.rect(xywh.x,
-             xywh.y, 
-             xywh.w,
-             xywh.h, 1, 1)
-    GUI_textC(gui,xywh,'EXIT',c,-2)
-
-    f_Get_SSV(gui.color.white)
-    gfx.rect(obj.sections[220].x,
-             obj.sections[220].y, 
+    gfx.rect(0,
+             0, 
              obj.sections[220].w,
              obj.sections[220].h, 0, 1)
     
@@ -5795,42 +5893,11 @@ end
       if #xxy[strip][page][sstype_select].points > 0 then
         for p = 1, #xxy[strip][page][sstype_select].points do
           local x,y = xxy[strip][page][sstype_select].points[p].x, xxy[strip][page][sstype_select].points[p].y
-          x = obj.sections[220].x + x*obj.sections[220].w 
-          y = obj.sections[220].y + y*obj.sections[220].h 
+          x = x*obj.sections[220].w 
+          y = y*obj.sections[220].h 
           gfx.blit(def_xytarget,1,0, 0, 0, ppw, pph, x-ppw/2, y-pph/2)
-          local xywh = {x = x, y = y-butt_h, w = 1, h = 1}
-          local sstxt = snapshots[strip][page][sstype_select].snapshot[xxy[strip][page][sstype_select].points[p].ss].name
-          local c = gui.color.white
-          local dist = xxy[strip][page][sstype_select].points[p].distance
-          local dfnd = false
-          if dist then
-          --DBG(xxy_gravity)
-            --if tostring(dist) ~= tostring(xxy_shortdist) then
-            local gx = 0
-            if tostring(dist) == tostring(xxy_mindist) then
-              gx = F_limit((192-dist*1000),0,255)
-              dfnd = true
-            end
-            dist = (dist^(1/(xxy_gravity)))^(5-xxy_gravity)
-            local rx = F_limit(255-(dist*800),0,255)
-            local bx = F_limit((dist*1000),0,255)
-            c = rx..' '..gx..' '..bx
-            
-            --[[if dfnd == true then
-              f_Get_SSV(c)
-              gfx.a=0.2
-              gfx.circle(x,y, xxy[strip][page][sstype_select].points[p].d2*obj.sections[220].w,0,1)
-              gfx.a=1
-            end  ]]          
-          end
-          GUI_textC(gui,xywh,sstxt,c,-2)
         end
       end
-      --POS
-      local x,y = xxy[strip][page][sstype_select].x*obj.sections[220].w + obj.sections[220].x, xxy[strip][page][sstype_select].y*obj.sections[220].h + obj.sections[220].y
-      f_Get_SSV(gui.color.yellow)
-      gfx.line(x-16,y,x+16,y,1)
-      gfx.line(x,y-16,x,y+16,1)    
     end
     
     if xxymode == 1 then
@@ -5852,6 +5919,8 @@ end
 
       end
     end
+
+    gfx.dest = 1      
       
   end
   
@@ -15070,6 +15139,7 @@ end
             xxymode = 0
           end
           update_snaps = true
+          update_xxy = true
         end
       
       end
@@ -15198,7 +15268,7 @@ end
           
           if xxy[tracks[track_select].strip][page][sstype_select].x ~= ox or xxy[tracks[track_select].strip][page][sstype_select].y ~= oy then
             XXY_Set(tracks[track_select].strip, page, sstype_select)
-            update_xxy = true        
+            update_xxypos = true        
           end
           
         elseif mouse.context and mouse.context == contexts.xxy_movesnap then
@@ -15253,7 +15323,11 @@ end
         end
       elseif xxymode == 1 then
       
-        if mouse.context == nil and (MOUSE_click(obj.sections[220]) or MOUSE_click_RB(obj.sections[220])) then
+        if mouse.context == nil and MOUSE_click(obj.sections[230]) then
+      
+          mouse.context = contexts.xxypath_posslider
+      
+        elseif mouse.context == nil and xxypath_edit and (MOUSE_click(obj.sections[220]) or MOUSE_click_RB(obj.sections[220])) then
         
           if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.15 then
           
@@ -15262,8 +15336,8 @@ end
             local y = (mouse.my - obj.sections[220].y)/obj.sections[220].h
             
             XXYPATH_addpoint(x,y)
-            update_gfx = true
-          
+            update_gfx = true          
+            
           elseif MOUSE_click(obj.sections[220]) then
           
             if xxypath[xxypath_select] then
@@ -15341,6 +15415,21 @@ end
           
           end        
         
+        elseif mouse.context == nil and (MOUSE_click(obj.sections[221]) or MOUSE_click_RB(obj.sections[221])) then
+          local mx,my = mouse.mx,mouse.my
+          mouse.mx = mouse.mx-obj.sections[221].x
+          mouse.my = mouse.my-obj.sections[221].y
+        
+          if mouse.context == nil and MOUSE_click(obj.sections[227]) then
+        
+            xxypath_edit = not xxypath_edit
+            update_xxy = true
+            update_snaps = true
+            
+          end
+        
+          mouse.mx, mouse.my = mx, my
+        
         end
       
         if mouse.context and mouse.context == contexts.xxypath_dragcontrolpt then
@@ -15354,6 +15443,23 @@ end
           local y = (mouse.my - obj.sections[220].y) / obj.sections[220].h
           XXYPATH_movept(dragpt,x,y)
           update_gfx = true        
+        
+        elseif mouse.context and mouse.context == contexts.xxypath_posslider then
+        
+          local pos = (mouse.mx-obj.sections[230].x)/obj.sections[230].w
+          local curve_sections = #xxypath[xxypath_select].points-1
+          local pt = F_limit(math.floor(pos*curve_sections)+1,1,curve_sections)
+          local secpos = F_limit((pos*curve_sections +1 )- pt,0,1)
+          
+          local x,y = curve_getxy(xxypath[xxypath_select].points[pt].x, xxypath[xxypath_select].points[pt].y, secpos)
+          local ox, oy = xxy[tracks[track_select].strip][page][sstype_select].x, xxy[tracks[track_select].strip][page][sstype_select].y
+          xxy[tracks[track_select].strip][page][sstype_select].x = F_limit(x,0,1)
+          xxy[tracks[track_select].strip][page][sstype_select].y = F_limit(y,0,1)
+          
+          if xxy[tracks[track_select].strip][page][sstype_select].x ~= ox or xxy[tracks[track_select].strip][page][sstype_select].y ~= oy then
+            XXY_Set(tracks[track_select].strip, page, sstype_select)
+            update_xxypos = true        
+          end
         
         end
         
@@ -15423,6 +15529,10 @@ end
         xxypath[xxypath_select].points[pt.p].y[pt.sp] = F_limit(y,0,1)
         xxypath[xxypath_select].points[pt.p].x[3] = F_limit(x-pt.dx3,0,1)
         xxypath[xxypath_select].points[pt.p].y[3] = F_limit(y-pt.dy3,0,1)
+        if pt.p == #xxypath[xxypath_select].points-1 then
+          xxypath[xxypath_select].points[pt.p+1].x[1] = F_limit(x,0,1)
+          xxypath[xxypath_select].points[pt.p+1].y[1] = F_limit(y,0,1)      
+        end
       
       else
       
@@ -16645,6 +16755,21 @@ end
   
     if GPES('savedok') ~= '' then
   
+      local ww, wh = GPES('win_w',true), GPES('win_h',true)
+      if ww ~= nil and wh ~= nil then
+        gfx1 = {main_w = tonumber(ww),
+                main_h = tonumber(wh)}
+      else    
+        gfx1 = {main_w = 800,
+                main_h = 450}
+      end
+      Lokasenna_Window_At_Center(gfx1.main_w,gfx1.main_h) 
+      --gfx.dock(dockstate)
+      
+      gfx.setimgdim(1, -1, -1)  
+      gfx.setimgdim(1, gfx1.main_w,gfx1.main_h)
+      GUI_DrawMsgX(obj, gui, 'Loading Strip Data...')
+      
       local rv, v = reaper.GetProjExtState(0,SCRIPT,'version')
       if v ~= '' then
   
@@ -16664,6 +16789,8 @@ end
         if scnt > 0 then
           --DBG(scnt)
           for s = 1, scnt do
+
+            GUI_DrawMsgX(obj, gui, 'Loading Strip Data...', s, scnt)
           
             if tonumber(v) >= 0.93 then
               LoadStripData(s, ss)
@@ -16911,6 +17038,8 @@ end
             
           for s = 1, scnt do
 
+            GUI_DrawMsgX(obj, gui, 'Loading Snapshot Data...', s, scnt)
+
             if tonumber(v) >= 0.93 then
             
               LoadSnapData(s)
@@ -17012,6 +17141,8 @@ end
         --XXY
         
         for s = 1, #strips do
+
+          GUI_DrawMsgX(obj, gui, 'Loading Metalite Data...', s, #strips)
         
           if tonumber(v) >= 0.93 then
           
@@ -17060,14 +17191,14 @@ end
       else
         plist_w = 0
       end
-      local ww, wh = GPES('win_w',true), GPES('win_h',true)
+      --[[local ww, wh = GPES('win_w',true), GPES('win_h',true)
       if ww ~= nil and wh ~= nil then
         gfx1 = {main_w = tonumber(ww),
                 main_h = tonumber(wh)}
       else    
         gfx1 = {main_w = 800,
                 main_h = 450}
-      end    
+      end ]]   
     else
       --error with saved data
       SaveData()
@@ -17081,6 +17212,8 @@ end
         gfx1 = {main_w = 800,
                 main_h = 450}
       end    
+      Lokasenna_Window_At_Center(gfx1.main_w,gfx1.main_h) 
+      --gfx.dock(dockstate)
         
     end
     if track_select then
@@ -17885,7 +18018,7 @@ end
       save_path=reaper.GetProjectPath('')..'/'
     end
     
-    local pn = reaper.GetProjectName(0,'')
+    local pn = GetProjectName()
     local projname = string.sub(pn,0,string.len(pn)-4)..'_'..PROJECTID
     reaper.RecursiveCreateDirectory(save_path..projname,1)
     
@@ -19014,7 +19147,7 @@ end
     lastprojdirty = reaper.IsProjectDirty()
     last_proj_change_count = -1
     projnamechange = false
-    lastprojname = reaper.GetProjectName(0,'')
+    lastprojname = GetProjectName()
     
     g_cids = {}
     g_edstrips = {}
@@ -19142,6 +19275,7 @@ end
     xxypath = {points = {}}
     xxypath_select = 1
     xxymode = 0
+    xxypath_edit = true
     
     ctl_page = 0
     cycle_editmode = false
@@ -19478,10 +19612,10 @@ end
     if #strips > 0 then
       GUI_DrawMsgX(obj, gui, 'Saving Data...')
       if tmp == nil then
-        local pn = reaper.GetProjectName(0,'')
+        local pn = GetProjectName()
         if pn == '' then
           reaper.Main_SaveProject(0,true)
-          pn = reaper.GetProjectName(0,'')
+          pn = GetProjectName()
         end
         if pn ~= '' then
           if lastprojname ~= pn then
@@ -19506,6 +19640,16 @@ end
       update_surface = true      
     end
       
+  end
+  
+  function GetProjectName()
+  
+    if reaper.APIExists('GetProjectName') then
+      return reaper.GetProjectName(0,'')
+    else
+      return ''
+    end
+    
   end
   
   function quit()
@@ -19615,10 +19759,9 @@ end
     INIT()
     LoadSettings()
     LoadData()  
-    Lokasenna_Window_At_Center(gfx1.main_w,gfx1.main_h) 
+    gfx.dock(dockstate)
   --test jsfx plug name in quotes
   
-    gfx.dock(dockstate)
     run()
 
     reaper.atexit(quit)
