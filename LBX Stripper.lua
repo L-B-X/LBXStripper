@@ -9586,7 +9586,7 @@ end
     if mode == 0 then
       mstr = 'Toggle Sidebar||Lock X|Lock Y|Scroll Up|Scroll Down||Save Project|Open Settings||Page 1|Page 2|Page 3|Page 4||'..ds..'||'..ls..'Lock Surface||'..dt..'Insert Default Strip'
     else
-      mstr = '#Toggle Sidebar||Lock X|Lock Y|Scroll Up|Scroll Down||Save Project|Open Settings||Page 1|Page 2|Page 3|Page 4||'..ds..'||'..ls..'Lock Surface||'..dt..'Insert Default Strip'
+      mstr = '#Toggle Sidebar||Lock X|Lock Y|Scroll Up|Scroll Down||Save Script Data|Open Settings||Page 1|Page 2|Page 3|Page 4||'..ds..'||'..ls..'Lock Surface||'..dt..'Insert Default Strip'
     end
     mstr = mstr .. sub
     gfx.x, gfx.y = mouse.mx, butt_h
@@ -9603,8 +9603,8 @@ end
       elseif res == 5 then
         ScrollDown()
       elseif res == 6 then
-        SaveProj()
-        lastprojdirty = 0
+        SaveProj(true)
+        --lastprojdirty = 0
         --infomsg = "*** DATA SAVED ***"
         OpenMsgBox(1,'Data Saved.',1)
         update_gfx = true      
@@ -11164,8 +11164,8 @@ end
         end
       
       elseif (obj.sections[17].x > obj.sections[20].x+obj.sections[20].w) and MOUSE_click(obj.sections[17]) then
-        SaveProj()
-        lastprojdirty = 0
+        SaveProj(true)
+        --lastprojdirty = 0
         OpenMsgBox(1,'Data Saved.',1)
         update_gfx = true
       
@@ -19647,7 +19647,7 @@ end
     if reaper.APIExists('GetProjectName') then
       return reaper.GetProjectName(0,'')
     else
-      return ''
+      return 'RPR_LBXProjID_'
     end
     
   end
