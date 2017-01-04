@@ -1,11 +1,11 @@
--- @version 0.90
+-- @version 0.93
 -- @author lbx
 -- @changelog
 
 --[[
    * ReaScript Name: LBX Stripper
    * Lua script for Cockos REAPER
-   * Author: Leon Bradley (LBX)
+   * Author: Leon Bradley (LBX) 
    * Author URI: 
    * Licence: GPL v3
   ]]
@@ -163,7 +163,11 @@
     end
     ----------------------------
     local ox,oy = nil, nil
-    f_Get_SSV('0 128 0')          
+    if xxymode == 0 then
+      f_Get_SSV('0 32 0')          
+    else
+      f_Get_SSV('0 128 0')          
+    end
     for t = 0, 1, 0.01 do
       x_point = bezier_eq(order, x_table, t)+ t^order*x_table[order]
       y_point = bezier_eq(order, y_table, t)+ t^order*y_table[order] 
@@ -176,7 +180,7 @@
       end
       ox,oy = x,y
     end
-    if xxypath_edit then    
+    if xxymode == 1 and xxypath_edit then    
       draw_points(x_table, y_table, pt, last)
     end
   end
@@ -1029,7 +1033,7 @@
                            w = 160,
                            h = butt_h}                     
 
-      local ssh2 = obj.sections[221].h - (butt_h+10) - (butt_h/2+4 + 10) * 2 - 10
+      local ssh2 = obj.sections[221].h - (butt_h+10) - (butt_h/2+4 + 10) * 5 - 10
       obj.sections[223] = {x = 10,
                           y = butt_h+10 + (butt_h/2+4 + 10) * 2,
                           w = obj.sections[221].w-20,
@@ -1044,15 +1048,38 @@
                           w = obj.sections[221].w-20,
                           h = butt_h/2+8}                       
 
+      obj.sections[232] = {x = 25,
+                          y = obj.sections[223].y + obj.sections[223].h + butt_h + 10,
+                          w = obj.sections[221].w-35,
+                          h = butt_h/2+8}                       
+      obj.sections[233] = {x = 25,
+                          y = obj.sections[223].y + obj.sections[223].h + (butt_h + 10)*2 - 10,
+                          w = obj.sections[221].w-35,
+                          h = butt_h/2+8}                       
+
       obj.sections[227] = {x = 10,
+                          y = butt_h+10 + (butt_h/2+2 + 10) * 2,
+                          w = obj.sections[221].w-20,
+                          h = butt_h/2+8}                       
+      obj.sections[228] = {x = 10,
+                          y = butt_h+10 + (butt_h/2+2 + 10) * 1,
+                          w = obj.sections[221].w-20,
+                          h = butt_h/2+8}                       
+      obj.sections[229] = {x = 10,
                           y = butt_h+10 + (butt_h/2+2 + 10) * 0,
                           w = obj.sections[221].w-20,
                           h = butt_h/2+8}                       
 
-      obj.sections[230] = {x = obj.sections[220].x + 10,
-                          y = 2,
-                          w = obj.sections[220].w-20,
+      obj.sections[231] = {x = 10,
+                          y = butt_h+10 + (butt_h/2+2 + 10) * 4,
+                          w = obj.sections[221].w-20,
                           h = butt_h/2+8}                       
+
+      obj.sections[230] = {x = obj.sections[220].x,
+                          y = 2,
+                          w = obj.sections[220].w,
+                          h = obj.sections[220].y-4}                       
+
       
     return obj
   end
@@ -5559,13 +5586,6 @@ end
                xywh.h, 1 )
 
       GUI_DrawTopBar(gui,obj)
-
-      if MS_Open > 0 then
-        GUI_DrawMsg(gui, obj)
-        
-      elseif EB_Open > 0 then
-        editbox_draw(gui, editbox)
-      end
       
       --if update_surfaceedge then
       --  UpdateEdges()
@@ -5599,6 +5619,49 @@ end
         gfx.setimgdim(1007,obj.sections[220].w, obj.sections[220].h)        
       end
 
+      --Edges
+      if update_gfx or update_xxypos then
+        f_Get_SSV(gui.color.black)
+        local xywh = {x = obj.sections[220].x,
+                      y = 0, 
+                      w = obj.sections[220].w,
+                      h = obj.sections[220].y}
+        gfx.rect(xywh.x,
+                 xywh.y, 
+                 xywh.w,
+                 xywh.h, 1, 1)
+        local xywh = {x = obj.sections[220].x,
+                      y = obj.sections[220].y+obj.sections[220].h, 
+                      w = obj.sections[220].w,
+                      h = gfx1.main_h - (obj.sections[220].y+obj.sections[220].h)}
+        gfx.rect(xywh.x,
+                 xywh.y, 
+                 xywh.w,
+                 xywh.h, 1, 1)
+        local xywh = {x = 0,
+                      y = obj.sections[220].y, 
+                      w = obj.sections[220].x,
+                      h = obj.sections[220].y+obj.sections[220].h}
+        gfx.rect(xywh.x,
+                 xywh.y, 
+                 xywh.w,
+                 xywh.h, 1, 1)
+        local xywh = {x = obj.sections[220].x+obj.sections[220].w,
+                      y = obj.sections[220].y, 
+                      w = obj.sections[221].x-(obj.sections[220].x+obj.sections[220].w),
+                      h = obj.sections[220].y+obj.sections[220].h}
+        gfx.rect(xywh.x,
+                 xywh.y, 
+                 xywh.w,
+                 xywh.h, 1, 1)
+        
+        f_Get_SSV(gui.color.white)
+        gfx.rect(obj.sections[230].x,
+                 obj.sections[230].y, 
+                 obj.sections[230].w,
+                 obj.sections[230].h, 0, 1)
+      end
+
       if update_gfx then
         local xywh = {x = obj.sections[222].x,
                       y = obj.sections[222].y, 
@@ -5612,12 +5675,8 @@ end
                  xywh.h, 1, 1)
         GUI_textC(gui,xywh,'EXIT',c,-2)
   
-        f_Get_SSV(gui.color.white)
-        gfx.rect(obj.sections[230].x,
-                 obj.sections[230].y, 
-                 obj.sections[230].w,
-                 obj.sections[230].h, 0, 1)
       end
+
     
       if update_gfx or update_xxy then
         GUI_DrawXXY(gui,obj)
@@ -5649,6 +5708,13 @@ end
       end
 
     
+    end
+    
+    if MS_Open > 0 then
+      GUI_DrawMsg(gui, obj)
+      
+    elseif EB_Open > 0 then
+      editbox_draw(gui, editbox)
     end
     
     gfx.dest = -1
@@ -5725,6 +5791,23 @@ end
         
       GUI_DrawButton(gui, sstypestr, obj.sections[226], gui.color.white, gui.color.black, true, '', false)
       GUI_DrawSliderH(gui, 'GRAVITY', obj.sections[225], gui.color.black, gui.color.white, ((xxy_gravity-1)/3))
+
+      local strip = tracks[track_select].strip
+      local xywh = {x = obj.sections[232].x,
+                    y = obj.sections[232].y - obj.sections[232].h,
+                    w = obj.sections[232].w,
+                    h = obj.sections[232].h}
+      GUI_textC(gui,xywh,'AUTOMATION',gui.color.white,-2)
+      if xxy and xxy[strip] and xxy[strip][page][sstype_select] and xxy[strip][page][sstype_select].xfader then
+        GUI_DrawButton(gui, 'FADER '..string.format('%i',xxy[strip][page][sstype_select].xfader), obj.sections[232], gui.color.white, gui.color.black, true, 'X', false)      
+      else
+        GUI_DrawButton(gui, 'NONE', obj.sections[232], gui.color.white, gui.color.black, false, 'X', false)
+      end
+      if xxy and xxy[strip] and xxy[strip][page][sstype_select] and xxy[strip][page][sstype_select].yfader then
+        GUI_DrawButton(gui, 'FADER '..string.format('%i',xxy[strip][page][sstype_select].yfader), obj.sections[233], gui.color.white, gui.color.black, true, 'Y', false)      
+      else
+        GUI_DrawButton(gui, 'NONE', obj.sections[233], gui.color.white, gui.color.black, false, 'Y', false)
+      end
       
       local bc, bc2 = gui.color.white, gui.color.white
       if sstype_select == 1 then
@@ -5823,7 +5906,21 @@ end
     elseif xxymode == 1 then
 
       GUI_DrawButton(gui, 'EDIT', obj.sections[227], gui.color.white, gui.color.black, xxypath_edit, '', false)
-    
+      GUI_DrawButton(gui, 'SAVE META PATH', obj.sections[228], gui.color.white, gui.color.black, true, '', false)
+      GUI_DrawButton(gui, 'LOAD META PATH', obj.sections[229], gui.color.white, gui.color.black, true, '', false)
+      
+      local strip = tracks[track_select].strip
+      local xywh = {x = obj.sections[231].x,
+                    y = obj.sections[231].y - obj.sections[231].h,
+                    w = obj.sections[231].w,
+                    h = obj.sections[231].h}
+      GUI_textC(gui,xywh,'AUTOMATION',gui.color.white,-2)
+      if xxy and xxy[strip] and xxy[strip][page][sstype_select] and xxy[strip][page][sstype_select].pathfader then
+        GUI_DrawButton(gui, 'FADER '..string.format('%i',xxy[strip][page][sstype_select].pathfader), obj.sections[231], gui.color.white, gui.color.black, true, '', false)      
+      else
+        GUI_DrawButton(gui, 'NONE', obj.sections[231], gui.color.white, gui.color.black, false, '', false)
+      end
+      
     end    
     
     gfx.dest = 1    
@@ -5900,7 +5997,7 @@ end
       end
     end
     
-    if xxymode == 1 then
+    --if xxymode == 1 then
     
       if xxypath[xxypath_select] then
         local pcnt = #xxypath[xxypath_select].points
@@ -5918,7 +6015,7 @@ end
         end
 
       end
-    end
+    --end
 
     gfx.dest = 1      
       
@@ -10360,7 +10457,7 @@ end
         
       end
   
-      faders[1].targettype = 0
+      --[[faders[1].targettype = 0
       faders[1].strip = 2
       faders[1].page = 1
       faders[1].control = nil
@@ -10371,11 +10468,69 @@ end
       faders[2].page = 1
       faders[2].control = nil
       faders[2].sstype = 2
-      faders[2].xy = 1
+      faders[2].xy = 1]]
+
+      --[[faders[1].targettype = 1
+      faders[1].strip = 2
+      faders[1].page = 1
+      faders[1].control = nil
+      faders[1].sstype = 2]]
+      --faders[2].xy = 1
     end  
     
   end
 
+  function SetAutomationFader(fad_tab, sel)
+  
+    if LBX_CTL_TRACK_INF and LBX_CTL_TRACK_INF.count > 0 then
+      local mstr = ''
+      for fxnum = 0, LBX_CTL_TRACK_INF.count-1 do
+        local fs = fxnum*32+1
+        local fe = fs+31
+        if mstr ~= '' then
+          mstr = mstr .. '|'
+        end
+        mstr = mstr .. '>Fader '..string.format('%i',fs)..'-'..string.format('%i',fe)
+        
+        for pf = 0, 31 do
+          local p = fs + pf
+          local assigned = ''
+          if faders[p].targettype then
+            if p == sel then
+              assigned = '!#'
+            else
+              assigned = '#'
+            end
+          end
+  
+          if pf ~= 31 then
+            mstr = mstr .. '|'..assigned..'Fader '..fs + pf
+          else
+            mstr = mstr .. '|<'..assigned..'Fader '..fs + pf        
+          end
+        end
+      end
+      local lastp = LBX_CTL_TRACK_INF.count * 32+1
+      mstr = mstr .. '|Clear'
+      gfx.x = mouse.mx
+      gfx.y = mouse.my
+      local ret = gfx.showmenu(mstr)
+      --DBG(lastp..'  '..ret)
+      if ret > 0 and ret ~= lastp then
+        faders[ret] = fad_tab
+      elseif ret == lastp then
+        faders[ret] = nil
+        ret = nil
+      else
+        ret = -1
+      end
+      
+      return ret
+    else
+      return -1
+    end    
+  end
+  
   function ReadAutomationFaders()
   
     if LBX_CTL_TRACK then    
@@ -10403,8 +10558,13 @@ end
                 end
                 XXY_Set(faders[p+1].strip,faders[p+1].page,faders[p+1].sstype)
                 if show_xxy then
-                  update_xxy = true
+                  update_xxypos = true
                 end
+              elseif faders[p+1].targettype == 1 then
+                XXYPath_SetPos(faders[p+1].strip,faders[p+1].page,faders[p+1].sstype,faders[p+1].val)
+                if show_xxy then
+                  update_xxypos = true
+                end                              
               end
             end
           end    
@@ -10627,11 +10787,107 @@ end
     mouse.alt = gfx.mouse_cap&16==16
     local char
     
-    if EB_Open == 0 then
+    if EB_Open == 0 and MS_Open == 0 then
       char = gfx.getchar() 
       if char ~= 0 then
         keypress(char)
       end
+    
+    elseif MS_Open > 0 then
+    
+      local c=gfx.getchar()  
+      mb_onchar(c)
+      
+      if MOUSE_click(obj.sections[62]) or MB_Enter then
+        --OK
+        if MS_Open == 1 then
+          msgbox = nil
+        end
+        MS_Open = 0
+        MB_Enter = false 
+        update_gfx = true
+      end
+      
+    elseif EB_Open > 0 then
+      if gfx.mouse_cap&1 == 1 then
+        if not mouse.down then
+          OnMouseDown()      
+          if mouse.uptime and os.clock()-mouse.uptime < 0.25 then 
+            OnMouseDoubleClick()
+          end
+        elseif gfx.mouse_x ~= mouse.lx or gfx.mouse_y ~= mouse.ly then
+          OnMouseMove() 
+        end
+      elseif mouse.down then 
+        OnMouseUp() 
+      end
+      
+      if MOUSE_click(obj.sections[6]) or EB_Enter then
+        --OK
+        EB_Enter = false
+        if EB_Open == 1 then
+          SaveStrip3(editbox.text)
+        elseif EB_Open == 2 then
+          EditCtlName2(editbox.text)
+        elseif EB_Open == 3 then
+          EditDValOffset2(editbox.text)
+          update_gfx = true
+        elseif EB_Open == 4 then
+          EditMinDVal2(editbox.text)
+          update_gfx = true
+        elseif EB_Open == 16 then
+          EditMaxDVal2(editbox.text)
+          update_gfx = true
+        elseif EB_Open == 5 then
+          EditValue2(editbox.text)
+          --update_ctls = true
+        elseif EB_Open == 6 then
+          InsertLabel2(editbox.text)
+        elseif EB_Open == 7 then
+          EditLabel2(editbox.text)
+        elseif EB_Open == 8 then
+          EditFont2(editbox.text)
+        elseif EB_Open == 10 then
+          EditCycleDV(editbox.text)        
+        elseif EB_Open == 11 then
+          EditSSName2(editbox.text)
+          update_snaps = true
+        elseif EB_Open == 12 then
+          AssActionByName(editbox.text)
+          update_gfx = true          
+        elseif EB_Open == 13 then
+          AssActionByID(editbox.text)
+          update_gfx = true          
+        elseif EB_Open == 14 then
+          action_tblF = ActionListFilter(editbox.text)
+          al_offset = 0
+          update_gfx = true
+        elseif EB_Open == 15 then
+          EditSubName(editbox.text)
+          update_snaps = true
+        elseif EB_Open == 17 then
+          local sc = tonumber(editbox.text)
+          if sc then
+            cycle_select.statecnt = F_limit(sc,0,max_cycle)
+            Cycle_InitData()
+          end
+          update_surface = true
+        elseif EB_Open == 18 then
+          SavePath(editbox.text)
+        elseif EB_Open == 20 then
+          SaveSet(editbox.text)
+        end
+        editbox = nil
+        EB_Open = 0
+      
+      elseif MOUSE_click(obj.sections[7]) then
+        editbox = nil
+        EB_Open = 0
+      end
+          
+      local c=gfx.getchar()  
+      if editbox and editbox.hasfocus then editbox_onchar(editbox, c) end  
+      update_gfx = true
     end
 
     ReadAutomationFaders()
@@ -11009,7 +11265,7 @@ end
           end
         end
         
-      elseif MS_Open > 0 then
+      --[[elseif MS_Open > 0 then
       
         local c=gfx.getchar()  
         mb_onchar(c)
@@ -11088,6 +11344,8 @@ end
               Cycle_InitData()
             end
             update_surface = true
+          elseif EB_Open == 18 then
+            SavePath(editbox.text)
           elseif EB_Open == 20 then
             SaveSet(editbox.text)
           end
@@ -11102,6 +11360,7 @@ end
         local c=gfx.getchar()  
         if editbox and editbox.hasfocus then editbox_onchar(editbox, c) end  
         update_gfx = true
+      ]]
       else
       
       if MOUSE_click(obj.sections[21]) then
@@ -11508,6 +11767,11 @@ end
             elseif mouse.context == nil and MOUSE_click(obj.sections[224]) then
               if sstype_select > 1 then
                 show_xxy = true
+                if xxy and xxy[tracks[track_select].strip] and xxy[tracks[track_select].strip][page][sstype_select] then
+                  xxypath_select = xxy[tracks[track_select].strip][page][sstype_select].pathidx
+                else
+                  xxypath_select = nil
+                end
                 update_gfx = true
               end
 
@@ -15138,11 +15402,17 @@ end
           if xxymode > #xxymode_table-1 then
             xxymode = 0
           end
+          xxypath_edit = false
           update_snaps = true
           update_xxy = true
         end
       
-      end
+      elseif mouse.context == nil and MOUSE_click(obj.sections[222]) then
+        show_xxy = false
+        --SaveSingleStrip(tracks[track_select].strip)
+        reaper.MarkProjectDirty(0)
+        update_gfx = true
+      end      
       
       if xxymode == 0 then
 
@@ -15231,9 +15501,11 @@ end
           
             if snapshots[tracks[track_select].strip] then
               sstype_select = F_limit(sstype_select + 1, 2, #snapshots[tracks[track_select].strip][page])
-            --else
-            --  Snapshots_INIT()
-            --  sstype_select = 1
+              if xxy[tracks[track_select].strip] and xxy[tracks[track_select].strip][page][sstype_select] then
+                xxypath_select = xxy[tracks[track_select].strip][page][sstype_select].pathidx
+              else
+                xxypath_select = nil
+              end
             end
             ss_select = nil
             xxylist_offset = 0
@@ -15243,22 +15515,59 @@ end
           
             if snapshots[tracks[track_select].strip] then
               sstype_select = F_limit(sstype_select - 1, 2, #snapshots[tracks[track_select].strip][page])
-            --else
-            --  Snapshots_INIT()
-            --  sstype_select = 1
+              if xxy[tracks[track_select].strip] and xxy[tracks[track_select].strip][page][sstype_select] then
+                xxypath_select = xxy[tracks[track_select].strip][page][sstype_select].pathidx
+              else
+                xxypath_select = nil
+              end
             end
             ss_select = nil
             xxylist_offset = 0
             update_gfx = true
+
+          elseif MOUSE_click(obj.sections[232]) then
+
+            if xxy and xxy[tracks[track_select].strip] and xxy[tracks[track_select].strip][page][sstype_select] then
+              local f = {targettype = 0,
+                         strip = tracks[track_select].strip,
+                         page = page,
+                         sstype = sstype_select,
+                         xy = 0}
+              
+              mouse.mx, mouse.my = mx, my
+              local fad = SetAutomationFader(f, xxy[tracks[track_select].strip][page][sstype_select].xfader)
+              if fad ~= -1 then
+                if xxy[tracks[track_select].strip][page][sstype_select].xfader and xxy[tracks[track_select].strip][page][sstype_select].xfader ~= fad then
+                  faders[xxy[tracks[track_select].strip][page][sstype_select].xfader] = {}
+                end
+                xxy[tracks[track_select].strip][page][sstype_select].xfader = fad
+                update_gfx = true
+              end
+            end
           
+          elseif MOUSE_click(obj.sections[233]) then
+
+            if xxy and xxy[tracks[track_select].strip] and xxy[tracks[track_select].strip][page][sstype_select] then
+              local f = {targettype = 0,
+                         strip = tracks[track_select].strip,
+                         page = page,
+                         sstype = sstype_select,
+                         xy = 1}
+              
+              mouse.mx, mouse.my = mx, my
+              local fad = SetAutomationFader(f, xxy[tracks[track_select].strip][page][sstype_select].yfader)
+              if fad ~= -1 then
+                if xxy[tracks[track_select].strip][page][sstype_select].yfader and xxy[tracks[track_select].strip][page][sstype_select].yfader ~= fad then
+                  faders[xxy[tracks[track_select].strip][page][sstype_select].yfader] = {}
+                end
+                xxy[tracks[track_select].strip][page][sstype_select].yfader = fad
+                update_gfx = true
+              end
+            end
+                      
           end
           
           mouse.mx, mouse.my = mx, my
-        elseif mouse.context == nil and MOUSE_click(obj.sections[222]) then
-          show_xxy = false
-          --SaveSingleStrip(tracks[track_select].strip)
-          reaper.MarkProjectDirty(0)
-          update_gfx = true
         end
   
         if mouse.context and mouse.context == contexts.xxy_drag then
@@ -15355,7 +15664,6 @@ end
                     fnd = true
                     fnd_p = p
                     fnd_sp = sp
-                    --DBG('fnd'..p..'  '..sp)
                     break
                   end
                 end
@@ -15390,14 +15698,14 @@ end
                   mouse.context = contexts.xxypath_dragpt
                 
                   local dx2,dy2,dx3,dy3
-                  if fnd_sp == 1 then
+                  if fnd_sp == 1 and #xxypath[xxypath_select].points > 1 then
                     dx2 = xxypath[xxypath_select].points[fnd_p].x[2]-xxypath[xxypath_select].points[fnd_p].x[1]
                     dy2 = xxypath[xxypath_select].points[fnd_p].y[2]-xxypath[xxypath_select].points[fnd_p].y[1]                    
                     if fnd_p > 1 then
                       dx3 = xxypath[xxypath_select].points[fnd_p-1].x[4]-xxypath[xxypath_select].points[fnd_p-1].x[3]
                       dy3 = xxypath[xxypath_select].points[fnd_p-1].y[4]-xxypath[xxypath_select].points[fnd_p-1].y[3]
                     end
-                  else
+                  elseif #xxypath[xxypath_select].points > 1 then
                     dx3 = xxypath[xxypath_select].points[fnd_p].x[4]-xxypath[xxypath_select].points[fnd_p].x[3]
                     dy3 = xxypath[xxypath_select].points[fnd_p].y[4]-xxypath[xxypath_select].points[fnd_p].y[3]                    
                     if fnd_p < #xxypath[xxypath_select].points-1 then
@@ -15419,15 +15727,43 @@ end
           local mx,my = mouse.mx,mouse.my
           mouse.mx = mouse.mx-obj.sections[221].x
           mouse.my = mouse.my-obj.sections[221].y
-        
-          if mouse.context == nil and MOUSE_click(obj.sections[227]) then
+
+          if MOUSE_click(obj.sections[227]) then
         
             xxypath_edit = not xxypath_edit
             update_xxy = true
             update_snaps = true
             
+          elseif MOUSE_click(obj.sections[228]) then
+
+            if xxypath and xxypath[xxypath_select] then
+              OpenEB(18,'Please enter a filename for the path:')
+            end
+            
+          elseif MOUSE_click(obj.sections[229]) then
+          
+            LoadPath()
+          
+          elseif MOUSE_click(obj.sections[231]) then
+
+            if xxy and xxy[tracks[track_select].strip] and xxy[tracks[track_select].strip][page][sstype_select] then
+              local f = {targettype = 1,
+                         strip = tracks[track_select].strip,
+                         page = page,
+                         sstype = sstype_select}
+              
+              mouse.mx, mouse.my = mx, my
+              local fad = SetAutomationFader(f, xxy[tracks[track_select].strip][page][sstype_select].pathfader)
+              if fad ~= -1 then
+                if xxy[tracks[track_select].strip][page][sstype_select].pathfader and xxy[tracks[track_select].strip][page][sstype_select].pathfader ~= fad then
+                  faders[xxy[tracks[track_select].strip][page][sstype_select].pathfader] = {}
+                end
+                xxy[tracks[track_select].strip][page][sstype_select].pathfader = fad
+                update_gfx = true
+              end
+            end
+                        
           end
-        
           mouse.mx, mouse.my = mx, my
         
         end
@@ -15446,20 +15782,59 @@ end
         
         elseif mouse.context and mouse.context == contexts.xxypath_posslider then
         
-          local pos = (mouse.mx-obj.sections[230].x)/obj.sections[230].w
-          local curve_sections = #xxypath[xxypath_select].points-1
-          local pt = F_limit(math.floor(pos*curve_sections)+1,1,curve_sections)
-          local secpos = F_limit((pos*curve_sections +1 )- pt,0,1)
-          
-          local x,y = curve_getxy(xxypath[xxypath_select].points[pt].x, xxypath[xxypath_select].points[pt].y, secpos)
-          local ox, oy = xxy[tracks[track_select].strip][page][sstype_select].x, xxy[tracks[track_select].strip][page][sstype_select].y
-          xxy[tracks[track_select].strip][page][sstype_select].x = F_limit(x,0,1)
-          xxy[tracks[track_select].strip][page][sstype_select].y = F_limit(y,0,1)
-          
-          if xxy[tracks[track_select].strip][page][sstype_select].x ~= ox or xxy[tracks[track_select].strip][page][sstype_select].y ~= oy then
-            XXY_Set(tracks[track_select].strip, page, sstype_select)
-            update_xxypos = true        
+          local pos = F_limit((mouse.mx-obj.sections[230].x)/obj.sections[230].w,0,1)
+          if pos ~= oxxysliderpos then
+            oxxysliderpos = pos
+            --[[local curve_sections = #xxypath[xxypath_select].points-1
+            local pt = F_limit(math.floor(pos*curve_sections)+1,1,curve_sections)
+            local secpos = F_limit((pos*curve_sections +1 )- pt,0,1)
+            
+            local x,y = curve_getxy(xxypath[xxypath_select].points[pt].x, xxypath[xxypath_select].points[pt].y, secpos)
+            local ox, oy = xxy[tracks[track_select].strip][page][sstype_select].x, xxy[tracks[track_select].strip][page][sstype_select].y]]
+            
+            --[[local pt = #xxypath[xxypath_select].points-1
+            for p = 1, #xxypath[xxypath_select].points-1 do
+            
+              if pos >= xxypath[xxypath_select].points[p].posstart and pos < xxypath[xxypath_select].points[p].posend then
+                pt = p
+                break
+              end
+            
+            end]]
+            
+            --[[local posidx = F_limit(math.floor(pos*xxypath_indexcnt),0,xxypath_indexcnt)
+            local pt = math.max(xxypath[xxypath_select].pathidxpt[posidx],1)
+            --local pc = 0
+            while xxypath[xxypath_select].points[pt].posend < pos do
+              pt = pt + 1
+              --pc=pc+1
+            end
+            --local pt = xxypath[xxypath_select].pathidxpt[posidx]
+            --[[if pc > 0 then
+              DBG(pc..'  '..pt)
+            end
+            
+            local secpos = F_limit((pos-xxypath[xxypath_select].points[pt].posstart)/(xxypath[xxypath_select].points[pt].posend-xxypath[xxypath_select].points[pt].posstart),0,1)
+            local x,y = curve_getxy(xxypath[xxypath_select].points[pt].x, xxypath[xxypath_select].points[pt].y, secpos)
+            local ox, oy = xxy[tracks[track_select].strip][page][sstype_select].x, xxy[tracks[track_select].strip][page][sstype_select].y
+            
+            xxy[tracks[track_select].strip][page][sstype_select].x = F_limit(x,0,1)
+            xxy[tracks[track_select].strip][page][sstype_select].y = F_limit(y,0,1)
+            
+            if xxy[tracks[track_select].strip][page][sstype_select].x ~= ox or xxy[tracks[track_select].strip][page][sstype_select].y ~= oy then
+              XXY_Set(tracks[track_select].strip, page, sstype_select)
+              update_xxypos = true        
+            end]]
+            
+            XXYPath_SetPos(tracks[track_select].strip,page,sstype_select,pos)
+            update_xxypos = true
           end
+        
+        elseif mouse.context == nil and dragpt ~= nil or dragcontrolpt ~= nil then
+        
+          dragpt = nil
+          dragcontrolpt = nil
+          xxypath[xxypath_select].pathlen = XXYPath_CalcPathLen(xxypath_select)
         
         end
         
@@ -15497,58 +15872,190 @@ end
       
   end
   
-  function XXYPATH_movept(pt, x, y)
+  function XXYPath_SetPos(strip, page, sst, pos)
+  
+    if xxy and xxy[strip] and xxy[strip][page][sst] then
+      local xxypath_sel = xxy[strip][page][sst].pathidx
+      if xxypath_sel and xxypath[xxypath_sel] and xxypath[xxypath_sel].points[1].t then
+        
+        local xxypath_indexcnt = #xxypath[xxypath_sel].pathidxpt
+        local posidx = F_limit(math.floor(pos*xxypath_indexcnt),0,xxypath_indexcnt)
+        local pt = math.max(xxypath[xxypath_sel].pathidxpt[posidx],1)
+        while xxypath[xxypath_sel].points[pt].posend < pos do
+          pt = pt + 1
+        end
+        
+        local secpos = F_limit((pos-xxypath[xxypath_sel].points[pt].posstart)/(xxypath[xxypath_sel].points[pt].posend-xxypath[xxypath_sel].points[pt].posstart),0,1)
+        local sp2 = xxypath[xxypath_sel].points[pt].t[math.floor(secpos*#xxypath[xxypath_sel].points[pt].t)]
+        --DBG(math.floor(secpos*100)..'  '..sp2)
+        local x,y = curve_getxy(xxypath[xxypath_sel].points[pt].x, xxypath[xxypath_sel].points[pt].y, sp2)
+        local ox, oy = xxy[strip][page][sst].x, xxy[strip][page][sst].y
+        
+        xxy[strip][page][sst].x = F_limit(x,0,1)
+        xxy[strip][page][sst].y = F_limit(y,0,1)
+        if xxy[strip][page][sst].x ~= ox or xxy[strip][page][sst].y ~= oy then
+          XXY_Set(strip, page, sst)
+          --update_xxypos = true        
+        end
+      end    
+    end
+  end
 
-    if pt.sp == 1 then
-    
-      if pt.p == 1 then
+  function XXYPath_SetPos2(strip, page, sst, pos)
+  
+    local xxypath_sel = xxy[strip][page][sst].pathidx
+    if xxypath_sel and xxypath[xxypath_sel] then
       
-        xxypath[xxypath_select].points[pt.p].x[pt.sp] = F_limit(x,0,1)
-        xxypath[xxypath_select].points[pt.p].y[pt.sp] = F_limit(y,0,1)
-        xxypath[xxypath_select].points[pt.p].x[2] = F_limit(x+pt.dx2,0,1)
-        xxypath[xxypath_select].points[pt.p].y[2] = F_limit(y+pt.dy2,0,1)
+      local xxypath_indexcnt = #xxypath[xxypath_sel].pathidxpt
+      local posidx = F_limit(math.floor(pos*xxypath_indexcnt),0,xxypath_indexcnt)
+      local pt = math.max(xxypath[xxypath_sel].pathidxpt[posidx],1)
+      while xxypath[xxypath_sel].points[pt].posend < pos do
+        pt = pt + 1
+      end
       
-      else
+      local secpos = F_limit((pos-xxypath[xxypath_sel].points[pt].posstart)/(xxypath[xxypath_sel].points[pt].posend-xxypath[xxypath_sel].points[pt].posstart),0,1)
+      local x,y = curve_getxy(xxypath[xxypath_sel].points[pt].x, xxypath[xxypath_sel].points[pt].y, secpos)
+      local ox, oy = xxy[strip][page][sst].x, xxy[strip][page][sst].y
       
-        xxypath[xxypath_select].points[pt.p].x[pt.sp] = F_limit(x,0,1)
-        xxypath[xxypath_select].points[pt.p].y[pt.sp] = F_limit(y,0,1)
-        xxypath[xxypath_select].points[pt.p-1].x[4] = F_limit(x,0,1)
-        xxypath[xxypath_select].points[pt.p-1].y[4] = F_limit(y,0,1)
-        xxypath[xxypath_select].points[pt.p].x[2] = F_limit(x+pt.dx2,0,1)
-        xxypath[xxypath_select].points[pt.p].y[2] = F_limit(y+pt.dy2,0,1)
-        xxypath[xxypath_select].points[pt.p-1].x[3] = F_limit(x-pt.dx3,0,1)
-        xxypath[xxypath_select].points[pt.p-1].y[3] = F_limit(y-pt.dy3,0,1)
+      xxy[strip][page][sst].x = F_limit(x,0,1)
+      xxy[strip][page][sst].y = F_limit(y,0,1)
+      
+      if xxy[strip][page][sst].x ~= ox or xxy[strip][page][sst].y ~= oy then
+        XXY_Set(strip, page, sst)
+        --update_xxypos = true        
+      end
+    end    
+  end
+  
+  function LoadPath()
+  
+    if xxy and xxy[tracks[track_select].strip] and xxy[tracks[track_select].strip][page][sstype_select] then
+
+      local retval, fn = reaper.GetUserFileNameForRead(paths_path..'*', 'Load Meta Path', '.path')
+      if retval then
+      
+        if reaper.file_exists(fn) then
+        
+          local file
+          file=io.open(fn,"r")
+          local content=file:read("*a")
+          file:close()
+          
+          local loaddata = unpickle(content)
+          if loaddata then
+            
+            if xxypath_select == nil then
+              xxypath_select = #xxypath+1
+              xxy[tracks[track_select].strip][page][sstype_select].pathidx = xxypath_select
+            end
+            xxypath[xxypath_select] = {}
+            xxypath[xxypath_select] = loaddata
+          end
+  
+          update_gfx = true
+          
+        else
+          OpenMsgBox(1,'File not found.',1)
+        end
       
       end
-    
-    else
+        
+    end
 
-      if pt.p >= #xxypath[xxypath_select].points-1  then
+  end
+    
+  function SavePath(fn)
+
+    if fn and string.len(fn)>0 then
+    
+      local save_path=paths_path
+      local fn=save_path..fn..".path"
       
-        xxypath[xxypath_select].points[pt.p].x[pt.sp] = F_limit(x,0,1)
-        xxypath[xxypath_select].points[pt.p].y[pt.sp] = F_limit(y,0,1)
-        xxypath[xxypath_select].points[pt.p].x[3] = F_limit(x-pt.dx3,0,1)
-        xxypath[xxypath_select].points[pt.p].y[3] = F_limit(y-pt.dy3,0,1)
-        if pt.p == #xxypath[xxypath_select].points-1 then
-          xxypath[xxypath_select].points[pt.p+1].x[1] = F_limit(x,0,1)
-          xxypath[xxypath_select].points[pt.p+1].y[1] = F_limit(y,0,1)      
+      local DELETE=true
+      local file
+      
+      if reaper.file_exists(fn) then
+      
+      end
+      
+      if DELETE then
+        file=io.open(fn,"w")
+        local pickled_table=pickle(xxypath[xxypath_select])
+        file:write(pickled_table)
+        file:close()
+      end
+      
+      OpenMsgBox(1,'Path saved.',1)
+      
+    end
+        
+  end
+  
+  function XXYPATH_movept(pt, x, y)
+
+    if #xxypath[xxypath_select].points > 1 then
+      if pt.sp == 1 then
+      
+        if pt.p == 1 then
+        
+          xxypath[xxypath_select].points[pt.p].x[pt.sp] = F_limit(x,0,1)
+          xxypath[xxypath_select].points[pt.p].y[pt.sp] = F_limit(y,0,1)
+          xxypath[xxypath_select].points[pt.p].x[2] = F_limit(x+pt.dx2,0,1)
+          xxypath[xxypath_select].points[pt.p].y[2] = F_limit(y+pt.dy2,0,1)
+  
+          xxypath[xxypath_select].points[pt.p].len = XXYPath_CalcPathSectionLength(pt.p)
+        
+        else
+        
+          xxypath[xxypath_select].points[pt.p].x[pt.sp] = F_limit(x,0,1)
+          xxypath[xxypath_select].points[pt.p].y[pt.sp] = F_limit(y,0,1)
+          xxypath[xxypath_select].points[pt.p-1].x[4] = F_limit(x,0,1)
+          xxypath[xxypath_select].points[pt.p-1].y[4] = F_limit(y,0,1)
+          xxypath[xxypath_select].points[pt.p].x[2] = F_limit(x+pt.dx2,0,1)
+          xxypath[xxypath_select].points[pt.p].y[2] = F_limit(y+pt.dy2,0,1)
+          xxypath[xxypath_select].points[pt.p-1].x[3] = F_limit(x-pt.dx3,0,1)
+          xxypath[xxypath_select].points[pt.p-1].y[3] = F_limit(y-pt.dy3,0,1)
+  
+          xxypath[xxypath_select].points[pt.p].len = XXYPath_CalcPathSectionLength(pt.p)
+          xxypath[xxypath_select].points[pt.p-1].len = XXYPath_CalcPathSectionLength(pt.p-1)
+        
         end
       
       else
+  
+        if pt.p >= #xxypath[xxypath_select].points-1  then
+        
+          xxypath[xxypath_select].points[pt.p].x[pt.sp] = F_limit(x,0,1)
+          xxypath[xxypath_select].points[pt.p].y[pt.sp] = F_limit(y,0,1)
+          xxypath[xxypath_select].points[pt.p].x[3] = F_limit(x-pt.dx3,0,1)
+          xxypath[xxypath_select].points[pt.p].y[3] = F_limit(y-pt.dy3,0,1)
+          if pt.p == #xxypath[xxypath_select].points-1 then
+            xxypath[xxypath_select].points[pt.p+1].x[1] = F_limit(x,0,1)
+            xxypath[xxypath_select].points[pt.p+1].y[1] = F_limit(y,0,1)      
+          end
+  
+        else
+        
+          xxypath[xxypath_select].points[pt.p].x[pt.sp] = F_limit(x,0,1)
+          xxypath[xxypath_select].points[pt.p].y[pt.sp] = F_limit(y,0,1)
+          xxypath[xxypath_select].points[pt.p+1].x[1] = F_limit(x,0,1)
+          xxypath[xxypath_select].points[pt.p+1].y[1] = F_limit(y,0,1)
+          xxypath[xxypath_select].points[pt.p+1].x[2] = F_limit(x+pt.dx2,0,1)
+          xxypath[xxypath_select].points[pt.p+1].y[2] = F_limit(y+pt.dy2,0,1)
+          xxypath[xxypath_select].points[pt.p].x[3] = F_limit(x-pt.dx3,0,1)
+          xxypath[xxypath_select].points[pt.p].y[3] = F_limit(y-pt.dy3,0,1)
+        
+        end
+  
+        xxypath[xxypath_select].points[pt.p].len = XXYPath_CalcPathSectionLength(pt.p)
+        xxypath[xxypath_select].points[pt.p+1].len = XXYPath_CalcPathSectionLength(pt.p+1)
       
-        xxypath[xxypath_select].points[pt.p].x[pt.sp] = F_limit(x,0,1)
-        xxypath[xxypath_select].points[pt.p].y[pt.sp] = F_limit(y,0,1)
-        xxypath[xxypath_select].points[pt.p+1].x[1] = F_limit(x,0,1)
-        xxypath[xxypath_select].points[pt.p+1].y[1] = F_limit(y,0,1)
-        xxypath[xxypath_select].points[pt.p+1].x[2] = F_limit(x+pt.dx2,0,1)
-        xxypath[xxypath_select].points[pt.p+1].y[2] = F_limit(y+pt.dy2,0,1)
-        xxypath[xxypath_select].points[pt.p].x[3] = F_limit(x-pt.dx3,0,1)
-        xxypath[xxypath_select].points[pt.p].y[3] = F_limit(y-pt.dy3,0,1)
-      
-      end
+      end    
+    else
+      xxypath[xxypath_select].points[pt.p].x[1] = F_limit(x,0,1)
+      xxypath[xxypath_select].points[pt.p].y[1] = F_limit(y,0,1)
     
-    end
-    
+    end    
   end
   
   function XXYPATH_movectlpt(ctlpt, x, y)
@@ -15559,6 +16066,8 @@ end
       
         xxypath[xxypath_select].points[ctlpt.p].x[ctlpt.sp] = F_limit(x,0,1)
         xxypath[xxypath_select].points[ctlpt.p].y[ctlpt.sp] = F_limit(y,0,1)
+
+        xxypath[xxypath_select].points[ctlpt.p].len = XXYPath_CalcPathSectionLength(ctlpt.p)
         
       else
 
@@ -15579,6 +16088,9 @@ end
         end
         xxypath[xxypath_select].points[ctlpt.p-1].x[3] = F_limit(sp3_x,0,1)
         xxypath[xxypath_select].points[ctlpt.p-1].y[3] = F_limit(sp3_y,0,1)
+
+        xxypath[xxypath_select].points[ctlpt.p].len = XXYPath_CalcPathSectionLength(ctlpt.p)
+        xxypath[xxypath_select].points[ctlpt.p-1].len = XXYPath_CalcPathSectionLength(ctlpt.p-1)
         
       end
     
@@ -15589,6 +16101,7 @@ end
         xxypath[xxypath_select].points[ctlpt.p].x[ctlpt.sp] = F_limit(x,0,1)
         xxypath[xxypath_select].points[ctlpt.p].y[ctlpt.sp] = F_limit(y,0,1)
     
+        xxypath[xxypath_select].points[ctlpt.p].len = XXYPath_CalcPathSectionLength(ctlpt.p)
       else
 
         xxypath[xxypath_select].points[ctlpt.p].x[ctlpt.sp] = F_limit(x,0,1)
@@ -15608,6 +16121,9 @@ end
         end
         xxypath[xxypath_select].points[ctlpt.p+1].x[2] = F_limit(sp2_x,0,1)
         xxypath[xxypath_select].points[ctlpt.p+1].y[2] = F_limit(sp2_y,0,1)
+
+        xxypath[xxypath_select].points[ctlpt.p].len = XXYPath_CalcPathSectionLength(ctlpt.p)
+        xxypath[xxypath_select].points[ctlpt.p+1].len = XXYPath_CalcPathSectionLength(ctlpt.p+1)
       
       end
 
@@ -15620,6 +16136,16 @@ end
     --[[if #xxypath == 0 then
       xxypath = {points = {x = {}, y = {}}}
     end]]
+    if xxypath_select == nil then
+      local strip = tracks[track_select].strip
+      if xxy and xxy[strip] and xxy[strip][page][sstype_select] then
+        xxypath_select = #xxypath + 1
+        xxy[strip][page][sstype_select].pathidx = xxypath_select
+      else
+        return
+      end
+    end
+    
     if xxypath[xxypath_select] == nil then
       xxypath[xxypath_select] = {}
       xxypath[xxypath_select].points = {}
@@ -15646,6 +16172,102 @@ end
       
     end
   
+    if p > 0 then
+      xxypath[xxypath_select].points[p].len = XXYPath_CalcPathSectionLength(p)
+      xxypath[xxypath_select].pathlen = XXYPath_CalcPathLen(xxypath_select)      
+    end
+    
+  end
+  
+  function XXYPath_CalcPathLen(xxysel)
+  
+    local len = 0
+    if #xxypath[xxysel].points > 1 then
+      for pt = 1, #xxypath[xxysel].points do
+        if xxypath[xxysel].points[pt].len then
+          len = len + xxypath[xxysel].points[pt].len
+        end
+      end
+      local ppos = 0
+      for pt = 1, #xxypath[xxysel].points do
+        if xxypath[xxysel].points[pt].len then
+          if pt == 0 then
+            xxypath[xxysel].points[pt].posstart = 0
+          else
+            xxypath[xxysel].points[pt].posstart = ppos / len
+          end
+          xxypath[xxysel].points[pt].posend = (ppos + xxypath[xxysel].points[pt].len)/ len
+          ppos = ppos + xxypath[xxysel].points[pt].len
+        end
+      end
+      
+      xxypath[xxysel].pathidxpt = {}
+      local pt = 1
+      for pi = 0,xxypath_indexcnt do
+        local pival = 1/xxypath_indexcnt * pi
+        while xxypath[xxysel].points[pt] and xxypath[xxysel].points[pt].posstart and (xxypath[xxysel].points[pt].posstart <= pival) do
+          pt = pt + 1
+        end
+        --DBG(pi..'  '..pt-1)
+        xxypath[xxysel].pathidxpt[pi] = pt-1
+      end
+            
+    end
+    return len
+  
+  end
+  
+  function XXYPath_CalcPathSectionLength(pt)
+    if #xxypath[xxypath_select].points > 1 and pt < #xxypath[xxypath_select].points then
+      return path_length(xxypath[xxypath_select].points[pt].x,xxypath[xxypath_select].points[pt].y,xxypath[xxypath_select].points[pt])
+    end
+  end
+  
+  function path_length(x_table, y_table, pt)
+    order = #x_table
+    ----------------------------
+    ----------------------------
+    function bezier_eq(n, tab_xy, dt)
+      local B = 0
+      for i = 0, n-1 do
+        B = B + 
+          ( fact[n] / ( fact[i] * fact[n-i] ) ) 
+          *  (1-dt)^(n-i)  
+          * dt ^ i
+          * tab_xy[i+1]
+      end 
+      return B
+    end  
+    ----------------------------
+    local ox,oy = nil, nil
+    local pathl = 0
+    pt.lens = {}
+    local resolution = 1/1000
+    for t = 0, 1, resolution do
+      x_point = bezier_eq(order, x_table, t)+ t^order*x_table[order]
+      y_point = bezier_eq(order, y_table, t)+ t^order*y_table[order] 
+      x = (x_point)
+      y = (y_point)
+      if ox and oy then
+        local secl = math.sqrt((x_point-ox)^2+(y_point-oy)^2)
+        pathl = pathl + secl
+      end
+      pt.lens[tonumber(string.format('%i',tostring((1/resolution)*t)))] = pathl
+      ox,oy = x,y
+    end
+    local def = math.floor(math.max(pathl * 500,xxypath_tres))
+    local p = 0
+    pt.t = {}
+    for d = 0, def do
+      while p < #pt.lens and pt.lens[p] / pathl < d/def do
+        --DBG(pt.lens[p] / pathl..'  '..d/100)
+        p = p + 1
+      end
+      --DBG(resolution * (p-1)..'  '..p)
+      pt.t[d] = math.max(resolution * (p-1),0)
+    end
+    pt.lens = nil
+    return pathl
   end
   
   function XXY_Set(strip, page, sst)
@@ -16729,6 +17351,11 @@ end
         if ptcnt then
       
           XXY_INIT(s, p, sst)
+          xxy[s][p][sst].pathidx = tonumber(zn(data[key..'pathidx']))
+          xxy[s][p][sst].pathfader = tonumber(zn(data[key..'pathfader']))
+          xxy[s][p][sst].xfader = tonumber(zn(data[key..'xfader']))
+          xxy[s][p][sst].yfader = tonumber(zn(data[key..'yfader']))
+          
           for pt = 1, ptcnt do
           
             local key = 'xxy_p'..p..'_sst_'..sst..'_pt_'..pt..'_'
@@ -16744,7 +17371,139 @@ end
       end
     
     end
+  
+  end
+  
 
+  function LoadXXYPathData()
+  
+    local load_path
+    local fn = GPES('path_datafile', true)
+
+    if fn == nil then return end
+
+    if settings_savedatainprojectfolder == true then
+      load_path=reaper.GetProjectPath('')..'/'
+      if reaper.file_exists(load_path..fn) ~= true then
+        load_path=projsave_path
+      end
+    else
+      load_path=projsave_path
+      if reaper.file_exists(load_path..fn) ~= true then
+        load_path=reaper.GetProjectPath('')..'/'
+      end      
+    end
+  
+    local ffn=load_path..fn
+    if reaper.file_exists(ffn) ~= true then
+      DBG('Missing file: '..ffn)
+      return 0
+    end    
+  
+    local file
+  
+    local data = {}
+    for line in io.lines(ffn) do
+      local idx, val = string.match(line,'%[(.-)%](.*)') --decipher(line)
+      if idx then
+        data[idx] = val
+      end
+    end
+  
+    local key = 'pathcnt'
+    local pathcnt = tonumber(zn(data[key]))
+  
+    if pathcnt and pathcnt > 0 then
+    
+      xxypath = {}
+      
+      for p = 1, pathcnt do
+      
+        xxypath[p] = {}
+        
+        local key = 'xxypath_'..p..'_'
+        local ptcnt = tonumber(zn(data[key..'pt_count']))      
+        local idxcnt = tonumber(zn(data[key..'idxpt_count']))            
+        xxypath[p].pathlen = tonumber(zn(data[key..'pathlen']))
+      
+        xxypath[p].points = {}
+        xxypath[p].pathidxpt = {}
+              
+        for pt = 1, ptcnt do
+                
+          local key = 'xxypath_'..p..'_pt_'..pt..'_'
+          xxypath[p].points[pt] = {}
+          xxypath[p].points[pt].len = tonumber(zn(data[key..'len']))
+          xxypath[p].points[pt].posstart = tonumber(zn(data[key..'posstart']))
+          xxypath[p].points[pt].posend = tonumber(zn(data[key..'posend']))
+          
+          xxypath[p].points[pt].x = {}
+          xxypath[p].points[pt].y = {}
+          
+          for xy = 1,4 do
+                    
+            xxypath[p].points[pt].x[xy] = tonumber(zn(data[key..'x_'..xy]))
+            xxypath[p].points[pt].y[xy] = tonumber(zn(data[key..'y_'..xy]))             
+          end
+          
+          local tcnt = tonumber(zn(data[key..'t_count']))            
+          
+          if tcnt and tcnt > 0 then
+            
+            xxypath[p].points[pt].t = {}
+            for t = 0, tcnt do
+            
+              xxypath[p].points[pt].t[t] = tonumber(zn(data[key..'t_'..t]))             
+
+            end
+          end          
+        end
+
+        for i = 0, idxcnt do
+        
+          local key = 'xxypath_'..p..'_idxpt_'..i
+          xxypath[p].pathidxpt[i] = tonumber(zn(data[key]))
+
+        end      
+      end
+    end
+    
+  end
+  
+  function LoadFaders()
+    
+    local load_path
+    local fn = GPES('fader_datafile', true)
+    if fn == nil then return end
+    
+    if settings_savedatainprojectfolder == true then
+      load_path=reaper.GetProjectPath('')..'/'
+      if reaper.file_exists(load_path..fn) ~= true then
+        load_path=projsave_path
+      end
+    else
+      load_path=projsave_path
+      if reaper.file_exists(load_path..fn) ~= true then
+        load_path=reaper.GetProjectPath('')..'/'
+      end      
+    end
+    
+    local ffn=load_path..fn
+    if reaper.file_exists(ffn) ~= true then
+      DBG('Missing file: '..ffn)
+      return 0
+    end    
+    
+    faders = {}
+    if reaper.file_exists(ffn) then
+      local file
+      file=io.open(ffn,"r")
+      local content=file:read("*a")
+      file:close()
+      
+      faders = unpickle(content)
+    end
+  
   end
     
   function LoadData()
@@ -17178,6 +17937,11 @@ end
                   
         end
         
+        if tonumber(v) >= 0.93 then
+          LoadXXYPathData()
+          LoadFaders()
+        end
+              
       else
         SaveData()
       end
@@ -17366,21 +18130,115 @@ end
     
   end
 
+  function SaveFaders(fn,save_path)
+  
+    local save_path=projsave_path..'/'
+    if settings_savedatainprojectfolder == true then
+      save_path=reaper.GetProjectPath('')..'/'
+    end
+
+    local ffn=save_path..fn
+    
+    local DELETE=true
+    local file
+    
+    if reaper.file_exists(ffn) then
+    
+    end
+    
+    if DELETE then
+      file=io.open(ffn,"w")
+      local pickled_table=pickle(faders)
+      file:write(pickled_table)
+      file:close()
+      
+      reaper.SetProjExtState(0,SCRIPT,'fader_datafile',fn)   
+      
+    end
+  
+  end
+
+  function SaveXXYPathData_FN(fn,save_path)
+  
+    local save_path=projsave_path..'/'
+    if settings_savedatainprojectfolder == true then
+      save_path=reaper.GetProjectPath('')..'/'
+    end
+
+    local ffn=save_path..fn
+     
+    local file
+     
+    file=io.open(ffn,"w")
+ 
+    if xxypath and #xxypath > 0 then
+
+      local key = 'pathcnt'
+      file:write('['..key..']'.. #xxypath ..'\n')
+      
+      for p = 1, #xxypath do
+    
+        if xxypath[p] then
+                  
+          local key = 'xxypath_'..p..'_'
+          local ptcnt = #xxypath[p].points
+          local idxcnt = #xxypath[p].pathidxpt
+          
+          file:write('['..key..'pathlen]'.. nz(xxypath[p].pathlen,'') ..'\n')
+          file:write('['..key..'pt_count]'.. ptcnt ..'\n')
+          file:write('['..key..'idxpt_count]'.. idxcnt ..'\n')
+          
+          for pt = 1, ptcnt do
+          
+            local key = 'xxypath_'..p..'_pt_'..pt..'_'
+            file:write('['..key..'len]'.. nz(xxypath[p].points[pt].len,'') ..'\n')
+            file:write('['..key..'posstart]'.. nz(xxypath[p].points[pt].posstart,'') ..'\n')
+            file:write('['..key..'posend]'.. nz(xxypath[p].points[pt].posend,'') ..'\n')
+
+            for xy = 1, 4 do
+              file:write('['..key..'x_'..xy..']'.. nz(xxypath[p].points[pt].x[xy],'') ..'\n')
+              file:write('['..key..'y_'..xy..']'.. nz(xxypath[p].points[pt].y[xy],'') ..'\n')
+            end
+            
+            if xxypath[p].points[pt].t then
+              local tcnt = #xxypath[p].points[pt].t
+              file:write('['..key..'t_count]'.. tcnt ..'\n')
+    
+              if tcnt > 0 then
+                for t = 0, tcnt do
+                
+                  file:write('['..key..'t_'..t..']'.. nz(xxypath[p].points[pt].t[t],'') ..'\n')            
+                
+                end
+              end 
+            end            
+          end
+
+          for i = 0, idxcnt do
+
+            local key = 'xxypath_'..p..'_idxpt_'..i
+            file:write('['..key..']'.. xxypath[p].pathidxpt[i] ..'\n')
+
+          end
+                    
+        end
+        
+      end
+    end
+
+    file:close()
+    
+    reaper.SetProjExtState(0,SCRIPT,'path_datafile',fn)   
+  
+  end
+
   function SaveXXYData_FN(s,fn,save_path)
 
     local save_path=projsave_path..'/'
     if settings_savedatainprojectfolder == true then
       save_path=reaper.GetProjectPath('')..'/'
     end
-    --[[local pn = reaper.GetProjectName(0,'')
-    local projname = string.sub(pn,0,string.len(pn)-4)..'_'..PROJECTID
-    reaper.RecursiveCreateDirectory(save_path..projname,1)
-    if fn == nil then
-      _, fn=reaper.GetProjExtState(0,SCRIPT,'metalite_datafile_'..string.format("%03d",s))
-    end
-    if projnamechange or fn == nil or fn == '' then
-      fn=projname..'/pmetalite'..string.format("%03d",s)..'_ss'..string.sub(STRIPSET,11)..".pxxy"
-    end]]
+
     local ffn=save_path..fn
      
     local file
@@ -17401,6 +18259,11 @@ end
               file:write('['..key..'x]'.. xxy[s][p][sst].x ..'\n')
               file:write('['..key..'y]'.. xxy[s][p][sst].y ..'\n')
               file:write('['..key..'pt_count]'.. ptcnt ..'\n')
+              file:write('['..key..'pathidx]'.. nz(xxy[s][p][sst].pathidx,'') ..'\n')
+              file:write('['..key..'pathfader]'.. nz(xxy[s][p][sst].pathfader,'') ..'\n')
+              file:write('['..key..'xfader]'.. nz(xxy[s][p][sst].xfader,'') ..'\n')
+              file:write('['..key..'yfader]'.. nz(xxy[s][p][sst].yfader,'') ..'\n')
+              
               for pt = 1, ptcnt do
               
                 local key = 'xxy_p'..p..'_sst_'..sst..'_pt_'..pt..'_'
@@ -18046,6 +18909,20 @@ end
         end
         fn_xxy[s] = fn
       end
+
+      if tmp then
+        fn=projname..'/__ppaths'..string.sub(STRIPSET,11)..".ppath"
+      else
+        fn=projname..'/ppaths'..string.sub(STRIPSET,11)..".ppath"
+      end
+      fn_paths = fn
+
+      if tmp then
+        fn=projname..'/__pfaders'..string.sub(STRIPSET,11)..".pfader"
+      else
+        fn=projname..'/pfaders'..string.sub(STRIPSET,11)..".pfader"
+      end
+      fn_faders = fn
     end
         
     local s, p, c, g
@@ -18092,8 +18969,13 @@ end
         SaveXXYData_FN(s,fn_xxy[s],save_path)
       end
     
+      SaveXXYPathData_FN(fn_paths,save_path)
     else
       reaper.SetProjExtState(0,SCRIPT,'snapshots_count',0)        
+    end
+  
+    if faders and fn_faders then
+      SaveFaders(fn_faders,save_path)
     end
   
     reaper.SetProjExtState(0,SCRIPT,'savedok',tostring(true))
@@ -19276,6 +20158,7 @@ end
     xxypath_select = 1
     xxymode = 0
     xxypath_edit = true
+    xxypath_tres = 400
     
     ctl_page = 0
     cycle_editmode = false
@@ -19614,7 +20497,7 @@ end
       if tmp == nil then
         local pn = GetProjectName()
         if pn == '' then
-          reaper.Main_SaveProject(0,true)
+          reaper.Main_SaveProject(0,false)
           pn = GetProjectName()
         end
         if pn ~= '' then
@@ -19687,7 +20570,8 @@ end
   lockw, olockw = 0, 0
   lockh, olockh = 0, 0
   auto_delay = 0
-
+  xxypath_indexcnt = 50
+  
   resource_path = reaper.GetResourcePath().."/Scripts/LBX/LBXCS_resources/"
   controls_path = resource_path.."controls/"
   graphics_path = resource_path.."graphics/"
@@ -19696,6 +20580,8 @@ end
   strips_path = resource_path.."strips/"
   sets_path = resource_path.."sets/"
   projsave_path = resource_path.."projsave/"
+  paths_path = resource_path.."paths/"
+  reaper.RecursiveCreateDirectory(paths_path,1)
 
   LBX_CTL_TRNAME='__LBX_CTL'
 
