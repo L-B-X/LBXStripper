@@ -15902,17 +15902,20 @@ end
   
   function XXYRecord_Set(val)
   
-    xxyrecord = val
-    if xxyrecord then
-      --set automode to touch
-      local track = GetTrack(tracks[LBX_CTL_TRACK].tracknum)
-      reaper.SetTrackAutomationMode(track, 4)
+    if LBX_CTL_TRACK and tracks[LBX_CTL_TRACK] then
+      xxyrecord = val
+      if xxyrecord then
+        --set automode to touch
+        local track = GetTrack(tracks[LBX_CTL_TRACK].tracknum)
+        reaper.SetTrackAutomationMode(track, 4)
+      else
+        --set automode to trim/read
+        local track = GetTrack(tracks[LBX_CTL_TRACK].tracknum)
+        reaper.SetTrackAutomationMode(track, 0)      
+      end
     else
-      --set automode to trim/read
-      local track = GetTrack(tracks[LBX_CTL_TRACK].tracknum)
-      reaper.SetTrackAutomationMode(track, 0)      
-    end
-    
+      xxyrecord = false
+    end    
   end
   
   function XXYPath_SetPos(strip, page, sst, pos)
