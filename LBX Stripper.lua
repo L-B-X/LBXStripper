@@ -1033,7 +1033,7 @@
                            w = 160,
                            h = butt_h}                     
 
-      local ssh2 = obj.sections[221].h - (butt_h+10) - (butt_h/2+4 + 10) * 5 - 10
+      local ssh2 = obj.sections[221].h - (butt_h+10) - (butt_h/2+4 + 10) * 6 - 10
       obj.sections[223] = {x = 10,
                           y = butt_h+10 + (butt_h/2+4 + 10) * 2,
                           w = obj.sections[221].w-20,
@@ -1055,6 +1055,10 @@
       obj.sections[233] = {x = 25,
                           y = obj.sections[223].y + obj.sections[223].h + (butt_h + 10)*2 - 10,
                           w = obj.sections[221].w-35,
+                          h = butt_h/2+8}                       
+      obj.sections[235] = {x = 10,
+                          y = obj.sections[223].y + obj.sections[223].h + (butt_h + 10)*3 - 10,
+                          w = obj.sections[221].w-20,
                           h = butt_h/2+8}                       
 
       obj.sections[227] = {x = 10,
@@ -5808,6 +5812,11 @@ end
       else
         GUI_DrawButton(gui, 'NONE', obj.sections[233], gui.color.white, gui.color.black, false, 'Y', false)
       end
+      local txt = 'RECORD MODE OFF'
+      if xxyrecord then
+        txt = 'RECORD MODE ON'
+      end
+      GUI_DrawButton(gui, txt, obj.sections[235], gui.color.white, gui.color.black, xxyrecord, '', false)
       
       local bc, bc2 = gui.color.white, gui.color.white
       if sstype_select == 1 then
@@ -5920,6 +5929,11 @@ end
       else
         GUI_DrawButton(gui, 'NONE', obj.sections[231], gui.color.white, gui.color.black, false, '', false)
       end
+      local txt = 'RECORD MODE OFF'
+      if xxyrecord then
+        txt = 'RECORD MODE ON'
+      end
+      GUI_DrawButton(gui, txt, obj.sections[235], gui.color.white, gui.color.black, xxyrecord, '', false)
       
     end    
     
@@ -10541,7 +10555,7 @@ end
       if tracks[LBX_CTL_TRACK].guid ~= reaper.GetTrackGUID(track) then
         PopulateTracks()
       end
-
+if xxyrecord == false then
       for fxnum = 0, LBX_CTL_TRACK_INF.count-1 do
         for pf = 0, 31 do
           p = fxnum * 32 + pf
@@ -10572,7 +10586,7 @@ end
       end    
       trackfxparam_select = ccc
     end
-  
+end  
   end
 
   ------------------------------------------------------------    
@@ -15403,12 +15417,26 @@ end
             xxymode = 0
           end
           xxypath_edit = false
+          XXYRecord_Set(false)
           update_snaps = true
           update_xxy = true
         end
       
+        local mx, my = mouse.mx, mouse.my
+        mouse.mx, mouse.my = mouse.mx - obj.sections[221].x, mouse.my - obj.sections[221].y
+        if MOUSE_click(obj.sections[235]) then
+        
+          XXYRecord_Set(not xxyrecord)
+          update_gfx = true
+        
+        end
+        
+        mouse.mx, mouse.my = mx, my
+        
       elseif mouse.context == nil and MOUSE_click(obj.sections[222]) then
         show_xxy = false
+        XXYRecord_Set(false)
+        
         --SaveSingleStrip(tracks[track_select].strip)
         reaper.MarkProjectDirty(0)
         update_gfx = true
@@ -15872,11 +15900,37 @@ end
       
   end
   
+  function XXYRecord_Set(val)
+  
+    xxyrecord = val
+    if xxyrecord then
+      --set automode to touch
+      local track = GetTrack(tracks[LBX_CTL_TRACK].tracknum)
+      reaper.SetTrackAutomationMode(track, 4)
+    else
+      --set automode to trim/read
+      local track = GetTrack(tracks[LBX_CTL_TRACK].tracknum)
+      reaper.SetTrackAutomationMode(track, 0)      
+    end
+    
+  end
+  
   function XXYPath_SetPos(strip, page, sst, pos)
   
     if xxy and xxy[strip] and xxy[strip][page][sst] then
       local xxypath_sel = xxy[strip][page][sst].pathidx
       if xxypath_sel and xxypath[xxypath_sel] and xxypath[xxypath_sel].points[1].t then
+        
+        if xxyrecord and xxymode == 1 then 
+          local track = GetTrack(tracks[LBX_CTL_TRACK].tracknum)
+          local pf = xxy[strip][page][sst].pathfader
+          if pf and faders[pf] then
+            local fxnum = math.floor((pf-1)/32)
+            local param = ((pf-1) % 32)
+            reaper.TrackFX_SetParam(track, fxnum, param, pos)
+            faders[pf].val = pos
+          end
+        end
         
         local xxypath_indexcnt = #xxypath[xxypath_sel].pathidxpt
         local posidx = F_limit(math.floor(pos*xxypath_indexcnt),0,xxypath_indexcnt)
@@ -16260,10 +16314,8 @@ end
     pt.t = {}
     for d = 0, def do
       while p < #pt.lens and pt.lens[p] / pathl < d/def do
-        --DBG(pt.lens[p] / pathl..'  '..d/100)
         p = p + 1
       end
-      --DBG(resolution * (p-1)..'  '..p)
       pt.t[d] = math.max(resolution * (p-1),0)
     end
     pt.lens = nil
@@ -16279,6 +16331,23 @@ end
       local gtrack = GetTrack(strips[strip].track.tracknum)
       --DBG(strip..' '..page..' '..sst)
       local px, py = xxy[strip][page][sst].x, xxy[strip][page][sst].y
+      if xxyrecord and xxymode == 0 then 
+        local track = GetTrack(tracks[LBX_CTL_TRACK].tracknum)
+        local xf = xxy[strip][page][sst].xfader
+        local yf = xxy[strip][page][sst].yfader
+        if xf and faders[xf] then
+          local fxnum = math.floor((xf-1)/32)
+          local param = ((xf-1) % 32)
+          reaper.TrackFX_SetParam(track, fxnum, param, px)
+          faders[xf].val = px
+        end
+        if yf and faders[yf] then
+          local fxnum = math.floor((yf-1)/32)
+          local param = (yf-1) % 32
+          reaper.TrackFX_SetParam(track, fxnum, param, py)
+          faders[yf].val = py
+        end        
+      end
       for p = 1, #xxy[strip][page][sst].points do
         d[p] = math.sqrt((px - xxy[strip][page][sst].points[p].x)^2 + (py - xxy[strip][page][sst].points[p].y)^2)
         xxy[strip][page][sst].points[p].d2 = d[p]
@@ -20157,6 +20226,7 @@ end
     xxypath = {points = {}}
     xxypath_select = 1
     xxymode = 0
+    xxyrecord = false
     xxypath_edit = true
     xxypath_tres = 400
     
