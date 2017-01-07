@@ -8441,7 +8441,7 @@ end
         strips[strip][page].controls[cc].membtn = {state = false, mem = 0}
       end
       if strips[strip][page].controls[cc].knobsens == nil then
-        strips[strip][page].controls[cc].knobsens = settings_defknobsens.norm
+        strips[strip][page].controls[cc].knobsens = settings_defknobsens
       end
       
     end
