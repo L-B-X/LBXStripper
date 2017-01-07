@@ -6877,9 +6877,9 @@ end
 
     local val = DenormalizeValue(min,max,v)
     if paramstr == 'D_VOL' then
-      reaper.SetTrackSendUIVol(track, idx, val, -1)
+      reaper.SetTrackSendUIVol(track, idx, val, 0)
     elseif paramstr == 'D_PAN' then
-      reaper.SetTrackSendUIPan(track, idx, val, -1)
+      reaper.SetTrackSendUIPan(track, idx, val, 0)
     elseif paramstr == 'B_MUTE' then
       reaper.ToggleTrackSendUIMute(track, idx)
     else
@@ -6892,9 +6892,9 @@ end
     local idx = strips[tracks[track_select].strip][page].controls[c].param_info.paramidx
     local paramstr = strips[tracks[track_select].strip][page].controls[c].param_info.paramstr
     if paramstr == 'D_VOL' then
-      reaper.SetTrackSendUIVol(track, idx, val, -1)
+      reaper.SetTrackSendUIVol(track, idx, val, 0)
     elseif paramstr == 'D_PAN' then
-      reaper.SetTrackSendUIPan(track, idx, val, -1)
+      reaper.SetTrackSendUIPan(track, idx, val, 0)
     elseif paramstr == 'B_MUTE' then
       local v = strips[tracks[track_select].strip][page].controls[c].val
       if v ~= val then
@@ -12089,6 +12089,7 @@ end
                     end
                     
                     if ctltype == 1 then
+                                        
                       --knob/slider
                       if strips[tracks[track_select].strip][page].controls[i].horiz then
                         mouse.context = contexts.sliderctl_h
@@ -12760,7 +12761,7 @@ end
           dragparam = nil
           update_gfx = true
         end
-              
+        
       elseif mode == 1 then
         reaper.MarkProjectDirty(0)
         show_fsnapshots = false
