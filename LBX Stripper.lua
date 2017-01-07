@@ -1980,25 +1980,29 @@
         file:close()
         
         ctl_files[c] = unpickle(content)
-        if ctl_files[c].ctltype == nil then
-          ctl_files[c].ctltype = 4
-        end
-         --= --{fn = kf, imageidx = nil, cellh = 100, frames = 101}
-        if kf == '__default.knb' then
-          ctl_files[c].imageidx = 0
-          knob_select = c
-        elseif kf == '__Snapshot.knb' then
-          ctl_files[c].imageidx = def_snapshot
-          def_snapshotctl = c
-        elseif kf == '__XY.knb' then
-          ctl_files[c].imageidx = def_XY
-          def_xyctl = c
-        elseif kf == '__XYTarget.knb' then
-          ctl_files[c].imageidx = def_xytarget
-          def_xytargetctl = c
-        elseif kf == 'SimpleFlat_48.knb' then
-          ctl_files[c].imageidx = def_knobsm
-          def_knobsmctl = c
+        if ctl_files[c] then 
+          if ctl_files[c].ctltype == nil then
+            ctl_files[c].ctltype = 4
+          end
+           --= --{fn = kf, imageidx = nil, cellh = 100, frames = 101}
+          if kf == '__default.knb' then
+            ctl_files[c].imageidx = 0
+            knob_select = c
+          elseif kf == '__Snapshot.knb' then
+            ctl_files[c].imageidx = def_snapshot
+            def_snapshotctl = c
+          elseif kf == '__XY.knb' then
+            ctl_files[c].imageidx = def_XY
+            def_xyctl = c
+          elseif kf == '__XYTarget.knb' then
+            ctl_files[c].imageidx = def_xytarget
+            def_xytargetctl = c
+          elseif kf == 'SimpleFlat_48.knb' then
+            ctl_files[c].imageidx = def_knobsm
+            def_knobsmctl = c
+          end
+        else
+          DBG('Error found with control file: '..kf)
         end
         c = c + 1
       end
