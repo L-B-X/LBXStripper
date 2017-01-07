@@ -82,6 +82,10 @@
               xxypath_dragcontrolpt = 45,
               xxypath_dragpt = 46,
               xxypath_posslider = 47,
+              knobsens_norm = 48,
+              knobsens_fine = 49,
+              knobsens_wheel = 50,
+              knobsens_wheelfine = 51,              
               dummy = 99
               }
   
@@ -795,11 +799,11 @@
                           w = obj.sections[45].w-70,
                           h = butt_h/2+8}
       local kwh = defctls[def_knobsm].cellh
-      obj.sections[128] = {x = obj.sections[45].x+15,
+      obj.sections[128] = {x = obj.sections[45].x+(obj.sections[45].w/4) - kwh/2,
                            y = obj.sections[45].y+butt_h+20 + (butt_h/2+4 + 10) * 1,
                           w = kwh,
                           h = kwh}
-      obj.sections[129] = {x = obj.sections[45].x+10 + kwh+20,
+      obj.sections[129] = {x = obj.sections[45].x+(obj.sections[45].w*(3/4)) - kwh/2,
                            y = obj.sections[45].y+butt_h+20 + (butt_h/2+4 + 10) * 1,
                           w = kwh,
                           h = kwh}
@@ -809,21 +813,38 @@
                           h = butt_h/2+4}
 
       obj.sections[131] = {x = obj.sections[45].x+70,
-                          y = obj.sections[45].y+butt_h+10 + (butt_h/2+4 + 10) * 8,
+                          y = obj.sections[45].y+butt_h + (butt_h/2+4 + 10) * 8,
                           w = obj.sections[45].w-80,
                           h = butt_h/2+8}
       obj.sections[132] = {x = obj.sections[45].x+70,
-                          y = obj.sections[45].y+butt_h+10 + (butt_h/2+4 + 10) * 9,
+                          y = obj.sections[45].y+butt_h + (butt_h/2+4 + 10) * 9,
                           w = obj.sections[45].w-80,
                           h = butt_h/2+8}
       obj.sections[133] = {x = obj.sections[45].x+70,
-                          y = obj.sections[45].y+butt_h+10 + (butt_h/2+4 + 10) * 10,
+                          y = obj.sections[45].y+butt_h + (butt_h/2+4 + 10) * 10,
                           w = obj.sections[45].w-80,
                           h = butt_h/2+8}
       obj.sections[134] = {x = obj.sections[45].x+obj.sections[45].w-40-butt_h/2+4,
-                          y = obj.sections[45].y+butt_h+10 + (butt_h/2+4 + 10) * 12,
+                          y = obj.sections[45].y+butt_h+10 + (butt_h/2+4 + 10) * 11,
                           w = butt_h/2+4,
                           h = butt_h/2+4}                           
+
+      obj.sections[135] = {x = obj.sections[45].x+70,
+                          y = obj.sections[45].y+butt_h+10 + (butt_h/2+4 + 10) * 13,
+                          w = obj.sections[45].w-80,
+                          h = butt_h/2+8}
+      obj.sections[136] = {x = obj.sections[45].x+70,
+                          y = obj.sections[45].y+butt_h+10 + (butt_h/2+4 + 10) * 14,
+                          w = obj.sections[45].w-80,
+                          h = butt_h/2+8}
+      obj.sections[137] = {x = obj.sections[45].x+70,
+                          y = obj.sections[45].y+butt_h+10 + (butt_h/2+4 + 10) * 15,
+                          w = obj.sections[45].w-80,
+                          h = butt_h/2+8}
+      obj.sections[138] = {x = obj.sections[45].x+70,
+                          y = obj.sections[45].y+butt_h+10 + (butt_h/2+4 + 10) * 16,
+                          w = obj.sections[45].w-80,
+                          h = butt_h/2+8}
 
       --LBL OPTIONS 
       --EDIT
@@ -1452,7 +1473,8 @@
                                                 trackguid = tracks[trackedit_select].guid,
                                                 scalemode = 8,
                                                 framemode = 1,
-                                                horiz = horiz_select
+                                                horiz = horiz_select,
+                                                knobsens = settings_defknobsens
                                                 }
         if track_select == trackedit_select then
           strips[strip][page].controls[ctlnum].tracknum = nil
@@ -1511,7 +1533,8 @@
                                                 scalemode = 8,
                                                 framemode = 1,
                                                 horiz = horiz_select,
-                                                poslock = false
+                                                poslock = false,
+                                                knobsens = settings_defknobsens
                                                 }
         if last_touch_fx.tracknum == strips[strip].track.tracknum then
           strips[strip][page].controls[ctlnum].tracknum = nil
@@ -1571,7 +1594,8 @@
                                                 scalemode = 8,
                                                 framemode = 1,
                                                 horiz = horiz_select,
-                                                poslock = false
+                                                poslock = false,
+                                                knobsens = settings_defknobsens
                                                 }
         if track_select == trackedit_select then
           strips[strip][page].controls[ctlnum].tracknum = nil
@@ -1636,7 +1660,8 @@
                                                   scalemode = 8,
                                                   framemode = 1,
                                                   horiz = horiz_select,
-                                                  poslock = false
+                                                  poslock = false,
+                                                  knobsens = settings_defknobsens
                                                   }
           
           if track_select == trackedit_select then
@@ -1700,7 +1725,8 @@
                                                 scalemode = 8,
                                                 framemode = 1,
                                                 horiz = horiz_select,
-                                                poslock = false
+                                                poslock = false,
+                                                knobsens = settings_defknobsens
                                                }
       elseif dragparam.type == 'pkmeter' then
         local tcs = trctl_select - 2
@@ -1762,7 +1788,8 @@
                                                 scalemode = 8,
                                                 framemode = 1,
                                                 horiz = horiz_select,
-                                                poslock = false
+                                                poslock = false,
+                                                knobsens = settings_defknobsens
                                                }
         if track_select == trackedit_select then
           strips[strip][page].controls[ctlnum].tracknum = nil
@@ -1821,7 +1848,8 @@
                                                 scalemode = 8,
                                                 framemode = 1,
                                                 horiz = horiz_select,
-                                                poslock = false
+                                                poslock = false,
+                                                knobsens = settings_defknobsens
                                                }
 
       elseif dragparam.type == 'xyctl' then
@@ -1875,7 +1903,8 @@
                                                 scalemode = 8,
                                                 framemode = 1,
                                                 horiz = horiz_select,
-                                                poslock = false
+                                                poslock = false,
+                                                knobsens = settings_defknobsens
                                                }
       end
     end  
@@ -3539,6 +3568,28 @@
       GUI_DrawButton(gui, scalemode_dtable[scalemode_select], obj.sections[132], gui.color.white, gui.color.black, true, 'SCALE MOD')
       GUI_DrawButton(gui, framemode_table[framemode_select], obj.sections[133], gui.color.white, gui.color.black, true, 'FRAME MOD')
       GUI_DrawTick(gui, 'HORIZ SLIDER', obj.sections[134], gui.color.white, horiz_select)
+
+      xywh = {x = obj.sections[45].x,
+              y = obj.sections[135].y-butt_h-5,
+              w = obj.sections[45].w,
+              h = butt_h}
+      GUI_textC(gui,xywh,'KNOB SENSITIVITY',gui.color.white,-2)
+      GUI_DrawSliderH(gui, 'NORMAL', obj.sections[135], gui.color.black, gui.color.white, ((knobsens_select.norm)/20)*2)
+      local txt = string.format('%i',round(knobsens_select.norm*2))
+      if txt == '0' then txt = 'GLOBAL' end
+      GUI_textC(gui,obj.sections[135],txt,gui.color.red,-2)
+      GUI_DrawSliderH(gui, 'FINE', obj.sections[136], gui.color.black, gui.color.white, ((knobsens_select.fine)/20)*100)
+      txt = string.format('%i',round(knobsens_select.fine*100))
+      if txt == '0' then txt = 'GLOBAL' end
+      GUI_textC(gui,obj.sections[136],txt,gui.color.red,-2)
+      GUI_DrawSliderH(gui, 'WHEEL', obj.sections[137], gui.color.black, gui.color.white, ((knobsens_select.wheel)/20)*100)
+      txt = string.format('%i',round(knobsens_select.wheel*100))
+      if txt == '0' then txt = 'GLOBAL' end
+      GUI_textC(gui,obj.sections[137],txt,gui.color.red,-2)
+      GUI_DrawSliderH(gui, 'WHEEL FINE', obj.sections[138], gui.color.black, gui.color.white, ((knobsens_select.wheelfine)/20)*1000)
+      txt = string.format('%i',round(knobsens_select.wheelfine*1000))
+      if txt == '0' then txt = 'GLOBAL' end
+      GUI_textC(gui,obj.sections[138],txt,gui.color.red,-2)
 
       local pmin, pmax = 0, 0
       if min and max then
@@ -7858,14 +7909,18 @@ end
     local dv = tonumber(txt)
     if dv then
       dvaloff_select = dv
-      for i = 1, #ctl_select do 
-        strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].dvaloffset = dv
+      if ctl_select then
+        for i = 1, #ctl_select do 
+          strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].dvaloffset = dv
+        end
       end
     else
       dvaloff_select = ''
-      for i = 1, #ctl_select do 
-        strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].dvaloffset = nil
-      end    
+      if ctl_select then
+        for i = 1, #ctl_select do 
+          strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].dvaloffset = nil
+        end    
+      end
     end  
   end
 
@@ -8385,6 +8440,10 @@ end
       if strips[strip][page].controls[cc].membtn == nil then
         strips[strip][page].controls[cc].membtn = {state = false, mem = 0}
       end
+      if strips[strip][page].controls[cc].knobsens == nil then
+        strips[strip][page].controls[cc].knobsens = settings_defknobsens.norm
+      end
+      
     end
     
     local lctl = GetLeftControlInStrip(strips[strip][page].controls, stripid)
@@ -9893,6 +9952,7 @@ end
     scalemode_select = nz(strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].scalemode,8)
     framemode_select = nz(strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].framemode,1)
     horiz_select = nz(strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].horiz,false)
+    knobsens_select = nz(strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].knobsens,settings_defknobsens)
     
     SetKnobScaleMode()
     cycle_select = Cycle_CopySelectIn(ctl_select[1].ctl)
@@ -10835,8 +10895,7 @@ end
       elseif mouse.down then 
         OnMouseUp() 
       end
-      
-      if MOUSE_click(obj.sections[6]) or EB_Enter then
+      if mouse.LB == true and MOUSE_over(obj.sections[6]) or EB_Enter then
         --OK
         EB_Enter = false
         if EB_Open == 1 then
@@ -10894,7 +10953,7 @@ end
         editbox = nil
         EB_Open = 0
       
-      elseif MOUSE_click(obj.sections[7]) then
+      elseif mouse.LB == true and MOUSE_over(obj.sections[7]) then
         editbox = nil
         EB_Open = 0
       end
@@ -10902,6 +10961,12 @@ end
       local c=gfx.getchar()  
       if editbox and editbox.hasfocus then editbox_onchar(editbox, c) end  
       update_gfx = true
+
+      --mouse.OLB = mouse.LB
+      --mouse.ORB = mouse.RB
+      mouse.LB = 0
+      mouse.RB = 0
+  
     end
 
     ReadAutomationFaders()
@@ -12385,7 +12450,16 @@ end
                     local ctltype = strips[tracks[track_select].strip][page].controls[i].ctltype
                     if ctltype == 1 then
                       trackfxparam_select = i
-                      local v = gfx.mouse_wheel/120 * 0.003
+                      local v
+                      if mouse.shift then
+                        local mult = strips[tracks[track_select].strip][page].controls[i].knobsens.wheelfine
+                        if mult == 0 then mult = settings_defknobsens.wheelfine end
+                        v = gfx.mouse_wheel/120 * mult
+                      else
+                        local mult = strips[tracks[track_select].strip][page].controls[i].knobsens.wheel
+                        if mult == 0 then mult = settings_defknobsens.wheel end
+                        v = gfx.mouse_wheel/120 * mult
+                      end
                       strips[tracks[track_select].strip][page].controls[i].val = F_limit(strips[tracks[track_select].strip][page].controls[i].val+v,0,1)
                       SetParam()
                       update_ctls = true
@@ -12504,9 +12578,13 @@ end
               mouse.slideoff = ctlxywh.y+ctlxywh.h/2 - mouse.my
             else
               if mouse.shift then
-                val = ctlpos + ((0.5-val)*2)*0.1
+                local mult = strips[tracks[track_select].strip][page].controls[trackfxparam_select].knobsens.fine
+                if mult == 0 then mult = settings_defknobsens.fine end
+                val = ctlpos + ((0.5-val)*2)*mult
               else
-                val = ctlpos + (0.5-val)*2
+                local mult = strips[tracks[track_select].strip][page].controls[trackfxparam_select].knobsens.norm
+                if mult == 0 then mult = settings_defknobsens.norm end
+                val = ctlpos + (0.5-val)*mult
               end
               if val < 0 then val = 0 end
               if val > 1 then val = 1 end
@@ -12529,9 +12607,13 @@ end
               mouse.slideoff = ctlxywh.y+ctlxywh.h/2 - mouse.my
             else
               if mouse.shift then
-                val = ctlpos - ((0.5-val)*2)*0.1
+                local mult = strips[tracks[track_select].strip][page].controls[trackfxparam_select].knobsens.fine
+                if mult == 0 then mult = settings_defknobsens.fine end
+                val = ctlpos - ((0.5-val)*2)*mult
               else
-                val = ctlpos - (0.5-val)*2
+                local mult = strips[tracks[track_select].strip][page].controls[trackfxparam_select].knobsens.norm
+                if mult == 0 then mult = settings_defknobsens.norm end
+                val = ctlpos - (0.5-val)*mult
               end
               if val < 0 then val = 0 end
               if val > 1 then val = 1 end
@@ -12555,9 +12637,13 @@ end
               mouse.slideoff = ctlxywh.y+ctlxywh.h/2 - mouse.my
             else
               if mouse.shift then
-                val = ctlpos + ((0.5-val)*2)*0.1
+                local mult = strips[tracks[track_select].strip][page].controls[trackfxparam_select].knobsens.fine
+                if mult == 0 then mult = settings_defknobsens.fine end
+                val = ctlpos + ((0.5-val)*2)*mult
               else
-                val = ctlpos + (0.5-val)*2
+                local mult = strips[tracks[track_select].strip][page].controls[trackfxparam_select].knobsens.norm
+                if mult == 0 then mult = settings_defknobsens.norm end
+                val = ctlpos + (0.5-val)*mult
               end
               if val < 0 then val = 0 end
               if val > 1 then val = 1 end
@@ -12961,6 +13047,36 @@ end
                     gfx.mouse_wheel = 0
                   end              
   
+                  if MOUSE_over(obj.sections[135]) then
+                    knobsens_select.norm = F_limit(knobsens_select.norm+(v*0.5),0,10)
+                    for i = 1, #ctl_select do
+                      strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].knobsens.norm = knobsens_select.norm
+                    end            
+                    update_surface = true
+                    gfx.mouse_wheel = 0
+                  elseif MOUSE_over(obj.sections[136]) then
+                    knobsens_select.fine = F_limit(knobsens_select.fine+(v*0.01),0,0.2)
+                    for i = 1, #ctl_select do
+                      strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].knobsens.fine = knobsens_select.fine
+                    end            
+                    update_surface = true
+                    gfx.mouse_wheel = 0
+                  elseif MOUSE_over(obj.sections[137]) then
+                    knobsens_select.wheel = F_limit(knobsens_select.wheel+(v*0.01),0,0.2)
+                    for i = 1, #ctl_select do
+                      strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].knobsens.wheel = knobsens_select.wheel
+                    end            
+                    update_surface = true
+                    gfx.mouse_wheel = 0
+                  elseif MOUSE_over(obj.sections[138]) then
+                    knobsens_select.wheelfine = F_limit(knobsens_select.wheelfine+(v*0.001),0,0.02)
+                    for i = 1, #ctl_select do
+                      strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].knobsens.wheelfine = knobsens_select.wheelfine
+                    end            
+                    update_surface = true
+                    gfx.mouse_wheel = 0
+                  end
+
                 end
                 
               end
@@ -13467,6 +13583,14 @@ end
                   end
                   maxov_act = 'maxov'
     
+                elseif mouse.context == nil and MOUSE_click(obj.sections[135]) then 
+                  mouse.context = contexts.knobsens_norm
+                elseif mouse.context == nil and MOUSE_click(obj.sections[136]) then 
+                  mouse.context = contexts.knobsens_fine
+                elseif mouse.context == nil and MOUSE_click(obj.sections[137]) then 
+                  mouse.context = contexts.knobsens_wheel
+                elseif mouse.context == nil and MOUSE_click(obj.sections[138]) then 
+                  mouse.context = contexts.knobsens_wheelfine
                 end
               
               end
@@ -13668,7 +13792,49 @@ end
               end
             end
             
-            if mouse.context and mouse.context == contexts.minov then
+            if mouse.context and mouse.context == contexts.knobsens_norm then
+              local val = F_limit(MOUSE_sliderHBar(obj.sections[135]),0,1)
+              if val ~= nil then
+                local v = math.floor(val * 20)*0.5
+                --DBG('v='..v)
+                knobsens_select.norm = v
+                for i = 1, #ctl_select do
+                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].knobsens.norm = v
+                end
+                update_surface = true
+              end
+            elseif mouse.context and mouse.context == contexts.knobsens_fine then
+              local val = F_limit(MOUSE_sliderHBar(obj.sections[136]),0,1)
+              if val ~= nil then
+                local v = math.floor(val * 20)*0.01
+                knobsens_select.fine = v
+                for i = 1, #ctl_select do
+                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].knobsens.fine = v
+                end
+                update_surface = true
+              end
+            elseif mouse.context and mouse.context == contexts.knobsens_wheel then
+              local val = F_limit(MOUSE_sliderHBar(obj.sections[137]),0,1)
+              if val ~= nil then
+                local v = math.floor(val * 20)*0.01
+                knobsens_select.wheel = v
+                for i = 1, #ctl_select do
+                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].knobsens.wheel = v
+                end
+                update_surface = true
+              end
+            elseif mouse.context and mouse.context == contexts.knobsens_wheelfine then
+              local val = F_limit(MOUSE_sliderHBar(obj.sections[138]),0,1)
+              if val ~= nil then
+                local v = math.floor(val * 20)*0.001
+                knobsens_select.wheelfine = v
+                for i = 1, #ctl_select do
+                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].knobsens.wheelfine = v
+                end
+                update_surface = true
+              end
+            
+            elseif mouse.context and mouse.context == contexts.minov then
               local val = MOUSE_slider(obj.sections[128],mouse.slideoff)
               if val ~= nil then
                 if oms ~= mouse.shift then
@@ -15887,6 +16053,12 @@ end
       reaper.defer(run)
     end
     gfx.update()
+    --[[if mouse.OLB then
+      mouse.LB = mouse.OLB
+      mouse.RB = mouse.ORB
+      mouse.OLB = nil
+      mouse.ORB = nil
+    end]]
     mouse.last_LB = mouse.LB
     mouse.last_RB = mouse.RB
     mouse.last_x = mouse.mx
@@ -16763,7 +16935,11 @@ end
                  scalemode = strips[tracks[track_select].strip][page].controls[c].scalemode,
                  framemode = strips[tracks[track_select].strip][page].controls[c].framemode,
                  horiz = strips[tracks[track_select].strip][page].controls[c].horiz,
-                 c_id = GenID()
+                 c_id = GenID(),
+                 knobsens = {norm = strips[tracks[track_select].strip][page].controls[c].knobsens.norm,
+                             fine = strips[tracks[track_select].strip][page].controls[c].knobsens.fine,
+                             wheel = strips[tracks[track_select].strip][page].controls[c].knobsens.wheel,
+                             wheelfine = strips[tracks[track_select].strip][page].controls[c].knobsens.wheelfine}
                  }
     return tbl
   end
@@ -17122,12 +17298,16 @@ end
           
           strips[ss][p].controls[c].tracknum = tonumber(zn(data[key..'tracknum']))
           strips[ss][p].controls[c].trackguid = data[key..'trackguid']                    
-          strips[ss][p].controls[c].dvaloffset = zn(key..'dvaloffset',0)
+          strips[ss][p].controls[c].dvaloffset = tonumber(zn(data[key..'dvaloffset'],0))
           strips[ss][p].controls[c].minov = zn(data[key..'minov'])
           strips[ss][p].controls[c].maxov = zn(data[key..'maxov'])
           strips[ss][p].controls[c].membtn = {state = tobool(zn(data[key..'memstate'],false)),
                                               mem = tonumber(zn(data[key..'memmem'],0))
                                               }
+          strips[ss][p].controls[c].knobsens = {norm = tonumber(zn(data[key..'knobsens_norm'],settings_defknobsens.norm)),
+                                                fine = tonumber(zn(data[key..'knobsens_fine'],settings_defknobsens.fine)),
+                                                wheel = tonumber(zn(data[key..'knobsens_wheel'],settings_defknobsens.wheel)),
+                                                wheelfine = tonumber(zn(data[key..'knobsens_wheelfine'],settings_defknobsens.wheelfine))}
           
           strips[ss][p].controls[c].cycledata.statecnt = tonumber(zn(data[key..'cycledata_statecnt'],0))
           strips[ss][p].controls[c].cycledata.mapptof = tobool(zn(data[key..'cycledata_mapptof'],false))
@@ -17717,7 +17897,8 @@ end
                                                   scalemode = tonumber(nz(GPES(key..'scalemodex',true),8)),
                                                   framemode = tonumber(nz(GPES(key..'framemodex',true),1)),
                                                   poslock = tobool(nz(GPES(key..'poslock',true),false)),
-                                                  horiz = tobool(nz(GPES(key..'horiz',true),false))
+                                                  horiz = tobool(nz(GPES(key..'horiz',true),false)),
+                                                  knobsens = settings_defknobsens
                                                  }
                       g_cids[strips[ss][p].controls[c].c_id] = true
                       if strips[ss][p].controls[c].maxdp == nil or (strips[ss][p].controls[c].maxdp and strips[ss][p].controls[c].maxdp == '') then
@@ -18673,7 +18854,11 @@ end
               file:write('['..key..'scalemodex]'..nz(strips[s][p].controls[c].scalemode,8)..'\n')   
               file:write('['..key..'framemodex]'..nz(strips[s][p].controls[c].framemode,1)..'\n')   
               file:write('['..key..'poslock]'..nz(tostring(strips[s][p].controls[c].poslock),false)..'\n')   
-              file:write('['..key..'horiz]'..tostring(nz(strips[s][p].controls[c].horiz,false))..'\n')   
+              file:write('['..key..'horiz]'..tostring(nz(strips[s][p].controls[c].horiz,false))..'\n')
+              file:write('['..key..'knobsens_norm]'..tostring(nz(strips[s][p].controls[c].knobsens.norm,settings_defknobsens.norm))..'\n')
+              file:write('['..key..'knobsens_fine]'..tostring(nz(strips[s][p].controls[c].knobsens.fine,settings_defknobsens.fine))..'\n')                 
+              file:write('['..key..'knobsens_wheel]'..tostring(nz(strips[s][p].controls[c].knobsens.wheel,settings_defknobsens.wheel))..'\n')
+              file:write('['..key..'knobsens_wheelfine]'..tostring(nz(strips[s][p].controls[c].knobsens.wheelfine,settings_defknobsens.wheelfine))..'\n')                 
   
               file:write('['..key..'id]'..convnum(strips[s][p].controls[c].id)..'\n')
       
@@ -20678,6 +20863,11 @@ end
   settings_hideofflinelabel = true
   settings_showparamnamelabelwhenoffline = true
   settings_snaplistbgcol = '0 0 0'
+  settings_defknobsens = {norm = 2,
+                          fine = 0.1,
+                          wheel = 0.05,
+                          wheelfine = 0.003}
+  
   
   strip_favs = {}
   peak_info = {}
