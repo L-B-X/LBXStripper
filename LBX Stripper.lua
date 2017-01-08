@@ -6860,16 +6860,16 @@ end
     end
   end
 
-  function STSI_denorm(track,trctl_idx,val,c)
+  function STSI_denorm(track,trctl_idx,val,c, strip, page)
   
-    local idx = strips[tracks[track_select].strip][page].controls[c].param_info.paramidx
-    local paramstr = strips[tracks[track_select].strip][page].controls[c].param_info.paramstr
+    local idx = strips[strip][page].controls[c].param_info.paramidx
+    local paramstr = strips[strip][page].controls[c].param_info.paramstr
     if paramstr == 'D_VOL' then
       reaper.SetTrackSendUIVol(track, idx, val, 0)
     elseif paramstr == 'D_PAN' then
       reaper.SetTrackSendUIPan(track, idx, val, 0)
     elseif paramstr == 'B_MUTE' then
-      local v = strips[tracks[track_select].strip][page].controls[c].val
+      local v = strips[strip][page].controls[c].val
       if v ~= val then
         reaper.ToggleTrackSendUIMute(track, idx)
       end
@@ -7246,7 +7246,7 @@ end
       elseif cc == ctlcats.tracksend then
         local param = strips[tracks[track_select].strip][page].controls[trackfxparam_select].param
         strips[tracks[track_select].strip][page].controls[trackfxparam_select].dirty = true
-        STSI_denorm(track,param,v,trackfxparam_select)
+        STSI_denorm(track,param,v,trackfxparam_select,tracks[track_select].strip,page)
       end    
     end
       
@@ -7269,7 +7269,7 @@ end
       elseif cc == ctlcats.tracksend then
         local param = strips[tracks[track_select].strip][page].controls[trackfxparam_select].param
         strips[tracks[track_select].strip][page].controls[trackfxparam_select].dirty = true
-        STSI_denorm(track,param,v,trackfxparam_select)
+        STSI_denorm(track,param,v,trackfxparam_select,tracks[track_select].strip,page)
       elseif cc == ctlcats.fxoffline then
         SetFXOffline(tracks[track_select].strip, page, trackfxparam_select, strips[tracks[track_select].strip].track.tracknum, v)
       end    
@@ -7294,7 +7294,7 @@ end
       elseif cc == ctlcats.tracksend then
         local param = strips[strip][page].controls[trackfxparam_select].param
         strips[strip][page].controls[trackfxparam_select].dirty = true
-        STSI_denorm(track,param,v,trackfxparam_select)
+        STSI_denorm(track,param,v,trackfxparam_select,strip,page)
       --elseif cc == ctlcats.fxoffline then
         --SetFXOffline2(strip, page, trackfxparam_select, track, v)
       end    
@@ -7319,7 +7319,7 @@ end
       elseif cc == ctlcats.tracksend then
         local param = strips[strip][page].controls[trackfxparam_select].param
         strips[strip][page].controls[trackfxparam_select].dirty = true
-        STSI_denorm(track,param,v,trackfxparam_select)
+        STSI_denorm(track,param,v,trackfxparam_select,strip,page)
       elseif cc == ctlcats.fxoffline then
         SetFXOffline2(strip, page, trackfxparam_select, track, v)
       end    
