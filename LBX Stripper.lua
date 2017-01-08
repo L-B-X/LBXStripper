@@ -4041,7 +4041,7 @@ end
                   if strips[strip][page].controls[i].membtn == nil then
                     strips[strip][page].controls[i].membtn = {state = false, mem = 0}
                   end
-                  local v3 = GetParamValue_Ctl(i)--strips[strip][page].controls[i].val
+                  local v3 = GetParamValue_Ctl(i)
                   if tostring(v3) ~= tostring(strips[strip][page].controls[i].defval) then
                     strips[strip][page].controls[i].membtn = {state = false, mem = v3}
                   end
@@ -5830,10 +5830,6 @@ end
              xywh.y, 
              xywh.w,
              butt_h, 1 )
-    --[[gfx.rect(obj.sections[165].x,
-             obj.sections[165].y, 
-             obj.sections[165].w,
-             obj.sections[165].h, 1 )]]
     
     GUI_textC(gui,xywh,xxymode_table[xxymode+1],gui.color.black,-2)
 
@@ -5962,10 +5958,6 @@ end
           end
   
         end
-      --else
-        --learn mode
-        
-      --end    
       
     elseif xxymode == 1 then
 
@@ -6001,8 +5993,6 @@ end
     gfx.dest = 1
     gfx.a=1
     
-    --gfx.a=0.5
-
     local strip = tracks[track_select].strip
     if xxy and xxy[strip] and xxy[strip][page] and xxy[strip][page][sstype_select] then
       if #xxy[strip][page][sstype_select].points > 0 then
@@ -6150,27 +6140,6 @@ end
                  xywh.h, 1, 1)
         GUI_textC(gui,xywh,'*',gui.color.black,-2)
 
---[[        local xywh = {x = obj.sections[13].x,
-                      y = obj.sections[13].y, 
-                      w = 30,
-                      h = obj.sections[13].h}
-        if trackedit_select ~= track_select then
-          f_Get_SSV(gui.color.red)
-          gfx.rect(xywh.x,
-                   xywh.y, 
-                   xywh.w,
-                   xywh.h, 1, 1)        
-        end
-        f_Get_SSV(gui.color.black)
-        gfx.rect(xywh.x+xywh.w,
-                 xywh.y, 
-                 2,
-                 xywh.h, 1, 1)
-        if trackedit_select >= 0 then
-          GUI_textC(gui,xywh,'Tr'..trackedit_select,gui.color.black,-2)
-        else
-          GUI_textC(gui,xywh,'Mst',gui.color.black,-2)        
-        end]]                 
       end
     end
     f_Get_SSV(gui.color.black)
@@ -8445,7 +8414,10 @@ end
         strips[strip][page].controls[cc].membtn = {state = false, mem = 0}
       end
       if strips[strip][page].controls[cc].knobsens == nil then
-        strips[strip][page].controls[cc].knobsens = settings_defknobsens
+        strips[strip][page].controls[cc].knobsens = {norm = settings_defknobsens.norm,
+                                                     fine = settings_defknobsens.fine,
+                                                     wheel = settings_defknobsens.wheel,
+                                                     wheelfine = settings_defknobsens.wheelfine}
       end
       
     end
@@ -15387,18 +15359,6 @@ end
 
         if MOUSE_click(obj.sections[13]) then
           if submode ~= 0 or (submode == 0 and mouse.mx < obj.sections[13].x + obj.sections[13].w - 30) then
-            --[[ctl_select = nil
-            gfx2_select = nil
-            gfx3_select = nil
-            show_paramlearn = false
-            CloseActChooser()
-            show_ctlbrowser = false
-            
-            submode = submode + 1
-            if submode+1 > #submode_table then
-              submode = 0
-            end
-            update_gfx = true]]
             if submode == 0 then
               setmode(4)
             elseif submode == 1 then
@@ -15417,35 +15377,9 @@ end
               setmode(2)
             end
             
-            --[[CloseActChooser()
-            show_ctlbrowser = false
-            show_paramlearn = false
-            fxmode = (fxmode + 1) % 2
-            update_gfx = true]]
-           
           end
   
         elseif MOUSE_click_RB(obj.sections[13]) then
-          --if submode ~= 0 or (submode == 0 and mouse.mx > 30) then
-            --[[ctl_select = nil
-            gfx2_select = nil
-            gfx3_select = nil
-            CloseActChooser()
-            show_ctlbrowser = false
-            
-            submode = submode - 1
-            if submode < 0 then
-              submode = #submode_table-1
-            end
-            update_gfx = true
-          --[[else
-            trackedit_select = trackedit_select - 1 
-            if trackedit_select < -1 then
-              trackedit_select = #tracks
-            end
-            PopulateTrackFX()
-            update_gfx = true    
-          end]]
           if submode == 2 then
             setmode(4)
           elseif submode == 0 then
@@ -15983,48 +15917,7 @@ end
         
           local pos = F_limit((mouse.mx-obj.sections[230].x)/obj.sections[230].w,0,1)
           if pos ~= oxxysliderpos then
-            oxxysliderpos = pos
-            --[[local curve_sections = #xxypath[xxypath_select].points-1
-            local pt = F_limit(math.floor(pos*curve_sections)+1,1,curve_sections)
-            local secpos = F_limit((pos*curve_sections +1 )- pt,0,1)
-            
-            local x,y = curve_getxy(xxypath[xxypath_select].points[pt].x, xxypath[xxypath_select].points[pt].y, secpos)
-            local ox, oy = xxy[tracks[track_select].strip][page][sstype_select].x, xxy[tracks[track_select].strip][page][sstype_select].y]]
-            
-            --[[local pt = #xxypath[xxypath_select].points-1
-            for p = 1, #xxypath[xxypath_select].points-1 do
-            
-              if pos >= xxypath[xxypath_select].points[p].posstart and pos < xxypath[xxypath_select].points[p].posend then
-                pt = p
-                break
-              end
-            
-            end]]
-            
-            --[[local posidx = F_limit(math.floor(pos*xxypath_indexcnt),0,xxypath_indexcnt)
-            local pt = math.max(xxypath[xxypath_select].pathidxpt[posidx],1)
-            --local pc = 0
-            while xxypath[xxypath_select].points[pt].posend < pos do
-              pt = pt + 1
-              --pc=pc+1
-            end
-            --local pt = xxypath[xxypath_select].pathidxpt[posidx]
-            --[[if pc > 0 then
-              DBG(pc..'  '..pt)
-            end
-            
-            local secpos = F_limit((pos-xxypath[xxypath_select].points[pt].posstart)/(xxypath[xxypath_select].points[pt].posend-xxypath[xxypath_select].points[pt].posstart),0,1)
-            local x,y = curve_getxy(xxypath[xxypath_select].points[pt].x, xxypath[xxypath_select].points[pt].y, secpos)
-            local ox, oy = xxy[tracks[track_select].strip][page][sstype_select].x, xxy[tracks[track_select].strip][page][sstype_select].y
-            
-            xxy[tracks[track_select].strip][page][sstype_select].x = F_limit(x,0,1)
-            xxy[tracks[track_select].strip][page][sstype_select].y = F_limit(y,0,1)
-            
-            if xxy[tracks[track_select].strip][page][sstype_select].x ~= ox or xxy[tracks[track_select].strip][page][sstype_select].y ~= oy then
-              XXY_Set(tracks[track_select].strip, page, sstype_select)
-              update_xxypos = true        
-            end]]
-            
+            oxxysliderpos = pos            
             XXYPath_SetPos(tracks[track_select].strip,page,sstype_select,pos)
             update_xxypos = true
           end
@@ -16058,12 +15951,6 @@ end
       reaper.defer(run)
     end
     gfx.update()
-    --[[if mouse.OLB then
-      mouse.LB = mouse.OLB
-      mouse.RB = mouse.ORB
-      mouse.OLB = nil
-      mouse.ORB = nil
-    end]]
     mouse.last_LB = mouse.LB
     mouse.last_RB = mouse.RB
     mouse.last_x = mouse.mx
@@ -16121,7 +16008,6 @@ end
         
         local secpos = F_limit((pos-xxypath[xxypath_sel].points[pt].posstart)/(xxypath[xxypath_sel].points[pt].posend-xxypath[xxypath_sel].points[pt].posstart),0,1)
         local sp2 = xxypath[xxypath_sel].points[pt].t[math.floor(secpos*#xxypath[xxypath_sel].points[pt].t)]
-        --DBG(math.floor(secpos*100)..'  '..sp2)
         local x,y = curve_getxy(xxypath[xxypath_sel].points[pt].x, xxypath[xxypath_sel].points[pt].y, sp2)
         local ox, oy = xxy[strip][page][sst].x, xxy[strip][page][sst].y
         
@@ -16129,7 +16015,6 @@ end
         xxy[strip][page][sst].y = F_limit(y,0,1)
         if xxy[strip][page][sst].x ~= ox or xxy[strip][page][sst].y ~= oy then
           XXY_Set(strip, page, sst)
-          --update_xxypos = true        
         end
       end    
     end
@@ -16156,7 +16041,6 @@ end
       
       if xxy[strip][page][sst].x ~= ox or xxy[strip][page][sst].y ~= oy then
         XXY_Set(strip, page, sst)
-        --update_xxypos = true        
       end
     end    
   end
@@ -16442,7 +16326,6 @@ end
         while xxypath[xxysel].points[pt] and xxypath[xxysel].points[pt].posstart and (xxypath[xxysel].points[pt].posstart <= pival) do
           pt = pt + 1
         end
-        --DBG(pi..'  '..pt-1)
         xxypath[xxysel].pathidxpt[pi] = pt-1
       end
             
@@ -16509,7 +16392,6 @@ end
       xxy_maxdist = 0
       local d = {}
       local gtrack = GetTrack(strips[strip].track.tracknum)
-      --DBG(strip..' '..page..' '..sst)
       local px, py = xxy[strip][page][sst].x, xxy[strip][page][sst].y
       if xxyrecord and xxymode == 0 then 
         local track = GetTrack(tracks[LBX_CTL_TRACK].tracknum)
@@ -17903,7 +17785,10 @@ end
                                                   framemode = tonumber(nz(GPES(key..'framemodex',true),1)),
                                                   poslock = tobool(nz(GPES(key..'poslock',true),false)),
                                                   horiz = tobool(nz(GPES(key..'horiz',true),false)),
-                                                  knobsens = settings_defknobsens
+                                                  knobsens = {norm = settings_defknobsens.norm,
+                                                              fine = settings_defknobsens.fine,
+                                                              wheel = settings_defknobsens.wheel,
+                                                              wheelfine = settings_defknobsens.wheelfine}
                                                  }
                       g_cids[strips[ss][p].controls[c].c_id] = true
                       if strips[ss][p].controls[c].maxdp == nil or (strips[ss][p].controls[c].maxdp and strips[ss][p].controls[c].maxdp == '') then
