@@ -7301,6 +7301,31 @@ end
     end
       
   end
+
+  function SetParam3_Denorm2_Safe2(track, v, strip, page)
+  
+    if strips and strips[strip] and strips[strip][page].controls[trackfxparam_select] then
+      local cc = strips[strip][page].controls[trackfxparam_select].ctlcat
+      if cc == ctlcats.fxparam then
+        local fxnum = strips[strip][page].controls[trackfxparam_select].fxnum
+        local param = strips[strip][page].controls[trackfxparam_select].param
+        reaper.TrackFX_SetParam(track, nz(fxnum,-1), param, v)
+
+      elseif cc == ctlcats.trackparam then
+        local param = strips[strip][page].controls[trackfxparam_select].param
+        strips[strip][page].controls[trackfxparam_select].dirty = true
+        SMTI_denorm(track,param,v)
+
+      elseif cc == ctlcats.tracksend then
+        local param = strips[strip][page].controls[trackfxparam_select].param
+        strips[strip][page].controls[trackfxparam_select].dirty = true
+        STSI_denorm(track,param,v,trackfxparam_select)
+      elseif cc == ctlcats.fxoffline then
+        SetFXOffline2(strip, page, trackfxparam_select, track, v)
+      end    
+    end
+      
+  end
   
 --[[  function SetParam3_norm2(track, v)
   
@@ -19553,7 +19578,7 @@ end
             else
               track = gtrack
             end
-            SetParam3_Denorm2(track, v)        
+            SetParam3_Denorm2_Safe2(track, v, strip, page)        
           end
         end
       end    
@@ -19573,7 +19598,7 @@ end
             else
               track = gtrack
             end
-            SetParam3_Denorm2(track, v)        
+            SetParam3_Denorm2_Safe2(track, v, strip, page)        
           end
         end
       end    
