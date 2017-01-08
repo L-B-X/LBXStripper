@@ -10965,8 +10965,9 @@ end
 
       --mouse.OLB = mouse.LB
       --mouse.ORB = mouse.RB
-      mouse.LB = 0
-      mouse.RB = 0
+      noscroll = true
+      mouse.LB = nil
+      mouse.RB = nil
   
     end
 
@@ -15105,7 +15106,6 @@ end
                     break
                   end
                 end
-  
                 if clickxywh == false and MOUSE_click_RB(obj.sections[10]) then
                   GFXMenu()
                 end
