@@ -631,7 +631,7 @@
                           w = msgwinw,
                           h = butt_h}
       --settings
-      local setw, seth = 300, 375                            
+      local setw, seth = 300, 400                            
       obj.sections[70] = {x = gfx1.main_w/2-setw/2,
                           y = gfx1.main_h/2-seth/2,
                           w = setw,
@@ -703,6 +703,10 @@
                                 h = bh}
       obj.sections[87] = {x = obj.sections[70].x+xofft,
                                 y = obj.sections[70].y+yoff + yoffm*13,
+                                w = bw,
+                                h = bh}
+      obj.sections[88] = {x = obj.sections[70].x+xofft,
+                                y = obj.sections[70].y+yoff + yoffm*14,
                                 w = bw,
                                 h = bh}
                                 
@@ -1909,6 +1913,7 @@
       end
     end  
   
+    GUI_DrawCtlBitmap()
   end
 
   -------------------------------------------------------
@@ -3851,6 +3856,52 @@ function outCirc(t, b, c, d)
   return(math.sqrt(1 - t^2)) 
 end
 
+  function SetColor2(c)
+    local r = (c & 255)/255
+    local g = (c >> 8 & 255)/255
+    local b = (c >> 16 & 255)/255
+    gfx.r, gfx.g, gfx.b = r, g, b
+  end
+
+  function GetColor(c)
+    return gfx.r + (gfx.g << 8) + (gfx.b << 16)
+  end
+
+  function GUI_DrawCtlBitmap()
+
+    if settings_usectlbitmap then
+      gfx.setimgdim(ctl_bitmap,surface_size.w, surface_size.h)
+      gfx.dest = ctl_bitmap
+    
+      if tracks[track_select] and strips[tracks[track_select].strip] then
+      
+        local strip = tracks[track_select].strip
+        
+        if #strips[strip][page].controls > 0 then
+  
+          gfx.a = 1
+  
+          for i = 1, #strips[strip][page].controls do
+  
+            local scale = strips[strip][page].controls[i].scale
+            local px = strips[strip][page].controls[i].xsc
+            local py = strips[strip][page].controls[i].ysc
+            local w = strips[strip][page].controls[i].w
+            local h = strips[strip][page].controls[i].ctl_info.cellh
+    
+            SetColor2(i)
+            gfx.rect(px,py,w*scale,h*scale,1)
+  
+          end
+  
+        end
+      end    
+    
+      gfx.dest = 1
+    end
+      
+  end
+  
   function GUI_DrawControls(obj, gui)
 
     gfx.dest = 1000
@@ -3877,11 +3928,7 @@ end
       else
         gfx.a = 1
       end
-      if surface_size.limit then
-        gfx.blit(1004,1,0,0,0,surface_size.w,surface_size.h,0,0)    
-      else
-        gfx.blit(1004,1,0,0,0,obj.sections[10].w,obj.sections[10].h,obj.sections[10].x,obj.sections[10].y)
-      end
+      gfx.blit(1004,1,0,0,0,surface_size.w,surface_size.h,0,0)    
     end    
         
     if tracks[track_select] and strips[tracks[track_select].strip] then
@@ -6396,6 +6443,7 @@ end
     GUI_DrawTick(gui, 'Display scroll bars', obj.sections[85], gui.color.white, settings_showbars)
     GUI_DrawColorBox(gui, 'Snapshot list background colour', obj.sections[86], gui.color.white, settings_snaplistbgcol)
     GUI_DrawTick(gui, 'Save script data in project folder', obj.sections[87], gui.color.white, settings_savedatainprojectfolder)
+    GUI_DrawTick(gui, 'Use bitmap mask control detection', obj.sections[88], gui.color.white, settings_usectlbitmap)
     
                
   end
@@ -7439,8 +7487,8 @@ end
           local ctl 
           ctl = {x = strips[tracks[track_select].strip][page].controls[i].x - surface_offset.x + obj.sections[10].x,
                      y = strips[tracks[track_select].strip][page].controls[i].y - surface_offset.y + obj.sections[10].y,
-                     w = strips[tracks[track_select].strip][page].controls[i].w,
-                     h = strips[tracks[track_select].strip][page].controls[i].ctl_info.cellh}
+                     w = strips[tracks[track_select].strip][page].controls[i].wsc,
+                     h = strips[tracks[track_select].strip][page].controls[i].hsc}
           if ((l.l <= ctl.x and l.r >= ctl.x+ctl.w) or (l.l <= ctl.x+ctl.w and l.r >= ctl.x)) and ((l.t <= ctl.y and l.b >= ctl.y+ctl.h) or (l.t <= ctl.y+ctl.h and l.b >= ctl.y)) then 
             if ctl_select == nil then
               ctl_select = {} 
@@ -7464,8 +7512,8 @@ end
             local g 
             g = {x = strips[tracks[track_select].strip][page].graphics[i].x - surface_offset.x + obj.sections[10].x,
                        y = strips[tracks[track_select].strip][page].graphics[i].y - surface_offset.y + obj.sections[10].y,
-                       w = strips[tracks[track_select].strip][page].graphics[i].w,
-                       h = strips[tracks[track_select].strip][page].graphics[i].h}
+                       w = strips[tracks[track_select].strip][page].graphics[i].stretchw,
+                       h = strips[tracks[track_select].strip][page].graphics[i].stretchh}
             if ((l.l <= g.x and l.r >= g.x+g.w) or (l.l <= g.x+g.w and l.r >= g.x)) and ((l.t <= g.y and l.b >= g.y+g.h) or (l.t <= g.y+g.h and l.b >= g.y)) then 
               if gfx3_select == nil then
                 gfx3_select = {}
@@ -7507,6 +7555,12 @@ end
       Snapshots_Check(tracks[track_select].strip,page)
       
       ctl_select = nil
+      
+      SetCtlBitmapRedraw()
+      --if settings_usectlbitmap then
+      --  GUI_DrawCtlBitmap()
+      --end
+      
     end  
     
     if gfx3_select then
@@ -8623,6 +8677,9 @@ end
     end  
       
     PopulateTrackFX()
+    
+    GUI_DrawCtlBitmap()
+    
     return stripid, strip
     
   end
@@ -9927,6 +9984,8 @@ end
 
     InsertDefaultStrip()
     
+    GUI_DrawCtlBitmap()
+    
     --if settings_autocentrectls then
     --  AutoCentreCtls()
     --end
@@ -10475,6 +10534,7 @@ end
     trackedit_select = t
     InsertDefaultStrip()
   
+    GUI_DrawCtlBitmap()
   end
   
   function ChangeTrack2(t)
@@ -10532,25 +10592,6 @@ end
         
       end
   
-      --[[faders[1].targettype = 0
-      faders[1].strip = 2
-      faders[1].page = 1
-      faders[1].control = nil
-      faders[1].sstype = 2
-      faders[1].xy = 0
-      faders[2].targettype = 0
-      faders[2].strip = 2
-      faders[2].page = 1
-      faders[2].control = nil
-      faders[2].sstype = 2
-      faders[2].xy = 1]]
-
-      --[[faders[1].targettype = 1
-      faders[1].strip = 2
-      faders[1].page = 1
-      faders[1].control = nil
-      faders[1].sstype = 2]]
-      --faders[2].xy = 1
     end  
     
   end
@@ -10616,38 +10657,38 @@ end
       if tracks[LBX_CTL_TRACK].guid ~= reaper.GetTrackGUID(track) then
         PopulateTracks()
       end
-if xxyrecord == false then
-      for fxnum = 0, LBX_CTL_TRACK_INF.count-1 do
-        for pf = 0, 31 do
-          p = fxnum * 32 + pf
-          faders[p+1].val = reaper.TrackFX_GetParam(track, fxnum, pf)
-          if faders[p+1].val and tostring(faders[p+1].val) ~= tostring(faders[p+1].oval) then
-            faders[p+1].oval = faders[p+1].val
-            if faders[p+1].targettype then
-              if faders[p+1].targettype == 0 then
-                --xy test
-                if faders[p+1].xy == 0 then
-                  xxy[faders[p+1].strip][faders[p+1].page][faders[p+1].sstype].x = faders[p+1].val            
-                else
-                  xxy[faders[p+1].strip][faders[p+1].page][faders[p+1].sstype].y = faders[p+1].val            
+      if xxyrecord == false then
+        for fxnum = 0, LBX_CTL_TRACK_INF.count-1 do
+          for pf = 0, 31 do
+            p = fxnum * 32 + pf
+            faders[p+1].val = reaper.TrackFX_GetParam(track, fxnum, pf)
+            if faders[p+1].val and tostring(faders[p+1].val) ~= tostring(faders[p+1].oval) then
+              faders[p+1].oval = faders[p+1].val
+              if faders[p+1].targettype then
+                if faders[p+1].targettype == 0 then
+                  --xy test
+                  if faders[p+1].xy == 0 then
+                    xxy[faders[p+1].strip][faders[p+1].page][faders[p+1].sstype].x = faders[p+1].val            
+                  else
+                    xxy[faders[p+1].strip][faders[p+1].page][faders[p+1].sstype].y = faders[p+1].val            
+                  end
+                  XXY_Set(faders[p+1].strip,faders[p+1].page,faders[p+1].sstype)
+                  if show_xxy then
+                    update_xxypos = true
+                  end
+                elseif faders[p+1].targettype == 1 then
+                  XXYPath_SetPos(faders[p+1].strip,faders[p+1].page,faders[p+1].sstype,faders[p+1].val)
+                  if show_xxy then
+                    update_xxypos = true
+                  end                              
                 end
-                XXY_Set(faders[p+1].strip,faders[p+1].page,faders[p+1].sstype)
-                if show_xxy then
-                  update_xxypos = true
-                end
-              elseif faders[p+1].targettype == 1 then
-                XXYPath_SetPos(faders[p+1].strip,faders[p+1].page,faders[p+1].sstype,faders[p+1].val)
-                if show_xxy then
-                  update_xxypos = true
-                end                              
               end
-            end
-          end    
-        end
-      end    
-      trackfxparam_select = ccc
-    end
-end  
+            end    
+          end
+        end    
+        trackfxparam_select = ccc
+      end
+    end  
   end
 
   ------------------------------------------------------------    
@@ -10854,9 +10895,14 @@ end
     
     local noscroll = false
     
-    mouse.mx, mouse.my = gfx.mouse_x, gfx.mouse_y  
+    mouse.mx, mouse.my = gfx.mouse_x, gfx.mouse_y
+    if gfx.mouse_cap == 0 then
+      mouse.release = nil
+    end
+    if not mouse.release then
     mouse.LB = gfx.mouse_cap&1==1
     mouse.RB = gfx.mouse_cap&2==2
+    end
     mouse.ctrl = gfx.mouse_cap&4==4
     mouse.shift = gfx.mouse_cap&8==8
     mouse.alt = gfx.mouse_cap&16==16
@@ -10880,7 +10926,7 @@ end
         end
         MS_Open = 0
         MB_Enter = false 
-        update_gfx = true
+        update_surface = true
       end
       
     elseif EB_Open > 0 then
@@ -10953,15 +10999,17 @@ end
         end
         editbox = nil
         EB_Open = 0
-      
+        mouse.release = true
+        
       elseif mouse.LB == true and MOUSE_over(obj.sections[7]) then
         editbox = nil
         EB_Open = 0
+        mouse.release = true
       end
           
       local c=gfx.getchar()  
       if editbox and editbox.hasfocus then editbox_onchar(editbox, c) end  
-      update_gfx = true
+      update_surface = true
 
       --mouse.OLB = mouse.LB
       --mouse.ORB = mouse.RB
@@ -11303,6 +11351,14 @@ end
           end
         elseif mouse.context == nil and MOUSE_click(obj.sections[87]) then
           settings_savedatainprojectfolder = not settings_savedatainprojectfolder
+          update_gfx = true
+        elseif mouse.context == nil and MOUSE_click(obj.sections[88]) then
+          settings_usectlbitmap = not settings_usectlbitmap
+          if settings_usectlbitmap then
+            GUI_DrawCtlBitmap()
+          else
+            gfx.setimgdim(ctl_bitmap,-1,-1)
+          end
           update_gfx = true
         end
         
@@ -12067,14 +12123,39 @@ end
           
           if mouse.mx > obj.sections[10].x then
             if strips and tracks[track_select] and strips[tracks[track_select].strip] then
-              for i = 1, #strips[tracks[track_select].strip][page].controls do
+              local i
+              --local ttt = reaper.time_precise()
+              if settings_usectlbitmap then
+                gfx.dest = ctl_bitmap
+                gfx.x = mouse.mx + surface_offset.x -obj.sections[10].x
+                gfx.y = mouse.my + surface_offset.y -obj.sections[10].y
+                local r,g,b = gfx.getpixel()
+                gfx.dest = 1
+                local cc = r*255 + ((g*255) << 8) + ((b*255) << 16)
+                if cc > 0 and strips[tracks[track_select].strip][page].controls[cc] then 
+                  i = cc
+                  ctlxywh = {x = strips[tracks[track_select].strip][page].controls[i].xsc - surface_offset.x +obj.sections[10].x, 
+                             y = strips[tracks[track_select].strip][page].controls[i].ysc - surface_offset.y +obj.sections[10].y, 
+                             w = strips[tracks[track_select].strip][page].controls[i].wsc, 
+                             h = strips[tracks[track_select].strip][page].controls[i].hsc}
+                end
+              else
+                for ii = 1, #strips[tracks[track_select].strip][page].controls do
+    
+                  ctlxywh = {x = strips[tracks[track_select].strip][page].controls[ii].xsc - surface_offset.x +obj.sections[10].x, 
+                             y = strips[tracks[track_select].strip][page].controls[ii].ysc - surface_offset.y +obj.sections[10].y, 
+                             w = strips[tracks[track_select].strip][page].controls[ii].wsc, 
+                             h = strips[tracks[track_select].strip][page].controls[ii].hsc}
+                  if MOUSE_over(ctlxywh) then
+                    i = ii
+                    break
+                  end
   
-                ctlxywh = {x = strips[tracks[track_select].strip][page].controls[i].xsc - surface_offset.x +obj.sections[10].x, 
-                           y = strips[tracks[track_select].strip][page].controls[i].ysc - surface_offset.y +obj.sections[10].y, 
-                           w = strips[tracks[track_select].strip][page].controls[i].wsc, 
-                           h = strips[tracks[track_select].strip][page].controls[i].hsc}
-                --if strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.fxparam then
-                
+                end
+              end
+                            
+              if i then
+                --DBG(ttt-reaper.time_precise())
                 if strips[tracks[track_select].strip][page].controls[i].fxfound then
                   if MOUSE_click(ctlxywh) and not mouse.ctrl and not mouse.alt then
                     local ctltype = strips[tracks[track_select].strip][page].controls[i].ctltype
@@ -12087,7 +12168,7 @@ end
                       end
                           
                       noscroll = true
-                      break
+                      --break
                     end
                     
                     if ctltype == 1 then
@@ -12363,7 +12444,7 @@ end
                       update_ctls = true
                     end
                     noscroll = true
-                    break
+                    --break
                     
                   elseif MOUSE_click_RB(ctlxywh) and mouse.ctrl == false then
                     local mstr
@@ -12418,7 +12499,7 @@ end
                       end
                     end
                     noscroll = true
-                    break
+                    --break
                   --elseif MOUSE_click_RB(ctlxywh) and mouse.ctrl then
                   
                   --  trackfxparam_select = i
@@ -12447,7 +12528,7 @@ end
                       SetParam_EnterVal(i)
                     end
                     noscroll = true
-                    break     
+                    --break     
                                
                   elseif settings_mousewheelknob and gfx.mouse_wheel ~= 0 and MOUSE_over(ctlxywh) then
                     local ctltype = strips[tracks[track_select].strip][page].controls[i].ctltype
@@ -12501,7 +12582,7 @@ end
                       noscroll = true
                       gfx.mouse_wheel = 0                  
                     end
-                    break
+                    --break
                   end
   
                 end
@@ -13132,6 +13213,7 @@ end
                   end
                 end
                 update_gfx = true
+                SetCtlBitmapRedraw()
               elseif char == 0x72676874 then -- right arrow
                 for i = 1,#ctl_select do
                   if strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].poslock == false then
@@ -13145,6 +13227,7 @@ end
                   end
                 end
                 update_gfx = true
+                SetCtlBitmapRedraw()
               elseif char == 0x7570 then -- up arrow
                 for i = 1,#ctl_select do
                   if strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].poslock == false then
@@ -13158,6 +13241,7 @@ end
                   end
                 end
                 update_gfx = true
+                SetCtlBitmapRedraw()
               elseif char == 0x646F776E then -- down arrow
                 for i = 1,#ctl_select do
                   if strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].poslock == false then
@@ -13170,7 +13254,8 @@ end
                                                                          - (strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctl_info.cellh*scale)/2)
                   end
                 end
-                update_gfx = true
+                update_gfx = true                
+                SetCtlBitmapRedraw()
               end
                           
             elseif ctl_select ~= nil and show_ctlbrowser and (MOUSE_click(obj.sections[200]) or MOUSE_click_RB(obj.sections[200])) then
@@ -14144,6 +14229,7 @@ end
                 end
                 update_gfx = true
               end
+              SetCtlBitmapRedraw()
             end      
       
             if mouse.context and mouse.context == contexts.draglasso then
@@ -15372,12 +15458,14 @@ end
                 Strip_AddStrip(loadstrip, dragstrip.x-obj.sections[10].x, dragstrip.y-obj.sections[10].y)
               end
             end
-                      
             loadstrip = nil
             dragstrip = nil
             dragstripx = nil
             ctl_select = nil
             update_gfx = true
+            
+            SetCtlBitmapRedraw()
+            
           end
           
         end
@@ -15432,8 +15520,9 @@ end
               sury = surface_offset.y
               mmx = mouse.mx
               mmy = mouse.my
-              update_gfx = true
+              update_surface = true
             end
+
             ctl_select = nil
             show_cycleoptions = false
             show_ctlbrowser = false
@@ -15442,7 +15531,7 @@ end
             --CloseActChooser()
             
             if mode ~= 0 then
-              update_gfx = true
+              update_surface = true
             end
           end
   
@@ -15986,7 +16075,19 @@ end
     gfx.mouse_wheel = 0
     if ctl_select then ctls = true else ctls = false end
     if closectlbrowser then closectlbrowser = nil show_ctlbrowser = false end
+    if redraw_ctlbitmap and reaper.time_precise() >= redraw_ctlbitmap then
+      redraw_ctlbitmap = nil
+      GUI_DrawCtlBitmap()
+    end
       
+  end
+  
+  function SetCtlBitmapRedraw()
+    if settings_usectlbitmap then
+      redraw_ctlbitmap = reaper.time_precise() + 0.5
+    else
+      redraw_ctlbitmap = nil
+    end
   end
   
   function XXYRecord_Set(val)
@@ -16011,8 +16112,7 @@ end
   
     if xxy and xxy[strip] and xxy[strip][page][sst] then
       local xxypath_sel = xxy[strip][page][sst].pathidx
-      if xxypath_sel and xxypath[xxypath_sel] and xxypath[xxypath_sel].points[1].t then
-        
+      if xxypath_sel and xxypath[xxypath_sel] and xxypath[xxypath_sel].points and xxypath[xxypath_sel].points[1] and xxypath[xxypath_sel].points[1].t then
         if xxyrecord and xxymode == 1 then 
           local track = GetTrack(tracks[LBX_CTL_TRACK].tracknum)
           local pf = xxy[strip][page][sst].pathfader
@@ -17581,54 +17681,58 @@ end
     
       xxypath = {}
       
-      for p = 1, pathcnt do
-      
-        xxypath[p] = {}
+      for p = 1, pathcnt do      
         
         local key = 'xxypath_'..p..'_'
         local ptcnt = tonumber(zn(data[key..'pt_count']))      
         local idxcnt = tonumber(zn(data[key..'idxpt_count']))            
+
+        xxypath[p] = {}
         xxypath[p].pathlen = tonumber(zn(data[key..'pathlen']))
       
         xxypath[p].points = {}
         xxypath[p].pathidxpt = {}
-              
-        for pt = 1, ptcnt do
-                
-          local key = 'xxypath_'..p..'_pt_'..pt..'_'
-          xxypath[p].points[pt] = {}
-          xxypath[p].points[pt].len = tonumber(zn(data[key..'len']))
-          xxypath[p].points[pt].posstart = tonumber(zn(data[key..'posstart']))
-          xxypath[p].points[pt].posend = tonumber(zn(data[key..'posend']))
-          
-          xxypath[p].points[pt].x = {}
-          xxypath[p].points[pt].y = {}
-          
-          for xy = 1,4 do
-                    
-            xxypath[p].points[pt].x[xy] = tonumber(zn(data[key..'x_'..xy]))
-            xxypath[p].points[pt].y[xy] = tonumber(zn(data[key..'y_'..xy]))             
-          end
-          
-          local tcnt = tonumber(zn(data[key..'t_count']))            
-          
-          if tcnt and tcnt > 0 then
-            
-            xxypath[p].points[pt].t = {}
-            for t = 0, tcnt do
-            
-              xxypath[p].points[pt].t[t] = tonumber(zn(data[key..'t_'..t]))             
 
-            end
-          end          
-        end
-
-        for i = 0, idxcnt do
+        if ptcnt > 0 then      
         
-          local key = 'xxypath_'..p..'_idxpt_'..i
-          xxypath[p].pathidxpt[i] = tonumber(zn(data[key]))
-
-        end      
+          for pt = 1, ptcnt do
+                  
+            local key = 'xxypath_'..p..'_pt_'..pt..'_'
+            xxypath[p].points[pt] = {}
+            xxypath[p].points[pt].len = tonumber(zn(data[key..'len']))
+            xxypath[p].points[pt].posstart = tonumber(zn(data[key..'posstart']))
+            xxypath[p].points[pt].posend = tonumber(zn(data[key..'posend']))
+            
+            xxypath[p].points[pt].x = {}
+            xxypath[p].points[pt].y = {}
+            
+            for xy = 1,4 do
+                      
+              xxypath[p].points[pt].x[xy] = tonumber(zn(data[key..'x_'..xy]))
+              xxypath[p].points[pt].y[xy] = tonumber(zn(data[key..'y_'..xy]))             
+            end
+            
+            local tcnt = tonumber(zn(data[key..'t_count']))            
+            
+            if tcnt and tcnt > 0 then
+              
+              xxypath[p].points[pt].t = {}
+              for t = 0, tcnt do
+              
+                xxypath[p].points[pt].t[t] = tonumber(zn(data[key..'t_'..t]))             
+  
+              end
+            end          
+          end
+        end
+        if idxcnt > 0 then
+          for i = 0, idxcnt do
+          
+            local key = 'xxypath_'..p..'_idxpt_'..i
+            xxypath[p].pathidxpt[i] = tonumber(zn(data[key]))
+  
+          end      
+        end
       end
     end
     
@@ -18166,6 +18270,8 @@ end
     if surface_size.w < ww then
       surface_offset.x = -math.floor((ww - surface_size.w)/2)
     end]]
+    GUI_DrawCtlBitmap()
+    
   end
   
   function LoadSettings()
@@ -18186,6 +18292,7 @@ end
     settings_insertdefaultoneverypage = tobool(nz(GES('insertdefstriponpage',true),settings_insertdefaultoneverypage))
     settings_snaplistbgcol = tostring(nz(GES('snaplistbgcol',true),settings_snaplistbgcol))
     settings_savedatainprojectfolder = tobool(nz(GES('savedatainprojectfolder',true),settings_savedatainprojectfolder))
+    settings_usectlbitmap = tobool(nz(GES('usectlbitmap',true),settings_usectlbitmap))
     
     local sd = tonumber(GES('strip_default',true))
     local sdf = tonumber(GES('stripfol_default',true))
@@ -18222,6 +18329,7 @@ end
     reaper.SetExtState(SCRIPT,'insertdefstriponpage',tostring(settings_insertdefaultoneverypage), true)
     reaper.SetExtState(SCRIPT,'snaplistbgcol',settings_snaplistbgcol, true)
     reaper.SetExtState(SCRIPT,'savedatainprojectfolder',tostring(settings_savedatainprojectfolder), true)
+    reaper.SetExtState(SCRIPT,'usectlbitmap',tostring(settings_usectlbitmap), true)
     
     if strip_default then
       reaper.SetExtState(SCRIPT,'strip_default',tostring(strip_default.strip_select), true)
@@ -18355,40 +18463,42 @@ end
           file:write('['..key..'pathlen]'.. nz(xxypath[p].pathlen,'') ..'\n')
           file:write('['..key..'pt_count]'.. ptcnt ..'\n')
           file:write('['..key..'idxpt_count]'.. idxcnt ..'\n')
-          
-          for pt = 1, ptcnt do
-          
-            local key = 'xxypath_'..p..'_pt_'..pt..'_'
-            file:write('['..key..'len]'.. nz(xxypath[p].points[pt].len,'') ..'\n')
-            file:write('['..key..'posstart]'.. nz(xxypath[p].points[pt].posstart,'') ..'\n')
-            file:write('['..key..'posend]'.. nz(xxypath[p].points[pt].posend,'') ..'\n')
 
-            for xy = 1, 4 do
-              file:write('['..key..'x_'..xy..']'.. nz(xxypath[p].points[pt].x[xy],'') ..'\n')
-              file:write('['..key..'y_'..xy..']'.. nz(xxypath[p].points[pt].y[xy],'') ..'\n')
-            end
+          if ptcnt > 0 then          
+            for pt = 1, ptcnt do
             
-            if xxypath[p].points[pt].t then
-              local tcnt = #xxypath[p].points[pt].t
-              file:write('['..key..'t_count]'.. tcnt ..'\n')
-    
-              if tcnt > 0 then
-                for t = 0, tcnt do
-                
-                  file:write('['..key..'t_'..t..']'.. nz(xxypath[p].points[pt].t[t],'') ..'\n')            
-                
-                end
-              end 
-            end            
+              local key = 'xxypath_'..p..'_pt_'..pt..'_'
+              file:write('['..key..'len]'.. nz(xxypath[p].points[pt].len,'') ..'\n')
+              file:write('['..key..'posstart]'.. nz(xxypath[p].points[pt].posstart,'') ..'\n')
+              file:write('['..key..'posend]'.. nz(xxypath[p].points[pt].posend,'') ..'\n')
+  
+              for xy = 1, 4 do
+                file:write('['..key..'x_'..xy..']'.. nz(xxypath[p].points[pt].x[xy],'') ..'\n')
+                file:write('['..key..'y_'..xy..']'.. nz(xxypath[p].points[pt].y[xy],'') ..'\n')
+              end
+              
+              if xxypath[p].points[pt].t then
+                local tcnt = #xxypath[p].points[pt].t
+                file:write('['..key..'t_count]'.. tcnt ..'\n')
+      
+                if tcnt > 0 then
+                  for t = 0, tcnt do
+                  
+                    file:write('['..key..'t_'..t..']'.. nz(xxypath[p].points[pt].t[t],'') ..'\n')            
+                  
+                  end
+                end 
+              end            
+            end
           end
-
-          for i = 0, idxcnt do
-
-            local key = 'xxypath_'..p..'_idxpt_'..i
-            file:write('['..key..']'.. xxypath[p].pathidxpt[i] ..'\n')
-
-          end
-                    
+          if idxcnt > 0 then
+            for i = 0, idxcnt do
+  
+              local key = 'xxypath_'..p..'_idxpt_'..i
+              file:write('['..key..']'.. xxypath[p].pathidxpt[i] ..'\n')
+  
+            end
+          end                    
         end
         
       end
@@ -20782,7 +20892,7 @@ end
                           fine = 0.1,
                           wheel = 0.05,
                           wheelfine = 0.003}
-  
+  settings_usectlbitmap = false
   
   strip_favs = {}
   peak_info = {}
@@ -20808,6 +20918,7 @@ end
   def_snapshot = LoadControl(1017, '__Snapshot.knb')
   def_xy = LoadControl(1016, '__XY.knb')
   def_xytarget = LoadControl(1015, '__XYTarget.knb')
+  ctl_bitmap = 1010
   
   --testchunkcopy(0,3)
 --testfxinsert()
@@ -20823,6 +20934,7 @@ end
     INIT()
     LoadSettings()
     LoadData()  
+    
     gfx.dock(dockstate)
   --test jsfx plug name in quotes
   
