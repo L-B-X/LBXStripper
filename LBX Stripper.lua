@@ -98,7 +98,8 @@
              snapshot = 6,
              pkmeter = 7,
              xy = 8,
-             fxoffline = 9}
+             fxoffline = 9,
+             macro = 10}
              
   gfxtype = {img = 0,
              txt = 1
@@ -1733,7 +1734,7 @@
                                                 knobsens = settings_defknobsens
                                                }
       elseif dragparam.type == 'pkmeter' then
-        local tcs = trctl_select - 2
+        local tcs = trctl_select - special_offs
         --local pname = 'Tr' .. tracks[trackedit_select].tracknum .. ' '
         local pname = ''
         if tcs >= special_table_chans then
@@ -1891,6 +1892,62 @@
                                                 textcol = textcol_select,
                                                 textoff = 90.25,
                                                 textoffval = -6.0,
+                                                textoffx = textoff_selectx,
+                                                textoffvalx = textoffval_selectx,
+                                                textsize = textsize_select,
+                                                val = 0,
+                                                defval = 0,
+                                                maxdp = maxdp_select,
+                                                cycledata = {statecnt = 0,val = 0,mapptof = false,draggable = false,spread = false, {}},
+                                                xydata = {snapa = 1, snapb = 1, snapc = 1, snapd = 1, x = 0.5, y = 0.5},
+                                                membtn = {state = false,
+                                                          mem = nil},
+                                                id = nil,
+                                                tracknum = nil,
+                                                trackguid = nil,
+                                                scalemode = 8,
+                                                framemode = 1,
+                                                horiz = horiz_select,
+                                                poslock = false,
+                                                knobsens = settings_defknobsens
+                                               }
+      elseif dragparam.type == 'macro' then
+        local mcnt = 0
+        for c = 1, #strips[strip][page].controls do
+          if strips[strip][page].controls[c].ctlcat == ctlcats.macro then
+            mcnt = mcnt + 1
+          end
+        end
+        strips[strip][page].controls[ctlnum] = {c_id = GenID(),
+                                                ctlcat = ctlcats.macro,
+                                                fxname='Macro Control',
+                                                fxguid=nil, 
+                                                fxnum=nil, 
+                                                fxfound = true,
+                                                param = trctl_select,
+                                                param_info = {paramname = 'Macro '..string.format('%i',mcnt+1),
+                                                              paramidx = nil},
+                                                ctltype = 1,
+                                                knob_select = knob_select,
+                                                ctl_info = {fn = ctl_files[knob_select].fn,
+                                                            frames = ctl_files[knob_select].frames,
+                                                            imageidx = ctl_files[knob_select].imageidx, 
+                                                            cellh = ctl_files[knob_select].cellh},
+                                                x = x,
+                                                y = y,
+                                                w = w,
+                                                poslock = false,
+                                                scale = scale_select,
+                                                xsc = x + math.floor(w/2 - (w*scale_select)/2),
+                                                ysc = y + math.floor(ctl_files[knob_select].cellh/2 - (ctl_files[knob_select].cellh*scale_select)/2),
+                                                wsc = w*scale_select,
+                                                hsc = ctl_files[knob_select].cellh*scale_select,
+                                                show_paramname = show_paramname,
+                                                show_paramval = show_paramval,
+                                                ctlname_override = '',
+                                                textcol = textcol_select,
+                                                textoff = textoff_select,
+                                                textoffval = textoffval_select,
                                                 textoffx = textoff_selectx,
                                                 textoffvalx = textoffval_selectx,
                                                 textsize = textsize_select,
@@ -2295,7 +2352,7 @@
 
   function PopulateSpecial()
   
-    special_table = {'Action Trigger'}
+    special_table = {'Action Trigger','Macro Control'}
     local trn = trackedit_select
     local tr
     if trn == -1 then
@@ -2304,9 +2361,10 @@
       tr = reaper.GetTrack(0, trn)
     end
     local nchan = reaper.GetMediaTrackInfo_Value(tr, 'I_NCHAN')
+    special_offs = #special_table+1
     for i = 0, nchan-1 do
-      special_table[i+2] = 'Peak Meter Ch'..i+1
-      special_table[i+2+nchan] = 'Clip Indicator Ch'..i+1
+      special_table[i+special_offs] = 'Peak Meter Ch'..i+1
+      special_table[i+special_offs+nchan] = 'Clip Indicator Ch'..i+1
     end
     special_table_chans = nchan
   
@@ -4194,6 +4252,13 @@ end
                   else
                     Disp_Name = ctlnmov
                   end
+                elseif ctlcat == ctlcats.macro then
+                  spv = false
+                  if nz(ctlnmov,'') == '' then
+                    Disp_Name = pname
+                  else
+                    Disp_Name = ctlnmov
+                  end
                 end
   
                 if ctltype == 4 and cycle_editmode == false then
@@ -4306,7 +4371,7 @@ end
                   end
                 end
                 
-                if mode == 0 and snaplrn_mode == true then
+                --[[if mode == 0 and snaplrn_mode == true then
                   local ctl = GetSnapshotCtlIdx(strip, page, sstype_select, i)
                   if ctl then
                     if nz(snapshots[strip][page][sstype_select].ctls[ctl].delete,false) == false then
@@ -4315,7 +4380,7 @@ end
                       gfx.rect(x, y, w, h, 1, 1)
                     end
                   end           
-                end
+                end]]
                 
                 if not update_gfx and not update_bg and update_ctls then
                 
@@ -5295,6 +5360,29 @@ end
                 gfx.line(x,y+h-ls,x,y+h,1)
                 gfx.line(x,y+h,x+ls,y+h,1)
               end              
+            end
+          end
+        end
+        
+        if snaplrn_mode == true then
+          local strip = tracks[track_select].strip
+          local scnt = #snapshots[strip][page][sstype_select].ctls
+          if scnt > 0 then
+            for ssc = 1, scnt do
+              local ctl = snapshots[strip][page][sstype_select].ctls[ssc].ctl
+              if ctl then
+                if nz(snapshots[strip][page][sstype_select].ctls[ssc].delete,false) == false then
+                  local x = strips[strip][page].controls[ctl].xsc
+                  local y = strips[strip][page].controls[ctl].ysc
+                  local w = strips[strip][page].controls[ctl].wsc
+                  local h = strips[strip][page].controls[ctl].hsc
+                  x=x-surface_offset.x+obj.sections[10].x
+                  y=y-surface_offset.y+obj.sections[10].y
+                  f_Get_SSV(gui.color.green)
+                  gfx.a = 0.2
+                  gfx.rect(x, y, w, h, 1, 1)
+                end
+              end           
             end
           end
         end
@@ -9709,7 +9797,8 @@ end
     
       gfx_text_select = txt
       Strip_AddGFX(gfxtype.txt)
-    
+      update_gfx = true
+      
     end
     
   end
@@ -10949,6 +11038,7 @@ end
           SaveStrip3(editbox.text)
         elseif EB_Open == 2 then
           EditCtlName2(editbox.text)
+          update_gfx = true
         elseif EB_Open == 3 then
           EditDValOffset2(editbox.text)
           update_gfx = true
@@ -10965,8 +11055,10 @@ end
           InsertLabel2(editbox.text)
         elseif EB_Open == 7 then
           EditLabel2(editbox.text)
+          update_gfx = true
         elseif EB_Open == 8 then
           EditFont2(editbox.text)
+          update_gfx = true
         elseif EB_Open == 10 then
           EditCycleDV(editbox.text)        
         elseif EB_Open == 11 then
@@ -12452,51 +12544,65 @@ end
                     if show_snapshots then
                       mm = '!'
                     end
-                    if strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.fxparam then
+                    local ccat = strips[tracks[track_select].strip][page].controls[i].ctlcat 
+                    if ccat == ctlcats.fxparam then
                       mstr = 'MIDI learn|Modulation||Enter value||Open FX window||'..mm..'Snapshots'
+                    elseif ccat == ctlcats.macro then
+                      mstr = 'Select Macro Parameters|Edit Macro Parameters'
                     else
                       mstr = '#MIDI learn|#Modulation||Enter value||#Open FX window||'..mm..'Snapshots'                  
                     end
-                    if #strip_favs > 0 then
-                     --[[ mstr = mstr .. '||>Insert Strip'
-                      for fvs = 1, #strip_favs do
-                        if fvs == #strip_favs then
-                          mstr = mstr .. '|<' .. string.match(strip_favs[fvs],'.+%/(.-)%.')
-                        else
-                          mstr = mstr .. '|' .. string.match(strip_favs[fvs],'.+%/(.-)%.')
-                        end
-                      end]]
-                    else
-                      mstr = mstr .. '||#>Insert strip (favorites)'                  
-                    end
-                    trackfxparam_select = i
-                    gfx.x, gfx.y = mouse.mx, mouse.my
-                    res = OpenMenu(mstr)
-                    if res ~= 0 then
-                      if res == 1 then
-                        SetParam2(true)
-                        reaper.Main_OnCommand(41144,0,0)
-                      elseif res == 2 then
-                        SetParam2(true)
-                        reaper.Main_OnCommand(41143,0)
-                      elseif res == 3 then
-                        --EditValue(5)
-                        OpenEB(5,'Please enter value:')
-                      elseif res == 4 then
-                        local track
-                        if strips[tracks[track_select].strip][page].controls[i].tracknum == nil then
-                          track = GetTrack(tracks[track_select].tracknum)
-                        else
-                          track = GetTrack(strips[tracks[track_select].strip][page].controls[i].tracknum)                      
-                        end
-                        local fxnum = strips[tracks[track_select].strip][page].controls[i].fxnum
-                        if not reaper.TrackFX_GetOpen(track, fxnum) then
-                          reaper.TrackFX_Show(track, fxnum, 3)
-                        end
-                      elseif res == 5 then
-                        show_snapshots = not show_snapshots
-                        update_gfx = true
+                    if ccat ~= ctlcats.macro then
+                      if #strip_favs > 0 then
+                       --[[ mstr = mstr .. '||>Insert Strip'
+                        for fvs = 1, #strip_favs do
+                          if fvs == #strip_favs then
+                            mstr = mstr .. '|<' .. string.match(strip_favs[fvs],'.+%/(.-)%.')
+                          else
+                            mstr = mstr .. '|' .. string.match(strip_favs[fvs],'.+%/(.-)%.')
+                          end
+                        end]]
+                      else
+                        mstr = mstr .. '||#>Insert strip (favorites)'                  
                       end
+                      trackfxparam_select = i
+                      gfx.x, gfx.y = mouse.mx, mouse.my
+                      res = OpenMenu(mstr)
+                      if res ~= 0 then
+                        if res == 1 then
+                          SetParam2(true)
+                          reaper.Main_OnCommand(41144,0,0)
+                        elseif res == 2 then
+                          SetParam2(true)
+                          reaper.Main_OnCommand(41143,0)
+                        elseif res == 3 then
+                          --EditValue(5)
+                          OpenEB(5,'Please enter value:')
+                        elseif res == 4 then
+                          local track
+                          if strips[tracks[track_select].strip][page].controls[i].tracknum == nil then
+                            track = GetTrack(tracks[track_select].tracknum)
+                          else
+                            track = GetTrack(strips[tracks[track_select].strip][page].controls[i].tracknum)                      
+                          end
+                          local fxnum = strips[tracks[track_select].strip][page].controls[i].fxnum
+                          if not reaper.TrackFX_GetOpen(track, fxnum) then
+                            reaper.TrackFX_Show(track, fxnum, 3)
+                          end
+                        elseif res == 5 then
+                          show_snapshots = not show_snapshots
+                          update_gfx = true
+                        end
+                      end
+                    else
+                      trackfxparam_select = i
+                      gfx.x, gfx.y = mouse.mx, mouse.my
+                      res = OpenMenu(mstr)
+                      if res ~= 0 then
+                        if res == 1 then
+
+                        end
+                      end                    
                     end
                     noscroll = true
                     --break
@@ -14685,7 +14791,9 @@ end
             elseif mouse.context and mouse.context == contexts.dragparam_spec then
               if trctl_select == 1 then
                 dragparam = {x = mouse.mx-ksel_size.w, y = mouse.my-ksel_size.h, type = 'action'}
-              elseif trctl_select >= 2 then
+              elseif trctl_select == 2 then
+                dragparam = {x = mouse.mx-ksel_size.w, y = mouse.my-ksel_size.h, type = 'macro'}
+              elseif trctl_select >= special_offs then
                 dragparam = {x = mouse.mx-ksel_size.w, y = mouse.my-ksel_size.h, type = 'pkmeter'}            
               end
               reass_param = nil
@@ -14871,6 +14979,15 @@ end
                 
                 end
               elseif dragparam.type == 'pkmeter' then
+                if reass_param == nil then
+                  if dragparam.x+ksel_size.w > obj.sections[10].x and dragparam.x+ksel_size.w < obj.sections[10].x+obj.sections[10].w and dragparam.y+ksel_size.h > obj.sections[10].y and dragparam.y+ksel_size.h < obj.sections[10].y+obj.sections[10].h then
+                    trackfxparam_select = i
+                    Strip_AddParam()              
+                  end
+                else
+                
+                end
+              elseif dragparam.type == 'macro' then
                 if reass_param == nil then
                   if dragparam.x+ksel_size.w > obj.sections[10].x and dragparam.x+ksel_size.w < obj.sections[10].x+obj.sections[10].w and dragparam.y+ksel_size.h > obj.sections[10].y and dragparam.y+ksel_size.h < obj.sections[10].y+obj.sections[10].h then
                     trackfxparam_select = i
