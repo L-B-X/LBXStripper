@@ -1110,6 +1110,13 @@
                           w = obj.sections[220].w,
                           h = obj.sections[220].y-4}                       
 
+
+      --macros
+      --exit macro learn param
+      obj.sections[250] = {x = obj.sections[10].x + obj.sections[10].w - 120,
+                          y = obj.sections[10].y + obj.sections[10].h - 40,
+                          w = 100,
+                          h = butt_h}                       
       
     return obj
   end
@@ -5407,6 +5414,39 @@ end
           
           gfx.blit(1022,1,0,0,0,w,h,x,y)          
         end
+
+        if macro_lrn_mode == true and (update_gfx or update_surface or update_ctls) then
+          gfx.a = 1
+          f_Get_SSV(gui.color.white)
+          gfx.rect(obj.sections[250].x,
+                   obj.sections[250].y, 
+                   obj.sections[250].w,
+                   obj.sections[250].h, 1, 1)          
+          GUI_textC(gui,obj.sections[250],'EXIT MACRO LRN',gui.color.black,-2)        
+          
+          local strip = tracks[track_select].strip
+          if strips[strip][page].controls[macroctl_select].macroctl then
+            local mcnt = #strips[strip][page].controls[macroctl_select].macroctl
+            if mcnt > 0 then
+              for mc = 1, mcnt do
+                local ctl = strips[strip][page].controls[macroctl_select].macroctl[mc].ctl
+                if ctl then
+                  if nz(strips[strip][page].controls[macroctl_select].macroctl[mc].delete,false) == false then
+                    local x = strips[strip][page].controls[ctl].xsc
+                    local y = strips[strip][page].controls[ctl].ysc
+                    local w = strips[strip][page].controls[ctl].wsc
+                    local h = strips[strip][page].controls[ctl].hsc
+                    x=x-surface_offset.x+obj.sections[10].x
+                    y=y-surface_offset.y+obj.sections[10].y
+                    f_Get_SSV(gui.color.blue)
+                    gfx.a = 0.2
+                    gfx.rect(x, y, w, h, 1, 1)
+                  end
+                end           
+              end
+            end
+          end          
+        end
         
         if show_snapshots then
           gfx.blit(1003,1,0,0,0,obj.sections[160].w,obj.sections[160].h,obj.sections[160].x,obj.sections[160].y)        
@@ -7641,6 +7681,7 @@ end
       strips[tracks[track_select].strip][page].controls = tbl
       
       Snapshots_Check(tracks[track_select].strip,page)
+      --Macros_Check(tracks[track_select].strip,page)
       
       ctl_select = nil
       
@@ -10573,6 +10614,21 @@ end
     return idx
   end
   
+  function GetMacroCtlIdx(strip, page, ctl, selc)
+
+    local idx = nil
+    
+    if strips[strip][page].controls[ctl].macroctl then
+      for c = 1, #strips[strip][page].controls[ctl].macroctl do 
+      
+        if strips[strip][page].controls[ctl].macroctl[c].c_id == strips[strip][page].controls[selc].c_id then
+          idx = c
+          break
+        end 
+      end
+    end
+    return idx
+  end
   
   function SetParam_ToDef(i)
   
@@ -11334,6 +11390,7 @@ end
                             strips[tracks[track_select].strip][page].controls[i].val = chd
                             strips[tracks[track_select].strip][page].controls[i].dirty = true
                             update_ctls = true
+                            --update_mtrs = true
                           end
                         end
                       elseif strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.fxoffline then
@@ -12130,7 +12187,6 @@ end
                           strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.tracksend or 
                           strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.fxoffline then 
                           local strip = tracks[track_select].strip
-                          
                           --Add / Remove
                           local ctlidx = GetSnapshotCtlIdx(strip, page, sstype_select, i)
                           if ctlidx then
@@ -12140,11 +12196,10 @@ end
                             else
                               snapshots[strip][page][sstype_select].ctls[ctlidx].delete = true
                             end
-                          
                           else
                             --add
                             local ctlidx = #snapshots[strip][page][sstype_select].ctls + 1
-                            snapshots[strip][page][sstype_select].ctls[ctlidx] = {c_id = strips[tracks[track_select].strip][page].controls[i].c_id,
+                            snapshots[strip][page][sstype_select].ctls[ctlidx] = {c_id = strips[strip][page].controls[i].c_id,
                                                                                   ctl = i}
                           end
   
@@ -12208,6 +12263,150 @@ end
             Lasso_Select(false)
             update_surface = true
           end
+        
+        elseif macro_lrn_mode == true then
+        
+          -- MACRO LEARN
+        
+          if MOUSE_click(obj.sections[250]) then
+          
+            macro_lrn_mode = false
+            update_surface = true
+          
+          elseif mouse.context == nil and (MOUSE_click(obj.sections[10])) then -- or MOUSE_click_RB(obj.sections[10])) then
+            if mouse.mx > obj.sections[10].x then
+              if strips and tracks[track_select] and strips[tracks[track_select].strip] then
+                local i
+                --local ttt = reaper.time_precise()
+                if settings_usectlbitmap then
+                  gfx.dest = ctl_bitmap
+                  gfx.x = mouse.mx + surface_offset.x -obj.sections[10].x
+                  gfx.y = mouse.my + surface_offset.y -obj.sections[10].y
+                  local r,g,b = gfx.getpixel()
+                  gfx.dest = 1
+                  local cc = r*255 + ((g*255) << 8) + ((b*255) << 16)
+                  if cc > 0 and strips[tracks[track_select].strip][page].controls[cc] then 
+                    i = cc
+                    ctlxywh = {x = strips[tracks[track_select].strip][page].controls[i].xsc - surface_offset.x +obj.sections[10].x, 
+                               y = strips[tracks[track_select].strip][page].controls[i].ysc - surface_offset.y +obj.sections[10].y, 
+                               w = strips[tracks[track_select].strip][page].controls[i].wsc, 
+                               h = strips[tracks[track_select].strip][page].controls[i].hsc}
+                  end
+                else
+                  for ii = 1, #strips[tracks[track_select].strip][page].controls do
+      
+                    ctlxywh = {x = strips[tracks[track_select].strip][page].controls[ii].xsc - surface_offset.x +obj.sections[10].x, 
+                               y = strips[tracks[track_select].strip][page].controls[ii].ysc - surface_offset.y +obj.sections[10].y, 
+                               w = strips[tracks[track_select].strip][page].controls[ii].wsc, 
+                               h = strips[tracks[track_select].strip][page].controls[ii].hsc}
+                    if MOUSE_over(ctlxywh) then
+                      i = ii
+                      break
+                    end
+    
+                  end
+                end
+                            
+                if i then
+
+                  if strips[tracks[track_select].strip][page].controls[i].fxfound then
+                    if MOUSE_click(ctlxywh) then
+          
+                      if strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.fxparam or 
+                         strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.trackparam or 
+                         strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.tracksend or 
+                         strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.fxoffline then 
+                        local strip = tracks[track_select].strip
+                        
+                        --Add / Remove
+                        local ctlidx = GetMacroCtlIdx(strip, page, macroctl_select, i)
+                        if ctlidx then
+                          --already added - remove?
+                          if strips[strip][page].controls[macroctl_select].macroctl[ctlidx].delete then
+                            strips[strip][page].controls[macroctl_select].macroctl[ctlidx].delete = not strips[strip][page].controls[macroctl_select].macroctl[ctlidx].delete
+                          else
+                            strips[strip][page].controls[macroctl_select].macroctl[ctlidx].delete = true
+                          end
+                        
+                        else
+                          --add
+                          if strips[strip][page].controls[macroctl_select].macroctl == nil then
+                            strips[strip][page].controls[macroctl_select].macroctl = {}
+                          end
+                          local ctlidx = #strips[strip][page].controls[macroctl_select].macroctl + 1
+                          strips[strip][page].controls[macroctl_select].macroctl[ctlidx] = {c_id = strips[tracks[track_select].strip][page].controls[i].c_id,
+                                                                                            ctl = i,
+                                                                                            A_val = 0,
+                                                                                            B_val = 0,
+                                                                                            shape = 0}
+                        end
+                      end
+                    end
+                  end
+                end
+              end
+            end      
+            
+          elseif mouse.context == nil and (MOUSE_click_RB(obj.sections[10])) then 
+            mouse.context = contexts.draglasso
+            lasso = {l = mouse.mx, t = mouse.my, r = mouse.mx+5, b = mouse.my+5}
+            
+          elseif mouse.context and mouse.context == contexts.draglasso then
+            if (mouse.mx ~= mouse.last_x or mouse.my ~= mouse.last_y) then
+              lasso.r = mouse.mx
+              lasso.b = mouse.my
+    
+              Lasso_Select(false)
+              update_surface = true
+            end
+            
+          elseif lasso ~= nil then
+            --Dropped
+            
+            Lasso_Select(false)
+            if ctl_select ~= nil then
+        
+              local strip = tracks[track_select].strip
+              
+              for c = 1, #ctl_select do
+                local i = ctl_select[c].ctl
+                
+                if strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.fxparam or 
+                   strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.trackparam or 
+                   strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.tracksend or 
+                   strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.fxoffline then 
+                  --Add / Remove
+                  local ctlidx = GetMacroCtlIdx(strip, page, macroctl_select, i)
+                  if ctlidx then
+                    --re-add deleted
+                    if strips[strip][page].controls[macroctl_select].macroctl[ctlidx].delete then
+                      strips[strip][page].controls[macroctl_select].macroctl[ctlidx].delete = false
+                      strips[tracks[track_select].strip][page].controls[i].dirty = true                  
+                    end
+                  else
+                    --add
+                    if strips[strip][page].controls[macroctl_select].macroctl == nil then
+                      strips[strip][page].controls[macroctl_select].macroctl = {}
+                    end
+                    local ctlidx = #strips[strip][page].controls[macroctl_select].macroctl + 1
+                    strips[strip][page].controls[macroctl_select].macroctl[ctlidx] = {c_id = strips[tracks[track_select].strip][page].controls[i].c_id,
+                                                                                      ctl = i,
+                                                                                      A_val = 0,
+                                                                                      B_val = 0,
+                                                                                      shape = 0}
+                    strips[tracks[track_select].strip][page].controls[i].dirty = true
+                  end
+                end
+                  
+              end
+            end
+            
+            lasso = nil
+            ctl_select = nil
+            update_ctls = true
+            update_surface = true
+        
+          end          
         
         elseif mouse.context == nil and (MOUSE_click(obj.sections[10]) or MOUSE_click_RB(obj.sections[10]) or gfx.mouse_wheel ~= 0) then
           
@@ -12546,11 +12745,11 @@ end
                     end
                     local ccat = strips[tracks[track_select].strip][page].controls[i].ctlcat 
                     if ccat == ctlcats.fxparam then
-                      mstr = 'MIDI learn|Modulation||Enter value||Open FX window||'..mm..'Snapshots'
+                      mstr = 'MIDI learn|Modulation||Enter value||Open FX window||'..mm..'Snapshots||>Tools|<Regenerate ID   (emergency only)'
                     elseif ccat == ctlcats.macro then
                       mstr = 'Select Macro Parameters|Edit Macro Parameters'
                     else
-                      mstr = '#MIDI learn|#Modulation||Enter value||#Open FX window||'..mm..'Snapshots'                  
+                      mstr = '#MIDI learn|#Modulation||Enter value||#Open FX window||'..mm..'Snapshots||>Tools|<Regenerate ID   (emergency only)'                  
                     end
                     if ccat ~= ctlcats.macro then
                       if #strip_favs > 0 then
@@ -12592,6 +12791,11 @@ end
                         elseif res == 5 then
                           show_snapshots = not show_snapshots
                           update_gfx = true
+                        elseif res == 6 then
+                          i = tonumber(string.format('%i',i))
+                          strips[tracks[track_select].strip][page].controls[i] = GetControlTable(i)
+                          strips[tracks[track_select].strip][page].controls[i].cid = GenID()
+                          update_gfx = true
                         end
                       end
                     else
@@ -12600,7 +12804,9 @@ end
                       res = OpenMenu(mstr)
                       if res ~= 0 then
                         if res == 1 then
-
+                          macro_lrn_mode = true
+                          macroctl_select = trackfxparam_select
+                          update_surface = true
                         end
                       end                    
                     end
@@ -20559,6 +20765,8 @@ end
     xxyrecord = false
     xxypath_edit = true
     xxypath_tres = 400
+    
+    macro_lrn_mode = false
     
     ctl_page = 0
     cycle_editmode = false
