@@ -22,6 +22,8 @@
   scalemode_preset_table = {'','NORMAL','REAPER VOL'}
   scalemode_table = {1/8,1/7,1/6,1/5,1/4,1/3,1/2,1,2,3,4,5,6,7,8}
   scalemode_dtable = {'1/8','1/7','1/6','1/5','1/4','1/3','1/2','1','2','3','4','5','6','7','8'}
+  eqcontrol_colours = {'160 0 0','0 160 0','0 0 160','160 160 0','0 160 160','160 0 160','255 165 0','160 160 160','196 80 80','80 196 80','80 80 196','196 196 80','196 80 196'
+                       ,'255 64 64','64 0 255','80 160 0','102 0 51','255 255 255','255 255 255','255 255 255'}
   
   ctlfile_type_table = {'Knob','Slider','Button','Meter','Misc'}
   
@@ -85,7 +87,20 @@
               knobsens_norm = 48,
               knobsens_fine = 49,
               knobsens_wheel = 50,
-              knobsens_wheelfine = 51,              
+              knobsens_wheelfine = 51,
+              eqc_pminslider = 52,
+              eqc_pmaxslider = 53,  
+              eqc_drag = 54,                          
+              eqc_gminslider = 55,
+              eqc_gmaxslider = 56,
+              eqc_dragfreq = 57,
+              eqc_draggain = 58,
+              eqc_dragq = 59,                
+              eqc_dragc1 = 60,                
+              eqc_dragc2 = 61,                
+              eqc_dragc3 = 62,                
+              eqc_dragc4 = 63,                
+              eqc_dragc5 = 64,                
               dummy = 99
               }
   
@@ -99,7 +114,8 @@
              pkmeter = 7,
              xy = 8,
              fxoffline = 9,
-             macro = 10}
+             macro = 10,
+             eqcontrol = 11}
              
   gfxtype = {img = 0,
              txt = 1
@@ -323,6 +339,7 @@
   ----------------------------------------------
   
   function unpickle(s)
+  if s == nil or s == '' then return end
   if type(s) ~= "string" then
   error("can't unpickle a "..type(s)..", only strings")
   end
@@ -330,18 +347,20 @@
   if gentables then
     local tables = gentables()
     
-    for tnum = 1, #tables do
-    local t = tables[tnum]
-    local tcopy = {}; for i, v in pairs(t) do tcopy[i] = v end
-    for i, v in pairs(tcopy) do
-    local ni, nv
-    if type(i) == "table" then ni = tables[i[1]] else ni = i end
-    if type(v) == "table" then nv = tables[v[1]] else nv = v end
-    t[i] = nil
-    t[ni] = nv
+    if tables then
+      for tnum = 1, #tables do
+      local t = tables[tnum]
+      local tcopy = {}; for i, v in pairs(t) do tcopy[i] = v end
+      for i, v in pairs(tcopy) do
+      local ni, nv
+      if type(i) == "table" then ni = tables[i[1]] else ni = i end
+      if type(v) == "table" then nv = tables[v[1]] else nv = v end
+      t[i] = nil
+      t[ni] = nv
+      end
+      end
+      return tables[1]
     end
-    end
-    return tables[1]
   else
     --error
   end
@@ -623,7 +642,7 @@
                           h = msgwinh}
       --ok
       local butt_w = 100
-      obj.sections[62] = {x = gfx1.main_w/2-butt_w/2,
+      obj.sections[62] = {x = gfx1.main_w/2+20,
                           y = obj.sections[61].y+obj.sections[61].h - butt_h*2,
                           w = butt_w,
                           h = butt_h}                            
@@ -631,6 +650,11 @@
                           y = gfx1.main_h/2-msgwinh/2 + butt_h*2,
                           w = msgwinw,
                           h = butt_h}
+      obj.sections[64] = {x = gfx1.main_w/2-butt_w - 20,
+                          y = obj.sections[61].y+obj.sections[61].h - butt_h*2,
+                          w = butt_w,
+                          h = butt_h}                            
+     
       --settings
       local setw, seth = 300, 400                            
       obj.sections[70] = {x = gfx1.main_w/2-setw/2,
@@ -1117,7 +1141,206 @@
                           y = obj.sections[10].y + obj.sections[10].h - 40,
                           w = 100,
                           h = butt_h}                       
+
+      --eq control
+      obj.sections[300] = {x = obj.sections[10].x,
+                           y = obj.sections[10].y,
+                           w = obj.sections[10].w,
+                           h = obj.sections[10].h}                       
+      obj.sections[301] = {x = 0,
+                           y = 0,
+                           w = obj.sections[300].w,
+                           h = 0}                       
+      obj.sections[302] = {x = 40,
+                           y = butt_h,
+                           w = obj.sections[300].w-80,
+                           h = obj.sections[300].h-butt_h-220}
+      obj.sections[303] = {x = 100,
+                           y = obj.sections[302].y + obj.sections[302].h + 20,
+                           w = obj.sections[300].w-120,
+                           h = butt_h+10}
+      obj.sections[304] = {x = 20,
+                           y = obj.sections[302].y + obj.sections[302].h + 20,
+                           w = 60,
+                           h = butt_h}
+      obj.sections[305] = {x = 100,
+                           y = obj.sections[304].y + obj.sections[304].h + 44,
+                           w = 300,
+                           h = butt_h}
+      obj.sections[306] = {x = 100,
+                           y = obj.sections[305].y + obj.sections[305].h + 10,
+                           w = 110,
+                           h = butt_h}
+      obj.sections[307] = {x = 100,
+                           y = obj.sections[306].y + obj.sections[306].h + 4,
+                           w = 110,
+                           h = butt_h}
+      obj.sections[308] = {x = 100,
+                           y = obj.sections[307].y + obj.sections[307].h + 4,
+                           w = 110,
+                           h = butt_h}
+      obj.sections[309] = {x = 520,
+                           y = obj.sections[304].y + obj.sections[304].h + 20,
+                           w = 100,
+                           h = butt_h}
+      obj.sections[310] = {x = 625,
+                           y = obj.sections[304].y + obj.sections[304].h + 20,
+                           w = 50,
+                           h = butt_h}
+      obj.sections[311] = {x = 20,
+                           y = obj.sections[304].y + obj.sections[304].h + 20,
+                           w = 60,
+                           h = butt_h}
+      obj.sections[312] = {x = 20,
+                           y = obj.sections[311].y + obj.sections[311].h + 4,
+                           w = 60,
+                           h = butt_h}
+      obj.sections[313] = {x = 100,
+                           y = obj.sections[304].y + obj.sections[304].h + 20,
+                           w = 120,
+                           h = butt_h}
+      obj.sections[314] = {x = 225,
+                           y = obj.sections[304].y + obj.sections[304].h + 20,
+                           w = 175,
+                           h = butt_h}
+      obj.sections[315] = {x = 20,
+                           y = obj.sections[312].y + obj.sections[312].h + 4,
+                           w = 60,
+                           h = butt_h}
+      obj.sections[316] = {x = 625,
+                           y = obj.sections[310].y + obj.sections[310].h + 4,
+                           w = 50,
+                           h = butt_h}
+      obj.sections[317] = {x = 215,
+                           y = obj.sections[306].y + obj.sections[306].h + 4,
+                           w = 40,
+                           h = butt_h}
+      obj.sections[318] = {x = 215,
+                           y = obj.sections[317].y + obj.sections[317].h + 4,
+                           w = 40,
+                           h = butt_h}
+
+      obj.sections[351] = {x = obj.sections[302].x+obj.sections[302].w+4,
+                           y = obj.sections[302].y,
+                           w = 32,
+                           h = 32}
+      obj.sections[320] = {x = obj.sections[302].x+obj.sections[302].w+4,
+                           y = obj.sections[302].y + (32+2) * 2 -16,
+                           w = 32,
+                           h = 32}
+      obj.sections[321] = {x = obj.sections[302].x+obj.sections[302].w+4,
+                           y = obj.sections[302].y + (32+2) * 3 -16,
+                           w = 32,
+                           h = 32}
+      obj.sections[322] = {x = 260,
+                           y = obj.sections[305].y + obj.sections[305].h + 10,
+                           w = 110,
+                           h = butt_h}
+      obj.sections[323] = {x = 260,
+                           y = obj.sections[306].y + obj.sections[306].h + 4,
+                           w = 110,
+                           h = butt_h}
+      obj.sections[324] = {x = 260,
+                           y = obj.sections[307].y + obj.sections[307].h + 4,
+                           w = 110,
+                           h = butt_h}
       
+      local w = gfx.getimgdim(def_eqcknobf)
+      local h = ctl_files[def_eqcknobfctl].cellh
+      
+      local panw = 615+48-120
+      obj.sections[350] = {x = math.max(obj.sections[302].x + (obj.sections[302].w/2) - panw/2,120),
+                           y = obj.sections[303].y + 75,
+                           w = panw,
+                           h = obj.sections[300].h - (obj.sections[303].y + 75)}
+      
+      obj.sections[325] = {x = obj.sections[350].x,
+                           y = obj.sections[303].y + 75,
+                           w = w,
+                           h = h+20}
+      local w = gfx.getimgdim(def_eqcknobg)
+      local h = ctl_files[def_eqcknobgctl].cellh
+      obj.sections[326] = {x = obj.sections[350].x+70,
+                           y = obj.sections[303].y + 75,
+                           w = w,
+                           h = h+20}
+      obj.sections[327] = {x = obj.sections[350].x+140,
+                           y = obj.sections[303].y + 75,
+                           w = w,
+                           h = h+20}
+
+      local w = gfx.getimgdim(def_knobsm)
+      local h = ctl_files[def_knobsmctl].cellh
+      obj.sections[328] = {x = obj.sections[350].x+255,
+                           y = obj.sections[303].y + 75,
+                           w = w,
+                           h = h+20}
+      obj.sections[329] = {x = obj.sections[350].x+315,
+                           y = obj.sections[303].y + 75,
+                           w = w,
+                           h = h+20}
+      obj.sections[330] = {x = obj.sections[350].x+375,
+                           y = obj.sections[303].y + 75,
+                           w = w,
+                           h = h+20}
+      obj.sections[334] = {x = obj.sections[350].x+435,
+                           y = obj.sections[303].y + 75,
+                           w = w,
+                           h = h+20}
+      obj.sections[335] = {x = obj.sections[350].x+495,
+                           y = obj.sections[303].y + 75,
+                           w = w,
+                           h = h+20}
+
+      obj.sections[331] = {x = 375,
+                           y = obj.sections[305].y + obj.sections[305].h + 10,
+                           w = 110,
+                           h = butt_h}
+      obj.sections[332] = {x = 375,
+                           y = obj.sections[331].y + obj.sections[331].h + 4,
+                           w = 110,
+                           h = butt_h}
+      obj.sections[333] = {x = 375,
+                           y = obj.sections[332].y + obj.sections[332].h + 4,
+                           w = 110,
+                           h = butt_h}
+      obj.sections[337] = {x = obj.sections[309].x,
+                           y = obj.sections[309].y + obj.sections[309].h + 4,
+                           w = 100,
+                           h = butt_h/2+4}
+      obj.sections[338] = {x = obj.sections[309].x,
+                           y = obj.sections[337].y + obj.sections[337].h + 4,
+                           w = 100,
+                           h = 56}
+      obj.sections[336] = {x = obj.sections[309].x,
+                           y = obj.sections[338].y + obj.sections[338].h + 4,
+                           w = 100,
+                           h = butt_h}
+      
+      obj.sections[340] = {x = 20,
+                           y = obj.sections[315].y + obj.sections[315].h + 4,
+                           w = 60,
+                           h = butt_h}
+      
+      obj.sections[345] = {x = obj.sections[302].x+obj.sections[302].w+4,
+                           y = obj.sections[302].y + (32+2) * 4 - 16,
+                           w = 32,
+                           h = 32}
+      obj.sections[355] = {x = 405,
+                           y = obj.sections[313].y,
+                           w = butt_h * 2 + 5,
+                           h = butt_h * 2 + 4}
+
+      obj.sections[356] = {x = 100,
+                           y = obj.sections[308].y + obj.sections[308].h + 10,
+                           w = 200,
+                           h = butt_h}
+
+      obj.sections[357] = {x = 625,
+                           y = obj.sections[316].y + obj.sections[316].h + 10,
+                           w = 50,
+                           h = (obj.sections[338].y + obj.sections[338].h)-(obj.sections[316].y + obj.sections[316].h+6) + butt_h}
+
     return obj
   end
   
@@ -1244,12 +1467,13 @@
         gfx.drawstr(text)
   end
   
-  function GUI_textC(gui, xywh, text, color, offs, alpha)
+  function GUI_textC(gui, xywh, text, color, offs, alpha, yoff)
         f_Get_SSV(color)  
-        if alpha then gfx.a = alpha else gfx.a = 1 end 
+        if alpha then gfx.a = alpha else gfx.a = 1 end
+        if yoff == nil then yoff = 0 end 
         gfx.setfont(1, gui.fontname, gui.fontsz_knob + offs)
         local text_len = gfx.measurestr(text)
-        gfx.x, gfx.y = xywh.x+(xywh.w-text_len)/2,xywh.y+(xywh.h-gfx.texth)/2 + 1
+        gfx.x, gfx.y = xywh.x+(xywh.w-text_len)/2,xywh.y+(xywh.h-gfx.texth)/2 + 1 + yoff
         gfx.drawstr(text)
   end
 
@@ -1974,6 +2198,63 @@
                                                 poslock = false,
                                                 knobsens = settings_defknobsens
                                                }
+      elseif dragparam.type == 'eqcontrol' then
+        local mcnt = 0
+        for c = 1, #strips[strip][page].controls do
+          if strips[strip][page].controls[c].ctlcat == ctlcats.eqcontrol then
+            mcnt = mcnt + 1
+          end
+        end
+        strips[strip][page].controls[ctlnum] = {c_id = GenID(),
+                                                ctlcat = ctlcats.eqcontrol,
+                                                fxname='EQ Control',
+                                                fxguid=nil, 
+                                                fxnum=nil, 
+                                                fxfound = true,
+                                                param = trctl_select,
+                                                param_info = {paramname = 'EQ '..string.format('%i',mcnt+1),
+                                                              paramidx = nil},
+                                                ctltype = 5,
+                                                knob_select = knob_select,
+                                                ctl_info = {fn = ctl_files[knob_select].fn,
+                                                            frames = ctl_files[knob_select].frames,
+                                                            imageidx = ctl_files[knob_select].imageidx, 
+                                                            cellh = ctl_files[knob_select].cellh},
+                                                x = x,
+                                                y = y,
+                                                w = w,
+                                                poslock = false,
+                                                scale = scale_select,
+                                                xsc = x + math.floor(w/2 - (w*scale_select)/2),
+                                                ysc = y + math.floor(ctl_files[knob_select].cellh/2 - (ctl_files[knob_select].cellh*scale_select)/2),
+                                                wsc = w*scale_select,
+                                                hsc = ctl_files[knob_select].cellh*scale_select,
+                                                show_paramname = show_paramname,
+                                                show_paramval = false,
+                                                ctlname_override = '',
+                                                textcol = textcol_select,
+                                                textoff = textoff_select-34,
+                                                textoffval = textoffval_select,
+                                                textoffx = textoff_selectx,
+                                                textoffvalx = textoffval_selectx,
+                                                textsize = 4,
+                                                val = 0,
+                                                defval = 0,
+                                                maxdp = maxdp_select,
+                                                cycledata = {statecnt = 0,val = 0,mapptof = false,draggable = false,spread = false, {}},
+                                                xydata = {snapa = 1, snapb = 1, snapc = 1, snapd = 1, x = 0.5, y = 0.5},
+                                                membtn = {state = false,
+                                                          mem = nil},
+                                                id = nil,
+                                                tracknum = nil,
+                                                trackguid = nil,
+                                                scalemode = 8,
+                                                framemode = 1,
+                                                horiz = horiz_select,
+                                                poslock = false,
+                                                knobsens = settings_defknobsens,
+                                                eqgraph = def_graph
+                                               }
       end
     end  
   
@@ -2069,6 +2350,15 @@
           elseif kf == 'SimpleFlat_48.knb' then
             ctl_files[c].imageidx = def_knobsm
             def_knobsmctl = c
+          elseif kf == 'SimpleFlat_64.knb' then
+            ctl_files[c].imageidx = def_eqcknobf
+            def_eqcknobfctl = c
+          elseif kf == 'SimpleFlat2_64.knb' then
+            ctl_files[c].imageidx = def_eqcknobg
+            def_eqcknobgctl = c
+          elseif kf == 'SimpleBox_9632.knb' then
+            ctl_files[c].imageidx = def_box
+            def_boxctl = c
           end
         else
           DBG('Error found with control file: '..kf)
@@ -2091,8 +2381,12 @@
         file:close()
         
         defctls[iidx] = unpickle(content)
-        gfx.loadimg(iidx,controls_path..defctls[iidx].fn)
-        return iidx
+        if defctls[iidx] then
+          gfx.loadimg(iidx,controls_path..defctls[iidx].fn)
+          return iidx
+        else
+          return -1
+        end
       else
         return -1
       end
@@ -2359,7 +2653,7 @@
 
   function PopulateSpecial()
   
-    special_table = {'Action Trigger','Macro Control'}
+    special_table = {'Action Trigger','Macro Control','EQ Engine'}
     local trn = trackedit_select
     local tr
     if trn == -1 then
@@ -3775,6 +4069,8 @@
   function round(num, idp)
     --num = tonumber(num)
     --if num then
+      if tonumber(num) == nil then return num end
+      
       local mult = 10^(idp or 0)
       return math.floor(num * mult + 0.5) / mult
     --else
@@ -3782,7 +4078,7 @@
     --end
   end
 
-  function roundX(num, idp)
+  function roundX(num, idp, suffix)
     local s, e = string.find(num,'%d+.%d+')
     if s and e then  
       local n = string.sub(num,s,e)
@@ -3792,7 +4088,11 @@
         if idp == 0 then
           res = string.match(tostring(res),'%d+')
         end
-        return string.sub(num,1,s-1) .. res .. string.sub(num,e+1)
+        if suffix then
+          return res..suffix
+        else
+          return string.sub(num,1,s-1) .. res .. string.sub(num,e+1)
+        end
       else
         return num
       end
@@ -4013,20 +4313,22 @@ end
       
         for i = 1, #strips[strip][page].controls do
 
-          if not strips[strip][page].controls[i].hide then
+          local ctl = strips[strip][page].controls[i]
 
-            local ctlcat = strips[strip][page].controls[i].ctlcat
+          if not ctl.hide then
+
+            local ctlcat = ctl.ctlcat
             
-            if update_gfx or strips[strip][page].controls[i].dirty or force_gfx_update or (ctlcat == ctlcats.snapshot and (update_snaps or update_fsnaps)) then
-              strips[strip][page].controls[i].dirty = false
+            if update_gfx or ctl.dirty or force_gfx_update or (ctlcat == ctlcats.snapshot and (update_snaps or update_fsnaps)) then
+              ctl.dirty = false
               
-              local scale = strips[strip][page].controls[i].scale
-              local x = strips[strip][page].controls[i].x 
-              local y = strips[strip][page].controls[i].y
-              local px = strips[strip][page].controls[i].xsc
-              local py = strips[strip][page].controls[i].ysc
-              local w = strips[strip][page].controls[i].w
-              local h = strips[strip][page].controls[i].ctl_info.cellh
+              local scale = ctl.scale
+              local x = ctl.x 
+              local y = ctl.y
+              local px = ctl.xsc
+              local py = ctl.ysc
+              local w = ctl.w
+              local h = ctl.ctl_info.cellh
     
               local visible = true
               if surface_size.limit == false then
@@ -4037,26 +4339,26 @@ end
               
               if visible then
                 local gh = h
-                local val = math.floor(100*nz(strips[strip][page].controls[i].val,0))
-                local fxnum = nz(strips[strip][page].controls[i].fxnum,-1)
-                local param = strips[strip][page].controls[i].param
-                local pname = strips[strip][page].controls[i].param_info.paramname
-                local iidx = strips[strip][page].controls[i].ctl_info.imageidx
-                local spn = strips[strip][page].controls[i].show_paramname
-                local spv = strips[strip][page].controls[i].show_paramval
-                local tc = strips[strip][page].controls[i].textcol
-                local toff = math.floor(strips[strip][page].controls[i].textoff)
-                local toffv = math.floor(strips[strip][page].controls[i].textoffval)
-                local toffx = math.floor(strips[strip][page].controls[i].textoffx)
-                local toffvx = math.floor(strips[strip][page].controls[i].textoffvalx)
-                local tsz = nz(strips[strip][page].controls[i].textsize,0)
-                local frames = math.floor(strips[strip][page].controls[i].ctl_info.frames)
-                local ctltype = strips[strip][page].controls[i].ctltype
-                local ctlnmov = strips[strip][page].controls[i].ctlname_override
-                local found = strips[strip][page].controls[i].fxfound
-                local maxdp = nz(strips[strip][page].controls[i].maxdp,-1)
-                local dvoff = strips[strip][page].controls[i].dvaloffset
-                local tnum = strips[strip][page].controls[i].tracknum
+                local val = math.floor(100*nz(ctl.val,0))
+                local fxnum = nz(ctl.fxnum,-1)
+                local param = ctl.param
+                local pname = ctl.param_info.paramname
+                local iidx = ctl.ctl_info.imageidx
+                local spn = ctl.show_paramname
+                local spv = ctl.show_paramval
+                local tc = ctl.textcol
+                local toff = math.floor(ctl.textoff)
+                local toffv = math.floor(ctl.textoffval)
+                local toffx = math.floor(ctl.textoffx)
+                local toffvx = math.floor(ctl.textoffvalx)
+                local tsz = nz(ctl.textsize,0)
+                local frames = math.floor(ctl.ctl_info.frames)
+                local ctltype = ctl.ctltype
+                local ctlnmov = ctl.ctlname_override
+                local found = ctl.fxfound
+                local maxdp = nz(ctl.maxdp,-1)
+                local dvoff = ctl.dvaloffset
+                local tnum = ctl.tracknum
   
                 if fxnum == nil then return end
       
@@ -4084,10 +4386,10 @@ end
                 local v2, val2 = 0, 0
   
                 if ctlcat == ctlcats.fxparam or ctlcat == ctlcats.trackparam or ctlcat == ctlcats.tracksend or ctlcat == ctlcats.pkmeter then
-                  v2 = nz(frameScale(strips[strip][page].controls[i].framemode, GetParamValue2(ctlcat,track,fxnum,param,i)),0)
+                  v2 = nz(frameScale(ctl.framemode, GetParamValue2(ctlcat,track,fxnum,param,i)),0)
                   val2 = F_limit(round(frames*v2),0,frames-1)
                 elseif ctlcat == ctlcats.fxoffline then
-                  v2 = strips[strip][page].controls[i].val                  
+                  v2 = ctl.val                  
                   val2 = F_limit(round(frames*v2),0,frames-1)
                 end
                   
@@ -4097,13 +4399,13 @@ end
                   val2 = 1-val2
                 elseif ctltype == 4 then
                   --cycle button
-                  if strips[strip][page].controls[i].cycledata.mapptof then
+                  if ctl.cycledata.mapptof then
                     --override val2
                     --prelim code for single state notify
-                    if strips[strip][page].controls[i].cycledata.statecnt == 1 then
-                      local v3 = strips[strip][page].controls[i].val
+                    if ctl.cycledata.statecnt == 1 then
+                      local v3 = ctl.val
                       --must convert to string to compare               
-                      if tostring(v3) ~= tostring(strips[strip][page].controls[i].cycledata[1].val) then
+                      if tostring(v3) ~= tostring(ctl.cycledata[1].val) then
                         --not selected
                         val2 = frames-1
                       else
@@ -4113,59 +4415,59 @@ end
                     else
                     
                       Disp_ParamV = GetParamDisp(ctlcat, tnum, fxnum, param, dvoff, i)
-                      local p = strips[strip][page].controls[i].cycledata.pos
+                      local p = ctl.cycledata.pos
                       
-                      if strips[strip][page].controls[i].cycledata[p] and
-                         Disp_ParamV ~= strips[strip][page].controls[i].cycledata[p].dv then
-                        for p = 1, strips[strip][page].controls[i].cycledata.statecnt do
-                          local vc = strips[strip][page].controls[i].cycledata[p].val
-                          if p < strips[strip][page].controls[i].cycledata.statecnt then
-                            vc = vc + (strips[strip][page].controls[i].cycledata[p+1].val - vc)/2
+                      if ctl.cycledata[p] and
+                         Disp_ParamV ~= ctl.cycledata[p].dv then
+                        for p = 1, ctl.cycledata.statecnt do
+                          local vc = ctl.cycledata[p].val
+                          if p < ctl.cycledata.statecnt then
+                            vc = vc + (ctl.cycledata[p+1].val - vc)/2
                           end
                           
-                          if Disp_ParamV == strips[strip][page].controls[i].cycledata[p].dv or 
-                             (strips[strip][page].controls[i].val and strips[strip][page].controls[i].val <= vc) then
-                            strips[strip][page].controls[i].cycledata.pos = p
+                          if Disp_ParamV == ctl.cycledata[p].dv or 
+                             (ctl.val and ctl.val <= vc) then
+                            ctl.cycledata.pos = p
                             break
                           end
                         end
                       end
                       
-                      if strips[strip][page].controls[i].cycledata.spread then
-                        val2 = F_limit(math.floor(((nz(strips[strip][page].controls[i].cycledata.pos,0)-1) / 
-                                  (strips[strip][page].controls[i].cycledata.statecnt-1)) * (frames-1)),0,frames-1)
+                      if ctl.cycledata.spread then
+                        val2 = F_limit(math.floor(((nz(ctl.cycledata.pos,0)-1) / 
+                                  (ctl.cycledata.statecnt-1)) * (frames-1)),0,frames-1)
                       else
-                        val2 = F_limit(nz(strips[strip][page].controls[i].cycledata.pos,0)-1,0,frames-1)
+                        val2 = F_limit(nz(ctl.cycledata.pos,0)-1,0,frames-1)
                       end
-                      if strips[strip][page].controls[i].cycledata and 
-                         strips[strip][page].controls[i].cycledata[nz(strips[strip][page].controls[i].cycledata.pos,0)] then
-                        DVOV = nz(strips[strip][page].controls[i].cycledata[nz(strips[strip][page].controls[i].cycledata.pos,0)].dispval,'')
+                      if ctl.cycledata and 
+                         ctl.cycledata[nz(ctl.cycledata.pos,0)] then
+                        DVOV = nz(ctl.cycledata[nz(ctl.cycledata.pos,0)].dispval,'')
                       end
                     end
                   else
-                    if strips[strip][page].controls[i].cycledata and 
-                       strips[strip][page].controls[i].cycledata[nz(strips[strip][page].controls[i].cycledata.pos,0)] then
-                      DVOV = nz(strips[strip][page].controls[i].cycledata[nz(strips[strip][page].controls[i].cycledata.pos,0)].dispval,'')
+                    if ctl.cycledata and 
+                       ctl.cycledata[nz(ctl.cycledata.pos,0)] then
+                      DVOV = nz(ctl.cycledata[nz(ctl.cycledata.pos,0)].dispval,'')
                     end                  
                   end
                 elseif ctltype == 6 then
                   --mem button
-                  if strips[strip][page].controls[i].membtn == nil then
-                    strips[strip][page].controls[i].membtn = {state = false, mem = 0}
+                  if ctl.membtn == nil then
+                    ctl.membtn = {state = false, mem = 0}
                   end
                   local v3 = GetParamValue_Ctl(i)
-                  if tostring(v3) ~= tostring(strips[strip][page].controls[i].defval) then
-                    strips[strip][page].controls[i].membtn = {state = false, mem = v3}
+                  if tostring(v3) ~= tostring(ctl.defval) then
+                    ctl.membtn = {state = false, mem = v3}
                   end
-                  if strips[strip][page].controls[i].membtn.state == true then
+                  if ctl.membtn.state == true then
                     val2 = frames-1
                   else
                     val2 = 0                
                   end
                 elseif ctltype == 7 or ctltype == 9 then
-                  val2 = strips[strip][page].controls[i].val
+                  val2 = ctl.val
                 elseif ctltype == 8 or ctltype == 10 then
-                  val2 = 1-strips[strip][page].controls[i].val
+                  val2 = 1-ctl.val
                 end
                 
                 if not found then
@@ -4173,7 +4475,7 @@ end
                 end
                 if ctlcat == ctlcats.fxparam then
                   if not found then
-                    Disp_Name = CropFXName(strips[strip][page].controls[i].fxname)
+                    Disp_Name = CropFXName(ctl.fxname)
                     Disp_ParamV = 'PLUGIN NOT FOUND'
                     tc = gui.color.red
                     val2 = 0
@@ -4185,7 +4487,7 @@ end
                     end
                     _, Disp_ParamV = reaper.TrackFX_GetFormattedParamValue(track, fxnum, param, "")
                     if dvoff and dvoff ~= 0 then
-                      Disp_ParamV = dvaloffset(Disp_ParamV, strips[strip][page].controls[i].dvaloffset)  
+                      Disp_ParamV = dvaloffset(Disp_ParamV, ctl.dvaloffset)  
                     end
                     if maxdp > -1 then
                       Disp_ParamV = roundX(Disp_ParamV, maxdp)                  
@@ -4231,7 +4533,7 @@ end
                   else
                     Disp_Name = ctlnmov
                   end
-                  local v = nz(strips[strip][page].controls[i].val,-1)
+                  local v = nz(ctl.val,-1)
                   Disp_ParamV = ''
                   if v > -1 then
                     if snapshots and snapshots[strip] and snapshots[strip][page][param] and snapshots[strip][page][param].selected then
@@ -4266,11 +4568,18 @@ end
                   else
                     Disp_Name = ctlnmov
                   end
+                elseif ctlcat == ctlcats.eqcontrol then
+                  spv = false
+                  if nz(ctlnmov,'') == '' then
+                    Disp_Name = pname
+                  else
+                    Disp_Name = ctlnmov
+                  end
                 end
   
                 if ctltype == 4 and cycle_editmode == false then
                   if DVOV and DVOV ~= '' then
-                    if strips[strip][page].controls[i].cycledata.posdirty == false then 
+                    if ctl.cycledata.posdirty == false then 
                       Disp_ParamV = DVOV
                       
                       if maxdp > -1 then
@@ -4282,7 +4591,7 @@ end
                 end
 
                 local offl = false
-                if ctlcat == ctlcats.fxparam and strips[strip][page].controls[i].offline then
+                if ctlcat == ctlcats.fxparam and ctl.offline then
                   offl = true
                   if settings_showparamnamelabelwhenoffline == false then
                     Disp_Name = 'Offline'
@@ -4298,8 +4607,8 @@ end
                 local xywh1 = {x = math.floor(mid-(text_len1x/2))-toffx, y = math.floor(y+(h/2)-toff-1), w = text_len1x, h = th_a+2}
                 local xywh2 = {x = math.floor(mid-(text_len2x/2))+toffx+toffvx, y = math.floor(y+(h/2)-to+toff+toffv-1), w = text_len2x, h = th_a+2}
                 
-                local tl1 = nz(strips[strip][page].controls[i].tl1,text_len1x)
-                local tl2 = nz(strips[strip][page].controls[i].tl2,text_len2x)
+                local tl1 = nz(ctl.tl1,text_len1x)
+                local tl2 = nz(ctl.tl2,text_len2x)
                 local tx1, tx2, th = math.floor(mid-(tl1/2))-toffx,
                                      math.floor(mid-(tl2/2))+toffx+toffvx,th_a --gui.fontsz_knob+tsz-4
                                      
@@ -4337,15 +4646,15 @@ end
                 
                   --draw pos
                   local ppw, pph = gfx.getimgdim(def_xytarget)
-                  local ppx = 12+px+math.floor(strips[strip][page].controls[i].xydata.x * (w-24)) - math.floor(ppw/2)
-                  local ppy = 12+py+math.floor(strips[strip][page].controls[i].xydata.y * (h-34-24)) - math.floor(pph/2)
+                  local ppx = 12+px+math.floor(ctl.xydata.x * (w-24)) - math.floor(ppw/2)
+                  local ppy = 12+py+math.floor(ctl.xydata.y * (h-34-24)) - math.floor(pph/2)
 
                   gfx.blit(def_xytarget,1,0, 0, 0, ppw, pph, ppx, ppy)
                 
                 end
                 
-                strips[strip][page].controls[i].tl1 = text_len1x
-                strips[strip][page].controls[i].tl2 = text_len2x
+                ctl.tl1 = text_len1x
+                ctl.tl2 = text_len2x
                 
                   local alpha = 1
                   if settings_hideofflinelabel and offl then
@@ -4361,7 +4670,7 @@ end
                   end
   
                 if ctltype == 4 and DVOV and DVOV ~= '' and cycle_editmode == false then
-                  if strips[strip][page].controls[i].cycledata.posdirty == true then 
+                  if ctl.cycledata.posdirty == true then 
                     gfx.a = 0.8
                     f_Get_SSV(gui.color.red)
                     gfx.circle(x+4,y+4,2,1,1)              
@@ -5242,6 +5551,1455 @@ end
     gfx.update()
     
   end
+
+  function calc_eqgraph_getmin(tr, fx, param, freq)
+  
+    if param then
+      local track = GetTrack(tr)
+      local bkp = reaper.TrackFX_GetParam(track, fx, param)
+      reaper.TrackFX_SetParam(track, fx, param, 0)
+      local del = 0
+      for dx = 1, auto_delay*1000000 do del = del + dx end
+      local _, d = reaper.TrackFX_GetFormattedParamValue(track, fx, param, '')
+      local mult = 1
+      if freq then
+        local s = string.find(string.lower(d), 'k')
+        if s and s>0 then mult = 1000 end
+      end
+      d = tonumber(GetNumericPart(d))*mult
+      reaper.TrackFX_SetParam(track, fx, param, bkp)
+    
+      return d
+    end
+      
+  end
+
+  function calc_eqgraph_getmax(tr, fx, param, freq)
+  
+    if param then
+      local track = GetTrack(tr)
+      local bkp = reaper.TrackFX_GetParam(track, fx, param)
+      reaper.TrackFX_SetParam(track, fx, param, 1)
+      local del = 0
+      for dx = 1, auto_delay*1000000 do del = del + dx end
+      local _, d = reaper.TrackFX_GetFormattedParamValue(track, fx, param, '')
+      local mult = 1
+      if freq then
+        local s = string.find(string.lower(d), 'k')
+        if s and s>0 then mult = 1000 end
+      end
+      d = tonumber(GetNumericPart(d))*mult
+      reaper.TrackFX_SetParam(track, fx, param, bkp)
+    
+      return d
+    end
+      
+  end
+  
+  function calc_eqgraph(tr, fx, param, min, max, khz, param2, min2, max2)
+  
+    --DBG('mm'..min..'  '..max)
+    local ad = auto_delay*100000
+    local track = GetTrack(tr)
+    --pixmap = {}
+    local lookmap = {}
+    local gmap = {}
+    local mult = 1
+    if khz then
+      mult = 1000
+      min = min * mult
+      max = max * mult
+    end
+    if min == 0 then min = 10 end
+    --if min2 == 0 then min2 = 10 end
+    
+    local inc = math.min(10^math.floor(math.log(min,10)),1000)
+    local look = (math.floor(min/inc)+1)*inc
+    --local look = min
+    local inc2 = 3
+    local look2 = min2
+    if param then
+      bkp = reaper.TrackFX_GetParam(track, fx, param)
+      reaper.TrackFX_SetParam(track, fx, param, 0)
+    end
+    if param2 then
+      bkp2 = reaper.TrackFX_GetParam(track, fx, param2)
+      reaper.TrackFX_SetParam(track, fx, param2, 0)
+    end
+    local del = 0
+    for dx = 1, ad do del = del + 1 end
+    
+    local fnd, fnd2 = false, false
+    
+    for p = 0, 2010 do        
+      GUI_DrawMsgX(obj, gui, 'Calculating Graph Data...',p,2000)
+      local pp = p/(2000)
+      if param then
+        reaper.TrackFX_SetParam(track, fx, param, pp)
+      end
+      if param2 then
+        reaper.TrackFX_SetParam(track, fx, param2, pp)
+      end
+      for dx = 1, ad do del = del + 1 end
+      local d, d2
+      if param then
+        _, d = reaper.TrackFX_GetFormattedParamValue(track, fx, param, '')
+      end
+      if param2 then
+        _, d2 = reaper.TrackFX_GetFormattedParamValue(track, fx, param2, '')
+      end
+      
+      if not khz then
+        local s = string.find(string.lower(d), 'k')
+        if s and s>0 then mult = 1000 end
+      end
+      d = tonumber(GetNumericPart(nz(d,'')))*mult
+      --if p%100 == 0 then
+        --DBG(d..'  '..look)
+      --end
+      if d and d >= look and not fnd then
+        lookmap[#lookmap+1] = {pix = math.min(p,2000),
+                               hz = look}
+        
+        if look >= max then fnd = true end
+        --DBG(max..'  '..tostring(fnd)..'  '..p..'  '..look)   
+        local inc = math.min(10^math.floor(math.log(look,10)),1000)
+        look = look + inc
+      end
+      
+      d2 = tonumber(GetNumericPart(nz(d2,'')))
+      if d2 and d2 >= look2 and not fnd2 then
+        gmap[#gmap+1] = {pix = math.min(p,2000),
+                         db = look2}
+        if look2 >= max2 then fnd2 = true end
+        look2 = math.floor((look2 + inc2)/inc2)*inc2
+        if look2 > max2 then look2 = max2 end
+      end
+      
+    end
+    if param then
+      reaper.TrackFX_SetParam(track, fx, param, bkp)
+    end
+    if param2 then
+      reaper.TrackFX_SetParam(track, fx, param2, bkp2)
+    end
+    
+    return lookmap, gmap
+  end
+  
+  function logspace(start, stop, n, N)
+    if n and stop and N then
+    return math.log(n,10)*(N/math.log(stop,10))
+    end
+    --return math.log(1+(n/stop)*400,10) * N
+  end
+  
+  function logspaceinv(start, stop, v, N)
+    return 10^(v / (N/math.log(stop,10)))
+    --return ((((10^(v/N)) / 400.0) * stop) -1.0)
+  end
+  
+  function GUI_DrawEQBands(obj, gui)
+  
+    local bands = strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands
+    if bands then
+    
+      for bb = 1, #bands+1 do
+
+        if bb ~= eqcontrolband_select then
+          local b = bb
+          if b == #bands+1 then
+            b = eqcontrolband_select
+          end
+          
+          if bands[b] and (eq_single == false or b == eqcontrolband_select) then
+            local track = GetTrack(tracks[track_select].tracknum)
+    
+            local pmin = bands[b].posmin
+            local pmax = bands[b].posmax
+            local gmin = bands[b].gmin
+            local gmax = bands[b].gmax
+            local fxnum = bands[b].fxnum
+            local freq_param = bands[b].freq_param
+            local khz = bands[b].khz
+            local gain_param = bands[b].gain_param
+            local q_param = bands[b].q_param
+            local c1_param = bands[b].c1_param
+            local c2_param = bands[b].c2_param
+            local c3_param = bands[b].c3_param
+            local c4_param = bands[b].c4_param
+            local c5_param = bands[b].c5_param
+            local bypass_param = bands[b].bypass_param
+            local col = bands[b].col
+            local xoff = obj.sections[300].x + obj.sections[302].x
+            local yoff = obj.sections[300].y + obj.sections[302].y
+            local bn = bands[b].bandname
+            local bt = bands[b].bandtype
+            
+            if eq_scale == false then
+              pmin = 0
+              pmax = 1
+              gmin = 0
+              gmax = 1
+            end
+
+            if eq_edit == false then
+              f_Get_SSV(gui.color.black)
+              local xywh = {x = obj.sections[300].x + obj.sections[326].x,
+                            y = obj.sections[300].y + obj.sections[326].y,
+                            w = obj.sections[326].w,
+                            h = obj.sections[326].h}
+              gfx.rect(xywh.x,
+                       xywh.y,
+                       xywh.w,
+                       xywh.h, 1)
+              local xywh = {x = obj.sections[300].x + obj.sections[325].x,
+                            y = obj.sections[300].y + obj.sections[325].y,
+                            w = obj.sections[325].w,
+                            h = obj.sections[325].h}
+              gfx.rect(xywh.x,
+                       xywh.y,
+                       xywh.w,
+                       xywh.h, 1)
+              local xywh = {x = obj.sections[300].x + obj.sections[327].x,
+                            y = obj.sections[300].y + obj.sections[327].y,
+                            w = obj.sections[327].w,
+                            h = obj.sections[327].h}
+              gfx.rect(xywh.x,
+                       xywh.y,
+                       xywh.w,
+                       xywh.h, 1)
+            end
+                    
+            local freq_val, gain_val, q_val, bypass_val, c1_val, c2_val, c3_val = 0, 0.5, nil, 0, 0, 0, 0
+            local freq_d, gain_d, q_d, c1_d, c2_d, c3_d
+            if freq_param then
+              freq_val = reaper.TrackFX_GetParamNormalized(track,fxnum,freq_param)
+              _, freq_d = reaper.TrackFX_GetFormattedParamValue(track,fxnum,freq_param,'')
+              if khz == true then
+                freq_d = GetNumericPart(freq_d)
+                local dd = tonumber(dd)
+                if dd then
+                  freq_d = freq_d*1000
+                end
+              end
+              
+              if eq_edit == false and b == eqcontrolband_select then
+                local xywh = {x = obj.sections[300].x + obj.sections[325].x,
+                              y = obj.sections[300].y + obj.sections[325].y,
+                              w = obj.sections[325].w,
+                              h = obj.sections[325].h}
+                local w = gfx.getimgdim(def_eqcknobf)
+                local h = ctl_files[def_eqcknobfctl].cellh
+                local frames = ctl_files[def_eqcknobfctl].frames-1
+                local v = math.floor(freq_val*frames)
+                gfx.blit(def_eqcknobf, 1, 0, 0, v* h, w, h, xywh.x, xywh.y)
+                xywh.y = xywh.y + 30
+                local suffix = ' Hz'
+                if khz then
+                  suffix = ' kHz'
+                else
+                  local s = string.find(string.lower(freq_d), 'k')
+                  if s and s>0 then suffix = ' kHz' end
+                end
+                GUI_textC(gui,xywh,roundX(freq_d,1, suffix),gui.color.white,-2)
+              end              
+            end
+            if gain_param then
+              gain_val = reaper.TrackFX_GetParamNormalized(track,fxnum,gain_param)
+              _, gain_d = reaper.TrackFX_GetFormattedParamValue(track,fxnum,gain_param,'')
+
+              if eq_edit == false and b == eqcontrolband_select then
+                local xywh = {x = obj.sections[300].x + obj.sections[326].x,
+                              y = obj.sections[300].y + obj.sections[326].y,
+                              w = obj.sections[326].w,
+                              h = obj.sections[326].h}
+                local w = gfx.getimgdim(def_eqcknobg)
+                local h = ctl_files[def_eqcknobgctl].cellh
+                local frames = ctl_files[def_eqcknobgctl].frames-1
+                local v = math.floor(gain_val*frames)
+                gfx.blit(def_eqcknobg, 1, 0, 0, v* h, w, h, xywh.x, xywh.y)
+                xywh.y = xywh.y + 30
+                GUI_textC(gui,xywh,roundX(gain_d,2,' dB'),gui.color.white,-2)
+              end
+            end
+
+            if q_param then
+              q_val = reaper.TrackFX_GetParamNormalized(track,fxnum,q_param)
+              _, q_d = reaper.TrackFX_GetFormattedParamValue(track,fxnum,q_param,'')
+
+              if eq_edit == false and b == eqcontrolband_select then
+                local xywh = {x = obj.sections[300].x + obj.sections[327].x,
+                              y = obj.sections[300].y + obj.sections[327].y,
+                              w = obj.sections[327].w,
+                              h = obj.sections[327].h}
+                local w = gfx.getimgdim(def_eqcknobg)
+                local h = ctl_files[def_eqcknobgctl].cellh
+                local frames = ctl_files[def_eqcknobgctl].frames-1
+                local v = math.floor(q_val*frames)
+                gfx.blit(def_eqcknobg, 1, 0, 0, v* h, w, h, xywh.x, xywh.y)
+                xywh.y = xywh.y + 30
+                GUI_textC(gui,xywh,roundX(q_d,2),gui.color.white,-2)
+              end
+            end
+
+            if c1_param then
+              c1_val = reaper.TrackFX_GetParamNormalized(track,fxnum,c1_param)
+              _, c1_d = reaper.TrackFX_GetFormattedParamValue(track,fxnum,c1_param,'')
+
+              if eq_edit == false and b == eqcontrolband_select then
+                local xywh = {x = obj.sections[300].x + obj.sections[328].x,
+                              y = obj.sections[300].y + obj.sections[328].y,
+                              w = obj.sections[328].w,
+                              h = obj.sections[328].h}
+                local w = gfx.getimgdim(def_knobsm)
+                local h = ctl_files[def_knobsmctl].cellh
+                local frames = ctl_files[def_knobsmctl].frames-1
+                local v = math.floor(c1_val*frames)
+                gfx.blit(def_knobsm, 1, 0, 0, v* h, w, h, xywh.x, xywh.y)
+                xywh.y = xywh.y + 30
+                GUI_textC(gui,xywh,roundX(c1_d,2),gui.color.white,-2)
+              end
+            end
+
+            if c2_param then
+              c2_val = reaper.TrackFX_GetParamNormalized(track,fxnum,c2_param)
+              _, c2_d = reaper.TrackFX_GetFormattedParamValue(track,fxnum,c2_param,'')
+
+              if eq_edit == false and b == eqcontrolband_select then
+                local xywh = {x = obj.sections[300].x + obj.sections[329].x,
+                              y = obj.sections[300].y + obj.sections[329].y,
+                              w = obj.sections[329].w,
+                              h = obj.sections[329].h}
+                local w = gfx.getimgdim(def_knobsm)
+                local h = ctl_files[def_knobsmctl].cellh
+                local frames = ctl_files[def_knobsmctl].frames-1
+                local v = math.floor(c2_val*frames)
+                gfx.blit(def_knobsm, 1, 0, 0, v* h, w, h, xywh.x, xywh.y)
+                xywh.y = xywh.y + 30
+                GUI_textC(gui,xywh,roundX(c2_d,2),gui.color.white,-2)
+              end
+            end
+
+            if c3_param then
+              c3_val = reaper.TrackFX_GetParamNormalized(track,fxnum,c3_param)
+              _, c3_d = reaper.TrackFX_GetFormattedParamValue(track,fxnum,c3_param,'')
+
+              if eq_edit == false and b == eqcontrolband_select then
+                local xywh = {x = obj.sections[300].x + obj.sections[330].x,
+                              y = obj.sections[300].y + obj.sections[330].y,
+                              w = obj.sections[330].w,
+                              h = obj.sections[330].h}
+                local w = gfx.getimgdim(def_knobsm)
+                local h = ctl_files[def_knobsmctl].cellh
+                local frames = ctl_files[def_knobsmctl].frames-1
+                local v = math.floor(c3_val*frames)
+                gfx.blit(def_knobsm, 1, 0, 0, v* h, w, h, xywh.x, xywh.y)
+                xywh.y = xywh.y + 30
+                GUI_textC(gui,xywh,roundX(c3_d,2),gui.color.white,-2)
+              end
+            end
+
+            if c4_param then
+              c4_val = reaper.TrackFX_GetParamNormalized(track,fxnum,c4_param)
+              _, c4_d = reaper.TrackFX_GetFormattedParamValue(track,fxnum,c4_param,'')
+
+              if eq_edit == false and b == eqcontrolband_select then
+                local xywh = {x = obj.sections[300].x + obj.sections[334].x,
+                              y = obj.sections[300].y + obj.sections[334].y,
+                              w = obj.sections[334].w,
+                              h = obj.sections[334].h}
+                local w = gfx.getimgdim(def_knobsm)
+                local h = ctl_files[def_knobsmctl].cellh
+                local frames = ctl_files[def_knobsmctl].frames-1
+                local v = math.floor(c4_val*frames)
+                gfx.blit(def_knobsm, 1, 0, 0, v* h, w, h, xywh.x, xywh.y)
+                xywh.y = xywh.y + 30
+                GUI_textC(gui,xywh,roundX(c4_d,2),gui.color.white,-2)
+              end
+            end
+
+            if c5_param then
+              c5_val = reaper.TrackFX_GetParamNormalized(track,fxnum,c5_param)
+              _, c5_d = reaper.TrackFX_GetFormattedParamValue(track,fxnum,c5_param,'')
+
+              if eq_edit == false and b == eqcontrolband_select then
+                local xywh = {x = obj.sections[300].x + obj.sections[335].x,
+                              y = obj.sections[300].y + obj.sections[335].y,
+                              w = obj.sections[335].w,
+                              h = obj.sections[335].h}
+                local w = gfx.getimgdim(def_knobsm)
+                local h = ctl_files[def_knobsmctl].cellh
+                local frames = ctl_files[def_knobsmctl].frames-1
+                local v = math.floor(c5_val*frames)
+                gfx.blit(def_knobsm, 1, 0, 0, v* h, w, h, xywh.x, xywh.y)
+                xywh.y = xywh.y + 30
+                GUI_textC(gui,xywh,roundX(c5_d,2),gui.color.white,-2)
+              end
+            end
+
+            if bypass_param then
+              bypass_val = reaper.TrackFX_GetParamNormalized(track,fxnum,bypass_param)
+              bands[b].bypass_val = bypass_val
+            end
+
+            bands[b].freq_val = freq_val
+            bands[b].gain_val = gain_val
+            bands[b].q_val = q_val
+            bands[b].c1_val = c1_val
+            bands[b].c2_val = c2_val
+            bands[b].c3_val = c3_val
+            bands[b].c4_val = c4_val
+            bands[b].c5_val = c5_val
+            
+            local xp = (freq_val * (pmax-pmin)*obj.sections[302].w)+(pmin*obj.sections[302].w)
+            if bands[b].gain_inv then
+              gain_val = 1-gain_val
+            end
+            local yp = obj.sections[302].h-(gmin*obj.sections[302].h) - (gain_val * (gmax-gmin)*obj.sections[302].h)
+        
+            if bypass_val and bypass_val == 1 then
+              gfx.a = 0.3
+            else
+              gfx.a = 1
+            end                     
+            
+            f_Get_SSV(col)
+            if q_val and b == eqcontrolband_select then
+              --[[local xywh = {x = (xp+xoff)-(q_val*50)-25,
+                            y = yp+yoff-1,
+                            w = 50+(q_val*50)*2,
+                            h = 3}]]
+              local qv = q_val
+              if bands[b].q_inv then
+                qv=1-qv
+              end
+              qv=qv*100
+              
+              gfx.triangle((xp+xoff)-qv-12, yp+yoff-4,
+                           (xp+xoff)-qv-12, yp+yoff+4,
+                           (xp+xoff)-qv-17, yp+yoff)
+              gfx.triangle((xp+xoff)+qv+12, yp+yoff-4,
+                           (xp+xoff)+qv+12, yp+yoff+4,
+                           (xp+xoff)+qv+17, yp+yoff)
+                       
+            end
+            
+            gfx.circle(xp+xoff,yp+yoff,6,1,1)
+            f_Get_SSV(gui.color.black)        
+            gfx.circle(xp+xoff,yp+yoff,6,0,1)
+            if b == eqcontrolband_select then
+              f_Get_SSV(gui.color.white)
+              gfx.circle(xp+xoff,yp+yoff,7,0,1)
+            end
+
+            gfx.a = 1
+
+            if eqcdrag == nil or b == eqcontrolband_select then
+              if bt or bn then
+                txt = ''
+                if bt then
+                  txt = bt
+                end
+                if bn then
+                  if txt ~= '' then
+                    txt = txt .. ': '
+                  end
+                  txt = txt .. bn
+                end            
+                gfx.setfont(1, gui.fontname, gui.fontsz_knob -5)
+                local text_len = gfx.measurestr(txt)
+  
+                local xywh = {x = xp+xoff-(text_len/2)-8,
+                              y = yp+yoff-30,
+                              w = text_len+16,
+                              h = 12+6}
+                local cc = '160 160 200'
+                if b ~= eqcontrolband_select then
+                  cc = '64 64 80'
+                end
+                gfx.a = 0.1
+                f_Get_SSV(gui.color.black)
+                gfx.rect(xywh.x,xywh.y,xywh.w,xywh.h,1,1)
+                f_Get_SSV(cc)
+                gfx.rect(xywh.x,xywh.y,xywh.w,xywh.h,0,1)
+                xywh.y = xywh.y - 1
+                GUI_textC(gui,xywh,txt,cc,-5)
+                gfx.a = 1
+              end
+  
+  
+              local hh = 0
+              if freq_d then
+                hh = hh + 12
+              end
+              if gain_d then
+                hh = hh + 12
+              end
+              if q_d then
+                hh = hh + 12
+              end
+              
+              
+              if b == eqcontrolband_select then
+                gfx.a = 0.1
+                if hh > 0 then
+                  local xywh = {x = xp+xoff-40,
+                                y = yp+yoff+20,
+                                w = 80,
+                                h = hh+6}
+                  local cc = '160 160 200'
+                  f_Get_SSV(gui.color.black)
+                  gfx.rect(xywh.x,xywh.y,xywh.w,xywh.h,1,1)
+                  f_Get_SSV(cc)
+                  gfx.rect(xywh.x,xywh.y,xywh.w,xywh.h,0,1)
+                  xywh.h = 12
+                  xywh.y = xywh.y + 2
+                  if freq_d then
+                    local suffix = ' Hz'
+                    if khz then
+                      suffix = ' kHz'
+                    else
+                      local s = string.find(string.lower(freq_d), 'k')
+                      if s and s>0 then suffix = ' kHz' end
+                    end
+                    
+                    GUI_textC(gui,xywh,roundX(freq_d,1,suffix),cc,-5)
+                  end
+                  if gain_d then
+                    xywh.y = xywh.y + 12
+                    GUI_textC(gui,xywh,roundX(gain_d,2,' dB'),cc,-5)
+                  end
+                  if q_d then
+                    xywh.y = xywh.y + 12
+                    GUI_textC(gui,xywh,round(q_d,2),cc,-5)
+                  end
+                end
+                gfx.a = 1
+              end
+            end                
+          end
+        end
+      end
+      
+    end
+  
+  end
+  
+  function GUI_DrawEQControl(obj, gui)
+  
+    local bands = strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands
+    gfx.dest = 1009
+    local w, h = gfx.getimgdim(1009)
+    if obj.sections[300].w ~= w or obj.sections[300].h ~= h or update_gfx then
+      gfx.setimgdim(1009, obj.sections[300].w, obj.sections[300].h)
+
+      f_Get_SSV(gui.color.black)
+      gfx.rect(0,
+               0, 
+               obj.sections[300].w,
+               obj.sections[300].h, 1)
+      f_Get_SSV(gui.color.white)
+      gfx.rect(0,
+               0, 
+               obj.sections[300].w,
+               obj.sections[300].h, 0)
+      gfx.rect(obj.sections[351].x,
+               obj.sections[351].y, 
+               obj.sections[351].w,
+               obj.sections[351].h, 1)
+      local xywh = {x = obj.sections[351].x+8,
+                    y = obj.sections[351].y+8,
+                    w = obj.sections[351].w-16,
+                    h = obj.sections[351].h-16}
+      f_Get_SSV(gui.color.black)
+      gfx.line(xywh.x,xywh.y,xywh.x+xywh.w,xywh.y+xywh.h,1)
+      gfx.line(xywh.x+xywh.w,xywh.y,xywh.x,xywh.y+xywh.h,1)
+      
+      f_Get_SSV(gui.color.white)
+      gfx.rect(obj.sections[304].x,
+               obj.sections[304].y, 
+               obj.sections[304].w,
+               obj.sections[304].h, 0)
+      GUI_textC(gui,obj.sections[304],'ADD',gui.color.white,-2)               
+
+      f_Get_SSV(gui.color.white)
+      local c = gui.color.white    
+      local f = 0
+      if eq_edit then
+        c = gui.color.black    
+        f = 1
+      end
+      gfx.rect(obj.sections[311].x,
+               obj.sections[311].y, 
+               obj.sections[311].w,
+               obj.sections[311].h, f)
+      GUI_textC(gui,obj.sections[311],'EDIT',c,-2)               
+
+      f_Get_SSV(gui.color.white)
+      local c = gui.color.white    
+      local f = 0
+      if eq_single == true then
+        c = gui.color.black    
+        f = 1
+      end
+      gfx.rect(obj.sections[320].x,
+               obj.sections[320].y, 
+               obj.sections[320].w,
+               obj.sections[320].h, f)
+      xywh = {x = obj.sections[320].x,
+              y = obj.sections[320].y-6,
+              w = obj.sections[320].w,
+              h = obj.sections[320].h}
+      GUI_textC(gui,xywh,'SINGLE',c,-8)               
+      xywh.y = xywh.y + 8
+      GUI_textC(gui,xywh,'BAND',c,-8)               
+
+      f_Get_SSV(gui.color.white)
+      local c = gui.color.white    
+      local f = 0
+      if eq_scale == true then
+        c = gui.color.black    
+        f = 1
+      end
+      gfx.rect(obj.sections[321].x,
+               obj.sections[321].y, 
+               obj.sections[321].w,
+               obj.sections[321].h, f)
+      xywh = {x = obj.sections[321].x,
+              y = obj.sections[321].y-1,
+              w = obj.sections[321].w,
+              h = obj.sections[321].h}
+      --GUI_textC(gui,xywh,'NO',c,-8)               
+      --xywh.y = xywh.y + 8
+      GUI_textC(gui,xywh,'SCALE',c,-8)               
+
+      f_Get_SSV(gui.color.white)
+      f = 0
+      c = gui.color.white    
+      gfx.rect(obj.sections[345].x,
+               obj.sections[345].y, 
+               obj.sections[345].w,
+               obj.sections[345].h, f)
+      xywh = {x = obj.sections[345].x,
+              y = obj.sections[345].y-6,
+              w = obj.sections[345].w,
+              h = obj.sections[345].h}
+      GUI_textC(gui,xywh,'OPEN',c,-8)               
+      xywh.y = xywh.y + 8
+      GUI_textC(gui,xywh,'FX',c,-8)               
+      
+      f_Get_SSV(gui.color.white)
+      --gfx.line(obj.sections[303].x,obj.sections[303].y,obj.sections[303].x+obj.sections[303].w,obj.sections[303].y,1)
+      --gfx.line(obj.sections[303].x,obj.sections[303].y+obj.sections[303].h,obj.sections[303].x+obj.sections[303].w,obj.sections[303].y+obj.sections[303].h,1)
+      local bandsn = 20
+      local track = GetTrack(tracks[track_select].tracknum)
+      for l = 1, bandsn do
+        local x = math.floor(obj.sections[303].w / bandsn) * (l-1)
+        f_Get_SSV(gui.color.white)
+
+        local xywh = {x = obj.sections[303].x+x,
+                      y = obj.sections[303].y,
+                      w = obj.sections[303].w / bandsn,
+                      h = obj.sections[303].h}
+        if l < bandsn then
+          local c = '32 32 32'
+          
+          local byp = 0
+          if bands and bands[l] then
+            local p_byp = bands[l].bypass_param
+            local fxnum = bands[l].fxnum
+            
+            if bands[l].bypass_param then
+              byp = reaper.TrackFX_GetParamNormalized(track, fxnum, p_byp)
+              bands[l].bypass_val = byp
+            end
+          end
+                    
+          if byp == 1 then            
+            f_Get_SSV('64 0 0')
+          else
+            f_Get_SSV('32 32 32')
+          end
+          
+          gfx.rect(xywh.x+2,xywh.y,xywh.w-4,xywh.h+1,1,1)
+
+          if eqcontrolband_select == l then
+            f_Get_SSV(gui.color.white)
+            gfx.rect(xywh.x+2,
+                     xywh.y, 
+                     xywh.w-4,
+                     xywh.h+1, 0)
+            c = gui.color.black                        
+            if bands and l <= #bands then
+              c = bands[l].col          
+            end
+          else
+            if bands and l <= #bands then
+              c = bands[l].col          
+            end
+          end
+          f_Get_SSV(c)
+          gfx.circle(xywh.x+math.floor(xywh.w/2),xywh.y+math.floor(xywh.h/2),6,1,1)
+          f_Get_SSV(gui.color.black)
+          gfx.circle(xywh.x+math.floor(xywh.w/2),xywh.y+math.floor(xywh.h/2),7,0,1)
+          gfx.circle(xywh.x+math.floor(xywh.w/2),xywh.y+math.floor(xywh.h/2),8,0,1)
+          xywh.y = xywh.y - 1
+                
+          GUI_textC(gui,xywh,string.format('%i',l),c,-4)
+        end
+      end
+      
+      if eqcontrolband_select and bands and 
+        bands[eqcontrolband_select] then
+        if eq_edit then
+  
+          gfx.a=1
+  
+          c = gui.color.black    
+          f = 1
+          f_Get_SSV(gui.color.white)
+          gfx.rect(obj.sections[312].x,
+                   obj.sections[312].y, 
+                   obj.sections[312].w,
+                   obj.sections[312].h, f)
+          GUI_textC(gui,obj.sections[312],'SAVE BAND',c,-5)               
+  
+          f_Get_SSV(gui.color.white)
+          gfx.rect(obj.sections[315].x,
+                   obj.sections[315].y, 
+                   obj.sections[315].w,
+                   obj.sections[315].h, f)
+          GUI_textC(gui,obj.sections[315],'DEL BAND',c,-5)               
+
+          f_Get_SSV(gui.color.white)
+          gfx.rect(obj.sections[340].x,
+                   obj.sections[340].y, 
+                   obj.sections[340].w,
+                   obj.sections[340].h, f)
+          GUI_textC(gui,obj.sections[340],'SAVE EQ',c,-5)               
+   
+          local f = 0
+          local c = gui.color.white
+          local txt = 'FOLDER'
+          if bands[eqcontrolband_select].bandtype then
+            f = 1
+            c = gui.color.black
+            txt = bands[eqcontrolband_select].bandtype
+          end
+          f_Get_SSV(gui.color.white)
+          gfx.rect(obj.sections[313].x,
+                   obj.sections[313].y, 
+                   obj.sections[313].w,
+                   obj.sections[313].h, f)
+          GUI_textC(gui,obj.sections[313],txt,c,-2)         
+
+          GUI_DrawColorBox(gui, '', obj.sections[355], gui.color.white, bands[eqcontrolband_select].col)
+          local xywh = {x = obj.sections[355].x,
+                        y = obj.sections[355].y-5,
+                        w = obj.sections[355].w,
+                        h = obj.sections[355].h}
+          GUI_textC(gui,xywh,'BAND',gui.color.black,-5) 
+          xywh.y = xywh.y + 10        
+          GUI_textC(gui,xywh,'COLOUR',gui.color.black,-5)                   
+  
+          local f = 0
+          local c = gui.color.white
+          local txt = 'BAND NAME'
+          if bands[eqcontrolband_select].bandname then
+            f = 1
+            c = gui.color.black
+            txt = bands[eqcontrolband_select].bandname
+          end
+          f_Get_SSV(gui.color.white)
+          gfx.rect(obj.sections[314].x,
+                   obj.sections[314].y, 
+                   obj.sections[314].w,
+                   obj.sections[314].h, f)
+          GUI_textC(gui,obj.sections[314],txt,c,-2)         
+                
+          local f = 0
+          local c = gui.color.white
+          local txt = 'SELECT PLUGIN'
+          if bands[eqcontrolband_select].fxnum then
+            f = 1
+            c = gui.color.black
+            if bands[eqcontrolband_select].fxname then
+              txt = string.format('%i',bands[eqcontrolband_select].fxnum+1)..': '..
+                    bands[eqcontrolband_select].fxname
+            else
+              txt = string.format('%i',bands[eqcontrolband_select].fxnum+1)..': '
+            end
+          end
+          f_Get_SSV(gui.color.white)
+          gfx.rect(obj.sections[305].x,
+                   obj.sections[305].y, 
+                   obj.sections[305].w,
+                   obj.sections[305].h, f)
+        
+          GUI_textC(gui,obj.sections[305],txt,c,-5)         
+          if bands[eqcontrolband_select].fxnum then
+          
+            f = 0
+            c = gui.color.white
+            txt = 'SELECT FREQ PARAM'
+            if bands[eqcontrolband_select].freq_param then
+              f = 1
+              c = gui.color.black
+              txt = bands[eqcontrolband_select].freq_param_name
+            end
+            f_Get_SSV(gui.color.white)
+            gfx.rect(obj.sections[306].x,
+                     obj.sections[306].y, 
+                     obj.sections[306].w,
+                     obj.sections[306].h, f)
+            GUI_textC(gui,obj.sections[306],txt,c,-5)         
+  
+            f_Get_SSV(gui.color.white)
+            gfx.rect(obj.sections[309].x,
+                     obj.sections[309].y, 
+                     obj.sections[309].w,
+                     obj.sections[309].h, f)
+
+            f_Get_SSV(gui.color.white)
+            gfx.rect(obj.sections[336].x,
+                     obj.sections[336].y, 
+                     obj.sections[336].w,
+                     obj.sections[336].h, f)
+
+            local xywh = {x = obj.sections[337].x-6,
+                          y = obj.sections[337].y-13,
+                          w = 1,
+                          h = butt_h}
+            GUI_textsm_RJ(gui,xywh,'DETECTION   ',gui.color.white,-5)
+            xywh.y = xywh.y + 10
+            GUI_textsm_RJ(gui,xywh,'SENSITIVITY',gui.color.white,-5)
+                          
+            GUI_DrawSliderH(gui, '', obj.sections[337], gui.color.black, gui.color.white, F_limit(auto_delay/10,0,1))
+            GUI_textC(gui,obj.sections[337],auto_delay,gui.color.red,-2)
+
+            local xywh = {x = obj.sections[338].x,
+                          y = obj.sections[338].y+3,
+                          w = obj.sections[338].w,
+                          h = 10}
+            
+            GUI_textsm_LJ(gui,xywh,'FREQ MIN:',gui.color.red,-5)
+            xywh.y = xywh.y + 12
+            GUI_textsm_LJ(gui,xywh,'FREQ MAX:',gui.color.red,-5)
+            xywh.y = xywh.y + 15
+            GUI_textsm_LJ(gui,xywh,'GAIN MIN:',gui.color.red,-5)
+            xywh.y = xywh.y + 12
+            GUI_textsm_LJ(gui,xywh,'GAIN MAX:',gui.color.red,-5)
+
+            xywh.x = obj.sections[338].x
+            xywh.y = obj.sections[338].y+3
+            
+            GUI_textsm_RJ(gui,xywh,nz(bands[eqcontrolband_select].freq_min,''),gui.color.red,-5)
+            xywh.y = xywh.y + 12
+            GUI_textsm_RJ(gui,xywh,nz(bands[eqcontrolband_select].freq_max,''),gui.color.red,-5)
+            xywh.y = xywh.y + 15
+            GUI_textsm_RJ(gui,xywh,nz(bands[eqcontrolband_select].gain_min,''),gui.color.red,-5)
+            xywh.y = xywh.y + 12
+            GUI_textsm_RJ(gui,xywh,nz(bands[eqcontrolband_select].gain_max,''),gui.color.red,-5)
+  
+            f = 0
+            c = gui.color.white
+            txt = 'SELECT BAND BYPASS'
+            if bands[eqcontrolband_select].bypass_param then
+              f = 1
+              c = gui.color.black
+              txt = bands[eqcontrolband_select].bypass_param_name
+            end
+            f_Get_SSV(gui.color.white)
+            gfx.rect(obj.sections[322].x,
+                     obj.sections[322].y, 
+                     obj.sections[322].w,
+                     obj.sections[322].h, f)
+            GUI_textC(gui,obj.sections[322],txt,c,-5)         
+
+            f = 0
+            c = gui.color.white
+            txt = 'SELECT CTL 1'
+            if bands[eqcontrolband_select].c1_param then
+              f = 1
+              c = gui.color.black
+              txt = bands[eqcontrolband_select].c1_param_name
+            end
+            f_Get_SSV(gui.color.white)
+            gfx.rect(obj.sections[323].x,
+                     obj.sections[323].y, 
+                     obj.sections[323].w,
+                     obj.sections[323].h, f)
+            GUI_textC(gui,obj.sections[323],txt,c,-5)         
+
+            f = 0
+            c = gui.color.white
+            txt = 'SELECT CTL 2'
+            if bands[eqcontrolband_select].c2_param then
+              f = 1
+              c = gui.color.black
+              txt = bands[eqcontrolband_select].c2_param_name
+            end
+            f_Get_SSV(gui.color.white)
+            gfx.rect(obj.sections[324].x,
+                     obj.sections[324].y, 
+                     obj.sections[324].w,
+                     obj.sections[324].h, f)
+            GUI_textC(gui,obj.sections[324],txt,c,-5)         
+            
+            f = 0
+            c = gui.color.white
+            txt = 'SELECT CTL 3'
+            if bands[eqcontrolband_select].c3_param then
+              f = 1
+              c = gui.color.black
+              txt = bands[eqcontrolband_select].c3_param_name
+            end
+            f_Get_SSV(gui.color.white)
+            gfx.rect(obj.sections[331].x,
+                     obj.sections[331].y, 
+                     obj.sections[331].w,
+                     obj.sections[331].h, f)
+            GUI_textC(gui,obj.sections[331],txt,c,-5)         
+
+            f = 0
+            c = gui.color.white
+            txt = 'SELECT CTL 4'
+            if bands[eqcontrolband_select].c4_param then
+              f = 1
+              c = gui.color.black
+              txt = bands[eqcontrolband_select].c4_param_name
+            end
+            f_Get_SSV(gui.color.white)
+            gfx.rect(obj.sections[332].x,
+                     obj.sections[332].y, 
+                     obj.sections[332].w,
+                     obj.sections[332].h, f)
+            GUI_textC(gui,obj.sections[332],txt,c,-5)         
+
+            f = 0
+            c = gui.color.white
+            txt = 'SELECT CTL 5'
+            if bands[eqcontrolband_select].c5_param then
+              f = 1
+              c = gui.color.black
+              txt = bands[eqcontrolband_select].c5_param_name
+            end
+            f_Get_SSV(gui.color.white)
+            gfx.rect(obj.sections[333].x,
+                     obj.sections[333].y, 
+                     obj.sections[333].w,
+                     obj.sections[333].h, f)
+            GUI_textC(gui,obj.sections[333],txt,c,-5)         
+
+            f = 1
+            c = gui.color.black
+            txt = bands[eqcontrolband_select].c5_param_name
+            f_Get_SSV(gui.color.white)
+            gfx.rect(obj.sections[356].x,
+                     obj.sections[356].y, 
+                     obj.sections[356].w,
+                     obj.sections[356].h, f)
+            GUI_textC(gui,obj.sections[356],'CAPTURE CURRENT VALUES AS DEFAULT',c,-5)
+            
+            c = gui.color.black
+            if bands[eqcontrolband_select].lookmap then
+              GUI_textC(gui,obj.sections[309],'ALIGN GRAPH',c,-5)         
+            else      
+              GUI_textC(gui,obj.sections[309],'CALC GRAPH',c,-5)         
+            end
+            GUI_textC(gui,obj.sections[336],'CLEAR GRAPH',c,-5)         
+
+            xywh = {x = obj.sections[357].x,
+                    y = obj.sections[357].y+10, 
+                    w = obj.sections[357].w,
+                    h = butt_h}
+            f_Get_SSV(gui.color.white)                     
+            gfx.rect(obj.sections[357].x,
+                     obj.sections[357].y, 
+                     obj.sections[357].w,
+                     obj.sections[357].h, 1)
+            GUI_textC(gui,xywh,'ALIGN',c,-5)
+            xywh.y = xywh.y + 14         
+            GUI_textC(gui,xywh,'ALL',c,-5)         
+            xywh.y = xywh.y + 14         
+            GUI_textC(gui,xywh,'BANDS',c,-5)         
+            
+            f_Get_SSV(gui.color.white)
+            f = 0
+            c = gui.color.white
+            if strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqgraph then
+              f = 1
+              c = gui.color.black
+            end          
+            gfx.rect(obj.sections[310].x,
+                     obj.sections[310].y, 
+                     obj.sections[310].w,
+                     obj.sections[310].h, f)
+            GUI_textC(gui,obj.sections[310],'SET',c,-6,nil,-5)         
+            GUI_textC(gui,obj.sections[310],'DEFAULT',c,-6,nil,4)         
+  
+            f_Get_SSV(gui.color.white)
+            f = 1
+            c = gui.color.black
+            local txt = 'Hz/kHz'
+            if bands[eqcontrolband_select].khz == true then
+              txt = 'kHz'
+            end          
+            gfx.rect(obj.sections[316].x,
+                     obj.sections[316].y, 
+                     obj.sections[316].w,
+                     obj.sections[316].h, f)
+            GUI_textC(gui,obj.sections[316],txt,c,-2)         
+          
+            f = 0
+            c = gui.color.white
+            txt = 'SELECT GAIN PARAM'
+            if bands[eqcontrolband_select].gain_param then
+              f = 1
+              c = gui.color.black
+              txt = bands[eqcontrolband_select].gain_param_name
+            end
+            f_Get_SSV(gui.color.white)
+            gfx.rect(obj.sections[307].x,
+                     obj.sections[307].y, 
+                     obj.sections[307].w,
+                     obj.sections[307].h, f)
+            GUI_textC(gui,obj.sections[307],txt,c,-5)         
+  
+            f = 0
+            c = gui.color.white
+            if bands[eqcontrolband_select].gain_inv then
+              f = 1
+              c = gui.color.black
+            end
+            f_Get_SSV(gui.color.white)
+            gfx.rect(obj.sections[317].x,
+                     obj.sections[317].y, 
+                     obj.sections[317].w,
+                     obj.sections[317].h, f)
+            GUI_textC(gui,obj.sections[317],'INVERT',c,-5)         
+  
+            f = 0
+            c = gui.color.white
+            txt = 'SELECT Q PARAM'
+            if bands[eqcontrolband_select].q_param then
+              f = 1
+              c = gui.color.black
+              txt = bands[eqcontrolband_select].q_param_name
+            end
+            f_Get_SSV(gui.color.white)
+            gfx.rect(obj.sections[308].x,
+                     obj.sections[308].y, 
+                     obj.sections[308].w,
+                     obj.sections[308].h, f)
+            GUI_textC(gui,obj.sections[308],txt,c,-5)         
+  
+            f = 0
+            c = gui.color.white
+            if bands[eqcontrolband_select].q_inv then
+              f = 1
+              c = gui.color.black
+            end
+            f_Get_SSV(gui.color.white)
+            gfx.rect(obj.sections[318].x,
+                     obj.sections[318].y, 
+                     obj.sections[318].w,
+                     obj.sections[318].h, f)
+            GUI_textC(gui,obj.sections[318],'INVERT',c,-5)         
+          
+          end
+        else
+       
+          local xywh = {x = obj.sections[325].x,
+                        y = obj.sections[325].y-20,
+                        w = obj.sections[325].w,
+                        h = 10}
+          if bands[eqcontrolband_select].freq_param then
+            GUI_textC(gui,xywh,'FREQ',gui.color.white,-2)         
+          end
+          if bands[eqcontrolband_select].gain_param then
+            xywh.x = obj.sections[326].x
+            GUI_textC(gui,xywh,'GAIN',gui.color.white,-2)                      
+          end
+          if bands[eqcontrolband_select].q_param then          
+            xywh.x = obj.sections[327].x
+            GUI_textC(gui,xywh,'Q',gui.color.white,-2)                      
+          end
+          xywh.x = obj.sections[328].x
+          xywh.w = obj.sections[328].w
+          local txt = bands[eqcontrolband_select].c1_param_name
+          if txt then
+            GUI_textC(gui,xywh,txt,gui.color.white,-4)                      
+          end
+          local ofs = 15
+          xywh.y = xywh.y - ofs
+          xywh.x = obj.sections[329].x
+          local txt = bands[eqcontrolband_select].c2_param_name
+          if txt then
+            GUI_textC(gui,xywh,txt,gui.color.white,-4)                      
+          end
+          xywh.y = xywh.y + ofs
+          xywh.x = obj.sections[330].x
+          local txt = bands[eqcontrolband_select].c3_param_name
+          if txt then
+            GUI_textC(gui,xywh,txt,gui.color.white,-4)                      
+          end
+          xywh.y = xywh.y - ofs
+          xywh.x = obj.sections[334].x
+          local txt = bands[eqcontrolband_select].c4_param_name
+          if txt then
+            GUI_textC(gui,xywh,txt,gui.color.white,-4)                      
+          end
+          xywh.y = xywh.y + ofs
+          xywh.x = obj.sections[335].x
+          local txt = bands[eqcontrolband_select].c5_param_name
+          if txt then
+            GUI_textC(gui,xywh,txt,gui.color.white,-4)                      
+          end
+        end
+      end
+    end
+    
+    local mp = math.floor(obj.sections[302].y+(obj.sections[302].h/2))
+    
+    if strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqgraph and eq_scale == true then
+      local eqg = strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqgraph
+      
+      if type(eqg) == 'table' and eqg.gmap and eqg.lookmap then
+
+        local pmin = eqg.posmin
+        local pmax = eqg.posmax
+        local gmin = eqg.gmin
+        local gmax = eqg.gmax
+        
+        if eq_scale == false then
+          pmin = 0
+          pmax = 1
+          gmin = 0
+          gmax = 1
+        end
+        
+        local xywh = {x = obj.sections[302].x + pmin*obj.sections[302].w,
+                      y = obj.sections[302].y,
+                      w = (pmax-pmin)*obj.sections[302].w,
+                      h = obj.sections[302].h}
+        f_Get_SSV('8 8 48')
+        gfx.rect(xywh.x,
+                 xywh.y, 
+                 xywh.w,
+                 xywh.h, 1)
+        --gfx.a = 0.3
+        --gfx.gradrect(xywh.x,xywh.y,xywh.w,xywh.h, 0,0,1.6,0.5, 0,0,0.0008,0.00005, 0,0,0,-0.0005)
+        --gfx.a = 1
+        
+        local pmin2, pmax2, gmin2, gmax2 = 0,1,0,1
+        if bands and eqcontrolband_select 
+           and bands[eqcontrolband_select] then
+          pmin2 = bands[eqcontrolband_select].posmin
+          pmax2 = bands[eqcontrolband_select].posmax
+          gmin2 = bands[eqcontrolband_select].gmin
+          gmax2 = bands[eqcontrolband_select].gmax
+
+          gmap2 = bands[eqcontrolband_select].gmap
+        end
+                
+        if eq_scale == false then
+          pmin2 = 0
+          pmax2 = 1
+          gmin2 = 0
+          gmax2 = 1
+        end
+
+        local gmap = eqg.gmap
+        
+        f_Get_SSV('16 16 48')
+        local prevx = 0
+        gfx.setfont(1, gui.fontname, gui.fontsz_knob -5)
+        local h = (gmax - gmin) * obj.sections[302].h
+        
+        if gmap2 and #gmap2 > 1 then
+          local g1 = obj.sections[302].y + obj.sections[302].h -(gmap2[1].pix/2000)*h - (gmin2 * obj.sections[302].h)+5
+          local g2 = obj.sections[302].y + obj.sections[302].h -((gmap2[#gmap2].pix/2000)*h - (gmin2 * obj.sections[302].h))-5 
+  
+          if gmap then
+            for l = 1, #gmap do
+              local y = obj.sections[302].y + obj.sections[302].h - (gmap[l].pix/2000)*h - (gmin * obj.sections[302].h)
+              f_Get_SSV('0 0 32')
+              
+              if (y > g1
+                 or y < g2) or draggraph then
+                if gmap[l].db % 6 == 0 then
+                  --gfx.line( obj.sections[302].x, y, obj.sections[302].x + obj.sections[302].w, y)
+                  xywh = {x = obj.sections[302].x-4,
+                          y = y,
+                          w = 1,
+                          h = 1}
+                  local txt = gmap[l].db
+                  GUI_textsm_RJ(gui, xywh, txt, '128 0 0', -5)    
+                end
+              end
+            end
+          end
+        end
+                
+        local lookmap = eqg.lookmap
+        f_Get_SSV('16 16 48')
+        if lookmap then
+          for l = 1, #lookmap do
+            local w = (pmax - pmin) * obj.sections[302].w
+            local x = (lookmap[l].pix/2000)*w + (pmin * obj.sections[302].w)
+            local yinc = 0
+            if (x < pmin2 * obj.sections[302].w or x > pmax2 * obj.sections[302].w) or draggraph then
+              if 10^math.floor(math.log(lookmap[l].hz,10)) == lookmap[l].hz then
+                local xywh = {x = obj.sections[302].x + x-4,
+                            y = obj.sections[302].y + obj.sections[302].h+1,
+                            w = 1,
+                            h = 10}
+                  
+                if draggraph then
+                  yinc = 10
+                  GUI_textsm_RJ(gui, xywh, string.format('%i',lookmap[l].hz), gui.color.white, -5)    
+                end
+                f_Get_SSV('64 64 128')
+              else
+                f_Get_SSV('32 32 96')  
+              end
+              if draggraph == nil then
+                gfx.a = 0.3          
+              end
+              gfx.line(obj.sections[302].x + x, obj.sections[302].y, obj.sections[302].x + x, obj.sections[302].y + obj.sections[302].h-1 + yinc)    
+              gfx.a = 1
+            end
+          end
+        end
+      end
+    
+    end
+    
+    if bands then
+    
+      if bands[eqcontrolband_select] and 
+         bands[eqcontrolband_select].lookmap then
+      
+        local pmin = bands[eqcontrolband_select].posmin
+        local pmax = bands[eqcontrolband_select].posmax
+        local gmin = bands[eqcontrolband_select].gmin
+        local gmax = bands[eqcontrolband_select].gmax
+        
+        if eq_scale == false then
+          pmin = 0
+          pmax = 1
+          gmin = 0
+          gmax = 1
+        end
+        
+        local xywh = {x = obj.sections[302].x + pmin*obj.sections[302].w,
+                      y = obj.sections[302].y+obj.sections[302].h - gmax*obj.sections[302].h,
+                      w = (pmax-pmin)*obj.sections[302].w,
+                      h = (gmax-gmin)*obj.sections[302].h}
+        f_Get_SSV('24 24 96')
+        if draggraph then
+          gfx.a = 0.2
+        end
+        gfx.rect(xywh.x,
+                 xywh.y, 
+                 xywh.w,
+                 xywh.h, 1)    
+        gfx.a = 1
+        local lookmap = bands[eqcontrolband_select].lookmap
+        local gmap = bands[eqcontrolband_select].gmap
+        f_Get_SSV('16 16 48')
+        local prevx = 0
+        gfx.setfont(1, gui.fontname, gui.fontsz_knob -5)
+
+        if gmap then
+          for l = 1, #gmap do
+            local h = (gmax - gmin) * obj.sections[302].h
+            local y = obj.sections[302].y + obj.sections[302].h - (gmap[l].pix/2000)*h - (gmin * obj.sections[302].h)
+            f_Get_SSV('16 16 60')
+            if gmap[l].db % 6 == 0 then
+              gfx.line( obj.sections[302].x, y, obj.sections[302].x + obj.sections[302].w, y)
+              xywh = {x = obj.sections[302].x-4,
+                      y = y,
+                      w = 1,
+                      h = 1}
+              local txt = gmap[l].db
+              GUI_textsm_RJ(gui, xywh, txt, gui.color.white, -5)    
+            end
+          end
+        end
+
+
+        for l = 1, #lookmap do
+          local w = (pmax - pmin) * obj.sections[302].w
+          local x = (lookmap[l].pix/2000)*w + (pmin * obj.sections[302].w)
+          local yinc = 0
+          if 10^math.floor(math.log(lookmap[l].hz,10)) == lookmap[l].hz then
+            local txt = string.format('%i',lookmap[l].hz)
+            local tw = gfx.measurestr(txt)
+            local xywh = {x = obj.sections[302].x + x-4,
+                          y = obj.sections[302].y + obj.sections[302].h+1,
+                          w = 1,
+                          h = 10}
+            if xywh.x - tw > prevx +10 then
+              yinc = 10
+              GUI_textsm_RJ(gui, xywh, txt, gui.color.white, -5)    
+              prevx = xywh.x           
+            end
+            f_Get_SSV('48 48 96')
+          else
+            local txt = string.format('%i',lookmap[l].hz)
+            local tw = gfx.measurestr(txt)
+            local xywh = {x = obj.sections[302].x + x-4,
+                          y = obj.sections[302].y + obj.sections[302].h+1,
+                          w = 1,
+                          h = 10}
+            if xywh.x - tw > prevx +10 then
+              yinc = 10
+              GUI_textsm_RJ(gui, xywh, txt, gui.color.white, -5)                
+              prevx = xywh.x           
+            end
+            f_Get_SSV('16 16 64') 
+
+          end
+          --DBG(x)
+          gfx.line( obj.sections[302].x + x, obj.sections[302].y, obj.sections[302].x + x, obj.sections[302].y + obj.sections[302].h-1 + yinc)
+          if yinc > 0 then
+            f_Get_SSV('64 64 128')
+            gfx.line( obj.sections[302].x + x, obj.sections[302].y + obj.sections[302].h-1, obj.sections[302].x + x, obj.sections[302].y + obj.sections[302].h-1 + yinc)
+            
+          end    
+        end
+      end
+      
+      if bands[eqcontrolband_select] then
+        local bn = bands[eqcontrolband_select].bandname
+        local bt = bands[eqcontrolband_select].bandtype
+        if bt or bn then
+          local txt = ''
+          if bt then
+            txt = bt
+          end
+          if bn then
+            if txt ~= '' then
+              txt = txt .. ' : '
+            end
+            txt = txt .. bn
+          end
+          
+          local xywh = {x = obj.sections[302].x + 10,
+                        y = obj.sections[302].y + 10,
+                        w = 2,
+                        h = 14}
+          GUI_textsm_LJ(gui, xywh, txt, '64 64 128', 4)
+        end  
+      end
+    end    
+    
+    f_Get_SSV('128 128 128')
+    gfx.line(obj.sections[302].x, mp, obj.sections[302].x + obj.sections[302].w-1, mp, 1)
+    f_Get_SSV('64 64 64')
+    gfx.rect(obj.sections[302].x,
+             obj.sections[302].y, 
+             obj.sections[302].w,
+             obj.sections[302].h, 0)
+    
+    if bands and
+       bands[eqcontrolband_select] and 
+       bands[eqcontrolband_select].freq_param then
+
+      local pmin = bands[eqcontrolband_select].posmin
+      local pmax = bands[eqcontrolband_select].posmax
+      
+      --[[if eq_scale == false then
+        pmin = 0
+        pmax = 1
+      end]]
+       
+      local x = obj.sections[302].x + pmin * obj.sections[302].w
+      f_Get_SSV('0 255 0')
+      if eq_edit then
+        xywh = {x = x-4,
+                y = obj.sections[302].y+obj.sections[302].h + 2,
+                w = 8,
+                h = 8}
+        gfx.rect(xywh.x,
+                 xywh.y, 
+                 xywh.w,
+                 xywh.h, 1)
+        gfx.line(x, obj.sections[302].y, x, obj.sections[302].y+obj.sections[302].h, 1)
+      else
+        f_Get_SSV('64 64 240')    
+      end
+            
+      x = obj.sections[302].x + pmax * obj.sections[302].w
+      f_Get_SSV('255 0 0')
+      if eq_edit then
+        xywh = {x = x-4,
+                y = obj.sections[302].y+obj.sections[302].h + 2,
+                w = 8,
+                h = 8}
+        gfx.rect(xywh.x,
+                 xywh.y, 
+                 xywh.w,
+                 xywh.h, 1)
+        gfx.line(x, obj.sections[302].y, x, obj.sections[302].y+obj.sections[302].h, 1)
+      else
+        f_Get_SSV('64 64 240')    
+      end
+                    
+    end    
+
+    if bands and
+       bands[eqcontrolband_select] and 
+       bands[eqcontrolband_select].gain_param then
+
+      local gmin = bands[eqcontrolband_select].gmin
+      local gmax = bands[eqcontrolband_select].gmax
+      
+      --[[if eq_scale == false then
+        pmin = 0
+        pmax = 1
+      end]]
+       
+      local y = obj.sections[302].y + obj.sections[302].h  - (gmin * obj.sections[302].h)
+      f_Get_SSV('0 255 255')
+      if eq_edit then
+        xywh = {x = obj.sections[302].x-10,
+                y = y-4,
+                w = 8,
+                h = 8}
+        gfx.rect(xywh.x,
+                 xywh.y, 
+                 xywh.w,
+                 xywh.h, 1)
+        gfx.line(obj.sections[302].x-2, y, obj.sections[302].x + obj.sections[302].w-1, y, 1)
+      else
+        f_Get_SSV('64 64 240')    
+      end
+            
+      y = obj.sections[302].y + obj.sections[302].h - gmax * obj.sections[302].h
+      f_Get_SSV('0 255 255')
+      if eq_edit then
+        xywh = {x = obj.sections[302].x-10,
+                y = y-4,
+                w = 8,
+                h = 8}
+        gfx.rect(xywh.x,
+                 xywh.y, 
+                 xywh.w,
+                 xywh.h, 1)
+        gfx.line(obj.sections[302].x-2, y, obj.sections[302].x + obj.sections[302].w-1, y, 1)
+      else
+        f_Get_SSV('64 64 240')    
+      end
+                    
+    end    
+
+    gfx.dest = 1
+  
+  end
   
   ------------------------------------------------------------
 
@@ -5249,7 +7007,7 @@ end
     gfx.mode =4
     
     if show_xxy == false and (update_gfx or update_surface or update_sidebar or update_topbar or update_ctlopts or update_ctls or update_bg or 
-       update_settings or update_snaps or update_msnaps or update_actcho or update_fsnaps or update_mfsnaps) then    
+       update_settings or update_snaps or update_msnaps or update_actcho or update_fsnaps or update_mfsnaps or update_eqcontrol) then    
       local p = 0
         
       gfx.dest = 1
@@ -5315,9 +7073,9 @@ end
         
         end
         
-        if plist_w > 0 then                  
+        --[[if plist_w > 0 then                  
           gfx.blit(1001,1,0,0,0,obj.sections[43].w,obj.sections[43].h,0,butt_h)
-        end
+        end]]
 
         if lasso ~= nil then
           gfx.a = 0.2
@@ -5386,8 +7144,8 @@ end
                   x=x-surface_offset.x+obj.sections[10].x
                   y=y-surface_offset.y+obj.sections[10].y
                   f_Get_SSV(gui.color.green)
-                  gfx.a = 0.2
-                  gfx.rect(x, y, w, h, 1, 1)
+                  gfx.a = 1
+                  gfx.roundrect(x, y, w, h, 5, 1)
                 end
               end           
             end
@@ -5439,13 +7197,18 @@ end
                     x=x-surface_offset.x+obj.sections[10].x
                     y=y-surface_offset.y+obj.sections[10].y
                     f_Get_SSV(gui.color.blue)
-                    gfx.a = 0.2
-                    gfx.rect(x, y, w, h, 1, 1)
+                    gfx.a = 1
+                    gfx.roundrect(x, y, w, h, 5, 1)
+                    --gfx.roundrect(x+1, y+1, w-2, h-2, 5, 1)
                   end
                 end           
               end
             end
           end          
+        end
+
+        if plist_w > 0 then                  
+          gfx.blit(1001,1,0,0,0,obj.sections[43].w,obj.sections[43].h,0,butt_h)
         end
         
         if show_snapshots then
@@ -5473,6 +7236,18 @@ end
         
         if show_fsnapshots or show_xysnapshots then
           gfx.blit(1005,1,0,0,0,obj.sections[180].w,obj.sections[180].h,obj.sections[180].x,obj.sections[180].y)                
+        end
+        
+        if show_eqcontrol then
+          if update_gfx then
+          --DBG('A')
+            GUI_DrawEQControl(obj, gui)
+          end
+          --DBG('B')
+          gfx.a=1
+          
+          gfx.blit(1009,1,0,0,0,obj.sections[300].w,obj.sections[300].h,obj.sections[300].x,obj.sections[300].y)  
+          GUI_DrawEQBands(obj, gui)              
         end
         
       elseif mode == 1 then        
@@ -5976,6 +7751,7 @@ end
     resize_fsnaps = false
     update_xxy = false
     update_xxypos = false
+    update_eqcontrol = false
     
   end
 
@@ -6402,7 +8178,7 @@ end
         if trn == '' then
           trn = '[unnamed track]'
         end
-        GUI_textC_LIM(gui,obj.sections[12],STRIPSET..' - TRACK: ' .. tracks[track_select].tracknum+1 .. ' - '.. trn,gui.color.black,-2)
+        GUI_textC_LIM(gui,obj.sections[12],GetProjectName()..' - '..STRIPSET..' - TRACK: ' .. tracks[track_select].tracknum+1 .. ' - '.. trn,gui.color.black,-2)
       end
     end  
 
@@ -6709,9 +8485,21 @@ end
              obj.sections[62].y, 
              obj.sections[62].w,
              obj.sections[62].h, 1)
-    GUI_textC(gui,obj.sections[62],'OK',gui.color.black,-2)
-    if msgbox then         
+    if msgbox then
+      if msgbox.b == 2 then
+        f_Get_SSV(gui.color.white)
+        gfx.rect(obj.sections[64].x,
+                 obj.sections[64].y, 
+                 obj.sections[64].w,
+                 obj.sections[64].h, 1)
+        GUI_textC(gui,obj.sections[62],'Yes',gui.color.black,-2)
+        GUI_textC(gui,obj.sections[64],'No',gui.color.black,-2)
+      else
+        GUI_textC(gui,obj.sections[62],'OK',gui.color.black,-2)  
+      end         
       GUI_textC(gui,obj.sections[63],nz(msgbox.text1,''),gui.color.white,-2)         
+    else
+      GUI_textC(gui,obj.sections[62],'OK',gui.color.black,-2)  
     end
     
   end
@@ -6800,9 +8588,12 @@ end
     end 
   end
 
-  function MOUSE_over(b)
-    if mouse.mx > b.x and mouse.mx < b.x+b.w
-      and mouse.my > b.y and mouse.my < b.y+b.h then
+  function MOUSE_over(b, mx, my)
+    if mx == nil then mx = mouse.mx end
+    if my == nil then my = mouse.my end
+    
+    if mx > b.x and mx < b.x+b.w
+      and my > b.y and my < b.y+b.h then
      return true 
     end 
   end
@@ -8200,6 +9991,22 @@ end
               instrip = true
               break
             end
+            if strips[tracks[track_select].strip][page].controls[j].ctlcat == ctlcats.eqcontrol then
+              local bands = strips[tracks[track_select].strip][page].controls[j].eqbands
+              if bands and #bands > 0 then
+                for b = 1, #bands do
+                
+                  if reaper.TrackFX_GetFXGUID(tr, i) == bands[b].fxguid then
+                    instrip = true
+                    break                  
+                  end
+                
+                end
+                if instrip then
+                  break
+                end
+              end
+            end
           end
           if instrip then
             --local _, fxname = reaper.TrackFX_GetFXName(tr, i, '')
@@ -8565,6 +10372,21 @@ end
           else
             stripdata.strip.controls[j].fxfound = false
             stripdata.strip.controls[j].fxnum = -1                  
+          end
+        end
+        if stripdata.strip.controls[j].ctlcat == ctlcats.eqcontrol then
+          local bands = stripdata.strip.controls[j].eqbands
+          if bands and #bands > 0 then
+          
+            for k = 1, #bands do
+            
+              if fxguids[bands[k].fxguid].found then
+                bands[k].fxnum = fxguids[bands[k].fxguid].fxnum
+                bands[k].fxguid = fxguids[bands[k].fxguid].guid
+              end
+            
+            end
+          
           end
         end
       end
@@ -10684,42 +12506,70 @@ end
   
   function ChangeTrack2(t)
   
-    if tracks[track_select] and strips[tracks[track_select].strip] then
-      strips[tracks[track_select].strip].page = page
-    end
-    ChangeTrack(t)
-    ss_select = nil
-    sstype_select = 1
-    ssoffset = 0
-    
-    if settings_followselectedtrack then
-      --Select track
-      local tr = GetTrack(track_select)
-      tracks[track_select].name = reaper.GetTrackState(tr)
-      
-      if tr ~= nil then
-        reaper.SetOnlyTrackSelected(tr)
-        reaper.SetTrackSelected(tr, true)
+    local fnd
+    if show_eqcontrol then
+
+      fnd = false
+      if tracks and tracks[t] and tracks[t].strip and strips[tracks[t].strip] and strips[tracks[t].strip][page].controls then
+        for c = 1, #strips[tracks[t].strip][page].controls do
+
+          if strips[tracks[t].strip][page].controls[c].ctlcat == ctlcats.eqcontrol then
+          
+            eqcontrol_select = c
+            if strips[tracks[t].strip][page].controls[c].eqbands and #strips[tracks[t].strip][page].controls[c].eqbands then
+              eqcontrolband_select = 1
+            else
+              eqcontrolband_select = nil
+            end
+            fnd = true
+                      
+            break
+          end
+        
+        end
       end
-    
-    end
-    
-    CheckStripSends()
-    PopulateTrackSendsInfo()
-    PopulateSpecial()
-    
-    if strips and strips[tracks[track_select].strip] then
-      page = strips[tracks[track_select].strip].page
-      surface_offset.x = strips[tracks[track_select].strip][page].surface_x
-      surface_offset.y = strips[tracks[track_select].strip][page].surface_y
     else
-      page = 1
-      surface_offset.x = 0
-      surface_offset.y = 0 
+      fnd = true
     end
-    CheckStripControls()            
-    update_gfx = true 
     
+    if fnd then
+      if tracks[track_select] and strips[tracks[track_select].strip] then
+        strips[tracks[track_select].strip].page = page
+      end
+      ChangeTrack(t)
+      ss_select = nil
+      sstype_select = 1
+      ssoffset = 0
+      
+      if settings_followselectedtrack then
+        --Select track
+        local tr = GetTrack(track_select)
+        tracks[track_select].name = reaper.GetTrackState(tr)
+        
+        if tr ~= nil then
+          reaper.SetOnlyTrackSelected(tr)
+          reaper.SetTrackSelected(tr, true)
+        end
+      
+      end
+      
+      CheckStripSends()
+      PopulateTrackSendsInfo()
+      PopulateSpecial()
+      
+      if strips and strips[tracks[track_select].strip] then
+        page = strips[tracks[track_select].strip].page
+        surface_offset.x = strips[tracks[track_select].strip][page].surface_x
+        surface_offset.y = strips[tracks[track_select].strip][page].surface_y
+      else
+        page = 1
+        surface_offset.x = 0
+        surface_offset.y = 0 
+      end
+      CheckStripControls()            
+      update_gfx = true 
+    end
+        
   end
   ------------------------------------------------------------    
 
@@ -11053,6 +12903,7 @@ end
     mouse.alt = gfx.mouse_cap&16==16
     local char
     
+    --DBG(mouse.mx..'  '..mouse.my..'  '..tostring(mouse.LB))
     if EB_Open == 0 and MS_Open == 0 then
       char = gfx.getchar() 
       if char ~= 0 then
@@ -11068,7 +12919,18 @@ end
         --OK
         if MS_Open == 1 then
           msgbox = nil
+          MS_Open = 0
+        elseif MS_Open == 2 then
+          -- savedefaultgraph
+          msgbox = nil
+          strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqgraph = EQC_SetMain(eqcontrolband_select)
+          update_gfx = true
         end
+        MB_Enter = false 
+        update_surface = true
+      elseif MOUSE_click(obj.sections[64]) then
+        --No
+        msgbox = nil
         MS_Open = 0
         MB_Enter = false 
         update_surface = true
@@ -11144,6 +13006,17 @@ end
           SavePath(editbox.text)
         elseif EB_Open == 20 then
           SaveSet(editbox.text)
+        elseif EB_Open == 30 then
+          strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands[eqcontrolband_select].bandname = editbox.text
+          update_gfx = true
+        elseif EB_Open == 31 then
+          strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands[eqcontrolband_select].bandtype = editbox.text
+          local path = eqbands_path
+          reaper.RecursiveCreateDirectory(path..string.upper(editbox.text),1)
+          
+          update_gfx = true
+        elseif EB_Open == 32 then        
+          EQC_SaveEQ(editbox.text)
         end
         editbox = nil
         EB_Open = 0
@@ -11551,102 +13424,6 @@ end
           end
         end
         
-      --[[elseif MS_Open > 0 then
-      
-        local c=gfx.getchar()  
-        mb_onchar(c)
-        
-        if MOUSE_click(obj.sections[62]) or MB_Enter then
-          --OK
-          if MS_Open == 1 then
-            msgbox = nil
-          end
-          MS_Open = 0
-          MB_Enter = false 
-          update_gfx = true
-        end
-        
-      elseif EB_Open > 0 then
-        if gfx.mouse_cap&1 == 1 then
-          if not mouse.down then
-            OnMouseDown()      
-            if mouse.uptime and os.clock()-mouse.uptime < 0.25 then 
-              OnMouseDoubleClick()
-            end
-          elseif gfx.mouse_x ~= mouse.lx or gfx.mouse_y ~= mouse.ly then
-            OnMouseMove() 
-          end
-        elseif mouse.down then 
-          OnMouseUp() 
-        end
-        
-        if MOUSE_click(obj.sections[6]) or EB_Enter then
-          --OK
-          EB_Enter = false
-          if EB_Open == 1 then
-            SaveStrip3(editbox.text)
-          elseif EB_Open == 2 then
-            EditCtlName2(editbox.text)
-          elseif EB_Open == 3 then
-            EditDValOffset2(editbox.text)
-            update_gfx = true
-          elseif EB_Open == 4 then
-            EditMinDVal2(editbox.text)
-            update_gfx = true
-          elseif EB_Open == 16 then
-            EditMaxDVal2(editbox.text)
-            update_gfx = true
-          elseif EB_Open == 5 then
-            EditValue2(editbox.text)
-            --update_ctls = true
-          elseif EB_Open == 6 then
-            InsertLabel2(editbox.text)
-          elseif EB_Open == 7 then
-            EditLabel2(editbox.text)
-          elseif EB_Open == 8 then
-            EditFont2(editbox.text)
-          elseif EB_Open == 10 then
-            EditCycleDV(editbox.text)        
-          elseif EB_Open == 11 then
-            EditSSName2(editbox.text)
-            update_snaps = true
-          elseif EB_Open == 12 then
-            AssActionByName(editbox.text)
-            update_gfx = true          
-          elseif EB_Open == 13 then
-            AssActionByID(editbox.text)
-            update_gfx = true          
-          elseif EB_Open == 14 then
-            action_tblF = ActionListFilter(editbox.text)
-            al_offset = 0
-            update_gfx = true
-          elseif EB_Open == 15 then
-            EditSubName(editbox.text)
-            update_snaps = true
-          elseif EB_Open == 17 then
-            local sc = tonumber(editbox.text)
-            if sc then
-              cycle_select.statecnt = F_limit(sc,0,max_cycle)
-              Cycle_InitData()
-            end
-            update_surface = true
-          elseif EB_Open == 18 then
-            SavePath(editbox.text)
-          elseif EB_Open == 20 then
-            SaveSet(editbox.text)
-          end
-          editbox = nil
-          EB_Open = 0
-        
-        elseif MOUSE_click(obj.sections[7]) then
-          editbox = nil
-          EB_Open = 0
-        end
-            
-        local c=gfx.getchar()  
-        if editbox and editbox.hasfocus then editbox_onchar(editbox, c) end  
-        update_gfx = true
-      ]]
       else
       
       if MOUSE_click(obj.sections[21]) then
@@ -11680,25 +13457,6 @@ end
             setmode(1)
           end
         
-          --[[gfx3_select = nil
-          gfx2_select = nil
-          ctl_select = nil
-          CloseActChooser()
-          show_ctlbrowser = false
-          
-          if mode == 0 then
-            g_edstrips = {}
-            trackedit_select = track_select
-            mode = 1
-            PopulateTrackFX()
-          else
-            --SaveData()
-            SaveEditedData()
-            mode = 0
-          end
-          update_gfx = true]]
-          
-          
         end
         
       elseif MOUSE_click(obj.sections[18]) then
@@ -12270,6 +14028,7 @@ end
         
           if MOUSE_click(obj.sections[250]) then
           
+            navigate = true
             macro_lrn_mode = false
             update_surface = true
           
@@ -12408,6 +14167,1075 @@ end
         
           end          
         
+        elseif show_eqcontrol == true then
+        
+          if strips[tracks[track_select].strip] and strips[tracks[track_select].strip][page].controls[eqcontrol_select] and
+             strips[tracks[track_select].strip][page].controls[eqcontrol_select].ctlcat == ctlcats.eqcontrol then
+        
+            EQC_UpdateVals()
+            
+            local bands = strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands
+            
+            local xywh = {x = obj.sections[300].x+obj.sections[351].x,
+                          y = obj.sections[300].y+obj.sections[351].y,
+                          w = obj.sections[351].w,
+                          h = obj.sections[351].h}
+            if mouse.context == nil and MOUSE_click(xywh) then
+            
+              navigate = true
+              show_eqcontrol = false
+              eq_edit = false
+              eqcontrolband_select = nil
+              update_gfx = true
+              
+            end
+  
+            local mx, my = mouse.mx, mouse.my
+            mouse.mx, mouse.my = mouse.mx - obj.sections[300].x, mouse.my - obj.sections[300].y
+  
+            local xywh_pmin, xywh_pmax,xywh_gmin, xywh_gmax, xywh_main
+            if bands then
+              if eqcontrolband_select and bands[eqcontrolband_select] and 
+                 bands[eqcontrolband_select].freq_param then
+              
+                local xmin = nz(bands[eqcontrolband_select].posmin,0)
+                local xmax = nz(bands[eqcontrolband_select].posmax,1)
+                
+                xywh_pmin = {x = obj.sections[302].x + (xmin * obj.sections[302].w) - 4,
+                             y = obj.sections[302].y + obj.sections[302].h + 2,
+                             w = 8,
+                             h = 8}
+                xywh_pmax = {x = obj.sections[302].x + (xmax * obj.sections[302].w) - 4,
+                             y = obj.sections[302].y + obj.sections[302].h + 2,
+                             w = 8,
+                             h = 8}
+  
+                local ymin = nz(bands[eqcontrolband_select].gmin,0)
+                local ymax = nz(bands[eqcontrolband_select].gmax,1)
+  
+                xywh_gmin = {x = obj.sections[302].x-12,
+                             y = obj.sections[302].y+obj.sections[302].h - (ymin * obj.sections[302].h) - 4,
+                             w = 8,
+                             h = 8}
+                xywh_gmax = {x = obj.sections[302].x-12,
+                             y = obj.sections[302].y+obj.sections[302].h - (ymax * obj.sections[302].h) - 4,
+                             w = 8,
+                             h = 8}
+              end
+            end
+        
+            local xywh_main = {x = obj.sections[302].x-10,
+                               y = obj.sections[302].y-10,
+                               w = obj.sections[302].w+20,
+                               h = obj.sections[302].h+20}
+        
+            if gfx.mouse_wheel ~= 0 and MOUSE_over(xywh_main) then
+            
+              local track = GetTrack(tracks[track_select].tracknum)
+              local fxnum = GetEQC_FXNum(eqcontrolband_select)
+              
+              local param = bands[eqcontrolband_select].q_param
+              
+              if param then
+                local mw = gfx.mouse_wheel/120
+                if bands[eqcontrolband_select].q_inv then
+                  mw = -mw
+                end
+                local v = F_limit(bands[eqcontrolband_select].q_val + (mw*0.05),0,1)
+                
+                if v ~= ov then
+                  reaper.TrackFX_SetParam(track,fxnum,param,v)
+                  ov = v
+                  update_eqcontrol = true
+                end
+              end
+              
+            elseif gfx.mouse_wheel ~= 0 and MOUSE_over(obj.sections[303]) then
+              local mw = gfx.mouse_wheel/120
+              eqcontrolband_select = F_limit(eqcontrolband_select + mw,1,#bands)
+              update_gfx = true          
+            end
+            
+            if eq_edit and xywh_pmin and mouse.context == nil and eqcontrolband_select and MOUSE_click(xywh_pmin) then
+              mouse.context = contexts.eqc_pminslider
+              draggraph = true
+            elseif eq_edit and xywh_pmax and mouse.context == nil and eqcontrolband_select and MOUSE_click(xywh_pmax) then
+              mouse.context = contexts.eqc_pmaxslider
+              draggraph = true
+            
+            elseif eq_edit and xywh_gmin and mouse.context == nil and eqcontrolband_select and MOUSE_click(xywh_gmin) then
+              mouse.context = contexts.eqc_gminslider
+              --draggraph = true
+            elseif eq_edit and xywh_gmax and mouse.context == nil and eqcontrolband_select and MOUSE_click(xywh_gmax) then
+              mouse.context = contexts.eqc_gmaxslider
+              --draggraph = true
+            elseif mouse.context == nil and (MOUSE_click(xywh_main) or MOUSE_click_RB(xywh_main)) then
+              local bs
+              if bands then
+                for b = 1, #bands do  
+                  
+                  if eq_single == false or b == eqcontrolband_select then
+                    local fv = bands[b].freq_val
+                    local gv = bands[b].gain_val
+                    local xmin = bands[b].posmin
+                    local xmax = bands[b].posmax
+                    local ymin = bands[b].gmin
+                    local ymax = bands[b].gmax
+    
+                    if eq_scale == false then
+                      xmin = 0
+                      xmax = 1
+                      ymin = 0
+                      ymax = 1
+                    end
+    
+                    if fv and gv then
+                      local xp = (fv * (xmax-xmin)*obj.sections[302].w)+(xmin*obj.sections[302].w)
+                      if bands[b].gain_inv then
+                        gv = 1-gv
+                      end
+                      local yp = obj.sections[302].h-(ymin*obj.sections[302].h) - (gv * (ymax-ymin)*obj.sections[302].h)
+                      --local yp = obj.sections[302].h - (gv * obj.sections[302].h)
+                       
+                      local xywh = {}
+                      xywh.x = obj.sections[302].x + xp - 8
+                      xywh.y = obj.sections[302].y + yp - 8
+                      xywh.w = 16
+                      xywh.h = 16
+                      
+                      if MOUSE_over(xywh) then
+                      
+                        if mouse.LB and mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.2 then
+                          EQC_SetDefault(b)
+                          break                          
+                        end
+                        
+                        if mouse.RB then
+                          if bands[b].bypass_param then
+                            bands[b].bypass_val = 
+                                  1-bands[b].bypass_val
+                            EQC_SetParam(b,bands[b].bypass_param,
+                                         bands[b].bypass_val)
+                            update_gfx = true
+                          end
+                          break
+                        elseif mouse.ctrl then
+                          EQC_SetDefault(b)
+                          break
+                        else
+                          bs = b
+                          eqcdrag = {xoff = mouse.mx - xywh.x-8, yoff = mouse.my - xywh.y-8, xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax, mx = mouse.mx, my = mouse.my}
+                          update_gfx = true
+                          break
+                        end
+                      end
+                    end
+                  end
+                                            
+                end
+    
+                if bs then
+                  eqcontrolband_select = bs
+                  update_gfx = true
+                  mouse.context = contexts.eqc_drag
+                end
+              end
+            
+            elseif eq_edit == false and mouse.context == nil and MOUSE_click(obj.sections[325]) then
+              if bands and
+                 bands[eqcontrolband_select] then
+                if bands[eqcontrolband_select].freq_param then
+                  if mouse.ctrl or(mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.2) then
+                    local b = eqcontrolband_select
+                    if bands[b].freq_def then
+                      EQC_SetParam(b, bands[b].freq_param, bands[b].freq_def)
+                    end
+                  else
+                    eqcdraginf = {my = mouse.my, yoff = mouse.my - obj.sections[325].y}
+                    mouse.context = contexts.eqc_dragfreq
+                  end
+                end
+              end
+            elseif eq_edit == false and mouse.context == nil and MOUSE_click(obj.sections[326]) then
+              if bands and
+                 bands[eqcontrolband_select] then
+                if bands[eqcontrolband_select].gain_param then
+                  if mouse.ctrl or(mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.2) then
+                    local b = eqcontrolband_select
+                    if bands[b].gain_def then
+                      EQC_SetParam(b, bands[b].gain_param, bands[b].gain_def)
+                    end
+                  else
+                    eqcdraginf = {my = mouse.my, yoff = mouse.my - obj.sections[326].y}
+                    mouse.context = contexts.eqc_draggain
+                  end
+                end
+              end
+            elseif eq_edit == false and mouse.context == nil and MOUSE_click(obj.sections[327]) then
+              if bands and
+                 bands[eqcontrolband_select] then
+                if bands[eqcontrolband_select].q_param then
+                  if mouse.ctrl or(mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.2) then
+                    local b = eqcontrolband_select
+                    if bands[b].q_def then
+                      EQC_SetParam(b, bands[b].q_param, bands[b].q_def)
+                    end
+                  else
+                    eqcdraginf = {my = mouse.my, yoff = mouse.my - obj.sections[327].y}
+                    mouse.context = contexts.eqc_dragq
+                  end
+                end
+              end
+            elseif eq_edit == false and mouse.context == nil and MOUSE_click(obj.sections[328]) then
+              if bands and
+                 bands[eqcontrolband_select] then
+                if bands[eqcontrolband_select].c1_param then
+                  if mouse.ctrl or(mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.2) then
+                    local b = eqcontrolband_select
+                    if bands[b].c1_def then
+                      EQC_SetParam(b, bands[b].c1_param, bands[b].c1_def)
+                    end
+                  else
+                    eqcdraginf = {my = mouse.my, yoff = mouse.my - obj.sections[328].y}
+                    mouse.context = contexts.eqc_dragc1
+                  end
+                end
+              end
+            elseif eq_edit == false and mouse.context == nil and MOUSE_click(obj.sections[329]) then
+              if bands and
+                 bands[eqcontrolband_select] then
+                if bands[eqcontrolband_select].c2_param then
+                  if mouse.ctrl or(mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.2) then
+                    local b = eqcontrolband_select
+                    if bands[b].c2_def then
+                      EQC_SetParam(b, bands[b].c2_param, bands[b].c2_def)
+                    end
+                  else
+                    eqcdraginf = {my = mouse.my, yoff = mouse.my - obj.sections[329].y}
+                    mouse.context = contexts.eqc_dragc2
+                  end
+                end
+              end
+            elseif eq_edit == false and mouse.context == nil and MOUSE_click(obj.sections[330]) then
+              if bands and
+                 bands[eqcontrolband_select] then
+                if bands[eqcontrolband_select].c3_param then
+                  if mouse.ctrl or(mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.2) then
+                    local b = eqcontrolband_select
+                    if bands[b].c3_def then
+                      EQC_SetParam(b, bands[b].c3_param, bands[b].c3_def)
+                    end
+                  else
+                    eqcdraginf = {my = mouse.my, yoff = mouse.my - obj.sections[330].y}
+                    mouse.context = contexts.eqc_dragc3
+                  end
+                end
+              end
+            elseif eq_edit == false and mouse.context == nil and MOUSE_click(obj.sections[334]) then
+              if bands and
+                 bands[eqcontrolband_select] then
+                if bands[eqcontrolband_select].c4_param then
+                  if mouse.ctrl or(mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.2) then
+                    local b = eqcontrolband_select
+                    if bands[b].c4_def then
+                      EQC_SetParam(b, bands[b].c4_param, bands[b].c4_def)
+                    end
+                  else
+                    eqcdraginf = {my = mouse.my, yoff = mouse.my - obj.sections[334].y}
+                    mouse.context = contexts.eqc_dragc4
+                  end
+                end
+              end
+            elseif eq_edit == false and mouse.context == nil and MOUSE_click(obj.sections[335]) then
+              if bands and
+                 bands[eqcontrolband_select] then
+                if bands[eqcontrolband_select].c5_param then
+                  if mouse.ctrl or(mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.2) then
+                    local b = eqcontrolband_select
+                    if bands[b].c5_def then
+                      EQC_SetParam(b, bands[b].c5_param, bands[b].c5_def)
+                    end
+                  else
+                    eqcdraginf = {my = mouse.my, yoff = mouse.my - obj.sections[335].y}
+                    mouse.context = contexts.eqc_dragc5
+                  end
+                end
+              end
+                                    
+            elseif mouse.context == nil and MOUSE_click(obj.sections[304]) then
+            
+              EQC_LoadBand()
+            
+            elseif mouse.context == nil and MOUSE_click(obj.sections[311]) then
+              eq_edit = not eq_edit
+              if eqcontrolband_select == nil then
+                eq_edit = false
+              end
+              update_gfx = true
+  
+            elseif mouse.context == nil and MOUSE_click(obj.sections[320]) then
+              eq_single = not eq_single
+              if eq_single == true then
+                eq_scale = false
+              else
+                eq_scale = true
+              end
+              update_gfx = true
+  
+            elseif mouse.context == nil and MOUSE_click(obj.sections[321]) then
+              eq_scale = not eq_scale
+              update_gfx = true
+  
+            elseif mouse.context == nil and MOUSE_click(obj.sections[345]) then
+              EQC_OpenEQs(eqcontrolband_select, true)
+              --update_gfx = true
+            
+            elseif eq_edit and mouse.context == nil and MOUSE_click(obj.sections[340]) then
+  
+              OpenEB(32,'Please enter EQ name:')
+  
+            elseif eq_edit and mouse.context == nil and MOUSE_click(obj.sections[312]) then
+  
+              EQC_SaveBand()
+  
+            elseif eq_edit and mouse.context == nil and MOUSE_click(obj.sections[315]) then
+  
+              EQC_DelBand()
+              if #bands == 0 then
+                eqcontrolband_select = nil
+                eq_edit = false
+              end
+  
+            elseif eq_edit and mouse.context == nil and MOUSE_click(obj.sections[313]) then
+            
+              EQC_SelectBandType()
+  
+            elseif eq_edit and mouse.context == nil and MOUSE_click(obj.sections[314]) then
+            
+              OpenEB(30,'Please enter band name:')
+
+            elseif eq_edit and mouse.context == nil and MOUSE_click(obj.sections[355]) then
+  
+              if bands and bands[eqcontrolband_select] then
+                local retval, c = reaper.GR_SelectColor(_,ConvertColorString(bands[eqcontrolband_select].col))
+                if retval ~= 0 then
+                  bands[eqcontrolband_select].col = ConvertColor(c)
+                  update_gfx = true
+                end
+              end
+
+            elseif eq_edit and mouse.context == nil and MOUSE_click(obj.sections[356]) then
+
+              if bands and bands[eqcontrolband_select] then
+                local fxnum = bands[eqcontrolband_select].fxnum
+                local track = GetTrack(tracks[track_select].tracknum)
+                
+                local p = bands[eqcontrolband_select].freq_param
+                if p then
+                  bands[eqcontrolband_select].freq_def = EQC_GetParam(track, fxnum, p)
+                end
+                p = bands[eqcontrolband_select].gain_param
+                if p then
+                  bands[eqcontrolband_select].gain_def = EQC_GetParam(track, fxnum, p)
+                end
+                p = bands[eqcontrolband_select].q_param
+                if p then
+                  bands[eqcontrolband_select].q_def = EQC_GetParam(track, fxnum, p)
+                end
+                p = bands[eqcontrolband_select].c1_param
+                if p then
+                  bands[eqcontrolband_select].c1_def = EQC_GetParam(track, fxnum, p)
+                end
+                p = bands[eqcontrolband_select].c2_param
+                if p then
+                  bands[eqcontrolband_select].c2_def = EQC_GetParam(track, fxnum, p)
+                end
+                p = bands[eqcontrolband_select].c3_param
+                if p then
+                  bands[eqcontrolband_select].c3_def = EQC_GetParam(track, fxnum, p)
+                end
+                p = bands[eqcontrolband_select].c4_param
+                if p then
+                  bands[eqcontrolband_select].c4_def = EQC_GetParam(track, fxnum, p)
+                end
+                p = bands[eqcontrolband_select].c5_param
+                if p then
+                  bands[eqcontrolband_select].c5_def = EQC_GetParam(track, fxnum, p)
+                end
+                
+                OpenMsgBox(1,'Default parameter values captured.',1)
+              end              
+
+            elseif eq_edit and mouse.context == nil and MOUSE_click_RB(obj.sections[355]) then
+  
+              if bands and bands[eqcontrolband_select] then
+                local col = round(math.random()*255)..' '..round(math.random()*255)..' '..round(math.random()*255) 
+                bands[eqcontrolband_select].col = col
+                update_gfx = true
+              end
+              
+            elseif mouse.context == nil and (MOUSE_click(obj.sections[303]) or MOUSE_click_RB(obj.sections[303])) then
+            
+              if bands then
+                local bw = obj.sections[303].w / 20
+                local bs = math.floor((mouse.mx - obj.sections[303].x)/bw)+1
+                if bs <= #bands then
+                  if mouse.ctrl or mouse.RB then
+                    if bands[bs].bypass_param then
+                      bands[bs].bypass_val = 
+                            1-bands[bs].bypass_val
+                      EQC_SetParam(bs,bands[bs].bypass_param,
+                                   bands[bs].bypass_val)
+                      update_gfx = true
+                    end
+                  else
+                    eqcontrolband_select = bs
+                  end
+                  update_gfx = true
+                end
+              end
+            elseif eq_edit and mouse.context == nil and MOUSE_click(obj.sections[305]) and eqcontrolband_select then
+              local track = GetTrack(tracks[track_select].tracknum)
+              local fxcnt = reaper.TrackFX_GetCount(track)
+              local mstr = ''
+              for fxn = 1, fxcnt do
+                local _, fxname = reaper.TrackFX_GetFXName(track, fxn-1, '')
+                mstr = mstr..fxn..': '..fxname
+                if fxn < fxcnt then
+                  mstr = mstr..'|'
+                end
+              end
+              gfx.x, gfx.y = mouse.mx, mouse.my
+              res = OpenMenu(mstr)
+              if res ~= 0 then
+                local _, fxname = reaper.TrackFX_GetFXName(track, res-1, '')
+                local fxguid = reaper.TrackFX_GetFXGUID(track, res-1)
+                bands[eqcontrolband_select] = {}
+                bands[eqcontrolband_select].fxnum = res-1
+                bands[eqcontrolband_select].fxguid = fxguid
+                bands[eqcontrolband_select].fxname = fxname
+                bands[eqcontrolband_select].posmin = 0
+                bands[eqcontrolband_select].posmax = 1
+                bands[eqcontrolband_select].gmin = 0
+                bands[eqcontrolband_select].gmax = 1
+                bands[eqcontrolband_select].col = '160 160 160'
+                 
+                update_gfx = true
+              end            
+  
+            elseif eq_edit and mouse.context == nil and MOUSE_click(obj.sections[322]) and eqcontrolband_select then
+              local res = EQC_SelectParam()
+              if res ~= 0 then
+                if res == -1 then
+                  bands[eqcontrolband_select].bypass_param = nil
+                  bands[eqcontrolband_select].bypass_param_name = nil              
+                else
+                  local fxnum = bands[eqcontrolband_select].fxnum
+                  local track = GetTrack(tracks[track_select].tracknum)
+                  
+                  local p = res - 1
+                  local _, pname = reaper.TrackFX_GetParamName(track, fxnum, p, '')
+                  bands[eqcontrolband_select].bypass_param = p
+                  bands[eqcontrolband_select].bypass_param_name = pname
+                end                
+                update_gfx = true
+              end            
+              
+            elseif eq_edit and mouse.context == nil and MOUSE_click(obj.sections[323]) and eqcontrolband_select then
+              local res = EQC_SelectParam()
+              if res ~= 0 then
+                if res == -1 then
+                  bands[eqcontrolband_select].c1_param = nil
+                  bands[eqcontrolband_select].c1_param_name = nil              
+                  bands[eqcontrolband_select].c1_def = nil          
+                else
+                  local fxnum = bands[eqcontrolband_select].fxnum
+                  local track = GetTrack(tracks[track_select].tracknum)
+                  
+                  local p = res - 1
+                  local _, pname = reaper.TrackFX_GetParamName(track, fxnum, p, '')
+                  bands[eqcontrolband_select].c1_param = p
+                  bands[eqcontrolband_select].c1_param_name = pname
+                  bands[eqcontrolband_select].c1_def = EQC_GetParam(track, fxnum, p)
+                end              
+                update_gfx = true
+              end            
+              
+            elseif eq_edit and mouse.context == nil and MOUSE_click(obj.sections[324]) and eqcontrolband_select then
+              local res = EQC_SelectParam()
+              if res ~= 0 then
+                if res == -1 then
+                  bands[eqcontrolband_select].c2_param = nil
+                  bands[eqcontrolband_select].c2_param_name = nil              
+                  bands[eqcontrolband_select].c2_def = nil          
+                else
+                  local fxnum = bands[eqcontrolband_select].fxnum
+                  local track = GetTrack(tracks[track_select].tracknum)
+                  
+                  local p = res - 1
+                  local _, pname = reaper.TrackFX_GetParamName(track, fxnum, p, '')
+                  bands[eqcontrolband_select].c2_param = p
+                  bands[eqcontrolband_select].c2_param_name = pname
+                  bands[eqcontrolband_select].c2_def = EQC_GetParam(track, fxnum, p)
+                end              
+                update_gfx = true
+              end            
+              
+            elseif eq_edit and mouse.context == nil and MOUSE_click(obj.sections[331]) and eqcontrolband_select then
+              local res = EQC_SelectParam()
+              if res ~= 0 then
+                if res == -1 then
+                  bands[eqcontrolband_select].c3_param = nil
+                  bands[eqcontrolband_select].c3_param_name = nil              
+                  bands[eqcontrolband_select].c3_def = nil          
+                else
+                  local fxnum = bands[eqcontrolband_select].fxnum
+                  local track = GetTrack(tracks[track_select].tracknum)
+                  
+                  local p = res - 1
+                  local _, pname = reaper.TrackFX_GetParamName(track, fxnum, p, '')
+                  bands[eqcontrolband_select].c3_param = p
+                  bands[eqcontrolband_select].c3_param_name = pname
+                  bands[eqcontrolband_select].c3_def = EQC_GetParam(track, fxnum, p)
+                end              
+                update_gfx = true
+              end            
+              
+            elseif eq_edit and mouse.context == nil and MOUSE_click(obj.sections[332]) and eqcontrolband_select then
+              local res = EQC_SelectParam()
+              if res ~= 0 then
+                if res == -1 then
+                  bands[eqcontrolband_select].c4_param = nil
+                  bands[eqcontrolband_select].c4_param_name = nil              
+                  bands[eqcontrolband_select].c4_def = nil          
+                else
+                  local fxnum = bands[eqcontrolband_select].fxnum
+                  local track = GetTrack(tracks[track_select].tracknum)
+                  
+                  local p = res - 1
+                  local _, pname = reaper.TrackFX_GetParamName(track, fxnum, p, '')
+                  bands[eqcontrolband_select].c4_param = p
+                  bands[eqcontrolband_select].c4_param_name = pname
+                  bands[eqcontrolband_select].c4_def = EQC_GetParam(track, fxnum, p)
+                end              
+                update_gfx = true
+              end            
+              
+            elseif eq_edit and mouse.context == nil and MOUSE_click(obj.sections[333]) and eqcontrolband_select then
+              local res = EQC_SelectParam()
+              if res ~= 0 then
+                if res == -1 then
+                  bands[eqcontrolband_select].c5_param = nil
+                  bands[eqcontrolband_select].c5_param_name = nil              
+                  bands[eqcontrolband_select].c5_def = nil          
+                else
+                  local fxnum = bands[eqcontrolband_select].fxnum
+                  local track = GetTrack(tracks[track_select].tracknum)
+                  
+                  local p = res - 1
+                  local _, pname = reaper.TrackFX_GetParamName(track, fxnum, p, '')
+                  bands[eqcontrolband_select].c5_param = p
+                  bands[eqcontrolband_select].c5_param_name = pname
+                  bands[eqcontrolband_select].c5_def = EQC_GetParam(track, fxnum, p)
+                end              
+                update_gfx = true
+              end            
+              
+            elseif eq_edit and mouse.context == nil and MOUSE_click(obj.sections[306]) and eqcontrolband_select then
+              local res = EQC_SelectParam()
+              if res ~= 0 then
+                if res == -1 then
+                  bands[eqcontrolband_select].freq_param = nil
+                  bands[eqcontrolband_select].freq_param_name = nil
+                  bands[eqcontrolband_select].freq_def = nil          
+                else
+                  local fxnum = bands[eqcontrolband_select].fxnum
+                  local track = GetTrack(tracks[track_select].tracknum)
+                  
+                  local p = res - 1
+                  local _, pname = reaper.TrackFX_GetParamName(track, fxnum, p, '')
+                  bands[eqcontrolband_select].freq_param = p
+                  bands[eqcontrolband_select].freq_param_name = pname
+                  bands[eqcontrolband_select].freq_def = EQC_GetParam(track, fxnum, p)
+                  
+                  bands[eqcontrolband_select].freq_min = nz(calc_eqgraph_getmin(tracks[track_select].tracknum, fxnum, p, true),20)
+                  bands[eqcontrolband_select].freq_max = nz(calc_eqgraph_getmax(tracks[track_select].tracknum, fxnum, p, true),24000)
+                end
+                update_gfx = true
+              end            
+  
+            elseif eq_edit and mouse.context == nil and MOUSE_click(obj.sections[307]) and eqcontrolband_select then
+              local res = EQC_SelectParam()
+              if res ~= 0 then
+                if res == -1 then
+                  bands[eqcontrolband_select].gain_param = nil
+                  bands[eqcontrolband_select].gain_param_name = nil
+                  bands[eqcontrolband_select].gain_def = nil
+                else
+                  local fxnum = bands[eqcontrolband_select].fxnum
+                  local track = GetTrack(tracks[track_select].tracknum)
+                  
+                  local p = res - 1
+                  local _, pname = reaper.TrackFX_GetParamName(track, fxnum, p, '')
+                  bands[eqcontrolband_select].gain_param = p
+                  bands[eqcontrolband_select].gain_param_name = pname
+                  bands[eqcontrolband_select].gain_def = EQC_GetParam(track, fxnum, p)
+                  
+                  bands[eqcontrolband_select].gain_min = nz(calc_eqgraph_getmin(tracks[track_select].tracknum, fxnum, p),-20)
+                  bands[eqcontrolband_select].gain_max = nz(calc_eqgraph_getmax(tracks[track_select].tracknum, fxnum, p),20)
+                end              
+                update_gfx = true
+              end            
+  
+            elseif eq_edit and mouse.context == nil and MOUSE_click(obj.sections[308]) and eqcontrolband_select then
+              local res = EQC_SelectParam()
+              if res ~= 0 then
+                if res == -1 then
+                  bands[eqcontrolband_select].q_param = nil
+                  bands[eqcontrolband_select].q_param_name = nil
+                  bands[eqcontrolband_select].q_def = nil
+                else
+                  local fxnum = bands[eqcontrolband_select].fxnum
+                  local track = GetTrack(tracks[track_select].tracknum)
+                  
+                  local _, pname = reaper.TrackFX_GetParamName(track, fxnum, res-1, '')
+                  bands[eqcontrolband_select].q_param = res-1
+                  bands[eqcontrolband_select].q_param_name = pname
+                  bands[eqcontrolband_select].q_def = EQC_GetParam(track, fxnum, res-1)
+                end              
+                update_gfx = true
+              end            
+  
+            elseif eq_edit and mouse.context == nil and MOUSE_click(obj.sections[337]) and eqcontrolband_select then
+              mouse.context = contexts.auto_delayslider
+              autodelay = true
+  
+            elseif eq_edit and mouse.context == nil and MOUSE_click(obj.sections[336]) and eqcontrolband_select then
+  
+              bands[eqcontrolband_select].lookmap = nil
+              bands[eqcontrolband_select].gmap = nil
+              update_gfx = true            
+
+            elseif eq_edit and mouse.context == nil and MOUSE_click(obj.sections[357]) then
+              if bands and #bands > 0 then
+
+                for b = 1,#bands do
+                  EQC_AlignGraph(b)
+                end
+                update_gfx = true            
+
+              end
+                
+            elseif eq_edit and mouse.context == nil and MOUSE_click_RB(obj.sections[309]) and eqcontrolband_select then
+              if bands[eqcontrolband_select].fxnum then
+                if bands[eqcontrolband_select].freq_param then
+                  
+                  if bands[eqcontrolband_select].lookmap and 
+                     mouse.ctrl == false then
+                    EQC_AlignGraph(eqcontrolband_select,2)                
+                  end
+                end
+              end
+            elseif eq_edit and mouse.context == nil and MOUSE_click(obj.sections[309]) and eqcontrolband_select then
+              if bands[eqcontrolband_select].fxnum then
+                if bands[eqcontrolband_select].freq_param then
+                  
+                  if bands[eqcontrolband_select].lookmap and 
+                     mouse.ctrl == false then
+                    EQC_AlignGraph(eqcontrolband_select,1)                
+                  else
+                    local fxnum = GetEQC_FXNum(eqcontrolband_select)
+                    local param = bands[eqcontrolband_select].freq_param                  
+                    local param2 = bands[eqcontrolband_select].gain_param
+  
+                    --EQC_OpenEQs(eqcontrolband_select, true)
+  
+                    --[[strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands[eqcontrolband_select].freq_min = 
+                                                                        nz(calc_eqgraph_getmin(tracks[track_select].tracknum, fxnum, param),20)
+                    strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands[eqcontrolband_select].freq_max = 
+                                                                        nz(calc_eqgraph_getmax(tracks[track_select].tracknum, fxnum, param, true),24000)]]
+  
+                    local min = nz(bands[eqcontrolband_select].freq_min,20)
+                    local max = nz(bands[eqcontrolband_select].freq_max,24000)
+                    local khz = bands[eqcontrolband_select].khz
+  
+                    --[[strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands[eqcontrolband_select].gain_min = 
+                                                                        nz(calc_eqgraph_getmin(tracks[track_select].tracknum, fxnum, param2),-20)
+                    strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands[eqcontrolband_select].gain_max = 
+                                                                        nz(calc_eqgraph_getmax(tracks[track_select].tracknum, fxnum, param2),20)]]
+  
+                    local min2 = nz(bands[eqcontrolband_select].gain_min,-20)
+                    local max2 = nz(bands[eqcontrolband_select].gain_max,20)
+                    
+                    local lm, gm = calc_eqgraph(tracks[track_select].tracknum,fxnum,param,min,max,khz,param2,min2,max2)
+                    bands[eqcontrolband_select].lookmap = lm
+                    bands[eqcontrolband_select].gmap = gm
+  
+                    --EQC_OpenEQs(eqcontrolband_select, false)
+                    
+                    EQC_AlignGraph(eqcontrolband_select,1)
+                    
+                    if bands[eqcontrolband_select].posmax > 1 then
+                      bands[eqcontrolband_select].posmax = 1
+                    end
+                    update_gfx = true
+                  end
+                end
+              end
+  
+            elseif eq_edit and mouse.context == nil and MOUSE_click(obj.sections[310]) and eqcontrolband_select then
+              --strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqgraph = eqcontrolband_select
+              --strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqgraph = EQC_SetMain(eqcontrolband_select)
+              OpenMsgBox(2,'Save/overwrite default eq graph?',2)
+              update_gfx = true
+  
+            elseif eq_edit and mouse.context == nil and MOUSE_click(obj.sections[317]) and eqcontrolband_select then
+              bands[eqcontrolband_select].gain_inv = not bands[eqcontrolband_select].gain_inv
+              update_gfx = true
+  
+            elseif eq_edit and mouse.context == nil and MOUSE_click(obj.sections[318]) and eqcontrolband_select then
+              bands[eqcontrolband_select].q_inv = not bands[eqcontrolband_select].q_inv
+              update_gfx = true
+  
+            elseif eq_edit and mouse.context == nil and MOUSE_click(obj.sections[316]) and eqcontrolband_select then
+              bands[eqcontrolband_select].khz = not bands[eqcontrolband_select].khz
+              update_gfx = true
+              
+            end
+          
+            if mouse.context and mouse.context == contexts.eqc_drag then
+  
+              local mmx, fv, yy, gv
+              if mouse.shift == true then
+                fv = bands[eqcontrolband_select].freq_val
+                gv = bands[eqcontrolband_select].gain_val
+  
+                local dx = mouse.mx - eqcdrag.mx
+                local dy = mouse.my - eqcdrag.my
+                
+                fv = F_limit(fv + (dx*0.0001),0,1)
+                gv = F_limit(gv - (dy*0.0001),0,1)      
+                
+                eqcdrag.mx = mouse.mx
+                eqcdrag.my = mouse.my
+                
+              else
+                mmx = (mouse.mx-eqcdrag.xoff)-(obj.sections[302].x)
+                fv = F_limit((mmx-(eqcdrag.xmin*obj.sections[302].w))/((eqcdrag.xmax-eqcdrag.xmin)*obj.sections[302].w),0,1)
+                
+                yy = obj.sections[302].y+(obj.sections[302].h-(eqcdrag.ymax * obj.sections[302].h))
+                gv = (mouse.my-eqcdrag.yoff-yy)/((eqcdrag.ymax-eqcdrag.ymin)*obj.sections[302].h)
+                
+                gv = F_limit(1-gv,0,1)
+     
+                if bands[eqcontrolband_select].gain_inv then
+                  gv = 1-gv
+                end
+              end
+                          
+              local track = GetTrack(tracks[track_select].tracknum)
+              local fxnum = GetEQC_FXNum(eqcontrolband_select)
+              
+              local param = bands[eqcontrolband_select].freq_param
+              if param and fv ~= ofv then
+                reaper.TrackFX_SetParam(track,fxnum,param,fv)
+              
+                update_eqcontrol = true
+                ofv = fv
+              end
+  
+              param = bands[eqcontrolband_select].gain_param              
+              if param and gv ~= ogv then
+                reaper.TrackFX_SetParam(track,fxnum,param,gv)
+              
+                update_eqcontrol = true
+                ogv = gv
+              end
+            
+            elseif mouse.context and mouse.context == contexts.eqc_dragfreq then
+            
+              local v = bands[eqcontrolband_select].freq_val
+              local dy = mouse.my - eqcdraginf.my
+              if mouse.shift then
+                v = F_limit(v-(dy*0.0002),0,1)              
+              else
+                v = F_limit(v-(dy*0.0015),0,1)
+              end
+              local track = GetTrack(tracks[track_select].tracknum)
+              local fxnum = GetEQC_FXNum(eqcontrolband_select)
+              
+              local param = bands[eqcontrolband_select].freq_param
+              if param and v ~= ov then
+                reaper.TrackFX_SetParam(track,fxnum,param,v)
+              
+                update_eqcontrol = true
+                ov = v
+              end
+              eqcdraginf.my = mouse.my
+  
+            elseif mouse.context and mouse.context == contexts.eqc_draggain then
+          
+              local v = bands[eqcontrolband_select].gain_val
+              local dy = mouse.my - eqcdraginf.my
+              if mouse.shift then
+                v = F_limit(v-(dy*0.0002),0,1)              
+              else
+                v = F_limit(v-(dy*0.0015),0,1)
+              end
+              local track = GetTrack(tracks[track_select].tracknum)
+              local fxnum = GetEQC_FXNum(eqcontrolband_select)
+              
+              local param = bands[eqcontrolband_select].gain_param
+              if param and v ~= ov then
+                reaper.TrackFX_SetParam(track,fxnum,param,v)
+              
+                update_eqcontrol = true
+                ov = v
+              end
+              eqcdraginf.my = mouse.my
+  
+            elseif mouse.context and mouse.context == contexts.eqc_dragq then
+          
+              local v = bands[eqcontrolband_select].q_val
+              local dy = mouse.my - eqcdraginf.my
+              if mouse.shift then
+                v = F_limit(v-(dy*0.0002),0,1)              
+              else
+                v = F_limit(v-(dy*0.0015),0,1)
+              end
+              local track = GetTrack(tracks[track_select].tracknum)
+              local fxnum = GetEQC_FXNum(eqcontrolband_select)
+              
+              local param = bands[eqcontrolband_select].q_param
+              if param and v ~= ov then
+                reaper.TrackFX_SetParam(track,fxnum,param,v)
+              
+                update_eqcontrol = true
+                ov = v
+              end
+              eqcdraginf.my = mouse.my
+  
+            elseif mouse.context and mouse.context == contexts.eqc_dragc1 then
+          
+              local v = bands[eqcontrolband_select].c1_val
+              local dy = mouse.my - eqcdraginf.my
+              if mouse.shift then
+                v = F_limit(v-(dy*0.0002),0,1)              
+              else
+                v = F_limit(v-(dy*0.0015),0,1)
+              end
+              local track = GetTrack(tracks[track_select].tracknum)
+              local fxnum = GetEQC_FXNum(eqcontrolband_select)
+              
+              local param = bands[eqcontrolband_select].c1_param
+              if param and v ~= ov then
+                reaper.TrackFX_SetParam(track,fxnum,param,v)
+              
+                update_eqcontrol = true
+                ov = v
+              end
+              eqcdraginf.my = mouse.my
+  
+            elseif mouse.context and mouse.context == contexts.eqc_dragc2 then
+          
+              local v = bands[eqcontrolband_select].c2_val
+              local dy = mouse.my - eqcdraginf.my
+              if mouse.shift then
+                v = F_limit(v-(dy*0.0002),0,1)              
+              else
+                v = F_limit(v-(dy*0.0015),0,1)
+              end
+              local track = GetTrack(tracks[track_select].tracknum)
+              local fxnum = GetEQC_FXNum(eqcontrolband_select)
+              
+              local param = bands[eqcontrolband_select].c2_param
+              if param and v ~= ov then
+                reaper.TrackFX_SetParam(track,fxnum,param,v)
+              
+                update_eqcontrol = true
+                ov = v
+              end
+              eqcdraginf.my = mouse.my
+  
+            elseif mouse.context and mouse.context == contexts.eqc_dragc3 then
+          
+              local v = bands[eqcontrolband_select].c3_val
+              local dy = mouse.my - eqcdraginf.my
+              if mouse.shift then
+                v = F_limit(v-(dy*0.0002),0,1)              
+              else
+                v = F_limit(v-(dy*0.0015),0,1)
+              end
+              local track = GetTrack(tracks[track_select].tracknum)
+              local fxnum = GetEQC_FXNum(eqcontrolband_select)
+              
+              local param = bands[eqcontrolband_select].c3_param
+              if param and v ~= ov then
+                reaper.TrackFX_SetParam(track,fxnum,param,v)
+              
+                update_eqcontrol = true
+                ov = v
+              end
+              eqcdraginf.my = mouse.my
+  
+            elseif mouse.context and mouse.context == contexts.eqc_dragc4 then
+          
+              local v = bands[eqcontrolband_select].c4_val
+              local dy = mouse.my - eqcdraginf.my
+              if mouse.shift then
+                v = F_limit(v-(dy*0.0002),0,1)              
+              else
+                v = F_limit(v-(dy*0.0015),0,1)
+              end
+              local track = GetTrack(tracks[track_select].tracknum)
+              local fxnum = GetEQC_FXNum(eqcontrolband_select)
+              
+              local param = bands[eqcontrolband_select].c4_param
+              if param and v ~= ov then
+                reaper.TrackFX_SetParam(track,fxnum,param,v)
+              
+                update_eqcontrol = true
+                ov = v
+              end
+              eqcdraginf.my = mouse.my
+  
+            elseif mouse.context and mouse.context == contexts.eqc_dragc5 then
+          
+              local v = bands[eqcontrolband_select].c5_val
+              local dy = mouse.my - eqcdraginf.my
+              if mouse.shift then
+                v = F_limit(v-(dy*0.0002),0,1)              
+              else
+                v = F_limit(v-(dy*0.0015),0,1)
+              end
+              local track = GetTrack(tracks[track_select].tracknum)
+              local fxnum = GetEQC_FXNum(eqcontrolband_select)
+              
+              local param = bands[eqcontrolband_select].c5_param
+              if param and v ~= ov then
+                reaper.TrackFX_SetParam(track,fxnum,param,v)
+              
+                update_eqcontrol = true
+                ov = v
+              end
+              eqcdraginf.my = mouse.my
+                        
+            elseif mouse.context and mouse.context == contexts.eqc_pminslider then
+              local xx = mouse.mx - obj.sections[302].x
+              local pos = F_limit((xx / obj.sections[302].w),0,bands[eqcontrolband_select].posmax-0.01)
+              
+              if mouse.shift then
+                local posdif = pos-bands[eqcontrolband_select].posmin
+                local posm = bands[eqcontrolband_select].posmax + posdif
+                if posm < 1 then
+                  bands[eqcontrolband_select].posmax = posm                   
+                  bands[eqcontrolband_select].posmin = pos
+                else 
+                  posdif = posm - 1
+                  posm = 1
+                  pos = pos - posdif
+                  bands[eqcontrolband_select].posmax = posm                   
+                  bands[eqcontrolband_select].posmin = pos                
+                end
+              else
+                bands[eqcontrolband_select].posmin = pos            
+              end
+              update_gfx = true
+              
+            elseif mouse.context and mouse.context == contexts.eqc_pmaxslider then
+              local xx = mouse.mx - obj.sections[302].x
+              local pos = F_limit((xx / obj.sections[302].w),bands[eqcontrolband_select].posmin+0.01,1)
+              
+              if mouse.shift then
+                local posdif = pos-bands[eqcontrolband_select].posmax
+                local posm = bands[eqcontrolband_select].posmin + posdif
+                if posm > 0 then
+                  bands[eqcontrolband_select].posmin = posm                   
+                  bands[eqcontrolband_select].posmax = pos
+                else
+                  posdif = -posm
+                  posm = 0
+                  pos = pos + posdif
+                  bands[eqcontrolband_select].posmin = posm                   
+                  bands[eqcontrolband_select].posmax = pos                
+                end
+              else
+                bands[eqcontrolband_select].posmax = pos
+              end
+              update_gfx = true
+  
+            elseif mouse.context and mouse.context == contexts.eqc_gminslider then
+              local yy = mouse.my - obj.sections[302].y
+              
+              local pos = 1-F_limit((yy / obj.sections[302].h),0,1)
+              
+              --[[if pos > strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands[eqcontrolband_select].gmax - 0.01 then
+                pos = strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands[eqcontrolband_select].gmax - 0.01
+              end]]
+              if pos > 0.5 then pos = 0.5 end
+              
+              if mouse.shift then
+                bands[eqcontrolband_select].gmin = pos
+              else
+                bands[eqcontrolband_select].gmin = pos
+                bands[eqcontrolband_select].gmax = 1-pos 
+              end
+              update_gfx = true
+  
+            elseif mouse.context and mouse.context == contexts.eqc_gmaxslider then
+              local yy = mouse.my - obj.sections[302].y
+              
+              local pos = 1-F_limit((yy / obj.sections[302].h),0,1)
+  
+              --[[if pos < strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands[eqcontrolband_select].gmin + 0.01 then
+                pos = strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands[eqcontrolband_select].gmin + 0.01
+              end   ]]         
+              if pos < 0.5 then pos = 0.5 end
+  
+              if mouse.shift then
+                bands[eqcontrolband_select].gmax = pos
+              else
+                bands[eqcontrolband_select].gmax = pos
+                bands[eqcontrolband_select].gmin = 1-pos 
+              end
+              update_gfx = true
+            
+            elseif mouse.context and mouse.context == contexts.auto_delayslider then
+              local val = F_limit(MOUSE_sliderHBar(obj.sections[337]),0,1)
+              if val ~= nil then
+                auto_delay = math.floor(val * 10)
+                update_gfx = true
+              end
+            
+            elseif autodelay then
+              autodelay = nil
+              local fxnum = GetEQC_FXNum(eqcontrolband_select)
+              local param = bands[eqcontrolband_select].freq_param                              
+              local param2 = bands[eqcontrolband_select].gain_param
+              bands[eqcontrolband_select].freq_min = nz(calc_eqgraph_getmin(tracks[track_select].tracknum, fxnum, param, true),20)
+              bands[eqcontrolband_select].freq_max = nz(calc_eqgraph_getmax(tracks[track_select].tracknum, fxnum, param, true),24000)            
+              bands[eqcontrolband_select].gain_min = nz(calc_eqgraph_getmin(tracks[track_select].tracknum, fxnum, param2),-20)
+              bands[eqcontrolband_select].gain_max = nz(calc_eqgraph_getmax(tracks[track_select].tracknum, fxnum, param2),20)
+              update_gfx = true
+              
+            elseif eqcdrag then
+              eqcdrag = nil
+              update_gfx = true
+            elseif draggraph then
+              draggraph = nil
+              update_gfx = true
+            end
+            noscroll = true
+            mouse.mx, mouse.my = mx, my
+          else
+          
+            navigate = true
+            show_eqcontrol = false
+            eq_edit = false
+            eqcontrolband_select = nil
+            update_gfx = true
+          
+          end
         elseif mouse.context == nil and (MOUSE_click(obj.sections[10]) or MOUSE_click_RB(obj.sections[10]) or gfx.mouse_wheel ~= 0) then
           
           local togfsnap = false
@@ -12723,6 +15551,15 @@ end
                           update_surface = true
                         end
                                           
+                      elseif strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.eqcontrol then
+                        eqcontrol_select = i
+                        show_eqcontrol = true
+                        --navigate = false
+                        if strips[tracks[track_select].strip][page].controls[i].eqbands and strips[tracks[track_select].strip][page].controls[i].eqbands[1] then
+                          eqcontrolband_select = 1
+                        end
+                        --EQC_OpenEQs()
+                        update_gfx = true
                       end
                     elseif ctltype == 7 or ctltype == 8 or ctltype == 9 or ctltype == 10 then
                       --hold button
@@ -12804,6 +15641,7 @@ end
                       res = OpenMenu(mstr)
                       if res ~= 0 then
                         if res == 1 then
+                          navigate = false
                           macro_lrn_mode = true
                           macroctl_select = trackfxparam_select
                           update_surface = true
@@ -14999,6 +17837,9 @@ end
                 dragparam = {x = mouse.mx-ksel_size.w, y = mouse.my-ksel_size.h, type = 'action'}
               elseif trctl_select == 2 then
                 dragparam = {x = mouse.mx-ksel_size.w, y = mouse.my-ksel_size.h, type = 'macro'}
+              elseif trctl_select == 3 then
+                knob_select = def_boxctl
+                dragparam = {x = mouse.mx-ksel_size.w, y = mouse.my-ksel_size.h, type = 'eqcontrol'}
               elseif trctl_select >= special_offs then
                 dragparam = {x = mouse.mx-ksel_size.w, y = mouse.my-ksel_size.h, type = 'pkmeter'}            
               end
@@ -15194,6 +18035,15 @@ end
                 
                 end
               elseif dragparam.type == 'macro' then
+                if reass_param == nil then
+                  if dragparam.x+ksel_size.w > obj.sections[10].x and dragparam.x+ksel_size.w < obj.sections[10].x+obj.sections[10].w and dragparam.y+ksel_size.h > obj.sections[10].y and dragparam.y+ksel_size.h < obj.sections[10].y+obj.sections[10].h then
+                    trackfxparam_select = i
+                    Strip_AddParam()              
+                  end
+                else
+                
+                end
+              elseif dragparam.type == 'eqcontrol' then
                 if reass_param == nil then
                   if dragparam.x+ksel_size.w > obj.sections[10].x and dragparam.x+ksel_size.w < obj.sections[10].x+obj.sections[10].w and dragparam.y+ksel_size.h > obj.sections[10].y and dragparam.y+ksel_size.h < obj.sections[10].y+obj.sections[10].h then
                     trackfxparam_select = i
@@ -16404,6 +19254,864 @@ end
     end
       
   end
+
+  function EQC_LoadGraph(band)
+
+    local fn = eqbands_path..'default.eqgraph'
+    if reaper.file_exists(fn) then
+    
+      local file
+      file=io.open(fn,"r")
+      local content=file:read("*a")
+      file:close()
+      
+      local defgraph = unpickle(content)
+      
+      return defgraph
+    end
+  
+  end
+  
+  function EQC_SetMain(band)
+  
+    
+    local m = {}
+    m.lookmap = {}
+    m.gmap = {}
+    local lm = strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands[band].lookmap
+    for i = 1, #lm do
+      m.lookmap[i] = {pix = lm[i].pix,
+                      hz = lm[i].hz}
+    end
+    local gm = strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands[band].gmap
+    for i = 1, #gm do
+      m.gmap[i] = {pix = gm[i].pix,
+                   db = gm[i].db}
+    end
+    m.gmin = strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands[band].gmin
+    m.gmax = strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands[band].gmax
+    m.posmin = strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands[band].posmin
+    m.posmax = strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands[band].posmax
+    
+    local save_path=eqbands_path
+    local fn=save_path.."default.eqgraph"
+    
+    local DELETE=true
+    local file
+    
+    if reaper.file_exists(fn) then
+    
+    end
+    
+    if DELETE then
+      file=io.open(fn,"w")
+      local pickled_table=pickle(m)
+      file:write(pickled_table)
+      file:close()
+    end
+    
+    OpenMsgBox(1,'Default EQ graph saved.',1)
+    def_graph = m
+    return m
+      
+  end
+  
+  function EQC_GetParam(track, fx, param)
+    if param then
+      --local track = GetTrack(tr)
+      local v = reaper.TrackFX_GetParam(track, fx, param)
+      return v
+    end    
+  end
+  
+  function EQC_SetDefault(b)
+  
+    local bands = strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands
+    if bands and bands[b] then
+      if bands[b].freq_def then
+        EQC_SetParam(b, bands[b].freq_param, bands[b].freq_def)
+      end
+      if bands[b].gain_def then
+        EQC_SetParam(b, bands[b].gain_param, bands[b].gain_def)
+      end
+      if bands[b].q_def then
+        EQC_SetParam(b, bands[b].q_param, bands[b].q_def)
+      end
+      if bands[b].c1_def then
+        EQC_SetParam(b, bands[b].c1_param, bands[b].c1_def)
+      end
+      if bands[b].c2_def then
+        EQC_SetParam(b, bands[b].c2_param, bands[b].c2_def)
+      end
+      if bands[b].c3_def then
+        EQC_SetParam(b, bands[b].c3_param, bands[b].c3_def)
+      end
+      if bands[b].c4_def then
+        EQC_SetParam(b, bands[b].c4_param, bands[b].c4_def)
+      end
+      if bands[b].c5_def then
+        EQC_SetParam(b, bands[b].c5_param, bands[b].c5_def)
+      end
+    end
+        
+  end
+  
+  function EQC_SetParam(band, param, val)
+    if strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands[band].fxnum then
+      local fxnum = strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands[band].fxnum
+      local track = GetTrack(tracks[track_select].tracknum)
+      reaper.TrackFX_SetParamNormalized(track, fxnum, param, val)
+    end
+  end
+  
+  function EQC_SelectParam()
+    if strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands[eqcontrolband_select].fxnum then
+      local fxnum = strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands[eqcontrolband_select].fxnum
+      local track = GetTrack(tracks[track_select].tracknum)
+      local pcnt = reaper.TrackFX_GetNumParams(track, fxnum)
+      local mstr = '[ CLEAR ]|'
+      for pn = 1, pcnt do
+        local _, pname = reaper.TrackFX_GetParamName(track, fxnum, pn-1, '')
+        mstr = mstr..pn..': '..pname
+        if pn < pcnt then
+          mstr = mstr..'|'
+        end
+      end
+      gfx.x, gfx.y = mouse.mx, mouse.my
+      res = OpenMenu(mstr)-1
+      if res == 0 then res = -1 end
+      return res
+    else
+      return 0
+    end
+  end
+  
+  function EQC_AlignGraph(src, aligntype)
+  
+    if aligntype == nil then aligntype = 1 end
+    
+    local strip = tracks[track_select].strip
+    local eqgraph = strips[strip][page].controls[eqcontrol_select].eqgraph
+    if eqgraph then
+      local lookmap_src = strips[strip][page].controls[eqcontrol_select].eqbands[src].lookmap
+      local lookmap_tgt = eqgraph.lookmap
+  
+      if lookmap_src and #lookmap_src > 1 then
+      
+        local src_pts = {}
+        for i = 1, #lookmap_src do
+        
+          if 10^math.floor(math.log(lookmap_src[i].hz,10)) == lookmap_src[i].hz then
+            src_pts[#src_pts+1] = i
+          end
+        
+        end
+      
+        if #src_pts < 2 then
+        
+          if #src_pts == 1 then
+            --if #lookmap_src - src_pts[1] > #lookmap_src / 2 and lookmap_src[#lookmap_src].hz <= lookmap_tgt[#lookmap_tgt].hz then
+            if #lookmap_src > src_pts[1] and lookmap_src[#lookmap_src].hz <= lookmap_tgt[#lookmap_tgt].hz and (aligntype == 1 or src_pts[1] == 1) then
+              src_pts[2] = #lookmap_src
+              --DBG('AA')
+            else
+              src_pts[2] = 1
+              --DBG('BB')
+            end
+            if src_pts[1] > src_pts[2] then
+              local sp = src_pts[1]
+              src_pts[1] = src_pts[2]
+              src_pts[2] = sp
+            end
+          else
+            src_pts[1] = 1
+            src_pts[2] = #lookmap_src 
+          end
+        end
+        local tgt_pts = {}
+        for i = 1, #lookmap_tgt do
+          if lookmap_tgt[i].hz == lookmap_src[src_pts[1]].hz then
+            tgt_pts[1] = i
+          elseif lookmap_tgt[i].hz == lookmap_src[src_pts[2]].hz then
+            tgt_pts[2] = i          
+          end
+        end
+        if #tgt_pts == 2 then
+          local tgt_pix = (lookmap_tgt[tgt_pts[2]].pix/2000) - (lookmap_tgt[tgt_pts[1]].pix/2000)
+          local tgt_mult = eqgraph.posmax-eqgraph.posmin
+          local tp = (lookmap_tgt[tgt_pts[1]].pix/2000)*tgt_mult
+          local src_pix = (lookmap_src[src_pts[2]].pix/2000) - (lookmap_src[src_pts[1]].pix/2000)
+          local src_mult = (tgt_pix*tgt_mult)/src_pix
+          
+          local srcdif = (lookmap_src[src_pts[1]].pix/2000) * src_mult
+          local posmin = tp - srcdif + (eqgraph.posmin)
+          local posmax = posmin + src_mult
+          strips[strip][page].controls[eqcontrol_select].eqbands[src].posmin = posmin
+          strips[strip][page].controls[eqcontrol_select].eqbands[src].posmax = posmax
+          
+          update_gfx = true
+        end
+      end
+
+      local gmap_src = strips[strip][page].controls[eqcontrol_select].eqbands[src].gmap
+      local gmap_tgt = eqgraph.gmap
+  
+      if gmap_src and #gmap_src > 1 then
+
+        local src_pts = {}
+        for i = 1, #gmap_src do
+        
+          if gmap_src[i].db == 0 then
+            src_pts[#src_pts+1] = i
+          end
+        
+        end
+
+        if #src_pts == 1 then
+
+          if #src_pts > src_pts[1]+1 then 
+
+            src_pts[2] = src_pts[1] + 2
+
+          elseif src_pts[1] > 2 then
+          
+            src_pts[2] = src_pts[1] - 2          
+
+          end
+          
+          if #src_pts == 2 then
+          
+            local tgt_pts = {}
+            for i = 1, #gmap_tgt do
+              if gmap_tgt[i].db == gmap_src[src_pts[1]].db then
+                tgt_pts[1] = i
+              elseif gmap_tgt[i].db == gmap_src[src_pts[2]].db then
+                tgt_pts[2] = i          
+              end
+            end
+          
+            if #tgt_pts == 2 then
+              local tgt_pix = (gmap_tgt[tgt_pts[2]].pix/2000) - (gmap_tgt[tgt_pts[1]].pix/2000)
+              local tgt_mult = eqgraph.gmax-eqgraph.gmin
+              local tp = (gmap_tgt[tgt_pts[1]].pix/2000)*tgt_mult
+              local src_pix = (gmap_src[src_pts[2]].pix/2000) - (gmap_src[src_pts[1]].pix/2000)
+              local src_mult = (tgt_pix*tgt_mult)/src_pix
+              
+              local srcdif = (gmap_src[src_pts[1]].pix/2000) * src_mult
+              local gmin = tp - srcdif + (eqgraph.gmin)
+              local gmax = gmin + src_mult
+              strips[strip][page].controls[eqcontrol_select].eqbands[src].gmin = gmin
+              strips[strip][page].controls[eqcontrol_select].eqbands[src].gmax = gmax
+              
+              update_gfx = true
+            end
+          
+          end
+        end
+      end
+      
+    end
+
+  end
+  
+  function EQC_LoadBand()
+  
+    if strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands == nil or 
+      (strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands 
+        and #strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands < 20) then
+      local i = 0
+      local mstr = '[ NEW EMPTY BAND ]|>EQs'
+      local bands = {}
+      local eqs = {}
+  
+      local eq = reaper.EnumerateFiles(eq_path,i)
+      if eq ~= nil then
+        while eq ~= nil do
+          local str = string.match(eq,'(.*)%.lbxeq')
+          i=i+1
+          eq = reaper.EnumerateFiles(eq_path,i)
+          if eq ~= nil then
+            mstr = mstr..'|'..str
+            eqs[#eqs+1] = str    
+          else
+            mstr = mstr..'|<'..str
+            eqs[#eqs+1] = str          
+          end
+        end
+      else
+        mstr = mstr..'|#<empty'
+        eqs[#eqs+1] = ''
+      end
+          
+      i=0
+      local bt = reaper.EnumerateSubdirectories(eqbands_path,i)
+      while bt ~= nil do
+        if mstr ~= '' then
+          mstr = mstr .. '|'
+        end
+        mstr = mstr..'>'..bt
+        local btp = eqbands_path..bt
+        local b = 0
+        local bn = reaper.EnumerateFiles(btp,b)
+        if bn ~= nil then
+          while bn ~= nil do
+            local str = string.match(bn,'(.*)%.eqband')
+            b=b+1
+            bn = reaper.EnumerateFiles(btp,b)
+            if bn ~= nil then
+              mstr = mstr..'|'..str
+              bands[#bands+1] = bt..'/'..str
+            else
+              mstr = mstr..'|<'..str
+              bands[#bands+1] = bt..'/'..str
+            end
+          end
+        else
+          mstr = mstr..'|#<empty'
+          bands[#bands+1] = ''
+        end
+        i=i+1
+        bt = reaper.EnumerateSubdirectories(eqbands_path,i)
+      end
+      gfx.x, gfx.y = mouse.mx+obj.sections[300].x, mouse.my+obj.sections[300].y
+      res = OpenMenu(mstr)
+      if res ~= 0 then
+  
+        if res == 1 then
+          --add band
+          eq_edit = true
+          if strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands == nil then
+            strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands = {}
+          end
+          local eqb = #strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands+1
+          eqcontrolband_select = eqb
+          strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands[eqb] = {}
+          strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands[eqb].posmin = 0
+          strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands[eqb].posmax = 1
+          strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands[eqb].gmin = 0
+          strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands[eqb].gmax = 1
+          
+          strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands[eqb].col = '160 160 160'
+          strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands[eqb].khz = false
+          
+          update_gfx = true      
+        elseif res-1 <= #eqs then
+          res = res - 1
+          local fn = eq_path..eqs[res]..'.lbxeq'
+          
+          EQC_LoadEQ(fn)
+          
+        else
+          res = res - (1+#eqs)
+          local fn = eqbands_path..bands[res]..'.eqband'
+          if reaper.file_exists(fn) then
+          
+            local file
+            file=io.open(fn,"r")
+            local content=file:read("*a")
+            file:close()
+            
+            local loaddata = unpickle(content)
+            if loaddata then
+              
+              local trn = tracks[track_select].tracknum
+              local fxc = loaddata.chunk
+              local track = GetTrack(trn)
+              local _, chunk = reaper.GetTrackStateChunk(track,'',false)
+              local nchunk, nfxguid, ofxguid = InsertFXChunkAtEndOfChain(trn, chunk, fxc)
+              if nchunk then
+                reaper.SetTrackStateChunk(track,nchunk,false)
+                loaddata.eqband.fxguid = nfxguid
+                loaddata.eqband.fxnum = reaper.TrackFX_GetCount(tr)-1
+                if strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands == nil then
+                  strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands = {}
+                end
+                local newband = #strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands+1
+                --loaddata.eqband.col = eqcontrol_colours[newband]
+                strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands[newband] = loaddata.eqband
+                eqcontrolband_select = newband
+                --compatibility
+                if strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands[newband].khz == nil then
+                  strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands[newband].khz = false
+                end
+                if strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands[newband].gmin == nil then
+                  strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands[newband].gmin = 0
+                  strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands[newband].gmax = 1
+                end
+              end
+            end
+          
+            update_gfx = true
+            
+          else
+            OpenMsgBox(1,'File not found.',1)
+          end
+        end
+      end      
+    end
+  end
+  
+  function EQC_SelectBandType()
+  
+    local i = 0
+    local bt = reaper.EnumerateSubdirectories(eqbands_path,i)
+    local mstr = '[ NEW FOLDER ]'
+    local bandtypes = {'NEW FOLDER'}
+    while bt ~= nil do
+      bandtypes[#bandtypes+1] = bt
+      if mstr ~= '' then
+        mstr = mstr .. '|'
+      end
+      mstr = mstr..bt
+      i=i+1
+      bt = reaper.EnumerateSubdirectories(eqbands_path,i)
+    end
+    gfx.x, gfx.y = mouse.mx+obj.sections[300].x, mouse.my+obj.sections[300].y
+    res = OpenMenu(mstr)
+    if res ~= 0 then
+      if res == 1 then
+        OpenEB(31,'Please enter new EQ band folder:')
+      else
+        strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands[eqcontrolband_select].bandtype = bandtypes[res]
+      end
+      update_gfx = true
+    end
+  
+  end
+  
+  function EQC_CopyBandData(strip, page, c,b)
+  
+    local bb = strips[strip][page].controls[c].eqbands
+
+    local bd = {posmin = bb[b].posmin,
+                posmax = bb[b].posmax,
+                gmin = bb[b].gmin,
+                gmax = bb[b].gmax,
+                fxnum = bb[b].fxnum,
+                fxguid = bb[b].fxguid,
+                fxname = bb[b].fxname,
+                col = bb[b].col,
+                freq_param = bb[b].freq_param,
+                freq_param_name = bb[b].freq_param_name,
+                gain_param = bb[b].gain_param,
+                gain_param_name = bb[b].gain_param_name,
+                q_param = bb[b].q_param,
+                q_param_name = bb[b].q_param_name,
+                bypass_param = bb[b].bypass_param,
+                bypass_param_name = bb[b].bypass_param_name,
+                c1_param = bb[b].c1_param,
+                c1_param_name = bb[b].c1_param_name,
+                c2_param = bb[b].c2_param,
+                c2_param_name = bb[b].c2_param_name,
+                c3_param = bb[b].c3_param,
+                c3_param_name = bb[b].c3_param_name,
+                c4_param = bb[b].c4_param,
+                c4_param_name = bb[b].c4_param_name,
+                c5_param = bb[b].c5_param,
+                c5_param_name = bb[b].c5_param_name,
+                freq_min = bb[b].freq_min,
+                freq_max = bb[b].freq_max,
+                bandtype = bb[b].bandtype,
+                bandname = bb[b].bandname,
+                lookmap = {},
+                gmap = {},
+                gain_inv = gain_inv,
+                q_inv = q_inv,
+                khz = khz,
+                freq_def = bb[b].freq_def,                
+                gain_def = bb[b].gain_def,
+                q_def = bb[b].q_def,
+                c1_def = bb[b].c1_def,
+                c2_def = bb[b].c2_def,
+                c3_def = bb[b].c3_def,
+                c4_def = bb[b].c4_def,
+                c5_def = bb[b].c5_def
+                }
+    if bb[b].lookmap then
+      for lc = 1, #bb[b].lookmap do
+        bd.lookmap[lc] = {pix = bb[b].lookmap[lc].pix,
+                          hz = bb[b].lookmap[lc].hz
+                          }
+      end
+    end
+    if bb[b].gmap then    
+      for lc = 1, #bb[b].gmap do
+        bd.gmap[lc] = {pix = bb[b].gmap[lc].pix,
+                        db = bb[b].gmap[lc].db
+                        }
+      end
+    end
+        
+    return bd
+  end
+  
+  function EQC_DelBand()
+  
+    local strip = tracks[track_select].strip
+    if strips[strip][page].controls[eqcontrol_select].eqbands[eqcontrolband_select] then
+      local fxnum = strips[strip][page].controls[eqcontrol_select].eqbands[eqcontrolband_select].fxnum
+      local unique = true
+      if fxnum then
+        for b = 1, #strips[strip][page].controls[eqcontrol_select].eqbands do
+          if b ~= eqcontrolband_select and fxnum == strips[strip][page].controls[eqcontrol_select].eqbands[b].fxnum then
+            unique = false
+          end
+        end
+      else
+        --no fx
+        unique = false
+      end
+            
+      local cnt = #strips[strip][page].controls[eqcontrol_select].eqbands
+      strips[strip][page].controls[eqcontrol_select].eqbands[eqcontrolband_select] = nil
+      strips[strip][page].controls[eqcontrol_select].eqbands = Table_RemoveNils(strips[strip][page].controls[eqcontrol_select].eqbands, cnt)
+      
+      if eqcontrolband_select > #strips[strip][page].controls[eqcontrol_select].eqbands then
+        eqcontrolband_select = #strips[strip][page].controls[eqcontrol_select].eqbands
+        if eqcontrolband_select == 0 then
+          eqcontrolband_select = nil
+        end
+      end
+      update_gfx = true
+        
+      if unique and fxnum then
+        --can delete
+        local tr = GetTrack(tracks[track_select].tracknum)
+        local _, chunk = reaper.GetTrackStateChunk(tr,'',false)
+        local _, nchunk = RemoveFXChunkFromTrackChunk(chunk, fxnum+1)
+        if nchunk then
+          reaper.SetTrackStateChunk(tr,nchunk,false)
+          
+          --Reorganise FXNUM
+          for i = 1, #strips[strip][page].controls[eqcontrol_select].eqbands do
+            if strips[strip][page].controls[eqcontrol_select].eqbands[i].fxnum and strips[strip][page].controls[eqcontrol_select].eqbands[i].fxnum > fxnum then
+              strips[strip][page].controls[eqcontrol_select].eqbands[i].fxnum = strips[strip][page].controls[eqcontrol_select].eqbands[i].fxnum-1
+            end
+          end
+        end
+      end
+
+    end
+  end
+  
+  function EQC_SaveBand()
+  
+    local strip = tracks[track_select].strip
+    if eqcontrolband_select then
+  
+      if strips[strip][page].controls[eqcontrol_select].eqbands[eqcontrolband_select].bandtype == nil then
+        OpenMsgBox(1,'Select a folder first.',1)        
+        return
+      end
+      if strips[strip][page].controls[eqcontrol_select].eqbands[eqcontrolband_select].bandname == nil then
+        OpenMsgBox(1,'Select a band name first.',1)        
+        return
+      end
+    
+      local bandtype = strips[strip][page].controls[eqcontrol_select].eqbands[eqcontrolband_select].bandtype      
+      local bandname = strips[strip][page].controls[eqcontrol_select].eqbands[eqcontrolband_select].bandname
+    
+      local savedata = {}
+      local track = GetTrack(tracks[track_select].tracknum)
+      local _, chunk = reaper.GetTrackStateChunk(track,'',false)
+      local fxnum = strips[strip][page].controls[eqcontrol_select].eqbands[eqcontrolband_select].fxnum
+      local fnd, fxc, s, e = GetFXChunkFromTrackChunk(chunk,fxnum+1)
+      
+      if fnd then
+        savedata.eqband = EQC_CopyBandData(strip, page, eqcontrol_select, eqcontrolband_select)
+        savedata.chunk = fxc
+      
+        local fn = bandtype..'/'..bandname
+        
+        if fn and string.len(fn)>0 then
+        
+          local save_path=eqbands_path
+          local fn=save_path..fn..".eqband"
+          
+          local DELETE=true
+          local file
+          
+          if reaper.file_exists(fn) then
+          
+          end
+          
+          if DELETE then
+            file=io.open(fn,"w")
+            local pickled_table=pickle(savedata)
+            file:write(pickled_table)
+            file:close()
+          end
+          
+          OpenMsgBox(1,'EQ band saved.',1)
+          
+        end
+      
+      else
+        --error
+        DBG('Failed to get fx chunk')
+      end
+    
+    end
+  
+  end
+
+  function EQC_LoadEQ(fn)
+  
+    if reaper.file_exists(fn) then
+    
+      local file
+      file=io.open(fn,"r")
+      local content=file:read("*a")
+      file:close()
+      
+      local loaddata = unpickle(content)
+      if loaddata then
+        
+        local fxcnt = #loaddata.chunks
+
+        GUI_DrawMsgX(obj, gui, 'Loading EQ Data...', ck, fxcnt)
+        
+        local trn = tracks[track_select].tracknum
+        local track = GetTrack(trn)
+        local _, chunk = reaper.GetTrackStateChunk(track,'',false)
+
+        local nguids = {}
+        for ck = 1, #loaddata.chunks do
+        
+          local fxc = loaddata.chunks[ck]
+          local nchunk, nfxguid, ofxguid = InsertFXChunkAtEndOfChain(trn, chunk, fxc)
+          chunk = nchunk
+          nguids[ofxguid] = nfxguid        
+        
+        end
+        reaper.SetTrackStateChunk(track,chunk,false)
+        local bandcnt = eqcontrolband_select
+        if loaddata.bands and #loaddata.bands > 0 then
+          if strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands == nil then
+            strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands = {}
+          end
+          local bands = strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands
+          bandcnt = #bands+1
+          for b = 1, #loaddata.bands do
+            loaddata.bands[b].fxguid = nguids[loaddata.bands[b].fxguid]
+            loaddata.bands[b].fxnum = -1
+
+            if #bands < 20 then
+              bands[#bands+1] = loaddata.bands[b]
+            end
+          end
+        end
+        if loaddata.eqgraph then
+          strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqgraph = loaddata.eqgraph
+        end
+
+        eqcontrolband_select = bandcnt
+        update_gfx = true    
+    
+      end
+    end
+  end
+  
+  function EQC_SaveEQ(fn)
+  
+    local strip = tracks[track_select].strip
+    --if eqcontrolband_select then
+  
+      --[[if strips[strip][page].controls[eqcontrol_select].eqbands[eqcontrolband_select].bandtype == nil then
+        OpenMsgBox(1,'Select a folder first.',1)        
+        return
+      end
+      if strips[strip][page].controls[eqcontrol_select].eqbands[eqcontrolband_select].bandname == nil then
+        OpenMsgBox(1,'Select a band name first.',1)        
+        return
+      end]]
+  
+      local eqc = strips[strip][page].controls[eqcontrol_select].eqbands
+      local savedata = {bands = {}, chunks = {}, eqgraph = {}}
+      local track = GetTrack(tracks[track_select].tracknum)
+      local fx = {}
+
+      local _, chunk = reaper.GetTrackStateChunk(track,'',false)
+
+      savedata.eqgraph = strips[strip][page].controls[eqcontrol_select].eqgraph
+      for b = 1, #eqc do
+
+        local fxnum = eqc[b].fxnum
+        fx[fxnum] = true 
+        savedata.bands[b] = EQC_CopyBandData(strip, page, eqcontrol_select, b)
+
+      end
+      
+      local fnd = false
+      for f = 0, reaper.TrackFX_GetCount(track)-1 do
+
+        if fx[f] == true then
+          fnd = false
+          local fxc, s, e
+          fnd, fxc, s, e = GetFXChunkFromTrackChunk(chunk,f+1)
+          if fnd then
+            savedata.chunks[#savedata.chunks+1] = fxc
+          end
+        end
+
+      end
+
+      if fnd then
+        
+        if fn and string.len(fn)>0 then
+        
+          local save_path=eq_path
+          local fn=save_path..fn..".lbxeq"
+          
+          local DELETE=true
+          local file
+          
+          if reaper.file_exists(fn) then
+          
+          end
+          
+          if DELETE then
+            file=io.open(fn,"w")
+            local pickled_table=pickle(savedata)
+            file:write(pickled_table)
+            file:close()
+          end
+          
+          OpenMsgBox(1,'EQ saved.',1)
+          
+        end
+      end
+    --end
+  
+  end
+  
+  function EQC_OpenEQs(b, open)
+  
+    local eqc = strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands
+    if eqc then
+      local track = GetTrack(tracks[track_select].tracknum)
+      for i = 1, #eqc do
+        local fxnum = GetEQC_FXNum(i)
+        if fxnum and fxnum >= 0 and (b == nil or i == b) then
+        
+          reaper.TrackFX_SetOpen(track, fxnum, open)
+        
+        end 
+  
+      end
+    end
+    
+  end
+  
+  function EQC_UpdateVals()
+  
+    if strips[tracks[track_select].strip] and strips[tracks[track_select].strip][page].controls[eqcontrol_select] then
+      local eqc = strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands
+      if eqc then
+        local track = GetTrack(tracks[track_select].tracknum)
+        for i = 1, #eqc do
+    
+          local fxnum = GetEQC_FXNum(i)
+        
+          if eqc[i].freq_param then
+            --DBG('f')
+            local v = reaper.TrackFX_GetParamNormalized(track, fxnum, eqc[i].freq_param)
+            --local v2 = reaper.TrackFX_GetParam(track, fxnum, eqc[i].freq_param)
+            --DBG(v..'  '..eqc[i].freq_val..'  '..v2)
+            if v ~= eqc[i].freq_val then
+              --eqc[i].freq_val = v
+              --DBG('A')
+              update_eqcontrol = true
+              break
+            end
+          end
+          if eqc[i].gain_param then
+            local v = reaper.TrackFX_GetParamNormalized(track, fxnum, eqc[i].gain_param)
+            if v ~= eqc[i].gain_val then
+              --eqc[i].gain_val = v
+              update_eqcontrol = true
+              break
+            end      
+          end
+          
+          if i == eqcontrolband_select then
+            if eqc[i].q_param then
+              local v = reaper.TrackFX_GetParamNormalized(track, fxnum, eqc[i].q_param)
+              if v ~= eqc[i].q_val then
+                --eqc[i].q_val = v
+                update_eqcontrol = true
+                break
+              end      
+            end
+            if eqc[i].c1_param then
+              local v = reaper.TrackFX_GetParamNormalized(track, fxnum, eqc[i].c1_param)
+              if v ~= eqc[i].c1_val then
+                update_eqcontrol = true
+                break
+              end        
+            end    
+            if eqc[i].c2_param then
+              local v = reaper.TrackFX_GetParamNormalized(track, fxnum, eqc[i].c2_param)
+              if v ~= eqc[i].c2_val then
+                update_eqcontrol = true
+                break
+              end          
+            end    
+            if eqc[i].c3_param then
+              local v = reaper.TrackFX_GetParamNormalized(track, fxnum, eqc[i].c3_param)
+              if v ~= eqc[i].c3_val then
+                update_eqcontrol = true
+                break
+              end        
+            end    
+            if eqc[i].c4_param then
+              local v = reaper.TrackFX_GetParamNormalized(track, fxnum, eqc[i].c4_param)
+              if v ~= eqc[i].c4_val then
+                update_eqcontrol = true
+                break
+              end        
+            end    
+            if eqc[i].c5_param then
+              local v = reaper.TrackFX_GetParamNormalized(track, fxnum, eqc[i].c5_param)
+              if v ~= eqc[i].c5_val then
+                update_eqcontrol = true
+                break
+              end        
+            end    
+          end    
+        
+        end
+      end  
+    end
+  end
+  
+  function GetEQC_FXNum(band)
+    local fxnum = strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands[band].fxnum
+    local track = GetTrack(tracks[track_select].tracknum)
+    if track and fxnum then
+      if reaper.TrackFX_GetFXGUID(track, fxnum) == strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands[band].fxguid then
+        return fxnum
+      else
+        local fxcnt = reaper.TrackFX_GetCount(track)
+        local guids = {}
+        for i = 0, fxcnt-1 do
+          local guid = reaper.TrackFX_GetFXGUID(track, i)
+          guids[guid] = i
+        end
+        for i = 1, #strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands do
+          local guid = strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands[i].fxguid
+          if guids[guid] then
+            strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands[i].fxnum = guids[guid]
+          else
+            strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands[i].fxnum = -1
+          end
+        end
+        
+        fxnum = strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands[band].fxnum
+        return fxnum
+      end
+    end
+  end
   
   function SetCtlBitmapRedraw()
     if settings_usectlbitmap then
@@ -16838,13 +20546,14 @@ end
     if sst > 1 then
       xxy_mindist = 1
       xxy_maxdist = 0
+      local xxytbl = xxy[strip][page][sst]
       local d = {}
       local gtrack = GetTrack(strips[strip].track.tracknum)
-      local px, py = xxy[strip][page][sst].x, xxy[strip][page][sst].y
+      local px, py = xxytbl.x, xxytbl.y
       if xxyrecord and xxymode == 0 then 
         local track = GetTrack(tracks[LBX_CTL_TRACK].tracknum)
-        local xf = xxy[strip][page][sst].xfader
-        local yf = xxy[strip][page][sst].yfader
+        local xf = xxytbl.xfader
+        local yf = xxytbl.yfader
         if xf and faders[xf] then
           local fxnum = math.floor((xf-1)/32)
           local param = ((xf-1) % 32)
@@ -16858,18 +20567,18 @@ end
           faders[yf].val = py
         end        
       end
-      for p = 1, #xxy[strip][page][sst].points do
-        d[p] = math.sqrt((px - xxy[strip][page][sst].points[p].x)^2 + (py - xxy[strip][page][sst].points[p].y)^2)
-        xxy[strip][page][sst].points[p].d2 = d[p]
+      for p = 1, #xxytbl.points do
+        d[p] = math.sqrt((px - xxytbl.points[p].x)^2 + (py - xxytbl.points[p].y)^2)
+        xxytbl.points[p].d2 = d[p]
         d[p] = d[p]^xxy_gravity
-        xxy[strip][page][sst].points[p].distance = d[p]
+        xxytbl.points[p].distance = d[p]
         xxy_mindist = math.min(xxy_mindist,d[p])
         xxy_maxdist = math.max(xxy_maxdist,d[p])
       end
       for ctl = 1, #snapshots[strip][page][sst].ctls do
         local num, den = 0, 0
         for p = 1, #d do
-          local ss = xxy[strip][page][sst].points[p].ss
+          local ss = xxytbl.points[p].ss
           if snapshots[strip][page][sst].snapshot[ss].data[ctl] then
             local v = snapshots[strip][page][sst].snapshot[ss].data[ctl].dval
             if v then
@@ -16880,8 +20589,8 @@ end
         end
         local nv = num/den
         
-        if xxy[strip][page][sst].points[1] then
-          local ss = xxy[strip][page][sst].points[1].ss
+        if xxytbl.points[1] then
+          local ss = xxytbl.points[1].ss
           if snapshots[strip][page][sst].snapshot[ss].data[ctl] then
             local c = snapshots[strip][page][sst].snapshot[ss].data[ctl].ctl
             if c and nv and nv < 1/0 and nv > -1/0 then
@@ -17664,6 +21373,136 @@ end
             end
           end
 
+          local mcnt = tonumber(zn(data[key..'macroctl_cnt'],0))
+          if mcnt > 0 then
+            strips[ss][p].controls[c].macroctl = {}
+            
+            for mc = 1, mcnt do
+              local key = 'p'..p..'_c_'..c..'_mc_'..mc..'_'
+              strips[ss][p].controls[c].macroctl[mc] = {c_id = tonumber(zn(data[key..'c_id'])),
+                                                        ctl = tonumber(zn(data[key..'ctl'])),
+                                                        A_val = tonumber(zn(data[key..'A'],0)),
+                                                        B_val = tonumber(zn(data[key..'B'],0)),
+                                                        shape = tonumber(zn(data[key..'shape'],0))} 
+            end
+          end
+
+          local bcnt = tonumber(zn(data[key..'eqband_cnt'],0))
+          if bcnt > 0 then
+            strips[ss][p].controls[c].eqbands = {}
+            
+            for bc = 1, bcnt do
+              local key = 'p'..p..'_c_'..c..'_eqband_'..bc..'_'
+              strips[ss][p].controls[c].eqbands[bc] = {posmin = tonumber(zn(data[key..'posmin'])),
+                                                        posmax = tonumber(zn(data[key..'posmax'])),
+                                                        gmin = tonumber(zn(data[key..'gmin'],0)),
+                                                        gmax = tonumber(zn(data[key..'gmax'],1)),
+                                                        col = zn(data[key..'col']),
+                                                        fxnum = tonumber(zn(data[key..'fxnum'])),
+                                                        fxguid = zn(data[key..'fxguid']),
+                                                        fxname = zn(data[key..'fxname']),
+                                                        freq_param = tonumber(zn(data[key..'freq_param'])),
+                                                        freq_param_name = zn(data[key..'freq_param_name']),
+                                                        gain_param = tonumber(zn(data[key..'gain_param'])),
+                                                        gain_param_name = zn(data[key..'gain_param_name']),
+                                                        q_param = tonumber(zn(data[key..'q_param'])),
+                                                        q_param_name = zn(data[key..'q_param_name']),
+                                                        bypass_param = tonumber(zn(data[key..'bypass_param'])),
+                                                        bypass_param_name = zn(data[key..'bypass_param_name']),
+                                                        c1_param = tonumber(zn(data[key..'c1_param'])),
+                                                        c1_param_name = zn(data[key..'c1_param_name']),
+                                                        c2_param = tonumber(zn(data[key..'c2_param'])),
+                                                        c2_param_name = zn(data[key..'c2_param_name']),
+                                                        c3_param = tonumber(zn(data[key..'c3_param'])),
+                                                        c3_param_name = zn(data[key..'c3_param_name']),
+                                                        c4_param = tonumber(zn(data[key..'c4_param'])),
+                                                        c4_param_name = zn(data[key..'c4_param_name']),
+                                                        c5_param = tonumber(zn(data[key..'c5_param'])),
+                                                        c5_param_name = zn(data[key..'c5_param_name']),
+                                                        freq_val = tonumber(zn(data[key..'freq_val'])),
+                                                        gain_val = tonumber(zn(data[key..'gain_val'])),
+                                                        q_val = tonumber(zn(data[key..'q_val'])),
+                                                        c1_val = tonumber(zn(data[key..'c1_val'])),
+                                                        c2_val = tonumber(zn(data[key..'c2_val'])),
+                                                        c3_val = tonumber(zn(data[key..'c3_val'])),
+                                                        c4_val = tonumber(zn(data[key..'c4_val'])),
+                                                        c5_val = tonumber(zn(data[key..'c5_val'])),
+                                                        freq_min = tonumber(zn(data[key..'freq_min'])),
+                                                        freq_max = tonumber(zn(data[key..'freq_max'])),
+                                                        gain_min = tonumber(zn(data[key..'gain_min'])),
+                                                        gain_max = tonumber(zn(data[key..'gain_max'])),
+                                                        bandtype = zn(data[key..'bandtype']),
+                                                        bandname = zn(data[key..'bandname']),
+                                                        khz = tobool(zn(data[key..'khz'],false)),
+                                                        gain_inv = tobool(zn(data[key..'gaininv'],false)),
+                                                        q_inv = tobool(zn(data[key..'qinv'],false)),
+                                                        freq_def = tonumber(zn(data[key..'freq_def'])),
+                                                        gain_def = tonumber(zn(data[key..'gain_def'])),
+                                                        q_def = tonumber(zn(data[key..'q_def'])),
+                                                        c1_def = tonumber(zn(data[key..'c1_def'])),
+                                                        c2_def = tonumber(zn(data[key..'c2_def'])),
+                                                        c3_def = tonumber(zn(data[key..'c3_def'])),
+                                                        c4_def = tonumber(zn(data[key..'c4_def'])),
+                                                        c5_def = tonumber(zn(data[key..'c5_def'])),
+                                                        } 
+              local lcnt = tonumber(zn(data[key..'lookmap_cnt'],0))
+              if lcnt > 0 then
+                strips[ss][p].controls[c].eqbands[bc].lookmap = {}
+                for lc = 1, lcnt do
+                  local key = 'p'..p..'_c_'..c..'_eqband_'..bc..'_lm_'..lc..'_'
+                  strips[ss][p].controls[c].eqbands[bc].lookmap[lc] = {pix = tonumber(zn(data[key..'pix'])),
+                                                                       hz = tonumber(zn(data[key..'hz']))}
+                end
+                
+              end
+
+              local lcnt = tonumber(zn(data[key..'gmap_cnt'],0))
+              if lcnt > 0 then
+                strips[ss][p].controls[c].eqbands[bc].gmap = {}
+                for lc = 1, lcnt do
+                  local key = 'p'..p..'_c_'..c..'_eqband_'..bc..'_gm_'..lc..'_'
+                  strips[ss][p].controls[c].eqbands[bc].gmap[lc] = {pix = tonumber(zn(data[key..'pix'])),
+                                                                     db = tonumber(zn(data[key..'db']))}
+                end
+                
+              end
+            end
+            --strips[ss][p].controls[c].eqgraph = tonumber(zn(data[key..'eqgraph']))
+          end
+
+          local key = 'p'..p..'_c_'..c..'_'
+          if tobool(zn(data[key..'ecg_graph'],false)) == true then
+            strips[ss][p].controls[c].eqgraph = {posmin = tonumber(zn(data[key..'ecg_posmin'])),
+                                                 posmax = tonumber(zn(data[key..'ecg_posmax'])),
+                                                 gmin = tonumber(zn(data[key..'ecg_gmin'],0)),
+                                                 gmax = tonumber(zn(data[key..'ecg_gmax'],1)),
+                                                 }
+            
+            local lcnt = tonumber(zn(data[key..'ecg_lookmap_cnt'],0))
+            if lcnt > 0 then
+              strips[ss][p].controls[c].eqgraph.lookmap = {}
+              for lc = 1, lcnt do
+                local key = 'p'..p..'_c_'..c..'_ecg_lm_'..lc..'_'
+                strips[ss][p].controls[c].eqgraph.lookmap[lc] = {pix = tonumber(zn(data[key..'pix'])),
+                                                                 hz = tonumber(zn(data[key..'hz']))}
+              end
+              
+            end
+            
+            local key = 'p'..p..'_c_'..c..'_'
+            local lcnt = tonumber(zn(data[key..'ecg_gmap_cnt'],0))
+            if lcnt > 0 then
+              strips[ss][p].controls[c].eqgraph.gmap = {}
+              for lc = 1, lcnt do
+                local key = 'p'..p..'_c_'..c..'_ecg_gm_'..lc..'_'
+                strips[ss][p].controls[c].eqgraph.gmap[lc] = {pix = tonumber(zn(data[key..'pix'])),
+                                                              db = tonumber(zn(data[key..'db']))}
+              end
+              
+            end
+
+          end
+
           --load control images - reshuffled to ensure no wasted slots between sessions
           local iidx
           local knob_sel = -1
@@ -18094,6 +21933,12 @@ end
       
       faders = unpickle(content)
     end
+  
+  end
+  
+  function GetProjectName()
+  
+    return reaper.GetProjectName(0, '')
   
   end
     
@@ -18683,6 +22528,7 @@ end
     if reaper.file_exists(fn) then
     
     end
+    if strip_favs == nil then strip_favs = {} end
     
     if DELETE then
       file=io.open(fn,"w")
@@ -19240,7 +23086,168 @@ end
                 end
               else
                 file:write('['..key..'cycledata_statecnt]'..0 ..'\n')                   
-              end     
+              end
+              
+              if strips[s][p].controls[c].macroctl then
+                local mcnt = #strips[s][p].controls[c].macroctl
+                file:write('['..key..'macroctl_cnt]'..mcnt..'\n')                                 
+                for mc = 1,mcnt do
+                  local key = 'p'..p..'_c_'..c..'_mc_'..mc..'_'
+                  file:write('['..key..'c_id]'..strips[s][p].controls[c].macroctl[mc].c_id..'\n')                                 
+                  file:write('['..key..'ctl]'..strips[s][p].controls[c].macroctl[mc].ctl..'\n')                                 
+                  file:write('['..key..'A]'..strips[s][p].controls[c].macroctl[mc].A_val..'\n')                                 
+                  file:write('['..key..'B]'..strips[s][p].controls[c].macroctl[mc].B_val..'\n')                                 
+                  file:write('['..key..'shape]'..strips[s][p].controls[c].macroctl[mc].shape..'\n')                                 
+                end
+              else
+                file:write('['..key..'macroctl_cnt]'..0 ..'\n')                                 
+              end
+
+              if strips[s][p].controls[c].eqbands then
+                local bcnt = #strips[s][p].controls[c].eqbands
+                file:write('['..key..'eqband_cnt]'..bcnt..'\n')
+                if bcnt > 0 then                                 
+                  for bc = 1,bcnt do
+                    local key = 'p'..p..'_c_'..c..'_eqband_'..bc..'_'
+                    file:write('['..key..'posmin]'..nz(strips[s][p].controls[c].eqbands[bc].posmin,'')..'\n')                                 
+                    file:write('['..key..'posmax]'..nz(strips[s][p].controls[c].eqbands[bc].posmax,'')..'\n')                                 
+                    file:write('['..key..'col]'..nz(strips[s][p].controls[c].eqbands[bc].col,'')..'\n')                                 
+                    file:write('['..key..'fxnum]'..nz(strips[s][p].controls[c].eqbands[bc].fxnum,'')..'\n')                                 
+                    file:write('['..key..'fxguid]'..nz(strips[s][p].controls[c].eqbands[bc].fxguid,'')..'\n')                                 
+                    file:write('['..key..'fxname]'..nz(strips[s][p].controls[c].eqbands[bc].fxname,'')..'\n')                                 
+                    file:write('['..key..'freq_param]'..nz(strips[s][p].controls[c].eqbands[bc].freq_param,'')..'\n')                                 
+                    file:write('['..key..'freq_param_name]'..nz(strips[s][p].controls[c].eqbands[bc].freq_param_name,'')..'\n')                                 
+                    file:write('['..key..'gain_param]'..nz(strips[s][p].controls[c].eqbands[bc].gain_param,'')..'\n')                                 
+                    file:write('['..key..'gain_param_name]'..nz(strips[s][p].controls[c].eqbands[bc].gain_param_name,'')..'\n')                                 
+                    file:write('['..key..'q_param]'..nz(strips[s][p].controls[c].eqbands[bc].q_param,'')..'\n')                                 
+                    file:write('['..key..'q_param_name]'..nz(strips[s][p].controls[c].eqbands[bc].q_param_name,'')..'\n')                                 
+                    file:write('['..key..'bypass_param]'..nz(strips[s][p].controls[c].eqbands[bc].bypass_param,'')..'\n')                                 
+                    file:write('['..key..'bypass_param_name]'..nz(strips[s][p].controls[c].eqbands[bc].bypass_param_name,'')..'\n')                                 
+                    file:write('['..key..'c1_param]'..nz(strips[s][p].controls[c].eqbands[bc].c1_param,'')..'\n')                                 
+                    file:write('['..key..'c1_param_name]'..nz(strips[s][p].controls[c].eqbands[bc].c1_param_name,'')..'\n')                                 
+                    file:write('['..key..'c2_param]'..nz(strips[s][p].controls[c].eqbands[bc].c2_param,'')..'\n')                                 
+                    file:write('['..key..'c2_param_name]'..nz(strips[s][p].controls[c].eqbands[bc].c2_param_name,'')..'\n')                                 
+                    file:write('['..key..'c3_param]'..nz(strips[s][p].controls[c].eqbands[bc].c3_param,'')..'\n')                                 
+                    file:write('['..key..'c3_param_name]'..nz(strips[s][p].controls[c].eqbands[bc].c3_param_name,'')..'\n')                                 
+                    file:write('['..key..'c4_param]'..nz(strips[s][p].controls[c].eqbands[bc].c4_param,'')..'\n')                                 
+                    file:write('['..key..'c4_param_name]'..nz(strips[s][p].controls[c].eqbands[bc].c4_param_name,'')..'\n')                                 
+                    file:write('['..key..'c5_param]'..nz(strips[s][p].controls[c].eqbands[bc].c5_param,'')..'\n')                                 
+                    file:write('['..key..'c5_param_name]'..nz(strips[s][p].controls[c].eqbands[bc].c5_param_name,'')..'\n')                                 
+                    file:write('['..key..'freq_val]'..nz(strips[s][p].controls[c].eqbands[bc].freq_val,'')..'\n')                                 
+                    file:write('['..key..'gain_val]'..nz(strips[s][p].controls[c].eqbands[bc].gain_val,'')..'\n')                                 
+                    file:write('['..key..'q_val]'..nz(strips[s][p].controls[c].eqbands[bc].q_val,'')..'\n')                                 
+                    file:write('['..key..'c1_val]'..nz(strips[s][p].controls[c].eqbands[bc].c1_val,'')..'\n')                                 
+                    file:write('['..key..'c2_val]'..nz(strips[s][p].controls[c].eqbands[bc].c2_val,'')..'\n')                                 
+                    file:write('['..key..'c3_val]'..nz(strips[s][p].controls[c].eqbands[bc].c3_val,'')..'\n')                                 
+                    file:write('['..key..'c4_val]'..nz(strips[s][p].controls[c].eqbands[bc].c4_val,'')..'\n')                                 
+                    file:write('['..key..'c5_val]'..nz(strips[s][p].controls[c].eqbands[bc].c5_val,'')..'\n')                                 
+
+                    file:write('['..key..'freq_min]'..nz(strips[s][p].controls[c].eqbands[bc].freq_min,'')..'\n')                                 
+                    file:write('['..key..'freq_max]'..nz(strips[s][p].controls[c].eqbands[bc].freq_max,'')..'\n')
+                    file:write('['..key..'gain_min]'..nz(strips[s][p].controls[c].eqbands[bc].gain_min,'')..'\n')                                 
+                    file:write('['..key..'gain_max]'..nz(strips[s][p].controls[c].eqbands[bc].gain_max,'')..'\n')
+                    file:write('['..key..'bandtype]'..nz(strips[s][p].controls[c].eqbands[bc].bandtype,'')..'\n')                                 
+                    file:write('['..key..'bandname]'..nz(strips[s][p].controls[c].eqbands[bc].bandname,'')..'\n')                    
+                    file:write('['..key..'khz]'..nz(tostring(strips[s][p].controls[c].eqbands[bc].khz),tostring(false))..'\n')                    
+                    file:write('['..key..'gaininv]'..nz(tostring(strips[s][p].controls[c].eqbands[bc].gain_inv),tostring(false))..'\n')                    
+                    file:write('['..key..'qinv]'..nz(tostring(strips[s][p].controls[c].eqbands[bc].q_inv),tostring(false))..'\n')                    
+                    file:write('['..key..'gmin]'..nz(strips[s][p].controls[c].eqbands[bc].gmin,'')..'\n')                                 
+                    file:write('['..key..'gmax]'..nz(strips[s][p].controls[c].eqbands[bc].gmax,'')..'\n')                                 
+
+                    file:write('['..key..'freq_def]'..nz(strips[s][p].controls[c].eqbands[bc].freq_def,'')..'\n')                                 
+                    file:write('['..key..'gain_def]'..nz(strips[s][p].controls[c].eqbands[bc].gain_def,'')..'\n')                                 
+                    file:write('['..key..'q_def]'..nz(strips[s][p].controls[c].eqbands[bc].q_def,'')..'\n')                                 
+                    file:write('['..key..'c1_def]'..nz(strips[s][p].controls[c].eqbands[bc].c1_def,'')..'\n')                                 
+                    file:write('['..key..'c2_def]'..nz(strips[s][p].controls[c].eqbands[bc].c2_def,'')..'\n')                                 
+                    file:write('['..key..'c3_def]'..nz(strips[s][p].controls[c].eqbands[bc].c3_def,'')..'\n')                                 
+                    file:write('['..key..'c4_def]'..nz(strips[s][p].controls[c].eqbands[bc].c4_def,'')..'\n')                                 
+                    file:write('['..key..'c5_def]'..nz(strips[s][p].controls[c].eqbands[bc].c5_def,'')..'\n')                                 
+                    
+                    local key = 'p'..p..'_c_'..c..'_eqband_'..bc..'_'
+                    if strips[s][p].controls[c].eqbands[bc].lookmap then
+                      local lcnt = #strips[s][p].controls[c].eqbands[bc].lookmap
+                      file:write('['..key..'lookmap_cnt]'..lcnt..'\n')
+                      
+                      if lcnt > 0 then
+                        for lc = 1, lcnt do
+                          local key = 'p'..p..'_c_'..c..'_eqband_'..bc..'_lm_'..lc..'_'
+                          file:write('['..key..'pix]'..nz(strips[s][p].controls[c].eqbands[bc].lookmap[lc].pix,'')..'\n')                                 
+                          file:write('['..key..'hz]'..nz(strips[s][p].controls[c].eqbands[bc].lookmap[lc].hz,'')..'\n')                                 
+                        end
+                      end
+                    
+                    else
+                      file:write('['..key..'lookmap_cnt]'..0 ..'\n')                    
+                    end
+
+                    local key = 'p'..p..'_c_'..c..'_eqband_'..bc..'_'
+                    if strips[s][p].controls[c].eqbands[bc].gmap then
+                      local lcnt = #strips[s][p].controls[c].eqbands[bc].gmap
+                      file:write('['..key..'gmap_cnt]'..lcnt..'\n')
+                      
+                      if lcnt > 0 then
+                        for lc = 1, lcnt do
+                          local key = 'p'..p..'_c_'..c..'_eqband_'..bc..'_gm_'..lc..'_'
+                          file:write('['..key..'pix]'..nz(strips[s][p].controls[c].eqbands[bc].gmap[lc].pix,'')..'\n')                                 
+                          file:write('['..key..'db]'..nz(strips[s][p].controls[c].eqbands[bc].gmap[lc].db,'')..'\n')                                 
+                        end
+                      end
+                    
+                    else
+                      file:write('['..key..'gmap_cnt]'..0 ..'\n')                    
+                    end
+                                                     
+                  end
+                  
+                end
+              else
+                file:write('['..key..'eqband_cnt]'..0 ..'\n')                                 
+              end
+
+              if strips[s][p].controls[c].eqgraph and type(strips[s][p].controls[c].eqgraph) == 'table' then
+
+                local key = 'p'..p..'_c_'..c..'_'
+                file:write('['..key..'ecg_graph]'..tostring(true)..'\n')                                               
+                file:write('['..key..'ecg_gmin]'..nz(strips[s][p].controls[c].eqgraph.gmin,'')..'\n')                                 
+                file:write('['..key..'ecg_gmax]'..nz(strips[s][p].controls[c].eqgraph.gmax,'')..'\n')                                 
+                file:write('['..key..'ecg_posmin]'..nz(strips[s][p].controls[c].eqgraph.posmin,'')..'\n')                                 
+                file:write('['..key..'ecg_posmax]'..nz(strips[s][p].controls[c].eqgraph.posmax,'')..'\n')                                 
+
+                if strips[s][p].controls[c].eqgraph.lookmap then
+                  local lcnt = #strips[s][p].controls[c].eqgraph.lookmap
+                  file:write('['..key..'ecg_lookmap_cnt]'..lcnt..'\n')
+                  
+                  if lcnt > 0 then
+                    for lc = 1, lcnt do
+                      local key = 'p'..p..'_c_'..c..'_ecg_lm_'..lc..'_'
+                      file:write('['..key..'pix]'..nz(strips[s][p].controls[c].eqgraph.lookmap[lc].pix,'')..'\n')                                 
+                      file:write('['..key..'hz]'..nz(strips[s][p].controls[c].eqgraph.lookmap[lc].hz,'')..'\n')                                 
+                    end
+                  end
+                
+                else
+                  file:write('['..key..'ecg_lookmap_cnt]'..0 ..'\n')                    
+                end
+
+                local key = 'p'..p..'_c_'..c..'_'
+                if strips[s][p].controls[c].eqgraph.gmap then
+                  local lcnt = #strips[s][p].controls[c].eqgraph.gmap
+                  file:write('['..key..'ecg_gmap_cnt]'..lcnt..'\n')
+                  
+                  if lcnt > 0 then
+                    for lc = 1, lcnt do
+                      local key = 'p'..p..'_c_'..c..'_ecg_gm_'..lc..'_'
+                      file:write('['..key..'pix]'..nz(strips[s][p].controls[c].eqgraph.gmap[lc].pix,'')..'\n')                                 
+                      file:write('['..key..'db]'..nz(strips[s][p].controls[c].eqgraph.gmap[lc].db,'')..'\n')                                 
+                    end
+                  end
+                
+                else
+                  file:write('['..key..'ecg_gmap_cnt]'..0 ..'\n')
+                end
+                
+              end
+
             end
           end        
 
@@ -19627,25 +23634,34 @@ end
     if snapshots and snapshots[strip] then
       if #snapshots[strip][page] > 0 then    
     
+        local ctls = {}
+        for c = 1, #strips[strip][page].controls do
+          --local cc = strips[strip][page].controls[c]
+          ctls[strips[strip][page].controls[c].c_id] = c
+        end
+    
         for sst = 1, #snapshots[strip][page] do
+
+          GUI_DrawMsgX(obj, gui, 'Checking snapshots...',sst,#snapshots[strip][page])
         
           if sst == 1 then
             if #snapshots[strip][page][sst] > 0 then
           
-              for ss = 1, #snapshots[strip][page][sst] do
+              local sscnt = #snapshots[strip][page][sst]
+              for ss = 1, sscnt do
+              
+              
                 local ss_entry_deleted = false
                 local dcnt = #snapshots[strip][page][sst][ss].data    
                 if dcnt > 0 then
                   local notfoundcnt = 0
                   for d = 1, dcnt do
                   
-                    --if snapshots[strip][page][sst][ss].data[d].ctl then
-                      --if strips[strip] and strips[strip][page] then
                       if strips[strip][page].controls[snapshots[strip][page][sst][ss].data[d].ctl] == nil or
                          snapshots[strip][page][sst][ss].data[d].c_id ~= strips[strip][page].controls[snapshots[strip][page][sst][ss].data[d].ctl].c_id then
                         --control numbers not match - a control has been deleted
-                        local found = false
-                        for c = 1, #strips[strip][page].controls do
+                        --local found = false
+                        --[[for c = 1, #strips[strip][page].controls do
                           if strips[strip][page].controls[c] then
                             if snapshots[strip][page][sst][ss].data[d].c_id == strips[strip][page].controls[c].c_id then
                               found = true
@@ -19653,8 +23669,12 @@ end
                               break
                             end
                           end
-                        end
-                        if found == false then
+                        end]]
+                        local c = ctls[snapshots[strip][page][sst][ss].data[d].c_id]
+                        if c then
+                          --found = true
+                          snapshots[strip][page][sst][ss].data[d].ctl = c
+                        else
                           --snapshot entry not found
                           notfoundcnt = notfoundcnt + 1
                           snapshots[strip][page][sst][ss].data[d] = nil
@@ -19680,12 +23700,14 @@ end
               local ctl_entry_deleted = false
               for ctl = 1, ctlcnt do
           
+                --GUI_DrawMsgX(obj, gui, 'Checking snapshots (subset '..sst..').',ctl,ctlcnt)
+                
                 --if strips[strip] and  strips[strip][page] then
                 if strips[strip][page].controls[snapshots[strip][page][sst].ctls[ctl].ctl] == nil or
                    snapshots[strip][page][sst].ctls[ctl].c_id ~= strips[strip][page].controls[snapshots[strip][page][sst].ctls[ctl].ctl].c_id then
                   --control numbers not match - a control has been deleted
-                  local found = false
-                  for c = 1, #strips[strip][page].controls do
+                  --local found = false
+                  --[[for c = 1, #strips[strip][page].controls do
                     if strips[strip][page].controls[c] then
                       if snapshots[strip][page][sst].ctls[ctl].c_id == strips[strip][page].controls[c].c_id then
                         found = true
@@ -19693,8 +23715,12 @@ end
                         break
                       end
                     end
-                  end
-                  if found == false then
+                  end]]
+                  local c = ctls[snapshots[strip][page][sst].ctls[ctl].c_id]
+                  if c then
+                    --found = true
+                    snapshots[strip][page][sst].ctls[ctl].ctl = c                  
+                  else
                     --snapshot entry not found
                     --notfoundcnt = notfoundcnt + 1
                     snapshots[strip][page][sst].ctls[ctl] = nil
@@ -19711,7 +23737,11 @@ end
             
             if #snapshots[strip][page][sst].snapshot > 0 then
             
+              local sscnt = #snapshots[strip][page][sst].snapshot
               for ss = 1, #snapshots[strip][page][sst].snapshot do
+
+                --GUI_DrawMsgX(obj, gui, 'Checking snapshots (subset '..sst..').',ss,sscnt)
+
                 local ss_entry_deleted = false
                 local dcnt = #snapshots[strip][page][sst].snapshot[ss].data    
                 if dcnt > 0 then
@@ -19723,8 +23753,8 @@ end
                       if strips[strip][page].controls[snapshots[strip][page][sst].snapshot[ss].data[d].ctl] == nil or
                          snapshots[strip][page][sst].snapshot[ss].data[d].c_id ~= strips[strip][page].controls[snapshots[strip][page][sst].snapshot[ss].data[d].ctl].c_id then
                         --control numbers not match - a control has been deleted
-                        local found = false
-                        for c = 1, #strips[strip][page].controls do
+                        --local found = false
+                        --[[for c = 1, #strips[strip][page].controls do
                           if strips[strip][page].controls[c] then
                             if snapshots[strip][page][sst].snapshot[ss].data[d].c_id == strips[strip][page].controls[c].c_id then
                               found = true
@@ -19732,8 +23762,13 @@ end
                               break
                             end
                           end
-                        end
-                        if found == false then
+                        end]]
+                        
+                        local c = ctls[snapshots[strip][page][sst].snapshot[ss].data[d].c_id]
+                        if c then
+                          --found = true
+                          snapshots[strip][page][sst].snapshot[ss].data[d].ctl = c
+                        else
                           --snapshot entry not found
                           notfoundcnt = notfoundcnt + 1
                           snapshots[strip][page][sst].snapshot[ss].data[d] = nil
@@ -19996,12 +24031,13 @@ end
   function Snapshot_Set(strip, page, sstype_select, ss_select)
   
     if sstype_select == 1 then
-      if snapshots[strip][page][sstype_select][ss_select] then
+      local snaptbl = snapshots[strip][page][sstype_select][ss_select]
+      if snaptbl then
         local gtrack = GetTrack(strips[strip].track.tracknum)
-        for ss = 1, #snapshots[strip][page][sstype_select][ss_select].data do
-          local c = snapshots[strip][page][sstype_select][ss_select].data[ss].ctl
-          local v = snapshots[strip][page][sstype_select][ss_select].data[ss].dval
-          local nv = snapshots[strip][page][sstype_select][ss_select].data[ss].val
+        for ss = 1, #snaptbl.data do
+          local c = snaptbl.data[ss].ctl
+          local v = snaptbl.data[ss].dval
+          local nv = snaptbl.data[ss].val
           if c and v and tostring(nv) ~= tostring(strips[strip][page].controls[c].val) then
             trackfxparam_select = c
         --    local trnum = nz(strips[strip][page].controls[c].tracknum,strips[strip].track.tracknum)
@@ -20016,12 +24052,13 @@ end
         end
       end    
     elseif sstype_select > 1 then
-      if snapshots[strip][page][sstype_select].snapshot[ss_select] then
+      local snaptbl = snapshots[strip][page][sstype_select].snapshot[ss_select]
+      if snaptbl then
         local gtrack = GetTrack(strips[strip].track.tracknum)
-        for ss = 1, #snapshots[strip][page][sstype_select].snapshot[ss_select].data do
-          local c = snapshots[strip][page][sstype_select].snapshot[ss_select].data[ss].ctl
-          local v = snapshots[strip][page][sstype_select].snapshot[ss_select].data[ss].dval
-          local nv = snapshots[strip][page][sstype_select].snapshot[ss_select].data[ss].val
+        for ss = 1, #snaptbl.data do
+          local c = snaptbl.data[ss].ctl
+          local v = snaptbl.data[ss].dval
+          local nv = snaptbl.data[ss].val
           if c and v and tostring(nv) ~= tostring(strips[strip][page].controls[c].val) then
             trackfxparam_select = c
         --    local trnum = nz(strips[strip][page].controls[c].tracknum,strips[strip].track.tracknum)
@@ -20038,7 +24075,6 @@ end
     
     end
     snapshots[strip][page][sstype_select].selected = ss_select
-
   end
 
   function Snapshots_INIT()
@@ -20344,6 +24380,8 @@ end
     
     local loaddata = unpickle(content)
 
+    if loaddata == nil then return end
+    
     guids = {}
     --INIT()
     local t_offset = reaper.CountTracks(0)
@@ -20767,6 +24805,7 @@ end
     xxypath_tres = 400
     
     macro_lrn_mode = false
+    eq_edit = false
     
     ctl_page = 0
     cycle_editmode = false
@@ -20910,7 +24949,10 @@ end
       insfxchunk = string.gsub(insfxchunk,
                               'FXID ({%x%x%x%x%x%x%x%x%-%x%x%x%x%-%x%x%x%x%-%x%x%x%x%-%x%x%x%x%x%x%x%x%x%x%x%x})',
                               function(d) if guids[d] == nil then guids[d]=reaper.genGuid('') end return 'FXID '..guids[d] end)
+      --insfxchunk = string.gsub(insfxchunk,'PRESETNAME.-\n','')
     end
+    --trchunk = string.gsub(trchunk,'PRESETNAME.-\n','')
+    
     --should be just one
     for i, v in pairs(guids) do 
       ofxid = i
@@ -20961,6 +25003,31 @@ end
       end
     end
     return fnd, fxchunk, s, e  
+  
+  end
+
+  function RemoveFXChunkFromTrackChunk(trchunk, fxn)
+  
+    local s,e, fnd = 0,0,nil
+    local nchunk
+    for i = 1,fxn do
+      s, e = string.find(trchunk,'(BYPASS.-WAK %d)',s)
+      if s and e then
+        fxchunk = string.sub(trchunk,s,e)
+
+        if i == fxn then 
+          fnd = true 
+          nchunk = string.sub(trchunk,0,s-2)..string.sub(trchunk,e+1)
+          break 
+        end
+        s=e+1
+      else
+        fxchunk = nil
+        fndn = nil
+        break
+      end
+    end
+    return fnd, nchunk  
   
   end
 
@@ -21189,7 +25256,11 @@ end
   sets_path = resource_path.."sets/"
   projsave_path = resource_path.."projsave/"
   paths_path = resource_path.."paths/"
+  eqbands_path = resource_path.."eqbands/"
+  eq_path = resource_path.."eq/"
   reaper.RecursiveCreateDirectory(paths_path,1)
+  reaper.RecursiveCreateDirectory(eqbands_path,1)
+  reaper.RecursiveCreateDirectory(eq_path,1)
 
   LBX_CTL_TRNAME='__LBX_CTL'
 
@@ -21218,11 +25289,16 @@ end
                           wheel = 0.05,
                           wheelfine = 0.003}
   settings_usectlbitmap = false
+  eq_scale = true
+  eq_single = false
   
   strip_favs = {}
   peak_info = {}
   
   dockstate = 0
+  
+  EQC_min = 20
+  EQC_max = 24000
   
   fontname_def = 'Calibri'
   fontsize_def  = 18
@@ -21243,13 +25319,16 @@ end
   def_snapshot = LoadControl(1017, '__Snapshot.knb')
   def_xy = LoadControl(1016, '__XY.knb')
   def_xytarget = LoadControl(1015, '__XYTarget.knb')
+  def_eqcknobf = LoadControl(1013, 'SimpleFlat_64.knb')
+  def_eqcknobg = LoadControl(1014, 'SimpleFlat2_64.knb')
+  def_box = LoadControl(1012, 'SimpleBox_9632.knb')
   ctl_bitmap = 1010
   
   --testchunkcopy(0,3)
 --testfxinsert()
   
-  if def_knob == -1 or def_knobsm == -1 or def_snapshot == -1 or def_xy == -1 or def_xytarget == -1 then
-    DBG("Please ensure you have the '__default', 'SimpleFlat_48', '__Snapshot', '__XY' and '__XYTarget' files in your LBXCS_resources/controls/ folder.")
+  if def_knob == -1 or def_knobsm == -1 or def_snapshot == -1 or def_xy == -1 or def_xytarget == -1 or def_eqcknobf == -1 or def_eqcknobg == -1 then
+    DBG("Please ensure you have the '__default', 'SimpleFlat_48', 'SimpleFlat_96', 'SimpleFlat2_96', '__Snapshot', '__XY' and '__XYTarget' files in your LBXCS_resources/controls/ folder.")
     DBG("You can get these files from the LBX Stripper project on github - in the LBXCS_resources zip file")
     reaper.atexit()
   else
@@ -21257,6 +25336,8 @@ end
         
     --DBG(_G['testfunc']('testtext'))
     INIT()
+    
+    def_graph = EQC_LoadGraph()
     LoadSettings()
     LoadData()  
     
