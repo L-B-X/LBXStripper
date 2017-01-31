@@ -5566,9 +5566,11 @@ end
         local s = string.find(string.lower(d), 'k')
         if s and s>0 then mult = 1000 end
       end
-      d = tonumber(GetNumericPart(d))*mult
-      reaper.TrackFX_SetParam(track, fx, param, bkp)
-    
+      DBG(d)
+      if d and d~= '' then
+        d = tonumber(GetNumericPart(d))*mult
+        reaper.TrackFX_SetParam(track, fx, param, bkp)
+      end
       return d
     end
       
@@ -5588,9 +5590,10 @@ end
         local s = string.find(string.lower(d), 'k')
         if s and s>0 then mult = 1000 end
       end
-      d = tonumber(GetNumericPart(d))*mult
-      reaper.TrackFX_SetParam(track, fx, param, bkp)
-    
+      if d and d~= '' then
+        d = tonumber(GetNumericPart(d))*mult
+        reaper.TrackFX_SetParam(track, fx, param, bkp)
+      end    
       return d
     end
       
@@ -14234,22 +14237,24 @@ end
               local track = GetTrack(tracks[track_select].tracknum)
               local fxnum = GetEQC_FXNum(eqcontrolband_select)
               
-              local param = bands[eqcontrolband_select].q_param
-              
-              if param then
-                local mw = gfx.mouse_wheel/120
-                if bands[eqcontrolband_select].q_inv then
-                  mw = -mw
-                end
-                local v = F_limit(bands[eqcontrolband_select].q_val + (mw*0.05),0,1)
+              if fxnum ~= -1 then
+                local param = bands[eqcontrolband_select].q_param
                 
-                if v ~= ov then
-                  reaper.TrackFX_SetParam(track,fxnum,param,v)
-                  ov = v
-                  update_eqcontrol = true
+                if param then
+                  local mw = gfx.mouse_wheel/120
+                  if bands[eqcontrolband_select].q_inv then
+                    mw = -mw
+                  end
+                  local v = F_limit(bands[eqcontrolband_select].q_val + (mw*0.05),0,1)
+                  
+                  if v ~= ov then
+                    reaper.TrackFX_SetParam(track,fxnum,param,v)
+                    ov = v
+                    update_eqcontrol = true
+                  end
                 end
               end
-              
+                            
             elseif gfx.mouse_wheel ~= 0 and MOUSE_over(obj.sections[303]) then
               local mw = gfx.mouse_wheel/120
               eqcontrolband_select = F_limit(eqcontrolband_select + mw,1,#bands)
@@ -14845,38 +14850,40 @@ end
                     EQC_AlignGraph(eqcontrolband_select,1)                
                   else
                     local fxnum = GetEQC_FXNum(eqcontrolband_select)
-                    local param = bands[eqcontrolband_select].freq_param                  
-                    local param2 = bands[eqcontrolband_select].gain_param
-  
-                    --EQC_OpenEQs(eqcontrolband_select, true)
-  
-                    --[[strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands[eqcontrolband_select].freq_min = 
-                                                                        nz(calc_eqgraph_getmin(tracks[track_select].tracknum, fxnum, param),20)
-                    strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands[eqcontrolband_select].freq_max = 
-                                                                        nz(calc_eqgraph_getmax(tracks[track_select].tracknum, fxnum, param, true),24000)]]
-  
-                    local min = nz(bands[eqcontrolband_select].freq_min,20)
-                    local max = nz(bands[eqcontrolband_select].freq_max,24000)
-                    local khz = bands[eqcontrolband_select].khz
-  
-                    --[[strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands[eqcontrolband_select].gain_min = 
-                                                                        nz(calc_eqgraph_getmin(tracks[track_select].tracknum, fxnum, param2),-20)
-                    strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands[eqcontrolband_select].gain_max = 
-                                                                        nz(calc_eqgraph_getmax(tracks[track_select].tracknum, fxnum, param2),20)]]
-  
-                    local min2 = nz(bands[eqcontrolband_select].gain_min,-20)
-                    local max2 = nz(bands[eqcontrolband_select].gain_max,20)
-                    
-                    local lm, gm = calc_eqgraph(tracks[track_select].tracknum,fxnum,param,min,max,khz,param2,min2,max2)
-                    bands[eqcontrolband_select].lookmap = lm
-                    bands[eqcontrolband_select].gmap = gm
-  
-                    --EQC_OpenEQs(eqcontrolband_select, false)
-                    
-                    EQC_AlignGraph(eqcontrolband_select,1)
-                    
-                    if bands[eqcontrolband_select].posmax > 1 then
-                      bands[eqcontrolband_select].posmax = 1
+                    if fxnum ~= -1 then
+                      local param = bands[eqcontrolband_select].freq_param                  
+                      local param2 = bands[eqcontrolband_select].gain_param
+    
+                      --EQC_OpenEQs(eqcontrolband_select, true)
+    
+                      --[[strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands[eqcontrolband_select].freq_min = 
+                                                                          nz(calc_eqgraph_getmin(tracks[track_select].tracknum, fxnum, param),20)
+                      strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands[eqcontrolband_select].freq_max = 
+                                                                          nz(calc_eqgraph_getmax(tracks[track_select].tracknum, fxnum, param, true),24000)]]
+    
+                      local min = nz(bands[eqcontrolband_select].freq_min,20)
+                      local max = nz(bands[eqcontrolband_select].freq_max,24000)
+                      local khz = bands[eqcontrolband_select].khz
+    
+                      --[[strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands[eqcontrolband_select].gain_min = 
+                                                                          nz(calc_eqgraph_getmin(tracks[track_select].tracknum, fxnum, param2),-20)
+                      strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands[eqcontrolband_select].gain_max = 
+                                                                          nz(calc_eqgraph_getmax(tracks[track_select].tracknum, fxnum, param2),20)]]
+    
+                      local min2 = nz(bands[eqcontrolband_select].gain_min,-20)
+                      local max2 = nz(bands[eqcontrolband_select].gain_max,20)
+                      
+                      local lm, gm = calc_eqgraph(tracks[track_select].tracknum,fxnum,param,min,max,khz,param2,min2,max2)
+                      bands[eqcontrolband_select].lookmap = lm
+                      bands[eqcontrolband_select].gmap = gm
+    
+                      --EQC_OpenEQs(eqcontrolband_select, false)
+                      
+                      EQC_AlignGraph(eqcontrolband_select,1)
+                      
+                      if bands[eqcontrolband_select].posmax > 1 then
+                        bands[eqcontrolband_select].posmax = 1
+                      end
                     end
                     update_gfx = true
                   end
@@ -14936,22 +14943,23 @@ end
               local track = GetTrack(tracks[track_select].tracknum)
               local fxnum = GetEQC_FXNum(eqcontrolband_select)
               
-              local param = bands[eqcontrolband_select].freq_param
-              if param and fv ~= ofv then
-                reaper.TrackFX_SetParam(track,fxnum,param,fv)
-              
-                update_eqcontrol = true
-                ofv = fv
-              end
-  
-              param = bands[eqcontrolband_select].gain_param              
-              if param and gv ~= ogv then
-                reaper.TrackFX_SetParam(track,fxnum,param,gv)
-              
-                update_eqcontrol = true
-                ogv = gv
-              end
-            
+              if fxnum ~= -1 then
+                local param = bands[eqcontrolband_select].freq_param
+                if param and fv ~= ofv then
+                  reaper.TrackFX_SetParam(track,fxnum,param,fv)
+                
+                  update_eqcontrol = true
+                  ofv = fv
+                end
+    
+                param = bands[eqcontrolband_select].gain_param              
+                if param and gv ~= ogv then
+                  reaper.TrackFX_SetParam(track,fxnum,param,gv)
+                
+                  update_eqcontrol = true
+                  ogv = gv
+                end
+              end            
             elseif mouse.context and mouse.context == contexts.eqc_dragfreq then
             
               local v = bands[eqcontrolband_select].freq_val
@@ -14964,15 +14972,16 @@ end
               local track = GetTrack(tracks[track_select].tracknum)
               local fxnum = GetEQC_FXNum(eqcontrolband_select)
               
-              local param = bands[eqcontrolband_select].freq_param
-              if param and v ~= ov then
-                reaper.TrackFX_SetParam(track,fxnum,param,v)
-              
-                update_eqcontrol = true
-                ov = v
-              end
-              eqcdraginf.my = mouse.my
-  
+              if fxnum ~= -1 then
+                local param = bands[eqcontrolband_select].freq_param
+                if param and v ~= ov then
+                  reaper.TrackFX_SetParam(track,fxnum,param,v)
+                
+                  update_eqcontrol = true
+                  ov = v
+                end
+                eqcdraginf.my = mouse.my
+              end  
             elseif mouse.context and mouse.context == contexts.eqc_draggain then
           
               local v = bands[eqcontrolband_select].gain_val
@@ -14985,15 +14994,17 @@ end
               local track = GetTrack(tracks[track_select].tracknum)
               local fxnum = GetEQC_FXNum(eqcontrolband_select)
               
-              local param = bands[eqcontrolband_select].gain_param
-              if param and v ~= ov then
-                reaper.TrackFX_SetParam(track,fxnum,param,v)
-              
-                update_eqcontrol = true
-                ov = v
+              if fxnum ~= -1 then
+                local param = bands[eqcontrolband_select].gain_param
+                if param and v ~= ov then
+                  reaper.TrackFX_SetParam(track,fxnum,param,v)
+                
+                  update_eqcontrol = true
+                  ov = v
+                end
+                eqcdraginf.my = mouse.my
               end
-              eqcdraginf.my = mouse.my
-  
+                
             elseif mouse.context and mouse.context == contexts.eqc_dragq then
           
               local v = bands[eqcontrolband_select].q_val
@@ -15006,15 +15017,17 @@ end
               local track = GetTrack(tracks[track_select].tracknum)
               local fxnum = GetEQC_FXNum(eqcontrolband_select)
               
-              local param = bands[eqcontrolband_select].q_param
-              if param and v ~= ov then
-                reaper.TrackFX_SetParam(track,fxnum,param,v)
-              
-                update_eqcontrol = true
-                ov = v
+              if fxnum ~= -1 then
+                local param = bands[eqcontrolband_select].q_param
+                if param and v ~= ov then
+                  reaper.TrackFX_SetParam(track,fxnum,param,v)
+                
+                  update_eqcontrol = true
+                  ov = v
+                end
+                eqcdraginf.my = mouse.my
               end
-              eqcdraginf.my = mouse.my
-  
+                
             elseif mouse.context and mouse.context == contexts.eqc_dragc1 then
           
               local v = bands[eqcontrolband_select].c1_val
@@ -15027,15 +15040,17 @@ end
               local track = GetTrack(tracks[track_select].tracknum)
               local fxnum = GetEQC_FXNum(eqcontrolband_select)
               
-              local param = bands[eqcontrolband_select].c1_param
-              if param and v ~= ov then
-                reaper.TrackFX_SetParam(track,fxnum,param,v)
-              
-                update_eqcontrol = true
-                ov = v
+              if fxnum ~= -1 then
+                local param = bands[eqcontrolband_select].c1_param
+                if param and v ~= ov then
+                  reaper.TrackFX_SetParam(track,fxnum,param,v)
+                
+                  update_eqcontrol = true
+                  ov = v
+                end
+                eqcdraginf.my = mouse.my
               end
-              eqcdraginf.my = mouse.my
-  
+                
             elseif mouse.context and mouse.context == contexts.eqc_dragc2 then
           
               local v = bands[eqcontrolband_select].c2_val
@@ -15048,15 +15063,17 @@ end
               local track = GetTrack(tracks[track_select].tracknum)
               local fxnum = GetEQC_FXNum(eqcontrolband_select)
               
-              local param = bands[eqcontrolband_select].c2_param
-              if param and v ~= ov then
-                reaper.TrackFX_SetParam(track,fxnum,param,v)
-              
-                update_eqcontrol = true
-                ov = v
+              if fxnum ~= -1 then
+                local param = bands[eqcontrolband_select].c2_param
+                if param and v ~= ov then
+                  reaper.TrackFX_SetParam(track,fxnum,param,v)
+                
+                  update_eqcontrol = true
+                  ov = v
+                end
+                eqcdraginf.my = mouse.my
               end
-              eqcdraginf.my = mouse.my
-  
+                
             elseif mouse.context and mouse.context == contexts.eqc_dragc3 then
           
               local v = bands[eqcontrolband_select].c3_val
@@ -15069,15 +15086,17 @@ end
               local track = GetTrack(tracks[track_select].tracknum)
               local fxnum = GetEQC_FXNum(eqcontrolband_select)
               
-              local param = bands[eqcontrolband_select].c3_param
-              if param and v ~= ov then
-                reaper.TrackFX_SetParam(track,fxnum,param,v)
-              
-                update_eqcontrol = true
-                ov = v
+              if fxnum ~= -1 then
+                local param = bands[eqcontrolband_select].c3_param
+                if param and v ~= ov then
+                  reaper.TrackFX_SetParam(track,fxnum,param,v)
+                
+                  update_eqcontrol = true
+                  ov = v
+                end
+                eqcdraginf.my = mouse.my
               end
-              eqcdraginf.my = mouse.my
-  
+                
             elseif mouse.context and mouse.context == contexts.eqc_dragc4 then
           
               local v = bands[eqcontrolband_select].c4_val
@@ -15090,15 +15109,17 @@ end
               local track = GetTrack(tracks[track_select].tracknum)
               local fxnum = GetEQC_FXNum(eqcontrolband_select)
               
-              local param = bands[eqcontrolband_select].c4_param
-              if param and v ~= ov then
-                reaper.TrackFX_SetParam(track,fxnum,param,v)
-              
-                update_eqcontrol = true
-                ov = v
+              if fxnum ~= -1 then
+                local param = bands[eqcontrolband_select].c4_param
+                if param and v ~= ov then
+                  reaper.TrackFX_SetParam(track,fxnum,param,v)
+                
+                  update_eqcontrol = true
+                  ov = v
+                end
+                eqcdraginf.my = mouse.my
               end
-              eqcdraginf.my = mouse.my
-  
+                
             elseif mouse.context and mouse.context == contexts.eqc_dragc5 then
           
               local v = bands[eqcontrolband_select].c5_val
@@ -15111,15 +15132,17 @@ end
               local track = GetTrack(tracks[track_select].tracknum)
               local fxnum = GetEQC_FXNum(eqcontrolband_select)
               
-              local param = bands[eqcontrolband_select].c5_param
-              if param and v ~= ov then
-                reaper.TrackFX_SetParam(track,fxnum,param,v)
-              
-                update_eqcontrol = true
-                ov = v
+              if fxnum ~= -1 then
+                local param = bands[eqcontrolband_select].c5_param
+                if param and v ~= ov then
+                  reaper.TrackFX_SetParam(track,fxnum,param,v)
+                
+                  update_eqcontrol = true
+                  ov = v
+                end
+                eqcdraginf.my = mouse.my
               end
-              eqcdraginf.my = mouse.my
-                        
+                                      
             elseif mouse.context and mouse.context == contexts.eqc_pminslider then
               local xx = mouse.mx - obj.sections[302].x
               local pos = F_limit((xx / obj.sections[302].w),0,bands[eqcontrolband_select].posmax-0.01)
@@ -19798,7 +19821,9 @@ end
   
     local strip = tracks[track_select].strip
     if eqcontrolband_select then
-  
+      local fxnum = strips[strip][page].controls[eqcontrol_select].eqbands[eqcontrolband_select].fxnum
+      if fxnum == -1 then OpenMsgBox(1,'Plugin not found.',1) return end
+        
       if strips[strip][page].controls[eqcontrol_select].eqbands[eqcontrolband_select].bandtype == nil then
         OpenMsgBox(1,'Select a folder first.',1)        
         return
@@ -19814,7 +19839,6 @@ end
       local savedata = {}
       local track = GetTrack(tracks[track_select].tracknum)
       local _, chunk = reaper.GetTrackStateChunk(track,'',false)
-      local fxnum = strips[strip][page].controls[eqcontrol_select].eqbands[eqcontrolband_select].fxnum
       local fnd, fxc, s, e = GetFXChunkFromTrackChunk(chunk,fxnum+1)
       
       if fnd then
@@ -19936,7 +19960,10 @@ end
       savedata.eqgraph = strips[strip][page].controls[eqcontrol_select].eqgraph
       for b = 1, #eqc do
 
-        local fxnum = eqc[b].fxnum
+        --local fxnum = eqc[b].fxnum
+        local fxnum = GetEQC_FXNum(b)
+        if fxnum == -1 then OpenMsgBox(1,'Save failed.  Plugin not found.',1) return end
+        
         fx[fxnum] = true 
         savedata.bands[b] = EQC_CopyBandData(strip, page, eqcontrol_select, b)
 
@@ -20012,74 +20039,75 @@ end
         for i = 1, #eqc do
     
           local fxnum = GetEQC_FXNum(i)
+          if fxnum ~= -1 then
         
-          if eqc[i].freq_param then
-            --DBG('f')
-            local v = reaper.TrackFX_GetParamNormalized(track, fxnum, eqc[i].freq_param)
-            --local v2 = reaper.TrackFX_GetParam(track, fxnum, eqc[i].freq_param)
-            --DBG(v..'  '..eqc[i].freq_val..'  '..v2)
-            if v ~= eqc[i].freq_val then
-              --eqc[i].freq_val = v
-              --DBG('A')
-              update_eqcontrol = true
-              break
+            if eqc[i].freq_param then
+              --DBG('f')
+              local v = reaper.TrackFX_GetParamNormalized(track, fxnum, eqc[i].freq_param)
+              --local v2 = reaper.TrackFX_GetParam(track, fxnum, eqc[i].freq_param)
+              --DBG(v..'  '..eqc[i].freq_val..'  '..v2)
+              if v ~= eqc[i].freq_val then
+                --eqc[i].freq_val = v
+                --DBG('A')
+                update_eqcontrol = true
+                break
+              end
             end
-          end
-          if eqc[i].gain_param then
-            local v = reaper.TrackFX_GetParamNormalized(track, fxnum, eqc[i].gain_param)
-            if v ~= eqc[i].gain_val then
-              --eqc[i].gain_val = v
-              update_eqcontrol = true
-              break
-            end      
-          end
-          
-          if i == eqcontrolband_select then
-            if eqc[i].q_param then
-              local v = reaper.TrackFX_GetParamNormalized(track, fxnum, eqc[i].q_param)
-              if v ~= eqc[i].q_val then
-                --eqc[i].q_val = v
+            if eqc[i].gain_param then
+              local v = reaper.TrackFX_GetParamNormalized(track, fxnum, eqc[i].gain_param)
+              if v ~= eqc[i].gain_val then
+                --eqc[i].gain_val = v
                 update_eqcontrol = true
                 break
               end      
             end
-            if eqc[i].c1_param then
-              local v = reaper.TrackFX_GetParamNormalized(track, fxnum, eqc[i].c1_param)
-              if v ~= eqc[i].c1_val then
-                update_eqcontrol = true
-                break
-              end        
+            
+            if i == eqcontrolband_select then
+              if eqc[i].q_param then
+                local v = reaper.TrackFX_GetParamNormalized(track, fxnum, eqc[i].q_param)
+                if v ~= eqc[i].q_val then
+                  --eqc[i].q_val = v
+                  update_eqcontrol = true
+                  break
+                end      
+              end
+              if eqc[i].c1_param then
+                local v = reaper.TrackFX_GetParamNormalized(track, fxnum, eqc[i].c1_param)
+                if v ~= eqc[i].c1_val then
+                  update_eqcontrol = true
+                  break
+                end        
+              end    
+              if eqc[i].c2_param then
+                local v = reaper.TrackFX_GetParamNormalized(track, fxnum, eqc[i].c2_param)
+                if v ~= eqc[i].c2_val then
+                  update_eqcontrol = true
+                  break
+                end          
+              end    
+              if eqc[i].c3_param then
+                local v = reaper.TrackFX_GetParamNormalized(track, fxnum, eqc[i].c3_param)
+                if v ~= eqc[i].c3_val then
+                  update_eqcontrol = true
+                  break
+                end        
+              end    
+              if eqc[i].c4_param then
+                local v = reaper.TrackFX_GetParamNormalized(track, fxnum, eqc[i].c4_param)
+                if v ~= eqc[i].c4_val then
+                  update_eqcontrol = true
+                  break
+                end        
+              end    
+              if eqc[i].c5_param then
+                local v = reaper.TrackFX_GetParamNormalized(track, fxnum, eqc[i].c5_param)
+                if v ~= eqc[i].c5_val then
+                  update_eqcontrol = true
+                  break
+                end        
+              end    
             end    
-            if eqc[i].c2_param then
-              local v = reaper.TrackFX_GetParamNormalized(track, fxnum, eqc[i].c2_param)
-              if v ~= eqc[i].c2_val then
-                update_eqcontrol = true
-                break
-              end          
-            end    
-            if eqc[i].c3_param then
-              local v = reaper.TrackFX_GetParamNormalized(track, fxnum, eqc[i].c3_param)
-              if v ~= eqc[i].c3_val then
-                update_eqcontrol = true
-                break
-              end        
-            end    
-            if eqc[i].c4_param then
-              local v = reaper.TrackFX_GetParamNormalized(track, fxnum, eqc[i].c4_param)
-              if v ~= eqc[i].c4_val then
-                update_eqcontrol = true
-                break
-              end        
-            end    
-            if eqc[i].c5_param then
-              local v = reaper.TrackFX_GetParamNormalized(track, fxnum, eqc[i].c5_param)
-              if v ~= eqc[i].c5_val then
-                update_eqcontrol = true
-                break
-              end        
-            end    
-          end    
-        
+          end        
         end
       end  
     end
