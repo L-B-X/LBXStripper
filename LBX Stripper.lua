@@ -5566,12 +5566,13 @@ end
         local s = string.find(string.lower(d), 'k')
         if s and s>0 then mult = 1000 end
       end
-      DBG(d)
       if d and d~= '' then
-        d = tonumber(GetNumericPart(d))*mult
+        rd = tonumber(GetNumericPart(d))
+        if rd then rd = rd * mult else rd = d end
+        
         reaper.TrackFX_SetParam(track, fx, param, bkp)
       end
-      return d
+      return rd
     end
       
   end
@@ -5591,10 +5592,12 @@ end
         if s and s>0 then mult = 1000 end
       end
       if d and d~= '' then
-        d = tonumber(GetNumericPart(d))*mult
+        rd = tonumber(GetNumericPart(d))
+        if rd then rd = rd * mult else rd = d end
+
         reaper.TrackFX_SetParam(track, fx, param, bkp)
       end    
-      return d
+      return rd
     end
       
   end
@@ -5671,14 +5674,18 @@ end
       end
       
       d2 = tonumber(GetNumericPart(nz(d2,'')))
-      if d2 and d2 >= look2 and not fnd2 then
-        gmap[#gmap+1] = {pix = math.min(p,2000),
-                         db = look2}
-        if look2 >= max2 then fnd2 = true end
-        look2 = math.floor((look2 + inc2)/inc2)*inc2
-        if look2 > max2 then look2 = max2 end
-      end
-      
+      --DBG(tostring(d2)..' '..look2)
+      if tonumber(look2) == nil then
+        if d2 then look2 = d2 end
+      else
+        if d2 and d2 >= look2 and not fnd2 then
+          gmap[#gmap+1] = {pix = math.min(p,2000),
+                           db = look2}
+          if look2 >= max2 then fnd2 = true end
+          look2 = math.floor((look2 + inc2)/inc2)*inc2
+          if look2 > max2 then look2 = max2 end
+        end
+      end      
     end
     if param then
       reaper.TrackFX_SetParam(track, fx, param, bkp)
@@ -8500,7 +8507,14 @@ end
       else
         GUI_textC(gui,obj.sections[62],'OK',gui.color.black,-2)  
       end         
-      GUI_textC(gui,obj.sections[63],nz(msgbox.text1,''),gui.color.white,-2)         
+      GUI_textC(gui,obj.sections[63],nz(msgbox.text1,''),gui.color.white,-2)
+      if msgbox.text2 then
+        local xywh = {x = obj.sections[63].x,
+                      y = obj.sections[63].y + butt_h,
+                      w = obj.sections[63].w,
+                      h = obj.sections[63].h}
+        GUI_textC(gui,xywh,nz(msgbox.text2,''),gui.color.white,-2)    
+      end         
     else
       GUI_textC(gui,obj.sections[62],'OK',gui.color.black,-2)  
     end
@@ -11523,10 +11537,10 @@ end
     
   end
   
-  function OpenMsgBox(id, str, butt)
+  function OpenMsgBox(id, str, butt, str2)
   
     MS_Open = id
-    msgbox = {text1 = str, b = butt}
+    msgbox = {text1 = str, text2 = str2, b = butt}
     update_gfx = true
     
   end
@@ -14624,7 +14638,11 @@ end
                 bands[eqcontrolband_select].gmin = 0
                 bands[eqcontrolband_select].gmax = 1
                 bands[eqcontrolband_select].col = '160 160 160'
-                 
+                
+                local s = string.find(fxname,'ReaEQ')
+                if s > 0 then
+                  OpenMsgBox(1,'ReaEQ is not recommended for use with EQ Control.', 1, 'Using ReaEQ will produce unexpected control and graph behaviour.')
+                end 
                 update_gfx = true
               end            
   
