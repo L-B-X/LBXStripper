@@ -5637,8 +5637,8 @@ end
   
     if param then
       local track = GetTrack(tr)
-      local bkp = reaper.TrackFX_GetParam(track, fx, param)
-      reaper.TrackFX_SetParam(track, fx, param, 0)
+      local bkp = reaper.TrackFX_GetParamNormalized(track, fx, param)
+      reaper.TrackFX_SetParamNormalized(track, fx, param, 0)
       local del = 0
       for dx = 1, auto_delay*1000000 do del = del + dx end
       local _, d = reaper.TrackFX_GetFormattedParamValue(track, fx, param, '')
@@ -5651,7 +5651,7 @@ end
         rd = tonumber(GetNumericPart(d))
         if rd then rd = rd * mult else rd = d end
         
-        reaper.TrackFX_SetParam(track, fx, param, bkp)
+        reaper.TrackFX_SetParamNormalized(track, fx, param, bkp)
       end
       return rd
     end
@@ -5662,8 +5662,8 @@ end
   
     if param then
       local track = GetTrack(tr)
-      local bkp = reaper.TrackFX_GetParam(track, fx, param)
-      reaper.TrackFX_SetParam(track, fx, param, 1)
+      local bkp = reaper.TrackFX_GetParamNormalized(track, fx, param)
+      reaper.TrackFX_SetParamNormalized(track, fx, param, 1)
       local del = 0
       for dx = 1, auto_delay*1000000 do del = del + dx end
       local _, d = reaper.TrackFX_GetFormattedParamValue(track, fx, param, '')
@@ -5676,7 +5676,7 @@ end
         rd = tonumber(GetNumericPart(d))
         if rd then rd = rd * mult else rd = d end
 
-        reaper.TrackFX_SetParam(track, fx, param, bkp)
+        reaper.TrackFX_SetParamNormalized(track, fx, param, bkp)
       end    
       return rd
     end
@@ -5710,8 +5710,8 @@ end
       reaper.TrackFX_SetParam(track, fx, param, 0)
     end
     if param2 then
-      bkp2 = reaper.TrackFX_GetParam(track, fx, param2)
-      reaper.TrackFX_SetParam(track, fx, param2, 0)
+      bkp2 = reaper.TrackFX_GetParamNormalized(track, fx, param2)
+      reaper.TrackFX_SetParamNormalized(track, fx, param2, 0)
     end
     local del = 0
     for dx = 1, ad do del = del + 1 end
@@ -5722,10 +5722,10 @@ end
       GUI_DrawMsgX(obj, gui, 'Calculating Graph Data...',p,2000)
       local pp = p/(2000)
       if param then
-        reaper.TrackFX_SetParam(track, fx, param, pp)
+        reaper.TrackFX_SetParamNormalized(track, fx, param, pp)
       end
       if param2 then
-        reaper.TrackFX_SetParam(track, fx, param2, pp)
+        reaper.TrackFX_SetParamNormalized(track, fx, param2, pp)
       end
       for dx = 1, ad do del = del + 1 end
       local d, d2
@@ -5769,10 +5769,10 @@ end
       end      
     end
     if param then
-      reaper.TrackFX_SetParam(track, fx, param, bkp)
+      reaper.TrackFX_SetParamNormalized(track, fx, param, bkp)
     end
     if param2 then
-      reaper.TrackFX_SetParam(track, fx, param2, bkp2)
+      reaper.TrackFX_SetParamNormalized(track, fx, param2, bkp2)
     end
     
     return lookmap, gmap
@@ -7262,6 +7262,14 @@ end
                   y = (obj.sections[403].y + mm*macroedit.sech) + math.floor(macroedit.sech/2) - (h/2),
                   w = w,
                   h = h}
+          if macro[m+macroedit_poffs].mute == true then
+            f_Get_SSV(gui.color.red)          
+          else
+            f_Get_SSV(gui.color.blue)
+          end
+          gfx.a = 0.6
+          gfx.line(obj.sections[403].x + p*obj.sections[403].w,py,obj.sections[403].x + p2*obj.sections[403].w,py)
+          gfx.a = 1
           f_Get_SSV('160 160 160')
           gfx.rect(xywh.x,
                    xywh.y, 
@@ -7272,10 +7280,6 @@ end
                    xywh.y, 
                    xywh.w,
                    xywh.h, 0)
-          f_Get_SSV(gui.color.blue)
-          gfx.a = 0.6
-          gfx.line(obj.sections[403].x + p*obj.sections[403].w,py,obj.sections[403].x + p2*obj.sections[403].w,py)
-          gfx.a = 1
           if macro[m+macroedit_poffs].mute == nil or macro[m+macroedit_poffs].mute == false then
             f_Get_SSV(gui.color.yellow)
             xywh.x = obj.sections[403].x + ctl.val*obj.sections[403].w
@@ -7292,7 +7296,11 @@ end
                   y = (obj.sections[404].y + mm*macroedit.sech) + math.floor(macroedit.sech/2) - (h/2),
                   w = w,
                   h = h}
-          f_Get_SSV(gui.color.blue)
+          if macro[m+macroedit_poffs].mute == true then
+            f_Get_SSV(gui.color.red)          
+          else
+            f_Get_SSV(gui.color.blue)
+          end
           gfx.a = 0.6
           gfx.line(obj.sections[404].x + p*obj.sections[404].w,py,obj.sections[404].x + p2*obj.sections[404].w,py)
           gfx.a = 1
@@ -15304,7 +15312,7 @@ end
               if fxnum ~= -1 then
                 local param = bands[eqcontrolband_select].freq_param
                 if param and fv ~= ofv then
-                  reaper.TrackFX_SetParam(track,fxnum,param,fv)
+                  reaper.TrackFX_SetParamNormalized(track,fxnum,param,fv)
                 
                   update_eqcontrol = true
                   ofv = fv
@@ -15312,7 +15320,7 @@ end
     
                 param = bands[eqcontrolband_select].gain_param              
                 if param and gv ~= ogv then
-                  reaper.TrackFX_SetParam(track,fxnum,param,gv)
+                  reaper.TrackFX_SetParamNormalized(track,fxnum,param,gv)
                 
                   update_eqcontrol = true
                   ogv = gv
@@ -15333,7 +15341,7 @@ end
               if fxnum ~= -1 then
                 local param = bands[eqcontrolband_select].freq_param
                 if param and v ~= ov then
-                  reaper.TrackFX_SetParam(track,fxnum,param,v)
+                  reaper.TrackFX_SetParamNormalized(track,fxnum,param,v)
                 
                   update_eqcontrol = true
                   ov = v
@@ -15355,7 +15363,7 @@ end
               if fxnum ~= -1 then
                 local param = bands[eqcontrolband_select].gain_param
                 if param and v ~= ov then
-                  reaper.TrackFX_SetParam(track,fxnum,param,v)
+                  reaper.TrackFX_SetParamNormalized(track,fxnum,param,v)
                 
                   update_eqcontrol = true
                   ov = v
@@ -15378,7 +15386,7 @@ end
               if fxnum ~= -1 then
                 local param = bands[eqcontrolband_select].q_param
                 if param and v ~= ov then
-                  reaper.TrackFX_SetParam(track,fxnum,param,v)
+                  reaper.TrackFX_SetParamNormalized(track,fxnum,param,v)
                 
                   update_eqcontrol = true
                   ov = v
@@ -15401,7 +15409,7 @@ end
               if fxnum ~= -1 then
                 local param = bands[eqcontrolband_select].c1_param
                 if param and v ~= ov then
-                  reaper.TrackFX_SetParam(track,fxnum,param,v)
+                  reaper.TrackFX_SetParamNormalized(track,fxnum,param,v)
                 
                   update_eqcontrol = true
                   ov = v
@@ -15424,7 +15432,7 @@ end
               if fxnum ~= -1 then
                 local param = bands[eqcontrolband_select].c2_param
                 if param and v ~= ov then
-                  reaper.TrackFX_SetParam(track,fxnum,param,v)
+                  reaper.TrackFX_SetParamNormalized(track,fxnum,param,v)
                 
                   update_eqcontrol = true
                   ov = v
@@ -15447,7 +15455,7 @@ end
               if fxnum ~= -1 then
                 local param = bands[eqcontrolband_select].c3_param
                 if param and v ~= ov then
-                  reaper.TrackFX_SetParam(track,fxnum,param,v)
+                  reaper.TrackFX_SetParamNormalized(track,fxnum,param,v)
                 
                   update_eqcontrol = true
                   ov = v
@@ -15470,7 +15478,7 @@ end
               if fxnum ~= -1 then
                 local param = bands[eqcontrolband_select].c4_param
                 if param and v ~= ov then
-                  reaper.TrackFX_SetParam(track,fxnum,param,v)
+                  reaper.TrackFX_SetParamNormalized(track,fxnum,param,v)
                 
                   update_eqcontrol = true
                   ov = v
@@ -15493,7 +15501,7 @@ end
               if fxnum ~= -1 then
                 local param = bands[eqcontrolband_select].c5_param
                 if param and v ~= ov then
-                  reaper.TrackFX_SetParam(track,fxnum,param,v)
+                  reaper.TrackFX_SetParamNormalized(track,fxnum,param,v)
                 
                   update_eqcontrol = true
                   ov = v
@@ -20035,7 +20043,7 @@ end
   function EQC_GetParam(track, fx, param)
     if param then
       --local track = GetTrack(tr)
-      local v = reaper.TrackFX_GetParam(track, fx, param)
+      local v = reaper.TrackFX_GetParamNormalized(track, fx, param)
       return v
     end    
   end
