@@ -16578,7 +16578,40 @@ end
               val = ctlScale(strips[tracks[track_select].strip][page].controls[tfxp_s].scalemode, val)
               if val ~= octlval then
                 strips[tracks[track_select].strip][page].controls[tfxp_s].val = val
-                --DBG(val)
+                SetMacro(tracks[track_select].strip, page, tfxp_s)
+                strips[tracks[track_select].strip][page].controls[tfxp_s].dirty = true
+                octlval = val
+                update_ctls = true
+                
+                trackfxparam_select = tfxp_s
+              end
+            end
+          end
+          
+        elseif mouse.context and mouse.context == contexts.macctl_h then
+          
+          local tfxp_s = trackfxparam_select
+          local val = MOUSE_slider_horiz(ctlxywh,mouse.slideoff)
+          if val ~= nil then
+            if oms ~= mouse.shift then
+              oms = mouse.shift
+              ctlpos = strips[tracks[track_select].strip][page].controls[tfxp_s].val
+              mouse.slideoff = ctlxywh.y+ctlxywh.h/2 - mouse.my
+            else
+              if mouse.shift then
+                local mult = strips[tracks[track_select].strip][page].controls[tfxp_s].knobsens.fine
+                if mult == 0 then mult = settings_defknobsens.fine end
+                val = ctlpos - ((0.5-val)*2)*mult
+              else
+                local mult = strips[tracks[track_select].strip][page].controls[tfxp_s].knobsens.norm
+                if mult == 0 then mult = settings_defknobsens.norm end
+                val = ctlpos - (0.5-val)*mult
+              end
+              if val < 0 then val = 0 end
+              if val > 1 then val = 1 end
+              val = ctlScale(strips[tracks[track_select].strip][page].controls[tfxp_s].scalemode, val)
+              if val ~= octlval then
+                strips[tracks[track_select].strip][page].controls[tfxp_s].val = val
                 SetMacro(tracks[track_select].strip, page, tfxp_s)
                 strips[tracks[track_select].strip][page].controls[tfxp_s].dirty = true
                 octlval = val
