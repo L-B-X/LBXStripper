@@ -14987,10 +14987,10 @@ end
                 bands[eqcontrolband_select].gmax = 1
                 bands[eqcontrolband_select].col = '160 160 160'
                 
-                local s = string.find(fxname,'ReaEQ')
+                --[[local s = string.find(fxname,'ReaEQ')
                 if s and s > 0 then
                   OpenMsgBox(1,'ReaEQ is not recommended for use with EQ Control.', 1, 'Using ReaEQ will produce unexpected control and graph behaviour.')
-                end 
+                end ]]
                 update_gfx = true
               end            
   
