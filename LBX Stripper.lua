@@ -22,6 +22,7 @@
   scalemode_preset_table = {'','NORMAL','REAPER VOL'}
   scalemode_table = {1/8,1/7,1/6,1/5,1/4,1/3,1/2,1,2,3,4,5,6,7,8}
   scalemode_dtable = {'1/8','1/7','1/6','1/5','1/4','1/3','1/2','1','2','3','4','5','6','7','8'}
+  macroscale_table = {'Linear','Slow','Fast','Smooth','Slow 2 (Cubic)','Fast 2 (Cubic)', 'Smooth 2 (Cubic)', 'Slow 3', 'Fast 3', 'Smooth 3'}
   eqcontrol_colours = {'160 0 0','0 160 0','0 0 160','160 160 0','0 160 160','160 0 160','255 165 0','160 160 160','196 80 80','80 196 80','80 80 196','196 196 80','196 80 196'
                        ,'255 64 64','64 0 255','80 160 0','102 0 51','255 255 255','255 255 255','255 255 255'}
   
@@ -100,7 +101,12 @@
               eqc_dragc2 = 61,                
               eqc_dragc3 = 62,                
               eqc_dragc4 = 63,                
-              eqc_dragc5 = 64,                
+              eqc_dragc5 = 64, 
+              macsliderA = 65,              
+              macsliderB = 66,
+              macctl = 67,
+              macctl_h = 68,
+              macctl2 = 69,              
               dummy = 99
               }
   
@@ -1138,9 +1144,9 @@
       --macros
       --exit macro learn param
       obj.sections[250] = {x = obj.sections[10].x + obj.sections[10].w - 120,
-                          y = obj.sections[10].y + obj.sections[10].h - 40,
+                          y = obj.sections[10].y + obj.sections[10].h - 60,
                           w = 100,
-                          h = butt_h}                       
+                          h = butt_h*2}                       
 
       --eq control
       obj.sections[300] = {x = obj.sections[10].x,
@@ -1340,7 +1346,82 @@
                            y = obj.sections[316].y + obj.sections[316].h + 10,
                            w = 50,
                            h = (obj.sections[338].y + obj.sections[338].h)-(obj.sections[316].y + obj.sections[316].h+6) + butt_h}
+      
+      macroedit = {}
+      macroedit.secyoff = 100
+      macroedit.sech = 40
+      macroedit.pcnt = math.floor((obj.sections[300].h-macroedit.secyoff-10)/macroedit.sech)
+      macroedit.h = macroedit.pcnt*macroedit.sech
+      macroedit.sliderw = 12
+      macroedit.sliderh = 24
 
+      obj.sections[401] = {x = obj.sections[300].w-32,
+                           y = 0,
+                           w = 32,
+                           h = 32}
+                          
+      --Param name
+      local sw = math.max(math.floor((obj.sections[300].w-470)/2),120)
+      
+      obj.sections[402] = {x = 20,
+                           y = macroedit.secyoff,
+                           w = 200,
+                           h = macroedit.sech}
+      --A
+      obj.sections[403] = {x = obj.sections[402].x+obj.sections[402].w+20,
+                           y = macroedit.secyoff,
+                           w = sw,
+                           h = macroedit.h}
+      --B
+      obj.sections[404] = {x = obj.sections[403].x+obj.sections[403].w+26,
+                           y = macroedit.secyoff,
+                           w = sw,
+                           h = macroedit.h}
+      obj.sections[405] = {x = obj.sections[404].x + obj.sections[404].w + 14,
+                           y = macroedit.secyoff,
+                           w = obj.sections[300].w - (obj.sections[404].x+obj.sections[404].w)-30,
+                           h = macroedit.h}
+
+      obj.sections[407] = {x = obj.sections[402].x+5,
+                           y = macroedit.secyoff,
+                           w = 20,
+                           h = macroedit.h}
+      obj.sections[406] = {x = obj.sections[402].x+obj.sections[402].w-25,
+                           y = macroedit.secyoff,
+                           w = 20,
+                           h = macroedit.h}
+      
+      obj.sections[408] = {x = obj.sections[404].x + 10,
+                           y = 30,
+                           w = obj.sections[404].w-20,
+                           h = butt_h/2+8} 
+
+      obj.sections[409] = {x = 40,
+                           y = 20,
+                           w = obj.sections[402].w-40,
+                           h = butt_h*3} 
+      
+      local w = gfx.getimgdim(def_eqcknobf)
+      local h = ctl_files[def_eqcknobfctl].cellh
+            
+      obj.sections[410] = {x = obj.sections[405].x + math.floor(obj.sections[405].w/2 - w/2),
+                           y = obj.sections[405].y /2 - math.floor(h/2),
+                           w = w,
+                           h = h}
+
+      obj.sections[411] = {x = obj.sections[403].x,
+                           y = obj.sections[409].y+obj.sections[409].h-butt_h+10,
+                           w = obj.sections[403].w,
+                           h = butt_h} 
+      obj.sections[412] = {x = obj.sections[404].x,
+                           y = obj.sections[411].y,
+                           w = obj.sections[404].w,
+                           h = butt_h} 
+      obj.sections[413] = {x = obj.sections[403].x + 10,
+                           y = 30,
+                           w = obj.sections[403].w-20,
+                           h = butt_h} 
+           
     return obj
   end
   
@@ -4388,7 +4469,7 @@ end
                 if ctlcat == ctlcats.fxparam or ctlcat == ctlcats.trackparam or ctlcat == ctlcats.tracksend or ctlcat == ctlcats.pkmeter then
                   v2 = nz(frameScale(ctl.framemode, GetParamValue2(ctlcat,track,fxnum,param,i)),0)
                   val2 = F_limit(round(frames*v2),0,frames-1)
-                elseif ctlcat == ctlcats.fxoffline then
+                elseif ctlcat == ctlcats.fxoffline or ctlcat == ctlcats.macro then
                   v2 = ctl.val                  
                   val2 = F_limit(round(frames*v2),0,frames-1)
                 end
@@ -7013,11 +7094,250 @@ end
   
   ------------------------------------------------------------
 
+  function GUI_DrawMacroEdit(obj, gui)
+
+    local macro = strips[tracks[track_select].strip][page].controls[macroctl_select].macroctl
+    gfx.dest = 1008
+    local w, h = gfx.getimgdim(1008)
+    if obj.sections[300].w ~= w or obj.sections[300].h ~= h or update_gfx or update_surface then
+      gfx.setimgdim(1008, obj.sections[300].w, obj.sections[300].h)
+    
+      f_Get_SSV(gui.color.black)
+      gfx.rect(0,
+               0, 
+               obj.sections[300].w,
+               obj.sections[300].h, 1)
+      f_Get_SSV(gui.color.white)
+      gfx.rect(0,
+               0, 
+               obj.sections[300].w,
+               obj.sections[300].h, 0)
+
+      local xywh = {x = obj.sections[401].x+8,
+                    y = obj.sections[401].y+8,
+                    w = obj.sections[401].w-16,
+                    h = obj.sections[401].h-16}
+      gfx.rect(obj.sections[401].x,
+               obj.sections[401].y, 
+               obj.sections[401].w,
+               obj.sections[401].h, 1)
+      f_Get_SSV(gui.color.black)
+      gfx.line(xywh.x,xywh.y,xywh.x+xywh.w,xywh.y+xywh.h,1)
+      gfx.line(xywh.x+xywh.w,xywh.y,xywh.x,xywh.y+xywh.h,1)
+
+      local w = gfx.getimgdim(def_eqcknobf)
+      local h = ctl_files[def_eqcknobfctl].cellh
+      local frames = ctl_files[def_eqcknobfctl].frames-1
+      local v = math.floor(strips[tracks[track_select].strip][page].controls[macroctl_select].val*frames)
+      gfx.blit(def_eqcknobf, 1, 0, 0, v* h, w, h, obj.sections[410].x, obj.sections[410].y)
+      --xywh.y = xywh.y + 30
+      --GUI_textC(gui,xywh,roundX(freq_d,1, suffix),gui.color.white,-2)
+    
+      local xywh = {x = obj.sections[408].x,
+                    y = obj.sections[408].y - obj.sections[408].h,
+                    w = obj.sections[408].w,
+                    h = obj.sections[408].h}
+                    
+      GUI_textC(gui,xywh,'AUTOMATION',gui.color.white,-2)
+      local macrofader = strips[tracks[track_select].strip][page].controls[macroctl_select].macrofader
+      if macrofader then
+        GUI_DrawButton(gui, 'FADER '..string.format('%i',macrofader), obj.sections[408], gui.color.white, gui.color.black, true, '', false)      
+      else
+        GUI_DrawButton(gui, 'NONE', obj.sections[408], gui.color.white, gui.color.black, false, '', false)
+      end
+      GUI_DrawButton(gui, 'ADD PARAMETERS', obj.sections[409], '160 160 160', gui.color.black, true, '', false)      
+      GUI_DrawButton(gui, 'CAPTURE A', obj.sections[411], '160 160 160', gui.color.black, true, '', false)      
+      GUI_DrawButton(gui, 'CAPTURE B', obj.sections[412], '160 160 160', gui.color.black, true, '', false)      
+      GUI_DrawButton(gui, 'MONITOR', obj.sections[413], '160 160 160', gui.color.black, settings_macroeditmonitor, '', false)      
+    
+      for m = 1, macroedit.pcnt do
+      
+        local mm = m-1
+        if macro and macro[m+macroedit_poffs] then
+          local ctl = strips[tracks[track_select].strip][page].controls[macro[m+macroedit_poffs].ctl]
+          local xywh = {x = obj.sections[402].x,
+                        y = obj.sections[402].y + mm*macroedit.sech +2,
+                        w = obj.sections[402].w+6,
+                        h = macroedit.sech-4}          
+          f_Get_SSV('32 32 32')              
+          gfx.rect(xywh.x,
+                   xywh.y, 
+                   xywh.w,
+                   xywh.h, 1)
+          local xywh = {x = obj.sections[403].x - macroedit.sliderw*0.5-6,
+                        y = obj.sections[403].y + mm*macroedit.sech +2,
+                        w = obj.sections[403].w + macroedit.sliderw+12,
+                        h = macroedit.sech-4}          
+          f_Get_SSV('32 32 32')              
+          gfx.rect(xywh.x,
+                   xywh.y, 
+                   xywh.w,
+                   xywh.h, 1)
+          local xywh = {x = obj.sections[404].x - macroedit.sliderw*0.5-6,
+                        y = obj.sections[404].y + mm*macroedit.sech +2,
+                        w = obj.sections[404].w + macroedit.sliderw+12,
+                        h = macroedit.sech-4}          
+          f_Get_SSV('32 32 32')              
+          gfx.rect(xywh.x,
+                   xywh.y, 
+                   xywh.w,
+                   xywh.h, 1)
+          local xywh = {x = obj.sections[405].x,
+                        y = obj.sections[405].y + mm*macroedit.sech +2,
+                        w = obj.sections[405].w,
+                        h = macroedit.sech-4}
+          f_Get_SSV('32 32 32')              
+          gfx.rect(xywh.x,
+                   xywh.y, 
+                   xywh.w,
+                   xywh.h, 1)
+          GUI_textC(gui, xywh, macroscale_table[macro[m+macroedit_poffs].shape], gui.color.white, -2)          
+          
+          xywh = {x = obj.sections[402].x+30,
+                  y = obj.sections[402].y + mm*macroedit.sech,
+                  w = obj.sections[402].w,
+                  h = macroedit.sech}
+          GUI_textsm_LJ(gui, xywh, ctl.param_info.paramname, gui.color.white, -2, xywh.w)
+
+          xywh = {x = obj.sections[406].x,
+                  y = obj.sections[406].y + mm*macroedit.sech + 0.5*macroedit.sech - 10,
+                  w = obj.sections[406].w,
+                  h = 20}
+          if macro[m].mute then
+            f_Get_SSV('255 204 0')
+          else
+            f_Get_SSV('160 160 160')
+          end
+          gfx.rect(xywh.x,
+                   xywh.y, 
+                   xywh.w,
+                   xywh.h, 1)
+          f_Get_SSV(gui.color.black)              
+          gfx.rect(xywh.x,
+                   xywh.y, 
+                   xywh.w,
+                   xywh.h, 0)
+          GUI_textC(gui, xywh, 'M', gui.color.black, -2)
+
+          xywh = {x = obj.sections[407].x,
+                  y = obj.sections[407].y + mm*macroedit.sech + 0.5*macroedit.sech - 10,
+                  w = obj.sections[407].w,
+                  h = 20}
+          f_Get_SSV('160 160 160')              
+          gfx.rect(xywh.x,
+                   xywh.y, 
+                   xywh.w,
+                   xywh.h, 1)
+          f_Get_SSV(gui.color.black)              
+          gfx.rect(xywh.x,
+                   xywh.y, 
+                   xywh.w,
+                   xywh.h, 0)
+          GUI_textC(gui, xywh, 'X', gui.color.black, -2)
+
+          xywh = {x = obj.sections[403].x,
+                  y = (obj.sections[403].y + mm*macroedit.sech) + math.floor(macroedit.sech/2)-1,
+                  w = obj.sections[403].w,
+                  h = 2}
+          f_Get_SSV('16 16 16')              
+          gfx.rect(xywh.x,
+                   xywh.y, 
+                   xywh.w,
+                   xywh.h, 1)
+          
+          xywh.x = obj.sections[404].x
+          gfx.rect(xywh.x,
+                   xywh.y, 
+                   xywh.w,
+                   xywh.h, 1)
+          
+          local w, h = macroedit.sliderw, macroedit.sliderh
+          
+          local p = macro[m+macroedit_poffs].A_val           
+          local p2 = macro[m+macroedit_poffs].B_val           
+
+          local py = (obj.sections[403].y + mm*macroedit.sech) + math.floor(macroedit.sech/2)-1
+
+          xywh = {x = obj.sections[403].x + p*obj.sections[403].w - (w/2),
+                  y = (obj.sections[403].y + mm*macroedit.sech) + math.floor(macroedit.sech/2) - (h/2),
+                  w = w,
+                  h = h}
+          f_Get_SSV('160 160 160')
+          gfx.rect(xywh.x,
+                   xywh.y, 
+                   xywh.w,
+                   xywh.h, 1)
+          f_Get_SSV(gui.color.black)
+          gfx.rect(xywh.x,
+                   xywh.y, 
+                   xywh.w,
+                   xywh.h, 0)
+          f_Get_SSV(gui.color.blue)
+          gfx.a = 0.6
+          gfx.line(obj.sections[403].x + p*obj.sections[403].w,py,obj.sections[403].x + p2*obj.sections[403].w,py)
+          gfx.a = 1
+          if macro[m+macroedit_poffs].mute == nil or macro[m+macroedit_poffs].mute == false then
+            f_Get_SSV(gui.color.yellow)
+            xywh.x = obj.sections[403].x + ctl.val*obj.sections[403].w
+            xywh.w = 1
+            xywh.y = xywh.y + 2
+            xywh.h = xywh.h - 4
+            gfx.rect(xywh.x,
+                     xywh.y, 
+                     xywh.w,
+                     xywh.h, 1)
+          end
+          
+          xywh = {x = obj.sections[404].x + p2*obj.sections[404].w - (w/2),
+                  y = (obj.sections[404].y + mm*macroedit.sech) + math.floor(macroedit.sech/2) - (h/2),
+                  w = w,
+                  h = h}
+          f_Get_SSV(gui.color.blue)
+          gfx.a = 0.6
+          gfx.line(obj.sections[404].x + p*obj.sections[404].w,py,obj.sections[404].x + p2*obj.sections[404].w,py)
+          gfx.a = 1
+          f_Get_SSV('160 160 160')
+          gfx.rect(xywh.x,
+                   xywh.y, 
+                   xywh.w,
+                   xywh.h, 1)
+          f_Get_SSV(gui.color.black)
+          gfx.rect(xywh.x,
+                   xywh.y, 
+                   xywh.w,
+                   xywh.h, 0)
+      
+          
+        end      
+      end
+      
+      --[[f_Get_SSV(gui.color.black)
+      gfx.rect(obj.sections[403].x-30,
+               obj.sections[403].y, 
+               4,
+               obj.sections[403].h, 1)
+      gfx.rect(obj.sections[404].x-30,
+               obj.sections[404].y, 
+               4,
+               obj.sections[404].h, 1)
+      gfx.rect(obj.sections[404].x+obj.sections[404].w+30,
+               obj.sections[404].y, 
+               4,
+               obj.sections[404].h, 1)]]
+      
+    end
+    
+    gfx.dest = 1
+  
+  end
+
+  ------------------------------------------------------------
+  
   function GUI_draw(obj, gui)
     gfx.mode =4
     
     if show_xxy == false and (update_gfx or update_surface or update_sidebar or update_topbar or update_ctlopts or update_ctls or update_bg or 
-       update_settings or update_snaps or update_msnaps or update_actcho or update_fsnaps or update_mfsnaps or update_eqcontrol) then    
+       update_settings or update_snaps or update_msnaps or update_actcho or update_fsnaps or update_mfsnaps or update_eqcontrol or update_macroedit) then    
       local p = 0
         
       gfx.dest = 1
@@ -7071,7 +7391,7 @@ end
         
         gfx.dest = 1
         
-        if update_gfx or update_surface or update_bg or update_msnaps or update_mfsnaps then
+        if (macro_edit_mode == false or macro_lrn_mode == true) and (update_gfx or update_surface or update_bg or update_msnaps or update_mfsnaps) then
           --local w, h = obj.sections[10].w, lockh
           --local x, y = obj.sections[10].x + obj.sections[10].w/2 - w/2, obj.sections[10].y + (obj.sections[10].h/2) - h/2
           gfx.blit(1000,1,0,surface_offset.x,
@@ -7250,14 +7570,22 @@ end
         
         if show_eqcontrol then
           if update_gfx then
-          --DBG('A')
             GUI_DrawEQControl(obj, gui)
           end
-          --DBG('B')
           gfx.a=1
           
           gfx.blit(1009,1,0,0,0,obj.sections[300].w,obj.sections[300].h,obj.sections[300].x,obj.sections[300].y)  
           GUI_DrawEQBands(obj, gui)              
+        end
+
+        if macro_edit_mode == true and macro_lrn_mode == false then
+          if update_macroedit or update_surface or update_gfx then
+            GUI_DrawMacroEdit(obj, gui)
+          end
+          gfx.a=1
+
+          gfx.blit(1008,1,0,0,0,obj.sections[300].w,obj.sections[300].h,obj.sections[300].x,obj.sections[300].y) 
+        
         end
         
       elseif mode == 1 then        
@@ -9094,6 +9422,7 @@ end
       end
       local cc = strips[tracks[track_select].strip][page].controls[trackfxparam_select].ctlcat
       if cc == ctlcats.fxparam then
+        --DBG(val)
         local fxnum = strips[tracks[track_select].strip][page].controls[trackfxparam_select].fxnum
         local param = strips[tracks[track_select].strip][page].controls[trackfxparam_select].param
         strips[tracks[track_select].strip][page].controls[trackfxparam_select].dirty = true
@@ -9489,7 +9818,7 @@ end
       strips[tracks[track_select].strip][page].controls = tbl
       
       Snapshots_Check(tracks[track_select].strip,page)
-      --Macros_Check(tracks[track_select].strip,page)
+      Macros_Check(tracks[track_select].strip,page)
       
       ctl_select = nil
       
@@ -12499,6 +12828,8 @@ end
   
   function SetParam_EnterVal(i)
   
+    if strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.macro then return end
+    
     local ctltype = strips[tracks[track_select].strip][page].controls[i].ctltype
     if ctltype == 1 then
       trackfxparam_select = i
@@ -12693,6 +13024,13 @@ end
                   if show_xxy then
                     update_xxypos = true
                   end                              
+                elseif faders[p+1].targettype == 2 then
+                  strips[faders[p+1].strip][faders[p+1].page].controls[faders[p+1].ctl].val = faders[p+1].val
+                  strips[faders[p+1].strip][faders[p+1].page].controls[faders[p+1].ctl].dirty = true
+                  SetMacro(faders[p+1].strip,faders[p+1].page,faders[p+1].ctl)
+                  if macro_edit_mode == true then
+                    update_surface = true
+                  end 
                 end
               end
             end    
@@ -14047,6 +14385,8 @@ end
           
             navigate = true
             macro_lrn_mode = false
+            Macro_UpdateCtls(tracks[track_select].strip, page, macroctl_select)
+            
             update_surface = true
           
           elseif mouse.context == nil and (MOUSE_click(obj.sections[10])) then -- or MOUSE_click_RB(obj.sections[10])) then
@@ -14113,8 +14453,8 @@ end
                           strips[strip][page].controls[macroctl_select].macroctl[ctlidx] = {c_id = strips[tracks[track_select].strip][page].controls[i].c_id,
                                                                                             ctl = i,
                                                                                             A_val = 0,
-                                                                                            B_val = 0,
-                                                                                            shape = 0}
+                                                                                            B_val = 1,
+                                                                                            shape = 1}
                         end
                       end
                     end
@@ -14168,8 +14508,8 @@ end
                     strips[strip][page].controls[macroctl_select].macroctl[ctlidx] = {c_id = strips[tracks[track_select].strip][page].controls[i].c_id,
                                                                                       ctl = i,
                                                                                       A_val = 0,
-                                                                                      B_val = 0,
-                                                                                      shape = 0}
+                                                                                      B_val = 1,
+                                                                                      shape = 1}
                     strips[tracks[track_select].strip][page].controls[i].dirty = true
                   end
                 end
@@ -14640,7 +14980,7 @@ end
                 bands[eqcontrolband_select].col = '160 160 160'
                 
                 local s = string.find(fxname,'ReaEQ')
-                if s > 0 then
+                if s and s > 0 then
                   OpenMsgBox(1,'ReaEQ is not recommended for use with EQ Control.', 1, 'Using ReaEQ will produce unexpected control and graph behaviour.')
                 end 
                 update_gfx = true
@@ -15277,6 +15617,262 @@ end
             update_gfx = true
           
           end
+
+        elseif macro_edit_mode == true and macro_lrn_mode == false then
+
+          if strips[tracks[track_select].strip] and strips[tracks[track_select].strip][page].controls[macroctl_select] and
+             strips[tracks[track_select].strip][page].controls[macroctl_select].ctlcat == ctlcats.macro then
+            
+            navigate = false
+            noscroll = true
+                    
+            local xywh = {x = obj.sections[300].x+obj.sections[401].x,
+                          y = obj.sections[300].y+obj.sections[401].y,
+                          w = obj.sections[401].w,
+                          h = obj.sections[401].h}
+            if mouse.context == nil and MOUSE_click(xywh) then
+            
+              navigate = true
+              macro_edit_mode = false
+              macroctl_select = nil
+              update_gfx = true
+              
+            else
+  
+              local macroctl = strips[tracks[track_select].strip][page].controls[macroctl_select].macroctl
+              if gfx.mouse_wheel ~= 0 and MOUSE_over(obj.sections[300]) then
+              
+                v = gfx.mouse_wheel/120
+                macroedit_poffs = F_limit(macroedit_poffs-v,0,#macroctl-1)
+                --DBG(macroedit_poffs)
+              
+                update_surface = true
+              end
+    
+              local mx, my = mouse.mx, mouse.my
+              mouse.mx, mouse.my = mouse.mx - obj.sections[300].x, mouse.my - obj.sections[300].y
+              
+              local xywh_403 = {x = obj.sections[403].x - (macroedit.sliderw*0.5),
+                                y = obj.sections[403].y,
+                                w = obj.sections[403].w + macroedit.sliderw,
+                                h = obj.sections[403].h}
+              local xywh_404 = {x = obj.sections[404].x - (macroedit.sliderw*0.5),
+                                y = obj.sections[404].y,
+                                w = obj.sections[404].w + macroedit.sliderw,
+                                h = obj.sections[404].h}
+
+              if mouse.context == nil and MOUSE_click(obj.sections[410]) then
+              
+                local i = macroctl_select
+                mouse.context = contexts.macctl2
+                mouse.slideoff = obj.sections[410].y+obj.sections[410].h/2 - mouse.my
+                ctlpos = ctlScaleInv(nz(strips[tracks[track_select].strip][page].controls[i].scalemode,8),
+                                     strips[tracks[track_select].strip][page].controls[i].val)
+                oms = mouse.shift
+
+              elseif mouse.context == nil and MOUSE_click(xywh_403) then
+                local yy = math.floor((mouse.my - obj.sections[403].y)/macroedit.sech)
+                if macroctl[(yy+1)+macroedit_poffs] then
+
+                  local val = macroctl[(yy+1)+macroedit_poffs].A_val
+                  local xywh = {x = obj.sections[403].x + (val*obj.sections[403].w) -(macroedit.sliderw*0.5),
+                                y = obj.sections[403].y + (yy*macroedit.sech) + (macroedit.sech*0.5) - (macroedit.sliderh*0.5),
+                                w = macroedit.sliderw,
+                                h = macroedit.sliderh}
+                  if MOUSE_over(xywh) then
+                  
+                    mouse.context = contexts.macsliderA
+                    macslide = {xoff = mouse.mx-(xywh.x+(xywh.w*0.5)), macparamidx = (yy+1)+macroedit_poffs}
+
+                  end
+              
+                end
+                
+              elseif mouse.context == nil and MOUSE_click(xywh_404) then
+                local yy = math.floor((mouse.my - obj.sections[404].y)/macroedit.sech)
+                if macroctl[(yy+1)+macroedit_poffs] then
+
+                  local val = macroctl[(yy+1)+macroedit_poffs].B_val
+                  local xywh = {x = obj.sections[404].x + (val*obj.sections[404].w) -(macroedit.sliderw*0.5),
+                                y = obj.sections[404].y + (yy*macroedit.sech) + (macroedit.sech*0.5) - (macroedit.sliderh*0.5),
+                                w = macroedit.sliderw,
+                                h = macroedit.sliderh}
+                  if MOUSE_over(xywh) then
+                  
+                    mouse.context = contexts.macsliderB
+                    macslide = {xoff = mouse.mx-(xywh.x+(xywh.w*0.5)), macparamidx = (yy+1)+macroedit_poffs}
+
+                  end
+              
+                end                  
+                  
+              elseif mouse.context == nil and MOUSE_click(obj.sections[405]) then
+                local yy = math.floor((mouse.my - obj.sections[405].y)/macroedit.sech)
+                if macroctl[(yy+1)+macroedit_poffs] then
+
+                  macroctl[(yy+1)+macroedit_poffs].shape = macroctl[(yy+1)+macroedit_poffs].shape + 1
+                  if macroctl[(yy+1)+macroedit_poffs].shape > #macroscale_table then
+                    macroctl[(yy+1)+macroedit_poffs].shape = 1
+                  end
+                  update_surface = true
+  
+                end              
+
+              elseif mouse.context == nil and MOUSE_click_RB(obj.sections[405]) then
+                local yy = math.floor((mouse.my - obj.sections[405].y)/macroedit.sech)
+                if macroctl[(yy+1)+macroedit_poffs] then
+
+                  macroctl[(yy+1)+macroedit_poffs].shape = macroctl[(yy+1)+macroedit_poffs].shape - 1
+                  if macroctl[(yy+1)+macroedit_poffs].shape < 1 then
+                    macroctl[(yy+1)+macroedit_poffs].shape = #macroscale_table
+                  end
+                  update_surface = true
+  
+                end              
+              
+              elseif mouse.context == nil and MOUSE_click(obj.sections[406]) then
+                local yy = math.floor((mouse.my - obj.sections[406].y)/macroedit.sech)
+                if macroctl[(yy+1)+macroedit_poffs] then
+                  local xywh = {x = obj.sections[406].x,
+                                y = obj.sections[406].y + yy*macroedit.sech + 0.5*macroedit.sech - 10,
+                                w = obj.sections[406].w,
+                                h = 20}                
+                  if MOUSE_over(xywh) then
+                
+                    macroctl[(yy+1)+macroedit_poffs].mute = not nz(macroctl[(yy+1)+macroedit_poffs].mute,false)
+                    update_surface = true
+                    
+                  end
+                end    
+
+              elseif mouse.context == nil and MOUSE_click(obj.sections[407]) then
+                local yy = math.floor((mouse.my - obj.sections[407].y)/macroedit.sech)
+                if macroctl[(yy+1)+macroedit_poffs] then
+                  local xywh = {x = obj.sections[407].x,
+                                y = obj.sections[407].y + yy*macroedit.sech + 0.5*macroedit.sech - 10,
+                                w = obj.sections[407].w,
+                                h = 20}                
+                  if MOUSE_over(xywh) then
+                
+                    local mcnt = #macroctl
+                    macroctl[(yy+1)+macroedit_poffs] = nil
+                    local mtab = Table_RemoveNils(macroctl, mcnt)
+                    strips[tracks[track_select].strip][page].controls[macroctl_select].macroctl = mtab
+                    update_surface = true
+                    
+                  end
+                end    
+    
+              elseif mouse.context == nil and MOUSE_click(obj.sections[408]) then
+    
+                local f = {targettype = 2,
+                           strip = tracks[track_select].strip,
+                           page = page,
+                           ctl = macroctl_select}
+                  
+                mouse.mx, mouse.my = mx, my
+                local fad = SetAutomationFader(f, strips[tracks[track_select].strip][page].controls[macroctl_select].macrofader)
+                if fad ~= -1 then
+                  if strips[tracks[track_select].strip][page].controls[macroctl_select].macrofader and strips[tracks[track_select].strip][page].controls[macroctl_select].macrofader ~= fad then
+                    faders[strips[tracks[track_select].strip][page].controls[macroctl_select].macrofader] = {}
+                  end
+                  strips[tracks[track_select].strip][page].controls[macroctl_select].macrofader = fad
+                  update_gfx = true
+                end
+
+              elseif mouse.context == nil and MOUSE_click(obj.sections[409]) then
+
+                macro_lrn_mode = true
+                update_gfx = true
+
+              elseif mouse.context == nil and MOUSE_click(obj.sections[411]) then
+
+                Macro_Capture(tracks[track_select].strip,page,macroctl_select,0)
+                if settings_macroeditmonitor then
+                  SetMacro(tracks[track_select].strip,page,macroctl_select)
+                end
+                update_surface = true
+
+              elseif mouse.context == nil and MOUSE_click(obj.sections[412]) then
+
+                Macro_Capture(tracks[track_select].strip,page,macroctl_select,1)
+                if settings_macroeditmonitor then
+                  SetMacro(tracks[track_select].strip,page,macroctl_select)
+                end
+                update_surface = true
+
+              elseif mouse.context == nil and MOUSE_click(obj.sections[413]) then
+
+                settings_macroeditmonitor = not settings_macroeditmonitor
+                update_surface = true
+
+              end
+              
+              if mouse.context and mouse.context == contexts.macctl2 then
+                
+                --local tfxp_s = macroctl_select
+                local val = MOUSE_slider(obj.sections[410],mouse.slideoff)
+                if val ~= nil then
+                  if oms ~= mouse.shift then
+                    oms = mouse.shift
+                    ctlpos = strips[tracks[track_select].strip][page].controls[macroctl_select].val
+                    mouse.slideoff = ctlxywh.y+ctlxywh.h/2 - mouse.my
+                  else
+                    if mouse.shift then
+                      local mult = strips[tracks[track_select].strip][page].controls[macroctl_select].knobsens.fine
+                      if mult == 0 then mult = settings_defknobsens.fine end
+                      val = ctlpos + ((0.5-val)*2)*mult
+                    else
+                      local mult = strips[tracks[track_select].strip][page].controls[macroctl_select].knobsens.norm
+                      if mult == 0 then mult = settings_defknobsens.norm end
+                      val = ctlpos + (0.5-val)*mult
+                    end
+                    if val < 0 then val = 0 end
+                    if val > 1 then val = 1 end
+                    val = ctlScale(strips[tracks[track_select].strip][page].controls[macroctl_select].scalemode, val)
+                    if val ~= octlval then
+                      strips[tracks[track_select].strip][page].controls[macroctl_select].val = val
+                      SetMacro(tracks[track_select].strip, page, macroctl_select)
+                      strips[tracks[track_select].strip][page].controls[macroctl_select].dirty = true
+                      octlval = val
+                      --update_ctls = true
+                      update_surface = true
+                      --update_ctls = false
+                    end
+                  end
+                end
+                
+              elseif mouse.context and mouse.context == contexts.macsliderA then
+              
+                local v = F_limit((mouse.mx - macslide.xoff - obj.sections[403].x)/obj.sections[403].w,0,1)
+                macroctl[macslide.macparamidx].A_val = v
+                if settings_macroeditmonitor then
+                  SetMacro(tracks[track_select].strip, page, macroctl_select)
+                end
+                update_surface = true
+              
+              elseif mouse.context and mouse.context == contexts.macsliderB then
+              
+                local v = F_limit((mouse.mx - macslide.xoff - obj.sections[404].x)/obj.sections[404].w,0,1)
+                macroctl[macslide.macparamidx].B_val = v
+                if settings_macroeditmonitor then
+                  SetMacro(tracks[track_select].strip, page, macroctl_select)
+                end              
+                update_surface = true
+              
+              end
+              
+              noscroll = true
+              mouse.mx, mouse.my = mx, my
+
+            end
+          else
+            navigate = true
+            macro_edit_mode = false
+            macroctl_select = nil
+            update_gfx = true          
+          end
+
         elseif mouse.context == nil and (MOUSE_click(obj.sections[10]) or MOUSE_click_RB(obj.sections[10]) or gfx.mouse_wheel ~= 0) then
           
           local togfsnap = false
@@ -15323,6 +15919,12 @@ end
                     if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.15 and ctltype ~= 5 and ctltype ~= 2 and ctltype ~= 3 then
                       if settings_swapctrlclick == false then
                         SetParam_ToDef(i)
+                      elseif strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.macro then
+                        macro_edit_mode = true
+                        macroedit_poffs = 0
+                        trackfxparam_select = i
+                        macroctl_select = trackfxparam_select
+                        update_surface = true                 
                       else
                         SetParam_EnterVal(i)
                       end
@@ -15332,20 +15934,35 @@ end
                     end
                     
                     if ctltype == 1 then
-                                        
-                      --knob/slider
-                      if strips[tracks[track_select].strip][page].controls[i].horiz then
-                        mouse.context = contexts.sliderctl_h
-                        mouse.slideoff = ctlxywh.x+ctlxywh.w/2 - mouse.mx
+                      
+                      if strips[tracks[track_select].strip][page].controls[i].ctlcat ~= ctlcats.macro then
+                        --knob/slider
+                        if strips[tracks[track_select].strip][page].controls[i].horiz then
+                          mouse.context = contexts.sliderctl_h
+                          mouse.slideoff = ctlxywh.x+ctlxywh.w/2 - mouse.mx
+                        else
+                          mouse.context = contexts.sliderctl
+                          mouse.slideoff = ctlxywh.y+ctlxywh.h/2 - mouse.my
+                        end
+                        --knobslider = 'ks'
+                        ctlpos = ctlScaleInv(nz(strips[tracks[track_select].strip][page].controls[i].scalemode,8),
+                                             strips[tracks[track_select].strip][page].controls[i].val)
+                        trackfxparam_select = i
+                        oms = mouse.shift
                       else
-                        mouse.context = contexts.sliderctl
-                        mouse.slideoff = ctlxywh.y+ctlxywh.h/2 - mouse.my
+                        if strips[tracks[track_select].strip][page].controls[i].horiz then
+                          mouse.context = contexts.macctl_h
+                          mouse.slideoff = ctlxywh.x+ctlxywh.w/2 - mouse.mx
+                        else
+                          mouse.context = contexts.macctl
+                          mouse.slideoff = ctlxywh.y+ctlxywh.h/2 - mouse.my
+                        end
+                        --knobslider = 'ks'
+                        ctlpos = ctlScaleInv(nz(strips[tracks[track_select].strip][page].controls[i].scalemode,8),
+                                             strips[tracks[track_select].strip][page].controls[i].val)
+                        trackfxparam_select = i
+                        oms = mouse.shift                      
                       end
-                      --knobslider = 'ks'
-                      ctlpos = ctlScaleInv(nz(strips[tracks[track_select].strip][page].controls[i].scalemode,8),
-                                           strips[tracks[track_select].strip][page].controls[i].val)
-                      trackfxparam_select = i
-                      oms = mouse.shift
                       
                       --undotxt = 'Parameter Change'
                       --reaper.Undo_BeginBlock2()
@@ -15616,78 +16233,91 @@ end
                     --break
                     
                   elseif MOUSE_click_RB(ctlxywh) and mouse.ctrl == false then
-                    local mstr
-                    mm = ''
-                    if show_snapshots then
-                      mm = '!'
-                    end
                     local ccat = strips[tracks[track_select].strip][page].controls[i].ctlcat 
-                    if ccat == ctlcats.fxparam then
-                      mstr = 'MIDI learn|Modulation||Enter value||Open FX window||'..mm..'Snapshots||>Tools|<Regenerate ID   (emergency only)'
-                    elseif ccat == ctlcats.macro then
-                      mstr = 'Select Macro Parameters|Edit Macro Parameters'
+                    if ccat == ctlcats.macro then
+                     -- mstr = 'Select Macro Parameters|Edit Macro Parameters'
+                      macro_edit_mode = true
+                      macroedit_poffs = 0
+                      trackfxparam_select = i
+                      macroctl_select = trackfxparam_select
+                      update_surface = true 
                     else
-                      mstr = '#MIDI learn|#Modulation||Enter value||#Open FX window||'..mm..'Snapshots||>Tools|<Regenerate ID   (emergency only)'                  
-                    end
-                    if ccat ~= ctlcats.macro then
-                      if #strip_favs > 0 then
-                       --[[ mstr = mstr .. '||>Insert Strip'
-                        for fvs = 1, #strip_favs do
-                          if fvs == #strip_favs then
-                            mstr = mstr .. '|<' .. string.match(strip_favs[fvs],'.+%/(.-)%.')
-                          else
-                            mstr = mstr .. '|' .. string.match(strip_favs[fvs],'.+%/(.-)%.')
-                          end
-                        end]]
+                      local mstr
+                      mm = ''
+                      if show_snapshots then
+                        mm = '!'
+                      end
+                      if ccat == ctlcats.fxparam then
+                        mstr = 'MIDI learn|Modulation||Enter value||Open FX window||'..mm..'Snapshots||>Tools|<Regenerate ID   (emergency only)'
                       else
-                        mstr = mstr .. '||#>Insert strip (favorites)'                  
+                        mstr = '#MIDI learn|#Modulation||Enter value||#Open FX window||'..mm..'Snapshots||>Tools|<Regenerate ID   (emergency only)'                  
                       end
-                      trackfxparam_select = i
-                      gfx.x, gfx.y = mouse.mx, mouse.my
-                      res = OpenMenu(mstr)
-                      if res ~= 0 then
-                        if res == 1 then
-                          SetParam2(true)
-                          reaper.Main_OnCommand(41144,0,0)
-                        elseif res == 2 then
-                          SetParam2(true)
-                          reaper.Main_OnCommand(41143,0)
-                        elseif res == 3 then
-                          --EditValue(5)
-                          OpenEB(5,'Please enter value:')
-                        elseif res == 4 then
-                          local track
-                          if strips[tracks[track_select].strip][page].controls[i].tracknum == nil then
-                            track = GetTrack(tracks[track_select].tracknum)
-                          else
-                            track = GetTrack(strips[tracks[track_select].strip][page].controls[i].tracknum)                      
-                          end
-                          local fxnum = strips[tracks[track_select].strip][page].controls[i].fxnum
-                          if not reaper.TrackFX_GetOpen(track, fxnum) then
-                            reaper.TrackFX_Show(track, fxnum, 3)
-                          end
-                        elseif res == 5 then
-                          show_snapshots = not show_snapshots
-                          update_gfx = true
-                        elseif res == 6 then
-                          i = tonumber(string.format('%i',i))
-                          strips[tracks[track_select].strip][page].controls[i] = GetControlTable(i)
-                          strips[tracks[track_select].strip][page].controls[i].cid = GenID()
-                          update_gfx = true
+                      if ccat ~= ctlcats.macro then
+                        if #strip_favs > 0 then
+                         --[[ mstr = mstr .. '||>Insert Strip'
+                          for fvs = 1, #strip_favs do
+                            if fvs == #strip_favs then
+                              mstr = mstr .. '|<' .. string.match(strip_favs[fvs],'.+%/(.-)%.')
+                            else
+                              mstr = mstr .. '|' .. string.match(strip_favs[fvs],'.+%/(.-)%.')
+                            end
+                          end]]
+                        else
+                          mstr = mstr .. '||#>Insert strip (favorites)'                  
                         end
+                        trackfxparam_select = i
+                        gfx.x, gfx.y = mouse.mx, mouse.my
+                        res = OpenMenu(mstr)
+                        if res ~= 0 then
+                          if res == 1 then
+                            SetParam2(true)
+                            reaper.Main_OnCommand(41144,0,0)
+                          elseif res == 2 then
+                            SetParam2(true)
+                            reaper.Main_OnCommand(41143,0)
+                          elseif res == 3 then
+                            --EditValue(5)
+                            OpenEB(5,'Please enter value:')
+                          elseif res == 4 then
+                            local track
+                            if strips[tracks[track_select].strip][page].controls[i].tracknum == nil then
+                              track = GetTrack(tracks[track_select].tracknum)
+                            else
+                              track = GetTrack(strips[tracks[track_select].strip][page].controls[i].tracknum)                      
+                            end
+                            local fxnum = strips[tracks[track_select].strip][page].controls[i].fxnum
+                            if not reaper.TrackFX_GetOpen(track, fxnum) then
+                              reaper.TrackFX_Show(track, fxnum, 3)
+                            end
+                          elseif res == 5 then
+                            show_snapshots = not show_snapshots
+                            update_gfx = true
+                          elseif res == 6 then
+                            i = tonumber(string.format('%i',i))
+                            strips[tracks[track_select].strip][page].controls[i] = GetControlTable(i)
+                            strips[tracks[track_select].strip][page].controls[i].cid = GenID()
+                            update_gfx = true
+                          end
+                        end
+                      --[[else
+                        trackfxparam_select = i
+                        gfx.x, gfx.y = mouse.mx, mouse.my
+                        res = OpenMenu(mstr)
+                        if res ~= 0 then
+                          if res == 1 then
+                            navigate = false
+                            macro_lrn_mode = true
+                            macroctl_select = trackfxparam_select
+                            update_surface = true
+                          elseif res == 2 then
+                            macro_edit_mode = true
+                            macroedit_poffs = 0
+                            
+                            macroctl_select = trackfxparam_select
+                            update_surface = true                          
+                          end
+                        end ]]                   
                       end
-                    else
-                      trackfxparam_select = i
-                      gfx.x, gfx.y = mouse.mx, mouse.my
-                      res = OpenMenu(mstr)
-                      if res ~= 0 then
-                        if res == 1 then
-                          navigate = false
-                          macro_lrn_mode = true
-                          macroctl_select = trackfxparam_select
-                          update_surface = true
-                        end
-                      end                    
                     end
                     noscroll = true
                     --break
@@ -15715,6 +16345,12 @@ end
                   elseif MOUSE_click(ctlxywh) and mouse.ctrl then --make double_click?
                     if settings_swapctrlclick == true then
                       SetParam_ToDef(i)
+                    elseif strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.macro then
+                      macro_edit_mode = true
+                      macroedit_poffs = 0
+                      trackfxparam_select = i
+                      macroctl_select = trackfxparam_select
+                      update_surface = true                               
                     else
                       SetParam_EnterVal(i)
                     end
@@ -15902,6 +16538,44 @@ end
               end
             end
           end
+          
+        elseif mouse.context and mouse.context == contexts.macctl then
+          
+          local tfxp_s = trackfxparam_select
+          local val = MOUSE_slider(ctlxywh,mouse.slideoff)
+          if val ~= nil then
+            if oms ~= mouse.shift then
+              oms = mouse.shift
+              ctlpos = strips[tracks[track_select].strip][page].controls[tfxp_s].val
+              mouse.slideoff = ctlxywh.y+ctlxywh.h/2 - mouse.my
+            else
+              if mouse.shift then
+                local mult = strips[tracks[track_select].strip][page].controls[tfxp_s].knobsens.fine
+                if mult == 0 then mult = settings_defknobsens.fine end
+                val = ctlpos + ((0.5-val)*2)*mult
+              else
+                local mult = strips[tracks[track_select].strip][page].controls[tfxp_s].knobsens.norm
+                if mult == 0 then mult = settings_defknobsens.norm end
+                val = ctlpos + (0.5-val)*mult
+              end
+              if val < 0 then val = 0 end
+              if val > 1 then val = 1 end
+              val = ctlScale(strips[tracks[track_select].strip][page].controls[tfxp_s].scalemode, val)
+              if val ~= octlval then
+                strips[tracks[track_select].strip][page].controls[tfxp_s].val = val
+                --DBG(val)
+                SetMacro(tracks[track_select].strip, page, tfxp_s)
+                strips[tracks[track_select].strip][page].controls[tfxp_s].dirty = true
+                octlval = val
+                update_ctls = true
+                
+                trackfxparam_select = tfxp_s
+              end
+            end
+          end
+          
+          
+          
         elseif mouse.context and mouse.context == contexts.dragcycle then
           local val = MOUSE_slider(ctlxywh,mouse.slideoff)
           if val ~= nil then
@@ -16749,6 +17423,7 @@ end
                     strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].wsc = w*scale
                     strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].hsc = ctl_files[knob_select].cellh*scale
                   end
+                  SetCtlBitmapRedraw()
                   update_gfx = true
                 end
                 
@@ -17213,7 +17888,7 @@ end
                     val = ctlpos + (0.5-val)*2
                   end
                   local min,max = 0,1
-                  if strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].ctlcats == ctlcats.fxparam then
+                  if strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].ctlcat == ctlcats.fxparam then
                     min, max = GetParamMinMax_ctl(ctl_select[1].ctl)
                   end
                   if val < min then val = min end
@@ -20587,6 +21262,105 @@ end
     return pathl
   end
   
+  function Macro_Capture(strip, page, ctl, ab)
+  
+    local macro = strips[strip][page].controls[ctl].macroctl
+    for m = 1, #macro do
+
+      local ctl = macro[m].ctl
+      local v = strips[strip][page].controls[ctl].val
+      
+      if ab == 0 then
+        macro[m].A_val = v
+      else
+        macro[m].B_val = v
+      end
+    
+    end
+    
+  end
+
+  function Macros_Check(strip, page)
+  
+    local ctls = strips[strip][page].controls
+    if ctls and #ctls > 0 then
+      
+      local cids = {}
+      for c = 1,#ctls do
+        cids[ctls[c].c_id] = c
+      end    
+      
+      for c = 1,#ctls do
+    
+        if ctls[c].ctlcat == ctlcats.macro then  
+    
+          local macro = ctls[c].macroctl
+          
+          if #macro > 0 then
+          
+            local mcnt = #macro
+            for m = 1, mcnt do
+          
+              if macro[m].c_id ~= ctls[macro[m].ctl] then
+          
+                if cids[macro[m].c_id] then
+                  macro[m].ctl = cids[macro[m].c_id]
+                else
+                  --deleted
+                  macro[m] = nil
+                end
+              end
+            end
+            strips[strip][page].controls[c].macroctl = Table_RemoveNils(macro, mcnt)
+          end
+        end
+      end
+    end
+  
+  end
+  
+  function Macro_UpdateCtls(strip, page, ctl)
+
+    local macro = strips[strip][page].controls[ctl].macroctl
+    local nmacro = {}
+    local mcnt = #macro
+    for m = 1, mcnt do
+    
+      if macro[m].delete then
+        macro[m] = nil
+      end
+    
+    end
+    nmacro =  Table_RemoveNils(macro, mcnt)
+    strips[strip][page].controls[ctl].macroctl = nmacro
+  
+    update_gfx = true
+  end
+  
+  function SetMacro(strip, page, ctl)
+
+    local macro = strips[strip][page].controls[ctl].macroctl
+    if macro then
+      for m = 1, #macro do
+      
+        if macro[m].mute == false or macro[m].mute == nil then
+          local c = strips[strip][page].controls[macro[m].ctl]
+          local mv = strips[strip][page].controls[ctl].val
+          local ma = macro[m].A_val
+          local mb = macro[m].B_val
+          
+          trackfxparam_select = macro[m].ctl
+          local v = (mb - ma) * macScale(macro[m].shape,mv) + ma
+          if v ~= macro[m].oval then
+            c.val = v
+            SetParam()
+            macro[m].oval = v
+          end
+        end
+      end
+    end  
+  end
+  
   function XXY_Set(strip, page, sst)
   
     if sst > 1 then
@@ -21375,7 +22149,8 @@ end
                                       scalemode = tonumber(zn(data[key..'scalemodex'],8)),
                                       framemode = tonumber(zn(data[key..'framemodex'],1)),
                                       poslock = tobool(zn(data[key..'poslock'],false)),
-                                      horiz = tobool(zn(data[key..'horiz'],false))
+                                      horiz = tobool(zn(data[key..'horiz'],false)),
+                                      macrofader = tonumber(zn(data[key..'macrofader']))
                                      }
           g_cids[strips[ss][p].controls[c].c_id] = true
           if strips[ss][p].controls[c].maxdp == nil or (strips[ss][p].controls[c].maxdp and strips[ss][p].controls[c].maxdp == '') then
@@ -21429,7 +22204,8 @@ end
                                                         ctl = tonumber(zn(data[key..'ctl'])),
                                                         A_val = tonumber(zn(data[key..'A'],0)),
                                                         B_val = tonumber(zn(data[key..'B'],0)),
-                                                        shape = tonumber(zn(data[key..'shape'],0))} 
+                                                        shape = tonumber(zn(data[key..'shape'],0)),
+                                                        mute = tobool(zn(data[key..'mute'],false))} 
             end
           end
 
@@ -22507,6 +23283,7 @@ end
     settings_snaplistbgcol = tostring(nz(GES('snaplistbgcol',true),settings_snaplistbgcol))
     settings_savedatainprojectfolder = tobool(nz(GES('savedatainprojectfolder',true),settings_savedatainprojectfolder))
     settings_usectlbitmap = tobool(nz(GES('usectlbitmap',true),settings_usectlbitmap))
+    settings_macroeditmonitor = tobool(nz(GES('macroeditmonitor',true),settings_macroeditmonitor))
     
     local sd = tonumber(GES('strip_default',true))
     local sdf = tonumber(GES('stripfol_default',true))
@@ -22544,6 +23321,7 @@ end
     reaper.SetExtState(SCRIPT,'snaplistbgcol',settings_snaplistbgcol, true)
     reaper.SetExtState(SCRIPT,'savedatainprojectfolder',tostring(settings_savedatainprojectfolder), true)
     reaper.SetExtState(SCRIPT,'usectlbitmap',tostring(settings_usectlbitmap), true)
+    reaper.SetExtState(SCRIPT,'macroeditmonitor',tostring(settings_macroeditmonitor), true)
     
     if strip_default then
       reaper.SetExtState(SCRIPT,'strip_default',tostring(strip_default.strip_select), true)
@@ -23114,6 +23892,8 @@ end
               file:write('['..key..'xydata_snapb]'..nz(strips[s][p].controls[c].xydata.snapb,1)..'\n')
               file:write('['..key..'xydata_snapc]'..nz(strips[s][p].controls[c].xydata.snapc,1)..'\n')
               file:write('['..key..'xydata_snapd]'..nz(strips[s][p].controls[c].xydata.snapd,1)..'\n')
+
+              file:write('['..key..'macrofader]'..nz(strips[s][p].controls[c].macrofader,'')..'\n')
   
               if strips[s][p].controls[c].cycledata and strips[s][p].controls[c].cycledata.statecnt then
                 file:write('['..key..'cycledata_statecnt]'..nz(strips[s][p].controls[c].cycledata.statecnt,0)..'\n')
@@ -23144,6 +23924,7 @@ end
                   file:write('['..key..'A]'..strips[s][p].controls[c].macroctl[mc].A_val..'\n')                                 
                   file:write('['..key..'B]'..strips[s][p].controls[c].macroctl[mc].B_val..'\n')                                 
                   file:write('['..key..'shape]'..strips[s][p].controls[c].macroctl[mc].shape..'\n')                                 
+                  file:write('['..key..'mute]'..tostring(nz(strips[s][p].controls[c].macroctl[mc].mute,false))..'\n')                                 
                 end
               else
                 file:write('['..key..'macroctl_cnt]'..0 ..'\n')                                 
@@ -23703,32 +24484,18 @@ end
                   local notfoundcnt = 0
                   for d = 1, dcnt do
                   
-                      if strips[strip][page].controls[snapshots[strip][page][sst][ss].data[d].ctl] == nil or
-                         snapshots[strip][page][sst][ss].data[d].c_id ~= strips[strip][page].controls[snapshots[strip][page][sst][ss].data[d].ctl].c_id then
-                        --control numbers not match - a control has been deleted
-                        --local found = false
-                        --[[for c = 1, #strips[strip][page].controls do
-                          if strips[strip][page].controls[c] then
-                            if snapshots[strip][page][sst][ss].data[d].c_id == strips[strip][page].controls[c].c_id then
-                              found = true
-                              snapshots[strip][page][sst][ss].data[d].ctl = c
-                              break
-                            end
-                          end
-                        end]]
-                        local c = ctls[snapshots[strip][page][sst][ss].data[d].c_id]
-                        if c then
-                          --found = true
-                          snapshots[strip][page][sst][ss].data[d].ctl = c
-                        else
-                          --snapshot entry not found
-                          notfoundcnt = notfoundcnt + 1
-                          snapshots[strip][page][sst][ss].data[d] = nil
-                          ss_entry_deleted = true
-                        end
+                    if strips[strip][page].controls[snapshots[strip][page][sst][ss].data[d].ctl] == nil or
+                       snapshots[strip][page][sst][ss].data[d].c_id ~= strips[strip][page].controls[snapshots[strip][page][sst][ss].data[d].ctl].c_id then
+                      local c = ctls[snapshots[strip][page][sst][ss].data[d].c_id]
+                      if c then
+                        snapshots[strip][page][sst][ss].data[d].ctl = c
+                      else
+                        --snapshot entry not found
+                        notfoundcnt = notfoundcnt + 1
+                        snapshots[strip][page][sst][ss].data[d] = nil
+                        ss_entry_deleted = true
                       end
-                      --end
-                    --end
+                    end
                   end
                   
                   if ss_entry_deleted == true then
@@ -23742,39 +24509,20 @@ end
             if #snapshots[strip][page][sst].ctls > 0 then
                     
               local ctlcnt = #snapshots[strip][page][sst].ctls
-              --local notfoundcnt = 0
               local ctl_entry_deleted = false
               for ctl = 1, ctlcnt do
           
-                --GUI_DrawMsgX(obj, gui, 'Checking snapshots (subset '..sst..').',ctl,ctlcnt)
-                
-                --if strips[strip] and  strips[strip][page] then
                 if strips[strip][page].controls[snapshots[strip][page][sst].ctls[ctl].ctl] == nil or
                    snapshots[strip][page][sst].ctls[ctl].c_id ~= strips[strip][page].controls[snapshots[strip][page][sst].ctls[ctl].ctl].c_id then
-                  --control numbers not match - a control has been deleted
-                  --local found = false
-                  --[[for c = 1, #strips[strip][page].controls do
-                    if strips[strip][page].controls[c] then
-                      if snapshots[strip][page][sst].ctls[ctl].c_id == strips[strip][page].controls[c].c_id then
-                        found = true
-                        snapshots[strip][page][sst].ctls[ctl].ctl = c
-                        break
-                      end
-                    end
-                  end]]
                   local c = ctls[snapshots[strip][page][sst].ctls[ctl].c_id]
                   if c then
-                    --found = true
                     snapshots[strip][page][sst].ctls[ctl].ctl = c                  
                   else
                     --snapshot entry not found
-                    --notfoundcnt = notfoundcnt + 1
                     snapshots[strip][page][sst].ctls[ctl] = nil
                     ctl_entry_deleted = true
                   end
                 end
-                --else
-                --end
               end
               if ctl_entry_deleted == true then
                 snapshots[strip][page][sst].ctls = Table_RemoveNils(snapshots[strip][page][sst].ctls, ctlcnt)
@@ -23786,45 +24534,25 @@ end
               local sscnt = #snapshots[strip][page][sst].snapshot
               for ss = 1, #snapshots[strip][page][sst].snapshot do
 
-                --GUI_DrawMsgX(obj, gui, 'Checking snapshots (subset '..sst..').',ss,sscnt)
-
                 local ss_entry_deleted = false
                 local dcnt = #snapshots[strip][page][sst].snapshot[ss].data    
                 if dcnt > 0 then
                   local notfoundcnt = 0
                   for d = 1, dcnt do
                   
-                    --if snapshots[strip][page][sst][ss].data[d].ctl then
-                      --if strips[strip] and strips[strip][page] then
-                      if strips[strip][page].controls[snapshots[strip][page][sst].snapshot[ss].data[d].ctl] == nil or
-                         snapshots[strip][page][sst].snapshot[ss].data[d].c_id ~= strips[strip][page].controls[snapshots[strip][page][sst].snapshot[ss].data[d].ctl].c_id then
-                        --control numbers not match - a control has been deleted
-                        --local found = false
-                        --[[for c = 1, #strips[strip][page].controls do
-                          if strips[strip][page].controls[c] then
-                            if snapshots[strip][page][sst].snapshot[ss].data[d].c_id == strips[strip][page].controls[c].c_id then
-                              found = true
-                              snapshots[strip][page][sst].snapshot[ss].data[d].ctl = c
-                              break
-                            end
-                          end
-                        end]]
-                        
-                        local c = ctls[snapshots[strip][page][sst].snapshot[ss].data[d].c_id]
-                        if c then
-                          --found = true
-                          snapshots[strip][page][sst].snapshot[ss].data[d].ctl = c
-                        else
-                          --snapshot entry not found
-                          notfoundcnt = notfoundcnt + 1
-                          snapshots[strip][page][sst].snapshot[ss].data[d] = nil
-                          ss_entry_deleted = true
-                        end
-                      end
-                      --else
+                    if strips[strip][page].controls[snapshots[strip][page][sst].snapshot[ss].data[d].ctl] == nil or
+                       snapshots[strip][page][sst].snapshot[ss].data[d].c_id ~= strips[strip][page].controls[snapshots[strip][page][sst].snapshot[ss].data[d].ctl].c_id then
                       
-                      --end
-                    --end
+                      local c = ctls[snapshots[strip][page][sst].snapshot[ss].data[d].c_id]
+                      if c then
+                        snapshots[strip][page][sst].snapshot[ss].data[d].ctl = c
+                      else
+                        --snapshot entry not found
+                        notfoundcnt = notfoundcnt + 1
+                        snapshots[strip][page][sst].snapshot[ss].data[d] = nil
+                        ss_entry_deleted = true
+                      end
+                    end
                   end
                   
                   if ss_entry_deleted == true then
@@ -24851,6 +25579,7 @@ end
     xxypath_tres = 400
     
     macro_lrn_mode = false
+    macro_edit_mode = false
     eq_edit = false
     
     ctl_page = 0
@@ -24927,6 +25656,84 @@ end
     return v^mm
   
   end
+  
+  function macScale(m, v)
+    if m == 1 then
+      return v
+    elseif m == 2 then
+      return inSine(v)
+    elseif m == 3 then
+      return outSine(v)    
+    elseif m == 4 then
+      return inOutSine(v)        
+    elseif m == 5 then
+      return inCubic(v)
+    elseif m == 6 then
+      return outCubic(v)
+    elseif m == 7 then
+      return inOutCubic(v)
+    elseif m == 8 then
+      return inQuart(v)
+    elseif m == 9 then
+      return outQuart(v)
+    elseif m == 10 then
+      return inOutQuart(v)
+    else
+      return v
+    end
+  end
+  
+  --b=0 c=1 d=1
+  function inSine(t)
+    return -1 * math.cos(t * (pi / 2)) + 1
+  end
+  
+  function outSine(t)
+    return 1 * math.sin(t * (pi / 2))
+  end
+  
+  function inOutSine(t)
+    return -1/2 * (math.cos(pi * t) - 1)
+  end
+  
+  function inCubic(t)
+    return t^3
+  end
+  
+  function outCubic(t)
+    t = t - 1
+    return t^3 + 1
+  end
+  
+  function inOutCubic(t)
+    t = t * 2
+    if t < 1 then
+      return 1/2 * t * t * t
+    else
+      t = t - 2
+      return 1/2 * (t * t * t + 2)
+    end
+  end
+  
+  function inQuart(t)
+    return t^4
+  end
+  
+  function outQuart(t)
+    t = t - 1
+    return -1 * (t^4 - 1)
+  end
+  
+  function inOutQuart(t)
+    t = t * 2
+    if t < 1 then
+      return 1/2 * t^4
+    else
+      t = t - 2
+      return -1/2 * (t^4 - 2)
+    end
+  end
+  
   
   function inQuint(t)
     return t^5
@@ -25335,6 +26142,7 @@ end
                           wheel = 0.05,
                           wheelfine = 0.003}
   settings_usectlbitmap = false
+  settings_macroeditmonitor = false
   eq_scale = true
   eq_single = false
   
