@@ -15671,13 +15671,20 @@ end
 
               if mouse.context == nil and MOUSE_click(obj.sections[410]) then
               
-                local i = macroctl_select
-                mouse.context = contexts.macctl2
-                mouse.slideoff = obj.sections[410].y+obj.sections[410].h/2 - mouse.my
-                ctlpos = ctlScaleInv(nz(strips[tracks[track_select].strip][page].controls[i].scalemode,8),
-                                     strips[tracks[track_select].strip][page].controls[i].val)
-                oms = mouse.shift
-
+                if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.15 then
+                  local i = macroctl_select
+                  strips[tracks[track_select].strip][page].controls[i].val = strips[tracks[track_select].strip][page].controls[i].defval
+                  SetMacro(tracks[track_select].strip,page,i)
+                  update_surface = true
+                else
+                  local i = macroctl_select
+                  mouse.context = contexts.macctl2
+                  mouse.slideoff = obj.sections[410].y+obj.sections[410].h/2 - mouse.my
+                  ctlpos = ctlScaleInv(nz(strips[tracks[track_select].strip][page].controls[i].scalemode,8),
+                                       strips[tracks[track_select].strip][page].controls[i].val)
+                  oms = mouse.shift
+                end
+                
               elseif mouse.context == nil and MOUSE_click(xywh_403) then
                 local yy = math.floor((mouse.my - obj.sections[403].y)/macroedit.sech)
                 if macroctl[(yy+1)+macroedit_poffs] then
@@ -21330,19 +21337,21 @@ end
   function Macro_UpdateCtls(strip, page, ctl)
 
     local macro = strips[strip][page].controls[ctl].macroctl
-    local nmacro = {}
-    local mcnt = #macro
-    for m = 1, mcnt do
-    
-      if macro[m].delete then
-        macro[m] = nil
+    if macro then
+      local nmacro = {}
+      local mcnt = #macro
+      for m = 1, mcnt do
+      
+        if macro[m].delete then
+          macro[m] = nil
+        end
+      
       end
+      nmacro =  Table_RemoveNils(macro, mcnt)
+      strips[strip][page].controls[ctl].macroctl = nmacro
     
-    end
-    nmacro =  Table_RemoveNils(macro, mcnt)
-    strips[strip][page].controls[ctl].macroctl = nmacro
-  
-    update_gfx = true
+      update_gfx = true
+    end 
   end
   
   function SetMacro(strip, page, ctl)
