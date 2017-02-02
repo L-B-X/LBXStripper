@@ -1365,7 +1365,7 @@
       
       obj.sections[402] = {x = 20,
                            y = macroedit.secyoff,
-                           w = 200,
+                           w = 250,
                            h = macroedit.sech}
       --A
       obj.sections[403] = {x = obj.sections[402].x+obj.sections[402].w+20,
@@ -1421,6 +1421,15 @@
                            y = 30,
                            w = obj.sections[403].w-20,
                            h = butt_h} 
+
+      obj.sections[414] = {x = obj.sections[402].x+obj.sections[402].w-75,
+                           y = macroedit.secyoff,
+                           w = 20,
+                           h = macroedit.h} 
+      obj.sections[415] = {x = obj.sections[402].x+obj.sections[402].w-50,
+                           y = macroedit.secyoff,
+                           w = 20,
+                           h = macroedit.h} 
            
     return obj
   end
@@ -4643,7 +4652,8 @@ end
                     Disp_Name = ctlnmov
                   end
                 elseif ctlcat == ctlcats.macro then
-                  spv = false
+                  --spv = false
+                  Disp_ParamV = round(ctl.val,2)
                   if nz(ctlnmov,'') == '' then
                     Disp_Name = pname
                   else
@@ -7219,6 +7229,46 @@ end
                    xywh.h, 0)
           GUI_textC(gui, xywh, 'M', gui.color.black, -2)
 
+          xywh = {x = obj.sections[414].x,
+                  y = obj.sections[414].y + mm*macroedit.sech + 0.5*macroedit.sech - 10,
+                  w = obj.sections[414].w,
+                  h = 20}
+          if macro[m].bi then
+            f_Get_SSV('255 204 0')
+          else
+            f_Get_SSV('160 160 160')
+          end
+          gfx.rect(xywh.x,
+                   xywh.y, 
+                   xywh.w,
+                   xywh.h, 1)
+          f_Get_SSV(gui.color.black)              
+          gfx.rect(xywh.x,
+                   xywh.y, 
+                   xywh.w,
+                   xywh.h, 0)
+          GUI_textC(gui, xywh, 'BI', gui.color.black, -5)
+
+          xywh = {x = obj.sections[415].x,
+                  y = obj.sections[415].y + mm*macroedit.sech + 0.5*macroedit.sech - 10,
+                  w = obj.sections[415].w,
+                  h = 20}
+          if macro[m].inv then
+            f_Get_SSV('255 204 0')
+          else
+            f_Get_SSV('160 160 160')
+          end
+          gfx.rect(xywh.x,
+                   xywh.y, 
+                   xywh.w,
+                   xywh.h, 1)
+          f_Get_SSV(gui.color.black)              
+          gfx.rect(xywh.x,
+                   xywh.y, 
+                   xywh.w,
+                   xywh.h, 0)
+          GUI_textC(gui, xywh, 'INV', gui.color.black, -5)
+
           xywh = {x = obj.sections[407].x,
                   y = obj.sections[407].y + mm*macroedit.sech + 0.5*macroedit.sech - 10,
                   w = obj.sections[407].w,
@@ -7268,7 +7318,13 @@ end
             f_Get_SSV(gui.color.blue)
           end
           gfx.a = 0.6
-          gfx.line(obj.sections[403].x + p*obj.sections[403].w,py,obj.sections[403].x + p2*obj.sections[403].w,py)
+          if macro[m+macroedit_poffs].bi == true then
+            x1 = F_limit(p*obj.sections[403].w - p2*obj.sections[403].w,0,obj.sections[403].w)
+            x2 = F_limit(p*obj.sections[403].w + p2*obj.sections[403].w,0,obj.sections[403].w)
+            gfx.line(obj.sections[403].x + x1,py,obj.sections[403].x + x2,py)          
+          else
+            gfx.line(obj.sections[403].x + p*obj.sections[403].w,py,obj.sections[403].x + p2*obj.sections[403].w,py)
+          end
           gfx.a = 1
           f_Get_SSV('160 160 160')
           gfx.rect(xywh.x,
@@ -7302,7 +7358,11 @@ end
             f_Get_SSV(gui.color.blue)
           end
           gfx.a = 0.6
-          gfx.line(obj.sections[404].x + p*obj.sections[404].w,py,obj.sections[404].x + p2*obj.sections[404].w,py)
+          if macro[m+macroedit_poffs].bi == true then
+            gfx.line(obj.sections[404].x,py,obj.sections[404].x + p2*obj.sections[404].w,py)
+          else
+            gfx.line(obj.sections[404].x + p*obj.sections[404].w,py,obj.sections[404].x + p2*obj.sections[404].w,py)
+          end
           gfx.a = 1
           f_Get_SSV('160 160 160')
           gfx.rect(xywh.x,
@@ -9466,6 +9526,8 @@ end
         end        
       elseif cc == ctlcats.fxoffline then
         ToggleFXOffline(tracks[track_select].strip, page, trackfxparam_select, tracks[track_select].tracknum)
+      elseif cc == ctlcats.macro then
+        SetMacro(tracks[track_select].strip, page, trackfxparam_select)
       end
     end
       
@@ -10133,6 +10195,14 @@ end
       
       end
     
+    elseif strips[tracks[track_select].strip][page].controls[trackfxparam_select].ctlcat == ctlcats.macro then
+      local v = tonumber(txt)
+      if v then
+        strips[tracks[track_select].strip][page].controls[trackfxparam_select].val = F_limit(v,0,1)
+        strips[tracks[track_select].strip][page].controls[trackfxparam_select].dirty = true
+        SetParam()
+      end
+          
     else
       if strips[tracks[track_select].strip][page].controls[trackfxparam_select].ctltype == 4 then
         --cycle
@@ -12836,7 +12906,7 @@ end
   
   function SetParam_EnterVal(i)
   
-    if strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.macro then return end
+    --if strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.macro then return end
     
     local ctltype = strips[tracks[track_select].strip][page].controls[i].ctltype
     if ctltype == 1 then
@@ -14462,7 +14532,8 @@ end
                                                                                             ctl = i,
                                                                                             A_val = 0,
                                                                                             B_val = 1,
-                                                                                            shape = 1}
+                                                                                            shape = 1,
+                                                                                            bi = false}
                         end
                       end
                     end
@@ -14517,7 +14588,8 @@ end
                                                                                       ctl = i,
                                                                                       A_val = 0,
                                                                                       B_val = 1,
-                                                                                      shape = 1}
+                                                                                      shape = 1,
+                                                                                      bi = false}
                     strips[tracks[track_select].strip][page].controls[i].dirty = true
                   end
                 end
@@ -15760,6 +15832,45 @@ end
                   end
                 end    
 
+              elseif mouse.context == nil and MOUSE_click(obj.sections[414]) then
+                local yy = math.floor((mouse.my - obj.sections[414].y)/macroedit.sech)
+                if macroctl[(yy+1)+macroedit_poffs] then
+                  local xywh = {x = obj.sections[414].x,
+                                y = obj.sections[414].y + yy*macroedit.sech + 0.5*macroedit.sech - 10,
+                                w = obj.sections[414].w,
+                                h = 20}                
+                  if MOUSE_over(xywh) then
+                
+                    macroctl[(yy+1)+macroedit_poffs].bi = not nz(macroctl[(yy+1)+macroedit_poffs].bi,false)
+                    if settings_macroeditmonitor then
+                      SetMacro(tracks[track_select].strip,page,macroctl_select)
+                    end
+
+                    update_surface = true
+                    
+                  end
+                end    
+
+              elseif mouse.context == nil and MOUSE_click(obj.sections[415]) then
+                local yy = math.floor((mouse.my - obj.sections[415].y)/macroedit.sech)
+                if macroctl[(yy+1)+macroedit_poffs] then
+                  local xywh = {x = obj.sections[415].x,
+                                y = obj.sections[415].y + yy*macroedit.sech + 0.5*macroedit.sech - 10,
+                                w = obj.sections[415].w,
+                                h = 20}                
+                  if MOUSE_over(xywh) then
+                
+                    macroctl[(yy+1)+macroedit_poffs].inv = not nz(macroctl[(yy+1)+macroedit_poffs].inv,false)
+                    if settings_macroeditmonitor then
+                      SetMacro(tracks[track_select].strip,page,macroctl_select)
+                    end
+
+                    update_surface = true
+                    
+                  end
+                end    
+
+
               elseif mouse.context == nil and MOUSE_click(obj.sections[407]) then
                 local yy = math.floor((mouse.my - obj.sections[407].y)/macroedit.sech)
                 if macroctl[(yy+1)+macroedit_poffs] then
@@ -15934,12 +16045,12 @@ end
                     if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.15 and ctltype ~= 5 and ctltype ~= 2 and ctltype ~= 3 then
                       if settings_swapctrlclick == false then
                         SetParam_ToDef(i)
-                      elseif strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.macro then
+                      --[[elseif strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.macro then
                         macro_edit_mode = true
                         macroedit_poffs = 0
                         trackfxparam_select = i
                         macroctl_select = trackfxparam_select
-                        update_surface = true                 
+                        update_surface = true ]]                
                       else
                         SetParam_EnterVal(i)
                       end
@@ -16360,12 +16471,13 @@ end
                   elseif MOUSE_click(ctlxywh) and mouse.ctrl then --make double_click?
                     if settings_swapctrlclick == true then
                       SetParam_ToDef(i)
-                    elseif strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.macro then
-                      macro_edit_mode = true
+                    --elseif strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.macro then
+                      --[[macro_edit_mode = true
                       macroedit_poffs = 0
                       trackfxparam_select = i
                       macroctl_select = trackfxparam_select
-                      update_surface = true                               
+                      update_surface = true   ]]
+                      --SetParam_ToDef(i)                            
                     else
                       SetParam_EnterVal(i)
                     end
@@ -16388,6 +16500,7 @@ end
                       end
                       strips[tracks[track_select].strip][page].controls[i].val = F_limit(strips[tracks[track_select].strip][page].controls[i].val+v,0,1)
                       SetParam()
+                      strips[tracks[track_select].strip][page].controls[i].dirty = true
                       update_ctls = true
                       gfx.mouse_wheel = 0
                     elseif ctltype == 4 then
@@ -21394,17 +21507,45 @@ end
       for m = 1, #macro do
       
         if macro[m].mute == false or macro[m].mute == nil then
-          local c = strips[strip][page].controls[macro[m].ctl]
-          local mv = strips[strip][page].controls[ctl].val
-          local ma = macro[m].A_val
-          local mb = macro[m].B_val
+          if macro[m].bi == true then
+
+            local c = strips[strip][page].controls[macro[m].ctl]
+            local mv = strips[strip][page].controls[ctl].val
+            local ma = macro[m].A_val
+            local mb = macro[m].B_val
+            
+            trackfxparam_select = macro[m].ctl
+            
+            local v
+            if macro[m].inv then
+              v = F_limit(ma - macScale(macro[m].shape,(mv-0.5)*2) * mb,F_limit(ma-mb,0,1),F_limit(ma+mb,0,1))            
+            else
+              v = F_limit(ma + macScale(macro[m].shape,(mv-0.5)*2) * mb,F_limit(ma-mb,0,1),F_limit(ma+mb,0,1))
+            end
+            if v ~= macro[m].oval then
+              c.val = v
+              SetParam()
+              macro[m].oval = v
+            end
           
-          trackfxparam_select = macro[m].ctl
-          local v = (mb - ma) * macScale(macro[m].shape,mv) + ma
-          if v ~= macro[m].oval then
-            c.val = v
-            SetParam()
-            macro[m].oval = v
+          else
+            local c = strips[strip][page].controls[macro[m].ctl]
+            local mv = strips[strip][page].controls[ctl].val
+            local ma = macro[m].A_val
+            local mb = macro[m].B_val
+            
+            trackfxparam_select = macro[m].ctl
+            local v
+            if macro[m].inv then            
+              v = (ma - mb) * macScale(macro[m].shape,mv) + mb              
+            else
+              v = (mb - ma) * macScale(macro[m].shape,mv) + ma
+            end
+            if v ~= macro[m].oval then
+              c.val = v
+              SetParam()
+              macro[m].oval = v
+            end
           end
         end
       end
@@ -22255,7 +22396,9 @@ end
                                                         A_val = tonumber(zn(data[key..'A'],0)),
                                                         B_val = tonumber(zn(data[key..'B'],0)),
                                                         shape = tonumber(zn(data[key..'shape'],0)),
-                                                        mute = tobool(zn(data[key..'mute'],false))} 
+                                                        mute = tobool(zn(data[key..'mute'],false)),
+                                                        bi = tobool(zn(data[key..'bi'],false)), 
+                                                        inv = tobool(zn(data[key..'inv'],false))} 
             end
           end
 
@@ -23975,6 +24118,8 @@ end
                   file:write('['..key..'B]'..strips[s][p].controls[c].macroctl[mc].B_val..'\n')                                 
                   file:write('['..key..'shape]'..strips[s][p].controls[c].macroctl[mc].shape..'\n')                                 
                   file:write('['..key..'mute]'..tostring(nz(strips[s][p].controls[c].macroctl[mc].mute,false))..'\n')                                 
+                  file:write('['..key..'bi]'..tostring(nz(strips[s][p].controls[c].macroctl[mc].bi,false))..'\n')
+                  file:write('['..key..'inv]'..tostring(nz(strips[s][p].controls[c].macroctl[mc].inv,false))..'\n')                                 
                 end
               else
                 file:write('['..key..'macroctl_cnt]'..0 ..'\n')                                 
@@ -25735,7 +25880,11 @@ end
   
   --b=0 c=1 d=1
   function inSine(t)
-    return -1 * math.cos(t * (pi / 2)) + 1
+    if t < 0 then
+      return -(-1 * math.cos(-t * (pi / 2)) + 1)
+    else
+      return -1 * math.cos(t * (pi / 2)) + 1
+    end
   end
   
   function outSine(t)
@@ -25743,7 +25892,11 @@ end
   end
   
   function inOutSine(t)
-    return -1/2 * (math.cos(pi * t) - 1)
+    if t < 0 then
+      return 1/2 * (math.cos(pi * t) - 1)
+    else
+      return -1/2 * (math.cos(pi * t) - 1)
+    end
   end
   
   function inCubic(t)
@@ -25751,36 +25904,71 @@ end
   end
   
   function outCubic(t)
-    t = t - 1
-    return t^3 + 1
+    if t < 0 then
+      t = -t - 1
+      return -(t^3 + 1)
+    else
+      t = t - 1
+      return t^3 + 1
+    end
   end
   
   function inOutCubic(t)
-    t = t * 2
-    if t < 1 then
-      return 1/2 * t * t * t
+    if t < 0 then
+      t = -t * 2
+      if t < 1 then
+        return -(1/2 * t * t * t)
+      else
+        t = t - 2
+        return -(1/2 * (t * t * t + 2))
+      end
     else
-      t = t - 2
-      return 1/2 * (t * t * t + 2)
+      t = t * 2
+      if t < 1 then
+        return 1/2 * t * t * t
+      else
+        t = t - 2
+        return 1/2 * (t * t * t + 2)
+      end
     end
   end
   
   function inQuart(t)
-    return t^4
+  
+    if t < 0 then
+      return -(t^4)
+    else
+      return t^4
+    end
   end
   
   function outQuart(t)
-    t = t - 1
-    return -1 * (t^4 - 1)
+    if t < 0 then
+      t = -t - 1
+      return -(-1 * (t^4 - 1))    
+    else
+      t = t - 1
+      return -1 * (t^4 - 1)
+    end
   end
   
   function inOutQuart(t)
-    t = t * 2
-    if t < 1 then
-      return 1/2 * t^4
+    if t < 0 then
+      t = -t * 2
+      if t < 1 then
+        return -(1/2 * t^4)
+      else
+        t = t - 2
+        return -(-1/2 * (t^4 - 2))
+      end
     else
-      t = t - 2
-      return -1/2 * (t^4 - 2)
+      t = t * 2
+      if t < 1 then
+        return 1/2 * t^4
+      else
+        t = t - 2
+        return -1/2 * (t^4 - 2)
+      end
     end
   end
   
