@@ -7109,181 +7109,193 @@ end
     local macro = strips[tracks[track_select].strip][page].controls[macroctl_select].macroctl
     gfx.dest = 1008
     local w, h = gfx.getimgdim(1008)
-    if obj.sections[300].w ~= w or obj.sections[300].h ~= h or update_gfx or update_surface then
-      gfx.setimgdim(1008, obj.sections[300].w, obj.sections[300].h)
-    
-      f_Get_SSV(gui.color.black)
-      gfx.rect(0,
-               0, 
-               obj.sections[300].w,
-               obj.sections[300].h, 1)
-      f_Get_SSV(gui.color.white)
-      gfx.rect(0,
-               0, 
-               obj.sections[300].w,
-               obj.sections[300].h, 0)
+    local update_size
+    if obj.sections[300].w ~= w or obj.sections[300].h ~= h then update_size = true update_gfx = true end
+    if update_gfx or update_surface or update_macroedit then
+      if update_size then
+        gfx.setimgdim(1008, obj.sections[300].w, obj.sections[300].h)
+      end
+      
+      if update_gfx or update_surface then
+        f_Get_SSV(gui.color.black)
+        gfx.rect(0,
+                 0, 
+                 obj.sections[300].w,
+                 obj.sections[300].h, 1)
+        f_Get_SSV(gui.color.white)
+        gfx.rect(0,
+                 0, 
+                 obj.sections[300].w,
+                 obj.sections[300].h, 0)
+  
+        local xywh = {x = obj.sections[401].x+8,
+                      y = obj.sections[401].y+8,
+                      w = obj.sections[401].w-16,
+                      h = obj.sections[401].h-16}
+        gfx.rect(obj.sections[401].x,
+                 obj.sections[401].y, 
+                 obj.sections[401].w,
+                 obj.sections[401].h, 1)
+        f_Get_SSV(gui.color.black)
+        gfx.line(xywh.x,xywh.y,xywh.x+xywh.w,xywh.y+xywh.h,1)
+        gfx.line(xywh.x+xywh.w,xywh.y,xywh.x,xywh.y+xywh.h,1)
 
-      local xywh = {x = obj.sections[401].x+8,
-                    y = obj.sections[401].y+8,
-                    w = obj.sections[401].w-16,
-                    h = obj.sections[401].h-16}
-      gfx.rect(obj.sections[401].x,
-               obj.sections[401].y, 
-               obj.sections[401].w,
-               obj.sections[401].h, 1)
-      f_Get_SSV(gui.color.black)
-      gfx.line(xywh.x,xywh.y,xywh.x+xywh.w,xywh.y+xywh.h,1)
-      gfx.line(xywh.x+xywh.w,xywh.y,xywh.x,xywh.y+xywh.h,1)
-
+        local xywh = {x = obj.sections[408].x,
+                      y = obj.sections[408].y - obj.sections[408].h,
+                      w = obj.sections[408].w,
+                      h = obj.sections[408].h}
+                      
+        GUI_textC(gui,xywh,'AUTOMATION',gui.color.white,-2)
+        local macrofader = strips[tracks[track_select].strip][page].controls[macroctl_select].macrofader
+        if macrofader then
+          GUI_DrawButton(gui, 'FADER '..string.format('%i',macrofader), obj.sections[408], gui.color.white, gui.color.black, true, '', false)      
+        else
+          GUI_DrawButton(gui, 'NONE', obj.sections[408], gui.color.white, gui.color.black, false, '', false)
+        end
+        GUI_DrawButton(gui, 'ADD PARAMETERS', obj.sections[409], '160 160 160', gui.color.black, true, '', false)      
+        GUI_DrawButton(gui, 'CAPTURE A', obj.sections[411], '160 160 160', gui.color.black, true, '', false)      
+        GUI_DrawButton(gui, 'CAPTURE B', obj.sections[412], '160 160 160', gui.color.black, true, '', false)      
+        GUI_DrawButton(gui, 'MONITOR', obj.sections[413], '160 160 160', gui.color.black, settings_macroeditmonitor, '', false)      
+      end
+  
       local w = gfx.getimgdim(def_eqcknobf)
       local h = ctl_files[def_eqcknobfctl].cellh
       local frames = ctl_files[def_eqcknobfctl].frames-1
       local v = math.floor(strips[tracks[track_select].strip][page].controls[macroctl_select].val*frames)
+      f_Get_SSV(gui.color.black)
+      gfx.rect(obj.sections[410].x,
+               obj.sections[410].y,
+               obj.sections[410].w,
+               obj.sections[410].h,1)          
+      
       gfx.blit(def_eqcknobf, 1, 0, 0, v* h, w, h, obj.sections[410].x, obj.sections[410].y)
       --xywh.y = xywh.y + 30
-      --GUI_textC(gui,xywh,roundX(freq_d,1, suffix),gui.color.white,-2)
-    
-      local xywh = {x = obj.sections[408].x,
-                    y = obj.sections[408].y - obj.sections[408].h,
-                    w = obj.sections[408].w,
-                    h = obj.sections[408].h}
-                    
-      GUI_textC(gui,xywh,'AUTOMATION',gui.color.white,-2)
-      local macrofader = strips[tracks[track_select].strip][page].controls[macroctl_select].macrofader
-      if macrofader then
-        GUI_DrawButton(gui, 'FADER '..string.format('%i',macrofader), obj.sections[408], gui.color.white, gui.color.black, true, '', false)      
-      else
-        GUI_DrawButton(gui, 'NONE', obj.sections[408], gui.color.white, gui.color.black, false, '', false)
-      end
-      GUI_DrawButton(gui, 'ADD PARAMETERS', obj.sections[409], '160 160 160', gui.color.black, true, '', false)      
-      GUI_DrawButton(gui, 'CAPTURE A', obj.sections[411], '160 160 160', gui.color.black, true, '', false)      
-      GUI_DrawButton(gui, 'CAPTURE B', obj.sections[412], '160 160 160', gui.color.black, true, '', false)      
-      GUI_DrawButton(gui, 'MONITOR', obj.sections[413], '160 160 160', gui.color.black, settings_macroeditmonitor, '', false)      
+      --GUI_textC(gui,xywh,roundX(freq_d,1, suffix),gui.color.white,-2)    
     
       for m = 1, macroedit.pcnt do
       
         local mm = m-1
+        
         if macro and macro[m+macroedit_poffs] then
+
           local ctl = strips[tracks[track_select].strip][page].controls[macro[m+macroedit_poffs].ctl]
-          local xywh = {x = obj.sections[402].x,
-                        y = obj.sections[402].y + mm*macroedit.sech +2,
-                        w = obj.sections[402].w+6,
-                        h = macroedit.sech-4}          
-          f_Get_SSV('32 32 32')              
-          gfx.rect(xywh.x,
-                   xywh.y, 
-                   xywh.w,
-                   xywh.h, 1)
-          local xywh = {x = obj.sections[403].x - macroedit.sliderw*0.5-6,
-                        y = obj.sections[403].y + mm*macroedit.sech +2,
-                        w = obj.sections[403].w + macroedit.sliderw+12,
-                        h = macroedit.sech-4}          
-          f_Get_SSV('32 32 32')              
-          gfx.rect(xywh.x,
-                   xywh.y, 
-                   xywh.w,
-                   xywh.h, 1)
-          local xywh = {x = obj.sections[404].x - macroedit.sliderw*0.5-6,
-                        y = obj.sections[404].y + mm*macroedit.sech +2,
-                        w = obj.sections[404].w + macroedit.sliderw+12,
-                        h = macroedit.sech-4}          
-          f_Get_SSV('32 32 32')              
-          gfx.rect(xywh.x,
-                   xywh.y, 
-                   xywh.w,
-                   xywh.h, 1)
-          local xywh = {x = obj.sections[405].x,
-                        y = obj.sections[405].y + mm*macroedit.sech +2,
-                        w = obj.sections[405].w,
-                        h = macroedit.sech-4}
-          f_Get_SSV('32 32 32')              
-          gfx.rect(xywh.x,
-                   xywh.y, 
-                   xywh.w,
-                   xywh.h, 1)
-          GUI_textC(gui, xywh, macroscale_table[macro[m+macroedit_poffs].shape], gui.color.white, -2)          
-          
-          xywh = {x = obj.sections[402].x+30,
-                  y = obj.sections[402].y + mm*macroedit.sech,
-                  w = obj.sections[402].w,
-                  h = macroedit.sech}
-          GUI_textsm_LJ(gui, xywh, ctl.param_info.paramname, gui.color.white, -2, xywh.w)
 
-          xywh = {x = obj.sections[406].x,
-                  y = obj.sections[406].y + mm*macroedit.sech + 0.5*macroedit.sech - 10,
-                  w = obj.sections[406].w,
-                  h = 20}
-          if macro[m].mute then
-            f_Get_SSV('255 204 0')
-          else
-            f_Get_SSV('160 160 160')
+          if update_gfx or update_surface then
+            local xywh = {x = obj.sections[402].x,
+                          y = obj.sections[402].y + mm*macroedit.sech +2,
+                          w = obj.sections[402].w+6,
+                          h = macroedit.sech-4}          
+            f_Get_SSV('32 32 32')              
+            gfx.rect(xywh.x,
+                     xywh.y, 
+                     xywh.w,
+                     xywh.h, 1)
+  
+            local xywh = {x = obj.sections[404].x - macroedit.sliderw*0.5-6,
+                          y = obj.sections[404].y + mm*macroedit.sech +2,
+                          w = obj.sections[404].w + macroedit.sliderw+12,
+                          h = macroedit.sech-4}          
+            f_Get_SSV('32 32 32')              
+            gfx.rect(xywh.x,
+                     xywh.y, 
+                     xywh.w,
+                     xywh.h, 1)
+            local xywh = {x = obj.sections[405].x,
+                          y = obj.sections[405].y + mm*macroedit.sech +2,
+                          w = obj.sections[405].w,
+                          h = macroedit.sech-4}
+            f_Get_SSV('32 32 32')              
+            gfx.rect(xywh.x,
+                     xywh.y, 
+                     xywh.w,
+                     xywh.h, 1)
+            GUI_textC(gui, xywh, macroscale_table[macro[m+macroedit_poffs].shape], gui.color.white, -2)          
+            
+            xywh = {x = obj.sections[402].x+30,
+                    y = obj.sections[402].y + mm*macroedit.sech,
+                    w = obj.sections[402].w,
+                    h = macroedit.sech}
+            GUI_textsm_LJ(gui, xywh, ctl.param_info.paramname, gui.color.white, -2, xywh.w)
+  
+            xywh = {x = obj.sections[406].x,
+                    y = obj.sections[406].y + mm*macroedit.sech + 0.5*macroedit.sech - 10,
+                    w = obj.sections[406].w,
+                    h = 20}
+            if macro[m+macroedit_poffs].mute then
+              f_Get_SSV('255 204 0')
+            else
+              f_Get_SSV('160 160 160')
+            end
+            gfx.rect(xywh.x,
+                     xywh.y, 
+                     xywh.w,
+                     xywh.h, 1)
+            f_Get_SSV(gui.color.black)              
+            gfx.rect(xywh.x,
+                     xywh.y, 
+                     xywh.w,
+                     xywh.h, 0)
+            GUI_textC(gui, xywh, 'M', gui.color.black, -2)
+  
+            xywh = {x = obj.sections[414].x,
+                    y = obj.sections[414].y + mm*macroedit.sech + 0.5*macroedit.sech - 10,
+                    w = obj.sections[414].w,
+                    h = 20}
+            if macro[m+macroedit_poffs].bi then
+              f_Get_SSV('255 204 0')
+            else
+              f_Get_SSV('160 160 160')
+            end
+            gfx.rect(xywh.x,
+                     xywh.y, 
+                     xywh.w,
+                     xywh.h, 1)
+            f_Get_SSV(gui.color.black)              
+            gfx.rect(xywh.x,
+                     xywh.y, 
+                     xywh.w,
+                     xywh.h, 0)
+            GUI_textC(gui, xywh, 'BI', gui.color.black, -5)
+  
+            xywh = {x = obj.sections[415].x,
+                    y = obj.sections[415].y + mm*macroedit.sech + 0.5*macroedit.sech - 10,
+                    w = obj.sections[415].w,
+                    h = 20}
+            if macro[m+macroedit_poffs].inv then
+              f_Get_SSV('255 204 0')
+            else
+              f_Get_SSV('160 160 160')
+            end
+            gfx.rect(xywh.x,
+                     xywh.y, 
+                     xywh.w,
+                     xywh.h, 1)
+            f_Get_SSV(gui.color.black)              
+            gfx.rect(xywh.x,
+                     xywh.y, 
+                     xywh.w,
+                     xywh.h, 0)
+            GUI_textC(gui, xywh, 'INV', gui.color.black, -5)
+  
+            xywh = {x = obj.sections[407].x,
+                    y = obj.sections[407].y + mm*macroedit.sech + 0.5*macroedit.sech - 10,
+                    w = obj.sections[407].w,
+                    h = 20}
+            f_Get_SSV('160 160 160')              
+            gfx.rect(xywh.x,
+                     xywh.y, 
+                     xywh.w,
+                     xywh.h, 1)
+            f_Get_SSV(gui.color.black)              
+            gfx.rect(xywh.x,
+                     xywh.y, 
+                     xywh.w,
+                     xywh.h, 0)
+            GUI_textC(gui, xywh, 'X', gui.color.black, -2)
+  
           end
-          gfx.rect(xywh.x,
-                   xywh.y, 
-                   xywh.w,
-                   xywh.h, 1)
-          f_Get_SSV(gui.color.black)              
-          gfx.rect(xywh.x,
-                   xywh.y, 
-                   xywh.w,
-                   xywh.h, 0)
-          GUI_textC(gui, xywh, 'M', gui.color.black, -2)
 
-          xywh = {x = obj.sections[414].x,
-                  y = obj.sections[414].y + mm*macroedit.sech + 0.5*macroedit.sech - 10,
-                  w = obj.sections[414].w,
-                  h = 20}
-          if macro[m].bi then
-            f_Get_SSV('255 204 0')
-          else
-            f_Get_SSV('160 160 160')
-          end
-          gfx.rect(xywh.x,
-                   xywh.y, 
-                   xywh.w,
-                   xywh.h, 1)
-          f_Get_SSV(gui.color.black)              
-          gfx.rect(xywh.x,
-                   xywh.y, 
-                   xywh.w,
-                   xywh.h, 0)
-          GUI_textC(gui, xywh, 'BI', gui.color.black, -5)
 
-          xywh = {x = obj.sections[415].x,
-                  y = obj.sections[415].y + mm*macroedit.sech + 0.5*macroedit.sech - 10,
-                  w = obj.sections[415].w,
-                  h = 20}
-          if macro[m].inv then
-            f_Get_SSV('255 204 0')
-          else
-            f_Get_SSV('160 160 160')
-          end
-          gfx.rect(xywh.x,
-                   xywh.y, 
-                   xywh.w,
-                   xywh.h, 1)
-          f_Get_SSV(gui.color.black)              
-          gfx.rect(xywh.x,
-                   xywh.y, 
-                   xywh.w,
-                   xywh.h, 0)
-          GUI_textC(gui, xywh, 'INV', gui.color.black, -5)
-
-          xywh = {x = obj.sections[407].x,
-                  y = obj.sections[407].y + mm*macroedit.sech + 0.5*macroedit.sech - 10,
-                  w = obj.sections[407].w,
-                  h = 20}
-          f_Get_SSV('160 160 160')              
-          gfx.rect(xywh.x,
-                   xywh.y, 
-                   xywh.w,
-                   xywh.h, 1)
-          f_Get_SSV(gui.color.black)              
-          gfx.rect(xywh.x,
-                   xywh.y, 
-                   xywh.w,
-                   xywh.h, 0)
-          GUI_textC(gui, xywh, 'X', gui.color.black, -2)
 
           xywh = {x = obj.sections[403].x,
                   y = (obj.sections[403].y + mm*macroedit.sech) + math.floor(macroedit.sech/2)-1,
@@ -7308,6 +7320,18 @@ end
 
           local py = (obj.sections[403].y + mm*macroedit.sech) + math.floor(macroedit.sech/2)-1
 
+
+
+          local xywh = {x = obj.sections[403].x - macroedit.sliderw*0.5-6,
+                        y = obj.sections[403].y + mm*macroedit.sech +2,
+                        w = obj.sections[403].w + macroedit.sliderw+12,
+                        h = macroedit.sech-4}          
+          f_Get_SSV('32 32 32')              
+          gfx.rect(xywh.x,
+                   xywh.y, 
+                   xywh.w,
+                   xywh.h, 1)
+
           xywh = {x = obj.sections[403].x + p*obj.sections[403].w - (w/2),
                   y = (obj.sections[403].y + mm*macroedit.sech) + math.floor(macroedit.sech/2) - (h/2),
                   w = w,
@@ -7325,6 +7349,7 @@ end
           else
             gfx.line(obj.sections[403].x + p*obj.sections[403].w,py,obj.sections[403].x + p2*obj.sections[403].w,py)
           end
+
           gfx.a = 1
           f_Get_SSV('160 160 160')
           gfx.rect(xywh.x,
@@ -7347,6 +7372,9 @@ end
                      xywh.w,
                      xywh.h, 1)
           end
+
+
+
           
           xywh = {x = obj.sections[404].x + p2*obj.sections[404].w - (w/2),
                   y = (obj.sections[404].y + mm*macroedit.sech) + math.floor(macroedit.sech/2) - (h/2),
@@ -7428,35 +7456,37 @@ end
       
       if mode == 0 then
         --Live
-        if update_gfx or (surface_size.limit == false and update_surface) then
-          GUI_DrawControlBackG(obj, gui)
-          GUI_DrawControls(obj, gui)
-          if show_snapshots then
+        if (macro_edit_mode == false or macro_lrn_mode == true) then
+          if update_gfx or (surface_size.limit == false and update_surface) then
+            GUI_DrawControlBackG(obj, gui)
+            GUI_DrawControls(obj, gui)
+            if show_snapshots then
+              GUI_DrawSnapshots(obj, gui)
+            end
+            if show_fsnapshots or show_xysnapshots then
+              GUI_DrawFSnapshots(obj, gui)
+            end
+          elseif update_snaps or (update_msnaps and resize_snaps) then  
             GUI_DrawSnapshots(obj, gui)
-          end
-          if show_fsnapshots or show_xysnapshots then
+            if update_fsnaps then
+              GUI_DrawFSnapshots(obj, gui)        
+            end
+            if update_ctls then
+              GUI_DrawControls(obj, gui)          
+            end
+          elseif update_fsnaps or (update_mfsnaps and resize_fsnaps) then        
             GUI_DrawFSnapshots(obj, gui)
+            if update_ctls then
+              GUI_DrawControls(obj, gui)          
+            end
+          elseif update_ctls then        
+            GUI_DrawControls(obj, gui)
           end
-        elseif update_snaps or (update_msnaps and resize_snaps) then  
-          GUI_DrawSnapshots(obj, gui)
-          if update_fsnaps then
-            GUI_DrawFSnapshots(obj, gui)        
+          if update_gfx or update_sidebar then        
+            GUI_DrawTracks(obj, gui)
           end
-          if update_ctls then
-            GUI_DrawControls(obj, gui)          
-          end
-        elseif update_fsnaps or (update_mfsnaps and resize_fsnaps) then        
-          GUI_DrawFSnapshots(obj, gui)
-          if update_ctls then
-            GUI_DrawControls(obj, gui)          
-          end
-        elseif update_ctls then        
-          GUI_DrawControls(obj, gui)
         end
-        if update_gfx or update_sidebar then        
-          GUI_DrawTracks(obj, gui)
-        end
-        
+                
         gfx.dest = 1
         
         if (macro_edit_mode == false or macro_lrn_mode == true) and (update_gfx or update_surface or update_bg or update_msnaps or update_mfsnaps) then
@@ -9530,6 +9560,7 @@ end
         ToggleFXOffline(tracks[track_select].strip, page, trackfxparam_select, tracks[track_select].tracknum)
       elseif cc == ctlcats.macro then
         SetMacro(tracks[track_select].strip, page, trackfxparam_select)
+        --strips[tracks[track_select].strip][page].controls[trackfxparam_select].dirty = true
       end
     end
       
@@ -13109,7 +13140,7 @@ end
                   strips[faders[p+1].strip][faders[p+1].page].controls[faders[p+1].ctl].dirty = true
                   SetMacro(faders[p+1].strip,faders[p+1].page,faders[p+1].ctl)
                   if macro_edit_mode == true then
-                    update_surface = true
+                    update_macroedit = true
                   end 
                 end
               end
@@ -14537,6 +14568,36 @@ end
                                                                                             shape = 1,
                                                                                             bi = false}
                         end
+                      --[[elseif strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.macro then
+                        local strip = tracks[track_select].strip
+
+                        if i ~= macroctl_select then
+                        
+                          --Add / Remove
+                          local ctlidx = GetMacroCtlIdx(strip, page, macroctl_select, i)
+                          if ctlidx then
+                            --already added - remove?
+                            if strips[strip][page].controls[macroctl_select].macroctl[ctlidx].delete then
+                              strips[strip][page].controls[macroctl_select].macroctl[ctlidx].delete = not strips[strip][page].controls[macroctl_select].macroctl[ctlidx].delete
+                            else
+                              strips[strip][page].controls[macroctl_select].macroctl[ctlidx].delete = true
+                            end
+                          
+                          else
+                            --add
+                            if strips[strip][page].controls[macroctl_select].macroctl == nil then
+                              strips[strip][page].controls[macroctl_select].macroctl = {}
+                            end
+                            local ctlidx = #strips[strip][page].controls[macroctl_select].macroctl + 1
+                            strips[strip][page].controls[macroctl_select].macroctl[ctlidx] = {c_id = strips[tracks[track_select].strip][page].controls[i].c_id,
+                                                                                              ctl = i,
+                                                                                              A_val = 0,
+                                                                                              B_val = 1,
+                                                                                              shape = 1,
+                                                                                              bi = false}
+                          end
+                        end]]
+                      
                       end
                     end
                   end
@@ -19606,6 +19667,8 @@ end
                 end                    
               end
               update_gfx = true
+              
+              SetCtlBitmapRedraw()
             end
           end      
           
@@ -21703,6 +21766,7 @@ end
   function SetMacro(strip, page, ctl)
 
     local macro = strips[strip][page].controls[ctl].macroctl
+    strips[strip][page].controls[ctl].dirty = true
     if macro then
       for m = 1, #macro do
       
