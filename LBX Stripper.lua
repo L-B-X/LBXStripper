@@ -9152,6 +9152,8 @@ end
         else
           return 0
         end
+      elseif cc == ctlcats.macro then
+        return strips[tracks[track_select].strip][page].controls[c].val
       end
     else
       return 0
@@ -14666,33 +14668,229 @@ end
                                w = obj.sections[302].w+20,
                                h = obj.sections[302].h+20}
         
-            if gfx.mouse_wheel ~= 0 and MOUSE_over(xywh_main) then
+            if gfx.mouse_wheel ~= 0 then
+              if MOUSE_over(xywh_main) then
             
-              local track = GetTrack(tracks[track_select].tracknum)
-              local fxnum = GetEQC_FXNum(eqcontrolband_select)
-              
-              if fxnum ~= -1 then
-                local param = bands[eqcontrolband_select].q_param
+                local track = GetTrack(tracks[track_select].tracknum)
+                local fxnum = GetEQC_FXNum(eqcontrolband_select)
                 
+                if fxnum ~= -1 then
+                  local param = bands[eqcontrolband_select].q_param
+                  
+                  if param then
+                    local mw = gfx.mouse_wheel/120
+                    if bands[eqcontrolband_select].q_inv then
+                      mw = -mw
+                    end
+                    local v = F_limit(bands[eqcontrolband_select].q_val + (mw*0.05),0,1)
+                    
+                    if v ~= ov then
+                      reaper.TrackFX_SetParam(track,fxnum,param,v)
+                      ov = v
+                      update_eqcontrol = true
+                    end
+                  end
+                end
+                            
+              elseif MOUSE_over(obj.sections[303]) then
+                local mw = gfx.mouse_wheel/120
+                eqcontrolband_select = F_limit(eqcontrolband_select + mw,1,#bands)
+                update_gfx = true          
+  
+              elseif MOUSE_over(obj.sections[325]) then
+  
+                local track = GetTrack(tracks[track_select].tracknum)
+                local fxnum = GetEQC_FXNum(eqcontrolband_select)
+                local param = bands[eqcontrolband_select].freq_param
+
                 if param then
                   local mw = gfx.mouse_wheel/120
-                  if bands[eqcontrolband_select].q_inv then
-                    mw = -mw
+    
+                  local v
+                  local mult = 0.015
+                  if mouse.shift then
+                    mult = 0.001
                   end
-                  local v = F_limit(bands[eqcontrolband_select].q_val + (mw*0.05),0,1)
                   
+                  v = F_limit(bands[eqcontrolband_select].freq_val + (mw*mult),0,1)
                   if v ~= ov then
                     reaper.TrackFX_SetParam(track,fxnum,param,v)
                     ov = v
                     update_eqcontrol = true
                   end
                 end
+                gfx.mouse_wheel = 0
+  
+              elseif MOUSE_over(obj.sections[326]) then
+  
+                local track = GetTrack(tracks[track_select].tracknum)
+                local fxnum = GetEQC_FXNum(eqcontrolband_select)
+                local param = bands[eqcontrolband_select].gain_param
+
+                if param then
+                  local mw = gfx.mouse_wheel/120
+    
+                  local v
+                  local mult = 0.015
+                  if mouse.shift then
+                    mult = 0.001
+                  end
+                  
+                  v = F_limit(bands[eqcontrolband_select].gain_val + (mw*mult),0,1)
+                  if v ~= ov then
+                    reaper.TrackFX_SetParam(track,fxnum,param,v)
+                    ov = v
+                    update_eqcontrol = true
+                  end
+                end
+                gfx.mouse_wheel = 0
+  
+              elseif MOUSE_over(obj.sections[327]) then
+  
+                local track = GetTrack(tracks[track_select].tracknum)
+                local fxnum = GetEQC_FXNum(eqcontrolband_select)
+                local param = bands[eqcontrolband_select].q_param
+
+                if param then
+                  local mw = gfx.mouse_wheel/120
+    
+                  local v
+                  local mult = 0.05
+                  if mouse.shift then
+                    mult = 0.005
+                  end
+                  
+                  v = F_limit(bands[eqcontrolband_select].q_val + (mw*mult),0,1)
+                  if v ~= ov then
+                    reaper.TrackFX_SetParam(track,fxnum,param,v)
+                    ov = v
+                    update_eqcontrol = true
+                  end
+                end
+                gfx.mouse_wheel = 0
+
+              elseif MOUSE_over(obj.sections[328]) then
+  
+                local track = GetTrack(tracks[track_select].tracknum)
+                local fxnum = GetEQC_FXNum(eqcontrolband_select)
+                local param = bands[eqcontrolband_select].c1_param
+
+                if param then
+                  local mw = gfx.mouse_wheel/120
+    
+                  local v
+                  local mult = 0.015
+                  if mouse.shift then
+                    mult = 0.001
+                  end
+                  
+                  v = F_limit(bands[eqcontrolband_select].c1_val + (mw*mult),0,1)
+                  if v ~= ov then
+                    reaper.TrackFX_SetParam(track,fxnum,param,v)
+                    ov = v
+                    update_eqcontrol = true
+                  end
+                end
+                gfx.mouse_wheel = 0
+
+              elseif MOUSE_over(obj.sections[329]) then
+  
+                local track = GetTrack(tracks[track_select].tracknum)
+                local fxnum = GetEQC_FXNum(eqcontrolband_select)
+                local param = bands[eqcontrolband_select].c2_param
+
+                if param then
+                  local mw = gfx.mouse_wheel/120
+    
+                  local v
+                  local mult = 0.015
+                  if mouse.shift then
+                    mult = 0.001
+                  end
+                  
+                  v = F_limit(bands[eqcontrolband_select].c2_val + (mw*mult),0,1)
+                  if v ~= ov then
+                    reaper.TrackFX_SetParam(track,fxnum,param,v)
+                    ov = v
+                    update_eqcontrol = true
+                  end
+                end
+                gfx.mouse_wheel = 0
+
+              elseif MOUSE_over(obj.sections[330]) then
+  
+                local track = GetTrack(tracks[track_select].tracknum)
+                local fxnum = GetEQC_FXNum(eqcontrolband_select)
+                local param = bands[eqcontrolband_select].c3_param
+
+                if param then
+                  local mw = gfx.mouse_wheel/120
+    
+                  local v
+                  local mult = 0.015
+                  if mouse.shift then
+                    mult = 0.001
+                  end
+                  
+                  v = F_limit(bands[eqcontrolband_select].c3_val + (mw*mult),0,1)
+                  if v ~= ov then
+                    reaper.TrackFX_SetParam(track,fxnum,param,v)
+                    ov = v
+                    update_eqcontrol = true
+                  end
+                end
+                gfx.mouse_wheel = 0
+
+              elseif MOUSE_over(obj.sections[334]) then
+  
+                local track = GetTrack(tracks[track_select].tracknum)
+                local fxnum = GetEQC_FXNum(eqcontrolband_select)
+                local param = bands[eqcontrolband_select].c4_param
+
+                if param then
+                  local mw = gfx.mouse_wheel/120
+    
+                  local v
+                  local mult = 0.015
+                  if mouse.shift then
+                    mult = 0.001
+                  end
+                  
+                  v = F_limit(bands[eqcontrolband_select].c4_val + (mw*mult),0,1)
+                  if v ~= ov then
+                    reaper.TrackFX_SetParam(track,fxnum,param,v)
+                    ov = v
+                    update_eqcontrol = true
+                  end
+                end
+                gfx.mouse_wheel = 0
+
+              elseif MOUSE_over(obj.sections[335]) then
+  
+                local track = GetTrack(tracks[track_select].tracknum)
+                local fxnum = GetEQC_FXNum(eqcontrolband_select)
+                local param = bands[eqcontrolband_select].c5_param
+                
+                if param then
+                  local mw = gfx.mouse_wheel/120
+    
+                  local v
+                  local mult = 0.015
+                  if mouse.shift then
+                    mult = 0.001
+                  end
+                  
+                  v = F_limit(bands[eqcontrolband_select].c5_val + (mw*mult),0,1)
+                  if v ~= ov then
+                    reaper.TrackFX_SetParam(track,fxnum,param,v)
+                    ov = v
+                    update_eqcontrol = true
+                  end
+                end
+                gfx.mouse_wheel = 0
+                
               end
-                            
-            elseif gfx.mouse_wheel ~= 0 and MOUSE_over(obj.sections[303]) then
-              local mw = gfx.mouse_wheel/120
-              eqcontrolband_select = F_limit(eqcontrolband_select + mw,1,#bands)
-              update_gfx = true          
+              
             end
             
             if eq_edit and xywh_pmin and mouse.context == nil and eqcontrolband_select and MOUSE_click(xywh_pmin) then
@@ -21434,7 +21632,9 @@ end
       if ab == 0 then
         macro[m].A_val = v
       else
-        macro[m].B_val = v
+        if macro[m].bi == false then
+          macro[m].B_val = v
+        end
       end
     
     end
