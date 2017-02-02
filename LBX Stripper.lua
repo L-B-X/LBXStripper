@@ -5921,7 +5921,7 @@ end
                 local v = math.floor(gain_val*frames)
                 gfx.blit(def_eqcknobg, 1, 0, 0, v* h, w, h, xywh.x, xywh.y)
                 xywh.y = xywh.y + 30
-                GUI_textC(gui,xywh,roundX(gain_d,2,' dB'),gui.color.white,-2)
+                GUI_textC(gui,xywh,round(GetNumericPart(gain_d),2)..' dB',gui.color.white,-2)
               end
             end
 
@@ -6169,7 +6169,7 @@ end
                   end
                   if gain_d then
                     xywh.y = xywh.y + 12
-                    GUI_textC(gui,xywh,roundX(gain_d,2,' dB'),cc,-5)
+                    GUI_textC(gui,xywh,round(GetNumericPart(gain_d),2)..' dB',cc,-5)
                   end
                   if q_d then
                     xywh.y = xywh.y + 12
