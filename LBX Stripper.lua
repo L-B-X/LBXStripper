@@ -14232,6 +14232,24 @@ end
               end
               mouse.context = contexts.addsnapctl          
             
+            elseif mouse.context == nil and MOUSE_click_RB(obj.sections[168]) and mouse.shift == false then
+            
+              if sstype_select > 1 then
+                mstr = 'Delete subset'
+                gfx.x, gfx.y = snapmx, snapmy
+                local res = OpenMenu(mstr)
+                if res > 0 then
+                  if res == 1 then
+                  
+                    --DBG('DELETE')
+                    Snapshot_DeleteSubset(tracks[track_select].strip, page, sstype_select)
+                    SetCtlBitmapRedraw()
+                    update_gfx = true
+                    
+                  end
+                
+                end
+              end
             elseif mouse.context == nil and MOUSE_click(obj.sections[168]) and mouse.shift == true then
             
               if sstype_select > 1 then
@@ -24159,15 +24177,6 @@ end
     if settings_savedatainprojectfolder == true then
       save_path=reaper.GetProjectPath('')..'/'
     end
-    --[[local pn = reaper.GetProjectName(0,'')
-    local projname = string.sub(pn,0,string.len(pn)-4)..'_'..PROJECTID
-    reaper.RecursiveCreateDirectory(save_path..projname,1)
-    if fn == nil then
-      _, fn=reaper.GetProjExtState(0,SCRIPT,'snaps_datafile_'..string.format("%03d",s))
-    end
-    if projnamechange or fn == nil or fn == '' then
-      fn=projname..'/psnap'..string.format("%03d",s)..'_ss'..string.sub(STRIPSET,11)..".psnap"
-    end]]
     local ffn=save_path..fn
     
     local file
@@ -25063,6 +25072,23 @@ end
     return tbl
       
   end
+
+  ------------------------------------------------------------
+
+  function Table_RemoveEntry(srctbl, dcnt, dremidx)
+  
+    local tbl = {}
+    
+    if dcnt > 0 then
+      for i = 1, dcnt do
+        if i ~= dremidx then
+          table.insert(tbl, srctbl[i])
+        end
+      end
+    end
+    return tbl
+      
+  end
   
   ------------------------------------------------------------
 
@@ -25278,6 +25304,94 @@ end
     
     end
 
+  end
+  
+  function XXYPath_Delete(path)
+  
+    if XXYPath and XXYPath[path] then
+  
+      local pcnt = #XXYPath
+      XXYPath[path] = nil
+      
+      local ptbl = Table_RemoveNils(XXYPath, pcnt)
+      XXYPath = ptbl
+  
+      for s = 1, #xxy do
+        if xxy[s] then
+          for p = 1, #xxy[s] do
+            if xxy[s][p] then
+              for sst = 1, #xxy[s][p] do
+                if xxy[s][p][sst] then
+             
+                  if xxy[s][p][sst].pathidx == path then
+                    xxy[s][p][sst].pathidx = nil
+                  elseif xxy[s][p][sst].pathidx > path then
+                    xxy[s][p][sst].pathidx = xxy[s][p][sst].pathidx -1
+                  end
+                end              
+              end
+            end
+          end
+        end
+      end
+      
+    end
+    
+  end
+  
+  function Snapshot_DeleteSubset(strip, page, sst)
+  
+    if sst > 1 and snapshots[strip][page][sst] then
+    
+      local scnt = #snapshots[strip][page]
+      local xcnt 
+      
+      snapshots[strip][page][sst] = nil
+      if xxy and xxy[strip] and xxy[strip][page] then
+        xcnt = #xxy[strip][page]
+        if xxy[strip][page][sst] then
+          local pathidx = xxy[strip][page][sst].pathidx 
+          xxy[strip][page][sst] = nil
+          XXYPath_Delete(pathidx)        
+        end
+      end
+
+      local stbl = Table_RemoveEntry(snapshots[strip][page], scnt, sst)
+      snapshots[strip][page] = stbl
+      if xcnt then
+        local xtbl = Table_RemoveEntry(xxy[strip][page], xcnt, sst)
+        xxy[strip][page] = xtbl
+      end
+                
+      ctl_select = {}
+      gfx2_select = nil
+      gfx3_select = nil
+    
+      for c = 1, #strips[strip][page].controls do
+      
+        if strips[strip][page].controls[c].ctlcat == ctlcats.snapshot or 
+           strips[strip][page].controls[c].ctlcat == ctlcats.xy then
+          if strips[strip][page].controls[c].param == sst then
+            ctl_select[#ctl_select+1] = {ctl = c} 
+          elseif strips[strip][page].controls[c].param > sst then
+            strips[strip][page].controls[c].param = strips[strip][page].controls[c].param -1
+            strips[strip][page].controls[c].param_info.paramidx = strips[strip][page].controls[c].param_info.paramidx -1
+          end        
+        end
+      
+      end
+      if #ctl_select > 0 then
+        DeleteSelectedCtls()
+      end
+      
+      if sstype_select > #snapshots[strip][page] then
+      
+        sstype_select = #snapshots[strip][page]
+      
+      end
+        
+    end
+  
   end
     
   function Snapshot_Set(strip, page, sstype_select, ss_select)
