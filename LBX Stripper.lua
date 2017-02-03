@@ -447,7 +447,7 @@
       else
         obj.sections[10] = {x = plist_w,
                             y = butt_h+2,
-                            w = gfx1.main_w-(plist_w+2),
+                            w = gfx1.main_w-(plist_w+2)+2,
                             h = gfx1.main_h-(butt_h+2)}
         if lockx then
           obj.sections[10].x = math.max(obj.sections[10].x, obj.sections[10].x+(obj.sections[10].w/2-lockw/2))
@@ -1355,10 +1355,10 @@
       macroedit.sliderw = 12
       macroedit.sliderh = 24
 
-      obj.sections[401] = {x = obj.sections[300].w-32,
+      obj.sections[401] = {x = obj.sections[300].w-16,
                            y = 0,
-                           w = 32,
-                           h = 32}
+                           w = 16,
+                           h = 16}
                           
       --Param name
       local sw = math.max(math.floor((obj.sections[300].w-470)/2),120)
@@ -1379,7 +1379,7 @@
                            h = macroedit.h}
       obj.sections[405] = {x = obj.sections[404].x + obj.sections[404].w + 14,
                            y = macroedit.secyoff,
-                           w = obj.sections[300].w - (obj.sections[404].x+obj.sections[404].w)-30,
+                           w = math.max(obj.sections[300].w - (obj.sections[404].x+obj.sections[404].w)-30,100),
                            h = macroedit.h}
 
       obj.sections[407] = {x = obj.sections[402].x+5,
@@ -1409,13 +1409,13 @@
                            w = w,
                            h = h}
 
-      obj.sections[411] = {x = obj.sections[403].x,
+      obj.sections[411] = {x = obj.sections[403].x + 10,
                            y = obj.sections[409].y+obj.sections[409].h-butt_h+10,
-                           w = obj.sections[403].w,
+                           w = obj.sections[403].w-20,
                            h = butt_h} 
-      obj.sections[412] = {x = obj.sections[404].x,
+      obj.sections[412] = {x = obj.sections[404].x + 10,
                            y = obj.sections[411].y,
-                           w = obj.sections[404].w,
+                           w = obj.sections[404].w - 20,
                            h = butt_h} 
       obj.sections[413] = {x = obj.sections[403].x + 10,
                            y = 30,
@@ -7122,24 +7122,7 @@ end
                  0, 
                  obj.sections[300].w,
                  obj.sections[300].h, 1)
-        f_Get_SSV(gui.color.white)
-        gfx.rect(0,
-                 0, 
-                 obj.sections[300].w,
-                 obj.sections[300].h, 0)
   
-        local xywh = {x = obj.sections[401].x+8,
-                      y = obj.sections[401].y+8,
-                      w = obj.sections[401].w-16,
-                      h = obj.sections[401].h-16}
-        gfx.rect(obj.sections[401].x,
-                 obj.sections[401].y, 
-                 obj.sections[401].w,
-                 obj.sections[401].h, 1)
-        f_Get_SSV(gui.color.black)
-        gfx.line(xywh.x,xywh.y,xywh.x+xywh.w,xywh.y+xywh.h,1)
-        gfx.line(xywh.x+xywh.w,xywh.y,xywh.x,xywh.y+xywh.h,1)
-
         local xywh = {x = obj.sections[408].x,
                       y = obj.sections[408].y - obj.sections[408].h,
                       w = obj.sections[408].w,
@@ -7191,15 +7174,6 @@ end
                      xywh.w,
                      xywh.h, 1)
   
-            local xywh = {x = obj.sections[404].x - macroedit.sliderw*0.5-6,
-                          y = obj.sections[404].y + mm*macroedit.sech +2,
-                          w = obj.sections[404].w + macroedit.sliderw+12,
-                          h = macroedit.sech-4}          
-            f_Get_SSV('32 32 32')              
-            gfx.rect(xywh.x,
-                     xywh.y, 
-                     xywh.w,
-                     xywh.h, 1)
             local xywh = {x = obj.sections[405].x,
                           y = obj.sections[405].y + mm*macroedit.sech +2,
                           w = obj.sections[405].w,
@@ -7297,6 +7271,33 @@ end
 
 
 
+          local w, h = macroedit.sliderw, macroedit.sliderh
+          
+          local p = macro[m+macroedit_poffs].A_val           
+          local p2 = macro[m+macroedit_poffs].B_val           
+
+          local py = (obj.sections[403].y + mm*macroedit.sech) + math.floor(macroedit.sech/2)-1
+
+          local xywh = {x = obj.sections[403].x - macroedit.sliderw*0.5-6,
+                        y = obj.sections[403].y + mm*macroedit.sech +2,
+                        w = obj.sections[403].w + macroedit.sliderw+12,
+                        h = macroedit.sech-4}          
+          f_Get_SSV('32 32 32')              
+          gfx.rect(xywh.x,
+                   xywh.y, 
+                   xywh.w,
+                   xywh.h, 1)
+
+          local xywh = {x = obj.sections[404].x - macroedit.sliderw*0.5-6,
+                        y = obj.sections[404].y + mm*macroedit.sech +2,
+                        w = obj.sections[404].w + macroedit.sliderw+12,
+                        h = macroedit.sech-4}          
+          f_Get_SSV('32 32 32')              
+          gfx.rect(xywh.x,
+                   xywh.y, 
+                   xywh.w,
+                   xywh.h, 1)
+
           xywh = {x = obj.sections[403].x,
                   y = (obj.sections[403].y + mm*macroedit.sech) + math.floor(macroedit.sech/2)-1,
                   w = obj.sections[403].w,
@@ -7313,25 +7314,6 @@ end
                    xywh.w,
                    xywh.h, 1)
           
-          local w, h = macroedit.sliderw, macroedit.sliderh
-          
-          local p = macro[m+macroedit_poffs].A_val           
-          local p2 = macro[m+macroedit_poffs].B_val           
-
-          local py = (obj.sections[403].y + mm*macroedit.sech) + math.floor(macroedit.sech/2)-1
-
-
-
-          local xywh = {x = obj.sections[403].x - macroedit.sliderw*0.5-6,
-                        y = obj.sections[403].y + mm*macroedit.sech +2,
-                        w = obj.sections[403].w + macroedit.sliderw+12,
-                        h = macroedit.sech-4}          
-          f_Get_SSV('32 32 32')              
-          gfx.rect(xywh.x,
-                   xywh.y, 
-                   xywh.w,
-                   xywh.h, 1)
-
           xywh = {x = obj.sections[403].x + p*obj.sections[403].w - (w/2),
                   y = (obj.sections[403].y + mm*macroedit.sech) + math.floor(macroedit.sech/2) - (h/2),
                   w = w,
@@ -7373,9 +7355,6 @@ end
                      xywh.h, 1)
           end
 
-
-
-          
           xywh = {x = obj.sections[404].x + p2*obj.sections[404].w - (w/2),
                   y = (obj.sections[404].y + mm*macroedit.sech) + math.floor(macroedit.sech/2) - (h/2),
                   w = w,
@@ -7402,10 +7381,30 @@ end
                    xywh.y, 
                    xywh.w,
                    xywh.h, 0)
-      
-          
         end      
       end
+      
+      if update_gfx or update_surface then
+        local xywh = {x = obj.sections[401].x+2,
+                      y = obj.sections[401].y+2,
+                      w = obj.sections[401].w-4,
+                      h = obj.sections[401].h-4}
+        f_Get_SSV(gui.color.white)              
+        gfx.rect(obj.sections[401].x,
+                 obj.sections[401].y, 
+                 obj.sections[401].w,
+                 obj.sections[401].h, 1)
+        f_Get_SSV(gui.color.black)
+        gfx.line(xywh.x,xywh.y,xywh.x+xywh.w,xywh.y+xywh.h,1)
+        gfx.line(xywh.x+xywh.w,xywh.y,xywh.x,xywh.y+xywh.h,1)
+
+      end      
+
+      f_Get_SSV(gui.color.white)
+      gfx.rect(0,
+               0, 
+               obj.sections[300].w,
+               obj.sections[300].h, 0)
       
       --[[f_Get_SSV(gui.color.black)
       gfx.rect(obj.sections[403].x-30,
@@ -16026,7 +16025,7 @@ end
                   local i = macroctl_select
                   strips[tracks[track_select].strip][page].controls[i].val = strips[tracks[track_select].strip][page].controls[i].defval
                   SetMacro(tracks[track_select].strip,page,i)
-                  update_surface = true
+                  update_macroedit = true
                 else
                   local i = macroctl_select
                   mouse.context = contexts.macctl2
@@ -16196,7 +16195,7 @@ end
                 if settings_macroeditmonitor then
                   SetMacro(tracks[track_select].strip,page,macroctl_select)
                 end
-                update_surface = true
+                update_macroedit = true
 
               elseif mouse.context == nil and MOUSE_click(obj.sections[412]) then
 
@@ -16204,7 +16203,7 @@ end
                 if settings_macroeditmonitor then
                   SetMacro(tracks[track_select].strip,page,macroctl_select)
                 end
-                update_surface = true
+                update_macroedit = true
 
               elseif mouse.context == nil and MOUSE_click(obj.sections[413]) then
 
@@ -16241,7 +16240,7 @@ end
                       strips[tracks[track_select].strip][page].controls[macroctl_select].dirty = true
                       octlval = val
                       --update_ctls = true
-                      update_surface = true
+                      update_macroedit = true
                       --update_ctls = false
                     end
                   end
@@ -16254,7 +16253,7 @@ end
                 if settings_macroeditmonitor then
                   SetMacro(tracks[track_select].strip, page, macroctl_select)
                 end
-                update_surface = true
+                update_macroedit = true
               
               elseif mouse.context and mouse.context == contexts.macsliderB then
               
@@ -16263,7 +16262,7 @@ end
                 if settings_macroeditmonitor then
                   SetMacro(tracks[track_select].strip, page, macroctl_select)
                 end              
-                update_surface = true
+                update_macroedit = true
               
               end
               
