@@ -12491,16 +12491,9 @@ end
         local p = strips[tracks[track_select].strip][page].controls[c].param
         track = GetTrack(t)
         
-        --local v, min, max = reaper.TrackFX_GetParam(track, f, p)
         local min, max = GetParamMinMax_ctl(c, checkov)
         local v = GetParamValue_Ctl(c)
         
-        --[[if strips[tracks[track_select].strip][page].controls[c].minov then
-          min = strips[tracks[track_select].strip][page].controls[c].minov
-        end
-        if strips[tracks[track_select].strip][page].controls[c].maxov then
-          max = strips[tracks[track_select].strip][page].controls[c].maxov
-        end]]
         local dvoff = strips[tracks[track_select].strip][page].controls[c].dvaloffset
         trackfxparam_select = c
         SetParam3(min)
@@ -12837,6 +12830,24 @@ end
     local u = { }
     for k, v in pairs(t) do u[k] = v end
     return setmetatable(u, getmetatable(t))
+  end
+  
+  function table.deepcopy(o, seen)
+    seen = seen or {}
+    if o == nil then return nil end
+    if seen[o] then return seen[o] end
+  
+  
+    local no = {}
+    seen[o] = no
+    setmetatable(no, deepcopy(getmetatable(o), seen))
+  
+    for k, v in next, o, nil do
+      k = (type(k) == 'table') and k:deepcopy(seen) or k
+      v = (type(v) == 'table') and v:deepcopy(seen) or v
+      no[k] = v
+    end
+    return no
   end
   
   function cycledata_slowsort(tbl)
@@ -16717,7 +16728,7 @@ end
                           elseif res == 6 then
                             i = tonumber(string.format('%i',i))
                             strips[tracks[track_select].strip][page].controls[i] = GetControlTable(i)
-                            strips[tracks[track_select].strip][page].controls[i].cid = GenID()
+                            strips[tracks[track_select].strip][page].controls[i].c_id = GenID()
                             update_gfx = true
                           end
                         end
