@@ -10851,6 +10851,7 @@ end
     end
           
     --time = math.abs(math.sin( -1 + (os.clock() % 2)))
+    ;
     stripid = GenID()
     local cidtrack = {}
     local cstart = #strips[strip][page].controls + 1
@@ -10907,6 +10908,25 @@ end
                                                      wheelfine = settings_defknobsens.wheelfine}
       end
       
+    end
+    for j = cstart, #strips[strip][page].controls do
+
+      if strips[strip][page].controls[j].ctlcat == ctlcats.macro then
+      
+        local macro = strips[strip][page].controls[j].macroctl
+        for m = 1, #macro do
+        
+          if cidtrack[macro[m].c_id] then
+            
+            macro[m].ctl = cidtrack[macro[m].c_id].ctl
+            macro[m].c_id = cidtrack[macro[m].c_id].c_id
+          
+          end
+        
+        end
+      
+      end 
+
     end
     
     local lctl = GetLeftControlInStrip(strips[strip][page].controls, stripid)
