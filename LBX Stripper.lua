@@ -13166,11 +13166,13 @@ end
                     update_xxypos = true
                   end                              
                 elseif faders[p+1].targettype == 2 then
-                  strips[faders[p+1].strip][faders[p+1].page].controls[faders[p+1].ctl].val = faders[p+1].val
-                  strips[faders[p+1].strip][faders[p+1].page].controls[faders[p+1].ctl].dirty = true
-                  SetMacro(faders[p+1].strip,faders[p+1].page,faders[p+1].ctl)
-                  if macro_edit_mode == true then
-                    update_macroedit = true
+                  if strips[faders[p+1].strip] and strips[faders[p+1].strip][faders[p+1].page].controls[faders[p+1].ctl] then
+                    strips[faders[p+1].strip][faders[p+1].page].controls[faders[p+1].ctl].val = faders[p+1].val
+                    strips[faders[p+1].strip][faders[p+1].page].controls[faders[p+1].ctl].dirty = true
+                    SetMacro(faders[p+1].strip,faders[p+1].page,faders[p+1].ctl)
+                    if macro_edit_mode == true then
+                      update_macroedit = true
+                    end 
                   end 
                 end
               end
@@ -13280,6 +13282,120 @@ end
     end    
   end
 
+  function Copy_Selected()
+  
+    if ctl_select and #ctl_select > 0 then
+    
+      copy_ctls = {strip = tracks[track_select].strip,
+                   page = page,
+                   tracknum = tracks[track_select].tracknum,
+                   trackguid = tracks[track_select].guid,
+                   ctls = {},
+                   gfx = {}}
+      for c = 1, #ctl_select do
+        copy_ctls.ctls[c] = ctl_select[c].ctl
+        --DBG(c)
+      end
+    
+    end
+  
+  end
+
+  function Paste_Selected()
+  --DBG('A')
+    if copy_ctls and copy_ctls.ctls and #copy_ctls.ctls > 0 then
+  --DBG('B')
+    
+      if tracks[track_select] then
+          
+        local strip
+        
+        if tracks[track_select].strip == -1 then
+          strip = #strips+1
+          strips[strip] = {track = tracks[track_select], page = page, {}}
+          for i = 1,4 do
+            strips[strip][i] = {surface_x = 0,
+                               surface_y = 0,     
+                               controls = {},
+                               graphics = {}}
+            if snapshots and snapshots[s] then
+              snapshots[s][i] = {}
+              snapshots[s][i][1] = {}
+            end
+          end
+          tracks[track_select].strip = strip
+        else
+          strip = tracks[track_select].strip
+        end
+      
+        local ctls = strips[strip][page].controls
+      
+        local cstart = #ctls + 1
+        local cids = {}
+      
+        for c = 1, #copy_ctls.ctls do
+          --DBG(c)
+          local nc = #ctls+1
+          local ctbl = GetControlTable(copy_ctls.strip, copy_ctls.page, copy_ctls.ctls[c])
+          if ctbl.ctlcat ~= ctlcats.snapshot and ctbl.ctlcat ~= ctlcats.xy and ctbl.ctlcat ~= ctlcats.eqcontrol then
+          
+            ctls[nc] = ctbl
+            --if ctls[nc].c_id == nil then ctls[nc].c_id = GenID() end
+            --DBG(strips[copy_ctls.strip][copy_ctls.page].controls[copy_ctls.ctls[c]].c_id..'  '..ctls[nc].c_id)
+            cids[strips[copy_ctls.strip][copy_ctls.page].controls[copy_ctls.ctls[c]].c_id] = {cid = ctls[nc].c_id,
+                                                                                              ctl = nc}
+            if ctls[nc].tracknum == nil and tracks[track_select].trackguid ~= copy_ctls.trackguid then
+              ctls[nc].tracknum = copy_ctls.tracknum
+              ctls[nc].trackguid = copy_ctls.trackguid
+            end
+          end
+        end
+
+        local dx = strips[tracks[track_select].strip][page].controls[cstart].x - (mouse.mx+surface_offset.x-obj.sections[10].x) 
+        local dy = strips[tracks[track_select].strip][page].controls[cstart].y - (mouse.my+surface_offset.y-obj.sections[10].y)
+
+        for c = cstart, #ctls do
+
+          strips[tracks[track_select].strip][page].controls[c].x = strips[tracks[track_select].strip][page].controls[c].x - dx
+          strips[tracks[track_select].strip][page].controls[c].y = strips[tracks[track_select].strip][page].controls[c].y - dy
+          strips[tracks[track_select].strip][page].controls[c].xsc = strips[tracks[track_select].strip][page].controls[c].xsc - dx
+          strips[tracks[track_select].strip][page].controls[c].ysc = strips[tracks[track_select].strip][page].controls[c].ysc - dy
+          strips[tracks[track_select].strip][page].controls[c].id = nil
+        
+          if ctls[c].ctlcat == ctlcats.macro then
+          
+            local macro = ctls[c].macroctl
+            if macro and #macro > 0 then
+            
+              local mcnt = #macro
+              local nils = false
+              for m = 1, mcnt do
+                
+                local mcid = macro[m].c_id 
+                if cids[mcid] then
+                  --DBG(cids[mcid].cid)
+                  macro[m].ctl = cids[mcid].ctl
+                  macro[m].c_id = cids[mcid].cid
+                else
+                  macro[m] = nil
+                  nils = true
+                end
+            
+              end
+              
+              if nils then
+              --DBG(nils)
+                local mtbl = Table_RemoveNils(macro, mcnt)
+                strips[strip][page].controls[c].macroctl = mtbl
+              
+              end
+            end
+          end
+        end
+      end    
+    end  
+  end
+  
   function run()  
 
     local rt = reaper.time_precise()
@@ -13620,6 +13736,7 @@ end
                 if strips and strips[tracks[track_select].strip] then
                   local chktbl = {}
                   local pkmts = false
+
                   for i = 1, #strips[tracks[track_select].strip][page].controls do
                     --check fx
                     
@@ -13632,12 +13749,13 @@ end
                         tr = GetTrack(strips[tracks[track_select].strip][page].controls[i].tracknum)
                       end 
                     end
+--DBG(tr_found)
                     
                     if tr_found then
                       if strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.fxparam then
                         local fxguid = reaper.TrackFX_GetFXGUID(tr, strips[tracks[track_select].strip][page].controls[i].fxnum)
                         if strips[tracks[track_select].strip][page].controls[i].fxguid == fxguid then
-    
+    --DBG(i)
                           local pn = reaper.TrackFX_GetNumParams(tr,strips[tracks[track_select].strip][page].controls[i].fxnum)
                           if pn ~= 2 then
                             if strips[tracks[track_select].strip][page].controls[i].offline ~= nil then
@@ -14203,7 +14321,7 @@ end
           mouse.my = snapmy
           noscroll = true
   
-        elseif mouse.context == nil and show_snapshots == true and (MOUSE_click(obj.sections[160]) or MOUSE_click_RB(obj.sections[160])) then
+        elseif mouse.context == nil and (show_snapshots == true and macro_edit_mode == false) and (MOUSE_click(obj.sections[160]) or MOUSE_click_RB(obj.sections[160])) then
         
           if show_fsnapshots or show_xysnapshots then
             show_fsnapshots = false
@@ -16727,7 +16845,7 @@ end
                             update_gfx = true
                           elseif res == 6 then
                             i = tonumber(string.format('%i',i))
-                            strips[tracks[track_select].strip][page].controls[i] = GetControlTable(i)
+                            strips[tracks[track_select].strip][page].controls[i] = GetControlTable(tracks[track_select].strip, page, i)
                             strips[tracks[track_select].strip][page].controls[i].c_id = GenID()
                             update_gfx = true
                           end
@@ -18594,7 +18712,13 @@ end
                   else
                     ac = '||#Assign custom action by name|#Assign action by command ID'              
                   end
-                  local mstr = 'Duplicate||Align Top|Align Left||'..mm..'||Delete'..ac
+                  local cp
+                  if copy_ctls ~= nil then
+                    cp = '||Copy|Paste'
+                  else
+                    cp = '||Copy|#Paste'
+                  end
+                  local mstr = 'Duplicate||Align Top|Align Left||'..mm..'||Delete'..ac..cp
                   gfx.x, gfx.y = mouse.mx, mouse.my
                   local res = OpenMenu(mstr)
                   if res == 1 then
@@ -18603,7 +18727,7 @@ end
                     local dy = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].y - (mouse.my+surface_offset.y-obj.sections[10].y)
                     for i = 1, #ctl_select do
                       local cc = c1+i-1
-                      strips[tracks[track_select].strip][page].controls[cc]=GetControlTable(ctl_select[i].ctl)
+                      strips[tracks[track_select].strip][page].controls[cc]=GetControlTable(tracks[track_select].strip, page, ctl_select[i].ctl)
                       --table.insert(strips[tracks[track_select].strip][page].controls[cc], strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl])
                       strips[tracks[track_select].strip][page].controls[cc].x = strips[tracks[track_select].strip][page].controls[cc].x - dx
                       strips[tracks[track_select].strip][page].controls[cc].y = strips[tracks[track_select].strip][page].controls[cc].y - dy
@@ -18676,8 +18800,29 @@ end
                   elseif res == 7 then
                     trackfxparam_select = ctl_select[1].ctl
                     OpenEB(13,'Please enter action command ID:')
+                  elseif res == 8 then
+                    Copy_Selected()
+                  elseif res == 9 then
+                    Paste_Selected()
+                    SetCtlBitmapRedraw()
+                    update_gfx = true
                   end
                 
+                else
+                  local cp
+                  if copy_ctls ~= nil then
+                    cp = 'Paste'
+                  end
+                  if cp then
+                    local mstr = cp
+                    gfx.x, gfx.y = mouse.mx, mouse.my
+                    local res = OpenMenu(mstr)
+                    if res == 1 then
+                      Paste_Selected()
+                      SetCtlBitmapRedraw()  
+                      update_gfx = true
+                    end
+                  end                
                 end
               
               end
@@ -22242,72 +22387,91 @@ end
     
   end
   
-  function GetControlTable(c)
+  function GetControlTable(strip, page, c)
     
-    local tbl = {ctlcat=strips[tracks[track_select].strip][page].controls[c].ctlcat,
-                 fxname=strips[tracks[track_select].strip][page].controls[c].fxname,
-                 fxguid=strips[tracks[track_select].strip][page].controls[c].fxguid, 
-                 fxnum=strips[tracks[track_select].strip][page].controls[c].fxnum, 
-                 fxfound = strips[tracks[track_select].strip][page].controls[c].fxfound,
-                 param = strips[tracks[track_select].strip][page].controls[c].param,
-                 param_info = {paramname = strips[tracks[track_select].strip][page].controls[c].param_info.paramname,
-                               paramnum = strips[tracks[track_select].strip][page].controls[c].param_info.paramnum,
-                               paramidx = strips[tracks[track_select].strip][page].controls[c].param_info.paramidx,
-                               paramstr = strips[tracks[track_select].strip][page].controls[c].param_info.paramstr,
-                               paramdesttrnum = strips[tracks[track_select].strip][page].controls[c].param_info.paramdesttrnum,
-                               paramdestguid = strips[tracks[track_select].strip][page].controls[c].param_info.paramdestguid,
-                               paramdestchan = strips[tracks[track_select].strip][page].controls[c].param_info.paramdestchan,
-                               paramsrcchan = strips[tracks[track_select].strip][page].controls[c].param_info.paramsrcchan},
-                 ctltype = strips[tracks[track_select].strip][page].controls[c].ctltype,
-                 knob_select = strips[tracks[track_select].strip][page].controls[c].knob_select,
-                 ctl_info = {fn = strips[tracks[track_select].strip][page].controls[c].ctl_info.fn,
-                             frames = strips[tracks[track_select].strip][page].controls[c].ctl_info.frames,
-                             imageidx = strips[tracks[track_select].strip][page].controls[c].ctl_info.imageidx, 
-                             cellh = strips[tracks[track_select].strip][page].controls[c].ctl_info.cellh},
-                 x = strips[tracks[track_select].strip][page].controls[c].x,
-                 y = strips[tracks[track_select].strip][page].controls[c].y,
-                 w = strips[tracks[track_select].strip][page].controls[c].w,
-                 scale = strips[tracks[track_select].strip][page].controls[c].scale,
-                 xsc = strips[tracks[track_select].strip][page].controls[c].xsc,
-                 ysc = strips[tracks[track_select].strip][page].controls[c].ysc,
-                 wsc = strips[tracks[track_select].strip][page].controls[c].wsc,
-                 hsc = strips[tracks[track_select].strip][page].controls[c].hsc,
-                 show_paramname = strips[tracks[track_select].strip][page].controls[c].show_paramname,
-                 show_paramval = strips[tracks[track_select].strip][page].controls[c].show_paramval,
-                 ctlname_override = strips[tracks[track_select].strip][page].controls[c].ctlname_override,
-                 textcol = strips[tracks[track_select].strip][page].controls[c].textcol,
-                 textoff = strips[tracks[track_select].strip][page].controls[c].textoff,
-                 textoffval = strips[tracks[track_select].strip][page].controls[c].textoffval,
-                 textoffx = strips[tracks[track_select].strip][page].controls[c].textoffx,
-                 textoffvalx = strips[tracks[track_select].strip][page].controls[c].textoffvalx,
-                 textsize = strips[tracks[track_select].strip][page].controls[c].textsize,
-                 val = strips[tracks[track_select].strip][page].controls[c].val,
-                 defval = strips[tracks[track_select].strip][page].controls[c].defval,
-                 maxdp = strips[tracks[track_select].strip][page].controls[c].maxdp,
-                 cycledata = strips[tracks[track_select].strip][page].controls[c].cycledata,
-                 id = strips[tracks[track_select].strip][page].controls[c].id,
-                 tracknum = strips[tracks[track_select].strip][page].controls[c].tracknum,
-                 trackguid = strips[tracks[track_select].strip][page].controls[c].trackguid,
-                 dvaloffset = strips[tracks[track_select].strip][page].controls[c].dvaloffset,
-                 minov = strips[tracks[track_select].strip][page].controls[c].minov,
-                 maxov = strips[tracks[track_select].strip][page].controls[c].maxov,
-                 membtn = {state = strips[tracks[track_select].strip][page].controls[c].membtn.state,
-                           mem = strips[tracks[track_select].strip][page].controls[c].membtn.mem},
-                 xydata = {snapa = strips[tracks[track_select].strip][page].controls[c].xydata.snapa,
-                           snapb = strips[tracks[track_select].strip][page].controls[c].xydata.snapb,
-                           snapc = strips[tracks[track_select].strip][page].controls[c].xydata.snapc,
-                           snapd = strips[tracks[track_select].strip][page].controls[c].xydata.snapd,
-                           x = strips[tracks[track_select].strip][page].controls[c].xydata.x,
-                           y = strips[tracks[track_select].strip][page].controls[c].xydata.y},
-                 scalemode = strips[tracks[track_select].strip][page].controls[c].scalemode,
-                 framemode = strips[tracks[track_select].strip][page].controls[c].framemode,
-                 horiz = strips[tracks[track_select].strip][page].controls[c].horiz,
+    local tbl = {ctlcat=strips[strip][page].controls[c].ctlcat,
+                 fxname=strips[strip][page].controls[c].fxname,
+                 fxguid=strips[strip][page].controls[c].fxguid, 
+                 fxnum=strips[strip][page].controls[c].fxnum, 
+                 fxfound = strips[strip][page].controls[c].fxfound,
+                 param = strips[strip][page].controls[c].param,
+                 param_info = {paramname = strips[strip][page].controls[c].param_info.paramname,
+                               paramnum = strips[strip][page].controls[c].param_info.paramnum,
+                               paramidx = strips[strip][page].controls[c].param_info.paramidx,
+                               paramstr = strips[strip][page].controls[c].param_info.paramstr,
+                               paramdesttrnum = strips[strip][page].controls[c].param_info.paramdesttrnum,
+                               paramdestguid = strips[strip][page].controls[c].param_info.paramdestguid,
+                               paramdestchan = strips[strip][page].controls[c].param_info.paramdestchan,
+                               paramsrcchan = strips[strip][page].controls[c].param_info.paramsrcchan},
+                 ctltype = strips[strip][page].controls[c].ctltype,
+                 knob_select = strips[strip][page].controls[c].knob_select,
+                 ctl_info = {fn = strips[strip][page].controls[c].ctl_info.fn,
+                             frames = strips[strip][page].controls[c].ctl_info.frames,
+                             imageidx = strips[strip][page].controls[c].ctl_info.imageidx, 
+                             cellh = strips[strip][page].controls[c].ctl_info.cellh},
+                 x = strips[strip][page].controls[c].x,
+                 y = strips[strip][page].controls[c].y,
+                 w = strips[strip][page].controls[c].w,
+                 scale = strips[strip][page].controls[c].scale,
+                 xsc = strips[strip][page].controls[c].xsc,
+                 ysc = strips[strip][page].controls[c].ysc,
+                 wsc = strips[strip][page].controls[c].wsc,
+                 hsc = strips[strip][page].controls[c].hsc,
+                 show_paramname = strips[strip][page].controls[c].show_paramname,
+                 show_paramval = strips[strip][page].controls[c].show_paramval,
+                 ctlname_override = strips[strip][page].controls[c].ctlname_override,
+                 textcol = strips[strip][page].controls[c].textcol,
+                 textoff = strips[strip][page].controls[c].textoff,
+                 textoffval = strips[strip][page].controls[c].textoffval,
+                 textoffx = strips[strip][page].controls[c].textoffx,
+                 textoffvalx = strips[strip][page].controls[c].textoffvalx,
+                 textsize = strips[strip][page].controls[c].textsize,
+                 val = strips[strip][page].controls[c].val,
+                 defval = strips[strip][page].controls[c].defval,
+                 maxdp = strips[strip][page].controls[c].maxdp,
+                 cycledata = strips[strip][page].controls[c].cycledata,
+                 id = strips[strip][page].controls[c].id,
+                 tracknum = strips[strip][page].controls[c].tracknum,
+                 trackguid = strips[strip][page].controls[c].trackguid,
+                 dvaloffset = strips[strip][page].controls[c].dvaloffset,
+                 minov = strips[strip][page].controls[c].minov,
+                 maxov = strips[strip][page].controls[c].maxov,
+                 membtn = {state = strips[strip][page].controls[c].membtn.state,
+                           mem = strips[strip][page].controls[c].membtn.mem},
+                 xydata = {snapa = strips[strip][page].controls[c].xydata.snapa,
+                           snapb = strips[strip][page].controls[c].xydata.snapb,
+                           snapc = strips[strip][page].controls[c].xydata.snapc,
+                           snapd = strips[strip][page].controls[c].xydata.snapd,
+                           x = strips[strip][page].controls[c].xydata.x,
+                           y = strips[strip][page].controls[c].xydata.y},
+                 scalemode = strips[strip][page].controls[c].scalemode,
+                 framemode = strips[strip][page].controls[c].framemode,
+                 horiz = strips[strip][page].controls[c].horiz,
                  c_id = GenID(),
-                 knobsens = {norm = strips[tracks[track_select].strip][page].controls[c].knobsens.norm,
-                             fine = strips[tracks[track_select].strip][page].controls[c].knobsens.fine,
-                             wheel = strips[tracks[track_select].strip][page].controls[c].knobsens.wheel,
-                             wheelfine = strips[tracks[track_select].strip][page].controls[c].knobsens.wheelfine}
+                 knobsens = {norm = strips[strip][page].controls[c].knobsens.norm,
+                             fine = strips[strip][page].controls[c].knobsens.fine,
+                             wheel = strips[strip][page].controls[c].knobsens.wheel,
+                             wheelfine = strips[strip][page].controls[c].knobsens.wheelfine},
                  }
+    if strips[strip][page].controls[c].ctlcat == ctlcats.macro and strips[strip][page].controls[c].macroctl then
+      local macro = strips[strip][page].controls[c].macroctl
+      local mctl = {}
+      for m = 1, #macro do
+      
+        mctl[m] = {c_id = macro[m].c_id,
+                   ctl = macro[m].ctl,
+                   A_val = macro[m].A_val,
+                   B_val = macro[m].B_val,
+                   shape = macro[m].shape,
+                   bi = macro[m].bi,
+                   inv = macro[m].inv,
+                   mute = macro[m].mute
+                   }
+      
+      end
+      tbl.macroctl = mctl
+    end
+    
     return tbl
   end
   
