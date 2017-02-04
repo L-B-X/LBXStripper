@@ -13537,15 +13537,31 @@ end
           msgbox = nil
           strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqgraph = EQC_SetMain(eqcontrolband_select)
           update_gfx = true
+        elseif MS_Open == 3 then
+          msgbox = nil
+          --MS_Open = 0
+          local sscnt = #snapshots[tracks[track_select].strip][page]
+          if sscnt > 1 then
+            for s = sscnt, 2, -1 do
+              Snapshot_DeleteSubset(tracks[track_select].strip, page, s)                  
+            end
+            SetCtlBitmapRedraw()
+            OpenMsgBox(1,sscnt..' subsets deleted.',1)
+          end
+          update_gfx = true                      
         end
         MB_Enter = false 
         update_surface = true
+        mouse.LB = false
+        mouse.release = true
       elseif MOUSE_click(obj.sections[64]) then
         --No
         msgbox = nil
         MS_Open = 0
         MB_Enter = false 
         update_surface = true
+        mouse.LB = false
+        mouse.release = true
       end
       
     elseif EB_Open > 0 then
@@ -14364,7 +14380,7 @@ end
             elseif mouse.context == nil and MOUSE_click_RB(obj.sections[168]) and mouse.shift == false then
             
               if sstype_select > 1 then
-                mstr = 'Delete subset'
+                mstr = 'Delete subset|Delete all subsets'
                 gfx.x, gfx.y = snapmx, snapmy
                 local res = OpenMenu(mstr)
                 if res > 0 then
@@ -14375,6 +14391,11 @@ end
                     SetCtlBitmapRedraw()
                     update_gfx = true
                     
+                  elseif res == 2 then
+                  
+                    if snapshots and snapshots[tracks[track_select].strip] and #snapshots[tracks[track_select].strip][page] > 1 then
+                      OpenMsgBox(3, 'Delete all subsets?', 2)
+                    end                  
                   end
                 
                 end
