@@ -403,7 +403,13 @@
   dB_to_val = function(dB_val) return 10^(dB_val/20) end
   
   function GetObjects()
-    local obj = {}
+    
+      local ss160
+      if obj and obj.sections then
+        ss160 = obj.sections[160]
+      end
+      
+      local obj = {}
       
       obj.sections = {}
       
@@ -532,8 +538,8 @@
 
       --CONTROL OPTIONS
       local cow = 160
-      obj.sections[45] = {x = gfx1.main_w - cow - 20,
-                          y = gfx1.main_h - 440 -20,
+      obj.sections[45] = {x = math.max(gfx1.main_w - cow - 10, obj.sections[10].x + cow + 20),
+                          y = math.max(gfx1.main_h - 440 -10, obj.sections[10].y),
                           w = cow,
                           h = 440}                           
       local sf_h = 140
@@ -561,78 +567,78 @@
                           w = cow,
                           h = 300}                           
       --scale
-      obj.sections[50] = {x = obj.sections[45].x+50,
-                          y = obj.sections[45].y+150+butt_h+10,
+      obj.sections[50] = {x = 50,
+                          y = 150+butt_h+10,
                           w = obj.sections[45].w-60,
                           h = butt_h/2+4}                           
       --apply
-      obj.sections[51] = {x = obj.sections[45].x+40,
-                          y = obj.sections[45].y+150,
+      obj.sections[51] = {x = 40,
+                          y = 150,
                           w = obj.sections[45].w-80,
                           h = butt_h/2+4}                           
 
-      obj.sections[52] = {x = obj.sections[45].x+obj.sections[45].w-40-butt_h/2+4,
-                          y = obj.sections[45].y+150+butt_h+10 + (butt_h/2+4 + 10),
+      obj.sections[52] = {x = obj.sections[45].w-40-butt_h/2+4,
+                          y = 150+butt_h+10 + (butt_h/2+4 + 10),
                           w = butt_h/2+4,
                           h = butt_h/2+4}                           
 
-      obj.sections[53] = {x = obj.sections[45].x+obj.sections[45].w-40-butt_h/2+4,
-                          y = obj.sections[45].y+150+butt_h+10 + (butt_h/2+4 + 10) * 2,
+      obj.sections[53] = {x = obj.sections[45].w-40-butt_h/2+4,
+                          y = 150+butt_h+10 + (butt_h/2+4 + 10) * 2,
                           w = butt_h/2+4,
                           h = butt_h/2+4}                           
 
-      obj.sections[54] = {x = obj.sections[45].x+obj.sections[45].w-40-butt_h/2+4,
-                          y = obj.sections[45].y+150+butt_h+10 + (butt_h/2+4 + 10) * 3,
+      obj.sections[54] = {x = obj.sections[45].w-40-butt_h/2+4,
+                          y = 150+butt_h+10 + (butt_h/2+4 + 10) * 3,
                           w = butt_h/2+4,
                           h = butt_h/2+4}                           
 
-      obj.sections[55] = {x = obj.sections[45].x+50,
-                          y = obj.sections[45].y+150+butt_h+10 + (butt_h/2+4 + 10) * 8,
+      obj.sections[55] = {x = 50,
+                          y = 150+butt_h+10 + (butt_h/2+4 + 10) * 8,
                           w = obj.sections[45].w-60,
                           h = butt_h/2+8}
-      obj.sections[56] = {x = obj.sections[45].x+50,
-                          y = obj.sections[45].y+150+butt_h+10 + (butt_h/2+4 + 10) * 4,
+      obj.sections[56] = {x = 50,
+                          y = 150+butt_h+10 + (butt_h/2+4 + 10) * 4,
                           w = obj.sections[45].w-80,
                           h = butt_h/2+4}                           
-      obj.sections[57] = {x = obj.sections[45].x+50,
-                          y = obj.sections[45].y+150+butt_h+10 + (butt_h/2+4 + 10) * 9,
+      obj.sections[57] = {x = 50,
+                          y = 150+butt_h+10 + (butt_h/2+4 + 10) * 9,
                           w = obj.sections[45].w-60,
                           h = butt_h/2+4}                           
 
-      obj.sections[58] = {x = obj.sections[45].x+50,
-                          y = obj.sections[45].y+150+butt_h+10 + (butt_h/2+4 + 10) * 6,
+      obj.sections[58] = {x = 50,
+                          y = 150+butt_h+10 + (butt_h/2+4 + 10) * 6,
                           w = obj.sections[45].w-60,
                           h = butt_h/2+4}                           
-      obj.sections[59] = {x = obj.sections[45].x+50,
-                          y = obj.sections[45].y+150+butt_h+10 + (butt_h/2+4 + 10) * 7,
+      obj.sections[59] = {x = 50,
+                          y = 150+butt_h+10 + (butt_h/2+4 + 10) * 7,
                           w = obj.sections[45].w-60,
                           h = butt_h/2+8}
 
-      obj.sections[90] = {x = obj.sections[45].x,
-                          y = obj.sections[45].y+75,
+      obj.sections[90] = {x = 2,
+                          y = 75,
                           w = 12,
                           h = butt_h/2+8}                           
-      obj.sections[91] = {x = obj.sections[45].x+obj.sections[45].w-12,
-                          y = obj.sections[45].y+75,
+      obj.sections[91] = {x = obj.sections[45].w-14,
+                          y = 75,
                           w = 12,
                           h = butt_h/2+8}                           
 
-      obj.sections[65] = {x = obj.sections[45].x+50,
-                          y = obj.sections[45].y+150+butt_h+10 + (butt_h/2+4 + 10) * 5,
+      obj.sections[65] = {x = 50,
+                          y = 150+butt_h+10 + (butt_h/2+4 + 10) * 5,
                           w = obj.sections[45].w-80,
                           h = butt_h/2+4}                           
 
-      obj.sections[68] = {x = obj.sections[45].x+50+obj.sections[45].w-74,
-                          y = obj.sections[45].y+150+butt_h+10 + (butt_h/2+4 + 10) * 4.5,
+      obj.sections[68] = {x = 50+obj.sections[45].w-74,
+                          y = 150+butt_h+10 + (butt_h/2+4 + 10) * 4.5,
                           w = butt_h/2+4,
                           h = butt_h/2+4}                           
 
-      obj.sections[66] = {x = obj.sections[45].x+50,
-                          y = obj.sections[45].y+150+butt_h+10 + (butt_h/2+4 + 10) * 10,
+      obj.sections[66] = {x = 50,
+                          y = 150+butt_h+10 + (butt_h/2+4 + 10) * 10,
                           w = obj.sections[45].w-100,
                           h = butt_h/2+4}
-      obj.sections[67] = {x = obj.sections[45].x+10,
-                          y = obj.sections[45].y+150+butt_h+10 + (butt_h/2+4 + 10) * 8,
+      obj.sections[67] = {x = 10,
+                          y = 150+butt_h+10 + (butt_h/2+4 + 10) * 8,
                           w = 35,
                           h = butt_h/2+8}
 
@@ -742,7 +748,7 @@
                                 h = bh}
                                 
       --Cycle
-      local cw, ch = 140, 380
+      local cw, ch = 160, 380
       obj.sections[100] = {x = obj.sections[45].x - cw - 10,
                            y = obj.sections[45].y + obj.sections[45].h - ch,
                            w = cw,
@@ -797,7 +803,7 @@
       
       obj.sections[115] = {x = obj.sections[43].x+obj.sections[43].w+20,
                            y = obj.sections[43].y+20,
-                           w = 140,
+                           w = 160,
                            h = 200}
       obj.sections[116] = {x = obj.sections[115].x,
                            y = obj.sections[115].y+butt_h*4,
@@ -820,64 +826,64 @@
                            h = butt_h}
       
       --CTL OPTIONS PG 2
-      obj.sections[125] = {x = obj.sections[45].x+60,
-                          y = obj.sections[45].y+butt_h+10 + (butt_h/2+4 + 10) * 0,
+      obj.sections[125] = {x = 60,
+                          y = butt_h+10 + (butt_h/2+4 + 10) * 0,
                           w = obj.sections[45].w-70,
                           h = butt_h/2+8}
 
-      obj.sections[126] = {x = obj.sections[45].x+60,
-                          y = obj.sections[45].y+butt_h+10 + (butt_h/2+4 + 10) * 5,
+      obj.sections[126] = {x = 60,
+                          y = butt_h+10 + (butt_h/2+4 + 10) * 5,
                           w = obj.sections[45].w-70,
                           h = butt_h/2+8}
-      obj.sections[127] = {x = obj.sections[45].x+60,
-                          y = obj.sections[45].y+butt_h+10 + (butt_h/2+4 + 10) * 6,
+      obj.sections[127] = {x = 60,
+                          y = butt_h+10 + (butt_h/2+4 + 10) * 6,
                           w = obj.sections[45].w-70,
                           h = butt_h/2+8}
       local kwh = defctls[def_knobsm].cellh
-      obj.sections[128] = {x = obj.sections[45].x+(obj.sections[45].w/4) - kwh/2,
-                           y = obj.sections[45].y+butt_h+20 + (butt_h/2+4 + 10) * 1,
+      obj.sections[128] = {x = (obj.sections[45].w/4) - kwh/2,
+                           y = butt_h+20 + (butt_h/2+4 + 10) * 1,
                           w = kwh,
                           h = kwh}
-      obj.sections[129] = {x = obj.sections[45].x+(obj.sections[45].w*(3/4)) - kwh/2,
-                           y = obj.sections[45].y+butt_h+20 + (butt_h/2+4 + 10) * 1,
+      obj.sections[129] = {x = (obj.sections[45].w*(3/4)) - kwh/2,
+                           y = butt_h+20 + (butt_h/2+4 + 10) * 1,
                           w = kwh,
                           h = kwh}
-      obj.sections[130] = {x = obj.sections[45].x+20,
-                          y = obj.sections[45].y+butt_h+10 + (butt_h/2+4 + 10) * 4,
+      obj.sections[130] = {x = 20,
+                          y = butt_h+10 + (butt_h/2+4 + 10) * 4,
                           w = obj.sections[45].w-40,
                           h = butt_h/2+4}
 
-      obj.sections[131] = {x = obj.sections[45].x+70,
-                          y = obj.sections[45].y+butt_h + (butt_h/2+4 + 10) * 8,
+      obj.sections[131] = {x = 70,
+                          y = butt_h + (butt_h/2+4 + 10) * 8,
                           w = obj.sections[45].w-80,
                           h = butt_h/2+8}
-      obj.sections[132] = {x = obj.sections[45].x+70,
-                          y = obj.sections[45].y+butt_h + (butt_h/2+4 + 10) * 9,
+      obj.sections[132] = {x = 70,
+                          y = butt_h + (butt_h/2+4 + 10) * 9,
                           w = obj.sections[45].w-80,
                           h = butt_h/2+8}
-      obj.sections[133] = {x = obj.sections[45].x+70,
-                          y = obj.sections[45].y+butt_h + (butt_h/2+4 + 10) * 10,
+      obj.sections[133] = {x = 70,
+                          y = butt_h + (butt_h/2+4 + 10) * 10,
                           w = obj.sections[45].w-80,
                           h = butt_h/2+8}
-      obj.sections[134] = {x = obj.sections[45].x+obj.sections[45].w-40-butt_h/2+4,
-                          y = obj.sections[45].y+butt_h+10 + (butt_h/2+4 + 10) * 11,
+      obj.sections[134] = {x = obj.sections[45].w-40-butt_h/2+4,
+                          y = butt_h+10 + (butt_h/2+4 + 10) * 11,
                           w = butt_h/2+4,
                           h = butt_h/2+4}                           
 
-      obj.sections[135] = {x = obj.sections[45].x+70,
-                          y = obj.sections[45].y+butt_h+10 + (butt_h/2+4 + 10) * 13,
+      obj.sections[135] = {x = 70,
+                          y = butt_h+10 + (butt_h/2+4 + 10) * 13,
                           w = obj.sections[45].w-80,
                           h = butt_h/2+8}
-      obj.sections[136] = {x = obj.sections[45].x+70,
-                          y = obj.sections[45].y+butt_h+10 + (butt_h/2+4 + 10) * 14,
+      obj.sections[136] = {x = 70,
+                          y = butt_h+10 + (butt_h/2+4 + 10) * 14,
                           w = obj.sections[45].w-80,
                           h = butt_h/2+8}
-      obj.sections[137] = {x = obj.sections[45].x+70,
-                          y = obj.sections[45].y+butt_h+10 + (butt_h/2+4 + 10) * 15,
+      obj.sections[137] = {x = 70,
+                          y = butt_h+10 + (butt_h/2+4 + 10) * 15,
                           w = obj.sections[45].w-80,
                           h = butt_h/2+8}
-      obj.sections[138] = {x = obj.sections[45].x+70,
-                          y = obj.sections[45].y+butt_h+10 + (butt_h/2+4 + 10) * 16,
+      obj.sections[138] = {x = 70,
+                          y = butt_h+10 + (butt_h/2+4 + 10) * 16,
                           w = obj.sections[45].w-80,
                           h = butt_h/2+8}
 
@@ -935,10 +941,23 @@
                           
       --SNAPSHOTS
       local ssh = snaph-160
-      obj.sections[160] = {x = gfx1.main_w - 160 - (sb_size+2),
-                          y = gfx1.main_h - snaph - (sb_size+2),
-                          w = 160,
-                          h = snaph}                            
+      obj.sections[160] = {}
+      obj.sections[160].w = 160
+      obj.sections[160].h = snaph
+      if ss160 == nil then
+        obj.sections[160] = {x = gfx1.main_w - 160 - (sb_size+2),
+                            y = gfx1.main_h - snaph - (sb_size+2),
+                            w = 160,
+                            h = snaph}                            
+      else
+        obj.sections[160] = ss160
+        if obj.sections[160].x + obj.sections[160].w > gfx1.main_w then
+          obj.sections[160].x = math.max(gfx1.main_w - obj.sections[160].w,obj.sections[10].x)
+        end
+        if obj.sections[160].y + obj.sections[160].h > gfx1.main_h then
+          obj.sections[160].y = math.max(gfx1.main_h - obj.sections[160].h,obj.sections[10].y)
+        end
+      end
       obj.sections[161] = {x = 30,
                           y = butt_h+10 + (butt_h/2+2 + 10) * 0,
                           w = obj.sections[160].w-20-20,
@@ -1024,8 +1043,8 @@
       local slsz = 100
       local cb_bw = 160
       ctl_browser_size.slotsz = slsz
-      ctl_browser_size.slots_x = math.floor((ctl_browser_size.w - 20 - cb_bw) / slsz)
-      ctl_browser_size.slots_y = math.floor((ctl_browser_size.h - (butt_h+2)*2 -20) / slsz)
+      ctl_browser_size.slots_x = math.max(math.floor((ctl_browser_size.w - 20 - cb_bw) / slsz),3)
+      ctl_browser_size.slots_y = math.max(math.floor((ctl_browser_size.h - (butt_h+2)*2 -20) / slsz),3)
       obj.sections[200] = {x = (obj.sections[10].w-ctl_browser_size.w)/2 +obj.sections[10].x,
                           y = (obj.sections[10].h-ctl_browser_size.h)/2 +obj.sections[10].y,
                           w = ctl_browser_size.w,
@@ -1612,25 +1631,7 @@
     --loadimg and set imageidx in graphics_files and strip.graphics
     if tracks[track_select] then
     
-      local strip
-      
-      if tracks[track_select].strip == -1 then
-        strip = #strips+1
-        strips[strip] = {track = tracks[track_select], page = page, {}}
-        for i = 1,4 do
-          strips[strip][i] = {surface_x = 0,
-                             surface_y = 0,     
-                             controls = {},
-                             graphics = {}}
-          if snapshots and snapshots[s] then
-            snapshots[s][i] = {}
-            snapshots[s][i][1] = {}
-          end
-        end
-        tracks[track_select].strip = strip
-      else
-        strip = tracks[track_select].strip
-      end
+      local strip = Strip_INIT()
       
       if type == gfxtype.img then
         if graphics_files[gfx_select].imageidx == nil then  
@@ -1703,10 +1704,10 @@
 
   end
   
-------------------------------------------------------------    
+------------------------------------------------------------
 
-  function Strip_AddParam()
-  
+  function Strip_INIT()
+
     if tracks[track_select] then
     
       local strip
@@ -1719,6 +1720,8 @@
                              surface_y = 0,     
                              controls = {},
                              graphics = {}}
+          Snapshots_INIT()
+          --XXY_INIT()
           if snapshots and snapshots[s] then
             snapshots[s][i] = {}
             snapshots[s][i][1] = {}
@@ -1728,6 +1731,20 @@
       else
         strip = tracks[track_select].strip
       end
+
+      return strip
+        
+    end
+    
+  end
+    
+------------------------------------------------------------
+
+  function Strip_AddParam()
+  
+    if tracks[track_select] then
+    
+      local strip = Strip_INIT()
 
       if ctl_files[knob_select].imageidx == nil then  
         image_count = F_limit(image_count + 1,0,image_max)
@@ -2483,7 +2500,39 @@
     end
     
   end
+
+  function LoadSkinIMG(iidx, fn)
+
+    if reaper.file_exists(skins_path..fn) then
+    --DBG(iidx)
+      gfx.loadimg(iidx,skins_path..fn)
+      return iidx
+    else
+      DBG('Skin file: '..fn..' missing.  Please ensure you have the latest skin folder from LBXCS_resources.zip on github installed inside your LBXCS_resources folder.')
+      return -1
+    end
+    
+  end
+
+  function LoadSkin()
   
+    local skin = {}
+    local ret = true
+    
+    skin.panela_top = LoadSkinIMG(850, 'PanelA_TOP.png')
+    skin.panela_mid = LoadSkinIMG(851, 'PanelA_MID.png')
+    skin.panela_bot = LoadSkinIMG(852, 'PanelA_BOT.png')
+  
+    if skin.panela_top == -1 or 
+       skin.panela_mid == -1 or 
+       skin.panela_bot == -1 then
+      ret = false   
+    end
+  
+    return skin, ret
+    
+  end
+    
   -------------------------------------------------------
 
   function GetTrack(t)
@@ -3727,9 +3776,15 @@
   
     gfx.dest = 1
 
+    local xywh = {x = obj.sections[100].x,
+                  y = obj.sections[100].y-butt_h,
+                  w = obj.sections[100].w,
+                  h = obj.sections[100].h+butt_h}
+    GUI_DrawPanel(xywh,true)
+
     f_Get_SSV('0 0 0')
     gfx.a = 1  
-    gfx.rect(obj.sections[100].x,
+    --[[gfx.rect(obj.sections[100].x,
              obj.sections[100].y, 
              obj.sections[100].w,
              obj.sections[100].h, 1 )
@@ -3751,7 +3806,11 @@
     gfx.rect(xywh.x,
              xywh.y, 
              xywh.w,
-             xywh.h, 1 )
+             xywh.h, 1 )]]
+    xywh = {x = obj.sections[100].x,
+                      y = obj.sections[100].y-butt_h,
+                      w = obj.sections[100].w,
+                      h = butt_h}
     GUI_textC(gui,xywh,'CYCLE OPTS',gui.color.black,-2)
   
     --local p = F_limit(math.floor(Cycle_Norm(cycle_select.val,ctl_select[1].ctl)*(defctls[def_knob].frames-1)),0,defctls[def_knob].frames-1)
@@ -3844,8 +3903,10 @@
                   y = obj.sections[49].y,
                   w = obj.sections[49].w,
                   h = obj.sections[49].h}
+
+    GUI_DrawPanel(xywh, true)
     
-    f_Get_SSV('0 0 0')
+    --[[f_Get_SSV('0 0 0')
     gfx.a = 1  
     gfx.rect(xywh.x,
      xywh.y, 
@@ -3857,15 +3918,15 @@
     gfx.rect(xywh.x,
      xywh.y, 
      xywh.w,
-     xywh.h, 0 )
+     xywh.h, 0 )]]
     
     xywh.h = butt_h     
     f_Get_SSV(gui.color.white)
     gfx.a = 1 
-    gfx.rect(xywh.x,
+    --[[gfx.rect(xywh.x,
      xywh.y, 
      xywh.w,
-     xywh.h, 1 )
+     xywh.h, 1 )]]
 
     GUI_textC(gui,xywh,'LABEL OPTS',gui.color.black,-2)
 
@@ -3887,14 +3948,19 @@
 
   function GUI_DrawCtlOptions(obj, gui)
 
-    gfx.dest = 1
+    gfx.dest = 1011
+    --if resize_display then
+      --gfx.setimgdim(1011,obj.sections[45].w, obj.sections[45].h)
+    --end
 
-    local xywh = {x = obj.sections[45].x,
-                  y = obj.sections[45].y,
+    GUI_DrawPanel(obj.sections[45])
+
+    local xywh = {x = 0,
+                  y = 0,
                   w = obj.sections[45].w,
                   h = obj.sections[45].h}
     
-    f_Get_SSV('0 0 0')
+    --[[f_Get_SSV('0 0 0')
     gfx.a = 1  
     gfx.rect(xywh.x,
      xywh.y, 
@@ -3906,15 +3972,15 @@
     gfx.rect(xywh.x,
      xywh.y, 
      xywh.w,
-     xywh.h, 0 )
+     xywh.h, 0 )]]
     
     xywh.h = butt_h     
     f_Get_SSV(gui.color.white)
     gfx.a = 1 
-    gfx.rect(xywh.x,
+    --[[gfx.rect(xywh.x,
      xywh.y, 
      xywh.w,
-     xywh.h, 1 )
+     xywh.h, 1 )]]
 
     GUI_textC(gui,xywh,'CTL OPTIONS',gui.color.black,-2)
     xywh.x = xywh.x+xywh.w-20
@@ -3922,8 +3988,8 @@
     GUI_textC(gui,xywh,ctl_page+1,gui.color.black,-2)
     
     if ctl_page == 0 then
-      xywh = {x = obj.sections[45].x,
-              y = obj.sections[45].y+butt_h,
+      xywh = {x = 0,
+              y = butt_h,
               w = obj.sections[45].w,
               h = obj.sections[45].h}
       
@@ -3951,17 +4017,17 @@
         end
         
         gfx.blit(iidx,scale_select,0, 0, h*math.ceil((ctl_files[knob_select].frames-1)*0.55), w, h, xywh.x + (xywh.w/2-(w*scale_select)/2), xywh.y + (62.5 - (h*scale_select)/2))
-        xywh = {x = obj.sections[45].x,
-                y = obj.sections[45].y+butt_h,
+        xywh = {x = 0,
+                y = butt_h,
                 w = obj.sections[45].w,
                 h = butt_h}
         gfx.a = 0.75
         
         f_Get_SSV('0 0 0')
-        gfx.rect(xywh.x+1,
-                 xywh.y,
-                 xywh.w-2,
-                 xywh.h,1)        
+        gfx.rect(xywh.x+2,
+                 xywh.y+3,
+                 xywh.w-4,
+                 xywh.h-3,1)        
         GUI_textC(gui,xywh,ctl_files[knob_select].fn,gui.color.white,-5)
   
       end
@@ -4027,7 +4093,7 @@
       GUI_DrawButton(gui, framemode_table[framemode_select], obj.sections[133], gui.color.white, gui.color.black, true, 'FRAME MOD')
       GUI_DrawTick(gui, 'HORIZ SLIDER', obj.sections[134], gui.color.white, horiz_select)
 
-      xywh = {x = obj.sections[45].x,
+      xywh = {x = 0,
               y = obj.sections[135].y-butt_h-5,
               w = obj.sections[45].w,
               h = butt_h}
@@ -4059,7 +4125,8 @@
       gfx.blit(def_knobsm,1,0, 0, defctls[def_knobsm].cellh*math.floor((defctls[def_knobsm].frames-1)*pmax), w, defctls[def_knobsm].cellh, obj.sections[129].x, obj.sections[129].y)
     
     end
-        
+    
+    gfx.dest = 1
   end
  
   function GUI_DrawSliderH(gui, t, b, colb, cols, v)
@@ -4075,7 +4142,7 @@
              b.h, 1 )
     f_Get_SSV(colb)
     gfx.a = 1
-    local w = (b.w-2) - (b.w-2) * v
+    local w = math.floor((b.w-2) - (b.w-2) * v)
     if w > 0 then
       gfx.rect(b.x+1 + (b.w-2)-w,
                b.y+1, 
@@ -4948,7 +5015,10 @@ end
     function GUI_DrawParamLearn(obj, gui)
     
       gfx.a=1
-      f_Get_SSV(gui.color.black)
+      
+      GUI_DrawPanel(obj.sections[115],true)
+      
+      --[[f_Get_SSV(gui.color.black)
       gfx.rect(obj.sections[115].x,
                obj.sections[115].y, 
                obj.sections[115].w,
@@ -4957,19 +5027,19 @@ end
       gfx.rect(obj.sections[115].x,
                obj.sections[115].y, 
                obj.sections[115].w,
-               obj.sections[115].h, 0, 1)
+               obj.sections[115].h, 0, 1)]]
       
       xywh = {x = obj.sections[115].x,
               y = obj.sections[115].y,
               w = obj.sections[115].w,
               h = butt_h}
       
-      f_Get_SSV(gui.color.white)
+      --[[f_Get_SSV(gui.color.white)
       gfx.a = 1 
       gfx.rect(xywh.x,
                xywh.y, 
                xywh.w,
-               butt_h, 1 )
+               butt_h, 1 )]]
       
       GUI_textC(gui,xywh,'PARAM LEARN',gui.color.black,-2)
       
@@ -5011,24 +5081,66 @@ end
     end
     
   ------------------------------------------------------------
+  
+  function GUI_DrawPanel(objPanel, tobgd)
+
+    gfx.a=1
+    local x,y = 0,0
+    if tobgd then
+      x,y = objPanel.x, objPanel.y
+    end
+    local wt, ht = gfx.getimgdim(skin.panela_top)
+    local wb, hb = gfx.getimgdim(skin.panela_bot)
+    local hh = ht + hb
+    local pw = objPanel.w
+    local ph = objPanel.h
+    if hh > ph then ht = ph - hb end
+    gfx.blit(skin.panela_top, 1, 0, 0, 0, wt, ht, x, y, pw) 
+    local th = ht
+    gfx.blit(skin.panela_bot, 1, 0, 0, 0, wb, hb, x, y+ph-hb, pw) 
+    local sh = ph - hh
+    if sh > 0 then
+      local w, h = gfx.getimgdim(skin.panela_mid)
+      gfx.blit(skin.panela_mid, 1, 0, 0, 0, w, h, x, y+th, pw, sh) 
+    end
+  
+  end
 
   function GUI_DrawSnapshots(obj, gui)
     
     gfx.dest = 1003
     
     gfx.a=1
-    f_Get_SSV(gui.color.black)
-    gfx.rect(0,
-             0, 
-             obj.sections[160].w,
-             obj.sections[160].h, 1, 1)
-    f_Get_SSV('64 64 64')
-    gfx.rect(0,
-             0, 
-             obj.sections[160].w,
-             obj.sections[160].h, 0, 1)
+
+    GUI_DrawPanel(obj.sections[160])
     
-    xywh = {x = 0,
+    --[[local wt, ht = gfx.getimgdim(skin.panela_top)
+    local wb, hb = gfx.getimgdim(skin.panela_bot)
+    local hh = ht + hb
+    local pw = obj.sections[160].w
+    local ph = obj.sections[160].h
+    if hh > ph then ht = ph - hb end
+    gfx.blit(skin.panela_top, 1, 0, 0, 0, wt, ht, 0, 0, pw) 
+    local th = ht
+    gfx.blit(skin.panela_bot, 1, 0, 0, 0, wb, hb, 0, ph-hb, pw) 
+    local sh = ph - hh
+    if sh > 0 then
+      local w, h = gfx.getimgdim(skin.panela_mid)
+      gfx.blit(skin.panela_mid, 1, 0, 0, 0, w, h, 0, th, pw, sh) 
+    end]]
+        
+    --[[f_Get_SSV(gui.color.black)
+    gfx.rect(0,
+             0, 
+             obj.sections[160].w,
+             obj.sections[160].h, 1, 1)]]
+    --[[f_Get_SSV('64 64 64')
+    gfx.rect(0,
+             0, 
+             obj.sections[160].w,
+             obj.sections[160].h, 0, 1)]]
+    
+    --[[xywh = {x = 0,
             y = 0,
             w = obj.sections[160].w,
             h = butt_h}
@@ -5042,8 +5154,11 @@ end
     gfx.rect(obj.sections[165].x,
              obj.sections[165].y, 
              obj.sections[165].w,
-             obj.sections[165].h, 1 )
-    
+             obj.sections[165].h, 1 )]]
+    xywh = {x = 0,
+            y = 0,
+            w = obj.sections[160].w,
+            h = butt_h}
     GUI_textC(gui,xywh,'SNAPSHOTS',gui.color.black,-2)
 
     local sstypestr = 'PAGE'
@@ -5357,7 +5472,7 @@ end
   function PopulateCtlBrowser_Imgs()
   
     cbi = {}
-    local icnt = image_max+1
+    local icnt = ctl_browser_image+1
     local it = 0
     cbi_cnt = 0
     local cbof = 0
@@ -7436,18 +7551,20 @@ end
       local p = 0
         
       gfx.dest = 1
-      if update_gfx then
+      if update_gfx or resize_display then
         gfx.setimgdim(1, -1, -1)  
         gfx.setimgdim(1, gfx1.main_w,gfx1.main_h)
       end
             
       if resize_display then
-        gfx.setimgdim(1002,obj.sections[45].w, obj.sections[45].h)
+        --gfx.setimgdim(1002,obj.sections[45].w, obj.sections[45].h)
         gfx.setimgdim(1003,obj.sections[160].w, obj.sections[160].h)
         gfx.setimgdim(1005,obj.sections[180].w, obj.sections[180].h)
         gfx.setimgdim(1006,obj.sections[221].w, obj.sections[221].h)
-        gfx.setimgdim(1007,obj.sections[220].w, obj.sections[220].h)        
+        gfx.setimgdim(1007,obj.sections[220].w, obj.sections[220].h)
+        gfx.setimgdim(1011,obj.sections[45].w, obj.sections[45].h)        
       elseif resize_snaps then
+        gfx.setimgdim(1003,-1,-1)
         gfx.setimgdim(1003,obj.sections[160].w, obj.sections[160].h)      
       elseif resize_fsnaps then
         gfx.setimgdim(1005,obj.sections[180].w, obj.sections[180].h)      
@@ -7481,7 +7598,7 @@ end
           elseif update_ctls then        
             GUI_DrawControls(obj, gui)
           end
-          if update_gfx or update_sidebar then        
+          if update_gfx or update_sidebar or resize_display then        
             GUI_DrawTracks(obj, gui)
           end
         end
@@ -7696,12 +7813,12 @@ end
           elseif update_ctls then        
             GUI_DrawControls(obj, gui)
           end
-          if update_gfx or update_sidebar then        
+          if update_gfx or update_sidebar or resize_display then        
             GUI_DrawFXParams(obj, gui)
           end
           
-          if show_ctloptions and ctl_select ~= nil then
-            --GUI_DrawCtlOptions(obj, gui)            
+          if show_ctloptions and ctl_select ~= nil and (update_gfx or update_ctlopts) then
+            GUI_DrawCtlOptions(obj, gui)            
           end
 
           gfx.dest = 1
@@ -7813,7 +7930,12 @@ end
             local w,h = gfx.getimgdim(1021)
             gfx.a = 0.5
             gfx.blit(1021,1,0,0,0,w,h,obj.sections[60].x,obj.sections[60].y)
-            GUI_DrawCtlOptions(obj, gui)
+            --GUI_DrawCtlOptions(obj, gui)
+
+            gfx.a = 1
+            local w,h = gfx.getimgdim(1011)
+            gfx.blit(1011,1,0,0,0,w,h,obj.sections[45].x,obj.sections[45].y)
+            
             if show_cycleoptions then
               GUI_DrawCycleOptions(obj, gui)
             end            
@@ -7876,7 +7998,7 @@ end
             GUI_DrawControls(obj, gui)
           end
                     
-          if update_gfx or update_sidebar then        
+          if update_gfx or update_sidebar or resize_display then        
             GUI_DrawGraphicsChooser(obj, gui)
           end
           
@@ -8056,7 +8178,7 @@ end
       end
             
       if resize_display then
-        gfx.setimgdim(1002,obj.sections[45].w, obj.sections[45].h)
+        --gfx.setimgdim(1002,obj.sections[45].w, obj.sections[45].h)
         gfx.setimgdim(1003,obj.sections[160].w, obj.sections[160].h)
         gfx.setimgdim(1005,obj.sections[180].w, obj.sections[180].h)
         gfx.setimgdim(1006,obj.sections[221].w, obj.sections[221].h)
@@ -10700,24 +10822,8 @@ end
     if track_select == nil then return end
     if ignoregrid == nil then ignoregrid = false end
     
-    local strip, i, j
-    if tracks[track_select].strip == -1 then
-      strip = #strips+1
-      strips[strip] = {track = tracks[track_select],page=page,{}}
-      for i = 1,4 do
-        strips[strip][i] = {surface_x = 0,
-                           surface_y = 0,     
-                           controls = {},
-                           graphics = {}}
-        if snapshots and snapshots[s] then
-          snapshots[s][i] = {}
-          snapshots[s][i][1] = {}
-        end
-      end
-      tracks[track_select].strip = strip
-    else
-      strip = tracks[track_select].strip
-    end
+    local i, j
+    local strip = Strip_INIT()
     
     local tr = GetTrack(strips[strip].track.tracknum)
     
@@ -13308,25 +13414,7 @@ end
     
       if tracks[track_select] then
           
-        local strip
-        
-        if tracks[track_select].strip == -1 then
-          strip = #strips+1
-          strips[strip] = {track = tracks[track_select], page = page, {}}
-          for i = 1,4 do
-            strips[strip][i] = {surface_x = 0,
-                               surface_y = 0,     
-                               controls = {},
-                               graphics = {}}
-            if snapshots and snapshots[s] then
-              snapshots[s][i] = {}
-              snapshots[s][i][1] = {}
-            end
-          end
-          tracks[track_select].strip = strip
-        else
-          strip = tracks[track_select].strip
-        end
+        local strip = Strip_INIT()
       
         local ctls = strips[strip][page].controls
       
@@ -13458,7 +13546,7 @@ end
         show_fsnapshots = false
         show_xysnapshots = false
         resize_display = true
-        update_gfx = true
+        update_surface = true
         force_resize = false
         
         if surface_size.w < obj.sections[10].w then
@@ -17481,14 +17569,42 @@ end
     
               elseif MOUSE_over(obj.sections[45]) then
   
+                local mx, my = mouse.mx, mouse.my
+                mouse.mx = mouse.mx - obj.sections[45].x
+                mouse.my = mouse.my - obj.sections[45].y
+  
                 if ctl_page == 0 then
   
-                  local xywh = {x = obj.sections[45].x, y = obj.sections[45].y, w = obj.sections[45].w, h = 150}
+                  local xywh = {x = 0, y = 0, w = obj.sections[45].w, h = 150}
                   if MOUSE_over(xywh) then
                     knob_select = (knob_select - v) % #ctl_files
-                    update_gfx = true
+                    update_ctlopts = true
                     gfx.mouse_wheel = 0
                   end
+                  
+                  if MOUSE_over(obj.sections[50]) then
+                    scale_select = F_limit(scale_select + (v*0.05),0.5,1)
+                    for i = 1, #ctl_select do
+                      if strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctlcat ~= ctlcats.xy then
+                        strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].scale = scale_select
+                        strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].xsc = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].x
+                                                                                                   + math.floor(strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].w/2
+                                                                                                   - (strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].w*scale_select)/2)
+                        strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ysc = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].y
+                                                                                                   + math.floor(strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctl_info.cellh/2
+                                                                                                   - (strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctl_info.cellh*scale_select)/2)
+                        strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].wsc = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].w*scale_select
+                        strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].hsc = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctl_info.cellh*scale_select
+                        --strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].dirty = true
+                      end
+                    end            
+                    --update_ctls = true
+                    --update_ctlopts = true
+                    --update_surface = true
+                    update_gfx = true
+                  end
+                  
+                  
                   if MOUSE_over(obj.sections[56]) then
                     if toffY then
                       textoff_select = textoff_select + v*2
@@ -17635,6 +17751,7 @@ end
 
                 end
                 
+                mouse.mx, mouse.my = mx, my
               end
             end
             
@@ -17758,6 +17875,7 @@ end
                     closectlbrowser = true
                     --show_ctlbrowser = false
                     update_surface = true
+                    update_ctlopts = true
                   end
                 else
                   local ix = math.floor((mouse.mx - obj.sections[210].x) / ctl_browser_size.slotsz)
@@ -17880,6 +17998,10 @@ end
                 update_gfx = true
               end
               
+              local mx, my = mouse.mx, mouse.my
+              mouse.mx = mouse.mx - obj.sections[45].x
+              mouse.my = mouse.my - obj.sections[45].y
+              
               if ctl_page == 0 then
                 
                 if mouse.context == nil and MOUSE_click(obj.sections[90]) then
@@ -17898,7 +18020,7 @@ end
                   end
                   update_gfx = true
   
-                elseif mouse.LB and mouse.my > obj.sections[45].y+butt_h and mouse.my < obj.sections[45].y+150 then
+                elseif mouse.LB and mouse.my > butt_h and mouse.my < 150 then
                 
                   PopulateCtlBrowser_Imgs()
                   cbi_select = knob_select
@@ -18156,6 +18278,8 @@ end
               
               end
             
+              mouse.mx, mouse.my = mx, my
+            
             elseif ctl_select ~= nil and show_cycleoptions and gfx.mouse_wheel ~= 0 and MOUSE_over(obj.sections[103]) then
             
               local v = gfx.mouse_wheel/120
@@ -18354,7 +18478,12 @@ end
             end
             
             if mouse.context and mouse.context == contexts.knobsens_norm then
-              local val = F_limit(MOUSE_sliderHBar(obj.sections[135]),0,1)
+              local objsec = obj.sections[135]
+              local xywh = {x = obj.sections[45].x + objsec.x,
+                            y = obj.sections[45].y + objsec.y,
+                            w = objsec.w,
+                            h = objsec.h}
+              local val = F_limit(MOUSE_sliderHBar(xywh),0,1)
               if val ~= nil then
                 local v = math.floor(val * 20)*0.5
                 --DBG('v='..v)
@@ -18363,9 +18492,15 @@ end
                   strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].knobsens.norm = v
                 end
                 update_surface = true
+                update_ctlopts = true
               end
             elseif mouse.context and mouse.context == contexts.knobsens_fine then
-              local val = F_limit(MOUSE_sliderHBar(obj.sections[136]),0,1)
+              local objsec = obj.sections[136]
+              local xywh = {x = obj.sections[45].x + objsec.x,
+                            y = obj.sections[45].y + objsec.y,
+                            w = objsec.w,
+                            h = objsec.h}
+              local val = F_limit(MOUSE_sliderHBar(xywh),0,1)
               if val ~= nil then
                 local v = math.floor(val * 20)*0.01
                 knobsens_select.fine = v
@@ -18373,9 +18508,15 @@ end
                   strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].knobsens.fine = v
                 end
                 update_surface = true
+                update_ctlopts = true
               end
             elseif mouse.context and mouse.context == contexts.knobsens_wheel then
-              local val = F_limit(MOUSE_sliderHBar(obj.sections[137]),0,1)
+              local objsec = obj.sections[137]
+              local xywh = {x = obj.sections[45].x + objsec.x,
+                            y = obj.sections[45].y + objsec.y,
+                            w = objsec.w,
+                            h = objsec.h}
+              local val = F_limit(MOUSE_sliderHBar(xywh),0,1)
               if val ~= nil then
                 local v = math.floor(val * 20)*0.01
                 knobsens_select.wheel = v
@@ -18383,9 +18524,15 @@ end
                   strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].knobsens.wheel = v
                 end
                 update_surface = true
+                update_ctlopts = true
               end
             elseif mouse.context and mouse.context == contexts.knobsens_wheelfine then
-              local val = F_limit(MOUSE_sliderHBar(obj.sections[138]),0,1)
+              local objsec = obj.sections[138]
+              local xywh = {x = obj.sections[45].x + objsec.x,
+                            y = obj.sections[45].y + objsec.y,
+                            w = objsec.w,
+                            h = objsec.h}
+              local val = F_limit(MOUSE_sliderHBar(xywh),0,1)
               if val ~= nil then
                 local v = math.floor(val * 20)*0.001
                 knobsens_select.wheelfine = v
@@ -18393,15 +18540,21 @@ end
                   strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].knobsens.wheelfine = v
                 end
                 update_surface = true
+                update_ctlopts = true
               end
             
             elseif mouse.context and mouse.context == contexts.minov then
-              local val = MOUSE_slider(obj.sections[128],mouse.slideoff)
+              local objsec = obj.sections[128]
+              local xywh = {x = obj.sections[45].x + objsec.x,
+                            y = obj.sections[45].y + objsec.y,
+                            w = objsec.w,
+                            h = objsec.h}
+              local val = MOUSE_slider(xywh,mouse.slideoff)
               if val ~= nil then
                 if oms ~= mouse.shift then
                   oms = mouse.shift
                   ctlpos = minov_select
-                  mouse.slideoff = obj.sections[128].y+obj.sections[128].h/2 - mouse.my
+                  mouse.slideoff = obj.sections[128].y+obj.sections[128].h/2 - (mouse.my-obj.sections[45].y)
                 else
                   if mouse.shift then
                     val = ctlpos + ((0.5-val)*2)*0.0125
@@ -18422,6 +18575,7 @@ end
                     SetParam()                
                     octlval = val
                     update_ctls = true
+                    update_ctlopts = true
                   end
                 end
               elseif minov_act ~= nil then
@@ -18439,12 +18593,17 @@ end
               end
               
             elseif mouse.context and mouse.context == contexts.maxov then
-              local val = MOUSE_slider(obj.sections[129],mouse.slideoff)
+              local objsec = obj.sections[129]
+              local xywh = {x = obj.sections[45].x + objsec.x,
+                            y = obj.sections[45].y + objsec.y,
+                            w = objsec.w,
+                            h = objsec.h}
+              local val = MOUSE_slider(xywh,mouse.slideoff)
               if val ~= nil then
                 if oms ~= mouse.shift then
                   oms = mouse.shift
                   ctlpos = maxov_select
-                  mouse.slideoff = obj.sections[129].y+obj.sections[129].h/2 - mouse.my
+                  mouse.slideoff = obj.sections[129].y+obj.sections[129].h/2 - (mouse.my-obj.sections[45].y)
                 else
                   if mouse.shift then
                     val = ctlpos + ((0.5-val)*2)*0.1
@@ -18465,6 +18624,7 @@ end
                     SetParam()
                     octlval = val
                     update_ctls = true
+                    update_ctlopts = true
                   end
                 end
               elseif maxov_act ~= nil then
@@ -18531,7 +18691,12 @@ end
             end
             
             if mouse.context and mouse.context == contexts.scaleslider then
-              local val = F_limit(MOUSE_sliderHBar(obj.sections[50]),0,1)
+              local objsec = obj.sections[50]
+              local xywh = {x = obj.sections[45].x + objsec.x,
+                            y = obj.sections[45].y + objsec.y,
+                            w = objsec.w,
+                            h = objsec.h}
+              local val = F_limit(MOUSE_sliderHBar(xywh),0,1)
               if val ~= nil then
                 scale_select = val*0.5 + 0.5
                 for i = 1, #ctl_select do
@@ -18545,25 +18710,35 @@ end
                                                                                                - (strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctl_info.cellh*scale_select)/2)
                     strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].wsc = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].w*scale_select
                     strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].hsc = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctl_info.cellh*scale_select
+                    --strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].dirty = true
                   end
                 end            
-                update_gfx = true
                 --update_ctls = true
+                --update_ctlopts = true
+                --update_surface = true
+                update_gfx = true
               end
             end
     
             if mouse.context and mouse.context == contexts.offsetslider then
-              local val = F_limit(MOUSE_sliderHBar(obj.sections[56]),0,1)
+              local objsec = obj.sections[56]
+              local xywh = {x = obj.sections[45].x + objsec.x,
+                            y = obj.sections[45].y + objsec.y,
+                            w = objsec.w,
+                            h = objsec.h}
+              local val = F_limit(MOUSE_sliderHBar(xywh),0,1)
               if val ~= nil then
                 if toffY then
                   textoff_select = val*300 - 150
                   for i = 1, #ctl_select do
                     strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].textoff = textoff_select
+                    --strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].dirty = true
                   end            
                 else
                   textoff_selectx = val*300 - 150
                   for i = 1, #ctl_select do
                     strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].textoffx = textoff_selectx
+                    --strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].dirty = true
                   end                          
                 end
                 update_gfx = true
@@ -18571,7 +18746,12 @@ end
             end
     
             if mouse.context and mouse.context == contexts.valoffsetslider then
-              local val = F_limit(MOUSE_sliderHBar(obj.sections[65]),0,1)
+              local objsec = obj.sections[65]
+              local xywh = {x = obj.sections[45].x + objsec.x,
+                            y = obj.sections[45].y + objsec.y,
+                            w = objsec.w,
+                            h = objsec.h}
+              local val = F_limit(MOUSE_sliderHBar(xywh),0,1)
               if val ~= nil then
                 if toffY then
                   textoffval_select = val*300 - 150
@@ -18589,7 +18769,12 @@ end
             end
     
             if mouse.context and mouse.context == contexts.textsizeslider then
-              local val = F_limit(MOUSE_sliderHBar(obj.sections[58]),0,1)
+              local objsec = obj.sections[58]
+              local xywh = {x = obj.sections[45].x + objsec.x,
+                            y = obj.sections[45].y + objsec.y,
+                            w = objsec.w,
+                            h = objsec.h}
+              local val = F_limit(MOUSE_sliderHBar(xywh),0,1)
               if val ~= nil then
                 textsize_select = (val*35)-2
                 for i = 1, #ctl_select do
@@ -18600,7 +18785,12 @@ end
             end
     
             if mouse.context and mouse.context == contexts.defvalslider then
-              local val = F_limit(MOUSE_sliderHBar(obj.sections[57]),0,1)
+              local objsec = obj.sections[57]
+              local xywh = {x = obj.sections[45].x + objsec.x,
+                            y = obj.sections[45].y + objsec.y,
+                            w = objsec.w,
+                            h = objsec.h}
+              local val = F_limit(MOUSE_sliderHBar(xywh),0,1)
               local upd = false
               if mouse.ctrl then
                 if mouse.mx ~= omx then
@@ -18628,6 +18818,7 @@ end
                   SetParam_ToDef(trackfxparam_select)
                 end
                 update_ctls = true
+                update_ctlopts = true
               end
             end
                 
@@ -26208,6 +26399,7 @@ end
         if strips[tracks[t].strip] then
 
           table.insert(striptbl, strips[tracks[t].strip])
+          --DBG(snapshots[tracks[t].strip])
           table.insert(snaptbl, snapshots[tracks[t].strip])
           tblpos = #striptbl
           striptbl[tblpos].track.strip = tblpos
@@ -26921,7 +27113,8 @@ end
     fact[f] = cfact(f)  
   end
   
-  image_max = 910
+  image_max = 849
+  ctl_browser_image = 910
   maximg_browse = 79
   b_sz = 100
   lockx = false
@@ -26942,6 +27135,8 @@ end
   paths_path = resource_path.."paths/"
   eqbands_path = resource_path.."eqbands/"
   eq_path = resource_path.."eq/"
+  skins_path = resource_path.."skins/LBXDEF/"
+    
   reaper.RecursiveCreateDirectory(paths_path,1)
   reaper.RecursiveCreateDirectory(eqbands_path,1)
   reaper.RecursiveCreateDirectory(eq_path,1)
@@ -27009,6 +27204,8 @@ end
   def_box = LoadControl(1012, 'SimpleBox_9632.knb')
   ctl_bitmap = 1010
   
+  skin, ret = LoadSkin()
+  
   --testchunkcopy(0,3)
 --testfxinsert()
   
@@ -27016,6 +27213,8 @@ end
     DBG("Please ensure you have the '__default', 'SimpleFlat_48', 'SimpleFlat_96', 'SimpleFlat2_96', '__Snapshot', '__XY' and '__XYTarget' files in your LBXCS_resources/controls/ folder.")
     DBG("You can get these files from the LBX Stripper project on github - in the LBXCS_resources zip file")
     reaper.atexit()
+  elseif ret == false then
+    reaper.atexit()  
   else
     def_snapshotctl = -1
         
