@@ -25274,6 +25274,7 @@ end
     reaper.SetProjExtState(0,SCRIPT,'locksurface',tostring(settings_locksurface))
     reaper.SetProjExtState(0,SCRIPT,'lasttrack',track_select)
     reaper.SetProjExtState(0,SCRIPT,'metalite_gravity',xxy_gravity)
+    if snapshot_win_pos == nil then snapshot_win_pos = {} end
     reaper.SetProjExtState(0,SCRIPT,'snapwinpos_x',snapshot_win_pos.x)
     reaper.SetProjExtState(0,SCRIPT,'snapwinpos_y',snapshot_win_pos.y)
     reaper.SetProjExtState(0,SCRIPT,'showsnap',tostring(show_snapshots))
