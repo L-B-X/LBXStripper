@@ -539,7 +539,7 @@
       --CONTROL OPTIONS
       local cow = 160
       obj.sections[45] = {x = math.max(gfx1.main_w - cow - 10, obj.sections[10].x + cow + 20),
-                          y = math.max(gfx1.main_h - 440 -10, obj.sections[10].y),
+                          y = math.max(gfx1.main_h - 440 - 10, obj.sections[10].y),
                           w = cow,
                           h = 440}                           
       local sf_h = 140
@@ -949,8 +949,22 @@
                             y = gfx1.main_h - snaph - (sb_size+2),
                             w = 160,
                             h = snaph}                            
+        if snapshot_win_pos and snapshot_win_pos.x and snapshot_win_pos.y then
+          obj.sections[160].x = snapshot_win_pos.x
+          obj.sections[160].y = snapshot_win_pos.y
+        end        
+        if obj.sections[160].x + obj.sections[160].w > gfx1.main_w then
+          obj.sections[160].x = math.max(gfx1.main_w - obj.sections[160].w,obj.sections[10].x)
+        end
+        if obj.sections[160].y + obj.sections[160].h > gfx1.main_h then
+          obj.sections[160].y = math.max(gfx1.main_h - obj.sections[160].h,obj.sections[10].y)
+        end
       else
         obj.sections[160] = ss160
+        if snapshot_win_pos and snapshot_win_pos.x and snapshot_win_pos.y then
+          obj.sections[160].x = snapshot_win_pos.x
+          obj.sections[160].y = snapshot_win_pos.y
+        end        
         if obj.sections[160].x + obj.sections[160].w > gfx1.main_w then
           obj.sections[160].x = math.max(gfx1.main_w - obj.sections[160].w,obj.sections[10].x)
         end
@@ -976,9 +990,9 @@
                           h = butt_h/2+8}                      
 
       obj.sections[165] = {x = 0,
-                          y = obj.sections[160].h-6,
+                          y = obj.sections[160].h-12,
                           w = obj.sections[160].w,
-                          h = 6}                       
+                          h = 12}                       
       obj.sections[166] = {x = 10,
                           y = butt_h+10 + (butt_h/2+2 + 10) * 2,
                           w = (obj.sections[160].w-20)/2 - 1,
@@ -17362,6 +17376,7 @@ end
           obj.sections[160].x = F_limit(mouse.mx - movesnapwin.offx, obj.sections[10].x, obj.sections[10].x+obj.sections[10].w-obj.sections[160].w)
           obj.sections[160].y = F_limit(mouse.my - movesnapwin.offy, obj.sections[10].y, obj.sections[10].y+obj.sections[10].h-obj.sections[160].h)
           
+          snapshot_win_pos = {x = obj.sections[160].x, y = obj.sections[160].y}
           update_msnaps = true
         
         elseif mouse.context and mouse.context == contexts.addsnapctl then
@@ -17377,7 +17392,7 @@ end
           local ly = obj.sections[10].h - obj.sections[160].y + butt_h
           obj.sections[160].h = F_limit(resizesnapwin.origh + (mouse.my - resizesnapwin.offy) - obj.sections[160].y, 180, ly)
           obj.sections[163].h = obj.sections[160].h - 160
-          obj.sections[165].y = obj.sections[160].h - 6
+          obj.sections[165].y = obj.sections[160].h - obj.sections[165].h
           snaph = obj.sections[160].h
           update_msnaps = true
           resize_snaps = true
@@ -23680,7 +23695,10 @@ end
         settings_locksurface = tobool(nz(GPES('locksurface',true),false))
         track_select = tonumber(nz(GPES('lasttrack',true),0))
         xxy_gravity = tonumber(nz(GPES('metalite_gravity',true),xxy_gravity))
-      
+        snapshot_win_pos = {x = tonumber(nz(GPES('snapwinpos_x',true))),
+                            y = tonumber(nz(GPES('snapwinpos_y',true)))}
+        show_snapshots = tobool(nz(GPES('showsnap',true),false))
+        
         local scnt = tonumber(nz(GPES('strips_count'),0))
         strips = {}
         local ss = 1
@@ -25249,6 +25267,9 @@ end
     reaper.SetProjExtState(0,SCRIPT,'locksurface',tostring(settings_locksurface))
     reaper.SetProjExtState(0,SCRIPT,'lasttrack',track_select)
     reaper.SetProjExtState(0,SCRIPT,'metalite_gravity',xxy_gravity)
+    reaper.SetProjExtState(0,SCRIPT,'snapwinpos_x',snapshot_win_pos.x)
+    reaper.SetProjExtState(0,SCRIPT,'snapwinpos_y',snapshot_win_pos.y)
+    reaper.SetProjExtState(0,SCRIPT,'showsnap',tostring(show_snapshots))
     
     if gfx1 then
       reaper.SetProjExtState(0,SCRIPT,'win_w',nz(gfx1.main_w,800))
