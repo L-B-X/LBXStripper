@@ -3794,7 +3794,7 @@
                   y = obj.sections[100].y-butt_h,
                   w = obj.sections[100].w,
                   h = obj.sections[100].h+butt_h}
-    GUI_DrawPanel(xywh,true)
+    GUI_DrawPanel(xywh,true,'CYCLE OPTS')
 
     f_Get_SSV('0 0 0')
     gfx.a = 1  
@@ -3821,11 +3821,11 @@
              xywh.y, 
              xywh.w,
              xywh.h, 1 )]]
-    xywh = {x = obj.sections[100].x,
+    --[[xywh = {x = obj.sections[100].x,
                       y = obj.sections[100].y-butt_h,
                       w = obj.sections[100].w,
                       h = butt_h}
-    GUI_textC(gui,xywh,'CYCLE OPTS',gui.color.black,-2)
+    GUI_textC(gui,xywh,'CYCLE OPTS',gui.color.black,-2)]]
   
     --local p = F_limit(math.floor(Cycle_Norm(cycle_select.val,ctl_select[1].ctl)*(defctls[def_knob].frames-1)),0,defctls[def_knob].frames-1)
     local p = F_limit(math.floor(cycle_select.val*(defctls[def_knob].frames-1)),0,defctls[def_knob].frames-1)
@@ -3918,7 +3918,7 @@
                   w = obj.sections[49].w,
                   h = obj.sections[49].h}
 
-    GUI_DrawPanel(xywh, true)
+    GUI_DrawPanel(xywh, true, 'LABEL OPTS')
     
     --[[f_Get_SSV('0 0 0')
     gfx.a = 1  
@@ -3942,7 +3942,7 @@
      xywh.w,
      xywh.h, 1 )]]
 
-    GUI_textC(gui,xywh,'LABEL OPTS',gui.color.black,-2)
+    --GUI_textC(gui,xywh,'LABEL OPTS',gui.color.black,-2)
 
     GUI_DrawButton(gui, 'EDIT LABEL', obj.sections[140], gui.color.white, gui.color.black, true)
     GUI_DrawButton(gui, gfx_font_select.name, obj.sections[147], gui.color.white, gui.color.black, true)
@@ -3967,10 +3967,10 @@
       --gfx.setimgdim(1011,obj.sections[45].w, obj.sections[45].h)
     --end
 
-    GUI_DrawPanel(obj.sections[45])
+    GUI_DrawPanel(obj.sections[45],nil,'CTL OPTIONS')
 
     local xywh = {x = 0,
-                  y = 0,
+                  y = 2,
                   w = obj.sections[45].w,
                   h = obj.sections[45].h}
     
@@ -3996,7 +3996,7 @@
      xywh.w,
      xywh.h, 1 )]]
 
-    GUI_textC(gui,xywh,'CTL OPTIONS',gui.color.black,-2)
+    --GUI_textC(gui,xywh,'CTL OPTIONS',gui.color.black,-2)
     xywh.x = xywh.x+xywh.w-20
     xywh.w = 20
     GUI_textC(gui,xywh,ctl_page+1,gui.color.black,-2)
@@ -5030,7 +5030,7 @@ end
     
       gfx.a=1
       
-      GUI_DrawPanel(obj.sections[115],true)
+      GUI_DrawPanel(obj.sections[115],true,'PARAM LEARN')
       
       --[[f_Get_SSV(gui.color.black)
       gfx.rect(obj.sections[115].x,
@@ -5055,7 +5055,7 @@ end
                xywh.w,
                butt_h, 1 )]]
       
-      GUI_textC(gui,xywh,'PARAM LEARN',gui.color.black,-2)
+      --GUI_textC(gui,xywh,'PARAM LEARN',gui.color.black,-2)
       
       xywh.y = obj.sections[116].y
       local iidx = 1023
@@ -5096,7 +5096,7 @@ end
     
   ------------------------------------------------------------
   
-  function GUI_DrawPanel(objPanel, tobgd)
+  function GUI_DrawPanel(objPanel, tobgd, tit)
 
     gfx.a=1
     local x,y = 0,0
@@ -5117,7 +5117,14 @@ end
       local w, h = gfx.getimgdim(skin.panela_mid)
       gfx.blit(skin.panela_mid, 1, 0, 0, 0, w, h, x, y+th, pw, sh) 
     end
-  
+    if tit then
+      xywh = {x = x,
+              y = y+2,
+              w = pw,
+              h = butt_h}
+      GUI_textC(gui,xywh,tit,gui.color.black,-2)
+    end
+    
   end
 
   function GUI_DrawSnapshots(obj, gui)
@@ -5126,7 +5133,7 @@ end
     
     gfx.a=1
 
-    GUI_DrawPanel(obj.sections[160])
+    GUI_DrawPanel(obj.sections[160], nil, 'SNAPSHOTS')
     
     --[[local wt, ht = gfx.getimgdim(skin.panela_top)
     local wb, hb = gfx.getimgdim(skin.panela_bot)
@@ -5169,11 +5176,11 @@ end
              obj.sections[165].y, 
              obj.sections[165].w,
              obj.sections[165].h, 1 )]]
-    xywh = {x = 0,
+    --[[xywh = {x = 0,
             y = 0,
             w = obj.sections[160].w,
             h = butt_h}
-    GUI_textC(gui,xywh,'SNAPSHOTS',gui.color.black,-2)
+    GUI_textC(gui,xywh,'SNAPSHOTS',gui.color.black,-2)]]
 
     local sstypestr = 'PAGE'
     if sstype_select > 1 then
