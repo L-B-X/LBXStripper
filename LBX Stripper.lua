@@ -26422,15 +26422,17 @@ end
   
     local striptbl = {}
     local snaptbl = {}
+    local xxytbl = {} 
   
     for t = -1, reaper.CountTracks(0)-1 do
       if tracks[t].strip then
         if strips[tracks[t].strip] then
 
           table.insert(striptbl, strips[tracks[t].strip])
-          --DBG(snapshots[tracks[t].strip])
           table.insert(snaptbl, snapshots[tracks[t].strip])
           tblpos = #striptbl
+          xxytbl[tblpos] = xxy[tracks[t].strip]
+
           striptbl[tblpos].track.strip = tblpos
           tracks[t].strip = tblpos
     
@@ -26439,6 +26441,7 @@ end
     end
     strips = striptbl
     snapshots = snaptbl
+    xxy = xxytbl
   
   end
   
