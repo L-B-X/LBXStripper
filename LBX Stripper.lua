@@ -14310,7 +14310,7 @@ end
           
           update_surface = true
         
-        elseif mouse.context == nil and show_xysnapshots == true and show_eqcontrol == false and macro_edit_mode == false and (MOUSE_click(obj.sections[180]) or MOUSE_click_RB(obj.sections[180])) then
+        elseif mouse.context == nil and show_xysnapshots == true and show_eqcontrol ~= true and macro_edit_mode ~= true and (MOUSE_click(obj.sections[180]) or MOUSE_click_RB(obj.sections[180])) then
         
           if mouse.context == nil and MOUSE_click_RB(obj.sections[180]) then
             show_xysnapshots = false
@@ -14379,7 +14379,7 @@ end
           mouse.my = snapmy
           noscroll = true
           
-        elseif mouse.context == nil and show_fsnapshots == true and show_eqcontrol == false and macro_edit_mode == false and (MOUSE_click(obj.sections[180]) or MOUSE_click_RB(obj.sections[180])) then
+        elseif mouse.context == nil and show_fsnapshots == true and show_eqcontrol ~= true and macro_edit_mode ~= true and (MOUSE_click(obj.sections[180]) or MOUSE_click_RB(obj.sections[180])) then
   
           if mouse.context == nil and MOUSE_click_RB(obj.sections[180]) then
             show_fsnapshots = false
@@ -14446,7 +14446,7 @@ end
           mouse.my = snapmy
           noscroll = true
   
-        elseif mouse.context == nil and (show_snapshots == true and macro_edit_mode == false and show_eqcontrol == false) and (MOUSE_click(obj.sections[160]) or MOUSE_click_RB(obj.sections[160])) then
+        elseif mouse.context == nil and (show_snapshots == true and macro_edit_mode ~= true and show_eqcontrol ~= true) and (MOUSE_click(obj.sections[160]) or MOUSE_click_RB(obj.sections[160])) then
         
           if show_fsnapshots or show_xysnapshots then
             show_fsnapshots = false
