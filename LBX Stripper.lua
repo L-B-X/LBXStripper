@@ -17624,6 +17624,7 @@ end
                     --update_ctlopts = true
                     --update_surface = true
                     update_gfx = true
+                    gfx.mouse_wheel = 0
                   end
                   
                   
@@ -17681,9 +17682,11 @@ end
                     ctltype_select = F_limit(ctltype_select + v,1,#ctltype_table)
                     for i = 1, #ctl_select do
                       strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctltype = ctltype_select
+                      strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].dirty = true
                     end
                     show_cycleoptions = false
-                    update_gfx = true
+                    update_ctls = true
+                    update_ctlopts = true
                     gfx.mouse_wheel = 0
                   end
                   
@@ -18104,15 +18107,20 @@ end
                   if ctltype_select > #ctltype_table then ctltype_select = 1 end
                   for i = 1, #ctl_select do
                     strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctltype = ctltype_select
+                    strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].dirty = true
                   end
-                  update_gfx = true
+                  update_ctls = true
+                  update_ctlopts = true
+                  
                 elseif MOUSE_click_RB(obj.sections[55]) then
                   ctltype_select = ctltype_select - 1
                   if ctltype_select < 1 then ctltype_select = #ctltype_table end
                   for i = 1, #ctl_select do
                     strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctltype = ctltype_select
+                    strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].dirty = true
                   end
-                  update_gfx = true
+                  update_ctls = true
+                  update_ctlopts = true
                 end
       
                 if ctltype_select == 4 and MOUSE_click(obj.sections[67]) then
@@ -26431,8 +26439,10 @@ end
           table.insert(striptbl, strips[tracks[t].strip])
           table.insert(snaptbl, snapshots[tracks[t].strip])
           tblpos = #striptbl
-          xxytbl[tblpos] = xxy[tracks[t].strip]
-
+          if xxy then
+            xxytbl[tblpos] = xxy[tracks[t].strip]
+          end
+          
           striptbl[tblpos].track.strip = tblpos
           tracks[t].strip = tblpos
     
@@ -26441,8 +26451,10 @@ end
     end
     strips = striptbl
     snapshots = snaptbl
-    xxy = xxytbl
-  
+    if xxy then
+      xxy = xxytbl
+    end
+    
   end
   
   
