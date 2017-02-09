@@ -1,4 +1,4 @@
--- @version 0.93
+-- @version 0.94
 -- @author lbx
 -- @changelog
 
@@ -731,7 +731,7 @@
                           h = butt_h}                            
      
       --settings
-      local setw, seth = 300, 400                            
+      local setw, seth = 300, 420                            
       obj.sections[70] = {x = gfx1.main_w/2-setw/2,
                           y = gfx1.main_h/2-seth/2,
                           w = setw,
@@ -807,6 +807,10 @@
                                 h = bh}
       obj.sections[88] = {x = obj.sections[70].x+xofft,
                                 y = obj.sections[70].y+yoff + yoffm*14,
+                                w = bw,
+                                h = bh}
+      obj.sections[89] = {x = obj.sections[70].x+xofft,
+                                y = obj.sections[70].y+yoff + yoffm*15,
                                 w = bw,
                                 h = bh}
                                 
@@ -5736,7 +5740,7 @@ end
 
   ------------------------------------------------------------
   
-  function GUI_DrawMsgX(obj, gui, txt, c, max)
+  function GUI_DrawMsgX(obj, gui, txt, c, max, bar)
     
     gfx.mode =4
     if gui == nil then
@@ -5788,7 +5792,20 @@ end
       xywh3.x = xywh3.x + 1      
       xywh3.y = xywh3.y + 1
       GUI_textC(gui,xywh3,string.format('%i',round((c/max)*100))..'%',gui.color.white,-2)         
-
+    elseif bar then
+    
+      
+      local t = (reaper.time_precise()*1000) % 2000
+      gfx.rect(xywh3.x,
+               xywh3.y, 
+               xywh3.w,
+               xywh3.h, 0)
+      local lw = math.floor((t/2000)*(xywh3.w-100))
+      gfx.rect(xywh3.x+lw,
+               xywh3.y, 
+               100,
+               xywh3.h, 1)      
+    
     end
 
     gfx.dest = -1
@@ -8481,6 +8498,8 @@ end
 
   function GUI_DrawTopBarMin(gui, obj)
 
+    if not settings_showminimaltopbar then return end
+
     local xywh = {x = obj.sections[18].x,
                   y = obj.sections[18].y,
                   w = obj.sections[18].w,
@@ -8784,6 +8803,7 @@ end
     GUI_DrawColorBox(gui, 'Snapshot list background colour', obj.sections[86], gui.color.white, settings_snaplistbgcol)
     GUI_DrawTick(gui, 'Save script data in project folder', obj.sections[87], gui.color.white, settings_savedatainprojectfolder)
     GUI_DrawTick(gui, 'Use bitmap mask control detection', obj.sections[88], gui.color.white, settings_usectlbitmap)
+    GUI_DrawTick(gui, 'Show minimal top bar when hidden', obj.sections[89], gui.color.white, settings_showminimaltopbar)
     
                
   end
@@ -10898,17 +10918,18 @@ end
       if strips[strip][page].controls[j].ctlcat == ctlcats.macro then
       
         local macro = strips[strip][page].controls[j].macroctl
-        for m = 1, #macro do
-        
-          if cidtrack[macro[m].c_id] then
+        if macro then
+          for m = 1, #macro do
+          
+            if cidtrack[macro[m].c_id] then
+              
+              macro[m].ctl = cidtrack[macro[m].c_id].ctl
+              macro[m].c_id = cidtrack[macro[m].c_id].c_id
             
-            macro[m].ctl = cidtrack[macro[m].c_id].ctl
-            macro[m].c_id = cidtrack[macro[m].c_id].c_id
+            end
           
           end
-        
-        end
-      
+        end      
       end 
 
     end
@@ -13236,6 +13257,15 @@ end
         setmode(5)
       elseif char == 108 then
         setmode(1)
+      elseif char == 47 then
+        TopMenu()
+      elseif char == 91 then
+        ToggleSidebar()
+      elseif char == 93 then
+        hide_topbar = not hide_topbar
+        obj = GetObjects()
+        update_surface = true
+        
       elseif char == 46 then
         local t = track_select + 1
         if t > #tracks then t = -1 end
@@ -13989,6 +14019,10 @@ end
             gfx.setimgdim(ctl_bitmap,-1,-1)
           end
           update_gfx = true
+        elseif mouse.context == nil and MOUSE_click(obj.sections[89]) then
+          settings_showminimaltopbar = not settings_showminimaltopbar
+          obj = GetObjects()
+          update_surface = true
         end
         
         if mouse.context and mouse.context == contexts.updatefreq then
@@ -14033,7 +14067,7 @@ end
         
       else
       
-      if show_eqcontrol ~= true and macro_edit_mode ~= true and MOUSE_click(obj.sections[21]) then
+      if show_eqcontrol ~= true and macro_edit_mode ~= true and MOUSE_click(obj.sections[21]) and (hide_topbar == false or settings_showminimaltopbar) then
       
         TopMenu()
         mouse.context = contexts.dummy
@@ -14067,7 +14101,7 @@ end
         
         end
         
-      elseif MOUSE_click(obj.sections[18]) then
+      elseif MOUSE_click(obj.sections[18]) and (hide_topbar == false or settings_showminimaltopbar) then
         ToggleSidebar()
         if mode == 1 then
           mouse.context = contexts.dragsidebar
@@ -16798,9 +16832,9 @@ end
                         mm = '!'
                       end
                       if ccat == ctlcats.fxparam then
-                        mstr = 'MIDI learn|Modulation||Enter value||Open FX window||'..mm..'Snapshots||>Tools|<Regenerate ID   (emergency only)'
+                        mstr = 'MIDI learn|Modulation||Enter value||Open FX window||'..mm..'Snapshots||>Tools|<Regenerate ID   (emergency only)||Toggle topbar'
                       else
-                        mstr = '#MIDI learn|#Modulation||Enter value||#Open FX window||'..mm..'Snapshots||>Tools|<Regenerate ID   (emergency only)'                  
+                        mstr = '#MIDI learn|#Modulation||Enter value||#Open FX window||'..mm..'Snapshots||>Tools|<Regenerate ID   (emergency only)||Toggle topbar'                  
                       end
                       if ccat ~= ctlcats.macro then
                         if #strip_favs > 0 then
@@ -16847,6 +16881,10 @@ end
                             strips[tracks[track_select].strip][page].controls[i] = GetControlTable(tracks[track_select].strip, page, i)
                             strips[tracks[track_select].strip][page].controls[i].c_id = GenID()
                             update_gfx = true
+                          elseif res == 7 then
+                            hide_topbar = not hide_topbar
+                            obj = GetObjects()
+                            update_surface = true
                           end
                         end
                       --[[else
@@ -16990,7 +17028,7 @@ end
                   mstr = mstr .. '#Insert strip (favorites)'                  
                 end
   
-                mstr = mstr .. '||#MIDI learn|#Modulation||#Enter value||#Open FX window||'..mm..'Snapshots'
+                mstr = mstr .. '||#MIDI learn|#Modulation||#Enter value||#Open FX window||'..mm..'Snapshots||Toggle topbar'
                 
                 gfx.x, gfx.y = mouse.mx, mouse.my
                 res = OpenMenu(mstr)
@@ -16998,6 +17036,11 @@ end
                   if res == sfcnt + 5 or (sfcnt == 0 and res == 6) then
                     show_snapshots = not show_snapshots
                     update_gfx = true
+                  elseif res == sfcnt + 6 or (sfcnt == 0 and res == 7) then
+                    hide_topbar = not hide_topbar
+                    obj = GetObjects()
+                    update_surface = true
+                    
                   elseif res <= sfcnt then
                     local fn = strip_favs[res]
                     --PopulateStrips()
@@ -22813,55 +22856,61 @@ end
     return string.match(ln,'%[(.-)%](.*)')
   end
     
-  function LoadStripData(s, ss)
+  function LoadStripData(s, ss, data)
   
-    local load_path
-    local fn = GPES('strips_datafile_'..string.format("%03d",s))
-
-    if settings_savedatainprojectfolder == true then
-      load_path=reaper.GetProjectPath('')..'/'
-      if reaper.file_exists(load_path..fn) ~= true then
-        load_path=projsave_path
-      end
-    else
-      load_path=projsave_path
-      if reaper.file_exists(load_path..fn) ~= true then
-        load_path=reaper.GetProjectPath('')..'/'
-      end      
-    end
-  
-    local ffn=load_path..fn
-    if reaper.file_exists(ffn) ~= true then
-      DBG('Missing file: '..ffn)
-      return 0
-    end    
-
-    local file
-
     t = reaper.time_precise()
-    local ccnt
+    local pfx = ''
     
-    local data = {}
-    for line in io.lines(ffn) do
-      local idx, val = string.match(line,'%[(.-)%](.*)') --decipher(line)
-      if idx then
-        data[idx] = val
+    if data == nil then
+      local load_path
+      local fn = GPES('strips_datafile_'..string.format("%03d",s))
+  
+      if settings_savedatainprojectfolder == true then
+        load_path=reaper.GetProjectPath('')..'/'
+        if reaper.file_exists(load_path..fn) ~= true then
+          load_path=projsave_path
+        end
+      else
+        load_path=projsave_path
+        if reaper.file_exists(load_path..fn) ~= true then
+          load_path=reaper.GetProjectPath('')..'/'
+        end      
       end
-    end
     
+      local ffn=load_path..fn
+      if reaper.file_exists(ffn) ~= true then
+        DBG('Missing file: '..ffn)
+        return 0
+      end    
+  
+      local file
+  
+      local ccnt
+      
+      data = {}
+      for line in io.lines(ffn) do
+        local idx, val = string.match(line,'%[(.-)%](.*)') --decipher(line)
+        if idx then
+          data[idx] = val
+        end
+      end
+    else 
+      pfx = 'strip_s'..ss..'_'
+    end
+        
     strips[ss] = {}
               
-    strips[ss].page = tonumber(zn(data['page'],1))
+    strips[ss].page = tonumber(zn(data[pfx..'page'],1))
     strips[ss].track = {
-                       name = data['track_name'],
-                       guid = data['track_guid'],
-                       tracknum = tonumber(data['track_num']),
-                       strip = tonumber(data['track_strip'])
+                       name = data[pfx..'track_name'],
+                       guid = data[pfx..'track_guid'],
+                       tracknum = tonumber(data[pfx..'track_num']),
+                       strip = tonumber(data[pfx..'track_strip'])
                       }
 
     for p = 1, 4 do
     
-      local key = 'p'..p..'_'
+      local key = pfx..'p'..p..'_'
     
       strips[ss][p] = {
                       surface_x = tonumber(data[key..'surface_x']),
@@ -22873,10 +22922,10 @@ end
       local ccnt = tonumber(data[key..'controls_count'])
       local gcnt = tonumber(data[key..'graphics_count'])
       
-      if ccnt > 0 then
+      if ccnt and ccnt > 0 then
         for c = 1, ccnt do
 
-          local key = 'p'..p..'_c_'..c..'_'
+          local key = pfx..'p'..p..'_c_'..c..'_'
           strips[ss][p].controls[c] = {
                                       c_id = tonumber(zn(data[key..'cid'],GenID())),
                                       ctlcat = tonumber(zn(data[key..'ctlcat'],0)),
@@ -22963,7 +23012,7 @@ end
           strips[ss][p].controls[c].cycledata.val = 0
           if nz(strips[ss][p].controls[c].cycledata.statecnt,0) > 0 then
             for i = 1, strips[ss][p].controls[c].cycledata.statecnt do
-              local key = 'p'..p..'_c_'..c..'_cyc_'..i..'_'
+              local key = pfx..'p'..p..'_c_'..c..'_cyc_'..i..'_'
             
               strips[ss][p].controls[c].cycledata[i] = {val = tonumber(zn(data[key..'val'],0)),
                                                         dispval = zn(data[key..'dispval'],'no disp val'),
@@ -22979,7 +23028,7 @@ end
             strips[ss][p].controls[c].macroctl = {}
             
             for mc = 1, mcnt do
-              local key = 'p'..p..'_c_'..c..'_mc_'..mc..'_'
+              local key = pfx..'p'..p..'_c_'..c..'_mc_'..mc..'_'
               strips[ss][p].controls[c].macroctl[mc] = {c_id = tonumber(zn(data[key..'c_id'])),
                                                         ctl = tonumber(zn(data[key..'ctl'])),
                                                         A_val = tonumber(zn(data[key..'A'],0)),
@@ -22996,7 +23045,7 @@ end
             strips[ss][p].controls[c].eqbands = {}
             
             for bc = 1, bcnt do
-              local key = 'p'..p..'_c_'..c..'_eqband_'..bc..'_'
+              local key = pfx..'p'..p..'_c_'..c..'_eqband_'..bc..'_'
               strips[ss][p].controls[c].eqbands[bc] = {posmin = tonumber(zn(data[key..'posmin'])),
                                                         posmax = tonumber(zn(data[key..'posmax'])),
                                                         gmin = tonumber(zn(data[key..'gmin'],0)),
@@ -23053,7 +23102,7 @@ end
               if lcnt > 0 then
                 strips[ss][p].controls[c].eqbands[bc].lookmap = {}
                 for lc = 1, lcnt do
-                  local key = 'p'..p..'_c_'..c..'_eqband_'..bc..'_lm_'..lc..'_'
+                  local key = pfx..'p'..p..'_c_'..c..'_eqband_'..bc..'_lm_'..lc..'_'
                   strips[ss][p].controls[c].eqbands[bc].lookmap[lc] = {pix = tonumber(zn(data[key..'pix'])),
                                                                        hz = tonumber(zn(data[key..'hz']))}
                 end
@@ -23064,7 +23113,7 @@ end
               if lcnt > 0 then
                 strips[ss][p].controls[c].eqbands[bc].gmap = {}
                 for lc = 1, lcnt do
-                  local key = 'p'..p..'_c_'..c..'_eqband_'..bc..'_gm_'..lc..'_'
+                  local key = pfx..'p'..p..'_c_'..c..'_eqband_'..bc..'_gm_'..lc..'_'
                   strips[ss][p].controls[c].eqbands[bc].gmap[lc] = {pix = tonumber(zn(data[key..'pix'])),
                                                                      db = tonumber(zn(data[key..'db']))}
                 end
@@ -23074,7 +23123,7 @@ end
             --strips[ss][p].controls[c].eqgraph = tonumber(zn(data[key..'eqgraph']))
           end
 
-          local key = 'p'..p..'_c_'..c..'_'
+          local key = pfx..'p'..p..'_c_'..c..'_'
           if tobool(zn(data[key..'ecg_graph'],false)) == true then
             strips[ss][p].controls[c].eqgraph = {posmin = tonumber(zn(data[key..'ecg_posmin'])),
                                                  posmax = tonumber(zn(data[key..'ecg_posmax'])),
@@ -23086,19 +23135,19 @@ end
             if lcnt > 0 then
               strips[ss][p].controls[c].eqgraph.lookmap = {}
               for lc = 1, lcnt do
-                local key = 'p'..p..'_c_'..c..'_ecg_lm_'..lc..'_'
+                local key = pfx..'p'..p..'_c_'..c..'_ecg_lm_'..lc..'_'
                 strips[ss][p].controls[c].eqgraph.lookmap[lc] = {pix = tonumber(zn(data[key..'pix'])),
                                                                  hz = tonumber(zn(data[key..'hz']))}
               end
               
             end
             
-            local key = 'p'..p..'_c_'..c..'_'
+            local key = pfx..'p'..p..'_c_'..c..'_'
             local lcnt = tonumber(zn(data[key..'ecg_gmap_cnt'],0))
             if lcnt > 0 then
               strips[ss][p].controls[c].eqgraph.gmap = {}
               for lc = 1, lcnt do
-                local key = 'p'..p..'_c_'..c..'_ecg_gm_'..lc..'_'
+                local key = pfx..'p'..p..'_c_'..c..'_ecg_gm_'..lc..'_'
                 strips[ss][p].controls[c].eqgraph.gmap[lc] = {pix = tonumber(zn(data[key..'pix'])),
                                                               db = tonumber(zn(data[key..'db']))}
               end
@@ -23138,11 +23187,11 @@ end
         end
       end
       
-      if gcnt > 0 then
+      if gcnt and gcnt > 0 then
       
         for g = 1, gcnt do
 
-          local key = 'p'..p..'_g_'..g..'_'
+          local key = pfx..'p'..p..'_g_'..g..'_'
           
           strips[ss][p].graphics[g] = {
                                       fn = data[key..'fn'],
@@ -23212,49 +23261,55 @@ end
   end  
   
   
-  function LoadSnapData(s)
+  function LoadSnapData(s, data)
   
-    local load_path
-    local fn = GPES('snaps_datafile_'..string.format("%03d",s))
-
-    if settings_savedatainprojectfolder == true then
-      load_path=reaper.GetProjectPath('')..'/'
-      if reaper.file_exists(load_path..fn) ~= true then
+    local pfx = ''
+    
+    if data == nil then
+      local load_path
+      local fn = GPES('snaps_datafile_'..string.format("%03d",s))
+  
+      if settings_savedatainprojectfolder == true then
+        load_path=reaper.GetProjectPath('')..'/'
+        if reaper.file_exists(load_path..fn) ~= true then
+          load_path=projsave_path
+        end
+      else
         load_path=projsave_path
+        if reaper.file_exists(load_path..fn) ~= true then
+          load_path=reaper.GetProjectPath('')..'/'
+        end      
+      end
+    
+      local ffn=load_path..fn
+      if reaper.file_exists(ffn) ~= true then
+        DBG('Missing file: '..ffn)
+        return 0
+      end    
+  
+      local file
+  
+      t = reaper.time_precise()
+      local ccnt
+      
+      data = {}
+      for line in io.lines(ffn) do
+        local idx, val = string.match(line,'%[(.-)%](.*)') --decipher(line)
+        if idx then
+          data[idx] = val
+        end
       end
     else
-      load_path=projsave_path
-      if reaper.file_exists(load_path..fn) ~= true then
-        load_path=reaper.GetProjectPath('')..'/'
-      end      
+      pfx = 'snap_s'..s..'_'
     end
-  
-    local ffn=load_path..fn
-    if reaper.file_exists(ffn) ~= true then
-      DBG('Missing file: '..ffn)
-      return 0
-    end    
 
-    local file
-
-    t = reaper.time_precise()
-    local ccnt
-    
-    local data = {}
-    for line in io.lines(ffn) do
-      local idx, val = string.match(line,'%[(.-)%](.*)') --decipher(line)
-      if idx then
-        data[idx] = val
-      end
-    end
-    
     snapshots[s] = {}
   
     for p = 1, 4 do
     
       snapshots[s][p] = {}
 
-      local key = 'p'..p..'_'
+      local key = pfx..'p'..p..'_'
       local sstcnt = tonumber(zn(data[key..'sstype_count'],0))
       
       if sstcnt > 0 then
@@ -23264,18 +23319,18 @@ end
           if sst == 1 then                
             snapshots[s][p][sst] = {}
           
-            local key = 'p'..p..'_sst_'..sst..'_'
+            local key = pfx..'p'..p..'_sst_'..sst..'_'
             local sscnt = tonumber(zn(data[key..'ss_count'],0))
             if sscnt > 0 then
         
               for ss = 1, sscnt do
-                local key = 'p'..p..'_sst_'..sst..'_ss_'..ss..'_'
+                local key = pfx..'p'..p..'_sst_'..sst..'_ss_'..ss..'_'
                 local dcnt = tonumber(data[key..'data_count'])
                 snapshots[s][p][sst][ss] = {name = data[key..'name'],
                                             data = {}}
                 for d = 1, dcnt do
 
-                  local key = 'p'..p..'_sst_'..sst..'_ss_'..ss..'_d_'..d..'_'
+                  local key = pfx..'p'..p..'_sst_'..sst..'_ss_'..ss..'_d_'..d..'_'
                 
                   snapshots[s][p][sst][ss].data[d] = {c_id = tonumber(data[key..'cid']),
                                                      ctl = tonumber(data[key..'ctl']),
@@ -23288,7 +23343,7 @@ end
             end
           elseif sst > 1 then
           
-            local key = 'p'..p..'_sst_'..sst..'_'
+            local key = pfx..'p'..p..'_sst_'..sst..'_'
             snapshots[s][p][sst] = {subsetname = data[key..'subsetname'], snapshot = {}, ctls = {}}
             
             snapsubsets_table[sst] = snapshots[s][p][sst].subsetname
@@ -23299,20 +23354,20 @@ end
             if ctlcnt > 0 then
               for ctl = 1, ctlcnt do
               
-                local key = 'p'..p..'_sst_'..sst..'_c_'..ctl..'_'
+                local key = pfx..'p'..p..'_sst_'..sst..'_c_'..ctl..'_'
                 snapshots[s][p][sst].ctls[ctl] = {c_id = tonumber(data[key..'cid']),
                                                   ctl = tonumber(data[key..'ctl'])}
               end
             end
             if sscnt > 0 then
               for ss = 1, sscnt do
-                local key = 'p'..p..'_sst_'..sst..'_ss_'..ss..'_'
+                local key = pfx..'p'..p..'_sst_'..sst..'_ss_'..ss..'_'
                 local dcnt = tonumber(data[key..'data_count'])
                 snapshots[s][p][sst].snapshot[ss] = {name = data[key..'name'],
                                                      data = {}}
                 for d = 1, dcnt do
 
-                  local key = 'p'..p..'_sst_'..sst..'_ss_'..ss..'_d_'..d..'_'
+                  local key = pfx..'p'..p..'_sst_'..sst..'_ss_'..ss..'_d_'..d..'_'
                 
                   snapshots[s][p][sst].snapshot[ss].data[d] = {c_id = tonumber(data[key..'cid']),
                                                                ctl = tonumber(data[key..'ctl']),
@@ -23325,7 +23380,7 @@ end
             --Snapshots_Check(s,p)
           end
           
-          local key = 'p'..p..'_sst_'..sst..'_'
+          local key = pfx..'p'..p..'_sst_'..sst..'_'
           if snapshots[s][p][sst] then
             snapshots[s][p][sst].selected = tonumber(zn(data[key..'ss_selected']))
           end
@@ -23339,44 +23394,50 @@ end
 
   end
   
-  function LoadXXYData(s)
+  function LoadXXYData(s, data)
   
-    local load_path
-    local fn = GPES('metalite_datafile_'..string.format("%03d",s))
-
-    if settings_savedatainprojectfolder == true then
-      load_path=reaper.GetProjectPath('')..'/'
-      if reaper.file_exists(load_path..fn) ~= true then
+    local pfx = ''
+    
+    if data == nil then
+      local load_path
+      local fn = GPES('metalite_datafile_'..string.format("%03d",s))
+  
+      if settings_savedatainprojectfolder == true then
+        load_path=reaper.GetProjectPath('')..'/'
+        if reaper.file_exists(load_path..fn) ~= true then
+          load_path=projsave_path
+        end
+      else
         load_path=projsave_path
+        if reaper.file_exists(load_path..fn) ~= true then
+          load_path=reaper.GetProjectPath('')..'/'
+        end      
+      end
+    
+      local ffn=load_path..fn
+      if reaper.file_exists(ffn) ~= true then
+        DBG('Missing file: '..ffn)
+        return 0
+      end    
+    
+      local file
+    
+      data = {}
+      for line in io.lines(ffn) do
+        local idx, val = string.match(line,'%[(.-)%](.*)') --decipher(line)
+        if idx then
+          data[idx] = val
+        end
       end
     else
-      load_path=projsave_path
-      if reaper.file_exists(load_path..fn) ~= true then
-        load_path=reaper.GetProjectPath('')..'/'
-      end      
+      pfx = 'xxy_s'..s..'_'
     end
-  
-    local ffn=load_path..fn
-    if reaper.file_exists(ffn) ~= true then
-      DBG('Missing file: '..ffn)
-      return 0
-    end    
-  
-    local file
-  
-    local data = {}
-    for line in io.lines(ffn) do
-      local idx, val = string.match(line,'%[(.-)%](.*)') --decipher(line)
-      if idx then
-        data[idx] = val
-      end
-    end
-  
+      
     for p = 1, 4 do
     
       for sst = 1, #snapshots[s][p] do
       
-        local key = 'xxy_p'..p..'_sst_'..sst..'_'
+        local key = pfx..'xxy_p'..p..'_sst_'..sst..'_'
         local ptcnt = tonumber(zn(data[key..'pt_count']))
         if ptcnt then
       
@@ -23388,7 +23449,7 @@ end
           
           for pt = 1, ptcnt do
           
-            local key = 'xxy_p'..p..'_sst_'..sst..'_pt_'..pt..'_'
+            local key = pfx..'xxy_p'..p..'_sst_'..sst..'_pt_'..pt..'_'
             xxy[s][p][sst].points[pt] = {}
             xxy[s][p][sst].points[pt].x = tonumber(data[key..'x'])
             xxy[s][p][sst].points[pt].y = tonumber(data[key..'y'])
@@ -23405,41 +23466,45 @@ end
   end
   
 
-  function LoadXXYPathData()
+  function LoadXXYPathData(data)
   
-    local load_path
-    local fn = GPES('path_datafile', true)
+    local pfx = ''
 
-    if fn == nil then return end
-
-    if settings_savedatainprojectfolder == true then
-      load_path=reaper.GetProjectPath('')..'/'
-      if reaper.file_exists(load_path..fn) ~= true then
-        load_path=projsave_path
-      end
-    else
-      load_path=projsave_path
-      if reaper.file_exists(load_path..fn) ~= true then
+    if data == nil then
+      local load_path
+      local fn = GPES('path_datafile', true)
+  
+      if fn == nil then return end
+  
+      if settings_savedatainprojectfolder == true then
         load_path=reaper.GetProjectPath('')..'/'
-      end      
-    end
-  
-    local ffn=load_path..fn
-    if reaper.file_exists(ffn) ~= true then
-      DBG('Missing file: '..ffn)
-      return 0
-    end    
-  
-    local file
-  
-    local data = {}
-    for line in io.lines(ffn) do
-      local idx, val = string.match(line,'%[(.-)%](.*)') --decipher(line)
-      if idx then
-        data[idx] = val
+        if reaper.file_exists(load_path..fn) ~= true then
+          load_path=projsave_path
+        end
+      else
+        load_path=projsave_path
+        if reaper.file_exists(load_path..fn) ~= true then
+          load_path=reaper.GetProjectPath('')..'/'
+        end      
+      end
+    
+      local ffn=load_path..fn
+      if reaper.file_exists(ffn) ~= true then
+        DBG('Missing file: '..ffn)
+        return 0
+      end    
+    
+      local file
+    
+      data = {}
+      for line in io.lines(ffn) do
+        local idx, val = string.match(line,'%[(.-)%](.*)') --decipher(line)
+        if idx then
+          data[idx] = val
+        end
       end
     end
-  
+      
     local key = 'pathcnt'
     local pathcnt = tonumber(zn(data[key]))
   
@@ -23504,40 +23569,64 @@ end
     
   end
   
-  function LoadFaders()
-    
-    local load_path
-    local fn = GPES('fader_datafile', true)
-    if fn == nil then return end
-    
-    if settings_savedatainprojectfolder == true then
-      load_path=reaper.GetProjectPath('')..'/'
-      if reaper.file_exists(load_path..fn) ~= true then
+  function LoadFaders(data)
+
+    if data == nil then
+      local load_path
+      local fn = GPES('fader_datafile', true)
+      if fn == nil then return end
+      
+      if settings_savedatainprojectfolder == true then
+        load_path=reaper.GetProjectPath('')..'/'
+        if reaper.file_exists(load_path..fn) ~= true then
+          load_path=projsave_path
+        end
+      else
         load_path=projsave_path
+        if reaper.file_exists(load_path..fn) ~= true then
+          load_path=reaper.GetProjectPath('')..'/'
+        end      
+      end
+      
+      local ffn=load_path..fn
+      if reaper.file_exists(ffn) ~= true then
+        DBG('Missing file: '..ffn)
+        return 0
+      end    
+      
+      faders = {}
+      if reaper.file_exists(ffn) then
+        local file
+        file=io.open(ffn,"r")
+        local content=file:read("*a")
+        file:close()
+        
+        faders = unpickle(content)
       end
     else
-      load_path=projsave_path
-      if reaper.file_exists(load_path..fn) ~= true then
-        load_path=reaper.GetProjectPath('')..'/'
-      end      
-    end
     
-    local ffn=load_path..fn
-    if reaper.file_exists(ffn) ~= true then
-      DBG('Missing file: '..ffn)
-      return 0
-    end    
+      local key = 'fadercnt'
+      local fadercnt = tonumber(zn(data[key]))
+
+      if fadercnt and fadercnt > 0 then
     
-    faders = {}
-    if reaper.file_exists(ffn) then
-      local file
-      file=io.open(ffn,"r")
-      local content=file:read("*a")
-      file:close()
-      
-      faders = unpickle(content)
-    end
-  
+        faders = {}
+        
+        for f = 1, fadercnt do      
+          
+          local key = 'fader_'..f..'_'
+        
+          faders[f] = {}
+          faders[f].targettype = tonumber(zn(data[key..'targettype']))
+          faders[f].strip = tonumber(zn(data[key..'strip']))
+          faders[f].page = tonumber(zn(data[key..'page']))
+          faders[f].ctl = tonumber(zn(data[key..'ctl']))
+          faders[f].sstype = tonumber(zn(data[key..'sstype']))
+          faders[f].xy = tonumber(zn(data[key..'xy']))        
+        end
+    
+      end
+    end  
   end
   
   function GetProjectName()
@@ -23551,6 +23640,7 @@ end
     local s, p, c, g, k
   
     local t = reaper.time_precise()
+    local data
   
     if GPES('savedok') ~= '' then
   
@@ -23567,7 +23657,7 @@ end
       
       gfx.setimgdim(1, -1, -1)  
       gfx.setimgdim(1, gfx1.main_w,gfx1.main_h)
-      GUI_DrawMsgX(obj, gui, 'Loading Strip Data...')
+      GUI_DrawMsgX(obj, gui, 'Reading data file...  Please wait...')
       
       local rv, v = reaper.GetProjExtState(0,SCRIPT,'version')
       if v ~= '' then
@@ -23585,6 +23675,58 @@ end
                             y = tonumber(nz(GPES('snapwinpos_y',true)))}
         show_snapshots = tobool(nz(GPES('showsnap',true),false))
         
+        if tonumber(v) >= 0.94 then
+        
+          data = {}
+          local load_path
+          local fn = GPES('lbxstripper_datafile', true)
+      
+          if fn == nil then return end
+      
+          if settings_savedatainprojectfolder == true then
+            load_path=reaper.GetProjectPath('')..'/'
+            if reaper.file_exists(load_path..fn) ~= true then
+              load_path=projsave_path
+            end
+          else
+            load_path=projsave_path
+            if reaper.file_exists(load_path..fn) ~= true then
+              load_path=reaper.GetProjectPath('')..'/'
+            end      
+          end
+        
+          local ffn=load_path..fn
+          if reaper.file_exists(ffn) ~= true then
+            DBG('Missing file: '..ffn)
+            return 0
+          end    
+        
+          local ctr = 0
+          --[[local f = assert(io.open(ffn, "r"))
+          while true do
+            local line = f:read()
+            if line == nil then break end
+            local idx, val = string.match(line,'%[(.-)%](.*)') --decipher(line)
+            if idx then
+              data[idx] = val
+            end
+          end          
+          f:close()]]
+          
+          
+          for line in io.lines(ffn) do
+            ctr = ctr + 1
+            if ctr % 4000 == 0 then
+              GUI_DrawMsgX(obj, gui, 'Reading data file...  (line: '..ctr..')', nil, nil, true)
+            end
+            local idx, val = string.match(line,'%[(.-)%](.*)') --decipher(line)
+            if idx then
+              data[idx] = val
+            end
+          end     
+        
+        end
+        
         local scnt = tonumber(nz(GPES('strips_count'),0))
         strips = {}
         local ss = 1
@@ -23594,13 +23736,16 @@ end
 
             GUI_DrawMsgX(obj, gui, 'Loading Strip Data...', s, scnt)
           
-            if tonumber(v) >= 0.93 then
+            if tonumber(v) == 0.93 then
               LoadStripData(s, ss)
               ss=ss+1
               --DBG(scnt..' '..s..'  '..ss..'yeah')
               --if not CheckTrackExists(ss) then
               --  ss = ss - 1
               --end
+            elseif tonumber(v) >= 0.94 then
+              LoadStripData(s, ss, data)
+              ss=ss+1           
             else
             
               key = 'strips_'..s..'_'
@@ -23846,9 +23991,13 @@ end
 
             GUI_DrawMsgX(obj, gui, 'Loading Snapshot Data...', s, scnt)
 
-            if tonumber(v) >= 0.93 then
+            if tonumber(v) == 0.93 then
             
               LoadSnapData(s)
+
+            elseif tonumber(v) >= 0.94 then
+
+              LoadSnapData(s, data)
 
             else
             
@@ -23950,10 +24099,14 @@ end
 
           GUI_DrawMsgX(obj, gui, 'Loading Metalite Data...', s, #strips)
         
-          if tonumber(v) >= 0.93 then
+          if tonumber(v) == 0.93 then
           
             LoadXXYData(s)
           
+          elseif tonumber(v) >= 0.94 then
+
+            LoadXXYData(s, data)
+
           else
         
             for p = 1, 4 do
@@ -23984,14 +24137,22 @@ end
                   
         end
         
-        if tonumber(v) >= 0.93 then
+        if tonumber(v) == 0.93 then
           LoadXXYPathData()
           LoadFaders()
+
+        elseif tonumber(v) >= 0.94 then
+
+          LoadXXYPathData(data)
+          LoadFaders(data)
+
         end
               
       else
         SaveData()
       end
+      
+      data = nil
       
       --DBG('Total Load Time: '..reaper.time_precise() - t)
       infomsg = 'Total Load Time: '..round(reaper.time_precise() - t,2)..'s'
@@ -24070,6 +24231,7 @@ end
     settings_usectlbitmap = tobool(nz(GES('usectlbitmap',true),settings_usectlbitmap))
     settings_macroeditmonitor = tobool(nz(GES('macroeditmonitor',true),settings_macroeditmonitor))
     hide_topbar = tobool(nz(GES('hide_topbar',true),hide_topbar))
+    settings_showminimaltopbar = tobool(nz(GES('settings_showminimaltopbar',true),settings_showminimaltopbar))
     
     local sd = tonumber(GES('strip_default',true))
     local sdf = tonumber(GES('stripfol_default',true))
@@ -24109,6 +24271,7 @@ end
     reaper.SetExtState(SCRIPT,'usectlbitmap',tostring(settings_usectlbitmap), true)
     reaper.SetExtState(SCRIPT,'macroeditmonitor',tostring(settings_macroeditmonitor), true)
     reaper.SetExtState(SCRIPT,'hide_topbar',tostring(hide_topbar), true)
+    reaper.SetExtState(SCRIPT,'settings_showminimaltopbar',tostring(settings_showminimaltopbar), true)
     
     if strip_default then
       reaper.SetExtState(SCRIPT,'strip_default',tostring(strip_default.strip_select), true)
@@ -24186,9 +24349,9 @@ end
     
   end
 
-  function SaveFaders(fn,save_path)
+  function SaveFaders(file)
   
-    local save_path=projsave_path..'/'
+    --[[local save_path=projsave_path..'/'
     if settings_savedatainprojectfolder == true then
       save_path=reaper.GetProjectPath('')..'/'
     end
@@ -24203,6 +24366,7 @@ end
     end
     
     if DELETE then
+      --DBG(ffn)
       file=io.open(ffn,"w")
       local pickled_table=pickle(faders)
       file:write(pickled_table)
@@ -24210,23 +24374,45 @@ end
       
       reaper.SetProjExtState(0,SCRIPT,'fader_datafile',fn)   
       
-    end
+    end]]
+
+    if file and faders and #faders > 0 then
   
+      local key = 'fadercnt'
+      file:write('['..key..']'.. #faders ..'\n')
+      for f = 1, #faders do
+    
+        if faders[f] then
+  
+          local key = 'fader_'..f..'_'
+          file:write('['..key..'targettype]'.. nz(faders[f].targettype,'') ..'\n')
+          file:write('['..key..'strip]'.. nz(faders[f].strip,'') ..'\n')
+          file:write('['..key..'page]'.. nz(faders[f].page,'') ..'\n')
+          file:write('['..key..'ctl]'.. nz(faders[f].ctl,'') ..'\n')
+          file:write('['..key..'sstype]'.. nz(faders[f].sstype,'') ..'\n')
+          file:write('['..key..'xy]'.. nz(faders[f].xy,'') ..'\n')
+  
+        end
+      end  
+    end
+    
   end
 
-  function SaveXXYPathData_FN(fn,save_path)
+  function SaveXXYPathData_FN(fn,save_path,file)
   
-    local save_path=projsave_path..'/'
-    if settings_savedatainprojectfolder == true then
-      save_path=reaper.GetProjectPath('')..'/'
+    local nofile = false
+    if file == nil then
+      nofile = true
+      local save_path=projsave_path..'/'
+      if settings_savedatainprojectfolder == true then
+        save_path=reaper.GetProjectPath('')..'/'
+      end
+  
+      local ffn=save_path..fn
+       
+      file=io.open(ffn,"w")
     end
-
-    local ffn=save_path..fn
      
-    local file
-     
-    file=io.open(ffn,"w")
- 
     if xxypath and #xxypath > 0 then
 
       local key = 'pathcnt'
@@ -24284,25 +24470,31 @@ end
       end
     end
 
-    file:close()
-    
-    reaper.SetProjExtState(0,SCRIPT,'path_datafile',fn)   
+    if nofile == true then
+      file:close()
+      reaper.SetProjExtState(0,SCRIPT,'path_datafile',fn)   
+    end
   
   end
 
-  function SaveXXYData_FN(s,fn,save_path)
+  function SaveXXYData_FN(s,fn,save_path, file)
 
-    local save_path=projsave_path..'/'
-    if settings_savedatainprojectfolder == true then
-      save_path=reaper.GetProjectPath('')..'/'
+    local nofile = false
+    local pfx = ''
+    if file == nil then
+      local save_path=projsave_path..'/'
+      if settings_savedatainprojectfolder == true then
+        save_path=reaper.GetProjectPath('')..'/'
+      end
+  
+      local ffn=save_path..fn
+       
+      file=io.open(ffn,"w")
+
+    else
+      pfx = 'xxy_s'..s..'_'
     end
-
-    local ffn=save_path..fn
      
-    local file
-     
-    file=io.open(ffn,"w")
- 
     if xxy and xxy[s] then
       for p = 1, 4 do
     
@@ -24312,7 +24504,7 @@ end
             
             if xxy[s][p][sst] then
           
-              local key = 'xxy_p'..p..'_sst_'..sst..'_'
+              local key = pfx..'xxy_p'..p..'_sst_'..sst..'_'
               local ptcnt = #xxy[s][p][sst].points
               file:write('['..key..'x]'.. xxy[s][p][sst].x ..'\n')
               file:write('['..key..'y]'.. xxy[s][p][sst].y ..'\n')
@@ -24324,7 +24516,7 @@ end
               
               for pt = 1, ptcnt do
               
-                local key = 'xxy_p'..p..'_sst_'..sst..'_pt_'..pt..'_'
+                local key = pfx..'xxy_p'..p..'_sst_'..sst..'_pt_'..pt..'_'
                 file:write('['..key..'x]'.. xxy[s][p][sst].points[pt].x ..'\n')
                 file:write('['..key..'y]'.. xxy[s][p][sst].points[pt].y ..'\n')
                 file:write('['..key..'ss]'.. xxy[s][p][sst].points[pt].ss ..'\n')
@@ -24340,10 +24532,11 @@ end
       end
     end
 
-    file:close()
-    
-    reaper.SetProjExtState(0,SCRIPT,'metalite_datafile_'..string.format("%03d",s),fn) 
-    
+    if nofile == true then
+      file:close()
+      reaper.SetProjExtState(0,SCRIPT,'metalite_datafile_'..string.format("%03d",s),fn) 
+    end
+        
   end
 
   --[[function SaveXXYData(s)
@@ -24464,28 +24657,34 @@ end
   
   end]]
 
-  function SaveSnapshotData_FN(s,fn,save_path)
+  function SaveSnapshotData_FN(s,fn,save_path, file)
   
-    local save_path=projsave_path..'/'
-    if settings_savedatainprojectfolder == true then
-      save_path=reaper.GetProjectPath('')..'/'
-    end
-    local ffn=save_path..fn
-    
-    local file
-    
     t = reaper.time_precise()
     
-    file=io.open(ffn,"w")
+    local nofile = false
+    local pfx = ''
+    if file == nil then
+    
+      local save_path=projsave_path..'/'
+      if settings_savedatainprojectfolder == true then
+        save_path=reaper.GetProjectPath('')..'/'
+      end
+      local ffn=save_path..fn      
+      
+      file=io.open(ffn,"w")
+
+    else
+      pfx = 'snap_s'..s..'_'
+    end
     
     for p = 1, #snapshots[s] do
     
-      local key = 'p'..p..'_'          
+      local key = pfx..'p'..p..'_'          
       file:write('['..key..'sstype_count]'..#snapshots[s][p]..'\n')
     
       for sst = 1, #snapshots[s][p] do
     
-        local key = 'p'..p..'_sst_'..sst..'_'
+        local key = pfx..'p'..p..'_sst_'..sst..'_'
         file:write('['..key..'ss_selected]'..nz(snapshots[s][p][sst].selected,'')..'\n')
         
         if sst == 1 then          
@@ -24495,7 +24694,7 @@ end
 
             for ss = 1, #snapshots[s][p][sst] do
 
-              local key = 'p'..p..'_sst_'..sst..'_ss_'..ss..'_'
+              local key = pfx..'p'..p..'_sst_'..sst..'_ss_'..ss..'_'
             
               file:write('['..key..'name]'.. snapshots[s][p][sst][ss].name ..'\n')
               file:write('['..key..'data_count]'.. #snapshots[s][p][sst][ss].data ..'\n')
@@ -24503,7 +24702,7 @@ end
               if #snapshots[s][p][sst][ss].data > 0 then
                 for d = 1, #snapshots[s][p][sst][ss].data do
   
-                  local key = 'p'..p..'_sst_'..sst..'_ss_'..ss..'_d_'..d..'_'
+                  local key = pfx..'p'..p..'_sst_'..sst..'_ss_'..ss..'_d_'..d..'_'
 
                   file:write('['..key..'cid]'.. snapshots[s][p][sst][ss].data[d].c_id ..'\n')
                   file:write('['..key..'ctl]'.. snapshots[s][p][sst][ss].data[d].ctl ..'\n')
@@ -24524,7 +24723,7 @@ end
           if #snapshots[s][p][sst].ctls > 0 then
     
             for ctl = 1, #snapshots[s][p][sst].ctls do
-              local key = 'p'..p..'_sst_'..sst..'_c_'..ctl..'_'
+              local key = pfx..'p'..p..'_sst_'..sst..'_c_'..ctl..'_'
               file:write('['..key..'cid]'.. snapshots[s][p][sst].ctls[ctl].c_id ..'\n')
               file:write('['..key..'ctl]'.. snapshots[s][p][sst].ctls[ctl].ctl ..'\n')                            
             end
@@ -24533,14 +24732,14 @@ end
           
             for ss = 1, #snapshots[s][p][sst].snapshot do
             
-              local key = 'p'..p..'_sst_'..sst..'_ss_'..ss..'_'
+              local key = pfx..'p'..p..'_sst_'..sst..'_ss_'..ss..'_'
               file:write('['..key..'name]'.. snapshots[s][p][sst].snapshot[ss].name ..'\n')
               file:write('['..key..'data_count]'.. #snapshots[s][p][sst].snapshot[ss].data ..'\n')
             
               if #snapshots[s][p][sst].snapshot[ss].data > 0 then
                 for d = 1, #snapshots[s][p][sst].snapshot[ss].data do
   
-                  local key = 'p'..p..'_sst_'..sst..'_ss_'..ss..'_d_'..d..'_'
+                  local key = pfx..'p'..p..'_sst_'..sst..'_ss_'..ss..'_d_'..d..'_'
             
                   file:write('['..key..'cid]'.. snapshots[s][p][sst].snapshot[ss].data[d].c_id ..'\n')
                   file:write('['..key..'ctl]'.. snapshots[s][p][sst].snapshot[ss].data[d].ctl ..'\n')
@@ -24555,46 +24754,43 @@ end
       end
     end
   
-    file:close()
-    
-    reaper.SetProjExtState(0,SCRIPT,'snaps_datafile_'..string.format("%03d",s),fn) 
-    
+    if nofile == true then
+      file:close()    
+      reaper.SetProjExtState(0,SCRIPT,'snaps_datafile_'..string.format("%03d",s),fn) 
+    end
+        
     --DBG('Save snapshot time: '..reaper.time_precise() - t)
     return reaper.time_precise() - t
     
   end
   
-  function SaveStripData_FN(s,fn,save_path)
+  function SaveStripData_FN(s,fn,save_path,file)
   
---[[    local pn = reaper.GetProjectName(0,'')
-    local projname = string.sub(pn,0,string.len(pn)-4)..'_'..PROJECTID
-    reaper.RecursiveCreateDirectory(save_path..projname,1)
-    if fn == nil then
-      _, fn=reaper.GetProjExtState(0,SCRIPT,'strips_datafile_'..string.format("%03d",s))
-    end
-    if projnamechange or fn == nil or fn == '' then
-      fn=projname..'/pstrip'..string.format("%03d",s)..'_ss'..string.sub(STRIPSET,11)..".pstrip"
-    end]]
-    local ffn=save_path..fn
-    local file
-
     t = reaper.time_precise()
-    --DBG(fn)
-    --DBG(ffn)
-    
-    file=io.open(ffn,"w")
+    local nofile = false
+    local pfx = ''
+    if file == nil then
+      local ffn=save_path..fn
+  
+      --DBG(fn)
+      --DBG(ffn)
+      
+      file=io.open(ffn,"w")
+    else
+      pfx = 'strip_s'..s..'_'
+    end
 
     --file:write('[strips_count]'..#strips..'\n')
     if strips[s] then
-      file:write('[page]'..nz(strips[s].page,1)..'\n')
-      file:write('[track_name]'..strips[s].track.name..'\n')
-      file:write('[track_guid]'..nz(strips[s].track.guid,'')..'\n')
-      file:write('[track_num]'..strips[s].track.tracknum..'\n')
-      file:write('[track_strip]'..strips[s].track.strip..'\n')
+      file:write('[' .. pfx ..'page]'..nz(strips[s].page,1)..'\n')
+      file:write('[' ..pfx ..'track_name]'..strips[s].track.name..'\n')
+      file:write('[' ..pfx ..'track_guid]'..nz(strips[s].track.guid,'')..'\n')
+      file:write('[' ..pfx ..'track_num]'..strips[s].track.tracknum..'\n')
+      file:write('[' ..pfx ..'track_strip]'..strips[s].track.strip..'\n')
     
       for p = 1, 4 do
       
-        local key = 'p'..p..'_'
+        local key = pfx..'p'..p..'_'
 
         if strips[s][p] then
 
@@ -24606,7 +24802,7 @@ end
           if #strips[s][p].controls > 0 then
             for c = 1, #strips[s][p].controls do
           
-              local key = 'p'..p..'_c_'..c..'_'
+              local key = pfx..'p'..p..'_c_'..c..'_'
               
               file:write('['..key..'cid]'..strips[s][p].controls[c].c_id..'\n')
               file:write('['..key..'fxname]'..strips[s][p].controls[c].fxname..'\n')
@@ -24682,7 +24878,7 @@ end
                 file:write('['..key..'cycledata_posdirty]'..tostring(nz(strips[s][p].controls[c].cycledata.posdirty,false))..'\n')
                 if nz(strips[s][p].controls[c].cycledata.statecnt,0) > 0 then
                   for i = 1, strips[s][p].controls[c].cycledata.statecnt do
-                    local key = 'p'..p..'_c_'..c..'_cyc_'..i..'_'
+                    local key = pfx..'p'..p..'_c_'..c..'_cyc_'..i..'_'
                     file:write('['..key..'val]'..nz(strips[s][p].controls[c].cycledata[i].val,0)..'\n')   
                     file:write('['..key..'dispval]'..nz(strips[s][p].controls[c].cycledata[i].dispval,'')..'\n')   
                     file:write('['..key..'dv]'..nz(strips[s][p].controls[c].cycledata[i].dv,'')..'\n')   
@@ -24696,7 +24892,7 @@ end
                 local mcnt = #strips[s][p].controls[c].macroctl
                 file:write('['..key..'macroctl_cnt]'..mcnt..'\n')                                 
                 for mc = 1,mcnt do
-                  local key = 'p'..p..'_c_'..c..'_mc_'..mc..'_'
+                  local key = pfx..'p'..p..'_c_'..c..'_mc_'..mc..'_'
                   file:write('['..key..'c_id]'..strips[s][p].controls[c].macroctl[mc].c_id..'\n')                                 
                   file:write('['..key..'ctl]'..strips[s][p].controls[c].macroctl[mc].ctl..'\n')                                 
                   file:write('['..key..'A]'..strips[s][p].controls[c].macroctl[mc].A_val..'\n')                                 
@@ -24715,7 +24911,7 @@ end
                 file:write('['..key..'eqband_cnt]'..bcnt..'\n')
                 if bcnt > 0 then                                 
                   for bc = 1,bcnt do
-                    local key = 'p'..p..'_c_'..c..'_eqband_'..bc..'_'
+                    local key = pfx..'p'..p..'_c_'..c..'_eqband_'..bc..'_'
                     file:write('['..key..'posmin]'..nz(strips[s][p].controls[c].eqbands[bc].posmin,'')..'\n')                                 
                     file:write('['..key..'posmax]'..nz(strips[s][p].controls[c].eqbands[bc].posmax,'')..'\n')                                 
                     file:write('['..key..'col]'..nz(strips[s][p].controls[c].eqbands[bc].col,'')..'\n')                                 
@@ -24770,14 +24966,14 @@ end
                     file:write('['..key..'c4_def]'..nz(strips[s][p].controls[c].eqbands[bc].c4_def,'')..'\n')                                 
                     file:write('['..key..'c5_def]'..nz(strips[s][p].controls[c].eqbands[bc].c5_def,'')..'\n')                                 
                     
-                    local key = 'p'..p..'_c_'..c..'_eqband_'..bc..'_'
+                    local key = pfx..'p'..p..'_c_'..c..'_eqband_'..bc..'_'
                     if strips[s][p].controls[c].eqbands[bc].lookmap then
                       local lcnt = #strips[s][p].controls[c].eqbands[bc].lookmap
                       file:write('['..key..'lookmap_cnt]'..lcnt..'\n')
                       
                       if lcnt > 0 then
                         for lc = 1, lcnt do
-                          local key = 'p'..p..'_c_'..c..'_eqband_'..bc..'_lm_'..lc..'_'
+                          local key = pfx..'p'..p..'_c_'..c..'_eqband_'..bc..'_lm_'..lc..'_'
                           file:write('['..key..'pix]'..nz(strips[s][p].controls[c].eqbands[bc].lookmap[lc].pix,'')..'\n')                                 
                           file:write('['..key..'hz]'..nz(strips[s][p].controls[c].eqbands[bc].lookmap[lc].hz,'')..'\n')                                 
                         end
@@ -24787,14 +24983,14 @@ end
                       file:write('['..key..'lookmap_cnt]'..0 ..'\n')                    
                     end
 
-                    local key = 'p'..p..'_c_'..c..'_eqband_'..bc..'_'
+                    local key = pfx..'p'..p..'_c_'..c..'_eqband_'..bc..'_'
                     if strips[s][p].controls[c].eqbands[bc].gmap then
                       local lcnt = #strips[s][p].controls[c].eqbands[bc].gmap
                       file:write('['..key..'gmap_cnt]'..lcnt..'\n')
                       
                       if lcnt > 0 then
                         for lc = 1, lcnt do
-                          local key = 'p'..p..'_c_'..c..'_eqband_'..bc..'_gm_'..lc..'_'
+                          local key = pfx..'p'..p..'_c_'..c..'_eqband_'..bc..'_gm_'..lc..'_'
                           file:write('['..key..'pix]'..nz(strips[s][p].controls[c].eqbands[bc].gmap[lc].pix,'')..'\n')                                 
                           file:write('['..key..'db]'..nz(strips[s][p].controls[c].eqbands[bc].gmap[lc].db,'')..'\n')                                 
                         end
@@ -24813,7 +25009,7 @@ end
 
               if strips[s][p].controls[c].eqgraph and type(strips[s][p].controls[c].eqgraph) == 'table' then
 
-                local key = 'p'..p..'_c_'..c..'_'
+                local key = pfx..'p'..p..'_c_'..c..'_'
                 file:write('['..key..'ecg_graph]'..tostring(true)..'\n')                                               
                 file:write('['..key..'ecg_gmin]'..nz(strips[s][p].controls[c].eqgraph.gmin,'')..'\n')                                 
                 file:write('['..key..'ecg_gmax]'..nz(strips[s][p].controls[c].eqgraph.gmax,'')..'\n')                                 
@@ -24826,7 +25022,7 @@ end
                   
                   if lcnt > 0 then
                     for lc = 1, lcnt do
-                      local key = 'p'..p..'_c_'..c..'_ecg_lm_'..lc..'_'
+                      local key = pfx..'p'..p..'_c_'..c..'_ecg_lm_'..lc..'_'
                       file:write('['..key..'pix]'..nz(strips[s][p].controls[c].eqgraph.lookmap[lc].pix,'')..'\n')                                 
                       file:write('['..key..'hz]'..nz(strips[s][p].controls[c].eqgraph.lookmap[lc].hz,'')..'\n')                                 
                     end
@@ -24836,14 +25032,14 @@ end
                   file:write('['..key..'ecg_lookmap_cnt]'..0 ..'\n')                    
                 end
 
-                local key = 'p'..p..'_c_'..c..'_'
+                local key = pfx..'p'..p..'_c_'..c..'_'
                 if strips[s][p].controls[c].eqgraph.gmap then
                   local lcnt = #strips[s][p].controls[c].eqgraph.gmap
                   file:write('['..key..'ecg_gmap_cnt]'..lcnt..'\n')
                   
                   if lcnt > 0 then
                     for lc = 1, lcnt do
-                      local key = 'p'..p..'_c_'..c..'_ecg_gm_'..lc..'_'
+                      local key = pfx..'p'..p..'_c_'..c..'_ecg_gm_'..lc..'_'
                       file:write('['..key..'pix]'..nz(strips[s][p].controls[c].eqgraph.gmap[lc].pix,'')..'\n')                                 
                       file:write('['..key..'db]'..nz(strips[s][p].controls[c].eqgraph.gmap[lc].db,'')..'\n')                                 
                     end
@@ -24861,7 +25057,7 @@ end
           if #strips[s][p].graphics > 0 then
             for g = 1, #strips[s][p].graphics do
 
-              local key = 'p'..p..'_g_'..g..'_'
+              local key = pfx..'p'..p..'_g_'..g..'_'
           
               file:write('['..key..'fn]'..strips[s][p].graphics[g].fn..'\n')
               file:write('['..key..'imageidx]'..strips[s][p].graphics[g].imageidx..'\n')
@@ -24904,11 +25100,12 @@ end
     end
 
     --file:write(pickled_table)
-    file:close()
-    
-    reaper.SetProjExtState(0,SCRIPT,'strips_count',#strips) 
-    reaper.SetProjExtState(0,SCRIPT,'strips_datafile_'..string.format("%03d",s),fn) 
-    
+    if nofile == true then
+      file:close()
+      reaper.SetProjExtState(0,SCRIPT,'strips_count',#strips) 
+      reaper.SetProjExtState(0,SCRIPT,'strips_datafile_'..string.format("%03d",s),fn) 
+    end
+        
     --DBG('Save strip time: '..reaper.time_precise() - t)
     return reaper.time_precise() - t
 
@@ -25091,18 +25288,22 @@ end
     
     local t = reaper.time_precise()
     
-    local fn_strips = {}
+    --[[local fn_strips = {}
     local fn_snaps = {}
     local fn_xxy = {}
-    
+    ]]
     local save_path=projsave_path..'/'
     if settings_savedatainprojectfolder == true then
       save_path=reaper.GetProjectPath('')..'/'
     end
     
     local pn = GetProjectName()
-    local projname = string.sub(pn,0,string.len(pn)-4)..'_'..PROJECTID
-    reaper.RecursiveCreateDirectory(save_path..projname,1)
+    local projname = string.sub(pn,0,string.len(pn)-4) --..'_'..PROJECTID
+    if projname == nil or projname == '' then
+      projname = 'unnamed_project_'..PROJECTID
+    end
+    --DBG(projname)
+    --[[reaper.RecursiveCreateDirectory(save_path..projname,1)
     
     local fn
     if #strips > 0 then
@@ -25135,14 +25336,26 @@ end
         fn=projname..'/ppaths'..string.sub(STRIPSET,11)..".ppath"
       end
       fn_paths = fn
-
-      if tmp then
-        fn=projname..'/__pfaders'..string.sub(STRIPSET,11)..".pfader"
-      else
-        fn=projname..'/pfaders'..string.sub(STRIPSET,11)..".pfader"
-      end
-      fn_faders = fn
+]]
+    local fn
+    if tmp then
+      fn=projname..".pfader__"
+    else
+      fn=projname..".pfader"
     end
+    fn_faders = fn
+--    end
+
+    if tmp then
+      fn=projname..".lbxstripper__"
+    else
+      fn=projname..".lbxstripper"
+    end
+    local ffn=save_path..fn
+
+    --DBG(fn)
+    --DBG(ffn)
+    file=io.open(ffn,"w")
         
     local s, p, c, g
     reaper.SetProjExtState(0,SCRIPT,"","") -- clear first
@@ -25174,7 +25387,7 @@ end
         --DBG('time: '..SaveStripData(s))
         --DBG('time: '..SaveStripData_FN(s))
         GUI_DrawMsgX(obj, gui, 'Saving Strip Data...',s,#strips)
-        SaveStripData_FN(s,fn_strips[s],save_path)
+        SaveStripData_FN(s,'dummy',save_path,file)
       end
       
     else
@@ -25188,19 +25401,21 @@ end
         --DBG('saving snaps:'..s)    
         --SaveSnapshotData(s)
         GUI_DrawMsgX(obj, gui, 'Saving Snapshot/Metalite Data...',s,#snapshots)
-        SaveSnapshotData_FN(s,fn_snaps[s],save_path)
-        SaveXXYData_FN(s,fn_xxy[s],save_path)
+        SaveSnapshotData_FN(s,'dummy',save_path,file)
+        SaveXXYData_FN(s,'dummy',save_path,file)
       end
     
-      SaveXXYPathData_FN(fn_paths,save_path)
+      SaveXXYPathData_FN('dummy',save_path,file)
     else
       reaper.SetProjExtState(0,SCRIPT,'snapshots_count',0)        
     end
   
-    if faders and fn_faders then
-      SaveFaders(fn_faders,save_path)
+    if faders then
+      SaveFaders(file)
     end
   
+    file:close()
+    reaper.SetProjExtState(0,SCRIPT,'lbxstripper_datafile',fn)
     reaper.SetProjExtState(0,SCRIPT,'savedok',tostring(true))
     --DBG('saving finished:')    
   
@@ -27020,7 +27235,7 @@ end
     local chunk, chs, che = Chunk_GetFXChainSection(trchunk)
     if chunk then
       --insert before final character
-      rchunk = string.sub(trchunk,0,che-2) .. insfxchunk .. string.sub(trchunk,che-1)
+      rchunk = string.sub(trchunk,0,che-1) .. insfxchunk .. string.sub(trchunk,che-1)
     else
       if trn == -1 then
         --master track
@@ -27099,7 +27314,7 @@ end
   ------------------------------------------------------------
 
   SCRIPT = 'LBX_STRIPPER'
-  VERSION = 0.93
+  VERSION = 0.94
   STRIPSET = 'STRIP SET 1'
 
   OS = reaper.GetOS()
@@ -27168,6 +27383,7 @@ end
   settings_usectlbitmap = false
   settings_macroeditmonitor = false
   hide_topbar = false
+  settings_showminimaltopbar = true
   
   eq_scale = true
   eq_single = false
