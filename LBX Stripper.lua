@@ -14036,6 +14036,7 @@ end
       if show_eqcontrol ~= true and macro_edit_mode ~= true and MOUSE_click(obj.sections[21]) then
       
         TopMenu()
+        mouse.context = contexts.dummy
   
       elseif MOUSE_click(obj.sections[14]) and navigate then
         --page
