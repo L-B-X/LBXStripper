@@ -27416,7 +27416,7 @@ end
   settings_macroeditmonitor = false
   hide_topbar = false
   settings_showminimaltopbar = true
-  save_subfolder = ''
+  save_subfolder = '#'
   
   eq_scale = true
   eq_single = false
