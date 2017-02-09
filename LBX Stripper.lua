@@ -731,7 +731,7 @@
                           h = butt_h}                            
      
       --settings
-      local setw, seth = 300, 420                            
+      local setw, seth = 300, 440                            
       obj.sections[70] = {x = gfx1.main_w/2-setw/2,
                           y = gfx1.main_h/2-seth/2,
                           w = setw,
@@ -802,17 +802,22 @@
                                 w = 40,
                                 h = bh}
       obj.sections[87] = {x = obj.sections[70].x+xofft,
-                                y = obj.sections[70].y+yoff + yoffm*13,
-                                w = bw,
-                                h = bh}
-      obj.sections[88] = {x = obj.sections[70].x+xofft,
-                                y = obj.sections[70].y+yoff + yoffm*14,
-                                w = bw,
-                                h = bh}
-      obj.sections[89] = {x = obj.sections[70].x+xofft,
                                 y = obj.sections[70].y+yoff + yoffm*15,
                                 w = bw,
                                 h = bh}
+      obj.sections[88] = {x = obj.sections[70].x+xofft,
+                                y = obj.sections[70].y+yoff + yoffm*13,
+                                w = bw,
+                                h = bh}
+      obj.sections[89] = {x = obj.sections[70].x+xofft,
+                                y = obj.sections[70].y+yoff + yoffm*14,
+                                w = bw,
+                                h = bh}
+      obj.sections[95] = {x = obj.sections[70].x+xofft-75,
+                                      y = obj.sections[70].y+yoff + yoffm*16,
+                                      w = 150,
+                                      h = bh+10}
+            
                                 
       --Cycle
       local cw, ch = 160, 380
@@ -8805,7 +8810,7 @@ end
     GUI_DrawTick(gui, 'Use bitmap mask control detection', obj.sections[88], gui.color.white, settings_usectlbitmap)
     GUI_DrawTick(gui, 'Show minimal top bar when hidden', obj.sections[89], gui.color.white, settings_showminimaltopbar)
     
-               
+    GUI_DrawButton(gui, nz(save_subfolder,''), obj.sections[95], gui.color.white, gui.color.white, false, 'Save subfolder', true)  
   end
   
   function UpdateLEdges()
@@ -13652,6 +13657,15 @@ end
           update_gfx = true
         elseif EB_Open == 32 then        
           EQC_SaveEQ(editbox.text)
+        
+        elseif EB_Open == 50 then
+        
+          save_subfolder = editbox.text
+          if save_subfolder == '' then
+            save_subfolder = nil
+          end
+          update_gfx = true
+        
         end
         editbox = nil
         EB_Open = 0
@@ -14023,6 +14037,10 @@ end
           settings_showminimaltopbar = not settings_showminimaltopbar
           obj = GetObjects()
           update_surface = true
+        elseif mouse.context == nil and MOUSE_click(obj.sections[95]) then
+        
+          OpenEB(50, 'Please choose a save subfolder name:', nz(save_subfolder,''))
+        
         end
         
         if mouse.context and mouse.context == contexts.updatefreq then
@@ -24227,7 +24245,10 @@ end
     settings_insertdefaultoneverytrack = tobool(nz(GES('insertdefstripontrack',true),settings_insertdefaultoneverytrack))
     settings_insertdefaultoneverypage = tobool(nz(GES('insertdefstriponpage',true),settings_insertdefaultoneverypage))
     settings_snaplistbgcol = tostring(nz(GES('snaplistbgcol',true),settings_snaplistbgcol))
+
     settings_savedatainprojectfolder = tobool(nz(GES('savedatainprojectfolder',true),settings_savedatainprojectfolder))
+    save_subfolder = nz(GES('save_subfolder',true),save_subfolder)
+
     settings_usectlbitmap = tobool(nz(GES('usectlbitmap',true),settings_usectlbitmap))
     settings_macroeditmonitor = tobool(nz(GES('macroeditmonitor',true),settings_macroeditmonitor))
     hide_topbar = tobool(nz(GES('hide_topbar',true),hide_topbar))
@@ -24267,7 +24288,10 @@ end
     reaper.SetExtState(SCRIPT,'insertdefstripontrack',tostring(settings_insertdefaultoneverytrack), true)
     reaper.SetExtState(SCRIPT,'insertdefstriponpage',tostring(settings_insertdefaultoneverypage), true)
     reaper.SetExtState(SCRIPT,'snaplistbgcol',settings_snaplistbgcol, true)
+   
     reaper.SetExtState(SCRIPT,'savedatainprojectfolder',tostring(settings_savedatainprojectfolder), true)
+    reaper.SetExtState(SCRIPT,'save_subfolder',nz(save_subfolder,''), true)
+   
     reaper.SetExtState(SCRIPT,'usectlbitmap',tostring(settings_usectlbitmap), true)
     reaper.SetExtState(SCRIPT,'macroeditmonitor',tostring(settings_macroeditmonitor), true)
     reaper.SetExtState(SCRIPT,'hide_topbar',tostring(hide_topbar), true)
@@ -25302,6 +25326,14 @@ end
     if projname == nil or projname == '' then
       projname = 'unnamed_project_'..PROJECTID
     end
+    if save_subfolder and save_subfolder ~= '' then
+      local sf = save_subfolder
+      if sf == '#' then
+        sf = projname
+      end
+      projname = sf..'/'..projname
+      reaper.RecursiveCreateDirectory(save_path..sf,1)
+    end
     --DBG(projname)
     --[[reaper.RecursiveCreateDirectory(save_path..projname,1)
     
@@ -25337,13 +25369,13 @@ end
       end
       fn_paths = fn
 ]]
-    local fn
+    --[[local fn
     if tmp then
       fn=projname..".pfader__"
     else
       fn=projname..".pfader"
     end
-    fn_faders = fn
+    fn_faders = fn]]
 --    end
 
     if tmp then
@@ -27384,6 +27416,7 @@ end
   settings_macroeditmonitor = false
   hide_topbar = false
   settings_showminimaltopbar = true
+  save_subfolder = ''
   
   eq_scale = true
   eq_single = false
