@@ -25324,12 +25324,15 @@ end
     local pn = GetProjectName()
     local projname = string.sub(pn,0,string.len(pn)-4) --..'_'..PROJECTID
     if projname == nil or projname == '' then
-      projname = 'unnamed_project_'..PROJECTID
+      projname = 'unnamed_project'
     end
     if save_subfolder and save_subfolder ~= '' then
       local sf = save_subfolder
       if sf == '#' then
         sf = projname
+        if projname == 'unnamed_project' then
+          projname = projname..'_'..PROJECTID
+        end
       end
       projname = sf..'/'..projname
       reaper.RecursiveCreateDirectory(save_path..sf,1)
