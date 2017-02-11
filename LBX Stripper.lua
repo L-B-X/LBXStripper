@@ -2623,6 +2623,7 @@
     skin.arrowdn = LoadSkinIMG(862, 'ArrowDown.png')
     skin.highlight = LoadSkinIMG(863, 'ListHighlight.png')
     skin.barG = LoadSkinIMG(864, 'BarG.png')
+    skin.butt18Y = LoadSkinIMG(865, 'Button18Y.png')
   
     if skin.panela_top == -1 or 
        skin.panela_mid == -1 or 
@@ -2638,7 +2639,8 @@
        skin.arrowup == -1 or
        skin.arrowdn == -1 or
        skin.highlight == -1 or
-       skin.barG == -1
+       skin.barG == -1 or
+       skin.butt18Y == -1
        then
       ret = false   
     end
@@ -7157,12 +7159,12 @@ end
     local w, h = gfx.getimgdim(1008)
     local update_size
     if obj.sections[300].w ~= w or obj.sections[300].h ~= h then update_size = true update_gfx = true end
-    if update_gfx or update_surface or update_macroedit then
+    if update_gfx or update_surface or update_macroedit or update_macrobutt then
       if update_size then
         gfx.setimgdim(1008, obj.sections[300].w, obj.sections[300].h)
       end
       
-      if update_gfx or update_surface then
+      if update_gfx then --or update_surface then
         f_Get_SSV(gui.color.black)
         gfx.rect(0,
                  0, 
@@ -7209,7 +7211,7 @@ end
 
           local ctl = strips[tracks[track_select].strip][page].controls[macro[m+macroedit_poffs].ctl]
 
-          if update_gfx or update_surface then
+          if update_gfx then --or update_surface then
             local xywh = {x = obj.sections[402].x,
                           y = obj.sections[402].y + mm*macroedit.sech +2,
                           w = obj.sections[402].w+6,
@@ -7236,82 +7238,44 @@ end
                     w = obj.sections[402].w,
                     h = macroedit.sech}
             GUI_textsm_LJ(gui, xywh, ctl.param_info.paramname, gui.color.white, -2, xywh.w)
-  
+          end
+          
+          if update_gfx or update_macrobutt then
             xywh = {x = obj.sections[406].x,
                     y = obj.sections[406].y + mm*macroedit.sech + 0.5*macroedit.sech - 10,
                     w = obj.sections[406].w,
                     h = 20}
             if macro[m+macroedit_poffs].mute then
-              f_Get_SSV('255 204 0')
+              GUI_DrawBar(gui,'M',xywh,skin.butt18R,true,gui.color.black,gui.color.black,-2)
             else
-              f_Get_SSV('160 160 160')
+              GUI_DrawBar(gui,'M',xywh,skin.butt18,true,gui.color.black,gui.color.black,-2)
             end
-            gfx.rect(xywh.x,
-                     xywh.y, 
-                     xywh.w,
-                     xywh.h, 1)
-            f_Get_SSV(gui.color.black)              
-            gfx.rect(xywh.x,
-                     xywh.y, 
-                     xywh.w,
-                     xywh.h, 0)
-            GUI_textC(gui, xywh, 'M', gui.color.black, -2)
   
             xywh = {x = obj.sections[414].x,
                     y = obj.sections[414].y + mm*macroedit.sech + 0.5*macroedit.sech - 10,
                     w = obj.sections[414].w,
                     h = 20}
             if macro[m+macroedit_poffs].bi then
-              f_Get_SSV('255 204 0')
+              GUI_DrawBar(gui,'BI',xywh,skin.butt18Y,true,gui.color.black,gui.color.black,-5)
             else
-              f_Get_SSV('160 160 160')
+              GUI_DrawBar(gui,'BI',xywh,skin.butt18,true,gui.color.black,gui.color.black,-5)
             end
-            gfx.rect(xywh.x,
-                     xywh.y, 
-                     xywh.w,
-                     xywh.h, 1)
-            f_Get_SSV(gui.color.black)              
-            gfx.rect(xywh.x,
-                     xywh.y, 
-                     xywh.w,
-                     xywh.h, 0)
-            GUI_textC(gui, xywh, 'BI', gui.color.black, -5)
   
             xywh = {x = obj.sections[415].x,
                     y = obj.sections[415].y + mm*macroedit.sech + 0.5*macroedit.sech - 10,
                     w = obj.sections[415].w,
                     h = 20}
             if macro[m+macroedit_poffs].inv then
-              f_Get_SSV('255 204 0')
+              GUI_DrawBar(gui,'INV',xywh,skin.butt18Y,true,gui.color.black,gui.color.black,-6)
             else
-              f_Get_SSV('160 160 160')
+              GUI_DrawBar(gui,'INV',xywh,skin.butt18,true,gui.color.black,gui.color.black,-6)
             end
-            gfx.rect(xywh.x,
-                     xywh.y, 
-                     xywh.w,
-                     xywh.h, 1)
-            f_Get_SSV(gui.color.black)              
-            gfx.rect(xywh.x,
-                     xywh.y, 
-                     xywh.w,
-                     xywh.h, 0)
-            GUI_textC(gui, xywh, 'INV', gui.color.black, -6)
   
             xywh = {x = obj.sections[407].x,
                     y = obj.sections[407].y + mm*macroedit.sech + 0.5*macroedit.sech - 10,
                     w = obj.sections[407].w,
                     h = 20}
-            f_Get_SSV('160 160 160')              
-            gfx.rect(xywh.x,
-                     xywh.y, 
-                     xywh.w,
-                     xywh.h, 1)
-            f_Get_SSV(gui.color.black)              
-            gfx.rect(xywh.x,
-                     xywh.y, 
-                     xywh.w,
-                     xywh.h, 0)
-            GUI_textC(gui, xywh, 'X', gui.color.black, -2)
+            GUI_DrawBar(gui,'X',xywh,skin.butt18,true,gui.color.black,gui.color.black,-2)
   
           end
 
@@ -7379,16 +7343,8 @@ end
           end
 
           gfx.a = 1
-          f_Get_SSV('160 160 160')
-          gfx.rect(xywh.x,
-                   xywh.y, 
-                   xywh.w,
-                   xywh.h, 1)
-          f_Get_SSV(gui.color.black)
-          gfx.rect(xywh.x,
-                   xywh.y, 
-                   xywh.w,
-                   xywh.h, 0)
+          GUI_DrawBar(gui,'',xywh,skin.butt18,true,gui.color.black,gui.color.black,-2)
+          
           if macro[m+macroedit_poffs].mute == nil or macro[m+macroedit_poffs].mute == false then
             f_Get_SSV(gui.color.yellow)
             xywh.x = obj.sections[403].x + ctl.val*obj.sections[403].w
@@ -7417,20 +7373,12 @@ end
             gfx.line(obj.sections[404].x + p*obj.sections[404].w,py,obj.sections[404].x + p2*obj.sections[404].w,py)
           end
           gfx.a = 1
-          f_Get_SSV('160 160 160')
-          gfx.rect(xywh.x,
-                   xywh.y, 
-                   xywh.w,
-                   xywh.h, 1)
-          f_Get_SSV(gui.color.black)
-          gfx.rect(xywh.x,
-                   xywh.y, 
-                   xywh.w,
-                   xywh.h, 0)
+          GUI_DrawBar(gui,'',xywh,skin.butt18,true,gui.color.black,gui.color.black,-2)
+          
         end      
       end
       
-      if update_gfx or update_surface then
+      if update_gfx then --or update_surface then
         local xywh = {x = obj.sections[401].x+2,
                       y = obj.sections[401].y+2,
                       w = obj.sections[401].w-4,
@@ -7446,25 +7394,6 @@ end
 
       end      
 
-      --[[f_Get_SSV('64 64 64')
-      gfx.rect(0,
-               0, 
-               obj.sections[300].w,
-               obj.sections[300].h, 0)]]
-      
-      --[[f_Get_SSV(gui.color.black)
-      gfx.rect(obj.sections[403].x-30,
-               obj.sections[403].y, 
-               4,
-               obj.sections[403].h, 1)
-      gfx.rect(obj.sections[404].x-30,
-               obj.sections[404].y, 
-               4,
-               obj.sections[404].h, 1)
-      gfx.rect(obj.sections[404].x+obj.sections[404].w+30,
-               obj.sections[404].y, 
-               4,
-               obj.sections[404].h, 1)]]
       
     end
     
@@ -7478,7 +7407,8 @@ end
     gfx.mode =4
     
     if show_xxy == false and (update_gfx or update_surface or update_sidebar or update_topbar or update_ctlopts or update_ctls or update_bg or 
-       update_settings or update_snaps or update_msnaps or update_actcho or update_fsnaps or update_mfsnaps or update_eqcontrol or update_macroedit) then    
+       update_settings or update_snaps or update_msnaps or update_actcho or update_fsnaps or update_mfsnaps or update_eqcontrol or update_macroedit or
+       update_macrobutt) then    
       local p = 0
         
       gfx.dest = 1
@@ -7719,7 +7649,7 @@ end
         end
 
         if macro_edit_mode == true and macro_lrn_mode == false then
-          if update_macroedit or update_surface or update_gfx then
+          if update_surface or update_gfx or update_macrobutt or update_macroedit then
             GUI_DrawMacroEdit(obj, gui)
           end
           gfx.a=1
@@ -8233,6 +8163,7 @@ end
     update_xxy = false
     update_xxypos = false
     update_eqcontrol = false
+    update_macrobutt = false
     
   end
 
@@ -12279,9 +12210,9 @@ end
         update_gfx = true      
       elseif res == 8 then
         show_settings = not show_settings
-        update_gfx = true
+        update_surface = true
       elseif res >= 9 and res <= 12 and navigate then
-        SetPage(res-7)
+        SetPage(res-8)
       elseif res == 13 then
         --[[if d%256 == 0 then 
           d=d+1 
@@ -12322,8 +12253,8 @@ end
           SCRIPT = 'LBX_STRIPPER'
           STRIPSET = 'STRIP SET 1'
         else
-          SCRIPT = 'LBX_STRIPPER_'..res-14        
-          STRIPSET = 'STRIP SET '..string.match(tostring(res-14),'(.-)%.')
+          SCRIPT = 'LBX_STRIPPER_'..res-15        
+          STRIPSET = 'STRIP SET '..string.match(tostring(res-15),'(.-)%.')
         end
         if oscript ~= SCRIPT then
           newloc = true
@@ -13308,6 +13239,9 @@ end
       elseif char == 83 then
         show_snapshots = not show_snapshots
         update_gfx = true      
+      elseif char == 63 then
+        show_settings = not show_settings
+        update_surface = true
       end
     end    
   end
@@ -16202,7 +16136,7 @@ end
                 macroedit_poffs = F_limit(macroedit_poffs-v,0,#macroctl-1)
                 --DBG(macroedit_poffs)
               
-                update_surface = true
+                update_gfx = true
               end
     
               local mx, my = mouse.mx, mouse.my
@@ -16303,7 +16237,7 @@ end
                   if MOUSE_over(xywh) then
                 
                     macroctl[(yy+1)+macroedit_poffs].mute = not nz(macroctl[(yy+1)+macroedit_poffs].mute,false)
-                    update_surface = true
+                    update_macrobutt = true
                     
                   end
                 end    
@@ -16322,7 +16256,7 @@ end
                       SetMacro(tracks[track_select].strip,page,macroctl_select)
                     end
 
-                    update_surface = true
+                    update_macrobutt = true
                     
                   end
                 end    
@@ -16341,7 +16275,7 @@ end
                       SetMacro(tracks[track_select].strip,page,macroctl_select)
                     end
 
-                    update_surface = true
+                    update_macrobutt = true
                     
                   end
                 end    
@@ -16360,7 +16294,7 @@ end
                     macroctl[(yy+1)+macroedit_poffs] = nil
                     local mtab = Table_RemoveNils(macroctl, mcnt)
                     strips[tracks[track_select].strip][page].controls[macroctl_select].macroctl = mtab
-                    update_surface = true
+                    update_gfx = true
                     
                   end
                 end    
