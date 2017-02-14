@@ -477,9 +477,9 @@
                           h = butt_h}
       
       --track title
-      obj.sections[12] = {x = plist_w+2+126,
+      obj.sections[12] = {x = 126,
                           y = 0,
-                          w = math.max(gfx1.main_w - plist_w - 329,0),
+                          w = math.max(gfx1.main_w - plist_w - 327,0),
                           h = topbarheight}
 
       --submode
@@ -488,7 +488,7 @@
                           w = plist_w,
                           h = butt_h}
       --pages
-      obj.sections[14] = {x = gfx1.main_w - 100,
+      obj.sections[14] = {x = gfx1.main_w - plist_w - 100,
                           y = 0,
                           w = 101,
                           h = topbarheight}
@@ -498,31 +498,31 @@
                           w = plist_w,
                           h = butt_h}
       --save
-      obj.sections[17] = {x = gfx1.main_w - 200,
+      obj.sections[17] = {x = gfx1.main_w - plist_w - 200,
                           y = 0,
                           w = 74,
                           h = topbarheight}
       --show/hide sidebar
-      obj.sections[18] = {x = plist_w,
+      obj.sections[18] = {x = 0,
                           y = 0,
-                          w = 26,
+                          w = 25,
                           h = butt_h}
-      obj.sections[19] = {x = gfx1.main_w - 125,
+      obj.sections[19] = {x = gfx1.main_w - plist_w - 125,
                           y = 0,
                           w = 25,
                           h = butt_h}
       --XYUD
-      obj.sections[20] = {x = obj.sections[18].x+obj.sections[18].w+2,
+      obj.sections[20] = {x = obj.sections[18].x+obj.sections[18].w+1,
                           y = 0,
                           w = 100,
                           h = topbarheight}
       if hide_topbar then
-        obj.sections[21] = {x = gfx1.main_w - 26,
+        obj.sections[21] = {x = gfx1.main_w - plist_w - 26,
                             y = 0,
                             w = 26,
                             h = butt_h}
       else
-        obj.sections[21] = {x = gfx1.main_w - 125,
+        obj.sections[21] = {x = gfx1.main_w - plist_w - 125,
                             y = 0,
                             w = 26,
                             h = butt_h}
@@ -731,7 +731,7 @@
                           h = butt_h}                            
      
       --settings
-      local setw, seth = 300, 440                            
+      local setw, seth = 300, 490                            
       obj.sections[70] = {x = gfx1.main_w/2-setw/2,
                           y = gfx1.main_h/2-seth/2,
                           w = setw,
@@ -802,7 +802,7 @@
                                 w = 40,
                                 h = bh}
       obj.sections[87] = {x = obj.sections[70].x+xofft,
-                                y = obj.sections[70].y+yoff + yoffm*15,
+                                y = obj.sections[70].y+yoff + yoffm*17,
                                 w = bw,
                                 h = bh}
       obj.sections[88] = {x = obj.sections[70].x+xofft,
@@ -814,9 +814,17 @@
                                 w = bw,
                                 h = bh}
       obj.sections[95] = {x = obj.sections[70].x+xofft-75,
-                                      y = obj.sections[70].y+yoff + yoffm*16,
+                                      y = obj.sections[70].y+yoff + yoffm*18,
                                       w = 150,
                                       h = bh+10}
+      obj.sections[96] = {x = obj.sections[70].x+xofft,
+                                 y = obj.sections[70].y+yoff + yoffm*15,
+                                 w = bw,
+                                 h = bh}
+      obj.sections[97] = {x = obj.sections[70].x+xofft,
+                                 y = obj.sections[70].y+yoff + yoffm*16,
+                                 w = bw,
+                                 h = bh}
             
                                 
       --Cycle
@@ -3114,12 +3122,27 @@
     end
   end
   
+  function CalcTListPos(t)
+    local oldp = tlist_offset
+    if t > oldp-2 and t < oldp+T_butt_cnt-2 then
+      return oldp
+    else
+      return math.max(math.min(t-(math.floor(T_butt_cnt/2)-1), (#tracks+1)-(T_butt_cnt-2)),0)  
+    end
+  end
+  
   function GUI_DrawTracks(obj, gui)
   
     gfx.dest = 1001
   
-    T_butt_cnt = math.floor(obj.sections[500].h / butt_h) - 1
-      
+    if T_butt_cnt == nil then
+      T_butt_cnt = math.floor(obj.sections[500].h / butt_h) - 1
+      tlist_offset = CalcTListPos(track_select)
+      --DBG(tlist_offset)
+    else
+      T_butt_cnt = math.floor(obj.sections[500].h / butt_h) - 1
+    end
+    
     for i = 0, T_butt_cnt-1 do
     
       if tracks[i-1 + tlist_offset] then
@@ -3255,7 +3278,7 @@
              xywh.y, 
              xywh.w,
              xywh.h, 1 )
-       
+             
     if mode == 0 then
 
       GUI_DrawBar(gui,'LIVE MODE',obj.sections[11],skin.bar,true,gui.color.black,nil,-2)
@@ -8001,7 +8024,7 @@ end
 
       end
       
-      local xywh = {x = obj.sections[43].w-1,
+      local xywh = {x = obj.sections[43].w-2,
                     y = obj.sections[43].y,
                     w = 1,
                     h = obj.sections[43].h}
@@ -8011,8 +8034,41 @@ end
                xywh.y, 
                xywh.w,
                xywh.h, 1 )
-               
-      GUI_DrawTopBar(gui,obj)
+      f_Get_SSV(gui.color.black)
+      gfx.line(obj.sections[43].w-1,0,obj.sections[43].w-1,gfx1.main_h)
+    
+      
+--[[      if resize_display or update_gfx then
+        gfx.setimgdim(999,-1,-1)
+        gfx.setimgdim(999,gfx1.main_w-plist_w, butt_h)         
+      end]]
+      if resize_display or update_gfx or update_topbar then
+        gfx.setimgdim(999,-1,-1)
+        gfx.setimgdim(999,gfx1.main_w-plist_w, butt_h+1)         
+        GUI_DrawTopBar(gui,obj)
+      end
+      gfx.dest=1
+      if hide_topbar == false or settings_showminimaltopbar == true then
+        gfx.a = 1
+        if topbarheight == 0 then
+          if show_eqcontrol ~= true and macro_edit_mode ~= true then
+            gfx.blit(1,1,0,plist_w,--surface_offset.x,
+                              0,--surface_offset.y,
+                              obj.sections[18].w,
+                              obj.sections[18].h,
+                              obj.sections[18].x+plist_w,
+                              obj.sections[18].y)
+            gfx.blit(1,1,0,(obj.sections[21].x+plist_w),--surface_offset.x+(obj.sections[21].x+plist_w-obj.sections[10].x),
+                              0,--surface_offset.y+(obj.sections[21].y-obj.sections[10].y),
+                              obj.sections[21].w,
+                              obj.sections[21].h,
+                              obj.sections[21].x+plist_w,
+                              obj.sections[21].y)
+          end
+        end
+        local w,h = gfx.getimgdim(999)
+        gfx.blit(999,1,0,0,0,w,h,plist_w,0)                
+      end
       
       --if update_surfaceedge then
       --  UpdateEdges()
@@ -8442,7 +8498,7 @@ end
                   y = obj.sections[18].y,
                   w = obj.sections[18].w,
                   h = obj.sections[18].h}
-    if show_eqcontrol ~= true and macro_edit_mode ~= true then
+    --[[if show_eqcontrol ~= true and macro_edit_mode ~= true then
       gfx.a = 1
       gfx.blit(1000,1,0,surface_offset.x,
                         surface_offset.y,
@@ -8450,7 +8506,7 @@ end
                         xywh.h,
                         xywh.x,
                         xywh.y)
-    end
+    end]]
     --GUI_DrawBar(gui,'',obj.sections[18],skin.bar,true,gui.color.black,nil,-2)
     gfx.a = 0.6
     if mode == 0 then
@@ -8462,34 +8518,41 @@ end
       end
     else
       GUI_DrawBar(gui,'<>',obj.sections[18],skin.bar,true,gui.color.black,nil,-2)
-    end    
+    end
+    --gfx.a = 1    
     gfx.line(obj.sections[18].x+obj.sections[18].w,obj.sections[18].y,obj.sections[18].x+obj.sections[18].w,obj.sections[18].y+obj.sections[18].h)
-    gfx.line(obj.sections[18].x,obj.sections[18].y+obj.sections[18].h,obj.sections[18].x+obj.sections[18].w,obj.sections[18].y+obj.sections[18].h)
+    gfx.line(obj.sections[18].x,obj.sections[18].y+obj.sections[18].h-1,obj.sections[18].x+obj.sections[18].w,obj.sections[18].y+obj.sections[18].h-1)
     
     if show_eqcontrol ~= true and macro_edit_mode ~= true then
-      gfx.a = 1
+      --[[gfx.a = 1
       gfx.blit(1000,1,0,surface_offset.x+(obj.sections[21].x-obj.sections[10].x),
                         surface_offset.y+(obj.sections[21].y-obj.sections[10].y),
                         obj.sections[21].w,
                         obj.sections[21].h,
                         obj.sections[21].x,
-                        obj.sections[21].y)
+                        obj.sections[21].y)]]
       gfx.a = 0.6
       GUI_DrawBar(gui,'...',obj.sections[21],skin.bar,true,gui.color.black,nil,-2)
+      --gfx.a=1
       gfx.line(obj.sections[21].x-1,obj.sections[21].y,obj.sections[21].x-1,obj.sections[21].y+obj.sections[21].h)
-      gfx.line(obj.sections[21].x,obj.sections[21].y+obj.sections[21].h,obj.sections[21].x+obj.sections[21].w,obj.sections[21].y+obj.sections[21].h)
+      gfx.line(obj.sections[21].x,obj.sections[21].y+obj.sections[21].h-1,obj.sections[21].x+obj.sections[21].w,obj.sections[21].y+obj.sections[21].h-1)
     end
-    
+    gfx.dest = 1
   end
     
   function GUI_DrawTopBar(gui, obj)
 
+    gfx.dest = 999
     if topbarheight == 0 then GUI_DrawTopBarMin(gui, obj) return end
   
     gfx.a=1
+    f_Get_SSV(gui.color.black)
+    local w, h = gfx.getimgdim(999)
+    gfx.rect(0,0,w,h,1)
+
     local xywh = {x = obj.sections[18].x,
                   y = obj.sections[18].y,
-                  w = obj.sections[20].x+obj.sections[20].w - obj.sections[18].x,
+                  w = obj.sections[18].w,
                   h = obj.sections[18].h}
     GUI_DrawBar(gui,'',obj.sections[12],skin.bar,true,gui.color.black,nil,-2)
     
@@ -8506,18 +8569,24 @@ end
     else
       GUI_DrawBar(gui,'<>',obj.sections[18],skin.bar,true,gui.color.black,nil,-2)
     end    
-    gfx.line(obj.sections[18].x+obj.sections[18].w,obj.sections[18].y,obj.sections[18].x+obj.sections[18].w,obj.sections[18].y+obj.sections[18].h)
+    --gfx.line(obj.sections[18].x+obj.sections[18].w,obj.sections[18].y,obj.sections[18].x+obj.sections[18].w,obj.sections[18].y+obj.sections[18].h)
     
     local t
+    if c == gui.color.black then
+      f_Get_SSV(gui.color.black)
+      gfx.rect(obj.sections[20].x,obj.sections[20].y,obj.sections[20].w,obj.sections[20].h,1)
+    end              
     for i = 0, 3 do
       local xywh = {x = obj.sections[20].x + i*(obj.sections[20].w/4),
                     y = obj.sections[20].y, 
-                    w = obj.sections[20].w/4-2,
+                    w = obj.sections[20].w/4-1,
                     h = obj.sections[20].h}
       --if i ~= 3 then
-        gfx.line(xywh.x+xywh.w,xywh.y,xywh.x+xywh.w,xywh.y+xywh.h)
+        --f_Get_SSV(gui.color.black)
+        --gfx.line(xywh.x+xywh.w,xywh.y,xywh.x+xywh.w,xywh.y+xywh.h)
       --end
       if i == 0 and lockx == false then 
+        GUI_DrawBar(gui,'',xywh,skin.bar,true,gui.color.black,nil,-2)
         f_Get_SSV(gui.color.white)
         c = gui.color.black
         t = 'X'
@@ -8526,6 +8595,7 @@ end
         c = gui.color.white
         t = 'X'
       elseif i == 1 and locky == false then         
+        GUI_DrawBar(gui,'',xywh,skin.bar,true,gui.color.black,nil,-2)
         f_Get_SSV(gui.color.white)
         c = gui.color.black
         t = 'Y'
@@ -8534,15 +8604,17 @@ end
         c = gui.color.white
         t = 'Y'
       elseif i == 2 then
+        GUI_DrawBar(gui,'',xywh,skin.bar,true,gui.color.black,nil,-2)
         f_Get_SSV(gui.color.white)
         c = gui.color.black
         t = ''
       elseif i == 3 then
+        GUI_DrawBar(gui,'',xywh,skin.bar,true,gui.color.black,nil,-2)
         f_Get_SSV(gui.color.white)
         c = gui.color.black        
         t = ''
       end
-              
+
       --[[gfx.rect(xywh.x,
                xywh.y, 
                xywh.w,
@@ -8616,7 +8688,7 @@ end
         f_Get_SSV(gui.color.white)
         GUI_DrawBar(gui,i+1,xywh,skin.bar,true,gui.color.black,nil,-2)
         
-        c = gui.color.black
+        --c = gui.color.black
       else
         f_Get_SSV(gui.color.black)
         c = gui.color.white
@@ -8705,7 +8777,8 @@ end
              xywh.y, 
              xywh.w,
              xywh.h, 1 )
-  
+    gfx.dest = 1
+    
   end
   
   function GUI_DrawSettings(gui, obj)
@@ -8742,6 +8815,8 @@ end
     GUI_DrawTick(gui, 'Save script data in project folder', obj.sections[87], gui.color.white, settings_savedatainprojectfolder)
     GUI_DrawTick(gui, 'Use bitmap mask control detection', obj.sections[88], gui.color.white, settings_usectlbitmap)
     GUI_DrawTick(gui, 'Show minimal top bar when hidden', obj.sections[89], gui.color.white, settings_showminimaltopbar)
+    GUI_DrawTick(gui, 'Hide edit bar on new projects', obj.sections[96], gui.color.white, settings_hideeditbaronnewproject)
+    GUI_DrawTick(gui, 'Lock surface on new projects', obj.sections[97], gui.color.white, settings_locksurfaceonnewproject)
     
     GUI_DrawButton(gui, nz(save_subfolder,''), obj.sections[95], gui.color.white, gui.color.white, false, 'Save subfolder', true)  
   end
@@ -8974,6 +9049,15 @@ end
   function MOUSE_click(b)
     if mouse.mx > b.x and mouse.mx < b.x+b.w
       and mouse.my > b.y and mouse.my < b.y+b.h 
+      and mouse.LB 
+      and not mouse.last_LB then
+     return true 
+    end 
+  end
+
+  function MOUSE_clickXY(b,xoff,yoff)
+    if mouse.mx > b.x+xoff and mouse.mx < b.x+xoff+b.w
+      and mouse.my > b.y+yoff and mouse.my < b.y+yoff+b.h 
       and mouse.LB 
       and not mouse.last_LB then
      return true 
@@ -12308,6 +12392,7 @@ end
     hide_topbar = not hide_topbar
     obj = GetObjects()
     update_surface = true
+    update_topbar = true
     
   end
   
@@ -12969,6 +13054,13 @@ end
   
     track_select = t
     trackedit_select = t
+    
+    gfx3_select = nil
+    ctl_select = nil
+    
+    if T_butt_cnt then
+      tlist_offset = CalcTListPos(track_select)
+    end
     InsertDefaultStrip()
   
     GUI_DrawCtlBitmap()
@@ -13231,6 +13323,7 @@ end
         hide_topbar = not hide_topbar
         obj = GetObjects()
         update_surface = true
+        update_topbar = true
         
       elseif char == 46 then
         local t = track_select + 1
@@ -13286,7 +13379,7 @@ end
 
   function Copy_Selected()
   
-    if ctl_select and #ctl_select > 0 then
+    if (ctl_select and #ctl_select > 0) or (gfx3_select and #gfx3_select > 0) then
     
       copy_ctls = {strip = tracks[track_select].strip,
                    page = page,
@@ -13294,89 +13387,126 @@ end
                    trackguid = tracks[track_select].guid,
                    ctls = {},
                    gfx = {}}
-      for c = 1, #ctl_select do
-        copy_ctls.ctls[c] = ctl_select[c].ctl
-        --DBG(c)
+      if ctl_select and #ctl_select > 0 then
+        for c = 1, #ctl_select do
+          copy_ctls.ctls[c] = ctl_select[c].ctl
+        end
       end
-    
+      if gfx3_select and #gfx3_select > 0 then
+        for c = 1, #gfx3_select do
+          copy_ctls.gfx[c] = gfx3_select[c].ctl
+        end      
+      end
     end
   
   end
 
   function Paste_Selected()
-  --DBG('A')
-    if copy_ctls and copy_ctls.ctls and #copy_ctls.ctls > 0 then
-  --DBG('B')
+
+    if copy_ctls and (copy_ctls.ctls and #copy_ctls.ctls > 0) or (copy_ctls.gfx and #copy_ctls.gfx > 0) then
     
       if tracks[track_select] then
           
         local strip = Strip_INIT()
+        local dx, dy
       
-        local ctls = strips[strip][page].controls
-      
-        local cstart = #ctls + 1
-        local cids = {}
-      
-        for c = 1, #copy_ctls.ctls do
-          --DBG(c)
-          local nc = #ctls+1
-          local ctbl = GetControlTable(copy_ctls.strip, copy_ctls.page, copy_ctls.ctls[c])
-          ctbl.poslock = false
-          if ctbl.ctlcat ~= ctlcats.snapshot and ctbl.ctlcat ~= ctlcats.xy and ctbl.ctlcat ~= ctlcats.eqcontrol then
-          
-            ctls[nc] = ctbl
-            --if ctls[nc].c_id == nil then ctls[nc].c_id = GenID() end
-            --DBG(strips[copy_ctls.strip][copy_ctls.page].controls[copy_ctls.ctls[c]].c_id..'  '..ctls[nc].c_id)
-            cids[strips[copy_ctls.strip][copy_ctls.page].controls[copy_ctls.ctls[c]].c_id] = {cid = ctls[nc].c_id,
-                                                                                              ctl = nc}
-            if ctls[nc].tracknum == nil and tracks[track_select].trackguid ~= copy_ctls.trackguid then
-              ctls[nc].tracknum = copy_ctls.tracknum
-              ctls[nc].trackguid = copy_ctls.trackguid
-            end
-          end
-        end
+        if #copy_ctls.ctls > 0 then
 
-        local dx = strips[tracks[track_select].strip][page].controls[cstart].x - (mouse.mx+surface_offset.x-obj.sections[10].x) 
-        local dy = strips[tracks[track_select].strip][page].controls[cstart].y - (mouse.my+surface_offset.y-obj.sections[10].y)
-
-        for c = cstart, #ctls do
-
-          strips[tracks[track_select].strip][page].controls[c].x = strips[tracks[track_select].strip][page].controls[c].x - dx
-          strips[tracks[track_select].strip][page].controls[c].y = strips[tracks[track_select].strip][page].controls[c].y - dy
-          strips[tracks[track_select].strip][page].controls[c].xsc = strips[tracks[track_select].strip][page].controls[c].xsc - dx
-          strips[tracks[track_select].strip][page].controls[c].ysc = strips[tracks[track_select].strip][page].controls[c].ysc - dy
-          strips[tracks[track_select].strip][page].controls[c].id = nil
+          local ctls = strips[strip][page].controls
         
-          if ctls[c].ctlcat == ctlcats.macro then
-          
-            local macro = ctls[c].macroctl
-            if macro and #macro > 0 then
+          local cstart = #ctls + 1
+          local cids = {}
+      
+          for c = 1, #copy_ctls.ctls do
+            local nc = #ctls+1
+            local ctbl = GetControlTable(copy_ctls.strip, copy_ctls.page, copy_ctls.ctls[c])
+            ctbl.poslock = false
+            if ctbl.ctlcat ~= ctlcats.snapshot and ctbl.ctlcat ~= ctlcats.xy and ctbl.ctlcat ~= ctlcats.eqcontrol then
             
-              local mcnt = #macro
-              local nils = false
-              for m = 1, mcnt do
-                
-                local mcid = macro[m].c_id 
-                if cids[mcid] then
-                  --DBG(cids[mcid].cid)
-                  macro[m].ctl = cids[mcid].ctl
-                  macro[m].c_id = cids[mcid].cid
-                else
-                  macro[m] = nil
-                  nils = true
-                end
-            
+              ctls[nc] = ctbl
+              cids[strips[copy_ctls.strip][copy_ctls.page].controls[copy_ctls.ctls[c]].c_id] = {cid = ctls[nc].c_id,
+                                                                                                ctl = nc}
+              if ctls[nc].tracknum == nil and tracks[track_select].trackguid ~= copy_ctls.trackguid then
+                ctls[nc].tracknum = copy_ctls.tracknum
+                ctls[nc].trackguid = copy_ctls.trackguid
               end
+            end
+          end
+  
+          dx = strips[tracks[track_select].strip][page].controls[cstart].x - (mouse.mx+surface_offset.x-obj.sections[10].x) 
+          dy = strips[tracks[track_select].strip][page].controls[cstart].y - (mouse.my+surface_offset.y-obj.sections[10].y)
+  
+          ctl_select = {}
+          
+          for c = cstart, #ctls do
+  
+            strips[tracks[track_select].strip][page].controls[c].x = strips[tracks[track_select].strip][page].controls[c].x - dx
+            strips[tracks[track_select].strip][page].controls[c].y = strips[tracks[track_select].strip][page].controls[c].y - dy
+            strips[tracks[track_select].strip][page].controls[c].xsc = strips[tracks[track_select].strip][page].controls[c].xsc - dx
+            strips[tracks[track_select].strip][page].controls[c].ysc = strips[tracks[track_select].strip][page].controls[c].ysc - dy
+            strips[tracks[track_select].strip][page].controls[c].id = nil
+          
+            ctl_select[#ctl_select+1] = {ctl = c}
+          
+            if ctls[c].ctlcat == ctlcats.macro then
+            
+              local macro = ctls[c].macroctl
+              if macro and #macro > 0 then
               
-              if nils then
-              --DBG(nils)
-                local mtbl = Table_RemoveNils(macro, mcnt)
-                strips[strip][page].controls[c].macroctl = mtbl
+                local mcnt = #macro
+                local nils = false
+                for m = 1, mcnt do
+                  
+                  local mcid = macro[m].c_id 
+                  if cids[mcid] then
+                    macro[m].ctl = cids[mcid].ctl
+                    macro[m].c_id = cids[mcid].cid
+                  else
+                    macro[m] = nil
+                    nils = true
+                  end
               
+                end
+                
+                if nils then
+                  local mtbl = Table_RemoveNils(macro, mcnt)
+                  strips[strip][page].controls[c].macroctl = mtbl                
+                end
               end
             end
           end
         end
+        
+        if #copy_ctls.gfx > 0 then
+        
+          local gfx = strips[strip][page].graphics
+        
+          local gstart = #gfx + 1
+        
+          for c = 1, #copy_ctls.gfx do
+            local nc = #gfx+1
+            local ctbl = GetGraphicsTable(copy_ctls.strip, copy_ctls.page, copy_ctls.gfx[c])
+            ctbl.poslock = false
+            
+            gfx[nc] = ctbl
+          end
+
+          if dx == nil or dy == nil then
+            dx = strips[tracks[track_select].strip][page].graphics[gstart].x - (mouse.mx+surface_offset.x-obj.sections[10].x) 
+            dy = strips[tracks[track_select].strip][page].graphics[gstart].y - (mouse.my+surface_offset.y-obj.sections[10].y)
+          end
+          
+          gfx3_select = {}
+          
+          for c = gstart, #gfx do
+
+            strips[tracks[track_select].strip][page].graphics[c].x = strips[tracks[track_select].strip][page].graphics[c].x - dx
+            strips[tracks[track_select].strip][page].graphics[c].y = strips[tracks[track_select].strip][page].graphics[c].y - dy
+
+            gfx3_select[#gfx3_select+1] = {ctl = c}
+          end
+        end
+        
       end    
     end  
   end
@@ -13460,6 +13590,15 @@ end
   
         last_gfx_w = gfx.w
         last_gfx_h = gfx.h
+        
+        if obj then
+          if show_editbar == true then
+            plist_w = oplist_w
+          end
+          plist_w = math.min(plist_w, gfx1.main_w-obj.sections[19].w-obj.sections[14].w-obj.sections[18].w)
+          plist_w = math.max(plist_w,0)
+          --if plist_w < 4 then show_editbar = false else show_editbar = true end
+        end
         
         gui = GetGUI_vars()
         obj = GetObjects()
@@ -13714,7 +13853,6 @@ end
                         strips[tracks[track_select].strip].page = page
                       end
                       ChangeTrack(i)
-                      --trackedit_select = track_select
                       trctlslist_offset = 0
                       
                       if strips and tracks[track_select] and strips[tracks[track_select].strip] then
@@ -14030,6 +14168,12 @@ end
         elseif mouse.context == nil and MOUSE_click(obj.sections[87]) then
           settings_savedatainprojectfolder = not settings_savedatainprojectfolder
           update_gfx = true
+        elseif mouse.context == nil and MOUSE_click(obj.sections[96]) then
+          settings_hideeditbaronnewproject = not settings_hideeditbaronnewproject
+          update_gfx = true
+        elseif mouse.context == nil and MOUSE_click(obj.sections[97]) then
+          settings_locksurfaceonnewproject = not settings_locksurfaceonnewproject
+          update_gfx = true
         elseif mouse.context == nil and MOUSE_click(obj.sections[88]) then
           settings_usectlbitmap = not settings_usectlbitmap
           if settings_usectlbitmap then
@@ -14090,14 +14234,14 @@ end
         
       else
       
-      if show_eqcontrol ~= true and macro_edit_mode ~= true and MOUSE_click(obj.sections[21]) and (hide_topbar == false or settings_showminimaltopbar) then
+      if show_eqcontrol ~= true and macro_edit_mode ~= true and MOUSE_clickXY(obj.sections[21],plist_w,0 ) and (hide_topbar == false or settings_showminimaltopbar) then
       
         TopMenu()
         mouse.context = contexts.dummy
   
-      elseif MOUSE_click(obj.sections[14]) and navigate then
+      elseif MOUSE_clickXY(obj.sections[14],plist_w,0) and navigate then
         --page
-        local page = F_limit(math.ceil((mouse.mx-obj.sections[14].x)/(obj.sections[14].w/4)),1,4)
+        local page = F_limit(math.ceil((mouse.mx-(obj.sections[14].x+plist_w))/(obj.sections[14].w/4)),1,4)
         SetPage(page)            
       
       elseif MOUSE_click(obj.sections[11]) then
@@ -14124,21 +14268,21 @@ end
         
         end
         
-      elseif MOUSE_click(obj.sections[18]) and (hide_topbar == false or settings_showminimaltopbar) then
+      elseif MOUSE_clickXY(obj.sections[18],plist_w,0) and (hide_topbar == false or settings_showminimaltopbar) then
         ToggleSidebar()
         if mode == 1 then
           mouse.context = contexts.dragsidebar
           offx = mouse.mx-plist_w
         end
       
-      elseif (obj.sections[17].x > obj.sections[20].x+obj.sections[20].w) and MOUSE_click(obj.sections[17]) then
+      elseif (obj.sections[17].x > obj.sections[20].x+obj.sections[20].w) and MOUSE_clickXY(obj.sections[17],plist_w,0) then
         SaveProj(true)
         --lastprojdirty = 0
         OpenMsgBox(1,'Data Saved.',1)
         update_gfx = true
       
-      elseif MOUSE_click(obj.sections[20]) then
-        local butt = F_limit(math.ceil((mouse.mx-obj.sections[20].x)/(obj.sections[20].w/4)),1,4)
+      elseif MOUSE_clickXY(obj.sections[20],plist_w,0) then
+        local butt = F_limit(math.ceil((mouse.mx-(obj.sections[20].x+plist_w))/(obj.sections[20].w/4)),1,4)
         if butt == 1 then
           LockX()
           
@@ -14157,8 +14301,8 @@ end
       
       if mouse.context and mouse.context == contexts.dragsidebar then
       
-        plist_w = math.max(mouse.mx-offx,0)
-        plist_w = math.min(plist_w, obj.sections[19].x-2)
+        plist_w = math.max(mouse.mx-offx,0) 
+        plist_w = math.min(plist_w, gfx1.main_w-obj.sections[19].w-obj.sections[14].w-obj.sections[18].w)
         oplist_w = math.max(plist_w,100)
         if plist_w <= 4 then
           show_editbar = false
@@ -16854,10 +16998,14 @@ end
                       if show_snapshots then
                         mm = '!'
                       end
+                      lspfx = ''
+                      if settings_locksurface then
+                        lspfx = '!'
+                      end
                       if ccat == ctlcats.fxparam then
-                        mstr = 'MIDI learn|Modulation||Enter value||Open FX window||'..mm..'Snapshots||>Tools|<Regenerate ID   (emergency only)||Toggle topbar'
+                        mstr = 'MIDI learn|Modulation||Enter value||Open FX window||'..mm..'Snapshots||>Tools|<Regenerate ID   (emergency only)||Toggle Topbar|Toggle Sidebar||'..lspfx..'Lock Surface'
                       else
-                        mstr = '#MIDI learn|#Modulation||Enter value||#Open FX window||'..mm..'Snapshots||>Tools|<Regenerate ID   (emergency only)||Toggle topbar'                  
+                        mstr = '#MIDI learn|#Modulation||Enter value||#Open FX window||'..mm..'Snapshots||>Tools|<Regenerate ID   (emergency only)||Toggle Topbar|Toggle Sidebar||'..lspfx..'Lock Surface'                  
                       end
                       if ccat ~= ctlcats.macro then
                         if #strip_favs > 0 then
@@ -16896,9 +17044,15 @@ end
                             strips[tracks[track_select].strip][page].controls[i].c_id = GenID()
                             update_gfx = true
                           elseif res == 7 then
-                            hide_topbar = not hide_topbar
-                            obj = GetObjects()
+                            ToggleTopbar()
+                            --hide_topbar = not hide_topbar
+                            --obj = GetObjects()
+                            --update_surface = true
+                          elseif res == 8 then
+                            ToggleSidebar()
                             update_surface = true
+                          elseif res == 9 then
+                            settings_locksurface = not settings_locksurface
                           end
                         end
                       --[[else
@@ -17041,8 +17195,11 @@ end
                 else
                   mstr = mstr .. '#Insert strip (favorites)'                  
                 end
-  
-                mstr = mstr .. '||#MIDI learn|#Modulation||#Enter value||#Open FX window||'..mm..'Snapshots||Toggle topbar'
+                local lspfx = ''
+                if settings_locksurface then
+                  lspfx = '!'
+                end
+                mstr = mstr .. '||#MIDI learn|#Modulation||#Enter value||#Open FX window||'..mm..'Snapshots||Toggle Topbar|Toggle Sidebar||'..lspfx..'Lock Surface'
                 
                 gfx.x, gfx.y = mouse.mx, mouse.my
                 res = OpenMenu(mstr)
@@ -17051,9 +17208,12 @@ end
                     show_snapshots = not show_snapshots
                     update_gfx = true
                   elseif res == sfcnt + 6 or (sfcnt == 0 and res == 7) then
-                    hide_topbar = not hide_topbar
-                    obj = GetObjects()
+                    ToggleTopbar()
+                  elseif res == sfcnt + 7 or (sfcnt == 0 and res == 8) then
+                    ToggleSidebar()
                     update_surface = true
+                  elseif res == sfcnt + 8 or (sfcnt == 0 and res == 9) then
+                    settings_locksurface = not settings_locksurface
                     
                   elseif res <= sfcnt then
                     local fn = strip_favs[res]
@@ -17757,16 +17917,26 @@ end
             
             --local char=gfx.getchar()
             if ctl_select ~= nil and char ~= 0 then
+              local shiftsize = settings_gridsize
+              if mouse.shift then
+                shiftsize = 1
+              end
               if char == 0x6C656674 then -- left arrow
                 for i = 1,#ctl_select do
                   if strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].poslock == false then
                     local scale = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].scale
                     strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].x = 
-                                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].x - 1
+                                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].x - shiftsize
                     strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].xsc = 
                                                                         strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].x
                                                                          + math.floor(strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].w/2
                                                                          - (strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].w*scale)/2)
+                  end
+                end
+                if gfx3_select and #gfx3_select > 0 then
+                  for i = 1,#gfx3_select do
+                    strips[tracks[track_select].strip][page].graphics[gfx3_select[i].ctl].x = 
+                                  strips[tracks[track_select].strip][page].graphics[gfx3_select[i].ctl].x - shiftsize
                   end
                 end
                 update_gfx = true
@@ -17776,11 +17946,17 @@ end
                   if strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].poslock == false then
                     local scale = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].scale
                     strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].x = 
-                                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].x + 1
+                                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].x + shiftsize
                     strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].xsc = 
                                                                         strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].x
                                                                          + math.floor(strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].w/2
                                                                          - (strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].w*scale)/2)
+                  end
+                end
+                if gfx3_select and #gfx3_select > 0 then
+                  for i = 1,#gfx3_select do
+                    strips[tracks[track_select].strip][page].graphics[gfx3_select[i].ctl].x = 
+                                  strips[tracks[track_select].strip][page].graphics[gfx3_select[i].ctl].x + shiftsize
                   end
                 end
                 update_gfx = true
@@ -17790,11 +17966,17 @@ end
                   if strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].poslock == false then
                     local scale = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].scale
                     strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].y = 
-                                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].y - 1
+                                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].y - shiftsize
                     strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ysc = 
                                                                         strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].y
                                                                          + math.floor(strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctl_info.cellh/2
                                                                          - (strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctl_info.cellh*scale)/2)
+                  end
+                end
+                if gfx3_select and #gfx3_select > 0 then
+                  for i = 1,#gfx3_select do
+                    strips[tracks[track_select].strip][page].graphics[gfx3_select[i].ctl].y = 
+                                  strips[tracks[track_select].strip][page].graphics[gfx3_select[i].ctl].y - shiftsize
                   end
                 end
                 update_gfx = true
@@ -17804,11 +17986,17 @@ end
                   if strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].poslock == false then
                     local scale = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].scale
                     strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].y = 
-                                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].y + 1
+                                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].y + shiftsize
                     strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ysc = 
                                                                         strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].y
                                                                          + math.floor(strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctl_info.cellh/2
                                                                          - (strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctl_info.cellh*scale)/2)
+                  end
+                end
+                if gfx3_select and #gfx3_select > 0 then
+                  for i = 1,#gfx3_select do
+                    strips[tracks[track_select].strip][page].graphics[gfx3_select[i].ctl].y = 
+                                  strips[tracks[track_select].strip][page].graphics[gfx3_select[i].ctl].y + shiftsize
                   end
                 end
                 update_gfx = true                
@@ -22585,6 +22773,37 @@ end
     
   end
   
+  function GetGraphicsTable(strip, page, c)
+
+    local tbl = {gfxtype = strips[strip][page].graphics[c].gfxtype,
+                 fn = strips[strip][page].graphics[c].fn,
+                 imageidx = strips[strip][page].graphics[c].imageidx,
+                 x = strips[strip][page].graphics[c].x,
+                 y = strips[strip][page].graphics[c].y,
+                 w = strips[strip][page].graphics[c].w,
+                 h = strips[strip][page].graphics[c].h,
+                 scale = strips[strip][page].graphics[c].scale,
+                 stretchw = strips[strip][page].graphics[c].stretchw,
+                 stretchh = strips[strip][page].graphics[c].stretchh,
+                 font = {idx = strips[strip][page].graphics[c].font.idx,
+                         name = strips[strip][page].graphics[c].font.name,
+                         size = strips[strip][page].graphics[c].font.size,
+                         bold = strips[strip][page].graphics[c].font.bold,
+                         italics = strips[strip][page].graphics[c].font.italics,
+                         underline = strips[strip][page].graphics[c].font.underline,
+                         shadow = strips[strip][page].graphics[c].font.shadow,
+                         shadow_x = strips[strip][page].graphics[c].font.shadow_x,
+                         shadow_y = strips[strip][page].graphics[c].font.shadow_y,
+                         shadow_a = strips[strip][page].graphics[c].font.shadow_a
+                         },
+                 text = strips[strip][page].graphics[c].text,
+                 text_col = strips[strip][page].graphics[c].text_col,
+                 poslock = false
+                 }
+    return tbl
+
+  end
+  
   function GetControlTable(strip, page, c)
     
     local tbl = {ctlcat=strips[strip][page].controls[c].ctlcat,
@@ -24304,7 +24523,21 @@ end
     settings_usectlbitmap = tobool(nz(GES('usectlbitmap',true),settings_usectlbitmap))
     settings_macroeditmonitor = tobool(nz(GES('macroeditmonitor',true),settings_macroeditmonitor))
     hide_topbar = tobool(nz(GES('hide_topbar',true),hide_topbar))
+    settings_hideeditbaronnewproject = tobool(nz(GES('hide_editbar',true),settings_hideeditbaronnewproject))
+    settings_locksurfaceonnewproject = tobool(nz(GES('lock_surface',true),settings_locksurfaceonnewproject))
     settings_showminimaltopbar = tobool(nz(GES('settings_showminimaltopbar',true),settings_showminimaltopbar))
+    
+    if settings_hideeditbaronnewproject then
+      plist_w = 0
+      show_editbar = false
+    else
+      plist_w = oplist_w
+      show_editbar = true
+    end
+    
+    if settings_locksurfaceonnewproject then
+      settings_locksurface = true
+    end
     
     local sd = tonumber(GES('strip_default',true))
     local sdf = tonumber(GES('stripfol_default',true))
@@ -24348,6 +24581,8 @@ end
     reaper.SetExtState(SCRIPT,'macroeditmonitor',tostring(settings_macroeditmonitor), true)
     reaper.SetExtState(SCRIPT,'hide_topbar',tostring(hide_topbar), true)
     reaper.SetExtState(SCRIPT,'settings_showminimaltopbar',tostring(settings_showminimaltopbar), true)
+    reaper.SetExtState(SCRIPT,'hide_editbar',tostring(settings_hideeditbaronnewproject), true)    
+    reaper.SetExtState(SCRIPT,'lock_surface',tostring(settings_locksurfaceonnewproject), true)    
     
     if strip_default then
       reaper.SetExtState(SCRIPT,'strip_default',tostring(strip_default.strip_select), true)
@@ -27153,6 +27388,9 @@ end
   settings_usectlbitmap = false
   settings_macroeditmonitor = false
   hide_topbar = false
+  settings_hideeditbaronnewproject = false
+  settings_locksurfaceonnewproject = false
+  
   settings_showminimaltopbar = true
   save_subfolder = ''
   
