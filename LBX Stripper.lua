@@ -9952,14 +9952,11 @@ end
               if gfx3_select == nil then
                 gfx3_select = {}
               end 
-              --  gfx3_select[1] = {ctl = i}
-              --else
-                local cs = #gfx3_select+1
-                gfx3_select[cs] = {}
-                gfx3_select[cs].ctl = i
-                gfx3_select[cs].relx = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].x - strips[tracks[track_select].strip][page].graphics[i].x
-                gfx3_select[cs].rely = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].y - strips[tracks[track_select].strip][page].graphics[i].y
-              --end
+              local cs = #gfx3_select+1
+              gfx3_select[cs] = {}
+              gfx3_select[cs].ctl = i
+              gfx3_select[cs].relx = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].x - strips[tracks[track_select].strip][page].graphics[i].x
+              gfx3_select[cs].rely = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].y - strips[tracks[track_select].strip][page].graphics[i].y
             end
           end
         end
@@ -13436,7 +13433,7 @@ end
           dx = strips[tracks[track_select].strip][page].controls[cstart].x - (mouse.mx+surface_offset.x-obj.sections[10].x) 
           dy = strips[tracks[track_select].strip][page].controls[cstart].y - (mouse.my+surface_offset.y-obj.sections[10].y)
   
-          ctl_select = {}
+          ctl_select = nil
           
           for c = cstart, #ctls do
   
@@ -13446,8 +13443,17 @@ end
             strips[tracks[track_select].strip][page].controls[c].ysc = strips[tracks[track_select].strip][page].controls[c].ysc - dy
             strips[tracks[track_select].strip][page].controls[c].id = nil
           
-            ctl_select[#ctl_select+1] = {ctl = c}
-          
+            if ctl_select == nil then
+              ctl_select = {} 
+              ctl_select[1] = {ctl = c}
+            else
+              local cs = #ctl_select+1
+              ctl_select[cs] = {}
+              ctl_select[cs].ctl = c
+              ctl_select[cs].relx = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].x - strips[tracks[track_select].strip][page].controls[c].x
+              ctl_select[cs].rely = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].y - strips[tracks[track_select].strip][page].controls[c].y
+            end
+            
             if ctls[c].ctlcat == ctlcats.macro then
             
               local macro = ctls[c].macroctl
@@ -13496,14 +13502,26 @@ end
             dy = strips[tracks[track_select].strip][page].graphics[gstart].y - (mouse.my+surface_offset.y-obj.sections[10].y)
           end
           
-          gfx3_select = {}
+          gfx3_select = nil
           
           for c = gstart, #gfx do
 
             strips[tracks[track_select].strip][page].graphics[c].x = strips[tracks[track_select].strip][page].graphics[c].x - dx
             strips[tracks[track_select].strip][page].graphics[c].y = strips[tracks[track_select].strip][page].graphics[c].y - dy
 
-            gfx3_select[#gfx3_select+1] = {ctl = c}
+            if gfx3_select == nil then
+              gfx3_select = {}
+            end 
+            local cs = #gfx3_select+1
+            gfx3_select[cs] = {}
+            gfx3_select[cs].ctl = c
+            if ctl_select and ctl_select[1] then
+              gfx3_select[cs].relx = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].x - strips[tracks[track_select].strip][page].graphics[c].x
+              gfx3_select[cs].rely = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].y - strips[tracks[track_select].strip][page].graphics[c].y
+            elseif gfx3_select and gfx3_select[1] then
+              gfx3_select[cs].relx = strips[tracks[track_select].strip][page].graphics[gfx3_select[1].ctl].x - strips[tracks[track_select].strip][page].graphics[c].x
+              gfx3_select[cs].rely = strips[tracks[track_select].strip][page].graphics[gfx3_select[1].ctl].y - strips[tracks[track_select].strip][page].graphics[c].y            
+            end            
           end
         end
         
