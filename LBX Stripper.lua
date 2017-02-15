@@ -106,7 +106,8 @@
               macsliderB = 66,
               macctl = 67,
               macctl_h = 68,
-              macctl2 = 69,              
+              macctl2 = 69,
+              reassplugin = 70,              
               dummy = 99
               }
   
@@ -2825,15 +2826,15 @@
                           srcchan = src,
                           {}}
             tbl[i][1] = {
-                                  name = tostring(sname)..' Send Vol',
+                                  name = 'Send Volume '..tostring(sname),
                                   parmname = 'D_VOL'
                                  }
             tbl[i][2] = {
-                                  name = tostring(sname)..' Send Pan',
+                                  name = 'Send Pan '..tostring(sname),
                                   parmname = 'D_PAN'
                                  }
             tbl[i][3] = {
-                                  name = tostring(sname)..' Send Mute',
+                                  name = 'Send Mute '..tostring(sname),
                                   parmname = 'B_MUTE'
                                  }
           end
@@ -2877,15 +2878,15 @@
                           srcchan = src,
                           {}}
             tbl[sidx][1] = {
-                                  name = tostring(sname)..' Send Vol',
+                                  name = 'Send Volume '..tostring(sname),
                                   parmname = 'D_VOL'
                                  }
             tbl[sidx][2] = {
-                                  name = tostring(sname)..' Send Pan',
+                                  name = 'Send Pan '..tostring(sname),
                                   parmname = 'D_PAN'
                                  }
             tbl[sidx][3] = {
-                                  name = tostring(sname)..' Send Mute',
+                                  name = 'Send Mute '..tostring(sname),
                                   parmname = 'B_MUTE'
                                  }
             
@@ -2960,13 +2961,13 @@
                        max = 1,
                        }
     trctls_table[4] = {idx = 4,
-                       name = 'Dual Pan L',
+                       name = 'Pan (Left)',
                        parmname = 'D_DUALPANL',
                        min = -1,
                        max = 1,
                        }
     trctls_table[5] = {idx = 5,
-                       name = 'Dual Pan R',
+                       name = 'Pan (Right)',
                        parmname = 'D_DUALPANR',
                        min = -1,
                        max = 1,
@@ -7831,33 +7832,59 @@ end
             if reass_param == nil then
               local x, y = dragparam.x, dragparam.y
               gfx.a = 0.7
-              local iidx = ctl_files[knob_select].imageidx
-              if iidx == nil or ksel_loaded == false then
-                ksel_loaded = true
-                gfx.loadimg(1023, controls_path..ctl_files[knob_select].fn)
-                iidx = 1023
-              elseif iidx == nil then
-                iidx = 1023
+              local iidx,w,h,bc 
+              if dragparam.type == 'reassplugin' then
+                iidx = 998
+                w,h = gfx.getimgdim(iidx)
+                if w == 0 or h == 0 then
+                  w, h = ksel_size.w*2, ksel_size.h*2
+                end
+                bc = gui.color.red
+                local xywh = {x=x+w/2,y=y+h/2,w=1,h=1}
+                GUI_textC(gui,xywh,'Reassign Plugin',bc,-2)
+              else
+                iidx = ctl_files[knob_select].imageidx
+                if iidx == nil or ksel_loaded == false then
+                  ksel_loaded = true
+                  gfx.loadimg(1023, controls_path..ctl_files[knob_select].fn)
+                  iidx = 1023
+                elseif iidx == nil then
+                  iidx = 1023
+                end
+                w, _ = gfx.getimgdim(iidx)
+                h = ctl_files[knob_select].cellh
+                bc = gui.color.yellow
               end
-              local w, _ = gfx.getimgdim(iidx)
-              local h = ctl_files[knob_select].cellh
               gfx.blit(iidx,scale_select,0,0,p*h,w,ctl_files[knob_select].cellh,x+ w/2-w*scale_select/2,y+ h/2-h*scale_select/2 )
-              f_Get_SSV(gui.color.yellow)
+              f_Get_SSV(bc)
               gfx.a = 1
               gfx.roundrect(x, y ,w, h, 8, 1, 0)
             else
               local x, y = dragparam.x, dragparam.y
-              local iidx = ctl_files[knob_select].imageidx
-              if iidx == nil or ksel_loaded == false then
-                ksel_loaded = true
-                gfx.loadimg(1023, controls_path..ctl_files[knob_select].fn)
-                iidx = 1023
-              elseif iidx == nil then
-                iidx = 1023
+              local iidx,w,h,bc 
+              if dragparam.type == 'reassplugin' then              
+                iidx = 998
+                w,h = gfx.getimgdim(iidx)
+                if w == 0 or h == 0 then
+                  w, h = ksel_size.w*2, ksel_size.h*2
+                end              
+                bc = dragparam.bc
+                local xywh = {x=x+w/2,y=y+h/2,w=1,h=1}
+                GUI_textC(gui,xywh,'Reassign Plugin',bc,-2)
+              else
+                local iidx = ctl_files[knob_select].imageidx
+                if iidx == nil or ksel_loaded == false then
+                  ksel_loaded = true
+                  gfx.loadimg(1023, controls_path..ctl_files[knob_select].fn)
+                  iidx = 1023
+                elseif iidx == nil then
+                  iidx = 1023
+                end
+                w, _ = gfx.getimgdim(iidx)
+                h = ctl_files[knob_select].cellh
+                bc = gui.color.red
               end
-              local w, _ = gfx.getimgdim(iidx)
-              local h = ctl_files[knob_select].cellh
-              f_Get_SSV(gui.color.red)
+              f_Get_SSV(bc)
               gfx.a = 1
               gfx.roundrect(x, y ,w, h, 8, 1, 0)              
             end
@@ -11679,8 +11706,25 @@ end
                       end
                       
                       if not fx_found then
-                        --find by name?
-                                        
+                        --find on other track?
+                        for t = -1, reaper.CountTracks(0)-1 do
+                          local tr3 = GetTrack(t)
+                          for f = 0, reaper.TrackFX_GetCount(tr3) do
+                            if strips[tracks[track_select].strip][p].controls[c].fxguid == reaper.TrackFX_GetFXGUID(tr3, f) then
+                              fx_found = true
+                              local ctl = strips[tracks[track_select].strip][p].controls[c]
+                              ctl.fxnum = f
+                              if t == tracks[track_select].tracknum then
+                                ctl.tracknum = nil
+                                ctl.trackguid = nil
+                              else
+                                ctl.tracknum = t
+                                ctl.trackguid = tracks[t].guid
+                              end
+                              break
+                            end
+                          end
+                        end
                       end
                       
                       PopulateTrackFX()
@@ -11725,8 +11769,25 @@ end
                     end
                     
                     if not fx_found then
-                      --find by name?
-                                      
+                      --find on other track?
+                      for t = -1, reaper.CountTracks(0)-1 do
+                        local tr3 = GetTrack(t)
+                        for f = 0, reaper.TrackFX_GetCount(tr3) do
+                          if strips[tracks[track_select].strip][p].controls[c].fxguid == reaper.TrackFX_GetFXGUID(tr3, f) then
+                            fx_found = true
+                            local ctl = strips[tracks[track_select].strip][p].controls[c]
+                            ctl.fxnum = f
+                            if t == tracks[track_select].tracknum then
+                              ctl.tracknum = nil
+                              ctl.trackguid = nil
+                            else
+                              ctl.tracknum = t
+                              ctl.trackguid = tracks[t].guid
+                            end
+                            break
+                          end
+                        end
+                      end                                      
                     end
                     
                     PopulateTrackFX()
@@ -13045,6 +13106,91 @@ end
     
   end
   
+  function Env_Test(strip, page)
+  
+    if strips and strips[strip] then
+      local ctls = strips[strip][page].controls
+      reaper.PreventUIRefresh(1)-- Prevent UI refreshing. Uncomment it only if the script works.
+      for i = 1, #ctls do
+              
+        Envelope_SetProps(strip,page,i, false, false, false)
+      end
+      reaper.PreventUIRefresh(-1)
+      for i = 1, #ctls do
+
+        Envelope_SetProps(strip,page,i, nil, true, nil)
+        
+        reaper.TrackList_AdjustWindows(true)
+        reaper.UpdateTimeline()
+        
+        reaper.UpdateArrange()
+      
+      end
+    end  
+  end
+  
+  function Envelope_SetProps(strip, page, c, active, visible, armed)
+
+    if strips and strips[strip] and strips[strip][page].controls[c] then
+
+      local ctl = strips[strip][page].controls[c]
+      local track
+      if ctl.tracknum == nil then
+        track = GetTrack(strips[strip].track.tracknum)
+      else
+        track = GetTrack(ctl.tracknum)      
+      end
+    
+      if track then
+      
+        local env
+        if ctl.ctlcat == ctlcats.fxparam then
+          
+          env = reaper.GetFXEnvelope(track, ctl.fxnum, ctl.param_info.paramnum,false)  
+        
+        elseif ctl.ctlcat == ctlcats.trackparam then
+          local env_count = reaper.CountTrackEnvelopes(track)
+          for j = 0, env_count-1 do
+          
+            local e = reaper.GetTrackEnvelope(track, j)            
+            retval, envName = reaper.GetEnvelopeName(e, "")
+            
+            if envName == string.sub(ctl.param_info.paramname,7) then
+              env = e
+              break
+            end
+          end
+           
+        elseif ctl.ctlcat == ctlcats.tracksend then
+          --mute all envelopes?
+        end
+      
+        if env then
+        
+          Envelope_SetProps2(env, active, visible, armed)
+        
+        end
+      end
+    
+    end
+  
+  end
+  
+  function Envelope_SetProps2(env, active_out, visible_out, armed_out)
+    
+    local br_env = reaper.BR_EnvAlloc(env, false)
+    local active, visible, armed, inLane, laneHeight, defaultShape, minValue, maxValue, centerValue, type, faderScaling = 
+                                          reaper.BR_EnvGetProperties(br_env, true, true, true, true, 0, 0, 0, 0, 0, 0, true)
+    if active_out == nil then active_out = active end
+    if visible_out == nil then visible_out = visible end
+    if armed_out == nil then armed_out = armed end
+    
+    --reaper.BR_EnvSetProperties(br_env, active_out, false, armed_out, inLane, laneHeight, defaultShape, faderScaling)
+    reaper.BR_EnvSetProperties(br_env, active_out, visible_out, armed_out, inLane, laneHeight, defaultShape, faderScaling)
+    reaper.BR_EnvFree(br_env, 1)
+  
+  end
+  
   ------------------------------------------------------------
   
   function ChangeTrack(t)
@@ -13061,6 +13207,8 @@ end
     InsertDefaultStrip()
   
     GUI_DrawCtlBitmap()
+    
+    --Env_Test(tracks[track_select].strip, page)
   end
   
   function ChangeTrack2(t)
@@ -13372,6 +13520,129 @@ end
         update_surface = true
       end
     end   ]] 
+  end
+
+  function ArrowKey_Shift(char, ctl_select, gfx3_select, gfx2_select)
+  
+    local shiftsize = settings_gridsize
+    if mouse.shift then
+      shiftsize = 1
+    end
+    
+    if char == 0x6C656674 then -- left arrow
+      if ctl_select and #ctl_select > 0 then
+        for i = 1,#ctl_select do
+          if strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].poslock == false then
+            local scale = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].scale
+            strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].x = 
+                          strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].x - shiftsize
+            strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].xsc = 
+                                                                strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].x
+                                                                 + math.floor(strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].w/2
+                                                                 - (strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].w*scale)/2)
+          end
+        end
+      end
+      if gfx3_select and #gfx3_select > 0 then
+        for i = 1,#gfx3_select do
+          strips[tracks[track_select].strip][page].graphics[gfx3_select[i].ctl].x = 
+                        strips[tracks[track_select].strip][page].graphics[gfx3_select[i].ctl].x - shiftsize
+        end
+      end
+      if gfx2_select then
+        if strips[tracks[track_select].strip][page].graphics[gfx2_select].poslock == false then
+          strips[tracks[track_select].strip][page].graphics[gfx2_select].x = 
+                        strips[tracks[track_select].strip][page].graphics[gfx2_select].x - shiftsize
+        end
+      end
+      update_gfx = true
+      SetCtlBitmapRedraw()
+    elseif char == 0x72676874 then -- right arrow
+      if ctl_select and #ctl_select > 0 then
+        for i = 1,#ctl_select do
+          if strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].poslock == false then
+            local scale = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].scale
+            strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].x = 
+                          strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].x + shiftsize
+            strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].xsc = 
+                                                                strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].x
+                                                                 + math.floor(strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].w/2
+                                                                 - (strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].w*scale)/2)
+          end
+        end
+      end
+      if gfx3_select and #gfx3_select > 0 then
+        for i = 1,#gfx3_select do
+          strips[tracks[track_select].strip][page].graphics[gfx3_select[i].ctl].x = 
+                        strips[tracks[track_select].strip][page].graphics[gfx3_select[i].ctl].x + shiftsize
+        end
+      end
+      if gfx2_select then
+        if strips[tracks[track_select].strip][page].graphics[gfx2_select].poslock == false then
+          strips[tracks[track_select].strip][page].graphics[gfx2_select].x = 
+                        strips[tracks[track_select].strip][page].graphics[gfx2_select].x + shiftsize
+        end
+      end
+      update_gfx = true
+      SetCtlBitmapRedraw()
+    elseif char == 0x7570 then -- up arrow
+      if ctl_select and #ctl_select > 0 then
+        for i = 1,#ctl_select do
+          if strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].poslock == false then
+            local scale = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].scale
+            strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].y = 
+                          strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].y - shiftsize
+            strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ysc = 
+                                                                strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].y
+                                                                 + math.floor(strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctl_info.cellh/2
+                                                                 - (strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctl_info.cellh*scale)/2)
+          end
+        end
+      end
+      if gfx3_select and #gfx3_select > 0 then
+        for i = 1,#gfx3_select do
+          strips[tracks[track_select].strip][page].graphics[gfx3_select[i].ctl].y = 
+                        strips[tracks[track_select].strip][page].graphics[gfx3_select[i].ctl].y - shiftsize
+        end
+      end
+      if gfx2_select then
+        if strips[tracks[track_select].strip][page].graphics[gfx2_select].poslock == false then
+          strips[tracks[track_select].strip][page].graphics[gfx2_select].y = 
+                        strips[tracks[track_select].strip][page].graphics[gfx2_select].y - shiftsize
+        end
+      end
+      update_gfx = true
+      SetCtlBitmapRedraw()
+    elseif char == 0x646F776E then -- down arrow
+      if ctl_select and #ctl_select > 0 then
+        for i = 1,#ctl_select do
+          if strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].poslock == false then
+            local scale = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].scale
+            strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].y = 
+                          strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].y + shiftsize
+            strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ysc = 
+                                                                strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].y
+                                                                 + math.floor(strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctl_info.cellh/2
+                                                                 - (strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctl_info.cellh*scale)/2)
+          end
+        end
+      end
+      if gfx3_select and #gfx3_select > 0 then
+        for i = 1,#gfx3_select do
+          strips[tracks[track_select].strip][page].graphics[gfx3_select[i].ctl].y = 
+                        strips[tracks[track_select].strip][page].graphics[gfx3_select[i].ctl].y + shiftsize
+        end
+      end
+      if gfx2_select then
+        if strips[tracks[track_select].strip][page].graphics[gfx2_select].poslock == false then
+          strips[tracks[track_select].strip][page].graphics[gfx2_select].y = 
+                        strips[tracks[track_select].strip][page].graphics[gfx2_select].y + shiftsize
+        end
+      end
+      update_gfx = true                
+      SetCtlBitmapRedraw()
+    end
+  
   end
 
   function Copy_Selected()
@@ -17933,94 +18204,10 @@ end
             
             end
             
-            --local char=gfx.getchar()
-            if ctl_select ~= nil and char ~= 0 then
-              local shiftsize = settings_gridsize
-              if mouse.shift then
-                shiftsize = 1
-              end
-              if char == 0x6C656674 then -- left arrow
-                for i = 1,#ctl_select do
-                  if strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].poslock == false then
-                    local scale = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].scale
-                    strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].x = 
-                                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].x - shiftsize
-                    strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].xsc = 
-                                                                        strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].x
-                                                                         + math.floor(strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].w/2
-                                                                         - (strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].w*scale)/2)
-                  end
-                end
-                if gfx3_select and #gfx3_select > 0 then
-                  for i = 1,#gfx3_select do
-                    strips[tracks[track_select].strip][page].graphics[gfx3_select[i].ctl].x = 
-                                  strips[tracks[track_select].strip][page].graphics[gfx3_select[i].ctl].x - shiftsize
-                  end
-                end
-                update_gfx = true
-                SetCtlBitmapRedraw()
-              elseif char == 0x72676874 then -- right arrow
-                for i = 1,#ctl_select do
-                  if strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].poslock == false then
-                    local scale = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].scale
-                    strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].x = 
-                                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].x + shiftsize
-                    strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].xsc = 
-                                                                        strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].x
-                                                                         + math.floor(strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].w/2
-                                                                         - (strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].w*scale)/2)
-                  end
-                end
-                if gfx3_select and #gfx3_select > 0 then
-                  for i = 1,#gfx3_select do
-                    strips[tracks[track_select].strip][page].graphics[gfx3_select[i].ctl].x = 
-                                  strips[tracks[track_select].strip][page].graphics[gfx3_select[i].ctl].x + shiftsize
-                  end
-                end
-                update_gfx = true
-                SetCtlBitmapRedraw()
-              elseif char == 0x7570 then -- up arrow
-                for i = 1,#ctl_select do
-                  if strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].poslock == false then
-                    local scale = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].scale
-                    strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].y = 
-                                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].y - shiftsize
-                    strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ysc = 
-                                                                        strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].y
-                                                                         + math.floor(strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctl_info.cellh/2
-                                                                         - (strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctl_info.cellh*scale)/2)
-                  end
-                end
-                if gfx3_select and #gfx3_select > 0 then
-                  for i = 1,#gfx3_select do
-                    strips[tracks[track_select].strip][page].graphics[gfx3_select[i].ctl].y = 
-                                  strips[tracks[track_select].strip][page].graphics[gfx3_select[i].ctl].y - shiftsize
-                  end
-                end
-                update_gfx = true
-                SetCtlBitmapRedraw()
-              elseif char == 0x646F776E then -- down arrow
-                for i = 1,#ctl_select do
-                  if strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].poslock == false then
-                    local scale = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].scale
-                    strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].y = 
-                                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].y + shiftsize
-                    strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ysc = 
-                                                                        strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].y
-                                                                         + math.floor(strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctl_info.cellh/2
-                                                                         - (strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctl_info.cellh*scale)/2)
-                  end
-                end
-                if gfx3_select and #gfx3_select > 0 then
-                  for i = 1,#gfx3_select do
-                    strips[tracks[track_select].strip][page].graphics[gfx3_select[i].ctl].y = 
-                                  strips[tracks[track_select].strip][page].graphics[gfx3_select[i].ctl].y + shiftsize
-                  end
-                end
-                update_gfx = true                
-                SetCtlBitmapRedraw()
-              end
-                          
+            if (ctl_select ~= nil or gfx3_select ~= nil) and char ~= 0 then
+            
+              ArrowKey_Shift(char,ctl_select,gfx3_select)
+                                         
             elseif ctl_select ~= nil and show_ctlbrowser and (MOUSE_click(obj.sections[200]) or MOUSE_click_RB(obj.sections[200])) then
             
               if mouse.context == nil and MOUSE_click(obj.sections[211]) then
@@ -19272,6 +19459,14 @@ end
                 elseif trackfx[i + flist_offset] then
                   trackfx_select = i + flist_offset
                   PopulateTrackFXParams()
+                  mouse.context = contexts.reassplugin
+                  reass_plugin = trackfx_select
+                  local w,h = gfx.getimgdim(998)
+                  if w == 0 or h == 0 then
+                    ksel_size = {w = 50, h = 50}
+                  else
+                   ksel_size = {w = w/2, h = h/2}
+                  end
                   update_gfx = true
                 end
               elseif MOUSE_click_RB(obj.sections[520]) then
@@ -19432,7 +19627,7 @@ end
                       if w == 0 or h == 0 then
                         ksel_size = {w = 50, h = 50}
                       else
-                       ksel_size = {w = w/2, h = h/2}
+                        ksel_size = {w = w/2, h = h/2}
                       end
                     else 
                       ksel_size = {w = 50, h = 50}
@@ -19451,7 +19646,7 @@ end
                       if w == 0 or h == 0 then
                         ksel_size = {w = 50, h = 50}
                       else
-                       ksel_size = {w = w/2, h = h/2}
+                        ksel_size = {w = w/2, h = h/2}
                       end
                     else 
                       ksel_size = {w = 50, h = 50}
@@ -19470,7 +19665,7 @@ end
                       if w == 0 or h == 0 then
                         ksel_size = {w = 50, h = 50}
                       else
-                       ksel_size = {w = w/2, h = h/2}
+                        ksel_size = {w = w/2, h = h/2}
                       end
                     else 
                       ksel_size = {w = 50, h = 50}
@@ -19482,7 +19677,31 @@ end
               
             end
                     
-            if mouse.context and mouse.context == contexts.dragparam then
+            if mouse.context and mouse.context == contexts.reassplugin then
+              dragparam = {x = mouse.mx-ksel_size.w, y = mouse.my-ksel_size.h, type = 'reassplugin'}
+              reass_param = nil
+              if tracks[track_select] and tracks[track_select].strip ~= -1 then
+                for i = 1, #strips[tracks[track_select].strip][page].controls do
+                
+                  local xywh 
+                  xywh = {x = strips[tracks[track_select].strip][page].controls[i].x - surface_offset.x +obj.sections[10].x, 
+                          y = strips[tracks[track_select].strip][page].controls[i].y - surface_offset.y +obj.sections[10].y, 
+                          w = strips[tracks[track_select].strip][page].controls[i].w, 
+                          h = strips[tracks[track_select].strip][page].controls[i].ctl_info.cellh}    
+                  if MOUSE_over(xywh) and strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.fxparam then
+                    reass_param = i
+                    if trackfx[trackfx_select].name == strips[tracks[track_select].strip][page].controls[i].fxname then
+                      dragparam.bc = gui.color.green
+                    else
+                      dragparam.bc = '255 153 0'
+                    end
+                    break
+                  end
+                end
+              end                    
+              update_surface = true
+              
+            elseif mouse.context and mouse.context == contexts.dragparam then
               dragparam = {x = mouse.mx-ksel_size.w, y = mouse.my-ksel_size.h, type = 'track'}
               reass_param = nil
               if tracks[track_select] and tracks[track_select].strip ~= -1 then
@@ -19588,7 +19807,33 @@ end
               
             elseif dragparam ~= nil then
               --Dropped
-              if dragparam.type == 'track' then
+              if dragparam.type == 'reassplugin' then
+                if reass_param ~= nil then
+                  local guid = strips[tracks[track_select].strip][page].controls[reass_param].fxguid
+                  local nguid = trackfx[trackfx_select].guid
+                  local nfxnum = trackfx[trackfx_select].fxnum
+                  local nfxname = trackfx[trackfx_select].name
+                  for c = 1, #strips[tracks[track_select].strip][page].controls do
+                    local ctl = strips[tracks[track_select].strip][page].controls[c]
+                    if ctl.fxguid == guid then
+                    
+                      ctl.fxnum = nfxnum
+                      ctl.fxguid = nguid
+                      ctl.fxname = nfxname
+                      ctl.param_info.paramname = trackfxparams[ctl.param_info.paramnum].paramname
+                      
+                      if tracks[trackedit_select].tracknum ~= tracks[track_select].tracknum then
+                        ctl.tracknum=tracks[trackedit_select].tracknum
+                        ctl.trackguid=tracks[trackedit_select].guid
+                      else
+                        ctl.tracknum=nil
+                        ctl.trackguid=nil                  
+                      end
+                      
+                    end
+                  end
+                end
+              elseif dragparam.type == 'track' then
                 if reass_param == nil then
                   if dragparam.x+ksel_size.w > obj.sections[10].x and dragparam.x+ksel_size.w < obj.sections[10].x+obj.sections[10].w and dragparam.y+ksel_size.h > obj.sections[10].y and dragparam.y+ksel_size.h < obj.sections[10].y+obj.sections[10].h then
                     local i
@@ -19816,33 +20061,9 @@ end
         
           local clicklblopts = false
           
-          --local char=gfx.getchar()
           if gfx2_select ~= nil and char ~= 0 then
-            if char == 0x6C656674 then -- left arrow
-              if strips[tracks[track_select].strip][page].graphics[gfx2_select].poslock == false then
-                strips[tracks[track_select].strip][page].graphics[gfx2_select].x = 
-                              strips[tracks[track_select].strip][page].graphics[gfx2_select].x - 1
-              end
-              update_gfx = true
-            elseif char == 0x72676874 then -- right arrow
-              if strips[tracks[track_select].strip][page].graphics[gfx2_select].poslock == false then
-                strips[tracks[track_select].strip][page].graphics[gfx2_select].x = 
-                              strips[tracks[track_select].strip][page].graphics[gfx2_select].x + 1
-              end
-              update_gfx = true
-            elseif char == 0x7570 then -- up arrow
-              if strips[tracks[track_select].strip][page].graphics[gfx2_select].poslock == false then
-                strips[tracks[track_select].strip][page].graphics[gfx2_select].y = 
-                              strips[tracks[track_select].strip][page].graphics[gfx2_select].y - 1
-              end
-              update_gfx = true
-            elseif char == 0x646F776E then -- down arrow
-              if strips[tracks[track_select].strip][page].graphics[gfx2_select].poslock == false then
-                strips[tracks[track_select].strip][page].graphics[gfx2_select].y = 
-                              strips[tracks[track_select].strip][page].graphics[gfx2_select].y + 1
-              end
-              update_gfx = true
-            end
+          
+            ArrowKey_Shift(char,nil,nil,gfx2_select)
           
           elseif gfx2_select ~= nil and show_lbloptions and (MOUSE_click(obj.sections[49]) or MOUSE_click_RB(obj.sections[49])) then
             
@@ -20140,7 +20361,11 @@ end
             end
           end
           
-          if MOUSE_click(obj.sections[15]) then
+          if (ctl_select ~= nil or gfx3_select ~= nil) and char ~= 0 then
+          
+            ArrowKey_Shift(char,ctl_select,gfx3_select)
+          
+          elseif MOUSE_click(obj.sections[15]) then
             SaveStrip()
             update_gfx = true
           end
