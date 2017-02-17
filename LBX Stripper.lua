@@ -12921,7 +12921,7 @@ end
   
   function ToggleSidebar()
     
-    if mode == 0 then
+    --if mode == 0 or hide_topbar == true and settings_showminimaltopbar == false then
       show_editbar = not show_editbar
       if show_editbar then
         plist_w = oplist_w
@@ -12929,7 +12929,7 @@ end
         plist_w = 0
       end
       force_resize = true
-    end    
+    --end    
   
   end
   
@@ -15132,10 +15132,11 @@ end
         end
         
       elseif MOUSE_clickXY(obj.sections[18],plist_w,0) and (hide_topbar == false or settings_showminimaltopbar) then
-        ToggleSidebar()
         if mode == 1 then
           mouse.context = contexts.dragsidebar
           offx = mouse.mx-plist_w
+        else
+          ToggleSidebar()
         end
       
       elseif (obj.sections[17].x > obj.sections[20].x+obj.sections[20].w) and MOUSE_clickXY(obj.sections[17],plist_w,0) then
