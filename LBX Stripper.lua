@@ -12358,7 +12358,7 @@ end
 
   function SortCtlSel_Horiz()
   
-    if ctl_select and #ctl_select > 0 then
+    if ctl_select and #ctl_select > 1 then
     
       local ctls = strips[tracks[track_select].strip][page].controls
       nctlsel = {}
@@ -12394,7 +12394,7 @@ end
 
   function Distribute_Horiz()
   
-    if ctl_select and #ctl_select > 0 then
+    if ctl_select and #ctl_select > 1 then
     
       SortCtlSel_Horiz()
     
@@ -12430,7 +12430,7 @@ end
   
   function SortCtlSel_Vert()
   
-    if ctl_select and #ctl_select > 0 then
+    if ctl_select and #ctl_select > 1 then
     
       local ctls = strips[tracks[track_select].strip][page].controls
       nctlsel = {}
@@ -12466,7 +12466,7 @@ end
   
   function Distribute_Vert()
   
-    if ctl_select and #ctl_select > 0 then
+    if ctl_select and #ctl_select > 1 then
     
       SortCtlSel_Vert()
     
