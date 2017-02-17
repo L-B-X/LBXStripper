@@ -12358,7 +12358,7 @@ end
 
   function SortCtlSel_Horiz()
   
-    if ctl_select and #ctl_select > 1 then
+    if ctl_select and #ctl_select > 0 then
     
       local ctls = strips[tracks[track_select].strip][page].controls
       nctlsel = {}
@@ -12394,7 +12394,7 @@ end
 
   function Distribute_Horiz()
   
-    if ctl_select and #ctl_select > 1 then
+    if ctl_select and #ctl_select > 0 then
     
       SortCtlSel_Horiz()
     
@@ -12405,11 +12405,11 @@ end
       local maxxc = -1
       for c = 1, #ctl_select do
         if ctls[ctl_select[c].ctl].x < minx then
-          minx = ctls[ctl_select[c].ctl].x
+          minx = math.floor(ctls[ctl_select[c].ctl].x + (ctls[ctl_select[c].ctl].w / 2))
           minxc = c
         end
         if ctls[ctl_select[c].ctl].x > maxx then
-          maxx = ctls[ctl_select[c].ctl].x
+          maxx = math.floor(ctls[ctl_select[c].ctl].x + (ctls[ctl_select[c].ctl].w / 2))
           maxxc = c
         end
       end
@@ -12417,7 +12417,7 @@ end
       local dx = (maxx - minx) / (#ctl_select-1)
       for c = 1, #ctl_select do
       
-        ctls[ctl_select[c].ctl].x = math.floor(minx+(dx*(c-1)))
+        ctls[ctl_select[c].ctl].x = math.floor(minx+(dx*(c-1)) - ctls[ctl_select[c].ctl].w/2)
         local scale = ctls[ctl_select[c].ctl].scale
         ctls[ctl_select[c].ctl].xsc = ctls[ctl_select[c].ctl].x + math.floor(ctls[ctl_select[c].ctl].w/2
                                                                    - (ctls[ctl_select[c].ctl].w*scale)/2)
@@ -12430,7 +12430,7 @@ end
   
   function SortCtlSel_Vert()
   
-    if ctl_select and #ctl_select > 1 then
+    if ctl_select and #ctl_select > 0 then
     
       local ctls = strips[tracks[track_select].strip][page].controls
       nctlsel = {}
@@ -12466,7 +12466,7 @@ end
   
   function Distribute_Vert()
   
-    if ctl_select and #ctl_select > 1 then
+    if ctl_select and #ctl_select > 0 then
     
       SortCtlSel_Vert()
     
@@ -12477,11 +12477,11 @@ end
       local maxyc = -1
       for c = 1, #ctl_select do
         if ctls[ctl_select[c].ctl].y < miny then
-          miny = ctls[ctl_select[c].ctl].y
+          miny = math.floor(ctls[ctl_select[c].ctl].y + (ctls[ctl_select[c].ctl].ctl_info.cellh / 2))
           minyc = c
         end
         if ctls[ctl_select[c].ctl].y > maxy then
-          maxy = ctls[ctl_select[c].ctl].y
+          maxy = math.floor(ctls[ctl_select[c].ctl].y + (ctls[ctl_select[c].ctl].ctl_info.cellh / 2))
           maxyc = c
         end
       end
@@ -12489,7 +12489,7 @@ end
       local dy = (maxy - miny) / (#ctl_select-1)
       for c = 1, #ctl_select do
       
-        ctls[ctl_select[c].ctl].y = math.floor(miny+(dy*(c-1)))
+        ctls[ctl_select[c].ctl].y = math.floor(miny+(dy*(c-1)) - (ctls[ctl_select[c].ctl].ctl_info.cellh/2))
         local scale = ctls[ctl_select[c].ctl].scale
         ctls[ctl_select[c].ctl].ysc = ctls[ctl_select[c].ctl].y + math.floor(ctls[ctl_select[c].ctl].ctl_info.cellh/2
                                                                    - (ctls[ctl_select[c].ctl].ctl_info.cellh*scale)/2)
