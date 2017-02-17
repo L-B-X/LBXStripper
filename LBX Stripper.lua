@@ -1554,7 +1554,7 @@
   -----------------------------------------------------------------------     
   
   function GetGUI_vars()
-    gfx.mode = 0
+    gfx.mode = gmode
     
     local gui = {}
       gui.aa = 1
@@ -3733,6 +3733,7 @@
   function GUI_DrawControlBackG(obj, gui)
 
     gfx.dest = 1004
+    --gfx.clear=256
     if resize_display then
       if surface_size.w == -1 then
         gfx.setimgdim(1000,obj.sections[10].w, obj.sections[10].h)
@@ -3743,18 +3744,11 @@
     end
 
     gfx.a = 1
-    f_Get_SSV('16 16 16')
-    if surface_size.limit then
-      gfx.rect(0,
-               0, 
-               surface_size.w,
-               surface_size.h, 1, 1)      
-    else
-      gfx.rect(obj.sections[10].x,
-               obj.sections[10].y, 
-               obj.sections[10].w,
-               obj.sections[10].h, 1, 1)
-    end
+    f_Get_SSV(backcol)
+    gfx.rect(0,
+             0, 
+             surface_size.w,
+             surface_size.h, 1, 1)  
                  
     if tracks and tracks[track_select] and strips[tracks[track_select].strip] and strips[tracks[track_select].strip][page] then
     
@@ -3794,6 +3788,7 @@
                   yoff = obj.sections[10].y - y
                 end
               end
+              --gfx.a = backalpha
               gfx.blit(imageidx,1,0, xoff, yoff, w, h-yoff, x+xoff, y+yoff, sw, sh)
             
             elseif gtype == gfxtype.txt then
@@ -3828,12 +3823,14 @@
                 --local shadoff = F_limit(math.ceil((strips[tracks[track_select].strip][page].graphics[i].font.size/250)*10),1,15)
               
                 f_Get_SSV(gui.color.black)
+                --gfx.a = math.max(shada-(1-backalpha),0)
                 gfx.a = shada
                 gfx.x, gfx.y = x+shadx,y+shady
                 gfx.drawstr(text)
               end
               
               gfx.a = 1
+              --gfx.a = backalpha
               gfx.x, gfx.y = x,y
               f_Get_SSV(textcol)
               
@@ -3857,7 +3854,7 @@
         gfx.line(0,i,surface_size.h,i)
       end
     end
-    
+    gfx.muladdrect(0,0,surface_size.w,surface_size.h,backalpha,backalpha,backalpha)
     gfx.dest = 1    
   end
 
@@ -5806,7 +5803,7 @@ end
   
   function GUI_DrawMsgX(obj, gui, txt, c, max, bar)
     
-    gfx.mode =4
+    gfx.mode = gmode
     if gui == nil then
       gui = GetGUI_vars()
     end
@@ -7465,7 +7462,7 @@ end
   ------------------------------------------------------------
   
   function GUI_draw(obj, gui)
-    gfx.mode =4
+    gfx.mode = gmode
     
     if show_xxy == false and (update_gfx or update_surface or update_sidebar or update_topbar or update_ctlopts or update_ctls or update_bg or 
        update_settings or update_snaps or update_msnaps or update_actcho or update_fsnaps or update_mfsnaps or update_eqcontrol or update_macroedit or
@@ -8124,22 +8121,22 @@ end
         gfx.a = 1
         if topbarheight == 0 then
           if show_eqcontrol ~= true and macro_edit_mode ~= true then
-            gfx.blit(1,1,0,plist_w,--surface_offset.x,
+            gfx.blit(1,1,0,plist_w-1,--surface_offset.x,
                               0,--surface_offset.y,
                               obj.sections[18].w,
                               obj.sections[18].h,
-                              obj.sections[18].x+plist_w,
+                              obj.sections[18].x+plist_w-1,
                               obj.sections[18].y)
-            gfx.blit(1,1,0,(obj.sections[21].x+plist_w),--surface_offset.x+(obj.sections[21].x+plist_w-obj.sections[10].x),
+            gfx.blit(1,1,0,(obj.sections[21].x+plist_w-1),--surface_offset.x+(obj.sections[21].x+plist_w-obj.sections[10].x),
                               0,--surface_offset.y+(obj.sections[21].y-obj.sections[10].y),
                               obj.sections[21].w,
                               obj.sections[21].h,
-                              obj.sections[21].x+plist_w,
+                              obj.sections[21].x+plist_w-1,
                               obj.sections[21].y)
           end
         end
         local w,h = gfx.getimgdim(999)
-        gfx.blit(999,1,0,0,0,w,h,plist_w,0)                
+        gfx.blit(999,1,0,0,0,w,h,plist_w-1,0)                
       end
       
       --if update_surfaceedge then
@@ -12358,6 +12355,150 @@ end
     strips[tracks[track_select].strip][page].graphics[gfx2_select].font.name = f3
 
   end
+
+  function SortCtlSel_Horiz()
+  
+    if ctl_select and #ctl_select > 0 then
+    
+      local ctls = strips[tracks[track_select].strip][page].controls
+      nctlsel = {}
+      for c = 1, #ctl_select do
+    
+        if c == 1 then
+          table.insert(nctlsel, ctl_select[c])
+        else
+          local pos = nil
+          for nc = 1, #nctlsel do
+            if ctls[ctl_select[c].ctl].xsc < ctls[nctlsel[nc].ctl].xsc then
+              pos = nc
+              break
+            end
+          end
+          if pos then
+            --insert at pos
+            table.insert(nctlsel, pos, ctl_select[c])            
+          else
+            --insert at end
+            table.insert(nctlsel, ctl_select[c])
+          end
+        end  
+      end
+      --[[for i = 1, #nctlsel do
+        DBG(i..'  '..ctls[nctlsel[i].ctl].ysc)
+      end]]
+      
+      ctl_select = nctlsel
+    
+    end
+  end
+
+  function Distribute_Horiz()
+  
+    if ctl_select and #ctl_select > 0 then
+    
+      SortCtlSel_Horiz()
+    
+      local ctls = strips[tracks[track_select].strip][page].controls
+      local minx = 2048
+      local minxc = -1
+      local maxx = 0
+      local maxxc = -1
+      for c = 1, #ctl_select do
+        if ctls[ctl_select[c].ctl].x < minx then
+          minx = ctls[ctl_select[c].ctl].x
+          minxc = c
+        end
+        if ctls[ctl_select[c].ctl].x > maxx then
+          maxx = ctls[ctl_select[c].ctl].x
+          maxxc = c
+        end
+      end
+      
+      local dx = (maxx - minx) / (#ctl_select-1)
+      for c = 1, #ctl_select do
+      
+        ctls[ctl_select[c].ctl].x = math.floor(minx+(dx*(c-1)))
+        local scale = ctls[ctl_select[c].ctl].scale
+        ctls[ctl_select[c].ctl].xsc = ctls[ctl_select[c].ctl].x + math.floor(ctls[ctl_select[c].ctl].w/2
+                                                                   - (ctls[ctl_select[c].ctl].w*scale)/2)
+      end
+      ReselectSelection()
+      SetCtlBitmapRedraw()
+      update_gfx = true      
+    end
+  end
+  
+  function SortCtlSel_Vert()
+  
+    if ctl_select and #ctl_select > 0 then
+    
+      local ctls = strips[tracks[track_select].strip][page].controls
+      nctlsel = {}
+      for c = 1, #ctl_select do
+    
+        if c == 1 then
+          table.insert(nctlsel, ctl_select[c])
+        else
+          local pos = nil
+          for nc = 1, #nctlsel do
+            if ctls[ctl_select[c].ctl].ysc < ctls[nctlsel[nc].ctl].ysc then
+              pos = nc
+              break
+            end
+          end
+          if pos then
+            --insert at pos
+            table.insert(nctlsel, pos, ctl_select[c])            
+          else
+            --insert at end
+            table.insert(nctlsel, ctl_select[c])
+          end
+        end  
+      end
+      --[[for i = 1, #nctlsel do
+        DBG(i..'  '..ctls[nctlsel[i].ctl].ysc)
+      end]]
+      
+      ctl_select = nctlsel
+    
+    end
+  end
+  
+  function Distribute_Vert()
+  
+    if ctl_select and #ctl_select > 0 then
+    
+      SortCtlSel_Vert()
+    
+      local ctls = strips[tracks[track_select].strip][page].controls
+      local miny = 2048
+      local minyc = -1
+      local maxy = 0
+      local maxyc = -1
+      for c = 1, #ctl_select do
+        if ctls[ctl_select[c].ctl].y < miny then
+          miny = ctls[ctl_select[c].ctl].y
+          minyc = c
+        end
+        if ctls[ctl_select[c].ctl].y > maxy then
+          maxy = ctls[ctl_select[c].ctl].y
+          maxyc = c
+        end
+      end
+      
+      local dy = (maxy - miny) / (#ctl_select-1)
+      for c = 1, #ctl_select do
+      
+        ctls[ctl_select[c].ctl].y = math.floor(miny+(dy*(c-1)))
+        local scale = ctls[ctl_select[c].ctl].scale
+        ctls[ctl_select[c].ctl].ysc = ctls[ctl_select[c].ctl].y + math.floor(ctls[ctl_select[c].ctl].ctl_info.cellh/2
+                                                                   - (ctls[ctl_select[c].ctl].ctl_info.cellh*scale)/2)
+      end
+      ReselectSelection()
+      SetCtlBitmapRedraw()
+      update_gfx = true      
+    end
+  end
   
   function RBMenu_Edit()
     local mm
@@ -12384,7 +12525,7 @@ end
     else
       cp = '||Copy|#Paste'
     end
-    local mstr = 'Duplicate||Align Top|Align Left||'..mm..'||'..vv..'||Delete'..ac..cp
+    local mstr = 'Duplicate||Align Top|Align Left|Distribute Vertically|Distribute Horizontally||'..mm..'||'..vv..'||Delete'..ac..cp
     gfx.x, gfx.y = mouse.mx, mouse.my
     local res = OpenMenu(mstr)
     if res == 1 then
@@ -12414,7 +12555,8 @@ end
           ctl_select[cs].relx = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].x - strips[tracks[track_select].strip][page].controls[i].x
           ctl_select[cs].rely = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].y - strips[tracks[track_select].strip][page].controls[i].y
         end
-      end                
+      end
+      SetCtlBitmapRedraw()                
       update_gfx = true
     elseif res == 2 then
       if #ctl_select > 1 then
@@ -12429,6 +12571,7 @@ end
           end
         end
         ReselectSelection()
+        SetCtlBitmapRedraw()
         update_gfx = true
       end
     elseif res == 3 then
@@ -12444,25 +12587,34 @@ end
           end
         end
         ReselectSelection()
+        SetCtlBitmapRedraw()
         update_gfx = true
       end
     elseif res == 4 then
+      
+      Distribute_Vert()
+      
+    elseif res == 5 then
+
+      Distribute_Horiz()
+    
+    elseif res == 6 then
       for i = 1, #ctl_select do
         strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].poslock = not poslockctl_select
       end
       SetPosLockCtl()
-    elseif res == 5 then
+    elseif res == 7 then
       local hidd = not nz(strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].hidden,false)
       for i = 1, #ctl_select do
         strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].hidden = hidd
       end
       update_gfx = true        
       
-    elseif res == 6 then
+    elseif res == 8 then
       DeleteSelectedCtls()
       update_gfx = true
     
-    elseif res == 7 then
+    elseif res == 9 then
       trackfxparam_select = ctl_select[1].ctl
       show_actionchooser = true
       action_tbl = LoadActionIDs()
@@ -12471,12 +12623,12 @@ end
       
       update_gfx = true
       --OpenEB(12,'Please enter action name:')
-    elseif res == 8 then
+    elseif res == 10 then
       trackfxparam_select = ctl_select[1].ctl
       OpenEB(13,'Please enter action command ID:')
-    elseif res == 9 then
+    elseif res == 11 then
       Copy_Selected()
-    elseif res == 10 then
+    elseif res == 12 then
       Paste_Selected()
       SetCtlBitmapRedraw()
       update_gfx = true
@@ -13918,6 +14070,18 @@ end
       elseif char == 63 then
         show_settings = not show_settings
         update_surface = true
+      elseif char == 53 then
+        backalpha = math.max(backalpha - 0.05,0)
+        update_bg = true
+        update_gfx = true
+      elseif char == 54 then
+        backalpha = math.min(backalpha +0.05,2)
+        update_bg = true
+        update_gfx = true
+      elseif char == 55 then
+        backalpha = 1
+        update_bg = true
+        update_gfx = true
       end
     --[[else -- shift
       if char == 19 then
@@ -27751,6 +27915,8 @@ end
   ZeroProjectFlags()
   StripperRunning(true)
   
+  gmode = 0
+  
   fact = {}
   for f = 0,4 do
     fact[f] = cfact(f)  
@@ -27820,6 +27986,9 @@ end
   save_subfolder = ''
   
   DBG_mode = false
+  
+  backalpha = 1
+  backcol = '16 16 16'
   
   eq_scale = true
   eq_single = false
