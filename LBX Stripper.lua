@@ -632,9 +632,9 @@
                           h = 300}                           
       --scale
       obj.sections[50] = {x = 50,
-                          y = 150+butt_h+10,
+                          y = 150+butt_h+8,
                           w = obj.sections[45].w-60,
-                          h = butt_h/2+4}                           
+                          h = butt_h/2+8}                           
       --apply
       obj.sections[51] = {x = 40,
                           y = 150,
@@ -657,24 +657,24 @@
                           h = butt_h/2+4}                           
 
       obj.sections[55] = {x = 50,
-                          y = 150+butt_h+4 + (butt_h/2+4 + 10) * 8,
+                          y = 150+butt_h+7 + (butt_h/2+4 + 10) * 8,
                           w = obj.sections[45].w-60,
                           h = butt_h}
       obj.sections[56] = {x = 50,
                           y = 150+butt_h+10 + (butt_h/2+4 + 10) * 4,
                           w = obj.sections[45].w-80,
-                          h = butt_h/2+4}                           
+                          h = butt_h/2+8}                           
       obj.sections[57] = {x = 50,
                           y = 150+butt_h+10 + (butt_h/2+4 + 10) * 9,
                           w = obj.sections[45].w-60,
-                          h = butt_h/2+4}                           
+                          h = butt_h/2+8}                           
 
       obj.sections[58] = {x = 50,
                           y = 150+butt_h+10 + (butt_h/2+4 + 10) * 6,
                           w = obj.sections[45].w-60,
-                          h = butt_h/2+4}                           
+                          h = butt_h/2+8}                           
       obj.sections[59] = {x = 50,
-                          y = 150+butt_h+8 + (butt_h/2+4 + 10) * 7,
+                          y = 150+butt_h+11 + (butt_h/2+4 + 10) * 7,
                           w = obj.sections[45].w-60,
                           h = butt_h}
 
@@ -690,7 +690,7 @@
       obj.sections[65] = {x = 50,
                           y = 150+butt_h+10 + (butt_h/2+4 + 10) * 5,
                           w = obj.sections[45].w-80,
-                          h = butt_h/2+4}                           
+                          h = butt_h/2+8}                           
 
       obj.sections[68] = {x = 50+obj.sections[45].w-74,
                           y = 150+butt_h+10 + (butt_h/2+4 + 10) * 4.5,
@@ -702,7 +702,7 @@
                           w = obj.sections[45].w-100,
                           h = butt_h/2+4}
       obj.sections[67] = {x = 10,
-                          y = 150+butt_h+4 + (butt_h/2+4 + 10) * 8,
+                          y = 150+butt_h+7 + (butt_h/2+4 + 10) * 8,
                           w = 35,
                           h = butt_h}
 
@@ -4595,7 +4595,7 @@ end
 
           local ctl = strips[strip][page].controls[i]
 
-          if not ctl.hide then
+          if not ctl.hide and (mode == 1 or not ctl.hidden or macro_lrn_mode == true or snaplrn_mode == true) then
 
             local ctlcat = ctl.ctlcat
             
@@ -4650,11 +4650,11 @@ end
                   tnum = strips[strip].track.tracknum
                 end
       
-                if mode == 1 and submode == 1 then
+                --[[if mode == 1 and submode == 1 then
                   gfx.a = 0.5
                 else
                   gfx.a = 1
-                end
+                end]]
   
                 gfx.setfont(1, gui.fontname, gui.fontsz_knob +tsz-4)
                 local _, th_a = gfx.measurestr('|')
@@ -4893,15 +4893,33 @@ end
                 local tx1, tx2, th = math.floor(mid-(tl1/2))-toffx,
                                      math.floor(mid-(tl2/2))+toffx+toffvx,th_a --gui.fontsz_knob+tsz-4
                                      
-                
+                gfx.a=1
                 if not update_gfx and not update_bg and ctlcat ~= ctlcats.xy then
+                  if (mode == 1 and submode == 0) then
+                    gfx.a=1
+                    f_Get_SSV(gui.color.black)
+                    gfx.rect(px,
+                             py,
+                             w*scale,
+                             h*scale,1)
+                    gfx.a=0.5
+                  end
                   gfx.blit(1004,1,0, px,
                                      py,
                                      w*scale,
-                                     (h)*scale,
+                                     h*scale,
                                      px,
                                      py)
                   if spn then                   
+                    if (mode == 1 and submode == 0) then
+                      gfx.a=1
+                      f_Get_SSV(gui.color.black)
+                      gfx.rect(tx1,
+                               xywh1.y,
+                               tl1,
+                               th_a,1)
+                      gfx.a=0.5
+                    end
                     gfx.blit(1004,1,0, tx1,
                                        xywh1.y,
                                        tl1,
@@ -4910,6 +4928,15 @@ end
                                        xywh1.y)
                   end
                   if spv then                
+                    if (mode == 1 and submode == 0) then
+                      gfx.a=1
+                      f_Get_SSV(gui.color.black)
+                      gfx.rect(tx2,
+                               xywh2.y,
+                               tl2,
+                               th_a,1)
+                      gfx.a=0.5
+                    end
                     gfx.blit(1004,1,0, tx2,
                                        xywh2.y,
                                        tl2,
@@ -4917,9 +4944,13 @@ end
                                        tx2,
                                        xywh2.y)
                   end
+                  gfx.a=1
                 end
   
+                gfx.a=1
                 if ctlcat == ctlcats.fxparam and ((not reaper.TrackFX_GetEnabled(track, fxnum) and pname ~= 'Bypass') or strips[strip][page].controls[i].offline) then
+                  gfx.a = 0.5
+                elseif (mode == 1 and submode == 1) or ctl.hidden then
                   gfx.a = 0.5
                 end
                 gfx.blit(iidx,scale,0, 0, val2*gh, w, h, px, py)
@@ -4940,14 +4971,14 @@ end
                   local alpha = 1
                   if settings_hideofflinelabel and offl then
                     spn = false
-                  elseif offl then
+                  elseif offl or ctl.hidden then
                     alpha = 0.4
                   end
                   if spn then
                     GUI_textC(gui,xywh1, Disp_Name,tc,-4 + tsz, alpha)
                   end
                   if spv then
-                    GUI_textC(gui,xywh2, Disp_ParamV,tc,-4 + tsz)          
+                    GUI_textC(gui,xywh2, Disp_ParamV,tc,-4 + tsz, alpha)          
                   end
   
                 if ctltype == 4 and DVOV and DVOV ~= '' and cycle_editmode == false then
@@ -7212,7 +7243,11 @@ end
         GUI_DrawButton(gui, 'ADD PARAMETERS', obj.sections[409], '160 160 160', gui.color.black, true, '', false)      
         GUI_DrawButton(gui, 'CAPTURE A', obj.sections[411], '160 160 160', gui.color.black, true, '', false)      
         GUI_DrawButton(gui, 'CAPTURE B', obj.sections[412], '160 160 160', gui.color.black, true, '', false)      
-        GUI_DrawButton(gui, 'MONITOR', obj.sections[413], '160 160 160', gui.color.black, settings_macroeditmonitor, '', false)      
+        if settings_macroeditmonitor == true then
+          GUI_DrawBar(gui, 'MONITOR', obj.sections[413], skin.butt18Y, true, gui.color.black, nil, -2)     
+        else
+          GUI_DrawBar(gui, 'MONITOR', obj.sections[413], skin.butt18, true, gui.color.black, nil, -2)              
+        end      
       end
   
       local w = gfx.getimgdim(def_eqcknobf)
@@ -7839,9 +7874,14 @@ end
                 if w == 0 or h == 0 then
                   w, h = ksel_size.w*2, ksel_size.h*2
                 end
-                bc = gui.color.red
-                local xywh = {x=x+w/2,y=y+h/2,w=1,h=1}
+                bc = '160 160 160'
+                gfx.a=0.6
+                f_Get_SSV(gui.color.black)
+                gfx.rect(x,y,w,h,1)
+                local xywh = {x=x+w/2,y=y+h/2-butt_h,w=1,h=1}
                 GUI_textC(gui,xywh,'Reassign Plugin',bc,-2)
+                xywh.y = xywh.y + butt_h
+                GUI_textC(gui,xywh,CropFXName(trackfx[trackfx_select].name),bc,-4)                
               else
                 iidx = ctl_files[knob_select].imageidx
                 if iidx == nil or ksel_loaded == false then
@@ -7869,8 +7909,13 @@ end
                   w, h = ksel_size.w*2, ksel_size.h*2
                 end              
                 bc = dragparam.bc
-                local xywh = {x=x+w/2,y=y+h/2,w=1,h=1}
+                gfx.a=0.6
+                f_Get_SSV(gui.color.black)
+                gfx.rect(x,y,w,h,1)
+                local xywh = {x=x+w/2,y=y+h/2-butt_h,w=1,h=1}
                 GUI_textC(gui,xywh,'Reassign Plugin',bc,-2)
+                xywh.y = xywh.y + butt_h
+                GUI_textC(gui,xywh,CropFXName(trackfx[trackfx_select].name),bc,-4)                
               else
                 local iidx = ctl_files[knob_select].imageidx
                 if iidx == nil or ksel_loaded == false then
@@ -8453,11 +8498,18 @@ end
             local bx = F_limit((dist*1000),0,255)
             c = rx..' '..gx..' '..bx            
           end
-          GUI_textC(gui,xywh,sstxt,c,-2)
+          local alpha = 1
+          if xxy[strip][page][sstype_select].points[p].inactive == true then
+            alpha = 0.2
+            c = '128 128 128'
+          end
+          --f_Get_SSV(gui.color.black)
+          --gfx.rect(xywh.x,xywh.y,xywh.w,xywh.h,1)          
+          GUI_textC(gui,xywh,sstxt,c,-2,alpha)
         end
       end
     end
-      
+    gfx.a = 1  
   end
 
   function GUI_DrawXXY(gui, obj)
@@ -8487,12 +8539,17 @@ end
         for p = 1, #xxy[strip][page][sstype_select].points do
           local x,y = xxy[strip][page][sstype_select].points[p].x, xxy[strip][page][sstype_select].points[p].y
           x = x*obj.sections[220].w 
-          y = y*obj.sections[220].h 
+          y = y*obj.sections[220].h
+          if xxy[strip][page][sstype_select].points[p].inactive == true then
+            gfx.a = 0.2
+          else
+            gfx.a = 1
+          end
           gfx.blit(def_xytarget,1,0, 0, 0, ppw, pph, x-ppw/2, y-pph/2)
         end
       end
     end
-    
+    gfx.a = 1
     --if xxymode == 1 then
     
       if xxypath[xxypath_select] then
@@ -10133,20 +10190,7 @@ end
   function DeleteXXY(ss)
     
       if sstype_select == 1 then
-        --[[if ss_select and snapshots and snapshots[tracks[track_select].strip] and snapshots[tracks[track_select].strip][page][sstype_select][ss_select] then
         
-          local cnt = #snapshots[tracks[track_select].strip][page][sstype_select]
-          snapshots[tracks[track_select].strip][page][sstype_select][ss_select] = nil
-          local tbl = {}
-          for i = 1, cnt do
-            if snapshots[tracks[track_select].strip][page][sstype_select][i] ~= nil then
-              table.insert(tbl, snapshots[tracks[track_select].strip][page][sstype_select][i])
-            end
-          end
-          snapshots[tracks[track_select].strip][page][sstype_select] = tbl
-          ss_select = nil
-          
-        end]]
       elseif sstype_select > 1 then
         local strip = tracks[track_select].strip
         if xxy and xxy[strip] and xxy[strip][page] and xxy[strip][page][sstype_select] then
@@ -10170,40 +10214,43 @@ end
       end    
     end
 
+  function XXY_PtToggleActive(pt)
+  
+    if sstype_select == 1 then
+      
+    elseif sstype_select > 1 then
+      local strip = tracks[track_select].strip
+      if xxy and xxy[strip] and xxy[strip][page] and xxy[strip][page][sstype_select] then
+      
+        xxy[strip][page][sstype_select].points[pt].inactive = not nz(xxy[strip][page][sstype_select].points[pt].inactive,false)
+        XXY_Set(strip, page, sstype_select)
+        update_xxypos = true 
+      end
+    end  
+  
+  end
+  
   function DeleteXXY_pt(pt)
     
-      if sstype_select == 1 then
-        --[[if ss_select and snapshots and snapshots[tracks[track_select].strip] and snapshots[tracks[track_select].strip][page][sstype_select][ss_select] then
-        
-          local cnt = #snapshots[tracks[track_select].strip][page][sstype_select]
-          snapshots[tracks[track_select].strip][page][sstype_select][ss_select] = nil
-          local tbl = {}
-          for i = 1, cnt do
-            if snapshots[tracks[track_select].strip][page][sstype_select][i] ~= nil then
-              table.insert(tbl, snapshots[tracks[track_select].strip][page][sstype_select][i])
-            end
+    if sstype_select == 1 then
+      
+    elseif sstype_select > 1 then
+      local strip = tracks[track_select].strip
+      if xxy and xxy[strip] and xxy[strip][page] and xxy[strip][page][sstype_select] then
+      
+        local cnt = #xxy[strip][page][sstype_select].points
+        local tbl = {}
+        for i = 1, cnt do
+          if i ~= pt then
+            table.insert(tbl, xxy[strip][page][sstype_select].points[i])
           end
-          snapshots[tracks[track_select].strip][page][sstype_select] = tbl
-          ss_select = nil
-          
-        end]]
-      elseif sstype_select > 1 then
-        local strip = tracks[track_select].strip
-        if xxy and xxy[strip] and xxy[strip][page] and xxy[strip][page][sstype_select] then
+        end
+        xxy[strip][page][sstype_select].points = tbl
+        ss_select = nil
         
-          local cnt = #xxy[strip][page][sstype_select].points
-          local tbl = {}
-          for i = 1, cnt do
-            if i ~= pt then
-              table.insert(tbl, xxy[strip][page][sstype_select].points[i])
-            end
-          end
-          xxy[strip][page][sstype_select].points = tbl
-          ss_select = nil
-          
-        end    
       end    
-    end
+    end    
+  end
     
   ------------------------------------------------------------    
   
@@ -12311,7 +12358,273 @@ end
     strips[tracks[track_select].strip][page].graphics[gfx2_select].font.name = f3
 
   end
+  
+  function RBMenu_Edit()
+    local mm
+    if poslockctl_select then
+      mm = '!Lock position'
+    else
+      mm = 'Lock position'              
+    end
+    local vv
+    if strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].hidden == true then
+      vv = 'Visible'
+    else
+      vv = '!Visible'    
+    end
+    local ac
+    if strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].ctlcat == ctlcats.action then
+      ac = '||Assign custom action by name|Assign action by command ID'
+    else
+      ac = '||#Assign custom action by name|#Assign action by command ID'              
+    end
+    local cp
+    if copy_ctls ~= nil then
+      cp = '||Copy|Paste'
+    else
+      cp = '||Copy|#Paste'
+    end
+    local mstr = 'Duplicate||Align Top|Align Left||'..mm..'||'..vv..'||Delete'..ac..cp
+    gfx.x, gfx.y = mouse.mx, mouse.my
+    local res = OpenMenu(mstr)
+    if res == 1 then
+      local c1 = #strips[tracks[track_select].strip][page].controls+1
+      local dx = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].x - (mouse.mx+surface_offset.x-obj.sections[10].x) 
+      local dy = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].y - (mouse.my+surface_offset.y-obj.sections[10].y)
+      for i = 1, #ctl_select do
+        local cc = c1+i-1
+        strips[tracks[track_select].strip][page].controls[cc]=GetControlTable(tracks[track_select].strip, page, ctl_select[i].ctl)
+        strips[tracks[track_select].strip][page].controls[cc].poslock = false
+        --table.insert(strips[tracks[track_select].strip][page].controls[cc], strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl])
+        strips[tracks[track_select].strip][page].controls[cc].x = strips[tracks[track_select].strip][page].controls[cc].x - dx
+        strips[tracks[track_select].strip][page].controls[cc].y = strips[tracks[track_select].strip][page].controls[cc].y - dy
+        strips[tracks[track_select].strip][page].controls[cc].xsc = strips[tracks[track_select].strip][page].controls[cc].xsc - dx
+        strips[tracks[track_select].strip][page].controls[cc].ysc = strips[tracks[track_select].strip][page].controls[cc].ysc - dy
+        strips[tracks[track_select].strip][page].controls[cc].id = nil
+      end
+      ctl_select = nil
+      for i = c1, #strips[tracks[track_select].strip][page].controls do
+        if ctl_select == nil then
+          ctl_select = {}
+          ctl_select[1] = {ctl = i}
+        else
+          local cs = #ctl_select+1
+          ctl_select[cs] = {}
+          ctl_select[cs].ctl = i                      
+          ctl_select[cs].relx = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].x - strips[tracks[track_select].strip][page].controls[i].x
+          ctl_select[cs].rely = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].y - strips[tracks[track_select].strip][page].controls[i].y
+        end
+      end                
+      update_gfx = true
+    elseif res == 2 then
+      if #ctl_select > 1 then
+        local y = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].y
+        for i = 2, #ctl_select do
+          if nz(strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].poslock, false) == false then
+            strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].y = y
+            local scale = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].scale
+            strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ysc = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].y
+                                                                       + math.floor(strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctl_info.cellh/2
+                                                                       - (strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctl_info.cellh*scale)/2)
+          end
+        end
+        ReselectSelection()
+        update_gfx = true
+      end
+    elseif res == 3 then
+      if #ctl_select > 1 then
+        local x = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].x
+        for i = 2, #ctl_select do
+          if nz(strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].poslock, false) == false then
+            strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].x = x
+            local scale = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].scale
+            strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].xsc = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].x
+                                                                       + math.floor(strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].w/2
+                                                                       - (strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].w*scale)/2)
+          end
+        end
+        ReselectSelection()
+        update_gfx = true
+      end
+    elseif res == 4 then
+      for i = 1, #ctl_select do
+        strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].poslock = not poslockctl_select
+      end
+      SetPosLockCtl()
+    elseif res == 5 then
+      local hidd = not nz(strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].hidden,false)
+      for i = 1, #ctl_select do
+        strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].hidden = hidd
+      end
+      update_gfx = true        
+      
+    elseif res == 6 then
+      DeleteSelectedCtls()
+      update_gfx = true
     
+    elseif res == 7 then
+      trackfxparam_select = ctl_select[1].ctl
+      show_actionchooser = true
+      action_tbl = LoadActionIDs()
+      action_tblF = {}
+      action_tblF = table.copy(action_tbl)
+      
+      update_gfx = true
+      --OpenEB(12,'Please enter action name:')
+    elseif res == 8 then
+      trackfxparam_select = ctl_select[1].ctl
+      OpenEB(13,'Please enter action command ID:')
+    elseif res == 9 then
+      Copy_Selected()
+    elseif res == 10 then
+      Paste_Selected()
+      SetCtlBitmapRedraw()
+      update_gfx = true
+    end
+  end
+    
+  function RBMenu(mtype,ccat,i)
+
+    if mtype == 0 then
+      local mstr
+      mm = ''
+      if show_snapshots then
+        mm = '!'
+      end
+      lspfx = ''
+      if settings_locksurface then
+        lspfx = '!'
+      end
+      if ccat == ctlcats.fxparam then
+        mstr = 'MIDI learn|Modulation||Enter value||Open FX window||'..mm..'Add Envelope|Add All Envelopes For Plugin||Snapshots||>Tools|<Regenerate ID   (emergency only)||Toggle Topbar|Toggle Sidebar||'..lspfx..'Lock Surface'
+      else
+        mstr = '#MIDI learn|#Modulation||Enter value||#Open FX window||'..mm..'#Add Envelope|#Add All Envelopes For Plugin||Snapshots||>Tools|<Regenerate ID   (emergency only)||Toggle Topbar|Toggle Sidebar||'..lspfx..'Lock Surface'                  
+      end
+      if ccat ~= ctlcats.macro then
+        if #strip_favs > 0 then
+          mstr = mstr .. '||#>Insert strip (favorites)'                  
+        end
+        trackfxparam_select = i
+        gfx.x, gfx.y = mouse.mx, mouse.my
+        res = OpenMenu(mstr)
+        if res ~= 0 then
+          if res == 1 then
+            SetParam2(true)
+            reaper.Main_OnCommand(41144,0,0)
+          elseif res == 2 then
+            SetParam2(true)
+            reaper.Main_OnCommand(41143,0)
+          elseif res == 3 then
+            --EditValue(5)
+            OpenEB(5,'Please enter value:')
+          elseif res == 4 then
+            local track
+            if strips[tracks[track_select].strip][page].controls[i].tracknum == nil then
+              track = GetTrack(tracks[track_select].tracknum)
+            else
+              track = GetTrack(strips[tracks[track_select].strip][page].controls[i].tracknum)                      
+            end
+            local fxnum = strips[tracks[track_select].strip][page].controls[i].fxnum
+            if not reaper.TrackFX_GetOpen(track, fxnum) then
+              reaper.TrackFX_Show(track, fxnum, 3)
+            end
+          elseif res == 5 then
+            Envelope_Add(tracks[track_select].strip,page,i)
+          elseif res == 6 then
+            Envelope_AddAllFX(tracks[track_select].strip,page,i)
+          elseif res == 7 then
+            show_snapshots = not show_snapshots
+            update_gfx = true
+          elseif res == 8 then
+            i = tonumber(string.format('%i',i))
+            strips[tracks[track_select].strip][page].controls[i] = GetControlTable(tracks[track_select].strip, page, i)
+            strips[tracks[track_select].strip][page].controls[i].c_id = GenID()
+            update_gfx = true
+          elseif res == 9 then
+            ToggleTopbar()
+          elseif res == 10 then
+            ToggleSidebar()
+            update_surface = true
+          elseif res == 11 then
+            settings_locksurface = not settings_locksurface
+          end
+        end
+      end
+    elseif mtype == 1 then
+    
+      mm = ''
+      if show_snapshots then
+        mm = '!'
+      end
+      local mstr = ''
+      local sfcnt = #strip_favs
+      if sfcnt > 0 then
+        mstr = mstr .. '>Insert strip (favorites)'
+        for fvs = 1, sfcnt do
+          if fvs == sfcnt then
+            mstr = mstr .. '|<' .. string.match(strip_favs[fvs],'.+/(.-).strip')
+          else
+            mstr = mstr .. '|' .. string.match(strip_favs[fvs],'.+/(.-).strip')
+          end
+        end
+      else
+        mstr = mstr .. '#Insert strip (favorites)'                  
+      end
+      local lspfx = ''
+      if settings_locksurface then
+        lspfx = '!'
+      end
+      mstr = mstr .. '||#MIDI learn|#Modulation||#Enter value||#Open FX window||'..mm..'Snapshots||Toggle Topbar|Toggle Sidebar||'..lspfx..'Lock Surface'..
+                     '||>Envelopes|Bypass Envelopes|Enable Envelopes|Delete Envelopes||Bypass Strip Envelopes|Enable Strip Envelopes|Delete Strip Envelopes'
+      
+      gfx.x, gfx.y = mouse.mx, mouse.my
+      res = OpenMenu(mstr) 
+      if res ~= 0 then
+        if res == sfcnt + 5 or (sfcnt == 0 and res == 6) then
+          show_snapshots = not show_snapshots
+          update_gfx = true
+        elseif res == sfcnt + 6 or (sfcnt == 0 and res == 7) then
+          ToggleTopbar()
+        elseif res == sfcnt + 7 or (sfcnt == 0 and res == 8) then
+          ToggleSidebar()
+          update_surface = true
+        elseif res == sfcnt + 8 or (sfcnt == 0 and res == 9) then
+          settings_locksurface = not settings_locksurface
+          
+        elseif res <= sfcnt then
+          local fn = strip_favs[res]
+          --PopulateStrips()
+          loadstrip = LoadStripFN(fn)
+          if loadstrip then                  
+            GenStripPreview(gui, loadstrip.strip)
+            --image_count = image_count_add
+            
+            local dx, dy = GetLeftControlInStrip2(loadstrip.strip)
+            insertstrip = {x = mouse.mx, y = mouse.my, dx = dx, dy = dy}
+          end
+          --loadstrip = nil
+        elseif res == sfcnt + 9 or (sfcnt == 0 and res == 10) then
+          Envelopes_SetProps(false,nil,false,false)
+        elseif res == sfcnt + 10 or (sfcnt == 0 and res == 11) then
+          Envelopes_SetProps(true,nil,true,false)
+        elseif res == sfcnt + 11 or (sfcnt == 0 and res == 12) then
+          --delete envs
+          Envelopes_SetProps(nil,nil,nil,true)
+        elseif res == sfcnt + 12 or (sfcnt == 0 and res == 13) then
+          Envelopes_SetProps(false,nil,false,false,tracks[track_select].strip,page)
+        elseif res == sfcnt + 13 or (sfcnt == 0 and res == 14) then
+          Envelopes_SetProps(true,nil,true,false,tracks[track_select].strip,page)
+        elseif res == sfcnt + 14 or (sfcnt == 0 and res == 15) then
+          --delete strip envs
+          Envelopes_SetProps(nil,nil,nil,true,tracks[track_select].strip,page)
+        end
+      end
+      
+    
+    end    
+
+  end
+  
   function TopMenu()
   
     local mstr
@@ -13120,16 +13433,114 @@ end
 
         Envelope_SetProps(strip,page,i, nil, true, nil)
         
-        reaper.TrackList_AdjustWindows(true)
-        reaper.UpdateTimeline()
-        
+        reaper.TrackList_AdjustWindows(false)
+        reaper.UpdateTimeline()        
         reaper.UpdateArrange()
       
       end
     end  
   end
   
-  function Envelope_SetProps(strip, page, c, active, visible, armed)
+  function Envelope_Clear(env)
+  
+    local _, envchunk = reaper.GetEnvelopeStateChunk(env, "", false)
+    envchunk = envchunk:gsub("\n", "¤¤")
+    reaper.SetEnvelopeStateChunk(env, envchunk, false)
+  
+  end
+  
+  function Envelope_Add(strip,page,c)
+    local ctl = strips[strip][page].controls[c]
+    if ctl.ctlcat == ctlcats.fxparam then
+      local track
+      if ctl.tracknum == nil then
+        track = GetTrack(strips[strip].track.tracknum)
+      else
+        track = GetTrack(ctl.tracknum)      
+      end
+      env = reaper.GetFXEnvelope(track, ctl.fxnum, ctl.param_info.paramnum,true)
+      reaper.TrackList_AdjustWindows(false)
+      reaper.UpdateTimeline()        
+      reaper.UpdateArrange()
+    end
+  end
+
+  function Envelope_AddAllFX(strip,page,c)
+    local ctl = strips[strip][page].controls[c]
+    if ctl.ctlcat == ctlcats.fxparam then
+      local track
+      if ctl.tracknum == nil then
+        track = GetTrack(strips[strip].track.tracknum)
+      else
+        track = GetTrack(ctl.tracknum)      
+      end
+      for cc = 1, #strips[strip][page].controls do
+        local cctl = strips[strip][page].controls[cc]
+        if cctl.ctlcat == ctlcats.fxparam then
+          if cctl.fxguid == ctl.fxguid then
+            local env = reaper.GetFXEnvelope(track, cctl.fxnum, cctl.param_info.paramnum, true)
+          end
+        end
+      end
+      reaper.TrackList_AdjustWindows(false)
+      reaper.UpdateTimeline()        
+      reaper.UpdateArrange()
+    end
+  end
+  
+  function Envelopes_SetProps(active, visible, armed, clear, strip, page)
+  
+    if strips and #strips > 0 then
+      if strip == nil then
+        reaper.PreventUIRefresh(1)
+        for s = 1, #strips do
+          for p = 1,4 do
+            for c = 1, #strips[s][p].controls do
+            
+              local ctl = strips[s][p].controls[c]
+              Envelope_SetProps(s,p,c,active,false,armed, clear)
+            
+            end
+          end  
+        end
+        reaper.PreventUIRefresh(-1)
+        for s = 1, #strips do
+          for p = 1,4 do
+            for c = 1, #strips[s][p].controls do
+            
+              local ctl = strips[s][p].controls[c]
+              Envelope_SetProps(s,p,c,active,nz(visible,true),armed, clear)
+            
+            end
+          end  
+        end
+      else
+        local s, p = strip, page
+        if strip and page and strips[s] then
+          reaper.PreventUIRefresh(1)          
+          for c = 1, #strips[s][p].controls do
+          
+            local ctl = strips[s][p].controls[c]
+            Envelope_SetProps(s,p,c,active,false,armed, clear)
+          
+          end
+          reaper.PreventUIRefresh(-1)
+          for c = 1, #strips[s][p].controls do
+          
+            local ctl = strips[s][p].controls[c]
+            Envelope_SetProps(s,p,c,active,nz(visible,true),armed, clear)
+          
+          end          
+        end      
+      end    
+      reaper.TrackList_AdjustWindows(false)
+      reaper.UpdateTimeline()
+      reaper.UpdateArrange()
+    end
+      
+  end
+  
+  function Envelope_SetProps(strip, page, c, active, visible, armed, clear)
 
     if strips and strips[strip] and strips[strip][page].controls[c] then
 
@@ -13145,9 +13556,8 @@ end
       
         local env
         if ctl.ctlcat == ctlcats.fxparam then
-          
           env = reaper.GetFXEnvelope(track, ctl.fxnum, ctl.param_info.paramnum,false)  
-        
+         
         elseif ctl.ctlcat == ctlcats.trackparam then
           local env_count = reaper.CountTrackEnvelopes(track)
           for j = 0, env_count-1 do
@@ -13162,13 +13572,15 @@ end
           end
            
         elseif ctl.ctlcat == ctlcats.tracksend then
-          --mute all envelopes?
+          --mute all envelopes?]]
         end
       
         if env then
-        
-          Envelope_SetProps2(env, active, visible, armed)
-        
+          if clear == true then
+            Envelope_Clear(env)
+          else
+            Envelope_SetProps2(env, active, visible, armed)
+          end 
         end
       end
     
@@ -13368,7 +13780,6 @@ end
               faders[p+1].oval = faders[p+1].val
               if faders[p+1].targettype then
                 if faders[p+1].targettype == 0 then
-                  --xy test
                   if faders[p+1].xy == 0 then
                     xxy[faders[p+1].strip][faders[p+1].page][faders[p+1].sstype].x = faders[p+1].val            
                   else
@@ -13388,7 +13799,6 @@ end
                     strips[faders[p+1].strip][faders[p+1].page].controls[faders[p+1].ctl].val = faders[p+1].val
                     strips[faders[p+1].strip][faders[p+1].page].controls[faders[p+1].ctl].dirty = true
                     SetMacro(faders[p+1].strip,faders[p+1].page,faders[p+1].ctl)
-                    --DBG('l')
                     if macro_edit_mode == true then
                       update_macroedit = true
                     end 
@@ -14117,7 +14527,7 @@ end
   
     end
 
-    ReadAutomationFaders()
+    --ReadAutomationFaders()
 
     if show_xxy == false then
 
@@ -14188,7 +14598,7 @@ end
       
       if rt >= time_nextupdate then
         local suf = settings_updatefreq
-        if mode == 1 then suf = 0.2 end
+        --if mode == 1 then suf = 0.2 end
   
         time_nextupdate = rt + suf
         if strips and tracks[track_select] and strips[tracks[track_select].strip] and #strips[tracks[track_select].strip][page].controls > 0 then
@@ -16844,7 +17254,7 @@ end
               elseif mouse.context == nil and MOUSE_click(obj.sections[413]) then
 
                 settings_macroeditmonitor = not settings_macroeditmonitor
-                update_surface = true
+                update_gfx = true
 
               end
               
@@ -16950,7 +17360,7 @@ end
                 end
               end
                             
-              if i then
+              if i and not strips[tracks[track_select].strip][page].controls[i].hidden then
                 --DBG(ttt-reaper.time_precise())
                 if strips[tracks[track_select].strip][page].controls[i].fxfound then
                   if MOUSE_click(ctlxywh) and not mouse.ctrl and not mouse.alt then
@@ -17282,87 +17692,7 @@ end
                       macroctl_select = trackfxparam_select
                       update_surface = true 
                     else
-                      local mstr
-                      mm = ''
-                      if show_snapshots then
-                        mm = '!'
-                      end
-                      lspfx = ''
-                      if settings_locksurface then
-                        lspfx = '!'
-                      end
-                      if ccat == ctlcats.fxparam then
-                        mstr = 'MIDI learn|Modulation||Enter value||Open FX window||'..mm..'Snapshots||>Tools|<Regenerate ID   (emergency only)||Toggle Topbar|Toggle Sidebar||'..lspfx..'Lock Surface'
-                      else
-                        mstr = '#MIDI learn|#Modulation||Enter value||#Open FX window||'..mm..'Snapshots||>Tools|<Regenerate ID   (emergency only)||Toggle Topbar|Toggle Sidebar||'..lspfx..'Lock Surface'                  
-                      end
-                      if ccat ~= ctlcats.macro then
-                        if #strip_favs > 0 then
-                          mstr = mstr .. '||#>Insert strip (favorites)'                  
-                        end
-                        trackfxparam_select = i
-                        gfx.x, gfx.y = mouse.mx, mouse.my
-                        res = OpenMenu(mstr)
-                        if res ~= 0 then
-                          if res == 1 then
-                            SetParam2(true)
-                            reaper.Main_OnCommand(41144,0,0)
-                          elseif res == 2 then
-                            SetParam2(true)
-                            reaper.Main_OnCommand(41143,0)
-                          elseif res == 3 then
-                            --EditValue(5)
-                            OpenEB(5,'Please enter value:')
-                          elseif res == 4 then
-                            local track
-                            if strips[tracks[track_select].strip][page].controls[i].tracknum == nil then
-                              track = GetTrack(tracks[track_select].tracknum)
-                            else
-                              track = GetTrack(strips[tracks[track_select].strip][page].controls[i].tracknum)                      
-                            end
-                            local fxnum = strips[tracks[track_select].strip][page].controls[i].fxnum
-                            if not reaper.TrackFX_GetOpen(track, fxnum) then
-                              reaper.TrackFX_Show(track, fxnum, 3)
-                            end
-                          elseif res == 5 then
-                            show_snapshots = not show_snapshots
-                            update_gfx = true
-                          elseif res == 6 then
-                            i = tonumber(string.format('%i',i))
-                            strips[tracks[track_select].strip][page].controls[i] = GetControlTable(tracks[track_select].strip, page, i)
-                            strips[tracks[track_select].strip][page].controls[i].c_id = GenID()
-                            update_gfx = true
-                          elseif res == 7 then
-                            ToggleTopbar()
-                            --hide_topbar = not hide_topbar
-                            --obj = GetObjects()
-                            --update_surface = true
-                          elseif res == 8 then
-                            ToggleSidebar()
-                            update_surface = true
-                          elseif res == 9 then
-                            settings_locksurface = not settings_locksurface
-                          end
-                        end
-                      --[[else
-                        trackfxparam_select = i
-                        gfx.x, gfx.y = mouse.mx, mouse.my
-                        res = OpenMenu(mstr)
-                        if res ~= 0 then
-                          if res == 1 then
-                            navigate = false
-                            macro_lrn_mode = true
-                            macroctl_select = trackfxparam_select
-                            update_surface = true
-                          elseif res == 2 then
-                            macro_edit_mode = true
-                            macroedit_poffs = 0
-                            
-                            macroctl_select = trackfxparam_select
-                            update_surface = true                          
-                          end
-                        end ]]                   
-                      end
+                      RBMenu(0, ccat, i)
                     end
                     noscroll = true
                     --break
@@ -17466,64 +17796,7 @@ end
   
             if tracks[track_select] then          
               if noscroll == false and MOUSE_click_RB(obj.sections[10]) then
-                mm = ''
-                if show_snapshots then
-                  mm = '!'
-                end
-                local mstr = ''
-                local sfcnt = #strip_favs
-                if sfcnt > 0 then
-                  mstr = mstr .. '>Insert strip (favorites)'
-                  for fvs = 1, sfcnt do
-                    if fvs == sfcnt then
-                      mstr = mstr .. '|<' .. string.match(strip_favs[fvs],'.+/(.-).strip')
-                    else
-                      mstr = mstr .. '|' .. string.match(strip_favs[fvs],'.+/(.-).strip')
-                    end
-                  end
-                else
-                  mstr = mstr .. '#Insert strip (favorites)'                  
-                end
-                local lspfx = ''
-                if settings_locksurface then
-                  lspfx = '!'
-                end
-                mstr = mstr .. '||#MIDI learn|#Modulation||#Enter value||#Open FX window||'..mm..'Snapshots||Toggle Topbar|Toggle Sidebar||'..lspfx..'Lock Surface'
-                
-                gfx.x, gfx.y = mouse.mx, mouse.my
-                res = OpenMenu(mstr)
-                if res ~= 0 then
-                  if res == sfcnt + 5 or (sfcnt == 0 and res == 6) then
-                    show_snapshots = not show_snapshots
-                    update_gfx = true
-                  elseif res == sfcnt + 6 or (sfcnt == 0 and res == 7) then
-                    ToggleTopbar()
-                  elseif res == sfcnt + 7 or (sfcnt == 0 and res == 8) then
-                    ToggleSidebar()
-                    update_surface = true
-                  elseif res == sfcnt + 8 or (sfcnt == 0 and res == 9) then
-                    settings_locksurface = not settings_locksurface
-                    
-                  elseif res <= sfcnt then
-                    local fn = strip_favs[res]
-                    --PopulateStrips()
-                    loadstrip = LoadStripFN(fn)
-                    if loadstrip then                  
-                      GenStripPreview(gui, loadstrip.strip)
-                      --image_count = image_count_add
-                      
-                      local dx, dy = GetLeftControlInStrip2(loadstrip.strip)
-                      --local xp = GetXSpaceInGrid()+2
-                      --if xp < surface_size.w then
-                      --  Strip_AddStrip(loadstrip,xp-surface_offset.x,0-surface_offset.y,true)
-                      --end
-                      --update_gfx = true
-                      --SaveSingleStrip(tracks[track_select].strip)
-                      insertstrip = {x = mouse.mx, y = mouse.my, dx = dx, dy = dy}
-                    end
-                    --loadstrip = nil
-                  end
-                end
+                RBMenu(1,nil,nil)
               end
             end    
                   
@@ -19283,114 +19556,7 @@ end
               if math.abs(lasso.l-lasso.r) < 10 and math.abs(lasso.t-lasso.b) < 10 then
               -- == mouse.mx and lasso.t == mouse.my then
                 if ctl_select ~= nil then
-                  local mm
-                  if poslockctl_select then
-                    mm = '!Lock position'
-                  else
-                    mm = 'Lock position'              
-                  end
-                  local ac
-                  if strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].ctlcat == ctlcats.action then
-                    ac = '||Assign custom action by name|Assign action by command ID'
-                  else
-                    ac = '||#Assign custom action by name|#Assign action by command ID'              
-                  end
-                  local cp
-                  if copy_ctls ~= nil then
-                    cp = '||Copy|Paste'
-                  else
-                    cp = '||Copy|#Paste'
-                  end
-                  local mstr = 'Duplicate||Align Top|Align Left||'..mm..'||Delete'..ac..cp
-                  gfx.x, gfx.y = mouse.mx, mouse.my
-                  local res = OpenMenu(mstr)
-                  if res == 1 then
-                    local c1 = #strips[tracks[track_select].strip][page].controls+1
-                    local dx = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].x - (mouse.mx+surface_offset.x-obj.sections[10].x) 
-                    local dy = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].y - (mouse.my+surface_offset.y-obj.sections[10].y)
-                    for i = 1, #ctl_select do
-                      local cc = c1+i-1
-                      strips[tracks[track_select].strip][page].controls[cc]=GetControlTable(tracks[track_select].strip, page, ctl_select[i].ctl)
-                      strips[tracks[track_select].strip][page].controls[cc].poslock = false
-                      --table.insert(strips[tracks[track_select].strip][page].controls[cc], strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl])
-                      strips[tracks[track_select].strip][page].controls[cc].x = strips[tracks[track_select].strip][page].controls[cc].x - dx
-                      strips[tracks[track_select].strip][page].controls[cc].y = strips[tracks[track_select].strip][page].controls[cc].y - dy
-                      strips[tracks[track_select].strip][page].controls[cc].xsc = strips[tracks[track_select].strip][page].controls[cc].xsc - dx
-                      strips[tracks[track_select].strip][page].controls[cc].ysc = strips[tracks[track_select].strip][page].controls[cc].ysc - dy
-                      strips[tracks[track_select].strip][page].controls[cc].id = nil
-                    end
-                    ctl_select = nil
-                    for i = c1, #strips[tracks[track_select].strip][page].controls do
-                      if ctl_select == nil then
-                        ctl_select = {}
-                        ctl_select[1] = {ctl = i}
-                      else
-                        local cs = #ctl_select+1
-                        ctl_select[cs] = {}
-                        ctl_select[cs].ctl = i                      
-                        ctl_select[cs].relx = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].x - strips[tracks[track_select].strip][page].controls[i].x
-                        ctl_select[cs].rely = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].y - strips[tracks[track_select].strip][page].controls[i].y
-                      end
-                    end                
-                    update_gfx = true
-                  elseif res == 2 then
-                    if #ctl_select > 1 then
-                      local y = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].y
-                      for i = 2, #ctl_select do
-                        if nz(strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].poslock, false) == false then
-                          strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].y = y
-                          local scale = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].scale
-                          strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ysc = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].y
-                                                                                     + math.floor(strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctl_info.cellh/2
-                                                                                     - (strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctl_info.cellh*scale)/2)
-                        end
-                      end
-                      ReselectSelection()
-                      update_gfx = true
-                    end
-                  elseif res == 3 then
-                    if #ctl_select > 1 then
-                      local x = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].x
-                      for i = 2, #ctl_select do
-                        if nz(strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].poslock, false) == false then
-                          strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].x = x
-                          local scale = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].scale
-                          strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].xsc = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].x
-                                                                                     + math.floor(strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].w/2
-                                                                                     - (strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].w*scale)/2)
-                        end
-                      end
-                      ReselectSelection()
-                      update_gfx = true
-                    end
-                  elseif res == 4 then
-                    for i = 1, #ctl_select do
-                      strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].poslock = not poslockctl_select
-                    end
-                    SetPosLockCtl()
-                  elseif res == 5 then
-                    DeleteSelectedCtls()
-                    update_gfx = true
-                  
-                  elseif res == 6 then
-                    trackfxparam_select = ctl_select[1].ctl
-                    show_actionchooser = true
-                    action_tbl = LoadActionIDs()
-                    action_tblF = {}
-                    action_tblF = table.copy(action_tbl)
-                    
-                    update_gfx = true
-                    --OpenEB(12,'Please enter action name:')
-                  elseif res == 7 then
-                    trackfxparam_select = ctl_select[1].ctl
-                    OpenEB(13,'Please enter action command ID:')
-                  elseif res == 8 then
-                    Copy_Selected()
-                  elseif res == 9 then
-                    Paste_Selected()
-                    SetCtlBitmapRedraw()
-                    update_gfx = true
-                  end
+                  RBMenu_Edit()
                 
                 else
                   local cp
@@ -19460,7 +19626,7 @@ end
                   trackfx_select = i + flist_offset
                   PopulateTrackFXParams()
                   mouse.context = contexts.reassplugin
-                  reass_plugin = trackfx_select
+                  reass_plugin = {fx = trackfx_select, time = rt}
                   local w,h = gfx.getimgdim(998)
                   if w == 0 or h == 0 then
                     ksel_size = {w = 50, h = 50}
@@ -19678,29 +19844,31 @@ end
             end
                     
             if mouse.context and mouse.context == contexts.reassplugin then
-              dragparam = {x = mouse.mx-ksel_size.w, y = mouse.my-ksel_size.h, type = 'reassplugin'}
-              reass_param = nil
-              if tracks[track_select] and tracks[track_select].strip ~= -1 then
-                for i = 1, #strips[tracks[track_select].strip][page].controls do
-                
-                  local xywh 
-                  xywh = {x = strips[tracks[track_select].strip][page].controls[i].x - surface_offset.x +obj.sections[10].x, 
-                          y = strips[tracks[track_select].strip][page].controls[i].y - surface_offset.y +obj.sections[10].y, 
-                          w = strips[tracks[track_select].strip][page].controls[i].w, 
-                          h = strips[tracks[track_select].strip][page].controls[i].ctl_info.cellh}    
-                  if MOUSE_over(xywh) and strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.fxparam then
-                    reass_param = i
-                    if trackfx[trackfx_select].name == strips[tracks[track_select].strip][page].controls[i].fxname then
-                      dragparam.bc = gui.color.green
-                    else
-                      dragparam.bc = '255 153 0'
+              if rt > reass_plugin.time + 0.75 then
+                dragparam = {x = mouse.mx-ksel_size.w, y = mouse.my-ksel_size.h, type = 'reassplugin'}
+                reass_param = nil
+                if tracks[track_select] and tracks[track_select].strip ~= -1 then
+                  for i = 1, #strips[tracks[track_select].strip][page].controls do
+                  
+                    local xywh 
+                    xywh = {x = strips[tracks[track_select].strip][page].controls[i].x - surface_offset.x +obj.sections[10].x, 
+                            y = strips[tracks[track_select].strip][page].controls[i].y - surface_offset.y +obj.sections[10].y, 
+                            w = strips[tracks[track_select].strip][page].controls[i].w, 
+                            h = strips[tracks[track_select].strip][page].controls[i].ctl_info.cellh}    
+                    if MOUSE_over(xywh) and strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.fxparam then
+                      reass_param = i
+                      if trackfx[trackfx_select].name == strips[tracks[track_select].strip][page].controls[i].fxname then
+                        dragparam.bc = gui.color.green
+                      else
+                        dragparam.bc = '255 153 0'
+                      end
+                      break
                     end
-                    break
                   end
-                end
-              end                    
-              update_surface = true
-              
+                end                    
+                update_surface = true
+              end
+                            
             elseif mouse.context and mouse.context == contexts.dragparam then
               dragparam = {x = mouse.mx-ksel_size.w, y = mouse.my-ksel_size.h, type = 'track'}
               reass_param = nil
@@ -20822,10 +20990,15 @@ end
                         y = obj.sections[220].y + xxy[strip][page][sstype_select].points[p].y*obj.sections[220].h - 8,
                         w = 16,
                         h = 16}
-                if MOUSE_click_RB(xywh) and mouse.ctrl == false then
+                if MOUSE_click_RB(xywh) and mouse.shift == false and mouse.ctrl == false then
                   mouse.context = contexts.xxy_movesnap
                   movesnap = {xoff = mouse.mx - xywh.x, yoff = mouse.my - xywh.y, p = p}
                   break 
+                elseif MOUSE_click_RB(xywh) and mouse.shift == true then
+                  XXY_PtToggleActive(p)
+                  update_xxy = true
+                  break
+                
                 elseif MOUSE_click_RB(xywh) and mouse.ctrl == true then
                 
                   DeleteXXY_pt(p)
@@ -21180,6 +21353,8 @@ end
       undotxt = nil
     end]]
     if show_cycleoptions == false then cycle_editmode = false end
+    
+    ReadAutomationFaders()
     
     --local char = gfx.getchar()
     if char then 
@@ -22668,12 +22843,14 @@ end
       for ctl = 1, #snapshots[strip][page][sst].ctls do
         local num, den = 0, 0
         for p = 1, #d do
-          local ss = xxytbl.points[p].ss
-          if snapshots[strip][page][sst].snapshot[ss].data[ctl] then
-            local v = snapshots[strip][page][sst].snapshot[ss].data[ctl].dval
-            if v then
-              num = num + v/d[p]
-              den = den + 1/d[p]
+          if xxytbl.points[p].inactive ~= true then
+            local ss = xxytbl.points[p].ss
+            if snapshots[strip][page][sst].snapshot[ss].data[ctl] then
+              local v = snapshots[strip][page][sst].snapshot[ss].data[ctl].dval
+              if v then
+                num = num + v/d[p]
+                den = den + 1/d[p]
+              end
             end
           end
         end
@@ -23113,6 +23290,7 @@ end
                              fine = strips[strip][page].controls[c].knobsens.fine,
                              wheel = strips[strip][page].controls[c].knobsens.wheel,
                              wheelfine = strips[strip][page].controls[c].knobsens.wheelfine},
+                 hidden = strips[strip][page].controls[c].hidden,
                  }
     if strips[strip][page].controls[c].ctlcat == ctlcats.macro and strips[strip][page].controls[c].macroctl then
       local macro = strips[strip][page].controls[c].macroctl
@@ -23484,7 +23662,8 @@ end
                                       framemode = tonumber(zn(data[key..'framemodex'],1)),
                                       poslock = tobool(zn(data[key..'poslock'],false)),
                                       horiz = tobool(zn(data[key..'horiz'],false)),
-                                      macrofader = tonumber(zn(data[key..'macrofader']))
+                                      macrofader = tonumber(zn(data[key..'macrofader'])),
+                                      hidden = tobool(zn(data[key..'hidden'],false)),
                                      }
           g_cids[strips[ss][p].controls[c].c_id] = true
           if strips[ss][p].controls[c].maxdp == nil or (strips[ss][p].controls[c].maxdp and strips[ss][p].controls[c].maxdp == '') then
@@ -23959,6 +24138,7 @@ end
             xxy[s][p][sst].points[pt].x = tonumber(data[key..'x'])
             xxy[s][p][sst].points[pt].y = tonumber(data[key..'y'])
             xxy[s][p][sst].points[pt].ss = tonumber(data[key..'ss'])
+            xxy[s][p][sst].points[pt].inactive = tobool(zn(data[key..'inactive']))
           
           end
       
@@ -25049,6 +25229,7 @@ end
                 file:write('['..key..'x]'.. xxy[s][p][sst].points[pt].x ..'\n')
                 file:write('['..key..'y]'.. xxy[s][p][sst].points[pt].y ..'\n')
                 file:write('['..key..'ss]'.. xxy[s][p][sst].points[pt].ss ..'\n')
+                file:write('['..key..'inactive]'.. nz(tostring(xxy[s][p][sst].points[pt].inactive),'') ..'\n')
               
               end
               
@@ -25262,6 +25443,7 @@ end
               file:write('['..key..'knobsens_fine]'..tostring(nz(strips[s][p].controls[c].knobsens.fine,settings_defknobsens.fine))..'\n')                 
               file:write('['..key..'knobsens_wheel]'..tostring(nz(strips[s][p].controls[c].knobsens.wheel,settings_defknobsens.wheel))..'\n')
               file:write('['..key..'knobsens_wheelfine]'..tostring(nz(strips[s][p].controls[c].knobsens.wheelfine,settings_defknobsens.wheelfine))..'\n')                 
+              file:write('['..key..'hidden]'..tostring(nz(strips[s][p].controls[c].hidden,false))..'\n')
   
               file:write('['..key..'id]'..convnum(strips[s][p].controls[c].id)..'\n')
       
