@@ -13776,7 +13776,13 @@ end
       --OpenEB(12,'Please enter action name:')
     elseif res == 13 then
       trackfxparam_select = ctl_select[1].ctl
-      OpenEB(13,'Please enter action command ID:')
+      retval, comid = reaper.GetUserInputs('Action Button', 1, 'Please enter action command ID: ,extrawidth=196', '')
+      if retval == true and comid then
+        local actnm = AssAction_GetNameFromID(comid)
+        AssActionByID(comid,actnm)
+        update_gfx = true          
+      end
+      --OpenEB(13,'Please enter action command ID:')
     elseif res == 14 then
       Copy_Selected()
     elseif res == 15 then
@@ -22550,12 +22556,25 @@ end
       elseif EB_Open == 11 then
         EditSSName2(editbox.text)
         update_snaps = true
-      elseif EB_Open == 12 then
-        AssActionByName(editbox.text)
-        update_gfx = true          
-      elseif EB_Open == 13 then
-        AssActionByID(editbox.text)
-        update_gfx = true          
+      --elseif EB_Open == 12 then
+        --[[trackfxparam_select = ctl_select[1].ctl
+        retval, comid = reaper.GetUserInputs('Action Button', 1, 'Please enter action command ID: ,extrawidth=196', '')
+        if retval == true and comid then
+          local actnm = AssAction_GetNameFromID(comid)
+          AssActionByID(comid,actnm)
+          update_gfx = true          
+        end]]
+        --OpenEB(13,'Please enter action command ID:')
+      --[[elseif EB_Open == 13 then
+        trackfxparam_select = ctl_select[1].ctl
+        retval, comid = reaper.GetUserInputs('Action Button', 1, 'Please enter action command ID: ,extrawidth=196', '')
+        if retval == true and comid then
+          local actnm = AssAction_GetNameFromID(comid)
+          AssActionByID(comid,actnm)
+          update_gfx = true          
+        end]]
+        --AssActionByID(editbox.text)
+        --update_gfx = true          
       elseif EB_Open == 14 then
         action_tblF = ActionListFilter(editbox.text)
         al_offset = 0
