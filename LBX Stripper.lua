@@ -14627,6 +14627,7 @@ end
       strips[tracks[track_select].strip][page].controls[trackfxparam_select].param_info.paramidx = nil
       strips[tracks[track_select].strip][page].controls[trackfxparam_select].param_info.paramnum = tonumber(txt)
     end
+    update_gfx = true
     
   end
 
@@ -16087,6 +16088,7 @@ end
                   strips[tracks[track_select].strip][page].controls[trackfxparam_select].param_info.paramnum = action_tblF[al_select].dcommand_id
                   
                   CloseActChooser()
+                  update_gfx = true
                 end
                 
               elseif action_tblF[i + al_offset] then
@@ -16114,6 +16116,8 @@ end
                 strips[tracks[track_select].strip][page].controls[trackfxparam_select].param_info.paramnum = action_tblF[al_select].dcommand_id
   
                 CloseActChooser()
+                update_gfx = true
+                
               end
                       
             elseif mouse.context == nil and MOUSE_click(obj.sections[175]) then
