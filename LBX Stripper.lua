@@ -20385,6 +20385,8 @@ end
       update_gfx = true
     end
   
+    return noscroll
+  
   end
 
   function A_Run_SnapshotsLearn()
