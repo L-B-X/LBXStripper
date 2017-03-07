@@ -4839,7 +4839,9 @@ end
                 elseif ctltype == 7 or ctltype == 9 then
                   val2 = ctl.val
                 elseif ctltype == 8 or ctltype == 10 then
-                  val2 = 1-ctl.val
+                  if ctl.val then
+                    val2 = 1-ctl.val
+                  end
                 end
                 
                 if not found then
@@ -13754,7 +13756,13 @@ end
       --OpenEB(12,'Please enter action name:')
     elseif res == 12 then
       trackfxparam_select = ctl_select[1].ctl
-      OpenEB(13,'Please enter action command ID:')
+      retval, comid = reaper.GetUserInputs('Action Button', 1, 'Please enter action command ID: ,extrawidth=196', '')
+      if retval == true and comid then
+        local actnm = AssAction_GetNameFromID(comid)
+        AssActionByID(comid,actnm)
+        update_gfx = true          
+      end
+      --OpenEB(13,'Please enter action command ID:')
     elseif res == 13 then
       Copy_Selected()
     elseif res == 14 then
@@ -14550,9 +14558,47 @@ end
   
   end
 
-  function AssActionByID(txt)
+  function AssAction_GetNameFromID(comid)
+  
+    if string.sub(comid,1,1) == '_' then
+      comid = string.sub(comid,2)
+    end
+    local ret = 'Action: '..comid
+    local acttbl = LoadActionIDs()
+    for i = 1, #acttbl do
+      --if i%20 == 0 then
+      --DBG(tostring(acttbl[i].command_id)..'  '..tostring(acttbl[i].dcommand_id))
+      --end
+      if acttbl[i].command_id then
+        if string.sub(acttbl[i].command_id,1,1) == '_' then
+          acttbl[i].command_id = string.sub(acttbl[i].command_id,2)
+        end        
+        if acttbl[i].command_id == comid then
+          ret = acttbl[i].command_desc
+          --DBG(ret)
+          break
+        end
+      elseif acttbl[i].dcommand_id then
+        if string.sub(acttbl[i].dcommand_id,1,1) == '_' then
+          acttbl[i].dcommand_id = string.sub(acttbl[i].dcommand_id,2)
+        end 
+        if acttbl[i].dcommand_id == comid then
+          ret = acttbl[i].command_desc
+          --DBG(ret)
+          break
+        end
+      end
+    end
+    return ret
+    
+  end
+  
+  function AssActionByID(txt, p_actnm)
   
     local actnm = 'Action: '..txt
+    if p_actnm then
+      actnm = p_actnm
+    end
     strips[tracks[track_select].strip][page].controls[trackfxparam_select].param_info.paramname = actnm
     if tonumber(txt) == nil then
       strips[tracks[track_select].strip][page].controls[trackfxparam_select].param_info.paramidx = txt
