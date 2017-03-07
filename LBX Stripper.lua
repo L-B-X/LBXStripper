@@ -16026,7 +16026,7 @@ end
         reaper.MarkProjectDirty(0)
         show_fsnapshots = false
         
-        if ct == 0 then
+        if ct == 0 and track_select ~= -1 then
           --track_select = -1
           ChangeTrack(-1)
           update_gfx = true
@@ -17445,6 +17445,7 @@ end
                             vert = vert}
                 end              
               end
+
               
               if newgrp then
               
@@ -18672,6 +18673,7 @@ end
                 update_surface = true
               end              
             else
+
               if math.floor(mouse.mx/settings_gridsize) ~= math.floor(mouse.last_x/settings_gridsize) or math.floor(mouse.my/settings_gridsize) ~= math.floor(mouse.last_y/settings_gridsize) then
                 local i
                 local ctl = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl]
@@ -19465,7 +19467,7 @@ end
       redraw_ctlbitmap = nil
       GUI_DrawCtlBitmap()
     end
-      
+
   end
 
   function A_Run_Mode0(noscroll, rt)
@@ -23069,6 +23071,7 @@ end
   end
 
   function DropCtls()
+    --if ctl_select == nil then return end
     local updallowed = true
     --if ctl_select then
       if newgrp then
