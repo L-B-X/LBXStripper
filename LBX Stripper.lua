@@ -13617,7 +13617,19 @@ end
     else
       gg = gg..'#Ungroup||'    
     end
-    local mstr = 'Duplicate||Align Top|Align Left|Distribute Vertically|Distribute Horizontally||'..gg..mm..'||'..vv..'||Delete'..ac..cp
+    local sw
+    local c = GetControlAtXY(tracks[track_select].strip, page, mouse.mx, mouse.my)
+    local ctl
+    if c then
+      ctl = strips[tracks[track_select].strip][page].controls[c]
+      if ctl.ctlcat == ctlcats.switcher and SwitcherInSelected(ctl.switcherid) == false then
+        sw = 'Add To Switcher||'
+      end
+    end 
+    if sw == nil then
+      sw = '#Add Controls To Switcher||'
+    end
+    local mstr = 'Duplicate||Align Top|Align Left|Distribute Vertically|Distribute Horizontally||'..gg..sw..mm..'||'..vv..'||Delete'..ac..cp
     gfx.x, gfx.y = mouse.mx, mouse.my
     local res = OpenMenu(mstr)
     if res == 1 then
@@ -13689,6 +13701,13 @@ end
     elseif res == 5 then
 
       Distribute_Horiz()
+
+    elseif res == 8 then
+    
+      newgrp = {grpid = switchers[ctl.switcherid].current,
+                switchid = c}
+      DropCtls()
+      SetCtlBitmapRedraw()
     
     elseif res == 6 then
 
@@ -13729,23 +13748,23 @@ end
       update_bg = true
       update_gfx = true
   
-    elseif res == 8 then
+    elseif res == 9 then
       for i = 1, #ctl_select do
         strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].poslock = not poslockctl_select
       end
       SetPosLockCtl()
-    elseif res == 9 then
+    elseif res == 10 then
       local hidd = not nz(strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].hidden,false)
       for i = 1, #ctl_select do
         strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].hidden = hidd
       end
       update_gfx = true        
       
-    elseif res == 10 then
+    elseif res == 11 then
       DeleteSelectedCtls()
       update_gfx = true
     
-    elseif res == 11 then
+    elseif res == 12 then
       trackfxparam_select = ctl_select[1].ctl
       show_actionchooser = true
       action_tbl = LoadActionIDs()
@@ -13754,18 +13773,12 @@ end
       
       update_gfx = true
       --OpenEB(12,'Please enter action name:')
-    elseif res == 12 then
-      trackfxparam_select = ctl_select[1].ctl
-      retval, comid = reaper.GetUserInputs('Action Button', 1, 'Please enter action command ID: ,extrawidth=196', '')
-      if retval == true and comid then
-        local actnm = AssAction_GetNameFromID(comid)
-        AssActionByID(comid,actnm)
-        update_gfx = true          
-      end
-      --OpenEB(13,'Please enter action command ID:')
     elseif res == 13 then
-      Copy_Selected()
+      trackfxparam_select = ctl_select[1].ctl
+      OpenEB(13,'Please enter action command ID:')
     elseif res == 14 then
+      Copy_Selected()
+    elseif res == 15 then
       Paste_Selected()
       SetCtlBitmapRedraw()
       update_gfx = true
@@ -17436,7 +17449,7 @@ end
               
                 local rl, rt, rr, rb = GetLTRBControlInGrp(newgrp.grpid, newgrp.switchid)
 
-                if math.floor(mouse.mx/settings_gridsize) ~= math.floor(mouse.last_x/settings_gridsize) or math.floor(mouse.my/settings_gridsize) ~= math.floor(mouse.last_y/settings_gridsize) then
+                if math.floor(mouse.mx) ~= math.floor(mouse.last_x) or math.floor(mouse.my) ~= math.floor(mouse.last_y) then
                   local ctl = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl]
                   local scale = ctl.scale
                   
@@ -18602,7 +18615,7 @@ end
               local rl, rt, rr, rb = GetLTRBControlInGrp(newgrp.grpid, newgrp.switchid)
               --local rl, rt, rr, rb = GetLTRBControlInSel(newgrp.switchid)
               local dl, dt, _, _ = GetGFXOffsetInSel()
-              if math.floor(mouse.mx/settings_gridsize) ~= math.floor(mouse.last_x/settings_gridsize) or math.floor(mouse.my/settings_gridsize) ~= math.floor(mouse.last_y/settings_gridsize) then
+              if math.floor(mouse.mx) ~= math.floor(mouse.last_x) or math.floor(mouse.my) ~= math.floor(mouse.last_y) then
                 local ctl = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl]
                 local scale = ctl.scale
                 
