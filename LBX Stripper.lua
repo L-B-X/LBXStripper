@@ -13434,10 +13434,11 @@ end
           mstr = mstr .. '|' .. string.match(strip_favs[fvs],'.+/(.-).strip')
         end
       end
+      mstr = mstr..'||'
     else
-      mstr = '#>Add Strip'
+      mstr = ''
     end
-    mstr = mstr .. '||Add page|Rename page|Remove page|'
+    mstr = mstr .. 'Add page|Rename page|Remove page|'
     local exopts = 3
     local ctl = strips[tracks[track_select].strip][page].controls[switcher_select]
     local switchid = ctl.switcherid
