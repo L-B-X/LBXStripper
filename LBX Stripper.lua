@@ -2498,7 +2498,7 @@
                                                 show_paramname = show_paramname,
                                                 show_paramval = false,
                                                 ctlname_override = '',
-                                                textcol = gui.color.black,
+                                                textcol = textcol_select,
                                                 textoff = 9,
                                                 textoffval = textoffval_select,
                                                 textoffx = textoff_selectx,
