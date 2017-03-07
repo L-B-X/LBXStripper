@@ -4952,11 +4952,11 @@ end
                   end
                  elseif ctlcat == ctlcats.switcher then
                   spv = false
-                  if nz(ctlnmov,'') == '' then
+                  --if nz(ctlnmov,'') == '' then
                     Disp_Name = pname
-                  else
-                    Disp_Name = ctlnmov
-                  end
+                  --else
+                  --  Disp_Name = ctlnmov
+                  --end
                   
                  end
   
