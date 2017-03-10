@@ -25854,31 +25854,33 @@ end
           strips[ss][p].graphics[g].stretchh = tonumber(zn(data[key..'stretchh'],strips[ss][p].graphics[g].h))
 
           --load graphics images
-          local iidx
-          local gfx_sel = -1
-          for k = 0, #graphics_files do
-            if graphics_files[k].fn == strips[ss][p].graphics[g].fn then
-              gfx_sel = k
-              break
+          if strips[ss][p].graphics[g].gfxtype == gfxtype.img then
+            local iidx
+            local gfx_sel = -1
+            for k = 0, #graphics_files do
+              if graphics_files[k] and graphics_files[k].fn == strips[ss][p].graphics[g].fn then
+                gfx_sel = k
+                break
+              end
             end
-          end
-          if gfx_sel ~= -1 then
-            
-            if graphics_files[gfx_sel].imageidx == nil then
-              image_count = F_limit(image_count + 1,0,image_max)
-              gfx.loadimg(image_count, graphics_path..graphics_files[gfx_sel].fn)
-              iidx = image_count
+            if gfx_sel ~= -1 then
               
-              strips[ss][p].graphics[g].imageidx = iidx
-              graphics_files[gfx_sel].imageidx = iidx                    
-
+              if graphics_files[gfx_sel].imageidx == nil then
+                image_count = F_limit(image_count + 1,0,image_max)
+                gfx.loadimg(image_count, graphics_path..graphics_files[gfx_sel].fn)
+                iidx = image_count
+                
+                strips[ss][p].graphics[g].imageidx = iidx
+                graphics_files[gfx_sel].imageidx = iidx                    
+  
+              else
+                iidx = graphics_files[gfx_sel].imageidx
+                strips[ss][p].graphics[g].imageidx = iidx                                  
+              end
             else
-              iidx = graphics_files[gfx_sel].imageidx
-              strips[ss][p].graphics[g].imageidx = iidx                                  
+              --missing
+              strips[ss][p].graphics[g].imageidx = 1020
             end
-          else
-            --missing
-            strips[ss][p].graphics[g].imageidx = 1020
           end
         end                
       end
