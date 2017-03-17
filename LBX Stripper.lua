@@ -5949,11 +5949,12 @@ end
   function calc_eqgraph_getmin(tr, fx, param, freq)
   
     if param then
+      local sldiv = 40
       local track = GetTrack(tr)
       local bkp = reaper.TrackFX_GetParamNormalized(track, fx, param)
       reaper.TrackFX_SetParamNormalized(track, fx, param, 0)
       local del = 0
-      for dx = 1, auto_delay*1000000 do del = del + dx end
+      os.sleep(auto_delay/sldiv)
       local _, d = reaper.TrackFX_GetFormattedParamValue(track, fx, param, '')
       local mult = 1
       if freq then
@@ -5974,11 +5975,12 @@ end
   function calc_eqgraph_getmax(tr, fx, param, freq)
   
     if param then
+      local sldiv = 40
       local track = GetTrack(tr)
       local bkp = reaper.TrackFX_GetParamNormalized(track, fx, param)
       reaper.TrackFX_SetParamNormalized(track, fx, param, 1)
       local del = 0
-      for dx = 1, auto_delay*1000000 do del = del + dx end
+      os.sleep(auto_delay/sldiv)
       local _, d = reaper.TrackFX_GetFormattedParamValue(track, fx, param, '')
       local mult = 1
       if freq then
@@ -5999,12 +6001,13 @@ end
   function calc_eqgraph(tr, fx, param, min, max, khz, param2, min2, max2)
   
     --DBG('mm'..min..'  '..max)
-    local ad = auto_delay*100000
+    --local ad = auto_delay*100000
     local track = GetTrack(tr)
     --pixmap = {}
     local lookmap = {}
     local gmap = {}
     local mult = 1
+    local sldiv = 400
     if khz then
       mult = 1000
       min = min * mult
@@ -6027,8 +6030,8 @@ end
       reaper.TrackFX_SetParamNormalized(track, fx, param2, 0)
     end
     local del = 0
-    for dx = 1, ad do del = del + 1 end
-    
+    --for dx = 1, ad do del = del + 1 end
+    os.sleep((auto_delay/sldiv)*10)
     local fnd, fnd2 = false, false
     
     for p = 0, 2010 do        
@@ -6040,7 +6043,7 @@ end
       if param2 then
         reaper.TrackFX_SetParamNormalized(track, fx, param2, pp)
       end
-      for dx = 1, ad do del = del + 1 end
+      os.sleep(auto_delay/sldiv)
       local d, d2
       if param then
         _, d = reaper.TrackFX_GetFormattedParamValue(track, fx, param, '')
@@ -24960,7 +24963,7 @@ end
   
   function Cycle_Auto()
   
-    local sldiv = 20
+    local sldiv = 400
     --local ad = auto_delay*1000000
     --DBG(auto_delay)
     if cycle_select.statecnt == 0 then
@@ -24981,7 +24984,7 @@ end
       
       SetParam3(strip,page,trackfxparam_select,ctl,v)
       local x = 0
-      os.sleep(auto_delay/sldiv)
+      os.sleep((auto_delay/sldiv)*10)
       local dval = GetParamDisp(cc, tracknum, fxnum, param, dvoff,trackfxparam_select)
       local stcnt = 1
       local ndval
@@ -24994,7 +24997,7 @@ end
         GUI_DrawMsgX(obj, gui, 'Scanning values...', v, 1)
         SetParam3(strip,page,trackfxparam_select,ctl,v)
         local x = 0
-        os.sleep(auto_delay/sldiv)
+        os.sleep((auto_delay/sldiv)*10)
         ndval = GetParamDisp(cc, tracknum, fxnum, param, dvoff,trackfxparam_select)
         if ndval ~= dval then
           dval = ndval
@@ -25038,7 +25041,7 @@ end
       
       SetParam3(strip,page,trackfxparam_select,ctl,v)
       local x = 0
-      os.sleep(auto_delay/sldiv)
+      os.sleep((auto_delay/sldiv)*10)
       local dval = GetParamDisp(cc, tracknum, fxnum, param, dvoff,trackfxparam_select)
       local stcnt = 1
       local ndval
@@ -25052,7 +25055,7 @@ end
         v = min2+(i*step*md)
         SetParam3(strip,page,trackfxparam_select,ctl,v)
         local x = 0
-        os.sleep(auto_delay/sldiv)
+        os.sleep((auto_delay/sldiv)*10)
         ndval = GetParamDisp(cc, tracknum, fxnum, param, dvoff, trackfxparam_select)
         if ndval ~= dval then
           dval = ndval
