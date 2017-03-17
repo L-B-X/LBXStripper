@@ -109,6 +109,7 @@
               macctl_h = 68,
               macctl2 = 69,
               reassplugin = 70,              
+              dragcycle_h = 71,
               dummy = 99
               }
   
@@ -16570,7 +16571,7 @@ end
                   --cycle
                   if ctls[i].cycledata.draggable then
                     if ctls[i].horiz then
-                      mouse.context = contexts.dragcycle
+                      mouse.context = contexts.dragcycle_h
                       mouse.slideoff = ctlxywh.x+ctlxywh.w/2 - mouse.mx
                     else
                       mouse.context = contexts.dragcycle
@@ -17091,6 +17092,38 @@ end
             local mult = strips[tracks[track_select].strip][page].controls[trackfxparam_select].knobsens.norm
             if mult == 0 then mult = settings_defknobsens.norm end
             val = ctlpos + (0.5-val)*mult
+          end
+          if val < 0 then val = 0 end
+          if val > 1 then val = 1 end
+          if val ~= octlval then
+            local pos = F_limit(math.floor(val*strips[tracks[track_select].strip][page].controls[trackfxparam_select].cycledata.statecnt),1,
+                                strips[tracks[track_select].strip][page].controls[trackfxparam_select].cycledata.statecnt)
+            strips[tracks[track_select].strip][page].controls[trackfxparam_select].cycledata.pos = pos
+            strips[tracks[track_select].strip][page].controls[trackfxparam_select].val = strips[tracks[track_select].strip][page].controls[trackfxparam_select].cycledata[pos].val
+            SetParam()
+            strips[tracks[track_select].strip][page].controls[trackfxparam_select].dirty = true
+            octlval = val
+            update_ctls = true
+          end
+        end
+      end
+    elseif mouse.context and mouse.context == contexts.dragcycle_h then
+      local val = MOUSE_slider_horiz(ctlxywh,mouse.slideoff)
+      if val ~= nil then
+        if oms ~= mouse.shift then
+          oms = mouse.shift
+          ctlpos = normalize(0, strips[tracks[track_select].strip][page].controls[trackfxparam_select].cycledata.statecnt,
+                             strips[tracks[track_select].strip][page].controls[trackfxparam_select].cycledata.pos)
+          mouse.slideoff = ctlxywh.x+ctlxywh.w/2 - mouse.mx
+        else
+          if mouse.shift then
+            local mult = strips[tracks[track_select].strip][page].controls[trackfxparam_select].knobsens.fine
+            if mult == 0 then mult = settings_defknobsens.fine end
+            val = ctlpos - ((0.5-val)*2)*mult
+          else
+            local mult = strips[tracks[track_select].strip][page].controls[trackfxparam_select].knobsens.norm
+            if mult == 0 then mult = settings_defknobsens.norm end
+            val = ctlpos - (0.5-val)*mult
           end
           if val < 0 then val = 0 end
           if val > 1 then val = 1 end
