@@ -2097,7 +2097,7 @@
                                                   val = 0,
                                                   defval = 0,
                                                   maxdp = maxdp_select,
-                                                  cycledata = {statecnt = 0,val = 0,mapptof = false,draggable = false,spread = false, {}},
+                                                  cycledata = {statecnt = 0,val = 0,mapptof = mapptof_select,draggable = draggable_select,spread = spread_select, {}},
                                                   xydata = {snapa = 1, snapb = 1, snapc = 1, snapd = 1, x = 0.5, y = 0.5},
                                                   membtn = {state = false,
                                                             mem = nil},
@@ -14191,25 +14191,32 @@ end
   
   function SetCtlSelectVals()
     if ctl_select and #ctl_select > 0 then
-      ctltype_select = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].ctltype
-      knob_select = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].knob_select
-      scale_select = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].scale
-      textcol_select = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].textcol
-      show_paramname = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].show_paramname
-      show_paramval = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].show_paramval
-      textoff_select = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].textoff
-      textoffval_select = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].textoffval
-      textoff_selectx = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].textoffx
-      textoffval_selectx = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].textoffvalx
-      textsize_select = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].textsize
-      defval_select = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].defval
-      maxdp_select = nz(strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].maxdp,-1)                  
-      dvaloff_select = nz(strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].dvaloffset,'')                  
-      --knob_scalemode_select = nz(strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].scalemode,1)                  
-      scalemode_select = nz(strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].scalemode,8)
-      framemode_select = nz(strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].framemode,1)
-      horiz_select = nz(strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].horiz,false)
-      knobsens_select = nz(strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].knobsens,settings_defknobsens)
+      local ctl = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl]
+      ctltype_select = ctl.ctltype
+      knob_select = ctl.knob_select
+      scale_select = ctl.scale
+      textcol_select = ctl.textcol
+      show_paramname = ctl.show_paramname
+      show_paramval = ctl.show_paramval
+      textoff_select = ctl.textoff
+      textoffval_select = ctl.textoffval
+      textoff_selectx = ctl.textoffx
+      textoffval_selectx = ctl.textoffvalx
+      textsize_select = ctl.textsize
+      defval_select = ctl.defval
+      maxdp_select = nz(ctl.maxdp,-1)                  
+      dvaloff_select = nz(ctl.dvaloffset,'')                  
+      --knob_scalemode_select = nz(ctl.scalemode,1)                  
+      scalemode_select = nz(ctl.scalemode,8)
+      framemode_select = nz(ctl.framemode,1)
+      horiz_select = nz(ctl.horiz,false)
+      knobsens_select = nz(ctl.knobsens,settings_defknobsens)
+      --DBG(ctl.cycledata.statecnt)
+      if ctl.cycledata and ctl.cycledata.statecnt > 0 then
+        mapptof_select = ctl.cycledata.mapptof
+        draggable_select = ctl.cycledata.draggable
+        spread_select = ctl.cycledata.spread
+      end
       
       SetKnobScaleMode()
       cycle_select = Cycle_CopySelectIn(ctl_select[1].ctl)
@@ -18086,12 +18093,15 @@ end
 
         if MOUSE_click(obj.sections[107]) then
           cycle_select.mapptof = not cycle_select.mapptof
+          mapptof_select = cycle_select.mapptof
           update_gfx = true
         elseif MOUSE_click(obj.sections[108]) then
           cycle_select.draggable = not cycle_select.draggable
+          draggable_select = cycle_select.draggable
           update_gfx = true
         elseif MOUSE_click(obj.sections[109]) then
           cycle_select.spread = not cycle_select.spread
+          spread_select = cycle_select.spread
           update_gfx = true
         end          
       
@@ -24876,13 +24886,24 @@ end
     local cd = {}
     if strips[tracks[track_select].strip][page].controls[ctl].cycledata then
       cd = strips[tracks[track_select].strip][page].controls[ctl].cycledata
-      local co = {statecnt = cd.statecnt,
-                  selected = cd.selected,
-                  mapptof = cd.mapptof,
-                  draggable = cd.draggable,
-                  spread = cd.spread,
-                  val = 0,
-                  {}}
+      local co
+      if cd.statecnt > 0 then
+        co = {statecnt = cd.statecnt,
+                    selected = cd.selected,
+                    mapptof = cd.mapptof,
+                    draggable = cd.draggable,
+                    spread = cd.spread,
+                    val = 0,
+                    {}}
+      else
+        co = {statecnt = cd.statecnt,
+                    selected = cd.selected,
+                    mapptof = mapptof_select,
+                    draggable = draggable_select,
+                    spread = spread_select,
+                    val = 0,
+                    {}}      
+      end
       for i = 1, max_cycle do
         if cd[i] then
           co[i] = {val = cd[i].val, dispval = cd[i].dispval, dv = cd[i].dv}
@@ -24890,7 +24911,7 @@ end
       end
       return co
     else
-      return {statecnt = 0,mapptof = false,draggable = false,spread = false,val = 0,nil}
+      return {statecnt = 0,mapptof = mapptof_select,draggable = draggable_select,spread = spread_select,val = 0,nil}
     end    
   end
   
@@ -29450,6 +29471,9 @@ end
     sstype_select = 1
     fsstype_select = 1
     horiz_select = false
+    mapptof_select = false
+    draggable_select = false
+    spread_select = false
     al_select = 0
     
     plist_w = 140
