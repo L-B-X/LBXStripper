@@ -1554,6 +1554,10 @@
                            y = macroedit.secyoff,
                            w = 20,
                            h = macroedit.h} 
+      obj.sections[416] = {x = obj.sections[402].x+obj.sections[402].w-100,
+                           y = macroedit.secyoff,
+                           w = 20,
+                           h = macroedit.h} 
            
     return obj
   end
@@ -7389,6 +7393,16 @@ end
                 GUI_DrawBar(gui,'BI',xywh,skin.butt18Y,true,gui.color.black,gui.color.black,-5)
               else
                 GUI_DrawBar(gui,'BI',xywh,skin.butt18,true,gui.color.black,gui.color.black,-5)
+              end
+
+              xywh = {x = obj.sections[416].x,
+                      y = obj.sections[416].y + mm*macroedit.sech + 0.5*macroedit.sech - 10,
+                      w = obj.sections[416].w,
+                      h = 20}
+              if macro[m+macroedit_poffs].relative then
+                GUI_DrawBar(gui,'REL',xywh,skin.butt18Y,true,gui.color.black,gui.color.black,-5)
+              else
+                GUI_DrawBar(gui,'REL',xywh,skin.butt18,true,gui.color.black,gui.color.black,-5)
               end
     
               xywh = {x = obj.sections[415].x,
@@ -16545,6 +16559,8 @@ end
                     --knobslider = 'ks'
                     ctlpos = ctlScaleInv(nz(ctls[i].scalemode,8),
                                          ctls[i].val)
+                    macctlactive = i 
+                    --ctls[i].mval = nil
                     trackfxparam_select = i
                     oms = mouse.shift                      
                   end
@@ -17026,6 +17042,7 @@ end
           if val > 1 then val = 1 end
           val = ctlScale(ctl.scalemode, val)
           if val ~= octlval then
+            ctl.diff = val - ctl.val
             ctl.val = val
             SetMacro(strip, page, tfxp_s)
             ctl.dirty = true
@@ -17064,6 +17081,7 @@ end
           if val > 1 then val = 1 end
           val = ctlScale(ctl.scalemode, val)
           if val ~= octlval then
+            ctl.diff = val - ctl.val
             ctl.val = val
             SetMacro(strip, page, tfxp_s)
             ctl.dirty = true
@@ -17075,6 +17093,16 @@ end
         end
       end
       
+    elseif mouse.context == nil and macctlactive then 
+    
+      local strip = tracks[track_select].strip
+      local mac = strips[strip][page].controls[macctlactive].macroctl
+      strips[strip][page].controls[macctlactive].diff = nil
+      for m = 1, #mac do
+        strips[strip][page].controls[mac[m].ctl].mval = nil
+      end
+      macctlactive = nil
+    
     elseif mouse.context and mouse.context == contexts.dragcycle then
       local val = MOUSE_slider(ctlxywh,mouse.slideoff)
       if val ~= nil then
@@ -17107,6 +17135,7 @@ end
           end
         end
       end
+      
     elseif mouse.context and mouse.context == contexts.dragcycle_h then
       local val = MOUSE_slider_horiz(ctlxywh,mouse.slideoff)
       if val ~= nil then
@@ -21001,6 +21030,7 @@ end
             update_macroedit = true
           else
             local i = macroctl_select
+            macctlactive = i
             mouse.context = contexts.macctl2
             mouse.slideoff = obj.sections[410].y+obj.sections[410].h/2 - mouse.my
             ctlpos = ctlScaleInv(nz(strips[tracks[track_select].strip][page].controls[i].scalemode,8),
@@ -21121,6 +21151,25 @@ end
             end
           end    
 
+        elseif mouse.context == nil and MOUSE_click(obj.sections[416]) then
+          local yy = math.floor((mouse.my - obj.sections[416].y)/macroedit.sech)
+          if macroctl[(yy+1)+macroedit_poffs] then
+            local xywh = {x = obj.sections[416].x,
+                          y = obj.sections[416].y + yy*macroedit.sech + 0.5*macroedit.sech - 10,
+                          w = obj.sections[416].w,
+                          h = 20}                
+            if MOUSE_over(xywh) then
+          
+              macroctl[(yy+1)+macroedit_poffs].relative = not nz(macroctl[(yy+1)+macroedit_poffs].relative,false)
+              if macroctl[(yy+1)+macroedit_poffs].relative == false and settings_macroeditmonitor then
+                SetMacro(tracks[track_select].strip,page,macroctl_select)
+              end
+
+              update_macrobutt = true
+              
+            end
+          end    
+
         elseif mouse.context == nil and MOUSE_click(obj.sections[407]) then
           local yy = math.floor((mouse.my - obj.sections[407].y)/macroedit.sech)
           if macroctl[(yy+1)+macroedit_poffs] then
@@ -21190,27 +21239,29 @@ end
           --local tfxp_s = macroctl_select
           local val = MOUSE_slider(obj.sections[410],mouse.slideoff)
           if val ~= nil then
+            local ctl = strips[tracks[track_select].strip][page].controls[macroctl_select]
             if oms ~= mouse.shift then
               oms = mouse.shift
-              ctlpos = strips[tracks[track_select].strip][page].controls[macroctl_select].val
+              ctlpos = ctl.val
               mouse.slideoff = ctlxywh.y+ctlxywh.h/2 - mouse.my
             else
               if mouse.shift then
-                local mult = strips[tracks[track_select].strip][page].controls[macroctl_select].knobsens.fine
+                local mult = ctl.knobsens.fine
                 if mult == 0 then mult = settings_defknobsens.fine end
                 val = ctlpos + ((0.5-val)*2)*mult
               else
-                local mult = strips[tracks[track_select].strip][page].controls[macroctl_select].knobsens.norm
+                local mult = ctl.knobsens.norm
                 if mult == 0 then mult = settings_defknobsens.norm end
                 val = ctlpos + (0.5-val)*mult
               end
               if val < 0 then val = 0 end
               if val > 1 then val = 1 end
-              val = ctlScale(strips[tracks[track_select].strip][page].controls[macroctl_select].scalemode, val)
+              val = ctlScale(ctl.scalemode, val)
               if val ~= octlval then
-                strips[tracks[track_select].strip][page].controls[macroctl_select].val = val
+                ctl.diff = val - ctl.val
+                ctl.val = val
                 SetMacro(tracks[track_select].strip, page, macroctl_select)
-                strips[tracks[track_select].strip][page].controls[macroctl_select].dirty = true
+                ctl.dirty = true
                 octlval = val
                 --update_ctls = true
                 update_macroedit = true
@@ -21218,6 +21269,16 @@ end
               end
             end
           end
+        
+        elseif mouse.context == nil and macctlactive ~= nil then
+        
+          local strip = tracks[track_select].strip
+          local mac = strips[strip][page].controls[macctlactive].macroctl
+          strips[strip][page].controls[macctlactive].diff = nil
+          for m = 1, #mac do
+            strips[strip][page].controls[mac[m].ctl].mval = nil
+          end
+          macctlactive = nil
           
         elseif mouse.context and mouse.context == contexts.macsliderA then
         
@@ -24694,51 +24755,80 @@ end
   
   function SetMacro(strip, page, ctl)
 
-    local macro = strips[strip][page].controls[ctl].macroctl
-    strips[strip][page].controls[ctl].dirty = true
+    local ctls = strips[strip][page].controls
+    local macro = ctls[ctl].macroctl
+    ctls[ctl].dirty = true
     if macro then
       for m = 1, #macro do
       
         if macro[m].mute == false or macro[m].mute == nil then
-          if macro[m].bi == true then
+          if macro[m].relative ~= true then
+            if macro[m].bi == true then
+  
+              local c = ctls[macro[m].ctl]
+              local mv = ctls[ctl].val
+              local ma = macro[m].A_val
+              local mb = macro[m].B_val
+              
+              trackfxparam_select = macro[m].ctl
+              
+              local v
+              if macro[m].inv then
+                v = F_limit(ma - macScale(macro[m].shape,(mv-0.5)*2) * mb,F_limit(ma-mb,0,1),F_limit(ma+mb,0,1))            
+              else
+                v = F_limit(ma + macScale(macro[m].shape,(mv-0.5)*2) * mb,F_limit(ma-mb,0,1),F_limit(ma+mb,0,1))
+              end
+              if v ~= macro[m].oval then
+                c.val = v
+                A_SetParam(strip, page, ctl, c)
+                macro[m].oval = v
+              end
+            
+            else
+              local c = ctls[macro[m].ctl]
+              local mv = ctls[ctl].val
+              local ma = macro[m].A_val
+              local mb = macro[m].B_val
+              
+              trackfxparam_select = macro[m].ctl
+              local v
+              if macro[m].inv then            
+                v = (ma - mb) * macScale(macro[m].shape,mv) + mb              
+              else
+                v = (mb - ma) * macScale(macro[m].shape,mv) + ma
+              end
+              if v ~= macro[m].oval then
+                c.val = v
+                A_SetParam(strip, page, ctl, c)
+                macro[m].oval = v
+              end
+            end
 
-            local c = strips[strip][page].controls[macro[m].ctl]
-            local mv = strips[strip][page].controls[ctl].val
-            local ma = macro[m].A_val
-            local mb = macro[m].B_val
-            
-            trackfxparam_select = macro[m].ctl
-            
-            local v
-            if macro[m].inv then
-              v = F_limit(ma - macScale(macro[m].shape,(mv-0.5)*2) * mb,F_limit(ma-mb,0,1),F_limit(ma+mb,0,1))            
-            else
-              v = F_limit(ma + macScale(macro[m].shape,(mv-0.5)*2) * mb,F_limit(ma-mb,0,1),F_limit(ma+mb,0,1))
-            end
-            if v ~= macro[m].oval then
-              c.val = v
-              A_SetParam(strip, page, ctl, c)
-              macro[m].oval = v
-            end
-          
           else
-            local c = strips[strip][page].controls[macro[m].ctl]
-            local mv = strips[strip][page].controls[ctl].val
+
+            local c = ctls[macro[m].ctl]
+            local mv = ctls[ctl].diff
             local ma = macro[m].A_val
             local mb = macro[m].B_val
-            
-            trackfxparam_select = macro[m].ctl
-            local v
-            if macro[m].inv then            
-              v = (ma - mb) * macScale(macro[m].shape,mv) + mb              
-            else
-              v = (mb - ma) * macScale(macro[m].shape,mv) + ma
-            end
-            if v ~= macro[m].oval then
-              c.val = v
-              A_SetParam(strip, page, ctl, c)
-              macro[m].oval = v
-            end
+          
+            if mv then
+              mv = mv * mb
+              trackfxparam_select = macro[m].ctl
+              if macro[m].inv then            
+                mv = -mv             
+              end
+              if c.mval then
+                v = c.mval + mv
+              else
+                v = c.val + mv
+              end
+              if v ~= macro[m].oval then
+                c.mval = v
+                c.val = F_limit(v,0,1)
+                A_SetParam(strip, page, ctl, c)
+                macro[m].oval = v
+              end            
+            end          
           end
         end
       end
@@ -25307,6 +25397,8 @@ end
     f_Get_SSV('0 0 0')
     gfx.a = 1
     gfx.rect(obj.sections[8].x,obj.sections[8].y,obj.sections[8].w,obj.sections[8].h,true)
+    f_Get_SSV(gui.color.white)
+    gfx.rect(obj.sections[8].x,obj.sections[8].y,obj.sections[8].w,obj.sections[8].h,0)
   
     GUI_DrawButton(gui, 'OK', obj.sections[6], gui.color.blue, gui.color.black, true)
     GUI_DrawButton(gui, 'Cancel', obj.sections[7], gui.color.blue, gui.color.black, true)
@@ -25320,6 +25412,7 @@ end
     
     setcolor(e.bgcol)
     gfx.rect(e.x,e.y,e.w,e.h,true)
+    
     setcolor(e.hasfocus and e.fgfcol or e.fgcol)
     gfx.rect(e.x,e.y,e.w,e.h,false)
     gfx.setfont(e.font) 
@@ -25744,7 +25837,8 @@ end
                                                         shape = tonumber(zn(data[key..'shape'],0)),
                                                         mute = tobool(zn(data[key..'mute'],false)),
                                                         bi = tobool(zn(data[key..'bi'],false)), 
-                                                        inv = tobool(zn(data[key..'inv'],false))} 
+                                                        inv = tobool(zn(data[key..'inv'],false)),
+                                                        relative = tobool(zn(data[key..'rel'],false))} 
             end
           end
 
@@ -27718,6 +27812,7 @@ end
                   file:write('['..key..'mute]'..tostring(nz(strips[s][p].controls[c].macroctl[mc].mute,false))..'\n')                                 
                   file:write('['..key..'bi]'..tostring(nz(strips[s][p].controls[c].macroctl[mc].bi,false))..'\n')
                   file:write('['..key..'inv]'..tostring(nz(strips[s][p].controls[c].macroctl[mc].inv,false))..'\n')                                 
+                  file:write('['..key..'rel]'..tostring(nz(strips[s][p].controls[c].macroctl[mc].relative,false))..'\n')                                 
                 end
               else
                 file:write('['..key..'macroctl_cnt]'..0 ..'\n')                                 
