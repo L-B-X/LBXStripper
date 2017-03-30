@@ -31,6 +31,7 @@
   
   framemode_table = {'NORMAL','CIRC'}
   snapsubsets_table = {'PAGE'}
+  gaugetype_table = {'ARC','LINEAR VERT', 'LINEAR HORIZ'}
   
   trctltypeidx_table = {tr_ctls = 1,
                         tr_sends = 2,
@@ -110,6 +111,17 @@
               macctl2 = 69,
               reassplugin = 70,              
               dragcycle_h = 71,
+              gauge_val = 80,
+              gauge_arcrad = 82,
+              gauge_arclen = 83,              
+              gauge_arcrot = 84,              
+              gauge_tksz = 85,              
+              gauge_tkoffs = 86,              
+              gauge_xoffs = 87,              
+              gauge_yoffs = 88,              
+              gauge_fs = 89,
+              gauge_valfreq = 90,              
+              gauge_nudge = 91,              
               dummy = 99
               }
   
@@ -281,6 +293,346 @@
                            pk = pk,
                            ch_d = peak_info_dB}
     end
+  end
+  
+  function copyfile(src, dest)
+    local file = io.open(src, 'rb')
+    local content = file:read('*a')
+    file:close()
+    local file = io.open(dest, 'wb')
+    file:write(content)
+    file:close()
+  end
+
+  function readbinaryfile(src)
+    local file = io.open(src, 'rb')
+    local content = file:read('*a')
+    file:close()
+    return content
+  end
+
+  function writebinaryfile(dest, content)
+    local file = io.open(dest, 'wb')
+    file:write(content)
+    file:close()
+  end
+  
+  function StripShare_Export(fol, fn)
+  
+    savefn = fn
+  
+    local stripdata = LoadStripFN(fol..fn)
+    local gfxchk = {}
+    local ctlchk = {}
+    local gfxf = {}
+    local ctlf = {}
+    
+    if stripdata.strip.graphics then
+      for g = 1, #stripdata.strip.graphics do      
+        local gx = stripdata.strip.graphics[g]
+        if gx.gfxtype == gfxtype.img and reaper.file_exists(graphics_path..gx.fn) then
+          if gfxchk[gx.fn] == nil then
+            gfxchk[gx.fn] = true 
+            local imgbin = readbinaryfile(graphics_path..gx.fn)
+            gfxf[#gfxf+1] = {fn = gx.fn, bindata = imgbin}
+          end
+        end
+      end
+    end
+    if stripdata.strip.controls then
+      for c = 1, #stripdata.strip.controls do      
+        local cx = stripdata.strip.controls[c]
+        if nz(cx.ctl_info.fn,'') ~= '' and reaper.file_exists(controls_path..cx.ctl_info.fn) then
+          local knbfn = string.match(cx.ctl_info.fn, '(.+)%.') ..'.knb'
+          --DBG(knbfn)
+          if reaper.file_exists(controls_path..knbfn) then
+            if ctlchk[cx.ctl_info.fn] == nil then
+              ctlchk[cx.ctl_info.fn] = true 
+              local imgbin = readbinaryfile(controls_path..cx.ctl_info.fn)
+              local knbbin = readbinaryfile(controls_path..knbfn)
+              ctlf[#ctlf+1] = {fn = cx.ctl_info.fn, bindata = imgbin, knbdata = knbbin}
+            end
+          end
+        end
+      end
+    end
+    stripdata.sharedata = {stripfn = fn, ctls = ctlf, gfx = gfxf}
+    
+    local save_path=share_path..'/'
+    local fn=save_path..string.match(savefn,'(.+)%.')..".sharestrip"
+
+    local DELETE=true
+    local file
+    
+    if reaper.file_exists(fn) then
+    
+    end
+    
+    if DELETE then
+      file=io.open(fn,"w")
+      local pickled_table=pickle(stripdata)
+      file:write(pickled_table)
+      file:close()
+    end
+
+    --DBG('pickke time: '..reaper.time_precise()-t)
+    OpenMsgBox(1,'Strip share file saved.',1)
+  
+  end
+  
+  function CompareStringToFile(str, fn)
+  
+    local fil = readbinaryfile(fn)
+    local ret = false
+    if fil == str then
+      ret = true
+    end
+    return ret
+    
+  end
+  
+  function TestStuff()
+  
+    local gfxv = 1
+    local fn = 'testttt.sharestrip'
+    local tt = string.match(fn,'(.+)_v%d%d%d%d')
+    local sfx = string.match(fn,'.+(%..*)')
+    if tt == nil then
+      tt = fn
+    else
+      tt = tt .. sfx
+    end
+    --tt = tt .. '_v'.. string.format('%04d',gfxv) .. string.match(fn,'.+(%..*)')
+    DBG(tt)
+    
+  end
+  
+  function StripShare_Import()
+  
+    local loadfn
+    local retval, fn = reaper.GetUserFileNameForRead(share_path..'*', 'Load Strip Share File', '.sharestrip')
+    if retval then
+    
+      if reaper.file_exists(fn) then
+        loadfn = string.match(fn, ".+\\(.*)")
+      end
+    end
+            
+    if loadfn then
+      local stripdata = LoadStripFN(nil,loadfn)
+      local continue = false
+      
+      if stripdata.fx then
+        local fxstring = 'The following plugins are required by this strip layout:\n\n'
+        local fxns = {}
+        for f = 1, #stripdata.fx do
+        
+          local fxn = nil
+          if stripdata.fx[f].fxname then
+            fxn = stripdata.fx[f].fxname
+          else
+            local fxc = string.match(stripdata.fx[f].fxchunk,'.-<(.*)')
+            fxn = GetPlugNameFromChunk(fxc)
+            if fxn and fxns[fxn] == nil then
+              fxns[fxn] = true
+            else
+              fxn = nil
+            end
+          end
+          if fxn then
+            fxstring = fxstring .. fxn .. '\n'
+          end
+        end
+        fxstring = fxstring .. '\nContinue with import?'
+        local retval = reaper.MB(fxstring, 'Import Strip File', 4)
+        if retval == 6 then
+          continue = true
+        end
+      end      
+
+      if continue == true then
+        GUI_DrawStateWin(obj,gui,'Importing shared strip data... ',true)
+        GUI_DrawStateWin(obj,gui,'')
+
+        GUI_DrawStateWin(obj,gui,'Importing graphics data... ')
+        GUI_DrawStateWin(obj,gui,'')
+
+        for g = 1, #stripdata.sharedata.gfx do
+          local gfxv = 0
+          local base = string.match(stripdata.sharedata.gfx[g].fn,'(.+)_v%d%d%d%d')
+          local suffx = string.match(stripdata.sharedata.gfx[g].fn,'.+(%..*)')
+          if base == nil then
+            base = string.match(stripdata.sharedata.gfx[g].fn,'(.+)%..*')
+          end
+          gfxfn = base .. suffx
+          local gfn = graphics_path..gfxfn
+          local copy = 0 --1 = overwrite, 2 = rename (? not implemented yet), 3 = don't copy
+          if reaper.file_exists(gfn) then
+            --compare saved file verses imported - ask to overwrite if not same
+            if CompareStringToFile(stripdata.sharedata.gfx[g].bindata, gfn) == false then
+              --different file
+              while copy == 0 do
+                gfxv = gfxv + 1
+                gfxfn = base .. '_v' .. string.format('%04d',gfxv) .. suffx
+                gfn = graphics_path..gfxfn
+                if reaper.file_exists(gfn) then
+                  if CompareStringToFile(stripdata.sharedata.gfx[g].bindata, gfn) == true then
+                    copy = 3
+                  end
+                else
+                  copy = 1
+                end
+              end         
+            end
+          else
+            copy = 1
+          end
+          if copy == 1 then
+            GUI_DrawStateWin(obj,gui,'Importing graphic: '..stripdata.sharedata.gfx[g].fn..'   ('..gfxfn..')')
+            writebinaryfile(gfn, stripdata.sharedata.gfx[g].bindata)
+          else
+            GUI_DrawStateWin(obj,gui,'Already in graphics library: '..stripdata.sharedata.gfx[g].fn..'   ('..gfxfn..')')          
+          end    
+          if copy > 0 then
+            local src = stripdata.sharedata.gfx[g].fn
+            --update gfx fn in stripdata
+            for i = 1, #stripdata.sharedata.gfx do            
+              if stripdata.sharedata.gfx[i].fn == src then
+                stripdata.sharedata.gfx[i].fn = gfxfn
+                stripdata.sharedata.gfx[i].imageidx = -1
+              end 
+            end
+            for i = 1, #stripdata.strip.graphics do
+              if stripdata.strip.graphics[i].fn == src then
+                stripdata.strip.graphics[i].fn = gfxfn
+                stripdata.strip.graphics[i].imageidx = -1
+              end
+            end
+          end
+        end
+
+        GUI_DrawStateWin(obj,gui,'')
+        GUI_DrawStateWin(obj,gui,'Importing controls data... ')
+        GUI_DrawStateWin(obj,gui,'')
+    
+        for c = 1, #stripdata.sharedata.ctls do
+          
+          --local cfn = controls_path..stripdata.sharedata.ctls[c].fn
+
+          local cfxv = 0
+          local base = string.match(stripdata.sharedata.ctls[c].fn,'(.+)_v%d%d%d%d')
+          local suffx = string.match(stripdata.sharedata.ctls[c].fn,'.+(%..*)')
+          if base == nil then
+            base = string.match(stripdata.sharedata.ctls[c].fn,'(.+)%..*')
+          end
+          cfxfn = base .. suffx
+          local cfn = controls_path..cfxfn
+          local copy = 0
+          if reaper.file_exists(cfn) then
+            if CompareStringToFile(stripdata.sharedata.ctls[c].bindata, cfn) == false then
+              --different file
+              while copy == 0 do
+                cfxv = cfxv + 1
+                cfxfn = base .. '_v' .. string.format('%04d',cfxv) .. suffx
+                cfn = controls_path..cfxfn
+                if reaper.file_exists(cfn) then
+                  if CompareStringToFile(stripdata.sharedata.ctls[c].bindata, cfn) == true then
+                    copy = 3
+                  end
+                else
+                  copy = 1
+                end
+              end
+            end
+          else
+            copy = 1
+          end
+          if copy == 1 then
+            GUI_DrawStateWin(obj,gui,'Importing control: '..stripdata.sharedata.ctls[c].fn..'   ('..cfxfn..')')
+            writebinaryfile(cfn, stripdata.sharedata.ctls[c].bindata)
+            local knbfn = string.match(cfn, '(.+)%.') ..'.knb'
+            writebinaryfile(knbfn, stripdata.sharedata.ctls[c].knbdata)
+
+            setknbfn(knbfn,cfxfn)
+          else
+            GUI_DrawStateWin(obj,gui,'Already in controls library: '..stripdata.sharedata.ctls[c].fn..'   ('..cfxfn..')')
+          end
+          if copy > 0 then
+            local src = stripdata.sharedata.ctls[c].fn
+            --update ctl fn in stripdata
+            for i = 1, #stripdata.sharedata.ctls do            
+              if stripdata.sharedata.ctls[i].fn == src then
+                stripdata.sharedata.ctls[i].fn = cfxfn
+                stripdata.sharedata.ctls[i].imageidx = -1
+              end 
+            end
+            for i = 1, #stripdata.strip.controls do
+              if stripdata.strip.controls[i].ctl_info.fn == src then
+                stripdata.strip.controls[i].ctl_info.fn = cfxfn
+                stripdata.strip.controls[i].imageidx = -1
+              end
+            end
+          end                
+        end
+
+        GUI_DrawStateWin(obj,gui,'')
+        GUI_DrawStateWin(obj,gui,'Importing strip data... ')
+        GUI_DrawStateWin(obj,gui,'')
+    
+        local savefn = stripdata.sharedata.stripfn
+        local save_path=strips_path..strip_folders[stripfol_select].fn..'/'
+        local fn=save_path..savefn--..".strip"
+        local copy = 0
+        if reaper.file_exists(fn) then
+          local str = 'The strip file already exists:\n\n'..savefn..'\n\nOverwrite?'
+          local retval = reaper.MB(str, 'Import Strip', 4)
+          if retval == 6 then
+            copy = 1
+          end
+        else
+          copy = 1
+        end
+        if copy == 1 then
+          stripdata.sharedata = nil
+          
+          local DELETE=true
+          local file
+          
+          if DELETE then
+            file=io.open(fn,"w")
+            local pickled_table=pickle(stripdata)
+            file:write(pickled_table)
+            file:close()
+          end
+      
+          OpenMsgBox(1,'Strip share file imported.',1)
+        end
+      
+        RepopulateGFX()
+        RepopulateControls()
+      end
+    
+    end    
+  end
+  
+  function setknbfn(kfn, cfn)
+  
+    if reaper.file_exists(kfn) then
+      local file
+      file=io.open(controls_path..kf,"r")
+      local content=file:read("*a")
+      file:close()
+      
+      local knbdat = unpickle(content)
+      knbdat.fn = cfn
+  
+      --save knb file
+      file=io.open(kfn,"w")
+      local pickled_table=pickle(knbdat)
+      file:write(pickled_table)
+      file:close()
+    end
+    
   end
   
   ------------------------------------------- --
@@ -609,6 +961,147 @@
                           y = math.max(gfx1.main_h - 440 - 10, obj.sections[10].y),
                           w = cow,
                           h = 440}                           
+      
+      --GAUGE EDIT
+      local gaw, gah = 320, 500
+      local gsw = 90
+      local gofs = 270
+      obj.sections[800] = {x = math.max(gfx1.main_w/2 -gaw/2,obj.sections[43].w),
+                          y = math.max(gfx1.main_h/2 - gah/2, obj.sections[10].y),
+                          w = gaw,
+                          h = gah}
+      obj.sections[806] = {x = obj.sections[800].x + 60,
+                           y = obj.sections[800].y + butt_h,
+                           w = gaw-120,
+                           h = gofs-100}
+
+      obj.sections[801] = {x = obj.sections[800].x + 60,
+                           y = obj.sections[800].y + gofs - 8,
+                           w = gsw,
+                           h = butt_h}
+      --radius, len
+      obj.sections[802] = {x = obj.sections[800].x + 60,
+                           y = obj.sections[800].y + gofs + (butt_h/2+13)*4 -20,
+                           w = gsw,
+                           h = butt_h/2+8}
+      obj.sections[803] = {x = obj.sections[800].x + 60,
+                           y = obj.sections[800].y + gofs + (butt_h/2+13)*5 -20,
+                           w = gsw,
+                           h = butt_h/2+8}
+      obj.sections[804] = {x = obj.sections[800].x + 60,
+                           y = obj.sections[800].y + gofs + (butt_h/2+13)*6 -20,
+                           w = gsw,
+                           h = butt_h/2+8}
+      obj.sections[805] = {x = obj.sections[800].x + 60 + gsw/2,
+                           y = obj.sections[800].y + gofs + (butt_h/2+8) +18,
+                           w = gsw/2,
+                           h = butt_h}
+      obj.sections[807] = {x = obj.sections[800].x + 60,
+                           y = obj.sections[800].y + gofs + (butt_h/2+13)*7 -20,
+                           w = gsw,
+                           h = butt_h/2+8}
+      obj.sections[808] = {x = obj.sections[800].x + 60,
+                           y = obj.sections[800].y + gofs + (butt_h/2+13)*8 -20,
+                           w = gsw,
+                           h = butt_h/2+8}
+      --x, y
+      obj.sections[809] = {x = obj.sections[800].x + obj.sections[800].w/2 + 55,
+                           y = obj.sections[800].y + gofs -8 + (butt_h/2+13)*0,
+                           w = gsw,
+                           h = butt_h/2+8}
+      obj.sections[810] = {x = obj.sections[800].x + obj.sections[800].w/2 + 55,
+                           y = obj.sections[800].y + gofs -8 + (butt_h/2+13)*1,
+                           w = gsw,
+                           h = butt_h/2+8}
+
+      obj.sections[811] = {x = obj.sections[800].x + obj.sections[800].w - 40,
+                           y = obj.sections[800].y + 25,
+                           w = 35,
+                           h = butt_h/2+8}
+      obj.sections[812] = {x = obj.sections[800].x + obj.sections[800].w - 40,
+                           y = obj.sections[800].y + 25+ butt_h,
+                           w = 35,
+                           h = butt_h/2+8}
+      obj.sections[813] = {x = obj.sections[800].x + obj.sections[800].w - 40,
+                           y = obj.sections[800].y + 25 + butt_h*2,
+                           w = 35,
+                           h = butt_h/2+8}
+                           
+      obj.sections[814] = {x = obj.sections[800].x + obj.sections[800].w/2 + 55,
+                           y = obj.sections[800].y + gofs -8 + (butt_h/2+13)*2 +6,
+                           w = gsw,
+                           h = butt_h/2+8}
+      obj.sections[815] = {x = obj.sections[800].x + obj.sections[800].w/2 - 60,
+                           y = obj.sections[800].y + gofs -butt_h*2,
+                           w = 120,
+                           h = butt_h}
+      obj.sections[816] = {x = obj.sections[800].x +5,
+                           y = obj.sections[800].y + 25,
+                           w = 35,
+                           h = butt_h/2+8}
+      obj.sections[817] = {x = obj.sections[800].x + obj.sections[800].w/2 + 55,
+                           y = obj.sections[800].y + gofs -8 + (butt_h/2+13)*3 +6,
+                           w = 35,
+                           h = butt_h/2+8}
+
+      obj.sections[827] = {x = obj.sections[800].x + obj.sections[800].w/2 + 105,
+                           y = obj.sections[800].y + gofs -8 + (butt_h/2+13)*4 +6,
+                           w = butt_h/2+4,
+                           h = butt_h/2+4}
+
+      obj.sections[818] = {x = obj.sections[800].x + 60,
+                           y = obj.sections[800].y + gofs + (butt_h/2+8) - 4,
+                           w = gsw,
+                           h = butt_h}
+
+      obj.sections[823] = {x = obj.sections[800].x + 15,
+                           y = obj.sections[800].y + obj.sections[800].h - butt_h*1.5 - 8,
+                           w = gsw,
+                           h = butt_h*1.5}
+      obj.sections[824] = {x = obj.sections[823].x + obj.sections[823].w + 10,
+                           y = obj.sections[823].y,
+                           w = gsw,
+                           h = butt_h*1.5}
+      obj.sections[819] = {x = obj.sections[824].x + obj.sections[824].w + 10,
+                           y = obj.sections[823].y,
+                           w = gsw,
+                           h = butt_h*1.5}
+
+      obj.sections[820] = {x = obj.sections[800].x + obj.sections[800].w - 38 - butt_h,
+                           y = obj.sections[800].y + 27,
+                           w = butt_h/2+4,
+                           h = butt_h/2+4}
+      obj.sections[821] = {x = obj.sections[800].x + obj.sections[800].w - 38 - butt_h,
+                           y = obj.sections[800].y + 27+ butt_h,
+                           w = butt_h/2+4,
+                           h = butt_h/2+4}
+      obj.sections[822] = {x = obj.sections[800].x + obj.sections[800].w - 38 - butt_h,
+                           y = obj.sections[800].y + 27 + butt_h*2,
+                           w = butt_h/2+4,
+                           h = butt_h/2+4}
+      obj.sections[825] = {x = obj.sections[800].x + obj.sections[800].w/2 + 55,
+                           y = obj.sections[800].y + gofs -8 + (butt_h/2+13)*5 +6,
+                           w = gsw,
+                           h = butt_h/2+8}
+      
+      obj.sections[826] = {x = obj.sections[800].x + obj.sections[800].w/2 + 79,
+                           y = obj.sections[800].y + gofs -butt_h*2-1,
+                           w = 60,
+                           h = butt_h}
+
+      obj.sections[828] = {x = obj.sections[800].x + obj.sections[800].w/2 - 140,
+                           y = obj.sections[800].y + gofs -butt_h*2-1,
+                           w = 30,
+                           h = butt_h}
+      obj.sections[829] = {x = obj.sections[800].x + obj.sections[800].w/2 - 108,
+                           y = obj.sections[800].y + gofs -butt_h*2-1,
+                           w = 30,
+                           h = butt_h}
+      obj.sections[830] = {x = obj.sections[800].x + obj.sections[800].w/2 - 140 +1,
+                           y = obj.sections[800].y + gofs -butt_h*2-3 - (butt_h/2+8),
+                           w = 60,
+                           h = butt_h/2+8}
+      
       local sf_h = 140
       --STRIP FOLDERS
       obj.sections[47] = {x = 0,
@@ -639,11 +1132,16 @@
                           w = obj.sections[45].w-60,
                           h = butt_h/2+8}                           
       --apply
-      obj.sections[51] = {x = 40,
+      obj.sections[51] = {x = 10,
                           y = 150,
-                          w = obj.sections[45].w-80,
+                          w = 80,
                           h = butt_h}                           
-
+      
+      obj.sections[99] = {x = obj.sections[51].x+obj.sections[51].w+2,
+                          y = 150,
+                          w = 58,
+                          h = butt_h}
+      
       obj.sections[52] = {x = obj.sections[45].w-40-butt_h/2+4,
                           y = 150+butt_h+10 + (butt_h/2+4 + 10),
                           w = butt_h/2+4,
@@ -702,7 +1200,7 @@
 
       obj.sections[66] = {x = 50,
                           y = 150+butt_h+10 + (butt_h/2+4 + 10) * 10,
-                          w = obj.sections[45].w-100,
+                          w = 40,
                           h = butt_h/2+4}
       obj.sections[67] = {x = 10,
                           y = 150+butt_h+7 + (butt_h/2+4 + 10) * 8,
@@ -735,7 +1233,7 @@
                           h = butt_h}                            
      
       --settings
-      local setw, seth = 300, 530                            
+      local setw, seth = 600, 530                            
       obj.sections[70] = {x = gfx1.main_w/2-setw/2,
                           y = gfx1.main_h/2-seth/2,
                           w = setw,
@@ -829,10 +1327,23 @@
                                  y = obj.sections[70].y+yoff + yoffm*16,
                                  w = bw,
                                  h = bh}
-      obj.sections[98] = {x = obj.sections[70].x+xofft,
+      obj.sections[98] = {x = obj.sections[70].x+xofft, 
                                  y = obj.sections[70].y+yoff+10 + yoffm*19,
                                  w = bw,
                                  h = bh}
+                                 
+      obj.sections[700] = {x = obj.sections[70].x+obj.sections[70].w/2+xofft,
+                          y = obj.sections[70].y+yoff + yoffm*0,
+                          w = sw,
+                          h = butt_h}
+      obj.sections[701] = {x = obj.sections[70].x+obj.sections[70].w/2+xofft,
+                          y = obj.sections[70].y+yoff + yoffm*1,
+                          w = sw,
+                          h = butt_h}
+      obj.sections[702] = {x = obj.sections[70].x+obj.sections[70].w/2+xofft+bw+10,
+                          y = obj.sections[70].y+yoff + yoffm*2,
+                          w = 40,
+                          h = bh}
             
                                 
       --Cycle
@@ -942,19 +1453,23 @@
                           h = butt_h}
 
       obj.sections[131] = {x = 70,
-                          y = butt_h + (butt_h/2+4 + 10) * 8,
+                          y = butt_h + (butt_h/2+4 + 10) * 8 -8,
                           w = obj.sections[45].w-80,
                           h = butt_h}
       obj.sections[132] = {x = 70,
-                          y = butt_h + (butt_h/2+4 + 10) * 9 -4,
+                          y = butt_h + (butt_h/2+4 + 10) * 9 -12,
                           w = obj.sections[45].w-80,
                           h = butt_h}
       obj.sections[133] = {x = 70,
-                          y = butt_h + (butt_h/2+4 + 10) * 10 -8,
+                          y = butt_h + (butt_h/2+4 + 10) * 10 -16,
                           w = obj.sections[45].w-80,
                           h = butt_h}
       obj.sections[134] = {x = obj.sections[45].w-40-butt_h/2+4,
-                          y = butt_h+6 + (butt_h/2+4 + 10) * 11,
+                          y = butt_h+6 + (butt_h/2+4 + 10) * 11 -16,
+                          w = butt_h/2+4,
+                          h = butt_h/2+4}                           
+      obj.sections[139] = {x = obj.sections[45].w-40-butt_h/2+4,
+                          y = butt_h+6 + (butt_h/2+4 + 10) * 11 + 4,
                           w = butt_h/2+4,
                           h = butt_h/2+4}                           
 
@@ -1641,6 +2156,13 @@
         gfx.setfont(1, gui.fontname, gui.fontsz_knob)
         local text_len = gfx.measurestr(text)
         gfx.x, gfx.y = xywh.x+(xywh.w-text_len)/2,xywh.y+(xywh.h-gfx.texth)/2 + 1
+        gfx.drawstr(text)
+  end
+  
+  function GUI_textXY(gui, x, y, text, col, fsz)
+        f_Get_SSV(col)  
+        gfx.a = 1 
+        gfx.x, gfx.y = x,y
         gfx.drawstr(text)
   end
   
@@ -2585,6 +3107,25 @@
     end
     
   end
+
+  function RepopulateGFX()
+  
+    local gfxtab = {}
+    for i = 0, #graphics_files do
+      gfxtab[graphics_files[i].fn] = true
+    end
+
+    local i = 0
+    local gf = reaper.EnumerateFiles(graphics_path,i)
+    while gf ~= nil do
+      if gfxtab[gf] ~= true then
+        graphics_files[#graphics_files+1] = {fn = gf, imageidx = nil}
+      end
+      i=i+1
+      gf = reaper.EnumerateFiles(graphics_path,i)
+    end
+    
+  end
   
   -------------------------------------------------------
   
@@ -2648,6 +3189,33 @@
     
   end
 
+  function RepopulateControls()
+  
+    local ctltab = {}
+    for i = 0, #ctl_files do
+      ctltab[ctl_files[i].fn] = true
+    end
+  
+    local i = 0 
+    local kf = reaper.EnumerateFiles(controls_path,i)
+    while kf ~= nil do
+      if string.sub(kf,string.len(kf)-3) == '.knb' then
+        local file
+        file=io.open(controls_path..kf,"r")
+        local content=file:read("*a")
+        file:close()
+
+        if ctltab[kf] ~= true then        
+          ctl_files[#ctl_files+1] = unpickle(content)
+        end
+      end
+      i=i+1
+      kf = reaper.EnumerateFiles(controls_path,i)      
+    end
+    update_gfx = true
+  
+  end
+  
   function LoadControl(iidx, fn)
 
     if string.sub(fn,string.len(fn)-3) == '.knb' then
@@ -3844,6 +4412,569 @@
       
   ------------------------------------------------------------
 
+  function GUI_DrawGaugeEdit()
+  
+    if ctl_select ~= nil then
+      GUI_DrawPanel(obj.sections[800],true,'GAUGE EDIT')
+      
+      local strip = tracks[track_select].strip
+      local ctl = strips[strip][page].controls[ctl_select[1].ctl]
+      if ctl then
+      
+        local iidx = ctl.ctl_info.imageidx
+        local ctlw, _ = ctl.wsc
+        local ctlh = ctl.hsc
+        local ctlx, ctly = obj.sections[800].x+obj.sections[800].w/2 - ctlw/2, obj.sections[800].y+120 - ctlh/2
+        --local bgx = ctl.xsc+ctl.wsc/2 - obj.sections[800].w/2
+        --local bgy = ctl.ysc+ctl.hsc/2 - 120 -butt_h
+                
+        GUI_DrawGauge2(gauge_select, ctlx+ctlw/2, ctly+ctlh/2, ctl, true)
+        
+        local v2 = nz(frameScale(ctl.framemode, gauge_select.val),0)
+        local frame = F_limit(round(ctl.ctl_info.frames*v2),0,ctl.ctl_info.frames-1)
+        
+        --local frame = F_limit(math.floor(gauge_select.val * ctl.ctl_info.frames),0,ctl.ctl_info.frames-1)
+        gfx.blit(iidx,ctl.scale,0,0,frame*ctl.ctl_info.cellh,ctl.w,ctl.ctl_info.cellh,ctlx,ctly)
+        
+        f_Get_SSV(gui.color.white)
+        gfx.rect(obj.sections[815].x,obj.sections[815].y+1,obj.sections[815].w,obj.sections[815].h,0)
+        
+        GUI_textC(gui,obj.sections[815],gauge_select.dval,gui.color.white,0)
+        
+        GUI_DrawButton(gui, gaugetype_table[gauge_select.type], obj.sections[801], gui.color.white, gui.color.black, true, 'TYPE')
+        if gauge_select.type == 1 then
+          GUI_DrawSliderH(gui, 'RADIUS', obj.sections[802], gui.color.black, gui.color.white, F_limit(((gauge_select.radius-10)/110),0,1))
+          GUI_DrawSliderH(gui, 'ROTATE', obj.sections[804], gui.color.black, gui.color.white, F_limit(((gauge_select.rotation)),0,1))
+        end
+        GUI_DrawSliderH(gui, 'LENGTH', obj.sections[803], gui.color.black, gui.color.white, F_limit(((gauge_select.arclen)),0,1))
+        
+        --local xywh = {x = obj.sections[805].x, y = obj.sections[805].y - butt_h, w = obj.sections[805].w*2, h = butt_h}
+        --GUI_textC(gui,xywh,'AUTO',gui.color.white,-2)
+        
+        GUI_DrawButton(gui, gauge_select.ticks, obj.sections[805], gui.color.white, gui.color.black, true, 'TICKS (AUTO)')
+        GUI_DrawSliderH(gui, 'TICK SIZE', obj.sections[807], gui.color.black, gui.color.white, F_limit(((gauge_select.tick_size-2)/10),0,1))
+        GUI_DrawSliderH(gui, 'OFFSET', obj.sections[808], gui.color.black, gui.color.white, F_limit(((gauge_select.tick_offs)/12),0,1))
+        GUI_DrawSliderH(gui, 'X OFFSET', obj.sections[809], gui.color.black, gui.color.white, F_limit(((gauge_select.x_offs+30)/60),0,1))
+        GUI_DrawSliderH(gui, 'Y OFFSET', obj.sections[810], gui.color.black, gui.color.white, F_limit(((gauge_select.y_offs+30)/60),0,1))
+        GUI_DrawSliderH(gui, 'FONT SIZE', obj.sections[814], gui.color.black, gui.color.white, F_limit(((gauge_select.fontsz+8)/8),0,1))
+        GUI_DrawSliderH(gui, 'VAL FREQ', obj.sections[825], gui.color.black, gui.color.white, F_limit(((gauge_select.val_freq-1)/23),0,1))
+        
+        local mdptxt = gauge_select.val_dp
+        if gauge_select.val_dp < 0 then
+          mdptxt = 'OFF'
+        end
+        GUI_DrawButton(gui, mdptxt, obj.sections[817], gui.color.white, gui.color.black, true, 'MAX DP')
+        GUI_DrawTick(gui, 'NUMERIC ONLY', obj.sections[827], gui.color.white, nz(gauge_select.numonly, false))
+        
+        if ctl.ctltype == 4 then
+          GUI_DrawButton(gui, 'COPY CYCLE DATA', obj.sections[818], gui.color.white, gui.color.black, true)
+        end
+        GUI_DrawButton(gui, 'DEL SEL', obj.sections[826], gui.color.white, gui.color.black, true)
+        GUI_DrawButton(gui, '<<', obj.sections[828], gui.color.white, gui.color.black, true)
+        GUI_DrawButton(gui, '>>', obj.sections[829], gui.color.white, gui.color.black, true)
+        if gauge_ticksel and gauge_select.vals and gauge_select.vals[gauge_ticksel] then
+          GUI_DrawSliderH(gui, '', obj.sections[830], gui.color.black, gui.color.white, F_limit(((nz(gauge_select.vals[gauge_ticksel].nudge,0)+10)/20),0,1))
+        end
+        
+        local txt = 'ARC'
+        if gauge_select.type > 1 then
+          txt = 'LINE'        
+        end
+        GUI_DrawButton(gui, txt, obj.sections[811], gui.color.white, gui.color.black, gauge_select.show_arc)
+        
+        GUI_DrawButton(gui, 'TICKS', obj.sections[812], gui.color.white, gui.color.black, gauge_select.show_tick)
+        GUI_DrawButton(gui, 'VALS', obj.sections[813], gui.color.white, gui.color.black, gauge_select.show_val)
+        GUI_DrawColorBox(gui, '', obj.sections[820], gui.color.white, gauge_select.col_arc)
+        GUI_DrawColorBox(gui, '', obj.sections[821], gui.color.white, gauge_select.col_tick)
+        GUI_DrawColorBox(gui, '', obj.sections[822], gui.color.white, gauge_select.col_val)
+        GUI_DrawSliderH(gui, '', obj.sections[816], gui.color.black, gui.color.white, F_limit(auto_delay/10,0,1))
+        GUI_textC(gui,obj.sections[816],auto_delay,gui.color.red,-2)
+        xywh = {x = obj.sections[816].x+obj.sections[816].w+5,
+                y = obj.sections[816].y,
+                w = 30, h = obj.sections[816].h}
+        GUI_textC(gui,xywh,'SENS',gui.color.white,-5)
+
+        GUI_DrawButton(gui, 'REMOVE', obj.sections[823], gui.color.white, gui.color.black, true)
+        GUI_DrawButton(gui, 'RESET', obj.sections[824], gui.color.white, gui.color.black, true)
+        GUI_DrawButton(gui, 'SAVE', obj.sections[819], gui.color.white, gui.color.black, true)
+        
+      end
+    
+    else
+      show_gaugeedit = false
+    end
+  
+  end
+
+  function GUI_DrawGauge2(gtab, cx, cy, ctl, edit)
+  
+    if gtab then
+    
+      local strip = tracks[track_select].strip
+
+      cx = cx + gtab.x_offs
+      cy = cy + gtab.y_offs
+      
+      if gtab.type == 1 then
+        if gtab.show_arc == true then
+          f_Get_SSV(gtab.col_arc)
+          gfx.arc(cx,cy,gtab.radius,-pi*gtab.arclen +(gtab.rotation*(2*pi)),pi*gtab.arclen +(gtab.rotation*(2*pi)),1)
+        end
+        
+        local len = pi*(gtab.arclen*2)
+        local steps = gtab.ticks
+        local ticksize = gtab.tick_size
+        local toffx = 4
+        local toffy = 1
+        local fs = gtab.fontsz
+        r=gtab.radius+gtab.tick_offs
+        
+        if gtab.show_tick == true or gtab.show_val == true then
+          gfx.setfont(1, gui.fontname, gui.fontsz_knob+fs)
+          
+          local vals = gtab.vals
+          if vals and #vals > 0 then
+            for i = 0, #vals-1 do
+
+              local nudge = 0
+              if gtab.vals[i+1].nudge then
+                nudge = gtab.vals[i+1].nudge * 0.002
+              end
+
+              local theta
+              if gtab.mapptof and gtab.spread then
+                theta = -pi*gtab.arclen -(pi*0.5) +(gtab.rotation*(2*pi)) + (i/(#vals-1) + nudge) * len
+              else
+                theta = frameScale(ctl.framemode, vals[i+1].val+nudge) * (2*pi*gtab.arclen) - pi*gtab.arclen -(pi*0.5) +(gtab.rotation*(2*pi))
+              end
+              
+              local showv
+              if (i) % gtab.val_freq == 0 then
+                showv = true
+              end
+  
+              local x1, y1 = math.floor(cx + r * math.cos(theta)), math.floor(cy + r * math.sin(theta))
+              local x2, y2
+              if showv then
+                x2, y2 = math.floor(cx + (r+ticksize) * math.cos(theta)), math.floor(cy + (r+ticksize) * math.sin(theta))
+              else
+                x2, y2 = math.floor(cx + (r+ticksize/3) * math.cos(theta)), math.floor(cy + (r+ticksize/3) * math.sin(theta))            
+              end
+              
+              if gtab.show_tick == true then
+                if edit and gauge_ticksel and gauge_ticksel == i+1 then
+                  f_Get_SSV('255 0 0')
+                else
+                  f_Get_SSV(gtab.col_tick)
+                end
+                gfx.line(x1,y1,x2,y2)
+              end
+              if gtab.show_val == true and gtab.vals[i+1] then
+                if showv then
+                  local dv = gtab.vals[i+1].dval
+                  if gtab.val_dp > -1 or gtab.vals[i+1].dover then
+                    dv = gtab.vals[i+1].dover              
+                  end
+                  local text_len, th = gfx.measurestr(dv)
+                  local chkx = math.floor(x2)-math.floor(cx)
+                  local chky = math.floor(y2)-math.floor(cy)
+                  if chkx < -10 then
+                    tx = x2-text_len - toffx
+                  elseif chkx > 10 then
+                    tx = x2 + toffx
+                  else
+                    tx = x2-text_len/2
+                  end
+                  if chky < -10 then
+                    ty = y2-th -toffy         
+                  elseif chky > 10 then
+                    ty = y2 +toffy         
+                  else
+                    ty = y2-th/2              
+                  end
+                  local col = gtab.col_val
+                  if edit and gauge_ticksel and gauge_ticksel == i+1 then
+                    col = '255 0 0'
+                  end
+                  GUI_textXY(gui,tx,ty,dv,col,0)
+                end
+              end
+            end  
+          end
+
+        end
+        
+      elseif gtab.type == 2 then
+        
+        local lx = cx+gtab.x_offs
+        local ly1 = cy+gtab.y_offs-(gtab.arclen/2 * ctl.hsc)
+        local ly2 = cy+gtab.y_offs+(gtab.arclen/2 * ctl.hsc)
+        if gtab.show_arc == true then
+          f_Get_SSV(gtab.col_arc)
+          gfx.line(lx,ly1,lx,ly2,1)
+        end
+        
+        local len = gtab.arclen*ctl.hsc
+        local steps = gtab.ticks
+        local ticksize = gtab.tick_size
+        local toffx = 4
+        local toffy = 1
+        local fs = gtab.fontsz
+        
+        if gtab.show_tick == true or gtab.show_val == true then
+          gfx.setfont(1, gui.fontname, gui.fontsz_knob+fs)
+          
+          local vals = gtab.vals
+          if vals and #vals > 0 then
+            for i = 0, #vals-1 do
+
+              local nudge = 0
+              if gtab.vals[i+1].nudge then
+                nudge = gtab.vals[i+1].nudge * 0.002
+              end
+
+              local theta
+              if gtab.mapptof and gtab.spread then
+                theta = (i/(#vals-1) +nudge) * len
+              else
+                theta = (frameScale(ctl.framemode, vals[i+1].val)+nudge) * len
+              end
+              
+              local showv
+              if (i) % gtab.val_freq == 0 then
+                showv = true
+              end
+              
+              local x1, y1
+              local x2
+              if lx <= cx then
+                x1, y1 = lx-gtab.tick_offs, ly2-theta              
+                if showv then
+                  x2 = lx-gtab.tick_offs-gtab.tick_size
+                else
+                  x2 = lx-gtab.tick_offs-(gtab.tick_size/3)
+                end
+              else
+                x1, y1 = lx+gtab.tick_offs, ly2-theta              
+                if showv then
+                  x2 = lx+gtab.tick_offs+gtab.tick_size
+                else
+                  x2 = lx+gtab.tick_offs+(gtab.tick_size/3)
+                end              
+              end
+              
+              if gtab.show_tick == true then
+                if edit and gauge_ticksel and gauge_ticksel == i+1 then
+                  f_Get_SSV('255 0 0')
+                else
+                  f_Get_SSV(gtab.col_tick)
+                end
+                gfx.line(x1,y1,x2,y1)
+              end
+            
+              if gtab.show_val == true and gtab.vals[i+1] then
+                if showv then
+                  local dv = gtab.vals[i+1].dval
+                  if gtab.val_dp > -1 then
+                    dv = gtab.vals[i+1].dover              
+                  end
+                  local text_len, th = gfx.measurestr(dv)
+                  if lx <= cx then
+                    tx = x2-text_len - toffx
+                  else
+                    tx = x2 + toffx
+                  end
+                  ty = y1-th/2              
+                  local col = gtab.col_val
+                  if edit and gauge_ticksel and gauge_ticksel == i+1 then
+                    col = '255 0 0'
+                  end
+                  GUI_textXY(gui,tx,ty,dv,col,0)
+                end
+              end
+            end
+          end
+        end
+      elseif gtab.type == 3 then
+        
+        local ly = cy+gtab.y_offs
+        local lx1 = cx+gtab.x_offs-(gtab.arclen/2 * ctl.wsc)
+        local lx2 = cx+gtab.x_offs+(gtab.arclen/2 * ctl.wsc)
+        if gtab.show_arc == true then
+          f_Get_SSV(gtab.col_arc)
+          gfx.line(lx1,ly,lx2,ly,1)
+        end
+        
+        local len = gtab.arclen*ctl.wsc
+        local steps = gtab.ticks
+        local ticksize = gtab.tick_size
+        local toffx = 1
+        local toffy = 4
+        local fs = gtab.fontsz
+        
+        if gtab.show_tick == true or gtab.show_val == true then
+          gfx.setfont(1, gui.fontname, gui.fontsz_knob+fs)
+          
+          local vals = gtab.vals
+          if vals and #vals > 0 then
+            for i = 0, #vals-1 do
+
+              local nudge = 0
+              if gtab.vals[i+1].nudge then
+                nudge = gtab.vals[i+1].nudge * 0.002
+              end
+
+              local theta
+              if gtab.mapptof and gtab.spread then
+                theta = (i/(#vals-1) +nudge) * len
+              else
+                theta = (frameScale(ctl.framemode, vals[i+1].val)+nudge) * len
+              end
+              
+              local showv
+              if (i) % gtab.val_freq == 0 then
+                showv = true
+              end
+              
+              local x1, y1
+              local y2
+              if ly <= cy then
+                y1, x1 = ly-gtab.tick_offs, lx1+theta              
+                if showv then
+                  y2 = ly-gtab.tick_offs-gtab.tick_size
+                else
+                  y2 = ly-gtab.tick_offs-(gtab.tick_size/3)
+                end
+              else
+                y1, x1 = ly+gtab.tick_offs, lx1+theta              
+                if showv then
+                  y2 = ly+gtab.tick_offs+gtab.tick_size
+                else
+                  y2 = ly+gtab.tick_offs+(gtab.tick_size/3)
+                end              
+              end
+              
+              if gtab.show_tick == true then
+                if edit and gauge_ticksel and gauge_ticksel == i+1 then
+                  f_Get_SSV('255 0 0')
+                else
+                  f_Get_SSV(gtab.col_tick)
+                end
+                gfx.line(x1,y1,x1,y2)
+              end
+            
+              if gtab.show_val == true and gtab.vals[i+1] then
+                if showv then
+                  local dv = gtab.vals[i+1].dval
+                  if gtab.val_dp > -1 then
+                    dv = gtab.vals[i+1].dover              
+                  end
+                  local text_len, th = gfx.measurestr(dv)
+                  if ly <= cy then
+                    ty = y2-th - toffy
+                  else
+                    ty = y2 + toffy
+                  end
+                  tx = x1-text_len/2              
+                  local col = gtab.col_val
+                  if edit and gauge_ticksel and gauge_ticksel == i+1 then
+                    col = '255 0 0'
+                  end
+                  GUI_textXY(gui,tx,ty,dv,col,0)
+                end
+              end
+            end
+          end
+        end
+      end    
+    end
+  end
+
+  function Gauge_CalcTickVals()
+  
+    local gtab = gauge_select
+    local steps = gtab.ticks
+    local c = ctl_select[1].ctl
+    
+    local strip = tracks[track_select].strip
+    local ctl = strips[strip][page].controls[c]
+    if ctl then
+  
+      if steps > 0 then
+        --if not gtab.vals then gtab.vals = {} end
+        for i = 0, steps-1 do
+        
+          if steps-1 <= 0 then
+            val = 0
+          else
+            val = i/(steps-1)
+          end
+          local dval = nz(GetParamDisp_Val(c, val, true),val)
+        
+          gtab.vals[i+1] = {val = val, dval = dval, dover = nil}
+          local nonly
+          if gtab.numonly then
+            nonly = ''
+          end
+          if gtab.val_dp > -1 then
+            gtab.vals[i+1].dover = roundX(dval, gtab.val_dp, nonly)
+          end
+        end
+      else
+        gtab.vals = {}
+      end      
+    end
+    
+  end
+
+  function Gauge_SortVals()
+  
+    local vals = table_slowsort_val(gauge_select.vals)
+    if vals then
+      gauge_select.vals = vals
+    end
+    
+  end
+
+  function Gauge_RecalcTickVals()
+  
+    local gtab = gauge_select
+    local c = ctl_select[1].ctl
+    
+    local strip = tracks[track_select].strip
+    local ctl = strips[strip][page].controls[c]
+    if ctl then
+  
+      if gtab.vals and #gtab.vals > 0 then
+
+        for i = 1, #gtab.vals do
+          
+          local dval = gtab.vals[i].dval --GetParamDisp_Val(c, gtab.vals[i].val, true)
+          if dval then
+            local nonly
+            if gtab.numonly then
+              nonly = ''
+            end        
+            gtab.vals[i].dover = roundX(dval, gtab.val_dp, nonly)
+          end
+        end
+        
+        --Gauge_SortVals()
+      end
+    end
+    
+  end
+  
+  function Gauge_CopySelect(gt)  
+    
+    --local gt = gauge_select  
+    local gtab
+    if gt then              
+      gtab = {type = gt.type,
+              x_offs = gt.x_offs,
+              y_offs = gt.y_offs,
+              radius = gt.radius,
+              arclen = gt.arclen,
+              rotation = gt.rotation,
+              ticks = gt.ticks,
+              tick_size = gt.tick_size,
+              tick_offs = gt.tick_offs,
+              val_freq = gt.val_freq,
+              col_tick = gt.col_tick,
+              col_arc = gt.col_arc,
+              col_val = gt.col_val,
+              show_arc = gt.show_arc,
+              show_tick = gt.show_tick,
+              show_val = gt.show_val,
+              vals = {},
+              val_dp = gt.val_dp,
+              fontsz = gt.fontsz,
+              spread = gt.spread,
+              mapptof = gt.mapptof,
+              numonly = gt.numonly,
+              val = 0}
+                  
+      if gt.vals and #gt.vals > 0 then
+    
+        for i = 1, #gt.vals do
+        
+          gtab.vals[i] = {val = gt.vals[i].val,
+                          dval = gt.vals[i].dval,
+                          dover = gt.vals[i].dover,
+                          nudge = gt.vals[i].nudge}
+        
+        end
+      end
+    end
+    
+    return gtab
+    
+  end
+  
+  function Gauge_CopyCycleData()
+  
+    local gtab = gauge_select
+    local c = ctl_select[1].ctl
+    
+    local strip = tracks[track_select].strip
+    local ctl = strips[strip][page].controls[c]
+    if ctl then
+    
+      if ctl.ctltype == 4 then
+        local cycdata = ctl.cycledata
+        if cycdata and cycdata.statecnt > 0 then
+
+          gtab.spread = cycdata.spread
+          gtab.mapptof = cycdata.mapptof
+          
+          gtab.vals = {}      
+          for i = 1, cycdata.statecnt do
+          
+            --DBG(tostring(cycdata[i].dval)..'  '..tostring(cycdata[i].dv)) 
+            local gcnt = #gtab.vals+1
+            gtab.vals[gcnt] = {val = cycdata[i].val,
+                               dval = cycdata[i].dv,
+                               dover = cycdata[i].dv}
+            local nonly
+            if gtab.numonly then
+              nonly = ''
+            end
+            if gtab.val_dp > -1 then
+              gtab.vals[gcnt].dover = roundX(gtab.vals[gcnt].dval,gtab.val_dp,nonly)
+            end
+          end
+        end
+      end
+  
+    end
+    
+  end
+
+  function GUI_DrawGauge()
+  
+    f_Get_SSV(gui.color.white)
+    local strip = tracks[track_select].strip
+    
+    --local x,y = 500,500
+    if strips and strips[strip] and strips[strip][page].controls[1] then
+      for z = 1, #strips[strip][page].controls do
+        local ctl = strips[strip][page].controls[z]
+        if ctl.gauge then
+          local hidden = Switcher_CtlsHidden(ctl.switcher, ctl.grpid)
+          if ctl.hidden ~= true and hidden ~= true and ctl.hide ~= true then
+            
+            local x = math.floor(ctl.xsc + ctl.wsc/2)
+            local y = math.floor(ctl.ysc + ctl.hsc/2)
+            GUI_DrawGauge2(ctl.gauge,x,y,ctl)
+            
+          end
+        end
+      end
+    end
+    
+  
+  end
+
   function GUI_DrawControlBackG(obj, gui)
 
     gfx.dest = 1004
@@ -3973,6 +5104,9 @@
     end
     local ba = math.max(backalpha - backalpha2,0)
     gfx.muladdrect(0,0,surface_size.w,surface_size.h,ba,ba,ba)
+
+    GUI_DrawGauge()
+
     gfx.dest = 1    
   end
 
@@ -4233,7 +5367,7 @@
 
       GUI_DrawSliderH(gui, 'F SIZE', obj.sections[58], gui.color.black, gui.color.white, (textsize_select+2)/35)
       GUI_DrawSliderH(gui, 'DEF VAL', obj.sections[57], gui.color.black, gui.color.white, F_limit(defval_select,0,1))
-      GUI_DrawButton(gui, 'SET', obj.sections[51], gui.color.white, gui.color.black, true)
+      GUI_DrawButton(gui, 'SET IMAGE', obj.sections[51], gui.color.white, gui.color.black, true)
       GUI_DrawButton(gui, 'EDIT NAME', obj.sections[59], gui.color.white, gui.color.black, true)
       local dir
       if toffY then dir = 'Y' else dir = 'X' end
@@ -4252,6 +5386,12 @@
         mdptxt = 'OFF'
       end
       GUI_DrawButton(gui, mdptxt, obj.sections[66], gui.color.white, gui.color.black, true, 'MAX DP')
+      
+      local v = false
+      if gauge_select then
+        v = true
+      end
+      GUI_DrawButton(gui, 'GAUGE', obj.sections[99], gui.color.white, gui.color.black, v)
 
     elseif ctl_page == 1 then
 
@@ -4271,6 +5411,7 @@
       GUI_DrawButton(gui, scalemode_dtable[scalemode_select], obj.sections[132], gui.color.white, gui.color.black, true, 'SCALE MOD')
       GUI_DrawButton(gui, framemode_table[framemode_select], obj.sections[133], gui.color.white, gui.color.black, true, 'FRAME MOD')
       GUI_DrawTick(gui, 'HORIZ SLIDER', obj.sections[134], gui.color.white, horiz_select)
+      GUI_DrawTick(gui, 'PAGE SNAP EXCLUDE', obj.sections[139], gui.color.white, noss_select)
 
       xywh = {x = 0,
               y = obj.sections[135].y-butt_h-5,
@@ -4484,7 +5625,11 @@
           res = string.match(tostring(res),'%d+')
         end
         if suffix then
-          return res..suffix
+          local pfx = ''
+          if string.sub(num,s-2,s-1) == '-' and tonumber(res) ~= 0 then
+            pfx = '-'
+          end
+          return pfx..res..suffix
         else
           return string.sub(num,1,s-1) .. res .. string.sub(num,e+1)
         end
@@ -4866,12 +6011,14 @@ end
                       Disp_Name = ctlnmov
                     end
                     _, Disp_ParamV = reaper.TrackFX_GetFormattedParamValue(track, fxnum, param, "")
+                   --DBG(Disp_Name..'  '..Disp_ParamV..'  '..fxnum..' '..param)
                     if dvoff and dvoff ~= 0 then
                       Disp_ParamV = dvaloffset(Disp_ParamV, ctl.dvaloffset)  
                     end
                     if maxdp > -1 then
                       Disp_ParamV = roundX(Disp_ParamV, maxdp)                  
                     end
+                    --DBG(Disp_Name..'  '..Disp_ParamV..'  '..fxnum..' '..param)
                   end
                 elseif ctlcat == ctlcats.trackparam or ctlcat == ctlcats.tracksend then
                   if nz(ctlnmov,'') == '' then
@@ -5319,13 +6466,20 @@ end
     local pw = objPanel.w
     local ph = objPanel.h
     if hh > ph then ht = ph - hb end
-    gfx.blit(skin.panela_top, 1, 0, 0, 0, wt, ht, x, y, pw) 
+    local edge = 10
+    gfx.blit(skin.panela_top, 1, 0, 0, 0, edge, ht, x, y) 
+    gfx.blit(skin.panela_top, 1, 0, wt-edge, 0, edge, ht, x+(pw-edge), y) 
+    gfx.blit(skin.panela_top, 1, 0, 10, 0, wt-(2*edge), ht, x+edge, y, pw-(2*edge)) 
     local th = ht
-    gfx.blit(skin.panela_bot, 1, 0, 0, 0, wb, hb, x, y+ph-hb, pw) 
+    gfx.blit(skin.panela_bot, 1, 0, 0, 0, edge, hb, x, y+ph-hb) 
+    gfx.blit(skin.panela_bot, 1, 0, wt-edge, 0, edge, hb, x+(pw-edge), y+ph-hb) 
+    gfx.blit(skin.panela_bot, 1, 0, 10, 0, wb-(2*edge), hb, x+edge, y+ph-hb, pw-(2*edge)) 
     local sh = ph - hh
     if sh > 0 then
       local w, h = gfx.getimgdim(skin.panela_mid)
-      gfx.blit(skin.panela_mid, 1, 0, 0, 0, w, h, x, y+th, pw, sh) 
+      gfx.blit(skin.panela_mid, 1, 0, 0, 0, edge, h, x, y+th, edge, sh) 
+      gfx.blit(skin.panela_mid, 1, 0, w-edge, 0, edge, h, x+(pw-edge), y+th, edge, sh) 
+      gfx.blit(skin.panela_mid, 1, 0, 10, 0, w-(2*edge), h, x+edge, y+th, pw-(2*edge), sh) 
     end
     if tit then
       xywh = {x = x,
@@ -5949,6 +7103,69 @@ end
       0,0, gfx1.main_w,gfx1.main_h, 0,0)
     gfx.update()
     
+  end
+
+  function GUI_DrawStateWin(obj, gui, txt, reset)
+    
+    gfx.mode = gmode
+    if gui == nil then
+      gui = GetGUI_vars()
+    end
+
+    local lineh = 20
+    if reset or statewin_txtpos == nil then
+      statewin_txtpos = -1
+    end
+    statewin_txtpos = statewin_txtpos + 1
+    
+    local msgwinw, msgwinh = obj.sections[10].w - 100 - obj.sections[10].x, obj.sections[10].h-100
+    xywh1 = {x = gfx1.main_w/2-msgwinw/2,
+              y = gfx1.main_h/2-msgwinh/2,
+              w = msgwinw,
+              h = msgwinh}
+    xywh2 = {x = gfx1.main_w/2-msgwinw/2,
+              y = gfx1.main_h/2-msgwinh/2+lineh,
+              w = msgwinw,
+              h = msgwinh-lineh-1}
+
+    xywh3 = {x = gfx1.main_w/2-msgwinw/2+5,
+              y = gfx1.main_h/2-msgwinh/2 +math.min(statewin_txtpos*lineh,msgwinh-lineh),
+              w = msgwinw-10,
+              h = lineh}
+
+    gfx.dest = 1
+    if reset then
+      f_Get_SSV('0 0 0')
+      gfx.a = 1 
+      gfx.rect(xywh1.x,
+               xywh1.y, 
+               xywh1.w,
+               xywh1.h, 1)
+    end
+    if statewin_txtpos*lineh > msgwinh-lineh then
+      gfx.blit(1,1,0,xywh2.x,xywh2.y,xywh2.w,xywh2.h,xywh1.x,xywh1.y)
+      f_Get_SSV('0 0 0')
+      gfx.a = 1 
+      gfx.rect(xywh3.x,
+               xywh3.y, 
+               xywh3.w,
+               xywh3.h, 1)      
+    end
+    GUI_textsm_LJ(gui,xywh3,nz(txt,''),'128 128 128',-2,msgwinw-10)         
+
+    f_Get_SSV(gui.color.white)
+    gfx.rect(xywh1.x,
+             xywh1.y, 
+             xywh1.w,
+             xywh1.h, 0)
+
+    gfx.dest = -1
+    gfx.a = 1
+    gfx.blit(1, 1, 0, 
+      0,0, gfx1.main_w,gfx1.main_h,
+      0,0, gfx1.main_w,gfx1.main_h, 0,0)
+    gfx.update()
+
   end
 
   function calc_eqgraph_getmin(tr, fx, param, freq)
@@ -7478,16 +8695,20 @@ end
               f_Get_SSV(gui.color.blue)
             end
             gfx.a = 0.6
-            if macro[m+macroedit_poffs].bi == true then
-              x1 = F_limit(p*obj.sections[403].w - p2*obj.sections[403].w,0,obj.sections[403].w)
-              x2 = F_limit(p*obj.sections[403].w + p2*obj.sections[403].w,0,obj.sections[403].w)
-              gfx.line(obj.sections[403].x + x1,py,obj.sections[403].x + x2,py)          
-            else
-              gfx.line(obj.sections[403].x + p*obj.sections[403].w,py,obj.sections[403].x + p2*obj.sections[403].w,py)
+            if macro[m+macroedit_poffs].relative == false then
+              if macro[m+macroedit_poffs].bi == true then
+                x1 = F_limit(p*obj.sections[403].w - p2*obj.sections[403].w,0,obj.sections[403].w)
+                x2 = F_limit(p*obj.sections[403].w + p2*obj.sections[403].w,0,obj.sections[403].w)
+                gfx.line(obj.sections[403].x + x1,py,obj.sections[403].x + x2,py)          
+              else
+                gfx.line(obj.sections[403].x + p*obj.sections[403].w,py,obj.sections[403].x + p2*obj.sections[403].w,py)
+              end
             end
-  
+              
             gfx.a = 1
-            GUI_DrawBar(gui,'',xywh,skin.slidbutt,true,gui.color.black,gui.color.black,-2)
+            if macro[m+macroedit_poffs].relative ~= true then
+              GUI_DrawBar(gui,'',xywh,skin.slidbutt,true,gui.color.black,gui.color.black,-2)
+            end
             
             if macro[m+macroedit_poffs].mute == nil or macro[m+macroedit_poffs].mute == false then
               f_Get_SSV(gui.color.yellow)
@@ -7511,7 +8732,7 @@ end
               f_Get_SSV(gui.color.blue)
             end
             gfx.a = 0.6
-            if macro[m+macroedit_poffs].bi == true then
+            if macro[m+macroedit_poffs].bi == true or macro[m+macroedit_poffs].relative == true then
               gfx.line(obj.sections[404].x,py,obj.sections[404].x + p2*obj.sections[404].w,py)
             else
               gfx.line(obj.sections[404].x + p*obj.sections[404].w,py,obj.sections[404].x + p2*obj.sections[404].w,py)
@@ -7700,6 +8921,22 @@ end
             end
           end
         end
+
+        --[[if trackfxparam_select then
+          local strip = tracks[track_select].strip
+          local ctl = strips[strip][page].controls[trackfxparam_select]
+          if ctl then
+            local x = ctl.xsc
+            local y = ctl.ysc
+            local w = ctl.wsc
+            local h = ctl.hsc
+            x=x-surface_offset.x+obj.sections[10].x
+            y=y-surface_offset.y+obj.sections[10].y
+            f_Get_SSV(gui.color.green)
+            gfx.a = 0.5
+            gfx.roundrect(x, y, w, h, 5, 1)
+          end
+        end]]
         
         --[[gfx.a = 1
         f_Get_SSV(gui.color.black)
@@ -8036,6 +9273,10 @@ end
         
           if show_ctlbrowser then
             GUI_DrawCtlBrowser(obj, gui)          
+          end
+          
+          if show_gaugeedit == true then
+            GUI_DrawGaugeEdit(obj, gu)
           end
           
         elseif submode == 1 then
@@ -9012,6 +10253,41 @@ end
     GUI_DrawTick(gui, 'Create backup when manually saving', obj.sections[98], gui.color.white, settings_createbackuponmanualsave)
     
     GUI_DrawButton(gui, nz(save_subfolder,''), obj.sections[95], gui.color.white, gui.color.white, false, 'Save subfolder', true)  
+
+    --column2
+    
+    local abs, rel = GetMOFaders()
+    if abs then
+      GUI_DrawButton(gui, 'FADER '..abs, obj.sections[700], gui.color.white, gui.color.black, true, 'Global mouseover fader (absolute)')
+    else
+      GUI_DrawButton(gui, 'NO FADER', obj.sections[700], gui.color.white, gui.color.black, false, 'Global mouseover fader (absolute)')    
+    end
+    --[[if rel then
+      GUI_DrawButton(gui, 'FADER '..rel, obj.sections[701], gui.color.white, gui.color.black, true, 'Global mouseover fader (relative)')
+    else
+      GUI_DrawButton(gui, 'NO FADER', obj.sections[701], gui.color.white, gui.color.black, false, 'Global mouseover fader (relative)')    
+    end]]
+
+    GUI_DrawColorBox(gui, 'Main background colour', obj.sections[702], gui.color.white, backcol)
+    
+  end
+  
+  function GetMOFaders()
+    local abs, rel
+    if LBX_CTL_TRACK then    
+
+      for i = 1, 32*LBX_CTL_TRACK_INF.count do
+        if faders[i].targettype == 3 then
+          if faders[i].mode == 0 then
+            abs = i
+          else
+            rel = i        
+          end
+        end
+      end
+
+    end
+    return abs, rel  
   end
   
   function UpdateLEdges()
@@ -9277,6 +10553,33 @@ end
   end
       
   ------------------------------------------------------------
+
+  function GetParamDisp_Val(c, val, sleep)
+
+    local strip = tracks[track_select].strip
+    local ctl = strips[strip][page].controls[c]
+    local oval = ctl.val
+    
+    local tracknum = strips[strip].track.tracknum
+    if ctl.tracknum ~= nil then
+      tracknum = ctl.tracknum
+    end
+    local cc = ctl.ctlcat
+    local fxnum = ctl.fxnum
+    local param = ctl.param
+    local dvoff = ctl.dvaloffset
+    local sldiv = 400
+    
+    SetParam3(strip,page,c,ctl,val)
+    if sleep then
+      os.sleep((auto_delay/sldiv)*10)
+    end
+    local dval = GetParamDisp(cc, tracknum, fxnum, param, dvoff, c)
+    --SetParam3(strip,page,c,ctl,oval)
+
+    return dval    
+    
+  end
 
   function GetParamDisp_Ctl(c)
     local t = strips[tracks[track_select].strip].track.tracknum
@@ -9792,6 +11095,7 @@ end
   
     if strips and strips[strip] and ctl then
       local val = ctl.val
+      ctl.mval = val
       local track 
       if ctl.tracknum == nil then
         track = GetTrack(strips[strip].track.tracknum)
@@ -9834,6 +11138,7 @@ end
         end        
       elseif cc == ctlcats.fxoffline then
         ToggleFXOffline(strip, page, c, strips[strip].track.tracknum)
+        
       elseif cc == ctlcats.macro then
         SetMacro(strip, page, c)
       end
@@ -10001,21 +11306,22 @@ end
 
   function SetParam3_Denorm2_Safe2(track, v, strip, page)
   
-    if strips and strips[strip] and strips[strip][page].controls[trackfxparam_select] then
-      local cc = strips[strip][page].controls[trackfxparam_select].ctlcat
+    local ctl = strips[strip][page].controls[trackfxparam_select]
+    if strips and strips[strip] and ctl then
+      local cc = ctl.ctlcat
       if cc == ctlcats.fxparam then
-        local fxnum = strips[strip][page].controls[trackfxparam_select].fxnum
-        local param = strips[strip][page].controls[trackfxparam_select].param
+        local fxnum = ctl.fxnum
+        local param = ctl.param
         reaper.TrackFX_SetParam(track, nz(fxnum,-1), param, v)
 
       elseif cc == ctlcats.trackparam then
-        local param = strips[strip][page].controls[trackfxparam_select].param
-        strips[strip][page].controls[trackfxparam_select].dirty = true
+        local param = ctl.param
+        ctl.dirty = true
         SMTI_denorm(track,param,v)
 
       elseif cc == ctlcats.tracksend then
-        local param = strips[strip][page].controls[trackfxparam_select].param
-        strips[strip][page].controls[trackfxparam_select].dirty = true
+        local param = ctl.param
+        ctl.dirty = true
         STSI_denorm(track,param,v,trackfxparam_select,strip,page)
       
       elseif cc == ctlcats.fxoffline then
@@ -10958,13 +12264,19 @@ end
   
   end
 
-  function LoadStripFN(sfn)
+  function LoadStripFN(sfn,ffn)
   
     local stripdata = nil
-    local load_path=strips_path
-    local fn=load_path..sfn
+    local load_path, fn
+    if ffn == nil then
+      load_path=strips_path
+      fn=load_path..sfn
+    else
+      fn = ffn
+    end
+
     if reaper.file_exists(fn) then
-    
+
       local file
       file=io.open(fn,"r")
       local content=file:read("*a")
@@ -11644,6 +12956,11 @@ end
             local frames = strip.controls[i].ctl_info.frames
             local ctltype = strip.controls[i].ctltype
             local found = strip.controls[i].fxfound
+            local gauge = strip.controls[i].gauge
+      
+            if gauge then
+              GUI_DrawGauge2(gauge,x+w/2,y+h/2,strip.controls[i])
+            end
       
             local v2 = nz(strip.controls[i].val,0)
             local val2 = F_limit(round(frames*v2,0),0,frames-1)
@@ -11875,29 +13192,30 @@ end
     
       for ii = 1, #ctl_select do
         local i = ctl_select[ii].ctl
-        local hidden = Switcher_CtlsHidden(strips[strip][page].controls[i].switcher, strips[strip][page].controls[i].grpid)          
+        local ctl = strips[strip][page].controls[i]
+        local hidden = Switcher_CtlsHidden(ctl.switcher, ctl.grpid)          
         if hidden == false then
-          local scale = strips[strip][page].controls[i].scale
-          local x = strips[strip][page].controls[i].x+offsetx 
-          local y = strips[strip][page].controls[i].y+offsety
-          local w = strips[strip][page].controls[i].w
-          local h = strips[strip][page].controls[i].ctl_info.cellh
+          local scale = ctl.scale
+          local x = ctl.x+offsetx 
+          local y = ctl.y+offsety
+          local w = ctl.w
+          local h = ctl.ctl_info.cellh
           local gh = h
-          local val = math.floor(100*nz(strips[strip][page].controls[i].val,0))
-          local fxnum = strips[strip][page].controls[i].fxnum
-          local param = strips[strip][page].controls[i].param
-          local iidx = strips[strip][page].controls[i].ctl_info.imageidx
-          local spn = strips[strip][page].controls[i].show_paramname
-          local spv = strips[strip][page].controls[i].show_paramval
-          local ctlnmov = nz(strips[strip][page].controls[i].ctlname_override,'')
-          local tc = strips[strip][page].controls[i].textcol
-          local toff = strips[strip][page].controls[i].textoff
-          local tsze = nz(strips[strip][page].controls[i].textsize,0)
-          local frames = strips[strip][page].controls[i].ctl_info.frames
-          local ctltype = strips[strip][page].controls[i].ctltype
-          local found = strips[strip][page].controls[i].fxfound
+          local val = math.floor(100*nz(ctl.val,0))
+          local fxnum = ctl.fxnum
+          local param = ctl.param
+          local iidx = ctl.ctl_info.imageidx
+          local spn = ctl.show_paramname
+          local spv = ctl.show_paramval
+          local ctlnmov = nz(ctl.ctlname_override,'')
+          local tc = ctl.textcol
+          local toff = ctl.textoff
+          local tsze = nz(ctl.textsize,0)
+          local frames = ctl.ctl_info.frames
+          local ctltype = ctl.ctltype
+          local found = ctl.fxfound
     
-          local v2 = nz(strips[strip][page].controls[i].val,0)
+          local v2 = nz(ctl.val,0)
           local val2 = F_limit(round(frames*v2,0),0,frames-1)
           
           gfx.a = 1
@@ -11911,15 +13229,21 @@ end
           local _, th_a = gfx.measurestr('|')
           local to = th_a
           
+          --[[if ctl.gauge then
+            local gx = math.floor(ctl.xsc + offsetx + ctl.wsc/2)
+            local gy = math.floor(ctl.ysc + offsety + ctl.hsc/2)
+            GUI_DrawGauge2(ctl.gauge,gx,gy,ctl)
+          end]]
+          
           --load image
           gfx.blit(iidx,scale,0, 0, (val2)*gh, w, h, x + w/2-w*scale/2 +b_sz, y + h/2-h*scale/2 +b_sz)
           
           --xywh = {x = x+b_sz, y = math.floor(y+(h/2)-toff-1)+b_sz, w = w, h = th_a}
-          if w > strips[strip][page].controls[i].w/2 then
+          if w > ctl.w/2 then
             local Disp_ParamV
             local Disp_Name
             if ctlnmov == '' then
-              Disp_Name = strips[strip][page].controls[i].param_info.paramname
+              Disp_Name = ctl.param_info.paramname
             else
               Disp_Name = ctlnmov
             end
@@ -13626,6 +14950,12 @@ end
     else
       cp = '||Copy|#Paste'
     end
+    local cpg
+    if gauge_copy ~= nil then
+      cpg = '|Copy Gauge|Paste Gauge'
+    else
+      cpg = '|Copy Gauge|#Paste Gauge'    
+    end
     local gg = ''
     if CheckGroup() == true then
       gg = 'Group|'
@@ -13649,7 +14979,7 @@ end
     if sw == nil then
       sw = '#Add Controls To Switcher||'
     end
-    local mstr = 'Duplicate||Align Top|Align Left|Distribute Vertically|Distribute Horizontally||'..gg..sw..mm..'||'..vv..'||Delete'..ac..cp
+    local mstr = 'Duplicate||Align Top|Align Left|Distribute Vertically|Distribute Horizontally||'..gg..sw..mm..'||'..vv..'||Delete'..ac..cp..cpg
     gfx.x, gfx.y = mouse.mx, mouse.my
     local res = OpenMenu(mstr)
     if res == 1 then
@@ -13807,6 +15137,14 @@ end
     elseif res == 15 then
       Paste_Selected()
       SetCtlBitmapRedraw()
+      update_gfx = true
+    elseif res == 16 then
+      gauge_copy = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].gauge
+    elseif res == 17 then
+      for i = 1, #ctl_select do
+        strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].gauge = gauge_copy
+      end
+      update_bg = true
       update_gfx = true
     end
   end
@@ -14225,12 +15563,17 @@ end
       scalemode_select = nz(ctl.scalemode,8)
       framemode_select = nz(ctl.framemode,1)
       horiz_select = nz(ctl.horiz,false)
+      noss_select = ctl.noss
       knobsens_select = nz(ctl.knobsens,settings_defknobsens)
       --DBG(ctl.cycledata.statecnt)
       if ctl.cycledata and ctl.cycledata.statecnt > 0 then
         mapptof_select = ctl.cycledata.mapptof
         draggable_select = ctl.cycledata.draggable
         spread_select = ctl.cycledata.spread
+      end
+      local gt = Gauge_CopySelect(ctl.gauge)
+      if gt then
+        gauge_select = gt
       end
       
       SetKnobScaleMode()
@@ -14281,6 +15624,8 @@ end
       local cc = ctl.ctlcat
       if cc == ctlcats.fxparam or cc == ctlcats.trackparam or cc == ctlcats.tracksend then
 
+        local sldiv = 400
+
         local f = ctl.fxnum
         local p = ctl.param
         track = GetTrack(t)
@@ -14291,11 +15636,13 @@ end
         local dvoff = ctl.dvaloffset
         trackfxparam_select = c
         SetParam3(strip,page,c,ctl,min)
+        os.sleep((auto_delay/sldiv)*10)
         --for i = 1, 100 do i=i end
         miv = tonumber(GetParamDisp(cc,t,f,p,dvoff,c))
         --for i = 1, 10 do i=i end
         
         SetParam3(strip,page,c,ctl,max)
+        os.sleep((auto_delay/sldiv)*10)
         --for i = 1, 100 do i=i end
         mav = tonumber(GetParamDisp(cc,t,f,p,dvoff,c))
         if (miv == nil or mav == nil) or (miv and mav and mav > miv) then
@@ -14309,6 +15656,7 @@ end
               local inc = (1/(10^j))*i
               nval = rval + inc
               SetParam3(strip,page,c,ctl,nval)
+              os.sleep((auto_delay/sldiv)*10)
               dval2 = GetParamDisp(cc,t,f,p,dvoff,c)
               dval = GetNumericPart(dval2)
               if tonumber(dval) then
@@ -14337,7 +15685,7 @@ end
             end
           end
           A_SetParam(strip,page,c,ctl)    
-          return rval
+          return rval, dval2
         else
           OpenMsgBox(1, 'Currently unavailable for this parameter.', 1)
   --[[
@@ -14679,6 +16027,43 @@ end
       no[k] = v
     end
     return no
+  end
+  
+  function table_slowsort_val(tbl)
+   
+     local dtbl = {}
+     local rtbl
+     local cnt = #tbl
+     if cnt > 0 then  
+       for st = 1, cnt do
+         if st == 1 then
+           --insert 
+           table.insert(dtbl, tbl[st])
+         else
+           local inserted = false
+           local dcnt = #dtbl
+           for dt = 1, dcnt do
+             if dtbl[dt].val then
+               if tbl[st] and dtbl[dt] and nz(tonumber(tbl[st].val),0) > nz(tonumber(dtbl[dt].val),0) then
+                 table.insert(dtbl, dt, tbl[st])
+                 inserted = true
+                 break
+               end
+             else
+               break
+             end
+           end 
+           if inserted == false then
+             table.insert(dtbl, tbl[st])
+           end
+         end
+       end
+       rtbl = {}    
+       for dt = #dtbl, 1, -1 do
+         rtbl[#dtbl-(dt-1)] = dtbl[dt]
+       end
+     end
+     return rtbl
   end
   
   function cycledata_slowsort(tbl)
@@ -15146,8 +16531,11 @@ end
       --DBG(lastp..'  '..ret)
       if ret > 0 and ret ~= lastp then
         faders[ret] = fad_tab
+        if sel then
+          faders[sel] = {}
+        end
       elseif ret == lastp then
-        faders[ret] = nil
+        faders[sel] = {}
         ret = nil
       else
         ret = -1
@@ -15199,7 +16587,9 @@ end
                   end                              
                 elseif faders[p+1].targettype == 2 then
                   if strips[faders[p+1].strip] and strips[faders[p+1].strip][faders[p+1].page].controls[faders[p+1].ctl] then
+                    strips[faders[p+1].strip][faders[p+1].page].controls[faders[p+1].ctl].oval = strips[faders[p+1].strip][faders[p+1].page].controls[faders[p+1].ctl].val 
                     strips[faders[p+1].strip][faders[p+1].page].controls[faders[p+1].ctl].val = faders[p+1].val
+                    --strips[faders[p+1].strip][faders[p+1].page].controls[faders[p+1].ctl].mval = faders[p+1].val
                     strips[faders[p+1].strip][faders[p+1].page].controls[faders[p+1].ctl].dirty = true
                     SetMacro(faders[p+1].strip,faders[p+1].page,faders[p+1].ctl)
                     if macro_edit_mode == true then
@@ -15208,6 +16598,71 @@ end
                   else
                     DeleteFader(p+1)
                   end 
+                elseif faders[p+1].targettype == 3 then
+                  if mode == 0 and macro_edit_mode ~= true and macro_lrn_mode ~= true and show_xxy ~= true and show_eqcontrol ~= true and show_settings ~= true then
+                    local strip = tracks[track_select].strip
+                    local c = GetControlAtXY(strip,page,mouse.mx,mouse.my)
+                    if c then
+                      local ctl = strips[strip][page].controls[c]
+                      if c ~= faders[p+1].to_ctl then
+                        faders[p+1].to = false
+                        faders[p+1].to_ctl = c
+                        if faders[p+1].val > ctl.val then
+                          faders[p+1].to_pos = 1 
+                        elseif faders[p+1].val < ctl.val then
+                          faders[p+1].to_pos = 2
+                        else
+                          faders[p+1].to_pos = 3
+                          faders[p+1].to = true
+                        end
+                      end 
+
+                      if ctl.ctlcat == ctlcats.fxparam or ctl.ctlcat == ctlcats.trparam or ctl.ctlcat == ctlcats.macro then
+                        if faders[p+1].mode == 0 then
+                          --absolute
+                          if faders[p+1].to == false then
+                            if faders[p+1].to_pos == 1 then
+                              if faders[p+1].val <= ctl.val then
+                                faders[p+1].to = true 
+                              end
+                            else
+                              if faders[p+1].val >= ctl.val then
+                                faders[p+1].to = true 
+                              end                            
+                            end
+                          end
+                           
+                          if faders[p+1].to == true then
+                            ctl.oval = ctl.val
+                            ctl.val = faders[p+1].val
+                            if ctl.oval ~= ctl.val then
+                              A_SetParam(strip,page,c,ctl)
+                              ctl.dirty = true
+                              update_ctls = true
+                            end
+                          end
+                        else
+                          --relative
+                          local vi = 0.002
+                          local v = F_limit(faders[p+1].val-0.5,-vi,vi)
+                          --DBG(faders[p+1].val..'  '..v)
+                          ctl.val = F_limit(ctl.val + (v),0,1)
+                          --if ctl.oval ~= ctl.val then
+                            A_SetParam(strip,page,c,ctl)
+                            ctl.dirty = true
+                            update_ctls = true
+                          --end
+                          ctl.oval = ctl.val
+                          --[[if ctl.oval == 1 then
+                            ctl.oval ]]
+                          
+                          reaper.TrackFX_SetParam(track, fxnum, pf, 0.5)
+                          faders[p+1].oval = faders[p+1].val
+                          faders[p+1].val = 0.5
+                        end
+                      end
+                    end
+                  end
                 end
               end
             end    
@@ -15251,6 +16706,8 @@ end
       show_paramlearn = false
       CloseActChooser()
       show_ctlbrowser = false
+      show_gaugeedit = false
+      
       if m == 1 then
         if mode == 1 then
           --SaveEditedData()
@@ -16140,7 +17597,7 @@ end
       
       if mouse.context == nil then
         if ((submode == 0 and ctl_select ~= nil) and (MOUSE_click(obj.sections[45]) or (MOUSE_click(obj.sections[100]) and show_cycleoptions) 
-            or (MOUSE_click(obj.sections[200]) and show_ctlbrowser))) or 
+            or (MOUSE_click(obj.sections[200]) and show_ctlbrowser)) or (MOUSE_click(obj.sections[800]) and show_gaugeedit)) or 
            ((submode == 1 and gfx2_select ~= nil) and (MOUSE_click(obj.sections[49]) and show_lbloptions)) then
         elseif mouse.mx > obj.sections[10].x and show_actionchooser == false then
           if MOUSE_click(obj.sections[10]) then
@@ -16153,11 +17610,15 @@ end
               update_surface = true
             end
 
-            ctl_select = nil
-            show_cycleoptions = false
-            show_ctlbrowser = false
-            gfx2_select = nil
-            gfx3_select = nil
+            if show_gaugeedit ~= true then
+              ctl_select = nil
+              show_cycleoptions = false
+              show_ctlbrowser = false
+              gfx2_select = nil
+              gfx3_select = nil
+            else
+              show_gaugeedit = false
+            end
             
             if mode ~= 0 then
               update_surface = true
@@ -16286,6 +17747,7 @@ end
     gfx.mouse_wheel = 0
     if ctl_select then ctls = true else ctls = false end
     if closectlbrowser then closectlbrowser = nil show_ctlbrowser = false end
+    if closegaugeedit then closegaugeedit  = nil show_gaugeedit = false end
     if redraw_ctlbitmap and reaper.time_precise() >= redraw_ctlbitmap then
       redraw_ctlbitmap = nil
       GUI_DrawCtlBitmap()
@@ -16842,7 +18304,8 @@ end
                   macroedit_poffs = 0
                   trackfxparam_select = i
                   macroctl_select = trackfxparam_select
-                  update_surface = true 
+                  --update_surface = true
+                  update_gfx = true 
                 else
                   RBMenu(0, ccat, i)
                 end
@@ -16915,11 +18378,13 @@ end
                   if ctls[i].cycledata.pos <=     
                             ctls[i].cycledata.statecnt then
                     trackfxparam_select = i
-                    ctls[i].val = 
-                        ctls[i].cycledata[ctls[i].cycledata.pos].val
-                    SetParam()
-                    ctls[i].dirty = true
-                    update_ctls = true
+                    if ctls[i].cycledata[ctls[i].cycledata.pos] then
+                      ctls[i].val = 
+                          ctls[i].cycledata[ctls[i].cycledata.pos].val
+                      SetParam()
+                      ctls[i].dirty = true
+                      update_ctls = true
+                    end
                   end
                   noscroll = true
                   gfx.mouse_wheel = 0                  
@@ -17043,6 +18508,7 @@ end
           val = ctlScale(ctl.scalemode, val)
           if val ~= octlval then
             ctl.diff = val - ctl.val
+            ctl.oval = ctl.val
             ctl.val = val
             SetMacro(strip, page, tfxp_s)
             ctl.dirty = true
@@ -17082,6 +18548,7 @@ end
           val = ctlScale(ctl.scalemode, val)
           if val ~= octlval then
             ctl.diff = val - ctl.val
+            ctl.oval = ctl.val
             ctl.val = val
             SetMacro(strip, page, tfxp_s)
             ctl.dirty = true
@@ -17098,8 +18565,10 @@ end
       local strip = tracks[track_select].strip
       local mac = strips[strip][page].controls[macctlactive].macroctl
       strips[strip][page].controls[macctlactive].diff = nil
-      for m = 1, #mac do
-        strips[strip][page].controls[mac[m].ctl].mval = nil
+      if mac then
+        for m = 1, #mac do
+          --strips[strip][page].controls[mac[m].ctl].mval = nil
+        end
       end
       macctlactive = nil
     
@@ -17336,6 +18805,432 @@ end
         
       end
 
+    elseif show_gaugeedit then
+
+      if gfx.mouse_wheel ~= 0 then
+        local v = (gfx.mouse_wheel/120)
+        if MOUSE_over(obj.sections[809]) then
+            gauge_select.x_offs = F_limit(math.floor(gauge_select.x_offs+v),-30,30)
+            update_surface = true
+            gfx.mouse_wheel = 0
+        elseif MOUSE_over(obj.sections[810]) then
+            gauge_select.y_offs = F_limit(math.floor(gauge_select.y_offs-v),-30,30)
+            update_surface = true
+            gfx.mouse_wheel = 0
+        elseif MOUSE_over(obj.sections[802]) then
+            gauge_select.radius = F_limit(gauge_select.radius+v*0.5,10,150)
+            update_surface = true
+            gfx.mouse_wheel = 0
+        elseif MOUSE_over(obj.sections[803]) then
+            gauge_select.arclen = F_limit(gauge_select.arclen+v*0.01,0,1)
+            update_surface = true
+            gfx.mouse_wheel = 0
+        elseif MOUSE_over(obj.sections[804]) then
+            gauge_select.rotation = F_limit(gauge_select.rotation+v*0.01,0,1)
+            update_surface = true
+            gfx.mouse_wheel = 0
+        elseif MOUSE_over(obj.sections[805]) then
+            --gauge_select.ticks = F_limit(gauge_select.ticks + v,0,50)
+            --Gauge_CalcTickVals()
+            --update_surface = true
+            --gfx.mouse_wheel = 0
+        elseif MOUSE_over(obj.sections[807]) then
+            gauge_select.tick_size = F_limit(gauge_select.tick_size+v,2,12)
+            update_surface = true
+            gfx.mouse_wheel = 0
+        elseif MOUSE_over(obj.sections[808]) then
+            gauge_select.tick_offs = F_limit(gauge_select.tick_offs+v,0,12)
+            update_surface = true
+            gfx.mouse_wheel = 0
+        elseif MOUSE_over(obj.sections[814]) then
+            gauge_select.fontsz = F_limit(gauge_select.fontsz+v,-8,0)
+            update_surface = true
+            gfx.mouse_wheel = 0
+        elseif MOUSE_over(obj.sections[825]) then
+            gauge_select.val_freq = F_limit(gauge_select.val_freq+v,1,24)
+            update_surface = true
+            gfx.mouse_wheel = 0
+        elseif MOUSE_over(obj.sections[830]) then
+          if gauge_select.vals and gauge_ticksel and gauge_select.vals[gauge_ticksel] then
+            gauge_select.vals[gauge_ticksel].nudge = F_limit(gauge_select.vals[gauge_ticksel].nudge+v,-10,10)
+          end
+          update_surface = true
+          gfx.mouse_wheel = 0
+        end
+      end
+    
+      if mouse.context == nil and MOUSE_click(obj.sections[802]) then mouse.context = contexts.gauge_arcrad
+      elseif mouse.context == nil and MOUSE_click(obj.sections[803]) then mouse.context = contexts.gauge_arclen
+      elseif mouse.context == nil and MOUSE_click(obj.sections[804]) then mouse.context = contexts.gauge_arcrot
+      elseif mouse.context == nil and MOUSE_click(obj.sections[806]) then mouse.context = contexts.gauge_val
+        local strip = tracks[track_select].strip
+        local ctl = strips[strip][page].controls[ctl_select[1].ctl]
+        local gtab = gauge_select
+
+        local ctly = obj.sections[806].y+obj.sections[806].h/2
+        mouse.slideoff = ctly - mouse.my
+        ctlpos = ctlScaleInv(nz(ctl.scalemode,8),
+                                gtab.val)
+        oms = mouse.shift
+        gaugeglob = {ctly = ctly, sec = obj.sections[806], offset = mouse.slideoff}
+        
+      elseif mouse.context == nil and MOUSE_click(obj.sections[807]) then mouse.context = contexts.gauge_tksz
+      elseif mouse.context == nil and MOUSE_click(obj.sections[808]) then mouse.context = contexts.gauge_tkoffs
+      elseif mouse.context == nil and MOUSE_click(obj.sections[809]) then mouse.context = contexts.gauge_xoffs
+      elseif mouse.context == nil and MOUSE_click(obj.sections[810]) then mouse.context = contexts.gauge_yoffs
+      elseif mouse.context == nil and MOUSE_click(obj.sections[814]) then mouse.context = contexts.gauge_fs
+      elseif mouse.context == nil and MOUSE_click(obj.sections[825]) then mouse.context = contexts.gauge_valfreq
+      elseif mouse.context == nil and MOUSE_click(obj.sections[830]) then mouse.context = contexts.gauge_nudge
+      elseif mouse.context == nil and MOUSE_click(obj.sections[816]) then mouse.context = contexts.auto_delayslider
+
+      elseif mouse.context == nil and MOUSE_click_RB(obj.sections[830]) then
+        if gauge_select.vals and gauge_ticksel and gauge_select.vals[gauge_ticksel] then
+          gauge_select.vals[gauge_ticksel].nudge = 0
+        end
+        update_surface = true
+      
+      elseif mouse.context == nil and MOUSE_click(obj.sections[811]) then
+        gauge_select.show_arc = not gauge_select.show_arc
+        update_surface = true
+      elseif mouse.context == nil and MOUSE_click(obj.sections[812]) then
+        gauge_select.show_tick = not gauge_select.show_tick
+        update_surface = true
+      elseif mouse.context == nil and MOUSE_click(obj.sections[813]) then
+        gauge_select.show_val = not gauge_select.show_val
+        update_surface = true
+      
+      elseif mouse.context == nil and MOUSE_click(obj.sections[805]) then       
+        gauge_select.ticks = F_limit(gauge_select.ticks + 1,0,50)
+        Gauge_CalcTickVals()
+        update_surface = true
+      elseif mouse.context == nil and MOUSE_click_RB(obj.sections[805]) then 
+        if gauge_select.vals and #gauge_select.vals > 0 then
+          gauge_select.vals[#gauge_select.vals] = nil
+        end
+        gauge_select.ticks = #gauge_select.vals --F_limit(gauge_select.ticks - 1,0,50)
+        Gauge_CalcTickVals()
+        update_surface = true        
+      elseif mouse.context == nil and MOUSE_click(obj.sections[817]) then
+                
+        gauge_select.val_dp = F_limit(gauge_select.val_dp + 1, -1, 3)
+        Gauge_RecalcTickVals()
+        for i = 1, #ctl_select do
+        end            
+        update_surface = true
+      
+      elseif mouse.context == nil and MOUSE_click_RB(obj.sections[817]) then
+
+        gauge_select.val_dp = F_limit(gauge_select.val_dp - 1, -1, 3)
+        Gauge_RecalcTickVals()
+        for i = 1, #ctl_select do
+        end            
+        update_surface = true
+
+      elseif mouse.context == nil and MOUSE_click(obj.sections[827]) then
+      
+        gauge_select.numonly = not gauge_select.numonly
+        Gauge_RecalcTickVals()
+        for i = 1, #ctl_select do
+        end            
+        update_surface = true
+              
+      elseif mouse.context == nil and MOUSE_click_RB(obj.sections[806]) then       
+      
+        local gtab = gauge_select
+        local gcnt = #gtab.vals+1
+        gtab.vals[gcnt] = {val = gtab.val, dval = gtab.dval, dover = nil}
+        local nonly
+        if gtab.numonly then
+          nonly = ''
+        end
+        if gtab.val_dp > -1 then
+          gtab.vals[gcnt].dover = roundX(gtab.dval, gtab.val_dp, nonly)
+        end
+        Gauge_SortVals()
+        for i = 1, #gtab.vals do
+          if gtab.vals[i].val == gtab.val then
+            gauge_ticksel = i
+          end
+        end
+        gauge_select.ticks = #gtab.vals
+        update_surface = true
+        
+      elseif mouse.context == nil and MOUSE_click(obj.sections[818]) then
+      
+        local strip = tracks[track_select].strip
+        local ctl = strips[strip][page].controls[ctl_select[1].ctl]
+        if ctl.ctltype == 4 then
+        
+          Gauge_CopyCycleData()
+          Gauge_SortVals()
+          update_surface = true
+        
+        end
+      
+      elseif mouse.context == nil and MOUSE_click(obj.sections[820]) then
+        local gtab = gauge_select
+        local retval, c = reaper.GR_SelectColor(_,ConvertColorString(gtab.col_arc))
+        if retval ~= 0 then
+          gtab.col_arc = ConvertColor(c)
+          update_surface = true
+        end
+      elseif mouse.context == nil and MOUSE_click(obj.sections[821]) then
+        local gtab = gauge_select
+        local retval, c = reaper.GR_SelectColor(_,ConvertColorString(gtab.col_tick))
+        if retval ~= 0 then
+          gtab.col_tick = ConvertColor(c)
+          update_surface = true
+        end
+      elseif mouse.context == nil and MOUSE_click(obj.sections[822]) then
+        local gtab = gauge_select
+        local retval, c = reaper.GR_SelectColor(_,ConvertColorString(gtab.col_val))
+        if retval ~= 0 then
+          gtab.col_val = ConvertColor(c)
+          update_surface = true
+        end
+        
+      elseif mouse.context == nil and MOUSE_click(obj.sections[823]) then
+        --REMOVE
+        local strip = tracks[track_select].strip
+        local ctl = strips[strip][page].controls[ctl_select[1].ctl]
+        ctl.gauge = nil
+        update_bg = true
+        update_gfx = true
+        closegaugeedit = true
+
+      elseif mouse.context == nil and MOUSE_click(obj.sections[824]) then
+        --RESET
+        gauge_select = GaugeSelect_INIT()
+        Gauge_CalcTickVals()
+        update_surface = true
+        
+      elseif mouse.context == nil and MOUSE_click(obj.sections[819]) then
+        --SAVE
+        local strip = tracks[track_select].strip
+        local ctl = strips[strip][page].controls[ctl_select[1].ctl]
+        ctl.gauge = Gauge_CopySelect(gauge_select)
+        update_bg = true
+        update_gfx = true
+        closegaugeedit = true
+        --show_gaugeedit = false
+                
+      elseif mouse.context == nil and MOUSE_click(obj.sections[801]) then
+        local gtab = gauge_select
+        gtab.type = gtab.type+1
+        if gtab.type > #gaugetype_table then
+          gtab.type = 1
+        end
+        update_surface = true
+
+      elseif mouse.context == nil and MOUSE_click_RB(obj.sections[801]) then
+        local gtab = gauge_select
+        gtab.type = gtab.type-1
+        if gtab.type < 1 then
+          gtab.type = #gaugetype_table
+        end
+        update_surface = true
+
+      elseif mouse.context == nil and MOUSE_click(obj.sections[815]) then
+        
+        OpenEB(60,'Enter numeric display value to add tick','')
+        
+      elseif mouse.context == nil and MOUSE_click(obj.sections[826]) then
+
+        local gtab = gauge_select
+        if gtab.vals and #gtab.vals > 0 and gauge_ticksel and gauge_ticksel <= #gtab.vals then
+          local cnt = #gtab.vals
+          gtab.vals[gauge_ticksel] = nil
+          gtab.vals = Table_RemoveNils(gtab.vals, cnt)
+          if gauge_ticksel > #gtab.vals then
+            gauge_ticksel = #gtab.vals
+          end
+          --Gauge_SortVals()
+          gtab.ticks = #gtab.vals
+          update_surface = true
+        end
+
+      elseif mouse.context == nil and MOUSE_click(obj.sections[828]) then
+        if gauge_select.vals and #gauge_select.vals > 0 then
+          if gauge_ticksel == nil then
+            gauge_ticksel = 1
+          else
+            gauge_ticksel = gauge_ticksel-1
+            if gauge_ticksel < 1 then
+              gauge_ticksel = #gauge_select.vals
+            end
+          end
+        else
+          gauge_ticksel = 1
+        end
+        update_surface = true
+
+      elseif mouse.context == nil and MOUSE_click(obj.sections[829]) then
+        if gauge_select.vals and #gauge_select.vals > 0 then
+          if gauge_ticksel == nil then
+            gauge_ticksel = 1
+          else
+            gauge_ticksel = gauge_ticksel+1
+            if gauge_ticksel > #gauge_select.vals then
+              gauge_ticksel = 1
+            end
+          end
+        else
+          gauge_ticksel = 1
+        end
+        update_surface = true
+
+      end
+    
+      if mouse.context and mouse.context == contexts.gauge_val then
+      
+        local val = MOUSE_slider(gaugeglob.sec,gaugeglob.offset)
+        if val ~= nil then
+          
+          local strip = tracks[track_select].strip
+          local ctl = strips[strip][page].controls[ctl_select[1].ctl]
+          
+          if oms ~= mouse.shift then
+            oms = mouse.shift
+            local gtab = gauge_select
+            ctlpos = gtab.val
+            mouse.slideoff = gaugeglob.ctly - mouse.my
+          else
+            if mouse.shift then
+              local mult = ctl.knobsens.fine
+              if mult == 0 then mult = settings_defknobsens.fine end
+              val = ctlpos + ((0.5-val)*2)*mult
+            else
+              local mult = ctl.knobsens.norm
+              if mult == 0 then mult = settings_defknobsens.norm end
+              val = ctlpos + (0.5-val)*mult
+            end
+            if val < 0 then val = 0 end
+            if val > 1 then val = 1 end
+            val = ctlScale(ctl.scalemode, val)
+            if val ~= octlval then
+              gauge_select.val = F_limit(val,0,1)
+              gauge_select.dval = nz(GetParamDisp_Val(ctl_select[1].ctl,gauge_select.val,true),'')
+              octlval = val
+              --update_ctls = true
+              update_surface = true
+            end
+          end
+        end
+      
+        --[[local val = F_limit(MOUSE_slider(obj.sections[806]),0,1)
+        if val ~= nil then
+          gauge_select.val = F_limit(1-val,0,1)
+          gauge_select.dval = GetParamDisp_Val(ctl_select[1].ctl,gauge_select.val)
+          for i = 1, #ctl_select do
+          end
+        end]]
+      elseif mouse.context and mouse.context == contexts.auto_delayslider then
+      
+        local val = F_limit(MOUSE_sliderHBar(obj.sections[816]),0,1)
+        if val ~= nil then
+          auto_delay = math.floor(val * 10)
+          update_surface = true
+        end
+        
+      elseif mouse.context and mouse.context == contexts.gauge_arcrad then
+      
+        local val = F_limit(MOUSE_sliderHBar(obj.sections[802]),0,1)
+        if val ~= nil then
+          gauge_select.radius = math.floor(val*110) + 10
+          for i = 1, #ctl_select do
+          end
+        end
+        update_surface = true
+        
+      elseif mouse.context and mouse.context == contexts.gauge_arclen then
+
+        local val = F_limit(MOUSE_sliderHBar(obj.sections[803]),0,1)
+        if val ~= nil then
+          gauge_select.arclen = val
+          for i = 1, #ctl_select do
+          end
+        end
+        update_surface = true
+
+      elseif mouse.context and mouse.context == contexts.gauge_arcrot then
+
+        local val = F_limit(MOUSE_sliderHBar(obj.sections[804]),0,1)
+        if val ~= nil then
+          gauge_select.rotation = val
+          for i = 1, #ctl_select do
+          end
+        end
+        update_surface = true
+
+      elseif mouse.context and mouse.context == contexts.gauge_tksz then
+
+        local val = F_limit(MOUSE_sliderHBar(obj.sections[807]),0,1)
+        if val ~= nil then
+          gauge_select.tick_size = math.floor(val*10)+2
+          for i = 1, #ctl_select do
+          end
+        end
+        update_surface = true
+
+      elseif mouse.context and mouse.context == contexts.gauge_tkoffs then
+
+        local val = F_limit(MOUSE_sliderHBar(obj.sections[808]),0,1)
+        if val ~= nil then
+          gauge_select.tick_offs = math.floor(val*12)
+          for i = 1, #ctl_select do
+          end
+        end
+        update_surface = true
+
+      elseif mouse.context and mouse.context == contexts.gauge_xoffs then
+
+        local val = F_limit(MOUSE_sliderHBar(obj.sections[809]),0,1)
+        if val ~= nil then
+          gauge_select.x_offs = math.floor(val*60) -30
+          for i = 1, #ctl_select do
+          end
+        end
+        update_surface = true
+
+      elseif mouse.context and mouse.context == contexts.gauge_yoffs then
+
+        local val = F_limit(MOUSE_sliderHBar(obj.sections[810]),0,1)
+        if val ~= nil then
+          gauge_select.y_offs = math.floor(val*60) -30
+          for i = 1, #ctl_select do
+          end
+        end
+        update_surface = true
+
+      elseif mouse.context and mouse.context == contexts.gauge_fs then
+
+        local val = F_limit(MOUSE_sliderHBar(obj.sections[814]),0,1)
+        if val ~= nil then
+          gauge_select.fontsz = math.floor(val*8) -8
+          for i = 1, #ctl_select do
+          end
+        end
+        update_surface = true
+
+      elseif mouse.context and mouse.context == contexts.gauge_valfreq then
+
+        local val = F_limit(MOUSE_sliderHBar(obj.sections[825]),0,1)
+        if val ~= nil then
+          gauge_select.val_freq = math.floor(val*23)+1
+          for i = 1, #ctl_select do
+          end
+        end
+        update_surface = true
+
+      elseif mouse.context and mouse.context == contexts.gauge_nudge then
+
+        local val = F_limit(MOUSE_sliderHBar(obj.sections[830]),0,1)
+        if val ~= nil and gauge_select.vals and gauge_ticksel and gauge_select.vals[gauge_ticksel] then
+          gauge_select.vals[gauge_ticksel].nudge = math.floor(val*20)-10
+        end
+        update_surface = true
+      end
+      
     else
       if mouse.context == nil and fxmode == 1 and trctltype_select == 1 and rt > time_sendupdate then
         time_sendupdate = rt + 1
@@ -17828,6 +19723,19 @@ end
           
           end
 
+          if MOUSE_click(obj.sections[99]) then
+          
+            show_gaugeedit = true
+            gauge_select.val = 0
+            gauge_select.dval = nz(GetParamDisp_Val(ctl_select[1].ctl,gauge_select.val,true),'')
+            local strip = tracks[track_select].strip
+            if strips[strip][page].controls[ctl_select[1].ctl].gauge == nil then
+              Gauge_CalcTickVals()
+            end
+            update_gfx = true
+          
+          end
+
           if MOUSE_click(obj.sections[52]) then
             show_paramname = not show_paramname
             for i = 1, #ctl_select do
@@ -17965,6 +19873,16 @@ end
               strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].horiz = horiz_select
             end
             update_gfx = true              
+          elseif MOUSE_click(obj.sections[139]) then
+            if noss_select then
+              noss_select = nil
+            else
+              noss_select = true
+            end 
+            for i = 1, #ctl_select do
+              strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].noss = noss_select
+            end
+            update_gfx = true
           end            
 
           if MOUSE_click(obj.sections[131]) then
@@ -18272,6 +20190,7 @@ end
                     end
                     --SetCtlBitmapRedraw()
                   end
+                  update_bg = true
                   update_gfx = true
                   break
                 end
@@ -19433,6 +21352,30 @@ end
         update_sidebar = true
         gfx.mouse_wheel = 0
       end
+      
+      if show_lbloptions and gfx2_select and MOUSE_over(obj.sections[49]) then
+        if MOUSE_over(obj.sections[141]) then
+          gfx_font_select.size = F_limit(gfx_font_select.size+v,8,250)
+          strips[tracks[track_select].strip][page].graphics[gfx2_select].font.size = gfx_font_select.size
+          update_gfx = true
+          gfx.mouse_wheel = 0                
+        elseif MOUSE_over(obj.sections[148]) then
+          gfx_font_select.shadow_x = gfx_font_select.shadow_x+v
+          strips[tracks[track_select].strip][page].graphics[gfx2_select].font.shadow_x = gfx_font_select.shadow_x
+          update_gfx = true
+          gfx.mouse_wheel = 0                
+        elseif MOUSE_over(obj.sections[149]) then
+          gfx_font_select.shadow_y = gfx_font_select.shadow_y+v
+          strips[tracks[track_select].strip][page].graphics[gfx2_select].font.shadow_y = gfx_font_select.shadow_y
+          update_gfx = true
+          gfx.mouse_wheel = 0                
+        elseif MOUSE_over(obj.sections[150]) then
+          gfx_font_select.shadow_a = gfx_font_select.shadow_a+v*0.1
+          strips[tracks[track_select].strip][page].graphics[gfx2_select].font.shadow_a = gfx_font_select.shadow_a
+          update_gfx = true
+          gfx.mouse_wheel = 0                
+        end
+      end
     end
   
     local clicklblopts = false
@@ -20021,9 +21964,9 @@ end
       if strip_select then
         local i = math.floor(((mouse.my - obj.sections[512].y)) / butt_h)
         if strip_select == i-1 + slist_offset then
-          mstr = 'Set Default (Track)|Set Default (Master)||Clear Default (Track)|Clear Default (Master)||Save (Overwrite)||Add to favorites'
+          mstr = 'Set Default (Track)|Set Default (Master)||Clear Default (Track)|Clear Default (Master)||Save (Overwrite)||Add to favorites||Export Shareable Strip File|Import Shared Strip File'
         else
-          mstr = '#Set Default (Track)|#Set Default (Master)||Clear Default (Track)|Clear Default (Master)||#Save (Overwrite)||#Add to favorites'            
+          mstr = '#Set Default (Track)|#Set Default (Master)||Clear Default (Track)|Clear Default (Master)||#Save (Overwrite)||#Add to favorites||#Export Shareable Strip File|Import Shared Strip File'            
         end
         gfx.x, gfx.y = mouse.mx, mouse.my
         res = OpenMenu(mstr)
@@ -20046,6 +21989,10 @@ end
             slist_offset = ostoff
           elseif res == 6 then
             strip_favs[#strip_favs+1] = strip_folders[stripfol_select].fn..'/'..strip_files[strip_select].fn
+          elseif res == 7 then
+            StripShare_Export(strip_folders[stripfol_select].fn..'/', strip_files[strip_select].fn)
+          elseif res == 8 then
+            StripShare_Import('')
           end
         end
       end        
@@ -21124,7 +23071,7 @@ end
           
               macroctl[(yy+1)+macroedit_poffs].bi = not nz(macroctl[(yy+1)+macroedit_poffs].bi,false)
               if settings_macroeditmonitor then
-                SetMacro(tracks[track_select].strip,page,macroctl_select)
+                SetMacro(tracks[track_select].strip,page,macroctl_select,true)
               end
 
               update_macrobutt = true
@@ -21143,7 +23090,7 @@ end
           
               macroctl[(yy+1)+macroedit_poffs].inv = not nz(macroctl[(yy+1)+macroedit_poffs].inv,false)
               if settings_macroeditmonitor then
-                SetMacro(tracks[track_select].strip,page,macroctl_select)
+                SetMacro(tracks[track_select].strip,page,macroctl_select,true)
               end
 
               update_macrobutt = true
@@ -21162,7 +23109,7 @@ end
           
               macroctl[(yy+1)+macroedit_poffs].relative = not nz(macroctl[(yy+1)+macroedit_poffs].relative,false)
               if macroctl[(yy+1)+macroedit_poffs].relative == false and settings_macroeditmonitor then
-                SetMacro(tracks[track_select].strip,page,macroctl_select)
+                SetMacro(tracks[track_select].strip,page,macroctl_select,true)
               end
 
               update_macrobutt = true
@@ -21215,7 +23162,7 @@ end
 
           Macro_Capture(tracks[track_select].strip,page,macroctl_select,0)
           if settings_macroeditmonitor then
-            SetMacro(tracks[track_select].strip,page,macroctl_select)
+            SetMacro(tracks[track_select].strip,page,macroctl_select,true)
           end
           update_macroedit = true
 
@@ -21223,7 +23170,7 @@ end
 
           Macro_Capture(tracks[track_select].strip,page,macroctl_select,1)
           if settings_macroeditmonitor then
-            SetMacro(tracks[track_select].strip,page,macroctl_select)
+            SetMacro(tracks[track_select].strip,page,macroctl_select,true)
           end
           update_macroedit = true
 
@@ -21259,6 +23206,7 @@ end
               val = ctlScale(ctl.scalemode, val)
               if val ~= octlval then
                 ctl.diff = val - ctl.val
+                ctl.oval = ctl.val
                 ctl.val = val
                 SetMacro(tracks[track_select].strip, page, macroctl_select)
                 ctl.dirty = true
@@ -21276,7 +23224,7 @@ end
           local mac = strips[strip][page].controls[macctlactive].macroctl
           strips[strip][page].controls[macctlactive].diff = nil
           for m = 1, #mac do
-            strips[strip][page].controls[mac[m].ctl].mval = nil
+            --strips[strip][page].controls[mac[m].ctl].mval = nil
           end
           macctlactive = nil
           
@@ -21285,7 +23233,7 @@ end
           local v = F_limit((mouse.mx - macslide.xoff - obj.sections[403].x)/obj.sections[403].w,0,1)
           macroctl[macslide.macparamidx].A_val = v
           if settings_macroeditmonitor then
-            SetMacro(tracks[track_select].strip, page, macroctl_select)
+            SetMacro(tracks[track_select].strip, page, macroctl_select,true)
           end
           update_macroedit = true
         
@@ -21294,7 +23242,7 @@ end
           local v = F_limit((mouse.mx - macslide.xoff - obj.sections[404].x)/obj.sections[404].w,0,1)
           macroctl[macslide.macparamidx].B_val = v
           if settings_macroeditmonitor then
-            SetMacro(tracks[track_select].strip, page, macroctl_select)
+            SetMacro(tracks[track_select].strip, page, macroctl_select,true)
           end              
           update_macroedit = true
         
@@ -22755,6 +24703,35 @@ end
           end
         end
       
+      elseif EB_Open == 60 then
+        local txt = editbox.text
+        local mo = tonumber(txt)
+        if mo then
+          local nval, dval = GetValFromDVal(ctl_select[1].ctl,txt)
+          DBG(dval)
+          if nval then
+          
+            local gtab = gauge_select
+            local gcnt = #gtab.vals+1
+            gtab.vals[gcnt] = {val = nval, dval = dval, dover = nil}
+            local nonly
+            if gtab.numonly then
+              nonly = ''
+            end
+            if gtab.val_dp > -1 then
+              gtab.vals[gcnt].dover = roundX(dval, gtab.val_dp, nonly)
+            end
+            Gauge_SortVals()
+            for i = 1, #gtab.vals do
+              if gtab.vals[i].val == gtab.val then
+                gauge_ticksel = i
+              end
+            end
+            gtab.ticks = gtab.ticks+1
+            update_surface = true
+          
+          end
+        end  
       end
       editbox = nil
       EB_Open = 0
@@ -22954,6 +24931,29 @@ end
     elseif mouse.context == nil and MOUSE_click(obj.sections[98]) then
       settings_createbackuponmanualsave = not settings_createbackuponmanualsave
       update_gfx = true
+      
+    elseif mouse.context == nil and MOUSE_click(obj.sections[700]) then
+      local abs, _ = GetMOFaders()
+      local fadabs = SetAutomationFader({targettype = 3, mode = 0},abs)
+      update_gfx = true
+
+    elseif mouse.context == nil and MOUSE_click(obj.sections[702]) then
+      local retval, c = reaper.GR_SelectColor(_,ConvertColorString(backcol))
+      if retval ~= 0 then
+        backcol = ConvertColor(c)
+        update_bg = true
+        update_gfx = true
+      end
+    elseif mouse.context == nil and MOUSE_click_RB(obj.sections[702]) then
+      backcol = '16 16 16'
+      update_bg = true
+      update_gfx = true
+      
+    --[[elseif mouse.context == nil and MOUSE_click(obj.sections[701]) then
+      local _, rel = GetMOFaders()
+      local fadrel = SetAutomationFader({targettype = 3, mode = 1},rel)
+      update_gfx = true]]
+
     elseif mouse.context == nil and MOUSE_click(obj.sections[88]) then
       settings_usectlbitmap = not settings_usectlbitmap
       if settings_usectlbitmap then
@@ -24753,7 +26753,7 @@ end
     end 
   end
   
-  function SetMacro(strip, page, ctl)
+  function SetMacro(strip, page, ctl, mon)
 
     local ctls = strips[strip][page].controls
     local macro = ctls[ctl].macroctl
@@ -24780,7 +26780,7 @@ end
               end
               if v ~= macro[m].oval then
                 c.val = v
-                A_SetParam(strip, page, ctl, c)
+                A_SetParam(strip, page, trackfxparam_select, c)
                 macro[m].oval = v
               end
             
@@ -24799,20 +26799,23 @@ end
               end
               if v ~= macro[m].oval then
                 c.val = v
-                A_SetParam(strip, page, ctl, c)
+                A_SetParam(strip, page, trackfxparam_select, c)
                 macro[m].oval = v
               end
             end
 
-          else
+          elseif mon ~= true then
 
             local c = ctls[macro[m].ctl]
-            local mv = ctls[ctl].diff
+            local mc = ctls[ctl]
+            local mva = mc.val
+            local mov = mc.oval
+            if not mov then mov = mva end
+            local mv = -(macScale(macro[m].shape,mov)-macScale(macro[m].shape,mva))
             local ma = macro[m].A_val
             local mb = macro[m].B_val
-          
             if mv then
-              mv = mv * mb
+              mv =  mv * mb 
               trackfxparam_select = macro[m].ctl
               if macro[m].inv then            
                 mv = -mv             
@@ -24822,10 +26825,12 @@ end
               else
                 v = c.val + mv
               end
+
               if v ~= macro[m].oval then
-                c.mval = v
+
                 c.val = F_limit(v,0,1)
-                A_SetParam(strip, page, ctl, c)
+                A_SetParam(strip, page, trackfxparam_select, c)
+                c.mval = v
                 macro[m].oval = v
               end            
             end          
@@ -25360,6 +27365,8 @@ end
                              wheel = strips[strip][page].controls[c].knobsens.wheel,
                              wheelfine = strips[strip][page].controls[c].knobsens.wheelfine},
                  hidden = strips[strip][page].controls[c].hidden,
+                 gauge = Gauge_CopySelect(strips[strip][page].controls[c].gauge),
+                 noss = strips[strip][page].controls[c].noss
                  }
     if strips[strip][page].controls[c].ctlcat == ctlcats.macro and strips[strip][page].controls[c].macroctl then
       local macro = strips[strip][page].controls[c].macroctl
@@ -25755,6 +27762,7 @@ end
                                       textoffvalx = tonumber(zn(data[key..'textoffvalx'],0)),
                                       textsize = tonumber(zn(data[key..'textsize'],0)),
                                       val = tonumber(data[key..'val']),
+                                      mval = tonumber(data[key..'mval']),
                                       defval = tonumber(data[key..'defval']),
                                       maxdp = tonumber(zn(data[key..'maxdp'],-1)),
                                       cycledata = {statecnt = 0,{}},
@@ -25774,6 +27782,7 @@ end
                                       hidden = tobool(zn(data[key..'hidden'],false)),
                                       switcherid = tonumber(zn(data[key..'switcherid'])),
                                       switcher = tonumber(zn(data[key..'switcher'])),
+                                      noss = tobool(zn(data[key..'noss'])),
                                      }
           g_cids[strips[ss][p].controls[c].c_id] = true
           if strips[ss][p].controls[c].id then
@@ -25821,6 +27830,49 @@ end
               if strips[ss][p].controls[c].cycledata[i].dv == nil then
                 strips[ss][p].controls[c].cycledata[i].dv = strips[ss][p].controls[c].cycledata[i].dispval
               end 
+            end
+          end
+
+          local gauge = data[key..'gauge']
+          if gauge then
+            strips[ss][p].controls[c].gauge = {}
+            strips[ss][p].controls[c].gauge.type = tonumber(zn(data[key..'gauge_type'],1))
+            strips[ss][p].controls[c].gauge.x_offs = tonumber(zn(data[key..'gauge_x_offs']))
+            strips[ss][p].controls[c].gauge.y_offs = tonumber(zn(data[key..'gauge_y_offs']))
+            strips[ss][p].controls[c].gauge.radius = tonumber(zn(data[key..'gauge_radius']))
+            strips[ss][p].controls[c].gauge.arclen = tonumber(zn(data[key..'gauge_arclen']))
+            strips[ss][p].controls[c].gauge.rotation = tonumber(zn(data[key..'gauge_rotation']))
+            strips[ss][p].controls[c].gauge.ticks = tonumber(zn(data[key..'gauge_ticks']))
+            strips[ss][p].controls[c].gauge.tick_size = tonumber(zn(data[key..'gauge_tick_size']))
+            strips[ss][p].controls[c].gauge.tick_offs = tonumber(zn(data[key..'gauge_tick_offs']))
+            strips[ss][p].controls[c].gauge.val_freq = tonumber(zn(data[key..'gauge_val_freq']))
+            strips[ss][p].controls[c].gauge.col_tick = (zn(data[key..'gauge_col_tick']))
+            strips[ss][p].controls[c].gauge.col_arc = (zn(data[key..'gauge_col_arc']))
+            strips[ss][p].controls[c].gauge.col_val = (zn(data[key..'gauge_col_val']))
+            strips[ss][p].controls[c].gauge.show_arc = tobool(zn(data[key..'gauge_show_arc']))
+            strips[ss][p].controls[c].gauge.show_tick = tobool(zn(data[key..'gauge_show_tick']))
+            strips[ss][p].controls[c].gauge.show_val = tobool(zn(data[key..'gauge_show_val']))
+            strips[ss][p].controls[c].gauge.val = 0
+            strips[ss][p].controls[c].gauge.dval = ''
+            strips[ss][p].controls[c].gauge.vals = {}
+            strips[ss][p].controls[c].gauge.val_dp = tonumber(zn(data[key..'gauge_val_dp']))
+            strips[ss][p].controls[c].gauge.fontsz = tonumber(zn(data[key..'gauge_fontsz']))
+            strips[ss][p].controls[c].gauge.spread = tobool(zn(data[key..'gauge_spread']))
+            strips[ss][p].controls[c].gauge.mapptof = tobool(zn(data[key..'gauge_mapptof']))
+            strips[ss][p].controls[c].gauge.numonly = tobool(zn(data[key..'gauge_numonly']))
+            strips[ss][p].controls[c].gauge.vals = {}
+            
+            local gcnt = tonumber(zn(data[key..'gauge_valcnt']))
+            if gcnt and gcnt > 0 then
+              for gv = 1, gcnt do
+                local key = pfx..'p'..p..'_c_'..c..'_gaugevals_'..gv..'_' 
+                strips[ss][p].controls[c].gauge.vals[gv] = {}
+                strips[ss][p].controls[c].gauge.vals[gv].val = tonumber(zn(data[key..'val'],0))
+                strips[ss][p].controls[c].gauge.vals[gv].dval = zn(data[key..'dval'],'')
+                strips[ss][p].controls[c].gauge.vals[gv].dover = zn(data[key..'dover'],'') 
+                strips[ss][p].controls[c].gauge.vals[gv].nudge = zn(data[key..'nudge'],0) 
+              end
+            
             end
           end
 
@@ -26430,8 +28482,15 @@ end
           faders[f].ctl = tonumber(zn(data[key..'ctl']))
           faders[f].c_id = tonumber(zn(data[key..'c_id']))
           faders[f].sstype = tonumber(zn(data[key..'sstype']))
-          faders[f].xy = tonumber(zn(data[key..'xy']))        
-        end
+          faders[f].xy = tonumber(zn(data[key..'xy'])) 
+          faders[f].mode = tonumber(zn(data[key..'mode'])) 
+          
+          --[[test
+          if f == 32 then
+            faders[f].targettype = 3
+            faders[f].mode = 1
+          end--]]
+        end 
     
       end
     end  
@@ -27232,6 +29291,7 @@ end
     settings_hideeditbaronnewproject = tobool(nz(GES('hide_editbar',true),settings_hideeditbaronnewproject))
     settings_locksurfaceonnewproject = tobool(nz(GES('lock_surface',true),settings_locksurfaceonnewproject))
     settings_showminimaltopbar = tobool(nz(GES('settings_showminimaltopbar',true),settings_showminimaltopbar))
+    backcol = nz(GES('backcol',true),'16 16 16')
     
     if settings_hideeditbaronnewproject then
       plist_w = 0
@@ -27290,6 +29350,7 @@ end
     reaper.SetExtState(SCRIPT,'settings_showminimaltopbar',tostring(settings_showminimaltopbar), true)
     reaper.SetExtState(SCRIPT,'hide_editbar',tostring(settings_hideeditbaronnewproject), true)    
     reaper.SetExtState(SCRIPT,'lock_surface',tostring(settings_locksurfaceonnewproject), true)    
+    reaper.SetExtState(SCRIPT,'backcol',tostring(backcol), true)    
     
     if strip_default then
       reaper.SetExtState(SCRIPT,'strip_default',tostring(strip_default.strip_select), true)
@@ -27385,6 +29446,7 @@ end
           file:write('['..key..'c_id]'.. nz(faders[f].c_id,'') ..'\n')
           file:write('['..key..'sstype]'.. nz(faders[f].sstype,'') ..'\n')
           file:write('['..key..'xy]'.. nz(faders[f].xy,'') ..'\n')
+          file:write('['..key..'mode]'.. nz(faders[f].mode,'') ..'\n')
   
         end
       end  
@@ -27745,6 +29807,7 @@ end
               file:write('['..key..'textoffvalx]'..strips[s][p].controls[c].textoffvalx..'\n')
               file:write('['..key..'textsize]'..nz(strips[s][p].controls[c].textsize,0)..'\n')
               file:write('['..key..'val]'..nz(strips[s][p].controls[c].val,0)..'\n')
+              file:write('['..key..'mval]'..nz(strips[s][p].controls[c].mval,nz(strips[s][p].controls[c].val,0))..'\n')
               file:write('['..key..'defval]'..nz(strips[s][p].controls[c].defval,0)..'\n')   
               file:write('['..key..'maxdp]'..nz(strips[s][p].controls[c].maxdp,-1)..'\n')   
               file:write('['..key..'dvaloffset]'..nz(strips[s][p].controls[c].dvaloffset,'')..'\n')   
@@ -27761,6 +29824,7 @@ end
               file:write('['..key..'hidden]'..tostring(nz(strips[s][p].controls[c].hidden,false))..'\n')
               file:write('['..key..'switcherid]'..tostring(nz(strips[s][p].controls[c].switcherid,''))..'\n')
               file:write('['..key..'switcher]'..tostring(nz(strips[s][p].controls[c].switcher,''))..'\n')
+              file:write('['..key..'noss]'..tostring(nz(strips[s][p].controls[c].noss,''))..'\n')
   
               file:write('['..key..'id]'..convnum(strips[s][p].controls[c].id)..'\n')
               file:write('['..key..'grpid]'..convnum(strips[s][p].controls[c].grpid)..'\n')
@@ -27799,6 +29863,43 @@ end
                 file:write('['..key..'cycledata_statecnt]'..0 ..'\n')                   
               end
               
+              if strips[s][p].controls[c].gauge then
+                file:write('['..key..'gauge]'..tostring(true)..'\n')
+              
+                file:write('['..key..'gauge_type]'..nz(strips[s][p].controls[c].gauge.type,1)..'\n')
+                file:write('['..key..'gauge_x_offs]'..nz(strips[s][p].controls[c].gauge.x_offs,0)..'\n')
+                file:write('['..key..'gauge_y_offs]'..nz(strips[s][p].controls[c].gauge.y_offs,0)..'\n')
+                file:write('['..key..'gauge_radius]'..nz(strips[s][p].controls[c].gauge.radius,50)..'\n')
+                file:write('['..key..'gauge_arclen]'..nz(strips[s][p].controls[c].gauge.arclen,1)..'\n')
+                file:write('['..key..'gauge_rotation]'..nz(strips[s][p].controls[c].gauge.rotation,0)..'\n')
+                file:write('['..key..'gauge_ticks]'..nz(strips[s][p].controls[c].gauge.ticks,0)..'\n')
+                file:write('['..key..'gauge_tick_size]'..nz(strips[s][p].controls[c].gauge.tick_size,2)..'\n')
+                file:write('['..key..'gauge_tick_offs]'..nz(strips[s][p].controls[c].gauge.tick_offs,1)..'\n')
+                file:write('['..key..'gauge_val_freq]'..nz(strips[s][p].controls[c].gauge.val_freq,0)..'\n')
+                file:write('['..key..'gauge_col_tick]'..nz(strips[s][p].controls[c].gauge.col_tick,gui.color.white)..'\n')
+                file:write('['..key..'gauge_col_arc]'..nz(strips[s][p].controls[c].gauge.col_arc,gui.color.white)..'\n')
+                file:write('['..key..'gauge_col_val]'..nz(strips[s][p].controls[c].gauge.col_val,gui.color.white)..'\n')
+                file:write('['..key..'gauge_show_arc]'..tostring(nz(strips[s][p].controls[c].gauge.show_arc,true))..'\n')
+                file:write('['..key..'gauge_show_tick]'..tostring(nz(strips[s][p].controls[c].gauge.show_tick,true))..'\n')
+                file:write('['..key..'gauge_show_val]'..tostring(nz(strips[s][p].controls[c].gauge.show_val,true))..'\n')
+                file:write('['..key..'gauge_val_dp]'..nz(strips[s][p].controls[c].gauge.val_dp,0)..'\n')
+                file:write('['..key..'gauge_fontsz]'..nz(strips[s][p].controls[c].gauge.fontsz,0)..'\n')
+                file:write('['..key..'gauge_spread]'..tostring(nz(strips[s][p].controls[c].gauge.spread,''))..'\n')
+                file:write('['..key..'gauge_mapptof]'..tostring(nz(strips[s][p].controls[c].gauge.mapptof,''))..'\n')
+                file:write('['..key..'gauge_numonly]'..tostring(nz(strips[s][p].controls[c].gauge.numonly,''))..'\n')
+                file:write('['..key..'gauge_valcnt]'..#strips[s][p].controls[c].gauge.vals..'\n')
+              
+                if strips[s][p].controls[c].gauge.vals and #strips[s][p].controls[c].gauge.vals > 0 then
+                  for gv = 1, #strips[s][p].controls[c].gauge.vals do
+                    local key = pfx..'p'..p..'_c_'..c..'_gaugevals_'..gv..'_' 
+                    file:write('['..key..'val]'..nz(strips[s][p].controls[c].gauge.vals[gv].val,0)..'\n')
+                    file:write('['..key..'dval]'..nz(strips[s][p].controls[c].gauge.vals[gv].dval,'-')..'\n')
+                    file:write('['..key..'dover]'..nz(strips[s][p].controls[c].gauge.vals[gv].dover,'')..'\n')                  
+                    file:write('['..key..'nudge]'..nz(strips[s][p].controls[c].gauge.vals[gv].nudge,0)..'\n')                  
+                  end
+                end
+              end
+                            
               if strips[s][p].controls[c].macroctl then
                 local mcnt = #strips[s][p].controls[c].macroctl
                 file:write('['..key..'macroctl_cnt]'..mcnt..'\n')                                 
@@ -28565,25 +30666,27 @@ end
       --page
       if #strips[strip][page].controls > 0 then
         for ctl = 1, #strips[strip][page].controls do
-          if strips[strip][page].controls[ctl].ctlcat == ctlcats.fxparam or 
-             strips[strip][page].controls[ctl].ctlcat == ctlcats.trackparam or
-             strips[strip][page].controls[ctl].ctlcat == ctlcats.tracksend then
-            trackfxparam_select = ctl
-            local v = math.random()
-            if strips[strip][page].controls[ctl].ctltype == 2 or 
-               strips[strip][page].controls[ctl].ctltype == 3 or 
-               strips[strip][page].controls[ctl].ctltype == 7 or
-               strips[strip][page].controls[ctl].ctltype == 8 or
-               strips[strip][page].controls[ctl].ctltype == 9 or
-               strips[strip][page].controls[ctl].ctltype == 10 then
-               v = round(v)
-            end
-            if respectminmax == true then
-              --local min, max = GetParamMinMax_ctl(ctl,true)
-              --v = v*(max-min)+min            
-              SetParam3(strip,page,ctl,strips[strip][page].controls[ctl],v)
-            else
-              SetParam5(v)                          
+          if strips[strip][page].controls[ctl].noss ~= true then
+            if strips[strip][page].controls[ctl].ctlcat == ctlcats.fxparam or 
+               strips[strip][page].controls[ctl].ctlcat == ctlcats.trackparam or
+               strips[strip][page].controls[ctl].ctlcat == ctlcats.tracksend then
+              trackfxparam_select = ctl
+              local v = math.random()
+              if strips[strip][page].controls[ctl].ctltype == 2 or 
+                 strips[strip][page].controls[ctl].ctltype == 3 or 
+                 strips[strip][page].controls[ctl].ctltype == 7 or
+                 strips[strip][page].controls[ctl].ctltype == 8 or
+                 strips[strip][page].controls[ctl].ctltype == 9 or
+                 strips[strip][page].controls[ctl].ctltype == 10 then
+                 v = round(v)
+              end
+              if respectminmax == true then
+                --local min, max = GetParamMinMax_ctl(ctl,true)
+                --v = v*(max-min)+min            
+                SetParam3(strip,page,ctl,strips[strip][page].controls[ctl],v)
+              else
+                SetParam5(v)                          
+              end
             end
           end
         end
@@ -28718,12 +30821,12 @@ end
           local c = snaptbl.data[ss].ctl
           local v = snaptbl.data[ss].dval
           local nv = snaptbl.data[ss].val
-          if c and v and tostring(nv) ~= tostring(strips[strip][page].controls[c].val) then
+          local ctl = strips[strip][page].controls[c]
+          if ctl.noss ~= true and c and v and tostring(nv) ~= tostring(ctl.val) then
             trackfxparam_select = c
-        --    local trnum = nz(strips[strip][page].controls[c].tracknum,strips[strip].track.tracknum)
-            local trnum = nz(strips[strip][page].controls[c].tracknum,strips[strip].track.tracknum)
-            if strips[strip][page].controls[c].tracknum then
-              track = GetTrack(strips[strip][page].controls[c].tracknum)
+            local trnum = nz(ctl.tracknum,strips[strip].track.tracknum)
+            if ctl.tracknum then
+              track = GetTrack(ctl.tracknum)
             else
               track = gtrack
             end
@@ -28739,12 +30842,13 @@ end
           local c = snaptbl.data[ss].ctl
           local v = snaptbl.data[ss].dval
           local nv = snaptbl.data[ss].val
-          if c and v and tostring(nv) ~= tostring(strips[strip][page].controls[c].val) then
+          local ctl = strips[strip][page].controls[c]
+          if c and v and tostring(nv) ~= tostring(ctl.val) then
             trackfxparam_select = c
         --    local trnum = nz(strips[strip][page].controls[c].tracknum,strips[strip].track.tracknum)
-            local trnum = nz(strips[strip][page].controls[c].tracknum,strips[strip].track.tracknum)
-            if strips[strip][page].controls[c].tracknum then
-              track = GetTrack(strips[strip][page].controls[c].tracknum)
+            local trnum = nz(ctl.tracknum,strips[strip].track.tracknum)
+            if ctl.tracknum then
+              track = GetTrack(ctl.tracknum)
             else
               track = gtrack
             end
@@ -28821,25 +30925,27 @@ end
         local sscnt = 1
         for c = 1, #strips[strip][page].controls do
         
-          if strips[strip][page].controls[c].ctlcat == ctlcats.fxparam or
-             strips[strip][page].controls[c].ctlcat == ctlcats.trackparam or
-             strips[strip][page].controls[c].ctlcat == ctlcats.tracksend or 
-             strips[strip][page].controls[c].ctlcat == ctlcats.fxoffline then
-            if strips[strip][page].controls[c].ctltype ~= 5 then
-              local track = GetTrack(nz(strips[strip][page].controls[c].tracknum,strips[strip].track.tracknum))
-              local cc = strips[strip][page].controls[c].ctlcat
-              local fxnum = strips[strip][page].controls[c].fxnum
-              local param = strips[strip][page].controls[c].param
-              local min, max = GetParamMinMax(cc,track,nz(fxnum,-1),param,true,c)
-              local dval = DenormalizeValue(min,max,strips[strip][page].controls[c].val)
-              snapshots[strip][page][sstype][snappos].data[sscnt] = {c_id = strips[strip][page].controls[c].c_id,
-                                                                      ctl = c,
-                                                                      val = strips[strip][page].controls[c].val,
-                                                                      dval = dval}
-              if cc == ctlcats.fxoffline then
-                offflag = true
+          if strips[strip][page].controls[c].noss ~= true then
+            if strips[strip][page].controls[c].ctlcat == ctlcats.fxparam or
+               strips[strip][page].controls[c].ctlcat == ctlcats.trackparam or
+               strips[strip][page].controls[c].ctlcat == ctlcats.tracksend or 
+               strips[strip][page].controls[c].ctlcat == ctlcats.fxoffline then
+              if strips[strip][page].controls[c].ctltype ~= 5 then
+                local track = GetTrack(nz(strips[strip][page].controls[c].tracknum,strips[strip].track.tracknum))
+                local cc = strips[strip][page].controls[c].ctlcat
+                local fxnum = strips[strip][page].controls[c].fxnum
+                local param = strips[strip][page].controls[c].param
+                local min, max = GetParamMinMax(cc,track,nz(fxnum,-1),param,true,c)
+                local dval = DenormalizeValue(min,max,strips[strip][page].controls[c].val)
+                snapshots[strip][page][sstype][snappos].data[sscnt] = {c_id = strips[strip][page].controls[c].c_id,
+                                                                        ctl = c,
+                                                                        val = strips[strip][page].controls[c].val,
+                                                                        dval = dval}
+                if cc == ctlcats.fxoffline then
+                  offflag = true
+                end
+                sscnt = sscnt + 1
               end
-              sscnt = sscnt + 1
             end
           end
         end
@@ -29483,6 +31589,37 @@ end
   
   ------------------------------------------------------------
 
+  function GaugeSelect_INIT()
+  
+    local gs = {type = 1,
+                x_offs = 0,
+                y_offs = 0,
+                radius = 50,
+                arclen = 0.7,
+                rotation = 0,
+                ticks = 2,
+                tick_size = 4,
+                tick_offs = 1,
+                val_freq = 1,
+                col_tick = '192 192 192',
+                col_arc = '192 192 192',
+                col_val = '192 192 192',
+                show_arc = true,
+                show_tick = true,
+                show_val = true,
+                val = 0,
+                dval = '',
+                vals = {},
+                val_dp = 0,
+                fontsz = -5,
+                nudge = 0,
+                spread = nil,
+                mapptof = nil,
+                numonly = false}
+    return gs
+    
+  end
+
   function INIT(keepprojid)
 
     DBGOut('')
@@ -29603,6 +31740,7 @@ end
     draggable_select = false
     spread_select = false
     al_select = 0
+    gauge_select = GaugeSelect_INIT()
     
     plist_w = 140
     oplist_w = 140
@@ -29623,6 +31761,7 @@ end
     show_fsnapshots = false
     show_actionchooser = false
     show_xxy = false
+    show_gaugeedit = false
     
     show_paramname = true
     show_paramval = true
@@ -30313,10 +32452,14 @@ end
   eqbands_path = resource_path.."eqbands/"
   eq_path = resource_path.."eq/"
   skins_path = resource_path.."skins/LBXDEF/"
+  share_path = resource_path.."share/"
+    
+  --copyfile('C:/Users/HMSStudio/AppData/Roaming/REAPER/Scripts/LBX/LBXCS_resources/controls/__default.png', 'C:/Users/HMSStudio/AppData/Roaming/REAPER/Scripts/LBX/LBXCS_resources/controls/cpcpcpcpcpc.png')  
     
   reaper.RecursiveCreateDirectory(paths_path,1)
   reaper.RecursiveCreateDirectory(eqbands_path,1)
   reaper.RecursiveCreateDirectory(eq_path,1)
+  reaper.RecursiveCreateDirectory(share_path,1)
 
   LBX_CTL_TRNAME='__LBX_CTL'
 
@@ -30398,7 +32541,8 @@ end
   ctl_bitmap = 1010
   
   skin, ret = LoadSkin()
-  
+
+  --TestStuff()  
   --testchunkcopy(0,3)
 --testfxinsert()
   
