@@ -958,9 +958,9 @@
       --CONTROL OPTIONS
       local cow = 160
       obj.sections[45] = {x = math.max(gfx1.main_w - cow - 10, obj.sections[10].x + cow + 20),
-                          y = math.max(gfx1.main_h - 440 - 10, obj.sections[10].y),
+                          y = math.max(gfx1.main_h - 470 - 10, obj.sections[10].y),
                           w = cow,
-                          h = 440}                           
+                          h = 470}                           
       
       --GAUGE EDIT
       local gaw, gah = 320, 500
@@ -1028,7 +1028,7 @@
                            h = butt_h/2+8}
                            
       obj.sections[814] = {x = obj.sections[800].x + obj.sections[800].w/2 + 55,
-                           y = obj.sections[800].y + gofs -8 + (butt_h/2+13)*2 +6,
+                           y = obj.sections[800].y + gofs + (butt_h/2+13)*4 -20,
                            w = gsw,
                            h = butt_h/2+8}
       obj.sections[815] = {x = obj.sections[800].x + obj.sections[800].w/2 - 60,
@@ -1040,12 +1040,12 @@
                            w = 35,
                            h = butt_h/2+8}
       obj.sections[817] = {x = obj.sections[800].x + obj.sections[800].w/2 + 55,
-                           y = obj.sections[800].y + gofs -8 + (butt_h/2+13)*3 +6,
+                           y = obj.sections[800].y + gofs + (butt_h/2+13)*5 -20,
                            w = 35,
                            h = butt_h/2+8}
 
       obj.sections[827] = {x = obj.sections[800].x + obj.sections[800].w/2 + 105,
-                           y = obj.sections[800].y + gofs -8 + (butt_h/2+13)*4 +6,
+                           y = obj.sections[800].y + gofs + (butt_h/2+13)*6 -20,
                            w = butt_h/2+4,
                            h = butt_h/2+4}
 
@@ -1080,7 +1080,7 @@
                            w = butt_h/2+4,
                            h = butt_h/2+4}
       obj.sections[825] = {x = obj.sections[800].x + obj.sections[800].w/2 + 55,
-                           y = obj.sections[800].y + gofs -8 + (butt_h/2+13)*5 +6,
+                           y = obj.sections[800].y + gofs + (butt_h/2+13)*7 -20,
                            w = gsw,
                            h = butt_h/2+8}
       
@@ -1101,6 +1101,11 @@
                            y = obj.sections[800].y + gofs -butt_h*2-3 - (butt_h/2+8),
                            w = 60,
                            h = butt_h/2+8}
+      obj.sections[831] = {x = obj.sections[800].x + obj.sections[800].w/2 + 35,
+                           y = obj.sections[800].y + gofs + (butt_h/2+13)*3 -26,
+                           w = gsw+20,
+                           h = butt_h}
+      
       
       local sf_h = 140
       --STRIP FOLDERS
@@ -1158,7 +1163,7 @@
                           h = butt_h/2+4}                           
 
       obj.sections[55] = {x = 50,
-                          y = 150+butt_h+7 + (butt_h/2+4 + 10) * 8,
+                          y = 150+butt_h+7 + (butt_h/2+4 + 10) * 9,
                           w = obj.sections[45].w-60,
                           h = butt_h}
       obj.sections[56] = {x = 50,
@@ -1166,16 +1171,21 @@
                           w = obj.sections[45].w-80,
                           h = butt_h/2+8}                           
       obj.sections[57] = {x = 50,
-                          y = 150+butt_h+10 + (butt_h/2+4 + 10) * 9,
+                          y = 150+butt_h+10 + (butt_h/2+4 + 10) * 10,
                           w = obj.sections[45].w-60,
                           h = butt_h/2+8}                           
 
+      obj.sections[48] = {x = 50,
+                          y = 150+butt_h+10 + (butt_h/2+4 + 10) * 6 -1,
+                          w = obj.sections[45].w-60,
+                          h = butt_h}
+                                                     
       obj.sections[58] = {x = 50,
-                          y = 150+butt_h+10 + (butt_h/2+4 + 10) * 6,
+                          y = 150+butt_h+10 + (butt_h/2+4 + 10) * 7,
                           w = obj.sections[45].w-60,
                           h = butt_h/2+8}                           
       obj.sections[59] = {x = 50,
-                          y = 150+butt_h+11 + (butt_h/2+4 + 10) * 7,
+                          y = 150+butt_h+11 + (butt_h/2+4 + 10) * 8,
                           w = obj.sections[45].w-60,
                           h = butt_h}
 
@@ -1199,11 +1209,11 @@
                           h = butt_h/2+4}                           
 
       obj.sections[66] = {x = 50,
-                          y = 150+butt_h+10 + (butt_h/2+4 + 10) * 10,
+                          y = 150+butt_h+10 + (butt_h/2+4 + 10) * 11,
                           w = 40,
                           h = butt_h/2+4}
       obj.sections[67] = {x = 10,
-                          y = 150+butt_h+7 + (butt_h/2+4 + 10) * 8,
+                          y = 150+butt_h+7 + (butt_h/2+4 + 10) * 9,
                           w = 35,
                           h = butt_h}
 
@@ -2085,7 +2095,7 @@
     local gui = {}
       gui.aa = 1
       gui.fontname = fontname_def
-      gui.fontsize_tab = 20    
+      gui.fontsize_tab = 20   
       gui.fontsz_knob = fontsize_def
       --gui.fontsz_get = fontsize_def
 
@@ -2212,6 +2222,16 @@
         if alpha then gfx.a = alpha else gfx.a = 1 end
         if yoff == nil then yoff = 0 end 
         gfx.setfont(1, gui.fontname, gui.fontsz_knob + offs)
+        local text_len = gfx.measurestr(text)
+        gfx.x, gfx.y = xywh.x+(xywh.w-text_len)/2,xywh.y+(xywh.h-gfx.texth)/2 + 1 + yoff
+        gfx.drawstr(text)
+  end
+
+  function GUI_textCtl(gui, xywh, text, color, offs, alpha, yoff)
+        f_Get_SSV(color)  
+        if alpha then gfx.a = alpha else gfx.a = 1 end
+        if yoff == nil then yoff = 0 end 
+        --gfx.setfont(1, gui.fontname, gui.fontsz_knob + offs)
         local text_len = gfx.measurestr(text)
         gfx.x, gfx.y = xywh.x+(xywh.w-text_len)/2,xywh.y+(xywh.h-gfx.texth)/2 + 1 + yoff
         gfx.drawstr(text)
@@ -4456,6 +4476,7 @@
         GUI_DrawSliderH(gui, 'OFFSET', obj.sections[808], gui.color.black, gui.color.white, F_limit(((gauge_select.tick_offs)/12),0,1))
         GUI_DrawSliderH(gui, 'X OFFSET', obj.sections[809], gui.color.black, gui.color.white, F_limit(((gauge_select.x_offs+30)/60),0,1))
         GUI_DrawSliderH(gui, 'Y OFFSET', obj.sections[810], gui.color.black, gui.color.white, F_limit(((gauge_select.y_offs+30)/60),0,1))
+        GUI_DrawButton(gui, gauge_select.font, obj.sections[831], gui.color.white, gui.color.black, true, 'FONT')
         GUI_DrawSliderH(gui, 'FONT SIZE', obj.sections[814], gui.color.black, gui.color.white, F_limit(((gauge_select.fontsz+8)/8),0,1))
         GUI_DrawSliderH(gui, 'VAL FREQ', obj.sections[825], gui.color.black, gui.color.white, F_limit(((gauge_select.val_freq-1)/23),0,1))
         
@@ -4530,7 +4551,7 @@
         r=gtab.radius+gtab.tick_offs
         
         if gtab.show_tick == true or gtab.show_val == true then
-          gfx.setfont(1, gui.fontname, gui.fontsz_knob+fs)
+          gfx.setfont(1, nz(gtab.font,fontname_def), gui.fontsz_knob+fs)
           
           local vals = gtab.vals
           if vals and #vals > 0 then
@@ -4622,7 +4643,7 @@
         local fs = gtab.fontsz
         
         if gtab.show_tick == true or gtab.show_val == true then
-          gfx.setfont(1, gui.fontname, gui.fontsz_knob+fs)
+          gfx.setfont(1, nz(gtab.font,fontname_def), gui.fontsz_knob+fs)
           
           local vals = gtab.vals
           if vals and #vals > 0 then
@@ -4713,7 +4734,7 @@
         local fs = gtab.fontsz
         
         if gtab.show_tick == true or gtab.show_val == true then
-          gfx.setfont(1, gui.fontname, gui.fontsz_knob+fs)
+          gfx.setfont(1, nz(gtab.font,fontname_def), gui.fontsz_knob+fs)
           
           local vals = gtab.vals
           if vals and #vals > 0 then
@@ -4888,6 +4909,7 @@
               show_val = gt.show_val,
               vals = {},
               val_dp = gt.val_dp,
+              font = gt.font,
               fontsz = gt.fontsz,
               spread = gt.spread,
               mapptof = gt.mapptof,
@@ -5365,6 +5387,7 @@
       GUI_DrawSliderH(gui, 'OFFSET', obj.sections[56], gui.color.black, gui.color.white, F_limit((off+150)/300,0,1))
       GUI_DrawSliderH(gui, 'VAL OFF', obj.sections[65], gui.color.black, gui.color.white, F_limit((valoff+150)/300,0,1))
 
+      GUI_DrawButton(gui, ctlfont_select, obj.sections[48], gui.color.white, gui.color.black, true, 'FONT', true)
       GUI_DrawSliderH(gui, 'F SIZE', obj.sections[58], gui.color.black, gui.color.white, (textsize_select+2)/35)
       GUI_DrawSliderH(gui, 'DEF VAL', obj.sections[57], gui.color.black, gui.color.white, F_limit(defval_select,0,1))
       GUI_DrawButton(gui, 'SET IMAGE', obj.sections[51], gui.color.white, gui.color.black, true)
@@ -5888,6 +5911,7 @@ end
                 local maxdp = nz(ctl.maxdp,-1)
                 local dvoff = ctl.dvaloffset
                 local tnum = ctl.tracknum
+                local font = ctl.font
   
                 if fxnum == nil then return end
       
@@ -5899,7 +5923,7 @@ end
                   tnum = strips[strip].track.tracknum
                 end
       
-                gfx.setfont(1, gui.fontname, gui.fontsz_knob +tsz-4)
+                gfx.setfont(1, font, gui.fontsz_knob +tsz-4)
                 local _, th_a = gfx.measurestr('|')
                 th_a=th_a+1
                 local to = th_a
@@ -5907,7 +5931,11 @@ end
                 local Disp_ParamV
                 local Disp_Name
                 local v2, val2 = 0, 0
-  
+                
+                if ctlcat == ctlcats.fxparam and settings_UCV then
+                  _, ctl.dval = reaper.TrackFX_GetFormattedParamValue(track, fxnum, param, "")
+                end
+                
                 if ctlcat == ctlcats.fxparam or ctlcat == ctlcats.trackparam or ctlcat == ctlcats.tracksend or ctlcat == ctlcats.pkmeter then
                   v2 = nz(frameScale(ctl.framemode, GetParamValue2(ctlcat,track,fxnum,param,i)),0)
                   val2 = F_limit(round(frames*v2),0,frames-1)
@@ -6203,10 +6231,10 @@ end
                     alpha = 0.4
                   end
                   if spn then
-                    GUI_textC(gui,xywh1, Disp_Name,tc,-4 + tsz, alpha)
+                    GUI_textCtl(gui,xywh1, Disp_Name,tc,-4 + tsz, alpha)
                   end
                   if spv then
-                    GUI_textC(gui,xywh2, Disp_ParamV,tc,-4 + tsz, alpha)          
+                    GUI_textCtl(gui,xywh2, Disp_ParamV,tc,-4 + tsz, alpha)          
                   end
   
                 if setting_reddotindicator == true and ctltype == 4 and DVOV and DVOV ~= '' and cycle_editmode == false then
@@ -12502,6 +12530,7 @@ end
       end
             
       --compatibility
+      if strips[strip][page].controls[cc].font == nil then strips[strip][page].controls[cc].font = fontname_def end
       if strips[strip][page].controls[cc].xydata == nil then strips[strip][page].controls[cc].xydata = {snapa = 1, snapb = 1, snapc = 1, snapd = 1, x = 0.5, y = 0.5} end
       if strips[strip][page].controls[cc].textoffx == nil then strips[strip][page].controls[cc].textoffx = 0 end
       if strips[strip][page].controls[cc].textoffvalx == nil then strips[strip][page].controls[cc].textoffvalx = 0 end      
@@ -12957,7 +12986,11 @@ end
             local ctltype = strip.controls[i].ctltype
             local found = strip.controls[i].fxfound
             local gauge = strip.controls[i].gauge
-      
+            local font = strip.controls[i].font
+            if not font then
+              font = fontname_def
+            end
+            
             if gauge then
               GUI_DrawGauge2(gauge,x+w/2,y+h/2,strip.controls[i])
             end
@@ -12970,6 +13003,8 @@ end
               --invert button
               val2 = 1-val2
             end
+            
+            gfx.setfont(1, font, gui.fontsz_knob +tsze-4)
             
             --load image
             gfx.blit(iidx,scale,0, 0, (val2)*gh, w, h, x + w/2-w*scale/2, y + h/2-h*scale/2)
@@ -12984,7 +13019,7 @@ end
               end
               Disp_ParamV = ''
               if spn then
-                GUI_textC(gui,xywh, tostring(Disp_Name),tc,-4+tsze)
+                GUI_textCtl(gui,xywh, tostring(Disp_Name),tc,-4+tsze)
               end
             end
           end          
@@ -13214,6 +13249,7 @@ end
           local frames = ctl.ctl_info.frames
           local ctltype = ctl.ctltype
           local found = ctl.fxfound
+          local font = ctl.font
     
           local v2 = nz(ctl.val,0)
           local val2 = F_limit(round(frames*v2,0),0,frames-1)
@@ -13225,7 +13261,7 @@ end
             val2 = 1-val2
           end
           
-          gfx.setfont(1, gui.fontname, gui.fontsz_knob +tsze-4)
+          gfx.setfont(1, font, gui.fontsz_knob +tsze-4)
           local _, th_a = gfx.measurestr('|')
           local to = th_a
           
@@ -13255,7 +13291,7 @@ end
             local xywh1 = {x = math.floor(mid-(text_len1x/2))+b_sz, y = math.floor(y+(h/2)-toff-1)+b_sz, w = text_len1x, h = th_a+2}
             
             if spn then
-              GUI_textC(gui,xywh1, tostring(Disp_Name),tc,-4+tsze)
+              GUI_textCtl(gui,xywh1, tostring(Disp_Name),tc,-4+tsze)
             end
           end
         end
@@ -14329,6 +14365,16 @@ end
     gfx_font_select.name = f3
     strips[tracks[track_select].strip][page].graphics[gfx2_select].font.name = f3
 
+  end
+
+  function CheckFont(font)
+
+    gfx.setfont(1,font)
+    local f2,f3 = gfx.getfont()
+    if f3 == font then
+      return f3
+    end
+    
   end
 
   function SortCtlSel_Horiz()
@@ -15575,6 +15621,7 @@ end
       if gt then
         gauge_select = gt
       end
+      ctlfont_select = ctl.font
       
       SetKnobScaleMode()
       cycle_select = Cycle_CopySelectIn(ctl_select[1].ctl)
@@ -17417,7 +17464,11 @@ end
         checksends = true
       end      
       
-      UpdateControlValues(rt)
+      if settings_UCV == 0 then
+        UpdateControlValues(rt)
+      else      
+        UpdateControlValues2(rt)
+      end
       
       if show_settings then
         
@@ -18883,6 +18934,20 @@ end
       elseif mouse.context == nil and MOUSE_click(obj.sections[830]) then mouse.context = contexts.gauge_nudge
       elseif mouse.context == nil and MOUSE_click(obj.sections[816]) then mouse.context = contexts.auto_delayslider
 
+      elseif mouse.context == nil and MOUSE_click(obj.sections[831]) then
+        if fontlist then
+          local fnt = ChooseFontMenu(mouse.mx,mouse.my)
+          if fnt then
+            local f = CheckFont(fnt)
+            if f then
+              gauge_select.font = f
+            end
+            update_gfx = true
+          end
+        else          
+          OpenEB(61,'Please enter font name:')
+        end
+        
       elseif mouse.context == nil and MOUSE_click_RB(obj.sections[830]) then
         if gauge_select.vals and gauge_ticksel and gauge_select.vals[gauge_ticksel] then
           gauge_select.vals[gauge_ticksel].nudge = 0
@@ -19845,6 +19910,25 @@ end
             end
             SetCtlBitmapRedraw()
             update_gfx = true
+          end
+          
+          if MOUSE_click(obj.sections[48]) then
+            if fontlist then
+              local fnt = ChooseFontMenu(mouse.mx,mouse.my)
+              if fnt then
+                local f = CheckFont(fnt)
+                if f then
+                  ctlfont_select = f
+                  for i = 1, #ctl_select do
+                    strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].font = ctlfont_select
+                  end            
+                end
+                update_gfx = true
+              end
+            else          
+              OpenEB(62,'Please enter font name:')
+            end
+            
           end
           
           if mouse.context == nil and MOUSE_click(obj.sections[50]) then mouse.context = contexts.scaleslider 
@@ -21397,10 +21481,18 @@ end
       end          
 
       if MOUSE_click(obj.sections[147]) then
-        --EditFont()
-        if strips and strips[tracks[track_select].strip] then
-          OpenEB(8,'Please enter font name:')
+        local fnt = ChooseFontMenu()
+        if fnt then
+          EditFont2(fnt)
+          update_gfx = true
+        else
+          if strips and strips[tracks[track_select].strip] then
+            OpenEB(8,'Please enter font name:')
+          end
         end
+      --elseif MOUSE_click_RB(obj.sections[147]) then
+      
+                
       end          
     
       if MOUSE_click(obj.sections[142]) then
@@ -24708,7 +24800,6 @@ end
         local mo = tonumber(txt)
         if mo then
           local nval, dval = GetValFromDVal(ctl_select[1].ctl,txt)
-          DBG(dval)
           if nval then
           
             local gtab = gauge_select
@@ -24732,6 +24823,21 @@ end
           
           end
         end  
+      elseif EB_Open == 61 then
+        local f = CheckFont(editbox.text)
+        if f then
+          gauge_select.font = f
+          update_gfx = true
+        end
+      elseif EB_open == 62 then
+        local f = CheckFont(editbox.text)
+        if f then
+          ctlfont_select = f
+          for i = 1, #ctl_select do
+            strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].font = ctlfont_select
+          end            
+        end
+        update_gfx = true
       end
       editbox = nil
       EB_Open = 0
@@ -25082,6 +25188,212 @@ end
                         else
                           if ctl.val ~= v then
                             ctl.val = v
+                            ctl.dirty = true
+                            if ctl.param_info.paramname == 'Bypass' then
+                              SetCtlEnabled(ctl.fxnum) 
+                            end
+                            update_ctls = true
+                          end                      
+                        end
+                      else
+                        if ctl.fxfound then
+                          CheckStripControls()
+                        end
+                      end
+                    elseif ctl.ctlcat == ctlcats.trackparam then
+                      local v = GetParamValue2(ctl.ctlcat,
+                                               tr,
+                                               nil,
+                                               ctl.param, i)
+                      if ctl.ctltype == 4 then
+                        if tostring(ctl.val) ~= tostring(v) then
+                          ctl.val = v
+                          ctl.dirty = true
+                          ctl.cycledata.posdirty = true 
+                          update_ctls = true
+                        end
+                      else
+                        if ctl.val ~= v then
+                          ctl.val = v
+                          ctl.dirty = true
+                          update_ctls = true
+                        end
+                      end                    
+                    elseif ctl.ctlcat == ctlcats.tracksend then
+  
+                      if settings_disablesendchecks == false and checksends == true then
+                        local tt = ctl.tracknum
+                        if tt == nil then
+                          tt = strips[strip].track.tracknum
+                        end
+                        local chk
+                        
+                        chk, chktbl[tt] = CheckSendGUID(tt,nil,ctl.param_info.paramnum,
+                                                              ctl.param_info.paramdestguid,
+                                                              ctl.param_info.paramdestchan,
+                                                              ctl.param_info.paramsrcchan,
+                                                              chktbl[tt])
+                        if chk == false then
+                          chktbl = CheckStripSends(chktbl)
+                        end
+                      end                    
+  
+                      local v = GetParamValue2(ctl.ctlcat,
+                                               tr,
+                                               nil,
+                                               ctl.param, i)
+  
+                      if ctl.ctltype == 4 then
+                        if tostring(ctl.val) ~= tostring(v) then
+                          ctl.val = v
+                          ctl.dirty = true
+                          ctl.cycledata.posdirty = true 
+                          update_ctls = true                    
+                        end
+                      else
+                        if ctl.val ~= v then
+                          ctl.val = v
+                          ctl.dirty = true
+                          update_ctls = true
+                        end
+                      end
+                    elseif ctl.ctlcat == ctlcats.pkmeter then
+                      if rt >= time_nextupdate_pkmeter then
+                        pkmts = true
+                        local chd = 0
+                        local trn = strips[strip].track.tracknum
+                        if ctl.tracknum ~= nil then
+                          trn = ctl.tracknum
+                        end
+                        local p = ctl.param
+                        local v = GetParamValue2(ctl.ctlcat,
+                                                 tr,
+                                                 nil,
+                                                 p, i)
+                        if peak_info[trn] and peak_info[trn][p % 64] then
+                          chd = peak_info[trn][p % 64].ch_d
+                        else
+                          chd = -150
+                        end
+                        if tostring(ctl.val) ~= tostring(chd) then
+                          ctl.val = chd
+                          ctl.dirty = true
+                          update_ctls = true
+                          --update_mtrs = true
+                        end
+                      end
+                    elseif ctl.ctlcat == ctlcats.fxoffline then
+                      local fxguid = reaper.TrackFX_GetFXGUID(tr, ctl.fxnum)
+                      if ctl.fxguid == fxguid then
+  
+                        local pn = reaper.TrackFX_GetNumParams(tr,ctl.fxnum)
+                        if pn ~= 2 then
+                          if ctl.offline ~= nil then
+                            ctl.dirty = true
+                            update_ctls = true
+                          end
+                          ctl.offline = nil
+                          ctl.val = 0
+                        else
+                          if ctl.offline == nil then
+                            ctl.dirty = true
+                            update_ctls = true
+                          end
+                          ctl.offline = true
+                          ctl.val = 1
+                        end
+                      else
+                        if ctl.fxfound then
+                          CheckStripControls()
+                        end
+                      end                  
+                    end
+                  end
+                end
+                chktbl = nil
+                if pkmts then
+                  time_nextupdate_pkmeter = rt + settings_updatefreq_pkmeter
+                end
+              end
+            end
+          end
+        end
+      end
+    end
+
+  end
+
+  function UpdateControlValues2(rt)
+  
+    if rt >= time_nextupdate then
+      local suf = settings_updatefreq
+      --if mode == 1 then suf = 0.2 end
+
+      time_nextupdate = rt + suf
+      if strips and tracks[track_select] and strips[tracks[track_select].strip] and #strips[tracks[track_select].strip][page].controls > 0 then
+        --check track
+        local strip = tracks[track_select].strip
+        
+        if CheckTrack(strips[strip].track, strip) then        
+          if tracks[track_select] and strips[tracks[track_select].strip] then
+            local strip = tracks[track_select].strip
+
+            local tr2 = GetTrack(strips[strip].track.tracknum)
+            if tr2 ~= nil then
+              if strips and strips[strip] then
+                local chktbl = {}
+                local pkmts = false
+
+                for i = 1, #strips[strip][page].controls do
+                  --check fx
+                  local ctl = strips[strip][page].controls[i]
+                  
+                  tr = tr2
+                  local tr_found = true
+                  if ctl.tracknum ~= nil then
+                    --tr = GetTrack(strips[tracks[track_select].strip][page].controls[i].tracknum)
+                    tr_found = CheckTrack(tracks[ctl.tracknum], strip, page, i)
+                    if tr_found then
+                      tr = GetTrack(ctl.tracknum)
+                    end 
+                  end
+--DBG(tr_found)
+                  
+                  if tr_found then
+                    if ctl.ctlcat == ctlcats.fxparam then
+                      local fxguid = reaper.TrackFX_GetFXGUID(tr, ctl.fxnum)
+                      if ctl.fxguid == fxguid then
+  --DBG(i)
+                        local pn = reaper.TrackFX_GetNumParams(tr,ctl.fxnum)
+                        if pn ~= 2 then
+                          if ctl.offline ~= nil then
+                            ctl.dirty = true
+                          end
+                          ctl.offline = nil
+                        else
+                          if ctl.offline == nil then
+                            ctl.dirty = true
+                          end
+                          ctl.offline = true
+                        end
+                      
+                        local _, v = reaper.TrackFX_GetFormattedParamValue(tr, ctl.fxnum, ctl.param, "")
+                        --DBG(v.. '  '..ctl.dval)
+                        local v2 = GetParamValue2(ctl.ctlcat,
+                                                 tr,
+                                                 ctl.fxnum,
+                                                 ctl.param, i)
+                          
+                        if ctl.ctltype == 4 then
+                          if tostring(ctl.dval) ~= tostring(v) then
+                            ctl.val = v2
+                            ctl.dirty = true
+                            ctl.cycledata.posdirty = true 
+                            update_ctls = true
+                          end
+                        else
+                          if ctl.dval ~= v then
+                            ctl.val = v2
                             ctl.dirty = true
                             if ctl.param_info.paramname == 'Bypass' then
                               SetCtlEnabled(ctl.fxnum) 
@@ -27334,6 +27646,7 @@ end
                  textoffx = strips[strip][page].controls[c].textoffx,
                  textoffvalx = strips[strip][page].controls[c].textoffvalx,
                  textsize = strips[strip][page].controls[c].textsize,
+                 font = strips[strip][page].controls[c].font,
                  val = strips[strip][page].controls[c].val,
                  defval = strips[strip][page].controls[c].defval,
                  maxdp = strips[strip][page].controls[c].maxdp,
@@ -27761,6 +28074,7 @@ end
                                       textoffx = tonumber(zn(data[key..'textoffx'],0)),
                                       textoffvalx = tonumber(zn(data[key..'textoffvalx'],0)),
                                       textsize = tonumber(zn(data[key..'textsize'],0)),
+                                      font = zn(data[key..'font'],fontname_def),
                                       val = tonumber(data[key..'val']),
                                       mval = tonumber(data[key..'mval']),
                                       defval = tonumber(data[key..'defval']),
@@ -27856,6 +28170,7 @@ end
             strips[ss][p].controls[c].gauge.dval = ''
             strips[ss][p].controls[c].gauge.vals = {}
             strips[ss][p].controls[c].gauge.val_dp = tonumber(zn(data[key..'gauge_val_dp']))
+            strips[ss][p].controls[c].gauge.font = (zn(data[key..'gauge_font'],fontname_def))
             strips[ss][p].controls[c].gauge.fontsz = tonumber(zn(data[key..'gauge_fontsz']))
             strips[ss][p].controls[c].gauge.spread = tobool(zn(data[key..'gauge_spread']))
             strips[ss][p].controls[c].gauge.mapptof = tobool(zn(data[key..'gauge_mapptof']))
@@ -29806,6 +30121,7 @@ end
               file:write('['..key..'textoffx]'..strips[s][p].controls[c].textoffx..'\n')
               file:write('['..key..'textoffvalx]'..strips[s][p].controls[c].textoffvalx..'\n')
               file:write('['..key..'textsize]'..nz(strips[s][p].controls[c].textsize,0)..'\n')
+              file:write('['..key..'font]'..nz(strips[s][p].controls[c].font,fontname_def)..'\n')
               file:write('['..key..'val]'..nz(strips[s][p].controls[c].val,0)..'\n')
               file:write('['..key..'mval]'..nz(strips[s][p].controls[c].mval,nz(strips[s][p].controls[c].val,0))..'\n')
               file:write('['..key..'defval]'..nz(strips[s][p].controls[c].defval,0)..'\n')   
@@ -29883,6 +30199,7 @@ end
                 file:write('['..key..'gauge_show_tick]'..tostring(nz(strips[s][p].controls[c].gauge.show_tick,true))..'\n')
                 file:write('['..key..'gauge_show_val]'..tostring(nz(strips[s][p].controls[c].gauge.show_val,true))..'\n')
                 file:write('['..key..'gauge_val_dp]'..nz(strips[s][p].controls[c].gauge.val_dp,0)..'\n')
+                file:write('['..key..'gauge_font]'..nz(strips[s][p].controls[c].gauge.font,fontname_def)..'\n')
                 file:write('['..key..'gauge_fontsz]'..nz(strips[s][p].controls[c].gauge.fontsz,0)..'\n')
                 file:write('['..key..'gauge_spread]'..tostring(nz(strips[s][p].controls[c].gauge.spread,''))..'\n')
                 file:write('['..key..'gauge_mapptof]'..tostring(nz(strips[s][p].controls[c].gauge.mapptof,''))..'\n')
@@ -31233,6 +31550,7 @@ end
                 end
                 
                 --compatibility
+                if ctl.font == nil then ctl.font = fontname_def end
                 if ctl.xydata == nil then ctl.xydata = {snapa = 1, snapb = 1, snapc = 1, snapd = 1, x = 0.5, y = 0.5} end
                 if ctl.textoffx == nil then ctl.textoffx = 0 end
                 if ctl.textoffvalx == nil then ctl.textoffvalx = 0 end      
@@ -31611,6 +31929,7 @@ end
                 dval = '',
                 vals = {},
                 val_dp = 0,
+                font = fontname_def,
                 fontsz = -5,
                 nudge = 0,
                 spread = nil,
@@ -31741,6 +32060,7 @@ end
     spread_select = false
     al_select = 0
     gauge_select = GaugeSelect_INIT()
+    ctlfont_select = fontname_def
     
     plist_w = 140
     oplist_w = 140
@@ -32409,6 +32729,48 @@ end
     end
     
   end
+  
+  function LoadFontList()
+  
+    local ffn=resource_path..'lbx_font_list.txt'
+    if reaper.file_exists(ffn) ~= true then
+      --DBG('Missing file: '..ffn)
+      return 0
+    end    
+    fontlist = {}
+   
+    data = {}
+    local i = 1
+    for line in io.lines(ffn) do
+      fontlist[i] = line
+      i=i+1
+    end    
+  
+  end
+  
+  function ChooseFontMenu(x,y)
+  
+    if fontlist and #fontlist > 0 then
+    
+      local fl = ''
+      for i = 1, #fontlist do
+        if fl ~= '' then
+          fl = fl .. '|'
+        end
+        fl = fl..fontlist[i]
+      end
+    
+      if x and y then
+        gfx.x = x
+        gfx.y = y
+      end
+      res = OpenMenu(fl)
+      if res then
+        return fontlist[res]
+      end
+    end
+  
+  end
   ------------------------------------------------------------
 
   SCRIPT = 'LBX_STRIPPER'
@@ -32453,6 +32815,9 @@ end
   eq_path = resource_path.."eq/"
   skins_path = resource_path.."skins/LBXDEF/"
   share_path = resource_path.."share/"
+  font_folder = "C:/Windows/Fonts/"
+  
+  LoadFontList()
     
   --copyfile('C:/Users/HMSStudio/AppData/Roaming/REAPER/Scripts/LBX/LBXCS_resources/controls/__default.png', 'C:/Users/HMSStudio/AppData/Roaming/REAPER/Scripts/LBX/LBXCS_resources/controls/cpcpcpcpcpc.png')  
     
@@ -32495,6 +32860,7 @@ end
   setting_reddotindicator = false
   settings_showminimaltopbar = true
   settings_createbackuponmanualsave = false
+  settings_UCV = 1
   
   save_subfolder = ''
   
