@@ -24829,7 +24829,7 @@ end
           gauge_select.font = f
           update_gfx = true
         end
-      elseif EB_open == 62 then
+      elseif EB_Open == 62 then
         local f = CheckFont(editbox.text)
         if f then
           ctlfont_select = f
