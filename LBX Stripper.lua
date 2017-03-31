@@ -19914,7 +19914,7 @@ end
           
           if MOUSE_click(obj.sections[48]) then
             if fontlist then
-              local fnt = ChooseFontMenu(mouse.mx,mouse.my)
+              local fnt = ChooseFontMenu(mx,my)
               if fnt then
                 local f = CheckFont(fnt)
                 if f then
@@ -21481,10 +21481,12 @@ end
       end          
 
       if MOUSE_click(obj.sections[147]) then
-        local fnt = ChooseFontMenu()
-        if fnt then
-          EditFont2(fnt)
-          update_gfx = true
+        if fontlist then
+          local fnt = ChooseFontMenu(mouse.mx,mouse.my)
+          if fnt then
+            EditFont2(fnt)
+            update_gfx = true
+          end
         else
           if strips and strips[tracks[track_select].strip] then
             OpenEB(8,'Please enter font name:')
