@@ -121,7 +121,8 @@
               gauge_yoffs = 88,              
               gauge_fs = 89,
               gauge_valfreq = 90,              
-              gauge_nudge = 91,              
+              gauge_nudge = 91,
+              tfxo_shift = 92,              
               dummy = 99
               }
   
@@ -1106,6 +1107,11 @@
                            w = gsw+20,
                            h = butt_h}
       
+      local gaw,gah = 280, 400
+      obj.sections[900] = {x = math.max(gfx1.main_w/2 -gaw/2,obj.sections[43].w),
+                          y = math.max(gfx1.main_h/2 - gah/2, obj.sections[10].y),
+                          w = gaw,
+                          h = gah}
       
       local sf_h = 140
       --STRIP FOLDERS
@@ -4432,6 +4438,34 @@
       
   ------------------------------------------------------------
 
+  function GUI_DrawTrackFXOrder()
+
+    GUI_DrawPanel(obj.sections[900],true,'TRACK FX ORDER')
+    if tfxreorder then
+    
+      local butt_h = 25
+      local butt_cnt = (obj.sections[900].h-30 -butt_h)/butt_h
+      local offs = 0
+      --DBG(tostring(tfxo_sel)..'  '..tostring(tfxo_pos))
+      for i = 1, butt_cnt-1 do
+    
+        if tfxreorder[i+tfxo_listpos] then
+          local xywh = {x = obj.sections[900].x+30,
+                        y = obj.sections[900].y + 30 + ((i-1) * (butt_h+5)),
+                        w = obj.sections[900].w-50,
+                        h = butt_h}
+          if i+tfxo_listpos == tfxo_pos then
+            GUI_DrawButton(gui, CropFXName(tfxreorder[i+tfxo_listpos].name), xywh, -2, gui.color.black, true, i+tfxo_listpos)
+          else
+            GUI_DrawButton(gui, CropFXName(tfxreorder[i+tfxo_listpos].name), xywh, gui.color.white, gui.color.black, true, string.format('%i',i+tfxo_listpos))
+          end          
+        end    
+      end
+      
+    end
+  
+  end
+
   function GUI_DrawGaugeEdit()
   
     if ctl_select ~= nil then
@@ -5931,10 +5965,12 @@ end
                 local Disp_ParamV
                 local Disp_Name
                 local v2, val2 = 0, 0
-                
+                --[[DBG(settings_UCV)
                 if ctlcat == ctlcats.fxparam and settings_UCV then
                   _, ctl.dval = reaper.TrackFX_GetFormattedParamValue(track, fxnum, param, "")
-                end
+                  --strips[strip][page].controls[i] = ctl.dval
+                  DBG('setitigng: '..tostring(ctl.dval))
+                end]]
                 
                 if ctlcat == ctlcats.fxparam or ctlcat == ctlcats.trackparam or ctlcat == ctlcats.tracksend or ctlcat == ctlcats.pkmeter then
                   v2 = nz(frameScale(ctl.framemode, GetParamValue2(ctlcat,track,fxnum,param,i)),0)
@@ -9535,6 +9571,32 @@ end
         UpdateLEdges()
       end]]
  
+      --[[DBG('gfx'..tostring(update_gfx))
+      DBG('surface'..tostring(update_surface))
+      DBG('sidebar'..tostring(update_sidebar))
+      DBG('topbar'..tostring(update_topbar))
+      DBG('ctlopts'..tostring(update_ctlopts))
+      DBG('ctls'..tostring(update_ctls))
+      DBG('bg'..tostring(update_bg))
+      DBG('settings'..tostring(update_settings))
+      DBG('snaps'..tostring(update_snaps))
+      DBG('msnaps'..tostring(update_msnaps))
+      DBG('actcho'..tostring(update_actcho))
+      DBG('fsnaps'..tostring(update_fsnaps))
+      DBG('mfsnaps'..tostring(update_mfsnaps))
+      DBG('eqcontrol'..tostring(update_eqcontrol))
+      DBG('macroedit'..tostring(update_macroedit))
+      DBG('macrobutt'..tostring(update_macrobutt))]]
+   --DBG('*')
+      --update_gfx or update_surface or update_sidebar or update_topbar or update_ctlopts or update_ctls or update_bg or 
+       --update_settings or update_snaps or update_msnaps or update_actcho or update_fsnaps or update_mfsnaps or update_eqcontrol or update_macroedit or
+       --update_macrobutt 
+      if show_trackfxorder then
+       --DBG('fghf')
+        GUI_DrawTrackFXOrder()
+       
+      end
+ 
     elseif show_xxy and (update_gfx or update_xxy or update_xxypos or update_surface or update_snaps or update_msnaps or resize_snaps or resize_display) then
     
       gfx.dest = 1
@@ -9671,6 +9733,7 @@ end
     update_xxypos = false
     update_eqcontrol = false
     update_macrobutt = false
+    update_trackfxorder = false
     
   end
 
@@ -16862,6 +16925,15 @@ end
         backalpha = 1
         update_bg = true
         update_gfx = true
+      elseif char == 49 then
+        tfxo_listpos = 0
+        tfxorder = TrackFXOrder_Read()
+        tfxreorder = TrackFXOrder_Read()
+        if tfxorder then
+          show_trackfxorder = not show_trackfxorder 
+          update_gfx = true
+        end
+        char = 0
       end
     --[[else -- shift
       if char == 19 then
@@ -16874,6 +16946,28 @@ end
         update_surface = true
       end
     end   ]] 
+    return char
+  end
+  
+  function TrackFXOrder_Read()
+  
+    local tfxorder = nil
+    if tracks and tracks[track_select] then
+      tfxorder = {}
+    
+      local track = GetTrack(tracks[track_select].tracknum)
+      local fxc = reaper.TrackFX_GetCount(track)
+      for i = 1, fxc do
+        local _, name = reaper.TrackFX_GetFXName(track,i-1,'')
+        --DBG(i)
+        tfxorder[i] = {name = name,
+                       guid = reaper.TrackFX_GetFXGUID(track,i-1),
+                       fxnum = i-1,
+                       found = true}
+      end
+    end
+    return tfxorder
+  
   end
 
   function ArrowKey_Shift(char, ctl_select, gfx3_select, gfx2_select)
@@ -17431,7 +17525,10 @@ end
     if EB_Open == 0 and MS_Open == 0 then
       char = gfx.getchar() 
       if char ~= 0 then
-        keypress(char)
+        --need to check if xxy/trackfxorder open?
+        if show_trackfxorder == false and show_xxy == false then
+          char = keypress(char)
+        end
       end
     
     elseif MS_Open > 0 then
@@ -17450,7 +17547,17 @@ end
   
     end
 
-    if show_xxy == false then
+    if show_trackfxorder then
+
+      if settings_UCV == 0 then
+        UpdateControlValues(rt)
+      else      
+        UpdateControlValues2(rt)
+      end
+    
+      A_Run_TFXOrder(char)
+    
+    elseif show_xxy == false then
 
       if settings_followselectedtrack and navigate then
       
@@ -17806,6 +17913,84 @@ end
 
   end
 
+  function A_Run_TFXOrder(char)
+  
+    if char ~= 0 then
+      if char == 49 then
+        show_trackfxorder = false
+        update_surface = true
+      end
+    end
+    
+    local bh = 30
+    local xywh = {x = obj.sections[900].x+30,
+                  y = obj.sections[900].y+30,
+                  w = obj.sections[900].w-50,
+                  h = obj.sections[900].h-30}
+                  
+    if gfx.mouse_wheel ~= 0 and MOUSE_over(xywh) then
+    
+      local v = gfx.mouse_wheel/120
+      tfxo_listpos = F_limit(tfxo_listpos -v,0,#tfxorder-12)
+      update_surface = true
+      
+    elseif mouse.context == nil and MOUSE_click(xywh) then
+      tfxo_sel =  F_limit(math.floor((mouse.my - xywh.y) / bh)+1 +tfxo_listpos, 1, #tfxorder)
+      if tfxo_sel <= #tfxorder then
+        mouse.context = contexts.tfxo_shift
+        tfxo_scrolldel = reaper.time_precise()
+        tfxo_pos = tfxo_sel  
+      else
+        tfxo_sel = nil
+      end
+      update_surface = true
+    end
+  
+    if mouse.context and mouse.context == contexts.tfxo_shift then
+      tfxo_lastpos = tfxo_pos
+      local mpos = math.floor((mouse.my - xywh.y) / bh)+1
+      tfxo_pos = F_limit(mpos +tfxo_listpos, 1, #tfxorder)
+      if reaper.time_precise() > tfxo_scrolldel then
+        if mpos < 1 then
+          tfxo_listpos = math.max(tfxo_listpos -1,0)
+        elseif mpos > 12 then --hard coded size :/
+          tfxo_listpos = math.min(tfxo_listpos +1,#tfxorder-12)
+        end
+        tfxo_scrolldel = reaper.time_precise() + 0.1
+        update_surface = true
+      end        
+      if tfxo_pos ~= tfxo_lastpos then      
+        tfxreorder = ReOrderTable(tfxorder, 1, tfxo_sel, tfxo_pos)
+        update_surface = true
+      end
+    elseif mouse.context == nil and tfxo_pos then
+      MoveFXChunk(tfxo_sel, tfxo_pos)
+      tfxo_pos = nil
+      tfxo_sel = nil
+      tfxorder = tfxreorder
+      update_surface = true
+    end
+    
+  end
+
+  function ReOrderTable(tab, s, p1, p2)
+  
+    local newtab = {}
+    local offs = 0
+    for i = s, #tab do
+      if i ~= p1 then
+        table.insert(newtab, tab[i])
+      end
+    end
+    if p2 == #tab then
+      table.insert(newtab, tab[p1])
+    else
+      table.insert(newtab, p2, tab[p1])
+    end
+    return newtab
+    
+  end
+  
   function A_Run_Mode0(noscroll, rt)
   
     if gfx.mouse_wheel ~= 0 then
@@ -25388,14 +25573,18 @@ end
                           
                         if ctl.ctltype == 4 then
                           if tostring(ctl.dval) ~= tostring(v) then
+                          --DBG(tostring(ctl.dval)..'  '..tostring(v))
                             ctl.val = v2
+                            ctl.dval = v
                             ctl.dirty = true
                             ctl.cycledata.posdirty = true 
                             update_ctls = true
                           end
                         else
                           if ctl.dval ~= v then
+                          --DBG(tostring(ctl.dval)..'  '..tostring(v))
                             ctl.val = v2
+                            ctl.dval = v
                             ctl.dirty = true
                             if ctl.param_info.paramname == 'Bypass' then
                               SetCtlEnabled(ctl.fxnum) 
@@ -27024,7 +27213,7 @@ end
     
           local macro = ctls[c].macroctl
           
-          if #macro > 0 then
+          if macro and #macro > 0 then
           
             local mcnt = #macro
             for m = 1, mcnt do
@@ -32084,6 +32273,7 @@ end
     show_actionchooser = false
     show_xxy = false
     show_gaugeedit = false
+    show_trackfxorder = false
     
     show_paramname = true
     show_paramval = true
@@ -32397,6 +32587,37 @@ end
     return rchunk, nfxid, ofxid
     
   end]]
+  
+  function MoveFXChunk(srcfxnum, dstfxnum)
+  
+    --DBG(srcfxnum..'  '..dstfxnum)
+    local writechunk = false
+    local trn = tracks[track_select].tracknum
+    local tr = GetTrack(trn)
+    local fxcnt = reaper.TrackFX_GetCount(tr)
+    local _, chunk = reaper.GetTrackStateChunk(tr,'',false)
+    local _, nchunk, movechunk = RemoveFXChunkFromTrackChunk(chunk, srcfxnum)
+    if nchunk then
+      if dstfxnum == fxcnt then
+        --insert at end
+        nchunk = Chunk_InsertFXChunkAtEndOfFXChain(trn, nchunk, movechunk, true)
+        if nchunk then
+          writechunk = true
+        end
+      else
+        local fnd, _, s, e = GetFXChunkFromTrackChunk(nchunk, dstfxnum)
+        if fnd then
+          nchunk = string.sub(nchunk,0,s-1)..movechunk..string.sub(nchunk,s)
+          writechunk = true
+        end
+      end
+    
+      if writechunk == true then
+        reaper.SetTrackStateChunk(tr,nchunk,true)
+        --DBG(nchunk)
+      end
+    end
+  end
     
   --returns success, fxchunk, start loc, end loc
   function GetFXChunkFromTrackChunk(trchunk, fxn)
@@ -32426,7 +32647,7 @@ end
     for i = 1,fxn do
       s, e = string.find(trchunk,'(BYPASS.-WAK %d)',s)
       if s and e then
-        fxchunk = string.sub(trchunk,s,e)
+        fxchunk = string.sub(trchunk,s,e+1)
 
         if i == fxn then 
           fnd = true 
@@ -32440,7 +32661,7 @@ end
         break
       end
     end
-    return fnd, nchunk  
+    return fnd, nchunk, fxchunk  
   
   end
 
@@ -32616,25 +32837,27 @@ end
   end
   
   --returns new track chunk, new fxguid, old fxguid
-  function Chunk_InsertFXChunkAtEndOfFXChain(trn, trchunk, insfxchunk)
+  function Chunk_InsertFXChunkAtEndOfFXChain(trn, trchunk, insfxchunk, keepid)
 
     guids = {}
     local ofxid, nfxid = nil, nil
     local rchunk = nil
 
-    --prepare insert chunk    
-    if insfxchunk then
-      insfxchunk = string.gsub(insfxchunk,
-                              'FXID ({%x%x%x%x%x%x%x%x%-%x%x%x%x%-%x%x%x%x%-%x%x%x%x%-%x%x%x%x%x%x%x%x%x%x%x%x})',
-                              function(d) if guids[d] == nil then guids[d]=reaper.genGuid('') end return 'FXID '..guids[d] end)
+    if keepid == nil then
+      --prepare insert chunk    
+      if insfxchunk then
+        insfxchunk = string.gsub(insfxchunk,
+                                'FXID ({%x%x%x%x%x%x%x%x%-%x%x%x%x%-%x%x%x%x%-%x%x%x%x%-%x%x%x%x%x%x%x%x%x%x%x%x})',
+                                function(d) if guids[d] == nil then guids[d]=reaper.genGuid('') end return 'FXID '..guids[d] end)
+      end
+      
+      --should be just one
+      for i, v in pairs(guids) do 
+        ofxid = i
+        nfxid = v 
+      end
     end
-    
-    --should be just one
-    for i, v in pairs(guids) do 
-      ofxid = i
-      nfxid = v 
-    end
-    
+      
     local chunk, chs, che = Chunk_GetFXChainSection(trchunk)
     if chunk then
       --insert before final character
@@ -32656,6 +32879,7 @@ end
     return rchunk, nfxid, ofxid
     
   end
+
     
   function SaveProj(tmp, bak)
     --DBG(reaper.GetProjectPath(''))
@@ -32817,7 +33041,7 @@ end
   eq_path = resource_path.."eq/"
   skins_path = resource_path.."skins/LBXDEF/"
   share_path = resource_path.."share/"
-  font_folder = "C:/Windows/Fonts/"
+  --font_folder = "C:/Windows/Fonts/"
   
   LoadFontList()
     
