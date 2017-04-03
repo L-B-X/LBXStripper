@@ -30692,6 +30692,10 @@ end
     --DBG(fn)
     --DBG(ffn)
     file=io.open(ffn,"w")
+    if file == nil then
+      DBG('Failed to create save file:/n/n'..ffn)
+      return nil
+    end
         
     local s, p, c, g
     reaper.SetProjExtState(0,SCRIPT,"","") -- clear first
@@ -30716,54 +30720,6 @@ end
     
     SaveDataFile(file, save_path)
     
-    --DBG('saving strips')    
-    --[[if strips and #strips > 0 then
-    
-      reaper.SetProjExtState(0,SCRIPT,'strips_count',#strips)
-      file:write('[stripcount]'..tostring(#strips)..'\n')    
-      DBGOut('SaveData: strips count: '..tostring(#strips))
-      
-      for s = 1, #strips do
-        --DBG('saving strips:'..s)    
-        --DBG('time: '..SaveStripData(s))
-        --DBG('time: '..SaveStripData_FN(s))
-        GUI_DrawMsgX(obj, gui, 'Saving Strip Data...',s,#strips)
-        SaveStripData_FN(s,'dummy',save_path,file)
-      end
-      
-    else
-      reaper.SetProjExtState(0,SCRIPT,'strips_count',0)    
-      file:write('[stripcount]'..tostring(0)..'\n')    
-      DBGOut('SaveData: strips count: '..tostring(0))
-    end
-  
-    if snapshots and #snapshots > 0 then
-      reaper.SetProjExtState(0,SCRIPT,'snapshots_count',#snapshots)
-      file:write('[snapshotcount]'..tostring(#snapshots)..'\n')    
-      DBGOut('SaveData: snapshots count: '..tostring(#snapshots))
-    
-      for s = 1, #snapshots do
-        --DBG('saving snaps:'..s)    
-        --SaveSnapshotData(s)
-        GUI_DrawMsgX(obj, gui, 'Saving Snapshot/Metalite Data...',s,#snapshots)
-        SaveSnapshotData_FN(s,'dummy',save_path,file)
-        SaveXXYData_FN(s,'dummy',save_path,file)
-      end
-    
-      SaveXXYPathData_FN('dummy',save_path,file)
-    else
-      reaper.SetProjExtState(0,SCRIPT,'snapshots_count',0)        
-      file:write('[snapshotcount]'..tostring(0)..'\n')    
-      DBGOut('SaveData: snapshots count: '..tostring(0))
-    end
-  
-    if faders then
-      SaveFaders(file)
-    end
-    if switchers then
-      SaveSwitchers(file)
-    end]]
-  
     file:close()
     reaper.SetProjExtState(0,SCRIPT,'lbxstripper_datafile',fn)
     reaper.SetProjExtState(0,SCRIPT,'savedok',tostring(true))
@@ -30776,14 +30732,15 @@ end
         ffn = ffn..'.lbxbak'      
       end
       file=io.open(ffn,"w")
+      if file == nil then
+        DBG('Failed to create backup file:/n/n'..ffn)
+        return nil
+      end
       SaveDataFile(file, save_path)
       file:close()
       DBGOut('SaveData: Backup created: '..tostring(true))      
     end
     
-    --DBG('saving finished:')    
-  
-    --DBG('Total Save Time: '..reaper.time_precise() - t)
     infomsg = 'Total Save Time: '..round(reaper.time_precise() - t,2)..'s'
     DBGOut(infomsg)
     g_savedirty = false
