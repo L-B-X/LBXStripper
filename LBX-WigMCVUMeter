@@ -1,0 +1,255 @@
+desc:LBX WigWare Multi-channel Peak VU Meter
+// Copyright Dr Bruce Wiggins 2016
+// License: LGPL - http://www.gnu.org/licenses/lgpl-3.0.en.html
+// http://www.brucewiggins.co.uk
+// Twitter @BruceWiggins
+// I've commented it extensively to aid in the writing of 
+// JS effects.  Please let me know if you find this useful :-)
+// NB. I know it isn't really a VU meter (it's a peak meter), 
+// but that's what everyone searches for!
+// You MUST retain the text above when sharing/distributing
+
+// Adapted for use with LBX Stripper by Leon Bradley
+
+slider1:16<0,16,1>Number of Channels
+slider2:0<0,1,1>Reset Max Peak
+//slider2:100<0,500,10>Sample Time (ms)
+//slider3:60<0,96,1>min dB Value (-ve)
+//slider4:10<2,20,1>peak hold (x Sample Time)
+slider3:-60<-60,0,0.1>-OUT:Ch1 Peak
+slider4:-60<-60,0,0.1>-OUT:Ch2 Peak
+slider5:-60<-60,0,0.1>-OUT:Ch1 Peak Hold
+slider6:-60<-60,0,0.1>-OUT:Ch2 Peak Hold
+
+slider7:-60<-60,0,0.1>-OUT:Ch3 Peak
+slider8:-60<-60,0,0.1>-OUT:Ch4 Peak
+slider9:-60<-60,0,0.1>-OUT:Ch3 Peak Hold
+slider10:-60<-60,0,0.1>-OUT:Ch4 Peak Hold
+
+slider11:-60<-60,0,0.1>-OUT:Ch5 Peak
+slider12:-60<-60,0,0.1>-OUT:Ch6 Peak
+slider13:-60<-60,0,0.1>-OUT:Ch5 Peak Hold
+slider14:-60<-60,0,0.1>-OUT:Ch6 Peak Hold
+
+slider15:-60<-60,0,0.1>-OUT:Ch7 Peak
+slider16:-60<-60,0,0.1>-OUT:Ch8 Peak
+slider17:-60<-60,0,0.1>-OUT:Ch7 Peak Hold
+slider18:-60<-60,0,0.1>-OUT:Ch8 Peak Hold
+
+slider19:-60<-60,0,0.1>-OUT:Ch9 Peak
+slider20:-60<-60,0,0.1>-OUT:Ch10 Peak
+slider21:-60<-60,0,0.1>-OUT:Ch9 Peak Hold
+slider22:-60<-60,0,0.1>-OUT:Ch10 Peak Hold
+
+slider23:-60<-60,0,0.1>-OUT:Ch11 Peak
+slider24:-60<-60,0,0.1>-OUT:Ch12 Peak
+slider25:-60<-60,0,0.1>-OUT:Ch11 Peak Hold
+slider26:-60<-60,0,0.1>-OUT:Ch12 Peak Hold
+
+slider27:-60<-60,0,0.1>-OUT:Ch13 Peak
+slider28:-60<-60,0,0.1>-OUT:Ch14 Peak
+slider29:-60<-60,0,0.1>-OUT:Ch13 Peak Hold
+slider30:-60<-60,0,0.1>-OUT:Ch14 Peak Hold
+
+slider31:-60<-60,0,0.1>-OUT:Ch15 Peak
+slider32:-60<-60,0,0.1>-OUT:Ch16 Peak
+slider33:-60<-60,0,0.1>-OUT:Ch15 Peak Hold
+slider34:-60<-60,0,0.1>-OUT:Ch16 Peak Hold
+
+@init
+ln = 64;          // max length of arrays (no of channels);
+sc=6/log(2);      // dB scaling factor
+scalex = 20;      // pixels width for labels on left
+pcnt = 0;         // peak hold counter;
+maxsamples = 1024;// mem location for maxsamples array;         
+peaks = maxsamples + ln; // samples peaks
+pholds = peaks + ln;     // peak holds
+pctr = pholds + ln;      // peak hold counters
+memset(maxsamples,0,ln); // zero/min memory at start
+memset(peaks,-192,ln);
+memset(pholds,-192,ln);
+memset(pctr,0,ln);
+
+function SL_Reset(_nr)
+(
+  this.last_val[_nr] = 0.0;
+  this.binit[_nr] = 0;
+);
+
+function SL_Init(_nr)
+(
+  this.nr[_nr] = _nr;
+  this.sl_reset(_nr);
+);
+
+function SL_Process(nr, _val)
+local(bupdate)
+(
+  
+  (this.binit[nr] == 0) ?
+  (
+    this.binit[nr] = 1;
+    this.last_val[nr] = _val;
+  );
+  
+  (this.last_val[nr] != _val) ? 
+  (
+    slider(nr) = _val;
+    slider_automate(slider(nr));
+    this.bupdate[nr] = 1;
+  ):
+  (
+    this.bupdate[nr] = 0;
+  );
+  
+  this.last_val[nr] = _val;
+);  
+
+  //Init
+  
+  SL3.SL_Init(3);
+  SL4.SL_Init(4);
+  SL5.SL_Init(5);
+  SL6.SL_Init(6);
+  SL7.SL_Init(7);
+  SL8.SL_Init(8);
+  SL9.SL_Init(9);
+  SL10.SL_Init(10);
+  SL11.SL_Init(11);
+  SL12.SL_Init(12);
+  SL13.SL_Init(13);
+  SL14.SL_Init(14);
+  SL15.SL_Init(15);
+  SL16.SL_Init(16);
+  SL17.SL_Init(17);
+  SL18.SL_Init(18);
+  SL19.SL_Init(19);
+  SL20.SL_Init(20);
+  SL21.SL_Init(21);
+  SL22.SL_Init(22);
+  SL23.SL_Init(23);
+  SL24.SL_Init(24);
+  SL25.SL_Init(25);
+  SL26.SL_Init(26);
+  SL27.SL_Init(27);
+  SL28.SL_Init(28);
+  SL29.SL_Init(29);
+  SL30.SL_Init(30);
+  SL31.SL_Init(31);
+  SL32.SL_Init(32);
+  SL33.SL_Init(33);
+  SL34.SL_Init(34);
+  
+@slider
+//make sure we can't have more channels than the track has
+//but num_ch ALWAYS inits to zero....how annoying.
+num_ch>0?(nch = max(2,min(num_ch,slider1));) :
+(nch = slider1;);
+slider1 = nch;
+sampletime=0*srate/1000;  // sample time ms to s
+mindb = 60;                // minimum dB value shown
+minlin = pow(10,-mindb/20);     // minimum dB value as lin gain
+phold = 2*500;                // peak hold time multiplier
+
+@block
+//if we've gone over the sample time
+bscnt>sampletime ? 
+(
+  ibl=0;
+  (slider(2) == 1) ?
+  (
+    pholds[0] = -mindb;
+    pholds[1] = -mindb;
+    pholds[2] = -mindb;
+    pholds[3] = -mindb;
+    pholds[4] = -mindb;
+    pholds[5] = -mindb;
+    pholds[6] = -mindb;
+    pholds[7] = -mindb;
+    pholds[8] = -mindb;
+    pholds[9] = -mindb;
+    pholds[10] = -mindb;
+    pholds[11] = -mindb;
+    pholds[12] = -mindb;
+    pholds[13] = -mindb;
+    pholds[14] = -mindb;
+    pholds[15] = -mindb;
+    slider(2) = 0;
+  );
+  loop(nch,
+    //get the current peak - make sure we don't log zero
+    peaks[ibl]=log(max(minlin,maxsamples[ibl]))*sc; 
+    SL_Process((floor(ibl/2)*4)+ibl%2+3,peaks[ibl]);
+    //if peak hold has held long enough, minimum it
+    //pctr[ibl]>phold ? (pholds[ibl] = -mindb;);
+    //if peak hold is less than current peak, store it and
+    //reset that channels peak hold counter, else decrement
+    //the channels peak hold counter
+    pholds[ibl]<peaks[ibl] ? 
+    (pholds[ibl]=peaks[ibl];pctr[ibl]=0;) :
+    (pctr[ibl]+=1;);
+    SL_Process((floor(ibl/2)*4)+ibl%2+5,pholds[ibl]);
+
+    //zero current channels max sample
+    maxsamples[ibl] = 0;
+    ibl+=1;
+  );
+  //reset timer
+  bscnt=0;
+  
+);
+bscnt += samplesblock;
+
+@sample
+//get maximum sample per channel per block of samples (abs)
+ispl=0;
+loop(nch,
+  maxsamples[ispl] = max(maxsamples[ispl],abs(spl(ispl)));
+  ispl+=1;
+);
+
+/*@gfx 400,200
+i=0;
+//decide on bar graph width
+myx = floor((gfx_w-scalex)/(nch));
+//offset the bar graphs to allow for scale on left
+x = scalex;
+//used for scaling the size of the graph
+mult = gfx_h/mindb;
+//draw rectangles for metres/peak hold
+loop(nch,
+  //draw var graphs
+  val = ceil(mult*(mindb+peaks[i]));
+  gfx_r = 0.0;gfx_g = 0.8;gfx_b = 0.25; //Bar Graph Colour (RGB)
+  gfx_rect(x,(gfx_h-val),myx-1,val);
+  //SL_Process(mindb+peaks[i]);
+  
+  //draw peak holds
+  val2 = ceil(mult*(mindb+pholds[i]));
+  gfx_r = 1.0;gfx_g =0.5;gfx_b = 0.0;   //Peak Hold Colour (RGB)
+  gfx_rect(x,(gfx_h-val2),myx-1,3);
+  
+  //draw channel number
+  gfx_x = x+1;
+  gfx_y = gfx_h-gfx_texth-2;
+  gfx_r = 1.0;gfx_g =1.0;gfx_b = 1.0;  //Channel Test Colour (RGB)
+  gfx_drawnumber(i+1,0);
+  x+=myx;
+  i+=1;
+  );
+  
+//draw dB scale on the left hand side in 6dB blocks
+ppdb = gfx_h/mindb; //pixels per dB
+db6 = 6 * ppdb;     //6dB in pixels
+i=0;
+gfx_r = 1.0;gfx_g = 1.0;gfx_b = 1.0;  //dB scale colour
+loop(ceil(gfx_h/db6),
+  gfx_x = 0;
+  gfx_y = db6*i;
+  gfx_lineto(scalex-3,gfx_y);
+  gfx_x = 1;
+  gfx_y+=1;
+  gfx_drawnumber(i*6,0);
+  i+=1;
+  );
+*/
