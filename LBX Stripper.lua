@@ -1107,7 +1107,7 @@
                            w = gsw+20,
                            h = butt_h}
       
-      local gaw,gah = 280, 400
+      local gaw,gah = 400, math.max(200, obj.sections[10].h-40)
       obj.sections[900] = {x = math.max(gfx1.main_w/2 -gaw/2,obj.sections[43].w),
                           y = math.max(gfx1.main_h/2 - gah/2, obj.sections[10].y),
                           w = gaw,
@@ -4438,26 +4438,38 @@
       
   ------------------------------------------------------------
 
+  function GetTFXOButtCnt()
+    local tfxo_butth = 30
+    return math.floor((obj.sections[900].h-30)/tfxo_butth), tfxo_butth
+  end
+
   function GUI_DrawTrackFXOrder()
 
     GUI_DrawPanel(obj.sections[900],true,'TRACK FX ORDER')
     if tfxreorder then
     
-      local butt_h = 25
-      local butt_cnt = (obj.sections[900].h-30 -butt_h)/butt_h
+      local butt_cnt, butt_h = GetTFXOButtCnt()
       local offs = 0
       --DBG(tostring(tfxo_sel)..'  '..tostring(tfxo_pos))
-      for i = 1, butt_cnt-1 do
+      for i = 1, butt_cnt do
     
         if tfxreorder[i+tfxo_listpos] then
           local xywh = {x = obj.sections[900].x+30,
-                        y = obj.sections[900].y + 30 + ((i-1) * (butt_h+5)),
+                        y = obj.sections[900].y + 30 + ((i-1) * (butt_h)),
                         w = obj.sections[900].w-50,
-                        h = butt_h}
+                        h = butt_h-5}
+          local tc = gui.color.black
+          if tostring(tfxreorder[i+tfxo_listpos].offline) == '1' then
+            tc = '128 128 128'
+          elseif tostring(tfxreorder[i+tfxo_listpos].bypass) == '1' then
+            tc = gui.color.red
+          end
           if i+tfxo_listpos == tfxo_pos then
-            GUI_DrawButton(gui, CropFXName(tfxreorder[i+tfxo_listpos].name), xywh, -2, gui.color.black, true, i+tfxo_listpos)
+            GUI_DrawButton(gui, CropFXName(tfxreorder[i+tfxo_listpos].name), xywh, -4, tc, true, string.format('%i',i+tfxo_listpos))
+          elseif tostring(tfxreorder[i+tfxo_listpos].offline) == '1' then
+            GUI_DrawButton(gui, CropFXName(tfxreorder[i+tfxo_listpos].name), xywh, -1, tc, true, string.format('%i',i+tfxo_listpos))          
           else
-            GUI_DrawButton(gui, CropFXName(tfxreorder[i+tfxo_listpos].name), xywh, gui.color.white, gui.color.black, true, string.format('%i',i+tfxo_listpos))
+            GUI_DrawButton(gui, CropFXName(tfxreorder[i+tfxo_listpos].name), xywh, gui.color.white, tc, true, string.format('%i',i+tfxo_listpos))
           end          
         end    
       end
@@ -5566,6 +5578,9 @@
     elseif colb == -3 then
       w, h = gfx.getimgdim(skin.butt18T)
       sl = skin.butt18T
+    elseif colb == -4 then
+      w, h = gfx.getimgdim(skin.butt18Y)
+      sl = skin.butt18Y
     else
       w, h = gfx.getimgdim(skin.butt18)
       sl = skin.butt18
@@ -5602,7 +5617,7 @@
     if f == 0 or tonumber(colb) ~= nil then
       if tonumber(colb) ~= nil and colb == -1 or colb == -3 then
         colt = gui.color.white
-      elseif tonumber(colb) ~= nil and colb == -2 then
+      elseif tonumber(colb) ~= nil and colb == -2 or colb == -4 then
         colt = gui.color.black
       else
         colt = colb
@@ -16957,6 +16972,9 @@ end
     
       local track = GetTrack(tracks[track_select].tracknum)
       local fxc = reaper.TrackFX_GetCount(track)
+      local _, chunk = reaper.GetTrackStateChunk(track,'',false)
+      local s,e = 0,0
+
       for i = 1, fxc do
         local _, name = reaper.TrackFX_GetFXName(track,i-1,'')
         --DBG(i)
@@ -16964,6 +16982,15 @@ end
                        guid = reaper.TrackFX_GetFXGUID(track,i-1),
                        fxnum = i-1,
                        found = true}
+        
+       s, e = string.find(chunk,'BYPASS %d %d %d',s)
+       if s and e then
+         local bypstr = string.sub(chunk,s,e)
+         tfxorder[i].bypass = string.match(bypstr,'(%d) %d %d')
+         tfxorder[i].offline = string.match(bypstr,'%d (%d) %d')
+         s=e+1
+       end           
+       --DBG(i..'  '..tfxorder[i].bypass..'  '..tfxorder[i].offline)    
       end
     end
     return tfxorder
@@ -17922,18 +17949,20 @@ end
       end
     end
     
-    local bh = 30
+    local butt_cnt, bh = GetTFXOButtCnt()
     local xywh = {x = obj.sections[900].x+30,
                   y = obj.sections[900].y+30,
                   w = obj.sections[900].w-50,
                   h = obj.sections[900].h-30}
                   
     if gfx.mouse_wheel ~= 0 and MOUSE_over(xywh) then
-    
       local v = gfx.mouse_wheel/120
-      tfxo_listpos = F_limit(tfxo_listpos -v,0,#tfxorder-12)
-      update_surface = true
-      
+    
+      if butt_cnt < #tfxorder then
+        tfxo_listpos = F_limit(tfxo_listpos -v,0,#tfxorder-butt_cnt)
+        update_surface = true
+        gfx.mouse_wheel = 0
+      end      
     elseif mouse.context == nil and MOUSE_click(xywh) then
       tfxo_sel =  F_limit(math.floor((mouse.my - xywh.y) / bh)+1 +tfxo_listpos, 1, #tfxorder)
       if tfxo_sel <= #tfxorder then
@@ -17953,8 +17982,8 @@ end
       if reaper.time_precise() > tfxo_scrolldel then
         if mpos < 1 then
           tfxo_listpos = math.max(tfxo_listpos -1,0)
-        elseif mpos > 12 then --hard coded size :/
-          tfxo_listpos = math.min(tfxo_listpos +1,#tfxorder-12)
+        elseif mpos > butt_cnt then --hard coded size :/
+          tfxo_listpos = math.min(tfxo_listpos +1,#tfxorder-butt_cnt)
         end
         tfxo_scrolldel = reaper.time_precise() + 0.1
         update_surface = true
@@ -18201,6 +18230,7 @@ end
         if strips and tracks[track_select] and strips[tracks[track_select].strip] then
           local i
           --local ttt = reaper.time_precise()
+          local strip = tracks[track_select].strip
           local ctls = strips[tracks[track_select].strip][page].controls
           local c = GetControlAtXY(tracks[track_select].strip, page, mouse.mx, mouse.my)
           --DBG(c)
@@ -18526,7 +18556,7 @@ end
                   mouse.context = contexts.hold
                   ctls[i].val = 1
                   ctls[i].dirty = true
-                  SetParam()
+                  A_SetParam(strip, page, i, ctls[i])
                   update_ctls = true
                 end
                 noscroll = true
@@ -18876,12 +18906,14 @@ end
     elseif mouse.context and mouse.context == contexts.hold then
     elseif mouse.context == nil and holdbtn ~= nil then
       holdbtn = nil
-      if tracks[track_select] and strips[tracks[track_select].strip] and strips[tracks[track_select].strip][page].controls[trackfxparam_select] then
-        strips[tracks[track_select].strip][page].controls[trackfxparam_select].val = 0
-        strips[tracks[track_select].strip][page].controls[trackfxparam_select].dirty = true
-        if strips[tracks[track_select].strip][page].controls[trackfxparam_select].ctltype == 7 or 
-           strips[tracks[track_select].strip][page].controls[trackfxparam_select].ctltype == 8 then
-          SetParam()
+      local strip = tracks[track_select].strip
+      if tracks[track_select] and strips[strip] and strips[strip][page].controls[trackfxparam_select] then
+        local ctl = strips[strip][page].controls[trackfxparam_select]
+        ctl.val = 0
+        ctl.dirty = true
+        if ctl.ctltype == 7 or 
+           ctl.ctltype == 8 then
+          A_SetParam(strip, page, trackfxparam_select, ctl)
         end
       end
       update_ctls = true
@@ -27258,6 +27290,7 @@ end
   
   function SetMacro(strip, page, ctl, mon)
 
+    ofxparam = trackfxparam_select
     local ctls = strips[strip][page].controls
     local macro = ctls[ctl].macroctl
     ctls[ctl].dirty = true
@@ -27272,7 +27305,6 @@ end
               local mv = ctls[ctl].val
               local ma = macro[m].A_val
               local mb = macro[m].B_val
-              
               trackfxparam_select = macro[m].ctl
               
               local v
@@ -27340,7 +27372,9 @@ end
           end
         end
       end
-    end  
+    end
+    trackfxparam_select = ofxparam
+      
   end
   
   function XXY_Set(strip, page, sst)
@@ -29825,6 +29859,43 @@ end
     
     LoadFavStrips()
     
+  end
+  
+  function ClearSettings()
+    --reaper.DeleteExtState(SCRIPT)
+    reaper.DeleteExtState(SCRIPT,'saveallfxinststrip', true)
+    reaper.DeleteExtState(SCRIPT,'followselectedtrack', true)
+    reaper.DeleteExtState(SCRIPT,'disablesendchecks', true)
+    reaper.DeleteExtState(SCRIPT,'updatefreq', true)
+    reaper.DeleteExtState(SCRIPT,'mousewheelknob', true)
+    reaper.DeleteExtState(SCRIPT,'dockstate', true)
+    reaper.DeleteExtState(SCRIPT,'lockx', true)
+    reaper.DeleteExtState(SCRIPT,'locky', true)
+    reaper.DeleteExtState(SCRIPT,'lockw', true)
+    reaper.DeleteExtState(SCRIPT,'lockh', true)
+    reaper.DeleteExtState(SCRIPT,'auto_sensitivity', true)
+    reaper.DeleteExtState(SCRIPT,'swapctrlclick', true)
+    reaper.DeleteExtState(SCRIPT,'showbars',true)
+    reaper.DeleteExtState(SCRIPT,'insertdefstripontrack',true)
+    reaper.DeleteExtState(SCRIPT,'insertdefstriponpage',true)
+    reaper.DeleteExtState(SCRIPT,'snaplistbgcol',true)
+   
+    reaper.DeleteExtState(SCRIPT,'savedatainprojectfolder',true)
+    reaper.DeleteExtState(SCRIPT,'save_subfolder',true)
+    reaper.DeleteExtState(SCRIPT,'createbackup',true)
+   
+    reaper.DeleteExtState(SCRIPT,'usectlbitmap',true)
+    reaper.DeleteExtState(SCRIPT,'macroeditmonitor',true)
+    reaper.DeleteExtState(SCRIPT,'hide_topbar',true)
+    reaper.DeleteExtState(SCRIPT,'settings_showminimaltopbar',true)
+    reaper.DeleteExtState(SCRIPT,'hide_editbar',true)    
+    reaper.DeleteExtState(SCRIPT,'lock_surface',true)    
+    reaper.DeleteExtState(SCRIPT,'backcol',true)    
+    
+    reaper.DeleteExtState(SCRIPT,'strip_default',true)
+    reaper.DeleteExtState(SCRIPT,'stripfol_default',true)
+    reaper.DeleteExtState(SCRIPT,'strip_default_mast',true)
+    reaper.DeleteExtState(SCRIPT,'stripfol_default_mast',true)
   end
   
   function SaveSettings()
@@ -32897,6 +32968,8 @@ end
     --if res == 1 then  
       SaveProj(true)
       SaveSettings()
+      
+      --ClearSettings()
       --reaper.MarkProjectDirty(0)
     --end
     StripperRunning(false)
