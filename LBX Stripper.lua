@@ -325,9 +325,11 @@
       if graphics_files[graphics_folder_files[file]].fol ~= 'GENERAL' then
         srcfol = graphics_files[graphics_folder_files[file]].fol..'/'
       end
+      local chkdfol = graphics_folders[folder]
       
       local srcfn = graphics_path..srcfol..graphics_files[graphics_folder_files[file]].fn
-      if reaper.file_exists(srcfn) then
+      --do nothing if file not exists or src and dest folders match
+      if chkdfol ~= graphics_files[graphics_folder_files[file]].fol and reaper.file_exists(srcfn) then
         local dstfol = ''
         local dfol = ''
         if folder ~= 0 then
@@ -347,7 +349,7 @@
         PopGfxFolder(gfxfol_select)
         update_gfx = true
       else
-        DBG('file not found')
+        --DBG('file not found')
       end
     
     end
