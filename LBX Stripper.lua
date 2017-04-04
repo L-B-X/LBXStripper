@@ -480,29 +480,54 @@
             end
           end
           
-          local copy = 0 --1 = overwrite, 2 = rename (? not implemented yet), 3 = don't copy
+          local copy = 0 --1 = overwrite, 2 = rename (? not implemented yet), 3 = don't copy - but update fn as might be diff
           if fndg == true then
             --compare saved file verses imported - ask to overwrite if not same
             if CompareStringToFile(stripdata.sharedata.gfx[g].bindata, gfn) == false then
+              
               --different file
               while copy == 0 do
                 gfxv = gfxv + 1
                 gfxfn = base .. '_v' .. string.format('%04d',gfxv) .. suffx
-                gfn = graphics_path..gfxfn
-                if reaper.file_exists(gfn) then
-                  if CompareStringToFile(stripdata.sharedata.gfx[g].bindata, gfn) == true then
-                    copy = 3
+                
+                fndg = false
+                for gf = 0, #graphics_folders do
+                  local gfol = ''
+                  if graphics_folders[gf] ~= 'GENERAL' then
+                    gfol = graphics_folders[gf]..'/'
+                  end
+                  gfn = graphics_path..gfol..gfxfn
+                  if reaper.file_exists(gfn) then
+                    fndg = true
+                    break
+                  end
+                end
+                
+                if fndg == true then  
+                  if reaper.file_exists(gfn) then
+                    if CompareStringToFile(stripdata.sharedata.gfx[g].bindata, gfn) == true then
+                      --same file - rename
+                      copy = 3
+                    end
                   end
                 else
+                  --not found - copy and rename
                   copy = 1
-                end
-              end         
+                end  
+              end
+                     
+            else
+              --same file - rename
+              copy = 3
             end
           else
+            --not found - copy and rename
             copy = 1
           end
+          
           if copy == 1 then
             GUI_DrawStateWin(obj,gui,'Importing graphic: '..stripdata.sharedata.gfx[g].fn..'   ('..gfxfn..')')
+            gfn = graphics_path..gfxfn
             writebinaryfile(gfn, stripdata.sharedata.gfx[g].bindata)
           else
             GUI_DrawStateWin(obj,gui,'Already in graphics library: '..stripdata.sharedata.gfx[g].fn..'   ('..gfxfn..')')          
