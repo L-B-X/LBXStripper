@@ -318,6 +318,42 @@
     file:close()
   end
   
+  function MoveGFXFileToFolder(file, folder)
+  
+    if graphics_files[graphics_folder_files[file]] then
+      local srcfol = ''
+      if graphics_files[graphics_folder_files[file]].fol ~= 'GENERAL' then
+        srcfol = graphics_files[graphics_folder_files[file]].fol..'/'
+      end
+      
+      local srcfn = graphics_path..srcfol..graphics_files[graphics_folder_files[file]].fn
+      if reaper.file_exists(srcfn) then
+        local dstfol = ''
+        local dfol = ''
+        if folder ~= 0 then
+          dstfol = graphics_folders[folder]..'/'
+          dfol = graphics_folders[folder]
+        end
+      
+        local dstfn = graphics_path..dstfol..graphics_files[graphics_folder_files[file]].fn
+        copyfile(srcfn, dstfn)
+        os.remove(srcfn)
+        
+        if folder == 0 then
+          graphics_files[graphics_folder_files[file]].fol = 'GENERAL'          
+        else
+          graphics_files[graphics_folder_files[file]].fol = dfol
+        end
+        PopGfxFolder(gfxfol_select)
+        update_gfx = true
+      else
+        DBG('file not found')
+      end
+    
+    end
+  
+  end
+  
   function StripShare_Export(fol, fn)
   
     savefn = fn
@@ -3233,7 +3269,7 @@
     local gf = reaper.EnumerateFiles(graphics_path,i)
     while gf ~= nil do
       if gfxtab[gf] ~= true then
-        graphics_files[#graphics_files+1] = {fn = gf, fol = nil, imageidx = nil}
+        graphics_files[#graphics_files+1] = {fn = gf, fol = 'GENERAL', imageidx = nil}
       end
       i=i+1
       gf = reaper.EnumerateFiles(graphics_path,i)
@@ -4400,6 +4436,13 @@
                    xywh.h, 1, 1)
 
           c = gui.color.black
+        end
+        if gfx_dropfolder == i + gflist_offset then
+          f_Get_SSV(gui.color.red)
+          gfx.rect(xywh.x,
+                   xywh.y, 
+                   xywh.w,
+                   xywh.h, 0, 1)        
         end
         GUI_textsm_LJ(gui, xywh, graphics_folders[i + gflist_offset], c, -4, plist_w)
       else
@@ -22002,13 +22045,40 @@ end
     
     if mouse.context and mouse.context == contexts.draggfx then
       draggfx = {x = mouse.mx - draggfx_w/2, y = mouse.my - draggfx_h/2}
+      if MOUSE_over(obj.sections[531]) then
+        local i = math.floor((mouse.my - obj.sections[531].y) / butt_h)-1
+        ogdf = gfx_dropfolder
+        if graphics_folders[i + gflist_offset] then
+          local dropfolder = i + gflist_offset
+          if dropfolder ~= gfx_dropfolder then
+            gfx_dropfolder = dropfolder
+          end
+        else
+          gfx_dropfolder = nil
+        end
+      else
+        gfx_dropfolder = nil
+      end
+      if ogdf ~= gfx_dropfolder then
+        update_sidebar = true
+      end
       update_surface = true
     elseif draggfx ~= nil then
       --Dropped
       if mouse.mx > obj.sections[10].x and mouse.mx < obj.sections[10].x+obj.sections[10].w and mouse.my > obj.sections[10].y and mouse.my < obj.sections[10].y+obj.sections[10].h then
         Strip_AddGFX(gfxtype.img)
+      elseif MOUSE_over(obj.sections[531]) then
+      
+        local i = math.floor((mouse.my - obj.sections[531].y) / butt_h)-1
+        if graphics_folders[i + gflist_offset] then
+          local dropfolder = i + gflist_offset
+          --DBG(graphics_folders[i + gflist_offset])
+          MoveGFXFileToFolder(gfx_select, dropfolder)
+        end
+        
       end
       
+      gfx_dropfolder = nil
       draggfx = nil
       update_gfx = true
     end
