@@ -466,9 +466,22 @@
             base = string.match(stripdata.sharedata.gfx[g].fn,'(.+)%..*')
           end
           gfxfn = base .. suffx
-          local gfn = graphics_path..gfxfn
+          local fndg = false
+          local gfn
+          for gf = 0, #graphics_folders do
+            local gfol = ''
+            if graphics_folders[gf] ~= 'GENERAL' then
+              gfol = graphics_folders[gf]..'/'
+            end
+            gfn = graphics_path..gfol..gfxfn
+            if reaper.file_exists(gfn) then
+              fndg = true
+              break
+            end
+          end
+          
           local copy = 0 --1 = overwrite, 2 = rename (? not implemented yet), 3 = don't copy
-          if reaper.file_exists(gfn) then
+          if fndg == true then
             --compare saved file verses imported - ask to overwrite if not same
             if CompareStringToFile(stripdata.sharedata.gfx[g].bindata, gfn) == false then
               --different file
@@ -950,10 +963,19 @@
                            w = plist_w,
                            h = gfx1.main_h - (obj.sections[521].y+obj.sections[521].h+2)}
       --NEW GRAPHICS
+
       obj.sections[530] = {x = 0,
+                           y = obj.sections[521].y+obj.sections[521].h+2,
+                           w = plist_w,
+                           h = gfx1.main_h - (obj.sections[521].y+obj.sections[521].h+2)}
+      obj.sections[531] = {x = 0,
                            y = (butt_h+2)*2,
                            w = plist_w,
-                           h = gfx1.main_h - ((butt_h+2)*2)}
+                           h = fx_h+butt_h}
+      --[[obj.sections[530] = {x = 0,
+                           y = (butt_h+2)*2,
+                           w = plist_w,
+                           h = gfx1.main_h - ((butt_h+2)*2)}]]
 
 
       --CONTROL OPTIONS
@@ -2291,20 +2313,28 @@
       local strip = Strip_INIT()
       
       if type == gfxtype.img then
-        if graphics_files[gfx_select].imageidx == nil then  
-          image_count = F_limit(image_count + 1,0,image_max)
+        if graphics_files[graphics_folder_files[gfx_select]].imageidx == nil then
+          local iidx = LoadGraphics(graphics_files[graphics_folder_files[gfx_select]].fn)
+          if iidx then
+            --DBG(iidx..'  '..image_count)
+            if iidx > image_count then
+              image_count = iidx
+            end
+            graphics_files[graphics_folder_files[gfx_select]].imageidx = iidx
+          end  
+          --[[image_count = F_limit(image_count + 1,0,image_max)
           gfx.loadimg(image_count, graphics_path..graphics_files[gfx_select].fn)
-          graphics_files[gfx_select].imageidx = image_count
+          graphics_files[gfx_select].imageidx = image_count]]
         end
   
         local x,y
         x = math.floor((draggfx.x)/settings_gridsize)*settings_gridsize + math.floor(surface_offset.x/settings_gridsize)*settings_gridsize - math.floor((obj.sections[10].x)/settings_gridsize)*settings_gridsize
         y = math.floor((draggfx.y)/settings_gridsize)*settings_gridsize + math.floor(surface_offset.y/settings_gridsize)*settings_gridsize - math.floor((obj.sections[10].y)/settings_gridsize)*settings_gridsize
-        local w, h = gfx.getimgdim(graphics_files[gfx_select].imageidx)      
+        local w, h = gfx.getimgdim(graphics_files[graphics_folder_files[gfx_select]].imageidx)      
         gfxnum = #strips[strip][page].graphics + 1
         strips[strip][page].graphics[gfxnum] = {gfxtype = type,
-                                          fn = graphics_files[gfx_select].fn,
-                                          imageidx = graphics_files[gfx_select].imageidx,
+                                          fn = graphics_files[graphics_folder_files[gfx_select]].fn,
+                                          imageidx = graphics_files[graphics_folder_files[gfx_select]].imageidx,
                                           x = x,
                                           y = y,
                                           w = w,
@@ -3118,20 +3148,53 @@
   end
 
   -------------------------------------------------------
+  function PopGfxFolder(folnum)
+  
+    graphics_folder_files = {}
+    gf = 0
+    for i = 0, #graphics_files do
+      if graphics_files[i].fol == graphics_folders[folnum] then
+        graphics_folder_files[gf] = i
+        gf = gf + 1
+      end
+    end
+  
+  end
   
   function PopulateGFX()
   
     graphics_files = {}
+    graphics_folders = {}
     glist_offset = 0
+    gflist_offset = 0
     
     local i = 0
     local gf = reaper.EnumerateFiles(graphics_path,i)
     while gf ~= nil do
-      graphics_files[i] = {fn = gf, imageidx = nil}
+      graphics_files[i] = {fn = gf, fol = 'GENERAL', imageidx = nil}
       i=i+1
       gf = reaper.EnumerateFiles(graphics_path,i)
     end
     
+    local f = 0
+    graphics_folders[f] = 'GENERAL'
+    local gfo = reaper.EnumerateSubdirectories(graphics_path,f)
+    while gfo ~= nil do
+      gi = 0
+      graphics_folders[f+1] = gfo  
+      local gf = reaper.EnumerateFiles(graphics_path..gfo,gi)
+      while gf ~= nil do
+        graphics_files[i] = {fn = gf, fol = gfo, imageidx = nil}
+        --DBG(gfo..'  '..gf)
+        i=i+1
+        gi=gi+1
+        gf = reaper.EnumerateFiles(graphics_path..gfo,gi)
+      end
+      f=f+1    
+      gfo = reaper.EnumerateSubdirectories(graphics_path,f)
+    end
+    
+    PopGfxFolder(gfxfol_select)
   end
 
   function RepopulateGFX()
@@ -3145,12 +3208,30 @@
     local gf = reaper.EnumerateFiles(graphics_path,i)
     while gf ~= nil do
       if gfxtab[gf] ~= true then
-        graphics_files[#graphics_files+1] = {fn = gf, imageidx = nil}
+        graphics_files[#graphics_files+1] = {fn = gf, fol = nil, imageidx = nil}
       end
       i=i+1
       gf = reaper.EnumerateFiles(graphics_path,i)
     end
+
+    local f = 0
+    local gfo = reaper.EnumerateSubdirectories(graphics_path,f)
+    while gfo ~= nil do
+      gi = 0
+      local gf = reaper.EnumerateFiles(graphics_path..gfo,gi)
+      while gf ~= nil do
+        if gfxtab[gf] ~= true then
+          graphics_files[#graphics_files+1] = {fn = gf, fol = gfo, imageidx = nil}
+        end
+        i=i+1
+        gi=gi+1
+        gf = reaper.EnumerateFiles(graphics_path..gfo,gi)
+      end
+      f=f+1    
+      gfo = reaper.EnumerateSubdirectories(graphics_path,f)
+    end
     
+    PopGfxFolder(gfxfol_select)
   end
   
   -------------------------------------------------------
@@ -4273,23 +4354,50 @@
       gfx.setimgdim(1001,obj.sections[43].w+2, obj.sections[43].h)
     end]]
 
-    local butt_cnt = math.floor((obj.sections[530].h) / butt_h)  
-    --[[local xywh = {x = 0,
-                  y = butt_h,
-                  w = obj.sections[43].w,
-                  h = obj.sections[43].h}
-    f_Get_SSV(gui.color.cbobg)
-    gfx.a = 1 
-    gfx.rect(xywh.x,
-     xywh.y, 
-     xywh.w,
-     xywh.h, 1 )]]
+    --PopGfxFolder(gfxfol_select) --MOVE TO WHEN FOLDER CHANGED
 
+    local butt_cnt = math.floor((obj.sections[530].h) / butt_h)  
+    GF_butt_cnt = math.floor(obj.sections[531].h / butt_h) - 1
+
+    for i = 0, GF_butt_cnt-1 do
+      --DBG(graphics_folders[i + gflist_offset])
+      if graphics_folders[i + gflist_offset] then
+        local xywh = {x = obj.sections[531].x,
+                      y = obj.sections[531].y +2+ (i+1) * butt_h,
+                      w = obj.sections[531].w,
+                      h = butt_h}
+        local c = gui.color.white
+        if gfxfol_select == i + gflist_offset then
+          f_Get_SSV(gui.color.white)
+          gfx.rect(xywh.x,
+                   xywh.y, 
+                   xywh.w,
+                   xywh.h, 1, 1)
+
+          c = gui.color.black
+        end
+        GUI_textsm_LJ(gui, xywh, graphics_folders[i + gflist_offset], c, -4, plist_w)
+      else
+        break
+      end
+              
+    end
+    
+    local xywh = {x = obj.sections[531].x,
+                  y = obj.sections[531].y,
+                  w = obj.sections[531].w,
+                  h = butt_h}
+    GUI_DrawBar(gui,'',xywh,skin.barUD,true,gui.color.black,nil,-2)
+    gfx.line(xywh.x+xywh.w/2,xywh.y,xywh.x+xywh.w/2,xywh.y+xywh.h)
+    local w, h = gfx.getimgdim(skin.arrowup)
+    gfx.blit(skin.arrowup,1,0,0,0,w,h,xywh.x+xywh.w/4-w/2,xywh.y+xywh.h/2-h/2)
+    gfx.blit(skin.arrowdn,1,0,0,0,w,h,xywh.x+xywh.w*0.75-w/2,xywh.y+xywh.h/2-h/2)
+        
     G_butt_cnt = math.floor(obj.sections[530].h / butt_h) - 2
       
     for i = 0, butt_cnt-1 do
     
-      if graphics_files[i + glist_offset] then
+      if graphics_files[graphics_folder_files[i + glist_offset]] then
         local xywh = {x = obj.sections[530].x,
                       y = obj.sections[530].y+2 + (i+1) * butt_h,
                       w = obj.sections[530].w,
@@ -4304,7 +4412,7 @@
 
           c = gui.color.black        
         end
-        GUI_textsm_LJ(gui, xywh, graphics_files[i + glist_offset].fn, c, -4, plist_w)
+        GUI_textsm_LJ(gui, xywh, graphics_files[graphics_folder_files[i + glist_offset]].fn, c, -4, plist_w)
                     
       end                      
     end           
@@ -12916,16 +13024,32 @@ end
           if nz(strip.graphics[i].gfxtype,gfxtype.img) == gfxtype.img then
             for j = 0, #graphics_files do
               if graphics_files[j].fn == strip.graphics[i].fn then
-                if graphics_files[j].imageidx ~= nil then
+              
+                local iidx = LoadGraphics(strip.graphics[i].fn)
+                if iidx then
+                  if iidx > image_count_add  then
+                    image_count_add = iidx
+                  end
+                  strip.graphics[i].imageidx = iidx
+                  fnd = true
+                end
+                
+                --[[if graphics_files[j].imageidx ~= nil then
                   fnd = true
                   strip.graphics[i].imageidx = graphics_files[j].imageidx
                 else
-                  fnd = true
-                  image_count_add = F_limit(image_count_add + 1,0,image_max)
+                  local iidx = LoadGraphics(strip.graphics[i].fn)
+                  if iidx then
+                    image_count_add = iidx
+                    strip.graphics[i].imageidx = iidx
+                    fnd = true
+                  end
+                  --fnd = true
+                  --[[image_count_add = F_limit(image_count_add + 1,0,image_max)
                   gfx.loadimg(image_count_add, graphics_path..strip.graphics[i].fn)
-                  graphics_files[j].imageidx = image_count_add
-                  strip.graphics[i].imageidx = image_count_add
-                end
+                  graphics_files[j].imageidx = image_count_add]]
+                  --strip.graphics[i].imageidx = image_count_add
+                --end
                 break
               end
             end
@@ -21648,8 +21772,12 @@ end
   
     if gfx.mouse_wheel ~= 0 then
       local v = gfx.mouse_wheel/120
-      if MOUSE_over(obj.sections[530]) then
-        glist_offset = F_limit(glist_offset - v, 0, #graphics_files)
+      if MOUSE_over(obj.sections[531]) then
+        gflist_offset = F_limit(gflist_offset - v, 0, #graphics_folders)
+        update_sidebar = true
+        gfx.mouse_wheel = 0
+      elseif MOUSE_over(obj.sections[530]) then
+        glist_offset = F_limit(glist_offset - v, 0, #graphics_folder_files)
         update_sidebar = true
         gfx.mouse_wheel = 0
       end
@@ -21792,7 +21920,29 @@ end
       end
     end
     
-    if MOUSE_click(obj.sections[530]) then
+    if MOUSE_click(obj.sections[531]) then
+      local i = math.floor((mouse.my - obj.sections[531].y) / butt_h)-1
+      if i == -1 then
+        if mouse.mx < obj.sections[531].w/2 then
+          gflist_offset = gflist_offset - GF_butt_cnt
+          if gflist_offset < 0 then
+            gflist_offset = 0
+          end
+        else
+          if gflist_offset + GF_butt_cnt < #graphics_folders then
+            gflist_offset = gflist_offset + GF_butt_cnt-1
+          end          
+        end
+        update_gfx = true
+        
+      elseif graphics_folders[i + gflist_offset] then
+        gfxfol_select = i + gflist_offset
+        --PopulateTrackFXParams()
+        PopGfxFolder(gfxfol_select)
+        update_gfx = true
+      end
+      
+    elseif MOUSE_click(obj.sections[530]) then
       local i = math.floor((mouse.my - obj.sections[530].y) / butt_h)-1
       
       if i == -1 then
@@ -21802,16 +21952,21 @@ end
             glist_offset = 0
           end
         else
-          if glist_offset + G_butt_cnt < #graphics_files then
+          if glist_offset + G_butt_cnt < #graphics_folder_files then
             glist_offset = glist_offset + G_butt_cnt
           end
         end
         update_gfx = true
-      elseif graphics_files[i + glist_offset] then
+      elseif graphics_files[graphics_folder_files[i + glist_offset]] then
         gfx_select = i + glist_offset
         
         --load temp image
-        gfx.loadimg(1023,graphics_path..graphics_files[gfx_select].fn)
+        local gfol = ''
+        local fol = graphics_files[graphics_folder_files[gfx_select]].fol
+        if fol and fol ~= 'GENERAL' then
+          gfol = fol..'/'
+        end
+        gfx.loadimg(1023,graphics_path..gfol..graphics_files[graphics_folder_files[gfx_select]].fn)
         draggfx_w, draggfx_h = gfx.getimgdim(1023)
         
         update_gfx = true
@@ -28619,7 +28774,12 @@ end
 
           --load graphics images
           if strips[ss][p].graphics[g].gfxtype == gfxtype.img then
-            local iidx
+          
+            local iidx = LoadGraphics(strips[ss][p].graphics[g].fn)
+            if iidx then
+              strips[ss][p].graphics[g].imageidx = iidx
+            end
+            --[[local iidx
             local gfx_sel = -1
             for k = 0, #graphics_files do
               if graphics_files[k] and graphics_files[k].fn == strips[ss][p].graphics[g].fn then
@@ -28644,7 +28804,7 @@ end
             else
               --missing
               strips[ss][p].graphics[g].imageidx = 1020
-            end
+            end]]
           end
         end                
       end
@@ -28658,6 +28818,39 @@ end
     --DBG('Strip load time: '..reaper.time_precise() - t)
   end  
   
+  function LoadGraphics(fn)
+  
+    local iidx
+    local gfx_sel = -1
+    for k = 0, #graphics_files do
+      if graphics_files[k] and graphics_files[k].fn == fn then
+        gfx_sel = k
+        break
+      end
+    end
+    if gfx_sel ~= -1 then
+      
+      if graphics_files[gfx_sel].imageidx == nil then
+        image_count = F_limit(image_count + 1,0,image_max)
+        local fol = ''
+        if graphics_files[gfx_sel].fol and graphics_files[gfx_sel].fol ~= 'GENERAL' then
+          fol = graphics_files[gfx_sel].fol..'/'
+        end
+        gfx.loadimg(image_count, graphics_path..fol..graphics_files[gfx_sel].fn)
+        iidx = image_count
+        
+        graphics_files[gfx_sel].imageidx = iidx                    
+
+      else
+        iidx = graphics_files[gfx_sel].imageidx
+      end
+    else
+      --missing
+      iidx = 1020
+    end
+    return iidx
+    
+  end
   
   function LoadSnapData(s, data)
   
@@ -29538,7 +29731,12 @@ end
                       strips[ss][p].graphics[g].stretchh = tonumber(nz(GPES(key..'stretchh',true),strips[ss][p].graphics[g].h))
   
                       --load graphics images
-                      local iidx
+                      local iidx = LoadGraphics(strips[ss][p].graphics[g].fn)
+                      if iidx then
+                        strips[ss][p].graphics[g].imageidx = iidx
+                      end
+                      
+                      --[[local iidx
                       local gfx_sel = -1
                       for k = 0, #graphics_files do
                         if graphics_files[k].fn == strips[ss][p].graphics[g].fn then
@@ -29563,7 +29761,7 @@ end
                       else
                         --missing
                         strips[ss][p].graphics[g].imageidx = 1020
-                      end
+                      end]]
                     end                
                   end
                 end
@@ -31971,7 +32169,16 @@ end
               local fnd = false
               for j = 0, #graphics_files do
                 if nz(loaddata.stripdata[s][p].graphics[i].gfxtype,gfxtype.img) == gfxtype.img then
-                  if graphics_files[j].fn == loaddata.stripdata[s][p].graphics[i].fn then
+                  local iidx = LoadGraphics(loaddata.stripdata[s][p].graphics[i].fn)
+                  if iidx then
+                    if iidx > image_count_add then
+                      image_count_add = iidx
+                    end
+                    loaddata.stripdata[s][p].graphics[i].imageidx = iidx
+                  end
+                  break
+                  
+                  --[[if graphics_files[j].fn == loaddata.stripdata[s][p].graphics[i].fn then
                     if graphics_files[j].imageidx ~= nil then
                       fnd = true
                       loaddata.stripdata[s][p].graphics[i].imageidx = graphics_files[j].imageidx
@@ -31983,7 +32190,7 @@ end
                       loaddata.stripdata[s][p].graphics[i].imageidx = image_count_add
                     end
                     break
-                  end
+                  end]]
                 end
               end
               if not fnd then
@@ -32233,6 +32440,7 @@ end
     navigate = true
     
     gfx_select = 0
+    gfxfol_select = 0
     track_select = -1
     trackedit_select = -1
     trackfx_select = 0
