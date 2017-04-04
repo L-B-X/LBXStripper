@@ -3215,13 +3215,15 @@
   
     graphics_folder_files = {}
     gf = 0
-    for i = 0, #graphics_files do
-      if graphics_files[i].fol == graphics_folders[folnum] then
-        graphics_folder_files[gf] = i
-        gf = gf + 1
+    if graphics_files and #graphics_files > 0 then
+      for i = 0, #graphics_files do
+        if graphics_files[i].fol == graphics_folders[folnum] then
+          graphics_folder_files[gf] = i
+          gf = gf + 1
+        end
       end
     end
-  
+      
   end
   
   function PopulateGFX()
