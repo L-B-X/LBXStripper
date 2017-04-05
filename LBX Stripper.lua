@@ -3201,13 +3201,14 @@
     slist_offset = 0
     
     local i = 0
-    local sf = reaper.EnumerateFiles(strips_path..'/'..strip_folders[stripfol_select].fn,i)
-    while sf ~= nil do
-      strip_files[i] = {fn = sf}
-      i=i+1
-      sf = reaper.EnumerateFiles(strips_path..'/'..strip_folders[stripfol_select].fn,i)
-    end
-    
+    if strip_folders[stripfol_select] then
+      local sf = reaper.EnumerateFiles(strips_path..'/'..strip_folders[stripfol_select].fn,i)
+      while sf ~= nil do
+        strip_files[i] = {fn = sf}
+        i=i+1
+        sf = reaper.EnumerateFiles(strips_path..'/'..strip_folders[stripfol_select].fn,i)
+      end
+    end    
   end
 
   -------------------------------------------------------
@@ -15469,6 +15470,62 @@ end
     end
   end
     
+  function MenuStripFolders()
+  
+    local mstripfolders = {}
+    local mstr = ''
+    local cnt = 0
+    local filcnt = 0
+    local i = 0
+    local sfol = reaper.EnumerateSubdirectories(strips_path, i)
+    while sfol ~= nil do
+    
+      local mfol = sfol
+      i=i+1
+      sfol = reaper.EnumerateSubdirectories(strips_path, i)
+      if sfol == nil then
+        mstr = mstr ..'|<>'.. mfol
+      else
+        mstr = mstr ..'|>'.. mfol      
+      end     
+      
+      local j = 0
+      local sfil = reaper.EnumerateFiles(strips_path..mfol, j)
+      if sfil == nil then
+        mstr = mstr ..'|<#Empty'
+        mstripfolders[#mstripfolders+1] = ''
+        cnt = cnt + 1
+      else
+        while sfil ~= nil do
+
+          if string.sub(sfil, string.len(sfil)-5) == '.strip' then
+            cnt = cnt + 1
+            filcnt = filcnt + 1
+              
+            local mfil = sfil
+            mstripfolders[#mstripfolders+1] = mfol..'/'..mfil
+            
+            j=j+1
+            sfil = reaper.EnumerateFiles(strips_path..mfol, j)
+    
+            if sfil == nil then
+              mstr = mstr ..'|<'..string.sub(mfil, 1, string.len(mfil)-6)
+            else
+              mstr = mstr ..'|'..string.sub(mfil, 1, string.len(mfil)-6)
+            end
+          else
+            j=j+1
+            sfil = reaper.EnumerateFiles(strips_path..mfol, j)          
+          end
+              
+        end
+      end      
+    end
+    --if filcnt == 0 then cnt = 0 end
+    return cnt, mstr, mstripfolders
+  
+  end
+  
   function RBMenu(mtype,ccat,i)
 
     if mtype == 0 then
@@ -15559,8 +15616,15 @@ end
           end
         end
       else
-        mstr = mstr .. '#Insert strip (favorites)'                  
+        mstr = mstr .. '>Insert strip (favorites)|<#Empty'
+        sfcnt = 1                 
       end
+      local sffcnt, sflist, msf = MenuStripFolders()
+      if sflist ~= '' then
+        mstr = mstr .. '|>Insert strip (folders)' .. sflist
+        sfcnt = sfcnt + sffcnt
+      end
+            
       local lspfx = ''
       if settings_locksurface then
         lspfx = '!'
@@ -15571,18 +15635,96 @@ end
       gfx.x, gfx.y = mouse.mx, mouse.my
       res = OpenMenu(mstr) 
       if res ~= 0 then
-        if res == sfcnt + 5 or (sfcnt == 0 and res == 6) then
+        if res == sfcnt + 5 then
           show_snapshots = not show_snapshots
           update_gfx = true
-        elseif res == sfcnt + 6 or (sfcnt == 0 and res == 7) then
+        elseif res == sfcnt + 6 then
           ToggleTopbar()
-        elseif res == sfcnt + 7 or (sfcnt == 0 and res == 8) then
+        elseif res == sfcnt + 7 then
           ToggleSidebar()
           update_surface = true
-        elseif res == sfcnt + 8 or (sfcnt == 0 and res == 9) then
+        elseif res == sfcnt + 8 then
           settings_locksurface = not settings_locksurface
           
         elseif res <= sfcnt then
+          if res <= #strip_favs then
+            local fn = strip_favs[res]
+            --PopulateStrips()
+            loadstrip = LoadStripFN(fn)
+            if loadstrip then                  
+              GenStripPreview(gui, loadstrip.strip, loadstrip.switchers, loadstrip.switchconvtab)
+              --image_count = image_count_add
+              
+              local dx, dy = GetLeftControlInStrip2(loadstrip.strip)
+              insertstrip = {x = mouse.mx, y = mouse.my, dx = dx, dy = dy}
+            end
+            --loadstrip = nil
+          else
+            local fn = msf[res-math.max(#strip_favs,1)]
+            loadstrip = LoadStripFN(fn)
+            if loadstrip then                  
+              GenStripPreview(gui, loadstrip.strip, loadstrip.switchers, loadstrip.switchconvtab)
+              --image_count = image_count_add
+              
+              local dx, dy = GetLeftControlInStrip2(loadstrip.strip)
+              insertstrip = {x = mouse.mx, y = mouse.my, dx = dx, dy = dy}
+            end
+          
+          end
+
+        elseif res == sfcnt + 9 then
+          Envelopes_SetProps(false,nil,false,false)
+        elseif res == sfcnt + 10 then
+          Envelopes_SetProps(true,nil,true,false)
+        elseif res == sfcnt + 11 then
+          --delete envs
+          Envelopes_SetProps(nil,nil,nil,true)
+        elseif res == sfcnt + 12 then
+          Envelopes_SetProps(false,nil,false,false,tracks[track_select].strip,page)
+        elseif res == sfcnt + 13 then
+          Envelopes_SetProps(true,nil,true,false,tracks[track_select].strip,page)
+        elseif res == sfcnt + 14 then
+          --delete strip envs
+          Envelopes_SetProps(nil,nil,nil,true,tracks[track_select].strip,page)
+        end
+      end
+      
+    
+    elseif mtype == 2 then
+        
+      mm = ''
+      if show_snapshots then
+        mm = '!'
+      end
+      local mstr = ''
+      local sfcnt = #strip_favs
+      if sfcnt > 0 then
+        --mstr = mstr .. '>Insert strip (favorites)'
+        for fvs = 1, sfcnt do
+          if mstr ~= '' then
+            mstr = mstr .. '|'
+          end
+          --if fvs == sfcnt then
+          --  mstr = mstr .. '|<' .. string.match(strip_favs[fvs],'.+/(.-).strip')
+         -- else
+            mstr = mstr .. string.match(strip_favs[fvs],'.+/(.-).strip')
+          --end
+        end
+      --else
+      --  mstr = mstr .. '>Insert strip (favorites)|<#Empty'
+      --  sfcnt = 1                 
+      end
+      local sffcnt, sflist, msf = MenuStripFolders()
+      if sflist ~= '' then
+        mstr = mstr .. sflist
+        sfcnt = sfcnt + sffcnt
+      end
+      
+      gfx.x, gfx.y = mouse.mx, mouse.my
+      res = OpenMenu(mstr) 
+      if res ~= 0 then
+        
+        if res <= #strip_favs and #strip_favs > 0 then
           local fn = strip_favs[res]
           --PopulateStrips()
           loadstrip = LoadStripFN(fn)
@@ -15594,24 +15736,19 @@ end
             insertstrip = {x = mouse.mx, y = mouse.my, dx = dx, dy = dy}
           end
           --loadstrip = nil
-        elseif res == sfcnt + 9 or (sfcnt == 0 and res == 10) then
-          Envelopes_SetProps(false,nil,false,false)
-        elseif res == sfcnt + 10 or (sfcnt == 0 and res == 11) then
-          Envelopes_SetProps(true,nil,true,false)
-        elseif res == sfcnt + 11 or (sfcnt == 0 and res == 12) then
-          --delete envs
-          Envelopes_SetProps(nil,nil,nil,true)
-        elseif res == sfcnt + 12 or (sfcnt == 0 and res == 13) then
-          Envelopes_SetProps(false,nil,false,false,tracks[track_select].strip,page)
-        elseif res == sfcnt + 13 or (sfcnt == 0 and res == 14) then
-          Envelopes_SetProps(true,nil,true,false,tracks[track_select].strip,page)
-        elseif res == sfcnt + 14 or (sfcnt == 0 and res == 15) then
-          --delete strip envs
-          Envelopes_SetProps(nil,nil,nil,true,tracks[track_select].strip,page)
+        else
+          local fn = msf[res-#strip_favs]
+          loadstrip = LoadStripFN(fn)
+          if loadstrip then                  
+            GenStripPreview(gui, loadstrip.strip, loadstrip.switchers, loadstrip.switchconvtab)
+            --image_count = image_count_add
+            
+            local dx, dy = GetLeftControlInStrip2(loadstrip.strip)
+            insertstrip = {x = mouse.mx, y = mouse.my, dx = dx, dy = dy}
+          end
+        
         end
       end
-      
-    
     end    
 
   end
@@ -17145,6 +17282,8 @@ end
           update_gfx = true
         end
         char = 0
+      elseif char == 105 then
+        RBMenu(2,nil,nil)
       end
     --[[else -- shift
       if char == 19 then
