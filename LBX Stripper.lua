@@ -19316,6 +19316,9 @@ end
             gfx.mouse_wheel = 0
         elseif MOUSE_over(obj.sections[830]) then
           if gauge_select.vals and gauge_ticksel and gauge_select.vals[gauge_ticksel] then
+            if gauge_select.vals[gauge_ticksel].nudge == nil then
+              gauge_select.vals[gauge_ticksel].nudge = 0
+            end
             gauge_select.vals[gauge_ticksel].nudge = F_limit(gauge_select.vals[gauge_ticksel].nudge+v,-10,10)
           end
           update_surface = true
