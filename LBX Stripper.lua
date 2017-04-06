@@ -122,7 +122,9 @@
               gauge_fs = 89,
               gauge_valfreq = 90,              
               gauge_nudge = 91,
-              tfxo_shift = 92,              
+              tfxo_shift = 92,
+              midiout_chan = 93,
+              midiout_msg = 94,              
               dummy = 99
               }
   
@@ -2174,6 +2176,26 @@
                            y = macroedit.secyoff,
                            w = 20,
                            h = macroedit.h} 
+
+
+      --MIDI OUt
+      local mow, moh = 350, 120
+      obj.sections[950] = {x = math.floor(obj.sections[10].x+obj.sections[10].w/2 - mow/2),
+                           y = math.floor(obj.sections[10].y+obj.sections[10].h/2 - moh/2),
+                           w = mow,
+                           h = moh} 
+      obj.sections[951] = {x = obj.sections[950].x+100,
+                           y = obj.sections[950].y+butt_h*2,
+                           w = obj.sections[950].w-120,
+                           h = butt_h} 
+      obj.sections[952] = {x = obj.sections[950].x+100,
+                           y = obj.sections[950].y+butt_h*2 + butt_h+10,
+                           w = 60,
+                           h = butt_h} 
+      obj.sections[953] = {x = obj.sections[952].x+obj.sections[952].w+80,
+                           y = obj.sections[950].y+butt_h*2 + butt_h+10,
+                           w = 60,
+                           h = butt_h} 
            
     return obj
   end
@@ -4619,12 +4641,24 @@
       
   ------------------------------------------------------------
 
+  function GUI_DrawMIDIOut(gui, obj)
+
+    local strip = tracks[track_select].strip
+    local ctl = strips[strip][page].controls[midioutedit_select]
+    GUI_DrawPanel(obj.sections[950],true,'MIDI OUT - '..ctl.param_info.paramname)
+
+    GUI_DrawButton(gui, nz(midiout_select.output,'NONE'), obj.sections[951], gui.color.white, gui.color.black, true, 'HARDWARE OUT')
+    GUI_DrawButton(gui, midiout_select.mchan, obj.sections[952], gui.color.white, gui.color.black, true, 'MIDI CHANNEL')
+    GUI_DrawButton(gui, midiout_select.msg3, obj.sections[953], gui.color.white, gui.color.black, true, 'MIDI CC#')
+
+  end
+  
   function GetTFXOButtCnt()
     local tfxo_butth = 30
     return math.floor((obj.sections[900].h-30)/tfxo_butth), tfxo_butth
   end
 
-  function GUI_DrawTrackFXOrder()
+  function GUI_DrawTrackFXOrder(gui, obj)
 
     GUI_DrawPanel(obj.sections[900],true,'TRACK FX ORDER')
     if tfxreorder then
@@ -9789,7 +9823,7 @@ end
        --update_macrobutt 
       if show_trackfxorder then
        --DBG('fghf')
-        GUI_DrawTrackFXOrder()
+        GUI_DrawTrackFXOrder(gui, obj)
        
       end
  
@@ -9895,11 +9929,16 @@ end
     
     end
     
+    if show_midiout then
+      GUI_DrawMIDIOut(gui, obj)
+    end
+    
     if MS_Open > 0 then
       GUI_DrawMsg(gui, obj)
       
     elseif EB_Open > 0 then
-      editbox_draw(gui, editbox)
+      editbox_draw(gui, editbox)    
+    
     end
     
     gfx.dest = -1
@@ -10771,8 +10810,19 @@ end
       if yoff == nil then yoff = 0 end
       local my = mouse.my - (b.y-200) + yoff
      return (my) / (b.h+400)
+      --local my = mouse.my - b.y - yoff
+      --return (my+200) / 400
     end 
   end
+  
+  function MOUSE_sliderX(b,yoff)
+    if mouse.LB then
+      if yoff == nil then yoff = 0 end
+      local my = mouse.my - b.y + yoff
+     return (my+200) / (400)
+    end 
+  end
+  
   function MOUSE_slider_horiz(b,xoff)
     if mouse.LB then
       if xoff == nil then xoff = 0 end
@@ -11398,6 +11448,7 @@ end
         local min, max = A_GetParamMinMax(cc,track,ctl,fxnum,param,true,c)
         reaper.TrackFX_SetParam(track, fxnum, param, DenormalizeValue(min, max, val))
         
+        if ctl.midiout then SendMIDIMsg(ctl.midiout,val) end
         --SendMIDIMsg(midiouts[2],val)
         
       elseif cc == ctlcats.trackparam then
@@ -15189,6 +15240,28 @@ end
     end
   end
   
+  function MenuMidiOuts()
+  
+    local mstr = ''
+    for i = 0, #midiouts do
+      
+      if mstr ~= '' then
+        mstr = mstr .. '|'
+      end
+      mstr = mstr ..midiouts[i].name
+  
+    end
+    if mstr ~= '' then
+      gfx.x, gfx.y = mouse.mx, mouse.my
+      local res = OpenMenu(mstr)
+      if res ~= 0 then
+        return res
+      end
+    end
+    return nil
+    
+  end
+  
   function CheckUngroup()
   
     local ret = true
@@ -15539,6 +15612,9 @@ end
         switcher_select = i
         SwitcherMenu_RB()
       else
+        local strip = tracks[track_select].strip
+        local ctl = strips[strip][page].controls[i]
+
         local mstr
         mm = ''
         if show_snapshots then
@@ -15548,10 +15624,18 @@ end
         if settings_locksurface then
           lspfx = '!'
         end
+        local mido = '>Midi Out|#Set|<#Clear'
+        if ccat == ctlcats.fxparam or ccat == ctlcats.trackparam or ccat == ctlcats.macro then
+          local moclr = '|<#Clear'
+          if ctl.midiout then
+            moclr = '|<Clear'
+          end
+          mido = '>Midi Out|Set'..moclr
+        end  
         if ccat == ctlcats.fxparam then
-          mstr = 'MIDI learn|Modulation||Enter value||Open FX window||'..mm..'Add Envelope|Add All Envelopes For Plugin||Snapshots||>Tools|<Regenerate ID   (emergency only)||Toggle Topbar|Toggle Sidebar||'..lspfx..'Lock Surface'
+          mstr = 'MIDI learn|Modulation||Enter value||'..mido..'||Open FX window||'..mm..'Add Envelope|Add All Envelopes For Plugin||Snapshots||>Tools|<Regenerate ID   (emergency only)||Toggle Topbar|Toggle Sidebar||'..lspfx..'Lock Surface'
         else
-          mstr = '#MIDI learn|#Modulation||Enter value||#Open FX window||'..mm..'#Add Envelope|#Add All Envelopes For Plugin||Snapshots||>Tools|<Regenerate ID   (emergency only)||Toggle Topbar|Toggle Sidebar||'..lspfx..'Lock Surface'                  
+          mstr = '#MIDI learn|#Modulation||Enter value||'..mido..'||#Open FX window||'..mm..'#Add Envelope|#Add All Envelopes For Plugin||Snapshots||>Tools|<Regenerate ID   (emergency only)||Toggle Topbar|Toggle Sidebar||'..lspfx..'Lock Surface'                  
         end
         if ccat ~= ctlcats.macro then
           if #strip_favs > 0 then
@@ -15571,6 +15655,20 @@ end
               --EditValue(5)
               OpenEB(5,'Please enter value:')
             elseif res == 4 then
+              midioutedit_select = i
+              midiout_select = ctl.midiout
+              if midiout_select == nil then
+                midiout_select = {output = nil,
+                                  mchan = 1,
+                                  msg3 = 1,
+                                  msg4 = 0}
+              end
+              show_midiout = true
+              update_gfx = true
+            elseif res == 5 then
+              ctl.midiout = nil
+              
+            elseif res == 6 then
               local track
               if strips[tracks[track_select].strip][page].controls[i].tracknum == nil then
                 track = GetTrack(tracks[track_select].tracknum)
@@ -15581,24 +15679,24 @@ end
               if not reaper.TrackFX_GetOpen(track, fxnum) then
                 reaper.TrackFX_Show(track, fxnum, 3)
               end
-            elseif res == 5 then
-              Envelope_Add(tracks[track_select].strip,page,i)
-            elseif res == 6 then
-              Envelope_AddAllFX(tracks[track_select].strip,page,i)
             elseif res == 7 then
+              Envelope_Add(tracks[track_select].strip,page,i)
+            elseif res == 8 then
+              Envelope_AddAllFX(tracks[track_select].strip,page,i)
+            elseif res == 9 then
               show_snapshots = not show_snapshots
               update_gfx = true
-            elseif res == 8 then
+            elseif res == 10 then
               i = tonumber(string.format('%i',i))
               strips[tracks[track_select].strip][page].controls[i] = GetControlTable(tracks[track_select].strip, page, i)
               strips[tracks[track_select].strip][page].controls[i].c_id = GenID()
               update_gfx = true
-            elseif res == 9 then
+            elseif res == 11 then
               ToggleTopbar()
-            elseif res == 10 then
+            elseif res == 12 then
               ToggleSidebar()
               update_surface = true
-            elseif res == 11 then
+            elseif res == 13 then
               settings_locksurface = not settings_locksurface
             end
           end
@@ -17894,7 +17992,7 @@ end
       char = gfx.getchar() 
       if char ~= 0 then
         --need to check if xxy/trackfxorder open?
-        if show_trackfxorder == false and show_xxy == false then
+        if show_midiout == false and show_trackfxorder == false and show_xxy == false then
           char = keypress(char)
         end
       end
@@ -17924,6 +18022,16 @@ end
       end
     
       A_Run_TFXOrder(char)
+    
+    elseif show_midiout then
+    
+      if settings_UCV == 0 then
+        UpdateControlValues(rt)
+      else      
+        UpdateControlValues2(rt)
+      end
+
+      A_Run_MidiOut(char)
     
     elseif show_xxy == false then
 
@@ -18281,6 +18389,71 @@ end
 
   end
 
+  function A_Run_MidiOut(char)
+  
+    if mouse.context == nil and MOUSE_click(obj.sections[951]) then
+      local res = MenuMidiOuts()
+      if res then
+        midiout_select.output = midiouts[res-1].name
+      end
+      update_surface = true
+
+    elseif mouse.context == nil and MOUSE_click(obj.sections[952]) then
+      mouse.context = contexts.midiout_chan
+      midiout_select.mchan = F_limit(midiout_select.mchan + 1,1,16)
+      dragmidi = {pos = midiout_select.mchan, yoff = mouse.my-obj.sections[952].y}
+      
+      update_surface = true
+    elseif mouse.context == nil and MOUSE_click_RB(obj.sections[952]) then
+      midiout_select.mchan = F_limit(midiout_select.mchan - 1,1,16)
+      update_surface = true
+
+    elseif mouse.context == nil and MOUSE_click(obj.sections[953]) then
+      mouse.context = contexts.midiout_msg
+      midiout_select.msg3 = F_limit(midiout_select.msg3 + 1,0,127)
+      dragmidi = {pos = midiout_select.msg3, yoff = mouse.my-obj.sections[953].y}
+      
+      update_surface = true
+    elseif mouse.context == nil and MOUSE_click_RB(obj.sections[953]) then
+      midiout_select.msg3 = F_limit(midiout_select.msg3 - 1,0,127)
+      update_surface = true
+      
+    elseif mouse.context == nil and mouse.LB and not MOUSE_over(obj.sections[950]) then
+      show_midiout = false
+      
+      local strip = tracks[track_select].strip
+      local ctl = strips[strip][page].controls[midioutedit_select]
+      if ctl and midiout_select.output and midioutsidx[midiout_select.output] then
+      
+        ctl.midiout = {output = midiout_select.output,
+                       mchan = midiout_select.mchan,
+                       msg3 = midiout_select.msg3}
+      else
+        ctl.midiout = nil
+      end
+      
+      update_gfx = true
+    end
+    
+    if mouse.context and mouse.context == contexts.midiout_chan then
+      local v = MOUSE_slider(obj.sections[952], -dragmidi.yoff)
+      if v then
+        v=v-0.5
+        midiout_select.mchan = F_limit(math.floor(dragmidi.pos - v*32),1,16)
+        update_surface = true
+      end
+    
+    elseif mouse.context and mouse.context == contexts.midiout_msg then
+      local v = MOUSE_sliderX(obj.sections[953], -dragmidi.yoff)
+      if v then
+        v=v-0.5
+        midiout_select.msg3 = F_limit(math.floor(dragmidi.pos - v*96),0,127)
+        update_surface = true
+      end
+    end
+  
+  end
+  
   function A_Run_TFXOrder(char)
   
     if char ~= 0 then
@@ -28773,6 +28946,13 @@ end
               end 
             end
           end
+          
+          local mout = data[key..'midiout_output']
+          if mout then
+            strips[ss][p].controls[c].midiout = {output = mout}
+            strips[ss][p].controls[c].midiout.mchan = tonumber(zn(data[key..'midiout_mchan'],1))
+            strips[ss][p].controls[c].midiout.msg3 = tonumber(zn(data[key..'midiout_msg3'],0))
+          end
 
           local gauge = data[key..'gauge']
           if gauge then
@@ -30885,6 +31065,12 @@ end
               else
                 file:write('['..key..'cycledata_statecnt]'..0 ..'\n')                   
               end
+
+              if strips[s][p].controls[c].midiout then
+                file:write('['..key..'midiout_output]'..nz(strips[s][p].controls[c].midiout.output,'')..'\n')
+                file:write('['..key..'midiout_mchan]'..nz(strips[s][p].controls[c].midiout.mchan,'')..'\n')
+                file:write('['..key..'midiout_msg3]'..nz(strips[s][p].controls[c].midiout.msg3,'')..'\n')              
+              end
               
               if strips[s][p].controls[c].gauge then
                 file:write('['..key..'gauge]'..tostring(true)..'\n')
@@ -32757,6 +32943,7 @@ end
     show_xxy = false
     show_gaugeedit = false
     show_trackfxorder = false
+    show_midiout = false
     
     show_paramname = true
     show_paramval = true
@@ -33486,31 +33673,41 @@ end
   function PopMIDIOutputs()
   
     local midiouts = {}
+    local midioutsidx = {}
     local moutnum = reaper.GetNumMIDIOutputs()
+    local mcnt = 1
+    
+    midiouts[0] = {outnum = 0,
+                    foutnum = 0,
+                    mchan = 1,
+                    name = 'Virtual Midi Keyboard'}
+    midioutsidx['Virtual Midi Keyboard'] = 0
+    
     for i = 0, moutnum do
     
       local retval ,moutname = reaper.GetMIDIOutputName(i,'')
       if retval == true then
         --DBG(tostring(retval)..'  '..moutname)
-        midiouts[#midiouts+1] = {outnum = i,
+        midiouts[mcnt] = {outnum = i,
                                  foutnum = i+16,
-                                 mchan = 2,
+                                 mchan = 1,
                                  name = moutname}
+        midioutsidx[moutname] = i+16
+        mcnt = mcnt + 1
       end
       
     end
-    return midiouts
+    return midiouts, midioutsidx
   
   end
   
   function SendMIDIMsg(miditab, val)
   
-    --DBG()
     --Send MIDI CC
-    if val then
-      reaper.StuffMIDIMessage(miditab.foutnum, 
+    if val and midioutsidx[miditab.output] then
+      reaper.StuffMIDIMessage(midioutsidx[miditab.output], 
                               '0xB'..string.format('%x',miditab.mchan-1),
-                              1, --CC num
+                              miditab.msg3, --CC num
                               F_limit(math.floor(127*val),0,127)) -- CC val
     end
   end
@@ -33528,7 +33725,7 @@ end
   StripperRunning(true)
   Sleep()
   
-  midiouts = PopMIDIOutputs()
+  midiouts, midioutsidx = PopMIDIOutputs()
   
   gmode = 0
   
