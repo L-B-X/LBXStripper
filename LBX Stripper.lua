@@ -11397,6 +11397,9 @@ end
         ctl.dirty = true
         local min, max = A_GetParamMinMax(cc,track,ctl,fxnum,param,true,c)
         reaper.TrackFX_SetParam(track, fxnum, param, DenormalizeValue(min, max, val))
+        
+        --SendMIDIMsg(midiouts[1])
+        
       elseif cc == ctlcats.trackparam then
         local param = ctl.param
         ctl.dirty = true
@@ -13082,6 +13085,9 @@ end
       local minx, miny, maxx, maxy = nil,nil,nil,nil 
       if #strip.graphics > 0 then
         for i = 1, #strip.graphics do
+          if strip.graphics[i].stretchw == nil then strip.graphics[i].stretchw = strip.graphics[i].w end
+          if strip.graphics[i].stretchh == nil then strip.graphics[i].stretchh = strip.graphics[i].h end
+          
           if minx == nil then
             minx = strip.graphics[i].x
             miny = strip.graphics[i].y
@@ -33476,6 +33482,35 @@ end
     end
   
   end
+  
+  function PopMIDIOutputs()
+  
+    local midiouts = {}
+    local moutnum = reaper.GetNumMIDIOutputs()
+    for i = 0, moutnum do
+    
+      local retval ,moutname = reaper.GetMIDIOutputName(i,'')
+      if retval == true then
+        --DBG(tostring(retval)..'  '..moutname)
+        midiouts[#midiouts+1] = {outnum = i,
+                                 foutnum = i+16,
+                                 mchan = 1,
+                                 name = moutname}
+      end
+      
+    end
+    return midiouts
+  
+  end
+  
+  function SendMIDIMsg(miditab)
+  
+    reaper.StuffMIDIMessage(16+miditab.foutnum, 
+                            '0x9'..string.format('%x',miditab.mchan-1),
+                            0,
+                            64)
+  end
+  
   ------------------------------------------------------------
 
   SCRIPT = 'LBX_STRIPPER'
@@ -33488,6 +33523,8 @@ end
   ZeroProjectFlags()
   StripperRunning(true)
   Sleep()
+  
+  midiouts = PopMIDIOutputs()
   
   gmode = 0
   
