@@ -11398,7 +11398,7 @@ end
         local min, max = A_GetParamMinMax(cc,track,ctl,fxnum,param,true,c)
         reaper.TrackFX_SetParam(track, fxnum, param, DenormalizeValue(min, max, val))
         
-        --SendMIDIMsg(midiouts[1])
+        --SendMIDIMsg(midiouts[2],val)
         
       elseif cc == ctlcats.trackparam then
         local param = ctl.param
@@ -33494,7 +33494,7 @@ end
         --DBG(tostring(retval)..'  '..moutname)
         midiouts[#midiouts+1] = {outnum = i,
                                  foutnum = i+16,
-                                 mchan = 1,
+                                 mchan = 2,
                                  name = moutname}
       end
       
@@ -33503,12 +33503,16 @@ end
   
   end
   
-  function SendMIDIMsg(miditab)
+  function SendMIDIMsg(miditab, val)
   
-    reaper.StuffMIDIMessage(16+miditab.foutnum, 
-                            '0x9'..string.format('%x',miditab.mchan-1),
-                            0,
-                            64)
+    --DBG()
+    --Send MIDI CC
+    if val then
+      reaper.StuffMIDIMessage(miditab.foutnum, 
+                              '0xB'..string.format('%x',miditab.mchan-1),
+                              1, --CC num
+                              F_limit(math.floor(127*val),0,127)) -- CC val
+    end
   end
   
   ------------------------------------------------------------
