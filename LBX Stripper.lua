@@ -11447,7 +11447,6 @@ end
         ctl.dirty = true
         local min, max = A_GetParamMinMax(cc,track,ctl,fxnum,param,true,c)
         reaper.TrackFX_SetParam(track, fxnum, param, DenormalizeValue(min, max, val))
-        
         if ctl.midiout then SendMIDIMsg(ctl.midiout,val) end
         --SendMIDIMsg(midiouts[2],val)
         
@@ -18818,7 +18817,7 @@ end
                   else
                     ctls[i].val = 0
                   end
-                  SetParam()
+                  A_SetParam(tracks[track_select].strip,page,i,ctls[i])
                   ctls[i].dirty = true
                   if ctls[i].param_info.paramname == 'Bypass' then
                     SetCtlEnabled(ctls[i].fxnum) 
@@ -18855,7 +18854,7 @@ end
                       trackfxparam_select = i
                       ctls[i].val = 
                           ctls[i].cycledata[ctls[i].cycledata.pos].val
-                      SetParam()
+                      A_SetParam(tracks[track_select].strip,page,i,ctls[i])
                       ctls[i].dirty = true
                       ctls[i].cycledata.posdirty = false
                       update_ctls = true
@@ -18872,10 +18871,10 @@ end
                   if ctls[i].membtn.state == true then
                     ctls[i].membtn.mem = ctls[i].val
                     ctls[i].val = ctls[i].defval
-                    SetParam()
+                    A_SetParam(strip,page,i,ctls[i])
                   else
                     ctls[i].val = ctls[i].membtn.mem
-                    SetParam()
+                    A_SetParam(strip,page,i,ctls[i])
                   end
                   update_ctls = true                    
                 elseif ctltype == 5 then
@@ -19130,7 +19129,8 @@ end
                     v = gfx.mouse_wheel/120 * mult
                   end
                   ctls[i].val = F_limit(ctls[i].val+v,0,1)
-                  SetParam()
+                  A_SetParam(tracks[track_select].strip,page,i,ctls[i])
+                  --SetParam()
                   ctls[i].dirty = true
                   update_ctls = true
                   gfx.mouse_wheel = 0
@@ -19161,7 +19161,8 @@ end
                     if ctls[i].cycledata[ctls[i].cycledata.pos] then
                       ctls[i].val = 
                           ctls[i].cycledata[ctls[i].cycledata.pos].val
-                      SetParam()
+                      --SetParam()
+                      A_SetParam(tracks[track_select].strip,page,i,ctls[i])
                       ctls[i].dirty = true
                       update_ctls = true
                     end
@@ -19355,30 +19356,32 @@ end
     elseif mouse.context and mouse.context == contexts.dragcycle then
       local val = MOUSE_slider(ctlxywh,mouse.slideoff)
       if val ~= nil then
+        local strip = tracks[track_select].strip
+        local ctl = strips[strip][page].controls[trackfxparam_select]
         if oms ~= mouse.shift then
           oms = mouse.shift
-          ctlpos = normalize(0, strips[tracks[track_select].strip][page].controls[trackfxparam_select].cycledata.statecnt,
-                             strips[tracks[track_select].strip][page].controls[trackfxparam_select].cycledata.pos)
+          ctlpos = normalize(0, ctl.cycledata.statecnt,
+                             ctl.cycledata.pos)
           mouse.slideoff = ctlxywh.y+ctlxywh.h/2 - mouse.my
         else
           if mouse.shift then
-            local mult = strips[tracks[track_select].strip][page].controls[trackfxparam_select].knobsens.fine
+            local mult = ctl.knobsens.fine
             if mult == 0 then mult = settings_defknobsens.fine end
             val = ctlpos + ((0.5-val)*2)*mult
           else
-            local mult = strips[tracks[track_select].strip][page].controls[trackfxparam_select].knobsens.norm
+            local mult = ctl.knobsens.norm
             if mult == 0 then mult = settings_defknobsens.norm end
             val = ctlpos + (0.5-val)*mult
           end
           if val < 0 then val = 0 end
           if val > 1 then val = 1 end
           if val ~= octlval then
-            local pos = F_limit(math.floor(val*strips[tracks[track_select].strip][page].controls[trackfxparam_select].cycledata.statecnt),1,
-                                strips[tracks[track_select].strip][page].controls[trackfxparam_select].cycledata.statecnt)
-            strips[tracks[track_select].strip][page].controls[trackfxparam_select].cycledata.pos = pos
-            strips[tracks[track_select].strip][page].controls[trackfxparam_select].val = strips[tracks[track_select].strip][page].controls[trackfxparam_select].cycledata[pos].val
-            SetParam()
-            strips[tracks[track_select].strip][page].controls[trackfxparam_select].dirty = true
+            local pos = F_limit(math.floor(val*ctl.cycledata.statecnt),1,
+                                ctl.cycledata.statecnt)
+            ctl.cycledata.pos = pos
+            ctl.val = ctl.cycledata[pos].val
+            A_SetParam(strip,page,trackfxparam_select,ctl)
+            ctl.dirty = true
             octlval = val
             update_ctls = true
           end
@@ -19388,30 +19391,32 @@ end
     elseif mouse.context and mouse.context == contexts.dragcycle_h then
       local val = MOUSE_slider_horiz(ctlxywh,mouse.slideoff)
       if val ~= nil then
+        local strip = tracks[track_select].strip
+        local ctl = strips[strip][page].controls[trackfxparam_select]
         if oms ~= mouse.shift then
           oms = mouse.shift
-          ctlpos = normalize(0, strips[tracks[track_select].strip][page].controls[trackfxparam_select].cycledata.statecnt,
-                             strips[tracks[track_select].strip][page].controls[trackfxparam_select].cycledata.pos)
+          ctlpos = normalize(0, ctl.cycledata.statecnt,
+                             ctl.cycledata.pos)
           mouse.slideoff = ctlxywh.x+ctlxywh.w/2 - mouse.mx
         else
           if mouse.shift then
-            local mult = strips[tracks[track_select].strip][page].controls[trackfxparam_select].knobsens.fine
+            local mult = ctl.knobsens.fine
             if mult == 0 then mult = settings_defknobsens.fine end
             val = ctlpos - ((0.5-val)*2)*mult
           else
-            local mult = strips[tracks[track_select].strip][page].controls[trackfxparam_select].knobsens.norm
+            local mult = ctl.knobsens.norm
             if mult == 0 then mult = settings_defknobsens.norm end
             val = ctlpos - (0.5-val)*mult
           end
           if val < 0 then val = 0 end
           if val > 1 then val = 1 end
           if val ~= octlval then
-            local pos = F_limit(math.floor(val*strips[tracks[track_select].strip][page].controls[trackfxparam_select].cycledata.statecnt),1,
-                                strips[tracks[track_select].strip][page].controls[trackfxparam_select].cycledata.statecnt)
-            strips[tracks[track_select].strip][page].controls[trackfxparam_select].cycledata.pos = pos
-            strips[tracks[track_select].strip][page].controls[trackfxparam_select].val = strips[tracks[track_select].strip][page].controls[trackfxparam_select].cycledata[pos].val
-            SetParam()
-            strips[tracks[track_select].strip][page].controls[trackfxparam_select].dirty = true
+            local pos = F_limit(math.floor(val*ctl.cycledata.statecnt),1,
+                                ctl.cycledata.statecnt)
+            ctl.cycledata.pos = pos
+            ctl.val = ctl.cycledata[pos].val
+            A_SetParam(strip,page,trackfxparam_select,ctl)
+            ctl.dirty = true
             octlval = val
             update_ctls = true
           end
@@ -23487,8 +23492,21 @@ end
       
       elseif mouse.context == nil and MOUSE_click_RB(obj.sections[168]) and mouse.shift == false then
       
-        if sstype_select > 1 then
-          mstr = 'Delete subset|Delete all subsets'
+        if sstype_select == 1 then
+          mstr = 'Clone to subset (ctls only)'
+          gfx.x, gfx.y = snapmx, snapmy
+          local res = OpenMenu(mstr)
+          if res > 0 then
+            if res == 1 then
+              local newsst = Snapshot_CloneToSubset(tracks[track_select].strip, page, 1, false)
+              if newsst then
+                sstype_select = newsst
+                update_snaps = true
+              end
+            end
+          end        
+        elseif sstype_select > 1 then
+          mstr = 'Delete subset|Delete all subsets||Clone to subset (ctls only)'
           gfx.x, gfx.y = snapmx, snapmy
           local res = OpenMenu(mstr)
           if res > 0 then
@@ -23504,6 +23522,13 @@ end
               if snapshots and snapshots[tracks[track_select].strip] and #snapshots[tracks[track_select].strip][page] > 1 then
                 OpenMsgBox(3, 'Delete all subsets?', 2)
               end                  
+
+            elseif res == 3 then
+              local newsst = Snapshot_CloneToSubset(tracks[track_select].strip, page, sstype_select, false)
+              if newsst then
+                sstype_select = newsst
+                update_snaps = true
+              end
             end
           
           end
@@ -31919,6 +31944,51 @@ end
       
     end
     
+  end
+  
+  function Snapshot_CloneToSubset(strip, page, sst, copy)
+  
+    local newsst 
+    if sst == 1 then
+      local strip = tracks[track_select].strip
+      local ctls = strips[strip][page].controls
+      if ctls and #ctls > 0 then
+        newsst = #snapshots[strip][page]+1
+        snapshots[strip][page][newsst] = {subsetname = 'SUBSET '..newsst-1, snapshot = {}, ctls = {}}
+        snapsubsets_table[newsst] = 'SUBSET '..newsst-1
+        
+        for i = 1, #ctls do
+        
+          if ctls[i].ctlcat == ctlcats.fxparam or 
+             ctls[i].ctlcat == ctlcats.trackparam or 
+             ctls[i].ctlcat == ctlcats.tracksend or 
+             ctls[i].ctlcat == ctlcats.fxoffline then 
+            --add
+            local ctlidx = #snapshots[strip][page][newsst].ctls + 1
+            snapshots[strip][page][newsst].ctls[ctlidx] = {c_id = ctls[i].c_id,
+                                                           ctl = i}
+          end
+        end
+      end
+    elseif sst > 1 then
+
+      local strip = tracks[track_select].strip
+      local ctls = snapshots[strip][page][sst].ctls
+      if ctls and #ctls > 0 then
+        newsst = #snapshots[strip][page]+1
+        snapshots[strip][page][newsst] = {subsetname = 'SUBSET '..newsst-1, snapshot = {}, ctls = {}}
+        snapsubsets_table[newsst] = 'SUBSET '..newsst-1
+        for i = 1, #ctls do
+        
+          --add
+          local ctlidx = #snapshots[strip][page][newsst].ctls + 1
+          snapshots[strip][page][newsst].ctls[ctlidx] = {c_id = ctls[i].c_id,
+                                                         ctl = ctls[i].ctl}
+        end
+      end
+
+    end
+    return newsst
   end
   
   function Snapshot_DeleteSubset(strip, page, sst)
