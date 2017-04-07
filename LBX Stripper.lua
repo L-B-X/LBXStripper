@@ -124,7 +124,8 @@
               gauge_nudge = 91,
               tfxo_shift = 92,
               midiout_chan = 93,
-              midiout_msg = 94,              
+              midiout_msg = 94,
+              snap_move = 95,              
               dummy = 99
               }
   
@@ -3471,6 +3472,7 @@
     skin.slidbutt = LoadSkinIMG(866, 'SliderButton.png')
     skin.star = LoadSkinIMG(867, 'Star.png')
     skin.starout = LoadSkinIMG(868, 'StarOut.png')
+    --skin.led = LoadSkinIMG(869, 'LBX_Button32_Yellow.png')
   
     if skin.panela_top == -1 or 
        skin.panela_mid == -1 or 
@@ -3490,6 +3492,7 @@
        skin.butt18Y == -1 or 
        skin.slidbutt == -1 or
        skin.star == -1 or
+       --skin.led == -1 or
        skin.starout == -1
        then
       ret = false   
@@ -6868,6 +6871,13 @@ end
                 GUI_textsm_LJ(gui,xywh,roundX(i+ssoffset,0)..': '..snapshots[strip][page][sstype_select][i+ssoffset].name,c,-2,xywh.w)
               end
           
+              if snap_move and snap_move.epos == i+ssoffset and snap_move.epos ~= snap_move.spos and snap_move.epos ~= snap_move.spos+1 then
+                f_Get_SSV(gui.color.red)
+                gfx.rect(xywh.x,
+                 xywh.y-1, 
+                 xywh.w,
+                 2, 1)              
+              end
             end
         
           end
@@ -6887,6 +6897,14 @@ end
               end
               if snapshots[strip][page][sstype_select].snapshot[i+ssoffset] then
                 GUI_textsm_LJ(gui,xywh,roundX(i+ssoffset,0)..': '..snapshots[strip][page][sstype_select].snapshot[i+ssoffset].name,c,-2,xywh.w)
+              end
+
+              if snap_move and snap_move.epos == i+ssoffset and snap_move.epos ~= snap_move.spos and snap_move.epos ~= snap_move.spos+1 then
+                f_Get_SSV(gui.color.red)
+                gfx.rect(xywh.x,
+                 xywh.y-1, 
+                 xywh.w,
+                 2, 1)              
               end
           
             end
@@ -9767,22 +9785,22 @@ end
         gfx.a = 1
         if topbarheight == 0 then
           if show_eqcontrol ~= true and macro_edit_mode ~= true then
-            gfx.blit(1,1,0,plist_w-1,--surface_offset.x,
+            gfx.blit(1,1,0,plist_w,--surface_offset.x,
                               0,--surface_offset.y,
                               obj.sections[18].w,
                               obj.sections[18].h,
-                              obj.sections[18].x+plist_w-1,
+                              obj.sections[18].x+plist_w,
                               obj.sections[18].y)
-            gfx.blit(1,1,0,(obj.sections[21].x+plist_w-1),--surface_offset.x+(obj.sections[21].x+plist_w-obj.sections[10].x),
+            gfx.blit(1,1,0,(obj.sections[21].x+plist_w),--surface_offset.x+(obj.sections[21].x+plist_w-obj.sections[10].x),
                               0,--surface_offset.y+(obj.sections[21].y-obj.sections[10].y),
                               obj.sections[21].w,
                               obj.sections[21].h,
-                              obj.sections[21].x+plist_w-1,
+                              obj.sections[21].x+plist_w,
                               obj.sections[21].y)
           end
         end
         local w,h = gfx.getimgdim(999)
-        gfx.blit(999,1,0,0,0,w,h,plist_w-1,0)                
+        gfx.blit(999,1,0,0,0,w,h,plist_w,0)                
       end
       
       --if update_surfaceedge then
@@ -9939,6 +9957,13 @@ end
     elseif EB_Open > 0 then
       editbox_draw(gui, editbox)    
     
+    end
+    
+    if show_midioutind and midimsg == true then
+      f_Get_SSV(gui.color.red)
+      gfx.rect(6,6,8,8,1,1)
+      f_Get_SSV(gui.color.black)
+      gfx.rect(6,6,8,8,0,1)
     end
     
     gfx.dest = -1
@@ -10279,7 +10304,7 @@ end
       GUI_DrawBar(gui,'<>',obj.sections[18],skin.bar,true,gui.color.black,nil,-2)
     end
     --gfx.a = 1    
-    gfx.line(obj.sections[18].x+obj.sections[18].w,obj.sections[18].y,obj.sections[18].x+obj.sections[18].w,obj.sections[18].y+obj.sections[18].h)
+    gfx.line(obj.sections[18].x+obj.sections[18].w,obj.sections[18].y,obj.sections[18].x+obj.sections[18].w,obj.sections[18].y+obj.sections[18].h-1)
     gfx.line(obj.sections[18].x,obj.sections[18].y+obj.sections[18].h-1,obj.sections[18].x+obj.sections[18].w,obj.sections[18].y+obj.sections[18].h-1)
     
     if show_eqcontrol ~= true and macro_edit_mode ~= true then
@@ -10293,7 +10318,7 @@ end
       gfx.a = 0.6
       GUI_DrawBar(gui,'...',obj.sections[21],skin.bar,true,gui.color.black,nil,-2)
       --gfx.a=1
-      gfx.line(obj.sections[21].x-1,obj.sections[21].y,obj.sections[21].x-1,obj.sections[21].y+obj.sections[21].h)
+      gfx.line(obj.sections[21].x-1,obj.sections[21].y,obj.sections[21].x-1,obj.sections[21].y+obj.sections[21].h-1)
       gfx.line(obj.sections[21].x,obj.sections[21].y+obj.sections[21].h-1,obj.sections[21].x+obj.sections[21].w,obj.sections[21].y+obj.sections[21].h-1)
     end
     gfx.dest = 1
@@ -18393,6 +18418,10 @@ end
       redraw_ctlbitmap = nil
       GUI_DrawCtlBitmap()
     end
+    if midimsg == true and reaper.time_precise() > midimsgto then
+      midimsg = false
+      update_surface = true
+    end
 
   end
 
@@ -18493,6 +18522,9 @@ end
       else
         tfxo_sel = nil
       end
+      update_surface = true
+    elseif mouse.context == nil and mouse.LB and not MOUSE_over(obj.sections[900]) then
+      show_trackfxorder = false
       update_surface = true
     end
   
@@ -19525,6 +19557,36 @@ end
       resize_fsnaps = true
       --update_gfx = true
     
+    elseif mouse.context and mouse.context == contexts.snap_move then
+      local my = mouse.my-obj.sections[160].y
+      local i = math.floor((my-obj.sections[163].y)/butt_h)
+      local snapcnt
+      if sstype_select == 1 then
+        snapcnt = #snapshots[tracks[track_select].strip][page][sstype_select]
+      else
+        snapcnt = #snapshots[tracks[track_select].strip][page][sstype_select].snapshot      
+      end
+      if reaper.time_precise() > ssshiftto then
+        if i<1 then
+          ssoffset = math.max(ssoffset-1,0)
+        elseif i>SS_butt_cnt then
+          ssoffset = math.min(ssoffset+1,snapcnt-1)      
+        end
+        ssshiftto = reaper.time_precise() + 0.15
+      end
+      snap_move.epos = F_limit(ssoffset+i,1,snapcnt+1)
+      update_snaps = true
+      
+    elseif mouse.context == nil and snap_move then
+
+      if snap_move.epos ~= snap_move.spos and snap_move.epos ~= snap_move.spos+1 then
+        --move ss
+        Snapshot_Move(snap_move.spos, snap_move.epos)
+      end
+
+      snap_move = nil
+      update_snaps = true
+      
     elseif dragparam ~= nil then
     
       if mouse.mx > obj.sections[10].x and not MOUSE_over(obj.sections[160]) then
@@ -23673,11 +23735,21 @@ end
                 Snapshot_Set(tracks[track_select].strip, page, sstype_select, ss_select)
               --end
                 update_ctls = true --to update snapshot ctls
-                update_snaps = true          
+                update_snaps = true
+                
+                if mouse.shift then
+                  --Start Moving
+                  snap_move = {}
+                  snap_move.spos = ssoffset+i
+                  snap_move.epos = snap_move.spos
+                  mouse.context = contexts.snap_move
+                  ssshiftto = reaper.time_precise()
+                end          
               end
             end
           end
         end
+      --elseif mouse.context == nil and MOUSE_click(obj.sections[163]) and mouse.shift then
         
       elseif MOUSE_click_RB(obj.sections[163]) then
         if ss_select then
@@ -32055,6 +32127,66 @@ end
     end
   
   end
+  
+  function Snapshot_Move(src, dst)
+  
+    local strip = tracks[track_select].strip
+    if sstype_select == 1 then
+      local snaptbl = snapshots[strip][page][sstype_select]
+      local ssdst = {}
+      local inserted = false
+      local npos = 0
+      for i = 1, #snaptbl do
+        if i == src then
+          --skip
+        else
+          if inserted == false then
+            npos = npos + 1
+          end
+          if i == dst then
+            table.insert(ssdst, snaptbl[src])
+            inserted = true
+          end
+          table.insert(ssdst, snaptbl[i])
+        end      
+      end
+      if inserted == false then
+        table.insert(ssdst, snaptbl[src])
+        npos = npos + 1
+      end
+      snapshots[strip][page][sstype_select] = ssdst
+      ss_select = math.min(npos,#snapshots[strip][page][sstype_select])    
+    
+    else
+      local snaptbl = snapshots[strip][page][sstype_select].snapshot    
+      local ssdst = {}
+      local inserted = false
+      local npos = 0
+      for i = 1, #snaptbl do
+        if i == src then
+          --skip
+        else
+          if inserted == false then
+            npos = npos + 1
+          end
+          if i == dst then
+            table.insert(ssdst, snaptbl[src])
+            inserted = true
+          end
+          table.insert(ssdst, snaptbl[i])
+        end      
+      end
+      if inserted == false then
+        table.insert(ssdst, snaptbl[src])
+        npos = npos + 1
+      end
+      snapshots[strip][page][sstype_select].snapshot = ssdst
+      ss_select = math.min(npos,#snapshots[strip][page][sstype_select].snapshot)
+    end
+    update_snaps = true
+    update_fsnaps = true
+  
+  end
     
   function Snapshot_Set(strip, page, sstype_select, ss_select)
   
@@ -33787,6 +33919,8 @@ end
                               '0xB'..string.format('%x',miditab.mchan-1),
                               miditab.msg3, --CC num
                               F_limit(math.floor(127*val),0,127)) -- CC val
+      midimsg = true
+      midimsgto = reaper.time_precise() + 0.1
     end
   end
   
@@ -33882,6 +34016,7 @@ end
   settings_showminimaltopbar = true
   settings_createbackuponmanualsave = false
   settings_UCV = 1
+  show_midioutind = true
   
   save_subfolder = ''
   
