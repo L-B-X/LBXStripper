@@ -6081,18 +6081,19 @@ end
   
             local ctl = strips[strip][page].controls[i]
 
-            local scale = ctl.scale
+            --local scale = ctl.scale
             local px = ctl.xsc
             local py = ctl.ysc
-            local w = ctl.w
-            local h = ctl.ctl_info.cellh
+            local w = ctl.wsc --ctl.w
+            local h = ctl.hsc --ctl_info.cellh
     
             local hidden = Switcher_CtlsHidden(ctl.switcher, ctl.grpid)
             
             SetColor2(i)
             if hidden == false then
               if (mode == 1 or ctl.hidden ~= true) then
-                gfx.rect(px,py,w*scale,h*scale,1)
+                --gfx.rect(px,py,w*scale,h*scale,1)
+                gfx.rect(px,py,w,h,1)
               end
             end
           end
@@ -9147,12 +9148,27 @@ end
         if (macro_edit_mode == false or macro_lrn_mode == true) and (update_gfx or update_surface or update_bg or update_msnaps or update_mfsnaps) then
           --local w, h = obj.sections[10].w, lockh
           --local x, y = obj.sections[10].x + obj.sections[10].w/2 - w/2, obj.sections[10].y + (obj.sections[10].h/2) - h/2
-          gfx.blit(1000,1,0,surface_offset.x,
-                            surface_offset.y,
-                            obj.sections[10].w,
-                            obj.sections[10].h,
-                            obj.sections[10].x,
-                            obj.sections[10].y)
+          if show_bitmap == false then
+            gfx.blit(1000,1,0,surface_offset.x,
+                              surface_offset.y,
+                              obj.sections[10].w,
+                              obj.sections[10].h,
+                              obj.sections[10].x,
+                              obj.sections[10].y)
+          else
+            f_Get_SSV(gui.color.white)
+            gfx.rect(obj.sections[10].x,
+                     obj.sections[10].y,
+                     obj.sections[10].w,
+                     obj.sections[10].h)
+            
+            gfx.blit(ctl_bitmap,1,0,surface_offset.x,
+                              surface_offset.y,
+                              obj.sections[10].w,
+                              obj.sections[10].h,
+                              obj.sections[10].x,
+                              obj.sections[10].y)          
+          end
         end
         
         --[[if plist_w > 0 then                  
@@ -15925,7 +15941,7 @@ end
         end      
       end
     end
-    sub = sub .. '||Load Set|Merge Set|Save Set||Clear Set||>Script Data|Load Data File|<Load Backup Data File'
+    sub = sub .. '||Load Set|Merge Set|Save Set||Clear Set||>Script Data|Load Data File|<Load Backup Data File|Statistics'
     if mode == 0 then
       mstr = 'Toggle Topbar|Toggle Sidebar||Lock X|Lock Y|Scroll Up|Scroll Down||Save Project|Open Settings||>Pages|Page 1|Page 2|Page 3|<Page 4||'..ds..'||'..ls..'Lock Surface||'..dt..'Insert Default Strip'
     else
@@ -16029,10 +16045,71 @@ end
         if ret == true then
           LoadDataFile(rfn)
         end
+      elseif res == 30 then
+        ShowStats()
       end
       update_gfx = true
     end
     
+  end
+
+  function ShowStats()
+  
+    --GUI_DrawStateWin(obj,gui,'Strip Statistics',true)
+    --GUI_DrawStateWin(obj,gui,'')
+    DBG('Strip Statistics')
+    DBG('')
+    local totc = 0
+    local totsub = 0
+    local totsnap = 0
+    for s = 1, #strips do
+      local stripc = 0
+      local subsetsc = 0
+      local snapsc = 0
+      for p = 1, 4 do
+      
+        if strips[s][p] then
+          stripc = stripc + #strips[s][p].controls
+        end
+        if snapshots[s][p] then
+          subsetsc = subsetsc + #snapshots[s][p]
+          snapsc = snapsc + #snapshots[s][p][1]
+        
+          if #snapshots[s][p] > 1 then
+            for i = 2, #snapshots[s][p] do
+            
+              snapsc = snapsc + #snapshots[s][p][i].snapshot
+            
+            end
+          end          
+        end
+        
+      end
+      if stripc > 0 then
+        local tr = ''
+        if strips[s].track.tracknum == -1 then
+          tr = '(Master)'
+        else
+          tr = '(Track '..strips[s].track.tracknum+1 ..')'
+        end
+        local str = 'Strip '..s..' '.. tr ..' ................ #Controls = '..stripc..'  #Subsets = '..subsetsc..'  #Snapshots = '..snapsc
+        totc=totc+stripc
+        totsub=totsub+subsetsc
+        totsnap=totsnap+snapsc
+                
+        --GUI_DrawStateWin(obj,gui,str)
+        DBG(str)
+      end    
+    end
+    --GUI_DrawStateWin(obj,gui,'')
+    --GUI_DrawStateWin(obj,gui,'Total Controls = '..totc)
+    --GUI_DrawStateWin(obj,gui,'Total Subsets = '..totsub)
+    --GUI_DrawStateWin(obj,gui,'Total Snapshots = '..totsnap)
+    DBG('')
+    DBG('Total Controls = '..totc)
+    DBG('Total Subsets = '..totsub)
+    DBG('Total Snapshots = '..totsnap)
+    --reaper.MB('Close statistics', 'Stats', 0)
   end
 
   function ToggleTopbar()
@@ -17420,6 +17497,9 @@ end
         char = 0
       elseif char == 105 then
         RBMenu(2,nil,nil)
+      elseif char == 13 then
+        show_bitmap = not show_bitmap
+        update_gfx = true
       end
     --[[else -- shift
       if char == 19 then
@@ -33154,6 +33234,7 @@ end
     show_gaugeedit = false
     show_trackfxorder = false
     show_midiout = false
+    show_bitmap = false
     
     show_paramname = true
     show_paramval = true
