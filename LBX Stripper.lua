@@ -473,7 +473,7 @@
           if stripdata.fx[f].fxname then
             fxn = stripdata.fx[f].fxname
           else
-            local fxc = string.match(stripdata.fx[f].fxchunk,'.-<(.*)')
+            local fxc = string.match(stripdata.fx[f].fxchunk,'.-<(.-)\n')
             fxn = GetPlugNameFromChunk(fxc)
             if fxn and fxns[fxn] == nil then
               fxns[fxn] = true
@@ -498,6 +498,11 @@
 
         GUI_DrawStateWin(obj,gui,'Importing graphics data... ')
         GUI_DrawStateWin(obj,gui,'')
+
+        --[[DBG('Importing shared strip data... ')
+        DBG('')
+        DBG('Importing graphics data... ')
+        DBG('')]]
 
         for g = 1, #stripdata.sharedata.gfx do
           local gfxv = 0
@@ -568,10 +573,12 @@
           
           if copy == 1 then
             GUI_DrawStateWin(obj,gui,'Importing graphic: '..stripdata.sharedata.gfx[g].fn..'   ('..gfxfn..')')
+            --DBG('Importing graphic: '..stripdata.sharedata.gfx[g].fn..'   ('..gfxfn..')')
             gfn = graphics_path..gfxfn
             writebinaryfile(gfn, stripdata.sharedata.gfx[g].bindata)
           else
             GUI_DrawStateWin(obj,gui,'Already in graphics library: '..stripdata.sharedata.gfx[g].fn..'   ('..gfxfn..')')          
+            --DBG('Already in graphics library: '..stripdata.sharedata.gfx[g].fn..'   ('..gfxfn..')')
           end    
           if copy > 0 then
             local src = stripdata.sharedata.gfx[g].fn
@@ -594,6 +601,9 @@
         GUI_DrawStateWin(obj,gui,'')
         GUI_DrawStateWin(obj,gui,'Importing controls data... ')
         GUI_DrawStateWin(obj,gui,'')
+        --[[DBG('')
+        DBG('Importing controls data... ')
+        DBG('')]]
     
         for c = 1, #stripdata.sharedata.ctls do
           
@@ -629,6 +639,7 @@
           end
           if copy == 1 then
             GUI_DrawStateWin(obj,gui,'Importing control: '..stripdata.sharedata.ctls[c].fn..'   ('..cfxfn..')')
+            --DBG('Importing control: '..stripdata.sharedata.ctls[c].fn..'   ('..cfxfn..')')
             writebinaryfile(cfn, stripdata.sharedata.ctls[c].bindata)
             local knbfn = string.match(cfn, '(.+)%.') ..'.knb'
             writebinaryfile(knbfn, stripdata.sharedata.ctls[c].knbdata)
@@ -636,6 +647,7 @@
             setknbfn(knbfn,cfxfn)
           else
             GUI_DrawStateWin(obj,gui,'Already in controls library: '..stripdata.sharedata.ctls[c].fn..'   ('..cfxfn..')')
+            --DBG('Already in controls library: '..stripdata.sharedata.ctls[c].fn..'   ('..cfxfn..')')
           end
           if copy > 0 then
             local src = stripdata.sharedata.ctls[c].fn
@@ -658,7 +670,10 @@
         GUI_DrawStateWin(obj,gui,'')
         GUI_DrawStateWin(obj,gui,'Importing strip data... ')
         GUI_DrawStateWin(obj,gui,'')
-    
+        --[[DBG('')
+        DBG('Importing strip data... ')
+        DBG('')]]
+        
         local savefn = stripdata.sharedata.stripfn
         local save_path=strips_path..strip_folders[stripfol_select].fn..'/'
         local fn=save_path..savefn--..".strip"
@@ -685,6 +700,7 @@
             file:close()
           end
       
+         -- DBG('Strip share file imported.')
           OpenMsgBox(1,'Strip share file imported.',1)
         end
       
@@ -699,7 +715,8 @@
   
     if reaper.file_exists(kfn) then
       local file
-      file=io.open(controls_path..kf,"r")
+      --DBG(controls_path..kfn)
+      file=io.open(kfn,"r")
       local content=file:read("*a")
       file:close()
       
@@ -12596,6 +12613,9 @@ end
     local fxn
     if string.sub(fxchunk,1,3) == 'VST' then
       fxn = string.match(fxchunk, '.*: (.-) %(')
+      if fxn == nil then
+        fxn = string.match(fxchunk, '.*: (.-)%"')      
+      end
     elseif string.sub(fxchunk,1,2) == 'JS' then
       fxn = string.match(fxchunk, 'JS.*%/+(.-) \"')
       if fxn == nil then
@@ -17931,7 +17951,6 @@ end
         gfx.dest = ctl_bitmap
         gfx.x = x + surface_offset.x -obj.sections[10].x
         gfx.y = y + surface_offset.y -obj.sections[10].y
-        
         local r,g,b = gfx.getpixel()
         gfx.dest = 1
         local cc = r*255 + ((g*255) << 8) + ((b*255) << 16)
@@ -18866,7 +18885,6 @@ end
           local strip = tracks[track_select].strip
           local ctls = strips[tracks[track_select].strip][page].controls
           local c = GetControlAtXY(tracks[track_select].strip, page, mouse.mx, mouse.my)
-          --DBG(c)
           if c then
             i = c
             local ctl = ctls[i]
@@ -18875,7 +18893,6 @@ end
                        w = ctl.wsc, 
                        h = ctl.hsc} 
           end
-                        
           if i and not ctls[i].hidden then
             
             if ctls[i].fxfound then
