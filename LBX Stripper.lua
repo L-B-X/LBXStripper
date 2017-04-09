@@ -17952,18 +17952,20 @@ end
         gfx.x = x + surface_offset.x -obj.sections[10].x
         gfx.y = y + surface_offset.y -obj.sections[10].y
         local r,g,b = gfx.getpixel()
+        --DBG(r*255 ..'  '..g*255 ..'  '..b*255)
         gfx.dest = 1
-        local cc = r*255 + ((g*255) << 8) + ((b*255) << 16)
+        --local cc = r*255 + ((g*255) << 8) + ((b*255) << 16)
+        local cc = math.floor(((r*255) + ((g*255) << 8) + ((b*255) << 16))+0.5)
         if cc > 0 and ctls[cc] then
-          local ctl = strips[tracks[track_select].strip][page].controls[cc]
+          local ctl = strips[strip][page].controls[cc]
           if Switcher_CtlsHidden(ctl.switcher, ctl.grpid) == false then 
             ret = cc
           end
         end
       else
-        for ii = 1, #strips[tracks[track_select].strip][page].controls do
+        for ii = 1, #strips[strip][page].controls do
   
-          local ctl = strips[tracks[track_select].strip][page].controls[ii]
+          local ctl = strips[strip][page].controls[ii]
           ctlxywh = {x = ctl.xsc - surface_offset.x +obj.sections[10].x, 
                      y = ctl.ysc - surface_offset.y +obj.sections[10].y, 
                      w = ctl.wsc, 
@@ -28072,6 +28074,7 @@ end
     local macro = ctls[ctl].macroctl
     ctls[ctl].dirty = true
     if macro then
+      local byp = {}
       for m = 1, #macro do
       
         if macro[m].mute == false or macro[m].mute == nil then
@@ -28094,6 +28097,9 @@ end
                 c.val = v
                 A_SetParam(strip, page, trackfxparam_select, c)
                 macro[m].oval = v
+                if c.param_info.paramname == 'Bypass' then
+                  byp[#byp+1] = c.fxnum
+                end
               end
             
             else
@@ -28113,6 +28119,9 @@ end
                 c.val = v
                 A_SetParam(strip, page, trackfxparam_select, c)
                 macro[m].oval = v
+                if c.param_info.paramname == 'Bypass' then
+                  byp[#byp+1] = c.fxnum
+                end
               end
             end
 
@@ -28144,10 +28153,16 @@ end
                 A_SetParam(strip, page, trackfxparam_select, c)
                 c.mval = v
                 macro[m].oval = v
+                if c.param_info.paramname == 'Bypass' then
+                  byp[#byp+1] = c.fxnum
+                end
               end            
             end          
           end
         end
+      end
+      if #byp > 0 then
+        SetCtlsEnabled(byp)
       end
     end
     trackfxparam_select = ofxparam
@@ -28548,9 +28563,28 @@ end
   
     local i
     local enabled = reaper.TrackFX_GetEnabled(GetTrack(tracks[track_select].tracknum),fxnum)
-    for i = 1, #strips[tracks[track_select].strip][page].controls do
-      if strips[tracks[track_select].strip][page].controls[i].fxnum == fxnum then
-        strips[tracks[track_select].strip][page].controls[i].dirty = true
+    local strip = tracks[track_select].strip
+    for i = 1, #strips[strip][page].controls do
+      local ctl = strips[strip][page].controls[i]
+      if ctl.fxnum == fxnum then
+        ctl.dirty = true
+      end
+    end
+    
+  end
+
+  function SetCtlsEnabled(fxnum)
+  
+    local i
+    --local enabled = reaper.TrackFX_GetEnabled(GetTrack(tracks[track_select].tracknum),fxnum)
+    local strip = tracks[track_select].strip
+    for i = 1, #strips[strip][page].controls do
+      local ctl = strips[strip][page].controls[i]
+      for f = 1, #fxnum do
+        if ctl.fxnum == fxnum[f] then
+          ctl.dirty = true
+          break
+        end
       end
     end
     
@@ -33707,11 +33741,36 @@ end
   end
   
   function ToggleFXOffline(strip, page, ctl, trn)
-
     local trn = nz(strips[strip][page].controls[ctl].tracknum, trn)
     local fxn = strips[strip][page].controls[ctl].fxnum
     local str = GetTrack(trn)
     local _, chunk = reaper.GetTrackStateChunk(str,'',false)
+
+    --local chlines = {}
+    local s,e=0,0
+    --[[while e<string.len(chunk) or chline == nil do
+      chline = string.find(chunk,s,)
+    end]]
+    --ts = reaper.time_precise()
+    --[[chlines = split(chunk, "\n")
+    local c = 0
+    for i = 1, #chlines do
+      if string.sub(chlines[i],0,5) == 'BYPASS' then
+        if c == fxn then
+          byp = string.gsub(byp,'(%d) (%d) (%d)', function(d,e,f) if e == '0' then return d..' 1 '..f else return d..' 0 '..f end end)
+          chlines[i] = byp
+          break
+        end 
+        c=c+1        
+      end
+    end
+    local nchunk = ''
+    for i = 1, #chlines do
+    
+      nchunk = nchunk .. #chlines[i]
+    
+    end
+    DBG(reaper.time_precise()-ts..'  '..#chlines)]]
 
     local s,e, fnd = 0,0,nil
     for i = 0,fxn do
