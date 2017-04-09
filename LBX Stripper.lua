@@ -12457,6 +12457,14 @@ end
           end
         end
       end
+
+      --check tracknums
+      for j = 1, #strips[tracks[track_select].strip][page].controls do
+        local ctl = strips[tracks[track_select].strip][page].controls[j]
+        if ctl.tracknum and ctl.tracknum == strips[tracks[track_select].strip].track.tracknum then
+          ctl.tracknum = nil
+        end
+      end
     
       savestrip = {}
       savestrip.version = 3
