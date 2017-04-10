@@ -694,10 +694,14 @@
           local file
           
           if DELETE then
+          DBG(fn)
             file=io.open(fn,"w")
+          DBG('pickling')
             local pickled_table=pickle(stripdata)
+          DBG('writing')
             file:write(pickled_table)
             file:close()
+          DBG('done')
           end
       
          -- DBG('Strip share file imported.')
@@ -2419,6 +2423,8 @@
         if graphics_files[graphics_folder_files[gfx_select]].imageidx == nil then
           local iidx = LoadGraphics(graphics_files[graphics_folder_files[gfx_select]].fn)
           if iidx then
+            local w, h = gfx.getimgdim(graphics_files[graphics_folder_files[gfx_select]].imageidx)      
+            if w == 0 or h == 0 then OpenMsgBox(1, 'Invalid gfx file: '..graphics_files[graphics_folder_files[gfx_select]].fn, 1) return end
             --DBG(iidx..'  '..image_count)
             if iidx > image_count then
               image_count = iidx
@@ -5255,26 +5261,27 @@
 
   function GUI_DrawGauge()
   
-    f_Get_SSV(gui.color.white)
-    local strip = tracks[track_select].strip
-    
-    --local x,y = 500,500
-    if strips and strips[strip] and strips[strip][page].controls[1] then
-      for z = 1, #strips[strip][page].controls do
-        local ctl = strips[strip][page].controls[z]
-        if ctl.gauge then
-          local hidden = Switcher_CtlsHidden(ctl.switcher, ctl.grpid)
-          if ctl.hidden ~= true and hidden ~= true and ctl.hide ~= true then
-            
-            local x = math.floor(ctl.xsc + ctl.wsc/2)
-            local y = math.floor(ctl.ysc + ctl.hsc/2)
-            GUI_DrawGauge2(ctl.gauge,x,y,ctl)
-            
+    if tracks[track_select] then
+      f_Get_SSV(gui.color.white)
+      local strip = tracks[track_select].strip
+      
+      --local x,y = 500,500
+      if strips and strips[strip] and strips[strip][page].controls[1] then
+        for z = 1, #strips[strip][page].controls do
+          local ctl = strips[strip][page].controls[z]
+          if ctl.gauge then
+            local hidden = Switcher_CtlsHidden(ctl.switcher, ctl.grpid)
+            if ctl.hidden ~= true and hidden ~= true and ctl.hide ~= true then
+              
+              local x = math.floor(ctl.xsc + ctl.wsc/2)
+              local y = math.floor(ctl.ysc + ctl.hsc/2)
+              GUI_DrawGauge2(ctl.gauge,x,y,ctl)
+              
+            end
           end
         end
       end
-    end
-    
+    end    
   
   end
 
@@ -12992,59 +12999,60 @@ end
     end
     
     for j = 1, #stripdata.strip.graphics do
-      if surface_size.limit then
-        stripdata.strip.graphics[j].x = stripdata.strip.graphics[j].x + offsetx + x + surface_offset.x -dx
-        stripdata.strip.graphics[j].y = stripdata.strip.graphics[j].y + offsety + y + surface_offset.y -dy
-      else
-        stripdata.strip.graphics[j].x = stripdata.strip.graphics[j].x + offsetx + x - surface_offset.x     
-        stripdata.strip.graphics[j].y = stripdata.strip.graphics[j].y + offsety + y - surface_offset.y
-      end
-      stripdata.strip.graphics[j].id = stripid
-
-      local ogid = stripdata.strip.graphics[j].grpid
-      if ogid then
-      --DBG('G')
-        if gidtrack[ogid] then
-          stripdata.strip.graphics[j].grpid = gidtrack[ogid].grpid
+      if stripdata.strip.graphics[j].w > 0 and stripdata.strip.graphics[j].h > 0 then
+        --if surface_size.limit then
+          stripdata.strip.graphics[j].x = stripdata.strip.graphics[j].x + offsetx + x + surface_offset.x -dx
+          stripdata.strip.graphics[j].y = stripdata.strip.graphics[j].y + offsety + y + surface_offset.y -dy
+        --else
+          --stripdata.strip.graphics[j].x = stripdata.strip.graphics[j].x + offsetx + x - surface_offset.x     
+          --stripdata.strip.graphics[j].y = stripdata.strip.graphics[j].y + offsety + y - surface_offset.y
+        --end
+        stripdata.strip.graphics[j].id = stripid
+  
+        local ogid = stripdata.strip.graphics[j].grpid
+        if ogid then
+        --DBG('G')
+          if gidtrack[ogid] then
+            stripdata.strip.graphics[j].grpid = gidtrack[ogid].grpid
+          else
+            stripdata.strip.graphics[j].grpid = GenID() --give a new group id
+            gidtrack[ogid] = {grpid = stripdata.strip.graphics[j].grpid}
+          end
         else
-          stripdata.strip.graphics[j].grpid = GenID() --give a new group id
-          gidtrack[ogid] = {grpid = stripdata.strip.graphics[j].grpid}
+        --DBG('H')
+          stripdata.strip.graphics[j].grpid = grpid --give main group id
+        end      
+  
+        if switchstart and stripdata.strip.graphics[j].switcher then
+        --DBG('D')
+          local swid = stripdata.switchconvtab[stripdata.strip.graphics[j].switcher]
+          if swid then
+            swid = swid + switchstart-1
+            stripdata.strip.graphics[j].switcher = swid
+          end
         end
-      else
-      --DBG('H')
-        stripdata.strip.graphics[j].grpid = grpid --give main group id
-      end      
-
-      if switchstart and stripdata.strip.graphics[j].switcher then
-      --DBG('D')
-        local swid = stripdata.switchconvtab[stripdata.strip.graphics[j].switcher]
-        if swid then
-          swid = swid + switchstart-1
-          stripdata.strip.graphics[j].switcher = swid
+  
+        --compatibility
+        if stripdata.strip.graphics[j].poslock == nil then stripdata.strip.graphics[j].poslock = false end
+        if stripdata.strip.graphics[j].stretchw == nil then stripdata.strip.graphics[j].stretchw = w end
+        if stripdata.strip.graphics[j].stretchh == nil then stripdata.strip.graphics[j].stretchh = h end      
+  
+        if stripdata.strip.graphics[j].gfxtype == nil then stripdata.strip.graphics[j].gfxtype = gfxtype.img end
+        if stripdata.strip.graphics[j].font == nil then
+          stripdata.strip.graphics[j].font = {idx = nil,
+                                              name = nil,
+                                              size = nil,
+                                              bold = nil,
+                                              italics = nil,
+                                              underline = nil,
+                                              shadow = nil
+                                              }
+          stripdata.strip.graphics[j].text = nil
+          stripdata.strip.graphics[j].text_col = nil
         end
-      end
-
-      --compatibility
-      if stripdata.strip.graphics[j].poslock == nil then stripdata.strip.graphics[j].poslock = false end
-      if stripdata.strip.graphics[j].stretchw == nil then stripdata.strip.graphics[j].stretchw = w end
-      if stripdata.strip.graphics[j].stretchh == nil then stripdata.strip.graphics[j].stretchh = h end      
-
-      if stripdata.strip.graphics[j].gfxtype == nil then stripdata.strip.graphics[j].gfxtype = gfxtype.img end
-      if stripdata.strip.graphics[j].font == nil then
-        stripdata.strip.graphics[j].font = {idx = nil,
-                                            name = nil,
-                                            size = nil,
-                                            bold = nil,
-                                            italics = nil,
-                                            underline = nil,
-                                            shadow = nil
-                                            }
-        stripdata.strip.graphics[j].text = nil
-        stripdata.strip.graphics[j].text_col = nil
-      end
-      
-      strips[strip][page].graphics[#strips[strip][page].graphics + 1] = stripdata.strip.graphics[j]
-          
+        
+        strips[strip][page].graphics[#strips[strip][page].graphics + 1] = stripdata.strip.graphics[j]
+      end          
     end
 
     if switchstart then
@@ -13215,16 +13223,18 @@ end
           if strip.graphics[i].stretchw == nil then strip.graphics[i].stretchw = strip.graphics[i].w end
           if strip.graphics[i].stretchh == nil then strip.graphics[i].stretchh = strip.graphics[i].h end
           
-          if minx == nil then
-            minx = strip.graphics[i].x
-            miny = strip.graphics[i].y
-            maxx = strip.graphics[i].x + strip.graphics[i].stretchw
-            maxy = strip.graphics[i].y + strip.graphics[i].stretchh
-          else
-            minx = math.min(minx, strip.graphics[i].x)
-            miny = math.min(miny, strip.graphics[i].y)
-            maxx = math.max(maxx, strip.graphics[i].x + strip.graphics[i].stretchw)
-            maxy = math.max(maxy, strip.graphics[i].y + strip.graphics[i].stretchh)
+          if strip.graphics[i].stretchw > 0 and strip.graphics[i].stretchh > 0 then
+            if minx == nil then
+              minx = strip.graphics[i].x
+              miny = strip.graphics[i].y
+              maxx = strip.graphics[i].x + strip.graphics[i].stretchw
+              maxy = strip.graphics[i].y + strip.graphics[i].stretchh
+            else
+              minx = math.min(minx, strip.graphics[i].x)
+              miny = math.min(miny, strip.graphics[i].y)
+              maxx = math.max(maxx, strip.graphics[i].x + strip.graphics[i].stretchw)
+              maxy = math.max(maxy, strip.graphics[i].y + strip.graphics[i].stretchh)   
+            end
           end
           local fnd = false
           if nz(strip.graphics[i].gfxtype,gfxtype.img) == gfxtype.img then
@@ -13300,9 +13310,16 @@ end
         end
       end
       image_count = image_count_add
-      offsetx = -minx
-      offsety = -miny
-
+      offsetx, offsety = 0, 0
+      if minx and miny then
+        offsetx = -minx
+        offsety = -miny
+      elseif minx then
+        offsetx = -minx      
+      elseif miny then
+        offsety = -miny
+      end
+      
       if gui == nil then
         gui = GetGUI_vars()
       end
