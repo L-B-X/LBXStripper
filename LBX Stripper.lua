@@ -359,24 +359,68 @@
   
   end
   
+  function StripData_ReadSnapContent(sdata)
+  
+    local snapdata = {}
+    if sdata.version >= 4 and sdata.snapcontent then
+      local snapcontent = sdata.snapcontent
+      local data = {}
+      local cnt = 0          
+      local lines = split(snapcontent, "\n")
+      if lines and #lines > 0 then
+        for ln = 1, #lines do
+          local idx, val = string.match(lines[ln],'%[(.-)%](.*)') 
+          if idx then
+            data[idx] = val
+          end
+        end
+      end
+      snapdata = LoadSnapDataX(nil,data)
+    end    
+    return snapdata
+    
+  end
+  
   function StripShare_Export(fol, fn)
   
     savefn = fn
   
-    local stripdata = LoadStripFN(fol..fn)
+    local stripdata, stripfilecontent = LoadStripFN(fol..fn)
+    if stripdata.version and stripdata.version >= 4 then
+      if stripdata.snapcontent then
+        local snapd = StripData_ReadSnapContent(stripdata)
+        if snapd then
+          stripdata.snapshots = snapd
+        end
+      end
+    else
+      OpenMsgBox(1,'Please open and resave the strip file in the new strip format',1, 'before creating a stripshare file.') 
+      return
+    end
+    
     local gfxchk = {}
     local ctlchk = {}
     local gfxf = {}
     local ctlf = {}
     
     if stripdata.strip.graphics then
+      local gfxidx = PopulateGFXIdx()
       for g = 1, #stripdata.strip.graphics do      
         local gx = stripdata.strip.graphics[g]
-        if gx.gfxtype == gfxtype.img and reaper.file_exists(graphics_path..gx.fn) then
-          if gfxchk[gx.fn] == nil then
-            gfxchk[gx.fn] = true 
-            local imgbin = readbinaryfile(graphics_path..gx.fn)
-            gfxf[#gfxf+1] = {fn = gx.fn, bindata = imgbin}
+        local idx = gfxidx[gx.fn]
+        if idx then
+          local gfn
+          if graphics_files[idx].fol == 'GENERAL' then
+            gfn = graphics_files[idx].fn
+          else
+            gfn = graphics_files[idx].fol..'/'..graphics_files[idx].fn
+          end
+          if gx.gfxtype == gfxtype.img and reaper.file_exists(graphics_path..gfn) then
+            if gfxchk[gx.fn] == nil then
+              gfxchk[gx.fn] = true 
+              local imgbin = readbinaryfile(graphics_path..gfn)
+              gfxf[#gfxf+1] = {fn = gx.fn, bindata = imgbin}
+            end
           end
         end
       end
@@ -411,9 +455,19 @@
     end
     
     if DELETE then
+    
+      local pickledsharedata=pickle(stripdata.sharedata)
       file=io.open(fn,"w")
-      local pickled_table=pickle(stripdata)
-      file:write(pickled_table)
+      
+      file:write('[SHARESTRIPFILE_VERSION]2\n')
+      file:write('[SHAREDATA]\n'..pickledsharedata..'\n[\\SHAREDATA]\n')
+      file:write('[SHARESTRIPDATA]\n')      
+      file:write(stripfilecontent)
+      file:write('[\\SHARESTRIPDATA]\n')      
+      
+      --local pickled_table=pickle(stripdata)
+      --file:write(pickled_table)
+      
       file:close()
     end
 
@@ -461,7 +515,7 @@
     end
             
     if loadfn then
-      local stripdata = LoadStripFN(nil,loadfn)
+      local stripdata, stripfiledata = LoadStripShareFN(nil,loadfn)
       local continue = false
       
       if stripdata.fx then
@@ -688,20 +742,25 @@
           copy = 1
         end
         if copy == 1 then
-          stripdata.sharedata = nil
+          --stripdata.sharedata = nil
           
           local DELETE=true
           local file
           
           if DELETE then
-          DBG(fn)
+          --DBG(fn)
             file=io.open(fn,"w")
-          DBG('pickling')
-            local pickled_table=pickle(stripdata)
-          DBG('writing')
-            file:write(pickled_table)
+          --DBG('pickling')
+            if stripdata.version == 3 then
+              local pickled_table=pickle(stripdata)
+              file:write(pickled_table)                        
+            else
+              file:write(stripfiledata)                        
+            end
+            --local pickled_table=pickle(stripdata)
+          --DBG('writing')
             file:close()
-          DBG('done')
+          --DBG('done')
           end
       
          -- DBG('Strip share file imported.')
@@ -771,8 +830,9 @@
   s = string.format("%s[%s]=%s,\n", s, self:value_(i), self:value_(v))
   end
   s = s.."},\n"
+  --DBG('*****************************************************************')
+  --DBG(savecount)
   end
-  
   return string.format("{%s}", s)
   end
   
@@ -3272,7 +3332,21 @@
     end
       
   end
+
+  function PopulateGFXIdx()
   
+    local gfxidx = {}
+    if graphics_files and #graphics_files > 0 then
+      for i = 1, #graphics_files do
+      
+        gfxidx[graphics_files[i].fn] = i
+      
+      end
+    end
+    return gfxidx
+    
+  end
+    
   function PopulateGFX()
   
     graphics_files = {}
@@ -12410,6 +12484,124 @@ end
   --new version
   function SaveStrip3(fn)
 
+    --test
+    
+    if fn and string.len(fn)>0 then
+      local save_path=strips_path..strip_folders[stripfol_select].fn..'/'
+      local fn=save_path..fn..".strip"  
+      local file
+      file=io.open(fn,"w")
+
+
+      local tr = GetTrack(strips[tracks[track_select].strip].track.tracknum)
+      local i, j
+      local fxcnt = 1
+      local fxtbl = {}
+      local _, chunk = reaper.GetTrackStateChunk(tr,'',false)
+      for i = 0, reaper.TrackFX_GetCount(tr)-1 do
+        if settings_saveallfxinststrip then 
+          --local _, fxname = reaper.TrackFX_GetFXName(tr, i, '')
+          local _, fxchunk = GetFXChunkFromTrackChunk(chunk, i+1)
+          --local fxn = GetPlugNameFromChunk(fxchunk)
+          fxtbl[i+1] = {fxname = nil,
+                        fxchunk = fxchunk,
+                        fxguid = convertguid(reaper.TrackFX_GetFXGUID(tr, i)),
+                        fxenabled = reaper.TrackFX_GetEnabled(tr, i)
+                        }
+        else
+          --check fx has controls in strip
+          local instrip = false
+          for j = 1, #strips[tracks[track_select].strip][page].controls do
+            if reaper.TrackFX_GetFXGUID(tr, i) == strips[tracks[track_select].strip][page].controls[j].fxguid then
+              instrip = true
+              break
+            end
+            if strips[tracks[track_select].strip][page].controls[j].ctlcat == ctlcats.eqcontrol then
+              local bands = strips[tracks[track_select].strip][page].controls[j].eqbands
+              if bands and #bands > 0 then
+                for b = 1, #bands do
+                
+                  if reaper.TrackFX_GetFXGUID(tr, i) == bands[b].fxguid then
+                    instrip = true
+                    break                  
+                  end
+                
+                end
+                if instrip then
+                  break
+                end
+              end
+            end
+          end
+          if instrip then
+            --local _, fxname = reaper.TrackFX_GetFXName(tr, i, '')
+            local _, fxchunk = GetFXChunkFromTrackChunk(chunk, i+1)
+            --local fxn = GetPlugNameFromChunk(fxchunk)
+            fxtbl[fxcnt] = {fxname = nil,
+                            fxchunk = fxchunk,
+                            fxguid = convertguid(reaper.TrackFX_GetFXGUID(tr, i)),
+                            fxenabled = reaper.TrackFX_GetEnabled(tr, i)
+                            }          
+            fxcnt = fxcnt + 1
+          end
+        end
+      end
+    
+      --check tracknums
+      for j = 1, #strips[tracks[track_select].strip][page].controls do
+        local ctl = strips[tracks[track_select].strip][page].controls[j]
+        if ctl.tracknum and ctl.tracknum == strips[tracks[track_select].strip].track.tracknum then
+          ctl.tracknum = nil
+        end
+      end
+    
+      local savestrip = {}
+      local switchtab = {}
+      local saveswitchers = {}
+      local switchcnt = 1
+      
+      for j = 1, #strips[tracks[track_select].strip][page].controls do
+        local ctl = strips[tracks[track_select].strip][page].controls[j]
+        if ctl.ctlcat == ctlcats.pkmeter then
+          ctl.val = -150
+        end
+        
+        if ctl.ctlcat == ctlcats.switcher then
+          switchtab[ctl.switcherid] = switchcnt
+          saveswitchers[switchcnt] = switchers[ctl.switcherid]
+          --savestrip.strip.controls[i].switcherid = switchcnt -- eek
+          switchcnt = switchcnt + 1    
+        end
+      end
+      
+      savestrip.switchers = saveswitchers
+      savestrip.switchconvtab = switchtab
+      savestrip.fx = fxtbl
+      local pickledfx = pickle(savestrip)
+    
+      file:write('[STRIPFILE_VERSION]4\n')
+      file:write('[FXDATA]\n'..pickledfx..'\n[\\FXDATA]\n')
+      file:write('[STRIPDATA]\n')      
+      local t = GenStripSaveData(tracks[track_select].strip,page,nil,file)
+      file:write('[\\STRIPDATA]\n')      
+      
+      if snapshots and snapshots[tracks[track_select].strip] then
+        file:write('[SNAPSHOTDATA]\n')      
+        SaveSnapshotDataX(tracks[track_select].strip,page,nil,file)
+        file:write('[\\SNAPSHOTDATA]\n')      
+      end
+      --if t then
+      --  DBG(t)
+      --end
+      file:close()
+      return nil
+
+    else
+      return nil
+    end
+
+    --OLD NEVER RUNS
+
     if fn and string.len(fn)>0 then
       local tr = GetTrack(strips[tracks[track_select].strip].track.tracknum)
       local i, j
@@ -12668,28 +12860,10 @@ end
     return id
     
   end
-  
-  function LoadStrip(strip_select)
-  
-    local stripdata = nil
-    local load_path=strips_path
-    local fn=load_path..strip_folders[stripfol_select].fn..'/'..strip_files[strip_select].fn
-    if reaper.file_exists(fn) then
-    
-      local file
-      file=io.open(fn,"r")
-      local content=file:read("*a")
-      file:close()
-      stripdata = unpickle(content)
-    else
-      OpenMsgBox(1,'File not found.',1)
-    end
-    return stripdata
-  
-  end
 
-  function LoadStripFN(sfn,ffn)
+  function LoadStripShareFN(sfn,ffn)
   
+    local content, sharestripdata
     local stripdata = nil
     local load_path, fn
     if ffn == nil then
@@ -12701,16 +12875,178 @@ end
 
     if reaper.file_exists(fn) then
 
+      local find = string.find
+      local match = string.match
+      local file
+      file=io.open(fn,"r")
+      content=file:read("*a")
+      file:close()
+      local _,e = find(content,'.-\n')
+      local line = string.sub(content,0,e)
+      local newvers = string.match(line,'[[STRIPSHAREFILE_VERSION]](%d)')
+      if newvers then
+      
+        --DBG(newvers)
+        local sharedata = match(content,'%[SHAREDATA%](.-)%[\\SHAREDATA%]')
+        sharestripdata = match(content,'%[SHARESTRIPDATA%]\n(.-)%[\\SHARESTRIPDATA%]')
+        
+        local fxdata = match(content,'%[FXDATA%](.-)%[\\FXDATA%]')
+        local stripcontent = match(sharestripdata,'%[STRIPDATA%](.-)%[\\STRIPDATA%]')
+        local snapcontent = match(sharestripdata,'%[SNAPSHOTDATA%](.-)%[\\SNAPSHOTDATA%]')
+        
+        --SNAPSHOTS --only load if strip imported?
+        if fxdata and stripcontent then
+          stripdata = unpickle(fxdata)
+          stripdata.sharedata = unpickle(sharedata)
+
+          stripdata.version = tonumber(newvers)
+          stripdata.snapcontent = snapcontent
+          local data = {}
+          local cnt = 0          
+          local lines = split(stripcontent, "\n")
+          if lines and #lines > 0 then
+            for ln = 1, #lines do
+              local idx, val = match(lines[ln],'%[(.-)%](.*)') 
+              if idx then
+                data[idx] = val
+              end
+            end
+          end
+          stripdata.strip = LoadStripDataX(nil,data)
+
+          if snapcontent then
+            local data = {}
+            local cnt = 0          
+            local lines = split(snapcontent, "\n")
+            if lines and #lines > 0 then
+              for ln = 1, #lines do
+                local idx, val = match(lines[ln],'%[(.-)%](.*)') 
+                if idx then
+                  data[idx] = val
+                end
+              end
+            end
+            stripdata.snapshots = LoadSnapDataX(nil,data)
+          end
+        end
+      
+      else
+        stripdata = unpickle(content)
+      end
+    else
+      OpenMsgBox(1,'File not found.',1)
+    end
+    return stripdata, sharestripdata
+  
+  end
+  
+  function LoadStrip(strip_select)
+  
+    local find = string.find
+    local match = string.match
+    
+    local stripdata = nil
+    local load_path=strips_path
+    local fn=load_path..strip_folders[stripfol_select].fn..'/'..strip_files[strip_select].fn
+    if reaper.file_exists(fn) then
+    
+      GUI_DrawMsgX(obj, gui, 'Generating Preview...')
+    
       local file
       file=io.open(fn,"r")
       local content=file:read("*a")
       file:close()
-      
-      stripdata = unpickle(content)
+      local _,e = find(content,'.-\n')
+      local line = string.sub(content,0,e)
+      local newvers = match(line,'[[STRIPFILE_VERSION]](%d)')
+      if newvers then
+        --DBG(newvers)
+        local pickledcontent = match(content,'%[FXDATA%](.-)%[\\FXDATA%]')
+        local stripcontent = match(content,'%[STRIPDATA%](.-)%[\\STRIPDATA%]')
+        local snapcontent = match(content,'%[SNAPSHOTDATA%](.-)%[\\SNAPSHOTDATA%]')
+        --SNAPSHOTS --only load if strip imported?
+        if pickledcontent and stripcontent then
+          stripdata = unpickle(pickledcontent)
+          stripdata.version = tonumber(newvers)
+          stripdata.snapcontent = snapcontent
+          local data = {}
+          local cnt = 0          
+          local lines = split(stripcontent, "\n")
+          if lines and #lines > 0 then
+            for ln = 1, #lines do
+              local idx, val = match(lines[ln],'%[(.-)%](.*)') 
+              if idx then
+                data[idx] = val
+              end
+            end
+          end
+          stripdata.strip = LoadStripDataX(nil,data)
+        end
+        --return nil --remove
+      else
+        stripdata = unpickle(content)
+      end
     else
       OpenMsgBox(1,'File not found.',1)
     end
     return stripdata
+  
+  end
+
+  function LoadStripFN(sfn,ffn)
+  
+    local find = string.find
+    local match = string.match
+    
+    local content
+    local stripdata = nil
+    local load_path, fn
+    if ffn == nil then
+      load_path=strips_path
+      fn=load_path..sfn
+    else
+      fn = ffn
+    end
+
+    if reaper.file_exists(fn) then
+      local file
+      file=io.open(fn,"r")
+      content=file:read("*a")
+      file:close()
+      local _,e = find(content,'.-\n')
+      local line = string.sub(content,0,e)
+      local newvers = match(line,'[[STRIPFILE_VERSION]](%d)')
+      if newvers then
+        --DBG(newvers)
+        local pickledcontent = match(content,'%[FXDATA%](.-)%[\\FXDATA%]')
+        local stripcontent = match(content,'%[STRIPDATA%](.-)%[\\STRIPDATA%]')
+        local snapcontent = match(content,'%[SNAPSHOTDATA%](.-)%[\\SNAPSHOTDATA%]')
+        --SNAPSHOTS --only load if strip imported?
+        if pickledcontent and stripcontent then
+          stripdata = unpickle(pickledcontent)
+          stripdata.version = tonumber(newvers)
+          stripdata.snapcontent = snapcontent
+          local data = {}
+          local cnt = 0          
+          local lines = split(stripcontent, "\n")
+          if lines and #lines > 0 then
+            for ln = 1, #lines do
+              local idx, val = match(lines[ln],'%[(.-)%](.*)') 
+              if idx then
+                data[idx] = val
+              end
+            end
+          end
+          stripdata.strip = LoadStripDataX(nil,data)
+        end
+        --return nil --remove
+      else
+        stripdata = unpickle(content)
+      end
+    else
+      OpenMsgBox(1,'File not found.',1)
+    end
+    return stripdata, content
   
   end
   
@@ -12785,8 +13121,25 @@ end
         reaper.SetTrackStateChunk(tr, chunk, false)
       end
 
-    elseif stripdata.version == 3 then
+    elseif stripdata.version >= 3 then
     
+      --V4? - Load snapshot data
+      if stripdata.version >= 4 and stripdata.snapcontent then
+        local snapcontent = stripdata.snapcontent
+        local data = {}
+        local cnt = 0          
+        local lines = split(snapcontent, "\n")
+        if lines and #lines > 0 then
+          for ln = 1, #lines do
+            local idx, val = string.match(lines[ln],'%[(.-)%](.*)') 
+            if idx then
+              data[idx] = val
+            end
+          end
+        end
+        stripdata.snapshots = LoadSnapDataX(nil,data)
+      end
+      
       local retfx
       --create new fx
       local missing = 0
@@ -12815,8 +13168,10 @@ end
       end
       
       for j = 1, #stripdata.strip.controls do
-        if stripdata.strip.controls[j].fxguid then
-          stripdata.strip.controls[j].fxguid = '{'..stripdata.strip.controls[j].fxguid..'}'
+        if (stripdata.strip.controls[j].ctlcat == ctlcats.fxparam or stripdata.strip.controls[j].ctlcat == ctlcats.fxoffline) and stripdata.strip.controls[j].fxguid then
+          if stripdata.version == 3 then
+            stripdata.strip.controls[j].fxguid = '{'..stripdata.strip.controls[j].fxguid..'}'
+          end
           if fxguids[stripdata.strip.controls[j].fxguid] then
             if fxguids[stripdata.strip.controls[j].fxguid].found then
               stripdata.strip.controls[j].fxfound = true
@@ -12831,6 +13186,9 @@ end
             stripdata.strip.controls[j].fxfound = false
             stripdata.strip.controls[j].fxnum = -1                  
           end
+        else
+          stripdata.strip.controls[j].fxfound = true
+          stripdata.strip.controls[j].fxguid = nil
         end
         if stripdata.strip.controls[j].ctlcat == ctlcats.eqcontrol then
           local bands = stripdata.strip.controls[j].eqbands
@@ -12926,6 +13284,9 @@ end
       end
             
       --compatibility
+      if strips[strip][page].controls[cc].gauge and strips[strip][page].controls[cc].gauge.font == nil then
+        strips[strip][page].controls[cc].gauge.font = fontname_def
+      end
       if strips[strip][page].controls[cc].font == nil then strips[strip][page].controls[cc].font = fontname_def end
       if strips[strip][page].controls[cc].xydata == nil then strips[strip][page].controls[cc].xydata = {snapa = 1, snapb = 1, snapc = 1, snapd = 1, x = 0.5, y = 0.5} end
       if strips[strip][page].controls[cc].textoffx == nil then strips[strip][page].controls[cc].textoffx = 0 end
@@ -16137,7 +16498,7 @@ end
         else
           tr = '(Track '..strips[s].track.tracknum+1 ..')'
         end
-        local str = 'Strip '..s..' '.. tr ..' ................ #Controls = '..stripc..'  #Subsets = '..subsetsc..'  #Snapshots = '..snapsc
+        local str = 'Strip '..s..' '.. tr ..' ................ #Controls = '..stripc..'  #Snapshot sets = '..subsetsc..'  #Snapshots = '..snapsc
         totc=totc+stripc
         totsub=totsub+subsetsc
         totsnap=totsnap+snapsc
@@ -16152,7 +16513,7 @@ end
     --GUI_DrawStateWin(obj,gui,'Total Snapshots = '..totsnap)
     DBG('')
     DBG('Total Controls = '..totc)
-    DBG('Total Subsets = '..totsub)
+    DBG('Total Snapshot sets = '..totsub)
     DBG('Total Snapshots = '..totsnap)
     --reaper.MB('Close statistics', 'Stats', 0)
   end
@@ -18921,7 +19282,6 @@ end
                        h = ctl.hsc} 
           end
           if i and not ctls[i].hidden then
-            
             if ctls[i].fxfound then
               if MOUSE_click(ctlxywh) and not mouse.ctrl and not mouse.alt then
                 local ctltype = ctls[i].ctltype
@@ -28197,6 +28557,12 @@ end
   function XXY_Set(strip, page, sst)
   
     if sst > 1 then
+    
+      local fsqrt = math.sqrt
+      local fmin = math.min
+      local fmax = math.max
+      local ffloor = math.floor
+      
       xxy_mindist = 1
       xxy_maxdist = 0
       local xxytbl = xxy[strip][page][sst]
@@ -28208,25 +28574,25 @@ end
         local xf = xxytbl.xfader
         local yf = xxytbl.yfader
         if xf and faders[xf] then
-          local fxnum = math.floor((xf-1)/32)
+          local fxnum = ffloor((xf-1)/32)
           local param = ((xf-1) % 32)
           reaper.TrackFX_SetParam(track, fxnum, param, px)
           faders[xf].val = px
         end
         if yf and faders[yf] then
-          local fxnum = math.floor((yf-1)/32)
+          local fxnum = ffloor((yf-1)/32)
           local param = (yf-1) % 32
           reaper.TrackFX_SetParam(track, fxnum, param, py)
           faders[yf].val = py
         end        
       end
       for p = 1, #xxytbl.points do
-        d[p] = math.sqrt((px - xxytbl.points[p].x)^2 + (py - xxytbl.points[p].y)^2)
+        d[p] = fsqrt((px - xxytbl.points[p].x)^2 + (py - xxytbl.points[p].y)^2)
         xxytbl.points[p].d2 = d[p]
         d[p] = d[p]^xxy_gravity
         xxytbl.points[p].distance = d[p]
-        xxy_mindist = math.min(xxy_mindist,d[p])
-        xxy_maxdist = math.max(xxy_maxdist,d[p])
+        xxy_mindist = fmin(xxy_mindist,d[p])
+        xxy_maxdist = fmax(xxy_maxdist,d[p])
       end
       for ctl = 1, #snapshots[strip][page][sst].ctls do
         local num, den = 0, 0
@@ -29083,7 +29449,9 @@ end
     
       local key = pfx..'p'..p..'_'
     
-      strips[ss][p] = {
+      strips[ss][p] = LoadStripDataX(key, data)
+      
+      --[[strips[ss][p] = {
                       surface_x = tonumber(data[key..'surface_x']),
                       surface_y = tonumber(data[key..'surface_y']),
                       controls = {},
@@ -29492,10 +29860,10 @@ end
             else
               --missing
               strips[ss][p].graphics[g].imageidx = 1020
-            end]]
+            end] ]
           end
         end                
-      end
+      end]]
     end
     
     --ss = ss + 1
@@ -29505,6 +29873,433 @@ end
   --end
     --DBG('Strip load time: '..reaper.time_precise() - t)
   end  
+  
+  function LoadStripDataX(pfx, data)
+  
+    if pfx == nil then pfx = '' end
+    local key = pfx
+    
+    local strip = {
+                    surface_x = tonumber(data[key..'surface_x']),
+                    surface_y = tonumber(data[key..'surface_y']),
+                    controls = {},
+                    graphics = {}
+                   }          
+  
+    local ccnt = tonumber(data[key..'controls_count'])
+    local gcnt = tonumber(data[key..'graphics_count'])
+    
+    if ccnt and ccnt > 0 then
+      for c = 1, ccnt do
+
+        local key = pfx..'c_'..c..'_'
+        strip.controls[c] = {
+                                    c_id = tonumber(zn(data[key..'cid'],GenID())),
+                                    ctlcat = tonumber(zn(data[key..'ctlcat'],0)),
+                                    fxname = data[key..'fxname'],
+                                    fxguid = data[key..'fxguid'],
+                                    fxnum = tonumber(zn(data[key..'fxnum'])),
+                                    fxfound = tobool(data[key..'fxfound']),
+                                    param = tonumber(data[key..'param']),
+                                    param_info = {
+                                                  paramname = data[key..'param_info_name'],
+                                                  paramnum = tonumber(zn(data[key..'param_info_paramnum'])),
+                                                  paramidx = zn(data[key..'param_info_idx']),
+                                                  paramstr = zn(data[key..'param_info_str']),
+                                                  paramdestguid = zn(data[key..'param_info_guid']),
+                                                  paramdestchan = tonumber(zn(data[key..'param_info_chan'])),
+                                                  paramsrcchan = tonumber(zn(data[key..'param_info_srcchan']))
+                                                 },
+                                    ctltype = tonumber(data[key..'ctltype']),
+                                    knob_select = tonumber(data[key..'knob_select']),
+                                    ctl_info = {
+                                                fn = data[key..'ctl_info_fn'],
+                                                frames = tonumber(data[key..'ctl_info_frames']),
+                                                imageidx = tonumber(data[key..'ctl_info_imageidx']),
+                                                cellh = tonumber(data[key..'ctl_info_cellh'])
+                                               },
+                                    x = tonumber(data[key..'x']),
+                                    y = tonumber(data[key..'y']),
+                                    w = tonumber(data[key..'w']),
+                                    scale = tonumber(data[key..'scale']),
+                                    show_paramname = tobool(data[key..'show_paramname']),
+                                    show_paramval = tobool(data[key..'show_paramval']),
+                                    ctlname_override = zn(data[key..'ctlname_override'],''),
+                                    textcol = data[key..'textcol'],
+                                    textoff = tonumber(data[key..'textoff']),
+                                    textoffval = tonumber(zn(data[key..'textoffval'],0)),
+                                    textoffx = tonumber(zn(data[key..'textoffx'],0)),
+                                    textoffvalx = tonumber(zn(data[key..'textoffvalx'],0)),
+                                    textsize = tonumber(zn(data[key..'textsize'],0)),
+                                    font = zn(data[key..'font'],fontname_def),
+                                    val = tonumber(data[key..'val']),
+                                    mval = tonumber(data[key..'mval']),
+                                    defval = tonumber(data[key..'defval']),
+                                    maxdp = tonumber(zn(data[key..'maxdp'],-1)),
+                                    cycledata = {statecnt = 0,{}},
+                                    xydata = {x = tonumber(zn(data[key..'xydata_x'],0.5)), 
+                                              y = tonumber(zn(data[key..'xydata_y'],0.5)), 
+                                              snapa = tonumber(zn(data[key..'xydata_snapa'],1)),
+                                              snapb = tonumber(zn(data[key..'xydata_snapb'],1)),
+                                              snapc = tonumber(zn(data[key..'xydata_snapc'],1)),
+                                              snapd = tonumber(zn(data[key..'xydata_snapd'],1))},
+                                    id = deconvnum(data[key..'id'],true),
+                                    grpid = deconvnum(data[key..'grpid'], true),
+                                    scalemode = tonumber(zn(data[key..'scalemodex'],8)),
+                                    framemode = tonumber(zn(data[key..'framemodex'],1)),
+                                    poslock = tobool(zn(data[key..'poslock'],false)),
+                                    horiz = tobool(zn(data[key..'horiz'],false)),
+                                    macrofader = tonumber(zn(data[key..'macrofader'])),
+                                    hidden = tobool(zn(data[key..'hidden'],false)),
+                                    switcherid = tonumber(zn(data[key..'switcherid'])),
+                                    switcher = tonumber(zn(data[key..'switcher'])),
+                                    noss = tobool(zn(data[key..'noss'])),
+                                   }
+        g_cids[strip.controls[c].c_id] = true
+        if strip.controls[c].id then
+          g_cids[strip.controls[c].id] = true
+        end
+        if strip.controls[c].grpid then
+          g_cids[strip.controls[c].grpid] = true
+        end
+        
+        if strip.controls[c].maxdp == nil or (strip.controls[c].maxdp and strip.controls[c].maxdp == '') then
+          strip.controls[c].maxdp = -1
+        end
+        strip.controls[c].xsc = strip.controls[c].x + strip.controls[c].w/2 - (strip.controls[c].w*strip.controls[c].scale)/2
+        strip.controls[c].ysc = strip.controls[c].y + strip.controls[c].ctl_info.cellh/2 - (strip.controls[c].ctl_info.cellh*strip.controls[c].scale)/2
+        strip.controls[c].wsc = strip.controls[c].w*strip.controls[c].scale
+        strip.controls[c].hsc = strip.controls[c].ctl_info.cellh*strip.controls[c].scale
+        
+        strip.controls[c].tracknum = tonumber(zn(data[key..'tracknum']))
+        strip.controls[c].trackguid = data[key..'trackguid']                    
+        strip.controls[c].dvaloffset = tonumber(zn(data[key..'dvaloffset'],0))
+        strip.controls[c].minov = zn(data[key..'minov'])
+        strip.controls[c].maxov = zn(data[key..'maxov'])
+        strip.controls[c].membtn = {state = tobool(zn(data[key..'memstate'],false)),
+                                            mem = tonumber(zn(data[key..'memmem'],0))
+                                            }
+        strip.controls[c].knobsens = {norm = tonumber(zn(data[key..'knobsens_norm'],settings_defknobsens.norm)),
+                                              fine = tonumber(zn(data[key..'knobsens_fine'],settings_defknobsens.fine)),
+                                              wheel = tonumber(zn(data[key..'knobsens_wheel'],settings_defknobsens.wheel)),
+                                              wheelfine = tonumber(zn(data[key..'knobsens_wheelfine'],settings_defknobsens.wheelfine))}
+        
+        strip.controls[c].cycledata.statecnt = tonumber(zn(data[key..'cycledata_statecnt'],0))
+        strip.controls[c].cycledata.mapptof = tobool(zn(data[key..'cycledata_mapptof'],false))
+        strip.controls[c].cycledata.draggable = tobool(zn(data[key..'cycledata_draggable'],false))
+        strip.controls[c].cycledata.spread = tobool(zn(data[key..'cycledata_spread'],false))
+        strip.controls[c].cycledata.pos = tonumber(zn(data[key..'cycledata_pos'],1))
+        strip.controls[c].cycledata.posdirty = tobool(zn(data[key..'cycledata_posdirty'],false))
+        strip.controls[c].cycledata.val = 0
+        if nz(strip.controls[c].cycledata.statecnt,0) > 0 then
+          for i = 1, strip.controls[c].cycledata.statecnt do
+            local key = pfx..'c_'..c..'_cyc_'..i..'_'
+          
+            strip.controls[c].cycledata[i] = {val = tonumber(zn(data[key..'val'],0)),
+                                                      dispval = zn(data[key..'dispval'],'no disp val'),
+                                                      dv = zn(data[key..'dispval'])}
+            if strip.controls[c].cycledata[i].dv == nil then
+              strip.controls[c].cycledata[i].dv = strip.controls[c].cycledata[i].dispval
+            end 
+          end
+        end
+        
+        local mout = data[key..'midiout_output']
+        if mout then
+          strip.controls[c].midiout = {output = mout}
+          strip.controls[c].midiout.mchan = tonumber(zn(data[key..'midiout_mchan'],1))
+          strip.controls[c].midiout.msg3 = tonumber(zn(data[key..'midiout_msg3'],0))
+        end
+
+        local gauge = data[key..'gauge']
+        if gauge then
+          strip.controls[c].gauge = {}
+          strip.controls[c].gauge.type = tonumber(zn(data[key..'gauge_type'],1))
+          strip.controls[c].gauge.x_offs = tonumber(zn(data[key..'gauge_x_offs']))
+          strip.controls[c].gauge.y_offs = tonumber(zn(data[key..'gauge_y_offs']))
+          strip.controls[c].gauge.radius = tonumber(zn(data[key..'gauge_radius']))
+          strip.controls[c].gauge.arclen = tonumber(zn(data[key..'gauge_arclen']))
+          strip.controls[c].gauge.rotation = tonumber(zn(data[key..'gauge_rotation']))
+          strip.controls[c].gauge.ticks = tonumber(zn(data[key..'gauge_ticks']))
+          strip.controls[c].gauge.tick_size = tonumber(zn(data[key..'gauge_tick_size']))
+          strip.controls[c].gauge.tick_offs = tonumber(zn(data[key..'gauge_tick_offs']))
+          strip.controls[c].gauge.val_freq = tonumber(zn(data[key..'gauge_val_freq']))
+          strip.controls[c].gauge.col_tick = (zn(data[key..'gauge_col_tick']))
+          strip.controls[c].gauge.col_arc = (zn(data[key..'gauge_col_arc']))
+          strip.controls[c].gauge.col_val = (zn(data[key..'gauge_col_val']))
+          strip.controls[c].gauge.show_arc = tobool(zn(data[key..'gauge_show_arc']))
+          strip.controls[c].gauge.show_tick = tobool(zn(data[key..'gauge_show_tick']))
+          strip.controls[c].gauge.show_val = tobool(zn(data[key..'gauge_show_val']))
+          strip.controls[c].gauge.val = 0
+          strip.controls[c].gauge.dval = ''
+          strip.controls[c].gauge.vals = {}
+          strip.controls[c].gauge.val_dp = tonumber(zn(data[key..'gauge_val_dp']))
+          strip.controls[c].gauge.font = (zn(data[key..'gauge_font'],fontname_def))
+          strip.controls[c].gauge.fontsz = tonumber(zn(data[key..'gauge_fontsz']))
+          strip.controls[c].gauge.spread = tobool(zn(data[key..'gauge_spread']))
+          strip.controls[c].gauge.mapptof = tobool(zn(data[key..'gauge_mapptof']))
+          strip.controls[c].gauge.numonly = tobool(zn(data[key..'gauge_numonly']))
+          strip.controls[c].gauge.vals = {}
+          
+          local gcnt = tonumber(zn(data[key..'gauge_valcnt']))
+          if gcnt and gcnt > 0 then
+            for gv = 1, gcnt do
+              local key = pfx..'c_'..c..'_gaugevals_'..gv..'_' 
+              strip.controls[c].gauge.vals[gv] = {}
+              strip.controls[c].gauge.vals[gv].val = tonumber(zn(data[key..'val'],0))
+              strip.controls[c].gauge.vals[gv].dval = zn(data[key..'dval'],'')
+              strip.controls[c].gauge.vals[gv].dover = zn(data[key..'dover'],'') 
+              strip.controls[c].gauge.vals[gv].nudge = zn(data[key..'nudge'],0) 
+            end
+          
+          end
+        end
+
+        local mcnt = tonumber(zn(data[key..'macroctl_cnt'],0))
+        if mcnt > 0 then
+          strip.controls[c].macroctl = {}
+          
+          for mc = 1, mcnt do
+            local key = pfx..'c_'..c..'_mc_'..mc..'_'
+            strip.controls[c].macroctl[mc] = {c_id = tonumber(zn(data[key..'c_id'])),
+                                                      ctl = tonumber(zn(data[key..'ctl'])),
+                                                      A_val = tonumber(zn(data[key..'A'],0)),
+                                                      B_val = tonumber(zn(data[key..'B'],0)),
+                                                      shape = tonumber(zn(data[key..'shape'],0)),
+                                                      mute = tobool(zn(data[key..'mute'],false)),
+                                                      bi = tobool(zn(data[key..'bi'],false)), 
+                                                      inv = tobool(zn(data[key..'inv'],false)),
+                                                      relative = tobool(zn(data[key..'rel'],false))} 
+          end
+        end
+
+        local bcnt = tonumber(zn(data[key..'eqband_cnt'],0))
+        if bcnt > 0 then
+          strip.controls[c].eqbands = {}
+          
+          for bc = 1, bcnt do
+            local key = pfx..'c_'..c..'_eqband_'..bc..'_'
+            strip.controls[c].eqbands[bc] = {posmin = tonumber(zn(data[key..'posmin'])),
+                                                      posmax = tonumber(zn(data[key..'posmax'])),
+                                                      gmin = tonumber(zn(data[key..'gmin'],0)),
+                                                      gmax = tonumber(zn(data[key..'gmax'],1)),
+                                                      col = zn(data[key..'col']),
+                                                      fxnum = tonumber(zn(data[key..'fxnum'])),
+                                                      fxguid = zn(data[key..'fxguid']),
+                                                      fxname = zn(data[key..'fxname']),
+                                                      freq_param = tonumber(zn(data[key..'freq_param'])),
+                                                      freq_param_name = zn(data[key..'freq_param_name']),
+                                                      gain_param = tonumber(zn(data[key..'gain_param'])),
+                                                      gain_param_name = zn(data[key..'gain_param_name']),
+                                                      q_param = tonumber(zn(data[key..'q_param'])),
+                                                      q_param_name = zn(data[key..'q_param_name']),
+                                                      bypass_param = tonumber(zn(data[key..'bypass_param'])),
+                                                      bypass_param_name = zn(data[key..'bypass_param_name']),
+                                                      c1_param = tonumber(zn(data[key..'c1_param'])),
+                                                      c1_param_name = zn(data[key..'c1_param_name']),
+                                                      c2_param = tonumber(zn(data[key..'c2_param'])),
+                                                      c2_param_name = zn(data[key..'c2_param_name']),
+                                                      c3_param = tonumber(zn(data[key..'c3_param'])),
+                                                      c3_param_name = zn(data[key..'c3_param_name']),
+                                                      c4_param = tonumber(zn(data[key..'c4_param'])),
+                                                      c4_param_name = zn(data[key..'c4_param_name']),
+                                                      c5_param = tonumber(zn(data[key..'c5_param'])),
+                                                      c5_param_name = zn(data[key..'c5_param_name']),
+                                                      freq_val = tonumber(zn(data[key..'freq_val'])),
+                                                      gain_val = tonumber(zn(data[key..'gain_val'])),
+                                                      q_val = tonumber(zn(data[key..'q_val'])),
+                                                      c1_val = tonumber(zn(data[key..'c1_val'])),
+                                                      c2_val = tonumber(zn(data[key..'c2_val'])),
+                                                      c3_val = tonumber(zn(data[key..'c3_val'])),
+                                                      c4_val = tonumber(zn(data[key..'c4_val'])),
+                                                      c5_val = tonumber(zn(data[key..'c5_val'])),
+                                                      freq_min = tonumber(zn(data[key..'freq_min'])),
+                                                      freq_max = tonumber(zn(data[key..'freq_max'])),
+                                                      gain_min = tonumber(zn(data[key..'gain_min'])),
+                                                      gain_max = tonumber(zn(data[key..'gain_max'])),
+                                                      bandtype = zn(data[key..'bandtype']),
+                                                      bandname = zn(data[key..'bandname']),
+                                                      khz = tobool(zn(data[key..'khz'],false)),
+                                                      gain_inv = tobool(zn(data[key..'gaininv'],false)),
+                                                      q_inv = tobool(zn(data[key..'qinv'],false)),
+                                                      freq_def = tonumber(zn(data[key..'freq_def'])),
+                                                      gain_def = tonumber(zn(data[key..'gain_def'])),
+                                                      q_def = tonumber(zn(data[key..'q_def'])),
+                                                      c1_def = tonumber(zn(data[key..'c1_def'])),
+                                                      c2_def = tonumber(zn(data[key..'c2_def'])),
+                                                      c3_def = tonumber(zn(data[key..'c3_def'])),
+                                                      c4_def = tonumber(zn(data[key..'c4_def'])),
+                                                      c5_def = tonumber(zn(data[key..'c5_def'])),
+                                                      } 
+            local lcnt = tonumber(zn(data[key..'lookmap_cnt'],0))
+            if lcnt > 0 then
+              strip.controls[c].eqbands[bc].lookmap = {}
+              for lc = 1, lcnt do
+                local key = pfx..'c_'..c..'_eqband_'..bc..'_lm_'..lc..'_'
+                strip.controls[c].eqbands[bc].lookmap[lc] = {pix = tonumber(zn(data[key..'pix'])),
+                                                                     hz = tonumber(zn(data[key..'hz']))}
+              end
+              
+            end
+
+            local lcnt = tonumber(zn(data[key..'gmap_cnt'],0))
+            if lcnt > 0 then
+              strip.controls[c].eqbands[bc].gmap = {}
+              for lc = 1, lcnt do
+                local key = pfx..'c_'..c..'_eqband_'..bc..'_gm_'..lc..'_'
+                strip.controls[c].eqbands[bc].gmap[lc] = {pix = tonumber(zn(data[key..'pix'])),
+                                                                   db = tonumber(zn(data[key..'db']))}
+              end
+              
+            end
+          end
+          --strip.controls[c].eqgraph = tonumber(zn(data[key..'eqgraph']))
+        end
+
+        local key = pfx..'c_'..c..'_'
+        if tobool(zn(data[key..'ecg_graph'],false)) == true then
+          strip.controls[c].eqgraph = {posmin = tonumber(zn(data[key..'ecg_posmin'])),
+                                               posmax = tonumber(zn(data[key..'ecg_posmax'])),
+                                               gmin = tonumber(zn(data[key..'ecg_gmin'],0)),
+                                               gmax = tonumber(zn(data[key..'ecg_gmax'],1)),
+                                               }
+          
+          local lcnt = tonumber(zn(data[key..'ecg_lookmap_cnt'],0))
+          if lcnt > 0 then
+            strip.controls[c].eqgraph.lookmap = {}
+            for lc = 1, lcnt do
+              local key = pfx..'c_'..c..'_ecg_lm_'..lc..'_'
+              strip.controls[c].eqgraph.lookmap[lc] = {pix = tonumber(zn(data[key..'pix'])),
+                                                               hz = tonumber(zn(data[key..'hz']))}
+            end
+            
+          end
+          
+          local key = pfx..'c_'..c..'_'
+          local lcnt = tonumber(zn(data[key..'ecg_gmap_cnt'],0))
+          if lcnt > 0 then
+            strip.controls[c].eqgraph.gmap = {}
+            for lc = 1, lcnt do
+              local key = pfx..'c_'..c..'_ecg_gm_'..lc..'_'
+              strip.controls[c].eqgraph.gmap[lc] = {pix = tonumber(zn(data[key..'pix'])),
+                                                            db = tonumber(zn(data[key..'db']))}
+            end
+            
+          end
+
+        end
+
+        --load control images - reshuffled to ensure no wasted slots between sessions
+        if pfx ~= '' then
+          local iidx
+          local knob_sel = -1
+          for k = 0, #ctl_files do
+            if ctl_files[k].fn == strip.controls[c].ctl_info.fn then
+              knob_sel = k
+              break
+            end
+          end
+          if knob_sel ~= -1 then
+            strip.controls[c].knob_select = knob_sel
+  
+            if ctl_files[knob_sel].imageidx == nil then
+              image_count = F_limit(image_count + 1,0,image_max)
+              gfx.loadimg(image_count, controls_path..ctl_files[knob_sel].fn)
+              iidx = image_count
+              
+              strip.controls[c].ctl_info.imageidx = iidx
+              ctl_files[knob_sel].imageidx = iidx                    
+            else
+              iidx = ctl_files[knob_sel].imageidx
+              strip.controls[c].ctl_info.imageidx = iidx
+            end
+          else
+            --missing
+            strip.controls[c].knob_select = -1
+            strip.controls[c].ctl_info.imageidx = 1020
+          end
+        end
+        
+      end
+    end
+    
+    if gcnt and gcnt > 0 then
+    
+      for g = 1, gcnt do
+
+        local key = pfx..'g_'..g..'_'
+        
+        strip.graphics[g] = {
+                                    fn = data[key..'fn'],
+                                    imageidx = tonumber(data[key..'imageidx']),
+                                    x = tonumber(data[key..'x']),
+                                    y = tonumber(data[key..'y']),
+                                    w = tonumber(data[key..'w']),
+                                    h = tonumber(data[key..'h']),
+                                    scale = tonumber(data[key..'scale']),
+                                    id = deconvnum(data[key..'id']),
+                                    grpid = deconvnum(data[key..'grpid']),
+                                    gfxtype = tonumber(zn(data[key..'gfxtype'],gfxtype.img)),
+                                    font = {idx = tonumber(zn(data[key..'font_idx'])),
+                                            name = zn(data[key..'font_name']),
+                                            size = tonumber(zn(data[key..'font_size'])),
+                                            bold = tobool(zn(data[key..'font_bold'])),
+                                            italics = tobool(zn(data[key..'font_italics'])),
+                                            underline = tobool(zn(data[key..'font_underline'])),
+                                            shadow = tobool(zn(data[key..'font_shadow'],true)),
+                                            shadow_x = tonumber(zn(data[key..'font_shadowx'],1)),
+                                            shadow_y = tonumber(zn(data[key..'font_shadowy'],1)),
+                                            shadow_a = tonumber(zn(data[key..'font_shadowa'],0.6))
+                                            },
+                                    text = zn(data[key..'text']),
+                                    text_col = zn(data[key..'text_col']),
+                                    poslock = tobool(zn(data[key..'poslock'],false)),
+                                    switcher = tonumber(zn(data[key..'switcher'])),
+                                   }
+        strip.graphics[g].stretchw = tonumber(zn(data[key..'stretchw'],strip.graphics[g].w))
+        strip.graphics[g].stretchh = tonumber(zn(data[key..'stretchh'],strip.graphics[g].h))
+
+        --load graphics images
+        if pfx ~= '' then
+          if strip.graphics[g].gfxtype == gfxtype.img then
+          
+            local iidx = LoadGraphics(strip.graphics[g].fn)
+            if iidx then
+              strip.graphics[g].imageidx = iidx
+            end
+            --[[local iidx
+            local gfx_sel = -1
+            for k = 0, #graphics_files do
+              if graphics_files[k] and graphics_files[k].fn == strips[ss][p].graphics[g].fn then
+                gfx_sel = k
+                break
+              end
+            end
+            if gfx_sel ~= -1 then
+              
+              if graphics_files[gfx_sel].imageidx == nil then
+                image_count = F_limit(image_count + 1,0,image_max)
+                gfx.loadimg(image_count, graphics_path..graphics_files[gfx_sel].fn)
+                iidx = image_count
+                
+                strips[ss][p].graphics[g].imageidx = iidx
+                graphics_files[gfx_sel].imageidx = iidx                    
+  
+              else
+                iidx = graphics_files[gfx_sel].imageidx
+                strips[ss][p].graphics[g].imageidx = iidx                                  
+              end
+            else
+              --missing
+              strips[ss][p].graphics[g].imageidx = 1020
+            end]]
+          end
+        end
+
+      end                
+    end
+    return strip
+  end
   
   function LoadGraphics(fn)
   
@@ -29586,92 +30381,105 @@ end
   
     for p = 1, 4 do
     
-      snapshots[s][p] = {}
-
       local key = pfx..'p'..p..'_'
-      local sstcnt = tonumber(zn(data[key..'sstype_count'],0))
+      snapshots[s][p] = LoadSnapDataX(key, data)
       
-      if sstcnt > 0 then
-        
-        for sst = 1, sstcnt do
-
-          if sst == 1 then                
-            snapshots[s][p][sst] = {}
-          
-            local key = pfx..'p'..p..'_sst_'..sst..'_'
-            local sscnt = tonumber(zn(data[key..'ss_count'],0))
-            if sscnt > 0 then
-        
-              for ss = 1, sscnt do
-                local key = pfx..'p'..p..'_sst_'..sst..'_ss_'..ss..'_'
-                local dcnt = tonumber(data[key..'data_count'])
-                snapshots[s][p][sst][ss] = {name = data[key..'name'],
-                                            data = {}}
-                for d = 1, dcnt do
-
-                  local key = pfx..'p'..p..'_sst_'..sst..'_ss_'..ss..'_d_'..d..'_'
-                
-                  snapshots[s][p][sst][ss].data[d] = {c_id = tonumber(data[key..'cid']),
-                                                     ctl = tonumber(data[key..'ctl']),
-                                                     val = tonumber(data[key..'val']),
-                                                     dval = tonumber(zn(data[key..'dval']))}
-                end
-              end
-              
-              --Snapshots_Check(s,p)
-            end
-          elseif sst > 1 then
-          
-            local key = pfx..'p'..p..'_sst_'..sst..'_'
-            snapshots[s][p][sst] = {subsetname = data[key..'subsetname'], snapshot = {}, ctls = {}}
-            
-            snapsubsets_table[sst] = snapshots[s][p][sst].subsetname
-            
-            local sscnt = tonumber(zn(data[key..'ss_count'],0))
-            local ctlcnt = tonumber(zn(data[key..'ctl_count'],0))
-            
-            if ctlcnt > 0 then
-              for ctl = 1, ctlcnt do
-              
-                local key = pfx..'p'..p..'_sst_'..sst..'_c_'..ctl..'_'
-                snapshots[s][p][sst].ctls[ctl] = {c_id = tonumber(data[key..'cid']),
-                                                  ctl = tonumber(data[key..'ctl'])}
-              end
-            end
-            if sscnt > 0 then
-              for ss = 1, sscnt do
-                local key = pfx..'p'..p..'_sst_'..sst..'_ss_'..ss..'_'
-                local dcnt = tonumber(data[key..'data_count'])
-                snapshots[s][p][sst].snapshot[ss] = {name = data[key..'name'],
-                                                     data = {}}
-                for d = 1, dcnt do
-
-                  local key = pfx..'p'..p..'_sst_'..sst..'_ss_'..ss..'_d_'..d..'_'
-                
-                  snapshots[s][p][sst].snapshot[ss].data[d] = {c_id = tonumber(data[key..'cid']),
-                                                               ctl = tonumber(data[key..'ctl']),
-                                                               val = tonumber(data[key..'val']),
-                                                               dval = tonumber(zn(data[key..'dval']))}
-                end
-              end
-            end                 
-             
-            --Snapshots_Check(s,p)
-          end
-          
-          local key = pfx..'p'..p..'_sst_'..sst..'_'
-          if snapshots[s][p][sst] then
-            snapshots[s][p][sst].selected = tonumber(zn(data[key..'ss_selected']))
-          end
-          
-        end
-        
-        --Snapshots_Check(s,p)
-      end
     end
     --DBG('Snapshot load time: '..reaper.time_precise() - t)
 
   end
+  
+  function LoadSnapDataX(pfx, data)
+  
+    if pfx == nil then pfx = '' end
+    --local key = pfx
+    
+    local snaps = {}
+    
+    local key = pfx
+    local sstcnt = tonumber(zn(data[key..'sstype_count'],0))
+    
+    if sstcnt > 0 then
+      
+      for sst = 1, sstcnt do
+
+        if sst == 1 then                
+          snaps[sst] = {}
+        
+          local key = pfx..'sst_'..sst..'_'
+          local sscnt = tonumber(zn(data[key..'ss_count'],0))
+          if sscnt > 0 then
+      
+            for ss = 1, sscnt do
+              local key = pfx..'sst_'..sst..'_ss_'..ss..'_'
+              local dcnt = tonumber(data[key..'data_count'])
+              snaps[sst][ss] = {name = data[key..'name'],
+                                data = {}}
+              for d = 1, dcnt do
+
+                local key = pfx..'sst_'..sst..'_ss_'..ss..'_d_'..d..'_'
+              
+                snaps[sst][ss].data[d] = {c_id = tonumber(data[key..'cid']),
+                                           ctl = tonumber(data[key..'ctl']),
+                                           val = tonumber(data[key..'val']),
+                                           dval = tonumber(zn(data[key..'dval']))}
+              end
+            end
+            
+            --Snapshots_Check(s,p)
+          end
+        elseif sst > 1 then
+        
+          local key = pfx..'sst_'..sst..'_'
+          snaps[sst] = {subsetname = data[key..'subsetname'], snapshot = {}, ctls = {}}
+          
+          snapsubsets_table[sst] = snaps[sst].subsetname
+          
+          local sscnt = tonumber(zn(data[key..'ss_count'],0))
+          local ctlcnt = tonumber(zn(data[key..'ctl_count'],0))
+          
+          if ctlcnt > 0 then
+            for ctl = 1, ctlcnt do
+            
+              local key = pfx..'sst_'..sst..'_c_'..ctl..'_'
+              snaps[sst].ctls[ctl] = {c_id = tonumber(data[key..'cid']),
+                                      ctl = tonumber(data[key..'ctl'])}
+            end
+          end
+          if sscnt > 0 then
+            for ss = 1, sscnt do
+              local key = pfx..'sst_'..sst..'_ss_'..ss..'_'
+              local dcnt = tonumber(data[key..'data_count'])
+              snaps[sst].snapshot[ss] = {name = data[key..'name'],
+                                         data = {}}
+              for d = 1, dcnt do
+
+                local key = pfx..'sst_'..sst..'_ss_'..ss..'_d_'..d..'_'
+              
+                snaps[sst].snapshot[ss].data[d] = {c_id = tonumber(data[key..'cid']),
+                                                   ctl = tonumber(data[key..'ctl']),
+                                                   val = tonumber(data[key..'val']),
+                                                   dval = tonumber(zn(data[key..'dval']))}
+              end
+            end
+          end                 
+           
+          --Snapshots_Check(s,p)
+        end
+        
+        local key = pfx..'sst_'..sst..'_'
+        if snaps[sst] then
+          snaps[sst].selected = tonumber(zn(data[key..'ss_selected']))
+        end
+        
+      end
+      
+      --Snapshots_Check(s,p)
+    end
+    return snaps
+    
+  end
+  
   
   function LoadXXYData(s, data)
   
@@ -29980,6 +30788,7 @@ end
   
     local t = reaper.time_precise()
     local data = {}
+    DBG('a')
     
     DBGOut('')
     DBGOut('*** LOADING DATA ***')    
@@ -30100,6 +30909,10 @@ end
     
   function LoadData()
     
+  
+    local find = string.find
+    local match = string.match
+    
     ZeroProjectFlags()
     
     local s, p, c, g, k
@@ -30186,12 +30999,15 @@ end
           local ctr = 0
           datafile = ffn
           
-          for line in io.lines(ffn) do
+          local flines = io.lines
+          --local fGUI_DrawMsgX = GUI_DrawMsgX
+          
+          for line in flines(ffn) do
             ctr = ctr + 1
             if ctr % 4000 == 0 then
               GUI_DrawMsgX(obj, gui, 'Reading data file...  (line: '..ctr..')', nil, nil, true)
             end
-            local idx, val = string.match(line,'%[(.-)%](.*)') --decipher(line)
+            local idx, val = match(line,'%[(.-)%](.*)') --decipher(line)
             if idx then
               data[idx] = val
             end
@@ -31111,8 +31927,10 @@ end
     
     for p = 1, #snapshots[s] do
     
-      local key = pfx..'p'..p..'_'          
-      file:write('['..key..'sstype_count]'..#snapshots[s][p]..'\n')
+      local key = pfx..'p'..p..'_'
+      SaveSnapshotDataX(s,p,key,file)
+                
+      --[[file:write('['..key..'sstype_count]'..#snapshots[s][p]..'\n')
     
       for sst = 1, #snapshots[s][p] do
     
@@ -31183,7 +32001,7 @@ end
             end
           end
         end
-      end
+      end]]
     end
   
     if nofile == true then
@@ -31193,6 +32011,86 @@ end
         
     --DBG('Save snapshot time: '..reaper.time_precise() - t)
     return reaper.time_precise() - t
+    
+  end
+  
+  function SaveSnapshotDataX(s, p, pfx, file)
+  
+    if pfx == nil then pfx = '' end
+    local key = pfx
+    
+    file:write('['..key..'sstype_count]'..#snapshots[s][p]..'\n')
+    
+    for sst = 1, #snapshots[s][p] do
+    
+      local key = pfx..'sst_'..sst..'_'
+      file:write('['..key..'ss_selected]'..nz(snapshots[s][p][sst].selected,'')..'\n')
+      
+      if sst == 1 then          
+        file:write('['..key..'ss_count]'..#snapshots[s][p][sst]..'\n')
+      
+        if #snapshots[s][p][sst] > 0 then
+    
+          for ss = 1, #snapshots[s][p][sst] do
+    
+            local key = pfx..'sst_'..sst..'_ss_'..ss..'_'
+          
+            file:write('['..key..'name]'.. snapshots[s][p][sst][ss].name ..'\n')
+            file:write('['..key..'data_count]'.. #snapshots[s][p][sst][ss].data ..'\n')
+        
+            if #snapshots[s][p][sst][ss].data > 0 then
+              for d = 1, #snapshots[s][p][sst][ss].data do
+    
+                local key = pfx..'sst_'..sst..'_ss_'..ss..'_d_'..d..'_'
+    
+                file:write('['..key..'cid]'.. snapshots[s][p][sst][ss].data[d].c_id ..'\n')
+                file:write('['..key..'ctl]'.. snapshots[s][p][sst][ss].data[d].ctl ..'\n')
+                file:write('['..key..'val]'.. snapshots[s][p][sst][ss].data[d].val ..'\n')
+                file:write('['..key..'dval]'.. nz(snapshots[s][p][sst][ss].data[d].dval,'') ..'\n')
+          
+              end
+            end
+          end
+        end      
+    
+      elseif sst > 1 then
+      
+        file:write('['..key..'subsetname]'.. snapshots[s][p][sst].subsetname ..'\n')
+        file:write('['..key..'ss_count]'.. #snapshots[s][p][sst].snapshot ..'\n')
+        file:write('['..key..'ctl_count]'.. #snapshots[s][p][sst].ctls ..'\n')
+        
+        if #snapshots[s][p][sst].ctls > 0 then
+    
+          for ctl = 1, #snapshots[s][p][sst].ctls do
+            local key = pfx..'sst_'..sst..'_c_'..ctl..'_'
+            file:write('['..key..'cid]'.. snapshots[s][p][sst].ctls[ctl].c_id ..'\n')
+            file:write('['..key..'ctl]'.. snapshots[s][p][sst].ctls[ctl].ctl ..'\n')                            
+          end
+        end
+        if #snapshots[s][p][sst].snapshot > 0 then
+        
+          for ss = 1, #snapshots[s][p][sst].snapshot do
+          
+            local key = pfx..'sst_'..sst..'_ss_'..ss..'_'
+            file:write('['..key..'name]'.. snapshots[s][p][sst].snapshot[ss].name ..'\n')
+            file:write('['..key..'data_count]'.. #snapshots[s][p][sst].snapshot[ss].data ..'\n')
+          
+            if #snapshots[s][p][sst].snapshot[ss].data > 0 then
+              for d = 1, #snapshots[s][p][sst].snapshot[ss].data do
+    
+                local key = pfx..'sst_'..sst..'_ss_'..ss..'_d_'..d..'_'
+          
+                file:write('['..key..'cid]'.. snapshots[s][p][sst].snapshot[ss].data[d].c_id ..'\n')
+                file:write('['..key..'ctl]'.. snapshots[s][p][sst].snapshot[ss].data[d].ctl ..'\n')
+                file:write('['..key..'val]'.. snapshots[s][p][sst].snapshot[ss].data[d].val ..'\n')
+                file:write('['..key..'dval]'.. nz(snapshots[s][p][sst].snapshot[ss].data[d].dval,'') ..'\n')
+          
+              end
+            end
+          end
+        end
+      end
+    end
     
   end
   
@@ -31224,7 +32122,9 @@ end
       
         local key = pfx..'p'..p..'_'
 
-        if strips[s][p] then
+        GenStripSaveData(s,p,key,file)
+
+        --[[if strips[s][p] then
 
           file:write('['..key..'surface_x]'..strips[s][p].surface_x..'\n')
           file:write('['..key..'surface_y]'..strips[s][p].surface_y..'\n')
@@ -31544,7 +32444,402 @@ end
               local key = pfx..'p'..p..'_g_'..g..'_'
           
               file:write('['..key..'fn]'..strips[s][p].graphics[g].fn..'\n')
-              file:write('['..key..'imageidx]'..strips[s][p].graphics[g].imageidx..'\n')
+              --file:write('['..key..'imageidx]'..strips[s][p].graphics[g].imageidx..'\n')
+              file:write('['..key..'x]'..strips[s][p].graphics[g].x..'\n')
+              file:write('['..key..'y]'..strips[s][p].graphics[g].y..'\n')
+              file:write('['..key..'w]'..strips[s][p].graphics[g].w..'\n')
+              file:write('['..key..'h]'..strips[s][p].graphics[g].h..'\n')
+              file:write('['..key..'stretchw]'..nz(strips[s][p].graphics[g].stretchw,strips[s][p].graphics[g].w)..'\n')
+              file:write('['..key..'stretchh]'..nz(strips[s][p].graphics[g].stretchh,strips[s][p].graphics[g].h)..'\n')
+              file:write('['..key..'scale]'..strips[s][p].graphics[g].scale..'\n')
+              file:write('['..key..'id]'..convnum(strips[s][p].graphics[g].id)..'\n')
+              file:write('['..key..'grpid]'..convnum(strips[s][p].graphics[g].grpid)..'\n')
+            
+              file:write('['..key..'gfxtype]'..nz(strips[s][p].graphics[g].gfxtype, gfxtype.img)..'\n')
+              file:write('['..key..'font_idx]'..nz(strips[s][p].graphics[g].font.idx, '')..'\n')
+              file:write('['..key..'font_name]'..nz(strips[s][p].graphics[g].font.name, '')..'\n')
+              file:write('['..key..'font_size]'..nz(strips[s][p].graphics[g].font.size, '')..'\n')
+              file:write('['..key..'font_bold]'..nz(tostring(strips[s][p].graphics[g].font.bold), '')..'\n')
+              file:write('['..key..'font_italics]'..nz(tostring(strips[s][p].graphics[g].font.italics), '')..'\n')
+              file:write('['..key..'font_underline]'..nz(tostring(strips[s][p].graphics[g].font.underline), '')..'\n')
+              file:write('['..key..'font_shadow]'..nz(tostring(strips[s][p].graphics[g].font.shadow), '')..'\n')
+              file:write('['..key..'font_shadowx]'..nz(strips[s][p].graphics[g].font.shadow_x, '')..'\n')
+              file:write('['..key..'font_shadowy]'..nz(strips[s][p].graphics[g].font.shadow_y, '')..'\n')
+              file:write('['..key..'font_shadowa]'..nz(strips[s][p].graphics[g].font.shadow_a, '')..'\n')
+              file:write('['..key..'text]'..nz(strips[s][p].graphics[g].text, '')..'\n')
+              file:write('['..key..'text_col]'..nz(strips[s][p].graphics[g].text_col, '')..'\n')
+              file:write('['..key..'poslock]'..nz(tostring(strips[s][p].graphics[g].poslock), false)..'\n')
+              file:write('['..key..'switcher]'..tostring(nz(strips[s][p].graphics[g].switcher,''))..'\n')
+            
+            end
+          end
+      
+        else
+          file:write('['..key..'surface_x]'..0 ..'\n')
+          file:write('['..key..'surface_y]'..0 ..'\n')
+          file:write('['..key..'controls_count]'..0 ..'\n')
+          file:write('['..key..'graphics_count]'..0 ..'\n')          
+        end]]      
+      
+      end
+    
+    end
+
+    --file:write(pickled_table)
+    if nofile == true then
+      file:close()
+      reaper.SetProjExtState(0,SCRIPT,'strips_count',#strips) 
+      reaper.SetProjExtState(0,SCRIPT,'strips_datafile_'..string.format("%03d",s),fn) 
+    end
+        
+    --DBG('Save strip time: '..reaper.time_precise() - t)
+    return reaper.time_precise() - t
+
+  end
+  
+  
+  function GenStripSaveData(s,p,pfx,file)
+  
+    if file == nil then return end
+    if pfx == nil then pfx = '' end
+  
+    t = reaper.time_precise()
+    local stripdata = ''
+  
+    --file:write('[strips_count]'..#strips..'\n')
+    if strips[s] then
+    
+      --[[file:write('[' .. pfx ..'page]'..nz(strips[s].page,1)..'\n')
+      file:write('[' ..pfx ..'track_name]'..strips[s].track.name..'\n')
+      file:write('[' ..pfx ..'track_guid]'..nz(strips[s].track.guid,'')..'\n')
+      file:write('[' ..pfx ..'track_num]'..strips[s].track.tracknum..'\n')
+      file:write('[' ..pfx ..'track_strip]'..strips[s].track.strip..'\n')]]
+    
+      --for p = 1, 4 do
+      
+        local key = pfx
+
+        if strips[s][p] then
+
+          file:write('['..key..'surface_x]'..strips[s][p].surface_x..'\n')
+          file:write('['..key..'surface_y]'..strips[s][p].surface_y..'\n')
+          file:write('['..key..'controls_count]'..#strips[s][p].controls..'\n')
+          file:write('['..key..'graphics_count]'..#strips[s][p].graphics..'\n')
+          
+          if #strips[s][p].controls > 0 then
+            for c = 1, #strips[s][p].controls do
+          
+              local key = pfx..'c_'..c..'_'
+              
+              file:write('['..key..'cid]'..strips[s][p].controls[c].c_id..'\n')
+              file:write('['..key..'fxname]'..strips[s][p].controls[c].fxname..'\n')
+              file:write('['..key..'fxguid]'..nz(strips[s][p].controls[c].fxguid,'')..'\n')
+              file:write('['..key..'fxnum]'..nz(strips[s][p].controls[c].fxnum,'')..'\n')
+              file:write('['..key..'fxfound]'..tostring(strips[s][p].controls[c].fxfound)..'\n')
+              file:write('['..key..'param]'..strips[s][p].controls[c].param..'\n')
+  
+              file:write('['..key..'param_info_name]'..strips[s][p].controls[c].param_info.paramname..'\n')
+              file:write('['..key..'param_info_paramnum]'..nz(strips[s][p].controls[c].param_info.paramnum,'')..'\n')
+              file:write('['..key..'param_info_idx]'..nz(strips[s][p].controls[c].param_info.paramidx,'')..'\n')
+              file:write('['..key..'param_info_str]'..nz(strips[s][p].controls[c].param_info.paramstr,'')..'\n')
+              file:write('['..key..'param_info_guid]'..nz(strips[s][p].controls[c].param_info.paramdestguid,'')..'\n')
+              file:write('['..key..'param_info_chan]'..nz(strips[s][p].controls[c].param_info.paramdestchan,'')..'\n')
+              file:write('['..key..'param_info_srcchan]'..nz(strips[s][p].controls[c].param_info.paramsrcchan,'')..'\n')
+              file:write('['..key..'ctltype]'..strips[s][p].controls[c].ctltype..'\n')
+              file:write('['..key..'knob_select]'..strips[s][p].controls[c].knob_select..'\n')
+              file:write('['..key..'ctl_info_fn]'..strips[s][p].controls[c].ctl_info.fn..'\n')
+              file:write('['..key..'ctl_info_frames]'..strips[s][p].controls[c].ctl_info.frames..'\n')
+              file:write('['..key..'ctl_info_imageidx]'..strips[s][p].controls[c].ctl_info.imageidx..'\n')
+              file:write('['..key..'ctl_info_cellh]'..strips[s][p].controls[c].ctl_info.cellh..'\n')
+              file:write('['..key..'x]'..strips[s][p].controls[c].x..'\n')
+              file:write('['..key..'y]'..strips[s][p].controls[c].y..'\n')
+              file:write('['..key..'w]'..strips[s][p].controls[c].w..'\n')
+              file:write('['..key..'scale]'..strips[s][p].controls[c].scale..'\n')
+              file:write('['..key..'show_paramname]'..tostring(strips[s][p].controls[c].show_paramname)..'\n')
+              file:write('['..key..'show_paramval]'..tostring(strips[s][p].controls[c].show_paramval)..'\n')
+              file:write('['..key..'ctlname_override]'..nz(strips[s][p].controls[c].ctlname_override,'')..'\n')
+              file:write('['..key..'textcol]'..strips[s][p].controls[c].textcol..'\n')
+              file:write('['..key..'textoff]'..strips[s][p].controls[c].textoff..'\n')
+              file:write('['..key..'textoffval]'..strips[s][p].controls[c].textoffval..'\n')
+              file:write('['..key..'textoffx]'..strips[s][p].controls[c].textoffx..'\n')
+              file:write('['..key..'textoffvalx]'..strips[s][p].controls[c].textoffvalx..'\n')
+              file:write('['..key..'textsize]'..nz(strips[s][p].controls[c].textsize,0)..'\n')
+              file:write('['..key..'font]'..nz(strips[s][p].controls[c].font,fontname_def)..'\n')
+              file:write('['..key..'val]'..nz(strips[s][p].controls[c].val,0)..'\n')
+              file:write('['..key..'mval]'..nz(strips[s][p].controls[c].mval,nz(strips[s][p].controls[c].val,0))..'\n')
+              file:write('['..key..'defval]'..nz(strips[s][p].controls[c].defval,0)..'\n')   
+              file:write('['..key..'maxdp]'..nz(strips[s][p].controls[c].maxdp,-1)..'\n')   
+              file:write('['..key..'dvaloffset]'..nz(strips[s][p].controls[c].dvaloffset,'')..'\n')   
+              file:write('['..key..'minov]'..nz(strips[s][p].controls[c].minov,'')..'\n')   
+              file:write('['..key..'maxov]'..nz(strips[s][p].controls[c].maxov,'')..'\n')   
+              file:write('['..key..'scalemodex]'..nz(strips[s][p].controls[c].scalemode,8)..'\n')   
+              file:write('['..key..'framemodex]'..nz(strips[s][p].controls[c].framemode,1)..'\n')   
+              file:write('['..key..'poslock]'..nz(tostring(strips[s][p].controls[c].poslock),false)..'\n')   
+              file:write('['..key..'horiz]'..tostring(nz(strips[s][p].controls[c].horiz,false))..'\n')
+              file:write('['..key..'knobsens_norm]'..tostring(nz(strips[s][p].controls[c].knobsens.norm,settings_defknobsens.norm))..'\n')
+              file:write('['..key..'knobsens_fine]'..tostring(nz(strips[s][p].controls[c].knobsens.fine,settings_defknobsens.fine))..'\n')                 
+              file:write('['..key..'knobsens_wheel]'..tostring(nz(strips[s][p].controls[c].knobsens.wheel,settings_defknobsens.wheel))..'\n')
+              file:write('['..key..'knobsens_wheelfine]'..tostring(nz(strips[s][p].controls[c].knobsens.wheelfine,settings_defknobsens.wheelfine))..'\n')                 
+              file:write('['..key..'hidden]'..tostring(nz(strips[s][p].controls[c].hidden,false))..'\n')
+              file:write('['..key..'switcherid]'..tostring(nz(strips[s][p].controls[c].switcherid,''))..'\n')
+              file:write('['..key..'switcher]'..tostring(nz(strips[s][p].controls[c].switcher,''))..'\n')
+              file:write('['..key..'noss]'..tostring(nz(strips[s][p].controls[c].noss,''))..'\n')
+  
+              file:write('['..key..'id]'..convnum(strips[s][p].controls[c].id)..'\n')
+              file:write('['..key..'grpid]'..convnum(strips[s][p].controls[c].grpid)..'\n')
+      
+              file:write('['..key..'ctlcat]'..nz(strips[s][p].controls[c].ctlcat,'')..'\n')
+              file:write('['..key..'tracknum]'..nz(strips[s][p].controls[c].tracknum,'')..'\n')
+              file:write('['..key..'trackguid]'..nz(strips[s][p].controls[c].trackguid,'')..'\n')
+              file:write('['..key..'memstate]'..tostring(nz(strips[s][p].controls[c].membtn.state,false))..'\n')
+              file:write('['..key..'memmem]'..nz(strips[s][p].controls[c].membtn.mem,0)..'\n')
+              
+              file:write('['..key..'xydata_x]'..nz(strips[s][p].controls[c].xydata.x,0.5)..'\n')
+              file:write('['..key..'xydata_y]'..nz(strips[s][p].controls[c].xydata.y,0.5)..'\n')
+              file:write('['..key..'xydata_snapa]'..nz(strips[s][p].controls[c].xydata.snapa,1)..'\n')
+              file:write('['..key..'xydata_snapb]'..nz(strips[s][p].controls[c].xydata.snapb,1)..'\n')
+              file:write('['..key..'xydata_snapc]'..nz(strips[s][p].controls[c].xydata.snapc,1)..'\n')
+              file:write('['..key..'xydata_snapd]'..nz(strips[s][p].controls[c].xydata.snapd,1)..'\n')
+
+              file:write('['..key..'macrofader]'..nz(strips[s][p].controls[c].macrofader,'')..'\n')
+  
+              if strips[s][p].controls[c].cycledata and strips[s][p].controls[c].cycledata.statecnt then
+                file:write('['..key..'cycledata_statecnt]'..nz(strips[s][p].controls[c].cycledata.statecnt,0)..'\n')
+                file:write('['..key..'cycledata_mapptof]'..tostring(nz(strips[s][p].controls[c].cycledata.mapptof,false))..'\n')
+                file:write('['..key..'cycledata_draggable]'..tostring(nz(strips[s][p].controls[c].cycledata.draggable,false))..'\n')
+                file:write('['..key..'cycledata_spread]'..tostring(nz(strips[s][p].controls[c].cycledata.spread,false))..'\n')
+                file:write('['..key..'cycledata_pos]'..tostring(nz(strips[s][p].controls[c].cycledata.pos,1))..'\n')
+                file:write('['..key..'cycledata_posdirty]'..tostring(nz(strips[s][p].controls[c].cycledata.posdirty,false))..'\n')
+                if nz(strips[s][p].controls[c].cycledata.statecnt,0) > 0 then
+                  for i = 1, strips[s][p].controls[c].cycledata.statecnt do
+                    local key = pfx..'p'..p..'c_'..c..'_cyc_'..i..'_'
+                    file:write('['..key..'val]'..nz(strips[s][p].controls[c].cycledata[i].val,0)..'\n')   
+                    file:write('['..key..'dispval]'..nz(strips[s][p].controls[c].cycledata[i].dispval,'')..'\n')   
+                    file:write('['..key..'dv]'..nz(strips[s][p].controls[c].cycledata[i].dv,'')..'\n')   
+                  end
+                end
+              else
+                file:write('['..key..'cycledata_statecnt]'..0 ..'\n')                   
+              end
+
+              if strips[s][p].controls[c].midiout then
+                file:write('['..key..'midiout_output]'..nz(strips[s][p].controls[c].midiout.output,'')..'\n')
+                file:write('['..key..'midiout_mchan]'..nz(strips[s][p].controls[c].midiout.mchan,'')..'\n')
+                file:write('['..key..'midiout_msg3]'..nz(strips[s][p].controls[c].midiout.msg3,'')..'\n')              
+              end
+              
+              if strips[s][p].controls[c].gauge then
+                file:write('['..key..'gauge]'..tostring(true)..'\n')
+              
+                file:write('['..key..'gauge_type]'..nz(strips[s][p].controls[c].gauge.type,1)..'\n')
+                file:write('['..key..'gauge_x_offs]'..nz(strips[s][p].controls[c].gauge.x_offs,0)..'\n')
+                file:write('['..key..'gauge_y_offs]'..nz(strips[s][p].controls[c].gauge.y_offs,0)..'\n')
+                file:write('['..key..'gauge_radius]'..nz(strips[s][p].controls[c].gauge.radius,50)..'\n')
+                file:write('['..key..'gauge_arclen]'..nz(strips[s][p].controls[c].gauge.arclen,1)..'\n')
+                file:write('['..key..'gauge_rotation]'..nz(strips[s][p].controls[c].gauge.rotation,0)..'\n')
+                file:write('['..key..'gauge_ticks]'..nz(strips[s][p].controls[c].gauge.ticks,0)..'\n')
+                file:write('['..key..'gauge_tick_size]'..nz(strips[s][p].controls[c].gauge.tick_size,2)..'\n')
+                file:write('['..key..'gauge_tick_offs]'..nz(strips[s][p].controls[c].gauge.tick_offs,1)..'\n')
+                file:write('['..key..'gauge_val_freq]'..nz(strips[s][p].controls[c].gauge.val_freq,0)..'\n')
+                file:write('['..key..'gauge_col_tick]'..nz(strips[s][p].controls[c].gauge.col_tick,gui.color.white)..'\n')
+                file:write('['..key..'gauge_col_arc]'..nz(strips[s][p].controls[c].gauge.col_arc,gui.color.white)..'\n')
+                file:write('['..key..'gauge_col_val]'..nz(strips[s][p].controls[c].gauge.col_val,gui.color.white)..'\n')
+                file:write('['..key..'gauge_show_arc]'..tostring(nz(strips[s][p].controls[c].gauge.show_arc,true))..'\n')
+                file:write('['..key..'gauge_show_tick]'..tostring(nz(strips[s][p].controls[c].gauge.show_tick,true))..'\n')
+                file:write('['..key..'gauge_show_val]'..tostring(nz(strips[s][p].controls[c].gauge.show_val,true))..'\n')
+                file:write('['..key..'gauge_val_dp]'..nz(strips[s][p].controls[c].gauge.val_dp,0)..'\n')
+                file:write('['..key..'gauge_font]'..nz(strips[s][p].controls[c].gauge.font,fontname_def)..'\n')
+                file:write('['..key..'gauge_fontsz]'..nz(strips[s][p].controls[c].gauge.fontsz,0)..'\n')
+                file:write('['..key..'gauge_spread]'..tostring(nz(strips[s][p].controls[c].gauge.spread,''))..'\n')
+                file:write('['..key..'gauge_mapptof]'..tostring(nz(strips[s][p].controls[c].gauge.mapptof,''))..'\n')
+                file:write('['..key..'gauge_numonly]'..tostring(nz(strips[s][p].controls[c].gauge.numonly,''))..'\n')
+                file:write('['..key..'gauge_valcnt]'..#strips[s][p].controls[c].gauge.vals..'\n')
+              
+                if strips[s][p].controls[c].gauge.vals and #strips[s][p].controls[c].gauge.vals > 0 then
+                  for gv = 1, #strips[s][p].controls[c].gauge.vals do
+                    local key = pfx..'c_'..c..'_gaugevals_'..gv..'_' 
+                    file:write('['..key..'val]'..nz(strips[s][p].controls[c].gauge.vals[gv].val,0)..'\n')
+                    file:write('['..key..'dval]'..nz(strips[s][p].controls[c].gauge.vals[gv].dval,'-')..'\n')
+                    file:write('['..key..'dover]'..nz(strips[s][p].controls[c].gauge.vals[gv].dover,'')..'\n')                  
+                    file:write('['..key..'nudge]'..nz(strips[s][p].controls[c].gauge.vals[gv].nudge,0)..'\n')                  
+                  end
+                end
+              end
+                            
+              if strips[s][p].controls[c].macroctl then
+                local mcnt = #strips[s][p].controls[c].macroctl
+                file:write('['..key..'macroctl_cnt]'..mcnt..'\n')                                 
+                for mc = 1,mcnt do
+                  local key = pfx..'c_'..c..'_mc_'..mc..'_'
+                  file:write('['..key..'c_id]'..strips[s][p].controls[c].macroctl[mc].c_id..'\n')                                 
+                  file:write('['..key..'ctl]'..strips[s][p].controls[c].macroctl[mc].ctl..'\n')                                 
+                  file:write('['..key..'A]'..strips[s][p].controls[c].macroctl[mc].A_val..'\n')                                 
+                  file:write('['..key..'B]'..strips[s][p].controls[c].macroctl[mc].B_val..'\n')                                 
+                  file:write('['..key..'shape]'..strips[s][p].controls[c].macroctl[mc].shape..'\n')                                 
+                  file:write('['..key..'mute]'..tostring(nz(strips[s][p].controls[c].macroctl[mc].mute,false))..'\n')                                 
+                  file:write('['..key..'bi]'..tostring(nz(strips[s][p].controls[c].macroctl[mc].bi,false))..'\n')
+                  file:write('['..key..'inv]'..tostring(nz(strips[s][p].controls[c].macroctl[mc].inv,false))..'\n')                                 
+                  file:write('['..key..'rel]'..tostring(nz(strips[s][p].controls[c].macroctl[mc].relative,false))..'\n')                                 
+                end
+              else
+                file:write('['..key..'macroctl_cnt]'..0 ..'\n')                                 
+              end
+
+              if strips[s][p].controls[c].eqbands then
+                local bcnt = #strips[s][p].controls[c].eqbands
+                file:write('['..key..'eqband_cnt]'..bcnt..'\n')
+                if bcnt > 0 then                                 
+                  for bc = 1,bcnt do
+                    local key = pfx..'c_'..c..'_eqband_'..bc..'_'
+                    file:write('['..key..'posmin]'..nz(strips[s][p].controls[c].eqbands[bc].posmin,'')..'\n')                                 
+                    file:write('['..key..'posmax]'..nz(strips[s][p].controls[c].eqbands[bc].posmax,'')..'\n')                                 
+                    file:write('['..key..'col]'..nz(strips[s][p].controls[c].eqbands[bc].col,'')..'\n')                                 
+                    file:write('['..key..'fxnum]'..nz(strips[s][p].controls[c].eqbands[bc].fxnum,'')..'\n')                                 
+                    file:write('['..key..'fxguid]'..nz(strips[s][p].controls[c].eqbands[bc].fxguid,'')..'\n')                                 
+                    file:write('['..key..'fxname]'..nz(strips[s][p].controls[c].eqbands[bc].fxname,'')..'\n')                                 
+                    file:write('['..key..'freq_param]'..nz(strips[s][p].controls[c].eqbands[bc].freq_param,'')..'\n')                                 
+                    file:write('['..key..'freq_param_name]'..nz(strips[s][p].controls[c].eqbands[bc].freq_param_name,'')..'\n')                                 
+                    file:write('['..key..'gain_param]'..nz(strips[s][p].controls[c].eqbands[bc].gain_param,'')..'\n')                                 
+                    file:write('['..key..'gain_param_name]'..nz(strips[s][p].controls[c].eqbands[bc].gain_param_name,'')..'\n')                                 
+                    file:write('['..key..'q_param]'..nz(strips[s][p].controls[c].eqbands[bc].q_param,'')..'\n')                                 
+                    file:write('['..key..'q_param_name]'..nz(strips[s][p].controls[c].eqbands[bc].q_param_name,'')..'\n')                                 
+                    file:write('['..key..'bypass_param]'..nz(strips[s][p].controls[c].eqbands[bc].bypass_param,'')..'\n')                                 
+                    file:write('['..key..'bypass_param_name]'..nz(strips[s][p].controls[c].eqbands[bc].bypass_param_name,'')..'\n')                                 
+                    file:write('['..key..'c1_param]'..nz(strips[s][p].controls[c].eqbands[bc].c1_param,'')..'\n')                                 
+                    file:write('['..key..'c1_param_name]'..nz(strips[s][p].controls[c].eqbands[bc].c1_param_name,'')..'\n')                                 
+                    file:write('['..key..'c2_param]'..nz(strips[s][p].controls[c].eqbands[bc].c2_param,'')..'\n')                                 
+                    file:write('['..key..'c2_param_name]'..nz(strips[s][p].controls[c].eqbands[bc].c2_param_name,'')..'\n')                                 
+                    file:write('['..key..'c3_param]'..nz(strips[s][p].controls[c].eqbands[bc].c3_param,'')..'\n')                                 
+                    file:write('['..key..'c3_param_name]'..nz(strips[s][p].controls[c].eqbands[bc].c3_param_name,'')..'\n')                                 
+                    file:write('['..key..'c4_param]'..nz(strips[s][p].controls[c].eqbands[bc].c4_param,'')..'\n')                                 
+                    file:write('['..key..'c4_param_name]'..nz(strips[s][p].controls[c].eqbands[bc].c4_param_name,'')..'\n')                                 
+                    file:write('['..key..'c5_param]'..nz(strips[s][p].controls[c].eqbands[bc].c5_param,'')..'\n')                                 
+                    file:write('['..key..'c5_param_name]'..nz(strips[s][p].controls[c].eqbands[bc].c5_param_name,'')..'\n')                                 
+                    file:write('['..key..'freq_val]'..nz(strips[s][p].controls[c].eqbands[bc].freq_val,'')..'\n')                                 
+                    file:write('['..key..'gain_val]'..nz(strips[s][p].controls[c].eqbands[bc].gain_val,'')..'\n')                                 
+                    file:write('['..key..'q_val]'..nz(strips[s][p].controls[c].eqbands[bc].q_val,'')..'\n')                                 
+                    file:write('['..key..'c1_val]'..nz(strips[s][p].controls[c].eqbands[bc].c1_val,'')..'\n')                                 
+                    file:write('['..key..'c2_val]'..nz(strips[s][p].controls[c].eqbands[bc].c2_val,'')..'\n')                                 
+                    file:write('['..key..'c3_val]'..nz(strips[s][p].controls[c].eqbands[bc].c3_val,'')..'\n')                                 
+                    file:write('['..key..'c4_val]'..nz(strips[s][p].controls[c].eqbands[bc].c4_val,'')..'\n')                                 
+                    file:write('['..key..'c5_val]'..nz(strips[s][p].controls[c].eqbands[bc].c5_val,'')..'\n')                                 
+
+                    file:write('['..key..'freq_min]'..nz(strips[s][p].controls[c].eqbands[bc].freq_min,'')..'\n')                                 
+                    file:write('['..key..'freq_max]'..nz(strips[s][p].controls[c].eqbands[bc].freq_max,'')..'\n')
+                    file:write('['..key..'gain_min]'..nz(strips[s][p].controls[c].eqbands[bc].gain_min,'')..'\n')                                 
+                    file:write('['..key..'gain_max]'..nz(strips[s][p].controls[c].eqbands[bc].gain_max,'')..'\n')
+                    file:write('['..key..'bandtype]'..nz(strips[s][p].controls[c].eqbands[bc].bandtype,'')..'\n')                                 
+                    file:write('['..key..'bandname]'..nz(strips[s][p].controls[c].eqbands[bc].bandname,'')..'\n')                    
+                    file:write('['..key..'khz]'..nz(tostring(strips[s][p].controls[c].eqbands[bc].khz),tostring(false))..'\n')                    
+                    file:write('['..key..'gaininv]'..nz(tostring(strips[s][p].controls[c].eqbands[bc].gain_inv),tostring(false))..'\n')                    
+                    file:write('['..key..'qinv]'..nz(tostring(strips[s][p].controls[c].eqbands[bc].q_inv),tostring(false))..'\n')                    
+                    file:write('['..key..'gmin]'..nz(strips[s][p].controls[c].eqbands[bc].gmin,'')..'\n')                                 
+                    file:write('['..key..'gmax]'..nz(strips[s][p].controls[c].eqbands[bc].gmax,'')..'\n')                                 
+
+                    file:write('['..key..'freq_def]'..nz(strips[s][p].controls[c].eqbands[bc].freq_def,'')..'\n')                                 
+                    file:write('['..key..'gain_def]'..nz(strips[s][p].controls[c].eqbands[bc].gain_def,'')..'\n')                                 
+                    file:write('['..key..'q_def]'..nz(strips[s][p].controls[c].eqbands[bc].q_def,'')..'\n')                                 
+                    file:write('['..key..'c1_def]'..nz(strips[s][p].controls[c].eqbands[bc].c1_def,'')..'\n')                                 
+                    file:write('['..key..'c2_def]'..nz(strips[s][p].controls[c].eqbands[bc].c2_def,'')..'\n')                                 
+                    file:write('['..key..'c3_def]'..nz(strips[s][p].controls[c].eqbands[bc].c3_def,'')..'\n')                                 
+                    file:write('['..key..'c4_def]'..nz(strips[s][p].controls[c].eqbands[bc].c4_def,'')..'\n')                                 
+                    file:write('['..key..'c5_def]'..nz(strips[s][p].controls[c].eqbands[bc].c5_def,'')..'\n')                                 
+                    
+                    local key = pfx..'c_'..c..'_eqband_'..bc..'_'
+                    if strips[s][p].controls[c].eqbands[bc].lookmap then
+                      local lcnt = #strips[s][p].controls[c].eqbands[bc].lookmap
+                      file:write('['..key..'lookmap_cnt]'..lcnt..'\n')
+                      
+                      if lcnt > 0 then
+                        for lc = 1, lcnt do
+                          local key = pfx..'c_'..c..'_eqband_'..bc..'_lm_'..lc..'_'
+                          file:write('['..key..'pix]'..nz(strips[s][p].controls[c].eqbands[bc].lookmap[lc].pix,'')..'\n')                                 
+                          file:write('['..key..'hz]'..nz(strips[s][p].controls[c].eqbands[bc].lookmap[lc].hz,'')..'\n')                                 
+                        end
+                      end
+                    
+                    else
+                      file:write('['..key..'lookmap_cnt]'..0 ..'\n')                    
+                    end
+
+                    local key = pfx..'c_'..c..'_eqband_'..bc..'_'
+                    if strips[s][p].controls[c].eqbands[bc].gmap then
+                      local lcnt = #strips[s][p].controls[c].eqbands[bc].gmap
+                      file:write('['..key..'gmap_cnt]'..lcnt..'\n')
+                      
+                      if lcnt > 0 then
+                        for lc = 1, lcnt do
+                          local key = pfx..'c_'..c..'_eqband_'..bc..'_gm_'..lc..'_'
+                          file:write('['..key..'pix]'..nz(strips[s][p].controls[c].eqbands[bc].gmap[lc].pix,'')..'\n')                                 
+                          file:write('['..key..'db]'..nz(strips[s][p].controls[c].eqbands[bc].gmap[lc].db,'')..'\n')                                 
+                        end
+                      end
+                    
+                    else
+                      file:write('['..key..'gmap_cnt]'..0 ..'\n')                    
+                    end
+                                                     
+                  end
+                  
+                end
+              else
+                file:write('['..key..'eqband_cnt]'..0 ..'\n')                                 
+              end
+
+              if strips[s][p].controls[c].eqgraph and type(strips[s][p].controls[c].eqgraph) == 'table' then
+
+                local key = pfx..'c_'..c..'_'
+                file:write('['..key..'ecg_graph]'..tostring(true)..'\n')                                               
+                file:write('['..key..'ecg_gmin]'..nz(strips[s][p].controls[c].eqgraph.gmin,'')..'\n')                                 
+                file:write('['..key..'ecg_gmax]'..nz(strips[s][p].controls[c].eqgraph.gmax,'')..'\n')                                 
+                file:write('['..key..'ecg_posmin]'..nz(strips[s][p].controls[c].eqgraph.posmin,'')..'\n')                                 
+                file:write('['..key..'ecg_posmax]'..nz(strips[s][p].controls[c].eqgraph.posmax,'')..'\n')                                 
+
+                if strips[s][p].controls[c].eqgraph.lookmap then
+                  local lcnt = #strips[s][p].controls[c].eqgraph.lookmap
+                  file:write('['..key..'ecg_lookmap_cnt]'..lcnt..'\n')
+                  
+                  if lcnt > 0 then
+                    for lc = 1, lcnt do
+                      local key = pfx..'c_'..c..'_ecg_lm_'..lc..'_'
+                      file:write('['..key..'pix]'..nz(strips[s][p].controls[c].eqgraph.lookmap[lc].pix,'')..'\n')                                 
+                      file:write('['..key..'hz]'..nz(strips[s][p].controls[c].eqgraph.lookmap[lc].hz,'')..'\n')                                 
+                    end
+                  end
+                
+                else
+                  file:write('['..key..'ecg_lookmap_cnt]'..0 ..'\n')                    
+                end
+
+                local key = pfx..'c_'..c..'_'
+                if strips[s][p].controls[c].eqgraph.gmap then
+                  local lcnt = #strips[s][p].controls[c].eqgraph.gmap
+                  file:write('['..key..'ecg_gmap_cnt]'..lcnt..'\n')
+                  
+                  if lcnt > 0 then
+                    for lc = 1, lcnt do
+                      local key = pfx..'c_'..c..'_ecg_gm_'..lc..'_'
+                      file:write('['..key..'pix]'..nz(strips[s][p].controls[c].eqgraph.gmap[lc].pix,'')..'\n')                                 
+                      file:write('['..key..'db]'..nz(strips[s][p].controls[c].eqgraph.gmap[lc].db,'')..'\n')                                 
+                    end
+                  end
+                
+                else
+                  file:write('['..key..'ecg_gmap_cnt]'..0 ..'\n')
+                end
+                
+              end
+
+            end
+          end        
+
+          if #strips[s][p].graphics > 0 then
+            for g = 1, #strips[s][p].graphics do
+
+              local key = pfx..'g_'..g..'_'
+          
+              file:write('['..key..'fn]'..strips[s][p].graphics[g].fn..'\n')
+              --file:write('['..key..'imageidx]'..strips[s][p].graphics[g].imageidx..'\n')
               file:write('['..key..'x]'..strips[s][p].graphics[g].x..'\n')
               file:write('['..key..'y]'..strips[s][p].graphics[g].y..'\n')
               file:write('['..key..'w]'..strips[s][p].graphics[g].w..'\n')
@@ -31581,21 +32876,23 @@ end
           file:write('['..key..'graphics_count]'..0 ..'\n')          
         end      
       
-      end
+      --end
     
     end
 
     --file:write(pickled_table)
-    if nofile == true then
+    --[[if nofile == true then
       file:close()
       reaper.SetProjExtState(0,SCRIPT,'strips_count',#strips) 
       reaper.SetProjExtState(0,SCRIPT,'strips_datafile_'..string.format("%03d",s),fn) 
-    end
+    end]]
         
     --DBG('Save strip time: '..reaper.time_precise() - t)
     return reaper.time_precise() - t
-
+  
   end
+  
+  
       
   function SaveEditedData()
     for i, v in pairs(g_edstrips) do 
@@ -34157,7 +35454,11 @@ end
   LoadFontList()
     
   --copyfile('C:/Users/HMSStudio/AppData/Roaming/REAPER/Scripts/LBX/LBXCS_resources/controls/__default.png', 'C:/Users/HMSStudio/AppData/Roaming/REAPER/Scripts/LBX/LBXCS_resources/controls/cpcpcpcpcpc.png')  
-    
+  
+  reaper.RecursiveCreateDirectory(sets_path,1)
+  reaper.RecursiveCreateDirectory(icon_path,1)
+  reaper.RecursiveCreateDirectory(actiondump_path,1)
+  reaper.RecursiveCreateDirectory(projsave_path,1)  
   reaper.RecursiveCreateDirectory(paths_path,1)
   reaper.RecursiveCreateDirectory(eqbands_path,1)
   reaper.RecursiveCreateDirectory(eq_path,1)
