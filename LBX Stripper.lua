@@ -29966,6 +29966,7 @@ end
         if strip.controls[c].maxdp == nil or (strip.controls[c].maxdp and strip.controls[c].maxdp == '') then
           strip.controls[c].maxdp = -1
         end
+        --DBG(data[key..'fxname'])
         strip.controls[c].xsc = strip.controls[c].x + strip.controls[c].w/2 - (strip.controls[c].w*strip.controls[c].scale)/2
         strip.controls[c].ysc = strip.controls[c].y + strip.controls[c].ctl_info.cellh/2 - (strip.controls[c].ctl_info.cellh*strip.controls[c].scale)/2
         strip.controls[c].wsc = strip.controls[c].w*strip.controls[c].scale
@@ -32612,7 +32613,7 @@ end
                 file:write('['..key..'cycledata_posdirty]'..tostring(nz(strips[s][p].controls[c].cycledata.posdirty,false))..'\n')
                 if nz(strips[s][p].controls[c].cycledata.statecnt,0) > 0 then
                   for i = 1, strips[s][p].controls[c].cycledata.statecnt do
-                    local key = pfx..'p'..p..'c_'..c..'_cyc_'..i..'_'
+                    local key = pfx..'c_'..c..'_cyc_'..i..'_'
                     file:write('['..key..'val]'..nz(strips[s][p].controls[c].cycledata[i].val,0)..'\n')   
                     file:write('['..key..'dispval]'..nz(strips[s][p].controls[c].cycledata[i].dispval,'')..'\n')   
                     file:write('['..key..'dv]'..nz(strips[s][p].controls[c].cycledata[i].dv,'')..'\n')   
