@@ -126,7 +126,7 @@
               midiout_chan = 93,
               midiout_msg = 94,
               snap_move = 95,
-              snapshot_rand = 96,              
+              snapshot_rand = 96, 
               dummy = 99
               }
   
@@ -143,7 +143,8 @@
              macro = 10,
              eqcontrol = 11,
              switcher = 12,
-             snapshotrand = 13}
+             snapshotrand = 13,
+             fxgui = 14}
              
   gfxtype = {img = 0,
              txt = 1
@@ -2622,9 +2623,16 @@
       if dragparam.type == 'track' then
         local ccats = ctlcats.fxparam
         local cts = ctltype_select
-        if trackfxparam_select >= #trackfxparams then
+        local spv = show_paramval
+        local toff = textoff_select
+        if trackfxparam_select == #trackfxparams-1 then
           ccats = ctlcats.fxoffline
           cts = 2
+        elseif trackfxparam_select == #trackfxparams then
+          ccats = ctlcats.fxgui
+          cts = 2
+          spv = false
+          toff = 8
         end
         strips[strip][page].controls[ctlnum] = {c_id = GenID(),
                                                 ctlcat = ccats,
@@ -2650,10 +2658,10 @@
                                                 wsc = w*scale_select,
                                                 hsc = ctl_files[knob_select].cellh*scale_select,
                                                 show_paramname = show_paramname,
-                                                show_paramval = show_paramval,
+                                                show_paramval = spv,
                                                 ctlname_override = '',
                                                 textcol = textcol_select,
-                                                textoff = textoff_select,
+                                                textoff = toff,
                                                 textoffval = textoffval_select,
                                                 textoffx = textoff_selectx,
                                                 textoffvalx = textoffval_selectx,
@@ -4119,6 +4127,9 @@
       local p = #trackfxparams+1
       trackfxparams[p] = {paramnum = p,
                           paramname = 'Offline'}
+      p=p+1
+      trackfxparams[p] = {paramnum = p,
+                          paramname = 'Open GUI'}      
     end
   end
   
@@ -6520,7 +6531,7 @@ end
                   Disp_ParamV = ''
                   if v > -1 then
                     if snapshots and snapshots[strip] and snapshots[strip][page][param] and snapshots[strip][page][param].selected then
-                      if param == 1 then                      
+                      if param == 1 then 
                         if snapshots[strip][page][param][snapshots[strip][page][param].selected] then
                           Disp_ParamV = snapshots[strip][page][param][snapshots[strip][page][param].selected].name
                         end
@@ -6531,7 +6542,7 @@ end
                       end
                     end
                   end
-                elseif ctlcat == ctlcats.xy or ctlcat == ctlcats.snapshotrand then
+                elseif ctlcat == ctlcats.xy or ctlcat == ctlcats.snapshotrand or ctlcat == ctlcats.fxgui then
                   if nz(ctlnmov,'') == '' then
                     Disp_Name = pname
                   else
@@ -11687,11 +11698,26 @@ end
           Snapshot_RANDOMIZE(strip, page, sst, true)
         end
       
+      elseif cc == ctlcats.fxgui then
+      
+        OpenFXGUI(ctl)
+        
       end
       if ctl.midiout then SendMIDIMsg(ctl.midiout,val) end
 
     end
       
+  end
+  
+  function OpenFXGUI(ctl)
+    local track
+    if ctl.tracknum == nil then
+      track = GetTrack(tracks[track_select].tracknum)
+    else
+      track = GetTrack(ctl.tracknum)                      
+    end
+    local fxnum = ctl.fxnum
+    reaper.TrackFX_Show(track, fxnum, 3)  
   end
   
 ------------------------------------------------------------
@@ -13241,7 +13267,10 @@ end
       end
       
       for j = 1, #stripdata.strip.controls do
-        if (stripdata.strip.controls[j].ctlcat == ctlcats.fxparam or stripdata.strip.controls[j].ctlcat == ctlcats.fxoffline) and stripdata.strip.controls[j].fxguid then
+        if (stripdata.strip.controls[j].ctlcat == ctlcats.fxparam 
+            or stripdata.strip.controls[j].ctlcat == ctlcats.fxoffline
+            or stripdata.strip.controls[j].ctlcat == ctlcats.fxgui) 
+            and stripdata.strip.controls[j].fxguid then
           if stripdata.version == 3 then
             stripdata.strip.controls[j].fxguid = '{'..stripdata.strip.controls[j].fxguid..'}'
           end
@@ -13614,11 +13643,8 @@ end
         
         elseif strips[strip][page].controls[j].ctlcat == ctlcats.snapshotrand then
           if paramchange[strips[strip][page].controls[j].param] then
-          DBG(strips[strip][page].controls[j].param_info.paramname..': '..tostring(strips[strip][page].controls[j].param))
-          DBG(paramchange[strips[strip][page].controls[j].param])
             strips[strip][page].controls[j].param = paramchange[strips[strip][page].controls[j].param]
             strips[strip][page].controls[j].param_info.paramidx = paramchange[strips[strip][page].controls[j].param]
-          DBG(strips[strip][page].controls[j].param_info.paramname..': '..tostring(strips[strip][page].controls[j].param))
           end
         end
       end
@@ -14210,7 +14236,8 @@ end
                                       tracks[track_select].strip, p, c)                      
                 if tr_found then
                   tr2 = GetTrack(strips[tracks[track_select].strip][p].controls[c].tracknum)
-                  if strips[tracks[track_select].strip][p].controls[c].ctlcat == ctlcats.fxparam or strips[tracks[track_select].strip][p].controls[c].ctlcat == ctlcats.fxoffline then
+                  if strips[tracks[track_select].strip][p].controls[c].ctlcat == ctlcats.fxparam or strips[tracks[track_select].strip][p].controls[c].ctlcat == ctlcats.fxoffline 
+                     or strips[tracks[track_select].strip][p].controls[c].ctlcat == ctlcats.fxgui then
                     if strips[tracks[track_select].strip][p].controls[c].fxguid == reaper.TrackFX_GetFXGUID(tr2, nz(strips[tracks[track_select].strip][p].controls[c].fxnum,-1)) then
                       --fx found
                       strips[tracks[track_select].strip][p].controls[c].fxfound = true
@@ -14274,7 +14301,8 @@ end
                   
                 end              
               else
-                if strips[tracks[track_select].strip][p].controls[c].ctlcat == ctlcats.fxparam or strips[tracks[track_select].strip][p].controls[c].ctlcat == ctlcats.fxoffline then
+                if strips[tracks[track_select].strip][p].controls[c].ctlcat == ctlcats.fxparam or strips[tracks[track_select].strip][p].controls[c].ctlcat == ctlcats.fxoffline 
+                   or strips[tracks[track_select].strip][p].controls[c].ctlcat == ctlcats.fxgui then
                   if strips[tracks[track_select].strip][p].controls[c].fxguid == reaper.TrackFX_GetFXGUID(tr2, nz(strips[tracks[track_select].strip][p].controls[c].fxnum,-1)) then
                     --fx found
                     strips[tracks[track_select].strip][p].controls[c].fxfound = true
@@ -16205,7 +16233,8 @@ end
               ctl.midiout = nil
               
             elseif res == 6 then
-              local track
+              OpenFXGUI(strips[tracks[track_select].strip][page].controls[i])
+              --[[local track
               if strips[tracks[track_select].strip][page].controls[i].tracknum == nil then
                 track = GetTrack(tracks[track_select].tracknum)
               else
@@ -16214,7 +16243,7 @@ end
               local fxnum = strips[tracks[track_select].strip][page].controls[i].fxnum
               if not reaper.TrackFX_GetOpen(track, fxnum) then
                 reaper.TrackFX_Show(track, fxnum, 3)
-              end
+              end]]
             elseif res == 7 then
               Envelope_Add(tracks[track_select].strip,page,i)
             elseif res == 8 then
@@ -19364,6 +19393,7 @@ end
                        h = ctl.hsc} 
           end
           if i and not ctls[i].hidden then
+          
             if ctls[i].fxfound then
               if MOUSE_click(ctlxywh) and not mouse.ctrl and not mouse.alt then
                 local ctltype = ctls[i].ctltype
@@ -19700,7 +19730,8 @@ end
               
                 if ctls[i].ctlcat == ctlcats.fxparam or 
                    ctls[i].ctlcat == ctlcats.fxoffline then
-                  local track
+                  OpenFXGUI(ctls[i])
+                  --[[local track
                   if ctls[i].tracknum == nil then
                     track = GetTrack(tracks[track_select].tracknum)
                   else
@@ -19709,7 +19740,7 @@ end
                   local fxnum = ctls[i].fxnum
                   if not reaper.TrackFX_GetOpen(track, fxnum) then
                     reaper.TrackFX_Show(track, fxnum, 3)
-                  end
+                  end]]
                 end
                                 
               elseif MOUSE_click(ctlxywh) and mouse.ctrl then --make double_click?
