@@ -125,7 +125,8 @@
               tfxo_shift = 92,
               midiout_chan = 93,
               midiout_msg = 94,
-              snap_move = 95,              
+              snap_move = 95,
+              snapshot_rand = 96,              
               dummy = 99
               }
   
@@ -141,7 +142,8 @@
              fxoffline = 9,
              macro = 10,
              eqcontrol = 11,
-             switcher = 12}
+             switcher = 12,
+             snapshotrand = 13}
              
   gfxtype = {img = 0,
              txt = 1
@@ -769,6 +771,8 @@
       
         RepopulateGFX()
         RepopulateControls()
+        PopulateStrips()
+        
       end
     
     end    
@@ -3275,6 +3279,62 @@
                                                 poslock = false,
                                                 knobsens = settings_defknobsens,
                                                 eqgraph = def_graph
+                                               }
+
+      elseif dragparam.type == 'snaprand' then
+        local pname = 'RND PAGE'
+        if sstype_select > 1 then
+          pname = 'RND '..snapshots[strip][page][sstype_select].subsetname
+        end
+        
+        strips[strip][page].controls[ctlnum] = {c_id = GenID(),
+                                                ctlcat = ctlcats.snapshotrand,
+                                                fxname='Snapshot Randomize',
+                                                fxguid=nil, 
+                                                fxnum=nil, 
+                                                fxfound = true,
+                                                param = sstype_select,
+                                                param_info = {paramname = pname,
+                                                              paramidx = sstype_select},
+                                                ctltype = 2,
+                                                knob_select = knob_select,
+                                                ctl_info = {fn = ctl_files[knob_select].fn,
+                                                            frames = ctl_files[knob_select].frames,
+                                                            imageidx = ctl_files[knob_select].imageidx, 
+                                                            cellh = ctl_files[knob_select].cellh},
+                                                x = x,
+                                                y = y,
+                                                w = w,
+                                                poslock = false,
+                                                scale = 1,
+                                                xsc = x + math.floor(w/2 - (w*1)/2),
+                                                ysc = y + math.floor(ctl_files[knob_select].cellh/2 - (ctl_files[knob_select].cellh*1)/2),
+                                                wsc = w*1,
+                                                hsc = ctl_files[knob_select].cellh*1,
+                                                show_paramname = show_paramname,
+                                                show_paramval = false,
+                                                ctlname_override = '',
+                                                textcol = textcol_select,
+                                                textoff = 8,
+                                                textoffval = -6.0,
+                                                textoffx = textoff_selectx,
+                                                textoffvalx = textoffval_selectx,
+                                                textsize = textsize_select,
+                                                val = 0,
+                                                defval = 0,
+                                                maxdp = maxdp_select,
+                                                cycledata = {statecnt = 0,val = 0,mapptof = false,draggable = false,spread = false, {}},
+                                                xydata = {snapa = 1, snapb = 1, snapc = 1, snapd = 1, x = 0.5, y = 0.5},
+                                                membtn = {state = false,
+                                                          mem = nil},
+                                                id = nil,
+                                                tracknum = nil,
+                                                trackguid = nil,
+                                                scalemode = 8,
+                                                framemode = 1,
+                                                horiz = horiz_select,
+                                                poslock = false,
+                                                knobsens = settings_defknobsens
                                                }
       end
     end  
@@ -6471,7 +6531,7 @@ end
                       end
                     end
                   end
-                elseif ctlcat == ctlcats.xy then
+                elseif ctlcat == ctlcats.xy or ctlcat == ctlcats.snapshotrand then
                   if nz(ctlnmov,'') == '' then
                     Disp_Name = pname
                   else
@@ -11579,6 +11639,7 @@ end
         track = GetTrack(ctl.tracknum)
       end
       local cc = ctl.ctlcat
+
       if cc == ctlcats.fxparam then
         local fxnum = ctl.fxnum
         local param = ctl.param
@@ -11618,6 +11679,15 @@ end
         
       elseif cc == ctlcats.macro then
         SetMacro(strip, page, c)
+
+      elseif cc == ctlcats.snapshotrand then
+        
+        local sst = ctl.param
+        DBG(sst)
+        if sst then
+          Snapshot_RANDOMIZE(strip, page, sst, true)
+        end
+      
       end
       if ctl.midiout then SendMIDIMsg(ctl.midiout,val) end
 
@@ -12594,14 +12664,18 @@ end
       --  DBG(t)
       --end
       file:close()
-      return nil
 
+      OpenMsgBox(1,'Strip saved.',1)
+      
     else
       return nil
     end
+    PopulateStrips()
 
+  end
+      
     --OLD NEVER RUNS
-
+--[[
     if fn and string.len(fn)>0 then
       local tr = GetTrack(strips[tracks[track_select].strip].track.tracknum)
       local i, j
@@ -12724,9 +12798,9 @@ end
       OpenMsgBox(1,'Strip saved.',1)
 
     end
-    PopulateStrips()
+    PopulateStrips()]]
     
-  end
+  --end
 
   --[[function SaveStrip2(fn)
 
@@ -13538,6 +13612,15 @@ end
         elseif strips[strip][page].controls[j].ctlcat == ctlcats.xy then
             strips[strip][page].controls[j].param = paramchange[strips[strip][page].controls[j].param]
             strips[strip][page].controls[j].param_info.paramidx = paramchange[strips[strip][page].controls[j].param]
+        
+        elseif strips[strip][page].controls[j].ctlcat == ctlcats.snapshotrand then
+          if paramchange[strips[strip][page].controls[j].param] then
+          DBG(strips[strip][page].controls[j].param_info.paramname..': '..tostring(strips[strip][page].controls[j].param))
+          DBG(paramchange[strips[strip][page].controls[j].param])
+            strips[strip][page].controls[j].param = paramchange[strips[strip][page].controls[j].param]
+            strips[strip][page].controls[j].param_info.paramidx = paramchange[strips[strip][page].controls[j].param]
+          DBG(strips[strip][page].controls[j].param_info.paramname..': '..tostring(strips[strip][page].controls[j].param))
+          end
         end
       end
     end  
@@ -20018,6 +20101,10 @@ end
     elseif mouse.context and mouse.context == contexts.addxyctl then
       dragparam = {x = mouse.mx-ksel_size.w, y = mouse.my-ksel_size.h, type = 'xyctl'}
       update_gfx = true
+
+    elseif mouse.context and mouse.context == contexts.snapshot_rand then
+      dragparam = {x = mouse.mx-ksel_size.w, y = mouse.my-ksel_size.h, type = 'snaprand'}
+      update_surface = true
     
     elseif mouse.context and mouse.context == contexts.resizesnapwindow then
 
@@ -24147,6 +24234,22 @@ end
           Snapshot_RANDOMIZE(tracks[track_select].strip, page, sstype_select, respectminmax)
           update_ctls = true --to update snapshot ctls
         end  
+
+      elseif mouse.context == nil and MOUSE_click_RB(obj.sections[169]) then
+
+        knob_select = def_boxctl
+        if ctl_files[knob_select].imageidx ~= nil then
+          local w,_ = gfx.getimgdim(ctl_files[knob_select].imageidx)
+          local h = ctl_files[knob_select].cellh
+          if w == 0 or h == 0 then
+            ksel_size = {w = 50, h = 50}
+          else
+           ksel_size = {w = w/2, h = h/2}
+          end
+        else 
+          ksel_size = {w = 50, h = 50}
+        end
+        mouse.context = contexts.snapshot_rand
 
       elseif mouse.context == nil and MOUSE_click(obj.sections[224]) then
         if sstype_select > 1 then
@@ -33556,7 +33659,8 @@ end
       for c = 1, #strips[strip][page].controls do
       
         if strips[strip][page].controls[c].ctlcat == ctlcats.snapshot or 
-           strips[strip][page].controls[c].ctlcat == ctlcats.xy then
+           strips[strip][page].controls[c].ctlcat == ctlcats.xy or 
+           strips[strip][page].controls[c].ctlcat == ctlcats.snapshotrand then
           if strips[strip][page].controls[c].param == sst then
             ctl_select[#ctl_select+1] = {ctl = c} 
           elseif strips[strip][page].controls[c].param > sst then
