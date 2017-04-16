@@ -11683,7 +11683,6 @@ end
       elseif cc == ctlcats.snapshotrand then
         
         local sst = ctl.param
-        DBG(sst)
         if sst then
           Snapshot_RANDOMIZE(strip, page, sst, true)
         end
