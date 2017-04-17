@@ -3394,6 +3394,8 @@
   function PopGfxFolder(folnum)
   
     graphics_folder_files = {}
+    glist_offset = 0
+    
     gf = 0
     if graphics_files and #graphics_files > 0 then
       for i = 0, #graphics_files do
@@ -3459,6 +3461,8 @@
   function RepopulateGFX()
   
     local gfxtab = {}
+    --glist_offset = 0
+    
     for i = 0, #graphics_files do
       gfxtab[graphics_files[i].fn] = true
     end
