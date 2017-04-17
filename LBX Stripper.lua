@@ -1224,6 +1224,11 @@
                            w = butt_h/2+4,
                            h = butt_h/2+4}
 
+      obj.sections[832] = {x = obj.sections[800].x + obj.sections[800].w/2 + 105 + butt_h,
+                           y = obj.sections[800].y + gofs + (butt_h/2+13)*6 -20,
+                           w = butt_h/2+4,
+                           h = butt_h/2+4}
+
       obj.sections[818] = {x = obj.sections[800].x + 60,
                            y = obj.sections[800].y + gofs + (butt_h/2+8) - 4,
                            w = gsw,
@@ -4918,6 +4923,12 @@
         end
         GUI_DrawButton(gui, mdptxt, obj.sections[817], gui.color.white, gui.color.black, true, 'MAX DP')
         GUI_DrawTick(gui, 'NUMERIC ONLY', obj.sections[827], gui.color.white, nz(gauge_select.numonly, false))
+        local xywh = {x = obj.sections[832].x,
+                      y = obj.sections[832].y-butt_h,
+                      w = 1,
+                      h = butt_h}
+        GUI_textC(gui,xywh,'1000 = 1k',gui.color.white,-5)
+        GUI_DrawTick(gui, '', obj.sections[832], gui.color.white, nz(gauge_select.abbrev, false))
         
         if ctl.ctltype == 4 then
           GUI_DrawButton(gui, 'COPY CYCLE DATA', obj.sections[818], gui.color.white, gui.color.black, true)
@@ -5308,7 +5319,7 @@
             if gtab.numonly then
               nonly = ''
             end        
-            gtab.vals[i].dover = roundX(dval, gtab.val_dp, nonly)
+            gtab.vals[i].dover = roundX(dval, gtab.val_dp, nonly, gtab.abbrev)
           end
         end
         
@@ -5346,6 +5357,7 @@
               spread = gt.spread,
               mapptof = gt.mapptof,
               numonly = gt.numonly,
+              abbrev = gt.abbrev,
               val = 0}
                   
       if gt.vals and #gt.vals > 0 then
@@ -6073,7 +6085,7 @@
     --end
   end
 
-  function roundX(num, idp, suffix)
+  function roundX(num, idp, suffix, abbrev)
     local s, e = string.find(num,'%d+.%d+')
     if s and e then  
       local n = string.sub(num,s,e)
@@ -6082,6 +6094,14 @@
         local res = math.floor(n * mult + 0.5) / mult
         if idp == 0 then
           res = string.match(tostring(res),'%d+')
+          if abbrev == true then
+            if tonumber(res) >= 1000 then
+              res = string.gsub(tonumber(res)/1000,'%.','k')
+              if tonumber(string.match(res, 'k(.*)')) == 0 then
+                res = string.match(res, '(.-k).*')
+              end
+            end
+          end
         end
         if suffix then
           local pfx = ''
@@ -20408,6 +20428,14 @@ end
         for i = 1, #ctl_select do
         end            
         update_surface = true
+
+      elseif mouse.context == nil and MOUSE_click(obj.sections[832]) then
+      
+        gauge_select.abbrev = not gauge_select.abbrev
+        Gauge_RecalcTickVals()
+        for i = 1, #ctl_select do
+        end            
+        update_surface = true
               
       elseif mouse.context == nil and MOUSE_click_RB(obj.sections[806]) then       
       
@@ -30173,6 +30201,7 @@ end
           strip.controls[c].gauge.spread = tobool(zn(data[key..'gauge_spread']))
           strip.controls[c].gauge.mapptof = tobool(zn(data[key..'gauge_mapptof']))
           strip.controls[c].gauge.numonly = tobool(zn(data[key..'gauge_numonly']))
+          strip.controls[c].gauge.abbrev = tobool(zn(data[key..'gauge_abbrev'],false))
           strip.controls[c].gauge.vals = {}
           
           local gcnt = tonumber(zn(data[key..'gauge_valcnt']))
@@ -32787,6 +32816,7 @@ end
                 file:write('['..key..'gauge_spread]'..tostring(nz(strips[s][p].controls[c].gauge.spread,''))..'\n')
                 file:write('['..key..'gauge_mapptof]'..tostring(nz(strips[s][p].controls[c].gauge.mapptof,''))..'\n')
                 file:write('['..key..'gauge_numonly]'..tostring(nz(strips[s][p].controls[c].gauge.numonly,''))..'\n')
+                file:write('['..key..'gauge_abbrev]'..tostring(nz(strips[s][p].controls[c].gauge.abbrev,''))..'\n')
                 file:write('['..key..'gauge_valcnt]'..#strips[s][p].controls[c].gauge.vals..'\n')
               
                 if strips[s][p].controls[c].gauge.vals and #strips[s][p].controls[c].gauge.vals > 0 then
@@ -34591,7 +34621,8 @@ end
                 nudge = 0,
                 spread = nil,
                 mapptof = nil,
-                numonly = false}
+                numonly = false,
+                abbrev = false}
     return gs
     
   end
