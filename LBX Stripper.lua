@@ -17,9 +17,10 @@
   submode_table = {'FX PARAMS','GRAPHICS','STRIPS'}
   xxymode_table = {'SNAPSHOTS','PATHS'}
   ctltype_table = {'KNOB/SLIDER','BUTTON','BUTTON INV','CYCLE BUTTON','METER','MEM BUTTON','MOMENT BTN','MOMENT INV','FLASH BUTTON','FLASH INV'}
-  trctltype_table = {'Track Controls','Track Sends','Actions & Meters'}
+  trctltype_table = {'Track Controls','Track Sends','Track Meters','Other Controls'}
   --special_table = {'Action Trigger','Peak Meter L','Peak Meter R','Clip Indicator L','Clip Indicator R'}
-  special_table = {'Action Trigger'}
+  special_table = {}
+  otherctl_table = {'Action Trigger','Macro Control','EQ Engine','Strip Switcher','ReaControlMidi Switch'}
   scalemode_preset_table = {'','NORMAL','REAPER VOL'}
   scalemode_table = {1/8,1/7,1/6,1/5,1/4,1/3,1/2,1,2,3,4,5,6,7,8}
   scalemode_dtable = {'1/8','1/7','1/6','1/5','1/4','1/3','1/2','1','2','3','4','5','6','7','8'}
@@ -126,7 +127,9 @@
               midiout_chan = 93,
               midiout_msg = 94,
               snap_move = 95,
-              snapshot_rand = 96, 
+              snapshot_rand = 96,
+              dragparam_other = 97, 
+              dd = 98,
               dummy = 99
               }
   
@@ -144,7 +147,8 @@
              eqcontrol = 11,
              switcher = 12,
              snapshotrand = 13,
-             fxgui = 14}
+             fxgui = 14,
+             rcm_switch = 15}
              
   gfxtype = {img = 0,
              txt = 1
@@ -2696,6 +2700,65 @@
           strips[strip][page].controls[ctlnum].tracknum = nil
           strips[strip][page].controls[ctlnum].trackguid = nil         
         end
+
+      elseif dragparam.type == 'rcmswitch' then
+        local ccats = ctlcats.rcm_switch
+        local cts = 5
+        local spv = true
+        local toff = textoff_select
+        strips[strip][page].controls[ctlnum] = {c_id = GenID(),
+                                                ctlcat = ccats,
+                                                fxname='RCM Switch',
+                                                fxguid=nil, 
+                                                fxnum=nil, 
+                                                fxfound = false,
+                                                param = -1,
+                                                param_info = {paramname = 'RCM (Unassigned)',
+                                                              paramidx = nil},
+                                                ctltype = cts,
+                                                knob_select = knob_select,
+                                                ctl_info = {fn = ctl_files[knob_select].fn,
+                                                            frames = ctl_files[knob_select].frames,
+                                                            imageidx = ctl_files[knob_select].imageidx, 
+                                                            cellh = ctl_files[knob_select].cellh},
+                                                x = x,
+                                                y = y,
+                                                w = w,
+                                                poslock = false,
+                                                scale = scale_select,
+                                                xsc = x + math.floor(w/2 - (w*scale_select)/2),
+                                                ysc = y + math.floor(ctl_files[knob_select].cellh/2 - (ctl_files[knob_select].cellh*scale_select)/2),
+                                                wsc = w*scale_select,
+                                                hsc = ctl_files[knob_select].cellh*scale_select,
+                                                show_paramname = show_paramname,
+                                                show_paramval = spv,
+                                                ctlname_override = '',
+                                                textcol = textcol_select,
+                                                textoff = toff,
+                                                textoffval = textoffval_select,
+                                                textoffx = textoff_selectx,
+                                                textoffvalx = textoffval_selectx,
+                                                textsize = textsize_select,
+                                                val = 0,
+                                                defval = 0,
+                                                maxdp = maxdp_select,
+                                                cycledata = {statecnt = 0,val = 0,mapptof = false,draggable = false,spread = false, {}},
+                                                xydata = {snapa = 1, snapb = 1, snapc = 1, snapd = 1, x = 0.5, y = 0.5},
+                                                membtn = {state = false,
+                                                          mem = nil},
+                                                id = nil,
+                                                tracknum = tracks[trackedit_select].tracknum,
+                                                trackguid = tracks[trackedit_select].guid,
+                                                scalemode = 8,
+                                                framemode = 1,
+                                                horiz = horiz_select,
+                                                knobsens = settings_defknobsens
+                                                }
+        if track_select == trackedit_select then
+          strips[strip][page].controls[ctlnum].tracknum = nil
+          strips[strip][page].controls[ctlnum].trackguid = nil         
+        end
+
       elseif dragparam.type == 'learn' then
         strips[strip][page].controls[ctlnum] = {c_id = GenID(),
                                                 ctlcat = ctlcats.fxparam,
@@ -3935,7 +3998,7 @@
 
   function PopulateSpecial()
   
-    special_table = {'Action Trigger','Macro Control','EQ Engine','Strip Switcher'}
+    special_table = {}
     local trn = trackedit_select
     local tr
     if trn == -1 then
@@ -3944,7 +4007,7 @@
       tr = reaper.GetTrack(0, trn)
     end
     local nchan = reaper.GetMediaTrackInfo_Value(tr, 'I_NCHAN')
-    special_offs = #special_table+1
+    special_offs = 1 --#special_table+1
     for i = 0, nchan-1 do
       special_table[i+special_offs] = 'Peak Meter Ch'..i+1
       special_table[i+special_offs+nchan] = 'Clip Indicator Ch'..i+1
@@ -4484,11 +4547,11 @@
         --track sends
         tbl = trsends_table
       elseif trctltype_select == 2 then
-        --Special
+        --track meters
         tbl = special_table
       elseif trctltype_select == 3 then
-        --track h/w outs
-      
+        --other controls
+        tbl = otherctl_table
       end
       
       if trctltype_select == 0 then
@@ -4536,7 +4599,7 @@
             break
           end
         end      
-      elseif trctltype_select == 2 then
+      elseif trctltype_select == 2 or trctltype_select == 3 then
         for i = 1, #tbl do
           --local ii = i-1 + trctlslist_offset
           if tbl[i + trctlslist_offset] then
@@ -4820,6 +4883,85 @@
   end
       
   ------------------------------------------------------------
+
+  function OpenDropDown(idx, ddtab, variwidth)
+  
+    ddlist = ddtab
+    ddlist.idx = idx
+    ddlist.offset = 0
+    ddlist.textsize = -5
+    
+    if variwidth == true then
+      local text_len = 0
+      gfx.setfont(1, gui.fontname, gui.fontsz_knob + ddlist.textsize)
+      
+      for i = 1, #ddlist.items do
+        text_len = math.max(gfx.measurestr(ddlist.items[i]),text_len)
+      end
+      ddlist.w = text_len + ddlist.wpad
+    end
+
+    gfx.setimgdim(996,-1,-1)
+    
+    show_dd = true
+    update_dd = true
+    update_surface = true
+    mouse.context = contexts.dd
+    
+  end
+  
+  function GUI_DrawDropdown(gui, obj)
+  
+    gfx.dest = 996
+    if ddlist and ddlist.items then
+      local size = #ddlist.items
+      if size > 0 then
+        local h = math.min(size*butt_h,obj.sections[10].h)+2
+        if h > gfx1.main_h then 
+          h = gfx1.main_h 
+          size = math.floor(h / butt_h)
+        end
+        ddlist.h = h
+        
+        local w = math.max(ddlist.w,100)
+        ddlist.w = w
+        
+        gfx.setimgdim(996,w+6,h+6)
+        --local x, y = ddlist.x, ddlist.y
+        if ddlist.y + ddlist.h > gfx1.main_h then
+          ddlist.y = gfx1.main_h - ddlist.h
+        end
+        if ddlist.x + ddlist.w > gfx1.main_w then
+          ddlist.x = gfx1.main_w - ddlist.w
+        end
+        
+        --[[gfx.a = 0.2
+        f_Get_SSV(gui.color.black)
+        gfx.rect(4,4,w+2,h+2,1)]]
+                
+        gfx.a = 1
+        gfx.rect(0,0,w+2,h+2,1)
+        f_Get_SSV(gui.color.white)
+        gfx.rect(1,1,w,h,0)
+        
+        local xywh = {x = 1, y = 0, w = w, h = butt_h}
+        for i = 1, size do
+        
+          xywh.y = (i-1)*butt_h +2
+          if ddlist.over == i then
+            f_Get_SSV(gui.color.white)
+            gfx.rect(xywh.x+2,xywh.y+1,xywh.w-4,xywh.h-2,1)
+            GUI_textC_LIM(gui, xywh, ddlist.items[i+ddlist.offset], gui.color.black, -5)            
+          else
+            GUI_textC_LIM(gui, xywh, ddlist.items[i+ddlist.offset], gui.color.white, -5)
+          end   
+        end
+  
+      end
+    end
+    gfx.dest = 1
+    
+  end
 
   function GUI_DrawMIDIOut(gui, obj)
 
@@ -6579,6 +6721,18 @@ end
                   else
                     Disp_Name = ctlnmov
                   end
+                elseif ctlcat == ctlcats.rcm_switch then
+                  if nz(ctlnmov,'') == '' then
+                    Disp_Name = pname
+                  else
+                    Disp_Name = ctlnmov
+                  end
+                  if ctl.rcmdata and ctl.val and ctl.rcmdata[ctl.val] then
+                    Disp_ParamV = ctl.rcmdata[ctl.val].name
+                  else
+                    Disp_ParamV = ''
+                  end
+                  
                 elseif ctlcat == ctlcats.macro then
                   --spv = false
                   Disp_ParamV = round(ctl.val,2)
@@ -10160,6 +10314,16 @@ end
       GUI_DrawMIDIOut(gui, obj)
     end
     
+    if show_dd == true then
+      if update_gfx == true or update_dd == true then
+        GUI_DrawDropdown(gui, obj)
+      end
+      --gfx.blit(1,1,0,ddlist.x,ddlist.y,ddlist.w+6,ddlist.h+6,ddlist.x,ddlist.y)
+      --if update_surface or update_gfx or update_dd then
+        gfx.blit(996,1,0,0,0,ddlist.w+2,ddlist.h+2,ddlist.x,ddlist.y)
+      --end
+    end
+    
     if MS_Open > 0 then
       GUI_DrawMsg(gui, obj)
       
@@ -10203,6 +10367,7 @@ end
     update_eqcontrol = false
     update_macrobutt = false
     update_trackfxorder = false
+    update_dd = false
     
   end
 
@@ -11678,7 +11843,7 @@ end
       if cc == ctlcats.fxparam then
         local fxnum = ctl.fxnum
         local param = ctl.param
-        if fxnum == nil then fnxum = -1 end
+        if fxnum == nil then fxnum = -1 end
         ctl.dirty = true
         local min, max = A_GetParamMinMax(cc,track,ctl,fxnum,param,true,c)
         reaper.TrackFX_SetParam(track, fxnum, param, DenormalizeValue(min, max, val))
@@ -11905,7 +12070,7 @@ end
       
   end
 
-  function SetParam3_Denorm2_Safe2(track, v, strip, page)
+  function SetParam3_Denorm2_Safe2(track, v, strip, page, reaper)
   
     local ctl = strips[strip][page].controls[trackfxparam_select]
     if strips and strips[strip] and ctl then
@@ -13293,7 +13458,8 @@ end
       for j = 1, #stripdata.strip.controls do
         if (stripdata.strip.controls[j].ctlcat == ctlcats.fxparam 
             or stripdata.strip.controls[j].ctlcat == ctlcats.fxoffline
-            or stripdata.strip.controls[j].ctlcat == ctlcats.fxgui) 
+            or stripdata.strip.controls[j].ctlcat == ctlcats.fxgui
+            or stripdata.strip.controls[j].ctlcat == ctlcats.rcm_switch) 
             and stripdata.strip.controls[j].fxguid then
           if stripdata.version == 3 then
             stripdata.strip.controls[j].fxguid = '{'..stripdata.strip.controls[j].fxguid..'}'
@@ -14252,27 +14418,28 @@ end
           
             for c = 1, #strips[tracks[track_select].strip][p].controls do
              
-              strips[tracks[track_select].strip][p].controls[c].offline = nil
+              local ctl = strips[tracks[track_select].strip][p].controls[c]
+              ctl.offline = nil
               
               local tr2 = tr
-              if strips[tracks[track_select].strip][p].controls[c].tracknum ~= nil then
-                tr_found = CheckTrack(tracks[strips[tracks[track_select].strip][p].controls[c].tracknum],
+              if ctl.tracknum ~= nil then
+                tr_found = CheckTrack(tracks[ctl.tracknum],
                                       tracks[track_select].strip, p, c)                      
                 if tr_found then
-                  tr2 = GetTrack(strips[tracks[track_select].strip][p].controls[c].tracknum)
-                  if strips[tracks[track_select].strip][p].controls[c].ctlcat == ctlcats.fxparam or strips[tracks[track_select].strip][p].controls[c].ctlcat == ctlcats.fxoffline 
-                     or strips[tracks[track_select].strip][p].controls[c].ctlcat == ctlcats.fxgui then
-                    if strips[tracks[track_select].strip][p].controls[c].fxguid == reaper.TrackFX_GetFXGUID(tr2, nz(strips[tracks[track_select].strip][p].controls[c].fxnum,-1)) then
+                  tr2 = GetTrack(ctl.tracknum)
+                  if ctl.ctlcat == ctlcats.fxparam or ctl.ctlcat == ctlcats.fxoffline 
+                     or ctl.ctlcat == ctlcats.fxgui or (ctl.ctlcat == ctlcats.rcm_switch and ctl.fxnum ~= nil) then
+                    if ctl.fxguid == reaper.TrackFX_GetFXGUID(tr2, nz(ctl.fxnum,-1)) then
                       --fx found
-                      strips[tracks[track_select].strip][p].controls[c].fxfound = true
+                      ctl.fxfound = true
                       
                     else
                       --find fx by guid
                       local fx_found = false
                       for f = 0, reaper.TrackFX_GetCount(tr2) do
-                        if strips[tracks[track_select].strip][p].controls[c].fxguid == reaper.TrackFX_GetFXGUID(tr2, f) then
+                        if ctl.fxguid == reaper.TrackFX_GetFXGUID(tr2, f) then
                           fx_found = true
-                          strips[tracks[track_select].strip][p].controls[c].fxnum = f
+                          ctl.fxnum = f
                           break
                         end
                       end
@@ -14282,9 +14449,9 @@ end
                         for t = -1, reaper.CountTracks(0)-1 do
                           local tr3 = GetTrack(t)
                           for f = 0, reaper.TrackFX_GetCount(tr3) do
-                            if strips[tracks[track_select].strip][p].controls[c].fxguid == reaper.TrackFX_GetFXGUID(tr3, f) then
+                            if ctl.fxguid == reaper.TrackFX_GetFXGUID(tr3, f) then
                               fx_found = true
-                              local ctl = strips[tracks[track_select].strip][p].controls[c]
+                              local ctl = ctl
                               ctl.fxnum = f
                               if t == tracks[track_select].tracknum then
                                 ctl.tracknum = nil
@@ -14303,16 +14470,16 @@ end
                       update_gfx = true
                       
                       if fx_found then
-                        strips[tracks[track_select].strip][p].controls[c].fxfound = true
+                        ctl.fxfound = true
                       else
                         --FX not found
-                        strips[tracks[track_select].strip][p].controls[c].fxfound = false
+                        ctl.fxfound = false
                       end
                     end
                   
-                    local pn = reaper.TrackFX_GetNumParams(tr2,strips[tracks[track_select].strip][p].controls[c].fxnum)
+                    local pn = reaper.TrackFX_GetNumParams(tr2,ctl.fxnum)
                     if pn == 2 then
-                      strips[tracks[track_select].strip][p].controls[c].offline = true
+                      ctl.offline = true
                     end
                                           
                   else
@@ -14325,18 +14492,18 @@ end
                   
                 end              
               else
-                if strips[tracks[track_select].strip][p].controls[c].ctlcat == ctlcats.fxparam or strips[tracks[track_select].strip][p].controls[c].ctlcat == ctlcats.fxoffline 
-                   or strips[tracks[track_select].strip][p].controls[c].ctlcat == ctlcats.fxgui then
-                  if strips[tracks[track_select].strip][p].controls[c].fxguid == reaper.TrackFX_GetFXGUID(tr2, nz(strips[tracks[track_select].strip][p].controls[c].fxnum,-1)) then
+                if ctl.ctlcat == ctlcats.fxparam or ctl.ctlcat == ctlcats.fxoffline 
+                   or ctl.ctlcat == ctlcats.fxgui or (ctl.ctlcat == ctlcats.rcm_switch and ctl.fxnum ~= nil) then
+                  if ctl.fxguid == reaper.TrackFX_GetFXGUID(tr2, nz(ctl.fxnum,-1)) then
                     --fx found
-                    strips[tracks[track_select].strip][p].controls[c].fxfound = true
+                    ctl.fxfound = true
                   else
                     --find fx by guid
                     local fx_found = false
                     for f = 0, reaper.TrackFX_GetCount(tr2) do
-                      if strips[tracks[track_select].strip][p].controls[c].fxguid == reaper.TrackFX_GetFXGUID(tr2, f) then
+                      if ctl.fxguid == reaper.TrackFX_GetFXGUID(tr2, f) then
                         fx_found = true
-                        strips[tracks[track_select].strip][p].controls[c].fxnum = f
+                        ctl.fxnum = f
                         break
                       end
                     end
@@ -14346,9 +14513,9 @@ end
                       for t = -1, reaper.CountTracks(0)-1 do
                         local tr3 = GetTrack(t)
                         for f = 0, reaper.TrackFX_GetCount(tr3) do
-                          if strips[tracks[track_select].strip][p].controls[c].fxguid == reaper.TrackFX_GetFXGUID(tr3, f) then
+                          if ctl.fxguid == reaper.TrackFX_GetFXGUID(tr3, f) then
                             fx_found = true
-                            local ctl = strips[tracks[track_select].strip][p].controls[c]
+                            --local ctl = strips[tracks[track_select].strip][p].controls[c]
                             ctl.fxnum = f
                             if t == tracks[track_select].tracknum then
                               ctl.tracknum = nil
@@ -14367,15 +14534,15 @@ end
                     update_gfx = true
                     
                     if fx_found then
-                      strips[tracks[track_select].strip][p].controls[c].fxfound = true
+                      ctl.fxfound = true
                     else
                       --FX not found
-                      strips[tracks[track_select].strip][p].controls[c].fxfound = false
+                      ctl.fxfound = false
                     end
                   end            
 
-                  if fxoffline[strips[tracks[track_select].strip][p].controls[c].fxnum] then
-                    strips[tracks[track_select].strip][p].controls[c].offline = true
+                  if fxoffline[ctl.fxnum] then
+                    ctl.offline = true
                   end
                 else
                   --other control type
@@ -15729,7 +15896,140 @@ end
       CheckDataTables()
     end
   end
+  
+  function RCM_AddProgram()
+  
+    local retval, retcsv = reaper.GetUserInputs('Add RCM Program',4,'Program Name,Bank MSB,Bank LSB,Program Change,extrawidth=60','')
+    if retval == true then
     
+      local vals = split(retcsv,',')
+      if vals[1] and vals[1] ~= '' and tonumber(vals[2]) and tonumber(vals[3]) and tonumber(vals[4]) then
+        local msb = F_limit(tonumber(vals[2]),0,127)
+        local lsb = F_limit(tonumber(vals[3]),0,127)
+        local prog = F_limit(tonumber(vals[4]),0,127)
+        
+        local rctl = strips[tracks[track_select].strip][page].controls[rcm_select]
+        if rctl.rcmdata == nil then
+          rctl.rcmdata = {}
+        end
+        rctl.rcmdata[#rctl.rcmdata+1] = {name = vals[1],
+                                         msb = msb,
+                                         lsb = lsb,
+                                         prog = prog}
+                
+      else
+        OpenMsgBox(1,'Invalid value.',1)
+      end
+    end
+  
+  end
+  
+  function RCM_Set(rcm_select, v)
+
+    local strip = tracks[track_select].strip
+    local ctl = strips[strip][page].controls[rcm_select]
+    if ctl and ctl.rcmdata and ctl.rcmdata[v] then
+
+      if ctl.fxfound == true then
+        
+        local track
+        if ctl.tracknum == nil then
+          track = GetTrack(strips[strip].track.tracknum)
+        else
+          track = GetTrack(ctl.tracknum)
+        end
+        if track then
+          local fxnum = ctl.fxnum
+          if fxnum == nil then return end
+          local pcnt = reaper.TrackFX_GetNumParams(track, fxnum)
+          local p_byp = pcnt-1
+          local p_msb = 0
+          local p_lsb = 1
+          local p_prog = 2
+          
+          --bypass
+          reaper.TrackFX_SetParam(track, fxnum, p_byp, 1)
+          reaper.TrackFX_SetParam(track, fxnum, p_msb, ctl.rcmdata[v].msb/127)
+          reaper.TrackFX_SetParam(track, fxnum, p_lsb, ctl.rcmdata[v].lsb/127)
+          reaper.TrackFX_SetParam(track, fxnum, p_prog, ctl.rcmdata[v].prog/127)
+          reaper.TrackFX_SetParam(track, fxnum, p_byp, 0)
+        
+          ctl.val = v
+          ctl.dirty = true
+          update_ctls = true
+        end
+      end
+    end
+      
+  end
+  
+  function RCMMenu_RB()
+    
+    local ctl = strips[tracks[track_select].strip][page].controls[rcm_select]
+
+    if ctl then
+      if mode == 0 then      
+        
+        if ctl.rcmdata and #ctl.rcmdata > 0 then
+        
+          local ddtab = {idx = 1, x = mouse.mx, y = mouse.my, w = 100, h = 100, items = {}, wpad = 40}       
+          
+          local mstr = ''      
+          for i = 1, #ctl.rcmdata do
+            ddtab.items[i] = ctl.rcmdata[i].name
+               
+            --if mstr ~= '' then
+            --  mstr = mstr..'|'
+            --end
+            --mstr = mstr .. ctl.rcmdata[i].name
+            
+          end
+
+          OpenDropDown(1, ddtab, true)
+  
+          --gfx.x, gfx.y = mouse.mx, mouse.my
+          --local res = OpenMenu(mstr)
+          --if res > 0 then
+          --  RCM_Set(rcm_select, res)
+          --end        
+        
+        end
+      
+      elseif mode == 1 then
+      
+        local mstr = 'Add Program'
+
+        if ctl.rcmdata and #ctl.rcmdata > 0 then
+        
+          mstr = mstr .. '|>Remove Program'
+          for i = 1, #ctl.rcmdata do
+          
+            if i < #ctl.rcmdata then 
+              mstr = mstr..'|'..ctl.rcmdata[i].name
+            else
+              mstr = mstr..'|<'..ctl.rcmdata[i].name            
+            end
+          end        
+        end
+        
+        gfx.x, gfx.y = mouse.mx, mouse.my
+        local res = OpenMenu(mstr)
+        if res > 0 then
+          if res == 1 then
+            RCM_AddProgram()
+          elseif res > 1 and res <= #ctl.rcmdata+1 then
+          
+            local rcnt = #ctl.rcmdata
+            ctl.rcmdata[res-1] = nil
+            ctl.rcmdata = Table_RemoveNils(ctl.rcmdata, rcnt)
+          
+          end
+        end
+            
+      end
+    end    
+  end
+  
   function SwitcherMenu_RB()
   
     local mstr
@@ -16576,6 +16876,7 @@ end
       elseif res == 27 then
       elseif res == 28 then
         local fn = datafile
+        if fn == nil then fn = '' end
         local ret, rfn = reaper.GetUserFileNameForRead(fn, 'Load lbxstripper data file:', string.match(fn, '.+%.(lbxstripper.*)'))
         if ret == true then
           LoadDataFile(rfn)
@@ -18646,7 +18947,7 @@ end
       char = gfx.getchar() 
       if char ~= 0 then
         --need to check if xxy/trackfxorder open?
-        if show_midiout == false and show_trackfxorder == false and show_xxy == false then
+        if show_midiout == false and show_trackfxorder == false and show_xxy == false and show_dd == false then
           char = keypress(char)
         end
       end
@@ -18667,23 +18968,27 @@ end
   
     end
 
+    if show_dd and mouse.context == nil then
+      A_Run_DropDown()
+    end
+    
     if show_trackfxorder then
 
-      if settings_UCV == 0 then
-        UpdateControlValues(rt)
-      else      
+      --if settings_UCV == 0 then
+      --  UpdateControlValues(rt)
+      --else      
         UpdateControlValues2(rt)
-      end
+      --end
     
       A_Run_TFXOrder(char)
     
     elseif show_midiout then
     
-      if settings_UCV == 0 then
-        UpdateControlValues(rt)
-      else      
+      --if settings_UCV == 0 then
+      --  UpdateControlValues(rt)
+      --else      
         UpdateControlValues2(rt)
-      end
+      --end
 
       A_Run_MidiOut(char)
     
@@ -18701,11 +19006,11 @@ end
         checksends = true
       end      
       
-      if settings_UCV == 0 then
-        UpdateControlValues(rt)
-      else      
+      --if settings_UCV == 0 then
+      --  UpdateControlValues(rt)
+      --else      
         UpdateControlValues2(rt)
-      end
+      --end
       
       if show_settings then
         
@@ -19721,6 +20026,9 @@ end
                   elseif ctls[i].ctlcat == ctlcats.switcher then
                     switcher_select = i
                     SwitcherMenu_LB()
+                  elseif ctls[i].ctlcat == ctlcats.rcm_switch then
+                    rcm_select = i
+                    RCMMenu_RB()
                   end
                 elseif ctltype == 7 or ctltype == 8 or ctltype == 9 or ctltype == 10 then
                   --hold button
@@ -20774,6 +21082,10 @@ end
               gfx.mouse_wheel = 0              
             elseif trctltype_select == 2 then
               trctlslist_offset = F_limit(trctlslist_offset - v, 0, #special_table-1)
+              update_sidebar = true
+              gfx.mouse_wheel = 0              
+            elseif trctltype_select == 3 then
+              trctlslist_offset = F_limit(trctlslist_offset - v, 0, #otherctl_table-1)
               update_sidebar = true
               gfx.mouse_wheel = 0              
             end
@@ -22252,9 +22564,14 @@ end
             --end
           else
             local c = GetControlAtXY(tracks[track_select].strip, page, mouse.mx, mouse.my)
-            if c and strips[tracks[track_select].strip][page].controls[c].ctlcat == ctlcats.switcher then
-              switcher_select = c
-              SwitcherMenu_RB()
+            if c then
+              if strips[tracks[track_select].strip][page].controls[c].ctlcat == ctlcats.switcher then
+                switcher_select = c
+                SwitcherMenu_RB()
+              elseif strips[tracks[track_select].strip][page].controls[c].ctlcat == ctlcats.rcm_switch then
+                rcm_select = c
+                RCMMenu_RB()
+              end
             else
             
               local cp
@@ -22427,6 +22744,17 @@ end
               mouse.context = contexts.dragparam
             end
           end
+        
+        elseif MOUSE_click_RB(obj.sections[522]) then
+          local i = math.floor((mouse.my - obj.sections[522].y) / butt_h)-1 
+          if i == -1 then
+            if mouse.mx < obj.sections[520].w/2 then
+              plist_offset = 0
+            else
+              plist_offset = #trackfxparams - (P_butt_cnt)+2
+            end
+            update_gfx = true
+          end        
         end
       elseif fxmode == 1 then
         if MOUSE_click(obj.sections[520]) then
@@ -22461,6 +22789,8 @@ end
             pcnt = (#trsends_table+1)*3
           elseif trctltype_select == 2 then
             pcnt = #special_table              
+          elseif trctltype_select == 3 then
+            pcnt = #otherctl_table
           end
           local i = math.floor((mouse.my - obj.sections[522].y) / butt_h)-1
           if i == -1 then
@@ -22536,6 +22866,26 @@ end
                 ksel_size = {w = 50, h = 50}
               end
               mouse.context = contexts.dragparam_spec
+
+            elseif trctltype_select == 3 then
+              trctl_select = i + trctlslist_offset+1
+              ctl_select = nil
+              show_ctlbrowser = false
+              
+              update_gfx = true
+  
+              if ctl_files[knob_select].imageidx ~= nil then
+                local w,_ = gfx.getimgdim(ctl_files[knob_select].imageidx)
+                local h = ctl_files[knob_select].cellh
+                if w == 0 or h == 0 then
+                  ksel_size = {w = 50, h = 50}
+                else
+                  ksel_size = {w = w/2, h = h/2}
+                end
+              else 
+                ksel_size = {w = 50, h = 50}
+              end
+              mouse.context = contexts.dragparam_other
             end
           end
         end
@@ -22548,7 +22898,8 @@ end
           reass_param = nil
           if tracks[track_select] and tracks[track_select].strip ~= -1 then
             local i = GetReassCtl()   
-            if i and strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.fxparam then
+            if i and (strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.fxparam or 
+                      strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.rcm_switch) then
               reass_param = i
               if trackfx[trackfx_select].name == strips[tracks[track_select].strip][page].controls[i].fxname then
                 dragparam.bc = gui.color.green
@@ -22593,6 +22944,16 @@ end
         update_surface = true
 
       elseif mouse.context and mouse.context == contexts.dragparam_spec then
+        dragparam = {x = mouse.mx-ksel_size.w, y = mouse.my-ksel_size.h, type = 'pkmeter'}            
+        
+        reass_param = nil
+        if tracks[track_select] and tracks[track_select].strip ~= -1 then
+          reass_param = GetReassCtl()
+        end                    
+        update_surface = true
+
+      elseif mouse.context and mouse.context == contexts.dragparam_other then
+      
         if trctl_select == 1 then
           dragparam = {x = mouse.mx-ksel_size.w, y = mouse.my-ksel_size.h, type = 'action'}
         elseif trctl_select == 2 then
@@ -22603,8 +22964,9 @@ end
         elseif trctl_select == 4 then
           knob_select = def_switchctl
           dragparam = {x = mouse.mx-ksel_size.w, y = mouse.my-ksel_size.h, type = 'switcher'}
-        elseif trctl_select >= special_offs then
-          dragparam = {x = mouse.mx-ksel_size.w, y = mouse.my-ksel_size.h, type = 'pkmeter'}            
+        elseif trctl_select == 5 then
+          --knob_select = def_boxctl
+          dragparam = {x = mouse.mx-ksel_size.w, y = mouse.my-ksel_size.h, type = 'rcmswitch'}
         end
         
         reass_param = nil
@@ -22612,33 +22974,62 @@ end
           reass_param = GetReassCtl()
         end                    
         update_surface = true
-        
+                
       elseif dragparam ~= nil then
         --Dropped
         if dragparam.type == 'reassplugin' then
           if reass_param ~= nil then
-            local guid = strips[tracks[track_select].strip][page].controls[reass_param].fxguid
-            local nguid = trackfx[trackfx_select].guid
-            local nfxnum = trackfx[trackfx_select].fxnum
-            local nfxname = trackfx[trackfx_select].name
-            for c = 1, #strips[tracks[track_select].strip][page].controls do
-              local ctl = strips[tracks[track_select].strip][page].controls[c]
-              if ctl.fxguid == guid then
-              
-                ctl.fxnum = nfxnum
-                ctl.fxguid = nguid
-                ctl.fxname = nfxname
-                ctl.param_info.paramname = trackfxparams[ctl.param_info.paramnum].paramname
+            local rctl = strips[tracks[track_select].strip][page].controls[reass_param]
+            if rctl.ctlcat ~= ctlcats.rcm_switch then
+              local guid = strips[tracks[track_select].strip][page].controls[reass_param].fxguid
+              local nguid = trackfx[trackfx_select].guid
+              local nfxnum = trackfx[trackfx_select].fxnum
+              local nfxname = trackfx[trackfx_select].name
+              for c = 1, #strips[tracks[track_select].strip][page].controls do
+                local ctl = strips[tracks[track_select].strip][page].controls[c]
+                if ctl.fxguid == guid then
                 
-                if tracks[trackedit_select].tracknum ~= tracks[track_select].tracknum then
-                  ctl.tracknum=tracks[trackedit_select].tracknum
-                  ctl.trackguid=tracks[trackedit_select].guid
-                else
-                  ctl.tracknum=nil
-                  ctl.trackguid=nil                  
+                  ctl.fxnum = nfxnum
+                  ctl.fxguid = nguid
+                  ctl.fxname = nfxname
+                  ctl.param_info.paramname = trackfxparams[ctl.param_info.paramnum].paramname
+                  
+                  if tracks[trackedit_select].tracknum ~= tracks[track_select].tracknum then
+                    ctl.tracknum=tracks[trackedit_select].tracknum
+                    ctl.trackguid=tracks[trackedit_select].guid
+                  else
+                    ctl.tracknum=nil
+                    ctl.trackguid=nil                  
+                  end
+                  
                 end
-                
               end
+            else
+              --local guid = strips[tracks[track_select].strip][page].controls[reass_param].fxguid
+              local nguid = trackfx[trackfx_select].guid
+              local nfxnum = trackfx[trackfx_select].fxnum
+              local nfxname = trackfx[trackfx_select].name
+              --for c = 1, #strips[tracks[track_select].strip][page].controls do
+                --local ctl = strips[tracks[track_select].strip][page].controls[c]
+                --if rctl.fxguid == guid then
+                
+                  rctl.fxnum = nfxnum
+                  rctl.fxguid = nguid
+                  rctl.fxname = nfxname
+                  rctl.fxfound = true
+                  rctl.param_info.paramname = 'RCM' --trackfxparams[ctl.param_info.paramnum].paramname
+                  
+                  if tracks[trackedit_select].tracknum ~= tracks[track_select].tracknum then
+                    rctl.tracknum=tracks[trackedit_select].tracknum
+                    rctl.trackguid=tracks[trackedit_select].guid
+                  else
+                    rctl.tracknum=nil
+                    rctl.trackguid=nil                  
+                  end
+                  
+                --end
+              --end
+            
             end
           end
         elseif dragparam.type == 'track' then
@@ -22832,6 +23223,15 @@ end
           
           end
         elseif dragparam.type == 'switcher' then
+          if reass_param == nil then
+            if dragparam.x+ksel_size.w > obj.sections[10].x and dragparam.x+ksel_size.w < obj.sections[10].x+obj.sections[10].w and dragparam.y+ksel_size.h > obj.sections[10].y and dragparam.y+ksel_size.h < obj.sections[10].y+obj.sections[10].h then
+              trackfxparam_select = i
+              Strip_AddParam()              
+            end
+          else
+          
+          end
+        elseif dragparam.type == 'rcmswitch' then
           if reass_param == nil then
             if dragparam.x+ksel_size.w > obj.sections[10].x and dragparam.x+ksel_size.w < obj.sections[10].x+obj.sections[10].w and dragparam.y+ksel_size.h > obj.sections[10].y and dragparam.y+ksel_size.h < obj.sections[10].y+obj.sections[10].h then
               trackfxparam_select = i
@@ -24902,6 +25302,52 @@ end
       
   end
   
+  function A_Run_DropDown()
+  
+    if MOUSE_over(ddlist) then
+    
+      local over = math.floor((mouse.my - ddlist.y)/butt_h)+1
+      if over ~= ddlist.over then
+      
+        ddlist.over = over
+        update_dd = true
+        update_surface = true
+      
+      end
+      
+      if mouse.LB then
+        ddlist.select = over
+        show_dd = false
+        update_surface = true
+      end
+
+      if ddlist.select then
+        DropDown_ItemSel(ddlist.select)
+      end    
+      
+    else
+      ddlist.over = nil
+      if mouse.LB then
+        show_dd = false          
+        update_surface = true
+      end
+    end
+  
+  end
+
+  function DropDown_ItemSel(sel)
+  
+    if sel then
+      if ddlist.idx == 1 then
+      
+        RCM_Set(rcm_select, sel)
+      
+      end
+    end
+    mouse.context = contexts.dd
+  
+  end
+  
   function A_Run_EQControl(noscroll, rt)
   
     if strips[tracks[track_select].strip] and strips[tracks[track_select].strip][page].controls[eqcontrol_select] and
@@ -26668,8 +27114,8 @@ end
     
   end
 
-  function UpdateControlValues(rt)
-  
+  --[[function UpdateControlValues(rt)
+
     if rt >= time_nextupdate then
       local suf = settings_updatefreq
       --if mode == 1 then suf = 0.2 end
@@ -26704,7 +27150,9 @@ end
                   end
 --DBG(tr_found)
                   
+                  DBG(ctl.ctlcat)
                   if tr_found then
+                  DBG(ctl.ctlcat)
                     if ctl.ctlcat == ctlcats.fxparam then
                       local fxguid = reaper.TrackFX_GetFXGUID(tr, ctl.fxnum)
                       if ctl.fxguid == fxguid then
@@ -26855,6 +27303,17 @@ end
                           CheckStripControls()
                         end
                       end                  
+                    
+                    elseif ctl.ctlcat == ctlcats.fxgui or ctl.ctlcat == ctlcats.rcm_switch then
+                      local fxguid = reaper.TrackFX_GetFXGUID(tr, ctl.fxnum)
+                        DBG('1')
+                      if ctl.fxguid and ctl.fxguid ~= fxguid then
+                        DBG('1')
+                        if ctl.fxfound then
+                        DBG('csc')
+                          CheckStripControls()
+                        end
+                      end
                     end
                   end
                 end
@@ -26869,7 +27328,7 @@ end
       end
     end
 
-  end
+  end]]
 
   function UpdateControlValues2(rt)
   
@@ -27065,6 +27524,13 @@ end
                           CheckStripControls()
                         end
                       end                  
+                    elseif ctl.ctlcat == ctlcats.fxgui or (ctl.ctlcat == ctlcats.rcm_switch and ctl.fxnum) then
+                      local fxguid = reaper.TrackFX_GetFXGUID(tr, ctl.fxnum)
+                      if ctl.fxguid and ctl.fxguid ~= fxguid then
+                        if ctl.fxfound then
+                          CheckStripControls()
+                        end
+                      end
                     end
                   end
                 end
@@ -30177,6 +30643,19 @@ end
           strip.controls[c].midiout.msg3 = tonumber(zn(data[key..'midiout_msg3'],0))
         end
 
+        local rcmcnt = tonumber(data[key..'rcmdata_cnt'])
+        if rcmcnt and rcmcnt > 0 then
+          strip.controls[c].rcmdata = {}
+          for r = 1, rcmcnt do
+            local key = pfx..'c_'..c..'_rcm_'..r..'_'         
+            strip.controls[c].rcmdata[r] = {}
+            strip.controls[c].rcmdata[r].name = zn(data[key..'name'])  
+            strip.controls[c].rcmdata[r].msb = tonumber(data[key..'msb'])  
+            strip.controls[c].rcmdata[r].lsb = tonumber(data[key..'lsb'])  
+            strip.controls[c].rcmdata[r].prog = tonumber(data[key..'prog'])          
+          end
+        end
+
         local gauge = data[key..'gauge']
         if gauge then
           strip.controls[c].gauge = {}
@@ -32794,6 +33273,19 @@ end
                 file:write('['..key..'midiout_mchan]'..nz(strips[s][p].controls[c].midiout.mchan,'')..'\n')
                 file:write('['..key..'midiout_msg3]'..nz(strips[s][p].controls[c].midiout.msg3,'')..'\n')              
               end
+
+              if strips[s][p].controls[c].rcmdata and #strips[s][p].controls[c].rcmdata > 0 then
+                file:write('['..key..'rcmdata_cnt]'..#strips[s][p].controls[c].rcmdata ..'\n')                                 
+                for r = 1, #strips[s][p].controls[c].rcmdata do
+                  local key = pfx..'c_'..c..'_rcm_'..r..'_'
+                  file:write('['..key..'name]'..strips[s][p].controls[c].rcmdata[r].name..'\n')                                 
+                  file:write('['..key..'msb]'..strips[s][p].controls[c].rcmdata[r].msb..'\n')
+                  file:write('['..key..'lsb]'..strips[s][p].controls[c].rcmdata[r].lsb..'\n')
+                  file:write('['..key..'prog]'..strips[s][p].controls[c].rcmdata[r].prog..'\n')                  
+                end 
+              else
+                file:write('['..key..'rcmdata_cnt]'..0 ..'\n')                                               
+              end
               
               if strips[s][p].controls[c].gauge then
                 file:write('['..key..'gauge]'..tostring(true)..'\n')
@@ -33546,7 +34038,7 @@ end
             else
               track = gtrack
             end
-            SetParam3_Denorm2_Safe2(track, v_ABCD, strip, page)
+            SetParam3_Denorm2_Safe2(track, v_ABCD, strip, page, reaper)
           end      
         end
       end
@@ -33558,25 +34050,26 @@ end
     if sstype_select == 1 then
       --page
       if #strips[strip][page].controls > 0 then
-        for ctl = 1, #strips[strip][page].controls do
-          if strips[strip][page].controls[ctl].noss ~= true then
-            if strips[strip][page].controls[ctl].ctlcat == ctlcats.fxparam or 
-               strips[strip][page].controls[ctl].ctlcat == ctlcats.trackparam or
-               strips[strip][page].controls[ctl].ctlcat == ctlcats.tracksend then
+        for c = 1, #strips[strip][page].controls do
+          local ctl = strips[strip][page].controls[c]
+          if ctl.noss ~= true then
+            if ctl.ctlcat == ctlcats.fxparam or 
+               ctl.ctlcat == ctlcats.trackparam or
+               ctl.ctlcat == ctlcats.tracksend then
               trackfxparam_select = ctl
               local v = math.random()
-              if strips[strip][page].controls[ctl].ctltype == 2 or 
-                 strips[strip][page].controls[ctl].ctltype == 3 or 
-                 strips[strip][page].controls[ctl].ctltype == 7 or
-                 strips[strip][page].controls[ctl].ctltype == 8 or
-                 strips[strip][page].controls[ctl].ctltype == 9 or
-                 strips[strip][page].controls[ctl].ctltype == 10 then
+              if ctl.ctltype == 2 or 
+                 ctl.ctltype == 3 or 
+                 ctl.ctltype == 7 or
+                 ctl.ctltype == 8 or
+                 ctl.ctltype == 9 or
+                 ctl.ctltype == 10 then
                  v = round(v)
               end
               if respectminmax == true then
                 --local min, max = GetParamMinMax_ctl(ctl,true)
                 --v = v*(max-min)+min            
-                SetParam3(strip,page,ctl,strips[strip][page].controls[ctl],v)
+                SetParam3(strip,page,c,ctl,v)
               else
                 SetParam5(v)                          
               end
@@ -33590,19 +34083,19 @@ end
         if #snapshots[strip][page][sstype_select].ctls > 0 then
           for ctl = 1, #snapshots[strip][page][sstype_select].ctls do
             local c = snapshots[strip][page][sstype_select].ctls[ctl].ctl
-  
+            local cctl = strips[strip][page].controls[c]
             trackfxparam_select = c
             local v = math.random()
-            if strips[strip][page].controls[c].ctltype == 2 or 
-               strips[strip][page].controls[c].ctltype == 3 or 
-               strips[strip][page].controls[c].ctltype == 7 or
-               strips[strip][page].controls[c].ctltype == 8 or
-               strips[strip][page].controls[c].ctltype == 9 or
-               strips[strip][page].controls[c].ctltype == 10 then
+            if cctl.ctltype == 2 or 
+               cctl.ctltype == 3 or 
+               cctl.ctltype == 7 or
+               cctl.ctltype == 8 or
+               cctl.ctltype == 9 or
+               cctl.ctltype == 10 then
                v = round(v)
             end
             if respectminmax == true then
-              SetParam3(strip,page,c,strips[strip][page].controls[c],v)        
+              SetParam3(strip,page,c,cctl,v)        
             else
               SetParam5(v)                          
             end
@@ -33812,6 +34305,9 @@ end
     
   function Snapshot_Set(strip, page, sstype_select, ss_select)
   
+    --local r = reaper
+    --local t = reaper.time_precise()
+    
     if sstype_select == 1 then
       local snaptbl = snapshots[strip][page][sstype_select][ss_select]
       if snaptbl then
@@ -33829,7 +34325,7 @@ end
             else
               track = gtrack
             end
-            SetParam3_Denorm2_Safe2(track, v, strip, page)        
+            SetParam3_Denorm2_Safe2(track, v, strip, page, reaper)        
           end
         end
       end    
@@ -33851,13 +34347,14 @@ end
             else
               track = gtrack
             end
-            SetParam3_Denorm2_Safe2(track, v, strip, page)        
+            SetParam3_Denorm2_Safe2(track, v, strip, page, reaper)        
           end
         end
       end    
     
     end
     snapshots[strip][page][sstype_select].selected = ss_select
+    --DBG(round(reaper.time_precise() - t,6))
   end
 
   function Snapshots_INIT()
@@ -34778,6 +35275,7 @@ end
     show_trackfxorder = false
     show_midiout = false
     show_bitmap = false
+    show_dd = false
     
     show_paramname = true
     show_paramval = true
