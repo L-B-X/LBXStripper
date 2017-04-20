@@ -17636,6 +17636,7 @@ end
   end
 
   function table.copy(t)
+    if t == nil then return nil end
     local u = { }
     for k, v in pairs(t) do u[k] = v end
     return setmetatable(u, getmetatable(t))
