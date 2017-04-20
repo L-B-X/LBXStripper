@@ -15905,7 +15905,7 @@ end
   
   function RCM_AddProgram()
   
-    local retval, retcsv = reaper.GetUserInputs('Add RCM Program',4,'Program Name,Bank MSB,Bank LSB,Program Change,extrawidth=60','')
+    local retval, retcsv = reaper.GetUserInputs('Add RCM Program',4,'Program Name,Bank MSB,Bank LSB,Program Change,extrawidth=60',',0,0,0')
     if retval == true then
     
       local vals = split(retcsv,',')
@@ -15928,6 +15928,32 @@ end
       end
     end
   
+  end
+
+  function RCM_EditProgram(pn)
+  
+    local rctl = strips[tracks[track_select].strip][page].controls[rcm_select]
+    if rctl and rctl.rcmdata and rctl.rcmdata[pn] then
+      local defvals = rctl.rcmdata[pn].name ..','.. rctl.rcmdata[pn].msb ..','..rctl.rcmdata[pn].lsb ..','.. rctl.rcmdata[pn].prog
+      local retval, retcsv = reaper.GetUserInputs('Edit RCM Program',4,'Program Name,Bank MSB,Bank LSB,Program Change,extrawidth=60',defvals)
+      if retval == true then
+      
+        local vals = split(retcsv,',')
+        if vals[1] and vals[1] ~= '' and tonumber(vals[2]) and tonumber(vals[3]) and tonumber(vals[4]) then
+          local msb = F_limit(tonumber(vals[2]),0,127)
+          local lsb = F_limit(tonumber(vals[3]),0,127)
+          local prog = F_limit(tonumber(vals[4]),0,127)
+          
+          rctl.rcmdata[pn] = {name = vals[1],
+                               msb = msb,
+                               lsb = lsb,
+                               prog = prog}
+                  
+        else
+          OpenMsgBox(1,'Invalid value.',1)
+        end
+      end
+    end  
   end
   
   function RCM_Set(rcm_select, v)
@@ -16006,8 +16032,8 @@ end
 
 
         if ctl.rcmdata and #ctl.rcmdata > 0 then
-        
-          mstr = mstr .. '|>Remove Program'
+
+          mstr = mstr .. '|>Edit Program'
           for i = 1, #ctl.rcmdata do
           
             if i < #ctl.rcmdata then 
@@ -16016,11 +16042,27 @@ end
               mstr = mstr..'|<'..ctl.rcmdata[i].name            
             end
           end        
+        
+          mstr = mstr .. '||>Remove Program'
+          for i = 1, #ctl.rcmdata do
+          
+            if i < #ctl.rcmdata then 
+              mstr = mstr..'|'..ctl.rcmdata[i].name
+            else
+              mstr = mstr..'|<'..ctl.rcmdata[i].name            
+            end
+          end        
+        
         end
+        
+        local edprog_off = 1
         local remprog_off = 1
+
         if ctl.rcmdata then
-          remprog_off = 1+#ctl.rcmdata
+          edprog_off = 1+#ctl.rcmdata
+          remprog_off = edprog_off + #ctl.rcmdata
         end
+
         local delcnt = 10
         if ctl.rcmrefresh and ctl.rcmrefresh.guid then
           mstr = mstr .. '||>!Refresh Plugin|>Delay'
@@ -16061,10 +16103,14 @@ end
         if res > 0 then
           if res == 1 then
             RCM_AddProgram()
-          elseif res > 1 and res <= remprog_off then
+          elseif res > 1 and res <= edprog_off then
+          
+            RCM_EditProgram(res-1)
+
+          elseif res > edprog_off and res <= remprog_off-1 then
           
             local rcnt = #ctl.rcmdata
-            ctl.rcmdata[res-1] = nil
+            ctl.rcmdata[res-edprog_off] = nil
             ctl.rcmdata = Table_RemoveNils(ctl.rcmdata, rcnt)
           
           elseif res > remprog_off and res <= remprog_off+delcnt then
@@ -29911,6 +29957,10 @@ end
       
       end
       tbl.macroctl = mctl
+    end
+    if strips[strip][page].controls[c].ctlcat == ctlcats.rcm_switch and strips[strip][page].controls[c].rcmdata and #strips[strip][page].controls[c].rcmdata > 0 then
+      tbl.rcmdata = table.copy(strips[strip][page].controls[c].rcmdata)
+      tbl.rcmrefresh = table.copy(strips[strip][page].controls[c].rcmrefresh)
     end
     
     return tbl
