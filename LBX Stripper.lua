@@ -13484,7 +13484,7 @@ end
         end
         
         if (stripdata.strip.controls[j].ctlcat == ctlcats.rcm_switch) 
-            and stripdata.strip.controls[j].rcmrefresh.guid then
+            and stripdata.strip.controls[j].rcmrefresh and stripdata.strip.controls[j].rcmrefresh.guid then
           stripdata.strip.controls[j].rcmrefresh.guid = fxguids[stripdata.strip.controls[j].rcmrefresh.guid].guid
         end        
         
