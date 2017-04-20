@@ -16017,7 +16017,10 @@ end
             end
           end        
         end
-        local remprog_off = 1+#ctl.rcmdata
+        local remprog_off = 1
+        if ctl.rcmdata then
+          remprog_off = 1+#ctl.rcmdata
+        end
         local delcnt = 10
         if ctl.rcmrefresh and ctl.rcmrefresh.guid then
           mstr = mstr .. '||>!Refresh Plugin|>Delay'
