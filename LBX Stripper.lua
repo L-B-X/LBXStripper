@@ -13482,6 +13482,12 @@ end
           stripdata.strip.controls[j].fxfound = true
           stripdata.strip.controls[j].fxguid = nil
         end
+        
+        if (stripdata.strip.controls[j].ctlcat == ctlcats.rcm_switch) 
+            and stripdata.strip.controls[j].rcmrefresh.guid then
+          stripdata.strip.controls[j].rcmrefresh.guid = fxguids[stripdata.strip.controls[j].rcmrefresh.guid].guid
+        end        
+        
         if stripdata.strip.controls[j].ctlcat == ctlcats.eqcontrol then
           local bands = stripdata.strip.controls[j].eqbands
           if bands and #bands > 0 then
@@ -15957,6 +15963,16 @@ end
           ctl.val = v
           ctl.dirty = true
           update_ctls = true
+          
+          if ctl.rcmrefresh and ctl.rcmrefresh.guid then
+            if rcmrefreshtimer == nil then
+              rcmrefreshtimer = {}
+            end
+            rcmrefreshtimer[#rcmrefreshtimer+1] = {time = reaper.time_precise() + (ctl.rcmrefresh.delay),
+                                                   guid = ctl.rcmrefresh.guid,
+                                                   tracknum = tracks[track_select].tracknum}
+            rcmrefreshtimercount = rcmrefreshtimercount + 1
+          end
         end
       end
     end
@@ -15977,27 +15993,17 @@ end
           local mstr = ''      
           for i = 1, #ctl.rcmdata do
             ddtab.items[i] = ctl.rcmdata[i].name
-               
-            --if mstr ~= '' then
-            --  mstr = mstr..'|'
-            --end
-            --mstr = mstr .. ctl.rcmdata[i].name
             
           end
 
           OpenDropDown(1, ddtab, true)
   
-          --gfx.x, gfx.y = mouse.mx, mouse.my
-          --local res = OpenMenu(mstr)
-          --if res > 0 then
-          --  RCM_Set(rcm_select, res)
-          --end        
-        
         end
       
       elseif mode == 1 then
       
         local mstr = 'Add Program'
+
 
         if ctl.rcmdata and #ctl.rcmdata > 0 then
         
@@ -16011,18 +16017,67 @@ end
             end
           end        
         end
+        local remprog_off = 1+#ctl.rcmdata
+        local delcnt = 10
+        if ctl.rcmrefresh and ctl.rcmrefresh.guid then
+          mstr = mstr .. '||>!Refresh Plugin|>Delay'
+        else
+          mstr = mstr .. '||>Refresh Plugin|>Delay'        
+        end
+        for i = 1, delcnt do
+          if i == delcnt then
+            mstr = mstr .. '|<'        
+          else
+            mstr = mstr .. '|'                  
+          end 
+          if ctl.rcmrefresh and ctl.rcmrefresh.delay == i then
+            mstr = mstr ..'!'..i..' sec'
+          else
+            mstr = mstr ..i..' sec'
+          end
+        end
+        mstr = mstr..'|>Plugin'
+        local track = GetTrack(tracks[track_select].tracknum)
+        local fxcnt = reaper.TrackFX_GetCount(track)
+        for f = 0, fxcnt-1 do
+          local _, fxname = reaper.TrackFX_GetFXName(track,f,'')
+          local guid = reaper.TrackFX_GetFXGUID(track,f)
+          mstr = mstr .. '|'
+          if f == fxcnt-1 then
+            mstr = mstr .. '<'
+          end
+          if ctl.rcmrefresh and ctl.rcmrefresh.guid == guid then
+            mstr = mstr .. '!'
+          end
+          mstr = mstr..fxname
+        end
+        mstr = mstr .. '||<Clear'
         
         gfx.x, gfx.y = mouse.mx, mouse.my
         local res = OpenMenu(mstr)
         if res > 0 then
           if res == 1 then
             RCM_AddProgram()
-          elseif res > 1 and res <= #ctl.rcmdata+1 then
+          elseif res > 1 and res <= remprog_off then
           
             local rcnt = #ctl.rcmdata
             ctl.rcmdata[res-1] = nil
             ctl.rcmdata = Table_RemoveNils(ctl.rcmdata, rcnt)
           
+          elseif res > remprog_off and res <= remprog_off+delcnt then
+            if ctl.rcmrefresh == nil then
+              ctl.rcmrefresh = {}
+            end
+            ctl.rcmrefresh.delay = res-remprog_off
+            
+          elseif res > remprog_off+delcnt and res <= remprog_off+delcnt+fxcnt then
+            local fxnum = res - (remprog_off+delcnt+1)
+            if ctl.rcmrefresh == nil then
+              ctl.rcmrefresh = {delay = 1}
+            end
+            ctl.rcmrefresh.guid = reaper.TrackFX_GetFXGUID(track,fxnum)
+          elseif res == remprog_off+delcnt+fxcnt+1 then
+            ctl.rcmrefresh = nil
           end
         end
             
@@ -16032,6 +16087,8 @@ end
   
   function SwitcherMenu_RB()
   
+    show_dd = false
+    
     local mstr
     local sfcnt = #strip_favs
     if sfcnt > 0 then
@@ -16101,7 +16158,7 @@ end
 
   function SwitcherMenu_LB()
   
-    local mstr = ''
+    --[[local mstr = ''
     local exopts = 0
     local ctl = strips[tracks[track_select].strip][page].controls[switcher_select]
     local switchid = ctl.switcherid
@@ -16125,7 +16182,18 @@ end
         SetCtlBitmapRedraw()
       end
     
+    end]]
+
+    local ddtab = {idx = 2, x = mouse.mx, y = mouse.my, w = 100, h = 100, items = {}, wpad = 40}
+    local exopts = 0
+    local ctl = strips[tracks[track_select].strip][page].controls[switcher_select]
+    local switchid = ctl.switcherid
+    local swc = #switchers[switchid].grpids
+    for sid = 1, swc do      
+      ddtab.items[sid] = string.format('%i',sid)..': '..tostring(switchers[switchid].grpids[sid].name)
     end
+    OpenDropDown(2, ddtab, true)
+    
   end
   
   function MenuMidiOuts()
@@ -19323,6 +19391,10 @@ end
     
     ReadAutomationFaders()
     
+    if rcmrefreshtimercount > 0 then
+      RCMRefresh()
+    end
+    
     if char then 
       if char == 32 then reaper.Main_OnCommandEx(40044, 0,0) end
       if char>=0 and char~=27 then reaper.defer(run) end
@@ -19350,6 +19422,67 @@ end
       update_surface = true
     end
 
+  end
+
+  function RCMRefresh()
+  
+    if rcmrefreshtimer then
+      local cnt = 0
+      for r = 1, rcmrefreshtimercount do
+        if rcmrefreshtimer[r] then 
+          cnt = cnt + 1
+          if rcmrefreshtimer[r].tracknum == tracks[track_select].tracknum then
+            if reaper.time_precise() >= rcmrefreshtimer[r].time then
+              RefreshControlsByGUID(rcmrefreshtimer[r].guid)
+              rcmrefreshtimer[r] = nil
+              rcmrefreshtimercount = math.max(rcmrefreshtimercount -1,0)
+            end
+          else
+            rcmrefreshtimer[r] = nil
+            rcmrefreshtimercount = math.max(rcmrefreshtimercount -1,0)            
+          end
+        end
+      end
+      if cnt == 0 then
+        rcmrefreshtimer = nil
+        rcmrefreshtimercount = 0
+      else 
+        if rcmrefreshtimercount == 0 then
+          rcmrefreshtimer = nil
+        end
+      end
+    else
+      rcmrefreshtimercount = 0
+    end
+    
+  end
+  
+  function GetFXNum(guid)
+    local track = GetTrack(tracks[track_select].tracknum)
+    if track then
+      local fxcnt = reaper.TrackFX_GetCount(track)
+      for f = 0, fxcnt do
+        if reaper.TrackFX_GetFXGUID(track,f) == guid then
+          return f
+        end
+      end
+    end
+  end
+  
+  function RefreshControlsByGUID(guid)
+    --DBG(guid..'   '..rcmrefreshtimercount)
+    --local fxnum = GetFXNum(guid)
+    --if fxnum then
+    local strip = tracks[track_select].strip
+    for c = 1, #strips[strip][page].controls do
+      local ctl = strips[strip][page].controls[c]
+      if ctl and ctl.fxguid and ctl.fxguid == guid then
+        --DBG(c)
+        ctl.dirty = true
+      end
+    end
+  --end
+    update_ctls = true
   end
 
   function A_Run_MidiOut(char)
@@ -25342,9 +25475,28 @@ end
       
         RCM_Set(rcm_select, sel)
       
+      elseif ddlist.idx == 2 then
+      
+        Switcher_Set(switcher_select, sel)
+        
       end
     end
     mouse.context = contexts.dd
+  
+  end
+  
+  function Switcher_Set(switcher_select, sel)
+  
+    local strip = tracks[track_select].strip
+    local ctl = strips[strip][page].controls[switcher_select]
+    local switchid = ctl.switcherid
+    
+    switchers[switchid].current = switchers[switchid].grpids[sel].id
+    ctl.param_info.paramname = string.format('%i',sel)..': '..switchers[switchid].grpids[sel].name
+    update_gfx = true
+    update_bg = true
+
+    SetCtlBitmapRedraw()
   
   end
   
@@ -30656,6 +30808,13 @@ end
           end
         end
 
+        local rcmrefresh_guid = data[key..'rcmrefresh_guid']
+        local rcmrefresh_delay = tonumber(data[key..'rcmrefresh_delay'])
+        if rcmrefresh_guid or rcmrefresh_delay then
+          strip.controls[c].rcmrefresh = {guid = rcmrefresh_guid,
+                                          delay = rcmrefresh_delay}
+        end
+        
         local gauge = data[key..'gauge']
         if gauge then
           strip.controls[c].gauge = {}
@@ -33287,6 +33446,11 @@ end
                 file:write('['..key..'rcmdata_cnt]'..0 ..'\n')                                               
               end
               
+              if strips[s][p].controls[c].rcmrefresh then
+                file:write('['..key..'rcmrefresh_guid]'..nz(strips[s][p].controls[c].rcmrefresh.guid,'')..'\n')                                 
+                file:write('['..key..'rcmrefresh_delay]'..nz(strips[s][p].controls[c].rcmrefresh.delay,'')..'\n')              
+              end
+              
               if strips[s][p].controls[c].gauge then
                 file:write('['..key..'gauge]'..tostring(true)..'\n')
               
@@ -35329,6 +35493,8 @@ end
     update_actcho = false
     update_xxy = false
     force_gfx_update = true
+    
+    rcmrefreshtimercount = 0
     
     Snapshots_INIT()
     
