@@ -1543,6 +1543,10 @@
                           y = obj.sections[70].y+yoff + yoffm*2,
                           w = 40,
                           h = bh}
+      obj.sections[703] = {x = obj.sections[70].x+obj.sections[70].w/2+xofft,
+                          y = obj.sections[70].y+yoff + yoffm*4,
+                          w = sw,
+                          h = butt_h}
             
                                 
       --Cycle
@@ -10994,6 +10998,13 @@ end
     end]]
 
     GUI_DrawColorBox(gui, 'Main background colour', obj.sections[702], gui.color.white, backcol)
+    local sb = false
+    local sbt = 'NOT SET'
+    if neb_scanboot_tab then
+      sb = true
+      sbt = 'SET'
+    end
+    GUI_DrawButton(gui, sbt, obj.sections[703], gui.color.white, gui.color.black, sb, 'Nebula scanboot location')
     
   end
   
@@ -15945,11 +15956,14 @@ end
         if rctl.rcmdata == nil then
           rctl.rcmdata = {}
         end
-        rctl.rcmdata[#rctl.rcmdata+1] = {name = vals[1],
+        local datacnt = #rctl.rcmdata+1
+        rctl.rcmdata[datacnt] = {name = vals[1],
                                          msb = msb,
                                          lsb = lsb,
                                          prog = prog}
-                
+        if neb_scanboot_tab then
+          rctl.rcmdata[datacnt].nebfn = neb_scanboot_tab[tonumber(vals[2])]
+        end        
       else
         OpenMsgBox(1,'Invalid value.',1)
       end
@@ -16001,6 +16015,9 @@ end
                                msb = msb,
                                lsb = lsb,
                                prog = prog}
+          if neb_scanboot_tab then
+            rctl.rcmdata[pn].nebfn = neb_scanboot_tab[tonumber(vals[2])]
+          end        
                   
         else
           OpenMsgBox(1,'Invalid value.',1)
@@ -16129,8 +16146,12 @@ end
             else
               mstr = mstr..'|<'..ctl.rcmdata[i].name            
             end
-          end        
-        
+          end
+          if neb_scanboot_fn then        
+            mstr = mstr .. '|Update all program IDs (Nebula)'
+          else
+            mstr = mstr .. '|#Update all program IDs (Nebula)'          
+          end
           mstr = mstr .. '||>Remove Program'
           for i = 1, #ctl.rcmdata do
           
@@ -16145,12 +16166,12 @@ end
         
         local edprog_off = 1
         local edprogN_off = 2
-        local remprog_off = 2
+        local remprog_off = 3
 
         if ctl.rcmdata then
           edprog_off = 1+#ctl.rcmdata
           edprogN_off = edprog_off+1 + #ctl.rcmdata
-          remprog_off = edprogN_off + #ctl.rcmdata
+          remprog_off = edprogN_off + #ctl.rcmdata + 1
         end
 
         local delcnt = 10
@@ -16212,7 +16233,11 @@ end
           
             RCM_EditProgramNeb(res-(edprog_off+1))
 
-          elseif res > edprogN_off and res <= remprog_off then
+          elseif res == edprogN_off+1 then
+          
+            RCM_Neb_UpdateProgIDs(tracks[track_select].strip,page)
+          
+          elseif res > edprogN_off+1 and res <= remprog_off then
           
             local rcnt = #ctl.rcmdata
             ctl.rcmdata[res-(edprogN_off)] = nil
@@ -27396,6 +27421,17 @@ end
       local fadrel = SetAutomationFader({targettype = 3, mode = 1},rel)
       update_gfx = true]]
 
+    elseif mouse.context == nil and MOUSE_click(obj.sections[703]) then
+    
+      local retval, fn = reaper.GetUserFileNameForRead('~scanboot.xml', 'Locate Nebula Scanboot', '*.XML')
+      if retval == true then
+      
+        nebscanboot_file = fn
+        LoadScanBoot(nebscanboot_file)
+        update_gfx = true
+        
+      end
+    
     elseif mouse.context == nil and MOUSE_click(obj.sections[88]) then
       settings_usectlbitmap = not settings_usectlbitmap
       if settings_usectlbitmap then
@@ -30999,6 +31035,7 @@ end
             strip.controls[c].rcmdata[r].msb = tonumber(data[key..'msb'])  
             strip.controls[c].rcmdata[r].lsb = tonumber(data[key..'lsb'])  
             strip.controls[c].rcmdata[r].prog = tonumber(data[key..'prog'])          
+            strip.controls[c].rcmdata[r].nebfn = zn(data[key..'nebfn'])          
           end
         end
 
@@ -32535,6 +32572,7 @@ end
     settings_locksurfaceonnewproject = tobool(nz(GES('lock_surface',true),settings_locksurfaceonnewproject))
     settings_showminimaltopbar = tobool(nz(GES('settings_showminimaltopbar',true),settings_showminimaltopbar))
     backcol = nz(GES('backcol',true),'16 16 16')
+    nebscanboot_file = nz(GES('nebscanboot',true),nil)
     
     if settings_hideeditbaronnewproject then
       plist_w = 0
@@ -32631,6 +32669,7 @@ end
     reaper.SetExtState(SCRIPT,'hide_editbar',tostring(settings_hideeditbaronnewproject), true)    
     reaper.SetExtState(SCRIPT,'lock_surface',tostring(settings_locksurfaceonnewproject), true)    
     reaper.SetExtState(SCRIPT,'backcol',tostring(backcol), true)    
+    reaper.SetExtState(SCRIPT,'nebscanboot',tostring(nebscanboot_file), true)    
     
     if strip_default then
       reaper.SetExtState(SCRIPT,'strip_default',tostring(strip_default.strip_select), true)
@@ -33637,6 +33676,7 @@ end
                   file:write('['..key..'msb]'..strips[s][p].controls[c].rcmdata[r].msb..'\n')
                   file:write('['..key..'lsb]'..strips[s][p].controls[c].rcmdata[r].lsb..'\n')
                   file:write('['..key..'prog]'..strips[s][p].controls[c].rcmdata[r].prog..'\n')                  
+                  file:write('['..key..'nebfn]'..nz(strips[s][p].controls[c].rcmdata[r].nebfn,'')..'\n')                  
                 end 
               else
                 file:write('['..key..'rcmdata_cnt]'..0 ..'\n')                                               
@@ -36434,6 +36474,74 @@ end
     end
   end
   
+  function LoadScanBoot(fn)
+
+    local file
+    file=io.open(fn,"r")
+    content=file:read("*a")
+    file:close()
+  
+    neb_scanboot_tab = {}
+    neb_scanboot_fn = {}
+    
+    if content then    
+      for progid, filen in string.gmatch(content, "<SEQUENCE> (.-) </SEQUENCE>.-<FILENAME> (.-) </FILENAME>") do
+        neb_scanboot_tab[progid+200] = filen
+        neb_scanboot_fn[filen] = tonumber(progid+200)
+      end
+    end
+    
+  end
+  
+  function RCM_Neb_UpdateProgIDs(strip, page)
+  
+    if neb_scanboot_fn and strips[strip] then
+    
+      local upd = 0
+      local fail = 0
+    
+      for i = 1, #strips[strip][page].controls do
+        local ctl = strips[strip][page].controls[i]
+        if ctl.ctlcat == ctlcats.rcm_switch then
+      
+          if ctl.rcmdata and #ctl.rcmdata > 0 then
+      
+            for j = 1, #ctl.rcmdata do
+            
+              if ctl.rcmdata[j].nebfn and neb_scanboot_fn[ctl.rcmdata[j].nebfn] then
+            
+                local nprog = neb_scanboot_fn[ctl.rcmdata[j].nebfn]
+                if nprog then
+                
+                  local msb = F_limit(tonumber(math.floor(math.floor(nprog/100) / 128)),0,127)
+                  local lsb = F_limit(tonumber(math.floor(nprog/100) % 128),0,127)
+                  local prog = F_limit(tonumber(nprog % 100),0,127)
+                  
+                  ctl.rcmdata[j].msb = msb
+                  ctl.rcmdata[j].lsb = lsb
+                  ctl.rcmdata[j].prog = prog
+            
+                  upd = upd + 1
+                end
+                
+              else
+                fail = fail + 1
+              end
+            
+            end
+      
+          end
+      
+        end
+      end
+    
+      local str = 'Neb IDs updated: '..upd..'\n\nNeb IDs not found: '..fail
+      OpenMsgBox(1, str, 1)
+    
+    end
+  
+  end
+  
   ------------------------------------------------------------
 
   SCRIPT = 'LBX_STRIPPER'
@@ -36480,6 +36588,8 @@ end
   eq_path = resource_path.."eq/"
   skins_path = resource_path.."skins/LBXDEF/"
   share_path = resource_path.."share/"
+  nebscanboot_file = nil
+  
   --font_folder = "C:/Windows/Fonts/"
   
   LoadFontList()
@@ -36596,7 +36706,11 @@ end
     
     def_graph = EQC_LoadGraph()
     LoadSettings()
-    LoadData()      
+    LoadData()
+    
+    if nebscanboot_file then
+      LoadScanBoot(nebscanboot_file)
+    end      
     
     gfx.dock(dockstate)
   --test jsfx plug name in quotes
