@@ -15930,6 +15930,33 @@ end
   
   end
 
+  function RCM_AddProgramNeb()
+  
+    local retval, retcsv = reaper.GetUserInputs('Add RCM Program',2,'Program Name,Program ID,extrawidth=60',',0')
+    if retval == true then
+    
+      local vals = split(retcsv,',')
+      if vals[1] and vals[1] ~= '' and tonumber(vals[2]) then
+        local msb = F_limit(tonumber(math.floor(math.floor(vals[2]/100) / 128)),0,127)
+        local lsb = F_limit(tonumber(math.floor(vals[2]/100) % 128),0,127)
+        local prog = F_limit(tonumber(vals[2] % 100),0,127)
+        
+        local rctl = strips[tracks[track_select].strip][page].controls[rcm_select]
+        if rctl.rcmdata == nil then
+          rctl.rcmdata = {}
+        end
+        rctl.rcmdata[#rctl.rcmdata+1] = {name = vals[1],
+                                         msb = msb,
+                                         lsb = lsb,
+                                         prog = prog}
+                
+      else
+        OpenMsgBox(1,'Invalid value.',1)
+      end
+    end
+  
+  end
+
   function RCM_EditProgram(pn)
   
     local rctl = strips[tracks[track_select].strip][page].controls[rcm_select]
@@ -15943,6 +15970,32 @@ end
           local msb = F_limit(tonumber(vals[2]),0,127)
           local lsb = F_limit(tonumber(vals[3]),0,127)
           local prog = F_limit(tonumber(vals[4]),0,127)
+          
+          rctl.rcmdata[pn] = {name = vals[1],
+                               msb = msb,
+                               lsb = lsb,
+                               prog = prog}
+                  
+        else
+          OpenMsgBox(1,'Invalid value.',1)
+        end
+      end
+    end  
+  end
+
+  function RCM_EditProgramNeb(pn)
+  
+    local rctl = strips[tracks[track_select].strip][page].controls[rcm_select]
+    if rctl and rctl.rcmdata and rctl.rcmdata[pn] then
+      local defvals = rctl.rcmdata[pn].name ..','.. rctl.rcmdata[pn].msb * (128*100) + rctl.rcmdata[pn].lsb*100 + rctl.rcmdata[pn].prog
+      local retval, retcsv = reaper.GetUserInputs('Edit RCM Program',2,'Program Name,Program ID,extrawidth=60',defvals)
+      if retval == true then
+      
+        local vals = split(retcsv,',')
+        if vals[1] and vals[1] ~= '' and tonumber(vals[2]) then
+          local msb = F_limit(tonumber(math.floor(math.floor(vals[2]/100) / 128)),0,127)
+          local lsb = F_limit(tonumber(math.floor(vals[2]/100) % 128),0,127)
+          local prog = F_limit(tonumber(vals[2] % 100),0,127)
           
           rctl.rcmdata[pn] = {name = vals[1],
                                msb = msb,
@@ -15994,10 +16047,32 @@ end
             if rcmrefreshtimer == nil then
               rcmrefreshtimer = {}
             end
-            rcmrefreshtimer[#rcmrefreshtimer+1] = {time = reaper.time_precise() + (ctl.rcmrefresh.delay),
+            local rcmrtcnt = #rcmrefreshtimer+1
+            rcmrefreshtimer[rcmrtcnt] = {time = reaper.time_precise() + (ctl.rcmrefresh.delay),
                                                    guid = ctl.rcmrefresh.guid,
-                                                   tracknum = tracks[track_select].tracknum}
+                                                   tracknum = tracks[track_select].tracknum,
+                                                   setvals = ctl.rcmrefresh.setvals}
             rcmrefreshtimercount = rcmrefreshtimercount + 1
+            if ctl.rcmrefresh.setvals then
+              local guid = ctl.rcmrefresh.guid
+              for i = 1, #strips[strip][page].controls do
+                local sctl = strips[strip][page].controls[i]
+                if sctl.fxguid == guid then
+                
+                  if sctl.ctlcat == ctlcats.fxparam then
+                
+                    if rcmrefreshtimer[rcmrtcnt].ctlvals == nil then
+                      rcmrefreshtimer[rcmrtcnt].ctlvals = {}
+                    end
+                    rcmrefreshtimer[rcmrtcnt].ctlvals[#rcmrefreshtimer[rcmrtcnt].ctlvals+1] = {val = sctl.val,
+                                                                                               strip = strip,
+                                                                                               page = page,
+                                                                                               ctl = i}
+                  end
+                end
+              end
+            
+            end
           end
         end
       end
@@ -16030,10 +16105,23 @@ end
       
         local mstr = 'Add Program'
 
-
         if ctl.rcmdata and #ctl.rcmdata > 0 then
 
           mstr = mstr .. '|>Edit Program'
+          for i = 1, #ctl.rcmdata do
+          
+            if i < #ctl.rcmdata then 
+              mstr = mstr..'|'..ctl.rcmdata[i].name
+            else
+              mstr = mstr..'|<'..ctl.rcmdata[i].name            
+            end
+          end        
+        end
+        
+        mstr = mstr ..'||Add Program (Nebula)'
+        
+        if ctl.rcmdata and #ctl.rcmdata > 0 then
+          mstr = mstr .. '|>Edit Program (Nebula)'
           for i = 1, #ctl.rcmdata do
           
             if i < #ctl.rcmdata then 
@@ -16056,11 +16144,13 @@ end
         end
         
         local edprog_off = 1
-        local remprog_off = 1
+        local edprogN_off = 2
+        local remprog_off = 2
 
         if ctl.rcmdata then
           edprog_off = 1+#ctl.rcmdata
-          remprog_off = edprog_off + #ctl.rcmdata
+          edprogN_off = edprog_off+1 + #ctl.rcmdata
+          remprog_off = edprogN_off + #ctl.rcmdata
         end
 
         local delcnt = 10
@@ -16096,21 +16186,36 @@ end
           end
           mstr = mstr..fxname
         end
+        if ctl.rcmrefresh and ctl.rcmrefresh.setvals == true then
+          mstr = mstr .. '|!Retain Values'
+        else
+          mstr = mstr .. '|Retain Values'        
+        end
         mstr = mstr .. '||<Clear'
         
         gfx.x, gfx.y = mouse.mx, mouse.my
         local res = OpenMenu(mstr)
+        --DBG(res..'  '..edprog_off..'  '..edprogN_off..'  '..remprog_off)
         if res > 0 then
           if res == 1 then
             RCM_AddProgram()
+                      
           elseif res > 1 and res <= edprog_off then
           
             RCM_EditProgram(res-1)
 
-          elseif res > edprog_off and res <= remprog_off-1 then
+          elseif res == edprog_off+1 then
+          
+            RCM_AddProgramNeb()
+
+          elseif res > edprog_off+1 and res <= edprogN_off then
+          
+            RCM_EditProgramNeb(res-(edprog_off+1))
+
+          elseif res > edprogN_off and res <= remprog_off then
           
             local rcnt = #ctl.rcmdata
-            ctl.rcmdata[res-edprog_off] = nil
+            ctl.rcmdata[res-(edprogN_off)] = nil
             ctl.rcmdata = Table_RemoveNils(ctl.rcmdata, rcnt)
           
           elseif res > remprog_off and res <= remprog_off+delcnt then
@@ -16126,6 +16231,15 @@ end
             end
             ctl.rcmrefresh.guid = reaper.TrackFX_GetFXGUID(track,fxnum)
           elseif res == remprog_off+delcnt+fxcnt+1 then
+            if ctl.rcmrefresh == nil then
+              ctl.rcmrefresh = {delay = 1}
+            end
+            if ctl.rcmrefresh.setvals == nil or ctl.rcmrefresh.setvals == false then
+              ctl.rcmrefresh.setvals = true
+            else
+              ctl.rcmrefresh.setvals = nil
+            end
+          elseif res == remprog_off+delcnt+fxcnt+2 then
             ctl.rcmrefresh = nil
           end
         end
@@ -19484,12 +19598,38 @@ end
           if rcmrefreshtimer[r].tracknum == tracks[track_select].tracknum then
             if reaper.time_precise() >= rcmrefreshtimer[r].time then
               RefreshControlsByGUID(rcmrefreshtimer[r].guid)
+              
+              if rcmrefreshtimer[r].setvals == true then
+                local cvs = rcmrefreshtimer[r].ctlvals
+                if cvs and #cvs > 0 then
+                  for i = 1, #cvs do
+                    local ctl = strips[cvs[i].strip][cvs[i].page].controls[cvs[i].ctl]
+                    ctl.val = cvs[i].val
+                    A_SetParam(cvs[i].strip,cvs[i].page,cvs[i].ctl,ctl)
+                  end
+                end
+              
+              end
+              
               rcmrefreshtimer[r] = nil
               rcmrefreshtimercount = math.max(rcmrefreshtimercount -1,0)
             end
           else
-            rcmrefreshtimer[r] = nil
-            rcmrefreshtimercount = math.max(rcmrefreshtimercount -1,0)            
+            if rcmrefreshtimer[r].setvals == true then
+              if reaper.time_precise() >= rcmrefreshtimer[r].time then
+                local cvs = rcmrefreshtimer[r].ctlvals
+                if cvs and #cvs > 0 then
+                  for i = 1, #cvs do
+                    local ctl = strips[cvs[i].strip][cvs[i].page].controls[cvs[i].ctl]
+                    ctl.val = cvs[i].val
+                    A_SetParam(cvs[i].strip,cvs[i].page,cvs[i].ctl,ctl)
+                  end
+                end
+              end
+            else
+              rcmrefreshtimer[r] = nil
+              rcmrefreshtimercount = math.max(rcmrefreshtimercount -1,0)            
+            end
           end
         end
       end
@@ -30862,11 +31002,13 @@ end
           end
         end
 
+        local rcmrefresh_setvals = tobool(zn(data[key..'rcmrefresh_setvals']))
         local rcmrefresh_guid = data[key..'rcmrefresh_guid']
         local rcmrefresh_delay = tonumber(data[key..'rcmrefresh_delay'])
-        if rcmrefresh_guid or rcmrefresh_delay then
+        if rcmrefresh_guid or rcmrefresh_delay or rcmrefresh_setvals then
           strip.controls[c].rcmrefresh = {guid = rcmrefresh_guid,
-                                          delay = rcmrefresh_delay}
+                                          delay = rcmrefresh_delay,
+                                          setvals = rcmrefresh_setvals}
         end
         
         local gauge = data[key..'gauge']
@@ -33503,6 +33645,7 @@ end
               if strips[s][p].controls[c].rcmrefresh then
                 file:write('['..key..'rcmrefresh_guid]'..nz(strips[s][p].controls[c].rcmrefresh.guid,'')..'\n')                                 
                 file:write('['..key..'rcmrefresh_delay]'..nz(strips[s][p].controls[c].rcmrefresh.delay,'')..'\n')              
+                file:write('['..key..'rcmrefresh_setvals]'..tostring(nz(strips[s][p].controls[c].rcmrefresh.setvals,''))..'\n')              
               end
               
               if strips[s][p].controls[c].gauge then
