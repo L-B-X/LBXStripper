@@ -725,9 +725,13 @@
                 stripdata.strip.controls[i].imageidx = -1
               end
             end
+            
+            
           end                
         end
 
+        RCM_Neb_UpdateProgIDs(stripdata.strip.controls)
+        
         GUI_DrawStateWin(obj,gui,'')
         GUI_DrawStateWin(obj,gui,'Importing strip data... ')
         GUI_DrawStateWin(obj,gui,'')
@@ -762,7 +766,13 @@
               local pickled_table=pickle(stripdata)
               file:write(pickled_table)                        
             else
-              file:write(stripfiledata)                        
+              local fxdata = string.match(stripfiledata, '%[STRIPFILE_VERSION%].-%[\\FXDATA%]')..'\n'
+              file:write(fxdata)
+              file:write('[STRIPDATA]\n')
+              GenStripSaveData2(stripdata.strip,nil,file)
+              file:write('[\\STRIPDATA]\n')
+              
+              --file:write(stripfiledata)                        
             end
             --local pickled_table=pickle(stripdata)
           --DBG('writing')
@@ -12877,7 +12887,7 @@ end
       file:write('[STRIPFILE_VERSION]4\n')
       file:write('[FXDATA]\n'..pickledfx..'\n[\\FXDATA]\n')
       file:write('[STRIPDATA]\n')      
-      local t = GenStripSaveData(tracks[track_select].strip,page,nil,file)
+      local t = GenStripSaveData2(strips[tracks[track_select].strip][page],nil,file)
       file:write('[\\STRIPDATA]\n')      
       
       if snapshots and snapshots[tracks[track_select].strip] then
@@ -16235,7 +16245,7 @@ end
 
           elseif res == edprogN_off+1 then
           
-            RCM_Neb_UpdateProgIDs(tracks[track_select].strip,page)
+            RCM_Neb_UpdateProgIDs(strips[tracks[track_select].strip][page].controls)
           
           elseif res > edprogN_off+1 and res <= remprog_off then
           
@@ -32572,7 +32582,7 @@ end
     settings_locksurfaceonnewproject = tobool(nz(GES('lock_surface',true),settings_locksurfaceonnewproject))
     settings_showminimaltopbar = tobool(nz(GES('settings_showminimaltopbar',true),settings_showminimaltopbar))
     backcol = nz(GES('backcol',true),'16 16 16')
-    nebscanboot_file = nz(GES('nebscanboot',true),nil)
+    nebscanboot_file = zn(GES('nebscanboot',true),nil)
     
     if settings_hideeditbaronnewproject then
       plist_w = 0
@@ -33162,7 +33172,7 @@ end
       
         local key = pfx..'p'..p..'_'
 
-        GenStripSaveData(s,p,key,file)
+        GenStripSaveData2(strips[s][p],key,file)
 
         --[[if strips[s][p] then
 
@@ -33537,6 +33547,420 @@ end
 
   end
   
+  function GenStripSaveData2(stripdata,pfx,file)
+  
+    if file == nil then return end
+    if pfx == nil then pfx = '' end
+  
+    t = reaper.time_precise()
+    --local stripdata = ''
+  
+    --file:write('[strips_count]'..#strips..'\n')
+    --if strips[s] then
+    
+      --[[file:write('[' .. pfx ..'page]'..nz(strips[s].page,1)..'\n')
+      file:write('[' ..pfx ..'track_name]'..strips[s].track.name..'\n')
+      file:write('[' ..pfx ..'track_guid]'..nz(strips[s].track.guid,'')..'\n')
+      file:write('[' ..pfx ..'track_num]'..strips[s].track.tracknum..'\n')
+      file:write('[' ..pfx ..'track_strip]'..strips[s].track.strip..'\n')]]
+    
+      --for p = 1, 4 do
+      
+        local key = pfx
+
+        if stripdata then
+
+          file:write('['..key..'surface_x]'..stripdata.surface_x..'\n')
+          file:write('['..key..'surface_y]'..stripdata.surface_y..'\n')
+          file:write('['..key..'controls_count]'..#stripdata.controls..'\n')
+          file:write('['..key..'graphics_count]'..#stripdata.graphics..'\n')
+          
+          if #stripdata.controls > 0 then
+            for c = 1, #stripdata.controls do
+          
+              local key = pfx..'c_'..c..'_'
+              
+              file:write('['..key..'cid]'..stripdata.controls[c].c_id..'\n')
+              file:write('['..key..'fxname]'..stripdata.controls[c].fxname..'\n')
+              file:write('['..key..'fxguid]'..nz(stripdata.controls[c].fxguid,'')..'\n')
+              file:write('['..key..'fxnum]'..nz(stripdata.controls[c].fxnum,'')..'\n')
+              file:write('['..key..'fxfound]'..tostring(stripdata.controls[c].fxfound)..'\n')
+              file:write('['..key..'param]'..stripdata.controls[c].param..'\n')
+  
+              file:write('['..key..'param_info_name]'..stripdata.controls[c].param_info.paramname..'\n')
+              file:write('['..key..'param_info_paramnum]'..nz(stripdata.controls[c].param_info.paramnum,'')..'\n')
+              file:write('['..key..'param_info_idx]'..nz(stripdata.controls[c].param_info.paramidx,'')..'\n')
+              file:write('['..key..'param_info_str]'..nz(stripdata.controls[c].param_info.paramstr,'')..'\n')
+              file:write('['..key..'param_info_guid]'..nz(stripdata.controls[c].param_info.paramdestguid,'')..'\n')
+              file:write('['..key..'param_info_chan]'..nz(stripdata.controls[c].param_info.paramdestchan,'')..'\n')
+              file:write('['..key..'param_info_srcchan]'..nz(stripdata.controls[c].param_info.paramsrcchan,'')..'\n')
+              file:write('['..key..'ctltype]'..stripdata.controls[c].ctltype..'\n')
+              file:write('['..key..'knob_select]'..stripdata.controls[c].knob_select..'\n')
+              file:write('['..key..'ctl_info_fn]'..stripdata.controls[c].ctl_info.fn..'\n')
+              file:write('['..key..'ctl_info_frames]'..stripdata.controls[c].ctl_info.frames..'\n')
+              file:write('['..key..'ctl_info_imageidx]'..stripdata.controls[c].ctl_info.imageidx..'\n')
+              file:write('['..key..'ctl_info_cellh]'..stripdata.controls[c].ctl_info.cellh..'\n')
+              file:write('['..key..'x]'..stripdata.controls[c].x..'\n')
+              file:write('['..key..'y]'..stripdata.controls[c].y..'\n')
+              file:write('['..key..'w]'..stripdata.controls[c].w..'\n')
+              file:write('['..key..'scale]'..stripdata.controls[c].scale..'\n')
+              file:write('['..key..'show_paramname]'..tostring(stripdata.controls[c].show_paramname)..'\n')
+              file:write('['..key..'show_paramval]'..tostring(stripdata.controls[c].show_paramval)..'\n')
+              file:write('['..key..'ctlname_override]'..nz(stripdata.controls[c].ctlname_override,'')..'\n')
+              file:write('['..key..'textcol]'..stripdata.controls[c].textcol..'\n')
+              file:write('['..key..'textoff]'..stripdata.controls[c].textoff..'\n')
+              file:write('['..key..'textoffval]'..stripdata.controls[c].textoffval..'\n')
+              file:write('['..key..'textoffx]'..stripdata.controls[c].textoffx..'\n')
+              file:write('['..key..'textoffvalx]'..stripdata.controls[c].textoffvalx..'\n')
+              file:write('['..key..'textsize]'..nz(stripdata.controls[c].textsize,0)..'\n')
+              file:write('['..key..'font]'..nz(stripdata.controls[c].font,fontname_def)..'\n')
+              file:write('['..key..'val]'..nz(stripdata.controls[c].val,0)..'\n')
+              file:write('['..key..'mval]'..nz(stripdata.controls[c].mval,nz(stripdata.controls[c].val,0))..'\n')
+              file:write('['..key..'defval]'..nz(stripdata.controls[c].defval,0)..'\n')   
+              file:write('['..key..'maxdp]'..nz(stripdata.controls[c].maxdp,-1)..'\n')   
+              file:write('['..key..'dvaloffset]'..nz(stripdata.controls[c].dvaloffset,'')..'\n')   
+              file:write('['..key..'minov]'..nz(stripdata.controls[c].minov,'')..'\n')   
+              file:write('['..key..'maxov]'..nz(stripdata.controls[c].maxov,'')..'\n')   
+              file:write('['..key..'scalemodex]'..nz(stripdata.controls[c].scalemode,8)..'\n')   
+              file:write('['..key..'framemodex]'..nz(stripdata.controls[c].framemode,1)..'\n')   
+              file:write('['..key..'poslock]'..nz(tostring(stripdata.controls[c].poslock),false)..'\n')   
+              file:write('['..key..'horiz]'..tostring(nz(stripdata.controls[c].horiz,false))..'\n')
+              file:write('['..key..'knobsens_norm]'..tostring(nz(stripdata.controls[c].knobsens.norm,settings_defknobsens.norm))..'\n')
+              file:write('['..key..'knobsens_fine]'..tostring(nz(stripdata.controls[c].knobsens.fine,settings_defknobsens.fine))..'\n')                 
+              file:write('['..key..'knobsens_wheel]'..tostring(nz(stripdata.controls[c].knobsens.wheel,settings_defknobsens.wheel))..'\n')
+              file:write('['..key..'knobsens_wheelfine]'..tostring(nz(stripdata.controls[c].knobsens.wheelfine,settings_defknobsens.wheelfine))..'\n')                 
+              file:write('['..key..'hidden]'..tostring(nz(stripdata.controls[c].hidden,false))..'\n')
+              file:write('['..key..'switcherid]'..tostring(nz(stripdata.controls[c].switcherid,''))..'\n')
+              file:write('['..key..'switcher]'..tostring(nz(stripdata.controls[c].switcher,''))..'\n')
+              file:write('['..key..'noss]'..tostring(nz(stripdata.controls[c].noss,''))..'\n')
+  
+              file:write('['..key..'id]'..convnum(stripdata.controls[c].id)..'\n')
+              file:write('['..key..'grpid]'..convnum(stripdata.controls[c].grpid)..'\n')
+      
+              file:write('['..key..'ctlcat]'..nz(stripdata.controls[c].ctlcat,'')..'\n')
+              file:write('['..key..'tracknum]'..nz(stripdata.controls[c].tracknum,'')..'\n')
+              file:write('['..key..'trackguid]'..nz(stripdata.controls[c].trackguid,'')..'\n')
+              file:write('['..key..'memstate]'..tostring(nz(stripdata.controls[c].membtn.state,false))..'\n')
+              file:write('['..key..'memmem]'..nz(stripdata.controls[c].membtn.mem,0)..'\n')
+              
+              file:write('['..key..'xydata_x]'..nz(stripdata.controls[c].xydata.x,0.5)..'\n')
+              file:write('['..key..'xydata_y]'..nz(stripdata.controls[c].xydata.y,0.5)..'\n')
+              file:write('['..key..'xydata_snapa]'..nz(stripdata.controls[c].xydata.snapa,1)..'\n')
+              file:write('['..key..'xydata_snapb]'..nz(stripdata.controls[c].xydata.snapb,1)..'\n')
+              file:write('['..key..'xydata_snapc]'..nz(stripdata.controls[c].xydata.snapc,1)..'\n')
+              file:write('['..key..'xydata_snapd]'..nz(stripdata.controls[c].xydata.snapd,1)..'\n')
+
+              file:write('['..key..'macrofader]'..nz(stripdata.controls[c].macrofader,'')..'\n')
+  
+              if stripdata.controls[c].cycledata and stripdata.controls[c].cycledata.statecnt then
+                file:write('['..key..'cycledata_statecnt]'..nz(stripdata.controls[c].cycledata.statecnt,0)..'\n')
+                file:write('['..key..'cycledata_mapptof]'..tostring(nz(stripdata.controls[c].cycledata.mapptof,false))..'\n')
+                file:write('['..key..'cycledata_draggable]'..tostring(nz(stripdata.controls[c].cycledata.draggable,false))..'\n')
+                file:write('['..key..'cycledata_spread]'..tostring(nz(stripdata.controls[c].cycledata.spread,false))..'\n')
+                file:write('['..key..'cycledata_pos]'..tostring(nz(stripdata.controls[c].cycledata.pos,1))..'\n')
+                file:write('['..key..'cycledata_posdirty]'..tostring(nz(stripdata.controls[c].cycledata.posdirty,false))..'\n')
+                if nz(stripdata.controls[c].cycledata.statecnt,0) > 0 then
+                  for i = 1, stripdata.controls[c].cycledata.statecnt do
+                    local key = pfx..'c_'..c..'_cyc_'..i..'_'
+                    file:write('['..key..'val]'..nz(stripdata.controls[c].cycledata[i].val,0)..'\n')   
+                    file:write('['..key..'dispval]'..nz(stripdata.controls[c].cycledata[i].dispval,'')..'\n')   
+                    file:write('['..key..'dv]'..nz(stripdata.controls[c].cycledata[i].dv,'')..'\n')   
+                  end
+                end
+              else
+                file:write('['..key..'cycledata_statecnt]'..0 ..'\n')                   
+              end
+
+              if stripdata.controls[c].midiout then
+                file:write('['..key..'midiout_output]'..nz(stripdata.controls[c].midiout.output,'')..'\n')
+                file:write('['..key..'midiout_mchan]'..nz(stripdata.controls[c].midiout.mchan,'')..'\n')
+                file:write('['..key..'midiout_msg3]'..nz(stripdata.controls[c].midiout.msg3,'')..'\n')              
+              end
+
+              if stripdata.controls[c].rcmdata and #stripdata.controls[c].rcmdata > 0 then
+                file:write('['..key..'rcmdata_cnt]'..#stripdata.controls[c].rcmdata ..'\n')                                 
+                for r = 1, #stripdata.controls[c].rcmdata do
+                  local key = pfx..'c_'..c..'_rcm_'..r..'_'
+                  file:write('['..key..'name]'..stripdata.controls[c].rcmdata[r].name..'\n')                                 
+                  file:write('['..key..'msb]'..stripdata.controls[c].rcmdata[r].msb..'\n')
+                  file:write('['..key..'lsb]'..stripdata.controls[c].rcmdata[r].lsb..'\n')
+                  file:write('['..key..'prog]'..stripdata.controls[c].rcmdata[r].prog..'\n')                  
+                  file:write('['..key..'nebfn]'..nz(stripdata.controls[c].rcmdata[r].nebfn,'')..'\n')                  
+                end 
+              else
+                file:write('['..key..'rcmdata_cnt]'..0 ..'\n')                                               
+              end
+              
+              if stripdata.controls[c].rcmrefresh then
+                file:write('['..key..'rcmrefresh_guid]'..nz(stripdata.controls[c].rcmrefresh.guid,'')..'\n')                                 
+                file:write('['..key..'rcmrefresh_delay]'..nz(stripdata.controls[c].rcmrefresh.delay,'')..'\n')              
+                file:write('['..key..'rcmrefresh_setvals]'..tostring(nz(stripdata.controls[c].rcmrefresh.setvals,''))..'\n')              
+              end
+              
+              if stripdata.controls[c].gauge then
+                file:write('['..key..'gauge]'..tostring(true)..'\n')
+              
+                file:write('['..key..'gauge_type]'..nz(stripdata.controls[c].gauge.type,1)..'\n')
+                file:write('['..key..'gauge_x_offs]'..nz(stripdata.controls[c].gauge.x_offs,0)..'\n')
+                file:write('['..key..'gauge_y_offs]'..nz(stripdata.controls[c].gauge.y_offs,0)..'\n')
+                file:write('['..key..'gauge_radius]'..nz(stripdata.controls[c].gauge.radius,50)..'\n')
+                file:write('['..key..'gauge_arclen]'..nz(stripdata.controls[c].gauge.arclen,1)..'\n')
+                file:write('['..key..'gauge_rotation]'..nz(stripdata.controls[c].gauge.rotation,0)..'\n')
+                file:write('['..key..'gauge_ticks]'..nz(stripdata.controls[c].gauge.ticks,0)..'\n')
+                file:write('['..key..'gauge_tick_size]'..nz(stripdata.controls[c].gauge.tick_size,2)..'\n')
+                file:write('['..key..'gauge_tick_offs]'..nz(stripdata.controls[c].gauge.tick_offs,1)..'\n')
+                file:write('['..key..'gauge_val_freq]'..nz(stripdata.controls[c].gauge.val_freq,0)..'\n')
+                file:write('['..key..'gauge_col_tick]'..nz(stripdata.controls[c].gauge.col_tick,gui.color.white)..'\n')
+                file:write('['..key..'gauge_col_arc]'..nz(stripdata.controls[c].gauge.col_arc,gui.color.white)..'\n')
+                file:write('['..key..'gauge_col_val]'..nz(stripdata.controls[c].gauge.col_val,gui.color.white)..'\n')
+                file:write('['..key..'gauge_show_arc]'..tostring(nz(stripdata.controls[c].gauge.show_arc,true))..'\n')
+                file:write('['..key..'gauge_show_tick]'..tostring(nz(stripdata.controls[c].gauge.show_tick,true))..'\n')
+                file:write('['..key..'gauge_show_val]'..tostring(nz(stripdata.controls[c].gauge.show_val,true))..'\n')
+                file:write('['..key..'gauge_val_dp]'..nz(stripdata.controls[c].gauge.val_dp,0)..'\n')
+                file:write('['..key..'gauge_font]'..nz(stripdata.controls[c].gauge.font,fontname_def)..'\n')
+                file:write('['..key..'gauge_fontsz]'..nz(stripdata.controls[c].gauge.fontsz,0)..'\n')
+                file:write('['..key..'gauge_spread]'..tostring(nz(stripdata.controls[c].gauge.spread,''))..'\n')
+                file:write('['..key..'gauge_mapptof]'..tostring(nz(stripdata.controls[c].gauge.mapptof,''))..'\n')
+                file:write('['..key..'gauge_numonly]'..tostring(nz(stripdata.controls[c].gauge.numonly,''))..'\n')
+                file:write('['..key..'gauge_abbrev]'..tostring(nz(stripdata.controls[c].gauge.abbrev,''))..'\n')
+                file:write('['..key..'gauge_valcnt]'..#stripdata.controls[c].gauge.vals..'\n')
+              
+                if stripdata.controls[c].gauge.vals and #stripdata.controls[c].gauge.vals > 0 then
+                  for gv = 1, #stripdata.controls[c].gauge.vals do
+                    local key = pfx..'c_'..c..'_gaugevals_'..gv..'_' 
+                    file:write('['..key..'val]'..nz(stripdata.controls[c].gauge.vals[gv].val,0)..'\n')
+                    file:write('['..key..'dval]'..nz(stripdata.controls[c].gauge.vals[gv].dval,'-')..'\n')
+                    file:write('['..key..'dover]'..nz(stripdata.controls[c].gauge.vals[gv].dover,'')..'\n')                  
+                    file:write('['..key..'nudge]'..nz(stripdata.controls[c].gauge.vals[gv].nudge,0)..'\n')                  
+                  end
+                end
+              end
+                            
+              if stripdata.controls[c].macroctl then
+                local mcnt = #stripdata.controls[c].macroctl
+                file:write('['..key..'macroctl_cnt]'..mcnt..'\n')                                 
+                for mc = 1,mcnt do
+                  local key = pfx..'c_'..c..'_mc_'..mc..'_'
+                  file:write('['..key..'c_id]'..stripdata.controls[c].macroctl[mc].c_id..'\n')                                 
+                  file:write('['..key..'ctl]'..stripdata.controls[c].macroctl[mc].ctl..'\n')                                 
+                  file:write('['..key..'A]'..stripdata.controls[c].macroctl[mc].A_val..'\n')                                 
+                  file:write('['..key..'B]'..stripdata.controls[c].macroctl[mc].B_val..'\n')                                 
+                  file:write('['..key..'shape]'..stripdata.controls[c].macroctl[mc].shape..'\n')                                 
+                  file:write('['..key..'mute]'..tostring(nz(stripdata.controls[c].macroctl[mc].mute,false))..'\n')                                 
+                  file:write('['..key..'bi]'..tostring(nz(stripdata.controls[c].macroctl[mc].bi,false))..'\n')
+                  file:write('['..key..'inv]'..tostring(nz(stripdata.controls[c].macroctl[mc].inv,false))..'\n')                                 
+                  file:write('['..key..'rel]'..tostring(nz(stripdata.controls[c].macroctl[mc].relative,false))..'\n')                                 
+                end
+              else
+                file:write('['..key..'macroctl_cnt]'..0 ..'\n')                                 
+              end
+
+              if stripdata.controls[c].eqbands then
+                local bcnt = #stripdata.controls[c].eqbands
+                file:write('['..key..'eqband_cnt]'..bcnt..'\n')
+                if bcnt > 0 then                                 
+                  for bc = 1,bcnt do
+                    local key = pfx..'c_'..c..'_eqband_'..bc..'_'
+                    file:write('['..key..'posmin]'..nz(stripdata.controls[c].eqbands[bc].posmin,'')..'\n')                                 
+                    file:write('['..key..'posmax]'..nz(stripdata.controls[c].eqbands[bc].posmax,'')..'\n')                                 
+                    file:write('['..key..'col]'..nz(stripdata.controls[c].eqbands[bc].col,'')..'\n')                                 
+                    file:write('['..key..'fxnum]'..nz(stripdata.controls[c].eqbands[bc].fxnum,'')..'\n')                                 
+                    file:write('['..key..'fxguid]'..nz(stripdata.controls[c].eqbands[bc].fxguid,'')..'\n')                                 
+                    file:write('['..key..'fxname]'..nz(stripdata.controls[c].eqbands[bc].fxname,'')..'\n')                                 
+                    file:write('['..key..'freq_param]'..nz(stripdata.controls[c].eqbands[bc].freq_param,'')..'\n')                                 
+                    file:write('['..key..'freq_param_name]'..nz(stripdata.controls[c].eqbands[bc].freq_param_name,'')..'\n')                                 
+                    file:write('['..key..'gain_param]'..nz(stripdata.controls[c].eqbands[bc].gain_param,'')..'\n')                                 
+                    file:write('['..key..'gain_param_name]'..nz(stripdata.controls[c].eqbands[bc].gain_param_name,'')..'\n')                                 
+                    file:write('['..key..'q_param]'..nz(stripdata.controls[c].eqbands[bc].q_param,'')..'\n')                                 
+                    file:write('['..key..'q_param_name]'..nz(stripdata.controls[c].eqbands[bc].q_param_name,'')..'\n')                                 
+                    file:write('['..key..'bypass_param]'..nz(stripdata.controls[c].eqbands[bc].bypass_param,'')..'\n')                                 
+                    file:write('['..key..'bypass_param_name]'..nz(stripdata.controls[c].eqbands[bc].bypass_param_name,'')..'\n')                                 
+                    file:write('['..key..'c1_param]'..nz(stripdata.controls[c].eqbands[bc].c1_param,'')..'\n')                                 
+                    file:write('['..key..'c1_param_name]'..nz(stripdata.controls[c].eqbands[bc].c1_param_name,'')..'\n')                                 
+                    file:write('['..key..'c2_param]'..nz(stripdata.controls[c].eqbands[bc].c2_param,'')..'\n')                                 
+                    file:write('['..key..'c2_param_name]'..nz(stripdata.controls[c].eqbands[bc].c2_param_name,'')..'\n')                                 
+                    file:write('['..key..'c3_param]'..nz(stripdata.controls[c].eqbands[bc].c3_param,'')..'\n')                                 
+                    file:write('['..key..'c3_param_name]'..nz(stripdata.controls[c].eqbands[bc].c3_param_name,'')..'\n')                                 
+                    file:write('['..key..'c4_param]'..nz(stripdata.controls[c].eqbands[bc].c4_param,'')..'\n')                                 
+                    file:write('['..key..'c4_param_name]'..nz(stripdata.controls[c].eqbands[bc].c4_param_name,'')..'\n')                                 
+                    file:write('['..key..'c5_param]'..nz(stripdata.controls[c].eqbands[bc].c5_param,'')..'\n')                                 
+                    file:write('['..key..'c5_param_name]'..nz(stripdata.controls[c].eqbands[bc].c5_param_name,'')..'\n')                                 
+                    file:write('['..key..'freq_val]'..nz(stripdata.controls[c].eqbands[bc].freq_val,'')..'\n')                                 
+                    file:write('['..key..'gain_val]'..nz(stripdata.controls[c].eqbands[bc].gain_val,'')..'\n')                                 
+                    file:write('['..key..'q_val]'..nz(stripdata.controls[c].eqbands[bc].q_val,'')..'\n')                                 
+                    file:write('['..key..'c1_val]'..nz(stripdata.controls[c].eqbands[bc].c1_val,'')..'\n')                                 
+                    file:write('['..key..'c2_val]'..nz(stripdata.controls[c].eqbands[bc].c2_val,'')..'\n')                                 
+                    file:write('['..key..'c3_val]'..nz(stripdata.controls[c].eqbands[bc].c3_val,'')..'\n')                                 
+                    file:write('['..key..'c4_val]'..nz(stripdata.controls[c].eqbands[bc].c4_val,'')..'\n')                                 
+                    file:write('['..key..'c5_val]'..nz(stripdata.controls[c].eqbands[bc].c5_val,'')..'\n')                                 
+
+                    file:write('['..key..'freq_min]'..nz(stripdata.controls[c].eqbands[bc].freq_min,'')..'\n')                                 
+                    file:write('['..key..'freq_max]'..nz(stripdata.controls[c].eqbands[bc].freq_max,'')..'\n')
+                    file:write('['..key..'gain_min]'..nz(stripdata.controls[c].eqbands[bc].gain_min,'')..'\n')                                 
+                    file:write('['..key..'gain_max]'..nz(stripdata.controls[c].eqbands[bc].gain_max,'')..'\n')
+                    file:write('['..key..'bandtype]'..nz(stripdata.controls[c].eqbands[bc].bandtype,'')..'\n')                                 
+                    file:write('['..key..'bandname]'..nz(stripdata.controls[c].eqbands[bc].bandname,'')..'\n')                    
+                    file:write('['..key..'khz]'..nz(tostring(stripdata.controls[c].eqbands[bc].khz),tostring(false))..'\n')                    
+                    file:write('['..key..'gaininv]'..nz(tostring(stripdata.controls[c].eqbands[bc].gain_inv),tostring(false))..'\n')                    
+                    file:write('['..key..'qinv]'..nz(tostring(stripdata.controls[c].eqbands[bc].q_inv),tostring(false))..'\n')                    
+                    file:write('['..key..'gmin]'..nz(stripdata.controls[c].eqbands[bc].gmin,'')..'\n')                                 
+                    file:write('['..key..'gmax]'..nz(stripdata.controls[c].eqbands[bc].gmax,'')..'\n')                                 
+
+                    file:write('['..key..'freq_def]'..nz(stripdata.controls[c].eqbands[bc].freq_def,'')..'\n')                                 
+                    file:write('['..key..'gain_def]'..nz(stripdata.controls[c].eqbands[bc].gain_def,'')..'\n')                                 
+                    file:write('['..key..'q_def]'..nz(stripdata.controls[c].eqbands[bc].q_def,'')..'\n')                                 
+                    file:write('['..key..'c1_def]'..nz(stripdata.controls[c].eqbands[bc].c1_def,'')..'\n')                                 
+                    file:write('['..key..'c2_def]'..nz(stripdata.controls[c].eqbands[bc].c2_def,'')..'\n')                                 
+                    file:write('['..key..'c3_def]'..nz(stripdata.controls[c].eqbands[bc].c3_def,'')..'\n')                                 
+                    file:write('['..key..'c4_def]'..nz(stripdata.controls[c].eqbands[bc].c4_def,'')..'\n')                                 
+                    file:write('['..key..'c5_def]'..nz(stripdata.controls[c].eqbands[bc].c5_def,'')..'\n')                                 
+                    
+                    local key = pfx..'c_'..c..'_eqband_'..bc..'_'
+                    if stripdata.controls[c].eqbands[bc].lookmap then
+                      local lcnt = #stripdata.controls[c].eqbands[bc].lookmap
+                      file:write('['..key..'lookmap_cnt]'..lcnt..'\n')
+                      
+                      if lcnt > 0 then
+                        for lc = 1, lcnt do
+                          local key = pfx..'c_'..c..'_eqband_'..bc..'_lm_'..lc..'_'
+                          file:write('['..key..'pix]'..nz(stripdata.controls[c].eqbands[bc].lookmap[lc].pix,'')..'\n')                                 
+                          file:write('['..key..'hz]'..nz(stripdata.controls[c].eqbands[bc].lookmap[lc].hz,'')..'\n')                                 
+                        end
+                      end
+                    
+                    else
+                      file:write('['..key..'lookmap_cnt]'..0 ..'\n')                    
+                    end
+
+                    local key = pfx..'c_'..c..'_eqband_'..bc..'_'
+                    if stripdata.controls[c].eqbands[bc].gmap then
+                      local lcnt = #stripdata.controls[c].eqbands[bc].gmap
+                      file:write('['..key..'gmap_cnt]'..lcnt..'\n')
+                      
+                      if lcnt > 0 then
+                        for lc = 1, lcnt do
+                          local key = pfx..'c_'..c..'_eqband_'..bc..'_gm_'..lc..'_'
+                          file:write('['..key..'pix]'..nz(stripdata.controls[c].eqbands[bc].gmap[lc].pix,'')..'\n')                                 
+                          file:write('['..key..'db]'..nz(stripdata.controls[c].eqbands[bc].gmap[lc].db,'')..'\n')                                 
+                        end
+                      end
+                    
+                    else
+                      file:write('['..key..'gmap_cnt]'..0 ..'\n')                    
+                    end
+                                                     
+                  end
+                  
+                end
+              else
+                file:write('['..key..'eqband_cnt]'..0 ..'\n')                                 
+              end
+
+              if stripdata.controls[c].eqgraph and type(stripdata.controls[c].eqgraph) == 'table' then
+
+                local key = pfx..'c_'..c..'_'
+                file:write('['..key..'ecg_graph]'..tostring(true)..'\n')                                               
+                file:write('['..key..'ecg_gmin]'..nz(stripdata.controls[c].eqgraph.gmin,'')..'\n')                                 
+                file:write('['..key..'ecg_gmax]'..nz(stripdata.controls[c].eqgraph.gmax,'')..'\n')                                 
+                file:write('['..key..'ecg_posmin]'..nz(stripdata.controls[c].eqgraph.posmin,'')..'\n')                                 
+                file:write('['..key..'ecg_posmax]'..nz(stripdata.controls[c].eqgraph.posmax,'')..'\n')                                 
+
+                if stripdata.controls[c].eqgraph.lookmap then
+                  local lcnt = #stripdata.controls[c].eqgraph.lookmap
+                  file:write('['..key..'ecg_lookmap_cnt]'..lcnt..'\n')
+                  
+                  if lcnt > 0 then
+                    for lc = 1, lcnt do
+                      local key = pfx..'c_'..c..'_ecg_lm_'..lc..'_'
+                      file:write('['..key..'pix]'..nz(stripdata.controls[c].eqgraph.lookmap[lc].pix,'')..'\n')                                 
+                      file:write('['..key..'hz]'..nz(stripdata.controls[c].eqgraph.lookmap[lc].hz,'')..'\n')                                 
+                    end
+                  end
+                
+                else
+                  file:write('['..key..'ecg_lookmap_cnt]'..0 ..'\n')                    
+                end
+
+                local key = pfx..'c_'..c..'_'
+                if stripdata.controls[c].eqgraph.gmap then
+                  local lcnt = #stripdata.controls[c].eqgraph.gmap
+                  file:write('['..key..'ecg_gmap_cnt]'..lcnt..'\n')
+                  
+                  if lcnt > 0 then
+                    for lc = 1, lcnt do
+                      local key = pfx..'c_'..c..'_ecg_gm_'..lc..'_'
+                      file:write('['..key..'pix]'..nz(stripdata.controls[c].eqgraph.gmap[lc].pix,'')..'\n')                                 
+                      file:write('['..key..'db]'..nz(stripdata.controls[c].eqgraph.gmap[lc].db,'')..'\n')                                 
+                    end
+                  end
+                
+                else
+                  file:write('['..key..'ecg_gmap_cnt]'..0 ..'\n')
+                end
+                
+              end
+
+            end
+          end        
+
+          if #stripdata.graphics > 0 then
+            for g = 1, #stripdata.graphics do
+
+              local key = pfx..'g_'..g..'_'
+          
+              file:write('['..key..'fn]'..stripdata.graphics[g].fn..'\n')
+              --file:write('['..key..'imageidx]'..stripdata.graphics[g].imageidx..'\n')
+              file:write('['..key..'x]'..stripdata.graphics[g].x..'\n')
+              file:write('['..key..'y]'..stripdata.graphics[g].y..'\n')
+              file:write('['..key..'w]'..stripdata.graphics[g].w..'\n')
+              file:write('['..key..'h]'..stripdata.graphics[g].h..'\n')
+              file:write('['..key..'stretchw]'..nz(stripdata.graphics[g].stretchw,stripdata.graphics[g].w)..'\n')
+              file:write('['..key..'stretchh]'..nz(stripdata.graphics[g].stretchh,stripdata.graphics[g].h)..'\n')
+              file:write('['..key..'scale]'..stripdata.graphics[g].scale..'\n')
+              file:write('['..key..'id]'..convnum(stripdata.graphics[g].id)..'\n')
+              file:write('['..key..'grpid]'..convnum(stripdata.graphics[g].grpid)..'\n')
+            
+              file:write('['..key..'gfxtype]'..nz(stripdata.graphics[g].gfxtype, gfxtype.img)..'\n')
+              file:write('['..key..'font_idx]'..nz(stripdata.graphics[g].font.idx, '')..'\n')
+              file:write('['..key..'font_name]'..nz(stripdata.graphics[g].font.name, '')..'\n')
+              file:write('['..key..'font_size]'..nz(stripdata.graphics[g].font.size, '')..'\n')
+              file:write('['..key..'font_bold]'..nz(tostring(stripdata.graphics[g].font.bold), '')..'\n')
+              file:write('['..key..'font_italics]'..nz(tostring(stripdata.graphics[g].font.italics), '')..'\n')
+              file:write('['..key..'font_underline]'..nz(tostring(stripdata.graphics[g].font.underline), '')..'\n')
+              file:write('['..key..'font_shadow]'..nz(tostring(stripdata.graphics[g].font.shadow), '')..'\n')
+              file:write('['..key..'font_shadowx]'..nz(stripdata.graphics[g].font.shadow_x, '')..'\n')
+              file:write('['..key..'font_shadowy]'..nz(stripdata.graphics[g].font.shadow_y, '')..'\n')
+              file:write('['..key..'font_shadowa]'..nz(stripdata.graphics[g].font.shadow_a, '')..'\n')
+              file:write('['..key..'text]'..nz(stripdata.graphics[g].text, '')..'\n')
+              file:write('['..key..'text_col]'..nz(stripdata.graphics[g].text_col, '')..'\n')
+              file:write('['..key..'poslock]'..nz(tostring(stripdata.graphics[g].poslock), false)..'\n')
+              file:write('['..key..'switcher]'..tostring(nz(stripdata.graphics[g].switcher,''))..'\n')
+            
+            end
+          end
+      
+        else
+          file:write('['..key..'surface_x]'..0 ..'\n')
+          file:write('['..key..'surface_y]'..0 ..'\n')
+          file:write('['..key..'controls_count]'..0 ..'\n')
+          file:write('['..key..'graphics_count]'..0 ..'\n')          
+        end      
+      
+      --end
+    
+    --end
+
+    --file:write(pickled_table)
+    --[[if nofile == true then
+      file:close()
+      reaper.SetProjExtState(0,SCRIPT,'strips_count',#strips) 
+      reaper.SetProjExtState(0,SCRIPT,'strips_datafile_'..string.format("%03d",s),fn) 
+    end]]
+        
+    --DBG('Save strip time: '..reaper.time_precise() - t)
+    return reaper.time_precise() - t
+  
+  end
   
   function GenStripSaveData(s,p,pfx,file)
   
@@ -36478,30 +36902,32 @@ end
 
     local file
     file=io.open(fn,"r")
-    content=file:read("*a")
-    file:close()
-  
-    neb_scanboot_tab = {}
-    neb_scanboot_fn = {}
+    if file then
+      content=file:read("*a")
+      file:close()
     
-    if content then    
-      for progid, filen in string.gmatch(content, "<SEQUENCE> (.-) </SEQUENCE>.-<FILENAME> (.-) </FILENAME>") do
-        neb_scanboot_tab[progid+200] = filen
-        neb_scanboot_fn[filen] = tonumber(progid+200)
+      neb_scanboot_tab = {}
+      neb_scanboot_fn = {}
+      
+      if content then    
+        for progid, filen in string.gmatch(content, "<SEQUENCE> (.-) </SEQUENCE>.-<FILENAME> (.-) </FILENAME>") do
+          neb_scanboot_tab[progid+200] = filen
+          neb_scanboot_fn[filen] = tonumber(progid+200)
+        end
       end
     end
-    
+        
   end
   
-  function RCM_Neb_UpdateProgIDs(strip, page)
+  function RCM_Neb_UpdateProgIDs(ctls)
   
-    if neb_scanboot_fn and strips[strip] then
+    if neb_scanboot_fn and ctls then
     
       local upd = 0
       local fail = 0
     
-      for i = 1, #strips[strip][page].controls do
-        local ctl = strips[strip][page].controls[i]
+      for i = 1, #ctls do
+        local ctl = ctls[i]
         if ctl.ctlcat == ctlcats.rcm_switch then
       
           if ctl.rcmdata and #ctl.rcmdata > 0 then
@@ -36535,7 +36961,7 @@ end
         end
       end
     
-      local str = 'Neb IDs updated: '..upd..'\n\nNeb IDs not found: '..fail
+      local str = 'Neb IDs updated: '..upd..'\n\nNeb IDs not updated: '..fail
       OpenMsgBox(1, str, 1)
     
     end
@@ -36708,7 +37134,7 @@ end
     LoadSettings()
     LoadData()
     
-    if nebscanboot_file then
+    if nebscanboot_file ~= nil then
       LoadScanBoot(nebscanboot_file)
     end      
     
