@@ -25716,13 +25716,15 @@ end
     local ctl = strips[strip][page].controls[switcher_select]
     local switchid = ctl.switcherid
     
-    switchers[switchid].current = switchers[switchid].grpids[sel].id
-    ctl.param_info.paramname = string.format('%i',sel)..': '..switchers[switchid].grpids[sel].name
-    update_gfx = true
-    update_bg = true
-
-    SetCtlBitmapRedraw()
+    if switchers[switchid].grpids[sel] then
+      switchers[switchid].current = switchers[switchid].grpids[sel].id
+      ctl.param_info.paramname = string.format('%i',sel)..': '..switchers[switchid].grpids[sel].name
+      update_gfx = true
+      update_bg = true
   
+      SetCtlBitmapRedraw()
+    end
+      
   end
   
   function A_Run_EQControl(noscroll, rt)
