@@ -19106,6 +19106,8 @@ end
     ReadProjectFlags()
     
     local PROJNAME = GetProjectName()
+    projdirty = reaper.IsProjectDirty()
+--DBG('lpd:'..tostring(lastprojdirty)..'  pd:'..tostring(projdirty))
     if (PROJECTID ~= tonumber(GPES('projectid'))) or newloc then
       if newloc then
         --SaveData()
@@ -19117,7 +19119,7 @@ end
         INIT()                
       end
       LoadData()
-      
+       
     elseif loadset_fn then
       --SaveData()
       if lsmerge == true then
@@ -19129,17 +19131,22 @@ end
       loadset_fn = nil
     elseif PROJNAME ~= lastprojname then
     
+      lastprojname = PROJNAME
       --projid match - loaded older project or new version
       local fn = GPES('lbxstripper_datafile', true)
+      --DBG(fn)
+      --if fn then
       --DBG('load: '..tostring(fn))
+      INIT(true)
       LoadData()
       update_gfx = true
-      lastprojdirty = false
+      lastprojdirty = 0 --reaper.IsProjectDirty()
     
-    end
+    --end
     
-    projdirty = reaper.IsProjectDirty()
-    if lastprojdirty ~= projdirty then
+    --projdirty = reaper.IsProjectDirty()
+    elseif lastprojdirty ~= projdirty then
+      --DBG('pd:'..tostring(projdirty))
       if projdirty == 0 then
         --project saved
         --DBG('saving data')
@@ -32570,7 +32577,7 @@ end
     
     force_resize = true
     update_gfx = true
-    lastprojdirty = false
+    lastprojdirty = 0
     
   end
   
@@ -35986,7 +35993,7 @@ end
       DBGOut('NEW PROJECT ID: '..PROJECTID)          
     end
     
-    lastprojdirty = reaper.IsProjectDirty()
+    lastprojdirty = reaper.IsProjectDirty(0)
     last_proj_change_count = -1
     projnamechange = false
     lastprojname = GetProjectName()
