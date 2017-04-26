@@ -16058,13 +16058,17 @@ end
           local p_msb = 0
           local p_lsb = 1
           local p_prog = 2
+          local p_bken = 13
           
           --bypass
-          reaper.TrackFX_SetParam(track, fxnum, p_byp, 1)
+          --reaper.TrackFX_SetParam(track, fxnum, p_byp, 1)
+          reaper.TrackFX_SetParam(track, fxnum, p_bken, 1)
           reaper.TrackFX_SetParam(track, fxnum, p_msb, ctl.rcmdata[v].msb/127)
           reaper.TrackFX_SetParam(track, fxnum, p_lsb, ctl.rcmdata[v].lsb/127)
           reaper.TrackFX_SetParam(track, fxnum, p_prog, ctl.rcmdata[v].prog/127)
-          reaper.TrackFX_SetParam(track, fxnum, p_byp, 0)
+          os.sleep(0.1)
+          reaper.TrackFX_SetParam(track, fxnum, p_bken, 0)
+          --reaper.TrackFX_SetParam(track, fxnum, p_byp, 1)
         
           ctl.val = v
           ctl.dirty = true
@@ -17143,7 +17147,7 @@ end
       elseif res == 28 then
         local fn = datafile
         if fn == nil then fn = '' end
-        local ret, rfn = reaper.GetUserFileNameForRead(fn, 'Load lbxstripper data file:', string.match(fn, '.+%.(lbxstripper.*)'))
+        local ret, rfn = reaper.GetUserFileNameForRead(fn, 'Load lbxstripper data file:', nz(string.match(fn, '.+%.(lbxstripper.*)'),''))
         if ret == true then
           LoadDataFile(rfn)
         end
@@ -19101,7 +19105,8 @@ end
     
     ReadProjectFlags()
     
-    if PROJECTID ~= tonumber(GPES('projectid')) or newloc then
+    local PROJNAME = GetProjectName()
+    if (PROJECTID ~= tonumber(GPES('projectid'))) or newloc then
       if newloc then
         --SaveData()
         newloc = nil
@@ -19112,6 +19117,7 @@ end
         INIT()                
       end
       LoadData()
+      
     elseif loadset_fn then
       --SaveData()
       if lsmerge == true then
@@ -19121,6 +19127,15 @@ end
         LoadSet2(loadset_fn)
       end
       loadset_fn = nil
+    elseif PROJNAME ~= lastprojname then
+    
+      --projid match - loaded older project or new version
+      local fn = GPES('lbxstripper_datafile', true)
+      --DBG('load: '..tostring(fn))
+      LoadData()
+      update_gfx = true
+      lastprojdirty = false
+    
     end
     
     projdirty = reaper.IsProjectDirty()
@@ -19624,7 +19639,7 @@ end
   end
 
   function RCMRefresh()
-  
+  --DBG('rcmrefresh')
     if rcmrefreshtimer then
       local cnt = 0
       for r = 1, rcmrefreshtimercount do
@@ -31838,7 +31853,7 @@ end
   
     local t = reaper.time_precise()
     local data = {}
-    DBG('a')
+    --DBG('a')
     
     DBGOut('')
     DBGOut('*** LOADING DATA ***')    
@@ -32552,6 +32567,10 @@ end
     GUI_DrawCtlBitmap()
     
     ZeroProjectFlags()
+    
+    force_resize = true
+    update_gfx = true
+    lastprojdirty = false
     
   end
   
@@ -33712,9 +33731,9 @@ end
                 file:write('['..key..'gauge_tick_size]'..nz(stripdata.controls[c].gauge.tick_size,2)..'\n')
                 file:write('['..key..'gauge_tick_offs]'..nz(stripdata.controls[c].gauge.tick_offs,1)..'\n')
                 file:write('['..key..'gauge_val_freq]'..nz(stripdata.controls[c].gauge.val_freq,0)..'\n')
-                file:write('['..key..'gauge_col_tick]'..nz(stripdata.controls[c].gauge.col_tick,gui.color.white)..'\n')
-                file:write('['..key..'gauge_col_arc]'..nz(stripdata.controls[c].gauge.col_arc,gui.color.white)..'\n')
-                file:write('['..key..'gauge_col_val]'..nz(stripdata.controls[c].gauge.col_val,gui.color.white)..'\n')
+                file:write('['..key..'gauge_col_tick]'..nz(stripdata.controls[c].gauge.col_tick,'205 205 205')..'\n')
+                file:write('['..key..'gauge_col_arc]'..nz(stripdata.controls[c].gauge.col_arc,'205 205 205')..'\n')
+                file:write('['..key..'gauge_col_val]'..nz(stripdata.controls[c].gauge.col_val,'205 205 205')..'\n')
                 file:write('['..key..'gauge_show_arc]'..tostring(nz(stripdata.controls[c].gauge.show_arc,true))..'\n')
                 file:write('['..key..'gauge_show_tick]'..tostring(nz(stripdata.controls[c].gauge.show_tick,true))..'\n')
                 file:write('['..key..'gauge_show_val]'..tostring(nz(stripdata.controls[c].gauge.show_val,true))..'\n')
@@ -36747,6 +36766,7 @@ end
           reaper.Main_SaveProject(0,false)
           pn = GetProjectName()
         end
+        --DBG(pn..'  '..lastprojname)
         if pn ~= '' then
           if lastprojname ~= pn then
             projnamechange = true
