@@ -19129,7 +19129,7 @@ end
         LoadSet2(loadset_fn)
       end
       loadset_fn = nil
-    elseif PROJNAME ~= lastprojname then
+    --[[elseif PROJNAME ~= lastprojname then
     
       lastprojname = PROJNAME
       --projid match - loaded older project or new version
@@ -19140,7 +19140,7 @@ end
       INIT(true)
       LoadData()
       update_gfx = true
-      lastprojdirty = 0 --reaper.IsProjectDirty()
+      lastprojdirty = 0 --reaper.IsProjectDirty()]]
     
     --end
     
