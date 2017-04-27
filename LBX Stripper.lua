@@ -19099,6 +19099,59 @@ end
     
   end
   
+  function FindSaveFile(fn)
+  
+    local f = string.match(fn, '(.*)%.lbxstripper')
+    if f then fn = f end
+    
+    local load_path
+    local sf = ''
+    --DBG('ssf:'..save_subfolder)
+    if save_subfolder and save_subfolder ~= '' then
+      sf = save_subfolder
+      if sf == '#' then
+        local projname = GetProjectName() 
+        sf = projname
+      end
+      sf = sf ..'/'
+    end
+    
+    fn = sf..fn
+    --DBG('ffff'..fn)
+    
+    if settings_savedatainprojectfolder == true then
+      load_path=reaper.GetProjectPath('')..'/'
+      --DBG(load_path..fn..'.lbxstripper')
+      if reaper.file_exists(load_path..fn..'.lbxstripper') ~= true and reaper.file_exists(load_path..fn..'.lbxstripper__') ~= true then
+        load_path=projsave_path
+      end
+    else
+      load_path=projsave_path
+      --DBG(load_path..fn..'.lbxstripper')
+      if reaper.file_exists(load_path..fn..'.lbxstripper') ~= true and reaper.file_exists(load_path..fn..'.lbxstripper__') ~= true then
+        load_path=reaper.GetProjectPath('')..'/'
+      end      
+    end
+  
+    local ffn=load_path..fn
+    --DBG('ffn: '..tostring(ffn))
+    local fndffn, fndfn
+    if reaper.file_exists(ffn..'.lbxstripper') then
+      fndffn = ffn..'.lbxstripper'
+      fndfn = fn..'.lbxstripper'
+    elseif reaper.file_exists(ffn..'.lbxstripper__') then
+      fndffn = ffn..'.lbxstripper__'
+      fndfn = fn..'.lbxstripper__'    
+    end
+    --DBG(fndfn)
+    if fndfn then
+      return true, fndfn, fndffn
+    else
+      return false, nil, nil
+    end
+  
+  end
+  
   function run()  
 
     local rt = reaper.time_precise()
@@ -19107,8 +19160,10 @@ end
     
     local PROJNAME = GetProjectName()
     projdirty = reaper.IsProjectDirty()
---DBG('lpd:'..tostring(lastprojdirty)..'  pd:'..tostring(projdirty))
+
     if (PROJECTID ~= tonumber(GPES('projectid'))) or newloc then
+    
+      --DBG('zzz')
       if newloc then
         --SaveData()
         newloc = nil
@@ -19121,6 +19176,7 @@ end
       LoadData()
        
     elseif loadset_fn then
+    
       --SaveData()
       if lsmerge == true then
         LoadSet2(loadset_fn, true)      
@@ -19129,32 +19185,68 @@ end
         LoadSet2(loadset_fn)
       end
       loadset_fn = nil
-    --[[elseif PROJNAME ~= lastprojname then
-    
-      lastprojname = PROJNAME
-      --projid match - loaded older project or new version
-      local fn = GPES('lbxstripper_datafile', true)
-      --DBG(fn)
-      --if fn then
-      --DBG('load: '..tostring(fn))
-      INIT(true)
-      LoadData()
-      update_gfx = true
-      lastprojdirty = 0 --reaper.IsProjectDirty()]]
-    
-    --end
-    
-    --projdirty = reaper.IsProjectDirty()
-    elseif lastprojdirty ~= projdirty then
-      --DBG('pd:'..tostring(projdirty))
-      if projdirty == 0 then
+   
+    elseif lastprojdirty ~= projdirty or PROJNAME ~= lastprojname then
+      
+      --local fn = GPES('lbxstripper_datafile', true)
+      local pfname = string.sub(PROJNAME,0,string.len(PROJNAME)-4)
+      local fn = pfname
+      
+      if projdirty == 0 and PROJNAME == lastprojname then
         --project saved
-        --DBG('saving data')
         SaveProj()
-      else
+        
+      elseif PROJNAME ~= lastprojname then
+      
+        local pr_pfx = string.match(PROJNAME,'(.*%_)%d+.*')
+        local pr_n = string.match(PROJNAME,'%_(%d+).*')
+        local ls_pfx = string.match(lastprojname ,'(.*%_)%d+.*')
+        local ls_n = string.match(lastprojname ,'%_(%d+).*')
+        
+        local found, fn, ffn = FindSaveFile(fn)
+        
+        if found == true then
+          --load
+          --DBG('a')
+          INIT()
+          LoadData()
+          update_gfx = true
+          lastprojdirty = projdirty
+          
+        elseif pr_pfx ~= ls_pfx then
+          --DBG('b')
+          SaveProj()
+        
+        elseif (pr_n and ls_n) and pr_n > ls_n then
+          --DBG('c')
+          SaveProj()
+
+        elseif (pr_n and ls_n) and pr_n < ls_n then
+          --DBG('d')
+          INIT()
+          LoadData()
+          update_gfx = true
+          lastprojdirty = projdirty
+          
+        else
+        
+          --DBG(PROJNAME)
+          --DBG('e')
+          if nz(PROJNAME,'') ~= '' then
+            SaveProj()
+          else
+            INIT()
+            LoadData()
+          end
+          
+        end
+
+        lastprojname = PROJNAME
+        update_gfx = true
         --DBG('projmodified')
       end
       lastprojdirty = projdirty
+      --end
     end
     
     if gfx.w ~= last_gfx_w or gfx.h ~= last_gfx_h or force_resize then
@@ -31984,6 +32076,7 @@ end
   
     local find = string.find
     local match = string.match
+    local LDF
     
     ZeroProjectFlags()
     
@@ -32037,6 +32130,7 @@ end
           data = {}
           local load_path
           local fn = GPES('lbxstripper_datafile', true)
+          LDF = fn
       
           if fn == nil then return end
       
@@ -32578,6 +32672,8 @@ end
     force_resize = true
     update_gfx = true
     lastprojdirty = 0
+    LASTPROJECTID = PROJECTID
+    LOADEDDATAFILE = LDF
     
   end
   
@@ -34495,6 +34591,7 @@ end
     
     file:close()
     reaper.SetProjExtState(0,SCRIPT,'lbxstripper_datafile',fn)
+    LOADEDDATAFILE = fn
     reaper.SetProjExtState(0,SCRIPT,'savedok',tostring(true))
     DBGOut('SaveData: Saved OK: '..tostring(true))
     
@@ -35985,6 +36082,7 @@ end
 
     DBGOut('')
     DBGOut('** DATA INITIALIZATION ***')    
+    LASTPROJECTID = PROJECTID
     
     if keepprojid then
       DBGOut('KEEP PROJECT ID: '..PROJECTID)    
@@ -35992,7 +36090,6 @@ end
       PROJECTID = math.ceil((math.abs(math.sin( -1 + (os.clock() % 2)))) * 0xFFFFFFFF)
       DBGOut('NEW PROJECT ID: '..PROJECTID)          
     end
-    
     lastprojdirty = reaper.IsProjectDirty(0)
     last_proj_change_count = -1
     projnamechange = false
