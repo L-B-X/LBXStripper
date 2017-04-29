@@ -130,7 +130,8 @@
               snapshot_rand = 96,
               dragparam_other = 97, 
               dd = 98,
-              dummy = 99
+              textsizevslider = 99,
+              dummy = 999
               }
   
   ctlcats = {fxparam = 0,
@@ -1346,18 +1347,33 @@
                           w = 58,
                           h = butt_h}
       
-      obj.sections[52] = {x = obj.sections[45].w-40-butt_h/2+4,
-                          y = 150+butt_h+10 + (butt_h/2+4 + 10),
+      obj.sections[52] = {x = obj.sections[45].w-104-butt_h/2+4,
+                          y = 150+butt_h+10 + (butt_h/2+4 + 10)+24,
                           w = butt_h/2+4,
                           h = butt_h/2+4}                           
 
-      obj.sections[53] = {x = obj.sections[45].w-40-butt_h/2+4,
-                          y = 150+butt_h+10 + (butt_h/2+4 + 10) * 2,
+      obj.sections[53] = {x = obj.sections[45].w-104-butt_h/2+4,
+                          y = 150+butt_h+10 + (butt_h/2+4 + 10) * 2+20,
                           w = butt_h/2+4,
                           h = butt_h/2+4}                           
 
-      obj.sections[54] = {x = obj.sections[45].w-40-butt_h/2+4,
-                          y = 150+butt_h+10 + (butt_h/2+4 + 10) * 3,
+      obj.sections[850] = {x = obj.sections[45].w-84-butt_h/2+4,
+                          y = 150+butt_h+10 + (butt_h/2+4 + 10) * 2+20,
+                          w = butt_h/2+4,
+                          h = butt_h/2+4}                           
+
+      obj.sections[851] = {x = obj.sections[52].x+obj.sections[52].w+26,
+                          y = 150+butt_h+10 + (butt_h/2+4 + 10) * 2+20,
+                          w = obj.sections[45].w-(obj.sections[52].x+obj.sections[52].w+36),
+                          h = butt_h/2+4}                           
+
+      obj.sections[852] = {x = obj.sections[851].x+obj.sections[851].w-22,
+                          y = 150+butt_h+10 + (butt_h/2+4 + 10)+24-butt_h,
+                          w = 26,
+                          h = butt_h/2+4}                           
+
+      obj.sections[54] = {x = obj.sections[45].w-84-butt_h/2+4,
+                          y = 150+butt_h+10 + (butt_h/2+4 + 10)+24,
                           w = butt_h/2+4,
                           h = butt_h/2+4}                           
 
@@ -1379,10 +1395,10 @@
                           w = obj.sections[45].w-60,
                           h = butt_h}
                                                      
-      obj.sections[58] = {x = 50,
-                          y = 150+butt_h+10 + (butt_h/2+4 + 10) * 7,
-                          w = obj.sections[45].w-60,
-                          h = butt_h/2+8}                           
+      obj.sections[58] = {x = obj.sections[52].x+obj.sections[52].w+26,
+                          y = 150+butt_h+10 + (butt_h/2+4 + 10)+24,
+                          w = obj.sections[45].w-(obj.sections[52].x+obj.sections[52].w+36),
+                          h = butt_h/2+4}                           
       obj.sections[59] = {x = 50,
                           y = 150+butt_h+11 + (butt_h/2+4 + 10) * 8,
                           w = obj.sections[45].w-60,
@@ -1703,6 +1719,24 @@
                           w = obj.sections[45].w-80,
                           h = butt_h/2+8}
 
+      --CTL OPTIONS PG 3
+      obj.sections[860] = {x = obj.sections[45].w-40-butt_h/2+4,
+                          y = butt_h+10 + (butt_h/2+4 + 10) * 0,
+                          w = butt_h/2+4,
+                          h = butt_h/2+4}
+      obj.sections[861] = {x = obj.sections[45].w-40-butt_h/2+4,
+                          y = butt_h+10 + (butt_h/2+4 + 10) * 1,
+                          w = butt_h/2+4,
+                          h = butt_h/2+4}
+      obj.sections[862] = {x = obj.sections[45].w-40-butt_h/2+4,
+                          y = butt_h+10 + (butt_h/2+4 + 10) * 2,
+                          w = butt_h/2+4,
+                          h = butt_h/2+4}
+      obj.sections[863] = {x = obj.sections[45].w-40-butt_h/2+4,
+                          y = butt_h+10 + (butt_h/2+4 + 10) * 4,
+                          w = butt_h/2+4,
+                          h = butt_h/2+4}
+      
       --LBL OPTIONS 
       --EDIT
       obj.sections[140] = {x = obj.sections[49].x+20,
@@ -2689,6 +2723,8 @@
                                                 textoffx = textoff_selectx,
                                                 textoffvalx = textoffval_selectx,
                                                 textsize = textsize_select,
+                                                textsizev = textsizev_select,
+                                                textcolv = textcolv_select,
                                                 val = GetParamValue(ctlcats.fxparam,
                                                                     tracks[trackedit_select].tracknum,
                                                                     trackfx[trackfx_select].fxnum,
@@ -2708,6 +2744,9 @@
                                                 scalemode = 8,
                                                 framemode = 1,
                                                 horiz = horiz_select,
+                                                bypassbg_c = bypass_bgdraw_c_select,
+                                                bypassbg_n = bypass_bgdraw_n_select,
+                                                bypassbg_v = bypass_bgdraw_v_select,
                                                 knobsens = settings_defknobsens
                                                 }
         if track_select == trackedit_select then
@@ -2753,6 +2792,8 @@
                                                 textoffx = textoff_selectx,
                                                 textoffvalx = textoffval_selectx,
                                                 textsize = textsize_select,
+                                                textsizev = textsizev_select,
+                                                textcolv = textcolv_select,
                                                 val = 0,
                                                 defval = 0,
                                                 maxdp = maxdp_select,
@@ -2766,6 +2807,10 @@
                                                 scalemode = 8,
                                                 framemode = 1,
                                                 horiz = horiz_select,
+                                                bypassbg_c = bypass_bgdraw_c_select,
+                                                bypassbg_n = bypass_bgdraw_n_select,
+                                                bypassbg_v = bypass_bgdraw_v_select,
+                                                clickthrough = clickthrough_select,
                                                 knobsens = settings_defknobsens
                                                 }
         if track_select == trackedit_select then
@@ -2807,6 +2852,8 @@
                                                 textoffx = textoff_selectx,
                                                 textoffvalx = textoffval_selectx,
                                                 textsize = textsize_select,
+                                                textsizev = textsizev_select,
+                                                textcolv = textcolv_select,
                                                 val = GetParamValue(ctlcats.fxparam,
                                                                     last_touch_fx.tracknum,
                                                                     last_touch_fx.fxnum,
@@ -2827,6 +2874,10 @@
                                                 framemode = 1,
                                                 horiz = horiz_select,
                                                 poslock = false,
+                                                bypassbg_c = bypass_bgdraw_c_select,
+                                                bypassbg_n = bypass_bgdraw_n_select,
+                                                bypassbg_v = bypass_bgdraw_v_select,
+                                                clickthrough = clickthrough_select,
                                                 knobsens = settings_defknobsens
                                                 }
         if last_touch_fx.tracknum == strips[strip].track.tracknum then
@@ -2868,6 +2919,8 @@
                                                 textoffx = textoff_selectx,
                                                 textoffvalx = textoffval_selectx,
                                                 textsize = textsize_select,
+                                                textsizev = textsizev_select,
+                                                textcolv = textcolv_select,
                                                 val = GetParamValue(ctlcats.trackparam,
                                                                     tracks[trackedit_select].tracknum,
                                                                     nil,
@@ -2888,6 +2941,10 @@
                                                 framemode = 1,
                                                 horiz = horiz_select,
                                                 poslock = false,
+                                                bypassbg_c = bypass_bgdraw_c_select,
+                                                bypassbg_n = bypass_bgdraw_n_select,
+                                                bypassbg_v = bypass_bgdraw_v_select,
+                                                clickthrough = clickthrough_select,
                                                 knobsens = settings_defknobsens
                                                 }
         if track_select == trackedit_select then
@@ -2940,6 +2997,8 @@
                                                   textoffx = textoff_selectx,
                                                   textoffvalx = textoffval_selectx,
                                                   textsize = textsize_select,
+                                                  textsizev = textsizev_select,
+                                                  textcolv = textcolv_select,
                                                   val = 0,
                                                   defval = 0,
                                                   maxdp = maxdp_select,
@@ -2954,6 +3013,10 @@
                                                   framemode = 1,
                                                   horiz = horiz_select,
                                                   poslock = false,
+                                                  bypassbg_c = bypass_bgdraw_c_select,
+                                                  bypassbg_n = bypass_bgdraw_n_select,
+                                                  bypassbg_v = bypass_bgdraw_v_select,
+                                                  clickthrough = clickthrough_select,
                                                   knobsens = settings_defknobsens
                                                   }
           
@@ -3005,6 +3068,8 @@
                                                 textoffx = textoff_selectx,
                                                 textoffvalx = textoffval_selectx,
                                                 textsize = textsize_select,
+                                                textsizev = textsizev_select,
+                                                textcolv = textcolv_select,
                                                 val = 0,
                                                 defval = 0,
                                                 maxdp = maxdp_select,
@@ -3019,6 +3084,10 @@
                                                 framemode = 1,
                                                 horiz = horiz_select,
                                                 poslock = false,
+                                                bypassbg_c = bypass_bgdraw_c_select,
+                                                bypassbg_n = bypass_bgdraw_n_select,
+                                                bypassbg_v = bypass_bgdraw_v_select,
+                                                clickthrough = clickthrough_select,
                                                 knobsens = settings_defknobsens
                                                }
       elseif dragparam.type == 'pkmeter' then
@@ -3068,6 +3137,8 @@
                                                 textoffx = textoff_selectx,
                                                 textoffvalx = textoffval_selectx,
                                                 textsize = textsize_select,
+                                                textsizev = textsizev_select,
+                                                textcolv = textcolv_select,
                                                 val = 0,
                                                 defval = 0,
                                                 maxdp = maxdp_select,
@@ -3082,6 +3153,10 @@
                                                 framemode = 1,
                                                 horiz = horiz_select,
                                                 poslock = false,
+                                                bypassbg_c = bypass_bgdraw_c_select,
+                                                bypassbg_n = bypass_bgdraw_n_select,
+                                                bypassbg_v = bypass_bgdraw_v_select,
+                                                clickthrough = clickthrough_select,
                                                 knobsens = settings_defknobsens
                                                }
         if track_select == trackedit_select then
@@ -3128,6 +3203,8 @@
                                                 textoffx = textoff_selectx,
                                                 textoffvalx = textoffval_selectx,
                                                 textsize = textsize_select,
+                                                textsizev = textsizev_select,
+                                                textcolv = textcolv_select,
                                                 val = 0,
                                                 defval = 0,
                                                 maxdp = maxdp_select,
@@ -3142,6 +3219,10 @@
                                                 framemode = 1,
                                                 horiz = horiz_select,
                                                 poslock = false,
+                                                bypassbg_c = bypass_bgdraw_c_select,
+                                                bypassbg_n = bypass_bgdraw_n_select,
+                                                bypassbg_v = bypass_bgdraw_v_select,
+                                                clickthrough = clickthrough_select,
                                                 knobsens = settings_defknobsens
                                                }
 
@@ -3183,6 +3264,8 @@
                                                 textoffx = textoff_selectx,
                                                 textoffvalx = textoffval_selectx,
                                                 textsize = textsize_select,
+                                                textsizev = textsizev_select,
+                                                textcolv = textcolv_select,
                                                 val = 0,
                                                 defval = 0,
                                                 maxdp = maxdp_select,
@@ -3197,6 +3280,10 @@
                                                 framemode = 1,
                                                 horiz = horiz_select,
                                                 poslock = false,
+                                                bypassbg_c = bypass_bgdraw_c_select,
+                                                bypassbg_n = bypass_bgdraw_n_select,
+                                                bypassbg_v = bypass_bgdraw_v_select,
+                                                clickthrough = clickthrough_select,
                                                 knobsens = settings_defknobsens
                                                }
       elseif dragparam.type == 'macro' then
@@ -3239,6 +3326,8 @@
                                                 textoffx = textoff_selectx,
                                                 textoffvalx = textoffval_selectx,
                                                 textsize = textsize_select,
+                                                textsizev = textsizev_select,
+                                                textcolv = textcolv_select,
                                                 val = 0,
                                                 defval = 0,
                                                 maxdp = maxdp_select,
@@ -3253,6 +3342,10 @@
                                                 framemode = 1,
                                                 horiz = horiz_select,
                                                 poslock = false,
+                                                bypassbg_c = bypass_bgdraw_c_select,
+                                                bypassbg_n = bypass_bgdraw_n_select,
+                                                bypassbg_v = bypass_bgdraw_v_select,
+                                                clickthrough = clickthrough_select,
                                                 knobsens = settings_defknobsens
                                                }
       elseif dragparam.type == 'eqcontrol' then
@@ -3295,6 +3388,8 @@
                                                 textoffx = textoff_selectx,
                                                 textoffvalx = textoffval_selectx,
                                                 textsize = 4,
+                                                textsizev = textsizev_select,
+                                                textcolv = textcolv_select,
                                                 val = 0,
                                                 defval = 0,
                                                 maxdp = maxdp_select,
@@ -3309,7 +3404,11 @@
                                                 framemode = 1,
                                                 horiz = horiz_select,
                                                 poslock = false,
+                                                bypassbg_c = bypass_bgdraw_c_select,
+                                                bypassbg_n = bypass_bgdraw_n_select,
+                                                bypassbg_v = bypass_bgdraw_v_select,
                                                 knobsens = settings_defknobsens,
+                                                clickthrough = clickthrough_select,
                                                 eqgraph = def_graph
                                                }
 
@@ -3351,6 +3450,8 @@
                                                 textoffx = textoff_selectx,
                                                 textoffvalx = textoffval_selectx,
                                                 textsize = 0,
+                                                textsizev = textsizev_select,
+                                                textcolv = textcolv_select,
                                                 val = 0,
                                                 defval = 0,
                                                 maxdp = maxdp_select,
@@ -3367,7 +3468,11 @@
                                                 framemode = 1,
                                                 horiz = horiz_select,
                                                 poslock = false,
+                                                bypassbg_c = bypass_bgdraw_c_select,
+                                                bypassbg_n = bypass_bgdraw_n_select,
+                                                bypassbg_v = bypass_bgdraw_v_select,
                                                 knobsens = settings_defknobsens,
+                                                clickthrough = clickthrough_select,
                                                 eqgraph = def_graph
                                                }
 
@@ -3410,6 +3515,8 @@
                                                 textoffx = textoff_selectx,
                                                 textoffvalx = textoffval_selectx,
                                                 textsize = textsize_select,
+                                                textsizev = textsizev_select,
+                                                textcolv = textcolv_select,
                                                 val = 0,
                                                 defval = 0,
                                                 maxdp = maxdp_select,
@@ -3424,6 +3531,10 @@
                                                 framemode = 1,
                                                 horiz = horiz_select,
                                                 poslock = false,
+                                                bypassbg_c = bypass_bgdraw_c_select,
+                                                bypassbg_n = bypass_bgdraw_n_select,
+                                                bypassbg_v = bypass_bgdraw_v_select,
+                                                clickthrough = clickthrough_select,
                                                 knobsens = settings_defknobsens
                                                }
       end
@@ -5976,10 +6087,16 @@
       GUI_DrawButton(gui, '>', obj.sections[91], gui.color.white, gui.color.black, true)
           
       GUI_DrawSliderH(gui, 'SCALE', obj.sections[50], gui.color.black, gui.color.white, (scale_select-0.5)*2)
-      GUI_DrawTick(gui, 'SHOW NAME', obj.sections[52], gui.color.white, show_paramname)
-      GUI_DrawTick(gui, 'SHOW VALUE', obj.sections[53], gui.color.white, show_paramval)
-      GUI_DrawColorBox(gui, 'TEXT COL', obj.sections[54], gui.color.white, textcol_select)
+      local xywh = {x = obj.sections[52].x-10, y = obj.sections[52].y-butt_h, w = obj.sections[52].w, h = obj.sections[52].h}
+      GUI_textC(gui,xywh,'SHOW',gui.color.white,-5)
+      GUI_DrawTick(gui, 'NAME', obj.sections[52], gui.color.white, show_paramname)
+      GUI_DrawTick(gui, 'VALUE', obj.sections[53], gui.color.white, show_paramval)
+      local xywh = {x = obj.sections[54].x, y = obj.sections[54].y-butt_h, w = obj.sections[54].w, h = obj.sections[54].h}
+      GUI_textC(gui,xywh,'COL',gui.color.white,-5)
+      GUI_DrawColorBox(gui, '', obj.sections[54], gui.color.white, textcol_select)
+      GUI_DrawColorBox(gui, '', obj.sections[850], gui.color.white, textcolv_select)
       GUI_DrawButton(gui, ctltype_table[ctltype_select], obj.sections[55], gui.color.white, gui.color.black, true)
+      GUI_DrawButton(gui, 'LINK', obj.sections[852], -4, gui.color.black, textoptlink_select)
 
       local off, valoff
       if toffY then 
@@ -5993,7 +6110,11 @@
       GUI_DrawSliderH(gui, 'VAL OFF', obj.sections[65], gui.color.black, gui.color.white, F_limit((valoff+150)/300,0,1))
 
       GUI_DrawButton(gui, ctlfont_select, obj.sections[48], gui.color.white, gui.color.black, true, 'FONT', true)
-      GUI_DrawSliderH(gui, 'F SIZE', obj.sections[58], gui.color.black, gui.color.white, (textsize_select+2)/35)
+      local xywh = {x = obj.sections[58].x-10, y = obj.sections[58].y-butt_h, w = obj.sections[58].w, h = obj.sections[52].h}
+      GUI_textC(gui,xywh,'F SIZE',gui.color.white,-5)
+
+      GUI_DrawSliderH(gui, '', obj.sections[58], gui.color.black, gui.color.white, (textsize_select+2)/35)
+      GUI_DrawSliderH(gui, '', obj.sections[851], gui.color.black, gui.color.white, (textsizev_select+2)/35)
       GUI_DrawSliderH(gui, 'DEF VAL', obj.sections[57], gui.color.black, gui.color.white, F_limit(defval_select,0,1))
       GUI_DrawButton(gui, 'SET IMAGE', obj.sections[51], gui.color.white, gui.color.black, true)
       GUI_DrawButton(gui, 'EDIT NAME', obj.sections[59], gui.color.white, gui.color.black, true)
@@ -6072,6 +6193,14 @@
       gfx.blit(def_knobsm,1,0, 0, defctls[def_knobsm].cellh*math.floor((defctls[def_knobsm].frames-1)*pmin), w, defctls[def_knobsm].cellh, obj.sections[128].x, obj.sections[128].y)
       gfx.blit(def_knobsm,1,0, 0, defctls[def_knobsm].cellh*math.floor((defctls[def_knobsm].frames-1)*pmax), w, defctls[def_knobsm].cellh, obj.sections[129].x, obj.sections[129].y)
     
+    elseif ctl_page == 2 then
+
+      GUI_DrawTick(gui, 'BYPASS BG CTL', obj.sections[860], gui.color.white, bypass_bgdraw_c_select)
+      GUI_DrawTick(gui, 'BYPASS BG NAME', obj.sections[861], gui.color.white, bypass_bgdraw_n_select)
+      GUI_DrawTick(gui, 'BYPASS BG VAL', obj.sections[862], gui.color.white, bypass_bgdraw_v_select)
+      
+      GUI_DrawTick(gui, 'CLICK THROUGH', obj.sections[863], gui.color.white, clickthrough_select)
+
     end
     
     gfx.dest = 1
@@ -6440,7 +6569,7 @@ end
             
             SetColor2(i)
             if hidden == false then
-              if (mode == 1 or ctl.hidden ~= true) then
+              if (mode == 1 or (ctl.hidden ~= true and ctl.clickthrough ~= true)) then
                 --gfx.rect(px,py,w*scale,h*scale,1)
                 gfx.rect(px,py,w,h,1)
               end
@@ -6516,11 +6645,13 @@ end
                 local spn = ctl.show_paramname
                 local spv = ctl.show_paramval
                 local tc = ctl.textcol
+                local tc2 = ctl.textcolv
                 local toff = math.floor(ctl.textoff)
                 local toffv = math.floor(ctl.textoffval)
                 local toffx = math.floor(ctl.textoffx)
                 local toffvx = math.floor(ctl.textoffvalx)
                 local tsz = nz(ctl.textsize,0)
+                local tsz2 = nz(ctl.textsizev,0)
                 local frames = math.floor(ctl.ctl_info.frames)
                 local ctltype = ctl.ctltype
                 local ctlnmov = ctl.ctlname_override
@@ -6540,10 +6671,12 @@ end
                   tnum = strips[strip].track.tracknum
                 end
       
-                gfx.setfont(1, font, gui.fontsz_knob +tsz-4)
+                --[[gfx.setfont(1, font, gui.fontsz_knob +tsz-4)
                 local _, th_a = gfx.measurestr('|')
-                th_a=th_a+1
-                local to = th_a
+                gfx.setfont(1, font, gui.fontsz_knob +tsz2-4)
+                local _, th_a2 = gfx.measurestr('|')
+                th_a, th_a2 = th_a+1, th_a2+1
+                local to = th_a2]]
   
                 local Disp_ParamV
                 local Disp_Name
@@ -6796,40 +6929,49 @@ end
                   
                 local mid = x+(w/2)
   
+                gfx.setfont(1, font, gui.fontsz_knob +tsz-4)
                 local text_len1x, text_len1y = gfx.measurestr(Disp_Name)
+                gfx.setfont(1, font, gui.fontsz_knob +tsz2-4)
                 local text_len2x, text_len2y = gfx.measurestr(Disp_ParamV)
   
-                local xywh1 = {x = math.floor(mid-(text_len1x/2))-toffx, y = math.floor(y+(h/2)-toff-1), w = text_len1x, h = th_a+2}
-                local xywh2 = {x = math.floor(mid-(text_len2x/2))+toffx+toffvx, y = math.floor(y+(h/2)-to+toff+toffv-1), w = text_len2x, h = th_a+2}
-                
                 local tl1 = nz(ctl.tl1,text_len1x)
                 local tl2 = nz(ctl.tl2,text_len2x)
-                local tx1, tx2, th = math.floor(mid-(tl1/2))-toffx,
-                                     math.floor(mid-(tl2/2))+toffx+toffvx,th_a --gui.fontsz_knob+tsz-4
+                --DBG(tostring(ctl.th1)..'  '..text_len1y)
+                local th1 = nz(ctl.th1,text_len1y)
+                --DBG(th1)f
+                local th2 = nz(ctl.th2,text_len2y)
+
+                local xywh1 = {x = math.floor(mid-(text_len1x/2))-toffx, y = math.floor(y+(h/2)-toff-1), w = text_len1x, h = 1}
+                local xywh2 = {x = math.floor(mid-(text_len2x/2))+toffx+toffvx, y = math.floor(y+(h/2)+toff+toffv-1), w = text_len2x, h = 1}
+                
+                local tx1, tx2 = math.floor(mid-(tl1/2))-toffx,
+                                     math.floor(mid-(tl2/2))+toffx+toffvx --gui.fontsz_knob+tsz-4
                                      
                 gfx.a=1
                 if not update_gfx and not update_bg and ctlcat ~= ctlcats.xy then
-                  gfx.blit(1004,1,0, px,
-                                     py,
-                                     w*scale,
-                                     h*scale,
-                                     px,
-                                     py)
-                  if spn then                   
-                    gfx.blit(1004,1,0, tx1,
-                                       xywh1.y,
-                                       tl1,
-                                       th_a,
-                                       tx1,
-                                       xywh1.y)
+                  if ctl.bypassbg_c ~= true then
+                    gfx.blit(1004,1,0, px,
+                                       py,
+                                       w*scale,
+                                       h*scale,
+                                       px,
+                                       py)
                   end
-                  if spv then                
+                  if spn and ctl.bypassbg_n ~= true then                   
+                    gfx.blit(1004,1,0, tx1,
+                                       xywh1.y-math.floor(th1/2),
+                                       tl1,
+                                       --[[th_a]]th1,
+                                       tx1,
+                                       xywh1.y-math.floor(th1/2))
+                  end
+                  if spv and ctl.bypassbg_v ~= true then                
                     gfx.blit(1004,1,0, tx2,
-                                       xywh2.y,
+                                       xywh2.y-math.floor(th2/2),
                                        tl2,
-                                       th_a,
+                                       --[[th_a2]]th2,
                                        tx2,
-                                       xywh2.y)
+                                       xywh2.y-math.floor(th2/2))
                   end
                   gfx.a=1
                 end
@@ -6854,6 +6996,8 @@ end
                 
                 ctl.tl1 = text_len1x
                 ctl.tl2 = text_len2x
+                ctl.th1 = text_len1y
+                ctl.th2 = text_len2y                
                 
                   local alpha = 1
                   if settings_hideofflinelabel and offl then
@@ -6861,11 +7005,16 @@ end
                   elseif offl or ctl.hidden then
                     alpha = 0.4
                   end
+                  --[[if tsz ~= tsz2 then
+                    DBG(tsz..'  '..tsz2)
+                  end]]
                   if spn then
+                    gfx.setfont(1, font, gui.fontsz_knob +tsz-4)                    
                     GUI_textCtl(gui,xywh1, Disp_Name,tc,-4 + tsz, alpha)
                   end
                   if spv then
-                    GUI_textCtl(gui,xywh2, Disp_ParamV,tc,-4 + tsz, alpha)          
+                    gfx.setfont(1, font, gui.fontsz_knob +tsz2-4)                    
+                    GUI_textCtl(gui,xywh2, Disp_ParamV,tc2,-4 + tsz2, alpha)          
                   end
   
                 if setting_reddotindicator == true and ctltype == 4 and DVOV and DVOV ~= '' and cycle_editmode == false then
@@ -6891,8 +7040,8 @@ end
                   --just blit control area to main backbuffer - create area table
                   local al = math.min(px, xywh1.x, xywh2.x, tx1, tx2)
                   local ar = math.max(px+w*scale, tx1+tl1, tx2+tl2, xywh1.x+xywh1.w, xywh2.x+xywh2.w)
-                  local at = math.min(py, xywh1.y, xywh2.y)
-                  local ab = math.max(py+(h)*scale,xywh1.y+th, xywh2.y+th)
+                  local at = math.min(py, xywh1.y-math.floor(th1/2), xywh2.y-math.floor(th2/2))
+                  local ab = math.max(py+(h)*scale,xywh1.y+math.floor(th1/2), xywh2.y+math.floor(th2/2))
                   xywharea[#xywharea+1] = {x=al,y=at,w=ar-al,h=ab-at,r=ar,b=ab}
                 end
               end
@@ -12884,7 +13033,7 @@ end
       savestrip.fx = fxtbl
       local pickledfx = pickle(savestrip)
     
-      file:write('[STRIPFILE_VERSION]4\n')
+      file:write('[STRIPFILE_VERSION]5\n')
       file:write('[FXDATA]\n'..pickledfx..'\n[\\FXDATA]\n')
       file:write('[STRIPDATA]\n')      
       local t = GenStripSaveData2(strips[tracks[track_select].strip][page],nil,file)
@@ -13295,6 +13444,22 @@ end
       else
         stripdata = unpickle(content)
       end
+      
+      if newvers == nil or tonumber(newvers) < 5 then
+      
+        --compatibility
+        local ctls = stripdata.strip.controls
+        if ctls and #ctls > 0 then
+        
+          for c = 1, #ctls do
+            gfx.setfont(1, ctls[c].font, gui.fontsz_knob + ctls[c].textsize-4)
+            local _, th = gfx.measurestr('|')
+            ctls[c].textoff = ctls[c].textoff - math.floor(th/2)
+          end
+        
+        end
+      
+      end
     else
       OpenMsgBox(1,'File not found.',1)
     end
@@ -13351,6 +13516,21 @@ end
         --return nil --remove
       else
         stripdata = unpickle(content)
+      end
+      
+      if newvers == nil or tonumber(newvers) < 5 then
+        --compatibility
+        local ctls = stripdata.strip.controls
+        if ctls and #ctls > 0 then
+        
+          for c = 1, #ctls do
+            gfx.setfont(1, ctls[c].font, gui.fontsz_knob + ctls[c].textsize-4)
+            local _, th = gfx.measurestr('|')
+            ctls[c].textoff = ctls[c].textoff - math.floor(th/2)
+          end
+        
+        end
+      
       end
     else
       OpenMsgBox(1,'File not found.',1)
@@ -13611,6 +13791,8 @@ end
       if strips[strip][page].controls[cc].textoffx == nil then strips[strip][page].controls[cc].textoffx = 0 end
       if strips[strip][page].controls[cc].textoffvalx == nil then strips[strip][page].controls[cc].textoffvalx = 0 end      
       if strips[strip][page].controls[cc].poslock == nil then strips[strip][page].controls[cc].poslock = false end
+      if strips[strip][page].controls[cc].textsizev == nil then strips[strip][page].controls[cc].textsizev = strips[strip][page].controls[cc].textsize end
+      if strips[strip][page].controls[cc].textcolv == nil then strips[strip][page].controls[cc].textcolv = strips[strip][page].controls[cc].textcol end
       if strips[strip][page].controls[cc].scalemode == nil then strips[strip][page].controls[cc].scalemode = 8 end
       if strips[strip][page].controls[cc].framemode == nil then strips[strip][page].controls[cc].framemode = 1 end      
       if strips[strip][page].controls[cc].ctlcat == nil then strips[strip][page].controls[cc].ctlcat = ctlcats.fxparam end
@@ -14119,7 +14301,7 @@ end
             
             --load image
             gfx.blit(iidx,scale,0, 0, (val2)*gh, w, h, x + w/2-w*scale/2, y + h/2-h*scale/2)
-            xywh = {x = x, y = y+(h/2)-toff, w = w, h = 10}
+            xywh = {x = x, y = y+(h/2)-toff, w = w, h = 1}
             if w > strip.controls[i].w/2 then
               local Disp_ParamV
               local Disp_Name
@@ -14399,7 +14581,7 @@ end
             local mid = x+(w/2)
             local text_len1x, text_len1y = gfx.measurestr(Disp_Name)
             --local text_len2x, text_len2y = gfx.measurestr(Disp_ParamV)
-            local xywh1 = {x = math.floor(mid-(text_len1x/2))+b_sz, y = math.floor(y+(h/2)-toff-1)+b_sz, w = text_len1x, h = th_a+2}
+            local xywh1 = {x = math.floor(mid-(text_len1x/2))+b_sz, y = math.floor(y+(h/2)-toff-1)+b_sz, w = text_len1x, h = 1}
             
             if spn then
               GUI_textCtl(gui,xywh1, tostring(Disp_Name),tc,-4+tsze)
@@ -17331,6 +17513,7 @@ end
       knob_select = ctl.knob_select
       scale_select = ctl.scale
       textcol_select = ctl.textcol
+      textcolv_select = ctl.textcolv
       show_paramname = ctl.show_paramname
       show_paramval = ctl.show_paramval
       textoff_select = ctl.textoff
@@ -17338,6 +17521,7 @@ end
       textoff_selectx = ctl.textoffx
       textoffval_selectx = ctl.textoffvalx
       textsize_select = ctl.textsize
+      textsizev_select = ctl.textsizev
       defval_select = ctl.defval
       maxdp_select = nz(ctl.maxdp,-1)                  
       dvaloff_select = nz(ctl.dvaloffset,'')                  
@@ -17358,6 +17542,10 @@ end
         gauge_select = gt
       end
       ctlfont_select = ctl.font
+      bypass_bgdraw_c_select = ctl.bypassbg_c
+      bypass_bgdraw_n_select = ctl.bypassbg_n
+      bypass_bgdraw_v_select = ctl.bypassbg_v
+      clickthrough_select = ctl.clickthrough
       
       SetKnobScaleMode()
       cycle_select = Cycle_CopySelectIn(ctl_select[1].ctl)
@@ -19065,7 +19253,7 @@ end
                      h = ctl.hsc}
           if MOUSE_over(ctlxywh, x, y) then
            
-            if Switcher_CtlsHidden(ctl.switcher, ctl.grpid) == false then
+            if Switcher_CtlsHidden(ctl.switcher, ctl.grpid) == false and ctl.clickthrough ~= true then
               ret = ii
               break
             end
@@ -19145,9 +19333,15 @@ end
     end
     --DBG(fndfn)
     if fndfn then
-      return true, fndfn, fndffn
+      return true, fndfn, fndffn, nil
     else
-      return false, nil, nil
+    
+      local xfn = GPES('lbxstripper_datafile', true)
+      if xfn and reaper.file_exists(load_path..xfn) == true then
+        return false, nil, nil, true
+      else  
+        return false, nil, nil, nil
+      end
     end
   
   end
@@ -19203,7 +19397,7 @@ end
         local ls_pfx = string.match(lastprojname ,'(.*%_)%d+.*')
         local ls_n = string.match(lastprojname ,'%_(%d+).*')
         
-        local found, fn, ffn = FindSaveFile(fn)
+        local found, fn, ffn, storeddata = FindSaveFile(fn)
         
         if found == true then
           --load
@@ -19212,6 +19406,17 @@ end
           LoadData()
           update_gfx = true
           lastprojdirty = projdirty
+        
+        elseif storeddata == true then
+        
+          if lastprojname == nil or lastprojname == '' then
+            SaveProj()
+          else
+            --[[DBG('still confused')
+            DBG('lpn: '..lastprojname)
+            DBG(PROJECTID)
+            DBG(PROJNAME)]]
+          end          
           
         elseif pr_pfx ~= ls_pfx then
           --DBG('b')
@@ -21598,9 +21803,7 @@ end
               knob_select = (knob_select - v) % #ctl_files
               update_ctlopts = true
               gfx.mouse_wheel = 0
-            end
-            
-            if MOUSE_over(obj.sections[50]) then
+            elseif MOUSE_over(obj.sections[50]) then
               scale_select = F_limit(scale_select + (v*0.05),0.5,1)
               for i = 1, #ctl_select do
                 if strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctlcat ~= ctlcats.xy then
@@ -21621,10 +21824,7 @@ end
               --update_surface = true
               update_gfx = true
               gfx.mouse_wheel = 0
-            end
-            
-            
-            if MOUSE_over(obj.sections[56]) then
+            elseif MOUSE_over(obj.sections[56]) then
               if toffY then
                 textoff_select = textoff_select + v*2
                 for i = 1, #ctl_select do
@@ -21638,8 +21838,7 @@ end
               end
               update_gfx = true
               gfx.mouse_wheel = 0
-            end
-            if MOUSE_over(obj.sections[65]) then
+            elseif MOUSE_over(obj.sections[65]) then
               if toffY then
                 textoffval_select = textoffval_select + v*2
                 for i = 1, #ctl_select do
@@ -21653,17 +21852,39 @@ end
               end
               update_gfx = true
               gfx.mouse_wheel = 0
-            end
-            if MOUSE_over(obj.sections[58]) then
+            elseif MOUSE_over(obj.sections[58]) then
               textsize_select = F_limit(textsize_select + v,-2,35)
+              if textoptlink_select == true then
+                textsizev_select = textsize_select
+              end
               for i = 1, #ctl_select do
                 strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].textsize = textsize_select
+                if textoptlink_select == true then
+                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].textsizev = textsizev_select
+                end
+                strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].dirty = true
               end            
-              update_gfx = true
+              update_ctls = true
+              update_ctlopts = true            
+              --update_gfx = true
               gfx.mouse_wheel = 0
-            end
-
-            if MOUSE_over(obj.sections[57]) then
+            elseif MOUSE_over(obj.sections[851]) then
+              textsizev_select = F_limit(textsizev_select + v,-2,35)
+              if textoptlink_select == true then
+                textsize_select = textsizev_select
+              end
+              for i = 1, #ctl_select do
+                strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].textsizev = textsizev_select
+                if textoptlink_select == true then
+                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].textsize = textsizev_select
+                end
+                strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].dirty = true
+              end
+              update_ctls = true
+              update_ctlopts = true            
+              --update_gfx = true
+              gfx.mouse_wheel = 0
+            elseif MOUSE_over(obj.sections[57]) then
               defval_select = F_limit(defval_select + v/200,0,1)
               for i = 1, #ctl_select do
                 strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].val = defval_select
@@ -21672,9 +21893,7 @@ end
               end            
               update_gfx = true
               gfx.mouse_wheel = 0
-            end
-            
-            if MOUSE_over(obj.sections[55]) then
+            elseif MOUSE_over(obj.sections[55]) then
               ctltype_select = F_limit(ctltype_select + v,1,#ctltype_table)
               for i = 1, #ctl_select do
                 strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctltype = ctltype_select
@@ -21712,9 +21931,8 @@ end
               end            
               update_gfx = true
               gfx.mouse_wheel = 0
-            end              
-
-            if MOUSE_over(obj.sections[129]) then
+            
+            elseif MOUSE_over(obj.sections[129]) then
               val = maxov_select + v*0.00125
               
               local p = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].param
@@ -21738,9 +21956,7 @@ end
               end            
               update_gfx = true
               gfx.mouse_wheel = 0
-            end              
-
-            if MOUSE_over(obj.sections[135]) then
+            elseif MOUSE_over(obj.sections[135]) then
               knobsens_select.norm = F_limit(knobsens_select.norm+(v*0.5),0,10)
               for i = 1, #ctl_select do
                 strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].knobsens.norm = knobsens_select.norm
@@ -21956,7 +22172,7 @@ end
           
           show_cycleoptions = false
           ctl_page = ctl_page + 1
-          if ctl_page > 1 then
+          if ctl_page > 2 then
             ctl_page = 0
           end
           update_gfx = true
@@ -21974,7 +22190,7 @@ end
             if knob_select < 0 then
               knob_select = #ctl_files
             end
-            update_gfx = true
+            update_ctlopts = true
           
           elseif mouse.context == nil and MOUSE_click(obj.sections[91]) then
           
@@ -21982,7 +22198,7 @@ end
             if knob_select > #ctl_files then
               knob_select = 0
             end
-            update_gfx = true
+            update_ctlopts = true
 
           elseif mouse.LB and mouse.my > butt_h and mouse.my < 150 then
           
@@ -21994,9 +22210,7 @@ end
             show_ctlbrowser = true
             update_surface = true              
             
-          end
-
-          if MOUSE_click(obj.sections[66]) then
+          elseif mouse.context == nil and MOUSE_click(obj.sections[66]) then
           
             maxdp_select = F_limit(maxdp_select + 1, -1, 3)
             for i = 1, #ctl_select do
@@ -22004,7 +22218,7 @@ end
             end            
             update_gfx = true
           
-          elseif MOUSE_click_RB(obj.sections[66]) then
+          elseif mouse.context == nil and MOUSE_click_RB(obj.sections[66]) then
 
             maxdp_select = F_limit(maxdp_select - 1, -1, 3)
             for i = 1, #ctl_select do
@@ -22012,9 +22226,7 @@ end
             end            
             update_gfx = true
           
-          end
-
-          if MOUSE_click(obj.sections[99]) then
+          elseif mouse.context == nil and MOUSE_click(obj.sections[99]) then
           
             show_gaugeedit = true
             gauge_select.val = 0
@@ -22024,37 +22236,54 @@ end
               Gauge_CalcTickVals()
             end
             update_gfx = true
-          
-          end
 
-          if MOUSE_click(obj.sections[52]) then
+          elseif mouse.context == nil and MOUSE_click(obj.sections[852]) then
+            textoptlink_select = not textoptlink_select
+            update_ctlopts = true
+            
+          elseif mouse.context == nil and MOUSE_click(obj.sections[52]) then
             show_paramname = not show_paramname
             for i = 1, #ctl_select do
               strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].show_paramname = show_paramname
             end            
             update_gfx = true
-          end
-
-          if MOUSE_click(obj.sections[53]) then
+          elseif mouse.context == nil and MOUSE_click(obj.sections[53]) then
             show_paramval = not show_paramval
             for i = 1, #ctl_select do
               strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].show_paramval = show_paramval
             end            
             update_gfx = true
-          end
-
-          if MOUSE_click(obj.sections[54]) then
+          elseif mouse.context == nil and MOUSE_click(obj.sections[54]) then
             local retval, c = reaper.GR_SelectColor(_,ConvertColorString(textcol_select))
             if retval ~= 0 then
               textcol_select = ConvertColor(c)
+              if textoptlink_select == true then
+                textcolv_select = textcol_select
+              end
               for i = 1, #ctl_select do
                 strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].textcol = textcol_select
+                if textoptlink_select == true then
+                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].textcolv = textcol_select
+                end
               end
               update_gfx = true
             end
-          end
-
-          if MOUSE_click(obj.sections[55]) then
+          elseif mouse.context == nil and MOUSE_click(obj.sections[850]) then
+            local retval, c = reaper.GR_SelectColor(_,ConvertColorString(textcolv_select))
+            if retval ~= 0 then
+              textcolv_select = ConvertColor(c)
+              if textoptlink_select == true then
+                textcol_select = textcolv_select
+              end              
+              for i = 1, #ctl_select do
+                strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].textcolv = textcolv_select
+                if textoptlink_select == true then
+                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].textcol = textcolv_select
+                end
+              end
+              update_gfx = true
+            end
+          elseif mouse.context == nil and MOUSE_click(obj.sections[55]) then
             ctltype_select = ctltype_select + 1
             if ctltype_select > #ctltype_table then ctltype_select = 1 end
             for i = 1, #ctl_select do
@@ -22075,7 +22304,7 @@ end
             update_ctlopts = true
           end
 
-          if ctltype_select == 4 and MOUSE_click(obj.sections[67]) then
+          if mouse.context == nil and ctltype_select == 4 and MOUSE_click(obj.sections[67]) then
             show_cycleoptions = not show_cycleoptions
             if show_cycleoptions then
               cycle_select.val = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].val
@@ -22085,7 +22314,7 @@ end
             show_cycleoptions = false          
           end
           
-          if MOUSE_click(obj.sections[59]) then
+          if mouse.context == nil and MOUSE_click(obj.sections[59]) then
             if ctl_select and #ctl_select > 0 then
               --EditCtlName()
               if strips and strips[tracks[track_select].strip] then
@@ -22093,22 +22322,16 @@ end
                 --update_gfx = true
               end
             end
-          end
-
-          if MOUSE_click(obj.sections[68]) then
+          elseif mouse.context == nil and MOUSE_click(obj.sections[68]) then
             toffY = not toffY
             update_gfx = true
-          end
-                        
-          if MOUSE_click_RB(obj.sections[57]) then
+          elseif mouse.context == nil and MOUSE_click_RB(obj.sections[57]) then
             defval_select = GetParamValue_Ctl(ctl_select[1].ctl)
             for i = 1, #ctl_select do
               strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].defval = GetParamValue_Ctl(ctl_select[i].ctl)
             end
-            update_gfx = true
-          end
-        
-          if MOUSE_click(obj.sections[51]) then
+            update_ctlopts = true
+          elseif mouse.context == nil and MOUSE_click(obj.sections[51]) then
             --apply
             if ctl_files[knob_select].imageidx == nil then  
               image_count = F_limit(image_count + 1,0,image_max)
@@ -22136,9 +22359,7 @@ end
             end
             SetCtlBitmapRedraw()
             update_gfx = true
-          end
-          
-          if MOUSE_click(obj.sections[48]) then
+          elseif mouse.context == nil and MOUSE_click(obj.sections[48]) then
             if fontlist then
               local fnt = ChooseFontMenu(mx,my)
               if fnt then
@@ -22161,7 +22382,8 @@ end
           elseif mouse.context == nil and MOUSE_click(obj.sections[56]) then mouse.context = contexts.offsetslider
           elseif mouse.context == nil and MOUSE_click(obj.sections[65]) then mouse.context = contexts.valoffsetslider 
           elseif mouse.context == nil and MOUSE_click(obj.sections[57]) then omx = -1 ctlpos = defval_select mouse.context = contexts.defvalslider
-          elseif mouse.context == nil and MOUSE_click(obj.sections[58]) then mouse.context = contexts.textsizeslider end
+          elseif mouse.context == nil and MOUSE_click(obj.sections[58]) then mouse.context = contexts.textsizeslider 
+          elseif mouse.context == nil and MOUSE_click(obj.sections[851]) then mouse.context = contexts.textsizevslider end
   
         elseif ctl_page == 1 then
           
@@ -22287,6 +22509,34 @@ end
             mouse.context = contexts.knobsens_wheelfine
           end
         
+        elseif ctl_page == 2 then
+        
+          if mouse.context == nil and MOUSE_click(obj.sections[860]) then
+            bypass_bgdraw_c_select = not bypass_bgdraw_c_select
+            for i = 1, #ctl_select do
+              strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].bypassbg_c = bypass_bgdraw_c_select
+            end            
+            update_gfx = true
+          elseif mouse.context == nil and MOUSE_click(obj.sections[861]) then
+            bypass_bgdraw_n_select = not bypass_bgdraw_n_select
+            for i = 1, #ctl_select do
+              strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].bypassbg_n = bypass_bgdraw_n_select
+            end            
+            update_gfx = true
+          elseif mouse.context == nil and MOUSE_click(obj.sections[862]) then
+            bypass_bgdraw_v_select = not bypass_bgdraw_v_select
+            for i = 1, #ctl_select do
+              strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].bypassbg_v = bypass_bgdraw_v_select
+            end            
+            update_gfx = true
+          elseif mouse.context == nil and MOUSE_click(obj.sections[863]) then
+            clickthrough_select = not clickthrough_select 
+            for i = 1, #ctl_select do
+              strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].clickthrough = clickthrough_select
+            end            
+            update_gfx = true
+          end
+          
         end
       
         mouse.mx, mouse.my = mx, my
@@ -22818,6 +23068,7 @@ end
       end
 
       if mouse.context and mouse.context == contexts.textsizeslider then
+        textresize = true
         local objsec = obj.sections[58]
         local xywh = {x = obj.sections[45].x + objsec.x,
                       y = obj.sections[45].y + objsec.y,
@@ -22826,11 +23077,48 @@ end
         local val = F_limit(MOUSE_sliderHBar(xywh),0,1)
         if val ~= nil then
           textsize_select = (val*35)-2
+          if textoptlink_select == true then
+            textsizev_select = textsize_select
+          end
           for i = 1, #ctl_select do
             strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].textsize = textsize_select
+            if textoptlink_select == true then
+              strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].textsizev = textsize_select
+            end
+            strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].dirty = true
           end            
-          update_gfx = true
+          update_ctls = true
+          update_ctlopts = true
+          --update_bg = true
+          --update_gfx = true
         end
+      elseif mouse.context and mouse.context == contexts.textsizevslider then
+        textresize = true
+        local objsec = obj.sections[851]
+        local xywh = {x = obj.sections[45].x + objsec.x,
+                      y = obj.sections[45].y + objsec.y,
+                      w = objsec.w,
+                      h = objsec.h}
+        local val = F_limit(MOUSE_sliderHBar(xywh),0,1)
+        if val ~= nil then
+          textsizev_select = (val*35)-2
+          if textoptlink_select == true then
+            textsize_select = textsizev_select
+          end
+          for i = 1, #ctl_select do
+            strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].textsizev = textsizev_select
+            if textoptlink_select == true then
+              strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].textsize = textsizev_select
+            end
+            strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].dirty = true
+          end            
+          update_ctls = true
+          update_ctlopts = true
+          --update_gfx = true
+        end
+      elseif mouse.context == nil and textresize then
+        textresize = nil
+        update_gfx = true
       end
 
       if mouse.context and mouse.context == contexts.defvalslider then
@@ -30171,80 +30459,83 @@ end
   
   function GetControlTable(strip, page, c)
     
-    local tbl = {ctlcat=strips[strip][page].controls[c].ctlcat,
-                 fxname=strips[strip][page].controls[c].fxname,
-                 fxguid=strips[strip][page].controls[c].fxguid, 
-                 fxnum=strips[strip][page].controls[c].fxnum, 
-                 fxfound = strips[strip][page].controls[c].fxfound,
-                 param = strips[strip][page].controls[c].param,
-                 param_info = {paramname = strips[strip][page].controls[c].param_info.paramname,
-                               paramnum = strips[strip][page].controls[c].param_info.paramnum,
-                               paramidx = strips[strip][page].controls[c].param_info.paramidx,
-                               paramstr = strips[strip][page].controls[c].param_info.paramstr,
-                               paramdesttrnum = strips[strip][page].controls[c].param_info.paramdesttrnum,
-                               paramdestguid = strips[strip][page].controls[c].param_info.paramdestguid,
-                               paramdestchan = strips[strip][page].controls[c].param_info.paramdestchan,
-                               paramsrcchan = strips[strip][page].controls[c].param_info.paramsrcchan},
-                 ctltype = strips[strip][page].controls[c].ctltype,
-                 knob_select = strips[strip][page].controls[c].knob_select,
-                 ctl_info = {fn = strips[strip][page].controls[c].ctl_info.fn,
-                             frames = strips[strip][page].controls[c].ctl_info.frames,
-                             imageidx = strips[strip][page].controls[c].ctl_info.imageidx, 
-                             cellh = strips[strip][page].controls[c].ctl_info.cellh},
-                 x = strips[strip][page].controls[c].x,
-                 y = strips[strip][page].controls[c].y,
-                 w = strips[strip][page].controls[c].w,
-                 scale = strips[strip][page].controls[c].scale,
-                 xsc = strips[strip][page].controls[c].xsc,
-                 ysc = strips[strip][page].controls[c].ysc,
-                 wsc = strips[strip][page].controls[c].wsc,
-                 hsc = strips[strip][page].controls[c].hsc,
-                 show_paramname = strips[strip][page].controls[c].show_paramname,
-                 show_paramval = strips[strip][page].controls[c].show_paramval,
-                 ctlname_override = strips[strip][page].controls[c].ctlname_override,
-                 textcol = strips[strip][page].controls[c].textcol,
-                 textoff = strips[strip][page].controls[c].textoff,
-                 textoffval = strips[strip][page].controls[c].textoffval,
-                 textoffx = strips[strip][page].controls[c].textoffx,
-                 textoffvalx = strips[strip][page].controls[c].textoffvalx,
-                 textsize = strips[strip][page].controls[c].textsize,
-                 font = strips[strip][page].controls[c].font,
-                 val = strips[strip][page].controls[c].val,
-                 defval = strips[strip][page].controls[c].defval,
-                 maxdp = strips[strip][page].controls[c].maxdp,
-                 cycledata = strips[strip][page].controls[c].cycledata,
-                 switcherid = strips[strip][page].controls[c].switcherid,
-                 switcher = strips[strip][page].controls[c].switcher,
-                 id = strips[strip][page].controls[c].id,
-                 grpid = strips[strip][page].controls[c].grpid,
-                 tracknum = strips[strip][page].controls[c].tracknum,
-                 trackguid = strips[strip][page].controls[c].trackguid,
-                 dvaloffset = strips[strip][page].controls[c].dvaloffset,
-                 minov = strips[strip][page].controls[c].minov,
-                 maxov = strips[strip][page].controls[c].maxov,
-                 membtn = {state = strips[strip][page].controls[c].membtn.state,
-                           mem = strips[strip][page].controls[c].membtn.mem},
-                 xydata = {snapa = strips[strip][page].controls[c].xydata.snapa,
-                           snapb = strips[strip][page].controls[c].xydata.snapb,
-                           snapc = strips[strip][page].controls[c].xydata.snapc,
-                           snapd = strips[strip][page].controls[c].xydata.snapd,
-                           x = strips[strip][page].controls[c].xydata.x,
-                           y = strips[strip][page].controls[c].xydata.y},
-                 scalemode = strips[strip][page].controls[c].scalemode,
-                 framemode = strips[strip][page].controls[c].framemode,
-                 horiz = strips[strip][page].controls[c].horiz,
-                 poslock = strips[strip][page].controls[c].poslock,
+    local ctl = strips[strip][page].controls[c]
+    local tbl = {ctlcat=ctl.ctlcat,
+                 fxname=ctl.fxname,
+                 fxguid=ctl.fxguid, 
+                 fxnum=ctl.fxnum, 
+                 fxfound = ctl.fxfound,
+                 param = ctl.param,
+                 param_info = {paramname = ctl.param_info.paramname,
+                               paramnum = ctl.param_info.paramnum,
+                               paramidx = ctl.param_info.paramidx,
+                               paramstr = ctl.param_info.paramstr,
+                               paramdesttrnum = ctl.param_info.paramdesttrnum,
+                               paramdestguid = ctl.param_info.paramdestguid,
+                               paramdestchan = ctl.param_info.paramdestchan,
+                               paramsrcchan = ctl.param_info.paramsrcchan},
+                 ctltype = ctl.ctltype,
+                 knob_select = ctl.knob_select,
+                 ctl_info = {fn = ctl.ctl_info.fn,
+                             frames = ctl.ctl_info.frames,
+                             imageidx = ctl.ctl_info.imageidx, 
+                             cellh = ctl.ctl_info.cellh},
+                 x = ctl.x,
+                 y = ctl.y,
+                 w = ctl.w,
+                 scale = ctl.scale,
+                 xsc = ctl.xsc,
+                 ysc = ctl.ysc,
+                 wsc = ctl.wsc,
+                 hsc = ctl.hsc,
+                 show_paramname = ctl.show_paramname,
+                 show_paramval = ctl.show_paramval,
+                 ctlname_override = ctl.ctlname_override,
+                 textcol = ctl.textcol,
+                 textoff = ctl.textoff,
+                 textoffval = ctl.textoffval,
+                 textoffx = ctl.textoffx,
+                 textoffvalx = ctl.textoffvalx,
+                 textsize = ctl.textsize,
+                 textsizev = ctl.textsizev,
+                 textcolv = ctl.textcolv,
+                 font = ctl.font,
+                 val = ctl.val,
+                 defval = ctl.defval,
+                 maxdp = ctl.maxdp,
+                 cycledata = ctl.cycledata,
+                 switcherid = ctl.switcherid,
+                 switcher = ctl.switcher,
+                 id = ctl.id,
+                 grpid = ctl.grpid,
+                 tracknum = ctl.tracknum,
+                 trackguid = ctl.trackguid,
+                 dvaloffset = ctl.dvaloffset,
+                 minov = ctl.minov,
+                 maxov = ctl.maxov,
+                 membtn = {state = ctl.membtn.state,
+                           mem = ctl.membtn.mem},
+                 xydata = {snapa = ctl.xydata.snapa,
+                           snapb = ctl.xydata.snapb,
+                           snapc = ctl.xydata.snapc,
+                           snapd = ctl.xydata.snapd,
+                           x = ctl.xydata.x,
+                           y = ctl.xydata.y},
+                 scalemode = ctl.scalemode,
+                 framemode = ctl.framemode,
+                 horiz = ctl.horiz,
+                 poslock = ctl.poslock,
                  c_id = GenID(),
-                 knobsens = {norm = strips[strip][page].controls[c].knobsens.norm,
-                             fine = strips[strip][page].controls[c].knobsens.fine,
-                             wheel = strips[strip][page].controls[c].knobsens.wheel,
-                             wheelfine = strips[strip][page].controls[c].knobsens.wheelfine},
-                 hidden = strips[strip][page].controls[c].hidden,
-                 gauge = Gauge_CopySelect(strips[strip][page].controls[c].gauge),
-                 noss = strips[strip][page].controls[c].noss
+                 knobsens = {norm = ctl.knobsens.norm,
+                             fine = ctl.knobsens.fine,
+                             wheel = ctl.knobsens.wheel,
+                             wheelfine = ctl.knobsens.wheelfine},
+                 hidden = ctl.hidden,
+                 gauge = Gauge_CopySelect(ctl.gauge),
+                 noss = ctl.noss
                  }
-    if strips[strip][page].controls[c].ctlcat == ctlcats.macro and strips[strip][page].controls[c].macroctl then
-      local macro = strips[strip][page].controls[c].macroctl
+    if ctl.ctlcat == ctlcats.macro and ctl.macroctl then
+      local macro = ctl.macroctl
       local mctl = {}
       for m = 1, #macro do
       
@@ -30261,9 +30552,9 @@ end
       end
       tbl.macroctl = mctl
     end
-    if strips[strip][page].controls[c].ctlcat == ctlcats.rcm_switch and strips[strip][page].controls[c].rcmdata and #strips[strip][page].controls[c].rcmdata > 0 then
-      tbl.rcmdata = table.copy(strips[strip][page].controls[c].rcmdata)
-      tbl.rcmrefresh = table.copy(strips[strip][page].controls[c].rcmrefresh)
+    if ctl.ctlcat == ctlcats.rcm_switch and ctl.rcmdata and #ctl.rcmdata > 0 then
+      tbl.rcmdata = table.copy(ctl.rcmdata)
+      tbl.rcmrefresh = table.copy(ctl.rcmrefresh)
     end
     
     return tbl
@@ -30590,427 +30881,8 @@ end
     
       strips[ss][p] = LoadStripDataX(key, data)
       
-      --[[strips[ss][p] = {
-                      surface_x = tonumber(data[key..'surface_x']),
-                      surface_y = tonumber(data[key..'surface_y']),
-                      controls = {},
-                      graphics = {}
-                     }          
-    
-      local ccnt = tonumber(data[key..'controls_count'])
-      local gcnt = tonumber(data[key..'graphics_count'])
-      
-      if ccnt and ccnt > 0 then
-        for c = 1, ccnt do
-
-          local key = pfx..'p'..p..'_c_'..c..'_'
-          strips[ss][p].controls[c] = {
-                                      c_id = tonumber(zn(data[key..'cid'],GenID())),
-                                      ctlcat = tonumber(zn(data[key..'ctlcat'],0)),
-                                      fxname = data[key..'fxname'],
-                                      fxguid = data[key..'fxguid'],
-                                      fxnum = tonumber(zn(data[key..'fxnum'])),
-                                      fxfound = tobool(data[key..'fxfound']),
-                                      param = tonumber(data[key..'param']),
-                                      param_info = {
-                                                    paramname = data[key..'param_info_name'],
-                                                    paramnum = tonumber(zn(data[key..'param_info_paramnum'])),
-                                                    paramidx = zn(data[key..'param_info_idx']),
-                                                    paramstr = zn(data[key..'param_info_str']),
-                                                    paramdestguid = zn(data[key..'param_info_guid']),
-                                                    paramdestchan = tonumber(zn(data[key..'param_info_chan'])),
-                                                    paramsrcchan = tonumber(zn(data[key..'param_info_srcchan']))
-                                                   },
-                                      ctltype = tonumber(data[key..'ctltype']),
-                                      knob_select = tonumber(data[key..'knob_select']),
-                                      ctl_info = {
-                                                  fn = data[key..'ctl_info_fn'],
-                                                  frames = tonumber(data[key..'ctl_info_frames']),
-                                                  imageidx = tonumber(data[key..'ctl_info_imageidx']),
-                                                  cellh = tonumber(data[key..'ctl_info_cellh'])
-                                                 },
-                                      x = tonumber(data[key..'x']),
-                                      y = tonumber(data[key..'y']),
-                                      w = tonumber(data[key..'w']),
-                                      scale = tonumber(data[key..'scale']),
-                                      show_paramname = tobool(data[key..'show_paramname']),
-                                      show_paramval = tobool(data[key..'show_paramval']),
-                                      ctlname_override = zn(data[key..'ctlname_override'],''),
-                                      textcol = data[key..'textcol'],
-                                      textoff = tonumber(data[key..'textoff']),
-                                      textoffval = tonumber(zn(data[key..'textoffval'],0)),
-                                      textoffx = tonumber(zn(data[key..'textoffx'],0)),
-                                      textoffvalx = tonumber(zn(data[key..'textoffvalx'],0)),
-                                      textsize = tonumber(zn(data[key..'textsize'],0)),
-                                      font = zn(data[key..'font'],fontname_def),
-                                      val = tonumber(data[key..'val']),
-                                      mval = tonumber(data[key..'mval']),
-                                      defval = tonumber(data[key..'defval']),
-                                      maxdp = tonumber(zn(data[key..'maxdp'],-1)),
-                                      cycledata = {statecnt = 0,{}},
-                                      xydata = {x = tonumber(zn(data[key..'xydata_x'],0.5)), 
-                                                y = tonumber(zn(data[key..'xydata_y'],0.5)), 
-                                                snapa = tonumber(zn(data[key..'xydata_snapa'],1)),
-                                                snapb = tonumber(zn(data[key..'xydata_snapb'],1)),
-                                                snapc = tonumber(zn(data[key..'xydata_snapc'],1)),
-                                                snapd = tonumber(zn(data[key..'xydata_snapd'],1))},
-                                      id = deconvnum(data[key..'id'],true),
-                                      grpid = deconvnum(data[key..'grpid'], true),
-                                      scalemode = tonumber(zn(data[key..'scalemodex'],8)),
-                                      framemode = tonumber(zn(data[key..'framemodex'],1)),
-                                      poslock = tobool(zn(data[key..'poslock'],false)),
-                                      horiz = tobool(zn(data[key..'horiz'],false)),
-                                      macrofader = tonumber(zn(data[key..'macrofader'])),
-                                      hidden = tobool(zn(data[key..'hidden'],false)),
-                                      switcherid = tonumber(zn(data[key..'switcherid'])),
-                                      switcher = tonumber(zn(data[key..'switcher'])),
-                                      noss = tobool(zn(data[key..'noss'])),
-                                     }
-          g_cids[strips[ss][p].controls[c].c_id] = true
-          if strips[ss][p].controls[c].id then
-            g_cids[strips[ss][p].controls[c].id] = true
-          end
-          if strips[ss][p].controls[c].grpid then
-            g_cids[strips[ss][p].controls[c].grpid] = true
-          end
-          
-          if strips[ss][p].controls[c].maxdp == nil or (strips[ss][p].controls[c].maxdp and strips[ss][p].controls[c].maxdp == '') then
-            strips[ss][p].controls[c].maxdp = -1
-          end
-          strips[ss][p].controls[c].xsc = strips[ss][p].controls[c].x + strips[ss][p].controls[c].w/2 - (strips[ss][p].controls[c].w*strips[ss][p].controls[c].scale)/2
-          strips[ss][p].controls[c].ysc = strips[ss][p].controls[c].y + strips[ss][p].controls[c].ctl_info.cellh/2 - (strips[ss][p].controls[c].ctl_info.cellh*strips[ss][p].controls[c].scale)/2
-          strips[ss][p].controls[c].wsc = strips[ss][p].controls[c].w*strips[ss][p].controls[c].scale
-          strips[ss][p].controls[c].hsc = strips[ss][p].controls[c].ctl_info.cellh*strips[ss][p].controls[c].scale
-          
-          strips[ss][p].controls[c].tracknum = tonumber(zn(data[key..'tracknum']))
-          strips[ss][p].controls[c].trackguid = data[key..'trackguid']                    
-          strips[ss][p].controls[c].dvaloffset = tonumber(zn(data[key..'dvaloffset'],0))
-          strips[ss][p].controls[c].minov = zn(data[key..'minov'])
-          strips[ss][p].controls[c].maxov = zn(data[key..'maxov'])
-          strips[ss][p].controls[c].membtn = {state = tobool(zn(data[key..'memstate'],false)),
-                                              mem = tonumber(zn(data[key..'memmem'],0))
-                                              }
-          strips[ss][p].controls[c].knobsens = {norm = tonumber(zn(data[key..'knobsens_norm'],settings_defknobsens.norm)),
-                                                fine = tonumber(zn(data[key..'knobsens_fine'],settings_defknobsens.fine)),
-                                                wheel = tonumber(zn(data[key..'knobsens_wheel'],settings_defknobsens.wheel)),
-                                                wheelfine = tonumber(zn(data[key..'knobsens_wheelfine'],settings_defknobsens.wheelfine))}
-          
-          strips[ss][p].controls[c].cycledata.statecnt = tonumber(zn(data[key..'cycledata_statecnt'],0))
-          strips[ss][p].controls[c].cycledata.mapptof = tobool(zn(data[key..'cycledata_mapptof'],false))
-          strips[ss][p].controls[c].cycledata.draggable = tobool(zn(data[key..'cycledata_draggable'],false))
-          strips[ss][p].controls[c].cycledata.spread = tobool(zn(data[key..'cycledata_spread'],false))
-          strips[ss][p].controls[c].cycledata.pos = tonumber(zn(data[key..'cycledata_pos'],1))
-          strips[ss][p].controls[c].cycledata.posdirty = tobool(zn(data[key..'cycledata_posdirty'],false))
-          strips[ss][p].controls[c].cycledata.val = 0
-          if nz(strips[ss][p].controls[c].cycledata.statecnt,0) > 0 then
-            for i = 1, strips[ss][p].controls[c].cycledata.statecnt do
-              local key = pfx..'p'..p..'_c_'..c..'_cyc_'..i..'_'
-            
-              strips[ss][p].controls[c].cycledata[i] = {val = tonumber(zn(data[key..'val'],0)),
-                                                        dispval = zn(data[key..'dispval'],'no disp val'),
-                                                        dv = zn(data[key..'dispval'])}
-              if strips[ss][p].controls[c].cycledata[i].dv == nil then
-                strips[ss][p].controls[c].cycledata[i].dv = strips[ss][p].controls[c].cycledata[i].dispval
-              end 
-            end
-          end
-          
-          local mout = data[key..'midiout_output']
-          if mout then
-            strips[ss][p].controls[c].midiout = {output = mout}
-            strips[ss][p].controls[c].midiout.mchan = tonumber(zn(data[key..'midiout_mchan'],1))
-            strips[ss][p].controls[c].midiout.msg3 = tonumber(zn(data[key..'midiout_msg3'],0))
-          end
-
-          local gauge = data[key..'gauge']
-          if gauge then
-            strips[ss][p].controls[c].gauge = {}
-            strips[ss][p].controls[c].gauge.type = tonumber(zn(data[key..'gauge_type'],1))
-            strips[ss][p].controls[c].gauge.x_offs = tonumber(zn(data[key..'gauge_x_offs']))
-            strips[ss][p].controls[c].gauge.y_offs = tonumber(zn(data[key..'gauge_y_offs']))
-            strips[ss][p].controls[c].gauge.radius = tonumber(zn(data[key..'gauge_radius']))
-            strips[ss][p].controls[c].gauge.arclen = tonumber(zn(data[key..'gauge_arclen']))
-            strips[ss][p].controls[c].gauge.rotation = tonumber(zn(data[key..'gauge_rotation']))
-            strips[ss][p].controls[c].gauge.ticks = tonumber(zn(data[key..'gauge_ticks']))
-            strips[ss][p].controls[c].gauge.tick_size = tonumber(zn(data[key..'gauge_tick_size']))
-            strips[ss][p].controls[c].gauge.tick_offs = tonumber(zn(data[key..'gauge_tick_offs']))
-            strips[ss][p].controls[c].gauge.val_freq = tonumber(zn(data[key..'gauge_val_freq']))
-            strips[ss][p].controls[c].gauge.col_tick = (zn(data[key..'gauge_col_tick']))
-            strips[ss][p].controls[c].gauge.col_arc = (zn(data[key..'gauge_col_arc']))
-            strips[ss][p].controls[c].gauge.col_val = (zn(data[key..'gauge_col_val']))
-            strips[ss][p].controls[c].gauge.show_arc = tobool(zn(data[key..'gauge_show_arc']))
-            strips[ss][p].controls[c].gauge.show_tick = tobool(zn(data[key..'gauge_show_tick']))
-            strips[ss][p].controls[c].gauge.show_val = tobool(zn(data[key..'gauge_show_val']))
-            strips[ss][p].controls[c].gauge.val = 0
-            strips[ss][p].controls[c].gauge.dval = ''
-            strips[ss][p].controls[c].gauge.vals = {}
-            strips[ss][p].controls[c].gauge.val_dp = tonumber(zn(data[key..'gauge_val_dp']))
-            strips[ss][p].controls[c].gauge.font = (zn(data[key..'gauge_font'],fontname_def))
-            strips[ss][p].controls[c].gauge.fontsz = tonumber(zn(data[key..'gauge_fontsz']))
-            strips[ss][p].controls[c].gauge.spread = tobool(zn(data[key..'gauge_spread']))
-            strips[ss][p].controls[c].gauge.mapptof = tobool(zn(data[key..'gauge_mapptof']))
-            strips[ss][p].controls[c].gauge.numonly = tobool(zn(data[key..'gauge_numonly']))
-            strips[ss][p].controls[c].gauge.vals = {}
-            
-            local gcnt = tonumber(zn(data[key..'gauge_valcnt']))
-            if gcnt and gcnt > 0 then
-              for gv = 1, gcnt do
-                local key = pfx..'p'..p..'_c_'..c..'_gaugevals_'..gv..'_' 
-                strips[ss][p].controls[c].gauge.vals[gv] = {}
-                strips[ss][p].controls[c].gauge.vals[gv].val = tonumber(zn(data[key..'val'],0))
-                strips[ss][p].controls[c].gauge.vals[gv].dval = zn(data[key..'dval'],'')
-                strips[ss][p].controls[c].gauge.vals[gv].dover = zn(data[key..'dover'],'') 
-                strips[ss][p].controls[c].gauge.vals[gv].nudge = zn(data[key..'nudge'],0) 
-              end
-            
-            end
-          end
-
-          local mcnt = tonumber(zn(data[key..'macroctl_cnt'],0))
-          if mcnt > 0 then
-            strips[ss][p].controls[c].macroctl = {}
-            
-            for mc = 1, mcnt do
-              local key = pfx..'p'..p..'_c_'..c..'_mc_'..mc..'_'
-              strips[ss][p].controls[c].macroctl[mc] = {c_id = tonumber(zn(data[key..'c_id'])),
-                                                        ctl = tonumber(zn(data[key..'ctl'])),
-                                                        A_val = tonumber(zn(data[key..'A'],0)),
-                                                        B_val = tonumber(zn(data[key..'B'],0)),
-                                                        shape = tonumber(zn(data[key..'shape'],0)),
-                                                        mute = tobool(zn(data[key..'mute'],false)),
-                                                        bi = tobool(zn(data[key..'bi'],false)), 
-                                                        inv = tobool(zn(data[key..'inv'],false)),
-                                                        relative = tobool(zn(data[key..'rel'],false))} 
-            end
-          end
-
-          local bcnt = tonumber(zn(data[key..'eqband_cnt'],0))
-          if bcnt > 0 then
-            strips[ss][p].controls[c].eqbands = {}
-            
-            for bc = 1, bcnt do
-              local key = pfx..'p'..p..'_c_'..c..'_eqband_'..bc..'_'
-              strips[ss][p].controls[c].eqbands[bc] = {posmin = tonumber(zn(data[key..'posmin'])),
-                                                        posmax = tonumber(zn(data[key..'posmax'])),
-                                                        gmin = tonumber(zn(data[key..'gmin'],0)),
-                                                        gmax = tonumber(zn(data[key..'gmax'],1)),
-                                                        col = zn(data[key..'col']),
-                                                        fxnum = tonumber(zn(data[key..'fxnum'])),
-                                                        fxguid = zn(data[key..'fxguid']),
-                                                        fxname = zn(data[key..'fxname']),
-                                                        freq_param = tonumber(zn(data[key..'freq_param'])),
-                                                        freq_param_name = zn(data[key..'freq_param_name']),
-                                                        gain_param = tonumber(zn(data[key..'gain_param'])),
-                                                        gain_param_name = zn(data[key..'gain_param_name']),
-                                                        q_param = tonumber(zn(data[key..'q_param'])),
-                                                        q_param_name = zn(data[key..'q_param_name']),
-                                                        bypass_param = tonumber(zn(data[key..'bypass_param'])),
-                                                        bypass_param_name = zn(data[key..'bypass_param_name']),
-                                                        c1_param = tonumber(zn(data[key..'c1_param'])),
-                                                        c1_param_name = zn(data[key..'c1_param_name']),
-                                                        c2_param = tonumber(zn(data[key..'c2_param'])),
-                                                        c2_param_name = zn(data[key..'c2_param_name']),
-                                                        c3_param = tonumber(zn(data[key..'c3_param'])),
-                                                        c3_param_name = zn(data[key..'c3_param_name']),
-                                                        c4_param = tonumber(zn(data[key..'c4_param'])),
-                                                        c4_param_name = zn(data[key..'c4_param_name']),
-                                                        c5_param = tonumber(zn(data[key..'c5_param'])),
-                                                        c5_param_name = zn(data[key..'c5_param_name']),
-                                                        freq_val = tonumber(zn(data[key..'freq_val'])),
-                                                        gain_val = tonumber(zn(data[key..'gain_val'])),
-                                                        q_val = tonumber(zn(data[key..'q_val'])),
-                                                        c1_val = tonumber(zn(data[key..'c1_val'])),
-                                                        c2_val = tonumber(zn(data[key..'c2_val'])),
-                                                        c3_val = tonumber(zn(data[key..'c3_val'])),
-                                                        c4_val = tonumber(zn(data[key..'c4_val'])),
-                                                        c5_val = tonumber(zn(data[key..'c5_val'])),
-                                                        freq_min = tonumber(zn(data[key..'freq_min'])),
-                                                        freq_max = tonumber(zn(data[key..'freq_max'])),
-                                                        gain_min = tonumber(zn(data[key..'gain_min'])),
-                                                        gain_max = tonumber(zn(data[key..'gain_max'])),
-                                                        bandtype = zn(data[key..'bandtype']),
-                                                        bandname = zn(data[key..'bandname']),
-                                                        khz = tobool(zn(data[key..'khz'],false)),
-                                                        gain_inv = tobool(zn(data[key..'gaininv'],false)),
-                                                        q_inv = tobool(zn(data[key..'qinv'],false)),
-                                                        freq_def = tonumber(zn(data[key..'freq_def'])),
-                                                        gain_def = tonumber(zn(data[key..'gain_def'])),
-                                                        q_def = tonumber(zn(data[key..'q_def'])),
-                                                        c1_def = tonumber(zn(data[key..'c1_def'])),
-                                                        c2_def = tonumber(zn(data[key..'c2_def'])),
-                                                        c3_def = tonumber(zn(data[key..'c3_def'])),
-                                                        c4_def = tonumber(zn(data[key..'c4_def'])),
-                                                        c5_def = tonumber(zn(data[key..'c5_def'])),
-                                                        } 
-              local lcnt = tonumber(zn(data[key..'lookmap_cnt'],0))
-              if lcnt > 0 then
-                strips[ss][p].controls[c].eqbands[bc].lookmap = {}
-                for lc = 1, lcnt do
-                  local key = pfx..'p'..p..'_c_'..c..'_eqband_'..bc..'_lm_'..lc..'_'
-                  strips[ss][p].controls[c].eqbands[bc].lookmap[lc] = {pix = tonumber(zn(data[key..'pix'])),
-                                                                       hz = tonumber(zn(data[key..'hz']))}
-                end
-                
-              end
-
-              local lcnt = tonumber(zn(data[key..'gmap_cnt'],0))
-              if lcnt > 0 then
-                strips[ss][p].controls[c].eqbands[bc].gmap = {}
-                for lc = 1, lcnt do
-                  local key = pfx..'p'..p..'_c_'..c..'_eqband_'..bc..'_gm_'..lc..'_'
-                  strips[ss][p].controls[c].eqbands[bc].gmap[lc] = {pix = tonumber(zn(data[key..'pix'])),
-                                                                     db = tonumber(zn(data[key..'db']))}
-                end
-                
-              end
-            end
-            --strips[ss][p].controls[c].eqgraph = tonumber(zn(data[key..'eqgraph']))
-          end
-
-          local key = pfx..'p'..p..'_c_'..c..'_'
-          if tobool(zn(data[key..'ecg_graph'],false)) == true then
-            strips[ss][p].controls[c].eqgraph = {posmin = tonumber(zn(data[key..'ecg_posmin'])),
-                                                 posmax = tonumber(zn(data[key..'ecg_posmax'])),
-                                                 gmin = tonumber(zn(data[key..'ecg_gmin'],0)),
-                                                 gmax = tonumber(zn(data[key..'ecg_gmax'],1)),
-                                                 }
-            
-            local lcnt = tonumber(zn(data[key..'ecg_lookmap_cnt'],0))
-            if lcnt > 0 then
-              strips[ss][p].controls[c].eqgraph.lookmap = {}
-              for lc = 1, lcnt do
-                local key = pfx..'p'..p..'_c_'..c..'_ecg_lm_'..lc..'_'
-                strips[ss][p].controls[c].eqgraph.lookmap[lc] = {pix = tonumber(zn(data[key..'pix'])),
-                                                                 hz = tonumber(zn(data[key..'hz']))}
-              end
-              
-            end
-            
-            local key = pfx..'p'..p..'_c_'..c..'_'
-            local lcnt = tonumber(zn(data[key..'ecg_gmap_cnt'],0))
-            if lcnt > 0 then
-              strips[ss][p].controls[c].eqgraph.gmap = {}
-              for lc = 1, lcnt do
-                local key = pfx..'p'..p..'_c_'..c..'_ecg_gm_'..lc..'_'
-                strips[ss][p].controls[c].eqgraph.gmap[lc] = {pix = tonumber(zn(data[key..'pix'])),
-                                                              db = tonumber(zn(data[key..'db']))}
-              end
-              
-            end
-
-          end
-
-          --load control images - reshuffled to ensure no wasted slots between sessions
-          local iidx
-          local knob_sel = -1
-          for k = 0, #ctl_files do
-            if ctl_files[k].fn == strips[ss][p].controls[c].ctl_info.fn then
-              knob_sel = k
-              break
-            end
-          end
-          if knob_sel ~= -1 then
-            strips[ss][p].controls[c].knob_select = knob_sel
-
-            if ctl_files[knob_sel].imageidx == nil then
-              image_count = F_limit(image_count + 1,0,image_max)
-              gfx.loadimg(image_count, controls_path..ctl_files[knob_sel].fn)
-              iidx = image_count
-              
-              strips[ss][p].controls[c].ctl_info.imageidx = iidx
-              ctl_files[knob_sel].imageidx = iidx                    
-            else
-              iidx = ctl_files[knob_sel].imageidx
-              strips[ss][p].controls[c].ctl_info.imageidx = iidx
-            end
-          else
-            --missing
-            strips[ss][p].controls[c].knob_select = -1
-            strips[ss][p].controls[c].ctl_info.imageidx = 1020
-          end
-        end
-      end
-      
-      if gcnt and gcnt > 0 then
-      
-        for g = 1, gcnt do
-
-          local key = pfx..'p'..p..'_g_'..g..'_'
-          
-          strips[ss][p].graphics[g] = {
-                                      fn = data[key..'fn'],
-                                      imageidx = tonumber(data[key..'imageidx']),
-                                      x = tonumber(data[key..'x']),
-                                      y = tonumber(data[key..'y']),
-                                      w = tonumber(data[key..'w']),
-                                      h = tonumber(data[key..'h']),
-                                      scale = tonumber(data[key..'scale']),
-                                      id = deconvnum(data[key..'id']),
-                                      grpid = deconvnum(data[key..'grpid']),
-                                      gfxtype = tonumber(zn(data[key..'gfxtype'],gfxtype.img)),
-                                      font = {idx = tonumber(zn(data[key..'font_idx'])),
-                                              name = zn(data[key..'font_name']),
-                                              size = tonumber(zn(data[key..'font_size'])),
-                                              bold = tobool(zn(data[key..'font_bold'])),
-                                              italics = tobool(zn(data[key..'font_italics'])),
-                                              underline = tobool(zn(data[key..'font_underline'])),
-                                              shadow = tobool(zn(data[key..'font_shadow'],true)),
-                                              shadow_x = tonumber(zn(data[key..'font_shadowx'],1)),
-                                              shadow_y = tonumber(zn(data[key..'font_shadowy'],1)),
-                                              shadow_a = tonumber(zn(data[key..'font_shadowa'],0.6))
-                                              },
-                                      text = zn(data[key..'text']),
-                                      text_col = zn(data[key..'text_col']),
-                                      poslock = tobool(zn(data[key..'poslock'],false)),
-                                      switcher = tonumber(zn(data[key..'switcher'])),
-                                     }
-          strips[ss][p].graphics[g].stretchw = tonumber(zn(data[key..'stretchw'],strips[ss][p].graphics[g].w))
-          strips[ss][p].graphics[g].stretchh = tonumber(zn(data[key..'stretchh'],strips[ss][p].graphics[g].h))
-
-          --load graphics images
-          if strips[ss][p].graphics[g].gfxtype == gfxtype.img then
-          
-            local iidx = LoadGraphics(strips[ss][p].graphics[g].fn)
-            if iidx then
-              strips[ss][p].graphics[g].imageidx = iidx
-            end
-            --[[local iidx
-            local gfx_sel = -1
-            for k = 0, #graphics_files do
-              if graphics_files[k] and graphics_files[k].fn == strips[ss][p].graphics[g].fn then
-                gfx_sel = k
-                break
-              end
-            end
-            if gfx_sel ~= -1 then
-              
-              if graphics_files[gfx_sel].imageidx == nil then
-                image_count = F_limit(image_count + 1,0,image_max)
-                gfx.loadimg(image_count, graphics_path..graphics_files[gfx_sel].fn)
-                iidx = image_count
-                
-                strips[ss][p].graphics[g].imageidx = iidx
-                graphics_files[gfx_sel].imageidx = iidx                    
-  
-              else
-                iidx = graphics_files[gfx_sel].imageidx
-                strips[ss][p].graphics[g].imageidx = iidx                                  
-              end
-            else
-              --missing
-              strips[ss][p].graphics[g].imageidx = 1020
-            end] ]
-          end
-        end                
-      end]]
     end
     
-    --ss = ss + 1
-  --else
-    --not found
-    --strips[s] = nil
-  --end
-    --DBG('Strip load time: '..reaper.time_precise() - t)
   end  
   
   function LoadStripDataX(pfx, data)
@@ -31065,11 +30937,13 @@ end
                                     show_paramval = tobool(data[key..'show_paramval']),
                                     ctlname_override = zn(data[key..'ctlname_override'],''),
                                     textcol = data[key..'textcol'],
+                                    textcolv = zn(data[key..'textcolv'],data[key..'textcol']),
                                     textoff = tonumber(data[key..'textoff']),
                                     textoffval = tonumber(zn(data[key..'textoffval'],0)),
                                     textoffx = tonumber(zn(data[key..'textoffx'],0)),
                                     textoffvalx = tonumber(zn(data[key..'textoffvalx'],0)),
                                     textsize = tonumber(zn(data[key..'textsize'],0)),
+                                    textsizev = tonumber(zn(data[key..'textsizev'],zn(data[key..'textsize'],0))),
                                     font = zn(data[key..'font'],fontname_def),
                                     val = tonumber(data[key..'val']),
                                     mval = tonumber(data[key..'mval']),
@@ -31093,6 +30967,10 @@ end
                                     switcherid = tonumber(zn(data[key..'switcherid'])),
                                     switcher = tonumber(zn(data[key..'switcher'])),
                                     noss = tobool(zn(data[key..'noss'])),
+                                    bypassbg_c = tobool(zn(data[key..'bypassbg_c'])),
+                                    bypassbg_n = tobool(zn(data[key..'bypassbg_n'])),
+                                    bypassbg_v = tobool(zn(data[key..'bypassbg_v'])),
+                                    clickthrough = tobool(zn(data[key..'clickthrough'])),
                                    }
         g_cids[strip.controls[c].c_id] = true
         if strip.controls[c].id then
@@ -31431,32 +31309,7 @@ end
             if iidx then
               strip.graphics[g].imageidx = iidx
             end
-            --[[local iidx
-            local gfx_sel = -1
-            for k = 0, #graphics_files do
-              if graphics_files[k] and graphics_files[k].fn == strips[ss][p].graphics[g].fn then
-                gfx_sel = k
-                break
-              end
-            end
-            if gfx_sel ~= -1 then
-              
-              if graphics_files[gfx_sel].imageidx == nil then
-                image_count = F_limit(image_count + 1,0,image_max)
-                gfx.loadimg(image_count, graphics_path..graphics_files[gfx_sel].fn)
-                iidx = image_count
-                
-                strips[ss][p].graphics[g].imageidx = iidx
-                graphics_files[gfx_sel].imageidx = iidx                    
-  
-              else
-                iidx = graphics_files[gfx_sel].imageidx
-                strips[ss][p].graphics[g].imageidx = iidx                                  
-              end
-            else
-              --missing
-              strips[ss][p].graphics[g].imageidx = 1020
-            end]]
+            
           end
         end
 
@@ -31993,6 +31846,7 @@ end
     DBGOut('LoadData: Read lines: '..tostring(ctr))
     
     --local scnt = tonumber(nz(GPES('strips_count'),0))
+    local v = tonumber(zn(data['version']))
     local scnt = tonumber(zn(data['stripcount']))
     if scnt == nil then data = nil reaper.MB('Not a loadable lbxstripper file','Load Failed',0) return 0 end
     
@@ -32041,6 +31895,8 @@ end
     LoadSwitchers(data)
     
     data = nil
+    
+    LoadCompatibility(v, strips)
     
     --DBG('Total Load Time: '..reaper.time_precise() - t)
     infomsg = 'Total Load Time: '..round(reaper.time_precise() - t,2)..'s'
@@ -32619,6 +32475,8 @@ end
       
       data = nil
       
+      LoadCompatibility(v, strips)
+      
       --DBG('Total Load Time: '..reaper.time_precise() - t)
       infomsg = 'Total Load Time: '..round(reaper.time_precise() - t,2)..'s'
       DBGOut(infomsg)
@@ -32630,6 +32488,7 @@ end
       else
         plist_w = 0
       end
+      
     else
       --error with saved data
       SaveData()
@@ -32673,7 +32532,37 @@ end
     update_gfx = true
     lastprojdirty = 0
     LASTPROJECTID = PROJECTID
+    lastprojname = GetProjectName()
     LOADEDDATAFILE = LDF
+    
+  end
+  
+  function LoadCompatibility(v, strips)
+  
+    if v == nil or tonumber(v) < 0.95 then
+      
+      if strips and #strips > 0 then
+        for s = 1, #strips do
+          for p = 1, 4 do            
+            
+            --compatibility
+            local ctls = strips[s][p].controls
+            if ctls and #ctls > 0 then
+            
+              for c = 1, #ctls do
+                if ctls[c].lcflag == nil then
+                  gfx.setfont(1, ctls[c].font, gui.fontsz_knob + ctls[c].textsize-4)
+                  local _, th = gfx.measurestr('|')
+                  ctls[c].textoff = ctls[c].textoff - math.floor(th/2)
+                  ctls[c].lcflag = true
+                end
+              end
+            
+            end
+          end
+        end
+      end    
+    end
     
   end
   
@@ -33732,11 +33621,13 @@ end
               file:write('['..key..'show_paramval]'..tostring(stripdata.controls[c].show_paramval)..'\n')
               file:write('['..key..'ctlname_override]'..nz(stripdata.controls[c].ctlname_override,'')..'\n')
               file:write('['..key..'textcol]'..stripdata.controls[c].textcol..'\n')
+              file:write('['..key..'textcolv]'..nz(stripdata.controls[c].textcolv,stripdata.controls[c].textcol)..'\n')
               file:write('['..key..'textoff]'..stripdata.controls[c].textoff..'\n')
               file:write('['..key..'textoffval]'..stripdata.controls[c].textoffval..'\n')
               file:write('['..key..'textoffx]'..stripdata.controls[c].textoffx..'\n')
               file:write('['..key..'textoffvalx]'..stripdata.controls[c].textoffvalx..'\n')
               file:write('['..key..'textsize]'..nz(stripdata.controls[c].textsize,0)..'\n')
+              file:write('['..key..'textsizev]'..nz(stripdata.controls[c].textsizev,nz(stripdata.controls[c].textsize,0))..'\n')
               file:write('['..key..'font]'..nz(stripdata.controls[c].font,fontname_def)..'\n')
               file:write('['..key..'val]'..nz(stripdata.controls[c].val,0)..'\n')
               file:write('['..key..'mval]'..nz(stripdata.controls[c].mval,nz(stripdata.controls[c].val,0))..'\n')
@@ -33757,6 +33648,10 @@ end
               file:write('['..key..'switcherid]'..tostring(nz(stripdata.controls[c].switcherid,''))..'\n')
               file:write('['..key..'switcher]'..tostring(nz(stripdata.controls[c].switcher,''))..'\n')
               file:write('['..key..'noss]'..tostring(nz(stripdata.controls[c].noss,''))..'\n')
+              file:write('['..key..'bypassbg_c]'..tostring(nz(stripdata.controls[c].bypassbg_c,''))..'\n')
+              file:write('['..key..'bypassbg_n]'..tostring(nz(stripdata.controls[c].bypassbg_n,''))..'\n')
+              file:write('['..key..'bypassbg_v]'..tostring(nz(stripdata.controls[c].bypassbg_v,''))..'\n')
+              file:write('['..key..'clickthrough]'..tostring(nz(stripdata.controls[c].clickthrough,''))..'\n')
   
               file:write('['..key..'id]'..convnum(stripdata.controls[c].id)..'\n')
               file:write('['..key..'grpid]'..convnum(stripdata.controls[c].grpid)..'\n')
@@ -34596,11 +34491,16 @@ end
     DBGOut('SaveData: Saved OK: '..tostring(true))
     
     if settings_createbackuponmanualsave and bak == true then
+      local srcffn = ffn
       if tmp then
         ffn = string.match(ffn,'(.+)__')..'.lbxbak'
       else
         ffn = ffn..'.lbxbak'      
       end
+      --local t = reaper.time_precise()
+      copyfile(srcffn, ffn)
+      --[[DBG('bkp: '..reaper.time_precise()-t)
+      local t = reaper.time_precise()
       file=io.open(ffn,"w")
       if file == nil then
         DBG('Failed to create backup file:/n/n'..ffn)
@@ -34608,6 +34508,8 @@ end
       end
       SaveDataFile(file, save_path)
       file:close()
+      DBG('bkp: '..reaper.time_precise()-t)]]
+      
       DBGOut('SaveData: Backup created: '..tostring(true))      
     end
     
@@ -34619,6 +34521,7 @@ end
   
   function SaveDataFile(file, save_path)
     
+    file:write('[version]'..tostring(VERSION)..'\n')
     if strips and #strips > 0 then
     
       reaper.SetProjExtState(0,SCRIPT,'strips_count',#strips)
@@ -35519,7 +35422,8 @@ end
   
     if fn and string.len(fn)>0 then
     
-      local savedata = {trackdata = {},
+      local savedata = {version = VERSION,
+                        trackdata = {},
                         stripdata = {},
                         snapdata = {},
                         switchers = {}}
@@ -35683,6 +35587,8 @@ end
                 if ctl.xydata == nil then ctl.xydata = {snapa = 1, snapb = 1, snapc = 1, snapd = 1, x = 0.5, y = 0.5} end
                 if ctl.textoffx == nil then ctl.textoffx = 0 end
                 if ctl.textoffvalx == nil then ctl.textoffvalx = 0 end      
+                if ctl.textcolv == nil then ctl.textcolv = ctl.textcol end
+                if ctl.textsizev == nil then ctl.textsizev = ctl.textsize end
                 
                 if ctl.grpid then
                   if grids[ctl.grpid] then
@@ -35954,13 +35860,15 @@ end
       Snapshots_INIT()
     end
     
+    LoadCompatibility(loaddata.version,loaddata.stripdata)
+    
     for s = 1, #loaddata.stripdata do    
       if loaddata.stripdata and loaddata.stripdata[s] then
         local sc = #strips + 1 
         strips[sc] = loaddata.stripdata[s]
         snapshots[sc] = loaddata.snapdata[s]
       end
-    end
+    end    
     
     PopulateTracks()
     
@@ -36161,12 +36069,14 @@ end
     ctl_select = nil
     scale_select = 1
     textcol_select = '205 205 205'
+    textcolv_select = '205 205 205'
     ctltype_select = 1
     textoff_select = 45
     textoffval_select = 0
     textoff_selectx = 0
     textoffval_selectx = 0
     textsize_select = 0
+    textsizev_select = 0
     defval_select = 0
     strip_select = 0
     stripfol_select = 0
@@ -36201,6 +36111,10 @@ end
     al_select = 0
     gauge_select = GaugeSelect_INIT()
     ctlfont_select = fontname_def
+    bypass_bgdraw_c_select = false
+    bypass_bgdraw_n_select = false
+    bypass_bgdraw_v_select = false
+    clickthrough_select = false
     
     plist_w = 140
     oplist_w = 140
@@ -37097,7 +37011,7 @@ end
   ------------------------------------------------------------
 
   SCRIPT = 'LBX_STRIPPER'
-  VERSION = 0.94
+  VERSION = 0.95
   STRIPSET = 'STRIP SET 1'
 
   OS = reaper.GetOS()
@@ -37192,6 +37106,9 @@ end
   settings_showminimaltopbar = true
   settings_createbackuponmanualsave = false
   settings_UCV = 1
+  
+  textoptlink_select = true
+  
   show_midioutind = true
   
   save_subfolder = ''
@@ -37256,6 +37173,7 @@ end
     --DBG(_G['testfunc']('testtext'))
     INIT()
     
+    gui = GetGUI_vars()
     def_graph = EQC_LoadGraph()
     LoadSettings()
     LoadData()
