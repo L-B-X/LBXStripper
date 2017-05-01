@@ -2760,6 +2760,7 @@
                                                 bypassbg_c = bypass_bgdraw_c_select,
                                                 bypassbg_n = bypass_bgdraw_n_select,
                                                 bypassbg_v = bypass_bgdraw_v_select,
+                                                clickthrough = clickthrough_select,
                                                 knobsens = settings_defknobsens
                                                 }
         if track_select == trackedit_select then
@@ -30680,6 +30681,10 @@ end
                  gauge = Gauge_CopySelect(ctl.gauge),
                  noss = ctl.noss,
                  bright = ctl.bright,
+                 bypassbg_c = ctl.bypassbg_c,
+                 bypassbg_n = ctl.bypassbg_n,
+                 bypassbg_v = ctl.bypassbg_v,
+                 clickthrough = ctl.clickthrough,
                  }
     if ctl.ctlcat == ctlcats.macro and ctl.macroctl then
       local macro = ctl.macroctl
