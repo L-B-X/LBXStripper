@@ -131,6 +131,8 @@
               dragparam_other = 97, 
               dd = 98,
               textsizevslider = 99,
+              gfxopt_bright = 100,
+              gfxopt_contr = 101,
               dummy = 999
               }
   
@@ -1788,6 +1790,15 @@
                           y = obj.sections[49].y+butt_h+10 + (butt_h/2+4 + 10) * 10 + yo,
                           w = obj.sections[49].w-60,
                           h = butt_h/2+4}
+
+      obj.sections[910] = {x = obj.sections[49].x+75,
+                          y = obj.sections[49].y+butt_h+10 + (butt_h/2+4 + 10) * 0 + yo,
+                          w = obj.sections[49].w-85,
+                          h = butt_h/2+4}                           
+      obj.sections[911] = {x = obj.sections[49].x+75,
+                          y = obj.sections[49].y+butt_h+10 + (butt_h/2+4 + 10) * 1 + yo,
+                          w = obj.sections[49].w-85,
+                          h = butt_h/2+4}                           
                           
       --SNAPSHOTS
       local ssh = snaph-160
@@ -2545,7 +2556,7 @@
         if graphics_files[graphics_folder_files[gfx_select]].imageidx == nil then
           local iidx = LoadGraphics(graphics_files[graphics_folder_files[gfx_select]].fn)
           if iidx then
-            local w, h = gfx.getimgdim(graphics_files[graphics_folder_files[gfx_select]].imageidx)      
+            local w, h = gfx.getimgdim(iidx)      
             if w == 0 or h == 0 then OpenMsgBox(1, 'Invalid gfx file: '..graphics_files[graphics_folder_files[gfx_select]].fn, 1) return end
             --DBG(iidx..'  '..image_count)
             if iidx > image_count then
@@ -2583,7 +2594,9 @@
                                                   },
                                           text = nil,
                                           text_col = nil,
-                                          poslock = false
+                                          poslock = false,
+                                          bright = 0.5,
+                                          contr = 0.5,
                                          }
       elseif type == gfxtype.txt then
         local x,y
@@ -5742,21 +5755,21 @@
           local gfxx = strips[tracks[track_select].strip][page].graphics[i]
           local hidden = Switcher_CtlsHidden(gfxx.switcher, gfxx.grpid)
         
-          if strips[tracks[track_select].strip][page].graphics[i].hide == nil and hidden == false then
-            local gtype = strips[tracks[track_select].strip][page].graphics[i].gfxtype
-            local x = strips[tracks[track_select].strip][page].graphics[i].x
-            local y = strips[tracks[track_select].strip][page].graphics[i].y
+          if gfxx.hide == nil and hidden == false then
+            local gtype = gfxx.gfxtype
+            local x = gfxx.x
+            local y = gfxx.y
             if not surface_size.limit then
               x = x + surface_offset.x 
               y = y + surface_offset.y 
             end
             
             if gtype == gfxtype.img then
-              local w = strips[tracks[track_select].strip][page].graphics[i].w
-              local h = strips[tracks[track_select].strip][page].graphics[i].h
-              local sw = strips[tracks[track_select].strip][page].graphics[i].stretchw
-              local sh = strips[tracks[track_select].strip][page].graphics[i].stretchh
-              local imageidx = strips[tracks[track_select].strip][page].graphics[i].imageidx
+              local w = gfxx.w
+              local h = gfxx.h
+              local sw = gfxx.stretchw
+              local sh = gfxx.stretchh
+              local imageidx = gfxx.imageidx
               
               local yoff = 0
               local xoff = 0
@@ -5774,39 +5787,57 @@
                   yoff = obj.sections[10].y - y
                 end
               end
-              --gfx.a = backalpha
-              gfx.blit(imageidx,1,0, xoff, yoff, w, h-yoff, x+xoff, y+yoff, sw, sh)
-            
+              
+              if (gfxx.bright and gfxx.bright ~= 0.5) or (gfxx.contr and gfxx.contr ~= 0.5) then
+                iidx = 899
+                local ba = -F_limit((0.5-gfxx.bright)*2,-1,1)
+                local bc = gfxx.contr
+                if bc > 0.5 then
+                  bc = 1+(bc-0.5)*10
+                else
+                  bc = bc*2
+                end
+                gfx.setimgdim(iidx, -1, -1)
+                gfx.setimgdim(iidx, sw, sh)
+                gfx.dest = iidx
+                gfx.blit(imageidx,1,0, xoff, yoff, w, h-yoff, 0, 0, sw, sh)
+                gfx.muladdrect(0,0,sw,sh,bc,bc,bc,1,ba,ba,ba)
+                gfx.dest = 1004
+                gfx.blit(iidx,1,0, 0, 0, sw, sh, x+xoff, y+yoff)            
+              else
+                gfx.blit(imageidx,1,0, xoff, yoff, w, h-yoff, x+xoff, y+yoff, sw, sh)            
+              end
+                          
             elseif gtype == gfxtype.txt then
-              --local w = strips[tracks[track_select].strip][page].graphics[i].w
-              --local h = strips[tracks[track_select].strip][page].graphics[i].h
-              local text = strips[tracks[track_select].strip][page].graphics[i].text
-              local textcol = strips[tracks[track_select].strip][page].graphics[i].text_col
+              --local w = gfxx.w
+              --local h = gfxx.h
+              local text = gfxx.text
+              local textcol = gfxx.text_col
               
               local flagb,flagi,flagu = 0,0,0
-              if strips[tracks[track_select].strip][page].graphics[i].font.bold then
+              if gfxx.font.bold then
                 flagb = 98
               end
-              if strips[tracks[track_select].strip][page].graphics[i].font.italics then
+              if gfxx.font.italics then
                 flagi = 105
               end
-              if strips[tracks[track_select].strip][page].graphics[i].font.underline then
+              if gfxx.font.underline then
                 flagu = 117
               end
               local flags = flagb + (flagi*256) + (flagu*(256^2))
-              gfx.setfont(1,strips[tracks[track_select].strip][page].graphics[i].font.name,
-                            strips[tracks[track_select].strip][page].graphics[i].font.size,flags)
+              gfx.setfont(1,gfxx.font.name,
+                            gfxx.font.size,flags)
               local w, h = gfx.measurestr(text)
-              strips[tracks[track_select].strip][page].graphics[i].w = w
-              strips[tracks[track_select].strip][page].graphics[i].h = h            
-              strips[tracks[track_select].strip][page].graphics[i].stretchw = w
-              strips[tracks[track_select].strip][page].graphics[i].stretchh = h            
-              if strips[tracks[track_select].strip][page].graphics[i].font.shadow then
+              gfxx.w = w
+              gfxx.h = h            
+              gfxx.stretchw = w
+              gfxx.stretchh = h            
+              if gfxx.font.shadow then
               
-                local shada = nz(strips[tracks[track_select].strip][page].graphics[i].font.shadow_a,0.6)
-                local shadx = nz(strips[tracks[track_select].strip][page].graphics[i].font.shadow_x,1)
-                local shady = nz(strips[tracks[track_select].strip][page].graphics[i].font.shadow_y,1)
-                --local shadoff = F_limit(math.ceil((strips[tracks[track_select].strip][page].graphics[i].font.size/250)*10),1,15)
+                local shada = nz(gfxx.font.shadow_a,0.6)
+                local shadx = nz(gfxx.font.shadow_x,1)
+                local shady = nz(gfxx.font.shadow_y,1)
+                --local shadoff = F_limit(math.ceil((gfxx.font.size/250)*10),1,15)
               
                 f_Get_SSV(gui.color.black)
                 --gfx.a = math.max(shada-(1-backalpha),0)
@@ -5842,7 +5873,8 @@
     end
     local ba = math.max(backalpha - backalpha2,0)
     gfx.muladdrect(0,0,surface_size.w,surface_size.h,ba,ba,ba)
-
+    --gfx.muladdrect(0,0,surface_size.w,surface_size.h,1,1,1,1,1,1,1,1)
+    
     GUI_DrawGauge()
 
     gfx.dest = 1    
@@ -5957,29 +5989,9 @@
 
     GUI_DrawPanel(xywh, true, 'LABEL OPTS')
     
-    --[[f_Get_SSV('0 0 0')
-    gfx.a = 1  
-    gfx.rect(xywh.x,
-     xywh.y, 
-     xywh.w,
-     xywh.h, 1 )
-
-    f_Get_SSV('64 64 64')
-    gfx.a = 1  
-    gfx.rect(xywh.x,
-     xywh.y, 
-     xywh.w,
-     xywh.h, 0 )]]
-    
     xywh.h = butt_h     
     f_Get_SSV(gui.color.white)
     gfx.a = 1 
-    --[[gfx.rect(xywh.x,
-     xywh.y, 
-     xywh.w,
-     xywh.h, 1 )]]
-
-    --GUI_textC(gui,xywh,'LABEL OPTS',gui.color.black,-2)
 
     GUI_DrawButton(gui, 'EDIT LABEL', obj.sections[140], gui.color.white, gui.color.black, true)
     GUI_DrawButton(gui, gfx_font_select.name, obj.sections[147], gui.color.white, gui.color.black, true)
@@ -5992,6 +6004,27 @@
     GUI_DrawSliderH(gui, 'SHAD X', obj.sections[148], gui.color.black, gui.color.white, F_limit((gfx_font_select.shadow_x+15)/30,0,1))
     GUI_DrawSliderH(gui, 'SHAD Y', obj.sections[149], gui.color.black, gui.color.white, F_limit((gfx_font_select.shadow_y+15)/30,0,1))
     GUI_DrawSliderH(gui, 'SHAD A', obj.sections[150], gui.color.black, gui.color.white, F_limit(gfx_font_select.shadow_a,0,1))
+
+  end
+
+  ------------------------------------------------------------
+
+  function GUI_DrawGFXOptions(obj, gui)
+
+    gfx.dest = 1
+
+    local xywh = {x = obj.sections[49].x,
+                  y = obj.sections[49].y,
+                  w = obj.sections[49].w,
+                  h = obj.sections[49].h}
+
+    GUI_DrawPanel(xywh, true, 'GRAPHICS OPTS')
+    
+    xywh.h = butt_h     
+    f_Get_SSV(gui.color.white)
+    gfx.a = 1 
+    GUI_DrawSliderH(gui, 'BRIGHTNESS', obj.sections[910], gui.color.black, gui.color.white, F_limit(gfxbright_select,0,1))
+    GUI_DrawSliderH(gui, 'CONTRAST', obj.sections[911], gui.color.black, gui.color.white, F_limit(gfxcontr_select,0,1))
 
   end
   
@@ -6578,7 +6611,7 @@ end
   
         end
       end    
-    
+      
       gfx.dest = 1
     end
       
@@ -7079,6 +7112,7 @@ end
                 if yy + xywharea[i].h > obj.sections[10].y+obj.sections[10].h then
                   xywharea[i].h = (obj.sections[10].y+obj.sections[10].h)-yy
                 end
+
                 gfx.blit(1000,1,0, xywharea[i].x,
                                    xywharea[i].y,
                                    xywharea[i].w,
@@ -10183,6 +10217,10 @@ end
 
           if show_lbloptions and gfx2_select ~= nil then            
             GUI_DrawLblOptions(obj, gui)
+          end
+
+          if show_gfxoptions and gfx2_select ~= nil then            
+            GUI_DrawGFXOptions(obj, gui)
           end
 
           if update_gfx or update_surface then
@@ -14118,22 +14156,6 @@ end
                   fnd = true
                 end
                 
-                --[[if graphics_files[j].imageidx ~= nil then
-                  fnd = true
-                  strip.graphics[i].imageidx = graphics_files[j].imageidx
-                else
-                  local iidx = LoadGraphics(strip.graphics[i].fn)
-                  if iidx then
-                    image_count_add = iidx
-                    strip.graphics[i].imageidx = iidx
-                    fnd = true
-                  end
-                  --fnd = true
-                  --[[image_count_add = F_limit(image_count_add + 1,0,image_max)
-                  gfx.loadimg(image_count_add, graphics_path..strip.graphics[i].fn)
-                  graphics_files[j].imageidx = image_count_add]]
-                  --strip.graphics[i].imageidx = image_count_add
-                --end
                 break
               end
             end
@@ -14142,6 +14164,7 @@ end
           end
         end
       end
+
       if #strip.controls > 0 then      
         for i = 1, #strip.controls do
           if minx == nil then
@@ -14200,40 +14223,64 @@ end
       if #strip.graphics > 0 then
       
         for i = 1, #strip.graphics do
+
+          local gfxx = strip.graphics[i]
         
-          local hidden = GenStripPreview_CtlsHidden(switchers, switchconvtab, strip.graphics[i].switcher, strip.graphics[i].grpid)
+          local hidden = GenStripPreview_CtlsHidden(switchers, switchconvtab, gfxx.switcher, gfxx.grpid)
           if hidden == false then
-            if nz(strip.graphics[i].gfxtype, gfxtype.img) == gfxtype.img then
+            if nz(gfxx.gfxtype, gfxtype.img) == gfxtype.img then
   
-              local x = strip.graphics[i].x+offsetx 
-              local y = strip.graphics[i].y+offsety
-              local w = strip.graphics[i].w
-              local h = strip.graphics[i].h
-              local sw = strip.graphics[i].stretchw
-              local sh = strip.graphics[i].stretchh
-              local imageidx = strip.graphics[i].imageidx
+              local x = gfxx.x+offsetx 
+              local y = gfxx.y+offsety
+              local w = gfxx.w
+              local h = gfxx.h
+              local sw = gfxx.stretchw
+              local sh = gfxx.stretchh
+              local imageidx = gfxx.imageidx
               
-              gfx.blit(imageidx,1,0, 0, 0, w, h, x, y, sw, sh)
+              --gfx.blit(imageidx,1,0, 0, 0, w, h, x, y, sw, sh)
+              
+              if gfxx.bright and gfxx.bright ~= 0.5 then
+                iidx = 899
+                local ba = -F_limit((0.5-gfxx.bright)*2,-1,1)
+                local bc = gfxx.contr
+                if bc > 0.5 then
+                  bc = 1+(bc-0.5)*10
+                else
+                  bc = bc*2
+                end
+                
+                gfx.setimgdim(iidx, -1, -1)
+                gfx.setimgdim(iidx, sw, sh)
+                gfx.dest = iidx
+                gfx.a = 1
+                gfx.blit(imageidx,1,0, 0, 0, w, h, 0, 0, sw, sh)
+                gfx.muladdrect(0,0,sw,sh,bc,bc,bc,1,ba,ba,ba)
+                gfx.dest = 1022
+                gfx.blit(iidx,1,0, 0, 0, sw, sh, x, y)            
+              else
+                gfx.blit(imageidx,1,0, 0, 0, w, h, x, y, sw, sh)
+              end
             
-            elseif strip.graphics[i].gfxtype == gfxtype.txt then
+            elseif gfxx.gfxtype == gfxtype.txt then
             
-              local x = strip.graphics[i].x+offsetx 
-              local y = strip.graphics[i].y+offsety
+              local x = gfxx.x+offsetx 
+              local y = gfxx.y+offsety
             
-              local text = strip.graphics[i].text
-              local textcol = strip.graphics[i].text_col
+              local text = gfxx.text
+              local textcol = gfxx.text_col
               
               local flagb,flagi,flagu = 0,0,0
-              if strip.graphics[i].font.bold then flagb = 98 end
-              if strip.graphics[i].font.italics then flagi = 105 end
-              if strip.graphics[i].font.underline then flagu = 117 end
+              if gfxx.font.bold then flagb = 98 end
+              if gfxx.font.italics then flagi = 105 end
+              if gfxx.font.underline then flagu = 117 end
               local flags = flagb + (flagi*256) + (flagu*(256^2))
-              gfx.setfont(1,strip.graphics[i].font.name,
-                            strip.graphics[i].font.size,flags)
-              if strip.graphics[i].font.shadow then
+              gfx.setfont(1,gfxx.font.name,
+                            gfxx.font.size,flags)
+              if gfxx.font.shadow then
               
-                local shadx = nz(strip.graphics[i].font.shadow_x,1)
-                local shady = nz(strip.graphics[i].font.shadow_y,1)
+                local shadx = nz(gfxx.font.shadow_x,1)
+                local shady = nz(gfxx.font.shadow_y,1)
               
                 f_Get_SSV(gui.color.black)
                 gfx.a = 0.5
@@ -14360,38 +14407,62 @@ end
     if gfx2_select then
     
       local i = gfx2_select
+      local gfxx = strips[strip][page].graphics[i]
       if nz(strips[strip][page].graphics[i].gfxtype, gfxtype.img) == gfxtype.img then
 
-        local x = strips[strip][page].graphics[i].x+offsetx 
-        local y = strips[strip][page].graphics[i].y+offsety
-        local w = strips[strip][page].graphics[i].w
-        local h = strips[strip][page].graphics[i].h
-        local sw = strips[strip][page].graphics[i].stretchw
-        local sh = strips[strip][page].graphics[i].stretchh
-        local imageidx = strips[strip][page].graphics[i].imageidx
+        local x = gfxx.x+offsetx 
+        local y = gfxx.y+offsety
+        local w = gfxx.w
+        local h = gfxx.h
+        local sw = gfxx.stretchw
+        local sh = gfxx.stretchh
+        local imageidx = gfxx.imageidx
         
-        gfx.a = 0.8
-        gfx.blit(imageidx,1,0, 0, 0, w, h, x, y, sw, sh)
+        --gfx.a = 0.8
+        --gfx.blit(imageidx,1,0, 0, 0, w, h, x, y, sw, sh)
       
-      elseif strips[strip][page].graphics[i].gfxtype == gfxtype.txt then
+        if gfxx.bright and gfxx.bright ~= 0.5 then
+          iidx = 899
+          local ba = -F_limit((0.5-gfxx.bright)*2,-1,1)
+          local bc = gfxx.contr
+          if bc > 0.5 then
+            bc = 1+(bc-0.5)*10
+          else
+            bc = bc*2
+          end
+          gfx.setimgdim(iidx, -1, -1)
+          gfx.setimgdim(iidx, sw, sh)
+          gfx.dest = iidx
+          gfx.a = 1
+          gfx.blit(imageidx,1,0, 0, 0, w, h, 0, 0, sw, sh)
+          gfx.muladdrect(0,0,sw,sh,bc,bc,bc,1,ba,ba,ba)
+          gfx.dest = 1022
+          gfx.a = 0.8
+          gfx.blit(iidx,1,0, 0, 0, sw, sh, x, y)            
+        else
+          gfx.a = 0.8
+          gfx.blit(imageidx,1,0, 0, 0, w, h, x, y, sw, sh)
+        end
       
-        local x = strips[strip][page].graphics[i].x+offsetx 
-        local y = strips[strip][page].graphics[i].y+offsety
+      elseif gfxx.gfxtype == gfxtype.txt then
       
-        local text = strips[strip][page].graphics[i].text
-        local textcol = strips[strip][page].graphics[i].text_col
+        local x = gfxx.x+offsetx 
+        local y = gfxx.y+offsety
+      
+        local text = gfxx.text
+        local textcol = gfxx.text_col
         
         local flagb,flagi,flagu = 0,0,0
-        if strips[strip][page].graphics[i].font.bold then flagb = 98 end
-        if strips[strip][page].graphics[i].font.italics then flagi = 105 end
-        if strips[strip][page].graphics[i].font.underline then flagu = 117 end
+        if gfxx.font.bold then flagb = 98 end
+        if gfxx.font.italics then flagi = 105 end
+        if gfxx.font.underline then flagu = 117 end
         local flags = flagb + (flagi*256) + (flagu*(256^2))
-        gfx.setfont(1,strips[strip][page].graphics[i].font.name,
-                      strips[strip][page].graphics[i].font.size,flags)
-        if strips[strip][page].graphics[i].font.shadow then
+        gfx.setfont(1,gfxx.font.name,
+                      gfxx.font.size,flags)
+        if gfxx.font.shadow then
         
-          local shadx = nz(strips[strip][page].graphics[i].font.shadow_x,1)
-          local shady = nz(strips[strip][page].graphics[i].font.shadow_y,1)
+          local shadx = nz(gfxx.font.shadow_x,1)
+          local shady = nz(gfxx.font.shadow_y,1)
         
           f_Get_SSV(gui.color.black)
           gfx.a = 0.4
@@ -14463,40 +14534,64 @@ end
       
         for ii = 1, #gfx3_select do
           local i = gfx3_select[ii].ctl
-          local hidden = Switcher_CtlsHidden(strips[strip][page].graphics[i].switcher, strips[strip][page].graphics[i].grpid)          
+          local gfxx = strips[strip][page].graphics[i]
+          local hidden = Switcher_CtlsHidden(gfxx.switcher, gfxx.grpid)          
           if hidden == false then
-            if nz(strips[strip][page].graphics[i].gfxtype, gfxtype.img) == gfxtype.img then
+            if nz(gfxx.gfxtype, gfxtype.img) == gfxtype.img then
   
-              local x = strips[strip][page].graphics[i].x+offsetx 
-              local y = strips[strip][page].graphics[i].y+offsety
-              local w = strips[strip][page].graphics[i].w
-              local h = strips[strip][page].graphics[i].h
-              local sw = strips[strip][page].graphics[i].stretchw
-              local sh = strips[strip][page].graphics[i].stretchh
-              local imageidx = strips[strip][page].graphics[i].imageidx
+              local x = gfxx.x+offsetx 
+              local y = gfxx.y+offsety
+              local w = gfxx.w
+              local h = gfxx.h
+              local sw = gfxx.stretchw
+              local sh = gfxx.stretchh
+              local imageidx = gfxx.imageidx
               
-              gfx.a = 0.3
-              gfx.blit(imageidx,1,0, 0, 0, w, h, x+b_sz, y+b_sz, sw, sh)
+              --gfx.a = 0.3
+              --gfx.blit(imageidx,1,0, 0, 0, w, h, x+b_sz, y+b_sz, sw, sh)
             
-            elseif strips[strip][page].graphics[i].gfxtype == gfxtype.txt then
+              if gfxx.bright and gfxx.bright ~= 0.5 then
+                iidx = 899
+                local ba = -F_limit((0.5-gfxx.bright)*2,-1,1)
+                local bc = gfxx.contr
+                if bc > 0.5 then
+                  bc = 1+(bc-0.5)*10
+                else
+                  bc = bc*2
+                end
+                gfx.setimgdim(iidx, -1, -1)
+                gfx.setimgdim(iidx, sw, sh)
+                gfx.dest = iidx
+                gfx.a = 1
+                gfx.blit(imageidx,1,0, 0, 0, w, h, 0, 0, sw, sh)
+                gfx.muladdrect(0,0,sw,sh,bc,bc,bc,1,ba,ba,ba)
+                gfx.dest = 1022
+                gfx.a = 0.3
+                gfx.blit(iidx,1,0, 0, 0, sw, sh, x+b_sz, y+b_sz)            
+              else
+                gfx.a = 0.3
+                gfx.blit(imageidx,1,0, 0, 0, w, h, x+b_sz, y+b_sz, sw, sh)
+              end
+              
+            elseif gfxx.gfxtype == gfxtype.txt then
             
-              local x = strips[strip][page].graphics[i].x+offsetx 
-              local y = strips[strip][page].graphics[i].y+offsety
+              local x = gfxx.x+offsetx 
+              local y = gfxx.y+offsety
             
-              local text = strips[strip][page].graphics[i].text
-              local textcol = strips[strip][page].graphics[i].text_col
+              local text = gfxx.text
+              local textcol = gfxx.text_col
               
               local flagb,flagi,flagu = 0,0,0
-              if strips[strip][page].graphics[i].font.bold then flagb = 98 end
-              if strips[strip][page].graphics[i].font.italics then flagi = 105 end
-              if strips[strip][page].graphics[i].font.underline then flagu = 117 end
+              if gfxx.font.bold then flagb = 98 end
+              if gfxx.font.italics then flagi = 105 end
+              if gfxx.font.underline then flagu = 117 end
               local flags = flagb + (flagi*256) + (flagu*(256^2))
-              gfx.setfont(1,strips[strip][page].graphics[i].font.name,
-                            strips[strip][page].graphics[i].font.size,flags)
-              if strips[strip][page].graphics[i].font.shadow then
+              gfx.setfont(1,gfxx.font.name,
+                            gfxx.font.size,flags)
+              if gfxx.font.shadow then
               
-                local shadx = nz(strips[strip][page].graphics[i].font.shadow_x,1)
-                local shady = nz(strips[strip][page].graphics[i].font.shadow_y,1)
+                local shadx = nz(gfxx.font.shadow_x,1)
+                local shady = nz(gfxx.font.shadow_y,1)
               
                 f_Get_SSV(gui.color.black)
                 gfx.a = 0.15
@@ -15047,7 +15142,7 @@ end
     if ctl_select and #ctl_select > 0 then
       for i = 1, #ctl_select do
         if c == ctl_select[i].ctl then
-          ret = true
+          ret = true, i
           break
         end
       end
@@ -17581,7 +17676,12 @@ end
     gfx_text_select = strips[tracks[track_select].strip][page].graphics[gfx2_select].text
     poslock_select = strips[tracks[track_select].strip][page].graphics[gfx2_select].poslock
   end
-  
+
+  function SetGfxSelectVals2()
+    gfxbright_select = nz(strips[tracks[track_select].strip][page].graphics[gfx2_select].bright,0.5)
+    gfxcontr_select = nz(strips[tracks[track_select].strip][page].graphics[gfx2_select].contr,0.5)
+  end
+    
   function GetValFromDVal(c, dv, checkov)
     if checkov == nil then checkov = true end
   
@@ -19777,7 +19877,7 @@ end
       if mouse.context == nil then
         if ((submode == 0 and ctl_select ~= nil) and (MOUSE_click(obj.sections[45]) or (MOUSE_click(obj.sections[100]) and show_cycleoptions) 
             or (MOUSE_click(obj.sections[200]) and show_ctlbrowser)) or (MOUSE_click(obj.sections[800]) and show_gaugeedit)) or 
-           ((submode == 1 and gfx2_select ~= nil) and (MOUSE_click(obj.sections[49]) and show_lbloptions)) then
+           ((submode == 1 and gfx2_select ~= nil) and (MOUSE_click(obj.sections[49]) and (show_lbloptions or show_gfxoptions))) then
         elseif mouse.mx > obj.sections[10].x and show_actionchooser == false then
           if MOUSE_click(obj.sections[10]) then
             if noscroll == false then
@@ -22651,25 +22751,31 @@ end
       
         if mouse.context == nil and MOUSE_click(obj.sections[10]) then
           if strips and tracks[track_select] and strips[tracks[track_select].strip] then
-            for i = 1, #strips[tracks[track_select].strip][page].controls do
+            --for i = 1, #strips[tracks[track_select].strip][page].controls do
             
-              local xywh
+              --[[local xywh
               local ctl = strips[tracks[track_select].strip][page].controls[i]
               xywh = {x = ctl.x - surface_offset.x +obj.sections[10].x, 
                       y = ctl.y - surface_offset.y +obj.sections[10].y, 
                       w = ctl.w, 
                       h = ctl.ctl_info.cellh}
-              if MOUSE_click(xywh) then
-                
+              if MOUSE_click(xywh) then]]
+              
+            local c = GetControlAtXY(tracks[track_select].strip, page, mouse.mx, mouse.my)
+            if c then
+              local i = c
+              local ctl = strips[tracks[track_select].strip][page].controls[i]
+              
                 if Switcher_CtlsHidden(ctl.switcher, ctl.grpid) == false then
                   show_cycleoptions = false
                   
                   local found = false
-                  local j
+                  local j, ctlsel
                   if ctl_select ~= nil then
                     for j = 1, #ctl_select do
                       if tonumber(ctl_select[j].ctl) == tonumber(i) then
                         found = true
+                        ctlsel = j
                         break
                       end
                     end
@@ -22708,16 +22814,18 @@ end
                         if ctl_select == nil then
                           ctl_select = {}
                           ctl_select[1] = {ctl = i}
-                        --[[else
-                          local cs = #ctl_select+1
-                          ctl_select[cs] = {}
-                          ctl_select[cs].ctl = i                      
-                          ctl_select[cs].relx = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].x - strips[tracks[track_select].strip][page].controls[i].x
-                          ctl_select[cs].rely = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].y - strips[tracks[track_select].strip][page].controls[i].y]]
                         end
                       end
                     end
                                                       
+                  elseif mouse.ctrl and ctl_select ~= nil and found == true then
+                    if ctlsel then
+                      local cnt = #ctl_select
+                      ctl_select[ctlsel] = nil
+                      ctl_select = Table_RemoveNils(ctl_select, cnt)
+                      if #ctl_select == 0 then ctl_select = nil end
+                    end
+                  
                   elseif mouse.ctrl and ctl_select ~= nil and found == false then
                     local cs = #ctl_select+1
                     ctl_select[cs] = {}
@@ -22733,28 +22841,31 @@ end
                   SetCtlSelectVals()
                   SetPosLockCtl()
 
-                  dragoff = {x = mouse.mx - strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].x - 0.5*strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].w - surface_offset.x,
-                             y = mouse.my - strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].y - 0.5*strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].ctl_info.cellh - surface_offset.y}
-                  mouse.context = contexts.dummy
-                  if ctl_select ~= nil and not mouse.ctrl then --and not mouse.alt then
-                    dragctl = 'dragctl'
-                    mouse.context = contexts.dragctl
-                    GenCtlDragPreview(gui)
-                    for i = 1, #ctl_select do
-                      strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].hide = true
+                  if ctl_select then                  
+                    dragoff = {x = mouse.mx - strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].x - 0.5*strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].w - surface_offset.x,
+                               y = mouse.my - strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].y - 0.5*strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].ctl_info.cellh - surface_offset.y}
+                    mouse.context = contexts.dummy
+                    if ctl_select ~= nil and not mouse.ctrl then --and not mouse.alt then
+                      dragctl = 'dragctl'
+                      mouse.context = contexts.dragctl
+                      GenCtlDragPreview(gui)
+                      for i = 1, #ctl_select do
+                        strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].hide = true
+                      end
+                      if gfx3_select and #gfx3_select > 0 then
+                        for i = 1, #gfx3_select do
+                          strips[tracks[track_select].strip][page].graphics[gfx3_select[i].ctl].hide = true  
+                        end                    
+                      end
+                      --SetCtlBitmapRedraw()
                     end
-                    if gfx3_select and #gfx3_select > 0 then
-                      for i = 1, #gfx3_select do
-                        strips[tracks[track_select].strip][page].graphics[gfx3_select[i].ctl].hide = true  
-                      end                    
-                    end
-                    --SetCtlBitmapRedraw()
+                    update_bg = true
                   end
-                  update_bg = true
+                  
                   update_gfx = true
-                  break
+                  --break                  
                 end
-              end
+              --end
             end
           end
         elseif mouse.context == nil and MOUSE_click_RB(obj.sections[10]) then
@@ -24065,6 +24176,18 @@ end
           update_gfx = true
           gfx.mouse_wheel = 0                
         end
+      elseif show_gfxoptions and gfx2_select and MOUSE_over(obj.sections[49]) then
+        if MOUSE_over(obj.sections[910]) then
+          gfxbright_select = F_limit(gfxbright_select+(v*0.02),0,1)
+          strips[tracks[track_select].strip][page].graphics[gfx2_select].bright = gfxbright_select
+          update_gfx = true
+          gfx.mouse_wheel = 0                
+        elseif MOUSE_over(obj.sections[911]) then
+          gfxcontr_select = F_limit(gfxcontr_select+(v*0.02),0,1)
+          strips[tracks[track_select].strip][page].graphics[gfx2_select].contr = gfxcontr_select
+          update_gfx = true
+          gfx.mouse_wheel = 0                
+        end      
       end
     end
   
@@ -24141,6 +24264,11 @@ end
       elseif mouse.context == nil and MOUSE_click(obj.sections[149]) then mouse.context = contexts.shadyslider
       elseif mouse.context == nil and MOUSE_click(obj.sections[150]) then mouse.context = contexts.shadaslider end
       
+    elseif gfx2_select ~= nil and show_gfxoptions and (MOUSE_click(obj.sections[49]) or MOUSE_click_RB(obj.sections[49])) then
+    
+      if mouse.context == nil and MOUSE_click(obj.sections[910]) then mouse.context = contexts.gfxopt_bright 
+      elseif mouse.context == nil and MOUSE_click(obj.sections[911]) then mouse.context = contexts.gfxopt_contr end
+    
     end
   
     if mouse.context and mouse.context == contexts.textsizeslider then
@@ -24177,6 +24305,21 @@ end
         --for i = 1, #ctl_select do
         strips[tracks[track_select].strip][page].graphics[gfx2_select].font.shadow_a = gfx_font_select.shadow_a
         --end            
+        update_gfx = true
+      end
+
+    elseif mouse.context and mouse.context == contexts.gfxopt_bright then
+      local val = F_limit(MOUSE_sliderHBar(obj.sections[910]),0,1)
+      if val ~= nil then
+        gfxbright_select = val
+        strips[tracks[track_select].strip][page].graphics[gfx2_select].bright = gfxbright_select
+        update_gfx = true
+      end
+    elseif mouse.context and mouse.context == contexts.gfxopt_contr then
+      local val = F_limit(MOUSE_sliderHBar(obj.sections[911]),0,1)
+      if val ~= nil then
+        gfxcontr_select = val
+        strips[tracks[track_select].strip][page].graphics[gfx2_select].contr = gfxcontr_select
         update_gfx = true
       end
     end
@@ -24368,9 +24511,12 @@ end
               
               if strips[tracks[track_select].strip][page].graphics[gfx2_select].gfxtype == gfxtype.txt then
                 show_lbloptions = true
+                show_gfxoptions = false
                 SetGfxSelectVals()
               else
                 show_lbloptions = false
+                show_gfxoptions = true
+                SetGfxSelectVals2()
               end
               
               GenGFXDragPreview(gui)
@@ -30532,7 +30678,8 @@ end
                              wheelfine = ctl.knobsens.wheelfine},
                  hidden = ctl.hidden,
                  gauge = Gauge_CopySelect(ctl.gauge),
-                 noss = ctl.noss
+                 noss = ctl.noss,
+                 bright = ctl.bright,
                  }
     if ctl.ctlcat == ctlcats.macro and ctl.macroctl then
       local macro = ctl.macroctl
@@ -31297,6 +31444,8 @@ end
                                     text_col = zn(data[key..'text_col']),
                                     poslock = tobool(zn(data[key..'poslock'],false)),
                                     switcher = tonumber(zn(data[key..'switcher'])),
+                                    bright = tonumber(zn(data[key..'bright'],0.5)),
+                                    contr = tonumber(zn(data[key..'contr'],0.5)),
                                    }
         strip.graphics[g].stretchw = tonumber(zn(data[key..'stretchw'],strip.graphics[g].w))
         strip.graphics[g].stretchh = tonumber(zn(data[key..'stretchh'],strip.graphics[g].h))
@@ -33954,6 +34103,8 @@ end
               file:write('['..key..'text_col]'..nz(stripdata.graphics[g].text_col, '')..'\n')
               file:write('['..key..'poslock]'..nz(tostring(stripdata.graphics[g].poslock), false)..'\n')
               file:write('['..key..'switcher]'..tostring(nz(stripdata.graphics[g].switcher,''))..'\n')
+              file:write('['..key..'bright]'..tostring(nz(stripdata.graphics[g].bright,0.5))..'\n')
+              file:write('['..key..'contr]'..tostring(nz(stripdata.graphics[g].contr,0.5))..'\n')
             
             end
           end
@@ -36116,6 +36267,9 @@ end
     bypass_bgdraw_v_select = false
     clickthrough_select = false
     
+    gfxbright_select = 0.5
+    gfxcontr_select = 0.5
+    
     plist_w = 140
     oplist_w = 140
     
@@ -36127,6 +36281,7 @@ end
     show_ctlbrowser = false
     show_ctloptions = false
     show_lbloptions = false
+    show_gfxoptions = false
     show_editbar = true
     show_settings = false
     show_cycleoptions = false
