@@ -133,6 +133,9 @@
               textsizevslider = 99,
               gfxopt_bright = 100,
               gfxopt_contr = 101,
+              gfxopt_r = 102,
+              gfxopt_g = 103,
+              gfxopt_b = 104,
               dummy = 999
               }
   
@@ -1799,6 +1802,25 @@
                           y = obj.sections[49].y+butt_h+10 + (butt_h/2+4 + 10) * 1 + yo,
                           w = obj.sections[49].w-85,
                           h = butt_h/2+4}                           
+
+      obj.sections[913] = {x = obj.sections[49].x+75,
+                          y = obj.sections[49].y+butt_h+10 + (butt_h/2+4 + 10) * 3 + yo,
+                          w = obj.sections[49].w-85,
+                          h = butt_h/2+4}                           
+      obj.sections[914] = {x = obj.sections[49].x+75,
+                          y = obj.sections[49].y+butt_h+10 + (butt_h/2+4 + 10) * 4 + yo,
+                          w = obj.sections[49].w-85,
+                          h = butt_h/2+4}                           
+      obj.sections[915] = {x = obj.sections[49].x+75,
+                          y = obj.sections[49].y+butt_h+10 + (butt_h/2+4 + 10) * 5 + yo,
+                          w = obj.sections[49].w-85,
+                          h = butt_h/2+4}                           
+      
+      obj.sections[912] = {x = obj.sections[49].x+20,
+                          y = obj.sections[49].y+butt_h+10 + (butt_h/2+4 + 10) * 7,
+                          w = obj.sections[49].w-40,
+                          h = butt_h/2+8}                       
+      
                           
       --SNAPSHOTS
       local ssh = snaph-160
@@ -2597,6 +2619,9 @@
                                           poslock = false,
                                           bright = 0.5,
                                           contr = 0.5,
+                                          rmult = 0.5,
+                                          gmult = 0.5,
+                                          bmult = 0.5,
                                          }
       elseif type == gfxtype.txt then
         local x,y
@@ -5789,20 +5814,42 @@
                 end
               end
               
-              if (gfxx.bright and gfxx.bright ~= 0.5) or (gfxx.contr and gfxx.contr ~= 0.5) then
+              if (gfxx.bright and gfxx.bright ~= 0.5) or (gfxx.contr and gfxx.contr ~= 0.5) 
+                 or (gfxx.rmult and gfxx.rmult ~= 0.5) or (gfxx.gmult and gfxx.gmult ~= 0.5) or (gfxx.bmult and gfxx.bmult ~= 0.5) then
                 iidx = 899
                 local ba = -F_limit((0.5-gfxx.bright)*2,-1,1)
                 local bc = gfxx.contr
+                
                 if bc > 0.5 then
                   bc = 1+(bc-0.5)*10
                 else
                   bc = bc*2
                 end
+
+                local mr = gfxx.rmult
+                local mg = gfxx.gmult
+                local mb = gfxx.bmult
+                if mr > 0.5 then
+                  mr = 1+(mr-0.5)*10
+                else
+                  mr = mr*2
+                end
+                if mg > 0.5 then
+                  mg = 1+(mg-0.5)*10
+                else
+                  mg = mg*2
+                end
+                if mb > 0.5 then
+                  mb = 1+(mb-0.5)*10
+                else
+                  mb = mb*2
+                end
+                
                 gfx.setimgdim(iidx, -1, -1)
                 gfx.setimgdim(iidx, sw, sh)
                 gfx.dest = iidx
                 gfx.blit(imageidx,1,0, xoff, yoff, w, h-yoff, 0, 0, sw, sh)
-                gfx.muladdrect(0,0,sw,sh,bc,bc,bc,1,ba,ba,ba)
+                gfx.muladdrect(0,0,sw,sh,bc*mr,bc*mg,bc*mb,1,ba,ba,ba)
                 gfx.dest = 1004
                 gfx.blit(iidx,1,0, 0, 0, sw, sh, x+xoff, y+yoff)            
               else
@@ -6026,6 +6073,10 @@
     gfx.a = 1 
     GUI_DrawSliderH(gui, 'BRIGHTNESS', obj.sections[910], gui.color.black, gui.color.white, F_limit(gfxbright_select,0,1))
     GUI_DrawSliderH(gui, 'CONTRAST', obj.sections[911], gui.color.black, gui.color.white, F_limit(gfxcontr_select,0,1))
+    GUI_DrawSliderH(gui, 'R', obj.sections[913], gui.color.black, gui.color.white, F_limit(gfxr_select,0,1))
+    GUI_DrawSliderH(gui, 'G', obj.sections[914], gui.color.black, gui.color.white, F_limit(gfxg_select,0,1))
+    GUI_DrawSliderH(gui, 'B', obj.sections[915], gui.color.black, gui.color.white, F_limit(gfxb_select,0,1))
+    GUI_DrawButton(gui, 'RESET', obj.sections[912], gui.color.white, gui.color.black, true)
 
   end
   
@@ -14241,7 +14292,9 @@ end
               
               --gfx.blit(imageidx,1,0, 0, 0, w, h, x, y, sw, sh)
               
-              if gfxx.bright and gfxx.bright ~= 0.5 then
+              if (gfxx.bright and gfxx.bright ~= 0.5) or (gfxx.contr and gfxx.contr ~= 0.5) 
+                 or (gfxx.rmult and gfxx.rmult ~= 0.5) or (gfxx.gmult and gfxx.gmult ~= 0.5) or (gfxx.bmult and gfxx.bmult ~= 0.5) then
+                
                 iidx = 899
                 local ba = -F_limit((0.5-gfxx.bright)*2,-1,1)
                 local bc = gfxx.contr
@@ -14251,12 +14304,31 @@ end
                   bc = bc*2
                 end
                 
+                local mr = gfxx.rmult
+                local mg = gfxx.gmult
+                local mb = gfxx.bmult
+                if mr > 0.5 then
+                  mr = 1+(mr-0.5)*10
+                else
+                  mr = mr*2
+                end
+                if mg > 0.5 then
+                  mg = 1+(mg-0.5)*10
+                else
+                  mg = mg*2
+                end
+                if mb > 0.5 then
+                  mb = 1+(mb-0.5)*10
+                else
+                  mb = mb*2
+                end
+                
                 gfx.setimgdim(iidx, -1, -1)
                 gfx.setimgdim(iidx, sw, sh)
                 gfx.dest = iidx
                 gfx.a = 1
                 gfx.blit(imageidx,1,0, 0, 0, w, h, 0, 0, sw, sh)
-                gfx.muladdrect(0,0,sw,sh,bc,bc,bc,1,ba,ba,ba)
+                gfx.muladdrect(0,0,sw,sh,bc*mr,bc*mg,bc*mb,1,ba,ba,ba)
                 gfx.dest = 1022
                 gfx.blit(iidx,1,0, 0, 0, sw, sh, x, y)            
               else
@@ -14422,7 +14494,8 @@ end
         --gfx.a = 0.8
         --gfx.blit(imageidx,1,0, 0, 0, w, h, x, y, sw, sh)
       
-        if gfxx.bright and gfxx.bright ~= 0.5 then
+        if (gfxx.bright and gfxx.bright ~= 0.5) or (gfxx.contr and gfxx.contr ~= 0.5) 
+                         or (gfxx.rmult and gfxx.rmult ~= 0.5) or (gfxx.gmult and gfxx.gmult ~= 0.5) or (gfxx.bmult and gfxx.bmult ~= 0.5) then
           iidx = 899
           local ba = -F_limit((0.5-gfxx.bright)*2,-1,1)
           local bc = gfxx.contr
@@ -14431,12 +14504,32 @@ end
           else
             bc = bc*2
           end
+
+          local mr = gfxx.rmult
+          local mg = gfxx.gmult
+          local mb = gfxx.bmult
+          if mr > 0.5 then
+            mr = 1+(mr-0.5)*10
+          else
+            mr = mr*2
+          end
+          if mg > 0.5 then
+            mg = 1+(mg-0.5)*10
+          else
+            mg = mg*2
+          end
+          if mb > 0.5 then
+            mb = 1+(mb-0.5)*10
+          else
+            mb = mb*2
+          end
+                    
           gfx.setimgdim(iidx, -1, -1)
           gfx.setimgdim(iidx, sw, sh)
           gfx.dest = iidx
           gfx.a = 1
           gfx.blit(imageidx,1,0, 0, 0, w, h, 0, 0, sw, sh)
-          gfx.muladdrect(0,0,sw,sh,bc,bc,bc,1,ba,ba,ba)
+          gfx.muladdrect(0,0,sw,sh,bc*mr,bc*mg,bc*mb,1,ba,ba,ba)
           gfx.dest = 1022
           gfx.a = 0.8
           gfx.blit(iidx,1,0, 0, 0, sw, sh, x, y)            
@@ -14551,7 +14644,9 @@ end
               --gfx.a = 0.3
               --gfx.blit(imageidx,1,0, 0, 0, w, h, x+b_sz, y+b_sz, sw, sh)
             
-              if gfxx.bright and gfxx.bright ~= 0.5 then
+              if (gfxx.bright and gfxx.bright ~= 0.5) or (gfxx.contr and gfxx.contr ~= 0.5) 
+                               or (gfxx.rmult and gfxx.rmult ~= 0.5) or (gfxx.gmult and gfxx.gmult ~= 0.5) or (gfxx.bmult and gfxx.bmult ~= 0.5) then
+                               
                 iidx = 899
                 local ba = -F_limit((0.5-gfxx.bright)*2,-1,1)
                 local bc = gfxx.contr
@@ -14560,12 +14655,32 @@ end
                 else
                   bc = bc*2
                 end
+                
+                local mr = gfxx.rmult
+                local mg = gfxx.gmult
+                local mb = gfxx.bmult
+                if mr > 0.5 then
+                  mr = 1+(mr-0.5)*10
+                else
+                  mr = mr*2
+                end
+                if mg > 0.5 then
+                  mg = 1+(mg-0.5)*10
+                else
+                  mg = mg*2
+                end
+                if mb > 0.5 then
+                  mb = 1+(mb-0.5)*10
+                else
+                  mb = mb*2
+                end
+                
                 gfx.setimgdim(iidx, -1, -1)
                 gfx.setimgdim(iidx, sw, sh)
                 gfx.dest = iidx
                 gfx.a = 1
                 gfx.blit(imageidx,1,0, 0, 0, w, h, 0, 0, sw, sh)
-                gfx.muladdrect(0,0,sw,sh,bc,bc,bc,1,ba,ba,ba)
+                gfx.muladdrect(0,0,sw,sh,bc*mr,bc*mg,bc*mb,1,ba,ba,ba)
                 gfx.dest = 1022
                 gfx.a = 0.3
                 gfx.blit(iidx,1,0, 0, 0, sw, sh, x+b_sz, y+b_sz)            
@@ -17681,6 +17796,9 @@ end
   function SetGfxSelectVals2()
     gfxbright_select = nz(strips[tracks[track_select].strip][page].graphics[gfx2_select].bright,0.5)
     gfxcontr_select = nz(strips[tracks[track_select].strip][page].graphics[gfx2_select].contr,0.5)
+    gfxr_select = nz(strips[tracks[track_select].strip][page].graphics[gfx2_select].rmult,0.5)
+    gfxg_select = nz(strips[tracks[track_select].strip][page].graphics[gfx2_select].gmult,0.5)
+    gfxb_select = nz(strips[tracks[track_select].strip][page].graphics[gfx2_select].bmult,0.5)
   end
     
   function GetValFromDVal(c, dv, checkov)
@@ -24188,6 +24306,21 @@ end
           strips[tracks[track_select].strip][page].graphics[gfx2_select].contr = gfxcontr_select
           update_gfx = true
           gfx.mouse_wheel = 0                
+        elseif MOUSE_over(obj.sections[913]) then
+          gfxr_select = F_limit(gfxr_select+(v*0.02),0,1)
+          strips[tracks[track_select].strip][page].graphics[gfx2_select].rmult = gfxr_select
+          update_gfx = true
+          gfx.mouse_wheel = 0                
+        elseif MOUSE_over(obj.sections[914]) then
+          gfxg_select = F_limit(gfxg_select+(v*0.02),0,1)
+          strips[tracks[track_select].strip][page].graphics[gfx2_select].gmult = gfxg_select
+          update_gfx = true
+          gfx.mouse_wheel = 0                
+        elseif MOUSE_over(obj.sections[915]) then
+          gfxb_select = F_limit(gfxb_select+(v*0.02),0,1)
+          strips[tracks[track_select].strip][page].graphics[gfx2_select].bmult = gfxb_select
+          update_gfx = true
+          gfx.mouse_wheel = 0                
         end      
       end
     end
@@ -24267,8 +24400,27 @@ end
       
     elseif gfx2_select ~= nil and show_gfxoptions and (MOUSE_click(obj.sections[49]) or MOUSE_click_RB(obj.sections[49])) then
     
+      if mouse.context == nil and MOUSE_click(obj.sections[912]) then 
+        
+        gfxbright_select = 0.5
+        gfxcontr_select = 0.5
+        gfxr_select = 0.5
+        gfxg_select = 0.5
+        gfxb_select = 0.5
+        strips[tracks[track_select].strip][page].graphics[gfx2_select].bright = gfxbright_select
+        strips[tracks[track_select].strip][page].graphics[gfx2_select].contr = gfxcontr_select
+        strips[tracks[track_select].strip][page].graphics[gfx2_select].rmult = gfxr_select
+        strips[tracks[track_select].strip][page].graphics[gfx2_select].gmult = gfxg_select
+        strips[tracks[track_select].strip][page].graphics[gfx2_select].bmult = gfxb_select
+        update_gfx = true
+      
+      end
+      
       if mouse.context == nil and MOUSE_click(obj.sections[910]) then mouse.context = contexts.gfxopt_bright 
-      elseif mouse.context == nil and MOUSE_click(obj.sections[911]) then mouse.context = contexts.gfxopt_contr end
+      elseif mouse.context == nil and MOUSE_click(obj.sections[911]) then mouse.context = contexts.gfxopt_contr
+      elseif mouse.context == nil and MOUSE_click(obj.sections[913]) then mouse.context = contexts.gfxopt_r
+      elseif mouse.context == nil and MOUSE_click(obj.sections[914]) then mouse.context = contexts.gfxopt_g
+      elseif mouse.context == nil and MOUSE_click(obj.sections[915]) then mouse.context = contexts.gfxopt_b end
     
     end
   
@@ -24321,6 +24473,29 @@ end
       if val ~= nil then
         gfxcontr_select = val
         strips[tracks[track_select].strip][page].graphics[gfx2_select].contr = gfxcontr_select
+        update_gfx = true
+      end
+
+
+    elseif mouse.context and mouse.context == contexts.gfxopt_r then
+      local val = F_limit(MOUSE_sliderHBar(obj.sections[913]),0,1)
+      if val ~= nil then
+        gfxr_select = val
+        strips[tracks[track_select].strip][page].graphics[gfx2_select].rmult = gfxr_select
+        update_gfx = true
+      end
+    elseif mouse.context and mouse.context == contexts.gfxopt_g then
+      local val = F_limit(MOUSE_sliderHBar(obj.sections[914]),0,1)
+      if val ~= nil then
+        gfxg_select = val
+        strips[tracks[track_select].strip][page].graphics[gfx2_select].gmult = gfxg_select
+        update_gfx = true
+      end
+    elseif mouse.context and mouse.context == contexts.gfxopt_b then
+      local val = F_limit(MOUSE_sliderHBar(obj.sections[915]),0,1)
+      if val ~= nil then
+        gfxb_select = val
+        strips[tracks[track_select].strip][page].graphics[gfx2_select].bmult = gfxb_select
         update_gfx = true
       end
     end
@@ -31451,6 +31626,9 @@ end
                                     switcher = tonumber(zn(data[key..'switcher'])),
                                     bright = tonumber(zn(data[key..'bright'],0.5)),
                                     contr = tonumber(zn(data[key..'contr'],0.5)),
+                                    rmult = tonumber(zn(data[key..'rmult'],0.5)),
+                                    gmult = tonumber(zn(data[key..'gmult'],0.5)),
+                                    bmult = tonumber(zn(data[key..'bmult'],0.5)),
                                    }
         strip.graphics[g].stretchw = tonumber(zn(data[key..'stretchw'],strip.graphics[g].w))
         strip.graphics[g].stretchh = tonumber(zn(data[key..'stretchh'],strip.graphics[g].h))
@@ -34110,6 +34288,9 @@ end
               file:write('['..key..'switcher]'..tostring(nz(stripdata.graphics[g].switcher,''))..'\n')
               file:write('['..key..'bright]'..tostring(nz(stripdata.graphics[g].bright,0.5))..'\n')
               file:write('['..key..'contr]'..tostring(nz(stripdata.graphics[g].contr,0.5))..'\n')
+              file:write('['..key..'rmult]'..tostring(nz(stripdata.graphics[g].rmult,0.5))..'\n')
+              file:write('['..key..'gmult]'..tostring(nz(stripdata.graphics[g].gmult,0.5))..'\n')
+              file:write('['..key..'bmult]'..tostring(nz(stripdata.graphics[g].bmult,0.5))..'\n')
             
             end
           end
@@ -36274,6 +36455,9 @@ end
     
     gfxbright_select = 0.5
     gfxcontr_select = 0.5
+    gfxr_select = 0.5
+    gfxg_select = 0.5
+    gfxb_select = 0.5
     
     plist_w = 140
     oplist_w = 140
