@@ -999,9 +999,9 @@
         end
       else
         obj.sections[10] = {x = plist_w,
-                            y = topbarheight,
+                            y = topbarheight+1,
                             w = gfx1.main_w-(plist_w+2)+2,
-                            h = gfx1.main_h-(topbarheight)}
+                            h = gfx1.main_h-(topbarheight+1)}
         if lockx then
           obj.sections[10].x = math.max(obj.sections[10].x, obj.sections[10].x+(obj.sections[10].w/2-lockw/2))
           obj.sections[10].w = math.min(lockw,gfx1.main_w-(plist_w+2))
@@ -1009,7 +1009,16 @@
         if locky then
           obj.sections[10].y = math.max(obj.sections[10].y, obj.sections[10].y+(obj.sections[10].h/2-lockh/2))
           obj.sections[10].h = math.min(lockh,gfx1.main_h-(topbarheight+2))
-        end      
+        end
+      end
+      surface_size.exceed = false
+      if obj.sections[10].w > surface_size.w then
+        obj.sections[10].w = surface_size.w
+        surface_size.exceed = true
+      end
+      if obj.sections[10].h > surface_size.h then        
+        obj.sections[10].h = surface_size.h        
+        surface_size.exceed = true
       end
 
       --mode
@@ -10369,6 +10378,13 @@ end
             gfx.blit(1021,1,0,0,0,w,h,obj.sections[60].x,obj.sections[60].y)          
           end
         
+        end
+
+        if surface_size.exceed == true then
+          if update_gfx or update_surface then
+            f_Get_SSV(gui.color.red)            
+            gfx.rect(obj.sections[10].x,obj.sections[10].y,obj.sections[10].w+1,obj.sections[10].h+1,0)
+          end        
         end
 
       end
