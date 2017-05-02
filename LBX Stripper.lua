@@ -136,6 +136,7 @@
               gfxopt_r = 102,
               gfxopt_g = 103,
               gfxopt_b = 104,
+              gfxopt_a = 105,
               dummy = 999
               }
   
@@ -1824,9 +1825,13 @@
                           y = obj.sections[49].y+butt_h+10 + (butt_h/2+4 + 10) * 5 + yo,
                           w = obj.sections[49].w-85,
                           h = butt_h/2+4}                           
+      obj.sections[916] = {x = obj.sections[49].x+75,
+                          y = obj.sections[49].y+butt_h+10 + (butt_h/2+4 + 10) * 6 + yo,
+                          w = obj.sections[49].w-85,
+                          h = butt_h/2+4}                           
       
       obj.sections[912] = {x = obj.sections[49].x+20,
-                          y = obj.sections[49].y+butt_h+10 + (butt_h/2+4 + 10) * 7,
+                          y = obj.sections[49].y+butt_h+10 + (butt_h/2+4 + 10) * 8,
                           w = obj.sections[49].w-40,
                           h = butt_h/2+8}                       
       
@@ -5786,6 +5791,8 @@
       if #strips[tracks[track_select].strip][page].graphics > 0 then
       
         for i = 1, #strips[tracks[track_select].strip][page].graphics do
+
+          gfx.a = 1
         
           local gfxx = strips[tracks[track_select].strip][page].graphics[i]
           local hidden = Switcher_CtlsHidden(gfxx.switcher, gfxx.grpid)
@@ -5824,7 +5831,8 @@
               end
               
               if (gfxx.bright and gfxx.bright ~= 0.5) or (gfxx.contr and gfxx.contr ~= 0.5) 
-                 or (gfxx.rmult and gfxx.rmult ~= 0.5) or (gfxx.gmult and gfxx.gmult ~= 0.5) or (gfxx.bmult and gfxx.bmult ~= 0.5) then
+                 or (gfxx.rmult and gfxx.rmult ~= 0.5) or (gfxx.gmult and gfxx.gmult ~= 0.5) or (gfxx.bmult and gfxx.bmult ~= 0.5) 
+                 or (gfxx.alpha and gfxx.alpha ~= 1) then
                 iidx = 899
                 local ba = -F_limit((0.5-gfxx.bright)*2,-1,1)
                 local bc = gfxx.contr
@@ -5853,6 +5861,8 @@
                 else
                   mb = mb*2
                 end
+
+                local ma = gfxx.alpha
                 
                 gfx.setimgdim(iidx, -1, -1)
                 gfx.setimgdim(iidx, sw, sh)
@@ -5860,6 +5870,7 @@
                 gfx.blit(imageidx,1,0, xoff, yoff, w, h-yoff, 0, 0, sw, sh)
                 gfx.muladdrect(0,0,sw,sh,bc*mr,bc*mg,bc*mb,1,ba,ba,ba)
                 gfx.dest = 1004
+                gfx.a = ma
                 gfx.blit(iidx,1,0, 0, 0, sw, sh, x+xoff, y+yoff)            
               else
                 gfx.blit(imageidx,1,0, xoff, yoff, w, h-yoff, x+xoff, y+yoff, sw, sh)            
@@ -6085,6 +6096,7 @@
     GUI_DrawSliderH(gui, 'R', obj.sections[913], gui.color.black, gui.color.white, F_limit(gfxr_select,0,1))
     GUI_DrawSliderH(gui, 'G', obj.sections[914], gui.color.black, gui.color.white, F_limit(gfxg_select,0,1))
     GUI_DrawSliderH(gui, 'B', obj.sections[915], gui.color.black, gui.color.white, F_limit(gfxb_select,0,1))
+    GUI_DrawSliderH(gui, 'A', obj.sections[916], gui.color.black, gui.color.white, F_limit(gfxa_select,0,1))
     GUI_DrawButton(gui, 'RESET', obj.sections[912], gui.color.white, gui.color.black, true)
 
   end
@@ -9878,8 +9890,8 @@ end
                  gfx1.main_w,
                  obj.sections[11].h+2, 1, 1)]]
 
-        if update_gfx then
-          if lockh > 0 or lockw > 0 then
+        if update_gfx or update_surface or update_msnaps then
+          if lockh > 0 or lockw > 0 or surface_size.exceed == true then
             UpdateLEdges()
           end
         end
@@ -10102,8 +10114,8 @@ end
                      l.b-l.t, 1, 1)
           end
           
-          if update_gfx or update_surface then
-            if lockh > 0 or lockw > 0 then
+          if update_gfx or update_surface or lasso ~= nil then
+            if lockh > 0 or lockw > 0 or surface_size.exceed == true then
               UpdateLEdges()
             end
           end
@@ -10237,6 +10249,12 @@ end
           
           --gfx.blit(1001,1,0,0,0,obj.sections[43].w,obj.sections[43].h,0,butt_h)
 
+          if update_gfx or update_surface then
+            if lockh > 0 or lockw > 0 or surface_size.exceed == true then
+              UpdateLEdges()
+            end
+          end
+
           if draggfx ~= nil then
             local x, y = draggfx.x, draggfx.y
             local w, h = gfx.getimgdim(1023)
@@ -10284,12 +10302,6 @@ end
             GUI_DrawGFXOptions(obj, gui)
           end
 
-          if update_gfx or update_surface then
-            if lockh > 0 or lockw > 0 then
-              UpdateLEdges()
-            end
-          end
-
           if gfx_select ~= nil then
             local w,h = gfx.getimgdim(1021)
             gfx.a = 0.5
@@ -10316,7 +10328,13 @@ end
                             obj.sections[10].x,
                             obj.sections[10].y)
           --gfx.blit(1001,1,0,0,0,obj.sections[43].w,obj.sections[43].h,0,butt_h)          
-          
+
+          if update_gfx or update_surface then
+            if lockh > 0 or lockw > 0 or surface_size.exceed == true then
+              UpdateLEdges()
+            end
+          end
+                    
           if dragstrip ~= nil then
             local x, y = dragstrip.x, dragstrip.y
             local w, h = gfx.getimgdim(1022)
@@ -10365,12 +10383,6 @@ end
                    obj.sections[511].h, 1, 1)
           GUI_textC(gui,obj.sections[511],'SAVE STRIP',gui.color.black,-2)  ]]      
 
-          if update_gfx or update_surface then
-            if lockh > 0 or lockw > 0 then
-              UpdateLEdges()
-            end
-          end
-          
           if ctl_select ~= nil then
             --gfx.dest = 1
             local w,h = gfx.getimgdim(1021)
@@ -10380,12 +10392,12 @@ end
         
         end
 
-        if surface_size.exceed == true then
+        --[[if surface_size.exceed == true then
           if update_gfx or update_surface then
             f_Get_SSV(gui.color.red)            
             gfx.rect(obj.sections[10].x,obj.sections[10].y,obj.sections[10].w+1,obj.sections[10].h+1,0)
           end        
-        end
+        end]]
 
       end
       
@@ -11294,26 +11306,28 @@ end
   function UpdateLEdges()
 
     f_Get_SSV('0 0 0')
-    if lockw > 0 then
+    if lockw > 0 or surface_size.exceed == true then
 
-      local xx = plist_w+2
+      local xx = plist_w
       
       if obj.sections[10].x > xx then
         local xywh = {x = xx,
-                      y = obj.sections[10].y,
+                      y = topbarheight,
                       w = obj.sections[10].x - xx,
-                      h = obj.sections[10].h}
+                      h = gfx1.main_h - topbarheight}
         gfx.a = 1 
         gfx.rect(xywh.x,
                  xywh.y, 
                  xywh.w,
                  xywh.h, 1 )
-        
+      end
+      
+      if obj.sections[10].x + obj.sections[10].w < gfx1.main_w then
         xx = obj.sections[10].x + obj.sections[10].w
         local xywh = {x = xx,
-                      y = obj.sections[10].y,
-                      w = gfx1.main_w - xx,
-                      h = obj.sections[10].h}
+                      y = topbarheight,
+                      w = gfx1.main_w - xx+1,
+                      h = gfx1.main_h - topbarheight}
         gfx.a = 1 
         gfx.rect(xywh.x,
                  xywh.y, 
@@ -11323,22 +11337,24 @@ end
       end
     
     end
-    if lockh > 0 then
+    if lockh > 0 or surface_size.exceed == true then
     
       local yy = obj.sections[10].y
       
-      if obj.sections[10].y > yy then
+      if yy > topbarheight then
         local xywh = {x = obj.sections[10].x,
-                      y = yy,
+                      y = topbarheight,
                       w = obj.sections[10].w,
-                      h = obj.sections[10].y - yy}
+                      h = obj.sections[10].y - topbarheight}
         gfx.a = 1 
         gfx.rect(xywh.x,
                  xywh.y, 
                  xywh.w,
                  xywh.h, 1 )
-        
-        yy = obj.sections[10].y + obj.sections[10].h
+      end
+      
+      yy = obj.sections[10].y + obj.sections[10].h
+      if yy < gfx1.main_h then  
         local xywh = {x = obj.sections[10].x,
                       y = yy,
                       w = obj.sections[10].w,
@@ -11353,6 +11369,13 @@ end
     
     end
 
+    if mode == 1 and surface_size.exceed == true then
+      if update_gfx or update_surface or lasso ~= nil then
+        f_Get_SSV(gui.color.red)            
+        gfx.rect(obj.sections[10].x,obj.sections[10].y,obj.sections[10].w+1,obj.sections[10].h+1,0)
+      end        
+    end
+    
   end
   
   function UpdateEdges()
@@ -11533,7 +11556,8 @@ end
       and mouse.LB 
       and not mouse.last_LB then
      return true 
-    end 
+    end
+    --return nil
   end
 
   function MOUSE_clickXY(b,xoff,yoff)
@@ -11562,6 +11586,7 @@ end
       and my > b.y and my < b.y+b.h then
      return true 
     end 
+    --return nil
   end
       
   ------------------------------------------------------------
@@ -14309,7 +14334,8 @@ end
               --gfx.blit(imageidx,1,0, 0, 0, w, h, x, y, sw, sh)
               
               if (gfxx.bright and gfxx.bright ~= 0.5) or (gfxx.contr and gfxx.contr ~= 0.5) 
-                 or (gfxx.rmult and gfxx.rmult ~= 0.5) or (gfxx.gmult and gfxx.gmult ~= 0.5) or (gfxx.bmult and gfxx.bmult ~= 0.5) then
+                 or (gfxx.rmult and gfxx.rmult ~= 0.5) or (gfxx.gmult and gfxx.gmult ~= 0.5) or (gfxx.bmult and gfxx.bmult ~= 0.5) 
+                 or (gfxx.alpha and gfxx.alpha ~= 1) then
                 
                 iidx = 899
                 local ba = -F_limit((0.5-gfxx.bright)*2,-1,1)
@@ -14339,6 +14365,8 @@ end
                   mb = mb*2
                 end
                 
+                local ma = gfxx.alpha
+                
                 gfx.setimgdim(iidx, -1, -1)
                 gfx.setimgdim(iidx, sw, sh)
                 gfx.dest = iidx
@@ -14346,6 +14374,7 @@ end
                 gfx.blit(imageidx,1,0, 0, 0, w, h, 0, 0, sw, sh)
                 gfx.muladdrect(0,0,sw,sh,bc*mr,bc*mg,bc*mb,1,ba,ba,ba)
                 gfx.dest = 1022
+                gfx.a = ma
                 gfx.blit(iidx,1,0, 0, 0, sw, sh, x, y)            
               else
                 gfx.blit(imageidx,1,0, 0, 0, w, h, x, y, sw, sh)
@@ -14511,7 +14540,8 @@ end
         --gfx.blit(imageidx,1,0, 0, 0, w, h, x, y, sw, sh)
       
         if (gfxx.bright and gfxx.bright ~= 0.5) or (gfxx.contr and gfxx.contr ~= 0.5) 
-                         or (gfxx.rmult and gfxx.rmult ~= 0.5) or (gfxx.gmult and gfxx.gmult ~= 0.5) or (gfxx.bmult and gfxx.bmult ~= 0.5) then
+                 or (gfxx.rmult and gfxx.rmult ~= 0.5) or (gfxx.gmult and gfxx.gmult ~= 0.5) or (gfxx.bmult and gfxx.bmult ~= 0.5) 
+                 or (gfxx.alpha and gfxx.alpha ~= 1) then
           iidx = 899
           local ba = -F_limit((0.5-gfxx.bright)*2,-1,1)
           local bc = gfxx.contr
@@ -14539,6 +14569,8 @@ end
           else
             mb = mb*2
           end
+          
+          local ma = gfxx.alpha
                     
           gfx.setimgdim(iidx, -1, -1)
           gfx.setimgdim(iidx, sw, sh)
@@ -14547,7 +14579,7 @@ end
           gfx.blit(imageidx,1,0, 0, 0, w, h, 0, 0, sw, sh)
           gfx.muladdrect(0,0,sw,sh,bc*mr,bc*mg,bc*mb,1,ba,ba,ba)
           gfx.dest = 1022
-          gfx.a = 0.8
+          gfx.a = 0.8*ma
           gfx.blit(iidx,1,0, 0, 0, sw, sh, x, y)            
         else
           gfx.a = 0.8
@@ -14661,7 +14693,8 @@ end
               --gfx.blit(imageidx,1,0, 0, 0, w, h, x+b_sz, y+b_sz, sw, sh)
             
               if (gfxx.bright and gfxx.bright ~= 0.5) or (gfxx.contr and gfxx.contr ~= 0.5) 
-                               or (gfxx.rmult and gfxx.rmult ~= 0.5) or (gfxx.gmult and gfxx.gmult ~= 0.5) or (gfxx.bmult and gfxx.bmult ~= 0.5) then
+                 or (gfxx.rmult and gfxx.rmult ~= 0.5) or (gfxx.gmult and gfxx.gmult ~= 0.5) or (gfxx.bmult and gfxx.bmult ~= 0.5) 
+                 or (gfxx.alpha and gfxx.alpha ~= 1) then
                                
                 iidx = 899
                 local ba = -F_limit((0.5-gfxx.bright)*2,-1,1)
@@ -14691,6 +14724,8 @@ end
                   mb = mb*2
                 end
                 
+                local ma = gfxx.alpha
+                
                 gfx.setimgdim(iidx, -1, -1)
                 gfx.setimgdim(iidx, sw, sh)
                 gfx.dest = iidx
@@ -14698,7 +14733,7 @@ end
                 gfx.blit(imageidx,1,0, 0, 0, w, h, 0, 0, sw, sh)
                 gfx.muladdrect(0,0,sw,sh,bc*mr,bc*mg,bc*mb,1,ba,ba,ba)
                 gfx.dest = 1022
-                gfx.a = 0.3
+                gfx.a = 0.3*ma
                 gfx.blit(iidx,1,0, 0, 0, sw, sh, x+b_sz, y+b_sz)            
               else
                 gfx.a = 0.3
@@ -17815,6 +17850,7 @@ end
     gfxr_select = nz(strips[tracks[track_select].strip][page].graphics[gfx2_select].rmult,0.5)
     gfxg_select = nz(strips[tracks[track_select].strip][page].graphics[gfx2_select].gmult,0.5)
     gfxb_select = nz(strips[tracks[track_select].strip][page].graphics[gfx2_select].bmult,0.5)
+    gfxa_select = nz(strips[tracks[track_select].strip][page].graphics[gfx2_select].alpha,1)    
   end
     
   function GetValFromDVal(c, dv, checkov)
@@ -20012,7 +20048,8 @@ end
       if mouse.context == nil then
         if ((submode == 0 and ctl_select ~= nil) and (MOUSE_click(obj.sections[45]) or (MOUSE_click(obj.sections[100]) and show_cycleoptions) 
             or (MOUSE_click(obj.sections[200]) and show_ctlbrowser)) or (MOUSE_click(obj.sections[800]) and show_gaugeedit)) or 
-           ((submode == 1 and gfx2_select ~= nil) and (MOUSE_click(obj.sections[49]) and (show_lbloptions or show_gfxoptions))) then
+           ((submode == 1 and gfx2_select ~= nil) and (MOUSE_over(obj.sections[49]) and (show_lbloptions == true or show_gfxoptions == true))) then
+
         elseif mouse.mx > obj.sections[10].x and show_actionchooser == false then
           if MOUSE_click(obj.sections[10]) then
             if noscroll == false then
@@ -21360,8 +21397,8 @@ end
   
     if mouse.context and mouse.context == contexts.movesnapwindow then
       
-      obj.sections[160].x = F_limit(mouse.mx - movesnapwin.offx, obj.sections[10].x, obj.sections[10].x+obj.sections[10].w-obj.sections[160].w)
-      obj.sections[160].y = F_limit(mouse.my - movesnapwin.offy, obj.sections[10].y, obj.sections[10].y+obj.sections[10].h-obj.sections[160].h)
+      obj.sections[160].x = F_limit(mouse.mx - movesnapwin.offx, obj.sections[10].x, gfx1.main_w-obj.sections[160].w)
+      obj.sections[160].y = F_limit(mouse.my - movesnapwin.offy, obj.sections[10].y, gfx1.main_h-obj.sections[160].h)
       obj.sections[160].x = math.max(obj.sections[160].x,obj.sections[10].x)      
       obj.sections[160].y = math.max(obj.sections[160].y,obj.sections[10].y)
       
@@ -24337,6 +24374,11 @@ end
           strips[tracks[track_select].strip][page].graphics[gfx2_select].bmult = gfxb_select
           update_gfx = true
           gfx.mouse_wheel = 0                
+        elseif MOUSE_over(obj.sections[916]) then
+          gfxa_select = F_limit(gfxa_select+(v*0.02),0,1)
+          strips[tracks[track_select].strip][page].graphics[gfx2_select].alpha = gfxa_select
+          update_gfx = true
+          gfx.mouse_wheel = 0                
         end      
       end
     end
@@ -24415,6 +24457,8 @@ end
       elseif mouse.context == nil and MOUSE_click(obj.sections[150]) then mouse.context = contexts.shadaslider end
       
     elseif gfx2_select ~= nil and show_gfxoptions and (MOUSE_click(obj.sections[49]) or MOUSE_click_RB(obj.sections[49])) then
+
+      clicklblopts = true
     
       if mouse.context == nil and MOUSE_click(obj.sections[912]) then 
         
@@ -24423,11 +24467,13 @@ end
         gfxr_select = 0.5
         gfxg_select = 0.5
         gfxb_select = 0.5
+        gfxa_select = 1
         strips[tracks[track_select].strip][page].graphics[gfx2_select].bright = gfxbright_select
         strips[tracks[track_select].strip][page].graphics[gfx2_select].contr = gfxcontr_select
         strips[tracks[track_select].strip][page].graphics[gfx2_select].rmult = gfxr_select
         strips[tracks[track_select].strip][page].graphics[gfx2_select].gmult = gfxg_select
         strips[tracks[track_select].strip][page].graphics[gfx2_select].bmult = gfxb_select
+        strips[tracks[track_select].strip][page].graphics[gfx2_select].amult = gfxa_select
         update_gfx = true
       
       end
@@ -24436,7 +24482,8 @@ end
       elseif mouse.context == nil and MOUSE_click(obj.sections[911]) then mouse.context = contexts.gfxopt_contr
       elseif mouse.context == nil and MOUSE_click(obj.sections[913]) then mouse.context = contexts.gfxopt_r
       elseif mouse.context == nil and MOUSE_click(obj.sections[914]) then mouse.context = contexts.gfxopt_g
-      elseif mouse.context == nil and MOUSE_click(obj.sections[915]) then mouse.context = contexts.gfxopt_b end
+      elseif mouse.context == nil and MOUSE_click(obj.sections[915]) then mouse.context = contexts.gfxopt_b
+      elseif mouse.context == nil and MOUSE_click(obj.sections[916]) then mouse.context = contexts.gfxopt_a end
     
     end
   
@@ -24512,6 +24559,13 @@ end
       if val ~= nil then
         gfxb_select = val
         strips[tracks[track_select].strip][page].graphics[gfx2_select].bmult = gfxb_select
+        update_gfx = true
+      end
+    elseif mouse.context and mouse.context == contexts.gfxopt_a then
+      local val = F_limit(MOUSE_sliderHBar(obj.sections[916]),0,1)
+      if val ~= nil then
+        gfxa_select = val
+        strips[tracks[track_select].strip][page].graphics[gfx2_select].alpha = gfxa_select
         update_gfx = true
       end
     end
@@ -31645,6 +31699,7 @@ end
                                     rmult = tonumber(zn(data[key..'rmult'],0.5)),
                                     gmult = tonumber(zn(data[key..'gmult'],0.5)),
                                     bmult = tonumber(zn(data[key..'bmult'],0.5)),
+                                    alpha = tonumber(zn(data[key..'alpha'],1)),
                                    }
         strip.graphics[g].stretchw = tonumber(zn(data[key..'stretchw'],strip.graphics[g].w))
         strip.graphics[g].stretchh = tonumber(zn(data[key..'stretchh'],strip.graphics[g].h))
@@ -33534,363 +33589,6 @@ end
         local key = pfx..'p'..p..'_'
 
         GenStripSaveData2(strips[s][p],key,file)
-
-        --[[if strips[s][p] then
-
-          file:write('['..key..'surface_x]'..strips[s][p].surface_x..'\n')
-          file:write('['..key..'surface_y]'..strips[s][p].surface_y..'\n')
-          file:write('['..key..'controls_count]'..#strips[s][p].controls..'\n')
-          file:write('['..key..'graphics_count]'..#strips[s][p].graphics..'\n')
-          
-          if #strips[s][p].controls > 0 then
-            for c = 1, #strips[s][p].controls do
-          
-              local key = pfx..'p'..p..'_c_'..c..'_'
-              
-              file:write('['..key..'cid]'..strips[s][p].controls[c].c_id..'\n')
-              file:write('['..key..'fxname]'..strips[s][p].controls[c].fxname..'\n')
-              file:write('['..key..'fxguid]'..nz(strips[s][p].controls[c].fxguid,'')..'\n')
-              file:write('['..key..'fxnum]'..nz(strips[s][p].controls[c].fxnum,'')..'\n')
-              file:write('['..key..'fxfound]'..tostring(strips[s][p].controls[c].fxfound)..'\n')
-              file:write('['..key..'param]'..strips[s][p].controls[c].param..'\n')
-  
-              file:write('['..key..'param_info_name]'..strips[s][p].controls[c].param_info.paramname..'\n')
-              file:write('['..key..'param_info_paramnum]'..nz(strips[s][p].controls[c].param_info.paramnum,'')..'\n')
-              file:write('['..key..'param_info_idx]'..nz(strips[s][p].controls[c].param_info.paramidx,'')..'\n')
-              file:write('['..key..'param_info_str]'..nz(strips[s][p].controls[c].param_info.paramstr,'')..'\n')
-              file:write('['..key..'param_info_guid]'..nz(strips[s][p].controls[c].param_info.paramdestguid,'')..'\n')
-              file:write('['..key..'param_info_chan]'..nz(strips[s][p].controls[c].param_info.paramdestchan,'')..'\n')
-              file:write('['..key..'param_info_srcchan]'..nz(strips[s][p].controls[c].param_info.paramsrcchan,'')..'\n')
-              file:write('['..key..'ctltype]'..strips[s][p].controls[c].ctltype..'\n')
-              file:write('['..key..'knob_select]'..strips[s][p].controls[c].knob_select..'\n')
-              file:write('['..key..'ctl_info_fn]'..strips[s][p].controls[c].ctl_info.fn..'\n')
-              file:write('['..key..'ctl_info_frames]'..strips[s][p].controls[c].ctl_info.frames..'\n')
-              file:write('['..key..'ctl_info_imageidx]'..strips[s][p].controls[c].ctl_info.imageidx..'\n')
-              file:write('['..key..'ctl_info_cellh]'..strips[s][p].controls[c].ctl_info.cellh..'\n')
-              file:write('['..key..'x]'..strips[s][p].controls[c].x..'\n')
-              file:write('['..key..'y]'..strips[s][p].controls[c].y..'\n')
-              file:write('['..key..'w]'..strips[s][p].controls[c].w..'\n')
-              file:write('['..key..'scale]'..strips[s][p].controls[c].scale..'\n')
-              file:write('['..key..'show_paramname]'..tostring(strips[s][p].controls[c].show_paramname)..'\n')
-              file:write('['..key..'show_paramval]'..tostring(strips[s][p].controls[c].show_paramval)..'\n')
-              file:write('['..key..'ctlname_override]'..nz(strips[s][p].controls[c].ctlname_override,'')..'\n')
-              file:write('['..key..'textcol]'..strips[s][p].controls[c].textcol..'\n')
-              file:write('['..key..'textoff]'..strips[s][p].controls[c].textoff..'\n')
-              file:write('['..key..'textoffval]'..strips[s][p].controls[c].textoffval..'\n')
-              file:write('['..key..'textoffx]'..strips[s][p].controls[c].textoffx..'\n')
-              file:write('['..key..'textoffvalx]'..strips[s][p].controls[c].textoffvalx..'\n')
-              file:write('['..key..'textsize]'..nz(strips[s][p].controls[c].textsize,0)..'\n')
-              file:write('['..key..'font]'..nz(strips[s][p].controls[c].font,fontname_def)..'\n')
-              file:write('['..key..'val]'..nz(strips[s][p].controls[c].val,0)..'\n')
-              file:write('['..key..'mval]'..nz(strips[s][p].controls[c].mval,nz(strips[s][p].controls[c].val,0))..'\n')
-              file:write('['..key..'defval]'..nz(strips[s][p].controls[c].defval,0)..'\n')   
-              file:write('['..key..'maxdp]'..nz(strips[s][p].controls[c].maxdp,-1)..'\n')   
-              file:write('['..key..'dvaloffset]'..nz(strips[s][p].controls[c].dvaloffset,'')..'\n')   
-              file:write('['..key..'minov]'..nz(strips[s][p].controls[c].minov,'')..'\n')   
-              file:write('['..key..'maxov]'..nz(strips[s][p].controls[c].maxov,'')..'\n')   
-              file:write('['..key..'scalemodex]'..nz(strips[s][p].controls[c].scalemode,8)..'\n')   
-              file:write('['..key..'framemodex]'..nz(strips[s][p].controls[c].framemode,1)..'\n')   
-              file:write('['..key..'poslock]'..nz(tostring(strips[s][p].controls[c].poslock),false)..'\n')   
-              file:write('['..key..'horiz]'..tostring(nz(strips[s][p].controls[c].horiz,false))..'\n')
-              file:write('['..key..'knobsens_norm]'..tostring(nz(strips[s][p].controls[c].knobsens.norm,settings_defknobsens.norm))..'\n')
-              file:write('['..key..'knobsens_fine]'..tostring(nz(strips[s][p].controls[c].knobsens.fine,settings_defknobsens.fine))..'\n')                 
-              file:write('['..key..'knobsens_wheel]'..tostring(nz(strips[s][p].controls[c].knobsens.wheel,settings_defknobsens.wheel))..'\n')
-              file:write('['..key..'knobsens_wheelfine]'..tostring(nz(strips[s][p].controls[c].knobsens.wheelfine,settings_defknobsens.wheelfine))..'\n')                 
-              file:write('['..key..'hidden]'..tostring(nz(strips[s][p].controls[c].hidden,false))..'\n')
-              file:write('['..key..'switcherid]'..tostring(nz(strips[s][p].controls[c].switcherid,''))..'\n')
-              file:write('['..key..'switcher]'..tostring(nz(strips[s][p].controls[c].switcher,''))..'\n')
-              file:write('['..key..'noss]'..tostring(nz(strips[s][p].controls[c].noss,''))..'\n')
-  
-              file:write('['..key..'id]'..convnum(strips[s][p].controls[c].id)..'\n')
-              file:write('['..key..'grpid]'..convnum(strips[s][p].controls[c].grpid)..'\n')
-      
-              file:write('['..key..'ctlcat]'..nz(strips[s][p].controls[c].ctlcat,'')..'\n')
-              file:write('['..key..'tracknum]'..nz(strips[s][p].controls[c].tracknum,'')..'\n')
-              file:write('['..key..'trackguid]'..nz(strips[s][p].controls[c].trackguid,'')..'\n')
-              file:write('['..key..'memstate]'..tostring(nz(strips[s][p].controls[c].membtn.state,false))..'\n')
-              file:write('['..key..'memmem]'..nz(strips[s][p].controls[c].membtn.mem,0)..'\n')
-              
-              file:write('['..key..'xydata_x]'..nz(strips[s][p].controls[c].xydata.x,0.5)..'\n')
-              file:write('['..key..'xydata_y]'..nz(strips[s][p].controls[c].xydata.y,0.5)..'\n')
-              file:write('['..key..'xydata_snapa]'..nz(strips[s][p].controls[c].xydata.snapa,1)..'\n')
-              file:write('['..key..'xydata_snapb]'..nz(strips[s][p].controls[c].xydata.snapb,1)..'\n')
-              file:write('['..key..'xydata_snapc]'..nz(strips[s][p].controls[c].xydata.snapc,1)..'\n')
-              file:write('['..key..'xydata_snapd]'..nz(strips[s][p].controls[c].xydata.snapd,1)..'\n')
-
-              file:write('['..key..'macrofader]'..nz(strips[s][p].controls[c].macrofader,'')..'\n')
-  
-              if strips[s][p].controls[c].cycledata and strips[s][p].controls[c].cycledata.statecnt then
-                file:write('['..key..'cycledata_statecnt]'..nz(strips[s][p].controls[c].cycledata.statecnt,0)..'\n')
-                file:write('['..key..'cycledata_mapptof]'..tostring(nz(strips[s][p].controls[c].cycledata.mapptof,false))..'\n')
-                file:write('['..key..'cycledata_draggable]'..tostring(nz(strips[s][p].controls[c].cycledata.draggable,false))..'\n')
-                file:write('['..key..'cycledata_spread]'..tostring(nz(strips[s][p].controls[c].cycledata.spread,false))..'\n')
-                file:write('['..key..'cycledata_pos]'..tostring(nz(strips[s][p].controls[c].cycledata.pos,1))..'\n')
-                file:write('['..key..'cycledata_posdirty]'..tostring(nz(strips[s][p].controls[c].cycledata.posdirty,false))..'\n')
-                if nz(strips[s][p].controls[c].cycledata.statecnt,0) > 0 then
-                  for i = 1, strips[s][p].controls[c].cycledata.statecnt do
-                    local key = pfx..'p'..p..'_c_'..c..'_cyc_'..i..'_'
-                    file:write('['..key..'val]'..nz(strips[s][p].controls[c].cycledata[i].val,0)..'\n')   
-                    file:write('['..key..'dispval]'..nz(strips[s][p].controls[c].cycledata[i].dispval,'')..'\n')   
-                    file:write('['..key..'dv]'..nz(strips[s][p].controls[c].cycledata[i].dv,'')..'\n')   
-                  end
-                end
-              else
-                file:write('['..key..'cycledata_statecnt]'..0 ..'\n')                   
-              end
-
-              if strips[s][p].controls[c].midiout then
-                file:write('['..key..'midiout_output]'..nz(strips[s][p].controls[c].midiout.output,'')..'\n')
-                file:write('['..key..'midiout_mchan]'..nz(strips[s][p].controls[c].midiout.mchan,'')..'\n')
-                file:write('['..key..'midiout_msg3]'..nz(strips[s][p].controls[c].midiout.msg3,'')..'\n')              
-              end
-              
-              if strips[s][p].controls[c].gauge then
-                file:write('['..key..'gauge]'..tostring(true)..'\n')
-              
-                file:write('['..key..'gauge_type]'..nz(strips[s][p].controls[c].gauge.type,1)..'\n')
-                file:write('['..key..'gauge_x_offs]'..nz(strips[s][p].controls[c].gauge.x_offs,0)..'\n')
-                file:write('['..key..'gauge_y_offs]'..nz(strips[s][p].controls[c].gauge.y_offs,0)..'\n')
-                file:write('['..key..'gauge_radius]'..nz(strips[s][p].controls[c].gauge.radius,50)..'\n')
-                file:write('['..key..'gauge_arclen]'..nz(strips[s][p].controls[c].gauge.arclen,1)..'\n')
-                file:write('['..key..'gauge_rotation]'..nz(strips[s][p].controls[c].gauge.rotation,0)..'\n')
-                file:write('['..key..'gauge_ticks]'..nz(strips[s][p].controls[c].gauge.ticks,0)..'\n')
-                file:write('['..key..'gauge_tick_size]'..nz(strips[s][p].controls[c].gauge.tick_size,2)..'\n')
-                file:write('['..key..'gauge_tick_offs]'..nz(strips[s][p].controls[c].gauge.tick_offs,1)..'\n')
-                file:write('['..key..'gauge_val_freq]'..nz(strips[s][p].controls[c].gauge.val_freq,0)..'\n')
-                file:write('['..key..'gauge_col_tick]'..nz(strips[s][p].controls[c].gauge.col_tick,gui.color.white)..'\n')
-                file:write('['..key..'gauge_col_arc]'..nz(strips[s][p].controls[c].gauge.col_arc,gui.color.white)..'\n')
-                file:write('['..key..'gauge_col_val]'..nz(strips[s][p].controls[c].gauge.col_val,gui.color.white)..'\n')
-                file:write('['..key..'gauge_show_arc]'..tostring(nz(strips[s][p].controls[c].gauge.show_arc,true))..'\n')
-                file:write('['..key..'gauge_show_tick]'..tostring(nz(strips[s][p].controls[c].gauge.show_tick,true))..'\n')
-                file:write('['..key..'gauge_show_val]'..tostring(nz(strips[s][p].controls[c].gauge.show_val,true))..'\n')
-                file:write('['..key..'gauge_val_dp]'..nz(strips[s][p].controls[c].gauge.val_dp,0)..'\n')
-                file:write('['..key..'gauge_font]'..nz(strips[s][p].controls[c].gauge.font,fontname_def)..'\n')
-                file:write('['..key..'gauge_fontsz]'..nz(strips[s][p].controls[c].gauge.fontsz,0)..'\n')
-                file:write('['..key..'gauge_spread]'..tostring(nz(strips[s][p].controls[c].gauge.spread,''))..'\n')
-                file:write('['..key..'gauge_mapptof]'..tostring(nz(strips[s][p].controls[c].gauge.mapptof,''))..'\n')
-                file:write('['..key..'gauge_numonly]'..tostring(nz(strips[s][p].controls[c].gauge.numonly,''))..'\n')
-                file:write('['..key..'gauge_valcnt]'..#strips[s][p].controls[c].gauge.vals..'\n')
-              
-                if strips[s][p].controls[c].gauge.vals and #strips[s][p].controls[c].gauge.vals > 0 then
-                  for gv = 1, #strips[s][p].controls[c].gauge.vals do
-                    local key = pfx..'p'..p..'_c_'..c..'_gaugevals_'..gv..'_' 
-                    file:write('['..key..'val]'..nz(strips[s][p].controls[c].gauge.vals[gv].val,0)..'\n')
-                    file:write('['..key..'dval]'..nz(strips[s][p].controls[c].gauge.vals[gv].dval,'-')..'\n')
-                    file:write('['..key..'dover]'..nz(strips[s][p].controls[c].gauge.vals[gv].dover,'')..'\n')                  
-                    file:write('['..key..'nudge]'..nz(strips[s][p].controls[c].gauge.vals[gv].nudge,0)..'\n')                  
-                  end
-                end
-              end
-                            
-              if strips[s][p].controls[c].macroctl then
-                local mcnt = #strips[s][p].controls[c].macroctl
-                file:write('['..key..'macroctl_cnt]'..mcnt..'\n')                                 
-                for mc = 1,mcnt do
-                  local key = pfx..'p'..p..'_c_'..c..'_mc_'..mc..'_'
-                  file:write('['..key..'c_id]'..strips[s][p].controls[c].macroctl[mc].c_id..'\n')                                 
-                  file:write('['..key..'ctl]'..strips[s][p].controls[c].macroctl[mc].ctl..'\n')                                 
-                  file:write('['..key..'A]'..strips[s][p].controls[c].macroctl[mc].A_val..'\n')                                 
-                  file:write('['..key..'B]'..strips[s][p].controls[c].macroctl[mc].B_val..'\n')                                 
-                  file:write('['..key..'shape]'..strips[s][p].controls[c].macroctl[mc].shape..'\n')                                 
-                  file:write('['..key..'mute]'..tostring(nz(strips[s][p].controls[c].macroctl[mc].mute,false))..'\n')                                 
-                  file:write('['..key..'bi]'..tostring(nz(strips[s][p].controls[c].macroctl[mc].bi,false))..'\n')
-                  file:write('['..key..'inv]'..tostring(nz(strips[s][p].controls[c].macroctl[mc].inv,false))..'\n')                                 
-                  file:write('['..key..'rel]'..tostring(nz(strips[s][p].controls[c].macroctl[mc].relative,false))..'\n')                                 
-                end
-              else
-                file:write('['..key..'macroctl_cnt]'..0 ..'\n')                                 
-              end
-
-              if strips[s][p].controls[c].eqbands then
-                local bcnt = #strips[s][p].controls[c].eqbands
-                file:write('['..key..'eqband_cnt]'..bcnt..'\n')
-                if bcnt > 0 then                                 
-                  for bc = 1,bcnt do
-                    local key = pfx..'p'..p..'_c_'..c..'_eqband_'..bc..'_'
-                    file:write('['..key..'posmin]'..nz(strips[s][p].controls[c].eqbands[bc].posmin,'')..'\n')                                 
-                    file:write('['..key..'posmax]'..nz(strips[s][p].controls[c].eqbands[bc].posmax,'')..'\n')                                 
-                    file:write('['..key..'col]'..nz(strips[s][p].controls[c].eqbands[bc].col,'')..'\n')                                 
-                    file:write('['..key..'fxnum]'..nz(strips[s][p].controls[c].eqbands[bc].fxnum,'')..'\n')                                 
-                    file:write('['..key..'fxguid]'..nz(strips[s][p].controls[c].eqbands[bc].fxguid,'')..'\n')                                 
-                    file:write('['..key..'fxname]'..nz(strips[s][p].controls[c].eqbands[bc].fxname,'')..'\n')                                 
-                    file:write('['..key..'freq_param]'..nz(strips[s][p].controls[c].eqbands[bc].freq_param,'')..'\n')                                 
-                    file:write('['..key..'freq_param_name]'..nz(strips[s][p].controls[c].eqbands[bc].freq_param_name,'')..'\n')                                 
-                    file:write('['..key..'gain_param]'..nz(strips[s][p].controls[c].eqbands[bc].gain_param,'')..'\n')                                 
-                    file:write('['..key..'gain_param_name]'..nz(strips[s][p].controls[c].eqbands[bc].gain_param_name,'')..'\n')                                 
-                    file:write('['..key..'q_param]'..nz(strips[s][p].controls[c].eqbands[bc].q_param,'')..'\n')                                 
-                    file:write('['..key..'q_param_name]'..nz(strips[s][p].controls[c].eqbands[bc].q_param_name,'')..'\n')                                 
-                    file:write('['..key..'bypass_param]'..nz(strips[s][p].controls[c].eqbands[bc].bypass_param,'')..'\n')                                 
-                    file:write('['..key..'bypass_param_name]'..nz(strips[s][p].controls[c].eqbands[bc].bypass_param_name,'')..'\n')                                 
-                    file:write('['..key..'c1_param]'..nz(strips[s][p].controls[c].eqbands[bc].c1_param,'')..'\n')                                 
-                    file:write('['..key..'c1_param_name]'..nz(strips[s][p].controls[c].eqbands[bc].c1_param_name,'')..'\n')                                 
-                    file:write('['..key..'c2_param]'..nz(strips[s][p].controls[c].eqbands[bc].c2_param,'')..'\n')                                 
-                    file:write('['..key..'c2_param_name]'..nz(strips[s][p].controls[c].eqbands[bc].c2_param_name,'')..'\n')                                 
-                    file:write('['..key..'c3_param]'..nz(strips[s][p].controls[c].eqbands[bc].c3_param,'')..'\n')                                 
-                    file:write('['..key..'c3_param_name]'..nz(strips[s][p].controls[c].eqbands[bc].c3_param_name,'')..'\n')                                 
-                    file:write('['..key..'c4_param]'..nz(strips[s][p].controls[c].eqbands[bc].c4_param,'')..'\n')                                 
-                    file:write('['..key..'c4_param_name]'..nz(strips[s][p].controls[c].eqbands[bc].c4_param_name,'')..'\n')                                 
-                    file:write('['..key..'c5_param]'..nz(strips[s][p].controls[c].eqbands[bc].c5_param,'')..'\n')                                 
-                    file:write('['..key..'c5_param_name]'..nz(strips[s][p].controls[c].eqbands[bc].c5_param_name,'')..'\n')                                 
-                    file:write('['..key..'freq_val]'..nz(strips[s][p].controls[c].eqbands[bc].freq_val,'')..'\n')                                 
-                    file:write('['..key..'gain_val]'..nz(strips[s][p].controls[c].eqbands[bc].gain_val,'')..'\n')                                 
-                    file:write('['..key..'q_val]'..nz(strips[s][p].controls[c].eqbands[bc].q_val,'')..'\n')                                 
-                    file:write('['..key..'c1_val]'..nz(strips[s][p].controls[c].eqbands[bc].c1_val,'')..'\n')                                 
-                    file:write('['..key..'c2_val]'..nz(strips[s][p].controls[c].eqbands[bc].c2_val,'')..'\n')                                 
-                    file:write('['..key..'c3_val]'..nz(strips[s][p].controls[c].eqbands[bc].c3_val,'')..'\n')                                 
-                    file:write('['..key..'c4_val]'..nz(strips[s][p].controls[c].eqbands[bc].c4_val,'')..'\n')                                 
-                    file:write('['..key..'c5_val]'..nz(strips[s][p].controls[c].eqbands[bc].c5_val,'')..'\n')                                 
-
-                    file:write('['..key..'freq_min]'..nz(strips[s][p].controls[c].eqbands[bc].freq_min,'')..'\n')                                 
-                    file:write('['..key..'freq_max]'..nz(strips[s][p].controls[c].eqbands[bc].freq_max,'')..'\n')
-                    file:write('['..key..'gain_min]'..nz(strips[s][p].controls[c].eqbands[bc].gain_min,'')..'\n')                                 
-                    file:write('['..key..'gain_max]'..nz(strips[s][p].controls[c].eqbands[bc].gain_max,'')..'\n')
-                    file:write('['..key..'bandtype]'..nz(strips[s][p].controls[c].eqbands[bc].bandtype,'')..'\n')                                 
-                    file:write('['..key..'bandname]'..nz(strips[s][p].controls[c].eqbands[bc].bandname,'')..'\n')                    
-                    file:write('['..key..'khz]'..nz(tostring(strips[s][p].controls[c].eqbands[bc].khz),tostring(false))..'\n')                    
-                    file:write('['..key..'gaininv]'..nz(tostring(strips[s][p].controls[c].eqbands[bc].gain_inv),tostring(false))..'\n')                    
-                    file:write('['..key..'qinv]'..nz(tostring(strips[s][p].controls[c].eqbands[bc].q_inv),tostring(false))..'\n')                    
-                    file:write('['..key..'gmin]'..nz(strips[s][p].controls[c].eqbands[bc].gmin,'')..'\n')                                 
-                    file:write('['..key..'gmax]'..nz(strips[s][p].controls[c].eqbands[bc].gmax,'')..'\n')                                 
-
-                    file:write('['..key..'freq_def]'..nz(strips[s][p].controls[c].eqbands[bc].freq_def,'')..'\n')                                 
-                    file:write('['..key..'gain_def]'..nz(strips[s][p].controls[c].eqbands[bc].gain_def,'')..'\n')                                 
-                    file:write('['..key..'q_def]'..nz(strips[s][p].controls[c].eqbands[bc].q_def,'')..'\n')                                 
-                    file:write('['..key..'c1_def]'..nz(strips[s][p].controls[c].eqbands[bc].c1_def,'')..'\n')                                 
-                    file:write('['..key..'c2_def]'..nz(strips[s][p].controls[c].eqbands[bc].c2_def,'')..'\n')                                 
-                    file:write('['..key..'c3_def]'..nz(strips[s][p].controls[c].eqbands[bc].c3_def,'')..'\n')                                 
-                    file:write('['..key..'c4_def]'..nz(strips[s][p].controls[c].eqbands[bc].c4_def,'')..'\n')                                 
-                    file:write('['..key..'c5_def]'..nz(strips[s][p].controls[c].eqbands[bc].c5_def,'')..'\n')                                 
-                    
-                    local key = pfx..'p'..p..'_c_'..c..'_eqband_'..bc..'_'
-                    if strips[s][p].controls[c].eqbands[bc].lookmap then
-                      local lcnt = #strips[s][p].controls[c].eqbands[bc].lookmap
-                      file:write('['..key..'lookmap_cnt]'..lcnt..'\n')
-                      
-                      if lcnt > 0 then
-                        for lc = 1, lcnt do
-                          local key = pfx..'p'..p..'_c_'..c..'_eqband_'..bc..'_lm_'..lc..'_'
-                          file:write('['..key..'pix]'..nz(strips[s][p].controls[c].eqbands[bc].lookmap[lc].pix,'')..'\n')                                 
-                          file:write('['..key..'hz]'..nz(strips[s][p].controls[c].eqbands[bc].lookmap[lc].hz,'')..'\n')                                 
-                        end
-                      end
-                    
-                    else
-                      file:write('['..key..'lookmap_cnt]'..0 ..'\n')                    
-                    end
-
-                    local key = pfx..'p'..p..'_c_'..c..'_eqband_'..bc..'_'
-                    if strips[s][p].controls[c].eqbands[bc].gmap then
-                      local lcnt = #strips[s][p].controls[c].eqbands[bc].gmap
-                      file:write('['..key..'gmap_cnt]'..lcnt..'\n')
-                      
-                      if lcnt > 0 then
-                        for lc = 1, lcnt do
-                          local key = pfx..'p'..p..'_c_'..c..'_eqband_'..bc..'_gm_'..lc..'_'
-                          file:write('['..key..'pix]'..nz(strips[s][p].controls[c].eqbands[bc].gmap[lc].pix,'')..'\n')                                 
-                          file:write('['..key..'db]'..nz(strips[s][p].controls[c].eqbands[bc].gmap[lc].db,'')..'\n')                                 
-                        end
-                      end
-                    
-                    else
-                      file:write('['..key..'gmap_cnt]'..0 ..'\n')                    
-                    end
-                                                     
-                  end
-                  
-                end
-              else
-                file:write('['..key..'eqband_cnt]'..0 ..'\n')                                 
-              end
-
-              if strips[s][p].controls[c].eqgraph and type(strips[s][p].controls[c].eqgraph) == 'table' then
-
-                local key = pfx..'p'..p..'_c_'..c..'_'
-                file:write('['..key..'ecg_graph]'..tostring(true)..'\n')                                               
-                file:write('['..key..'ecg_gmin]'..nz(strips[s][p].controls[c].eqgraph.gmin,'')..'\n')                                 
-                file:write('['..key..'ecg_gmax]'..nz(strips[s][p].controls[c].eqgraph.gmax,'')..'\n')                                 
-                file:write('['..key..'ecg_posmin]'..nz(strips[s][p].controls[c].eqgraph.posmin,'')..'\n')                                 
-                file:write('['..key..'ecg_posmax]'..nz(strips[s][p].controls[c].eqgraph.posmax,'')..'\n')                                 
-
-                if strips[s][p].controls[c].eqgraph.lookmap then
-                  local lcnt = #strips[s][p].controls[c].eqgraph.lookmap
-                  file:write('['..key..'ecg_lookmap_cnt]'..lcnt..'\n')
-                  
-                  if lcnt > 0 then
-                    for lc = 1, lcnt do
-                      local key = pfx..'p'..p..'_c_'..c..'_ecg_lm_'..lc..'_'
-                      file:write('['..key..'pix]'..nz(strips[s][p].controls[c].eqgraph.lookmap[lc].pix,'')..'\n')                                 
-                      file:write('['..key..'hz]'..nz(strips[s][p].controls[c].eqgraph.lookmap[lc].hz,'')..'\n')                                 
-                    end
-                  end
-                
-                else
-                  file:write('['..key..'ecg_lookmap_cnt]'..0 ..'\n')                    
-                end
-
-                local key = pfx..'p'..p..'_c_'..c..'_'
-                if strips[s][p].controls[c].eqgraph.gmap then
-                  local lcnt = #strips[s][p].controls[c].eqgraph.gmap
-                  file:write('['..key..'ecg_gmap_cnt]'..lcnt..'\n')
-                  
-                  if lcnt > 0 then
-                    for lc = 1, lcnt do
-                      local key = pfx..'p'..p..'_c_'..c..'_ecg_gm_'..lc..'_'
-                      file:write('['..key..'pix]'..nz(strips[s][p].controls[c].eqgraph.gmap[lc].pix,'')..'\n')                                 
-                      file:write('['..key..'db]'..nz(strips[s][p].controls[c].eqgraph.gmap[lc].db,'')..'\n')                                 
-                    end
-                  end
-                
-                else
-                  file:write('['..key..'ecg_gmap_cnt]'..0 ..'\n')
-                end
-                
-              end
-
-            end
-          end        
-
-          if #strips[s][p].graphics > 0 then
-            for g = 1, #strips[s][p].graphics do
-
-              local key = pfx..'p'..p..'_g_'..g..'_'
-          
-              file:write('['..key..'fn]'..strips[s][p].graphics[g].fn..'\n')
-              --file:write('['..key..'imageidx]'..strips[s][p].graphics[g].imageidx..'\n')
-              file:write('['..key..'x]'..strips[s][p].graphics[g].x..'\n')
-              file:write('['..key..'y]'..strips[s][p].graphics[g].y..'\n')
-              file:write('['..key..'w]'..strips[s][p].graphics[g].w..'\n')
-              file:write('['..key..'h]'..strips[s][p].graphics[g].h..'\n')
-              file:write('['..key..'stretchw]'..nz(strips[s][p].graphics[g].stretchw,strips[s][p].graphics[g].w)..'\n')
-              file:write('['..key..'stretchh]'..nz(strips[s][p].graphics[g].stretchh,strips[s][p].graphics[g].h)..'\n')
-              file:write('['..key..'scale]'..strips[s][p].graphics[g].scale..'\n')
-              file:write('['..key..'id]'..convnum(strips[s][p].graphics[g].id)..'\n')
-              file:write('['..key..'grpid]'..convnum(strips[s][p].graphics[g].grpid)..'\n')
-            
-              file:write('['..key..'gfxtype]'..nz(strips[s][p].graphics[g].gfxtype, gfxtype.img)..'\n')
-              file:write('['..key..'font_idx]'..nz(strips[s][p].graphics[g].font.idx, '')..'\n')
-              file:write('['..key..'font_name]'..nz(strips[s][p].graphics[g].font.name, '')..'\n')
-              file:write('['..key..'font_size]'..nz(strips[s][p].graphics[g].font.size, '')..'\n')
-              file:write('['..key..'font_bold]'..nz(tostring(strips[s][p].graphics[g].font.bold), '')..'\n')
-              file:write('['..key..'font_italics]'..nz(tostring(strips[s][p].graphics[g].font.italics), '')..'\n')
-              file:write('['..key..'font_underline]'..nz(tostring(strips[s][p].graphics[g].font.underline), '')..'\n')
-              file:write('['..key..'font_shadow]'..nz(tostring(strips[s][p].graphics[g].font.shadow), '')..'\n')
-              file:write('['..key..'font_shadowx]'..nz(strips[s][p].graphics[g].font.shadow_x, '')..'\n')
-              file:write('['..key..'font_shadowy]'..nz(strips[s][p].graphics[g].font.shadow_y, '')..'\n')
-              file:write('['..key..'font_shadowa]'..nz(strips[s][p].graphics[g].font.shadow_a, '')..'\n')
-              file:write('['..key..'text]'..nz(strips[s][p].graphics[g].text, '')..'\n')
-              file:write('['..key..'text_col]'..nz(strips[s][p].graphics[g].text_col, '')..'\n')
-              file:write('['..key..'poslock]'..nz(tostring(strips[s][p].graphics[g].poslock), false)..'\n')
-              file:write('['..key..'switcher]'..tostring(nz(strips[s][p].graphics[g].switcher,''))..'\n')
-            
-            end
-          end
-      
-        else
-          file:write('['..key..'surface_x]'..0 ..'\n')
-          file:write('['..key..'surface_y]'..0 ..'\n')
-          file:write('['..key..'controls_count]'..0 ..'\n')
-          file:write('['..key..'graphics_count]'..0 ..'\n')          
-        end]]      
       
       end
     
@@ -33914,18 +33612,6 @@ end
     if pfx == nil then pfx = '' end
   
     t = reaper.time_precise()
-    --local stripdata = ''
-  
-    --file:write('[strips_count]'..#strips..'\n')
-    --if strips[s] then
-    
-      --[[file:write('[' .. pfx ..'page]'..nz(strips[s].page,1)..'\n')
-      file:write('[' ..pfx ..'track_name]'..strips[s].track.name..'\n')
-      file:write('[' ..pfx ..'track_guid]'..nz(strips[s].track.guid,'')..'\n')
-      file:write('[' ..pfx ..'track_num]'..strips[s].track.tracknum..'\n')
-      file:write('[' ..pfx ..'track_strip]'..strips[s].track.strip..'\n')]]
-    
-      --for p = 1, 4 do
       
         local key = pfx
 
@@ -34307,6 +33993,7 @@ end
               file:write('['..key..'rmult]'..tostring(nz(stripdata.graphics[g].rmult,0.5))..'\n')
               file:write('['..key..'gmult]'..tostring(nz(stripdata.graphics[g].gmult,0.5))..'\n')
               file:write('['..key..'bmult]'..tostring(nz(stripdata.graphics[g].bmult,0.5))..'\n')
+              file:write('['..key..'alpha]'..tostring(nz(stripdata.graphics[g].alpha,1))..'\n')
             
             end
           end
@@ -34318,18 +34005,6 @@ end
           file:write('['..key..'graphics_count]'..0 ..'\n')          
         end      
       
-      --end
-    
-    --end
-
-    --file:write(pickled_table)
-    --[[if nofile == true then
-      file:close()
-      reaper.SetProjExtState(0,SCRIPT,'strips_count',#strips) 
-      reaper.SetProjExtState(0,SCRIPT,'strips_datafile_'..string.format("%03d",s),fn) 
-    end]]
-        
-    --DBG('Save strip time: '..reaper.time_precise() - t)
     return reaper.time_precise() - t
   
   end
@@ -36474,6 +36149,7 @@ end
     gfxr_select = 0.5
     gfxg_select = 0.5
     gfxb_select = 0.5
+    gfxa_select = 1
     
     plist_w = 140
     oplist_w = 140
