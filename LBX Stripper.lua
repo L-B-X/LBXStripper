@@ -2636,6 +2636,7 @@
                                           rmult = 0.5,
                                           gmult = 0.5,
                                           bmult = 0.5,
+                                          alpha = 1,
                                          }
       elseif type == gfxtype.txt then
         local x,y
