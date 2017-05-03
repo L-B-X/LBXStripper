@@ -13523,6 +13523,22 @@ end
       else
         stripdata = unpickle(content)
       end
+
+      if newvers == nil or tonumber(newvers) < 5 then
+      
+        --compatibility
+        local ctls = stripdata.strip.controls
+        if ctls and #ctls > 0 then
+        
+          for c = 1, #ctls do
+            gfx.setfont(1, ctls[c].font, gui.fontsz_knob + ctls[c].textsize-4)
+            local _, th = gfx.measurestr('|')
+            ctls[c].textoff = ctls[c].textoff - math.floor(th/2)
+          end
+        
+        end
+      
+      end
     else
       OpenMsgBox(1,'File not found.',1)
     end
@@ -14030,6 +14046,12 @@ end
         if stripdata.strip.graphics[j].poslock == nil then stripdata.strip.graphics[j].poslock = false end
         if stripdata.strip.graphics[j].stretchw == nil then stripdata.strip.graphics[j].stretchw = w end
         if stripdata.strip.graphics[j].stretchh == nil then stripdata.strip.graphics[j].stretchh = h end      
+        if stripdata.strip.graphics[j].bright == nil then stripdata.strip.graphics[j].bright = 0.5 end      
+        if stripdata.strip.graphics[j].contr == nil then stripdata.strip.graphics[j].contr = 0.5 end      
+        if stripdata.strip.graphics[j].rmult == nil then stripdata.strip.graphics[j].rmult = 0.5 end      
+        if stripdata.strip.graphics[j].gmult == nil then stripdata.strip.graphics[j].gmult = 0.5 end      
+        if stripdata.strip.graphics[j].bmult == nil then stripdata.strip.graphics[j].bmult = 0.5 end      
+        if stripdata.strip.graphics[j].alpha == nil then stripdata.strip.graphics[j].alpha = 1 end      
   
         if stripdata.strip.graphics[j].gfxtype == nil then stripdata.strip.graphics[j].gfxtype = gfxtype.img end
         if stripdata.strip.graphics[j].font == nil then
@@ -24732,10 +24754,11 @@ end
         if mouse.context == nil then
           for i = #strips[tracks[track_select].strip][page].graphics,1,-1 do
             local xywh
-            xywh = {x = strips[tracks[track_select].strip][page].graphics[i].x - surface_offset.x + obj.sections[10].x, 
-                    y = strips[tracks[track_select].strip][page].graphics[i].y - surface_offset.y + obj.sections[10].y, 
-                    w = strips[tracks[track_select].strip][page].graphics[i].stretchw, 
-                    h = strips[tracks[track_select].strip][page].graphics[i].stretchh}
+            local gfxx = strips[tracks[track_select].strip][page].graphics[i]
+            xywh = {x = gfxx.x - surface_offset.x + obj.sections[10].x, 
+                    y = gfxx.y - surface_offset.y + obj.sections[10].y, 
+                    w = gfxx.stretchw, 
+                    h = gfxx.stretchh}
             
             if xywh.w < 16 then
               xywh.x = xywh.x - 8
@@ -24746,7 +24769,7 @@ end
               xywh.h = 16
             end
             
-            if MOUSE_click(xywh) then
+            if MOUSE_click(xywh) and Switcher_CtlsHidden(gfxx.switcher, gfxx.grpid) == false then
               gfx2_select = i              
 
               poslock_select = nz(strips[tracks[track_select].strip][page].graphics[gfx2_select].poslock,false)
@@ -24767,7 +24790,7 @@ end
               end
               
               GenGFXDragPreview(gui)
-              strips[tracks[track_select].strip][page].graphics[i].hide = true
+              gfxx.hide = true
               
               update_gfx = true
               clickxywh = true
@@ -35635,6 +35658,14 @@ end
             if #loaddata.stripdata[s][p].graphics > 0 then
               for c = 1, #loaddata.stripdata[s][p].graphics do
                 local ctl = loaddata.stripdata[s][p].graphics[c]
+                
+                if ctl.bright == nil then ctl.bright = 0.5 end      
+                if ctl.contr == nil then ctl.contr = 0.5 end      
+                if ctl.rmult == nil then ctl.rmult = 0.5 end      
+                if ctl.gmult == nil then ctl.gmult = 0.5 end      
+                if ctl.bmult == nil then ctl.bmult = 0.5 end      
+                if ctl.alpha == nil then ctl.alpha = 1 end      
+                
                 if ctl.grpid then
                   if grids[ctl.grpid] then
                     ctl.grpid = grids[ctl.grpid]
