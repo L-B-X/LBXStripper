@@ -399,7 +399,7 @@
   
     savefn = fn
   
-    local stripdata, stripfilecontent = LoadStripFN(fol..fn)
+    local stripdata, stripfilecontent = LoadStripFN(fol..fn, nil, true)
     if stripdata.version and stripdata.version >= 4 then
       if stripdata.snapcontent then
         local snapd = StripData_ReadSnapContent(stripdata)
@@ -773,7 +773,15 @@
               local pickled_table=pickle(stripdata)
               file:write(pickled_table)                        
             else
-              local fxdata = string.match(stripfiledata, '%[STRIPFILE_VERSION%].-%[\\FXDATA%]')..'\n'
+              local fxdata 
+              --if string.match(stripfiledata, '%[STRIPFILE_VERSION%].-%[\\FXDATA%]') then
+                fxdata = string.match(stripfiledata, '%[STRIPFILE_VERSION%].-%[\\FXDATA%]')..'\n'
+              --[[else
+                fxdata = string.match(stripfiledata, '%[FXDATA%].-%[\\FXDATA%]')..'\n'
+                if fxdata then
+                  fxdata = '[STRIPFILE_VERSION]5\n'..fxdata
+                end
+              end]]
               file:write(fxdata)
               file:write('[STRIPDATA]\n')
               GenStripSaveData2(stripdata.strip,nil,file)
@@ -13488,7 +13496,6 @@ end
         if fxdata and stripcontent then
           stripdata = unpickle(fxdata)
           stripdata.sharedata = unpickle(sharedata)
-
           stripdata.version = tonumber(newvers)
           stripdata.snapcontent = snapcontent
           local data = {}
@@ -13523,9 +13530,10 @@ end
       else
         stripdata = unpickle(content)
       end
-
-      if newvers == nil or tonumber(newvers) < 5 then
       
+      if newvers == nil or tonumber(newvers) < 2 then
+      
+        --DBG('compat a')
         --compatibility
         local ctls = stripdata.strip.controls
         if ctls and #ctls > 0 then
@@ -13594,8 +13602,9 @@ end
       end
       
       if newvers == nil or tonumber(newvers) < 5 then
-      
         --compatibility
+        --DBG('compat b')
+        
         local ctls = stripdata.strip.controls
         if ctls and #ctls > 0 then
         
@@ -13615,8 +13624,7 @@ end
   
   end
 
-  function LoadStripFN(sfn,ffn)
-  
+  function LoadStripFN(sfn, ffn, skipcompat)
     local find = string.find
     local match = string.match
     
@@ -13666,19 +13674,24 @@ end
         stripdata = unpickle(content)
       end
       
-      if newvers == nil or tonumber(newvers) < 5 then
-        --compatibility
-        local ctls = stripdata.strip.controls
-        if ctls and #ctls > 0 then
-        
-          for c = 1, #ctls do
-            gfx.setfont(1, ctls[c].font, gui.fontsz_knob + ctls[c].textsize-4)
-            local _, th = gfx.measurestr('|')
-            ctls[c].textoff = ctls[c].textoff - math.floor(th/2)
+      if nz(skipcompat,false) == false then
+      DBG('sc')
+        if newvers == nil or tonumber(newvers) < 5 then
+          --compatibility
+          --DBG('compat c')
+          
+          local ctls = stripdata.strip.controls
+          if ctls and #ctls > 0 then
+          
+            for c = 1, #ctls do
+              gfx.setfont(1, ctls[c].font, gui.fontsz_knob + ctls[c].textsize-4)
+              local _, th = gfx.measurestr('|')
+              ctls[c].textoff = ctls[c].textoff - math.floor(th/2)
+            end
+          
           end
         
         end
-      
       end
     else
       OpenMsgBox(1,'File not found.',1)
@@ -32973,6 +32986,8 @@ end
           for p = 1, 4 do            
             
             --compatibility
+            --DBG('compat d')
+            
             local ctls = strips[s][p].controls
             if ctls and #ctls > 0 then
             
