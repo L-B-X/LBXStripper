@@ -399,7 +399,7 @@
   
     savefn = fn
   
-    local stripdata, stripfilecontent = LoadStripFN(fol..fn)
+    local stripdata, stripfilecontent = LoadStripFN(fol..fn, _, true)
     if stripdata.version and stripdata.version >= 4 then
       if stripdata.snapcontent then
         local snapd = StripData_ReadSnapContent(stripdata)
@@ -773,7 +773,15 @@
               local pickled_table=pickle(stripdata)
               file:write(pickled_table)                        
             else
-              local fxdata = string.match(stripfiledata, '%[STRIPFILE_VERSION%].-%[\\FXDATA%]')..'\n'
+              local fxdata 
+              --if string.match(stripfiledata, '%[STRIPFILE_VERSION%].-%[\\FXDATA%]') then
+                fxdata = string.match(stripfiledata, '%[STRIPFILE_VERSION%].-%[\\FXDATA%]')..'\n'
+              --[[else
+                fxdata = string.match(stripfiledata, '%[FXDATA%].-%[\\FXDATA%]')..'\n'
+                if fxdata then
+                  fxdata = '[STRIPFILE_VERSION]5\n'..fxdata
+                end
+              end]]
               file:write(fxdata)
               file:write('[STRIPDATA]\n')
               GenStripSaveData2(stripdata.strip,nil,file)
@@ -13488,7 +13496,6 @@ end
         if fxdata and stripcontent then
           stripdata = unpickle(fxdata)
           stripdata.sharedata = unpickle(sharedata)
-
           stripdata.version = tonumber(newvers)
           stripdata.snapcontent = snapcontent
           local data = {}
@@ -13503,6 +13510,7 @@ end
             end
           end
           stripdata.strip = LoadStripDataX(nil,data)
+DBG(stripdata.strip.version)
 
           if snapcontent then
             local data = {}
@@ -13523,7 +13531,6 @@ end
       else
         stripdata = unpickle(content)
       end
-
       if newvers == nil or tonumber(newvers) < 5 then
       
         --compatibility
@@ -13594,7 +13601,6 @@ end
       end
       
       if newvers == nil or tonumber(newvers) < 5 then
-      
         --compatibility
         local ctls = stripdata.strip.controls
         if ctls and #ctls > 0 then
@@ -13615,7 +13621,7 @@ end
   
   end
 
-  function LoadStripFN(sfn,ffn)
+  function LoadStripFN(sfn,ffn, skipcompat)
   
     local find = string.find
     local match = string.match
@@ -13666,7 +13672,7 @@ end
         stripdata = unpickle(content)
       end
       
-      if newvers == nil or tonumber(newvers) < 5 then
+      if skipcompat == nil and newvers == nil or tonumber(newvers) < 5 then
         --compatibility
         local ctls = stripdata.strip.controls
         if ctls and #ctls > 0 then
