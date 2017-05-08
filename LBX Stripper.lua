@@ -20,13 +20,16 @@
   trctltype_table = {'Track Controls','Track Sends','Track Meters','Other Controls'}
   --special_table = {'Action Trigger','Peak Meter L','Peak Meter R','Clip Indicator L','Clip Indicator R'}
   special_table = {}
-  otherctl_table = {'Action Trigger','Macro Control','EQ Engine','Strip Switcher','ReaControlMidi Switch'}
+  otherctl_table = {'Action Trigger','Macro Control','EQ Engine','Strip Switcher','ReaControlMidi Switch','Midi/OSC Control'}
   scalemode_preset_table = {'','NORMAL','REAPER VOL'}
   scalemode_table = {1/8,1/7,1/6,1/5,1/4,1/3,1/2,1,2,3,4,5,6,7,8}
   scalemode_dtable = {'1/8','1/7','1/6','1/5','1/4','1/3','1/2','1','2','3','4','5','6','7','8'}
   macroscale_table = {'Linear','Slow','Fast','Smooth','Slow 2 (Cubic)','Fast 2 (Cubic)', 'Smooth 2 (Cubic)', 'Slow 3', 'Fast 3', 'Smooth 3'}
   eqcontrol_colours = {'160 0 0','0 160 0','0 0 160','160 160 0','0 160 160','160 0 160','255 165 0','160 160 160','196 80 80','80 196 80','80 80 196','196 196 80','196 80 196'
                        ,'255 64 64','64 0 255','80 160 0','102 0 51','255 255 255','255 255 255','255 255 255'}
+  
+  midimsgtype_table = {'80 - Note Off','90 - Note On','A0 - Key Pressure','B0 - Control Change','C0 - Program Change','D0 - Channel Pressure','E0 - Pitch Bend'}
+  midimsgval_table = {'0x8','0x9','0xA','0xB','0xC','0xD','0xE'}
   
   ctlfile_type_table = {'Knob','Slider','Button','Meter','Misc'}
   
@@ -155,7 +158,28 @@
              switcher = 12,
              snapshotrand = 13,
              fxgui = 14,
-             rcm_switch = 15}
+             rcm_switch = 15,
+             midictl = 16,
+             oscctl = 17}
+
+  ctlcats_nm = {'fxparam',
+                'trackparam',
+                'tracksend',
+                'trackrecv',
+                'trackhwout',
+                 'action',
+                 'snapshot',
+                 'pkmeter',
+                 'xy',
+                 'fxoffline',
+                 'macro',
+                 'eqcontrol',
+                 'switcher',
+                 'snapshotrand',
+                 'fxgui',
+                 'rcm_switch',
+                 'midictl',
+                 'oscctl'}
              
   gfxtype = {img = 0,
              txt = 1
@@ -1426,6 +1450,10 @@
                           y = 150+butt_h+11 + (butt_h/2+4 + 10) * 8,
                           w = obj.sections[45].w-60,
                           h = butt_h}
+      obj.sections[960] = {x = 50,
+                          y = 150+butt_h+11 + (butt_h/2+4 + 10) * 7,
+                          w = obj.sections[45].w-60,
+                          h = butt_h}
 
       obj.sections[90] = {x = 2,
                           y = 75,
@@ -2378,23 +2406,41 @@
 
 
       --MIDI OUt
-      local mow, moh = 350, 120
+      local mow, moh = 350, 340
       obj.sections[950] = {x = math.floor(obj.sections[10].x+obj.sections[10].w/2 - mow/2),
                            y = math.floor(obj.sections[10].y+obj.sections[10].h/2 - moh/2),
                            w = mow,
                            h = moh} 
       obj.sections[951] = {x = obj.sections[950].x+100,
-                           y = obj.sections[950].y+butt_h*2,
+                           y = obj.sections[950].y+butt_h*3,
                            w = obj.sections[950].w-120,
                            h = butt_h} 
       obj.sections[952] = {x = obj.sections[950].x+100,
-                           y = obj.sections[950].y+butt_h*2 + butt_h+10,
+                           y = obj.sections[950].y+butt_h*3 + (butt_h+10) * 2,
                            w = 60,
                            h = butt_h} 
       obj.sections[953] = {x = obj.sections[952].x+obj.sections[952].w+80,
-                           y = obj.sections[950].y+butt_h*2 + butt_h+10,
+                           y = obj.sections[950].y+butt_h*3 + (butt_h+10) * 2,
+                           w = 60,
+                           h = butt_h}
+      obj.sections[954] = {x = obj.sections[950].x+100,
+                           y = obj.sections[950].y+butt_h*3 + (butt_h+10) * 1,
+                           w = obj.sections[950].w-120,
+                           h = butt_h} 
+
+      obj.sections[955] = {x = obj.sections[950].x+100,
+                           y = obj.sections[950].y+butt_h*3 + (butt_h+10) * 5,
+                           w = obj.sections[950].w-120,
+                           h = butt_h} 
+
+      obj.sections[956] = {x = obj.sections[950].x+100,
+                           y = obj.sections[950].y+butt_h*3 + (butt_h+10) * 8,
                            w = 60,
                            h = butt_h} 
+      obj.sections[957] = {x = obj.sections[952].x+obj.sections[952].w+80,
+                           y = obj.sections[950].y+butt_h*3 + (butt_h+10) * 8,
+                           w = 60,
+                           h = butt_h}
            
     return obj
   end
@@ -2829,6 +2875,70 @@
                                                 fxfound = false,
                                                 param = -1,
                                                 param_info = {paramname = 'RCM (Unassigned)',
+                                                              paramidx = nil},
+                                                ctltype = cts,
+                                                knob_select = knob_select,
+                                                ctl_info = {fn = ctl_files[knob_select].fn,
+                                                            frames = ctl_files[knob_select].frames,
+                                                            imageidx = ctl_files[knob_select].imageidx, 
+                                                            cellh = ctl_files[knob_select].cellh},
+                                                x = x,
+                                                y = y,
+                                                w = w,
+                                                poslock = false,
+                                                scale = scale_select,
+                                                xsc = x + math.floor(w/2 - (w*scale_select)/2),
+                                                ysc = y + math.floor(ctl_files[knob_select].cellh/2 - (ctl_files[knob_select].cellh*scale_select)/2),
+                                                wsc = w*scale_select,
+                                                hsc = ctl_files[knob_select].cellh*scale_select,
+                                                show_paramname = show_paramname,
+                                                show_paramval = spv,
+                                                ctlname_override = '',
+                                                textcol = textcol_select,
+                                                textoff = toff,
+                                                textoffval = textoffval_select,
+                                                textoffx = textoff_selectx,
+                                                textoffvalx = textoffval_selectx,
+                                                textsize = textsize_select,
+                                                textsizev = textsizev_select,
+                                                textcolv = textcolv_select,
+                                                val = 0,
+                                                defval = 0,
+                                                maxdp = maxdp_select,
+                                                cycledata = {statecnt = 0,val = 0,mapptof = false,draggable = false,spread = false, {}},
+                                                xydata = {snapa = 1, snapb = 1, snapc = 1, snapd = 1, x = 0.5, y = 0.5},
+                                                membtn = {state = false,
+                                                          mem = nil},
+                                                id = nil,
+                                                tracknum = tracks[trackedit_select].tracknum,
+                                                trackguid = tracks[trackedit_select].guid,
+                                                scalemode = 8,
+                                                framemode = 1,
+                                                horiz = horiz_select,
+                                                bypassbg_c = bypass_bgdraw_c_select,
+                                                bypassbg_n = bypass_bgdraw_n_select,
+                                                bypassbg_v = bypass_bgdraw_v_select,
+                                                clickthrough = clickthrough_select,
+                                                knobsens = settings_defknobsens
+                                                }
+        if track_select == trackedit_select then
+          strips[strip][page].controls[ctlnum].tracknum = nil
+          strips[strip][page].controls[ctlnum].trackguid = nil         
+        end
+
+      elseif dragparam.type == 'midimsgctl' then
+        local ccats = ctlcats.midictl
+        local cts = 1
+        local spv = true
+        local toff = textoff_select
+        strips[strip][page].controls[ctlnum] = {c_id = GenID(),
+                                                ctlcat = ccats,
+                                                fxname='MIDI CTL',
+                                                fxguid=nil, 
+                                                fxnum=nil, 
+                                                fxfound = true,
+                                                param = -1,
+                                                param_info = {paramname = 'MIDI/OSC (Unassigned)',
                                                               paramidx = nil},
                                                 ctltype = cts,
                                                 knob_select = knob_select,
@@ -5156,9 +5266,32 @@
     local ctl = strips[strip][page].controls[midioutedit_select]
     GUI_DrawPanel(obj.sections[950],true,'MIDI OUT - '..ctl.param_info.paramname)
 
-    GUI_DrawButton(gui, nz(midiout_select.output,'NONE'), obj.sections[951], gui.color.white, gui.color.black, true, 'HARDWARE OUT')
+    local xywh = {x = obj.sections[950].x, y = obj.sections[951].y-butt_h*1.5, w = obj.sections[950].w, h = obj.sections[951].h}
+    GUI_textC_LIM(gui, xywh, 'TRANSMIT MIDI MESSAGE', gui.color.white, -2) 
+
+    GUI_DrawButton(gui, nz(midiout_select.output,'--- [None] ---'), obj.sections[951], gui.color.white, gui.color.black, true, 'MIDI OUTPUT')
     GUI_DrawButton(gui, midiout_select.mchan, obj.sections[952], gui.color.white, gui.color.black, true, 'MIDI CHANNEL')
-    GUI_DrawButton(gui, midiout_select.msg3, obj.sections[953], gui.color.white, gui.color.black, true, 'MIDI CC#')
+    local msglab = ''
+    if midiout_select.msgtype then      
+      if midiout_select.msgtype >= 1 and midiout_select.msgtype <= 3 then
+        msglab = 'KEY'
+      elseif midiout_select.msgtype == 4 then
+        msglab = 'MIDI CC#'    
+      elseif midiout_select.msgtype >= 5 and midiout_select.msgtype <= 7 then
+        msglab = 'N/A'
+      end
+    end
+    GUI_DrawButton(gui, midiout_select.msg3, obj.sections[953], gui.color.white, gui.color.black, true, msglab)
+    GUI_DrawButton(gui, nz(midimsgtype_table[nz(midiout_select.msgtype,-1)],'NONE'), obj.sections[954], gui.color.white, gui.color.black, true, 'MESSAGE TYPE')
+
+    local xywh = {x = obj.sections[950].x, y = obj.sections[955].y-butt_h*1.5, w = obj.sections[950].w, h = obj.sections[955].h}
+    GUI_textC_LIM(gui, xywh, 'TRANSMIT OSC MESSAGE', gui.color.white, -2) 
+    GUI_DrawButton(gui, nz(midiout_select.osc,'none'), obj.sections[955], gui.color.white, gui.color.black, true, 'OSC MESSAGE')
+
+    local xywh = {x = obj.sections[950].x, y = obj.sections[956].y-butt_h*1.5, w = obj.sections[950].w, h = obj.sections[956].h}
+    GUI_textC_LIM(gui, xywh, 'CONTROL PARAMETERS', gui.color.white, -2)     
+    GUI_DrawButton(gui, midiout_select.vmin, obj.sections[956], gui.color.white, gui.color.black, true, 'VALUE RANGE')
+    GUI_DrawButton(gui, midiout_select.vmax, obj.sections[957], gui.color.white, gui.color.black, true, 'TO')
 
   end
   
@@ -6233,6 +6366,18 @@
       GUI_DrawSliderH(gui, 'DEF VAL', obj.sections[57], gui.color.black, gui.color.white, F_limit(defval_select,0,1))
       GUI_DrawButton(gui, 'SET IMAGE', obj.sections[51], gui.color.white, gui.color.black, true)
       GUI_DrawButton(gui, 'EDIT NAME', obj.sections[59], gui.color.white, gui.color.black, true)
+
+      if ctl_select and ctl_select[1].ctl then
+        local ctl = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl]
+        if ctl and ctl.ctlcat == ctlcats.midictl then
+          local midiset = false
+          if ctl.midiout then
+            midiset = true
+          end      
+          GUI_DrawButton(gui, 'SET MIDI', obj.sections[960], gui.color.blue, gui.color.black, midiset)
+        end
+      end
+      
       local dir
       if toffY then dir = 'Y' else dir = 'X' end
       GUI_DrawButton(gui, dir, obj.sections[68], gui.color.white, gui.color.black, true)
@@ -6806,7 +6951,7 @@ end
                 if ctlcat == ctlcats.fxparam or ctlcat == ctlcats.trackparam or ctlcat == ctlcats.tracksend or ctlcat == ctlcats.pkmeter then
                   v2 = nz(frameScale(ctl.framemode, GetParamValue2(ctlcat,track,fxnum,param,i)),0)
                   val2 = F_limit(round(frames*v2),0,frames-1)
-                elseif ctlcat == ctlcats.fxoffline or ctlcat == ctlcats.macro then
+                elseif ctlcat == ctlcats.fxoffline or ctlcat == ctlcats.macro or ctlcat == ctlcats.midictl then
                   v2 = ctl.val                  
                   val2 = F_limit(round(frames*v2),0,frames-1)
                 end
@@ -6995,6 +7140,25 @@ end
                     Disp_ParamV = ''
                   end
                   
+                elseif ctlcat == ctlcats.midictl then
+                  --spv = false
+                  local ctv = ctl.val
+                  if ctl.midiout then
+                    ctv = math.floor((ctl.midiout.vmax - ctl.midiout.vmin)*ctv)+ctl.midiout.vmin
+                    --[[if ctl.midiout.msgtype <= 6 then
+                      ctv = math.floor(ctv * 127)
+                    else
+                      ctv = math.floor(ctv * 16383)
+                    end
+                    ctv = roundX(ctv,0)]]
+                  end
+                  Disp_ParamV = ctv
+                  if nz(ctlnmov,'') == '' then
+                    Disp_Name = pname
+                  else
+                    Disp_Name = ctlnmov
+                  end
+                  
                 elseif ctlcat == ctlcats.macro then
                   --spv = false
                   Disp_ParamV = round(ctl.val,2)
@@ -7097,7 +7261,7 @@ end
                 elseif (mode == 1 and submode == 1) or ctl.hidden then
                   gfx.a = 0.5
                 end
-                gfx.blit(iidx,scale,0, 0, val2*gh, w, h, px, py)
+                gfx.blit(iidx,_,0, 0, val2*gh, w, h, px, py, math.floor(w*scale), math.floor(h*scale))
                 if ctlcat == ctlcats.xy then
                 
                   --draw pos
@@ -10498,6 +10662,10 @@ end
        
       end
  
+      if show_midiout then
+        GUI_DrawMIDIOut(gui, obj)
+      end
+      
     elseif show_xxy and (update_gfx or update_xxy or update_xxypos or update_surface or update_snaps or update_msnaps or resize_snaps or resize_display) then
     
       gfx.dest = 1
@@ -10597,12 +10765,11 @@ end
       
       end
 
-    
-    end
-    
-    if show_midiout then
-      GUI_DrawMIDIOut(gui, obj)
-    end
+      if show_midiout then
+        GUI_DrawMIDIOut(gui, obj)
+      end
+      
+    end    
     
     if show_dd == true then
       if update_gfx == true or update_dd == true then
@@ -16878,6 +17045,28 @@ end
     
   end
   
+  function MenuMidiMsgType()
+
+    local mstr = ''
+    for i = 1, #midimsgtype_table do
+      
+      if mstr ~= '' then
+        mstr = mstr .. '|'
+      end
+      mstr = mstr ..midimsgtype_table[i]
+  
+    end
+    if mstr ~= '' then
+      gfx.x, gfx.y = mouse.mx, mouse.my
+      local res = OpenMenu(mstr)
+      if res ~= 0 then
+        return res
+      end
+    end
+    return nil
+  
+  end
+  
   function MenuMidiOuts()
   
     local mstr = ''
@@ -17017,7 +17206,7 @@ end
     if sw == nil then
       sw = '#Add Controls To Switcher||'
     end
-    local mstr = 'Duplicate||Align Top|Align Left|Distribute Vertically|Distribute Horizontally||'..gg..sw..mm..'||'..vv..'||Delete'..ac..cp..cpg
+    local mstr = 'Duplicate||Align Top|Align Left|Distribute Vertically|Distribute Horizontally||'..gg..sw..mm..'||'..vv..'||Delete'..ac..cp..cpg..'||Control Info'
     gfx.x, gfx.y = mouse.mx, mouse.my
     local res = OpenMenu(mstr)
     if res == 1 then
@@ -17184,7 +17373,43 @@ end
       end
       update_bg = true
       update_gfx = true
+    elseif res == 18 then
+      if ctl_select and #ctl_select > 0 then
+        for c = 1, #ctl_select do
+          CtlInfo(tracks[track_select].strip, page, ctl_select[c].ctl)
+        end
+      end
     end
+  end
+  
+  function CtlInfo(strip, page, c)
+  
+    local ctl = strips[strip][page].controls[c]
+    DBG('')
+    DBG('----------------------------------------------')
+    DBG('CTL INFO:')
+    DBG('----------------------------------------------')
+    DBG('')
+    DBG('Ctl ID: '..c)
+    DBG('Type: '..ctltype_table[ctl.ctltype])
+    DBG('Cat: '..ctl.ctlcat..' - '..string.upper(ctlcats_nm[ctl.ctlcat+1]))
+    DBG('Image FN: '..ctl_files[ctl.knob_select].fn)
+    DBG('Param Name: '..ctl.param_info.paramname)
+    DBG('Display Name: '..tostring(ctl.ctlname_override))
+    DBG('')
+    DBG('Pos x: '..ctl.x)
+    DBG('Pos y: '..ctl.y)
+    DBG('Image Width: '..ctl.w)
+    DBG('Image Height: '..ctl.ctl_info.cellh)
+    DBG('')
+    DBG('Scale: '..ctl.scale)
+    DBG('Pos x (scaled): '..ctl.xsc)
+    DBG('Pos y (scaled): '..ctl.ysc)    
+    DBG('Width (scaled): '..ctl.wsc)
+    DBG('Height (scaled): '..ctl.hsc)
+    DBG('')
+    DBG('----------------------------------------------')
+    
   end
     
   function MenuStripFolders()
@@ -17244,8 +17469,8 @@ end
   end
   
   function RBMenu(mtype,ccat,i)
-
     if mtype == 0 then
+    
       if ccat == ctlcats.switcher then
         switcher_select = i
         SwitcherMenu_RB()
@@ -17262,13 +17487,13 @@ end
         if settings_locksurface then
           lspfx = '!'
         end
-        local mido = '>Midi Out|#Set|<#Clear'
-        if ccat == ctlcats.fxparam or ccat == ctlcats.trackparam or ccat == ctlcats.macro then
+        local mido = '>Midi/OSC Out|#Set|<#Clear'
+        if ccat == ctlcats.fxparam or ccat == ctlcats.trackparam or ccat == ctlcats.macro or ccat == ctlcats.midictl then
           local moclr = '|<#Clear'
           if ctl.midiout then
             moclr = '|<Clear'
           end
-          mido = '>Midi Out|Set'..moclr
+          mido = '>Midi/OSC Out|Set'..moclr
         end  
         if ccat == ctlcats.fxparam then
           mstr = 'MIDI learn|Modulation||Enter value||'..mido..'||Open FX window||'..mm..'Add Envelope|Add All Envelopes For Plugin||Snapshots||>Tools|<Regenerate ID   (emergency only)||Toggle Topbar|Toggle Sidebar||'..lspfx..'Lock Surface'
@@ -17297,9 +17522,12 @@ end
               midiout_select = ctl.midiout
               if midiout_select == nil then
                 midiout_select = {output = nil,
+                                  msgtype = 4,
                                   mchan = 1,
                                   msg3 = 1,
-                                  msg4 = 0}
+                                  msg4 = 0,
+                                  vmin = 0,
+                                  vmax = 127}
               end
               show_midiout = true
               update_gfx = true
@@ -20341,11 +20569,50 @@ end
   
     if mouse.context == nil and MOUSE_click(obj.sections[951]) then
       local res = MenuMidiOuts()
-      if res then
+      if res and res > 1 then
         midiout_select.output = midiouts[res-1].name
+      else
+        midiout_select.output = nil
       end
       update_surface = true
 
+    elseif mouse.context == nil and MOUSE_click(obj.sections[954]) then
+      local res = MenuMidiMsgType()
+      if res then
+        midiout_select.msgtype = res
+      end
+      update_surface = true
+
+    elseif mouse.context == nil and MOUSE_click(obj.sections[955]) then
+
+      local retval, msg = reaper.GetUserInputs('Osc Message',1,'OSC:,extrawidth=220',nz(midiout_select.osc,''))
+      if retval == true then
+        midiout_select.osc = msg
+      end
+      update_surface = true
+
+    elseif mouse.context == nil and MOUSE_click(obj.sections[956]) then
+
+      local retval, msg = reaper.GetUserInputs('Value Range',1,'Value Min:',nz(midiout_select.vmin,0))
+      if retval == true then
+        local msgv = tonumber(msg)
+        if msgv then
+          midiout_select.vmin = msgv
+        end
+      end
+      update_surface = true
+
+    elseif mouse.context == nil and MOUSE_click(obj.sections[957]) then
+
+      local retval, msg = reaper.GetUserInputs('Value Range',1,'Value Max:',nz(midiout_select.vmax,127))
+      if retval == true then
+        local msgv = tonumber(msg)
+        if msgv then
+          midiout_select.vmax = msgv
+        end
+      end
+      update_surface = true
+      
     elseif mouse.context == nil and MOUSE_click(obj.sections[952]) then
       mouse.context = contexts.midiout_chan
       midiout_select.mchan = F_limit(midiout_select.mchan + 1,1,16)
@@ -20370,16 +20637,43 @@ end
       show_midiout = false
       
       local strip = tracks[track_select].strip
-      local ctl = strips[strip][page].controls[midioutedit_select]
-      if ctl and midiout_select.output and midioutsidx[midiout_select.output] then
-      
-        ctl.midiout = {output = midiout_select.output,
-                       mchan = midiout_select.mchan,
-                       msg3 = midiout_select.msg3}
-      else
-        ctl.midiout = nil
+      if midioutedit_ctlselect == true then
+        if ctl_select and #ctl_select > 0 then
+          for c = 1, #ctl_select do
+            local ctl = strips[strip][page].controls[ctl_select[c].ctl]
+            if ctl and ((midiout_select.output and midioutsidx[midiout_select.output]) or midiout_select.osc) then
+            
+              ctl.midiout = {output = midiout_select.output,
+                             msgtype = midiout_select.msgtype,
+                             mchan = midiout_select.mchan,
+                             msg3 = midiout_select.msg3,
+                             osc = midiout_select.osc,
+                             vmin = midiout_select.vmin,
+                             vmax = midiout_select.vmax}
+            
+            else
+              ctl.midiout = nil
+            end
+          end        
+        end
+        midioutedit_ctlselect = nil
+      elseif midioutedit_select then
+        local ctl = strips[strip][page].controls[midioutedit_select]
+        if ctl and ((midiout_select.output and midioutsidx[midiout_select.output]) or midiout_select.osc) then
+        
+          ctl.midiout = {output = midiout_select.output,
+                         msgtype = midiout_select.msgtype,
+                         mchan = midiout_select.mchan,
+                         msg3 = midiout_select.msg3,
+                         osc = midiout_select.osc,
+                         vmin = midiout_select.vmin,
+                         vmax = midiout_select.vmax}
+        
+        else
+          ctl.midiout = nil
+        end
       end
-      
+            
       update_gfx = true
     end
     
@@ -20707,7 +21001,6 @@ end
                        h = ctl.hsc} 
           end
           if i and not ctls[i].hidden then
-          
             if ctls[i].fxfound then
               if MOUSE_click(ctlxywh) and not mouse.ctrl and not mouse.alt then
                 local ctltype = ctls[i].ctltype
@@ -22626,10 +22919,36 @@ end
             if ctl_select and #ctl_select > 0 then
               --EditCtlName()
               if strips and strips[tracks[track_select].strip] then
-                OpenEB(2,'Please enter a name for the selected controls:',strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].param_info.paramname)
+                local ctl = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl]
+                local cn = nz(ctl.ctlname_override, ctl.param_info.paramname)
+                OpenEB(2,'Please enter a name for the selected controls:',cn)
                 --update_gfx = true
               end
             end
+          elseif mouse.context == nil and MOUSE_click(obj.sections[960]) then
+            if strips and strips[tracks[track_select].strip] then
+              if ctl_select and #ctl_select > 0 and strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl]
+                 and strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].ctlcat == ctlcats.midictl then
+                local ctl = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl]
+                
+                midioutedit_ctlselect = true
+                midioutedit_select = ctl_select[1].ctl
+                midiout_select = ctl.midiout
+                if midiout_select == nil then
+                  midiout_select = {output = nil,
+                                    msgtype = 4,
+                                    mchan = 1,
+                                    msg3 = 1,
+                                    msg4 = 0,
+                                    osc = nil}
+                end
+                show_midiout = true
+                update_gfx = true
+                mouse.context = contexts.dummy
+              
+              end            
+            end
+          
           elseif mouse.context == nil and MOUSE_click(obj.sections[68]) then
             toffY = not toffY
             update_gfx = true
@@ -24046,6 +24365,9 @@ end
         elseif trctl_select == 5 then
           --knob_select = def_boxctl
           dragparam = {x = mouse.mx-ksel_size.w, y = mouse.my-ksel_size.h, type = 'rcmswitch'}
+        elseif trctl_select == 6 then
+          --knob_select = def_boxctl
+          dragparam = {x = mouse.mx-ksel_size.w, y = mouse.my-ksel_size.h, type = 'midimsgctl'}
         end
         
         reass_param = nil
@@ -24311,6 +24633,15 @@ end
           
           end
         elseif dragparam.type == 'rcmswitch' then
+          if reass_param == nil then
+            if dragparam.x+ksel_size.w > obj.sections[10].x and dragparam.x+ksel_size.w < obj.sections[10].x+obj.sections[10].w and dragparam.y+ksel_size.h > obj.sections[10].y and dragparam.y+ksel_size.h < obj.sections[10].y+obj.sections[10].h then
+              trackfxparam_select = i
+              Strip_AddParam()              
+            end
+          else
+          
+          end
+        elseif dragparam.type == 'midimsgctl' then
           if reass_param == nil then
             if dragparam.x+ksel_size.w > obj.sections[10].x and dragparam.x+ksel_size.w < obj.sections[10].x+obj.sections[10].w and dragparam.y+ksel_size.h > obj.sections[10].y and dragparam.y+ksel_size.h < obj.sections[10].y+obj.sections[10].h then
               trackfxparam_select = i
@@ -30990,6 +31321,9 @@ end
       tbl.rcmdata = table.copy(ctl.rcmdata)
       tbl.rcmrefresh = table.copy(ctl.rcmrefresh)
     end
+    if ctl.ctlcat == ctlcats.midictl and ctl.midiout then
+      tbl.midiout = table.copy(ctl.midiout)
+    end
     
     return tbl
   end
@@ -30999,7 +31333,6 @@ end
   function setcolor(i)
     gfx.set(((i>>16)&0xFF)/0xFF, ((i>>8)&0xFF)/0xFF, (i&0xFF)/0xFF)
   end
-  
   
   ---- editbox ----
   
@@ -31456,12 +31789,16 @@ end
           end
         end
         
-        local mout = data[key..'midiout_output']
-        if mout then
+        local mout = zn(data[key..'midiout_output'])
+        --if mout then
           strip.controls[c].midiout = {output = mout}
           strip.controls[c].midiout.mchan = tonumber(zn(data[key..'midiout_mchan'],1))
           strip.controls[c].midiout.msg3 = tonumber(zn(data[key..'midiout_msg3'],0))
-        end
+          strip.controls[c].midiout.msgtype = tonumber(zn(data[key..'midiout_msgtype'],4))
+          strip.controls[c].midiout.osc = zn(data[key..'midiout_osc'])
+          strip.controls[c].midiout.vmin = tonumber(zn(data[key..'midiout_vmin'],0))          
+          strip.controls[c].midiout.vmax = tonumber(zn(data[key..'midiout_vmax'],127))          
+        --end
 
         local rcmcnt = tonumber(data[key..'rcmdata_cnt'])
         if rcmcnt and rcmcnt > 0 then
@@ -33767,6 +34104,10 @@ end
                 file:write('['..key..'midiout_output]'..nz(stripdata.controls[c].midiout.output,'')..'\n')
                 file:write('['..key..'midiout_mchan]'..nz(stripdata.controls[c].midiout.mchan,'')..'\n')
                 file:write('['..key..'midiout_msg3]'..nz(stripdata.controls[c].midiout.msg3,'')..'\n')              
+                file:write('['..key..'midiout_msgtype]'..nz(stripdata.controls[c].midiout.msgtype,4)..'\n')              
+                file:write('['..key..'midiout_osc]'..nz(stripdata.controls[c].midiout.osc,'')..'\n')              
+                file:write('['..key..'midiout_vmin]'..nz(stripdata.controls[c].midiout.vmin,0)..'\n')              
+                file:write('['..key..'midiout_vmax]'..nz(stripdata.controls[c].midiout.vmax,127)..'\n')              
               end
 
               if stripdata.controls[c].rcmdata and #stripdata.controls[c].rcmdata > 0 then
@@ -36982,13 +37323,24 @@ end
     local midiouts = {}
     local midioutsidx = {}
     local moutnum = reaper.GetNumMIDIOutputs()
-    local mcnt = 1
-    
+    local mcnt = 3
+
     midiouts[0] = {outnum = 0,
+                   foutnum = 0,
+                   mchan = 1,
+                   name = '--- [None] ---'}
+    
+    midiouts[1] = {outnum = 0,
                     foutnum = 0,
                     mchan = 1,
                     name = 'Virtual Midi Keyboard'}
     midioutsidx['Virtual Midi Keyboard'] = 0
+
+    midiouts[2] = {outnum = 0,
+                    foutnum = 0,
+                    mchan = 1,
+                    name = 'Reaper Control'}
+    midioutsidx['Reaper Control'] = 1
     
     for i = 0, moutnum do
     
@@ -36996,9 +37348,9 @@ end
       if retval == true then
         --DBG(tostring(retval)..'  '..moutname)
         midiouts[mcnt] = {outnum = i,
-                                 foutnum = i+16,
-                                 mchan = 1,
-                                 name = moutname}
+                           foutnum = i+16,
+                           mchan = 1,
+                           name = moutname}
         midioutsidx[moutname] = i+16
         mcnt = mcnt + 1
       end
@@ -37012,13 +37364,58 @@ end
   
     --Send MIDI CC
     if val and midioutsidx[miditab.output] then
-      reaper.StuffMIDIMessage(midioutsidx[miditab.output], 
-                              '0xB'..string.format('%x',miditab.mchan-1),
-                              miditab.msg3, --CC num
-                              F_limit(math.floor(127*val),0,127)) -- CC val
+      local vald = math.floor((miditab.vmax - miditab.vmin)*val) + miditab.vmin
+    
+      if miditab.msgtype <= 4 then      
+        reaper.StuffMIDIMessage(midioutsidx[miditab.output], 
+                                midimsgval_table[miditab.msgtype]..string.format('%x',miditab.mchan-1),
+                                miditab.msg3, --CC num
+                                F_limit(vald,0,127)) -- CC val
+      elseif miditab.msgtype == 5 or miditab.msgtype == 6 then      
+        reaper.StuffMIDIMessage(midioutsidx[miditab.output], 
+                                midimsgval_table[miditab.msgtype]..string.format('%x',miditab.mchan-1),
+                                F_limit(vald,0,127), 
+                                0) -- CC val      
+      elseif miditab.msgtype == 6 then      
+        reaper.StuffMIDIMessage(midioutsidx[miditab.output], 
+                                midimsgval_table[miditab.msgtype]..string.format('%x',miditab.mchan-1),
+                                miditab.msg3, --CC num
+                                F_limit(vald,0,127)) -- CC val      
+      elseif miditab.msgtype == 7 then
+        local v1 = math.floor(vald / 128)
+        local v2 = vald % 128
+        reaper.StuffMIDIMessage(midioutsidx[miditab.output], 
+                                midimsgval_table[miditab.msgtype]..string.format('%x',miditab.mchan-1),
+                                v2, 
+                                v1)
+      end
+
+      if miditab.osc then
+        local msg = string.gsub(miditab.osc, '%[val%]', vald)
+        --DBG(msg)    
+        reaper.OscLocalMessageToHost(msg)
+      end
+      
       midimsg = true
       midimsgto = reaper.time_precise() + 0.1
+      
+    elseif miditab.osc then
+      local vald = 0
+      if val then
+        vald = math.floor((miditab.vmax - miditab.vmin)*val) + miditab.vmin
+      end
+      
+      if miditab.osc then
+        local msg = string.gsub(miditab.osc, '%[val%]', vald)
+        --DBG(msg)    
+        reaper.OscLocalMessageToHost(msg)
+      end
+      
+      midimsg = true
+      midimsgto = reaper.time_precise() + 0.1
+          
     end
+
   end
   
   function LoadScanBoot(fn)
