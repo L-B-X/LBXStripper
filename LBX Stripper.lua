@@ -741,10 +741,12 @@
             GUI_DrawStateWin(obj,gui,'Already in controls library: '..stripdata.sharedata.ctls[c].fn..'   ('..cfxfn..')')
             --DBG('Already in controls library: '..stripdata.sharedata.ctls[c].fn..'   ('..cfxfn..')')
           end
-          if copy > 0 then
-            local src = stripdata.sharedata.ctls[c].fn
+          
+          local src = stripdata.sharedata.ctls[c].fn
+          if cfxfn ~= src then
+            --DBG(src..'  '..cfxfn)
             --update ctl fn in stripdata
-            for i = 1, #stripdata.sharedata.ctls do            
+            for i = 1, #stripdata.sharedata.ctls do
               if stripdata.sharedata.ctls[i].fn == src then
                 stripdata.sharedata.ctls[i].fn = cfxfn
                 stripdata.sharedata.ctls[i].imageidx = -1
@@ -753,12 +755,11 @@
             for i = 1, #stripdata.strip.controls do
               if stripdata.strip.controls[i].ctl_info.fn == src then
                 stripdata.strip.controls[i].ctl_info.fn = cfxfn
-                stripdata.strip.controls[i].imageidx = -1
+                stripdata.strip.controls[i].ctl_info.imageidx = -1
+                --stripdata.strip.controls[i].knob_select = nil
               end
             end
-            
-            
-          end                
+          end            
         end
 
         RCM_Neb_UpdateProgIDs(stripdata.strip.controls)
@@ -13940,6 +13941,8 @@ end
 
     elseif stripdata.version >= 3 then
     
+      local rcmflag = false
+    
       --V4? - Load snapshot data
       if stripdata.version >= 4 and stripdata.snapcontent then
         local snapcontent = stripdata.snapcontent
@@ -14015,6 +14018,7 @@ end
         if (stripdata.strip.controls[j].ctlcat == ctlcats.rcm_switch) 
             and stripdata.strip.controls[j].rcmrefresh and stripdata.strip.controls[j].rcmrefresh.guid then
           stripdata.strip.controls[j].rcmrefresh.guid = fxguids[stripdata.strip.controls[j].rcmrefresh.guid].guid
+          rcmflag = true
         end        
         
         if stripdata.strip.controls[j].ctlcat == ctlcats.eqcontrol then
@@ -14032,6 +14036,10 @@ end
           
           end
         end
+      end
+      
+      if rcmflag == true then
+        RCM_Neb_UpdateProgIDs(stripdata.strip.controls, false)
       end
       
     end
@@ -16896,7 +16904,8 @@ end
 
           elseif res == edprogN_off+1 then
           
-            RCM_Neb_UpdateProgIDs(strips[tracks[track_select].strip][page].controls)
+            --RCM_Neb_UpdateProgIDs(strips[tracks[track_select].strip][page].controls)
+            RCM_Neb_UpdateAllProgIDs()
           
           elseif res > edprogN_off+1 and res <= remprog_off then
           
@@ -34865,7 +34874,7 @@ end
     --DBG(ffn)
     file=io.open(ffn,"w")
     if file == nil then
-      DBG('Failed to create save file:/n/n'..ffn)
+      DBG('Failed to create save file:\n\n'..ffn)
       return nil
     end
         
@@ -37439,7 +37448,26 @@ end
         
   end
   
-  function RCM_Neb_UpdateProgIDs(ctls)
+  function RCM_Neb_UpdateAllProgIDs()
+  
+    if strips and #strips > 0 then
+      local str = ''
+      for s = 1, #strips do
+        for p = 1, 4 do
+        
+          if strips[s] and strips[s][p] then
+            str = str .. RCM_Neb_UpdateProgIDs(strips[s][p].controls, false) ..'\n'
+          end
+        
+        end
+      end
+      
+      DBG(str)
+    end
+      
+  end
+  
+  function RCM_Neb_UpdateProgIDs(ctls, verbose)
   
     if neb_scanboot_fn and ctls then
     
@@ -37482,8 +37510,10 @@ end
       end
     
       local str = 'Neb IDs updated: '..upd..'\n\nNeb IDs not updated: '..fail
-      OpenMsgBox(1, str, 1)
-    
+      if nz(verbose,true) == true then
+        OpenMsgBox(1, str, 1)
+      end    
+      return str
     end
   
   end
