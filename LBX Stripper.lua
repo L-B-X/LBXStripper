@@ -17519,7 +17519,9 @@ end
           if res ~= 0 then
             if res == 1 then
               SetParam2(true)
-              reaper.Main_OnCommand(41144,0,0)
+              --reaper.Main_OnCommand(41144,0,0)
+              reaper.OscLocalMessageToHost('/lbx/midilearn')
+              
             elseif res == 2 then
               SetParam2(true)
               reaper.Main_OnCommand(41143,0)
