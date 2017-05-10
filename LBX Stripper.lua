@@ -13843,7 +13843,7 @@ end
       end
       
       if nz(skipcompat,false) == false then
-      DBG('sc')
+      --DBG('sc')
         if newvers == nil or tonumber(newvers) < 5 then
           --compatibility
           --DBG('compat c')
