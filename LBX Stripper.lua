@@ -36,6 +36,7 @@
   framemode_table = {'NORMAL','CIRC'}
   snapsubsets_table = {'PAGE'}
   gaugetype_table = {'ARC','LINEAR VERT', 'LINEAR HORIZ'}
+  gfxstretch_table = {'normal','fix edge'}
   
   trctltypeidx_table = {tr_ctls = 1,
                         tr_sends = 2,
@@ -140,6 +141,7 @@
               gfxopt_g = 103,
               gfxopt_b = 104,
               gfxopt_a = 105,
+              gfxopt_edge = 106, 
               dummy = 999
               }
   
@@ -1868,11 +1870,19 @@
                           h = butt_h/2+4}                           
       
       obj.sections[912] = {x = obj.sections[49].x+20,
-                          y = obj.sections[49].y+butt_h+10 + (butt_h/2+4 + 10) * 8,
+                          y = obj.sections[49].y+butt_h+10 + (butt_h/2+4 + 10) * 7 + 12,
                           w = obj.sections[49].w-40,
                           h = butt_h/2+8}                       
       
-                          
+      obj.sections[917] = {x = obj.sections[49].x+75,
+                                y = obj.sections[49].y+butt_h+10 + (butt_h/2+4 + 10) * 9,
+                                w = obj.sections[49].w-85,
+                                h = butt_h/2+8}                           
+      obj.sections[918] = {x = obj.sections[49].x+75,
+                          y = obj.sections[49].y+butt_h+10 + (butt_h/2+4 + 10) * 10,
+                          w = obj.sections[49].w-125,
+                          h = butt_h/2+8}   
+                                           
       --SNAPSHOTS
       local ssh = snaph-160
       obj.sections[160] = {}
@@ -2692,6 +2702,8 @@
                                           gmult = 0.5,
                                           bmult = 0.5,
                                           alpha = 1,
+                      stretchmode = 1,
+                                          edgesz = 8,
                                          }
       elseif type == gfxtype.txt then
         local x,y
@@ -5958,20 +5970,6 @@
               
               local yoff = 0
               local xoff = 0
-              if not surface_size.limit then
-                if x+sw > obj.sections[10].x + obj.sections[10].w then
-                  sw = obj.sections[10].x + obj.sections[10].w - x
-                end
-                if x < obj.sections[10].x then
-                  xoff = obj.sections[10].x - x
-                end
-                if y+sh > obj.sections[10].y + obj.sections[10].h then
-                  sh = obj.sections[10].y + obj.sections[10].h - y
-                end
-                if y < obj.sections[10].y then
-                  yoff = obj.sections[10].y - y
-                end
-              end
               
               if (gfxx.bright and gfxx.bright ~= 0.5) or (gfxx.contr and gfxx.contr ~= 0.5) 
                  or (gfxx.rmult and gfxx.rmult ~= 0.5) or (gfxx.gmult and gfxx.gmult ~= 0.5) or (gfxx.bmult and gfxx.bmult ~= 0.5) 
@@ -6010,13 +6008,47 @@
                 gfx.setimgdim(iidx, -1, -1)
                 gfx.setimgdim(iidx, sw, sh)
                 gfx.dest = iidx
-                gfx.blit(imageidx,1,0, xoff, yoff, w, h-yoff, 0, 0, sw, sh)
+                if gfxx.stretchmode == 1 then
+                  gfx.blit(imageidx,1,0, xoff, yoff, w, h-yoff, 0, 0, sw, sh)
+                else
+                  local edge = gfxx.edgesz
+                  --corners
+                  gfx.blit(imageidx,1,0, 0, 0, edge, edge, 0, 0)
+                  gfx.blit(imageidx,1,0, w-edge, 0, edge, edge, sw-edge, 0)
+                  gfx.blit(imageidx,1,0, w-edge, h-edge, edge, edge, sw-edge, sh-edge)
+                  gfx.blit(imageidx,1,0, 0, h-edge, edge, edge, 0, sh-edge)
+                  --sides
+                  gfx.blit(imageidx,1,0, edge, 0, w-edge-edge, edge, edge, 0, sw-edge-edge, edge)
+                  gfx.blit(imageidx,1,0, w-edge, edge, edge, h-edge-edge, sw-edge, edge, edge, sh-edge-edge)
+                  gfx.blit(imageidx,1,0, edge, h-edge, w-edge-edge, edge, edge, sh-edge, sw-edge-edge, edge)
+                  gfx.blit(imageidx,1,0, 0, edge, edge, h-edge-edge, 0, edge, edge, sh-edge-edge)
+                  --middle
+                  gfx.blit(imageidx,1,0, edge, edge, w-edge-edge, h-edge-edge, edge, edge, sw-edge-edge, sh-edge-edge)                  
+                end
+                
                 gfx.muladdrect(0,0,sw,sh,bc*mr,bc*mg,bc*mb,1,ba,ba,ba)
                 gfx.dest = 1004
                 gfx.a = ma
                 gfx.blit(iidx,1,0, 0, 0, sw, sh, x+xoff, y+yoff)            
               else
-                gfx.blit(imageidx,1,0, xoff, yoff, w, h-yoff, x+xoff, y+yoff, sw, sh)            
+                --gfx.blit(imageidx,1,0, xoff, yoff, w, h-yoff, x+xoff, y+yoff, sw, sh)            
+                if gfxx.stretchmode == 1 then
+                  gfx.blit(imageidx,1,0, xoff, yoff, w, h-yoff, x+xoff, y+yoff, sw, sh)
+                else
+                  local edge = gfxx.edgesz
+                  --cornersh
+                  gfx.blit(imageidx,1,0, 0, 0, edge, edge, x+0, y+0)
+                  gfx.blit(imageidx,1,0, w-edge, 0, edge, edge, x+sw-edge, y+0)
+                  gfx.blit(imageidx,1,0, w-edge, h-edge, edge, edge, x+sw-edge, y+sh-edge)
+                  gfx.blit(imageidx,1,0, 0, h-edge, edge, edge, x+0, y+sh-edge)
+                  --sides
+                  gfx.blit(imageidx,1,0, edge, 0, w-edge-edge, edge, x+edge, y+0, sw-edge-edge, edge)
+                  gfx.blit(imageidx,1,0, w-edge, edge, edge, h-edge-edge, x+sw-edge, y+edge, edge, sh-edge-edge)
+                  gfx.blit(imageidx,1,0, edge, h-edge, w-edge-edge, edge, x+edge, y+sh-edge, sw-edge-edge, edge)
+                  gfx.blit(imageidx,1,0, 0, edge, edge, h-edge-edge, x+0, y+edge, edge, sh-edge-edge)
+                  --middle
+                  gfx.blit(imageidx,1,0, edge, edge, w-edge-edge, h-edge-edge, x+edge, y+edge, sw-edge-edge, sh-edge-edge)                  
+                end
               end
                           
             elseif gtype == gfxtype.txt then
@@ -6242,6 +6274,9 @@
     GUI_DrawSliderH(gui, 'A', obj.sections[916], gui.color.black, gui.color.white, F_limit(gfxa_select,0,1))
     GUI_DrawButton(gui, 'RESET', obj.sections[912], gui.color.white, gui.color.black, true)
 
+    GUI_DrawButton(gui, gfxstretch_table[gfxstretchmode_select], obj.sections[917], gui.color.white, gui.color.black, true, 'STRETCH')
+    GUI_DrawButton(gui, gfxedgesz_select, obj.sections[918], gui.color.white, gui.color.black, true, 'EDGE SIZE')
+  
   end
   
   ------------------------------------------------------------
@@ -7384,20 +7419,35 @@ end
     if strips and tracks[track_select] and strips[tracks[track_select].strip] and strips[tracks[track_select].strip][page] then
       if #strips[tracks[track_select].strip][page].controls > 0 then
         local i = ctl_select[1].ctl
-        local x = strips[tracks[track_select].strip][page].controls[i].x 
-        local y = strips[tracks[track_select].strip][page].controls[i].y
-        local w = strips[tracks[track_select].strip][page].controls[i].w
-        local h = strips[tracks[track_select].strip][page].controls[i].ctl_info.cellh
+        local ctl = strips[tracks[track_select].strip][page].controls[i]
+    
+        local x = ctl.x 
+        local y = ctl.y
+        local w = ctl.w
+        local h = ctl.ctl_info.cellh
+        
+        local xsc = ctl.xsc 
+        local ysc = ctl.ysc
+        local wsc = ctl.wsc
+        local hsc = ctl.hsc
+        
         local rx, ry = x+w, y+h
+        local rxsc, rysc = xsc+wsc, ysc+hsc
+
         if #ctl_select > 1 then
           for i = 2, #ctl_select do
             j = ctl_select[i].ctl
+            local ctlj = strips[tracks[track_select].strip][page].controls[j]
     
-            x = math.min(x, strips[tracks[track_select].strip][page].controls[j].x)
-            y = math.min(y, strips[tracks[track_select].strip][page].controls[j].y)
-            rx = math.max(rx, strips[tracks[track_select].strip][page].controls[j].x + strips[tracks[track_select].strip][page].controls[j].w)
-            ry = math.max(ry, strips[tracks[track_select].strip][page].controls[j].y + strips[tracks[track_select].strip][page].controls[j].ctl_info.cellh)
-            
+            x = math.min(x, ctlj.x)
+            y = math.min(y, ctlj.y)
+            rx = math.max(rx, ctlj.x + ctlj.w)
+            ry = math.max(ry, ctlj.y + ctlj.ctl_info.cellh)
+            xsc = math.min(xsc, ctlj.xsc)
+            ysc = math.min(ysc, ctlj.ysc)
+            rxsc = math.max(rxsc, ctlj.xsc + ctlj.wsc)
+            rysc = math.max(rysc, ctlj.ysc + ctlj.hsc)
+      
           end
         end
         if gfx3_select and #gfx3_select > 0 then
@@ -7413,7 +7463,8 @@ end
         end
 
         local selrect = {x = x, y = y, w = rx-x, h = ry-y}
-        return selrect
+        local selrect_sc = {x = xsc, y = ysc, w = rxsc-xsc, h = rysc-ysc}
+        return selrect, selrect_sc
       end
     end
     
@@ -9996,10 +10047,10 @@ end
                  strips[tracks[track_select].strip][page].controls[cx].ctlcat == ctlcats.tracksend or 
                  strips[tracks[track_select].strip][page].controls[cx].ctlcat == ctlcats.fxoffline then 
 
-                local x = strips[tracks[track_select].strip][page].controls[cx].x+4
-                local y = strips[tracks[track_select].strip][page].controls[cx].y+4
-                local w = strips[tracks[track_select].strip][page].controls[cx].w-8
-                local h = strips[tracks[track_select].strip][page].controls[cx].ctl_info.cellh-8
+                local x = strips[tracks[track_select].strip][page].controls[cx].xsc+4
+                local y = strips[tracks[track_select].strip][page].controls[cx].ysc+4
+                local w = strips[tracks[track_select].strip][page].controls[cx].wsc-8
+                local h = strips[tracks[track_select].strip][page].controls[cx].hsc-8
                 x=x-surface_offset.x+obj.sections[10].x
                 y=y-surface_offset.y+obj.sections[10].y
                 gfx.line(x,y,x+ls,y,1)
@@ -10188,7 +10239,7 @@ end
                             obj.sections[10].y)
           --gfx.blit(1001,1,0,0,0,obj.sections[43].w,obj.sections[43].h,0,butt_h+2)
           if ctl_select ~= nil then
-            selrect = CalcSelRect()
+            selrect, selrect_sc = CalcSelRect()
             if dragctl ~= nil then 
               local x, y = selrect.x - surface_offset.x + obj.sections[10].x -b_sz, selrect.y - surface_offset.y + obj.sections[10].y-b_sz
               local w, h = gfx.getimgdim(1022)
@@ -10218,10 +10269,10 @@ end
               local ls = 4
               for c = 1, #ctl_select do
                 local cx = ctl_select[c].ctl
-                local x = strips[tracks[track_select].strip][page].controls[cx].x+4
-                local y = strips[tracks[track_select].strip][page].controls[cx].y+4
-                local w = strips[tracks[track_select].strip][page].controls[cx].w-8
-                local h = strips[tracks[track_select].strip][page].controls[cx].ctl_info.cellh-8
+                local x = strips[tracks[track_select].strip][page].controls[cx].xsc+4
+                local y = strips[tracks[track_select].strip][page].controls[cx].ysc+4
+                local w = strips[tracks[track_select].strip][page].controls[cx].wsc-8
+                local h = strips[tracks[track_select].strip][page].controls[cx].hsc-8
                 x=x-surface_offset.x+obj.sections[10].x
                 y=y-surface_offset.y+obj.sections[10].y
                 gfx.line(x,y,x+ls,y,1)
@@ -10264,7 +10315,7 @@ end
                             
               gfx.a = 1
               f_Get_SSV(gui.color.yellow)
-              gfx.roundrect(selrect.x - surface_offset.x + obj.sections[10].x, selrect.y - surface_offset.y + obj.sections[10].y, selrect.w, selrect.h, 8, 1, 0)
+              gfx.roundrect(selrect_sc.x - surface_offset.x + obj.sections[10].x, selrect_sc.y - surface_offset.y + obj.sections[10].y, selrect_sc.w, selrect_sc.h, 8, 1, 0)
             end
           end
                     
@@ -12668,8 +12719,8 @@ end
         for i = 1, #strips[tracks[track_select].strip][page].controls do
           local ctl
           local cctl = strips[tracks[track_select].strip][page].controls[i]
-          ctl = {x = cctl.x - surface_offset.x + obj.sections[10].x,
-                     y = cctl.y - surface_offset.y + obj.sections[10].y,
+          ctl = {x = cctl.xsc - surface_offset.x + obj.sections[10].x,
+                     y = cctl.ysc - surface_offset.y + obj.sections[10].y,
                      w = cctl.wsc,
                      h = cctl.hsc}
           if ((l.l <= ctl.x and l.r >= ctl.x+ctl.w) or (l.l <= ctl.x+ctl.w and l.r >= ctl.x)) and ((l.t <= ctl.y and l.b >= ctl.y+ctl.h) or (l.t <= ctl.y+ctl.h and l.b >= ctl.y)) then 
@@ -13783,7 +13834,18 @@ end
           end
         
         end
-      
+        
+        local gfx = stripdata.strip.graphics
+        if gfx and #gfx > 0 then
+        
+          for g = 1, #gfx do
+        
+            if gfx[g].stretchmode == nil then gfx[g].stretchmode = 1 end
+            if gfx[g].edgesz == nil then gfx[g].edgesz = 8 end              
+        
+          end
+        end
+        
       end
     else
       OpenMsgBox(1,'File not found.',1)
@@ -13855,10 +13917,21 @@ end
               gfx.setfont(1, ctls[c].font, gui.fontsz_knob + ctls[c].textsize-4)
               local _, th = gfx.measurestr('|')
               ctls[c].textoff = ctls[c].textoff - math.floor(th/2)
+              
             end
           
           end
+
+          local gfx = stripdata.strip.graphics
+          if gfx and #gfx > 0 then
+          
+            for g = 1, #gfx do
         
+              if gfx[g].stretchmode == nil then gfx[g].stretchmode = 1 end
+              if gfx[g].edgesz == nil then gfx[g].edgesz = 8 end              
+        
+            end
+          end
         end
       end
     else
@@ -14582,13 +14655,48 @@ end
                 gfx.setimgdim(iidx, sw, sh)
                 gfx.dest = iidx
                 gfx.a = 1
-                gfx.blit(imageidx,1,0, 0, 0, w, h, 0, 0, sw, sh)
+                --gfx.blit(imageidx,1,0, 0, 0, w, h, 0, 0, sw, sh)
+                if gfxx.stretchmode == 1 then
+                  gfx.blit(imageidx,1,0, 0, 0, w, h, 0, 0, sw, sh)
+                else
+                  local edge = gfxx.edgesz
+                  --corners
+                  gfx.blit(imageidx,1,0, 0, 0, edge, edge, 0, 0)
+                  gfx.blit(imageidx,1,0, w-edge, 0, edge, edge, sw-edge, 0)
+                  gfx.blit(imageidx,1,0, w-edge, h-edge, edge, edge, sw-edge, sh-edge)
+                  gfx.blit(imageidx,1,0, 0, h-edge, edge, edge, 0, sh-edge)
+                  --sides
+                  gfx.blit(imageidx,1,0, edge, 0, w-edge-edge, edge, edge, 0, sw-edge-edge, edge)
+                  gfx.blit(imageidx,1,0, w-edge, edge, edge, h-edge-edge, sw-edge, edge, edge, sh-edge-edge)
+                  gfx.blit(imageidx,1,0, edge, h-edge, w-edge-edge, edge, edge, sh-edge, sw-edge-edge, edge)
+                  gfx.blit(imageidx,1,0, 0, edge, edge, h-edge-edge, 0, edge, edge, sh-edge-edge)
+                  --middle
+                  gfx.blit(imageidx,1,0, edge, edge, w-edge-edge, h-edge-edge, edge, edge, sw-edge-edge, sh-edge-edge)                  
+                end
+                
                 gfx.muladdrect(0,0,sw,sh,bc*mr,bc*mg,bc*mb,1,ba,ba,ba)
                 gfx.dest = 1022
                 gfx.a = ma
                 gfx.blit(iidx,1,0, 0, 0, sw, sh, x, y)            
               else
-                gfx.blit(imageidx,1,0, 0, 0, w, h, x, y, sw, sh)
+                --gfx.blit(imageidx,1,0, 0, 0, w, h, x, y, sw, sh)
+                if gfxx.stretchmode == 1 then
+                  gfx.blit(imageidx,1,0, 0, 0, w, h, x, y, sw, sh)
+                else
+                  local edge = gfxx.edgesz
+                  --corners
+                  gfx.blit(imageidx,1,0, 0, 0, edge, edge, x+0, y+0)
+                  gfx.blit(imageidx,1,0, w-edge, 0, edge, edge, x+sw-edge, y+0)
+                  gfx.blit(imageidx,1,0, w-edge, h-edge, edge, edge, x+sw-edge, y+sh-edge)
+                  gfx.blit(imageidx,1,0, 0, h-edge, edge, edge, x+0, y+sh-edge)
+                  --sides
+                  gfx.blit(imageidx,1,0, edge, 0, w-edge-edge, edge, x+edge, y+0, sw-edge-edge, edge)
+                  gfx.blit(imageidx,1,0, w-edge, edge, edge, h-edge-edge, x+sw-edge, y+edge, edge, sh-edge-edge)
+                  gfx.blit(imageidx,1,0, edge, h-edge, w-edge-edge, edge, x+edge, y+sh-edge, sw-edge-edge, edge)
+                  gfx.blit(imageidx,1,0, 0, edge, edge, h-edge-edge, x+0, y+edge, edge, sh-edge-edge)
+                  --middle
+                  gfx.blit(imageidx,1,0, edge, edge, w-edge-edge, h-edge-edge, x+edge, y+edge, sw-edge-edge, sh-edge-edge)                  
+                end
               end
             
             elseif gfxx.gfxtype == gfxtype.txt then
@@ -14738,7 +14846,7 @@ end
       local i = gfx2_select
       local gfxx = strips[strip][page].graphics[i]
       if nz(strips[strip][page].graphics[i].gfxtype, gfxtype.img) == gfxtype.img then
-
+      
         local x = gfxx.x+offsetx 
         local y = gfxx.y+offsety
         local w = gfxx.w
@@ -14787,14 +14895,49 @@ end
           gfx.setimgdim(iidx, sw, sh)
           gfx.dest = iidx
           gfx.a = 1
-          gfx.blit(imageidx,1,0, 0, 0, w, h, 0, 0, sw, sh)
+          --gfx.blit(imageidx,1,0, 0, 0, w, h, 0, 0, sw, sh)
+          if gfxx.stretchmode == 1 then
+            gfx.blit(imageidx,1,0, 0, 0, w, h, 0, 0, sw, sh)
+          else
+            local edge = gfxx.edgesz
+            --corners
+            gfx.blit(imageidx,1,0, 0, 0, edge, edge, 0, 0)
+            gfx.blit(imageidx,1,0, w-edge, 0, edge, edge, sw-edge, 0)
+            gfx.blit(imageidx,1,0, w-edge, h-edge, edge, edge, sw-edge, sh-edge)
+            gfx.blit(imageidx,1,0, 0, h-edge, edge, edge, 0, sh-edge)
+            --sides
+            gfx.blit(imageidx,1,0, edge, 0, w-edge-edge, edge, edge, 0, sw-edge-edge, edge)
+            gfx.blit(imageidx,1,0, w-edge, edge, edge, h-edge-edge, sw-edge, edge, edge, sh-edge-edge)
+            gfx.blit(imageidx,1,0, edge, h-edge, w-edge-edge, edge, edge, sh-edge, sw-edge-edge, edge)
+            gfx.blit(imageidx,1,0, 0, edge, edge, h-edge-edge, 0, edge, edge, sh-edge-edge)
+            --middle
+            gfx.blit(imageidx,1,0, edge, edge, w-edge-edge, h-edge-edge, edge, edge, sw-edge-edge, sh-edge-edge)                  
+          end
+          
           gfx.muladdrect(0,0,sw,sh,bc*mr,bc*mg,bc*mb,1,ba,ba,ba)
           gfx.dest = 1022
           gfx.a = 0.8*ma
           gfx.blit(iidx,1,0, 0, 0, sw, sh, x, y)            
         else
           gfx.a = 0.8
-          gfx.blit(imageidx,1,0, 0, 0, w, h, x, y, sw, sh)
+          --gfx.blit(imageidx,1,0, 0, 0, w, h, x, y, sw, sh)
+          if gfxx.stretchmode == 1 then
+            gfx.blit(imageidx,1,0, 0, 0, w, h, x, y, sw, sh)
+          else
+            local edge = gfxx.edgesz
+            --cornersh
+            gfx.blit(imageidx,1,0, 0, 0, edge, edge, x+0, y+0)
+            gfx.blit(imageidx,1,0, w-edge, 0, edge, edge, x+sw-edge, y+0)
+            gfx.blit(imageidx,1,0, w-edge, h-edge, edge, edge, x+sw-edge, y+sh-edge)
+            gfx.blit(imageidx,1,0, 0, h-edge, edge, edge, x+0, y+sh-edge)
+            --sides
+            gfx.blit(imageidx,1,0, edge, 0, w-edge-edge, edge, x+edge, y+0, sw-edge-edge, edge)
+            gfx.blit(imageidx,1,0, w-edge, edge, edge, h-edge-edge, x+sw-edge, y+edge, edge, sh-edge-edge)
+            gfx.blit(imageidx,1,0, edge, h-edge, w-edge-edge, edge, x+edge, y+sh-edge, sw-edge-edge, edge)
+            gfx.blit(imageidx,1,0, 0, edge, edge, h-edge-edge, x+0, y+edge, edge, sh-edge-edge)
+            --middle
+            gfx.blit(imageidx,1,0, edge, edge, w-edge-edge, h-edge-edge, x+edge, y+edge, sw-edge-edge, sh-edge-edge)                  
+          end
         end
       
       elseif gfxx.gfxtype == gfxtype.txt then
@@ -14891,7 +15034,7 @@ end
           local hidden = Switcher_CtlsHidden(gfxx.switcher, gfxx.grpid)          
           if hidden == false then
             if nz(gfxx.gfxtype, gfxtype.img) == gfxtype.img then
-  
+              
               local x = gfxx.x+offsetx 
               local y = gfxx.y+offsety
               local w = gfxx.w
@@ -14941,14 +15084,51 @@ end
                 gfx.setimgdim(iidx, sw, sh)
                 gfx.dest = iidx
                 gfx.a = 1
-                gfx.blit(imageidx,1,0, 0, 0, w, h, 0, 0, sw, sh)
+                --gfx.blit(imageidx,1,0, 0, 0, w, h, 0, 0, sw, sh)
+                if gfxx.stretchmode == 1 then
+                  gfx.blit(imageidx,1,0, 0, 0, w, h, 0, 0, sw, sh)
+                else
+                  local edge = gfxx.edgesz
+                  --corners
+                  gfx.blit(imageidx,1,0, 0, 0, edge, edge, 0, 0)
+                  gfx.blit(imageidx,1,0, w-edge, 0, edge, edge, sw-edge, 0)
+                  gfx.blit(imageidx,1,0, w-edge, h-edge, edge, edge, sw-edge, sh-edge)
+                  gfx.blit(imageidx,1,0, 0, h-edge, edge, edge, 0, sh-edge)
+                  --sides
+                  gfx.blit(imageidx,1,0, edge, 0, w-edge-edge, edge, edge, 0, sw-edge-edge, edge)
+                  gfx.blit(imageidx,1,0, w-edge, edge, edge, h-edge-edge, sw-edge, edge, edge, sh-edge-edge)
+                  gfx.blit(imageidx,1,0, edge, h-edge, w-edge-edge, edge, edge, sh-edge, sw-edge-edge, edge)
+                  gfx.blit(imageidx,1,0, 0, edge, edge, h-edge-edge, 0, edge, edge, sh-edge-edge)
+                  --middle
+                  gfx.blit(imageidx,1,0, edge, edge, w-edge-edge, h-edge-edge, edge, edge, sw-edge-edge, sh-edge-edge)                  
+                end
+                
                 gfx.muladdrect(0,0,sw,sh,bc*mr,bc*mg,bc*mb,1,ba,ba,ba)
                 gfx.dest = 1022
                 gfx.a = 0.3*ma
                 gfx.blit(iidx,1,0, 0, 0, sw, sh, x+b_sz, y+b_sz)            
               else
                 gfx.a = 0.3
-                gfx.blit(imageidx,1,0, 0, 0, w, h, x+b_sz, y+b_sz, sw, sh)
+                --gfx.blit(imageidx,1,0, 0, 0, w, h, x+b_sz, y+b_sz, sw, sh)
+                if gfxx.stretchmode == 1 then
+                  gfx.blit(imageidx,1,0, 0, 0, w, h, x+b_sz, y+b_sz, sw, sh)
+                else
+                  local edge = gfxx.edgesz
+                  --corners
+                  x=x+b_sz
+                  y=y+b_sz
+                  gfx.blit(imageidx,1,0, 0, 0, edge, edge, x, y+0)
+                  gfx.blit(imageidx,1,0, w-edge, 0, edge, edge, x+sw-edge, y+0)
+                  gfx.blit(imageidx,1,0, w-edge, h-edge, edge, edge, x+sw-edge, y+sh-edge)
+                  gfx.blit(imageidx,1,0, 0, h-edge, edge, edge, x+0, y+sh-edge)
+                  --sides
+                  gfx.blit(imageidx,1,0, edge, 0, w-edge-edge, edge, x+edge, y+0, sw-edge-edge, edge)
+                  gfx.blit(imageidx,1,0, w-edge, edge, edge, h-edge-edge, x+sw-edge, y+edge, edge, sh-edge-edge)
+                  gfx.blit(imageidx,1,0, edge, h-edge, w-edge-edge, edge, x+edge, y+sh-edge, sw-edge-edge, edge)
+                  gfx.blit(imageidx,1,0, 0, edge, edge, h-edge-edge, x+0, y+edge, edge, sh-edge-edge)
+                  --middle
+                  gfx.blit(imageidx,1,0, edge, edge, w-edge-edge, h-edge-edge, x+edge, y+edge, sw-edge-edge, sh-edge-edge)                  
+                end
               end
               
             elseif gfxx.gfxtype == gfxtype.txt then
@@ -15980,6 +16160,10 @@ end
   
   function GFXMenu()
     local mstr
+    local gp = 'Paste'
+    if gfx_clip == nil then
+      gp = '#'.. gp
+    end
     if gfx2_select then
       local mm = '#Copy formatting|#Paste formatting'
       if strips[tracks[track_select].strip][page].graphics[gfx2_select].gfxtype == gfxtype.txt then
@@ -15989,9 +16173,9 @@ end
       if nz(strips[tracks[track_select].strip][page].graphics[gfx2_select].poslock,false) == true then
         mm2 = '!'..mm2
       end
-      mstr = 'Move up|Move down|Bring to front|Send to back||Insert label||'..mm..'||'..mm2..'||Delete'
+      mstr = 'Move up|Move down|Bring to front|Send to back||Insert label||'..mm..'||'..mm2..'||Delete||Copy|'..gp
     else
-      mstr = '#Move up|#Move down|#Bring to front|#Send to back||Insert label||#Copy formatting|#Paste formatting||#Lock position||#Delete'    
+      mstr = '#Move up|#Move down|#Bring to front|#Send to back||Insert label||#Copy formatting|#Paste formatting||#Lock position||#Delete|#Copy'..gp    
     end
     gfx.x, gfx.y = mouse.mx, mouse.my
     local mx, my = mouse.mx, mouse.my
@@ -16089,6 +16273,17 @@ end
       elseif res == 9 then
         DeleteSelectedCtls()
         update_gfx = true
+      elseif res == 10 then
+        gfx_clip = GetGraphicsTable(tracks[track_select].strip, page, gfx2_select)
+      elseif res == 11 then
+        if gfx_clip then
+          local gfxx = strips[tracks[track_select].strip][page].graphics
+          local gcnt = #gfxx+1
+          gfxx[gcnt] = GetGraphicsTable(_,_,_, gfx_clip)
+          gfxx[gcnt].x = (mouse.mx+surface_offset.x-obj.sections[10].x)
+          gfxx[gcnt].y = (mouse.my+surface_offset.y-obj.sections[10].y)          
+          update_gfx = true
+        end  
       end
     end
     update_gfx = true    
@@ -18126,6 +18321,8 @@ end
     gfxg_select = nz(strips[tracks[track_select].strip][page].graphics[gfx2_select].gmult,0.5)
     gfxb_select = nz(strips[tracks[track_select].strip][page].graphics[gfx2_select].bmult,0.5)
     gfxa_select = nz(strips[tracks[track_select].strip][page].graphics[gfx2_select].alpha,1)    
+    gfxstretchmode_select = nz(strips[tracks[track_select].strip][page].graphics[gfx2_select].stretchmode,1)
+    gfxedgesz_select = nz(strips[tracks[track_select].strip][page].graphics[gfx2_select].edgesz,8)
   end
     
   function GetValFromDVal(c, dv, checkov)
@@ -19424,8 +19621,14 @@ end
       end
       if gfx2_select then
         if strips[tracks[track_select].strip][page].graphics[gfx2_select].poslock == false then
-          strips[tracks[track_select].strip][page].graphics[gfx2_select].x = 
-                        strips[tracks[track_select].strip][page].graphics[gfx2_select].x - shiftsize
+        
+          if submode == 1 and mouse.ctrl then
+            strips[tracks[track_select].strip][page].graphics[gfx2_select].stretchw = 
+                          strips[tracks[track_select].strip][page].graphics[gfx2_select].stretchw - shiftsize          
+          else
+            strips[tracks[track_select].strip][page].graphics[gfx2_select].x = 
+                          strips[tracks[track_select].strip][page].graphics[gfx2_select].x - shiftsize
+          end        
         end
       end
       update_gfx = true
@@ -19452,8 +19655,14 @@ end
       end
       if gfx2_select then
         if strips[tracks[track_select].strip][page].graphics[gfx2_select].poslock == false then
-          strips[tracks[track_select].strip][page].graphics[gfx2_select].x = 
-                        strips[tracks[track_select].strip][page].graphics[gfx2_select].x + shiftsize
+
+          if submode == 1 and mouse.ctrl then
+            strips[tracks[track_select].strip][page].graphics[gfx2_select].stretchw = 
+                          strips[tracks[track_select].strip][page].graphics[gfx2_select].stretchw + shiftsize          
+          else
+            strips[tracks[track_select].strip][page].graphics[gfx2_select].x = 
+                          strips[tracks[track_select].strip][page].graphics[gfx2_select].x + shiftsize
+          end
         end
       end
       update_gfx = true
@@ -19480,8 +19689,15 @@ end
       end
       if gfx2_select then
         if strips[tracks[track_select].strip][page].graphics[gfx2_select].poslock == false then
-          strips[tracks[track_select].strip][page].graphics[gfx2_select].y = 
-                        strips[tracks[track_select].strip][page].graphics[gfx2_select].y - shiftsize
+
+          if submode == 1 and mouse.ctrl then
+            strips[tracks[track_select].strip][page].graphics[gfx2_select].stretchh = 
+                          strips[tracks[track_select].strip][page].graphics[gfx2_select].stretchh - shiftsize          
+          else
+            strips[tracks[track_select].strip][page].graphics[gfx2_select].y = 
+                          strips[tracks[track_select].strip][page].graphics[gfx2_select].y - shiftsize
+          end
+          
         end
       end
       update_gfx = true
@@ -19508,8 +19724,15 @@ end
       end
       if gfx2_select then
         if strips[tracks[track_select].strip][page].graphics[gfx2_select].poslock == false then
-          strips[tracks[track_select].strip][page].graphics[gfx2_select].y = 
-                        strips[tracks[track_select].strip][page].graphics[gfx2_select].y + shiftsize
+
+          if submode == 1 and mouse.ctrl then
+            strips[tracks[track_select].strip][page].graphics[gfx2_select].stretchh = 
+                          strips[tracks[track_select].strip][page].graphics[gfx2_select].stretchh + shiftsize          
+          else
+            strips[tracks[track_select].strip][page].graphics[gfx2_select].y = 
+                          strips[tracks[track_select].strip][page].graphics[gfx2_select].y + shiftsize
+          end
+          
         end
       end
       update_gfx = true                
@@ -24854,6 +25077,12 @@ end
         strips[tracks[track_select].strip][page].graphics[gfx2_select].amult = gfxa_select
         update_gfx = true
       
+      elseif mouse.context == nil and MOUSE_click(obj.sections[917]) then 
+            
+        gfxstretchmode_select = math.max(((gfxstretchmode_select + 1) % (#gfxstretch_table+1)),1)
+        strips[tracks[track_select].strip][page].graphics[gfx2_select].stretchmode = gfxstretchmode_select
+        update_gfx = true
+
       end
       
       if mouse.context == nil and MOUSE_click(obj.sections[910]) then mouse.context = contexts.gfxopt_bright 
@@ -24861,7 +25090,17 @@ end
       elseif mouse.context == nil and MOUSE_click(obj.sections[913]) then mouse.context = contexts.gfxopt_r
       elseif mouse.context == nil and MOUSE_click(obj.sections[914]) then mouse.context = contexts.gfxopt_g
       elseif mouse.context == nil and MOUSE_click(obj.sections[915]) then mouse.context = contexts.gfxopt_b
-      elseif mouse.context == nil and MOUSE_click(obj.sections[916]) then mouse.context = contexts.gfxopt_a end
+      elseif mouse.context == nil and MOUSE_click(obj.sections[916]) then mouse.context = contexts.gfxopt_a
+      elseif mouse.context == nil and MOUSE_click(obj.sections[918]) then 
+
+        mouse.context = contexts.gfxopt_edge
+        gfxedgesz_select = F_limit(gfxedgesz_select + 1,0,127)
+        strips[tracks[track_select].strip][page].graphics[gfx2_select].edgesz = gfxedgesz_select
+        
+        draggfxedge = {pos = gfxedgesz_select, yoff = mouse.my-obj.sections[918].y}
+        update_bg = true
+        update_gfx = true
+      end
     
     end
   
@@ -24944,6 +25183,16 @@ end
       if val ~= nil then
         gfxa_select = val
         strips[tracks[track_select].strip][page].graphics[gfx2_select].alpha = gfxa_select
+        update_gfx = true
+      end
+      
+    elseif mouse.context and mouse.context == contexts.gfxopt_edge then
+      local v = MOUSE_sliderX(obj.sections[918], -draggfxedge.yoff)
+      if v then
+        v=v-0.5
+        gfxedgesz_select = F_limit(math.floor(draggfxedge.pos - v*96),0,127)
+        strips[tracks[track_select].strip][page].graphics[gfx2_select].edgesz = gfxedgesz_select
+        update_bg = true
         update_gfx = true
       end
     end
@@ -31175,34 +31424,46 @@ end
     
   end
   
-  function GetGraphicsTable(strip, page, c)
+  function GetGraphicsTable(strip, page, c, obj)
 
-    local tbl = {gfxtype = strips[strip][page].graphics[c].gfxtype,
-                 fn = strips[strip][page].graphics[c].fn,
-                 imageidx = strips[strip][page].graphics[c].imageidx,
-                 x = strips[strip][page].graphics[c].x,
-                 y = strips[strip][page].graphics[c].y,
-                 w = strips[strip][page].graphics[c].w,
-                 h = strips[strip][page].graphics[c].h,
-                 scale = strips[strip][page].graphics[c].scale,
-                 stretchw = strips[strip][page].graphics[c].stretchw,
-                 stretchh = strips[strip][page].graphics[c].stretchh,
-                 switcher = strips[strip][page].graphics[c].switcher,
-                 grpid = strips[strip][page].graphics[c].grpid,
-                 font = {idx = strips[strip][page].graphics[c].font.idx,
-                         name = strips[strip][page].graphics[c].font.name,
-                         size = strips[strip][page].graphics[c].font.size,
-                         bold = strips[strip][page].graphics[c].font.bold,
-                         italics = strips[strip][page].graphics[c].font.italics,
-                         underline = strips[strip][page].graphics[c].font.underline,
-                         shadow = strips[strip][page].graphics[c].font.shadow,
-                         shadow_x = strips[strip][page].graphics[c].font.shadow_x,
-                         shadow_y = strips[strip][page].graphics[c].font.shadow_y,
-                         shadow_a = strips[strip][page].graphics[c].font.shadow_a
+    if obj == nil then
+      obj = strips[strip][page].graphics[c]
+    end
+    
+    local tbl = {gfxtype = obj.gfxtype,
+                 fn = obj.fn,
+                 imageidx = obj.imageidx,
+                 x = obj.x,
+                 y = obj.y,
+                 w = obj.w,
+                 h = obj.h,
+                 scale = obj.scale,
+                 stretchw = obj.stretchw,
+                 stretchh = obj.stretchh,
+                 switcher = obj.switcher,
+                 grpid = obj.grpid,
+                 font = {idx = obj.font.idx,
+                         name = obj.font.name,
+                         size = obj.font.size,
+                         bold = obj.font.bold,
+                         italics = obj.font.italics,
+                         underline = obj.font.underline,
+                         shadow = obj.font.shadow,
+                         shadow_x = obj.font.shadow_x,
+                         shadow_y = obj.font.shadow_y,
+                         shadow_a = obj.font.shadow_a
                          },
-                 text = strips[strip][page].graphics[c].text,
-                 text_col = strips[strip][page].graphics[c].text_col,
-                 poslock = false
+                 text = obj.text,
+                 text_col = obj.text_col,
+                 poslock = false,
+                 bright = obj.bright,
+                 contr = obj.contr,
+                 rmult = obj.rmult,
+                 gmult = obj.gmult,
+                 bmult = obj.bmult,
+                 alpha = obj.alpha,
+                 stretchmode = obj.stretchmode,
+                 edgesz = obj.edgesz,
                  }
     return tbl
 
@@ -32085,6 +32346,8 @@ end
                                     gmult = tonumber(zn(data[key..'gmult'],0.5)),
                                     bmult = tonumber(zn(data[key..'bmult'],0.5)),
                                     alpha = tonumber(zn(data[key..'alpha'],1)),
+                                    stretchmode = tonumber(zn(data[key..'stretchmode'],1)),
+                                    edgesz = tonumber(zn(data[key..'edgesz'],8)),
                                    }
         strip.graphics[g].stretchw = tonumber(zn(data[key..'stretchw'],strip.graphics[g].w))
         strip.graphics[g].stretchh = tonumber(zn(data[key..'stretchh'],strip.graphics[g].h))
@@ -34385,7 +34648,9 @@ end
               file:write('['..key..'gmult]'..tostring(nz(stripdata.graphics[g].gmult,0.5))..'\n')
               file:write('['..key..'bmult]'..tostring(nz(stripdata.graphics[g].bmult,0.5))..'\n')
               file:write('['..key..'alpha]'..tostring(nz(stripdata.graphics[g].alpha,1))..'\n')
-            
+              file:write('['..key..'stretchmode]'..tostring(nz(stripdata.graphics[g].stretchmode,1))..'\n')
+              file:write('['..key..'edgesz]'..tostring(nz(stripdata.graphics[g].edgesz,8))..'\n')
+              
             end
           end
       
@@ -36032,6 +36297,9 @@ end
                 if ctl.gmult == nil then ctl.gmult = 0.5 end      
                 if ctl.bmult == nil then ctl.bmult = 0.5 end      
                 if ctl.alpha == nil then ctl.alpha = 1 end      
+                                
+                if ctl.stretchmode == nil then ctl.stretchmode = 1 end
+                if ctl.edgesz == nil then ctl.edgesz = 8 end              
                 
                 if ctl.grpid then
                   if grids[ctl.grpid] then
@@ -36223,19 +36491,6 @@ end
                   end
                   break
                   
-                  --[[if graphics_files[j].fn == loaddata.stripdata[s][p].graphics[i].fn then
-                    if graphics_files[j].imageidx ~= nil then
-                      fnd = true
-                      loaddata.stripdata[s][p].graphics[i].imageidx = graphics_files[j].imageidx
-                    else
-                      fnd = true
-                      image_count_add = F_limit(image_count_add + 1,0,image_max)
-                      graphics_files[j].imageidx = image_count_add
-                      gfx.loadimg(image_count_add, graphics_path..loaddata.stripdata[s][p].graphics[i].fn)
-                      loaddata.stripdata[s][p].graphics[i].imageidx = image_count_add
-                    end
-                    break
-                  end]]
                 end
               end
               if not fnd then
@@ -36549,6 +36804,8 @@ end
     gfxg_select = 0.5
     gfxb_select = 0.5
     gfxa_select = 1
+    gfxstretchmode_select = 1
+    gfxedgesz_select = 8
     
     plist_w = 140
     oplist_w = 140
