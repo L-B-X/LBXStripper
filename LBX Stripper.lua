@@ -4316,14 +4316,16 @@
     else  
       tr = reaper.GetTrack(0, trn)
     end
-    local nchan = reaper.GetMediaTrackInfo_Value(tr, 'I_NCHAN')
-    special_offs = 1 --#special_table+1
-    for i = 0, nchan-1 do
-      special_table[i+special_offs] = 'Peak Meter Ch'..i+1
-      special_table[i+special_offs+nchan] = 'Clip Indicator Ch'..i+1
+    if tr then
+      local nchan = reaper.GetMediaTrackInfo_Value(tr, 'I_NCHAN')
+      special_offs = 1 --#special_table+1
+      for i = 0, nchan-1 do
+        special_table[i+special_offs] = 'Peak Meter Ch'..i+1
+        special_table[i+special_offs+nchan] = 'Clip Indicator Ch'..i+1
+      end
+      special_table_chans = nchan
     end
-    special_table_chans = nchan
-  
+      
   end
 
   -------------------------------------------------------
@@ -19161,20 +19163,21 @@ end
       if settings_followselectedtrack then
         --Select track
         local tr = GetTrack(track_select)
-        tracks[track_select].name = reaper.GetTrackState(tr)
-        
-        if tr ~= nil then
-          reaper.SetOnlyTrackSelected(tr)
-          reaper.SetTrackSelected(tr, true)
-        end
-      
+        if tr then
+          tracks[track_select].name = reaper.GetTrackState(tr)
+          
+          if tr ~= nil then
+            reaper.SetOnlyTrackSelected(tr)
+            reaper.SetTrackSelected(tr, true)
+          end
+        end      
       end
       
       CheckStripSends()
       PopulateTrackSendsInfo()
       PopulateSpecial()
       
-      if strips and strips[tracks[track_select].strip] then
+      if strips and tracks[track_select] and strips[tracks[track_select].strip] then
         page = strips[tracks[track_select].strip].page
         surface_offset.x = strips[tracks[track_select].strip][page].surface_x
         surface_offset.y = strips[tracks[track_select].strip][page].surface_y
@@ -37666,6 +37669,9 @@ end
       
       midimsg = true
       midimsgto = reaper.time_precise() + 0.1
+
+      --reaper.Main_OnCommand(40716,0)
+      --reaper.Main_OnCommand(40716,0)
       
     elseif miditab.osc then
       local vald = 0
@@ -37681,7 +37687,7 @@ end
       
       midimsg = true
       midimsgto = reaper.time_precise() + 0.1
-          
+                
     end
 
   end
@@ -37926,6 +37932,8 @@ end
   
   skin, ret = LoadSkin()
 
+  --os.execute('E:\\AutoHotkey\\SRD_Home_TouchScreen.ahk')
+
   --TestStuff()  
   --testchunkcopy(0,3)
 --testfxinsert()
@@ -37953,6 +37961,11 @@ end
     
     gfx.dock(dockstate)
   --test jsfx plug name in quotes
+
+    local startbat = resource_path..'\\lbxstart.bat'
+    if reaper.file_exists(startbat) then
+      os.execute(startbat)
+    end  
   
     run()
 
