@@ -23190,11 +23190,14 @@ end
             toffY = not toffY
             update_gfx = true
           elseif mouse.context == nil and MOUSE_click_RB(obj.sections[57]) then
-            defval_select = GetParamValue_Ctl(ctl_select[1].ctl)
-            for i = 1, #ctl_select do
-              strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].defval = GetParamValue_Ctl(ctl_select[i].ctl)
+            local dv = GetParamValue_Ctl(ctl_select[1].ctl)
+            if dv then
+              defval_select = dv
+              for i = 1, #ctl_select do
+                strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].defval = GetParamValue_Ctl(ctl_select[i].ctl)
+              end
+              update_ctlopts = true
             end
-            update_ctlopts = true
           elseif mouse.context == nil and MOUSE_click(obj.sections[51]) then
             --apply
             if ctl_files[knob_select].imageidx == nil then  
