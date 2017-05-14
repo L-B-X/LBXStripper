@@ -12623,6 +12623,9 @@ end
       
       elseif cc == ctlcats.fxoffline then
         SetFXOffline2(strip, page, trackfxparam_select, track, v)
+      elseif cc == ctlcats.midictl then
+        ctl.val = v
+        ctl.dirty = true
       end    
       if ctl.midiout then SendMIDIMsg(ctl.midiout,v) end
 
@@ -23177,7 +23180,9 @@ end
                                     mchan = 1,
                                     msg3 = 1,
                                     msg4 = 0,
-                                    osc = nil}
+                                    osc = nil,
+                                    vmin = 0,
+                                    vmax = 127}
                 end
                 show_midiout = true
                 update_gfx = true
@@ -26262,7 +26267,8 @@ end
                     if ctl.ctlcat == ctlcats.fxparam or 
                        ctl.ctlcat == ctlcats.trackparam or 
                        ctl.ctlcat == ctlcats.tracksend or 
-                       ctl.ctlcat == ctlcats.fxoffline then 
+                       ctl.ctlcat == ctlcats.fxoffline or
+                       ctl.ctlcat == ctlcats.midictl then 
                       local strip = tracks[track_select].strip
                       --Add / Remove
                       local ctlidx = GetSnapshotCtlIdx(strip, page, sstype_select, i)
@@ -26308,7 +26314,8 @@ end
             if strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.fxparam or 
                strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.trackparam or 
                strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.tracksend or 
-               strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.fxoffline then 
+               strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.fxoffline or 
+               strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.midictl then 
               --Add / Remove
               local ctlidx = GetSnapshotCtlIdx(strip, page, sstype_select, i)
               if ctlidx then
@@ -35968,7 +35975,8 @@ end
             if strips[strip][page].controls[c].ctlcat == ctlcats.fxparam or
                strips[strip][page].controls[c].ctlcat == ctlcats.trackparam or
                strips[strip][page].controls[c].ctlcat == ctlcats.tracksend or 
-               strips[strip][page].controls[c].ctlcat == ctlcats.fxoffline then
+               strips[strip][page].controls[c].ctlcat == ctlcats.fxoffline or 
+               strips[strip][page].controls[c].ctlcat == ctlcats.midictl then
               if strips[strip][page].controls[c].ctltype ~= 5 then
                 local track = GetTrack(nz(strips[strip][page].controls[c].tracknum,strips[strip].track.tracknum))
                 local cc = strips[strip][page].controls[c].ctlcat
