@@ -5110,6 +5110,22 @@
     return ret
     
   end
+
+  function CheckFavs()
+  
+    local cnt = #strip_favs
+    for i = 1, cnt do
+      local fn = strips_path..strip_favs[i]
+      if reaper.file_exists(fn) == false then
+        strip_favs[i] = nil
+        ret = true
+      end
+    end
+    if ret then
+      strip_favs = Table_RemoveNils(strip_favs, cnt)
+    end    
+    
+  end
   
   function GUI_DrawStripChooser(obj, gui)
 
@@ -32320,7 +32336,7 @@ end
           end
         end
       
-        if strip.controls[c].ctlcat == ctlcats.rcmswitch then
+        if strip.controls[c].ctlcat == ctlcats.rcm_switch then
           rcms = true
         end
       end
@@ -33823,6 +33839,8 @@ end
       file:close()
       
       strip_favs = unpickle(content)
+      
+      CheckFavs()
     end
   
   end
