@@ -31952,6 +31952,8 @@ end
     local ccnt = tonumber(data[key..'controls_count'])
     local gcnt = tonumber(data[key..'graphics_count'])
     
+    local rcms = false
+    
     if ccnt and ccnt > 0 then
       for c = 1, ccnt do
 
@@ -32317,8 +32319,16 @@ end
             strip.controls[c].ctl_info.imageidx = 1020
           end
         end
-        
+      
+        if strip.controls[c].ctlcat == ctlcats.rcmswitch then
+          rcms = true
+        end
       end
+    
+      if rcms == true then
+        RCM_Neb_UpdateProgIDs(strip.controls,false)
+      end
+        
     end
     
     if gcnt and gcnt > 0 then
@@ -36046,7 +36056,8 @@ end
               if strips[strip][page].controls[c].ctlcat == ctlcats.fxparam or
                  strips[strip][page].controls[c].ctlcat == ctlcats.trackparam or
                  strips[strip][page].controls[c].ctlcat == ctlcats.tracksend or 
-                 strips[strip][page].controls[c].ctlcat == ctlcats.fxoffline then
+                 strips[strip][page].controls[c].ctlcat == ctlcats.fxoffline or 
+                 strips[strip][page].controls[c].ctlcat == ctlcats.midictl then
                 if strips[strip][page].controls[c].ctltype ~= 5 then
                   local track = GetTrack(nz(strips[strip][page].controls[c].tracknum,strips[strip].track.tracknum))
                   local cc = strips[strip][page].controls[c].ctlcat
@@ -37775,7 +37786,9 @@ end
                 end
                 
               else
-                fail = fail + 1
+                if ctl.rcmdata[j].nebfn then
+                  fail = fail + 1
+                end
               end
             
             end
