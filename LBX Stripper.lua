@@ -29240,6 +29240,10 @@ end
                             ctl.dirty = true
                             ctl.cycledata.posdirty = true 
                             update_ctls = true
+    
+                            if ctl.midiout then
+                              SendMIDIMsg(ctl.midiout, ctl.val)
+                            end
                           end
                         else
                           if ctl.dval ~= v then
@@ -29251,6 +29255,10 @@ end
                               SetCtlEnabled(ctl.fxnum) 
                             end
                             update_ctls = true
+
+                            if ctl.midiout then
+                              SendMIDIMsg(ctl.midiout, ctl.val)
+                            end
                           end                      
                         end
                       else
@@ -29269,14 +29277,23 @@ end
                           ctl.dirty = true
                           ctl.cycledata.posdirty = true 
                           update_ctls = true
+
+                          if ctl.midiout then
+                            SendMIDIMsg(ctl.midiout, ctl.val)
+                          end                          
                         end
                       else
                         if ctl.val ~= v then
                           ctl.val = v
                           ctl.dirty = true
                           update_ctls = true
+
+                          if ctl.midiout then
+                            SendMIDIMsg(ctl.midiout, ctl.val)
+                          end
                         end
-                      end                    
+                      end
+                                          
                     elseif ctl.ctlcat == ctlcats.tracksend then
   
                       if settings_disablesendchecks == false and checksends == true then
@@ -29307,12 +29324,20 @@ end
                           ctl.dirty = true
                           ctl.cycledata.posdirty = true 
                           update_ctls = true                    
+
+                          if ctl.midiout then
+                            SendMIDIMsg(ctl.midiout, ctl.val)
+                          end
                         end
                       else
                         if ctl.val ~= v then
                           ctl.val = v
                           ctl.dirty = true
                           update_ctls = true
+
+                          if ctl.midiout then
+                            SendMIDIMsg(ctl.midiout, ctl.val)
+                          end
                         end
                       end
                     elseif ctl.ctlcat == ctlcats.pkmeter then
@@ -29337,6 +29362,10 @@ end
                           ctl.val = chd
                           ctl.dirty = true
                           update_ctls = true
+
+                          if ctl.midiout then
+                            SendMIDIMsg(ctl.midiout, ctl.val)
+                          end
                           --update_mtrs = true
                         end
                       end
@@ -29349,6 +29378,10 @@ end
                           if ctl.offline ~= nil then
                             ctl.dirty = true
                             update_ctls = true
+                            
+                            if ctl.midiout then
+                              SendMIDIMsg(ctl.midiout, ctl.val)
+                            end
                           end
                           ctl.offline = nil
                           ctl.val = 0
@@ -29356,6 +29389,10 @@ end
                           if ctl.offline == nil then
                             ctl.dirty = true
                             update_ctls = true
+                            
+                            if ctl.midiout then
+                              SendMIDIMsg(ctl.midiout, ctl.val)
+                            end
                           end
                           ctl.offline = true
                           ctl.val = 1
