@@ -1627,6 +1627,16 @@
                           y = obj.sections[70].y+yoff + yoffm*4,
                           w = sw,
                           h = butt_h}
+      obj.sections[704] = {x = obj.sections[70].x+obj.sections[70].w/2+xofft,
+                                y = obj.sections[70].y+yoff + yoffm*6,
+                                w = bw,
+                                h = bh}
+                                
+      --send midi data on track change
+      obj.sections[705] = {x = obj.sections[70].x+obj.sections[70].w/2+xofft,
+                                y = obj.sections[70].y+yoff + yoffm*7,
+                                w = bw,
+                                h = bh}
             
                                 
       --Cycle
@@ -10865,6 +10875,10 @@ end
       f_Get_SSV(gui.color.black)
       gfx.rect(6,6,8,8,0,1)
     end
+    if touch_timer then
+      f_Get_SSV('255 255 255')
+      gfx.rect(0,0,5,5,1)
+    end
     
     gfx.dest = -1
     gfx.a = 1
@@ -11528,6 +11542,8 @@ end
       sbt = 'SET'
     end
     GUI_DrawButton(gui, sbt, obj.sections[703], gui.color.white, gui.color.black, sb, 'Nebula scanboot location')
+    GUI_DrawTick(gui, 'Touch feedback indicator', obj.sections[704], gui.color.white, settings_touchFB)
+    GUI_DrawTick(gui, 'Send MIDI feedback on track change', obj.sections[705], gui.color.white, settings_trackchangemidi)
     
   end
   
@@ -11727,7 +11743,7 @@ end
     local l, t, r, b = 0, 0, w, h    
     local __, __, screen_w, screen_h = reaper.my_getViewport(l, t, r, b, l, t, r, b, 1)    
     local x, y = (screen_w - w) / 2, (screen_h - h) / 2    
-    gfx.init("LBX Stripper", w, h, 0, x, y)  
+    gfx.init("- LBX Stripper -", w, h, 0, x, y)  
   end
 
  -------------------------------------------------------------     
@@ -18252,11 +18268,30 @@ end
     
     GUI_DrawCtlBitmap()
     
+    if settings_trackchangemidi == true then
+      TrackChangeMidi()
+    end
+    
     --if settings_autocentrectls then
     --  AutoCentreCtls()
     --end
     update_gfx = true
     
+  end
+  
+  function TrackChangeMidi()
+  
+    local strip = tracks[track_select].strip
+    if strips[strip] then
+      local ctls = strips[strip][page].controls
+      for c = 1, #ctls do
+        local ctl = ctls[c]
+        if ctl.ctlcat ~= ctlcats.midictl and ctl.midiout then
+          SendMIDIMsg(ctl.midiout, ctl.val)
+        end    
+      end
+    end
+      
   end
   
   function SetCtlSelectVals()
@@ -19139,6 +19174,9 @@ end
   
     GUI_DrawCtlBitmap()
     
+    if settings_trackchangemidi == true then
+      TrackChangeMidi()
+    end
     --Env_Test(tracks[track_select].strip, page)
   end
   
@@ -20731,6 +20769,10 @@ end
       midimsg = false
       update_surface = true
     end
+    if touch_timer and touch_timer <= reaper.time_precise() then
+      touch_timer = nil
+      update_surface = true
+    end
 
   end
 
@@ -21037,6 +21079,15 @@ end
   
   function A_Run_Mode0(noscroll, rt)
   
+    if settings_touchFB == true and mouse.LB then
+      touch_trigger = true
+    end
+    if touch_trigger == true and not mouse.LB then
+      touch_trigger = false
+      update_surface = true
+      touch_timer = reaper.time_precise()+0.2
+    end
+    
     if gfx.mouse_wheel ~= 0 then
       local v = gfx.mouse_wheel/120
       if MOUSE_over(obj.sections[500]) then
@@ -28861,6 +28912,12 @@ end
     elseif mouse.context == nil and MOUSE_click(obj.sections[98]) then
       settings_createbackuponmanualsave = not settings_createbackuponmanualsave
       update_gfx = true
+    elseif mouse.context == nil and MOUSE_click(obj.sections[704]) then
+      settings_touchFB = not settings_touchFB
+      update_gfx = true
+    elseif mouse.context == nil and MOUSE_click(obj.sections[705]) then
+      settings_trackchangemidi = not settings_trackchangemidi
+      update_gfx = true
       
     elseif mouse.context == nil and MOUSE_click(obj.sections[700]) then
       local abs, _ = GetMOFaders()
@@ -33725,6 +33782,8 @@ end
     settings_showminimaltopbar = tobool(nz(GES('settings_showminimaltopbar',true),settings_showminimaltopbar))
     backcol = nz(GES('backcol',true),'16 16 16')
     nebscanboot_file = zn(GES('nebscanboot',true),nil)
+    settings_touchFB = tobool(nz(GES('settings_touchfb',true),settings_touchFB))
+    settings_trackchangemidi = tobool(nz(GES('settings_trackchangemidi',true),settings_trackchangemidi))
     
     if settings_hideeditbaronnewproject then
       plist_w = 0
@@ -33822,6 +33881,8 @@ end
     reaper.SetExtState(SCRIPT,'lock_surface',tostring(settings_locksurfaceonnewproject), true)    
     reaper.SetExtState(SCRIPT,'backcol',tostring(backcol), true)    
     reaper.SetExtState(SCRIPT,'nebscanboot',tostring(nebscanboot_file), true)    
+    reaper.SetExtState(SCRIPT,'settings_touchfb',tostring(settings_touchFB), true)    
+    reaper.SetExtState(SCRIPT,'settings_trackchangemidi',tostring(settings_trackchangemidi), true)    
     
     if strip_default then
       reaper.SetExtState(SCRIPT,'strip_default',tostring(strip_default.strip_select), true)
@@ -37960,6 +38021,8 @@ end
   settings_showminimaltopbar = true
   settings_createbackuponmanualsave = false
   settings_UCV = 1
+  settings_touchFB = false
+  settings_trackchangemidi = false
   
   textoptlink_select = true
   
