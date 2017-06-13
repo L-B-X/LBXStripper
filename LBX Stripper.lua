@@ -31,10 +31,11 @@
   midimsgtype_table = {'80 - Note Off','90 - Note On','A0 - Key Pressure','B0 - Control Change','C0 - Program Change','D0 - Channel Pressure','E0 - Pitch Bend'}
   midimsgval_table = {'0x8','0x9','0xA','0xB','0xC','0xD','0xE'}
   
+  focus_table = {'Off','Arrange','MIDI Editor'}
   ctlfile_type_table = {'Knob','Slider','Button','Meter','Misc'}
   
   framemode_table = {'NORMAL','CIRC'}
-  snapsubsets_table = {'PAGE'}
+  snapsubsets_table = {'PAGE'} 
   gaugetype_table = {'ARC','LINEAR VERT', 'LINEAR HORIZ'}
   gfxstretch_table = {'normal','fix edge'}
   
@@ -2427,7 +2428,7 @@
 
 
       --MIDI OUt
-      local mow, moh = 350, 340
+      local mow, moh = 350, 430
       obj.sections[950] = {x = math.floor(obj.sections[10].x+obj.sections[10].w/2 - mow/2),
                            y = math.floor(obj.sections[10].y+obj.sections[10].h/2 - moh/2),
                            w = mow,
@@ -2462,7 +2463,34 @@
                            y = obj.sections[950].y+butt_h*3 + (butt_h+10) * 8,
                            w = 60,
                            h = butt_h}
-           
+      obj.sections[958] = {x = obj.sections[952].x+obj.sections[952].w+80,
+                           y = obj.sections[950].y+butt_h*3 + (butt_h+10) * 9,
+                           w = 60,
+                           h = butt_h}
+      obj.sections[959] = {x = obj.sections[952].x+obj.sections[952].w+80,
+                           y = obj.sections[950].y+butt_h*3 + (butt_h+10) * 10,
+                           w = butt_h/2+4,
+                           h = butt_h/2+4}
+      obj.sections[961] = {x = obj.sections[952].x+obj.sections[952].w+80,
+                           y = obj.sections[950].y+butt_h*3 + (butt_h+10) * 11,
+                           w = butt_h/2+4,
+                           h = butt_h/2+4}
+      
+      local mow, moh = 300, 120
+      obj.sections[980] = {x = math.floor(obj.sections[10].x+obj.sections[10].w/2 - mow/2),
+                           y = math.floor(obj.sections[10].y+obj.sections[10].h/2 - moh/2),
+                           w = mow,
+                           h = moh}
+      obj.sections[981] = {x = obj.sections[980].x+100,
+                           y = obj.sections[980].y+butt_h*2,
+                           w = obj.sections[980].w-120,
+                           h = butt_h} 
+
+      obj.sections[982] = {x = obj.sections[980].x+200,
+                           y = obj.sections[980].y+butt_h*4,
+                           w = 60,
+                           h = butt_h} 
+       
     return obj
   end
   
@@ -5301,6 +5329,30 @@
     
   end
 
+  function GUI_DrawMIDILrn(gui, obj)
+
+    local strip = tracks[track_select].strip
+    local ctl = strips[strip][page].controls[lbx_midilrnctl]
+    GUI_DrawPanel(obj.sections[980],true,'FADERBOX LEARN - '..ctl.param_info.paramname)
+
+    if lbx_midilrnval then
+      local c = gui.color.black
+      if lbx_midilrnval and faders[lbx_midilrnval] and faders[lbx_midilrnval].targettype then
+        if faders[lbx_midilrnval].targettype == 4 and faders[lbx_midilrnval].strip == strip and 
+           faders[lbx_midilrnval].page == page and faders[lbx_midilrnval].ctl == lbx_midilrnctl then
+          c = '0 128 0'        
+        else
+          c = gui.color.red
+        end
+      end
+      GUI_DrawButton(gui, 'FADER '..string.format('%i',lbx_midilrnval), obj.sections[981], gui.color.white, c, true, 'FADER', false)      
+    else
+      GUI_DrawButton(gui, 'NONE', obj.sections[981], -3, gui.color.black, false, 'FADER', false)
+    end
+    GUI_DrawButton(gui, "OK", obj.sections[982], gui.color.white, gui.color.black, true)
+    
+  end
+  
   function GUI_DrawMIDIOut(gui, obj)
 
     local strip = tracks[track_select].strip
@@ -5334,6 +5386,10 @@
     GUI_DrawButton(gui, midiout_select.vmin, obj.sections[956], gui.color.white, gui.color.black, true, 'VALUE RANGE')
     GUI_DrawButton(gui, midiout_select.vmax, obj.sections[957], gui.color.white, gui.color.black, true, 'TO')
 
+    GUI_DrawButton(gui, focus_table[nz(midiout_select.focus, 1)], obj.sections[958], gui.color.white, gui.color.black, true, 'Focus window')
+    GUI_DrawTick(gui, 'Update display before sending msg', obj.sections[959], gui.color.white, nz(midiout_select.updategfx, false))
+    GUI_DrawTick(gui, 'Send midi on mouse up', obj.sections[961], gui.color.white, nz(midiout_select.onmu, false))
+    
   end
   
   function GetTFXOButtCnt()
@@ -10746,6 +10802,10 @@ end
         GUI_DrawMIDIOut(gui, obj)
       end
       
+      if lbx_midilrnctl then
+        GUI_DrawMIDILrn(gui, obj)
+      end
+      
     elseif show_xxy and (update_gfx or update_xxy or update_xxypos or update_surface or update_snaps or update_msnaps or resize_snaps or resize_display) then
     
       gfx.dest = 1
@@ -10871,9 +10931,13 @@ end
     
     if show_midioutind and midimsg == true then
       f_Get_SSV(gui.color.red)
-      gfx.rect(6,6,8,8,1,1)
-      f_Get_SSV(gui.color.black)
-      gfx.rect(6,6,8,8,0,1)
+      gfx.rect(5,0,5,5,1,1)
+      --f_Get_SSV(gui.color.black)
+      --gfx.rect(6,6,8,8,0,1)
+    end
+    if touch_trigger == true then
+      f_Get_SSV('0 0 255')
+      gfx.rect(0,0,5,5,1)    
     end
     if touch_timer then
       f_Get_SSV('255 255 255')
@@ -10911,7 +10975,16 @@ end
     update_dd = false
     
   end
-
+  
+  function DrawMD(gui, obj)
+    gfx.dest = -1
+    gfx.a = 1
+    f_Get_SSV('0 0 255')
+    gfx.rect(0,0,5,5,1)    
+    gfx.update()
+    gfx.dest = 1
+  end
+  
   function GUI_DrawXXYSnaps(gui, obj)
     gfx.dest = 1006
     
@@ -11551,7 +11624,7 @@ end
     local abs, rel
     if LBX_CTL_TRACK then    
 
-      for i = 1, 32*LBX_CTL_TRACK_INF.count do
+      for i = 1, LBX_FB_CNT*LBX_CTL_TRACK_INF.count do
         if faders[i].targettype == 3 then
           if faders[i].mode == 0 then
             abs = i
@@ -11737,12 +11810,14 @@ end
   
   ------------------------------------------------------------
   
-  function Lokasenna_Window_At_Center (w, h)
+  function Lokasenna_Window_At_Center (w, h, x, y)
     -- thanks to Lokasenna 
     -- http://forum.cockos.com/showpost.php?p=1689028&postcount=15    
     local l, t, r, b = 0, 0, w, h    
     local __, __, screen_w, screen_h = reaper.my_getViewport(l, t, r, b, l, t, r, b, 1)    
-    local x, y = (screen_w - w) / 2, (screen_h - h) / 2    
+    if x == nil or y == nil then  
+      x, y = (screen_w - w) / 2, (screen_h - h) / 2
+    end
     gfx.init("- LBX Stripper -", w, h, 0, x, y)  
   end
 
@@ -12079,6 +12154,34 @@ end
     
   end
 
+  function GTSI_norm_XX(track,trctl_idx,min,max,c,strip,page)
+
+    local idx = strips[strip][page].controls[c].param_info.paramidx
+    local paramstr = strips[strip][page].controls[c].param_info.paramstr
+
+    --if paramstr == nil then return 0 end
+    
+    if track == nil then
+      track = GetTrack(nz(strips[strip][page].controls[c].tracknum,strips[strip].track.tracknum))
+    end
+    
+    if paramstr == 'D_VOL' then
+      local retval, vOut, pOut = reaper.GetTrackSendUIVolPan(track, idx)
+      return normalize(min, max, vOut)
+    elseif paramstr == 'D_PAN' then
+      local retval, vOut, pOut = reaper.GetTrackSendUIVolPan(track, idx)
+      return normalize(min, max, pOut)
+    elseif paramstr == 'B_MUTE' then
+      local retval, muteOut = reaper.GetTrackSendUIMute(track, idx)
+      local mo
+      if muteOut then mo = 1 else mo = 0 end
+      return mo
+    --else    
+    --  return normalize(min,max,reaper.GetTrackSendInfo_Value(track, 0, idx, paramstr))
+    end
+    
+  end
+
   function SMTI_norm(track,trctl_idx,v,min,max)
   
     local val = DenormalizeValue(min,max,v)
@@ -12149,6 +12252,46 @@ end
       local min, max = GetParamMinMax(ctlcat,nil,nil,paramnum,true,c)
       return GTSI_norm(track, paramnum, min, max,c)
 
+    elseif ctlcat == ctlcats.action then
+      return 0
+    elseif ctlcat == ctlcats.pkmeter then
+      if peak_info[tracknum] and peak_info[tracknum][paramnum % 64] then
+        if paramnum < 64 then
+          return peak_info[tracknum][paramnum].ch
+        else
+          return peak_info[tracknum][paramnum-64].pk
+        end
+      else
+        return 0
+      end
+    end
+  end
+
+  function GetParamValue_XX(ctlcat,tracknum,fxnum,paramnum,c,strip,page)
+    track = GetTrack(tracknum)
+    if ctlcat == ctlcats.fxparam then
+      local v, min, max = reaper.TrackFX_GetParam(track, fxnum, paramnum)
+      if c then
+        if strips[strip][page].controls[c].minov then
+          min = strips[strip][page].controls[c].minov
+        end
+        if strips[strip][page].controls[c].maxov then
+          max = strips[strip][page].controls[c].maxov
+        end
+      end
+      return normalize(min, max, v)
+
+    elseif ctlcat == ctlcats.trackparam then
+      local min, max = GetParamMinMax_XX(ctlcat,nil,nil,paramnum,true,c,strip,page)
+      return GMTI_norm(track, paramnum, min, max)
+
+    elseif ctlcat == ctlcats.tracksend then
+      local min, max = GetParamMinMax_XX(ctlcat,nil,nil,paramnum,true,c,strip,page)
+      return GTSI_norm_XX(track, paramnum, min, max,c, strip, page)
+
+    elseif ctlcat == ctlcats.macro then
+      return strips[strip][page].controls[c].val
+      
     elseif ctlcat == ctlcats.action then
       return 0
     elseif ctlcat == ctlcats.pkmeter then
@@ -12282,6 +12425,49 @@ end
         end
         if strips[tracks[track_select].strip][page].controls[c].maxov then
           max = strips[tracks[track_select].strip][page].controls[c].maxov
+        end      
+      end
+      return tonumber(min), tonumber(max)  
+    else 
+      return 0, 1
+    end
+  end
+
+  function GetParamMinMax_XX(ctlcat,track,fxnum,paramnum,checkov,c, strip, page)
+    if ctlcat == ctlcats.fxparam then    
+      if track == nil then return end
+      local _, min, max = reaper.TrackFX_GetParam(track, fxnum, paramnum)
+      if checkov and checkov == true and c then
+        if strips[strip][page].controls[c].minov then
+          min = strips[strip][page].controls[c].minov
+        end
+        if strips[strip][page].controls[c].maxov then
+          max = strips[strip][page].controls[c].maxov
+        end      
+      end
+      return min, max  
+    
+    elseif ctlcat == ctlcats.trackparam then
+      local min, max = trctls_table[paramnum].min, trctls_table[paramnum].max
+      if checkov and checkov == true and c then
+        if strips[strip][page].controls[c].minov then
+          min = strips[strip][page].controls[c].minov
+        end
+        if strips[strip][page].controls[c].maxov then
+          max = strips[strip][page].controls[c].maxov
+        end      
+      end
+      return tonumber(min), tonumber(max)  
+      
+    elseif ctlcat == ctlcats.tracksend then
+      local idx = math.floor((paramnum-1) % 3)+1
+      local min, max = trsends_mmtable[idx].min, trsends_mmtable[idx].max
+      if checkov and checkov == true and c then
+        if strips[strip][page].controls[c].minov then
+          min = strips[strip][page].controls[c].minov
+        end
+        if strips[strip][page].controls[c].maxov then
+          max = strips[strip][page].controls[c].maxov
         end      
       end
       return tonumber(min), tonumber(max)  
@@ -12456,9 +12642,23 @@ end
         
       end
       if ctl.midiout then SendMIDIMsg(ctl.midiout,val) end
-
+      if ctl.macrofader then
+        SetFader(ctl.macrofader, ctl.val)
+      end
     end
       
+  end
+  
+  function SetFader(f, val)
+    if LBX_CTL_TRACK then 
+      local track = GetTrack(LBX_CTL_TRACK) 
+      if track then
+        local fxnum = math.floor((f-1) / 32)
+        local p = (f-1) % 32
+        reaper.TrackFX_SetParam(track, fxnum, p, val)
+        faders[f].oval = round(val,5)
+      end
+    end
   end
   
   function OpenFXGUI(ctl)
@@ -17718,7 +17918,6 @@ end
       else
         local strip = tracks[track_select].strip
         local ctl = strips[strip][page].controls[i]
-
         local mstr
         mm = ''
         if show_snapshots then
@@ -17737,11 +17936,13 @@ end
           mido = '>Midi/OSC Out|Set'..moclr
         end  
         if ccat == ctlcats.fxparam then
-          mstr = 'MIDI learn|Modulation||Enter value||'..mido..'||Open FX window||'..mm..'Add Envelope|Add All Envelopes For Plugin||Snapshots||>Tools|<Regenerate ID   (emergency only)||Toggle Topbar|Toggle Sidebar||'..lspfx..'Lock Surface'
+          mstr = 'Faderbox learn (global)|Modulation||Enter value||'..mido..'||Open FX window||'..mm..'Add Envelope|Add All Envelopes For Plugin||Snapshots||>Tools|<Regenerate ID   (emergency only)||Toggle Topbar|Toggle Sidebar||'..lspfx..'Lock Surface'
+        elseif ccat == ctlcats.trackparam or ccat == ctlcats.tracksend or ccat == ctlcats.macro then
+          mstr = 'Faderbox learn (global)|#Modulation||Enter value||'..mido..'||#Open FX window||'..mm..'#Add Envelope|#Add All Envelopes For Plugin||Snapshots||>Tools|<Regenerate ID   (emergency only)||Toggle Topbar|Toggle Sidebar||'..lspfx..'Lock Surface'                  
         else
-          mstr = '#MIDI learn|#Modulation||Enter value||'..mido..'||#Open FX window||'..mm..'#Add Envelope|#Add All Envelopes For Plugin||Snapshots||>Tools|<Regenerate ID   (emergency only)||Toggle Topbar|Toggle Sidebar||'..lspfx..'Lock Surface'                  
+          mstr = '#Faderbox learn (global)|#Modulation||Enter value||'..mido..'||#Open FX window||'..mm..'#Add Envelope|#Add All Envelopes For Plugin||Snapshots||>Tools|<Regenerate ID   (emergency only)||Toggle Topbar|Toggle Sidebar||'..lspfx..'Lock Surface'                  
         end
-        if ccat ~= ctlcats.macro then
+        --if ccat ~= ctlcats.macro then
           if #strip_favs > 0 then
             mstr = mstr .. '||#>Insert strip (favorites)'                  
           end
@@ -17750,9 +17951,13 @@ end
           res = OpenMenu(mstr)
           if res ~= 0 then
             if res == 1 then
-              SetParam2(true)
+              --SetParam2(true)
               --reaper.Main_OnCommand(41144,0,0)
-              reaper.OscLocalMessageToHost('/lbx/midilearn')
+              --reaper.OscLocalMessageToHost('/lbx/midilearn')
+              lbx_midilrnctl = i
+              
+              lbx_midilrnval = strips[tracks[track_select].strip][page].controls[lbx_midilrnctl].macrofader
+              update_surface = true
               
             elseif res == 2 then
               SetParam2(true)
@@ -17770,7 +17975,9 @@ end
                                   msg3 = 1,
                                   msg4 = 0,
                                   vmin = 0,
-                                  vmax = 127}
+                                  vmax = 127,
+                                  focus = 1,
+                                  updategfx = false}
               end
               show_midiout = true
               update_gfx = true
@@ -17810,7 +18017,7 @@ end
               settings_locksurface = not settings_locksurface
             end
           end
-        end
+        --end
       end
     elseif mtype == 1 then
     
@@ -17843,7 +18050,7 @@ end
       if settings_locksurface then
         lspfx = '!'
       end
-      mstr = mstr .. '||#MIDI learn|#Modulation||#Enter value||#Open FX window||'..mm..'Snapshots||Toggle Topbar|Toggle Sidebar||'..lspfx..'Lock Surface'..
+      mstr = mstr .. '||#Faderbox learn (global)|#Modulation||#Enter value||#Open FX window||'..mm..'Snapshots||Toggle Topbar|Toggle Sidebar||'..lspfx..'Lock Surface'..
                      '||>Envelopes|Bypass Envelopes|Enable Envelopes|Clear Envelopes||Bypass Strip Envelopes|Enable Strip Envelopes|Clear Strip Envelopes'
       
       gfx.x, gfx.y = mouse.mx, mouse.my
@@ -19256,7 +19463,7 @@ end
       faders = {}
     end
     if LBX_CTL_TRACK_INF then
-      for f = 1, 32*LBX_CTL_TRACK_INF.count do
+      for f = 1, LBX_FB_CNT*LBX_CTL_TRACK_INF.count do
       
         if faders[f] == nil or force then 
           faders[f] = {}
@@ -19268,54 +19475,75 @@ end
     
   end
 
-  function SetAutomationFader(fad_tab, sel)
+  function SetAutomationFader(fad_tab, sel, returnonly)
   
     if LBX_CTL_TRACK_INF and LBX_CTL_TRACK_INF.count > 0 then
       local mstr = ''
       for fxnum = 0, LBX_CTL_TRACK_INF.count-1 do
-        local fs = fxnum*32+1
-        local fe = fs+31
+        local fs = fxnum*LBX_FB_CNT+1
+        local fe = fs+LBX_FB_CNT-1
         if mstr ~= '' then
           mstr = mstr .. '|'
         end
         mstr = mstr .. '>Fader '..string.format('%i',fs)..'-'..string.format('%i',fe)
         
-        for pf = 0, 31 do
+        for pf = 0, LBX_FB_CNT-1 do
           local p = fs + pf
           local assigned = ''
+          local ticked = ''
           if faders[p].targettype then
+            assigned = '#'
             if p == sel then
-              assigned = '!#'
-            else
-              assigned = '#'
+              ticked = '!'
             end
           end
   
-          if pf ~= 31 then
-            mstr = mstr .. '|'..assigned..'Fader '..fs + pf
+          if nz(returnonly,false) == false then
+            if pf ~= LBX_FB_CNT-1 then
+              mstr = mstr .. '|'..ticked..assigned..'Fader '..fs + pf
+            else
+              mstr = mstr .. '|<'..ticked..assigned..'Fader '..fs + pf        
+            end
           else
-            mstr = mstr .. '|<'..assigned..'Fader '..fs + pf        
+            if assigned == '' then
+              if pf ~= LBX_FB_CNT-1 then
+                mstr = mstr .. '|'..ticked..'Fader '..fs + pf
+              else
+                mstr = mstr .. '|<'..ticked..'Fader '..fs + pf        
+              end          
+            else
+              if pf ~= LBX_FB_CNT-1 then
+                mstr = mstr .. '|'..ticked..'[ Fader '..fs + pf..' ]'
+              else
+                mstr = mstr .. '|<'..ticked..'[ Fader '..fs + pf..' ]'        
+              end                      
+            end
           end
         end
       end
-      local lastp = LBX_CTL_TRACK_INF.count * 32+1
+      local lastp = LBX_CTL_TRACK_INF.count * LBX_FB_CNT+1
       mstr = mstr .. '|Clear'
+      
       gfx.x = mouse.mx
       gfx.y = mouse.my
       local ret = gfx.showmenu(mstr)
       --DBG(lastp..'  '..ret)
-      if ret > 0 and ret ~= lastp then
-        faders[ret] = fad_tab
-        if sel then
+      if nz(returnonly,false) == false then
+        if ret > 0 and ret ~= lastp then
+          faders[ret] = fad_tab
+          if sel then
+            faders[sel] = {}
+          end
+        elseif ret == lastp then
           faders[sel] = {}
+          ret = nil
+        else
+          ret = -1
         end
       elseif ret == lastp then
-        faders[sel] = {}
-        ret = nil
-      else
-        ret = -1
+        ret = -2
       end
-      
+            
       return ret
     else
       return -1
@@ -19326,145 +19554,206 @@ end
   
     if LBX_CTL_TRACK then    
     
-      local ccc = trackfxparam_select
-    
-      local track = GetTrack(tracks[LBX_CTL_TRACK].tracknum)
-      if tracks[LBX_CTL_TRACK].guid ~= reaper.GetTrackGUID(track) then
-        PopulateTracks()
-      end
-      if xxyrecord == false then
-        for fxnum = 0, LBX_CTL_TRACK_INF.count-1 do
-          for pf = 0, 31 do
-            p = fxnum * 32 + pf
-            faders[p+1].val = reaper.TrackFX_GetParam(track, fxnum, pf)
-            if faders[p+1].val and tostring(faders[p+1].val) ~= tostring(faders[p+1].oval) then
-              faders[p+1].oval = faders[p+1].val
-              if faders[p+1].targettype then
-                if faders[p+1].targettype == 0 then
-                  if xxy and xxy[faders[p+1]] then
-                    if faders[p+1].xy == 0 then
-                      xxy[faders[p+1].strip][faders[p+1].page][faders[p+1].sstype].x = faders[p+1].val            
+      if lbx_midilrnctl == nil then
+        local ccc = trackfxparam_select
+      
+        local track = GetTrack(tracks[LBX_CTL_TRACK].tracknum)
+        if tracks[LBX_CTL_TRACK].guid ~= reaper.GetTrackGUID(track) then
+          PopulateTracks()
+        end
+        if xxyrecord == false then
+          for fxnum = 0, LBX_CTL_TRACK_INF.count-1 do
+            for pf = 0, LBX_FB_CNT-1 do
+              p = fxnum * LBX_FB_CNT + pf
+              faders[p+1].val = round(reaper.TrackFX_GetParam(track, fxnum, pf),5)
+                            
+              if faders[p+1].val and tostring(faders[p+1].val) ~= tostring(faders[p+1].oval) then
+                --DBG(faders[p+1].oval)
+                faders[p+1].oval = faders[p+1].val
+                if faders[p+1].targettype then
+                  if faders[p+1].targettype == 0 then
+                    if xxy and xxy[faders[p+1]] then
+                      if faders[p+1].xy == 0 then
+                        xxy[faders[p+1].strip][faders[p+1].page][faders[p+1].sstype].x = faders[p+1].val            
+                      else
+                        xxy[faders[p+1].strip][faders[p+1].page][faders[p+1].sstype].y = faders[p+1].val            
+                      end
+                      XXY_Set(faders[p+1].strip,faders[p+1].page,faders[p+1].sstype)
+                      if show_xxy then
+                        update_xxypos = true
+                      end
                     else
-                      xxy[faders[p+1].strip][faders[p+1].page][faders[p+1].sstype].y = faders[p+1].val            
+                      --check fader
+                      DeleteFader(p+1)
                     end
-                    XXY_Set(faders[p+1].strip,faders[p+1].page,faders[p+1].sstype)
+                  elseif faders[p+1].targettype == 1 then
+                    XXYPath_SetPos(faders[p+1].strip,faders[p+1].page,faders[p+1].sstype,faders[p+1].val, p+1)
                     if show_xxy then
                       update_xxypos = true
-                    end
-                  else
-                    --check fader
-                    DeleteFader(p+1)
-                  end
-                elseif faders[p+1].targettype == 1 then
-                  XXYPath_SetPos(faders[p+1].strip,faders[p+1].page,faders[p+1].sstype,faders[p+1].val, p+1)
-                  if show_xxy then
-                    update_xxypos = true
-                  end                              
-                elseif faders[p+1].targettype == 2 then
-                  if strips[faders[p+1].strip] and strips[faders[p+1].strip][faders[p+1].page].controls[faders[p+1].ctl] then
-                    strips[faders[p+1].strip][faders[p+1].page].controls[faders[p+1].ctl].oval = strips[faders[p+1].strip][faders[p+1].page].controls[faders[p+1].ctl].val 
-                    strips[faders[p+1].strip][faders[p+1].page].controls[faders[p+1].ctl].val = faders[p+1].val
-                    --strips[faders[p+1].strip][faders[p+1].page].controls[faders[p+1].ctl].mval = faders[p+1].val
-                    strips[faders[p+1].strip][faders[p+1].page].controls[faders[p+1].ctl].dirty = true
-                    SetMacro(faders[p+1].strip,faders[p+1].page,faders[p+1].ctl)
-                    if macro_edit_mode == true then
-                      update_macroedit = true
-                    end 
-                  else
-                    DeleteFader(p+1)
-                  end 
-                elseif faders[p+1].targettype == 3 then
-                  if mode == 0 and macro_edit_mode ~= true and macro_lrn_mode ~= true and show_xxy ~= true and show_eqcontrol ~= true and show_settings ~= true then
-                    local strip = tracks[track_select].strip
-                    local c = GetControlAtXY(strip,page,mouse.mx,mouse.my)
-                    if c then
-                      local ctl = strips[strip][page].controls[c]
-                      if c ~= faders[p+1].to_ctl then
-                        faders[p+1].to = false
-                        faders[p+1].to_ctl = c
-                        if faders[p+1].val > ctl.val then
-                          faders[p+1].to_pos = 1 
-                        elseif faders[p+1].val < ctl.val then
-                          faders[p+1].to_pos = 2
-                        else
-                          faders[p+1].to_pos = 3
-                          faders[p+1].to = true
-                        end
+                    end                              
+                  elseif faders[p+1].targettype == 2 then
+                    if strips[faders[p+1].strip] and strips[faders[p+1].strip][faders[p+1].page].controls[faders[p+1].ctl] then
+                      strips[faders[p+1].strip][faders[p+1].page].controls[faders[p+1].ctl].oval = strips[faders[p+1].strip][faders[p+1].page].controls[faders[p+1].ctl].val 
+                      strips[faders[p+1].strip][faders[p+1].page].controls[faders[p+1].ctl].val = faders[p+1].val
+                      --strips[faders[p+1].strip][faders[p+1].page].controls[faders[p+1].ctl].mval = faders[p+1].val
+                      strips[faders[p+1].strip][faders[p+1].page].controls[faders[p+1].ctl].dirty = true
+                      SetMacro(faders[p+1].strip,faders[p+1].page,faders[p+1].ctl)
+                      if macro_edit_mode == true then
+                        update_macroedit = true
                       end 
+                    else
+                      DeleteFader(p+1)
+                    end 
+                    
+                  elseif faders[p+1].targettype == 4 then
+                  
+                    local strip = faders[p+1].strip
+                    local page = faders[p+1].page
+                    local c = faders[p+1].ctl
+                    if strips[strip] and strips[strip][page].controls[c] then
+                      strips[strip][page].controls[c].oval = strips[strip][page].controls[c].val 
+                      strips[strip][page].controls[c].val = faders[p+1].val
+                      strips[strip][page].controls[c].dirty = true
+                      local ctl = strips[strip][page].controls[c]
+                      A_SetParam(strip,page,c,ctl)
+                      update_ctls = true
+                    else
+                      DeleteFader(p+1)
+                    end 
 
-                      if ctl.ctlcat == ctlcats.fxparam or ctl.ctlcat == ctlcats.trparam or ctl.ctlcat == ctlcats.macro then
-                        if faders[p+1].mode == 0 then
-                          --absolute
-                          if faders[p+1].to == false then
-                            if faders[p+1].to_pos == 1 then
-                              if faders[p+1].val <= ctl.val then
-                                faders[p+1].to = true 
-                              end
-                            else
-                              if faders[p+1].val >= ctl.val then
-                                faders[p+1].to = true 
-                              end                            
-                            end
+                  elseif faders[p+1].targettype == 3 then
+                    if mode == 0 and macro_edit_mode ~= true and macro_lrn_mode ~= true and show_xxy ~= true and show_eqcontrol ~= true and show_settings ~= true then
+                      local strip = tracks[track_select].strip
+                      local c = GetControlAtXY(strip,page,mouse.mx,mouse.my)
+                      if c then
+                        local ctl = strips[strip][page].controls[c]
+                        if c ~= faders[p+1].to_ctl then
+                          faders[p+1].to = false
+                          faders[p+1].to_ctl = c
+                          if faders[p+1].val > ctl.val then
+                            faders[p+1].to_pos = 1 
+                          elseif faders[p+1].val < ctl.val then
+                            faders[p+1].to_pos = 2
+                          else
+                            faders[p+1].to_pos = 3
+                            faders[p+1].to = true
                           end
-                           
-                          if faders[p+1].to == true then
-                            ctl.oval = ctl.val
-                            ctl.val = faders[p+1].val
-                            if ctl.oval ~= ctl.val then
+                        end 
+  
+                        if ctl.ctlcat == ctlcats.fxparam or ctl.ctlcat == ctlcats.trackparam or ctl.ctlcat == ctlcats.macro then
+                          if faders[p+1].mode == 0 then
+                            --absolute
+                            if faders[p+1].to == false then
+                              if faders[p+1].to_pos == 1 then
+                                if faders[p+1].val <= ctl.val then
+                                  faders[p+1].to = true 
+                                end
+                              else
+                                if faders[p+1].val >= ctl.val then
+                                  faders[p+1].to = true 
+                                end                            
+                              end
+                            end
+                             
+                            if faders[p+1].to == true then
+                              ctl.oval = ctl.val
+                              ctl.val = faders[p+1].val
+                              if ctl.oval ~= ctl.val then
+                                A_SetParam(strip,page,c,ctl)
+                                ctl.dirty = true
+                                update_ctls = true
+                              end
+                            end
+                          else
+                            --relative
+                            local vi = 0.002
+                            local v = F_limit(faders[p+1].val-0.5,-vi,vi)
+                            --DBG(faders[p+1].val..'  '..v)
+                            ctl.val = F_limit(ctl.val + (v),0,1)
+                            --if ctl.oval ~= ctl.val then
                               A_SetParam(strip,page,c,ctl)
                               ctl.dirty = true
                               update_ctls = true
-                            end
+                            --end
+                            ctl.oval = ctl.val
+                            --[[if ctl.oval == 1 then
+                              ctl.oval ]]
+                            
+                            reaper.TrackFX_SetParam(track, fxnum, pf, 0.5)
+                            faders[p+1].oval = faders[p+1].val
+                            faders[p+1].val = 0.5
                           end
-                        else
-                          --relative
-                          local vi = 0.002
-                          local v = F_limit(faders[p+1].val-0.5,-vi,vi)
-                          --DBG(faders[p+1].val..'  '..v)
-                          ctl.val = F_limit(ctl.val + (v),0,1)
-                          --if ctl.oval ~= ctl.val then
-                            A_SetParam(strip,page,c,ctl)
-                            ctl.dirty = true
-                            update_ctls = true
-                          --end
-                          ctl.oval = ctl.val
-                          --[[if ctl.oval == 1 then
-                            ctl.oval ]]
-                          
-                          reaper.TrackFX_SetParam(track, fxnum, pf, 0.5)
-                          faders[p+1].oval = faders[p+1].val
-                          faders[p+1].val = 0.5
                         end
                       end
                     end
                   end
                 end
+              end    
+              if faders[p+1].targettype == 4 then
+                local strip = faders[p+1].strip
+                local page = faders[p+1].page
+                local c = faders[p+1].ctl
+                local ctl = strips[strip][page].controls[c]
+                local t = strips[strip].track.tracknum
+                if ctl.tracknum ~= nil then
+                  t = ctl.tracknum
+                end                
+                local vv = round(GetParamValue_XX(ctl.ctlcat, t, ctl.fxnum, ctl.param, c, strip, page),4)
+                if tostring(vv) ~= tostring(round(faders[p+1].val,4)) then
+                  --DBG(vv..'  '..faders[p+1].val)
+                  faders[p+1].val = vv
+                  SetFader(p+1, vv) 
+                end
               end
-            end    
-          end
-        end    
-        trackfxparam_select = ccc
+              
+            end
+          end    
+          trackfxparam_select = ccc
+    
+        end
+
+      elseif lbx_midilrnctl then
+        
+        local track = GetTrack(tracks[LBX_CTL_TRACK].tracknum)
+        
+        for fxnum = 0, LBX_CTL_TRACK_INF.count-1 do
+          for pf = 0, LBX_FB_CNT-1 do
+            p = fxnum * LBX_FB_CNT + pf
+            faders[p+1].val = reaper.TrackFX_GetParam(track, fxnum, pf)
+          -- DBG('v'..tostring(faders[p+1].val))
+          -- DBG('o'..tostring(faders[p+1].oval))
+            if faders[p+1].val and tostring(round(faders[p+1].val,5)) ~= tostring(round(faders[p+1].oval,5)) then
+              lbx_midilrnval = p+1
+              faders[p+1].oval = faders[p+1].val
+              update_surface = true
+              
+            end
+          end      
+        end
+        
       end
+      
     end  
   end
 
   function DeleteFader(f)
-    if faders[f].targettype == 0 then
-      if xxy and xxy[faders[f].strip] and xxy[faders[f].strip][faders[f].page] and xxy[faders[f].strip][faders[f].page][faders[f].sstype] then
-        xxy[faders[f].strip][faders[f].page][faders[f].sstype].xfader = nil
-        xxy[faders[f].strip][faders[f].page][faders[f].sstype].yfader = nil
+    if faders[f] then
+      if faders[f].targettype == 0 then
+        if xxy and xxy[faders[f].strip] and xxy[faders[f].strip][faders[f].page] and xxy[faders[f].strip][faders[f].page][faders[f].sstype] then
+          xxy[faders[f].strip][faders[f].page][faders[f].sstype].xfader = nil
+          xxy[faders[f].strip][faders[f].page][faders[f].sstype].yfader = nil
+        end
+      elseif faders[f].targettype == 1 then
+        if xxy and xxy[faders[f].strip] and xxy[faders[f].strip][faders[f].page] and xxy[faders[f].strip][faders[f].page][faders[f].sstype] then
+          xxy[faders[f].strip][faders[f].page][faders[f].sstype].pathfader = nil
+        end
+      elseif faders[f].targettype == 2 or faders[f].targettype == 4 then
+        if strips and strips[faders[f].strip] and strips[faders[f].strip][faders[f].page].controls[faders[f].ctl] then
+          strips[faders[f].strip][faders[f].page].controls[faders[f].ctl].macrofader = nil
+        end
       end
-    elseif faders[f].targettype == 1 then
-      if xxy and xxy[faders[f].strip] and xxy[faders[f].strip][faders[f].page] and xxy[faders[f].strip][faders[f].page][faders[f].sstype] then
-        xxy[faders[f].strip][faders[f].page][faders[f].sstype].pathfader = nil
-      end
-    elseif faders[f].targettype == 2 then
-      if strips and strips[faders[f].strip] and strips[faders[f].strip][faders[f].page].controls[faders[f].ctl] then
-        strips[faders[f].strip][faders[f].page].controls[faders[f].ctl].macrofader = nil
-      end
-    end
-    faders[f] = {}
-  
+      faders[f] = {}
+    end  
   end
   
   ------------------------------------------------------------    
@@ -20407,6 +20696,12 @@ end
 
       A_Run_MidiOut(char)
     
+    elseif lbx_midilrnctl then
+    
+      UpdateControlValues2(rt)
+
+      A_Run_MidiLrn(char)
+    
     elseif show_xxy == false then
 
       if settings_followselectedtrack and navigate then
@@ -20765,7 +21060,7 @@ end
       redraw_ctlbitmap = nil
       GUI_DrawCtlBitmap()
     end
-    if midimsg == true and reaper.time_precise() > midimsgto then
+    if midimsg == true and reaper.time_precise() >= midimsgto then
       midimsg = false
       update_surface = true
     end
@@ -20863,6 +21158,62 @@ end
     update_ctls = true
   end
 
+  function A_Run_MidiLrn(char)
+
+    if mouse.context == nil and MOUSE_click(obj.sections[982]) then
+
+      if lbx_midilrnval then
+      
+        if faders[lbx_midilrnval] and faders[lbx_midilrnval].targettype then
+          if reaper.MB('Replace assignment?','Faderbox learn',4) ~= 6 then
+            return
+          end 
+        end
+
+        DeleteFader(lbx_midilrnval)
+      
+        local f = {targettype = 4,
+                   strip = tracks[track_select].strip,
+                   page = page,
+                   ctl = lbx_midilrnctl,
+                   c_id = strips[tracks[track_select].strip][page].controls[lbx_midilrnctl].c_id}
+        faders[lbx_midilrnval] = f
+        strips[tracks[track_select].strip][page].controls[lbx_midilrnctl].macrofader = lbx_midilrnval
+        
+      else
+        local fad = strips[tracks[track_select].strip][page].controls[lbx_midilrnctl].macrofader
+        if fad then
+          DeleteFader(fad)
+        end
+      end
+      lbx_midilrnctl = nil
+      lbx_midilrnval = nil
+      update_surface = true
+    
+    elseif MOUSE_click(obj.sections[981]) then
+    
+      local f = {targettype = 4,
+                 strip = tracks[track_select].strip,
+                 page = page,
+                 ctl = lbx_midilrnctl,
+                 c_id = strips[tracks[track_select].strip][page].controls[lbx_midilrnctl].c_id}
+      
+      local fad = SetAutomationFader(f, strips[tracks[track_select].strip][page].controls[lbx_midilrnctl].macrofader, true)
+      if fad > 0 then
+        lbx_midilrnval = fad  
+      elseif fad == -2 then
+        lbx_midilrnval = nil
+      end
+      update_surface = true
+      
+    elseif mouse.context == nil and mouse.LB and not MOUSE_over(obj.sections[980]) then
+      lbx_midilrnctl = nil
+      lbx_midilrnval = nil
+      update_surface = true
+    end
+
+  end
+  
   function A_Run_MidiOut(char)
   
     if mouse.context == nil and MOUSE_click(obj.sections[951]) then
@@ -20911,6 +21262,21 @@ end
       end
       update_surface = true
       
+    elseif mouse.context == nil and MOUSE_click(obj.sections[958]) then
+      midiout_select.focus = midiout_select.focus + 1
+      if midiout_select.focus > #focus_table then
+        midiout_select.focus = 1
+      end
+      update_surface = true
+
+    elseif mouse.context == nil and MOUSE_click(obj.sections[959]) then
+      midiout_select.updategfx = not midiout_select.updategfx
+      update_surface = true
+
+    elseif mouse.context == nil and MOUSE_click(obj.sections[961]) then
+      midiout_select.onmu = not midiout_select.onmu
+      update_surface = true
+      
     elseif mouse.context == nil and MOUSE_click(obj.sections[952]) then
       mouse.context = contexts.midiout_chan
       midiout_select.mchan = F_limit(midiout_select.mchan + 1,1,16)
@@ -20947,7 +21313,10 @@ end
                              msg3 = midiout_select.msg3,
                              osc = midiout_select.osc,
                              vmin = midiout_select.vmin,
-                             vmax = midiout_select.vmax}
+                             vmax = midiout_select.vmax,
+                             focus = midiout_select.focus,
+                             updategfx = midiout_select.updategfx,
+                             onmu = midiout_select.onmu}
             
             else
               ctl.midiout = nil
@@ -20965,7 +21334,10 @@ end
                          msg3 = midiout_select.msg3,
                          osc = midiout_select.osc,
                          vmin = midiout_select.vmin,
-                         vmax = midiout_select.vmax}
+                         vmax = midiout_select.vmax,
+                         focus = midiout_select.focus,
+                         updategfx = midiout_select.updategfx,
+                         onmu = midiout_select.onmu}
         
         else
           ctl.midiout = nil
@@ -21081,11 +21453,23 @@ end
   
     if settings_touchFB == true and mouse.LB then
       touch_trigger = true
+      DrawMD(gui, obj)
     end
-    if touch_trigger == true and not mouse.LB then
-      touch_trigger = false
-      update_surface = true
-      touch_timer = reaper.time_precise()+0.2
+    if (touch_trigger == true and not mouse.LB) then -- or (mididelay and reaper.time_precise() >= mididelay) then
+      if mu_mmsg and (midi1st or mouse.LB) then
+        SendMIDIMsg(mu_mmsg.midiout, mu_mmsg.val, true)
+        midi1st = nil
+      end
+      
+      if not mouse.LB then
+        mu_mmsg = nil
+        touch_trigger = false
+        update_surface = true
+        touch_timer = reaper.time_precise()+0.2
+        mididelay = nil
+      else
+        mididelay = reaper.time_precise()+0.2
+      end
     end
     
     if gfx.mouse_wheel ~= 0 then
@@ -21622,8 +22006,8 @@ end
                   mouse.context = contexts.hold
                   ctls[i].val = 1
                   ctls[i].dirty = true
-                  A_SetParam(strip, page, i, ctls[i])
                   update_ctls = true
+                  A_SetParam(strip, page, i, ctls[i])
                 end
                 noscroll = true
                 --break
@@ -21733,7 +22117,13 @@ end
 
         if tracks[track_select] then          
           if noscroll == false and MOUSE_click_RB(obj.sections[10]) then
-            RBMenu(1,nil,nil)
+            local i = GetControlAtXY(tracks[track_select].strip,page,mouse.mx,mouse.my)
+            if i then
+              local ctl = strips[tracks[track_select].strip][page].controls[i]
+              RBMenu(0,ctl.ctlcat,i)
+            else
+              RBMenu(1,nil,nil)
+            end
           end
         end    
               
@@ -23249,7 +23639,9 @@ end
                                     msg4 = 0,
                                     osc = nil,
                                     vmin = 0,
-                                    vmax = 127}
+                                    vmax = 127,
+                                    focus = 1,
+                                    updategfx = false}
                 end
                 show_midiout = true
                 update_gfx = true
@@ -29467,6 +29859,11 @@ end
                         end
                       end
                     end
+                    
+                    if ctl.macrofader then                    
+                      SetFader(ctl.macrofader, ctl.val)                    
+                    end
+                    
                   end
                 end
                 chktbl = nil
@@ -30503,8 +30900,8 @@ end
           local track = GetTrack(tracks[LBX_CTL_TRACK].tracknum)
           local pf = xxy[strip][page][sst].pathfader
           if pf and faders[pf] then
-            local fxnum = math.floor((pf-1)/32)
-            local param = ((pf-1) % 32)
+            local fxnum = math.floor((pf-1)/LBX_FB_CNT)
+            local param = ((pf-1) % LBX_FB_CNT)
             reaper.TrackFX_SetParam(track, fxnum, param, pos)
             faders[pf].val = pos
           end
@@ -30910,8 +31307,8 @@ end
         PopulateTracks()
       end
       for fxnum = 0, LBX_CTL_TRACK_INF.count-1 do
-        for pf = 0, 31 do
-          p = fxnum * 32 + pf
+        for pf = 0, LBX_FB_CNT-1 do
+          p = fxnum * LBX_FB_CNT + pf
           if faders[p+1].targettype then
             if faders[p+1].targettype == 2 then
               --macro check
@@ -31140,14 +31537,14 @@ end
         local xf = xxytbl.xfader
         local yf = xxytbl.yfader
         if xf and faders[xf] then
-          local fxnum = ffloor((xf-1)/32)
-          local param = ((xf-1) % 32)
+          local fxnum = ffloor((xf-1)/LBX_FB_CNT)
+          local param = ((xf-1) % LBX_FB_CNT)
           reaper.TrackFX_SetParam(track, fxnum, param, px)
           faders[xf].val = px
         end
         if yf and faders[yf] then
-          local fxnum = ffloor((yf-1)/32)
-          local param = (yf-1) % 32
+          local fxnum = ffloor((yf-1)/LBX_FB_CNT)
+          local param = (yf-1) % LBX_FB_CNT
           reaper.TrackFX_SetParam(track, fxnum, param, py)
           faders[yf].val = py
         end        
@@ -32194,7 +32591,10 @@ end
           strip.controls[c].midiout.msgtype = tonumber(zn(data[key..'midiout_msgtype'],4))
           strip.controls[c].midiout.osc = zn(data[key..'midiout_osc'])
           strip.controls[c].midiout.vmin = tonumber(zn(data[key..'midiout_vmin'],0))          
-          strip.controls[c].midiout.vmax = tonumber(zn(data[key..'midiout_vmax'],127))          
+          strip.controls[c].midiout.vmax = tonumber(zn(data[key..'midiout_vmax'],127))
+          strip.controls[c].midiout.focus = tonumber(zn(data[key..'midiout_focus'],1))
+          strip.controls[c].midiout.updategfx = tobool(zn(data[key..'midiout_updategfx'],false))                              
+          strip.controls[c].midiout.onmu = tobool(zn(data[key..'midiout_onmu'],false))                              
         --end
 
         local rcmcnt = tonumber(data[key..'rcmdata_cnt'])
@@ -33130,17 +33530,23 @@ end
     DBGOut('LoadData: Saved OK: '..tostring(GPES('savedok')))
   
     if GPES('savedok') ~= '' then
-  
-      local ww, wh = GPES('win_w',true), GPES('win_h',true)
-      if ww ~= nil and wh ~= nil then
-        gfx1 = {main_w = tonumber(ww),
-                main_h = tonumber(wh)}
-      else    
-        gfx1 = {main_w = 800,
-                main_h = 450}
+  --DBG(lbxwin_dim)
+      if lbxwin_dim then
+        gfx1 = {main_w = lbxwin_dim.w,
+                main_h = lbxwin_dim.h}
+        Lokasenna_Window_At_Center(gfx1.main_w,gfx1.main_h,lbxwin_dim.x,lbxwin_dim.y) 
+      else
+        local ww, wh = GPES('win_w',true), GPES('win_h',true)
+        if ww ~= nil and wh ~= nil then
+          gfx1 = {main_w = tonumber(ww),
+                  main_h = tonumber(wh)}
+        else    
+          gfx1 = {main_w = 800,
+                  main_h = 450}
+        end
+        Lokasenna_Window_At_Center(gfx1.main_w,gfx1.main_h) 
+        --gfx.dock(dockstate)
       end
-      Lokasenna_Window_At_Center(gfx1.main_w,gfx1.main_h) 
-      --gfx.dock(dockstate)
       
       gfx.setimgdim(1, -1, -1)  
       gfx.setimgdim(1, gfx1.main_w,gfx1.main_h)
@@ -33678,17 +34084,24 @@ end
       SaveData()
       PopulateTracks() --must be called to link tracks to strips
       
-      local ww, wh = GPES('win_w',true), GPES('win_h',true)
-      if ww ~= nil and wh ~= nil then
-        gfx1 = {main_w = tonumber(ww),
-                main_h = tonumber(wh)}
-      else    
-        gfx1 = {main_w = 800,
-                main_h = 450}
-      end    
-      Lokasenna_Window_At_Center(gfx1.main_w,gfx1.main_h) 
-      --gfx.dock(dockstate)
-        
+      if lbxwin_dim then
+        gfx1 = {main_w = lbxwin_dim.w,
+                main_h = lbxwin_dim.h}
+        Lokasenna_Window_At_Center(gfx1.main_w,gfx1.main_h,lbxwin_dim.x,lbxwin_dim.y) 
+      
+      else
+        local ww, wh = GPES('win_w',true), GPES('win_h',true)
+        if ww ~= nil and wh ~= nil then
+          gfx1 = {main_w = tonumber(ww),
+                  main_h = tonumber(wh)}
+        else    
+          gfx1 = {main_w = 800,
+                  main_h = 450}
+        end    
+        Lokasenna_Window_At_Center(gfx1.main_w,gfx1.main_h) 
+        --gfx.dock(dockstate)
+      end
+              
     end
     if track_select then
       ChangeTrack(track_select)
@@ -33753,12 +34166,22 @@ end
   end
   
   function LoadSettings()
+  
     settings_saveallfxinststrip = tobool(nz(GES('saveallfxinststrip',true),settings_saveallfxinststrip))
     settings_followselectedtrack = tobool(nz(GES('followselectedtrack',true),settings_followselectedtrack))
     settings_disablesendchecks = tobool(nz(GES('disablesendchecks',false),settings_disablesendchecks))
     settings_updatefreq = tonumber(nz(GES('updatefreq',true),settings_updatefreq))
     settings_mousewheelknob = tobool(nz(GES('mousewheelknob',true),settings_mousewheelknob))
     dockstate = nz(GES('dockstate',true),0)
+    
+    local wx = GES('winx',true)
+    local wy = GES('winy',true)
+    local ww = GES('winw',true)
+    local wh = GES('winh',true)
+    if wx and wy and ww and wh then
+      lbxwin_dim = {x = tonumber(wx), y = tonumber(wy), w = tonumber(ww), h = tonumber(wh)}
+    end
+    
     lockx = tobool(nz(GES('lockx',true),false))
     locky = tobool(nz(GES('locky',true),false))
     lockw = tonumber(nz(GES('lockw',true),400))
@@ -33856,7 +34279,15 @@ end
     reaper.SetExtState(SCRIPT,'disablesendchecks',tostring(settings_disablesendchecks), true)
     reaper.SetExtState(SCRIPT,'updatefreq',settings_updatefreq, true)
     reaper.SetExtState(SCRIPT,'mousewheelknob',tostring(settings_mousewheelknob), true)
-    local d = gfx.dock(-1)
+    local d,wx,wy,ww,wh = gfx.dock(-1,-1,-1,-1,-1)
+    
+    if wx and wy and ww and wh then
+      reaper.SetExtState(SCRIPT,'winx',wx, true)      
+      reaper.SetExtState(SCRIPT,'winy',wy, true)
+      reaper.SetExtState(SCRIPT,'winw',ww, true)
+      reaper.SetExtState(SCRIPT,'winh',wh, true)
+    end
+    
     reaper.SetExtState(SCRIPT,'dockstate',d, true)
     reaper.SetExtState(SCRIPT,'lockx',tostring(lockx), true)
     reaper.SetExtState(SCRIPT,'locky',tostring(locky), true)
@@ -34521,6 +34952,9 @@ end
                 file:write('['..key..'midiout_osc]'..nz(stripdata.controls[c].midiout.osc,'')..'\n')              
                 file:write('['..key..'midiout_vmin]'..nz(stripdata.controls[c].midiout.vmin,0)..'\n')              
                 file:write('['..key..'midiout_vmax]'..nz(stripdata.controls[c].midiout.vmax,127)..'\n')              
+                file:write('['..key..'midiout_focus]'..nz(stripdata.controls[c].midiout.focus,1)..'\n')              
+                file:write('['..key..'midiout_updategfx]'..tostring(nz(stripdata.controls[c].midiout.updategfx,false))..'\n')              
+                file:write('['..key..'midiout_onmu]'..tostring(nz(stripdata.controls[c].midiout.onmu,false))..'\n')              
               end
 
               if stripdata.controls[c].rcmdata and #stripdata.controls[c].rcmdata > 0 then
@@ -34804,422 +35238,6 @@ end
   
   end
   
-  function GenStripSaveData(s,p,pfx,file)
-  
-    if file == nil then return end
-    if pfx == nil then pfx = '' end
-  
-    t = reaper.time_precise()
-    local stripdata = ''
-  
-    --file:write('[strips_count]'..#strips..'\n')
-    if strips[s] then
-    
-      --[[file:write('[' .. pfx ..'page]'..nz(strips[s].page,1)..'\n')
-      file:write('[' ..pfx ..'track_name]'..strips[s].track.name..'\n')
-      file:write('[' ..pfx ..'track_guid]'..nz(strips[s].track.guid,'')..'\n')
-      file:write('[' ..pfx ..'track_num]'..strips[s].track.tracknum..'\n')
-      file:write('[' ..pfx ..'track_strip]'..strips[s].track.strip..'\n')]]
-    
-      --for p = 1, 4 do
-      
-        local key = pfx
-
-        if strips[s][p] then
-
-          file:write('['..key..'surface_x]'..strips[s][p].surface_x..'\n')
-          file:write('['..key..'surface_y]'..strips[s][p].surface_y..'\n')
-          file:write('['..key..'controls_count]'..#strips[s][p].controls..'\n')
-          file:write('['..key..'graphics_count]'..#strips[s][p].graphics..'\n')
-          
-          if #strips[s][p].controls > 0 then
-            for c = 1, #strips[s][p].controls do
-          
-              local key = pfx..'c_'..c..'_'
-              
-              file:write('['..key..'cid]'..strips[s][p].controls[c].c_id..'\n')
-              file:write('['..key..'fxname]'..strips[s][p].controls[c].fxname..'\n')
-              file:write('['..key..'fxguid]'..nz(strips[s][p].controls[c].fxguid,'')..'\n')
-              file:write('['..key..'fxnum]'..nz(strips[s][p].controls[c].fxnum,'')..'\n')
-              file:write('['..key..'fxfound]'..tostring(strips[s][p].controls[c].fxfound)..'\n')
-              file:write('['..key..'param]'..strips[s][p].controls[c].param..'\n')
-  
-              file:write('['..key..'param_info_name]'..strips[s][p].controls[c].param_info.paramname..'\n')
-              file:write('['..key..'param_info_paramnum]'..nz(strips[s][p].controls[c].param_info.paramnum,'')..'\n')
-              file:write('['..key..'param_info_idx]'..nz(strips[s][p].controls[c].param_info.paramidx,'')..'\n')
-              file:write('['..key..'param_info_str]'..nz(strips[s][p].controls[c].param_info.paramstr,'')..'\n')
-              file:write('['..key..'param_info_guid]'..nz(strips[s][p].controls[c].param_info.paramdestguid,'')..'\n')
-              file:write('['..key..'param_info_chan]'..nz(strips[s][p].controls[c].param_info.paramdestchan,'')..'\n')
-              file:write('['..key..'param_info_srcchan]'..nz(strips[s][p].controls[c].param_info.paramsrcchan,'')..'\n')
-              file:write('['..key..'ctltype]'..strips[s][p].controls[c].ctltype..'\n')
-              file:write('['..key..'knob_select]'..strips[s][p].controls[c].knob_select..'\n')
-              file:write('['..key..'ctl_info_fn]'..strips[s][p].controls[c].ctl_info.fn..'\n')
-              file:write('['..key..'ctl_info_frames]'..strips[s][p].controls[c].ctl_info.frames..'\n')
-              file:write('['..key..'ctl_info_imageidx]'..strips[s][p].controls[c].ctl_info.imageidx..'\n')
-              file:write('['..key..'ctl_info_cellh]'..strips[s][p].controls[c].ctl_info.cellh..'\n')
-              file:write('['..key..'x]'..strips[s][p].controls[c].x..'\n')
-              file:write('['..key..'y]'..strips[s][p].controls[c].y..'\n')
-              file:write('['..key..'w]'..strips[s][p].controls[c].w..'\n')
-              file:write('['..key..'scale]'..strips[s][p].controls[c].scale..'\n')
-              file:write('['..key..'show_paramname]'..tostring(strips[s][p].controls[c].show_paramname)..'\n')
-              file:write('['..key..'show_paramval]'..tostring(strips[s][p].controls[c].show_paramval)..'\n')
-              file:write('['..key..'ctlname_override]'..nz(strips[s][p].controls[c].ctlname_override,'')..'\n')
-              file:write('['..key..'textcol]'..strips[s][p].controls[c].textcol..'\n')
-              file:write('['..key..'textoff]'..strips[s][p].controls[c].textoff..'\n')
-              file:write('['..key..'textoffval]'..strips[s][p].controls[c].textoffval..'\n')
-              file:write('['..key..'textoffx]'..strips[s][p].controls[c].textoffx..'\n')
-              file:write('['..key..'textoffvalx]'..strips[s][p].controls[c].textoffvalx..'\n')
-              file:write('['..key..'textsize]'..nz(strips[s][p].controls[c].textsize,0)..'\n')
-              file:write('['..key..'font]'..nz(strips[s][p].controls[c].font,fontname_def)..'\n')
-              file:write('['..key..'val]'..nz(strips[s][p].controls[c].val,0)..'\n')
-              file:write('['..key..'mval]'..nz(strips[s][p].controls[c].mval,nz(strips[s][p].controls[c].val,0))..'\n')
-              file:write('['..key..'defval]'..nz(strips[s][p].controls[c].defval,0)..'\n')   
-              file:write('['..key..'maxdp]'..nz(strips[s][p].controls[c].maxdp,-1)..'\n')   
-              file:write('['..key..'dvaloffset]'..nz(strips[s][p].controls[c].dvaloffset,'')..'\n')   
-              file:write('['..key..'minov]'..nz(strips[s][p].controls[c].minov,'')..'\n')   
-              file:write('['..key..'maxov]'..nz(strips[s][p].controls[c].maxov,'')..'\n')   
-              file:write('['..key..'scalemodex]'..nz(strips[s][p].controls[c].scalemode,8)..'\n')   
-              file:write('['..key..'framemodex]'..nz(strips[s][p].controls[c].framemode,1)..'\n')   
-              file:write('['..key..'poslock]'..nz(tostring(strips[s][p].controls[c].poslock),false)..'\n')   
-              file:write('['..key..'horiz]'..tostring(nz(strips[s][p].controls[c].horiz,false))..'\n')
-              file:write('['..key..'knobsens_norm]'..tostring(nz(strips[s][p].controls[c].knobsens.norm,settings_defknobsens.norm))..'\n')
-              file:write('['..key..'knobsens_fine]'..tostring(nz(strips[s][p].controls[c].knobsens.fine,settings_defknobsens.fine))..'\n')                 
-              file:write('['..key..'knobsens_wheel]'..tostring(nz(strips[s][p].controls[c].knobsens.wheel,settings_defknobsens.wheel))..'\n')
-              file:write('['..key..'knobsens_wheelfine]'..tostring(nz(strips[s][p].controls[c].knobsens.wheelfine,settings_defknobsens.wheelfine))..'\n')                 
-              file:write('['..key..'hidden]'..tostring(nz(strips[s][p].controls[c].hidden,false))..'\n')
-              file:write('['..key..'switcherid]'..tostring(nz(strips[s][p].controls[c].switcherid,''))..'\n')
-              file:write('['..key..'switcher]'..tostring(nz(strips[s][p].controls[c].switcher,''))..'\n')
-              file:write('['..key..'noss]'..tostring(nz(strips[s][p].controls[c].noss,''))..'\n')
-  
-              file:write('['..key..'id]'..convnum(strips[s][p].controls[c].id)..'\n')
-              file:write('['..key..'grpid]'..convnum(strips[s][p].controls[c].grpid)..'\n')
-      
-              file:write('['..key..'ctlcat]'..nz(strips[s][p].controls[c].ctlcat,'')..'\n')
-              file:write('['..key..'tracknum]'..nz(strips[s][p].controls[c].tracknum,'')..'\n')
-              file:write('['..key..'trackguid]'..nz(strips[s][p].controls[c].trackguid,'')..'\n')
-              file:write('['..key..'memstate]'..tostring(nz(strips[s][p].controls[c].membtn.state,false))..'\n')
-              file:write('['..key..'memmem]'..nz(strips[s][p].controls[c].membtn.mem,0)..'\n')
-              
-              file:write('['..key..'xydata_x]'..nz(strips[s][p].controls[c].xydata.x,0.5)..'\n')
-              file:write('['..key..'xydata_y]'..nz(strips[s][p].controls[c].xydata.y,0.5)..'\n')
-              file:write('['..key..'xydata_snapa]'..nz(strips[s][p].controls[c].xydata.snapa,1)..'\n')
-              file:write('['..key..'xydata_snapb]'..nz(strips[s][p].controls[c].xydata.snapb,1)..'\n')
-              file:write('['..key..'xydata_snapc]'..nz(strips[s][p].controls[c].xydata.snapc,1)..'\n')
-              file:write('['..key..'xydata_snapd]'..nz(strips[s][p].controls[c].xydata.snapd,1)..'\n')
-
-              file:write('['..key..'macrofader]'..nz(strips[s][p].controls[c].macrofader,'')..'\n')
-  
-              if strips[s][p].controls[c].cycledata and strips[s][p].controls[c].cycledata.statecnt then
-                file:write('['..key..'cycledata_statecnt]'..nz(strips[s][p].controls[c].cycledata.statecnt,0)..'\n')
-                file:write('['..key..'cycledata_mapptof]'..tostring(nz(strips[s][p].controls[c].cycledata.mapptof,false))..'\n')
-                file:write('['..key..'cycledata_draggable]'..tostring(nz(strips[s][p].controls[c].cycledata.draggable,false))..'\n')
-                file:write('['..key..'cycledata_spread]'..tostring(nz(strips[s][p].controls[c].cycledata.spread,false))..'\n')
-                file:write('['..key..'cycledata_pos]'..tostring(nz(strips[s][p].controls[c].cycledata.pos,1))..'\n')
-                file:write('['..key..'cycledata_posdirty]'..tostring(nz(strips[s][p].controls[c].cycledata.posdirty,false))..'\n')
-                if nz(strips[s][p].controls[c].cycledata.statecnt,0) > 0 then
-                  for i = 1, strips[s][p].controls[c].cycledata.statecnt do
-                    local key = pfx..'c_'..c..'_cyc_'..i..'_'
-                    file:write('['..key..'val]'..nz(strips[s][p].controls[c].cycledata[i].val,0)..'\n')   
-                    file:write('['..key..'dispval]'..nz(strips[s][p].controls[c].cycledata[i].dispval,'')..'\n')   
-                    file:write('['..key..'dv]'..nz(strips[s][p].controls[c].cycledata[i].dv,'')..'\n')   
-                  end
-                end
-              else
-                file:write('['..key..'cycledata_statecnt]'..0 ..'\n')                   
-              end
-
-              if strips[s][p].controls[c].midiout then
-                file:write('['..key..'midiout_output]'..nz(strips[s][p].controls[c].midiout.output,'')..'\n')
-                file:write('['..key..'midiout_mchan]'..nz(strips[s][p].controls[c].midiout.mchan,'')..'\n')
-                file:write('['..key..'midiout_msg3]'..nz(strips[s][p].controls[c].midiout.msg3,'')..'\n')              
-              end
-
-              if strips[s][p].controls[c].rcmdata and #strips[s][p].controls[c].rcmdata > 0 then
-                file:write('['..key..'rcmdata_cnt]'..#strips[s][p].controls[c].rcmdata ..'\n')                                 
-                for r = 1, #strips[s][p].controls[c].rcmdata do
-                  local key = pfx..'c_'..c..'_rcm_'..r..'_'
-                  file:write('['..key..'name]'..strips[s][p].controls[c].rcmdata[r].name..'\n')                                 
-                  file:write('['..key..'msb]'..strips[s][p].controls[c].rcmdata[r].msb..'\n')
-                  file:write('['..key..'lsb]'..strips[s][p].controls[c].rcmdata[r].lsb..'\n')
-                  file:write('['..key..'prog]'..strips[s][p].controls[c].rcmdata[r].prog..'\n')                  
-                  file:write('['..key..'nebfn]'..nz(strips[s][p].controls[c].rcmdata[r].nebfn,'')..'\n')                  
-                end 
-              else
-                file:write('['..key..'rcmdata_cnt]'..0 ..'\n')                                               
-              end
-              
-              if strips[s][p].controls[c].rcmrefresh then
-                file:write('['..key..'rcmrefresh_guid]'..nz(strips[s][p].controls[c].rcmrefresh.guid,'')..'\n')                                 
-                file:write('['..key..'rcmrefresh_delay]'..nz(strips[s][p].controls[c].rcmrefresh.delay,'')..'\n')              
-                file:write('['..key..'rcmrefresh_setvals]'..tostring(nz(strips[s][p].controls[c].rcmrefresh.setvals,''))..'\n')              
-              end
-              
-              if strips[s][p].controls[c].gauge then
-                file:write('['..key..'gauge]'..tostring(true)..'\n')
-              
-                file:write('['..key..'gauge_type]'..nz(strips[s][p].controls[c].gauge.type,1)..'\n')
-                file:write('['..key..'gauge_x_offs]'..nz(strips[s][p].controls[c].gauge.x_offs,0)..'\n')
-                file:write('['..key..'gauge_y_offs]'..nz(strips[s][p].controls[c].gauge.y_offs,0)..'\n')
-                file:write('['..key..'gauge_radius]'..nz(strips[s][p].controls[c].gauge.radius,50)..'\n')
-                file:write('['..key..'gauge_arclen]'..nz(strips[s][p].controls[c].gauge.arclen,1)..'\n')
-                file:write('['..key..'gauge_rotation]'..nz(strips[s][p].controls[c].gauge.rotation,0)..'\n')
-                file:write('['..key..'gauge_ticks]'..nz(strips[s][p].controls[c].gauge.ticks,0)..'\n')
-                file:write('['..key..'gauge_tick_size]'..nz(strips[s][p].controls[c].gauge.tick_size,2)..'\n')
-                file:write('['..key..'gauge_tick_offs]'..nz(strips[s][p].controls[c].gauge.tick_offs,1)..'\n')
-                file:write('['..key..'gauge_val_freq]'..nz(strips[s][p].controls[c].gauge.val_freq,0)..'\n')
-                file:write('['..key..'gauge_col_tick]'..nz(strips[s][p].controls[c].gauge.col_tick,gui.color.white)..'\n')
-                file:write('['..key..'gauge_col_arc]'..nz(strips[s][p].controls[c].gauge.col_arc,gui.color.white)..'\n')
-                file:write('['..key..'gauge_col_val]'..nz(strips[s][p].controls[c].gauge.col_val,gui.color.white)..'\n')
-                file:write('['..key..'gauge_show_arc]'..tostring(nz(strips[s][p].controls[c].gauge.show_arc,true))..'\n')
-                file:write('['..key..'gauge_show_tick]'..tostring(nz(strips[s][p].controls[c].gauge.show_tick,true))..'\n')
-                file:write('['..key..'gauge_show_val]'..tostring(nz(strips[s][p].controls[c].gauge.show_val,true))..'\n')
-                file:write('['..key..'gauge_val_dp]'..nz(strips[s][p].controls[c].gauge.val_dp,0)..'\n')
-                file:write('['..key..'gauge_font]'..nz(strips[s][p].controls[c].gauge.font,fontname_def)..'\n')
-                file:write('['..key..'gauge_fontsz]'..nz(strips[s][p].controls[c].gauge.fontsz,0)..'\n')
-                file:write('['..key..'gauge_spread]'..tostring(nz(strips[s][p].controls[c].gauge.spread,''))..'\n')
-                file:write('['..key..'gauge_mapptof]'..tostring(nz(strips[s][p].controls[c].gauge.mapptof,''))..'\n')
-                file:write('['..key..'gauge_numonly]'..tostring(nz(strips[s][p].controls[c].gauge.numonly,''))..'\n')
-                file:write('['..key..'gauge_abbrev]'..tostring(nz(strips[s][p].controls[c].gauge.abbrev,''))..'\n')
-                file:write('['..key..'gauge_valcnt]'..#strips[s][p].controls[c].gauge.vals..'\n')
-              
-                if strips[s][p].controls[c].gauge.vals and #strips[s][p].controls[c].gauge.vals > 0 then
-                  for gv = 1, #strips[s][p].controls[c].gauge.vals do
-                    local key = pfx..'c_'..c..'_gaugevals_'..gv..'_' 
-                    file:write('['..key..'val]'..nz(strips[s][p].controls[c].gauge.vals[gv].val,0)..'\n')
-                    file:write('['..key..'dval]'..nz(strips[s][p].controls[c].gauge.vals[gv].dval,'-')..'\n')
-                    file:write('['..key..'dover]'..nz(strips[s][p].controls[c].gauge.vals[gv].dover,'')..'\n')                  
-                    file:write('['..key..'nudge]'..nz(strips[s][p].controls[c].gauge.vals[gv].nudge,0)..'\n')                  
-                  end
-                end
-              end
-                            
-              if strips[s][p].controls[c].macroctl then
-                local mcnt = #strips[s][p].controls[c].macroctl
-                file:write('['..key..'macroctl_cnt]'..mcnt..'\n')                                 
-                for mc = 1,mcnt do
-                  local key = pfx..'c_'..c..'_mc_'..mc..'_'
-                  file:write('['..key..'c_id]'..strips[s][p].controls[c].macroctl[mc].c_id..'\n')                                 
-                  file:write('['..key..'ctl]'..strips[s][p].controls[c].macroctl[mc].ctl..'\n')                                 
-                  file:write('['..key..'A]'..strips[s][p].controls[c].macroctl[mc].A_val..'\n')                                 
-                  file:write('['..key..'B]'..strips[s][p].controls[c].macroctl[mc].B_val..'\n')                                 
-                  file:write('['..key..'shape]'..strips[s][p].controls[c].macroctl[mc].shape..'\n')                                 
-                  file:write('['..key..'mute]'..tostring(nz(strips[s][p].controls[c].macroctl[mc].mute,false))..'\n')                                 
-                  file:write('['..key..'bi]'..tostring(nz(strips[s][p].controls[c].macroctl[mc].bi,false))..'\n')
-                  file:write('['..key..'inv]'..tostring(nz(strips[s][p].controls[c].macroctl[mc].inv,false))..'\n')                                 
-                  file:write('['..key..'rel]'..tostring(nz(strips[s][p].controls[c].macroctl[mc].relative,false))..'\n')                                 
-                end
-              else
-                file:write('['..key..'macroctl_cnt]'..0 ..'\n')                                 
-              end
-
-              if strips[s][p].controls[c].eqbands then
-                local bcnt = #strips[s][p].controls[c].eqbands
-                file:write('['..key..'eqband_cnt]'..bcnt..'\n')
-                if bcnt > 0 then                                 
-                  for bc = 1,bcnt do
-                    local key = pfx..'c_'..c..'_eqband_'..bc..'_'
-                    file:write('['..key..'posmin]'..nz(strips[s][p].controls[c].eqbands[bc].posmin,'')..'\n')                                 
-                    file:write('['..key..'posmax]'..nz(strips[s][p].controls[c].eqbands[bc].posmax,'')..'\n')                                 
-                    file:write('['..key..'col]'..nz(strips[s][p].controls[c].eqbands[bc].col,'')..'\n')                                 
-                    file:write('['..key..'fxnum]'..nz(strips[s][p].controls[c].eqbands[bc].fxnum,'')..'\n')                                 
-                    file:write('['..key..'fxguid]'..nz(strips[s][p].controls[c].eqbands[bc].fxguid,'')..'\n')                                 
-                    file:write('['..key..'fxname]'..nz(strips[s][p].controls[c].eqbands[bc].fxname,'')..'\n')                                 
-                    file:write('['..key..'freq_param]'..nz(strips[s][p].controls[c].eqbands[bc].freq_param,'')..'\n')                                 
-                    file:write('['..key..'freq_param_name]'..nz(strips[s][p].controls[c].eqbands[bc].freq_param_name,'')..'\n')                                 
-                    file:write('['..key..'gain_param]'..nz(strips[s][p].controls[c].eqbands[bc].gain_param,'')..'\n')                                 
-                    file:write('['..key..'gain_param_name]'..nz(strips[s][p].controls[c].eqbands[bc].gain_param_name,'')..'\n')                                 
-                    file:write('['..key..'q_param]'..nz(strips[s][p].controls[c].eqbands[bc].q_param,'')..'\n')                                 
-                    file:write('['..key..'q_param_name]'..nz(strips[s][p].controls[c].eqbands[bc].q_param_name,'')..'\n')                                 
-                    file:write('['..key..'bypass_param]'..nz(strips[s][p].controls[c].eqbands[bc].bypass_param,'')..'\n')                                 
-                    file:write('['..key..'bypass_param_name]'..nz(strips[s][p].controls[c].eqbands[bc].bypass_param_name,'')..'\n')                                 
-                    file:write('['..key..'c1_param]'..nz(strips[s][p].controls[c].eqbands[bc].c1_param,'')..'\n')                                 
-                    file:write('['..key..'c1_param_name]'..nz(strips[s][p].controls[c].eqbands[bc].c1_param_name,'')..'\n')                                 
-                    file:write('['..key..'c2_param]'..nz(strips[s][p].controls[c].eqbands[bc].c2_param,'')..'\n')                                 
-                    file:write('['..key..'c2_param_name]'..nz(strips[s][p].controls[c].eqbands[bc].c2_param_name,'')..'\n')                                 
-                    file:write('['..key..'c3_param]'..nz(strips[s][p].controls[c].eqbands[bc].c3_param,'')..'\n')                                 
-                    file:write('['..key..'c3_param_name]'..nz(strips[s][p].controls[c].eqbands[bc].c3_param_name,'')..'\n')                                 
-                    file:write('['..key..'c4_param]'..nz(strips[s][p].controls[c].eqbands[bc].c4_param,'')..'\n')                                 
-                    file:write('['..key..'c4_param_name]'..nz(strips[s][p].controls[c].eqbands[bc].c4_param_name,'')..'\n')                                 
-                    file:write('['..key..'c5_param]'..nz(strips[s][p].controls[c].eqbands[bc].c5_param,'')..'\n')                                 
-                    file:write('['..key..'c5_param_name]'..nz(strips[s][p].controls[c].eqbands[bc].c5_param_name,'')..'\n')                                 
-                    file:write('['..key..'freq_val]'..nz(strips[s][p].controls[c].eqbands[bc].freq_val,'')..'\n')                                 
-                    file:write('['..key..'gain_val]'..nz(strips[s][p].controls[c].eqbands[bc].gain_val,'')..'\n')                                 
-                    file:write('['..key..'q_val]'..nz(strips[s][p].controls[c].eqbands[bc].q_val,'')..'\n')                                 
-                    file:write('['..key..'c1_val]'..nz(strips[s][p].controls[c].eqbands[bc].c1_val,'')..'\n')                                 
-                    file:write('['..key..'c2_val]'..nz(strips[s][p].controls[c].eqbands[bc].c2_val,'')..'\n')                                 
-                    file:write('['..key..'c3_val]'..nz(strips[s][p].controls[c].eqbands[bc].c3_val,'')..'\n')                                 
-                    file:write('['..key..'c4_val]'..nz(strips[s][p].controls[c].eqbands[bc].c4_val,'')..'\n')                                 
-                    file:write('['..key..'c5_val]'..nz(strips[s][p].controls[c].eqbands[bc].c5_val,'')..'\n')                                 
-
-                    file:write('['..key..'freq_min]'..nz(strips[s][p].controls[c].eqbands[bc].freq_min,'')..'\n')                                 
-                    file:write('['..key..'freq_max]'..nz(strips[s][p].controls[c].eqbands[bc].freq_max,'')..'\n')
-                    file:write('['..key..'gain_min]'..nz(strips[s][p].controls[c].eqbands[bc].gain_min,'')..'\n')                                 
-                    file:write('['..key..'gain_max]'..nz(strips[s][p].controls[c].eqbands[bc].gain_max,'')..'\n')
-                    file:write('['..key..'bandtype]'..nz(strips[s][p].controls[c].eqbands[bc].bandtype,'')..'\n')                                 
-                    file:write('['..key..'bandname]'..nz(strips[s][p].controls[c].eqbands[bc].bandname,'')..'\n')                    
-                    file:write('['..key..'khz]'..nz(tostring(strips[s][p].controls[c].eqbands[bc].khz),tostring(false))..'\n')                    
-                    file:write('['..key..'gaininv]'..nz(tostring(strips[s][p].controls[c].eqbands[bc].gain_inv),tostring(false))..'\n')                    
-                    file:write('['..key..'qinv]'..nz(tostring(strips[s][p].controls[c].eqbands[bc].q_inv),tostring(false))..'\n')                    
-                    file:write('['..key..'gmin]'..nz(strips[s][p].controls[c].eqbands[bc].gmin,'')..'\n')                                 
-                    file:write('['..key..'gmax]'..nz(strips[s][p].controls[c].eqbands[bc].gmax,'')..'\n')                                 
-
-                    file:write('['..key..'freq_def]'..nz(strips[s][p].controls[c].eqbands[bc].freq_def,'')..'\n')                                 
-                    file:write('['..key..'gain_def]'..nz(strips[s][p].controls[c].eqbands[bc].gain_def,'')..'\n')                                 
-                    file:write('['..key..'q_def]'..nz(strips[s][p].controls[c].eqbands[bc].q_def,'')..'\n')                                 
-                    file:write('['..key..'c1_def]'..nz(strips[s][p].controls[c].eqbands[bc].c1_def,'')..'\n')                                 
-                    file:write('['..key..'c2_def]'..nz(strips[s][p].controls[c].eqbands[bc].c2_def,'')..'\n')                                 
-                    file:write('['..key..'c3_def]'..nz(strips[s][p].controls[c].eqbands[bc].c3_def,'')..'\n')                                 
-                    file:write('['..key..'c4_def]'..nz(strips[s][p].controls[c].eqbands[bc].c4_def,'')..'\n')                                 
-                    file:write('['..key..'c5_def]'..nz(strips[s][p].controls[c].eqbands[bc].c5_def,'')..'\n')                                 
-                    
-                    local key = pfx..'c_'..c..'_eqband_'..bc..'_'
-                    if strips[s][p].controls[c].eqbands[bc].lookmap then
-                      local lcnt = #strips[s][p].controls[c].eqbands[bc].lookmap
-                      file:write('['..key..'lookmap_cnt]'..lcnt..'\n')
-                      
-                      if lcnt > 0 then
-                        for lc = 1, lcnt do
-                          local key = pfx..'c_'..c..'_eqband_'..bc..'_lm_'..lc..'_'
-                          file:write('['..key..'pix]'..nz(strips[s][p].controls[c].eqbands[bc].lookmap[lc].pix,'')..'\n')                                 
-                          file:write('['..key..'hz]'..nz(strips[s][p].controls[c].eqbands[bc].lookmap[lc].hz,'')..'\n')                                 
-                        end
-                      end
-                    
-                    else
-                      file:write('['..key..'lookmap_cnt]'..0 ..'\n')                    
-                    end
-
-                    local key = pfx..'c_'..c..'_eqband_'..bc..'_'
-                    if strips[s][p].controls[c].eqbands[bc].gmap then
-                      local lcnt = #strips[s][p].controls[c].eqbands[bc].gmap
-                      file:write('['..key..'gmap_cnt]'..lcnt..'\n')
-                      
-                      if lcnt > 0 then
-                        for lc = 1, lcnt do
-                          local key = pfx..'c_'..c..'_eqband_'..bc..'_gm_'..lc..'_'
-                          file:write('['..key..'pix]'..nz(strips[s][p].controls[c].eqbands[bc].gmap[lc].pix,'')..'\n')                                 
-                          file:write('['..key..'db]'..nz(strips[s][p].controls[c].eqbands[bc].gmap[lc].db,'')..'\n')                                 
-                        end
-                      end
-                    
-                    else
-                      file:write('['..key..'gmap_cnt]'..0 ..'\n')                    
-                    end
-                                                     
-                  end
-                  
-                end
-              else
-                file:write('['..key..'eqband_cnt]'..0 ..'\n')                                 
-              end
-
-              if strips[s][p].controls[c].eqgraph and type(strips[s][p].controls[c].eqgraph) == 'table' then
-
-                local key = pfx..'c_'..c..'_'
-                file:write('['..key..'ecg_graph]'..tostring(true)..'\n')                                               
-                file:write('['..key..'ecg_gmin]'..nz(strips[s][p].controls[c].eqgraph.gmin,'')..'\n')                                 
-                file:write('['..key..'ecg_gmax]'..nz(strips[s][p].controls[c].eqgraph.gmax,'')..'\n')                                 
-                file:write('['..key..'ecg_posmin]'..nz(strips[s][p].controls[c].eqgraph.posmin,'')..'\n')                                 
-                file:write('['..key..'ecg_posmax]'..nz(strips[s][p].controls[c].eqgraph.posmax,'')..'\n')                                 
-
-                if strips[s][p].controls[c].eqgraph.lookmap then
-                  local lcnt = #strips[s][p].controls[c].eqgraph.lookmap
-                  file:write('['..key..'ecg_lookmap_cnt]'..lcnt..'\n')
-                  
-                  if lcnt > 0 then
-                    for lc = 1, lcnt do
-                      local key = pfx..'c_'..c..'_ecg_lm_'..lc..'_'
-                      file:write('['..key..'pix]'..nz(strips[s][p].controls[c].eqgraph.lookmap[lc].pix,'')..'\n')                                 
-                      file:write('['..key..'hz]'..nz(strips[s][p].controls[c].eqgraph.lookmap[lc].hz,'')..'\n')                                 
-                    end
-                  end
-                
-                else
-                  file:write('['..key..'ecg_lookmap_cnt]'..0 ..'\n')                    
-                end
-
-                local key = pfx..'c_'..c..'_'
-                if strips[s][p].controls[c].eqgraph.gmap then
-                  local lcnt = #strips[s][p].controls[c].eqgraph.gmap
-                  file:write('['..key..'ecg_gmap_cnt]'..lcnt..'\n')
-                  
-                  if lcnt > 0 then
-                    for lc = 1, lcnt do
-                      local key = pfx..'c_'..c..'_ecg_gm_'..lc..'_'
-                      file:write('['..key..'pix]'..nz(strips[s][p].controls[c].eqgraph.gmap[lc].pix,'')..'\n')                                 
-                      file:write('['..key..'db]'..nz(strips[s][p].controls[c].eqgraph.gmap[lc].db,'')..'\n')                                 
-                    end
-                  end
-                
-                else
-                  file:write('['..key..'ecg_gmap_cnt]'..0 ..'\n')
-                end
-                
-              end
-
-            end
-          end        
-
-          if #strips[s][p].graphics > 0 then
-            for g = 1, #strips[s][p].graphics do
-
-              local key = pfx..'g_'..g..'_'
-          
-              file:write('['..key..'fn]'..strips[s][p].graphics[g].fn..'\n')
-              --file:write('['..key..'imageidx]'..strips[s][p].graphics[g].imageidx..'\n')
-              file:write('['..key..'x]'..strips[s][p].graphics[g].x..'\n')
-              file:write('['..key..'y]'..strips[s][p].graphics[g].y..'\n')
-              file:write('['..key..'w]'..strips[s][p].graphics[g].w..'\n')
-              file:write('['..key..'h]'..strips[s][p].graphics[g].h..'\n')
-              file:write('['..key..'stretchw]'..nz(strips[s][p].graphics[g].stretchw,strips[s][p].graphics[g].w)..'\n')
-              file:write('['..key..'stretchh]'..nz(strips[s][p].graphics[g].stretchh,strips[s][p].graphics[g].h)..'\n')
-              file:write('['..key..'scale]'..strips[s][p].graphics[g].scale..'\n')
-              file:write('['..key..'id]'..convnum(strips[s][p].graphics[g].id)..'\n')
-              file:write('['..key..'grpid]'..convnum(strips[s][p].graphics[g].grpid)..'\n')
-            
-              file:write('['..key..'gfxtype]'..nz(strips[s][p].graphics[g].gfxtype, gfxtype.img)..'\n')
-              file:write('['..key..'font_idx]'..nz(strips[s][p].graphics[g].font.idx, '')..'\n')
-              file:write('['..key..'font_name]'..nz(strips[s][p].graphics[g].font.name, '')..'\n')
-              file:write('['..key..'font_size]'..nz(strips[s][p].graphics[g].font.size, '')..'\n')
-              file:write('['..key..'font_bold]'..nz(tostring(strips[s][p].graphics[g].font.bold), '')..'\n')
-              file:write('['..key..'font_italics]'..nz(tostring(strips[s][p].graphics[g].font.italics), '')..'\n')
-              file:write('['..key..'font_underline]'..nz(tostring(strips[s][p].graphics[g].font.underline), '')..'\n')
-              file:write('['..key..'font_shadow]'..nz(tostring(strips[s][p].graphics[g].font.shadow), '')..'\n')
-              file:write('['..key..'font_shadowx]'..nz(strips[s][p].graphics[g].font.shadow_x, '')..'\n')
-              file:write('['..key..'font_shadowy]'..nz(strips[s][p].graphics[g].font.shadow_y, '')..'\n')
-              file:write('['..key..'font_shadowa]'..nz(strips[s][p].graphics[g].font.shadow_a, '')..'\n')
-              file:write('['..key..'text]'..nz(strips[s][p].graphics[g].text, '')..'\n')
-              file:write('['..key..'text_col]'..nz(strips[s][p].graphics[g].text_col, '')..'\n')
-              file:write('['..key..'poslock]'..nz(tostring(strips[s][p].graphics[g].poslock), false)..'\n')
-              file:write('['..key..'switcher]'..tostring(nz(strips[s][p].graphics[g].switcher,''))..'\n')
-            
-            end
-          end
-      
-        else
-          file:write('['..key..'surface_x]'..0 ..'\n')
-          file:write('['..key..'surface_y]'..0 ..'\n')
-          file:write('['..key..'controls_count]'..0 ..'\n')
-          file:write('['..key..'graphics_count]'..0 ..'\n')          
-        end      
-      
-      --end
-    
-    end
-
-    --file:write(pickled_table)
-    --[[if nofile == true then
-      file:close()
-      reaper.SetProjExtState(0,SCRIPT,'strips_count',#strips) 
-      reaper.SetProjExtState(0,SCRIPT,'strips_datafile_'..string.format("%03d",s),fn) 
-    end]]
-        
-    --DBG('Save strip time: '..reaper.time_precise() - t)
-    return reaper.time_precise() - t
-  
-  end
-  
-  
       
   function SaveEditedData()
     for i, v in pairs(g_edstrips) do 
@@ -35227,7 +35245,42 @@ end
     end
   end
   
-  function SaveData(tmp, bak)
+  function GetSaveFN()
+  
+    local save_path=projsave_path..'/'
+    if settings_savedatainprojectfolder == true then
+      save_path=reaper.GetProjectPath('')..'/'
+    end
+    
+    local pn = GetProjectName()
+    local projname = string.sub(pn,0,string.len(pn)-4) --..'_'..PROJECTID
+    if projname == nil or projname == '' then
+      projname = 'unnamed_project'
+    end
+    if save_subfolder and save_subfolder ~= '' then
+      local sf = save_subfolder
+      if sf == '#' then
+        sf = projname
+        if projname == 'unnamed_project' then
+          projname = projname..'_'..PROJECTID
+        end
+      end
+      projname = sf..'/'..projname
+      reaper.RecursiveCreateDirectory(save_path..sf,1)
+    end
+    
+    if tmp then
+      fn=projname..".lbxstripper__"
+    else
+      fn=projname..".lbxstripper"
+    end
+    local ffn=save_path..fn
+    
+    return ffn, save_path, fn
+    
+  end
+  
+  function SaveData(tmp, bak, noclean)
   
     ZeroProjectFlags()
     
@@ -35236,17 +35289,14 @@ end
   
     SaveSettings()
     
-    PopulateTracks()
-    --DBG('cleaning')
-    CleanData()
-    
+    if noclean == nil then
+      PopulateTracks()
+      CleanData()
+    end
+        
     local t = reaper.time_precise()
     
-    --[[local fn_strips = {}
-    local fn_snaps = {}
-    local fn_xxy = {}
-    ]]
-    local save_path=projsave_path..'/'
+    --[[local save_path=projsave_path..'/'
     if settings_savedatainprojectfolder == true then
       save_path=reaper.GetProjectPath('')..'/'
     end
@@ -35273,7 +35323,9 @@ end
     else
       fn=projname..".lbxstripper"
     end
-    local ffn=save_path..fn
+    local ffn=save_path..fn]]
+    
+    local ffn, save_path, fn = GetSaveFN()
     DBGOut('SaveData: ffn: '..tostring(ffn))
     
     --DBG(fn)
@@ -35316,7 +35368,12 @@ end
     if settings_createbackuponmanualsave and bak == true then
       local srcffn = ffn
       if tmp then
-        ffn = string.match(ffn,'(.+)__')..'.lbxbak'
+        ffn = string.match(ffn,'(.+)__')
+        if ffn == nil then
+          ffn = srcffn..'.lbxbak'
+        end
+        ffn=ffn..'.lbxbak'
+        
       else
         ffn = ffn..'.lbxbak'      
       end
@@ -37607,7 +37664,7 @@ end
   end
 
     
-  function SaveProj(tmp, bak)
+  function SaveProj(tmp, bak, noclean)
     --DBG(reaper.GetProjectPath(''))
     if #strips > 0 then
       GUI_DrawMsgX(obj, gui, 'Saving Data...')
@@ -37625,7 +37682,7 @@ end
           end
   
           local t = reaper.time_precise()
-          SaveData(nil, bak)
+          SaveData(nil, bak, noclean)
           reaper.Main_SaveProject(0,false)
           infomsg = "DATA SAVED (" .. round(reaper.time_precise() - t,2)..'s)'
           projnamechange = false
@@ -37634,7 +37691,7 @@ end
         end
       else
         local t = reaper.time_precise()
-        SaveData(tmp, bak)
+        SaveData(tmp, bak, noclean)
         infomsg = "DATA SAVED (" .. round(reaper.time_precise() - t,2)..'s)'
         --projnamechange = false
       end
@@ -37662,16 +37719,29 @@ end
   end    
   
   function quit()
-  
-    --local res = reaper.MB('Save data and project?', 'Save data',4) 
-    --if res == 1 then  
-      SaveProj(true)
-      SaveSettings()
+
       
-      --ClearSettings()
-      --reaper.MarkProjectDirty(0)
-    --end
+    local ffn = GetSaveFN()
+    local srcffn = ffn
+    ffn = ffn..'.lbxbak_'      
+    copyfile(srcffn, ffn)
+
+    local ffn=resource_path..'aa.testdata'    
+    local file=io.open(ffn,"w")    
+    file:write('[strips]'..#strips..'\n')
+    file:write('[snapshots]'..#snapshots..'\n')
+    file:write('[tracks]'..#tracks..'\n')
+      
+    SaveProj(true,nil,true)
+    SaveSettings()
+
+    file:write('[strips]'..#strips..'\n')
+    file:write('[snapshots]'..#snapshots..'\n')
+    file:write('[tracks]'..#tracks..'\n')
+    file:close()
+
     StripperRunning(false)
+    
     gfx.quit()
     
   end
@@ -37769,65 +37839,107 @@ end
   
   end
   
-  function SendMIDIMsg(miditab, val)
+  function SendMIDIMsg(miditab, val, mu)
   
     --Send MIDI CC
-    if val and midioutsidx[miditab.output] then
-      local vald = math.floor((miditab.vmax - miditab.vmin)*val) + miditab.vmin
-    
-      if miditab.msgtype <= 4 then      
-        reaper.StuffMIDIMessage(midioutsidx[miditab.output], 
-                                midimsgval_table[miditab.msgtype]..string.format('%x',miditab.mchan-1),
-                                miditab.msg3, --CC num
-                                F_limit(vald,0,127)) -- CC val
-      elseif miditab.msgtype == 5 or miditab.msgtype == 6 then      
-        reaper.StuffMIDIMessage(midioutsidx[miditab.output], 
-                                midimsgval_table[miditab.msgtype]..string.format('%x',miditab.mchan-1),
-                                F_limit(vald,0,127), 
-                                0) -- CC val      
-      elseif miditab.msgtype == 6 then      
-        reaper.StuffMIDIMessage(midioutsidx[miditab.output], 
-                                midimsgval_table[miditab.msgtype]..string.format('%x',miditab.mchan-1),
-                                miditab.msg3, --CC num
-                                F_limit(vald,0,127)) -- CC val      
-      elseif miditab.msgtype == 7 then
-        local v1 = math.floor(vald / 128)
-        local v2 = vald % 128
-        reaper.StuffMIDIMessage(midioutsidx[miditab.output], 
-                                midimsgval_table[miditab.msgtype]..string.format('%x',miditab.mchan-1),
-                                v2, 
-                                v1)
+    if miditab.focus > 1 then
+      if miditab.focus == 2 then
+        FocusArrange()
+      elseif miditab.focus == 3 then
+        FocusMIDIEditor()
       end
-
-      if miditab.osc then
-        local msg = string.gsub(miditab.osc, '%[val%]', vald)
-        --DBG(msg)    
-        reaper.OscLocalMessageToHost(msg)
-      end
-      
-      midimsg = true
-      midimsgto = reaper.time_precise() + 0.1
-
-      --reaper.Main_OnCommand(40716,0)
-      --reaper.Main_OnCommand(40716,0)
-      
-    elseif miditab.osc then
-      local vald = 0
-      if val then
-        vald = math.floor((miditab.vmax - miditab.vmin)*val) + miditab.vmin
-      end
-      
-      if miditab.osc then
-        local msg = string.gsub(miditab.osc, '%[val%]', vald)
-        --DBG(msg)    
-        reaper.OscLocalMessageToHost(msg)
-      end
-      
-      midimsg = true
-      midimsgto = reaper.time_precise() + 0.1
-                
     end
+    if miditab.onmu == false or mu == true then
+      if (val and midioutsidx[miditab.output]) then
 
+        if miditab.updategfx == true then
+          if mu then
+          
+            local ctl = strips[tracks[track_select].strip][page].controls[trackfxparam_select]
+            ctl.val = 0
+            ctl.dirty = true
+            update_ctls = true
+          end
+          touch_trigger = false
+          touch_timer = reaper.time_precise()+0.2
+          midimsg = true
+          midimsgto = reaper.time_precise() + 0.1
+          GUI_draw(obj, gui)
+          gfx.update()
+        end
+              
+        local vald = math.floor((miditab.vmax - miditab.vmin)*val) + miditab.vmin
+      
+        if miditab.msgtype <= 4 then      
+          reaper.StuffMIDIMessage(midioutsidx[miditab.output], 
+                                  midimsgval_table[miditab.msgtype]..string.format('%x',miditab.mchan-1),
+                                  miditab.msg3, --CC num
+                                  F_limit(vald,0,127)) -- CC val
+        elseif miditab.msgtype == 5 or miditab.msgtype == 6 then      
+          reaper.StuffMIDIMessage(midioutsidx[miditab.output], 
+                                  midimsgval_table[miditab.msgtype]..string.format('%x',miditab.mchan-1),
+                                  F_limit(vald,0,127), 
+                                  0) -- CC val      
+        elseif miditab.msgtype == 6 then      
+          reaper.StuffMIDIMessage(midioutsidx[miditab.output], 
+                                  midimsgval_table[miditab.msgtype]..string.format('%x',miditab.mchan-1),
+                                  miditab.msg3, --CC num
+                                  F_limit(vald,0,127)) -- CC val      
+        elseif miditab.msgtype == 7 then
+          local v1 = math.floor(vald / 128)
+          local v2 = vald % 128
+          reaper.StuffMIDIMessage(midioutsidx[miditab.output], 
+                                  midimsgval_table[miditab.msgtype]..string.format('%x',miditab.mchan-1),
+                                  v2, 
+                                  v1)
+        end
+  
+        if miditab.osc then
+          local msg = string.gsub(miditab.osc, '%[val%]', vald)
+          --DBG(msg)    
+          reaper.OscLocalMessageToHost(msg)
+        end
+        
+        midimsg = true
+        midimsgto = reaper.time_precise() + 0.1
+  
+      elseif miditab.osc then
+        local vald = 0
+        if val then
+          vald = math.floor((miditab.vmax - miditab.vmin)*val) + miditab.vmin
+        end
+        
+        if miditab.osc then
+          local msg = string.gsub(miditab.osc, '%[val%]', vald)
+          --DBG(msg)    
+          reaper.OscLocalMessageToHost(msg)
+        end
+        
+        midimsg = true
+        midimsgto = reaper.time_precise() + 0.1
+      end             
+    else
+      mu_mmsg = {midiout = miditab, val = val}
+      mididelay = reaper.time_precise() +0.05
+      midi1st = true
+      
+      if miditab.updategfx == true then
+        --local ctl = strips[tracks[track_select].strip][page].controls[trackfxparam_select]
+        --ctl.val = 1
+        --ctl.dirty = true
+        GUI_draw(obj, gui)
+        gfx.update()
+      end
+      
+    end
+    
+  end
+  
+  function FocusArrange()
+    reaper.Main_OnCommand(reaper.NamedCommandLookup('_BR_FOCUS_ARRANGE_WND'),0)
+  end
+  function FocusMIDIEditor()
+    reaper.Main_OnCommand(reaper.NamedCommandLookup('_SN_FOCUS_MIDI_EDITOR'),0)
   end
   
   function LoadScanBoot(fn)
@@ -37928,6 +38040,8 @@ end
   SCRIPT = 'LBX_STRIPPER'
   VERSION = 0.95
   STRIPSET = 'STRIP SET 1'
+
+  LBX_FB_CNT = 32
 
   OS = reaper.GetOS()
   math.randomseed(os.clock())
