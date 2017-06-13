@@ -38212,6 +38212,7 @@ end
     def_graph = EQC_LoadGraph()
     LoadSettings()
     LoadData()
+    CleanData()
     
     if nebscanboot_file ~= nil then
       LoadScanBoot(nebscanboot_file)
