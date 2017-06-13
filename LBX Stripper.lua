@@ -19606,7 +19606,7 @@ end
                     end 
                     
                   elseif faders[p+1].targettype == 4 then
-                  
+                  --DBG('p')
                     local strip = faders[p+1].strip
                     local page = faders[p+1].page
                     local c = faders[p+1].ctl
@@ -19690,6 +19690,7 @@ end
                 end
               end    
               if faders[p+1].targettype == 4 then
+              --DBG('bb')
                 local strip = faders[p+1].strip
                 local page = faders[p+1].page
                 local c = faders[p+1].ctl
@@ -29863,7 +29864,7 @@ end
                     end
                     
                     if ctl.macrofader then                    
-                      SetFader(ctl.macrofader, ctl.val)                    
+                      --SetFader(ctl.macrofader, ctl.val)                    
                     end
                     
                   end
