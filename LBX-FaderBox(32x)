@@ -1,0 +1,95 @@
+desc: LBX-FaderBox(32x)
+
+slider1:1<0,1,0.00001>-F1
+slider2:1<0,1,0.00001>-F2
+slider3:1<0,1,0.00001>-F3
+slider4:1<0,1,0.00001>-F4
+slider5:1<0,1,0.00001>-F5
+slider6:1<0,1,0.00001>-F6
+slider7:1<0,1,0.00001>-F7
+slider8:1<0,1,0.00001>-F8
+
+slider9:1<0,1,0.00001>-F9
+slider10:1<0,1,0.00001>-F10
+slider11:1<0,1,0.00001>-F11
+slider12:1<0,1,0.00001>-F12
+slider13:1<0,1,0.00001>-F13
+slider14:1<0,1,0.00001>-F14
+slider15:1<0,1,0.00001>-F15
+slider16:1<0,1,0.00001>-F16
+
+slider17:1<0,1,0.00001>-F17
+slider18:1<0,1,0.00001>-F18
+slider19:1<0,1,0.00001>-F19
+slider20:1<0,1,0.00001>-F20
+slider21:1<0,1,0.00001>-F21
+slider22:1<0,1,0.00001>-F22
+slider23:1<0,1,0.00001>-F23
+slider24:1<0,1,0.00001>-F24
+
+slider25:1<0,1,0.00001>-F25
+slider26:1<0,1,0.00001>-F26
+slider27:1<0,1,0.00001>-F27
+slider28:1<0,1,0.00001>-F28
+slider29:1<0,1,0.00001>-F29
+slider30:1<0,1,0.00001>-F30
+slider31:1<0,1,0.00001>-F31
+slider32:1<0,1,0.00001>-F32
+
+slider34:0<0,1,1{No,Yes}>Send Midi Feedback
+slider35:0<0,3,1{0-31,32-63,64-95,96-127}>Feedback CC No's
+slider36:0<0,15,1{1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16}>Feedback Midi Channel
+
+@init
+CC_MESG_MIN = 176;
+
+nfade = 32;
+ovals = 0;
+fbmsg = 32;
+fbmsgoff = 0;
+fbchan = 0;
+
+cnt = 0;
+loop(nfade,
+  fbmsg[cnt] = fbmsgoff+cnt;
+  cnt+=1;
+);
+
+cnt = 0;
+loop(nfade,
+  ovals[cnt] = 0;
+  cnt+=1;
+);
+
+@slider
+
+slider(36) !== fbchan ? (
+  fbchan = slider(36)
+);
+
+slider(35) !== fbmsgoff ? (
+  fbmsgoff = slider(35);
+  cnt = 0;
+  loop(nfade,
+    fbmsg[cnt] = (fbmsgoff*32)+cnt;
+    cnt+=1;
+  );
+);
+
+@block
+
+slider(34) == 1 ? (
+  fd=0;
+  loop(nfade,
+    slider(fd+1) !== oval[fd] ? (
+      msg1 = CC_MESG_MIN+fbchan;
+      msg2 = fbmsg[fd];
+      msg3 = floor(slider(fd+1) * 127);
+      midisend(0,msg1,msg2,msg3);
+      oval[fd] = slider(fd+1);
+    );
+    fd+=1;
+  );
+);
+
+@sample
