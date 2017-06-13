@@ -19694,15 +19694,17 @@ end
                 local page = faders[p+1].page
                 local c = faders[p+1].ctl
                 local ctl = strips[strip][page].controls[c]
-                local t = strips[strip].track.tracknum
-                if ctl.tracknum ~= nil then
-                  t = ctl.tracknum
-                end                
-                local vv = round(GetParamValue_XX(ctl.ctlcat, t, ctl.fxnum, ctl.param, c, strip, page),4)
-                if tostring(vv) ~= tostring(round(faders[p+1].val,4)) then
-                  --DBG(vv..'  '..faders[p+1].val)
-                  faders[p+1].val = vv
-                  SetFader(p+1, vv) 
+                if ctl then
+                  local t = strips[strip].track.tracknum
+                  if ctl.tracknum ~= nil then
+                    t = ctl.tracknum
+                  end                
+                  local vv = round(GetParamValue_XX(ctl.ctlcat, t, ctl.fxnum, ctl.param, c, strip, page),4)
+                  if tostring(vv) ~= tostring(round(faders[p+1].val,4)) then
+                    --DBG(vv..'  '..faders[p+1].val)
+                    faders[p+1].val = vv
+                    SetFader(p+1, vv) 
+                  end
                 end
               end
               
