@@ -18488,17 +18488,19 @@ end
   
   function TrackChangeMidi()
   
-    local strip = tracks[track_select].strip
-    if strips[strip] then
-      local ctls = strips[strip][page].controls
-      for c = 1, #ctls do
-        local ctl = ctls[c]
-        if ctl.ctlcat ~= ctlcats.midictl and ctl.midiout then
-          SendMIDIMsg(ctl.midiout, ctl.val)
-        end    
+    if tracks[track_select] then
+      local strip = tracks[track_select].strip
+      if strips[strip] then
+        local ctls = strips[strip][page].controls
+        for c = 1, #ctls do
+          local ctl = ctls[c]
+          if ctl.ctlcat ~= ctlcats.midictl and ctl.midiout then
+            SendMIDIMsg(ctl.midiout, ctl.val)
+          end    
+        end
       end
     end
-      
+          
   end
   
   function SetCtlSelectVals()
@@ -19368,6 +19370,10 @@ end
   
   function ChangeTrack(t)
   
+    if tracks[t] == nil then
+      t = -1
+    end
+    
     track_select = t
     trackedit_select = t
     
@@ -20626,6 +20632,7 @@ end
       otrkcnt = ct
       local st = reaper.GetSelectedTrack(0,0)
       if st == nil then
+      DBG('p')
         track_select = -1
         --update_gfx = true
       end
@@ -33501,7 +33508,7 @@ end
       ChangeTrack(track_select)
       local tr = GetTrack(track_select)
       if tr then
-        reaper.SetOnlyTrackSelected(tr)
+        --reaper.SetOnlyTrackSelected(tr)
       end 
     end
     if tracks and tracks[track_select] and tracks[track_select].strip and strips[tracks[track_select].strip] then
@@ -34111,7 +34118,7 @@ end
       --if settings_followselectedtrack then
         local tr = GetTrack(track_select)
         if tr then
-          reaper.SetOnlyTrackSelected(tr)
+          --reaper.SetOnlyTrackSelected(tr)
         end 
       --end 
     end
@@ -37058,6 +37065,8 @@ end
     otrkcnt = -1
     ofxcnt = -1
     checktr = 0    
+  
+    otrkcnt = reaper.CountTracks(0)
   
     PopulateTracks()
     PopulateGFX()
