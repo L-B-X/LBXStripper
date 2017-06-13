@@ -37721,24 +37721,24 @@ end
   function quit()
 
       
-    local ffn = GetSaveFN()
+    --[[local ffn = GetSaveFN()
     local srcffn = ffn
     ffn = ffn..'.lbxbak_'      
-    copyfile(srcffn, ffn)
+    copyfile(srcffn, ffn)]]
 
-    local ffn=resource_path..'aa.testdata'    
+    --[[local ffn=resource_path..'aa.testdata'    
     local file=io.open(ffn,"w")    
     file:write('[strips]'..#strips..'\n')
     file:write('[snapshots]'..#snapshots..'\n')
-    file:write('[tracks]'..#tracks..'\n')
+    file:write('[tracks]'..#tracks..'\n')]]
       
     SaveProj(true,nil,true)
     SaveSettings()
 
-    file:write('[strips]'..#strips..'\n')
+    --[[file:write('[strips]'..#strips..'\n')
     file:write('[snapshots]'..#snapshots..'\n')
     file:write('[tracks]'..#tracks..'\n')
-    file:close()
+    file:close()]]
 
     StripperRunning(false)
     
