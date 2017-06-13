@@ -7741,7 +7741,11 @@ end
                   h = obj.sections[168].h}
     GUI_textC(gui,xywh,'*',gui.color.black,9)
     GUI_DrawButton(gui, 'RANDOMIZE', obj.sections[169], gui.color.white, gui.color.black, true, '', false)
-    GUI_DrawButton(gui, 'CAPTURE', obj.sections[162], gui.color.white, gui.color.black, true, '', false)
+    if settings_savefaderboxassinsnapshots then
+      GUI_DrawButton(gui, 'CAPTURE (+FB)', obj.sections[162], gui.color.white, gui.color.black, true, '', false)
+    else
+      GUI_DrawButton(gui, 'CAPTURE', obj.sections[162], gui.color.white, gui.color.black, true, '', false)
+    end
     GUI_DrawButton(gui, 'NEW SUBSET', obj.sections[166], gui.color.white, gui.color.black, true, '', false)
     local bc, bc2 = gui.color.white, gui.color.white
     if sstype_select == 1 then
@@ -17909,6 +17913,23 @@ end
   
   end
   
+  function RBMenu_Capture()
+  
+    local mstr = 'Capture faderbox settings'
+    if settings_savefaderboxassinsnapshots == true then
+      mstr = '!'..mstr
+    end
+    gfx.x, gfx.y = obj.sections[160].x + mouse.mx, obj.sections[160].y + mouse.my
+    res = OpenMenu(mstr)
+    if res ~= 0 then
+      if res == 1 then
+        settings_savefaderboxassinsnapshots = not settings_savefaderboxassinsnapshots
+        update_gfx = true
+      end
+    end    
+    
+  end
+  
   function RBMenu(mtype,ccat,i)
     if mtype == 0 then
     
@@ -21179,14 +21200,23 @@ end
             return
           end 
         end
-
-        DeleteFader(lbx_midilrnval)
       
         local f = {targettype = 4,
                    strip = tracks[track_select].strip,
                    page = page,
                    ctl = lbx_midilrnctl,
                    c_id = strips[tracks[track_select].strip][page].controls[lbx_midilrnctl].c_id}
+        for i = 1, #faders do
+          if faders[i].targettype == f.targettype and
+             faders[i].strip == f.strip and
+             faders[i].page == f.page and
+             faders[i].ctl == f.ctl and
+             faders[i].c_id == f.c_id then
+            faders[i] = {}
+          end
+        end
+        DeleteFader(lbx_midilrnval)
+        
         faders[lbx_midilrnval] = f
         strips[tracks[track_select].strip][page].controls[lbx_midilrnctl].macrofader = lbx_midilrnval
         
@@ -26950,6 +26980,10 @@ end
         Snapshots_CREATE(tracks[track_select].strip, page, sstype_select)
         update_snaps = true
         update_ctls = true --to update snapshot ctls
+
+      elseif mouse.context == nil and MOUSE_click_RB(obj.sections[162]) then
+
+        RBMenu_Capture()
 
       elseif mouse.context == nil and MOUSE_click(obj.sections[169]) then
         if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.15 then
@@ -33034,6 +33068,16 @@ end
                                            ctl = tonumber(data[key..'ctl']),
                                            val = tonumber(data[key..'val']),
                                            dval = tonumber(zn(data[key..'dval']))}
+                
+                local mf = tonumber(data[key..'mf'])
+                if mf then
+                  snaps[sst][ss].data[d].mf = mf
+                  snaps[sst][ss].data[d].mfdata = {targettype = tonumber(data[key..'mfdata_targettype']),
+                                                   strip = tonumber(data[key..'mfdata_strip']),
+                                                   page = tonumber(data[key..'mfdata_page']),
+                                                   ctl = tonumber(data[key..'mfdata_ctl']),
+                                                   c_id = tonumber(data[key..'mfdata_c_id'])}
+                end
               end
             end
             
@@ -33071,6 +33115,17 @@ end
                                                    ctl = tonumber(data[key..'ctl']),
                                                    val = tonumber(data[key..'val']),
                                                    dval = tonumber(zn(data[key..'dval']))}
+
+                local mf = tonumber(data[key..'mf'])
+                if mf then
+                  snaps[sst].snapshot[ss].data[d].mf = mf
+                  snaps[sst].snapshot[ss].data[d].mfdata = {targettype = tonumber(data[key..'mfdata_targettype']),
+                                                            strip = tonumber(data[key..'mfdata_strip']),
+                                                            page = tonumber(data[key..'mfdata_page']),
+                                                            ctl = tonumber(data[key..'mfdata_ctl']),
+                                                            c_id = tonumber(data[key..'mfdata_c_id'])}
+                end
+
               end
             end
           end                 
@@ -34744,6 +34799,15 @@ end
                 file:write('['..key..'val]'.. snapshots[s][p][sst][ss].data[d].val ..'\n')
                 file:write('['..key..'dval]'.. nz(snapshots[s][p][sst][ss].data[d].dval,'') ..'\n')
           
+                if snapshots[s][p][sst][ss].data[d].mf then
+                  file:write('['..key..'mf]'.. snapshots[s][p][sst][ss].data[d].mf ..'\n')
+                  file:write('['..key..'mfdata_targettype]'.. snapshots[s][p][sst][ss].data[d].mfdata.targettype ..'\n')
+                  file:write('['..key..'mfdata_strip]'.. snapshots[s][p][sst][ss].data[d].mfdata.strip ..'\n')                
+                  file:write('['..key..'mfdata_page]'.. snapshots[s][p][sst][ss].data[d].mfdata.page ..'\n')                
+                  file:write('['..key..'mfdata_ctl]'.. snapshots[s][p][sst][ss].data[d].mfdata.ctl ..'\n')                
+                  file:write('['..key..'mfdata_c_id]'.. snapshots[s][p][sst][ss].data[d].mfdata.c_id ..'\n')                
+                end
+          
               end
             end
           end
@@ -34780,6 +34844,15 @@ end
                 file:write('['..key..'ctl]'.. snapshots[s][p][sst].snapshot[ss].data[d].ctl ..'\n')
                 file:write('['..key..'val]'.. snapshots[s][p][sst].snapshot[ss].data[d].val ..'\n')
                 file:write('['..key..'dval]'.. nz(snapshots[s][p][sst].snapshot[ss].data[d].dval,'') ..'\n')
+
+                if snapshots[s][p][sst].snapshot[ss].data[d].mf then
+                  file:write('['..key..'mf]'.. snapshots[s][p][sst].snapshot[ss].data[d].mf ..'\n')
+                  file:write('['..key..'mfdata_targettype]'.. snapshots[s][p][sst].snapshot[ss].data[d].mfdata.targettype ..'\n')
+                  file:write('['..key..'mfdata_strip]'.. snapshots[s][p][sst].snapshot[ss].data[d].mfdata.strip ..'\n')                
+                  file:write('['..key..'mfdata_page]'.. snapshots[s][p][sst].snapshot[ss].data[d].mfdata.page ..'\n')                
+                  file:write('['..key..'mfdata_ctl]'.. snapshots[s][p][sst].snapshot[ss].data[d].mfdata.ctl ..'\n')                
+                  file:write('['..key..'mfdata_c_id]'.. snapshots[s][p][sst].snapshot[ss].data[d].mfdata.c_id ..'\n')                
+                end
           
               end
             end
@@ -36062,13 +36135,25 @@ end
           local ctl = strips[strip][page].controls[c]
           if ctl.noss ~= true and c and v and tostring(nv) ~= tostring(ctl.val) then
             trackfxparam_select = c
-            local trnum = nz(ctl.tracknum,strips[strip].track.tracknum)
+            --local trnum = nz(ctl.tracknum,strips[strip].track.tracknum)
             if ctl.tracknum then
               track = GetTrack(ctl.tracknum)
             else
               track = gtrack
             end
-            SetParam3_Denorm2_Safe2(track, v, strip, page, reaper)        
+            SetParam3_Denorm2_Safe2(track, v, strip, page, reaper)
+            
+            if snaptbl.data[ss].mf then
+              local mf = snaptbl.data[ss].mf
+              local f = snaptbl.data[ss].mfdata
+              ctl.macrofader = mf
+              faders[mf] = {targettype = 4,
+                            strip = f.strip,
+                            page = f.page,
+                            ctl = f.ctl,
+                            c_id = f.c_id}
+            end
+                    
           end
         end
       end    
@@ -36084,13 +36169,25 @@ end
           if c and v and tostring(nv) ~= tostring(ctl.val) then
             trackfxparam_select = c
         --    local trnum = nz(strips[strip][page].controls[c].tracknum,strips[strip].track.tracknum)
-            local trnum = nz(ctl.tracknum,strips[strip].track.tracknum)
+            --local trnum = nz(ctl.tracknum,strips[strip].track.tracknum)
             if ctl.tracknum then
               track = GetTrack(ctl.tracknum)
             else
               track = gtrack
             end
             SetParam3_Denorm2_Safe2(track, v, strip, page, reaper)        
+
+            if snaptbl.data[ss].mf then
+              local mf = snaptbl.data[ss].mf
+              local f = snaptbl.data[ss].mfdata
+              ctl.macrofader = mf
+              faders[mf] = {targettype = 4,
+                            strip = f.strip,
+                            page = f.page,
+                            ctl = f.ctl,
+                            c_id = f.c_id}
+            end
+
           end
         end
       end    
@@ -36164,6 +36261,7 @@ end
         local sscnt = 1
         for c = 1, #strips[strip][page].controls do
         
+          local sflag = false
           if strips[strip][page].controls[c].noss ~= true then
             if strips[strip][page].controls[c].ctlcat == ctlcats.fxparam or
                strips[strip][page].controls[c].ctlcat == ctlcats.trackparam or
@@ -36184,10 +36282,46 @@ end
                 if cc == ctlcats.fxoffline then
                   offflag = true
                 end
+
+                if settings_savefaderboxassinsnapshots == true then
+                  local mf = strips[strip][page].controls[c].macrofader
+                  if mf then
+                    if faders[mf] and faders[mf].targettype == 4 then
+
+                      local f = {targettype = 4,
+                                 strip = faders[mf].strip,
+                                 page = faders[mf].page,
+                                 ctl = faders[mf].ctl,
+                                 c_id = faders[mf].c_id}
+                      snapshots[strip][page][sstype][snappos].data[sscnt].mf = mf
+                      snapshots[strip][page][sstype][snappos].data[sscnt].mfdata = f
+
+                    end
+                  end
+                end
+                
                 sscnt = sscnt + 1
+                sflag = true
               end
             end
           end
+          --[[if settings_savefaderboxassinsnapshots == true then
+            local mf = strips[strip][page].controls[c].macrofader
+            if mf then
+              if faders[mf] and faders[mf].targettype == 4 then
+              
+                local sscntx = sscnt
+                if sflag then
+                  sscntx = ssxntx -1
+                end
+                if not snapshots[strip][page][sstype][snappos].data[sscntx] then
+                
+                end 
+                
+              
+              end
+            end
+          end]]
         end
         
         if offflag == true then
@@ -36255,6 +36389,24 @@ end
                   if cc == ctlcats.fxoffline then
                     offflag = true
                   end
+
+                  if settings_savefaderboxassinsnapshots == true then
+                    local mf = strips[strip][page].controls[c].macrofader
+                    if mf then
+                      if faders[mf] and faders[mf].targettype == 4 then
+  
+                        local f = {targettype = 4,
+                                   strip = faders[mf].strip,
+                                   page = faders[mf].page,
+                                   ctl = faders[mf].ctl,
+                                   c_id = faders[mf].c_id}
+                        snapshots[strip][page][sstype].snapshot[snappos].data[sscnt].mf = mf
+                        snapshots[strip][page][sstype].snapshot[snappos].data[sscnt].mfdata = f
+  
+                      end
+                    end
+                  end
+
                   sscnt = sscnt + 1
                 end
               end
@@ -38149,6 +38301,7 @@ end
   settings_UCV = 1
   settings_touchFB = false
   settings_trackchangemidi = false
+  settings_savefaderboxassinsnapshots = false
   
   textoptlink_select = true
   
