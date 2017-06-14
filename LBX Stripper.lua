@@ -33070,6 +33070,7 @@ end
                                            dval = tonumber(zn(data[key..'dval']))}
                 
                 local mf = tonumber(data[key..'mf'])
+                snaps[sst][ss].data[d].mfset = tobool(zn(data[key..'mfset']))
                 if mf then
                   snaps[sst][ss].data[d].mf = mf
                   snaps[sst][ss].data[d].mfdata = {targettype = tonumber(data[key..'mfdata_targettype']),
@@ -33117,6 +33118,7 @@ end
                                                    dval = tonumber(zn(data[key..'dval']))}
 
                 local mf = tonumber(data[key..'mf'])
+                snaps[sst].snapshot[ss].data[d].mfset = tobool(zn(data[key..'mfset']))
                 if mf then
                   snaps[sst].snapshot[ss].data[d].mf = mf
                   snaps[sst].snapshot[ss].data[d].mfdata = {targettype = tonumber(data[key..'mfdata_targettype']),
@@ -33380,15 +33382,70 @@ end
           faders[f].xy = tonumber(zn(data[key..'xy'])) 
           faders[f].mode = tonumber(zn(data[key..'mode'])) 
           
-          --[[test
-          if f == 32 then
-            faders[f].targettype = 3
-            faders[f].mode = 1
-          end--]]
         end 
     
       end
     end  
+    CheckFaders()
+    
+  end
+
+  function CheckFaders()
+  
+    if faders == nil then return end
+    
+    for f = 1, #faders do
+      if faders[f].targettype == 3 or faders[f].targettype == 4 then
+        fnd = false
+        local s = faders[f].strip
+        local p = faders[f].page
+        local c = faders[f].ctl
+        local cid = faders[f].c_id
+        if strips[s][p].controls[c] and cid == strips[s][p].controls[c].c_id and 
+           strips[s][p].controls[c].macrofader == f then
+          --all good
+          fnd = true
+        else
+          for cc = 1, #strips[s][p].controls do
+            if strips[s][p].controls[cc].c_id == cid then
+            
+              strips[s][p].controls[cc].macrofader = f
+              faders[f].ctl = cc
+              fnd = true
+              break
+            end
+          end
+          if fnd == false then
+            for ss = 1, #strips do
+              for pp = 1, 4 do
+                for cc = 1, #strips[ss][pp].controls[cc] do
+                  if strips[ss][pp].controls[cc].c_id == cid then
+                  
+                    strips[ss][pp].controls[cc].macrofader = f
+                    faders[f].strip = ss
+                    faders[f].page = pp
+                    faders[f].ctl = cc
+                    fnd = true
+                    break
+                  end      
+                end
+                if fnd == true then
+                  break
+                end
+              end
+              if fnd == true then
+                break
+              end
+            end
+          end
+        end
+        if fnd == false then
+          --not found
+          faders[f] = {}
+        end
+      end
+    end
+  
   end
 
   function LoadSwitchers(data)
@@ -34462,6 +34519,8 @@ end
   
     if file and faders and #faders > 0 then
   
+      CheckFaders()
+  
       local key = 'fadercnt'
       file:write('['..key..']'.. #faders ..'\n')
       for f = 1, #faders do
@@ -34798,7 +34857,8 @@ end
                 file:write('['..key..'ctl]'.. snapshots[s][p][sst][ss].data[d].ctl ..'\n')
                 file:write('['..key..'val]'.. snapshots[s][p][sst][ss].data[d].val ..'\n')
                 file:write('['..key..'dval]'.. nz(snapshots[s][p][sst][ss].data[d].dval,'') ..'\n')
-          
+                          
+                file:write('['..key..'mfset]'.. tostring(nz(snapshots[s][p][sst][ss].data[d].mfset,'')) ..'\n')                
                 if snapshots[s][p][sst][ss].data[d].mf then
                   file:write('['..key..'mf]'.. snapshots[s][p][sst][ss].data[d].mf ..'\n')
                   file:write('['..key..'mfdata_targettype]'.. snapshots[s][p][sst][ss].data[d].mfdata.targettype ..'\n')
@@ -34845,6 +34905,7 @@ end
                 file:write('['..key..'val]'.. snapshots[s][p][sst].snapshot[ss].data[d].val ..'\n')
                 file:write('['..key..'dval]'.. nz(snapshots[s][p][sst].snapshot[ss].data[d].dval,'') ..'\n')
 
+                file:write('['..key..'mfset]'.. tostring(nz(snapshots[s][p][sst].snapshot[ss].data[d].mfset,'')) ..'\n')                
                 if snapshots[s][p][sst].snapshot[ss].data[d].mf then
                   file:write('['..key..'mf]'.. snapshots[s][p][sst].snapshot[ss].data[d].mf ..'\n')
                   file:write('['..key..'mfdata_targettype]'.. snapshots[s][p][sst].snapshot[ss].data[d].mfdata.targettype ..'\n')
@@ -36103,34 +36164,47 @@ end
           local v = snaptbl.data[ss].dval
           local nv = snaptbl.data[ss].val
           local ctl = strips[strip][page].controls[c]
-          if ctl.noss ~= true and c and v and tostring(round(nv,5)) ~= tostring(round(ctl.val,5)) then
+          
+          if ctl.noss ~= true and c and v and tostring(nv) ~= tostring(ctl.val) then
             trackfxparam_select = c
-            --local trnum = nz(ctl.tracknum,strips[strip].track.tracknum)
             if ctl.tracknum then
               track = GetTrack(ctl.tracknum)
             else
               track = gtrack
             end
-            local mf = snaptbl.data[ss].mf
-            if mf and ctl.macrofader ~= mf then
-              local f = snaptbl.data[ss].mfdata
+            mfs = snaptbl.data[ss].mfset
+            if mfs then
+              local mf = snaptbl.data[ss].mf
+              if mf and ctl.macrofader ~= mf then
+                local f = snaptbl.data[ss].mfdata
+                
+                if ctl.macrofader and not mfchk[ctl.macrofader] then
+                  faders[ctl.macrofader] = {}
+                end
+                
+                ctl.macrofader = mf
+                mfchk[mf] = true
+                faders[mf] = {targettype = 4,
+                              strip = f.strip,
+                              page = f.page,
+                              ctl = f.ctl,
+                              c_id = f.c_id}              
               
-              if ctl.macrofader and not mfchk[ctl.macrofader] then
-                faders[ctl.macrofader] = {}
+              elseif mf == nil then
+                if ctl.macrofader and not mfchk[ctl.macrofader] then
+                  faders[ctl.macrofader] = {}
+                end
+                
+                ctl.macrofader = nil
               end
-              
-              ctl.macrofader = mf
-              mfchk[mf] = true
-              faders[mf] = {targettype = 4,
-                            strip = f.strip,
-                            page = f.page,
-                            ctl = f.ctl,
-                            c_id = f.c_id}              
             end
             SetParam3_Denorm2_Safe2(track, v, strip, page, reaper)
             if ctl.macrofader then
               SetFader(ctl.macrofader, nv)
             end
+          
+          else
+          
           end
         end
       end    
@@ -36153,22 +36227,31 @@ end
             else
               track = gtrack
             end
-            if snaptbl.data[ss].mf then
+            mfs = snaptbl.data[ss].mfset
+            if mfs then
               local mf = snaptbl.data[ss].mf
-              local f = snaptbl.data[ss].mfdata
+              if mf and ctl.macrofader ~= mf then
+                local f = snaptbl.data[ss].mfdata
+                
+                if ctl.macrofader and not mfchk[ctl.macrofader] then
+                  faders[ctl.macrofader] = {}
+                end
+                
+                ctl.macrofader = mf
+                mfchk[mf] = true
+                faders[mf] = {targettype = 4,
+                              strip = f.strip,
+                              page = f.page,
+                              ctl = f.ctl,
+                              c_id = f.c_id}              
               
-              if ctl.macrofader and not mfchk[ctl.macrofader] then
-                faders[ctl.macrofader] = {}
+              elseif mf == nil then
+                if ctl.macrofader and not mfchk[ctl.macrofader] then
+                  faders[ctl.macrofader] = {}
+                end
+                
+                ctl.macrofader = nil
               end
-              
-              ctl.macrofader = mf
-              mfchk[mf] = true
-              faders[mf] = {targettype = 4,
-                            strip = f.strip,
-                            page = f.page,
-                            ctl = f.ctl,
-                            c_id = f.c_id}
-              
             end
             SetParam3_Denorm2_Safe2(track, v, strip, page, reaper)        
             if ctl.macrofader then
@@ -36270,10 +36353,10 @@ end
                 end
 
                 if settings_savefaderboxassinsnapshots == true then
+                  snapshots[strip][page][sstype][snappos].data[sscnt].mfset = true
                   local mf = strips[strip][page].controls[c].macrofader
                   if mf then
                     if faders[mf] and faders[mf].targettype == 4 then
-
                       local f = {targettype = 4,
                                  strip = faders[mf].strip,
                                  page = faders[mf].page,
@@ -36377,6 +36460,7 @@ end
                   end
 
                   if settings_savefaderboxassinsnapshots == true then
+                    snapshots[strip][page][sstype].snapshot[snappos].data[sscnt].mfset = true
                     local mf = strips[strip][page].controls[c].macrofader
                     if mf then
                       if faders[mf] and faders[mf].targettype == 4 then
