@@ -35328,7 +35328,7 @@ end
     end
   end
   
-  function GetSaveFN()
+  function GetSaveFN(tmp)
   
     local save_path=projsave_path..'/'
     if settings_savedatainprojectfolder == true then
@@ -35378,41 +35378,10 @@ end
     end
         
     local t = reaper.time_precise()
-    
-    --[[local save_path=projsave_path..'/'
-    if settings_savedatainprojectfolder == true then
-      save_path=reaper.GetProjectPath('')..'/'
-    end
-    
-    local pn = GetProjectName()
-    local projname = string.sub(pn,0,string.len(pn)-4) --..'_'..PROJECTID
-    if projname == nil or projname == '' then
-      projname = 'unnamed_project'
-    end
-    if save_subfolder and save_subfolder ~= '' then
-      local sf = save_subfolder
-      if sf == '#' then
-        sf = projname
-        if projname == 'unnamed_project' then
-          projname = projname..'_'..PROJECTID
-        end
-      end
-      projname = sf..'/'..projname
-      reaper.RecursiveCreateDirectory(save_path..sf,1)
-    end
-
-    if tmp then
-      fn=projname..".lbxstripper__"
-    else
-      fn=projname..".lbxstripper"
-    end
-    local ffn=save_path..fn]]
-    
-    local ffn, save_path, fn = GetSaveFN()
+        
+    local ffn, save_path, fn = GetSaveFN(tmp)
     DBGOut('SaveData: ffn: '..tostring(ffn))
     
-    --DBG(fn)
-    --DBG(ffn)
     file=io.open(ffn,"w")
     if file == nil then
       DBG('Failed to create save file:\n\n'..ffn)
