@@ -36141,17 +36141,25 @@ end
             else
               track = gtrack
             end
-            SetParam3_Denorm2_Safe2(track, v, strip, page, reaper)
-            
             if snaptbl.data[ss].mf then
               local mf = snaptbl.data[ss].mf
               local f = snaptbl.data[ss].mfdata
+              
+              if ctl.macrofader then
+                faders[ctl.macrofader] = {}
+              end
+              
               ctl.macrofader = mf
               faders[mf] = {targettype = 4,
                             strip = f.strip,
                             page = f.page,
                             ctl = f.ctl,
                             c_id = f.c_id}
+              
+            end
+            SetParam3_Denorm2_Safe2(track, v, strip, page, reaper)
+            if ctl.macrofader then
+              SetFader(ctl.macrofader, nv)
             end
                     
           end
@@ -36175,19 +36183,26 @@ end
             else
               track = gtrack
             end
-            SetParam3_Denorm2_Safe2(track, v, strip, page, reaper)        
-
             if snaptbl.data[ss].mf then
               local mf = snaptbl.data[ss].mf
               local f = snaptbl.data[ss].mfdata
+              
+              if ctl.macrofader then
+                faders[ctl.macrofader] = {}
+              end
+              
               ctl.macrofader = mf
               faders[mf] = {targettype = 4,
                             strip = f.strip,
                             page = f.page,
                             ctl = f.ctl,
                             c_id = f.c_id}
+              
             end
-
+            SetParam3_Denorm2_Safe2(track, v, strip, page, reaper)        
+            if ctl.macrofader then
+              SetFader(ctl.macrofader, nv)
+            end
           end
         end
       end    
