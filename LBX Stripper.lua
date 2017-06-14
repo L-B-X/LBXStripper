@@ -36092,17 +36092,18 @@ end
   
     --local r = reaper
     --local t = reaper.time_precise()
-    
+    local reaper = reaper
     if sstype_select == 1 then
       local snaptbl = snapshots[strip][page][sstype_select][ss_select]
       if snaptbl then
         local gtrack = GetTrack(strips[strip].track.tracknum)
+        mfchk = {}
         for ss = 1, #snaptbl.data do
           local c = snaptbl.data[ss].ctl
           local v = snaptbl.data[ss].dval
           local nv = snaptbl.data[ss].val
           local ctl = strips[strip][page].controls[c]
-          if ctl.noss ~= true and c and v and tostring(nv) ~= tostring(ctl.val) then
+          if ctl.noss ~= true and c and v and tostring(round(nv,5)) ~= tostring(round(ctl.val,5)) then
             trackfxparam_select = c
             --local trnum = nz(ctl.tracknum,strips[strip].track.tracknum)
             if ctl.tracknum then
@@ -36110,27 +36111,26 @@ end
             else
               track = gtrack
             end
-            if snaptbl.data[ss].mf then
-              local mf = snaptbl.data[ss].mf
+            local mf = snaptbl.data[ss].mf
+            if mf and ctl.macrofader ~= mf then
               local f = snaptbl.data[ss].mfdata
               
-              if ctl.macrofader then
+              if ctl.macrofader and not mfchk[ctl.macrofader] then
                 faders[ctl.macrofader] = {}
               end
               
               ctl.macrofader = mf
+              mfchk[mf] = true
               faders[mf] = {targettype = 4,
                             strip = f.strip,
                             page = f.page,
                             ctl = f.ctl,
-                            c_id = f.c_id}
-              
+                            c_id = f.c_id}              
             end
             SetParam3_Denorm2_Safe2(track, v, strip, page, reaper)
             if ctl.macrofader then
               SetFader(ctl.macrofader, nv)
             end
-                    
           end
         end
       end    
@@ -36138,6 +36138,7 @@ end
       local snaptbl = snapshots[strip][page][sstype_select].snapshot[ss_select]
       if snaptbl then
         local gtrack = GetTrack(strips[strip].track.tracknum)
+        mfchk = {}
         for ss = 1, #snaptbl.data do
           local c = snaptbl.data[ss].ctl
           local v = snaptbl.data[ss].dval
@@ -36156,11 +36157,12 @@ end
               local mf = snaptbl.data[ss].mf
               local f = snaptbl.data[ss].mfdata
               
-              if ctl.macrofader then
+              if ctl.macrofader and not mfchk[ctl.macrofader] then
                 faders[ctl.macrofader] = {}
               end
               
               ctl.macrofader = mf
+              mfchk[mf] = true
               faders[mf] = {targettype = 4,
                             strip = f.strip,
                             page = f.page,
