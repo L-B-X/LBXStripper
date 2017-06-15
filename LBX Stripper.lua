@@ -17940,7 +17940,7 @@ end
         local strip = tracks[track_select].strip
         local ctl = strips[strip][page].controls[i]
         local mstr
-        mm = ''
+        local mm = ''
         if show_snapshots then
           mm = '!'
         end
@@ -17955,13 +17955,19 @@ end
             moclr = '|<Clear'
           end
           mido = '>Midi/OSC Out|Set'..moclr
+        end
+        local ff = ''
+        local fft = ''
+        if ctl.macrofader then
+          fft = '!'
+          ff = '   [Fader '..ctl.macrofader..']'
         end  
         if ccat == ctlcats.fxparam then
-          mstr = 'Faderbox learn (global)|Modulation||Enter value||'..mido..'||Open FX window||Add Envelope|Add All Envelopes For Plugin||'..mm..'Snapshots||>Tools|<Regenerate ID   (emergency only)||Toggle Topbar|Toggle Sidebar||'..lspfx..'Lock Surface'
+          mstr = fft..'Faderbox learn (global)'..ff..'|Modulation||Enter value||'..mido..'||Open FX window||Add Envelope|Add All Envelopes For Plugin||'..mm..'Snapshots||>Tools|<Regenerate ID   (emergency only)||Toggle Topbar|Toggle Sidebar||'..lspfx..'Lock Surface'
         elseif ccat == ctlcats.trackparam or ccat == ctlcats.tracksend or ccat == ctlcats.macro then
-          mstr = 'Faderbox learn (global)|#Modulation||Enter value||'..mido..'||#Open FX window||#Add Envelope|#Add All Envelopes For Plugin||'..mm..'Snapshots||>Tools|<Regenerate ID   (emergency only)||Toggle Topbar|Toggle Sidebar||'..lspfx..'Lock Surface'                  
+          mstr = fft..'Faderbox learn (global)'..ff..'|#Modulation||Enter value||'..mido..'||#Open FX window||#Add Envelope|#Add All Envelopes For Plugin||'..mm..'Snapshots||>Tools|<Regenerate ID   (emergency only)||Toggle Topbar|Toggle Sidebar||'..lspfx..'Lock Surface'                  
         else
-          mstr = '#Faderbox learn (global)|#Modulation||Enter value||'..mido..'||#Open FX window||#Add Envelope|#Add All Envelopes For Plugin||'..mm..'Snapshots||>Tools|<Regenerate ID   (emergency only)||Toggle Topbar|Toggle Sidebar||'..lspfx..'Lock Surface'                  
+          mstr = fft..'#Faderbox learn (global)'..ff..'|#Modulation||Enter value||'..mido..'||#Open FX window||#Add Envelope|#Add All Envelopes For Plugin||'..mm..'Snapshots||>Tools|<Regenerate ID   (emergency only)||Toggle Topbar|Toggle Sidebar||'..lspfx..'Lock Surface'                  
         end
         --if ccat ~= ctlcats.macro then
           if #strip_favs > 0 then
