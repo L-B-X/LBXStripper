@@ -17960,7 +17960,7 @@ end
         local fft = ''
         if ctl.macrofader then
           fft = '!'
-          ff = '   [Fader '..ctl.macrofader..']'
+          ff = '   [Fader '..string.format('%i',ctl.macrofader)..']'
         end  
         if ccat == ctlcats.fxparam then
           mstr = fft..'Faderbox learn (global)'..ff..'|Modulation||Enter value||'..mido..'||Open FX window||Add Envelope|Add All Envelopes For Plugin||'..mm..'Snapshots||>Tools|<Regenerate ID   (emergency only)||Toggle Topbar|Toggle Sidebar||'..lspfx..'Lock Surface'
