@@ -17957,11 +17957,11 @@ end
           mido = '>Midi/OSC Out|Set'..moclr
         end  
         if ccat == ctlcats.fxparam then
-          mstr = 'Faderbox learn (global)|Modulation||Enter value||'..mido..'||Open FX window||'..mm..'Add Envelope|Add All Envelopes For Plugin||Snapshots||>Tools|<Regenerate ID   (emergency only)||Toggle Topbar|Toggle Sidebar||'..lspfx..'Lock Surface'
+          mstr = 'Faderbox learn (global)|Modulation||Enter value||'..mido..'||Open FX window||Add Envelope|Add All Envelopes For Plugin||'..mm..'Snapshots||>Tools|<Regenerate ID   (emergency only)||Toggle Topbar|Toggle Sidebar||'..lspfx..'Lock Surface'
         elseif ccat == ctlcats.trackparam or ccat == ctlcats.tracksend or ccat == ctlcats.macro then
-          mstr = 'Faderbox learn (global)|#Modulation||Enter value||'..mido..'||#Open FX window||'..mm..'#Add Envelope|#Add All Envelopes For Plugin||Snapshots||>Tools|<Regenerate ID   (emergency only)||Toggle Topbar|Toggle Sidebar||'..lspfx..'Lock Surface'                  
+          mstr = 'Faderbox learn (global)|#Modulation||Enter value||'..mido..'||#Open FX window||#Add Envelope|#Add All Envelopes For Plugin||'..mm..'Snapshots||>Tools|<Regenerate ID   (emergency only)||Toggle Topbar|Toggle Sidebar||'..lspfx..'Lock Surface'                  
         else
-          mstr = '#Faderbox learn (global)|#Modulation||Enter value||'..mido..'||#Open FX window||'..mm..'#Add Envelope|#Add All Envelopes For Plugin||Snapshots||>Tools|<Regenerate ID   (emergency only)||Toggle Topbar|Toggle Sidebar||'..lspfx..'Lock Surface'                  
+          mstr = '#Faderbox learn (global)|#Modulation||Enter value||'..mido..'||#Open FX window||#Add Envelope|#Add All Envelopes For Plugin||'..mm..'Snapshots||>Tools|<Regenerate ID   (emergency only)||Toggle Topbar|Toggle Sidebar||'..lspfx..'Lock Surface'                  
         end
         --if ccat ~= ctlcats.macro then
           if #strip_favs > 0 then
@@ -34329,6 +34329,7 @@ end
     nebscanboot_file = zn(GES('nebscanboot',true),nil)
     settings_touchFB = tobool(nz(GES('settings_touchfb',true),settings_touchFB))
     settings_trackchangemidi = tobool(nz(GES('settings_trackchangemidi',true),settings_trackchangemidi))
+    settings_savefaderboxassinsnapshots = tobool(nz(GES('settings_savefaderboxassinsnapshots',true),settings_savefaderboxassinsnapshots))
     
     if settings_hideeditbaronnewproject then
       plist_w = 0
@@ -34436,6 +34437,7 @@ end
     reaper.SetExtState(SCRIPT,'nebscanboot',tostring(nebscanboot_file), true)    
     reaper.SetExtState(SCRIPT,'settings_touchfb',tostring(settings_touchFB), true)    
     reaper.SetExtState(SCRIPT,'settings_trackchangemidi',tostring(settings_trackchangemidi), true)    
+    reaper.SetExtState(SCRIPT,'settings_savefaderboxassinsnapshots',tostring(settings_savefaderboxassinsnapshots), true)    
     
     if strip_default then
       reaper.SetExtState(SCRIPT,'strip_default',tostring(strip_default.strip_select), true)
