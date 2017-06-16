@@ -1067,7 +1067,7 @@
       --track title
       obj.sections[12] = {x = 126,
                           y = 0,
-                          w = math.max(gfx1.main_w - plist_w - 327,0),
+                          w = math.max(gfx1.main_w - plist_w - 352,0),
                           h = topbarheight}
 
       --submode
@@ -1080,13 +1080,18 @@
                           y = 0,
                           w = 101,
                           h = topbarheight}
+      --G page
+      obj.sections[1000] = {x = gfx1.main_w - plist_w - 150,
+                          y = 0,
+                          w = 50,
+                          h = topbarheight}
       
       obj.sections[15] = {x = 0,
                           y = (butt_h+2)*2,
                           w = plist_w,
                           h = butt_h}
       --save
-      obj.sections[17] = {x = gfx1.main_w - plist_w - 200,
+      obj.sections[17] = {x = gfx1.main_w - plist_w - 250,
                           y = 0,
                           w = 74,
                           h = topbarheight}
@@ -1110,7 +1115,7 @@
                             w = 26,
                             h = butt_h}
       else
-        obj.sections[21] = {x = gfx1.main_w - plist_w - 125,
+        obj.sections[21] = {x = gfx1.main_w - plist_w - 175,
                             y = 0,
                             w = 26,
                             h = butt_h}
@@ -4092,7 +4097,9 @@
   function GetTrack(t)
   
     local tr
-    if t== nil or t == -1 then
+    if t == -2 then
+      track = nil
+    elseif t== nil or t == -1 then
       track = reaper.GetMasterTrack(0)
     else
       track = reaper.GetTrack(0, t)
@@ -4455,11 +4462,13 @@
     if LBX_CTL_TRACK_INF then
       local LBX_CTL_TRACK_INF_CNT = LBX_CTL_TRACK_INF.count
     end
+    LBX_GTRACK = nil
     LBX_CTL_TRACK = nil
     LBX_CTL_TRACK_INF = nil
     local tracks_tmp = {}
     local guid_tr = {}
     local sendsdirty = false
+    tracks_idx = {}
     for i = -1, reaper.CountTracks(0) do
       local track = GetTrack(i)
       if track ~= nil then
@@ -4483,7 +4492,10 @@
               Faders_INIT()
             end
           end
+        elseif trname == LBX_GTRACK_NAME then
+          LBX_GTRACK = i
         end
+        
         --if tracks then
           --if tracks_tmp[i].guid ~= tracks[i].guid then
           --  sendsdirty = true
@@ -4503,6 +4515,10 @@
         end 
       end
     end
+    
+    if LBX_GTRACK then
+      CheckGlobalTrackSel()
+    end
     --if sendsdirty == true then
       --CheckStripSends()
     --end
@@ -4516,17 +4532,19 @@
 
     if trackedit_select and tracks[trackedit_select] then
       local track = GetTrack(tracks[trackedit_select].tracknum)
-      local fxc = reaper.TrackFX_GetCount(track)
-      for i = 0, fxc-1 do
-        local _, name = reaper.TrackFX_GetFXName(track,i,'')
-        
-        trackfx[i] = {name = name,
-                      guid = reaper.TrackFX_GetFXGUID(track,i),
-                      fxnum = i,
-                      found = true}
+      if track then
+        local fxc = reaper.TrackFX_GetCount(track)
+        for i = 0, fxc-1 do
+          local _, name = reaper.TrackFX_GetFXName(track,i,'')
+          
+          trackfx[i] = {name = name,
+                        guid = reaper.TrackFX_GetFXGUID(track,i),
+                        fxnum = i,
+                        found = true}
+        end
+        PopulateTrackFXParams()
+        ofxcnt = fxc
       end
-      PopulateTrackFXParams()
-      ofxcnt = fxc
     end
     
   end
@@ -4595,7 +4613,11 @@
           c = gui.color.black        
         else
           local s = tracks[i-1+tlist_offset].strip
-          if strips and strips[s] then
+          if tracks[i-1 + tlist_offset].name == LBX_GTRACK_NAME or 
+             tracks[i-1 + tlist_offset].name == LBX_CTL_TRNAME then
+            c = '255 192 60' 
+          
+          elseif strips and strips[s] then
             if (strips[s][1] and #strips[s][1].controls > 0) or --error s3 (nil)
                (strips[s][2] and #strips[s][2].controls > 0) or 
                (strips[s][3] and #strips[s][3].controls > 0) or 
@@ -4612,6 +4634,10 @@
         local nm = tracks[i-1 + tlist_offset].name
         if nm == '' then
           nm = '[unnamed track]'
+        elseif nm == LBX_GTRACK_NAME then
+          nm = '[LBX GLOBAL]'
+        elseif nm == LBX_CTL_TRNAME then
+          nm = '[LBX CTL]'
         end
         GUI_textsm_LJ(gui, xywh, tracks[i-1 + tlist_offset].tracknum+1 ..' - '..nm, c, -4, plist_w)
                     
@@ -11274,20 +11300,9 @@ end
                   y = obj.sections[18].y,
                   w = obj.sections[18].w,
                   h = obj.sections[18].h}
-    --[[if show_eqcontrol ~= true and macro_edit_mode ~= true then
-      gfx.a = 1
-      gfx.blit(1000,1,0,surface_offset.x,
-                        surface_offset.y,
-                        xywh.w,
-                        xywh.h,
-                        xywh.x,
-                        xywh.y)
-    end]]
-    --GUI_DrawBar(gui,'',obj.sections[18],skin.bar,true,gui.color.black,nil,-2)
     gfx.a = 0.6
     if mode == 0 then
       if show_editbar then
-        --GUI_textC(gui,obj.sections[18],'<',gui.color.black,-2)
         GUI_DrawBar(gui,'<',obj.sections[18],skin.bar,true,gui.color.black,nil,-2)
       else
         GUI_DrawBar(gui,'>',obj.sections[18],skin.bar,true,gui.color.black,nil,-2)      
@@ -11295,21 +11310,12 @@ end
     else
       GUI_DrawBar(gui,'<>',obj.sections[18],skin.bar,true,gui.color.black,nil,-2)
     end
-    --gfx.a = 1    
     gfx.line(obj.sections[18].x+obj.sections[18].w,obj.sections[18].y,obj.sections[18].x+obj.sections[18].w,obj.sections[18].y+obj.sections[18].h-1)
     gfx.line(obj.sections[18].x,obj.sections[18].y+obj.sections[18].h-1,obj.sections[18].x+obj.sections[18].w,obj.sections[18].y+obj.sections[18].h-1)
     
     if show_eqcontrol ~= true and macro_edit_mode ~= true then
-      --[[gfx.a = 1
-      gfx.blit(1000,1,0,surface_offset.x+(obj.sections[21].x-obj.sections[10].x),
-                        surface_offset.y+(obj.sections[21].y-obj.sections[10].y),
-                        obj.sections[21].w,
-                        obj.sections[21].h,
-                        obj.sections[21].x,
-                        obj.sections[21].y)]]
       gfx.a = 0.6
       GUI_DrawBar(gui,'...',obj.sections[21],skin.bar,true,gui.color.black,nil,-2)
-      --gfx.a=1
       gfx.line(obj.sections[21].x-1,obj.sections[21].y,obj.sections[21].x-1,obj.sections[21].y+obj.sections[21].h-1)
       gfx.line(obj.sections[21].x,obj.sections[21].y+obj.sections[21].h-1,obj.sections[21].x+obj.sections[21].w,obj.sections[21].y+obj.sections[21].h-1)
     end
@@ -11337,7 +11343,6 @@ end
     end
     if mode == 0 then
       if show_editbar then
-        --GUI_textC(gui,obj.sections[18],'<',gui.color.black,-2)
         GUI_DrawBar(gui,'<',obj.sections[18],skin.bar,true,gui.color.black,nil,-2)
       else
         GUI_DrawBar(gui,'>',obj.sections[18],skin.bar,true,gui.color.black,nil,-2)      
@@ -11345,7 +11350,6 @@ end
     else
       GUI_DrawBar(gui,'<>',obj.sections[18],skin.bar,true,gui.color.black,nil,-2)
     end    
-    --gfx.line(obj.sections[18].x+obj.sections[18].w,obj.sections[18].y,obj.sections[18].x+obj.sections[18].w,obj.sections[18].y+obj.sections[18].h)
     
     local t
     if c == gui.color.black then
@@ -11357,10 +11361,6 @@ end
                     y = obj.sections[20].y, 
                     w = obj.sections[20].w/4-1,
                     h = obj.sections[20].h}
-      --if i ~= 3 then
-        --f_Get_SSV(gui.color.black)
-        --gfx.line(xywh.x+xywh.w,xywh.y,xywh.x+xywh.w,xywh.y+xywh.h)
-      --end
       if i == 0 and lockx == false then 
         GUI_DrawBar(gui,'',xywh,skin.bar,true,gui.color.black,nil,-2)
         f_Get_SSV(gui.color.white)
@@ -11391,10 +11391,6 @@ end
         t = ''
       end
 
-      --[[gfx.rect(xywh.x,
-               xywh.y, 
-               xywh.w,
-               xywh.h, 1, 1)]]
       GUI_textC(gui,xywh,t,c,-2)
       if i == 2 then
         gfx.triangle(xywh.x+xywh.w/2,xywh.y+6,xywh.x+xywh.w/2-4,xywh.y+xywh.h-6,xywh.x+xywh.w/2+4,xywh.y+xywh.h-6,1)
@@ -11409,69 +11405,68 @@ end
         infomsg = nil        
       elseif tracks and tracks[track_select] then
         local trn = tracks[track_select].name
-        if trn == '' then
+        if trn == LBX_GTRACK_NAME then
+          trn = '[LBX GLOBAL]'
+        elseif trn == LBX_CTL_TRNAME then
+          trn = '[LBX CTL]'
+        elseif trn == '' then
           trn = '[unnamed track]'
         end
         GUI_textC_LIM(gui,obj.sections[12],GetProjectName()..' - '..STRIPSET..' - TRACK: ' .. tracks[track_select].tracknum+1 .. ' - '.. trn,gui.color.black,-2)
       end
     end  
 
-    --[[f_Get_SSV(gui.color.white)
-    gfx.rect(obj.sections[21].x,
-             obj.sections[21].y, 
-             obj.sections[21].w,
-             obj.sections[21].h, 1, 1)
-    GUI_textC(gui,obj.sections[21],'...',gui.color.black,-2)]]
+    local xywh = {x = obj.sections[21].x-1,
+                  y = obj.sections[1000].y, 
+                  w = obj.sections[21].w+obj.sections[1000].w+obj.sections[14].w,
+                  h = obj.sections[1000].h}
+    f_Get_SSV(gui.color.black)
+    gfx.rect(xywh.x,
+             xywh.y, 
+             xywh.w,
+             xywh.h, 1, 1)                  
+
     GUI_DrawBar(gui,'...',obj.sections[21],skin.bar,true,gui.color.black,nil,-2)
     if obj.sections[17].x > obj.sections[20].x+obj.sections[20].w then
-      --local c = gui.color.black
       local sb = skin.bar
       if g_savedirty then
-        --f_Get_SSV(gui.color.red)
         sb = skin.barR
       else
-        --f_Get_SSV(gui.color.white)
-        --sb = skin.bar
       end
       GUI_DrawBar(gui,'SAVE',obj.sections[17],sb,true,gui.color.black,nil,-2)
-      --[[gfx.rect(obj.sections[17].x,
-               obj.sections[17].y, 
-               obj.sections[17].w,
-               obj.sections[17].h, 1, 1)
-      GUI_textC(gui,obj.sections[17],'SAVE',gui.color.black,-2)]]
+      f_Get_SSV(gui.color.black)
+      gfx.line(obj.sections[17].x,obj.sections[17].y,obj.sections[17].x,obj.sections[17].y+obj.sections[17].h)
     else
-      --[[f_Get_SSV(gui.color.black)
-      gfx.rect(obj.sections[21].x,
-               obj.sections[21].y, 
-               1,
-               obj.sections[21].h, 1, 1)  ]]    
     end
-    gfx.line(obj.sections[21].x-1,obj.sections[21].y,obj.sections[21].x-1,obj.sections[21].y+obj.sections[21].h)
 
     local c
-    f_Get_SSV(gui.color.black)
-    gfx.rect(obj.sections[14].x+1,
-             obj.sections[14].y, 
-             obj.sections[14].w,
-             obj.sections[14].h, 1, 1)
-    
+    local xywh = {x = obj.sections[1000].x+2,
+                  y = obj.sections[1000].y, 
+                  w = obj.sections[1000].w-1,
+                  h = obj.sections[1000].h}
+    if gpage == true then
+      f_Get_SSV(gui.color.white)
+      GUI_DrawBar(gui,'GLOBAL',xywh,skin.barR,true,gui.color.black,nil,-5)                 
+    else
+      c = gui.color.white
+      GUI_textC(gui,xywh,'GLOBAL',c,-5)    
+    end
     for i = 0, 3 do
       local xywh = {x = obj.sections[14].x+2 + i*(obj.sections[14].w/4),
                     y = obj.sections[14].y, 
                     w = obj.sections[14].w/4-2,
                     h = obj.sections[14].h}
-      if page == i+1 then
+      if gpage == false and page == i+1 then
         f_Get_SSV(gui.color.white)
         GUI_DrawBar(gui,i+1,xywh,skin.bar,true,gui.color.black,nil,-2)
         
-        --c = gui.color.black
       else
         f_Get_SSV(gui.color.black)
         c = gui.color.white
-        gfx.rect(xywh.x,
+        --[[gfx.rect(xywh.x,
                  xywh.y, 
                  xywh.w,
-                 xywh.h, 1, 1)
+                 xywh.h, 1, 1)]]
         GUI_textC(gui,xywh,i+1,c,-2)
       end
     end
@@ -18472,7 +18467,100 @@ end
     end
   end
   
+  function CheckGlobalTrack()
+  
+    local track = reaper.GetTrack(0, LBX_GTRACK)
+    local _, trn = reaper.GetTrackName(track,'')
+    if trn ~= LBX_GTRACK_NAME then
+      PopulateTracks()
+      update_gfx = true
+    end
+  
+  end
+
+  function CheckGlobalTrackSel()
+  
+    if LBX_GTRACK then
+      CheckGlobalTrack()
+      if gpage == true then
+        if track_select ~= LBX_GTRACK then
+          SetGlobalPage(true)
+        end
+      else
+        if track_select == LBX_GTRACK then
+          SetGlobalPage(true)
+        end
+      end
+    else
+      if track_select == LBX_GTRACK then
+        SetPage(0)
+      end        
+    end
+  
+  end
+  
+  function SetGlobalPage(force)
+
+    if gpage == true and not force then SetPage(nz(gpage_opage,1)) return end
+    
+    if LBX_GTRACK == nil then
+      PopulateTracks()
+    else
+      CheckGlobalTrack()
+    end
+    if LBX_GTRACK then    
+    
+      if show_fsnapshots then
+        show_fsnapshots = false
+        show_xysnapshots = false
+        update_surface = true
+      end
+  
+      gpage = true
+      gpage_otrackselect = track_select
+      gpage_opage = page
+      
+      track_select = LBX_GTRACK
+      page = 1
+  
+      ctl_select = nil
+      gfx2_select = nil
+      gfx3_select = nil
+      ss_select = nil
+      sstype_select = 1
+      CloseActChooser()
+      show_ctlbrowser = false
+  
+      if strips and tracks[track_select] and strips[tracks[track_select].strip] then
+        strips[tracks[track_select].strip].page = 1
+        surface_offset.x = tonumber(strips[tracks[track_select].strip][page].surface_x)
+        surface_offset.y = tonumber(strips[tracks[track_select].strip][page].surface_y)
+      else
+        surface_offset.x = 0
+        surface_offset.y = 0       
+      end
+  
+      GUI_DrawCtlBitmap()
+      
+      if settings_trackchangemidi == true then
+        TrackChangeMidi()
+      end
+  
+      update_gfx = true
+    else
+    
+    end
+
+  end
+  
   function SetPage(lpage)
+  
+    if lpage == 0 then
+      if gpage == false then
+        SetGlobalPage()
+      end
+      return
+    end
     
     if show_fsnapshots then
       show_fsnapshots = false
@@ -18480,6 +18568,11 @@ end
       update_surface = true
     end
     
+    gpage = false
+    if track_select == LBX_GTRACK and gpage_otrackselect then
+      track_select = gpage_otrackselect
+      gpage_otrackselect = nil
+    end
     page = lpage
     ctl_select = nil
     gfx2_select = nil
@@ -19404,6 +19497,10 @@ end
     track_select = t
     trackedit_select = t
     
+    if gpage == true then
+      gpage = false
+    end
+    
     gfx3_select = nil
     ctl_select = nil
     
@@ -19457,7 +19554,7 @@ end
       sstype_select = 1
       ssoffset = 0
       
-      if settings_followselectedtrack then
+      if settings_followselectedtrack and gpage == false then
         --Select track
         local tr = GetTrack(track_select)
         if tr then
@@ -19868,12 +19965,20 @@ end
       elseif char == 46 then
         local t = track_select + 1
         if t > #tracks then t = -1 end
-        ChangeTrack2(t)
+        if t == LBX_GTRACK then
+          SetGlobalPage()
+        else
+          ChangeTrack2(t)
+        end
         
       elseif char == 44 then
         local t = track_select - 1
         if t < -1 then t = #tracks end
-        ChangeTrack2(t)
+        if t == LBX_GTRACK then
+          SetGlobalPage()
+        else
+          ChangeTrack2(t)
+        end
       elseif char == 4 then
         local d = gfx.dock(-1)
         if d%256 == 0 then
@@ -19889,9 +19994,11 @@ end
       elseif char == 12 then
         settings_locksurface = not settings_locksurface
       elseif char == 61 then
-        if navigate then SetPage(math.min(page+1,4)) end
+        if navigate and gpage == true then SetPage(1)
+        elseif navigate then SetPage(math.min(page+1,4)) end
+        
       elseif char == 45 then  
-        if navigate then SetPage(math.max(page-1,1)) end
+        if navigate then SetPage(math.max(page-1,0)) end
       elseif char == 19 then
         SaveProj(nil, true)
         lastprojdirty = 0
@@ -20623,7 +20730,7 @@ end
           if show_editbar == true then
             plist_w = oplist_w
           end
-          plist_w = math.min(plist_w, gfx1.main_w-obj.sections[19].w-obj.sections[14].w-obj.sections[18].w)
+          plist_w = math.min(plist_w, gfx1.main_w-obj.sections[19].w-obj.sections[14].w-obj.sections[18].w-obj.sections[1000].w)
           plist_w = math.max(plist_w,0)
           --if plist_w < 4 then show_editbar = false else show_editbar = true end
         end
@@ -20659,12 +20766,15 @@ end
       otrkcnt = ct
       local st = reaper.GetSelectedTrack(0,0)
       if st == nil then
-      DBG('p')
         track_select = -1
-        --update_gfx = true
       end
+      CheckGlobalTrackSel()
       CheckStripSends()
       PopulateTrackSendsInfo()
+    else
+      if LBX_GTRACK and gpage == true then
+        CheckGlobalTrackSel()
+      end    
     end    
     
     GUI_draw(obj, gui)
@@ -20741,7 +20851,7 @@ end
     
     elseif show_xxy == false then
 
-      if settings_followselectedtrack and navigate then
+      if settings_followselectedtrack and navigate and gpage == false then
       
         FollowTrack(ct)
         
@@ -20774,6 +20884,10 @@ end
         --page
         local page = F_limit(math.ceil((mouse.mx-(obj.sections[14].x+plist_w))/(obj.sections[14].w/4)),1,4)
         SetPage(page)            
+
+      elseif MOUSE_clickXY(obj.sections[1000],plist_w,0) and navigate then
+        --page
+        SetGlobalPage()            
       
       elseif MOUSE_click(obj.sections[11]) then
         
@@ -22463,7 +22577,12 @@ end
         end
         update_gfx = true
       elseif tracks[i-1 + tlist_offset] then
-        ChangeTrack2(i-1 + tlist_offset)
+        local tr = i-1 + tlist_offset
+        if tr == LBX_GTRACK then
+          SetGlobalPage()
+        else
+          ChangeTrack2(i-1 + tlist_offset)
+        end
       end
     end
   
@@ -26072,7 +26191,6 @@ end
       end
       
       if newgrp then
-      --DBG('poo')
         local rl, rt, rr, rb = GetLTRBControlInGrp(newgrp.grpid, newgrp.switchid)
         --local rl, rt, rr, rb = GetLTRBControlInSel(newgrp.switchid)
         local dl, dt, _, _ = GetGFXOffsetInSel()
@@ -34252,6 +34370,11 @@ end
     GUI_DrawCtlBitmap()
     
     ZeroProjectFlags()
+
+    if track_select and track_select == LBX_GTRACK then
+      gpage = true
+      gpage_otrackselect = -1
+    end
     
     force_resize = true
     update_gfx = true
@@ -37178,6 +37301,7 @@ end
     ksel_size = 50
     ksel_loaded = false
     page = 1
+    gpage = false
     navigate = true
     
     gfx_select = 0
@@ -38343,6 +38467,8 @@ end
   reaper.RecursiveCreateDirectory(share_path,1)
 
   LBX_CTL_TRNAME='__LBX_CTL'
+  LBX_GTRACK_NAME = '__GLOBAL'
+  LBX_GTRACK = nil
 
   settings_savedatainprojectfolder = true
   settings_followselectedtrack = true
