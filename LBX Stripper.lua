@@ -36362,6 +36362,32 @@ end
           local v = snaptbl.data[ss].dval
           local nv = snaptbl.data[ss].val
           local ctl = strips[strip][page].controls[c]
+          local mfs = snaptbl.data[ss].mfset
+          if mfs then
+            local mf = snaptbl.data[ss].mf
+            if mf and ctl.macrofader ~= mf then
+              local f = snaptbl.data[ss].mfdata
+              
+              if ctl.macrofader and not mfchk[ctl.macrofader] then
+                faders[ctl.macrofader] = {}
+              end
+              
+              ctl.macrofader = mf
+              mfchk[mf] = true
+              faders[mf] = {targettype = 4,
+                            strip = f.strip,
+                            page = f.page,
+                            ctl = f.ctl,
+                            c_id = f.c_id}              
+            
+            elseif mf == nil then
+              if ctl.macrofader and not mfchk[ctl.macrofader] then
+                faders[ctl.macrofader] = {}
+              end
+              
+              ctl.macrofader = nil
+            end
+          end
           
           if ctl.noss ~= true and c and v and tostring(nv) ~= tostring(ctl.val) then
             trackfxparam_select = c
@@ -36370,39 +36396,11 @@ end
             else
               track = gtrack
             end
-            mfs = snaptbl.data[ss].mfset
-            if mfs then
-              local mf = snaptbl.data[ss].mf
-              if mf and ctl.macrofader ~= mf then
-                local f = snaptbl.data[ss].mfdata
-                
-                if ctl.macrofader and not mfchk[ctl.macrofader] then
-                  faders[ctl.macrofader] = {}
-                end
-                
-                ctl.macrofader = mf
-                mfchk[mf] = true
-                faders[mf] = {targettype = 4,
-                              strip = f.strip,
-                              page = f.page,
-                              ctl = f.ctl,
-                              c_id = f.c_id}              
-              
-              elseif mf == nil then
-                if ctl.macrofader and not mfchk[ctl.macrofader] then
-                  faders[ctl.macrofader] = {}
-                end
-                
-                ctl.macrofader = nil
-              end
-            end
             SetParam3_Denorm2_Safe2(track, v, strip, page, reaper)
-            if ctl.macrofader then
-              SetFader(ctl.macrofader, nv)
-            end
+          end
           
-          else
-          
+          if ctl.macrofader then
+            SetFader(ctl.macrofader, nv)
           end
         end
       end    
@@ -36416,46 +36414,48 @@ end
           local v = snaptbl.data[ss].dval
           local nv = snaptbl.data[ss].val
           local ctl = strips[strip][page].controls[c]
+
+          local mfs = snaptbl.data[ss].mfset
+          if mfs then
+            local mf = snaptbl.data[ss].mf
+            if mf and ctl.macrofader ~= mf then
+              local f = snaptbl.data[ss].mfdata
+              
+              if ctl.macrofader and not mfchk[ctl.macrofader] then
+                faders[ctl.macrofader] = {}
+              end
+              
+              ctl.macrofader = mf
+              mfchk[mf] = true
+              faders[mf] = {targettype = 4,
+                            strip = f.strip,
+                            page = f.page,
+                            ctl = f.ctl,
+                            c_id = f.c_id}              
+            
+            elseif mf == nil then
+              if ctl.macrofader and not mfchk[ctl.macrofader] then
+                faders[ctl.macrofader] = {}
+              end
+              
+              ctl.macrofader = nil
+            end
+          end
+
           if c and v and tostring(nv) ~= tostring(ctl.val) then
             trackfxparam_select = c
-        --    local trnum = nz(strips[strip][page].controls[c].tracknum,strips[strip].track.tracknum)
-            --local trnum = nz(ctl.tracknum,strips[strip].track.tracknum)
             if ctl.tracknum then
               track = GetTrack(ctl.tracknum)
             else
               track = gtrack
             end
-            mfs = snaptbl.data[ss].mfset
-            if mfs then
-              local mf = snaptbl.data[ss].mf
-              if mf and ctl.macrofader ~= mf then
-                local f = snaptbl.data[ss].mfdata
-                
-                if ctl.macrofader and not mfchk[ctl.macrofader] then
-                  faders[ctl.macrofader] = {}
-                end
-                
-                ctl.macrofader = mf
-                mfchk[mf] = true
-                faders[mf] = {targettype = 4,
-                              strip = f.strip,
-                              page = f.page,
-                              ctl = f.ctl,
-                              c_id = f.c_id}              
-              
-              elseif mf == nil then
-                if ctl.macrofader and not mfchk[ctl.macrofader] then
-                  faders[ctl.macrofader] = {}
-                end
-                
-                ctl.macrofader = nil
-              end
-            end
             SetParam3_Denorm2_Safe2(track, v, strip, page, reaper)        
-            if ctl.macrofader then
-              SetFader(ctl.macrofader, nv)
-            end
           end
+          
+          if ctl.macrofader then
+            SetFader(ctl.macrofader, nv)
+          end
+
         end
       end    
     
