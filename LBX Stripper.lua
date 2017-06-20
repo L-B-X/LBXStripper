@@ -11439,14 +11439,16 @@ end
     else
     end
 
+    local gflag = false
     local c
     local xywh = {x = obj.sections[1000].x+2,
                   y = obj.sections[1000].y, 
                   w = obj.sections[1000].w-1,
                   h = obj.sections[1000].h}
-    if gpage == true then
+    if gpage == true or track_select == LBX_GTRACK then
       f_Get_SSV(gui.color.white)
-      GUI_DrawBar(gui,'GLOBAL',xywh,skin.barR,true,gui.color.black,nil,-5)                 
+      GUI_DrawBar(gui,'GLOBAL',xywh,skin.barR,true,gui.color.black,nil,-5)
+      gflag = true                 
     else
       c = gui.color.white
       GUI_textC(gui,xywh,'GLOBAL',c,-5)    
@@ -11456,7 +11458,7 @@ end
                     y = obj.sections[14].y, 
                     w = obj.sections[14].w/4-2,
                     h = obj.sections[14].h}
-      if gpage == false and page == i+1 then
+      if gpage == false and page == i+1 and gflag == false then
         f_Get_SSV(gui.color.white)
         GUI_DrawBar(gui,i+1,xywh,skin.bar,true,gui.color.black,nil,-2)
         
@@ -18500,9 +18502,7 @@ end
   end
   
   function SetGlobalPage(force)
-
     if gpage == true and not force then SetPage(nz(gpage_opage,1)) return end
-    
     if LBX_GTRACK == nil then
       PopulateTracks()
     else
@@ -18517,9 +18517,11 @@ end
       end
   
       gpage = true
-      gpage_otrackselect = track_select
-      gpage_opage = page
-      
+      if track_select ~= LBX_GTRACK then
+        gpage_otrackselect = track_select
+        gpage_opage = page
+      end
+            
       track_select = LBX_GTRACK
       page = 1
   
@@ -18540,6 +18542,8 @@ end
         surface_offset.y = 0       
       end
   
+      InsertDefaultStrip()
+      
       GUI_DrawCtlBitmap()
       
       if settings_trackchangemidi == true then
@@ -18555,8 +18559,9 @@ end
   
   function SetPage(lpage)
   
+    --if track_select == LBX_GTRACK then page = 1 return end
     if lpage == 0 then
-      if gpage == false then
+      if gpage == false and track_select ~= LBX_GTRACK then
         SetGlobalPage()
       end
       return
@@ -18569,9 +18574,21 @@ end
     end
     
     gpage = false
+
     if track_select == LBX_GTRACK and gpage_otrackselect then
       track_select = gpage_otrackselect
-      gpage_otrackselect = nil
+      --Set track selected
+      if settings_followselectedtrack then
+        --Select track
+        local tr = GetTrack(track_select)
+        if tr then
+          if tr ~= nil then
+            reaper.SetOnlyTrackSelected(tr)
+            reaper.SetTrackSelected(tr, true)
+          end
+        end      
+      end
+      --gpage_otrackselect = nil
     end
     page = lpage
     ctl_select = nil
@@ -19494,13 +19511,18 @@ end
       t = -1
     end
     
-    track_select = t
-    trackedit_select = t
-    
-    if gpage == true then
+    if gpage == true or t ~= LBX_GTRACK then
       gpage = false
     end
-    
+
+    if t == LBX_GTRACK then
+      gpage_opage = page
+      gpage_otrackselect = track_select
+    end
+
+    track_select = t
+    trackedit_select = t
+        
     gfx3_select = nil
     ctl_select = nil
     
@@ -19518,7 +19540,6 @@ end
   end
   
   function ChangeTrack2(t)
-  
     local fnd
     if show_eqcontrol then
 
@@ -19964,21 +19985,40 @@ end
         
       elseif char == 46 then
         local t = track_select + 1
+        if gpage == true then
+          if gpage_otrackselect then
+            t = (gpage_otrackselect) + 1
+          end
+        end
         if t > #tracks then t = -1 end
+        if t == LBX_GTRACK then
+          t = t + 1
+          if t > #tracks then t = -1 end
+        end        
         if t == LBX_GTRACK then
           SetGlobalPage()
         else
           ChangeTrack2(t)
         end
         
-      elseif char == 44 then
+      elseif char == 44 then        
         local t = track_select - 1
+        if gpage == true then
+          if gpage_otrackselect then
+            t = (gpage_otrackselect) - 1
+          end
+        end
         if t < -1 then t = #tracks end
+        if t == LBX_GTRACK then
+          t = t - 1
+          if t < -1 then t = #tracks end
+        end
         if t == LBX_GTRACK then
           SetGlobalPage()
         else
           ChangeTrack2(t)
         end
+        
       elseif char == 4 then
         local d = gfx.dock(-1)
         if d%256 == 0 then
@@ -20853,6 +20893,11 @@ end
 
       if settings_followselectedtrack and navigate and gpage == false then
       
+        --[[if track_select ~= LBX_GTRACK then
+          gpage_opage = page
+          gpage_otrackselect = track_select
+        end]]
+
         FollowTrack(ct)
         
       end
@@ -20882,9 +20927,11 @@ end
   
       elseif MOUSE_clickXY(obj.sections[14],plist_w,0) and navigate then
         --page
-        local page = F_limit(math.ceil((mouse.mx-(obj.sections[14].x+plist_w))/(obj.sections[14].w/4)),1,4)
-        SetPage(page)            
-
+        if track_select ~= LBX_GTRACK then
+          local page = F_limit(math.ceil((mouse.mx-(obj.sections[14].x+plist_w))/(obj.sections[14].w/4)),1,4)
+          SetPage(page)            
+        end
+        
       elseif MOUSE_clickXY(obj.sections[1000],plist_w,0) and navigate then
         --page
         SetGlobalPage()            
@@ -26372,9 +26419,9 @@ end
       if strip_select then
         local i = math.floor(((mouse.my - obj.sections[512].y)) / butt_h)
         if strip_select == i-1 + slist_offset then
-          mstr = 'Set Default (Track)|Set Default (Master)||Clear Default (Track)|Clear Default (Master)||Save (Overwrite)||Add to favorites||Export Shareable Strip File|Import Shared Strip File'
+          mstr = 'Set Default (Track)|Set Default (Master)|Set Default (Global)||Clear Default (Track)|Clear Default (Master)|Clear Default (Global)||Save (Overwrite)||Add to favorites||Export Shareable Strip File|Import Shared Strip File'
         else
-          mstr = '#Set Default (Track)|#Set Default (Master)||Clear Default (Track)|Clear Default (Master)||#Save (Overwrite)||#Add to favorites||#Export Shareable Strip File|Import Shared Strip File'            
+          mstr = '#Set Default (Track)|#Set Default (Master)|#Set Default (Global)||Clear Default (Track)|Clear Default (Master)|Clear Default (Global)||#Save (Overwrite)||#Add to favorites||#Export Shareable Strip File|Import Shared Strip File'            
         end
         gfx.x, gfx.y = mouse.mx, mouse.my
         res = OpenMenu(mstr)
@@ -26387,19 +26434,24 @@ end
             strip_default_mast = {strip_select = strip_select,
                                   stripfol_select = stripfol_select}
           elseif res == 3 then
-            strip_default = nil
+            strip_default_glob = {strip_select = strip_select,
+                                  stripfol_select = stripfol_select}
           elseif res == 4 then
-            strip_default_mast = nil
+            strip_default = nil
           elseif res == 5 then
+            strip_default_mast = nil
+          elseif res == 6 then
+            strip_default_glob = nil
+          elseif res == 7 then
           
             local ostoff = slist_offset
             SaveStrip3(string.sub(strip_files[strip_select].fn,1,string.len(strip_files[strip_select].fn)-6))
             slist_offset = ostoff
-          elseif res == 6 then
-            strip_favs[#strip_favs+1] = strip_folders[stripfol_select].fn..'/'..strip_files[strip_select].fn
-          elseif res == 7 then
-            StripShare_Export(strip_folders[stripfol_select].fn..'/', strip_files[strip_select].fn)
           elseif res == 8 then
+            strip_favs[#strip_favs+1] = strip_folders[stripfol_select].fn..'/'..strip_files[strip_select].fn
+          elseif res == 9 then
+            StripShare_Export(strip_folders[stripfol_select].fn..'/', strip_files[strip_select].fn)
+          elseif res == 10 then
             StripShare_Import('')
           end
         end
@@ -29335,7 +29387,6 @@ end
   end
   
   function FollowTrack(ct)
-  
     if track_select ~= nil or ct > 0 then
       if ct > 0 then
         if track_select == nil then track_select = -1 end
@@ -29355,6 +29406,7 @@ end
                   if strips[tracks[track_select].strip] then
                     strips[tracks[track_select].strip].page = page
                   end
+                  
                   ChangeTrack(i)
                   trctlslist_offset = 0
                   
@@ -34483,6 +34535,12 @@ end
     if sd and sdf then
       strip_default_mast = {stripfol_select = sdf, strip_select = sd}
     end
+
+    local sd = tonumber(GES('strip_default_glob',true))
+    local sdf = tonumber(GES('stripfol_default_glob',true))
+    if sd and sdf then
+      strip_default_glob = {stripfol_select = sdf, strip_select = sd}
+    end
     
     LoadFavStrips()
     
@@ -34523,6 +34581,8 @@ end
     reaper.DeleteExtState(SCRIPT,'stripfol_default',true)
     reaper.DeleteExtState(SCRIPT,'strip_default_mast',true)
     reaper.DeleteExtState(SCRIPT,'stripfol_default_mast',true)
+    reaper.DeleteExtState(SCRIPT,'strip_default_glob',true)
+    reaper.DeleteExtState(SCRIPT,'stripfol_default_glob',true)
   end
   
   function SaveSettings()
@@ -34581,6 +34641,13 @@ end
     else
       reaper.SetExtState(SCRIPT,'strip_default_mast', '', true)
       reaper.SetExtState(SCRIPT,'stripfol_default_mast', '', true)    
+    end
+    if strip_default_glob then
+      reaper.SetExtState(SCRIPT,'strip_default_glob',tostring(strip_default_glob.strip_select), true)
+      reaper.SetExtState(SCRIPT,'stripfol_default_glob',tostring(strip_default_glob.stripfol_select), true)
+    else
+      reaper.SetExtState(SCRIPT,'strip_default_glob', '', true)
+      reaper.SetExtState(SCRIPT,'stripfol_default_glob', '', true)    
     end
     
     SaveFavStrips()
@@ -37127,6 +37194,9 @@ end
   function InsertDefaultStrip()
     if settings_insertdefaultoneverytrack then
       if tracks[track_select] and (strips[tracks[track_select].strip] == nil or (strips[tracks[track_select].strip][page].controls and #strips[tracks[track_select].strip][page].controls == 0)) then
+        --[[DBG('page'..page)
+        DBG(track_select)
+        DBG(LBX_GTRACK)]]
         if settings_insertdefaultoneverypage or page == 1 then
           local ls = false
           if track_select == -1 then
@@ -37135,6 +37205,12 @@ end
               strip_select = strip_default_mast.strip_select          
               ls = true
             end
+          elseif track_select == LBX_GTRACK then
+            if strip_default_glob then
+              stripfol_select = strip_default_glob.stripfol_select
+              strip_select = strip_default_glob.strip_select          
+              ls = true
+            end          
           else
             if strip_default then
               stripfol_select = strip_default.stripfol_select
