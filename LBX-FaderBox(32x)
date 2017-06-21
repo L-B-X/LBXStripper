@@ -1,9 +1,9 @@
 desc: LBX-FaderBox(32x)
 
-slider1:1<0,1,0.00001>-F1
-slider2:1<0,1,0.00001>-F2
-slider3:1<0,1,0.00001>-F3
-slider4:1<0,1,0.00001>-F4
+slider1:1<0,1,0.00001>F1
+slider2:1<0,1,0.00001>F2
+slider3:1<0,1,0.00001>F3
+slider4:1<0,1,0.00001>F4
 slider5:1<0,1,0.00001>-F5
 slider6:1<0,1,0.00001>-F6
 slider7:1<0,1,0.00001>-F7
@@ -39,8 +39,16 @@ slider32:1<0,1,0.00001>-F32
 slider34:0<0,1,1{No,Yes}>Send Midi Feedback
 slider35:0<0,3,1{0-31,32-63,64-95,96-127}>Feedback CC No's
 slider36:0<0,15,1{1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16}>Feedback Midi Channel
+slider37:0<0,1,1{No,Yes}>Slider F1->F16 Note On Monitor
+
+in_pin:none
+out_pin:none
 
 @init
+
+NOTE_OFF = 8;
+NOTE_ON = 9;
+
 CC_MESG_MIN = 176;
 
 nfade = 32;
@@ -92,4 +100,21 @@ slider(34) == 1 ? (
   );
 );
 
+slider(37) == 1 ? (
+
+  while (
+    midirecv(mpos,msg1,msg2,msg3)?
+    (
+      statusHi = (msg1/16)|0;
+      statusLo = 1+(msg1-(statusHi*16))|0;
+      statusHi == NOTE_ON && msg3 > 0 ? 
+      (  
+        slider(statusLo) = msg2/127;
+        slider_automate(slider(statusLo));
+      );
+    );
+    0;
+  );
+);
+  
 @sample
