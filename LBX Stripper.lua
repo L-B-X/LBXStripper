@@ -19976,12 +19976,18 @@ end
                       local ss = round(faders[p+1].val*127)+1
                       local fnd = false
                       if sstype_select == 1 then
-                        if snapshots[tracks[track_select].strip][page][sstype_select][ss] then
+                        if snapshots[tracks[track_select].strip] and 
+                           snapshots[tracks[track_select].strip][page] and
+                           snapshots[tracks[track_select].strip][page][sstype_select] and
+                           snapshots[tracks[track_select].strip][page][sstype_select][ss] then
                           ss_select = ss
                           fnd = true
                         end
                       else
-                        if snapshots[tracks[track_select].strip][page][sstype_select].snapshot[ss] then
+                        if snapshots[tracks[track_select].strip] and 
+                           snapshots[tracks[track_select].strip][page] and
+                           snapshots[tracks[track_select].strip][page][sstype_select] and
+                           snapshots[tracks[track_select].strip][page][sstype_select].snapshot[ss] then
                           ss_select = ss
                           fnd = true
                         end                    
