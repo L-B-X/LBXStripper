@@ -12,7 +12,7 @@
     
   --------------------------------------------
 
-
+  noteletters_tab = {'C','C#','D','D#','E','F','F#','G','G#','A','A#','B'}
         
   submode_table = {'FX PARAMS','GRAPHICS','STRIPS'}
   xxymode_table = {'SNAPSHOTS','PATHS'}
@@ -17376,10 +17376,20 @@ end
     end    
   end
   
+  
+  function num2note(num)
+  
+    local i = (num % 12)+1
+    local n = math.floor((num)/12)-1
+    return noteletters_tab[i]..n
+  
+  end
+  
   function SwitcherMenu_RB()
   
     show_dd = false
     
+    local sfad = strips[tracks[track_select].strip][page].controls[switcher_select].switchfader           
     local mstr
     local sfcnt = #strip_favs
     if sfcnt > 0 then
@@ -17397,12 +17407,33 @@ end
     end
     mstr = mstr .. 'Add page|Rename page|Remove page|'
     local exopts = 3
+    local fm, lastp = FaderMenu(sfad,true)
+    mstr = mstr ..'|'..fm..'|'
+    local vo = '>Fader value offset'
+    for i = 0, 127 do
+      if sfad then
+        vo = vo .. '|'
+        if i == faders[sfad].voffset then
+          vo = vo .. '!'
+        end
+      else
+        vo = vo .. '|#'      
+      end
+      if i == 127 then
+        vo = vo .. '<'
+      end
+      vo = vo.. string.format('%i',i)..'  -  '..num2note(i)
+    end
+    local exopts2 = 3 + lastp + 128
+    mstr = mstr..vo..'|'
+
     local ctl = strips[tracks[track_select].strip][page].controls[switcher_select]
     local switchid = ctl.switcherid
     local swc = #switchers[switchid].grpids
     for sid = 1, swc do
       mstr = mstr..'|'..string.format('%i',sid)..': '..tostring(switchers[switchid].grpids[sid].name)
     end
+    
     gfx.x, gfx.y = mouse.mx, mouse.my
     local res = OpenMenu(mstr)
     if res > 0 then
@@ -17432,12 +17463,35 @@ end
       elseif res == sfcnt + 3 then
         
         Switcher_DeletePage(switchid)
-        
-      elseif res >= sfcnt + 1 + exopts then
       
-        switchers[switchid].current = switchers[switchid].grpids[res - sfcnt -exopts].id
+      elseif res >= sfcnt + 3 and res < sfcnt + 3 + lastp then
+        res = res - (sfcnt + 3)
+        local f = {targettype = 6,
+                   strip = tracks[track_select].strip,
+                   page = page,
+                   ctl = switcher_select,
+                   c_id = strips[tracks[track_select].strip][page].controls[switcher_select].c_id,
+                   voffset = 0}
+        AssignFader(res,f)
+
+      elseif res == sfcnt + 3 + lastp then
+      
+        DeleteFader(sfad)
+      
+      elseif res > sfcnt + 3 + lastp and res < sfcnt + exopts2 then
+        
+        res = res - (sfcnt + exopts2 -128)
+        if sfad then
+        
+          faders[sfad].voffset = res-1
+        
+        end
+        
+      elseif res >= sfcnt + 1 + exopts2 then
+      
+        switchers[switchid].current = switchers[switchid].grpids[res - sfcnt - exopts2].id
         local ctl = strips[tracks[track_select].strip][page].controls[switcher_select]
-        ctl.param_info.paramname = string.format('%i',res-sfcnt-exopts)..': '..switchers[switchid].grpids[res - sfcnt-exopts].name
+        ctl.param_info.paramname = string.format('%i',res-sfcnt-exopts2)..': '..switchers[switchid].grpids[res - sfcnt-exopts2].name
         update_gfx = true
         update_bg = true
 
@@ -17592,6 +17646,71 @@ end
     end
     return ret
   
+  end
+  
+  function RBMenu_Snapshot(snapmx, snapmy)
+  
+    if sstype_select == 1 then
+      local fm, lp = FaderMenu(snapshot_fader, true)
+      mstr = 'Clone to subset (ctls only)||'..fm
+      gfx.x, gfx.y = snapmx, snapmy
+      local res = OpenMenu(mstr)
+      if res > 0 then
+        if res == 1 then
+          local newsst = Snapshot_CloneToSubset(tracks[track_select].strip, page, 1, false)
+          if newsst then
+            sstype_select = newsst
+            update_snaps = true
+          end
+        else
+          local f = {targettype = 5}
+          res = res -1
+          if res ~= lastp then
+            AssignFader(res, f)            
+          elseif res == lastp then
+            DeleteFader(snapshot_fader)
+          end
+        end
+      end        
+    elseif sstype_select > 1 then
+      local fm, lp = FaderMenu(-1, true)
+      mstr = 'Delete subset|Delete all subsets||Clone to subset (ctls only)||'..fm
+      gfx.x, gfx.y = snapmx, snapmy
+      local res = OpenMenu(mstr)
+      if res > 0 then
+        if res == 1 then
+        
+          --DBG('DELETE')
+          Snapshot_DeleteSubset(tracks[track_select].strip, page, sstype_select)
+          SetCtlBitmapRedraw()
+          update_gfx = true
+          
+        elseif res == 2 then
+        
+          if snapshots and snapshots[tracks[track_select].strip] and #snapshots[tracks[track_select].strip][page] > 1 then
+            OpenMsgBox(3, 'Delete all subsets?', 2)
+          end                  
+
+        elseif res == 3 then
+          local newsst = Snapshot_CloneToSubset(tracks[track_select].strip, page, sstype_select, false)
+          if newsst then
+            sstype_select = newsst
+            update_snaps = true
+          end
+
+        else
+          local f = {targettype = 5}
+          res = res -3
+          if res ~= lastp then
+            AssignFader(res, f)            
+          elseif res == lastp then
+            DeleteFader(snapshot_fader)
+          end
+        end
+      
+      end
+    end
+    
   end
   
   function RBMenu_Edit()
@@ -19626,8 +19745,8 @@ end
     
   end
 
-  function SetAutomationFader(fad_tab, sel, returnonly)
-  
+  function FaderMenu(sel, returnonly)
+
     if LBX_CTL_TRACK_INF and LBX_CTL_TRACK_INF.count > 0 then
       local mstr = ''
       for fxnum = 0, LBX_CTL_TRACK_INF.count-1 do
@@ -19673,7 +19792,20 @@ end
         end
       end
       local lastp = LBX_CTL_TRACK_INF.count * LBX_FB_CNT+1
-      mstr = mstr .. '|Clear'
+      mstr = mstr .. '|Clear Fader'
+      return mstr, lastp
+    else
+      mstr = '#No Faderbox'
+      return mstr, 1  
+    end
+  
+  end
+
+  function SetAutomationFader(fad_tab, sel, returnonly)
+  
+    if LBX_CTL_TRACK_INF and LBX_CTL_TRACK_INF.count > 0 then
+      
+      local mstr, lastp = FaderMenu(sel, returnonly)
       
       gfx.x = mouse.mx
       gfx.y = mouse.my
@@ -19717,149 +19849,178 @@ end
             for pf = 0, LBX_FB_CNT-1 do
               p = fxnum * LBX_FB_CNT + pf
               faders[p+1].val = round(reaper.TrackFX_GetParam(track, fxnum, pf),5)
-                            
-              if faders[p+1].val and tostring(faders[p+1].val) ~= tostring(faders[p+1].oval) then
-                --DBG(faders[p+1].oval)
-                faders[p+1].oval = faders[p+1].val
-                if faders[p+1].targettype then
-                  if faders[p+1].targettype == 0 then
-                    if xxy and xxy[faders[p+1]] then
-                      if faders[p+1].xy == 0 then
-                        xxy[faders[p+1].strip][faders[p+1].page][faders[p+1].sstype].x = faders[p+1].val            
+              if faders[p+1].val < 0 then
+                faders[p+1].latch = nil
+              else              
+                if faders[p+1].val and (tostring(faders[p+1].val) ~= tostring(faders[p+1].oval) or faders[p+1].targettype == 5 or faders[p+1].targettype == 6) then
+                  --DBG(faders[p+1].oval)
+                  faders[p+1].oval = faders[p+1].val
+                  if faders[p+1].targettype then
+                    if faders[p+1].targettype == 0 then
+                      if xxy and xxy[faders[p+1].strip] then
+                        if faders[p+1].xy == 0 then
+                          xxy[faders[p+1].strip][faders[p+1].page][faders[p+1].sstype].x = faders[p+1].val            
+                        else
+                          xxy[faders[p+1].strip][faders[p+1].page][faders[p+1].sstype].y = faders[p+1].val            
+                        end
+                        XXY_Set(faders[p+1].strip,faders[p+1].page,faders[p+1].sstype)
+                        if show_xxy then
+                          update_xxypos = true
+                        end
                       else
-                        xxy[faders[p+1].strip][faders[p+1].page][faders[p+1].sstype].y = faders[p+1].val            
+                        --check fader
+                        DeleteFader(p+1)
                       end
-                      XXY_Set(faders[p+1].strip,faders[p+1].page,faders[p+1].sstype)
+                    elseif faders[p+1].targettype == 1 then
+                      XXYPath_SetPos(faders[p+1].strip,faders[p+1].page,faders[p+1].sstype,faders[p+1].val, p+1)
                       if show_xxy then
                         update_xxypos = true
-                      end
-                    else
-                      --check fader
-                      DeleteFader(p+1)
-                    end
-                  elseif faders[p+1].targettype == 1 then
-                    XXYPath_SetPos(faders[p+1].strip,faders[p+1].page,faders[p+1].sstype,faders[p+1].val, p+1)
-                    if show_xxy then
-                      update_xxypos = true
-                    end                              
-                  elseif faders[p+1].targettype == 2 then
-                    if strips[faders[p+1].strip] and strips[faders[p+1].strip][faders[p+1].page].controls[faders[p+1].ctl] then
-                      strips[faders[p+1].strip][faders[p+1].page].controls[faders[p+1].ctl].oval = strips[faders[p+1].strip][faders[p+1].page].controls[faders[p+1].ctl].val 
-                      strips[faders[p+1].strip][faders[p+1].page].controls[faders[p+1].ctl].val = faders[p+1].val
-                      --strips[faders[p+1].strip][faders[p+1].page].controls[faders[p+1].ctl].mval = faders[p+1].val
-                      strips[faders[p+1].strip][faders[p+1].page].controls[faders[p+1].ctl].dirty = true
-                      SetMacro(faders[p+1].strip,faders[p+1].page,faders[p+1].ctl)
-                      if macro_edit_mode == true then
-                        update_macroedit = true
-                      end 
-                    else
-                      DeleteFader(p+1)
-                    end 
-                    
-                  elseif faders[p+1].targettype == 4 then
-                  --DBG('p')
-                    local strip = faders[p+1].strip
-                    local page = faders[p+1].page
-                    local c = faders[p+1].ctl
-                    if strips[strip] and strips[strip][page].controls[c] then
-                      strips[strip][page].controls[c].oval = strips[strip][page].controls[c].val 
-                      strips[strip][page].controls[c].val = faders[p+1].val
-                      strips[strip][page].controls[c].dirty = true
-                      local ctl = strips[strip][page].controls[c]
-                      A_SetParam(strip,page,c,ctl)
-                      update_ctls = true
-                    else
-                      DeleteFader(p+1)
-                    end 
-
-                  elseif faders[p+1].targettype == 3 then
-                    if mode == 0 and macro_edit_mode ~= true and macro_lrn_mode ~= true and show_xxy ~= true and show_eqcontrol ~= true and show_settings ~= true then
-                      local strip = tracks[track_select].strip
-                      local c = GetControlAtXY(strip,page,mouse.mx,mouse.my)
-                      if c then
-                        local ctl = strips[strip][page].controls[c]
-                        if c ~= faders[p+1].to_ctl then
-                          faders[p+1].to = false
-                          faders[p+1].to_ctl = c
-                          if faders[p+1].val > ctl.val then
-                            faders[p+1].to_pos = 1 
-                          elseif faders[p+1].val < ctl.val then
-                            faders[p+1].to_pos = 2
-                          else
-                            faders[p+1].to_pos = 3
-                            faders[p+1].to = true
-                          end
+                      end                              
+                    elseif faders[p+1].targettype == 2 then
+                      if strips[faders[p+1].strip] and strips[faders[p+1].strip][faders[p+1].page].controls[faders[p+1].ctl] then
+                        strips[faders[p+1].strip][faders[p+1].page].controls[faders[p+1].ctl].oval = strips[faders[p+1].strip][faders[p+1].page].controls[faders[p+1].ctl].val 
+                        strips[faders[p+1].strip][faders[p+1].page].controls[faders[p+1].ctl].val = faders[p+1].val
+                        --strips[faders[p+1].strip][faders[p+1].page].controls[faders[p+1].ctl].mval = faders[p+1].val
+                        strips[faders[p+1].strip][faders[p+1].page].controls[faders[p+1].ctl].dirty = true
+                        SetMacro(faders[p+1].strip,faders[p+1].page,faders[p+1].ctl)
+                        if macro_edit_mode == true then
+                          update_macroedit = true
                         end 
+                      else
+                        DeleteFader(p+1)
+                      end 
+                      
+                    elseif faders[p+1].targettype == 4 then
+                    --DBG('p')
+                      local strip = faders[p+1].strip
+                      local page = faders[p+1].page
+                      local c = faders[p+1].ctl
+                      if strips[strip] and strips[strip][page].controls[c] then
+                        strips[strip][page].controls[c].oval = strips[strip][page].controls[c].val 
+                        strips[strip][page].controls[c].val = faders[p+1].val
+                        strips[strip][page].controls[c].dirty = true
+                        local ctl = strips[strip][page].controls[c]
+                        A_SetParam(strip,page,c,ctl)
+                        update_ctls = true
+                      else
+                        DeleteFader(p+1)
+                      end 
   
-                        if ctl.ctlcat == ctlcats.fxparam or ctl.ctlcat == ctlcats.trackparam or ctl.ctlcat == ctlcats.macro then
-                          if faders[p+1].mode == 0 then
-                            --absolute
-                            if faders[p+1].to == false then
-                              if faders[p+1].to_pos == 1 then
-                                if faders[p+1].val <= ctl.val then
-                                  faders[p+1].to = true 
-                                end
-                              else
-                                if faders[p+1].val >= ctl.val then
-                                  faders[p+1].to = true 
-                                end                            
-                              end
+                    elseif faders[p+1].targettype == 3 then
+                      if mode == 0 and macro_edit_mode ~= true and macro_lrn_mode ~= true and show_xxy ~= true and show_eqcontrol ~= true and show_settings ~= true then
+                        local strip = tracks[track_select].strip
+                        local c = GetControlAtXY(strip,page,mouse.mx,mouse.my)
+                        if c then
+                          local ctl = strips[strip][page].controls[c]
+                          if c ~= faders[p+1].to_ctl then
+                            faders[p+1].to = false
+                            faders[p+1].to_ctl = c
+                            if faders[p+1].val > ctl.val then
+                              faders[p+1].to_pos = 1 
+                            elseif faders[p+1].val < ctl.val then
+                              faders[p+1].to_pos = 2
+                            else
+                              faders[p+1].to_pos = 3
+                              faders[p+1].to = true
                             end
-                             
-                            if faders[p+1].to == true then
-                              ctl.oval = ctl.val
-                              ctl.val = faders[p+1].val
-                              if ctl.oval ~= ctl.val then
+                          end 
+    
+                          if ctl.ctlcat == ctlcats.fxparam or ctl.ctlcat == ctlcats.trackparam or ctl.ctlcat == ctlcats.macro then
+                            if faders[p+1].mode == 0 then
+                              --absolute
+                              if faders[p+1].to == false then
+                                if faders[p+1].to_pos == 1 then
+                                  if faders[p+1].val <= ctl.val then
+                                    faders[p+1].to = true 
+                                  end
+                                else
+                                  if faders[p+1].val >= ctl.val then
+                                    faders[p+1].to = true 
+                                  end                            
+                                end
+                              end
+                               
+                              if faders[p+1].to == true then
+                                ctl.oval = ctl.val
+                                ctl.val = faders[p+1].val
+                                if ctl.oval ~= ctl.val then
+                                  A_SetParam(strip,page,c,ctl)
+                                  ctl.dirty = true
+                                  update_ctls = true
+                                end
+                              end
+                            else
+                              --relative
+                              local vi = 0.002
+                              local v = F_limit(faders[p+1].val-0.5,-vi,vi)
+                              --DBG(faders[p+1].val..'  '..v)
+                              ctl.val = F_limit(ctl.val + (v),0,1)
+                              --if ctl.oval ~= ctl.val then
                                 A_SetParam(strip,page,c,ctl)
                                 ctl.dirty = true
                                 update_ctls = true
-                              end
+                              --end
+                              ctl.oval = ctl.val
+                              --[[if ctl.oval == 1 then
+                                ctl.oval ]]
+                              
+                              reaper.TrackFX_SetParam(track, fxnum, pf, 0.5)
+                              faders[p+1].oval = faders[p+1].val
+                              faders[p+1].val = 0.5
                             end
-                          else
-                            --relative
-                            local vi = 0.002
-                            local v = F_limit(faders[p+1].val-0.5,-vi,vi)
-                            --DBG(faders[p+1].val..'  '..v)
-                            ctl.val = F_limit(ctl.val + (v),0,1)
-                            --if ctl.oval ~= ctl.val then
-                              A_SetParam(strip,page,c,ctl)
-                              ctl.dirty = true
-                              update_ctls = true
-                            --end
-                            ctl.oval = ctl.val
-                            --[[if ctl.oval == 1 then
-                              ctl.oval ]]
-                            
-                            reaper.TrackFX_SetParam(track, fxnum, pf, 0.5)
-                            faders[p+1].oval = faders[p+1].val
-                            faders[p+1].val = 0.5
                           end
                         end
                       end
+                    elseif faders[p+1].targettype == 5 and faders[p+1].latch == nil then
+                      faders[p+1].latch = true
+                      local ss = round(faders[p+1].val*127)+1
+                      local fnd = false
+                      if sstype_select == 1 then
+                        if snapshots[tracks[track_select].strip][page][sstype_select][ss] then
+                          ss_select = ss
+                          fnd = true
+                        end
+                      else
+                        if snapshots[tracks[track_select].strip][page][sstype_select].snapshot[ss] then
+                          ss_select = ss
+                          fnd = true
+                        end                    
+                      end
+                      if fnd then
+                        Snapshot_Set(tracks[track_select].strip,page,sstype_select,ss_select)
+                        update_gfx = true
+                      end                    
+                      
+                    elseif faders[p+1].targettype == 6 and faders[p+1].latch == nil then
+                      faders[p+1].latch = true
+                      local sel = round(faders[p+1].val*127)+1 - faders[p+1].voffset
+                      Switcher_Set2(faders[p+1].ctl ,sel, faders[p+1].strip, faders[p+1].page)
+                      
+                    end
+                  end
+                end    
+                            
+                if faders[p+1].targettype == 4 then
+                --DBG('bb')
+                  local strip = faders[p+1].strip
+                  local page = faders[p+1].page
+                  local c = faders[p+1].ctl
+                  local ctl = strips[strip][page].controls[c]
+                  if ctl then
+                    local t = strips[strip].track.tracknum
+                    if ctl.tracknum ~= nil then
+                      t = ctl.tracknum
+                    end                
+                    local vv = round(GetParamValue_XX(ctl.ctlcat, t, ctl.fxnum, ctl.param, c, strip, page),4)
+                    if tostring(vv) ~= tostring(round(faders[p+1].val,4)) then
+                      --DBG(vv..'  '..faders[p+1].val)
+                      faders[p+1].val = vv
+                      SetFader(p+1, vv) 
                     end
                   end
                 end
-              end    
-              if faders[p+1].targettype == 4 then
-              --DBG('bb')
-                local strip = faders[p+1].strip
-                local page = faders[p+1].page
-                local c = faders[p+1].ctl
-                local ctl = strips[strip][page].controls[c]
-                if ctl then
-                  local t = strips[strip].track.tracknum
-                  if ctl.tracknum ~= nil then
-                    t = ctl.tracknum
-                  end                
-                  local vv = round(GetParamValue_XX(ctl.ctlcat, t, ctl.fxnum, ctl.param, c, strip, page),4)
-                  if tostring(vv) ~= tostring(round(faders[p+1].val,4)) then
-                    --DBG(vv..'  '..faders[p+1].val)
-                    faders[p+1].val = vv
-                    SetFader(p+1, vv) 
-                  end
-                end
               end
-              
+
             end
           end    
           trackfxparam_select = ccc
@@ -19890,12 +20051,57 @@ end
     end  
   end
 
-  function DeleteFader(f)
+  function AssignFader(f, ftab)
+  
     if faders[f] then
+      DeleteFader(f)
+    end
+    if ftab.targettype == 0 then
+      if xxy and xxy[ftab.strip] and xxy[ftab.strip][ftab.page] and xxy[ftab.strip][ftab.page][ftab.sstype] then
+        if ftab.xy == 0 then
+          DeleteFader(xxy[ftab.strip][ftab.page][ftab.sstype].xfader)
+          xxy[ftab.strip][ftab.page][ftab.sstype].xfader = f          
+        else
+          DeleteFader(xxy[ftab.strip][ftab.page][ftab.sstype].yfader)
+          xxy[ftab.strip][ftab.page][ftab.sstype].yfader = f      
+        end
+        faders[f] = ftab
+      end
+    elseif ftab.targettype == 1 then    
+      if xxy and xxy[ftab.strip] and xxy[ftab.strip][ftab.page] and xxy[ftab.strip][ftab.page][ftab.sstype] then
+        DeleteFader(xxy[ftab.strip][ftab.page][ftab.sstype].pathfader)
+        xxy[ftab.strip][ftab.page][ftab.sstype].pathfader = f
+        faders[f] = ftab    
+      end
+    elseif ftab.targettype == 2 or ftab.targettype == 4 then    
+      if strips and strips[ftab.strip] and strips[ftab.strip][ftab.page].controls[ftab.ctl] then
+        DeleteFader(strips[ftab.strip][ftab.page].controls[ftab.ctl].macrofader)
+        strips[ftab.strip][ftab.page].controls[ftab.ctl].macrofader = f
+        faders[f] = ftab    
+      end
+    elseif ftab.targettype == 5 then
+      DeleteFader(snapshot_fader)    
+      snapshot_fader = f      
+      faders[f] = ftab    
+    elseif ftab.targettype == 6 then    
+      if strips and strips[ftab.strip] and strips[ftab.strip][ftab.page].controls[ftab.ctl] then
+        DeleteFader(strips[ftab.strip][ftab.page].controls[ftab.ctl].switchfader)
+        strips[ftab.strip][ftab.page].controls[ftab.ctl].switchfader = f
+        faders[f] = ftab    
+      end
+    end
+  
+  end
+
+  function DeleteFader(f)
+    if f and faders[f] then
       if faders[f].targettype == 0 then
         if xxy and xxy[faders[f].strip] and xxy[faders[f].strip][faders[f].page] and xxy[faders[f].strip][faders[f].page][faders[f].sstype] then
-          xxy[faders[f].strip][faders[f].page][faders[f].sstype].xfader = nil
-          xxy[faders[f].strip][faders[f].page][faders[f].sstype].yfader = nil
+          if faders[f].xy == 0 then
+            xxy[faders[f].strip][faders[f].page][faders[f].sstype].xfader = nil
+          else
+            xxy[faders[f].strip][faders[f].page][faders[f].sstype].yfader = nil
+          end
         end
       elseif faders[f].targettype == 1 then
         if xxy and xxy[faders[f].strip] and xxy[faders[f].strip][faders[f].page] and xxy[faders[f].strip][faders[f].page][faders[f].sstype] then
@@ -19904,6 +20110,12 @@ end
       elseif faders[f].targettype == 2 or faders[f].targettype == 4 then
         if strips and strips[faders[f].strip] and strips[faders[f].strip][faders[f].page].controls[faders[f].ctl] then
           strips[faders[f].strip][faders[f].page].controls[faders[f].ctl].macrofader = nil
+        end
+      elseif faders[f].targettype == 5 then
+        snapshot_fader = nil
+      elseif faders[f].targettype == 6 then
+        if strips and strips[faders[f].strip] and strips[faders[f].strip][faders[f].page].controls[faders[f].ctl] then
+          strips[faders[f].strip][faders[f].page].controls[faders[f].ctl].switchfader = nil
         end
       end
       faders[f] = {}
@@ -21382,10 +21594,10 @@ end
             faders[i] = {}
           end
         end
-        DeleteFader(lbx_midilrnval)
-        
-        faders[lbx_midilrnval] = f
-        strips[tracks[track_select].strip][page].controls[lbx_midilrnctl].macrofader = lbx_midilrnval
+        --DeleteFader(lbx_midilrnval)
+        AssignFader(lbx_midilrnval, f)
+        --faders[lbx_midilrnval] = f
+        --strips[tracks[track_select].strip][page].controls[lbx_midilrnctl].macrofader = lbx_midilrnval
         
       else
         local fad = strips[tracks[track_select].strip][page].controls[lbx_midilrnctl].macrofader
@@ -24939,34 +25151,48 @@ end
       
       if fxmode == 0 then
         if MOUSE_click(obj.sections[520]) then
-          local i = math.floor((mouse.my - obj.sections[520].y) / butt_h)-1
-          if i == -1 then
-            if mouse.mx < obj.sections[520].w/2 then
-              flist_offset = flist_offset - F_butt_cnt
-              if flist_offset < 0 then
-                flist_offset = 0
+          
+          if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.15 then
+            local i = math.floor((mouse.my - obj.sections[520].y) / butt_h)-1
+            if i == -1 then
+            elseif i >= F_butt_cnt then
+            elseif trackfx[i + flist_offset] then
+              local track = GetTrack(tracks[track_select].tracknum)
+              if not reaper.TrackFX_GetOpen(track, i + flist_offset) then
+                reaper.TrackFX_Show(track, i + flist_offset, 3)
               end
-            else
-              if flist_offset + F_butt_cnt < #trackfx then
-                flist_offset = flist_offset + F_butt_cnt-1
-              end          
+            end        
+            
+          else
+            local i = math.floor((mouse.my - obj.sections[520].y) / butt_h)-1
+            if i == -1 then
+              if mouse.mx < obj.sections[520].w/2 then
+                flist_offset = flist_offset - F_butt_cnt
+                if flist_offset < 0 then
+                  flist_offset = 0
+                end
+              else
+                if flist_offset + F_butt_cnt < #trackfx then
+                  flist_offset = flist_offset + F_butt_cnt-1
+                end          
+              end
+              update_gfx = true
+            elseif trackfx[i + flist_offset] then
+              trackfx_select = i + flist_offset
+              PopulateTrackFXParams()
+              mouse.context = contexts.reassplugin
+              reass_plugin = {fx = trackfx_select, time = rt}
+              local w,h = gfx.getimgdim(998)
+              if w == 0 or h == 0 then
+                ksel_size = {w = 50, h = 50}
+              else
+               ksel_size = {w = w/2, h = h/2}
+              end
+              update_gfx = true
             end
-            update_gfx = true
-          elseif trackfx[i + flist_offset] then
-            trackfx_select = i + flist_offset
-            PopulateTrackFXParams()
-            mouse.context = contexts.reassplugin
-            reass_plugin = {fx = trackfx_select, time = rt}
-            local w,h = gfx.getimgdim(998)
-            if w == 0 or h == 0 then
-              ksel_size = {w = 50, h = 50}
-            else
-             ksel_size = {w = w/2, h = h/2}
-            end
-            update_gfx = true
           end
         elseif MOUSE_click_RB(obj.sections[520]) then
-          local i = math.floor((mouse.my - obj.sections[520].y) / butt_h)-1
+          --[[local i = math.floor((mouse.my - obj.sections[520].y) / butt_h)-1
           if i == -1 then
           elseif i >= F_butt_cnt then
           elseif trackfx[i + flist_offset] then
@@ -24974,7 +25200,7 @@ end
             if not reaper.TrackFX_GetOpen(track, i + flist_offset) then
               reaper.TrackFX_Show(track, i + flist_offset, 3)
             end
-          end        
+          end ]]       
         end
     
         if MOUSE_click(obj.sections[522]) then
@@ -26649,12 +26875,16 @@ end
                        xy = 0}
             
             mouse.mx, mouse.my = mx, my
-            local fad = SetAutomationFader(f, xxy[tracks[track_select].strip][page][sstype_select].xfader)
-            if fad ~= -1 then
-              if xxy[tracks[track_select].strip][page][sstype_select].xfader and xxy[tracks[track_select].strip][page][sstype_select].xfader ~= fad then
+            local fad = SetAutomationFader(f, xxy[tracks[track_select].strip][page][sstype_select].xfader, true)
+            if fad == -2 then
+              DeleteFader(xxy[tracks[track_select].strip][page][sstype_select].xfader)
+              update_gfx = true
+            elseif fad ~= -1 then
+              --[[if xxy[tracks[track_select].strip][page][sstype_select].xfader and xxy[tracks[track_select].strip][page][sstype_select].xfader ~= fad then
                 faders[xxy[tracks[track_select].strip][page][sstype_select].xfader] = {}
               end
-              xxy[tracks[track_select].strip][page][sstype_select].xfader = fad
+              xxy[tracks[track_select].strip][page][sstype_select].xfader = fad]]
+              AssignFader(fad, f)
               update_gfx = true
             end
           end
@@ -26669,12 +26899,16 @@ end
                        xy = 1}
             
             mouse.mx, mouse.my = mx, my
-            local fad = SetAutomationFader(f, xxy[tracks[track_select].strip][page][sstype_select].yfader)
-            if fad ~= -1 then
-              if xxy[tracks[track_select].strip][page][sstype_select].yfader and xxy[tracks[track_select].strip][page][sstype_select].yfader ~= fad then
-                faders[xxy[tracks[track_select].strip][page][sstype_select].yfader] = {}
-              end
-              xxy[tracks[track_select].strip][page][sstype_select].yfader = fad
+            local fad = SetAutomationFader(f, xxy[tracks[track_select].strip][page][sstype_select].yfader, true)
+            if fad == -2 then
+              DeleteFader(xxy[tracks[track_select].strip][page][sstype_select].yfader)
+              update_gfx = true              
+            elseif fad ~= -1 then
+              --if xxy[tracks[track_select].strip][page][sstype_select].yfader and xxy[tracks[track_select].strip][page][sstype_select].yfader ~= fad then
+              --  faders[xxy[tracks[track_select].strip][page][sstype_select].yfader] = {}
+              --end
+              --xxy[tracks[track_select].strip][page][sstype_select].yfader = fad
+              AssignFader(fad, f)
               update_gfx = true
             end
           end
@@ -26867,12 +27101,16 @@ end
                        sstype = sstype_select}
             
             mouse.mx, mouse.my = mx, my
-            local fad = SetAutomationFader(f, xxy[tracks[track_select].strip][page][sstype_select].pathfader)
-            if fad ~= -1 then
-              if xxy[tracks[track_select].strip][page][sstype_select].pathfader and xxy[tracks[track_select].strip][page][sstype_select].pathfader ~= fad then
-                faders[xxy[tracks[track_select].strip][page][sstype_select].pathfader] = {}
-              end
-              xxy[tracks[track_select].strip][page][sstype_select].pathfader = fad
+            local fad = SetAutomationFader(f, xxy[tracks[track_select].strip][page][sstype_select].pathfader, true)
+            if fad == -2 then
+              DeleteFader(xxy[tracks[track_select].strip][page][sstype_select].pathfader)
+              update_gfx = true
+            elseif fad ~= -1 then
+              --if xxy[tracks[track_select].strip][page][sstype_select].pathfader and xxy[tracks[track_select].strip][page][sstype_select].pathfader ~= fad then
+              --  faders[xxy[tracks[track_select].strip][page][sstype_select].pathfader] = {}
+              --end
+              --xxy[tracks[track_select].strip][page][sstype_select].pathfader = fad
+              AssignFader(fad,f)
               update_gfx = true
             end
           end
@@ -27063,47 +27301,8 @@ end
       
       elseif mouse.context == nil and MOUSE_click_RB(obj.sections[168]) and mouse.shift == false then
       
-        if sstype_select == 1 then
-          mstr = 'Clone to subset (ctls only)'
-          gfx.x, gfx.y = snapmx, snapmy
-          local res = OpenMenu(mstr)
-          if res > 0 then
-            if res == 1 then
-              local newsst = Snapshot_CloneToSubset(tracks[track_select].strip, page, 1, false)
-              if newsst then
-                sstype_select = newsst
-                update_snaps = true
-              end
-            end
-          end        
-        elseif sstype_select > 1 then
-          mstr = 'Delete subset|Delete all subsets||Clone to subset (ctls only)'
-          gfx.x, gfx.y = snapmx, snapmy
-          local res = OpenMenu(mstr)
-          if res > 0 then
-            if res == 1 then
-            
-              --DBG('DELETE')
-              Snapshot_DeleteSubset(tracks[track_select].strip, page, sstype_select)
-              SetCtlBitmapRedraw()
-              update_gfx = true
-              
-            elseif res == 2 then
-            
-              if snapshots and snapshots[tracks[track_select].strip] and #snapshots[tracks[track_select].strip][page] > 1 then
-                OpenMsgBox(3, 'Delete all subsets?', 2)
-              end                  
-
-            elseif res == 3 then
-              local newsst = Snapshot_CloneToSubset(tracks[track_select].strip, page, sstype_select, false)
-              if newsst then
-                sstype_select = newsst
-                update_snaps = true
-              end
-            end
-          
-          end
-        end
+        RBMenu_Snapshot(snapmx, snapmy)
+        
       elseif mouse.context == nil and MOUSE_click(obj.sections[168]) and mouse.shift == true then
       
         if sstype_select > 1 then
@@ -27656,12 +27855,16 @@ end
                      c_id = strips[tracks[track_select].strip][page].controls[macroctl_select].c_id}
             
           mouse.mx, mouse.my = mx, my
-          local fad = SetAutomationFader(f, strips[tracks[track_select].strip][page].controls[macroctl_select].macrofader)
-          if fad ~= -1 then
-            if strips[tracks[track_select].strip][page].controls[macroctl_select].macrofader and strips[tracks[track_select].strip][page].controls[macroctl_select].macrofader ~= fad then
-              faders[strips[tracks[track_select].strip][page].controls[macroctl_select].macrofader] = {}
-            end
-            strips[tracks[track_select].strip][page].controls[macroctl_select].macrofader = fad
+          local fad = SetAutomationFader(f, strips[tracks[track_select].strip][page].controls[macroctl_select].macrofader, true)
+          if fad == -2 then
+            DeleteFader(strips[tracks[track_select].strip][page].controls[macroctl_select].macrofader)
+            update_gfx = true
+          elseif fad ~= -1 then
+            --if strips[tracks[track_select].strip][page].controls[macroctl_select].macrofader and strips[tracks[track_select].strip][page].controls[macroctl_select].macrofader ~= fad then
+            --  faders[strips[tracks[track_select].strip][page].controls[macroctl_select].macrofader] = {}
+            --end
+            --strips[tracks[track_select].strip][page].controls[macroctl_select].macrofader = fad
+            AssignFader(fad, f)
             update_gfx = true
           end
 
@@ -27839,6 +28042,23 @@ end
       SetCtlBitmapRedraw()
     end
       
+  end
+
+  function Switcher_Set2(switcher_select, sel, strip, page)
+  
+    if strips[strip] then
+      local ctl = strips[strip][page].controls[switcher_select]
+      local switchid = ctl.switcherid
+      
+      if switchers[switchid].grpids[sel] and ctl then
+        switchers[switchid].current = switchers[switchid].grpids[sel].id
+        ctl.param_info.paramname = string.format('%i',sel)..': '..switchers[switchid].grpids[sel].name
+        update_gfx = true
+        update_bg = true
+    
+        SetCtlBitmapRedraw()
+      end
+    end      
   end
   
   function A_Run_EQControl(noscroll, rt)
@@ -29533,7 +29753,13 @@ end
       
     elseif mouse.context == nil and MOUSE_click(obj.sections[700]) then
       local abs, _ = GetMOFaders()
-      local fadabs = SetAutomationFader({targettype = 3, mode = 0},abs)
+      local f = {targettype = 3, mode = 0}
+      local fadabs = SetAutomationFader(f ,abs, true)
+      if fadabs == -2 then
+        DeleteFader(abs)
+      elseif fadabs ~= -1 then
+        AssignFader(fadabs, f)
+      end
       update_gfx = true
 
     elseif mouse.context == nil and MOUSE_click(obj.sections[702]) then
@@ -32744,6 +32970,7 @@ end
                                     poslock = tobool(zn(data[key..'poslock'],false)),
                                     horiz = tobool(zn(data[key..'horiz'],false)),
                                     macrofader = tonumber(zn(data[key..'macrofader'])),
+                                    switchfader = tonumber(zn(data[key..'switchfader'])),
                                     hidden = tobool(zn(data[key..'hidden'],false)),
                                     switcherid = tonumber(zn(data[key..'switcherid'])),
                                     switcher = tonumber(zn(data[key..'switcher'])),
@@ -33541,7 +33768,10 @@ end
       local fadercnt = tonumber(zn(data[key]))
 
       if fadercnt and fadercnt > 0 then
-    
+
+        local key = 'snapshot_fader'
+        snapshot_fader = tonumber(zn(data[key]))
+
         faders = {}
         
         for f = 1, fadercnt do      
@@ -33557,6 +33787,7 @@ end
           faders[f].sstype = tonumber(zn(data[key..'sstype']))
           faders[f].xy = tonumber(zn(data[key..'xy'])) 
           faders[f].mode = tonumber(zn(data[key..'mode'])) 
+          faders[f].voffset = tonumber(zn(data[key..'voffset'])) 
           
         end 
     
@@ -34721,6 +34952,9 @@ end
   
       local key = 'fadercnt'
       file:write('['..key..']'.. #faders ..'\n')
+      local key = 'snapshot_fader'
+      file:write('['..key..']'.. nz(snapshot_fader,'') ..'\n')
+      
       for f = 1, #faders do
     
         if faders[f] then
@@ -34734,6 +34968,7 @@ end
           file:write('['..key..'sstype]'.. nz(faders[f].sstype,'') ..'\n')
           file:write('['..key..'xy]'.. nz(faders[f].xy,'') ..'\n')
           file:write('['..key..'mode]'.. nz(faders[f].mode,'') ..'\n')
+          file:write('['..key..'voffset]'.. nz(faders[f].voffset,'') ..'\n')
   
         end
       end  
@@ -35266,6 +35501,7 @@ end
               file:write('['..key..'xydata_snapd]'..nz(stripdata.controls[c].xydata.snapd,1)..'\n')
 
               file:write('['..key..'macrofader]'..nz(stripdata.controls[c].macrofader,'')..'\n')
+              file:write('['..key..'switchfader]'..nz(stripdata.controls[c].switchfader,'')..'\n')
   
               if stripdata.controls[c].cycledata and stripdata.controls[c].cycledata.statecnt then
                 file:write('['..key..'cycledata_statecnt]'..nz(stripdata.controls[c].cycledata.statecnt,0)..'\n')
@@ -37529,6 +37765,7 @@ end
     rcmrefreshtimercount = 0
     
     Snapshots_INIT()
+    snapshot_fader = nil
     
     mouse = {}
     
