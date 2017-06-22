@@ -111,6 +111,12 @@ slider(37) == 1 ? (
       (  
         slider(statusLo) = msg2/127;
         slider_automate(slider(statusLo));
+      ) : (
+        statusHi == NOTE_OFF ? 
+        (  
+          slider(statusLo) = -1;
+          slider_automate(slider(statusLo));
+        );
       );
     );
     0;
