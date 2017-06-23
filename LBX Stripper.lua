@@ -33936,7 +33936,7 @@ end
           if fnd == false then
             for ss = 1, #strips do
               for pp = 1, 4 do
-                for cc = 1, #strips[ss][pp].controls[cc] do
+                for cc = 1, #strips[ss][pp].controls do
                   if strips[ss][pp].controls[cc].c_id == cid then
                   
                     strips[ss][pp].controls[cc].macrofader = f
