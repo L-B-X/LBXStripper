@@ -13031,6 +13031,7 @@ end
     Snapshots_Check(tracks[track_select].strip,page)
     Macros_Check(tracks[track_select].strip,page)
     Faders_Check(tracks[track_select].strip,page)
+    CheckFaders()
     Switcher_Check()
     SetCtlBitmapRedraw()
     update_gfx = true
