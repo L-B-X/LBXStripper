@@ -2481,7 +2481,7 @@
                            w = butt_h/2+4,
                            h = butt_h/2+4}
       
-      local mow, moh = 300, 120
+      local mow, moh = 300, 150
       obj.sections[980] = {x = math.floor(obj.sections[10].x+obj.sections[10].w/2 - mow/2),
                            y = math.floor(obj.sections[10].y+obj.sections[10].h/2 - moh/2),
                            w = mow,
@@ -2490,9 +2490,13 @@
                            y = obj.sections[980].y+butt_h*2,
                            w = obj.sections[980].w-120,
                            h = butt_h} 
+      obj.sections[983] = {x = obj.sections[980].x+140,
+                           y = obj.sections[980].y+butt_h*3.5,
+                           w = obj.sections[980].w-160,
+                           h = butt_h} 
 
       obj.sections[982] = {x = obj.sections[980].x+200,
-                           y = obj.sections[980].y+butt_h*4,
+                           y = obj.sections[980].y+butt_h*5.5,
                            w = 60,
                            h = butt_h} 
        
@@ -5364,7 +5368,7 @@
     if lbx_midilrnval then
       local c = gui.color.black
       if lbx_midilrnval and faders[lbx_midilrnval] and faders[lbx_midilrnval].targettype then
-        if faders[lbx_midilrnval].targettype == 4 and faders[lbx_midilrnval].strip == strip and 
+        if (faders[lbx_midilrnval].targettype == 4 or faders[lbx_midilrnval].targettype == 7) and faders[lbx_midilrnval].strip == strip and 
            faders[lbx_midilrnval].page == page and faders[lbx_midilrnval].ctl == lbx_midilrnctl then
           c = '0 128 0'        
         else
@@ -5375,6 +5379,13 @@
     else
       GUI_DrawButton(gui, 'NONE', obj.sections[981], -3, gui.color.black, false, 'FADER', false)
     end
+    
+    if ctl.ctlcat == ctlcats.snapshot then
+      local vv = nz(lbx_midilrnoff,0)
+      local v = string.format('%i',vv)..'  -  '..num2note(vv)
+      GUI_DrawButton(gui, v, obj.sections[983], gui.color.white, c, true, 'Fader Value Offset', false)      
+    end
+    
     GUI_DrawButton(gui, "OK", obj.sections[982], gui.color.white, gui.color.black, true)
     
   end
@@ -12834,16 +12845,18 @@ end
       
   end
 
-  function SetParam3_Denorm2_Safe2(track, v, strip, page, reaper)
+  function SetParam3_Denorm2_Safe2(track, v, strip, page, reaper, c)
   
-    local ctl = strips[strip][page].controls[trackfxparam_select]
+    local ctl = strips[strip][page].controls[c]
     if strips and strips[strip] and ctl then
       local cc = ctl.ctlcat
       if cc == ctlcats.fxparam then
         local fxnum = ctl.fxnum
         local param = ctl.param
         reaper.TrackFX_SetParam(track, nz(fxnum,-1), param, v)
-
+        ctl.val = v
+        ctl.dirty = true
+        
       elseif cc == ctlcats.trackparam then
         local param = ctl.param
         ctl.dirty = true
@@ -12852,10 +12865,10 @@ end
       elseif cc == ctlcats.tracksend then
         local param = ctl.param
         ctl.dirty = true
-        STSI_denorm(track,param,v,trackfxparam_select,strip,page)
+        STSI_denorm(track,param,v,c,strip,page)
       
       elseif cc == ctlcats.fxoffline then
-        SetFXOffline2(strip, page, trackfxparam_select, track, v)
+        SetFXOffline2(strip, page, c, track, v)
       elseif cc == ctlcats.midictl then
         ctl.val = v
         ctl.dirty = true
@@ -17385,6 +17398,27 @@ end
   
   end
   
+  function NoteValueOffsetMenu(f)
+  
+    local vo = ''
+    for i = 0, 127 do
+      vo = vo .. '|'
+      if i == f then
+        vo = vo .. '!'
+      end
+      if i == 127 then
+        vo = vo .. '<'
+      end
+      vo = vo.. string.format('%i',i)..'  -  '..num2note(i)
+    end  
+    gfx.x, gfx.y = mouse.mx, mouse.my
+    local res = OpenMenu(vo)
+    if res > 0 then
+      lbx_midilrnoff = res-1
+    end
+  
+  end
+  
   function SwitcherMenu_RB()
   
     show_dd = false
@@ -18080,7 +18114,7 @@ end
         end  
         if ccat == ctlcats.fxparam then
           mstr = fft..'Faderbox learn (global)'..ff..'|Modulation||Enter value||'..mido..'||Open FX window||Add Envelope|Add All Envelopes For Plugin||'..mm..'Snapshots||>Tools|<Regenerate ID   (emergency only)||Toggle Topbar|Toggle Sidebar||'..lspfx..'Lock Surface'
-        elseif ccat == ctlcats.trackparam or ccat == ctlcats.tracksend or ccat == ctlcats.macro then
+        elseif ccat == ctlcats.trackparam or ccat == ctlcats.tracksend or ccat == ctlcats.macro or ccat == ctlcats.snapshot then
           mstr = fft..'Faderbox learn (global)'..ff..'|#Modulation||Enter value||'..mido..'||#Open FX window||#Add Envelope|#Add All Envelopes For Plugin||'..mm..'Snapshots||>Tools|<Regenerate ID   (emergency only)||Toggle Topbar|Toggle Sidebar||'..lspfx..'Lock Surface'                  
         else
           mstr = fft..'#Faderbox learn (global)'..ff..'|#Modulation||Enter value||'..mido..'||#Open FX window||#Add Envelope|#Add All Envelopes For Plugin||'..mm..'Snapshots||>Tools|<Regenerate ID   (emergency only)||Toggle Topbar|Toggle Sidebar||'..lspfx..'Lock Surface'                  
@@ -18100,6 +18134,11 @@ end
               lbx_midilrnctl = i
               
               lbx_midilrnval = strips[tracks[track_select].strip][page].controls[lbx_midilrnctl].macrofader
+              if lbx_midilrnval then
+                lbx_midilrnoff = nz(faders[lbx_midilrnval].voffset,0)
+              else
+                lbx_midilrnoff = 0
+              end
               update_surface = true
               
             elseif res == 2 then
@@ -19968,8 +20007,7 @@ end
                         end
                       end
                     end
-                  elseif faders[p+1].targettype == 5 --[[and faders[p+1].latch == nil]] then
-                    --faders[p+1].latch = true
+                  elseif faders[p+1].targettype == 5 then
                     local ss = round(faders[p+1].val*127)+1
                     local fnd = false
                     if sstype_select == 1 then
@@ -19994,11 +20032,50 @@ end
                       update_gfx = true
                     end                    
                     
-                  elseif faders[p+1].targettype == 6 --[[and faders[p+1].latch == nil]] then
-                    --faders[p+1].latch = true
+                  elseif faders[p+1].targettype == 6 then
                     local sel = round(faders[p+1].val*127)+1 - faders[p+1].voffset
                     Switcher_Set2(faders[p+1].ctl ,sel, faders[p+1].strip, faders[p+1].page)
                     
+                  elseif faders[p+1].targettype == 7 then
+                    
+                    if strips[faders[p+1].strip] and strips[faders[p+1].strip][faders[p+1].page].controls[faders[p+1].ctl] then
+                      local ctl = strips[faders[p+1].strip][faders[p+1].page].controls[faders[p+1].ctl]
+                      
+                      local ss = round(faders[p+1].val*127)+1 -faders[p+1].voffset
+                      local fnd = false
+                      local sstype = ctl.param 
+                      if sstype == 1 then
+                        if snapshots[faders[p+1].strip] and 
+                           snapshots[faders[p+1].strip][faders[p+1].page] and
+                           snapshots[faders[p+1].strip][faders[p+1].page][sstype] and
+                           snapshots[faders[p+1].strip][faders[p+1].page][sstype][ss] then
+                          if tracks[track_select].strip == faders[p+1].strip and page == faders[p+1].page then 
+                            fss_select = ss
+                            if sstype_select == sstype then
+                              ss_select = ss
+                            end
+                          end
+                          fnd = true
+                        end
+                      else
+                        if snapshots[faders[p+1].strip] and 
+                           snapshots[faders[p+1].strip][faders[p+1].page] and
+                           snapshots[faders[p+1].strip][faders[p+1].page][sstype] and
+                           snapshots[faders[p+1].strip][faders[p+1].page][sstype].snapshot[ss] then
+                          if tracks[track_select].strip == faders[p+1].strip and page == faders[p+1].page then 
+                            fss_select = ss
+                            if sstype_select == sstype then
+                              ss_select = ss
+                            end
+                          end
+                          fnd = true
+                        end                    
+                      end
+                      if fnd then
+                        Snapshot_Set(faders[p+1].strip,faders[p+1].page,sstype,ss)
+                        update_gfx = true
+                      end                    
+                    end
                   end
                 end
               --elseif faders[p+1].val < 0 then
@@ -20093,6 +20170,12 @@ end
       if strips and strips[ftab.strip] and strips[ftab.strip][ftab.page].controls[ftab.ctl] then
         DeleteFader(strips[ftab.strip][ftab.page].controls[ftab.ctl].switchfader)
         strips[ftab.strip][ftab.page].controls[ftab.ctl].switchfader = f
+        faders[f] = ftab    
+      end
+    elseif ftab.targettype == 7 then    
+      if strips and strips[ftab.strip] and strips[ftab.strip][ftab.page].controls[ftab.ctl] then
+        DeleteFader(strips[ftab.strip][ftab.page].controls[ftab.ctl].macrofader)
+        strips[ftab.strip][ftab.page].controls[ftab.ctl].macrofader = f
         faders[f] = ftab    
       end
     end
@@ -21586,11 +21669,20 @@ end
           end 
         end
       
-        local f = {targettype = 4,
+        local ctl = strips[tracks[track_select].strip][page].controls[lbx_midilrnctl]
+        local tt
+        if ctl.ctlcat == ctlcats.snapshot then
+          tt = 7
+        else
+          tt = 4
+        end
+                
+        local f = {targettype = tt,
                    strip = tracks[track_select].strip,
                    page = page,
                    ctl = lbx_midilrnctl,
-                   c_id = strips[tracks[track_select].strip][page].controls[lbx_midilrnctl].c_id}
+                   c_id = ctl.c_id,
+                   voffset = lbx_midilrnoff}
         for i = 1, #faders do
           if faders[i].targettype == f.targettype and
              faders[i].strip == f.strip and
@@ -21600,13 +21692,10 @@ end
             faders[i] = {}
           end
         end
-        --DeleteFader(lbx_midilrnval)
         AssignFader(lbx_midilrnval, f)
-        --faders[lbx_midilrnval] = f
-        --strips[tracks[track_select].strip][page].controls[lbx_midilrnctl].macrofader = lbx_midilrnval
         
       else
-        local fad = strips[tracks[track_select].strip][page].controls[lbx_midilrnctl].macrofader
+        local fad = ctl.macrofader
         if fad then
           DeleteFader(fad)
         end
@@ -21616,14 +21705,17 @@ end
       update_surface = true
     
     elseif MOUSE_click(obj.sections[981]) then
+
+      local ctl = strips[tracks[track_select].strip][page].controls[lbx_midilrnctl]
     
       local f = {targettype = 4,
                  strip = tracks[track_select].strip,
                  page = page,
                  ctl = lbx_midilrnctl,
-                 c_id = strips[tracks[track_select].strip][page].controls[lbx_midilrnctl].c_id}
+                 c_id = ctl.c_id,
+                 voffset = 0}
       
-      local fad = SetAutomationFader(f, strips[tracks[track_select].strip][page].controls[lbx_midilrnctl].macrofader, true)
+      local fad = SetAutomationFader(f, ctl.macrofader, true)
       if fad > 0 then
         lbx_midilrnval = fad  
       elseif fad == -2 then
@@ -21635,6 +21727,13 @@ end
       lbx_midilrnctl = nil
       lbx_midilrnval = nil
       update_surface = true
+      
+    elseif MOUSE_click(obj.sections[983]) then
+      local ctl = strips[tracks[track_select].strip][page].controls[lbx_midilrnctl]
+      if ctl.ctlcat == ctlcats.snapshot then
+        NoteValueOffsetMenu(lbx_midilrnoff)
+        update_gfx = true
+      end
     end
 
   end
@@ -33798,6 +33897,9 @@ end
           faders[f].mode = tonumber(zn(data[key..'mode'])) 
           faders[f].voffset = tonumber(zn(data[key..'voffset'])) 
           
+          if faders[f].targettype == 7 then
+            faders[f].voffset = nz(faders[f].voffset,0)
+          end
         end 
     
       end
@@ -36327,7 +36429,7 @@ end
             else
               track = gtrack
             end
-            SetParam3_Denorm2_Safe2(track, v_ABCD, strip, page, reaper)
+            SetParam3_Denorm2_Safe2(track, v_ABCD, strip, page, reaper, c)
           end      
         end
       end
@@ -36593,7 +36695,7 @@ end
   end
     
   function Snapshot_Set(strip, page, sstype_select, ss_select)
-  
+
     --local r = reaper
     --local t = reaper.time_precise()
     local reaper = reaper
@@ -36641,7 +36743,7 @@ end
             else
               track = gtrack
             end
-            SetParam3_Denorm2_Safe2(track, v, strip, page, reaper)
+            SetParam3_Denorm2_Safe2(track, v, strip, page, reaper, c)
           end
           
           if ctl.macrofader then
@@ -36686,7 +36788,6 @@ end
               ctl.macrofader = nil
             end
           end
-
           if c and v and tostring(nv) ~= tostring(ctl.val) then
             trackfxparam_select = c
             if ctl.tracknum then
@@ -36694,7 +36795,7 @@ end
             else
               track = gtrack
             end
-            SetParam3_Denorm2_Safe2(track, v, strip, page, reaper)        
+            SetParam3_Denorm2_Safe2(track, v, strip, page, reaper, c)        
           end
           
           if ctl.macrofader then
