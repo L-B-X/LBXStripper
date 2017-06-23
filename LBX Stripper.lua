@@ -35961,10 +35961,16 @@ end
       reaper.RecursiveCreateDirectory(save_path..sf,1)
     end
     
+    local setno = string.sub(STRIPSET,11)
+    local setstr = ''
+    if setno ~= '1' then
+      setstr = '_SS'..setno
+    end
+    
     if tmp then
-      fn=projname..".lbxstripper__"
+      fn=projname..setstr..".lbxstripper__"
     else
-      fn=projname..".lbxstripper"
+      fn=projname..setstr..".lbxstripper"
     end
     local ffn=save_path..fn
     
