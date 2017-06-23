@@ -40,6 +40,7 @@ slider34:0<0,1,1{No,Yes}>Send Midi Feedback
 slider35:0<0,3,1{0-31,32-63,64-95,96-127}>Feedback CC No's
 slider36:0<0,15,1{1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16}>Feedback Midi Channel
 slider37:0<0,1,1{No,Yes}>Slider F1->F16 Note On Monitor
+slider38:0.1<0.1,1,0.1>Latch time
 
 in_pin:none
 out_pin:none
@@ -109,18 +110,35 @@ slider(37) == 1 ? (
       statusLo = 1+(msg1-(statusHi*16))|0;
       statusHi == NOTE_ON && msg3 > 0 ? 
       (  
+        //notes_on += 1;
         slider(statusLo) = msg2/127;
         slider_automate(slider(statusLo));
+        timer[statusLo] = time_precise()+slider38;
       ) : (
         statusHi == NOTE_OFF ? 
-        (  
-          slider(statusLo) = -1;
+        ( 
+          //notes_on -= 1 
+          //slider(statusLo) = -1;
           slider_automate(slider(statusLo));
         );
       );
     );
     0;
   );
+  s = 0;
+  loop(16,
+    s+=1;
+    time_precise() >= timer[s] ?
+    (
+      slider(s) = -1;
+      slider_automate(slider(s));      
+    );
+  );
+  /*notes_on <= 0 ? 
+  (
+    slider(statusLo) = -1;
+    slider_automate(slider(statusLo));    
+  );*/
 );
   
 @sample
