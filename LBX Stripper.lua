@@ -19849,184 +19849,184 @@ end
             for pf = 0, LBX_FB_CNT-1 do
               p = fxnum * LBX_FB_CNT + pf
               faders[p+1].val = round(reaper.TrackFX_GetParam(track, fxnum, pf),5)
-              if faders[p+1].val < 0 then
-                faders[p+1].latch = nil
-              else              
-                if faders[p+1].val and (tostring(faders[p+1].val) ~= tostring(faders[p+1].oval) or faders[p+1].targettype == 5 or faders[p+1].targettype == 6) then
-                  --DBG(faders[p+1].oval)
-                  faders[p+1].oval = faders[p+1].val
-                  if faders[p+1].targettype then
-                    if faders[p+1].targettype == 0 then
-                      if xxy and xxy[faders[p+1].strip] then
-                        if faders[p+1].xy == 0 then
-                          xxy[faders[p+1].strip][faders[p+1].page][faders[p+1].sstype].x = faders[p+1].val            
-                        else
-                          xxy[faders[p+1].strip][faders[p+1].page][faders[p+1].sstype].y = faders[p+1].val            
-                        end
-                        XXY_Set(faders[p+1].strip,faders[p+1].page,faders[p+1].sstype)
-                        if show_xxy then
-                          update_xxypos = true
-                        end
+              if faders[p+1].val and faders[p+1].val >= 0 and (tostring(faders[p+1].val) ~= tostring(faders[p+1].oval) --[[or faders[p+1].targettype == 5 or faders[p+1].targettype == 6]]) then
+                --DBG(faders[p+1].oval)
+                
+                if faders[p+1].targettype then
+                  if faders[p+1].targettype == 0 then
+                    if xxy and xxy[faders[p+1].strip] then
+                      if faders[p+1].xy == 0 then
+                        xxy[faders[p+1].strip][faders[p+1].page][faders[p+1].sstype].x = faders[p+1].val            
                       else
-                        --check fader
-                        DeleteFader(p+1)
+                        xxy[faders[p+1].strip][faders[p+1].page][faders[p+1].sstype].y = faders[p+1].val            
                       end
-                    elseif faders[p+1].targettype == 1 then
-                      XXYPath_SetPos(faders[p+1].strip,faders[p+1].page,faders[p+1].sstype,faders[p+1].val, p+1)
+                      XXY_Set(faders[p+1].strip,faders[p+1].page,faders[p+1].sstype)
                       if show_xxy then
                         update_xxypos = true
-                      end                              
-                    elseif faders[p+1].targettype == 2 then
-                      if strips[faders[p+1].strip] and strips[faders[p+1].strip][faders[p+1].page].controls[faders[p+1].ctl] then
-                        strips[faders[p+1].strip][faders[p+1].page].controls[faders[p+1].ctl].oval = strips[faders[p+1].strip][faders[p+1].page].controls[faders[p+1].ctl].val 
-                        strips[faders[p+1].strip][faders[p+1].page].controls[faders[p+1].ctl].val = faders[p+1].val
-                        --strips[faders[p+1].strip][faders[p+1].page].controls[faders[p+1].ctl].mval = faders[p+1].val
-                        strips[faders[p+1].strip][faders[p+1].page].controls[faders[p+1].ctl].dirty = true
-                        SetMacro(faders[p+1].strip,faders[p+1].page,faders[p+1].ctl)
-                        if macro_edit_mode == true then
-                          update_macroedit = true
-                        end 
-                      else
-                        DeleteFader(p+1)
+                      end
+                    else
+                      --check fader
+                      DeleteFader(p+1)
+                    end
+                  elseif faders[p+1].targettype == 1 then
+                    XXYPath_SetPos(faders[p+1].strip,faders[p+1].page,faders[p+1].sstype,faders[p+1].val, p+1)
+                    if show_xxy then
+                      update_xxypos = true
+                    end                              
+                  elseif faders[p+1].targettype == 2 then
+                    if strips[faders[p+1].strip] and strips[faders[p+1].strip][faders[p+1].page].controls[faders[p+1].ctl] then
+                      strips[faders[p+1].strip][faders[p+1].page].controls[faders[p+1].ctl].oval = strips[faders[p+1].strip][faders[p+1].page].controls[faders[p+1].ctl].val 
+                      strips[faders[p+1].strip][faders[p+1].page].controls[faders[p+1].ctl].val = faders[p+1].val
+                      --strips[faders[p+1].strip][faders[p+1].page].controls[faders[p+1].ctl].mval = faders[p+1].val
+                      strips[faders[p+1].strip][faders[p+1].page].controls[faders[p+1].ctl].dirty = true
+                      SetMacro(faders[p+1].strip,faders[p+1].page,faders[p+1].ctl)
+                      if macro_edit_mode == true then
+                        update_macroedit = true
                       end 
-                      
-                    elseif faders[p+1].targettype == 4 then
-                    --DBG('p')
-                      local strip = faders[p+1].strip
-                      local page = faders[p+1].page
-                      local c = faders[p+1].ctl
-                      if strips[strip] and strips[strip][page].controls[c] then
-                        strips[strip][page].controls[c].oval = strips[strip][page].controls[c].val 
-                        strips[strip][page].controls[c].val = faders[p+1].val
-                        strips[strip][page].controls[c].dirty = true
+                    else
+                      DeleteFader(p+1)
+                    end 
+                    
+                  elseif faders[p+1].targettype == 4 then
+                  --DBG('p')
+                    local strip = faders[p+1].strip
+                    local page = faders[p+1].page
+                    local c = faders[p+1].ctl
+                    if strips[strip] and strips[strip][page].controls[c] then
+                      strips[strip][page].controls[c].oval = strips[strip][page].controls[c].val 
+                      strips[strip][page].controls[c].val = faders[p+1].val
+                      strips[strip][page].controls[c].dirty = true
+                      local ctl = strips[strip][page].controls[c]
+                      A_SetParam(strip,page,c,ctl)
+                      update_ctls = true
+                    else
+                      DeleteFader(p+1)
+                    end 
+
+                  elseif faders[p+1].targettype == 3 then
+                    if mode == 0 and macro_edit_mode ~= true and macro_lrn_mode ~= true and show_xxy ~= true and show_eqcontrol ~= true and show_settings ~= true then
+                      local strip = tracks[track_select].strip
+                      local c = GetControlAtXY(strip,page,mouse.mx,mouse.my)
+                      if c then
                         local ctl = strips[strip][page].controls[c]
-                        A_SetParam(strip,page,c,ctl)
-                        update_ctls = true
-                      else
-                        DeleteFader(p+1)
-                      end 
+                        if c ~= faders[p+1].to_ctl then
+                          faders[p+1].to = false
+                          faders[p+1].to_ctl = c
+                          if faders[p+1].val > ctl.val then
+                            faders[p+1].to_pos = 1 
+                          elseif faders[p+1].val < ctl.val then
+                            faders[p+1].to_pos = 2
+                          else
+                            faders[p+1].to_pos = 3
+                            faders[p+1].to = true
+                          end
+                        end 
   
-                    elseif faders[p+1].targettype == 3 then
-                      if mode == 0 and macro_edit_mode ~= true and macro_lrn_mode ~= true and show_xxy ~= true and show_eqcontrol ~= true and show_settings ~= true then
-                        local strip = tracks[track_select].strip
-                        local c = GetControlAtXY(strip,page,mouse.mx,mouse.my)
-                        if c then
-                          local ctl = strips[strip][page].controls[c]
-                          if c ~= faders[p+1].to_ctl then
-                            faders[p+1].to = false
-                            faders[p+1].to_ctl = c
-                            if faders[p+1].val > ctl.val then
-                              faders[p+1].to_pos = 1 
-                            elseif faders[p+1].val < ctl.val then
-                              faders[p+1].to_pos = 2
-                            else
-                              faders[p+1].to_pos = 3
-                              faders[p+1].to = true
+                        if ctl.ctlcat == ctlcats.fxparam or ctl.ctlcat == ctlcats.trackparam or ctl.ctlcat == ctlcats.macro then
+                          if faders[p+1].mode == 0 then
+                            --absolute
+                            if faders[p+1].to == false then
+                              if faders[p+1].to_pos == 1 then
+                                if faders[p+1].val <= ctl.val then
+                                  faders[p+1].to = true 
+                                end
+                              else
+                                if faders[p+1].val >= ctl.val then
+                                  faders[p+1].to = true 
+                                end                            
+                              end
                             end
-                          end 
-    
-                          if ctl.ctlcat == ctlcats.fxparam or ctl.ctlcat == ctlcats.trackparam or ctl.ctlcat == ctlcats.macro then
-                            if faders[p+1].mode == 0 then
-                              --absolute
-                              if faders[p+1].to == false then
-                                if faders[p+1].to_pos == 1 then
-                                  if faders[p+1].val <= ctl.val then
-                                    faders[p+1].to = true 
-                                  end
-                                else
-                                  if faders[p+1].val >= ctl.val then
-                                    faders[p+1].to = true 
-                                  end                            
-                                end
-                              end
-                               
-                              if faders[p+1].to == true then
-                                ctl.oval = ctl.val
-                                ctl.val = faders[p+1].val
-                                if ctl.oval ~= ctl.val then
-                                  A_SetParam(strip,page,c,ctl)
-                                  ctl.dirty = true
-                                  update_ctls = true
-                                end
-                              end
-                            else
-                              --relative
-                              local vi = 0.002
-                              local v = F_limit(faders[p+1].val-0.5,-vi,vi)
-                              --DBG(faders[p+1].val..'  '..v)
-                              ctl.val = F_limit(ctl.val + (v),0,1)
-                              --if ctl.oval ~= ctl.val then
+                             
+                            if faders[p+1].to == true then
+                              ctl.oval = ctl.val
+                              ctl.val = faders[p+1].val
+                              if ctl.oval ~= ctl.val then
                                 A_SetParam(strip,page,c,ctl)
                                 ctl.dirty = true
                                 update_ctls = true
-                              --end
-                              ctl.oval = ctl.val
-                              --[[if ctl.oval == 1 then
-                                ctl.oval ]]
-                              
-                              reaper.TrackFX_SetParam(track, fxnum, pf, 0.5)
-                              faders[p+1].oval = faders[p+1].val
-                              faders[p+1].val = 0.5
+                              end
                             end
+                          else
+                            --relative
+                            local vi = 0.002
+                            local v = F_limit(faders[p+1].val-0.5,-vi,vi)
+                            --DBG(faders[p+1].val..'  '..v)
+                            ctl.val = F_limit(ctl.val + (v),0,1)
+                            --if ctl.oval ~= ctl.val then
+                              A_SetParam(strip,page,c,ctl)
+                              ctl.dirty = true
+                              update_ctls = true
+                            --end
+                            ctl.oval = ctl.val
+                            --[[if ctl.oval == 1 then
+                              ctl.oval ]]
+                            
+                            reaper.TrackFX_SetParam(track, fxnum, pf, 0.5)
+                            faders[p+1].oval = faders[p+1].val
+                            faders[p+1].val = 0.5
                           end
                         end
                       end
-                    elseif faders[p+1].targettype == 5 and faders[p+1].latch == nil then
-                      faders[p+1].latch = true
-                      local ss = round(faders[p+1].val*127)+1
-                      local fnd = false
-                      if sstype_select == 1 then
-                        if snapshots[tracks[track_select].strip] and 
-                           snapshots[tracks[track_select].strip][page] and
-                           snapshots[tracks[track_select].strip][page][sstype_select] and
-                           snapshots[tracks[track_select].strip][page][sstype_select][ss] then
-                          ss_select = ss
-                          fnd = true
-                        end
-                      else
-                        if snapshots[tracks[track_select].strip] and 
-                           snapshots[tracks[track_select].strip][page] and
-                           snapshots[tracks[track_select].strip][page][sstype_select] and
-                           snapshots[tracks[track_select].strip][page][sstype_select].snapshot[ss] then
-                          ss_select = ss
-                          fnd = true
-                        end                    
+                    end
+                  elseif faders[p+1].targettype == 5 --[[and faders[p+1].latch == nil]] then
+                    --faders[p+1].latch = true
+                    local ss = round(faders[p+1].val*127)+1
+                    local fnd = false
+                    if sstype_select == 1 then
+                      if snapshots[tracks[track_select].strip] and 
+                         snapshots[tracks[track_select].strip][page] and
+                         snapshots[tracks[track_select].strip][page][sstype_select] and
+                         snapshots[tracks[track_select].strip][page][sstype_select][ss] then
+                        ss_select = ss
+                        fnd = true
                       end
-                      if fnd then
-                        Snapshot_Set(tracks[track_select].strip,page,sstype_select,ss_select)
-                        update_gfx = true
+                    else
+                      if snapshots[tracks[track_select].strip] and 
+                         snapshots[tracks[track_select].strip][page] and
+                         snapshots[tracks[track_select].strip][page][sstype_select] and
+                         snapshots[tracks[track_select].strip][page][sstype_select].snapshot[ss] then
+                        ss_select = ss
+                        fnd = true
                       end                    
-                      
-                    elseif faders[p+1].targettype == 6 and faders[p+1].latch == nil then
-                      faders[p+1].latch = true
-                      local sel = round(faders[p+1].val*127)+1 - faders[p+1].voffset
-                      Switcher_Set2(faders[p+1].ctl ,sel, faders[p+1].strip, faders[p+1].page)
-                      
                     end
+                    if fnd then
+                      Snapshot_Set(tracks[track_select].strip,page,sstype_select,ss_select)
+                      update_gfx = true
+                    end                    
+                    
+                  elseif faders[p+1].targettype == 6 --[[and faders[p+1].latch == nil]] then
+                    --faders[p+1].latch = true
+                    local sel = round(faders[p+1].val*127)+1 - faders[p+1].voffset
+                    Switcher_Set2(faders[p+1].ctl ,sel, faders[p+1].strip, faders[p+1].page)
+                    
                   end
-                end    
-                            
-                if faders[p+1].targettype == 4 then
-                --DBG('bb')
-                  local strip = faders[p+1].strip
-                  local page = faders[p+1].page
-                  local c = faders[p+1].ctl
-                  local ctl = strips[strip][page].controls[c]
-                  if ctl then
-                    local t = strips[strip].track.tracknum
-                    if ctl.tracknum ~= nil then
-                      t = ctl.tracknum
-                    end                
-                    local vv = round(GetParamValue_XX(ctl.ctlcat, t, ctl.fxnum, ctl.param, c, strip, page),4)
-                    if tostring(vv) ~= tostring(round(faders[p+1].val,4)) then
-                      --DBG(vv..'  '..faders[p+1].val)
-                      faders[p+1].val = vv
-                      SetFader(p+1, vv) 
-                    end
+                end
+              --elseif faders[p+1].val < 0 then
+              --  DBG('nil')              
+              --  faders[p+1].latch = nil
+              end
+              faders[p+1].oval = faders[p+1].val    
+                          
+              if faders[p+1].targettype == 4 then
+              --DBG('bb')
+                local strip = faders[p+1].strip
+                local page = faders[p+1].page
+                local c = faders[p+1].ctl
+                local ctl = strips[strip][page].controls[c]
+                if ctl then
+                  local t = strips[strip].track.tracknum
+                  if ctl.tracknum ~= nil then
+                    t = ctl.tracknum
+                  end                
+                  local vv = round(GetParamValue_XX(ctl.ctlcat, t, ctl.fxnum, ctl.param, c, strip, page),4)
+                  if tostring(vv) ~= tostring(round(faders[p+1].val,4)) then
+                    --DBG(vv..'  '..faders[p+1].val)
+                    faders[p+1].val = vv
+                    SetFader(p+1, vv) 
                   end
                 end
               end
-
+            
             end
           end    
           trackfxparam_select = ccc
@@ -28045,6 +28045,9 @@ end
       update_gfx = true
       update_bg = true
   
+      if ctl.switchfader then
+        SetFader(ctl.switchfader, (sel-1+faders[ctl.switchfader].voffset)/128)
+      end
       SetCtlBitmapRedraw()
     end
       
