@@ -28156,15 +28156,17 @@ end
   
     if strips[strip] then
       local ctl = strips[strip][page].controls[switcher_select]
-      local switchid = ctl.switcherid
+      if ctl then
+        local switchid = ctl.switcherid
+        
+        if switchers[switchid].grpids[sel] and ctl then
+          switchers[switchid].current = switchers[switchid].grpids[sel].id
+          ctl.param_info.paramname = string.format('%i',sel)..': '..switchers[switchid].grpids[sel].name
+          update_gfx = true
+          update_bg = true
       
-      if switchers[switchid].grpids[sel] and ctl then
-        switchers[switchid].current = switchers[switchid].grpids[sel].id
-        ctl.param_info.paramname = string.format('%i',sel)..': '..switchers[switchid].grpids[sel].name
-        update_gfx = true
-        update_bg = true
-    
-        SetCtlBitmapRedraw()
+          SetCtlBitmapRedraw()
+        end
       end
     end      
   end
@@ -33913,7 +33915,7 @@ end
     if faders == nil then return end
     
     for f = 1, #faders do
-      if faders[f].targettype == 3 or faders[f].targettype == 4 then
+      if faders[f].targettype == 3 or faders[f].targettype == 4 or faders[f].targettype == 7 then
         fnd = false
         local s = faders[f].strip
         local p = faders[f].page
