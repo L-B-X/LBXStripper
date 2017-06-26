@@ -1954,7 +1954,7 @@
                           h = ssh}
       
       obj.sections[1010] = {x = 10,
-                            y = obj.sections[163].y + obj.sections[163].h + 4,
+                            y = obj.sections[163].y + obj.sections[163].h,
                             w = math.floor((obj.sections[163].w/3)+2),
                             h = butt_h}
       obj.sections[1011] = {x = 10+obj.sections[1010].w,
@@ -23278,7 +23278,7 @@ end
       local ly = obj.sections[10].h - obj.sections[160].y + butt_h
       obj.sections[160].h = F_limit(resizesnapwin.origh + (mouse.my - resizesnapwin.offy) - obj.sections[160].y, 205, ly)
       obj.sections[163].h = obj.sections[160].h - 180
-      obj.sections[1010].y = obj.sections[163].y + obj.sections[163].h + 4
+      obj.sections[1010].y = obj.sections[163].y + obj.sections[163].h
       obj.sections[1011].y = obj.sections[1010].y 
       obj.sections[1012].y = obj.sections[1010].y 
       obj.sections[165].y = obj.sections[160].h - obj.sections[165].h
