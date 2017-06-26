@@ -15,6 +15,7 @@
   noteletters_tab = {'C','C#','D','D#','E','F','F#','G','G#','A','A#','B'}
         
   submode_table = {'FX PARAMS','GRAPHICS','STRIPS'}
+  mode0_submode_table = {'LIVE MODE','FADERS'}
   xxymode_table = {'SNAPSHOTS','PATHS'}
   ctltype_table = {'KNOB/SLIDER','BUTTON','BUTTON INV','CYCLE BUTTON','METER','MEM BUTTON','MOMENT BTN','MOMENT INV','FLASH BUTTON','FLASH INV'}
   trctltype_table = {'Track Controls','Track Sends','Track Meters','Other Controls'}
@@ -147,7 +148,8 @@
               gfxopt_b = 104,
               gfxopt_a = 105,
               gfxopt_edge = 106,
-              morph_time = 107, 
+              morph_time = 107,
+              dragfader = 108, 
               dummy = 999
               }
   
@@ -1646,6 +1648,10 @@
       --send midi data on track change
       obj.sections[705] = {x = obj.sections[70].x+obj.sections[70].w/2+xofft,
                                 y = obj.sections[70].y+yoff + yoffm*7,
+                                w = bw,
+                                h = bh}
+      obj.sections[706] = {x = obj.sections[70].x+obj.sections[70].w/2+xofft,
+                                y = obj.sections[70].y+yoff + yoffm*8,
                                 w = bw,
                                 h = bh}
             
@@ -4679,6 +4685,77 @@
      
   end
 
+  function GUI_DrawFaders(obj, gui)
+  
+    gfx.dest = 1001
+  
+    if FD_butt_cnt == nil then
+      FD_butt_cnt = math.floor(obj.sections[500].h / butt_h) - 1
+      fdlist_offset = 0
+      --fdlist_offset = CalcTListPos(track_select)
+      --DBG(tlist_offset)
+    else
+      FD_butt_cnt = math.floor(obj.sections[500].h / butt_h) - 1
+    end
+    
+    for i = 1, FD_butt_cnt-1 do
+      local f = faders[i+fdlist_offset]
+    
+      if f then
+        local xywh = {x = obj.sections[500].x+2,
+                      y = obj.sections[500].y + butt_h + 2 + butt_h*(i)+1,
+                      w = obj.sections[500].w-6,
+                      h = butt_h-2}
+        local c = gui.color.white
+        if fader_select == i + fdlist_offset then
+          --GUI_DrawBar(gui,'',xywh,skin.highlight,true,gui.color.black,nil,-2)
+          if faders[fader_select] and faders[fader_select].targettype then
+            f_Get_SSV('255 160 0')
+          else
+            f_Get_SSV('0 160 255')          
+          end          
+          gfx.rect(xywh.x,xywh.y,xywh.w,xywh.h,1,1)
+          
+          c = gui.color.black        
+        else
+          if f.targettype then
+            
+            c = gui.color.black
+            f_Get_SSV('160 64 0')
+            
+            gfx.rect(xywh.x,xywh.y,xywh.w,xywh.h,1,1)
+            --GUI_DrawBar(gui,'',xywh,skin.highlight,true,gui.color.black,nil,-2)
+          
+          else
+            c = gui.color.white
+          end 
+        
+        end
+        local txt = 'FADER '..string.format('%i',i + fdlist_offset)
+        xywh.y = xywh.y -1
+        GUI_textsm_LJ(gui, xywh, txt, c, -4, plist_w)
+                    
+      end                      
+    end           
+
+    local xywh = {x = obj.sections[13].x,
+                          y = obj.sections[13].y, 
+                          w = obj.sections[13].w,
+                          h = obj.sections[13].h}
+    GUI_DrawBar(gui,'GLOBAL',xywh,skin.bar,true,gui.color.black,nil,-2)
+                              
+    local xywh = {x = obj.sections[500].x,
+                  y = obj.sections[500].y+butt_h+2,
+                  w = obj.sections[500].w,
+                  h = butt_h}
+    GUI_DrawBar(gui,'',xywh,skin.barUD,true,gui.color.black,nil,-2)
+    gfx.line(xywh.x+xywh.w/2,xywh.y,xywh.x+xywh.w/2,xywh.y+xywh.h-2)
+    local w, h = gfx.getimgdim(skin.arrowup)
+    gfx.blit(skin.arrowup,1,0,0,0,w,h,xywh.x+xywh.w/4-w/2,xywh.y+xywh.h/2-h/2)
+    gfx.blit(skin.arrowdn,1,0,0,0,w,h,xywh.x+xywh.w*0.75-w/2,xywh.y+xywh.h/2-h/2)
+     
+  end
+
   ------------------------------------------------------------
   
   function GetFXEnabled(tracknum, fxnum)
@@ -4761,7 +4838,7 @@
              xywh.w,
              xywh.h, 1 )
              
-    if mode == 0 then
+    if mode == 0 and mode0_submode == 0 then
 
       GUI_DrawBar(gui,'LIVE MODE',obj.sections[11],skin.bar,true,gui.color.black,nil,-2)
 
@@ -4773,6 +4850,19 @@
       f_Get_SSV(gui.color.white)
                
       GUI_DrawTracks(obj, gui)    
+    
+    elseif mode == 0 and mode0_submode == 1 then
+
+      GUI_DrawBar(gui,'FADERS',obj.sections[11],skin.bar,true,gui.color.black,nil,-2)
+
+      f_Get_SSV(gui.color.black)
+      gfx.rect(obj.sections[11].x+obj.sections[11].w-6,
+               obj.sections[11].y,
+               1,
+               obj.sections[11].h,1)        
+      f_Get_SSV(gui.color.white)
+               
+      GUI_DrawFaders(obj, gui)    
     
     else
     
@@ -7462,6 +7552,16 @@ end
                   --[[if tsz ~= tsz2 then
                     DBG(tsz..'  '..tsz2)
                   end]]
+
+                  if settings_showfaderassignments == true and ctl.macrofader then
+                    if mode0_submode == 1 and fader_select == ctl.macrofader then
+                      f_Get_SSV('255 160 0')
+                    else 
+                      f_Get_SSV('160 64 0')                    
+                    end
+                    gfx.roundrect(px,py,w*scale,h*scale,5,1)
+                  end
+
                   if spn then
                     gfx.setfont(1, font, gui.fontsz_knob +tsz-4)                    
                     GUI_textCtl(gui,xywh1, Disp_Name,tc,-4 + tsz, alpha)
@@ -7795,6 +7895,7 @@ end
                 morphing = true
                 p = morph_data[i].p
                 local col = string.format('%i',math.floor(96*(1-p)))
+                --local col = string.format('%i',math.floor(96+60*(p)))
                 bbcol = col..' '..col..' '..col
               end
               break
@@ -10263,6 +10364,7 @@ end
       local p = 0
         
       gfx.dest = 1
+
       if update_gfx or resize_display then
         gfx.setimgdim(1, -1, -1)  
         gfx.setimgdim(1, gfx1.main_w,gfx1.main_h)
@@ -10496,6 +10598,22 @@ end
 
         if plist_w > 0 then                  
           gfx.blit(1001,1,0,0,0,obj.sections[43].w,obj.sections[43].h,0,0)
+        end
+        
+        if dragfader then
+          local sz = 30
+          local xywh = {x = dragfader.x-sz, y = dragfader.y-butt_h/2, w = sz*2, h = butt_h}
+          if dragfader.ctl == nil then
+            f_Get_SSV('255 160 0')
+          elseif dragfader.ctl == -1 then
+            f_Get_SSV('255 0 0')    
+          else      
+            f_Get_SSV('0 255 0')    
+          end          
+          gfx.rect(xywh.x,xywh.y,xywh.w,xywh.h,1,1)
+          f_Get_SSV(gui.color.black)          
+          gfx.rect(xywh.x,xywh.y,xywh.w,xywh.h,0,1)
+          GUI_textC(gui,xywh,'FADER ' ..string.format('%i',fader_select),gui.color.black,-2,1,0)
         end
         
         if show_snapshots and macro_lrn_mode ~= true then
@@ -11841,6 +11959,7 @@ end
     GUI_DrawButton(gui, sbt, obj.sections[703], gui.color.white, gui.color.black, sb, 'Nebula scanboot location')
     GUI_DrawTick(gui, 'Touch feedback indicator', obj.sections[704], gui.color.white, settings_touchFB)
     GUI_DrawTick(gui, 'Send MIDI feedback on track change', obj.sections[705], gui.color.white, settings_trackchangemidi)
+    GUI_DrawTick(gui, 'Show fader assignments on grid', obj.sections[706], gui.color.white, settings_showfaderassignments)
     
   end
   
@@ -13503,6 +13622,10 @@ end
             table.insert(tbl, snapshots[tracks[track_select].strip][page][sstype_select][i])
           end
         end
+        tbl.morph_time = snapshots[tracks[track_select].strip][page][sstype_select].morph_time
+        tbl.morph_sync = snapshots[tracks[track_select].strip][page][sstype_select].morph_sync
+        tbl.morph_syncv = snapshots[tracks[track_select].strip][page][sstype_select].morph_syncv
+        tbl.morph_scale = snapshots[tracks[track_select].strip][page][sstype_select].morph_scale
         snapshots[tracks[track_select].strip][page][sstype_select] = tbl
         ss_select = nil
         
@@ -20545,6 +20668,7 @@ end
         end
       end
       faders[f] = {}
+      update_gfx = true
     end  
   end
   
@@ -21598,7 +21722,16 @@ end
           end
         
         end
-        
+
+      elseif MOUSE_click_RB(obj.sections[11]) then
+        if mode == 0 then
+          mode0_submode = mode0_submode+1
+          if mode0_submode > #mode0_submode_table-1 then
+            mode0_submode = 0
+          end
+          update_gfx = true
+        end
+                
       elseif MOUSE_clickXY(obj.sections[18],plist_w,0) and (hide_topbar == false or settings_showminimaltopbar) then
         if mode == 1 then
           mouse.context = contexts.dragsidebar
@@ -21608,10 +21741,10 @@ end
         end
       
       elseif (obj.sections[17].x > obj.sections[20].x+obj.sections[20].w) and MOUSE_clickXY(obj.sections[17],plist_w,0) then
-        SaveProj(true, true)
+        SaveProj(true, true)        
         OpenMsgBox(1,'Data Saved.',1)
-        update_gfx = true
-      
+        update_surface = true
+        
       elseif MOUSE_clickXY(obj.sections[20],plist_w,0) then
         local butt = F_limit(math.ceil((mouse.mx-(obj.sections[20].x+plist_w))/(obj.sections[20].w/4)),1,4)
         if butt == 1 then
@@ -21884,6 +22017,7 @@ end
     else
       reaper.defer(run)
     end
+    
     gfx.update()
     mouse.last_LB = mouse.LB
     mouse.last_RB = mouse.RB
@@ -22340,6 +22474,29 @@ end
     
   end
   
+  function DragFader_Assign(fd, c)
+  
+    local ctl = strips[tracks[track_select].strip][page].controls[c]
+    if ctl then
+            
+      if ctl.ctlcat == ctlcats.snapshot then
+        tt = 7
+      else
+        tt = 4
+      end
+      local f = {targettype = tt,
+                 strip = tracks[track_select].strip,
+                 page = page,
+                 ctl = c,
+                 c_id = ctl.c_id,
+                 voffset = 0}
+                   
+      AssignFader(fd, f)
+    
+    end
+  
+  end
+  
   function A_Run_Mode0(noscroll, rt)
   
     if settings_touchFB == true and mouse.LB then
@@ -22366,7 +22523,11 @@ end
     if gfx.mouse_wheel ~= 0 then
       local v = gfx.mouse_wheel/120
       if MOUSE_over(obj.sections[500]) then
-        tlist_offset = F_limit(tlist_offset - v, 0, #tracks+1)
+        if mode0_submode == 0 then
+          tlist_offset = F_limit(tlist_offset - v, 0, #tracks+1)
+        else
+          fdlist_offset = F_limit(fdlist_offset - v, 0, #faders-1)        
+        end
         update_gfx = true
         gfx.mouse_wheel = 0
       end
@@ -23288,33 +23449,89 @@ end
       end
     end
     
-    if MOUSE_click(obj.sections[500]) and navigate then
-      if show_fsnapshots then
-        show_fsnapshots = false
-        update_surface = true
+    if mode0_submode == 0 then
+      if MOUSE_click(obj.sections[500]) and navigate then
+        if show_fsnapshots then
+          show_fsnapshots = false
+          update_surface = true
+        end
+        
+        local i = math.floor((mouse.my - obj.sections[500].y) / butt_h)-1
+        if i == -1 then
+          if mouse.mx < obj.sections[500].w/2 then
+            tlist_offset = tlist_offset - T_butt_cnt
+            if tlist_offset < 0 then
+              tlist_offset = 0
+            end
+          else
+            if tlist_offset + T_butt_cnt < #tracks then
+              tlist_offset = tlist_offset + T_butt_cnt
+            end
+          end
+          update_gfx = true
+        elseif tracks[i-1 + tlist_offset] then
+          local tr = i-1 + tlist_offset
+          if tr == LBX_GTRACK then
+            SetGlobalPage()
+          else
+            ChangeTrack2(i-1 + tlist_offset)
+          end
+        end
       end
+    elseif mode0_submode == 1 then
+      if MOUSE_click(obj.sections[500]) then
+        if show_fsnapshots then
+          show_fsnapshots = false
+          update_surface = true
+        end
+        
+        local i = math.floor((mouse.my - obj.sections[500].y) / butt_h)-1
+        if i == 0 then
+          if mouse.mx < obj.sections[500].w/2 then
+            fdlist_offset = fdlist_offset - FD_butt_cnt
+            if fdlist_offset < 0 then
+              fdlist_offset = 0
+            end
+          else
+            if fdlist_offset + FD_butt_cnt < #faders-1 then
+              fdlist_offset = fdlist_offset + FD_butt_cnt
+            end
+          end
+          update_sidebar = true
+          
+        elseif faders[i + fdlist_offset] then
+          local fd = i + fdlist_offset
+          fader_select = fd
+          mouse.context = contexts.dragfader
+          dragfader = {x = mouse.mx, y = mouse.my}
+          update_gfx = true
+        end
+
+      elseif MOUSE_click_RB(obj.sections[500]) then
       
-      local i = math.floor((mouse.my - obj.sections[500].y) / butt_h)-1
-      if i == -1 then
-        if mouse.mx < obj.sections[500].w/2 then
-          tlist_offset = tlist_offset - T_butt_cnt
-          if tlist_offset < 0 then
-            tlist_offset = 0
-          end
-        else
-          if tlist_offset + T_butt_cnt < #tracks then
-            tlist_offset = tlist_offset + T_butt_cnt
+        local i = math.floor((mouse.my - obj.sections[500].y) / butt_h)-1
+        if i > 0 and faders[i + fdlist_offset] and faders[i + fdlist_offset].targettype then
+          local fd = i + fdlist_offset
+          fader_select = fd
+
+          update_sidebar = true
+          GUI_draw(obj, gui)
+          gfx.update()
+
+          local mstr = 'Clear'
+          gfx.x = mouse.mx
+          gfx.y = mouse.my
+          local ret = gfx.showmenu(mstr)
+          if ret > 0 then
+            if ret == 1 then        
+              DeleteFader(i + fdlist_offset)
+              update_sidebar = true
+              update_gfx = true
+            end
           end
         end
-        update_gfx = true
-      elseif tracks[i-1 + tlist_offset] then
-        local tr = i-1 + tlist_offset
-        if tr == LBX_GTRACK then
-          SetGlobalPage()
-        else
-          ChangeTrack2(i-1 + tlist_offset)
-        end
-      end
+        
+      end    
     end
   
     if mouse.context and mouse.context == contexts.movesnapwindow then
@@ -23337,6 +23554,38 @@ end
 
     elseif mouse.context and mouse.context == contexts.snapshot_rand then
       dragparam = {x = mouse.mx-ksel_size.w, y = mouse.my-ksel_size.h, type = 'snaprand'}
+      update_surface = true
+
+    elseif mouse.context and mouse.context == contexts.dragfader then
+      if mouse.mx ~= dragfader.x or mouse.my ~= dragfader.y then
+        local c = GetControlAtXY(tracks[track_select].strip,page,mouse.mx,mouse.my)
+        if c then
+          local ctl = strips[tracks[track_select].strip][page].controls[c]
+          if ctl and (ctl.ctlcat == ctlcats.fxparam or 
+                      ctl.ctlcat == ctlcats.trackparam or 
+                      ctl.ctlcat == ctlcats.tracksend or
+                      ctl.ctlcat == ctlcats.macro or  
+                      ctl.ctlcat == ctlcats.snapshot) then 
+            dragfader = {x = mouse.mx, y = mouse.my, ctl = c}
+          else
+            dragfader = {x = mouse.mx, y = mouse.my, ctl = -1}          
+          end
+        else
+          dragfader = {x = mouse.mx, y = mouse.my, ctl = nil}        
+        end
+        update_surface = true
+      end
+          
+    elseif dragfader ~= nil then
+    
+      if dragfader.ctl and dragfader.ctl ~= -1 then
+      
+        DragFader_Assign(fader_select, dragfader.ctl)
+      
+      end
+    
+      dragfader = nil
+      update_sidebar = true
       update_surface = true
     
     elseif mouse.context and mouse.context == contexts.resizesnapwindow then
@@ -30324,6 +30573,9 @@ end
     elseif mouse.context == nil and MOUSE_click(obj.sections[705]) then
       settings_trackchangemidi = not settings_trackchangemidi
       update_gfx = true
+    elseif mouse.context == nil and MOUSE_click(obj.sections[706]) then
+      settings_showfaderassignments = not settings_showfaderassignments
+      update_gfx = true
       
     elseif mouse.context == nil and MOUSE_click(obj.sections[700]) then
       local abs, _ = GetMOFaders()
@@ -35330,6 +35582,7 @@ end
     settings_touchFB = tobool(nz(GES('settings_touchfb',true),settings_touchFB))
     settings_trackchangemidi = tobool(nz(GES('settings_trackchangemidi',true),settings_trackchangemidi))
     settings_savefaderboxassinsnapshots = tobool(nz(GES('settings_savefaderboxassinsnapshots',true),settings_savefaderboxassinsnapshots))
+    settings_showfaderassignments = tobool(nz(GES('settings_showfaderassignments',false),settings_showfaderassignments))
     
     if settings_hideeditbaronnewproject then
       plist_w = 0
@@ -35446,6 +35699,7 @@ end
     reaper.SetExtState(SCRIPT,'settings_touchfb',tostring(settings_touchFB), true)    
     reaper.SetExtState(SCRIPT,'settings_trackchangemidi',tostring(settings_trackchangemidi), true)    
     reaper.SetExtState(SCRIPT,'settings_savefaderboxassinsnapshots',tostring(settings_savefaderboxassinsnapshots), true)    
+    reaper.SetExtState(SCRIPT,'settings_showfaderassignments',tostring(settings_showfaderassignments), false)    
     
     if strip_default then
       reaper.SetExtState(SCRIPT,'strip_default',tostring(strip_default.strip_select), true)
@@ -38409,6 +38663,7 @@ end
     toffY = true
     
     mode = 0
+    mode0_submode = 0
     submode = 2
     fxmode = 0
     snaplrn_mode = false
@@ -39216,10 +39471,10 @@ end
       else
         local t = reaper.time_precise()
         SaveData(tmp, bak, noclean)
-        infomsg = "DATA SAVED (" .. round(reaper.time_precise() - t,2)..'s)'
+        infomsg = "DATA SAVED (" .. round(reaper.time_precise() - t,2)..'s)'        
         --projnamechange = false
       end
-      update_surface = true      
+      update_surface = true            
     end
       
   end
@@ -39664,6 +39919,7 @@ end
   settings_touchFB = false
   settings_trackchangemidi = false
   settings_savefaderboxassinsnapshots = false
+  settings_showfaderassignments = false
   
   textoptlink_select = true
   
