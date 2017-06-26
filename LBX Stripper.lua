@@ -13072,7 +13072,13 @@ end
         ctl.dirty = true
         local min, max = A_GetParamMinMax(cc,track,ctl,nil,param,true,c)
         STSI_norm(track,param,v,min,max,c)
-      end
+      elseif cc == ctlcats.fxoffline then
+        SetFXOffline2(strip, page, c, track, v)
+      elseif cc == ctlcats.midictl then
+        ctl.val = v
+        ctl.dirty = true
+      end    
+      
       if ctl.midiout then SendMIDIMsg(ctl.midiout,v) end    
     end
       
@@ -37314,13 +37320,12 @@ end
 
           if gather == true then
             morph_data[data_id].data[ss] = {}
-            local min, max = GetParamMinMax_ctl2(strip,page,c)
-
-            morph_data[data_id].data[ss].dval = DenormalizeValue(min,max,ctl.val)
+            --local min, max = GetParamMinMax_ctl2(strip,page,c)
+            --morph_data[data_id].data[ss].dval = DenormalizeValue(min,max,ctl.val)
             morph_data[data_id].data[ss].val = tonumber(ctl.val)
           end
 
-          local v = morph_data[data_id].data[ss].dval + ((snaptbl.data[ss].dval - morph_data[data_id].data[ss].dval)*p)
+          --local v = morph_data[data_id].data[ss].dval + ((snaptbl.data[ss].dval - morph_data[data_id].data[ss].dval)*p)
           local nv = morph_data[data_id].data[ss].val + ((snaptbl.data[ss].val - morph_data[data_id].data[ss].val)*p)
           local mfs = snaptbl.data[ss].mfset
           
@@ -37350,14 +37355,15 @@ end
             end
           end
           
-          if ctl.noss ~= true and c and v and tostring(nv) ~= tostring(ctl.val) then
+          if ctl.noss ~= true and c and nv and tostring(nv) ~= tostring(ctl.val) then
             trackfxparam_select = c
-            if ctl.tracknum then
+            --[[if ctl.tracknum then
               track = GetTrack(ctl.tracknum)
             else
               track = gtrack
-            end
-            SetParam3_Denorm2_Safe2(track, v, strip, page, reaper, c)
+            end]]
+            --SetParam3_Denorm2_Safe2(track, v, strip, page, reaper, c)
+            SetParam3(strip,page,c,ctl,nv)
           end
           
           if ctl.macrofader then
@@ -37376,13 +37382,12 @@ end
 
           if gather == true then
             morph_data[data_id].data[ss] = {}
-            local min, max = GetParamMinMax_ctl2(strip,page,c)
-
-            morph_data[data_id].data[ss].dval = DenormalizeValue(min,max,ctl.val)
+            --local min, max = GetParamMinMax_ctl2(strip,page,c)
+            --morph_data[data_id].data[ss].dval = DenormalizeValue(min,max,ctl.val)
             morph_data[data_id].data[ss].val = tonumber(ctl.val)
           end
 
-          local v = morph_data[data_id].data[ss].dval + ((snaptbl.data[ss].dval - morph_data[data_id].data[ss].dval)*p)
+          --local v = morph_data[data_id].data[ss].dval + ((snaptbl.data[ss].dval - morph_data[data_id].data[ss].dval)*p)
           local nv = morph_data[data_id].data[ss].val + ((snaptbl.data[ss].val - morph_data[data_id].data[ss].val)*p)
 
           local mfs = snaptbl.data[ss].mfset
@@ -37413,14 +37418,15 @@ end
               ctl.macrofader = nil
             end
           end
-          if c and v and tostring(nv) ~= tostring(ctl.val) then
+          if c and nv and tostring(nv) ~= tostring(ctl.val) then
             trackfxparam_select = c
-            if ctl.tracknum then
+            --[[if ctl.tracknum then
               track = GetTrack(ctl.tracknum)
             else
               track = gtrack
             end
-            SetParam3_Denorm2_Safe2(track, v, strip, page, reaper, c)        
+            SetParam3_Denorm2_Safe2(track, v, strip, page, reaper, c)]]
+            SetParam3(strip,page,c,ctl,nv)        
           end
           
           if ctl.macrofader then
