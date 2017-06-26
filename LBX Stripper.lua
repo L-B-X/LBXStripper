@@ -37054,7 +37054,12 @@ end
       local ctls = snapshots[strip][page][sst].ctls
       if ctls and #ctls > 0 then
         newsst = #snapshots[strip][page]+1
-        snapshots[strip][page][newsst] = {subsetname = 'SUBSET '..newsst-1, snapshot = {}, ctls = {}}
+        snapshots[strip][page][newsst] = {subsetname = 'SUBSET '..newsst-1,
+                                          morph_time = 0,
+                                          morph_sync = false,
+                                          morph_syncv = 15,
+                                          morph_scale = 1,
+                                          snapshot = {}, ctls = {}}
         snapsubsets_table[newsst] = 'SUBSET '..newsst-1
         for i = 1, #ctls do
         
