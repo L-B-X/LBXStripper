@@ -18392,9 +18392,11 @@ end
         if ctl.macrofader then
           fft = '!'
           ff = '   [Fader '..string.format('%i',ctl.macrofader)..']'
-        end  
+        end
+        local fd, lastp = FaderMenu(-1,true)
+          
         if ccat == ctlcats.fxparam then
-          mstr = fft..'Faderbox learn (global)'..ff..'|Modulation||Enter value||'..mido..'||Open FX window||Add Envelope|Add All Envelopes For Plugin||'..mm..'Snapshots||>Tools|<Regenerate ID   (emergency only)||Toggle Topbar|Toggle Sidebar||'..lspfx..'Lock Surface'
+          mstr = fft..'Faderbox learn (global)'..ff..'||'..fd..'||Modulation||Enter value||'..mido..'||Open FX window||Add Envelope|Add All Envelopes For Plugin||'..mm..'Snapshots||>Tools|<Regenerate ID   (emergency only)||Toggle Topbar|Toggle Sidebar||'..lspfx..'Lock Surface'
         elseif ccat == ctlcats.trackparam or ccat == ctlcats.tracksend or ccat == ctlcats.macro or ccat == ctlcats.snapshot then
           mstr = fft..'Faderbox learn (global)'..ff..'|#Modulation||Enter value||'..mido..'||#Open FX window||#Add Envelope|#Add All Envelopes For Plugin||'..mm..'Snapshots||>Tools|<Regenerate ID   (emergency only)||Toggle Topbar|Toggle Sidebar||'..lspfx..'Lock Surface'                  
         else
@@ -18421,14 +18423,37 @@ end
                 lbx_midilrnoff = 0
               end
               update_surface = true
+            elseif res < 2 + lastp then
+            
+              if res == 1 + lastp then
+                DeleteFader(ctl.macrofader)
+                ctl.macrofader = nil
+              else
+                local fd = res-1
+                
+                if ctl.ctlcat == ctlcats.snapshot then
+                  tt = 7
+                else
+                  tt = 4
+                end
+                        
+                local f = {targettype = tt,
+                           strip = tracks[track_select].strip,
+                           page = page,
+                           ctl = i,
+                           c_id = ctl.c_id,
+                           voffset = 0}
+                           
+                AssignFader(fd,f)
+              end
               
-            elseif res == 2 then
+            elseif res == 2 +lastp then
               SetParam2(true)
               reaper.Main_OnCommand(41143,0)
-            elseif res == 3 then
+            elseif res == 3 +lastp then
               --EditValue(5)
               OpenEB(5,'Please enter value:')
-            elseif res == 4 then
+            elseif res == 4 +lastp then
               midioutedit_select = i
               midiout_select = ctl.midiout
               if midiout_select == nil then
@@ -18444,10 +18469,10 @@ end
               end
               show_midiout = true
               update_gfx = true
-            elseif res == 5 then
+            elseif res == 5 +lastp then
               ctl.midiout = nil
               
-            elseif res == 6 then
+            elseif res == 6 +lastp then
               OpenFXGUI(strips[tracks[track_select].strip][page].controls[i])
               --[[local track
               if strips[tracks[track_select].strip][page].controls[i].tracknum == nil then
@@ -18459,24 +18484,24 @@ end
               if not reaper.TrackFX_GetOpen(track, fxnum) then
                 reaper.TrackFX_Show(track, fxnum, 3)
               end]]
-            elseif res == 7 then
+            elseif res == 7 +lastp then
               Envelope_Add(tracks[track_select].strip,page,i)
-            elseif res == 8 then
+            elseif res == 8 +lastp then
               Envelope_AddAllFX(tracks[track_select].strip,page,i)
-            elseif res == 9 then
+            elseif res == 9 +lastp then
               show_snapshots = not show_snapshots
               update_gfx = true
-            elseif res == 10 then
+            elseif res == 10 +lastp then
               i = tonumber(string.format('%i',i))
               strips[tracks[track_select].strip][page].controls[i] = GetControlTable(tracks[track_select].strip, page, i)
               strips[tracks[track_select].strip][page].controls[i].c_id = GenID()
               update_gfx = true
-            elseif res == 11 then
+            elseif res == 11 +lastp then
               ToggleTopbar()
-            elseif res == 12 then
+            elseif res == 12 +lastp then
               ToggleSidebar()
               update_surface = true
-            elseif res == 13 then
+            elseif res == 13 +lastp then
               settings_locksurface = not settings_locksurface
             end
           end
@@ -20065,6 +20090,17 @@ end
     
   end
 
+  function FaderMenu_2(sel,x,y)
+  
+    local mstr,lastp = FaderMenu(sel, true)
+    gfx.x = x
+    gfx.y = y
+    local ret = gfx.showmenu(mstr)
+  
+    return ret, lastp
+    
+  end
+  
   function FaderMenu(sel, returnonly)
 
     if LBX_CTL_TRACK_INF and LBX_CTL_TRACK_INF.count > 0 then
@@ -20357,8 +20393,21 @@ end
                         update_gfx = true
                       end                    
                     end
+                  
+                  elseif faders[p+1].targettype == 8 then
+                    if snapshots[faders[p+1].strip] and 
+                       snapshots[faders[p+1].strip][faders[p+1].page] and
+                       snapshots[faders[p+1].strip][faders[p+1].page][faders[p+1].sstype] then
+                      if snapshots[faders[p+1].strip][faders[p+1].page][faders[p+1].sstype].morph_sync == false then
+                        snapshots[faders[p+1].strip][faders[p+1].page][faders[p+1].sstype].morph_time = faders[p+1].val
+                      else
+                        snapshots[faders[p+1].strip][faders[p+1].page][faders[p+1].sstype].morph_syncv = math.min(1+round(faders[p+1].val*127),#sync_table)
+                      end
+                      update_snaps = true
+                    end
                   end
                 end
+                
               --elseif faders[p+1].val < 0 then
               --  DBG('nil')              
               --  faders[p+1].latch = nil
@@ -20459,6 +20508,13 @@ end
         strips[ftab.strip][ftab.page].controls[ftab.ctl].macrofader = f
         faders[f] = ftab    
       end
+    elseif ftab.targettype == 8 then    
+      if snapshots[ftab.strip] and snapshots[ftab.strip][ftab.page][ftab.sstype] then
+        DeleteFader(snapshots[ftab.strip][ftab.page][ftab.sstype].morph_time_fader)
+        snapshots[ftab.strip][ftab.page][ftab.sstype].morph_time_fader = f
+        faders[f] = ftab
+      end
+    
     end
   
   end
@@ -27760,7 +27816,7 @@ end
           update_snaps = true
         end
 
-      elseif mouse.context == nil and MOUSE_click_RB(obj.sections[1010]) then
+      elseif mouse.context == nil and MOUSE_click_RB(obj.sections[1010]) and mouse.ctrl == false then
       
         if snapshots[tracks[track_select].strip][page][sstype_select].morph_sync == false then
 
@@ -27768,6 +27824,25 @@ end
           snapshots[tracks[track_select].strip][page][sstype_select].morph_syncv = math.max(snapshots[tracks[track_select].strip][page][sstype_select].morph_syncv - 1,1)
           update_snaps = true        
         end      
+
+      elseif mouse.context == nil and MOUSE_click_RB(obj.sections[1010]) and mouse.ctrl == true then
+        
+        if snapshots[tracks[track_select].strip][page][sstype_select] then
+          local snap = snapshots[tracks[track_select].strip][page][sstype_select]
+          local res, lastp = FaderMenu_2(snap.morph_time_fader,mouse.mx+obj.sections[160].x,mouse.my+obj.sections[160].y)
+          if res > 0 then
+            if res == lastp then
+              DeleteFader(snap.morph_time_fader)
+            else
+              local f = {targettype = 8,
+                         strip = tracks[track_select].strip,
+                         page = page,
+                         sstype = sstype_select}
+              AssignFader(res, f)
+            end
+          
+          end
+        end
         
       elseif mouse.context == nil and MOUSE_click(obj.sections[1011]) then
 
@@ -33957,6 +34032,7 @@ end
           snaps[sst].morph_sync = tobool(zn(data[key..'morph_sync'],false))
           snaps[sst].morph_syncv = tonumber(zn(data[key..'morph_syncv'],14))
           snaps[sst].morph_scale = tonumber(zn(data[key..'morph_scale'],1))
+          snaps[sst].morph_time_fader = tonumber(zn(data[key..'morph_time_fader']))
           
           local sscnt = tonumber(zn(data[key..'ss_count'],0))
           if sscnt > 0 then
@@ -35464,8 +35540,7 @@ end
   
       local key = 'fadercnt'
       file:write('['..key..']'.. #faders ..'\n')
-      local key = 'snapshot_fader'
-      file:write('['..key..']'.. nz(snapshot_fader,'') ..'\n')
+      file:write('[snapshot_fader]'.. nz(snapshot_fader,'') ..'\n')
       
       for f = 1, #faders do
     
@@ -35784,6 +35859,7 @@ end
       file:write('['..key..'morph_sync]'..tostring(nz(snapshots[s][p][sst].morph_sync,false))..'\n')
       file:write('['..key..'morph_syncv]'..nz(snapshots[s][p][sst].morph_syncv,14)..'\n')
       file:write('['..key..'morph_scale]'..nz(snapshots[s][p][sst].morph_scale,1)..'\n')
+      file:write('['..key..'morph_time_fader]'..nz(snapshots[s][p][sst].morph_time_fader,'')..'\n')
       file:write('['..key..'ss_selected]'..nz(snapshots[s][p][sst].selected,'')..'\n')
       
       if sst == 1 then          
