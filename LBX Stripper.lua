@@ -14885,8 +14885,10 @@ end
               end
               paramchange[i] = sstcnt 
               snapshots[strip][page][sstcnt] = {subsetname = '##Page Snapshots',
-                                                morph_time = stripdata.snapshots[i].morph_time | 0,
-                                                morph_scale = stripdata.snapshots[i].morph_scale | 1,
+                                                morph_time = nz(stripdata.snapshots[i].morph_time,0),
+                                                morph_scale = nz(stripdata.snapshots[i].morph_scale,1),
+                                                morph_sync = nz(stripdata.snapshots[i].morph_sync,false),
+                                                morph_syncv = nz(stripdata.snapshots[i].morph_syncv,15),
                                                 snapshot = {},
                                                 ctls = {}}
               for ss = 1, #stripdata.snapshots[i] do
@@ -14926,10 +14928,10 @@ end
             paramchange[i] = sstcnt 
             snapshots[strip][page][sstcnt] = stripdata.snapshots[i]
             if snapshots[strip][page][sstcnt] then
-              snapshots[strip][page][sstcnt].morph_time = stripdata.snapshots[i].morph_time | 0
-              snapshots[strip][page][sstcnt].morph_scale = stripdata.snapshots[i].morph_scale | 1
-              snapshots[strip][page][sstcnt].morph_sync = stripdata.snapshots[i].morph_sync | false
-              snapshots[strip][page][sstcnt].morph_syncv = stripdata.snapshots[i].morph_syncv | 14
+              snapshots[strip][page][sstcnt].morph_time = nz(stripdata.snapshots[i].morph_time,0)
+              snapshots[strip][page][sstcnt].morph_scale = nz(stripdata.snapshots[i].morph_scale,1)
+              snapshots[strip][page][sstcnt].morph_sync = nz(stripdata.snapshots[i].morph_sync,false)
+              snapshots[strip][page][sstcnt].morph_syncv = nz(stripdata.snapshots[i].morph_syncv,15)
             end
             
             if snapshots[strip][page][sstcnt] and #snapshots[strip][page][sstcnt].ctls > 0 then
@@ -21960,6 +21962,7 @@ end
 
     if mouse.context == nil and MOUSE_click(obj.sections[982]) then
 
+      local ctl = strips[tracks[track_select].strip][page].controls[lbx_midilrnctl]
       if lbx_midilrnval then
       
         if faders[lbx_midilrnval] and faders[lbx_midilrnval].targettype then
@@ -21968,7 +21971,6 @@ end
           end 
         end
       
-        local ctl = strips[tracks[track_select].strip][page].controls[lbx_midilrnctl]
         local tt
         if ctl.ctlcat == ctlcats.snapshot then
           tt = 7
@@ -27764,7 +27766,7 @@ end
 
       elseif mouse.context == nil and MOUSE_click(obj.sections[1012]) then
 
-        snapshots[tracks[track_select].strip][page][sstype_select].morph_scale = snapshots[tracks[track_select].strip][page][sstype_select].morph_scale + 1
+        snapshots[tracks[track_select].strip][page][sstype_select].morph_scale = nz(snapshots[tracks[track_select].strip][page][sstype_select].morph_scale,1) + 1
         if snapshots[tracks[track_select].strip][page][sstype_select].morph_scale > #macroscale_table then
           snapshots[tracks[track_select].strip][page][sstype_select].morph_scale = 1
         end
@@ -27772,7 +27774,7 @@ end
 
       elseif mouse.context == nil and MOUSE_click_RB(obj.sections[1012]) then
 
-        snapshots[tracks[track_select].strip][page][sstype_select].morph_scale = snapshots[tracks[track_select].strip][page][sstype_select].morph_scale - 1
+        snapshots[tracks[track_select].strip][page][sstype_select].morph_scale = nz(snapshots[tracks[track_select].strip][page][sstype_select].morph_scale,1) - 1
         if snapshots[tracks[track_select].strip][page][sstype_select].morph_scale < 1 then
           snapshots[tracks[track_select].strip][page][sstype_select].morph_scale = #macroscale_table
         end
@@ -37476,7 +37478,11 @@ end
       if sstype == 1 then
 
         if snapshots[strip][page][sstype] == nil then
-          snapshots[strip][page][sstype] = {}
+          snapshots[strip][page][sstype] = {morph_time = 0,
+                                            morph_sync = false,
+                                            morph_syncv = 1,
+                                            morph_scale = 15,
+}
         end
       
         if ss_ovr then
@@ -37580,7 +37586,12 @@ end
       elseif sstype > 1 then
       
         if snapshots[strip][page][sstype] == nil then
-          snapshots[strip][page][sstype] = {subsetname = 'SUBSET '..sstype-1, snapshot = {}, ctls = {}}
+          snapshots[strip][page][sstype] = {subsetname = 'SUBSET '..sstype-1, 
+                                            morph_time = 0,
+                                            morph_sync = false,
+                                            morph_syncv = 1,
+                                            morph_scale = 15,
+                                            snapshot = {}, ctls = {}}
           snapsubsets_table[sstype] = 'SUBSET '..sstype-1
         end
 
