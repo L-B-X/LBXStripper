@@ -7802,9 +7802,9 @@ end
           end
         end
 
-        xywh = {x = obj.sections[163].x,
+        xywh = {x = obj.sections[163].x+2,
                 y = obj.sections[163].y,
-                w = obj.sections[163].w,
+                w = obj.sections[163].w-4,
                 h = butt_h}
 
         if sstype_select == 1 then
@@ -7954,19 +7954,15 @@ end
             y = obj.sections[163].y,
             w = obj.sections[163].w,
             h = obj.sections[163].h}
-    f_Get_SSV('64 64 64')
-    gfx.a = 1 
-    gfx.rect(xywh.x,
-             xywh.y, 
-             xywh.w,
-             xywh.h, 0 )
-    
     
     xywh.h = butt_h
     GUI_DrawBar(gui,'',xywh,skin.barUD,true,gui.color.black,nil,-2)
     gfx.line(xywh.x+xywh.w/2,xywh.y,xywh.x+xywh.w/2,xywh.y+xywh.h)
     gfx.triangle(xywh.x+xywh.w/4,xywh.y+4,xywh.x+xywh.w/4-6,xywh.y+xywh.h-4,xywh.x+xywh.w/4+6,xywh.y+xywh.h-4,1)
     gfx.triangle(xywh.x+xywh.w*0.75,xywh.y+xywh.h-4,xywh.x+xywh.w*0.75-6,xywh.y+4,xywh.x+xywh.w*0.75+6,xywh.y+4,1)
+    
+    xywh.x = xywh.x + 2
+    xywh.w = xywh.w - 4
     
     gfx.a = 1
     
@@ -8086,6 +8082,14 @@ end
         end
 
       end
+      
+      f_Get_SSV('64 64 64')
+      gfx.a = 1 
+      gfx.rect(obj.sections[163].x,
+               obj.sections[163].y, 
+               obj.sections[163].w,
+               obj.sections[163].h, 0 )
+      
     else
       --learn mode
       
