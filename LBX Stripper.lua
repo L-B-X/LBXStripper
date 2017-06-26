@@ -37449,7 +37449,10 @@ end
           snapshots[s][p] = {}
         end
         if snapshots[s][p][1] == nil then
-          snapshots[s][p][1] = {}
+          snapshots[s][p][1] = {morph_time = 0,
+                                morph_sync = false,
+                                morph_syncv = 15,
+                                morph_scale = 1}
         end
       end
     end
@@ -37467,7 +37470,10 @@ end
           snapshots[s] = {}
           for p = 1, 4 do
             snapshots[s][p] = {}
-            snapshots[s][p][1] = {}
+            snapshots[s][p][1] = {morph_time = 0,
+                                  morph_sync = false,
+                                  morph_syncv = 15,
+                                  morph_scale = 1}
           end
         end
       end
@@ -37480,9 +37486,8 @@ end
         if snapshots[strip][page][sstype] == nil then
           snapshots[strip][page][sstype] = {morph_time = 0,
                                             morph_sync = false,
-                                            morph_syncv = 1,
-                                            morph_scale = 15,
-}
+                                            morph_syncv = 15,
+                                            morph_scale = 1}
         end
       
         if ss_ovr then
@@ -37589,8 +37594,8 @@ end
           snapshots[strip][page][sstype] = {subsetname = 'SUBSET '..sstype-1, 
                                             morph_time = 0,
                                             morph_sync = false,
-                                            morph_syncv = 1,
-                                            morph_scale = 15,
+                                            morph_syncv = 15,
+                                            morph_scale = 1,
                                             snapshot = {}, ctls = {}}
           snapsubsets_table[sstype] = 'SUBSET '..sstype-1
         end
