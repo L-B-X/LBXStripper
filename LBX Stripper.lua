@@ -7903,6 +7903,10 @@ end
           end
         end
 
+        if morphing == false then
+          return
+        end
+
         xywh = {x = obj.sections[163].x+2,
                 y = obj.sections[163].y,
                 w = obj.sections[163].w-4,
