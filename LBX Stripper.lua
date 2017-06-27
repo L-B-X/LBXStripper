@@ -4701,7 +4701,7 @@
     for i = 1, FD_butt_cnt-1 do
       local f = faders[i+fdlist_offset]
     
-      if f then
+      if f and i+fdlist_offset <= LBX_FB_CNT*LBX_CTL_TRACK_INF.count then
         local xywh = {x = obj.sections[500].x+2,
                       y = obj.sections[500].y + butt_h + 2 + butt_h*(i)+1,
                       w = obj.sections[500].w-6,
@@ -4710,7 +4710,7 @@
         if fader_select == i + fdlist_offset then
           --GUI_DrawBar(gui,'',xywh,skin.highlight,true,gui.color.black,nil,-2)
           if faders[fader_select] and faders[fader_select].targettype then
-            f_Get_SSV('255 160 0')
+            f_Get_SSV(faderselcol)
           else
             f_Get_SSV('0 160 255')          
           end          
@@ -4721,7 +4721,7 @@
           if f.targettype then
             
             c = gui.color.black
-            f_Get_SSV('160 64 0')
+            f_Get_SSV(faderhighcol)
             
             gfx.rect(xywh.x,xywh.y,xywh.w,xywh.h,1,1)
             --GUI_DrawBar(gui,'',xywh,skin.highlight,true,gui.color.black,nil,-2)
@@ -7555,11 +7555,11 @@ end
 
                   if settings_showfaderassignments == true and ctl.macrofader then
                     if mode0_submode == 1 and fader_select == ctl.macrofader then
-                      f_Get_SSV('255 160 0')
+                      f_Get_SSV(faderselcol)
                     else 
-                      f_Get_SSV('160 64 0')                    
+                      f_Get_SSV(faderhighcol)                    
                     end
-                    gfx.roundrect(px,py,w*scale,h*scale,5,1)
+                    gfx.roundrect(px+1,py+1,w*scale-2,h*scale-2,5,1)
                   end
 
                   if spn then
@@ -10604,7 +10604,7 @@ end
           local sz = 30
           local xywh = {x = dragfader.x-sz, y = dragfader.y-butt_h/2, w = sz*2, h = butt_h}
           if dragfader.ctl == nil then
-            f_Get_SSV('255 160 0')
+            f_Get_SSV(faderselcol)
           elseif dragfader.ctl == -1 then
             f_Get_SSV('255 0 0')    
           else      
@@ -20656,7 +20656,7 @@ end
         if xxy and xxy[faders[f].strip] and xxy[faders[f].strip][faders[f].page] and xxy[faders[f].strip][faders[f].page][faders[f].sstype] then
           xxy[faders[f].strip][faders[f].page][faders[f].sstype].pathfader = nil
         end
-      elseif faders[f].targettype == 2 or faders[f].targettype == 4 then
+      elseif faders[f].targettype == 2 or faders[f].targettype == 4 or faders[f].targettype == 7 then
         if strips and strips[faders[f].strip] and strips[faders[f].strip][faders[f].page].controls[faders[f].ctl] then
           strips[faders[f].strip][faders[f].page].controls[faders[f].ctl].macrofader = nil
         end
@@ -22062,6 +22062,10 @@ end
           morph_data[i].active = false
           runcnt = runcnt - 1
           update_snaps = true
+          update_gfx = true
+          if mode0_submode == 1 then
+            update_sidebar = true
+          end
         end    
       end
     end
@@ -22526,7 +22530,7 @@ end
         if mode0_submode == 0 then
           tlist_offset = F_limit(tlist_offset - v, 0, #tracks+1)
         else
-          fdlist_offset = F_limit(fdlist_offset - v, 0, #faders-1)        
+          fdlist_offset = F_limit(fdlist_offset - v, 0, LBX_FB_CNT*LBX_CTL_TRACK_INF.count -1)        
         end
         update_gfx = true
         gfx.mouse_wheel = 0
@@ -23488,13 +23492,13 @@ end
         local i = math.floor((mouse.my - obj.sections[500].y) / butt_h)-1
         if i == 0 then
           if mouse.mx < obj.sections[500].w/2 then
-            fdlist_offset = fdlist_offset - FD_butt_cnt
+            fdlist_offset = fdlist_offset - (FD_butt_cnt-3)
             if fdlist_offset < 0 then
               fdlist_offset = 0
             end
           else
             if fdlist_offset + FD_butt_cnt < #faders-1 then
-              fdlist_offset = fdlist_offset + FD_butt_cnt
+              fdlist_offset = fdlist_offset + (FD_butt_cnt-3)
             end
           end
           update_sidebar = true
@@ -23529,8 +23533,23 @@ end
               update_gfx = true
             end
           end
+        elseif i == -1 then
+          local mstr = 'Clear All'
+          gfx.x = mouse.mx
+          gfx.y = mouse.my
+          local ret = gfx.showmenu(mstr)
+          if ret > 0 then
+            if ret == 1 then     
+              for i = 1, #faders do   
+                DeleteFader(i)
+              end
+              update_sidebar = true
+              update_gfx = true
+            end
+          end
+          
         end
-        
+      
       end    
     end
   
@@ -37453,6 +37472,7 @@ end
     local reaper = reaper
     if (snapshots[strip][page][sstype_select].morph_sync == false and snapshots[strip][page][sstype_select].morph_time == 0) or 
        (snapshots[strip][page][sstype_select].morph_sync == true and snapshots[strip][page][sstype_select].morph_syncv == 1) then
+      local mfs
       if sstype_select == 1 then
         local snaptbl = snapshots[strip][page][sstype_select][ss_select]
         if snaptbl then
@@ -37463,7 +37483,7 @@ end
             local v = snaptbl.data[ss].dval
             local nv = snaptbl.data[ss].val
             local ctl = strips[strip][page].controls[c]
-            local mfs = snaptbl.data[ss].mfset
+            mfs = snaptbl.data[ss].mfset
             if mfs then
               local mf = snaptbl.data[ss].mf
               if mf and ctl.macrofader ~= mf then
@@ -37516,7 +37536,7 @@ end
             local nv = snaptbl.data[ss].val
             local ctl = strips[strip][page].controls[c]
   
-            local mfs = snaptbl.data[ss].mfset
+            mfs = snaptbl.data[ss].mfset
             if mfs then
               local mf = snaptbl.data[ss].mf
               if mf and ctl.macrofader ~= mf then
@@ -37568,6 +37588,10 @@ end
            morph_data[i].sstype == sstype_select then
           morph_data[i] = {}
         end
+      end
+      
+      if mfs and mode0_submode == 1 then
+        update_sidebar = true
       end
     else
       local fnd = -1
@@ -37883,8 +37907,9 @@ end
                   snapshots[strip][page][sstype][snappos].data[sscnt].mfset = true
                   local mf = strips[strip][page].controls[c].macrofader
                   if mf then
-                    if faders[mf] and faders[mf].targettype == 4 then
-                      local f = {targettype = 4,
+                    if faders[mf] and (faders[mf].targettype == 4 or 
+                                       faders[mf].targettype == 7) then
+                      local f = {targettype = faders[mf].targettype,
                                  strip = faders[mf].strip,
                                  page = faders[mf].page,
                                  ctl = faders[mf].ctl,
@@ -37995,9 +38020,9 @@ end
                     snapshots[strip][page][sstype].snapshot[snappos].data[sscnt].mfset = true
                     local mf = strips[strip][page].controls[c].macrofader
                     if mf then
-                      if faders[mf] and faders[mf].targettype == 4 then
-  
-                        local f = {targettype = 4,
+                      if faders[mf] and (faders[mf].targettype == 4 or 
+                                         faders[mf].targettype == 7) then
+                        local f = {targettype = faders[mf].targettype,
                                    strip = faders[mf].strip,
                                    page = faders[mf].page,
                                    ctl = faders[mf].ctl,
@@ -39932,6 +39957,8 @@ end
   backalpha = 1
   backalpha2 = 0
   backcol = '16 16 16'
+  faderhighcol = '160 64 255'
+  faderselcol = '255 160 255'
   
   eq_scale = true
   eq_single = false
