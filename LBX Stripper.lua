@@ -149,7 +149,9 @@
               gfxopt_a = 105,
               gfxopt_edge = 106,
               morph_time = 107,
-              dragfader = 108, 
+              dragfader = 108,
+              sa_dragstrip = 109, 
+              sa_dragstrip2 = 110, 
               dummy = 999
               }
   
@@ -1028,7 +1030,8 @@
       else
         topbarheight = butt_h      
       end
-      if settings_showbars then
+      SetSurfaceSize2(obj)
+      --[[if settings_showbars then
         obj.sections[10] = {x = plist_w+2 + sb_size + 2,
                             y = topbarheight + sb_size + 2,
                             w = gfx1.main_w-(plist_w+2+(sb_size+2)*2),
@@ -1063,7 +1066,7 @@
       if obj.sections[10].h > surface_size.h then        
         obj.sections[10].h = surface_size.h        
         surface_size.exceed = true
-      end
+      end]]
 
       --mode
       obj.sections[11] = {x = 0,
@@ -1632,7 +1635,7 @@
                           y = obj.sections[70].y+yoff + yoffm*1,
                           w = sw,
                           h = butt_h}
-      obj.sections[702] = {x = obj.sections[70].x+obj.sections[70].w/2+xofft+bw+10,
+      obj.sections[702] = {x = obj.sections[70].x+obj.sections[70].w/2+xofft,
                           y = obj.sections[70].y+yoff + yoffm*2,
                           w = 40,
                           h = bh}
@@ -1654,6 +1657,23 @@
                                 y = obj.sections[70].y+yoff + yoffm*8,
                                 w = bw,
                                 h = bh}
+
+      obj.sections[707] = {x = obj.sections[70].x+obj.sections[70].w/2+xofft,
+                                y = obj.sections[70].y+yoff + yoffm*10,
+                                w = bw,
+                                h = bh}
+      obj.sections[708] = {x = obj.sections[70].x+obj.sections[70].w/2+xofft,
+                          y = obj.sections[70].y+yoff + yoffm*11,
+                          w = 40,
+                          h = bh}
+      obj.sections[709] = {x = obj.sections[70].x+obj.sections[70].w/2+xofft,
+                          y = obj.sections[70].y+yoff + yoffm*12,
+                          w = 40,
+                          h = bh}
+      obj.sections[710] = {x = obj.sections[70].x+obj.sections[70].w/2+xofft,
+                          y = obj.sections[70].y+yoff + yoffm*13,
+                          w = 40,
+                          h = bh}
             
                                 
       --Cycle
@@ -3455,8 +3475,8 @@
                                                 show_paramval = show_paramval,
                                                 ctlname_override = '',
                                                 textcol = textcol_select,
-                                                textoff = 22.25,
-                                                textoffval = -6.0,
+                                                textoff = 14.25,
+                                                textoffval = -4.0,
                                                 textoffx = textoff_selectx,
                                                 textoffvalx = textoffval_selectx,
                                                 textsize = textsize_select,
@@ -3640,11 +3660,11 @@
                                                 show_paramval = false,
                                                 ctlname_override = '',
                                                 textcol = textcol_select,
-                                                textoff = textoff_select-34,
+                                                textoff = 1,
                                                 textoffval = textoffval_select,
                                                 textoffx = textoff_selectx,
                                                 textoffvalx = textoffval_selectx,
-                                                textsize = 4,
+                                                textsize = textsize_select,
                                                 textsizev = textsizev_select,
                                                 textcolv = textcolv_select,
                                                 val = 0,
@@ -3702,11 +3722,11 @@
                                                 show_paramval = false,
                                                 ctlname_override = '',
                                                 textcol = textcol_select,
-                                                textoff = 9,
+                                                textoff = 1,
                                                 textoffval = textoffval_select,
                                                 textoffx = textoff_selectx,
                                                 textoffvalx = textoffval_selectx,
-                                                textsize = 0,
+                                                textsize = textsize_select,
                                                 textsizev = textsizev_select,
                                                 textcolv = textcolv_select,
                                                 val = 0,
@@ -4632,12 +4652,12 @@
                       h = butt_h}
         local c = gui.color.white
         if track_select == i-1 + tlist_offset then
-          --[[f_Get_SSV(gui.color.white)
-          gfx.rect(xywh.x,
-                   xywh.y, 
-                   xywh.w,
-                   xywh.h, 1, 1)]]
-          GUI_DrawBar(gui,'',xywh,skin.highlight,true,gui.color.black,nil,-2)
+          f_Get_SSV(gui.color.white)
+          gfx.rect(xywh.x+2,
+                   xywh.y+1, 
+                   xywh.w-6,
+                   xywh.h-1, 1, 1)
+          --GUI_DrawBar(gui,'',xywh,skin.highlight,true,gui.color.black,nil,-2)
 
           c = gui.color.black        
         else
@@ -4668,6 +4688,7 @@
         elseif nm == LBX_CTL_TRNAME then
           nm = '[LBX CTL]'
         end
+        xywh.y=xywh.y-1
         GUI_textsm_LJ(gui, xywh, tracks[i-1 + tlist_offset].tracknum+1 ..' - '..nm, c, -4, plist_w)
                     
       end                      
@@ -4947,15 +4968,16 @@
           end
           if trackfx_select == i + flist_offset then
             f_Get_SSV(gui.color.white)
-            gfx.rect(xywh.x,
-                     xywh.y, 
-                     xywh.w,
-                     xywh.h, 1, 1)
+            gfx.rect(xywh.x+2,
+                     xywh.y+1, 
+                     xywh.w-6,
+                     xywh.h-2, 1, 1)
   
             if bypassed == false then        
               c = gui.color.black
             end
           end
+          xywh.y = xywh.y-1
           GUI_textsm_LJ(gui, xywh, CropFXName(trackfx[i + flist_offset].name), c, -4, plist_w)
         else
           break
@@ -4974,13 +4996,14 @@
           local c = gui.color.white
           if trctltype_select == i + trctltypelist_offset then
             f_Get_SSV(gui.color.white)
-            gfx.rect(xywh.x,
-                     xywh.y, 
-                     xywh.w,
-                     xywh.h, 1, 1)
+            gfx.rect(xywh.x+2,
+                     xywh.y+1, 
+                     xywh.w-6,
+                     xywh.h-2, 1, 1)
   
             c = gui.color.black
           end
+          xywh.y = xywh.y-1
           GUI_textsm_LJ(gui, xywh, trctltype_table[i + trctltypelist_offset + 1], c, -4, plist_w)
         else
           break
@@ -5014,13 +5037,14 @@
           --if trackfxparam_select == i + plist_offset then
           if tfxp_sel and tfxp_sel[i + plist_offset] then  
             f_Get_SSV(gui.color.white)
-            gfx.rect(xywh.x,
-                     xywh.y, 
-                     xywh.w,
-                     xywh.h, 1, 1)
+            gfx.rect(xywh.x+2,
+                     xywh.y+1, 
+                     xywh.w-6,
+                     xywh.h-2, 1, 1)
   
             c = gui.color.black        
           end
+          xywh.y=xywh.y-1
           GUI_textsm_LJ(gui, xywh, trackfxparams[i + plist_offset].paramname, c, -4, plist_w)
         else
           break
@@ -5053,12 +5077,13 @@
             local c = gui.color.white
             if trctl_select-1 == i + trctlslist_offset then  
               f_Get_SSV(gui.color.white)
-              gfx.rect(xywh.x,
-                       xywh.y, 
-                       xywh.w,
-                       xywh.h, 1, 1)
+              gfx.rect(xywh.x+2,
+                       xywh.y+1, 
+                       xywh.w-6,
+                       xywh.h-2, 1, 1)
               c = gui.color.black        
             end
+            xywh.y=xywh.y-1
             GUI_textsm_LJ(gui, xywh, tbl[i + trctlslist_offset+1].name, c, -4, plist_w)
           else
             break
@@ -5077,12 +5102,13 @@
             local c = gui.color.white
             if trctl_select-1 == i + trctlslist_offset then  
               f_Get_SSV(gui.color.white)
-              gfx.rect(xywh.x,
-                       xywh.y, 
-                       xywh.w,
-                       xywh.h, 1, 1)
+              gfx.rect(xywh.x+2,
+                       xywh.y+1, 
+                       xywh.w-6,
+                       xywh.h-2, 1, 1)
               c = gui.color.black        
             end
+            xywh.y=xywh.y-1
             GUI_textsm_LJ(gui, xywh, tbl[sidx][pidx].name, c, -4, plist_w)
           else
             break
@@ -5099,12 +5125,13 @@
             local c = gui.color.white
             if trctl_select == i + trctlslist_offset then  
               f_Get_SSV(gui.color.white)
-              gfx.rect(xywh.x,
-                       xywh.y, 
-                       xywh.w,
-                       xywh.h, 1, 1)
+              gfx.rect(xywh.x+2,
+                       xywh.y+1, 
+                       xywh.w-6,
+                       xywh.h-2, 1, 1)
               c = gui.color.black        
             end
+            xywh.y=xywh.y-1
             GUI_textsm_LJ(gui, xywh, tbl[i + trctlslist_offset], c, -4, plist_w)
           else
             break
@@ -5189,10 +5216,10 @@
         local c = gui.color.white
         if gfxfol_select == i + gflist_offset then
           f_Get_SSV(gui.color.white)
-          gfx.rect(xywh.x,
-                   xywh.y, 
-                   xywh.w,
-                   xywh.h, 1, 1)
+          gfx.rect(xywh.x+2,
+                   xywh.y+1, 
+                   xywh.w-6,
+                   xywh.h-2, 1, 1)
 
           c = gui.color.black
         end
@@ -5203,6 +5230,7 @@
                    xywh.w,
                    xywh.h, 0, 1)        
         end
+        xywh.y=xywh.y-1
         GUI_textsm_LJ(gui, xywh, graphics_folders[i + gflist_offset], c, -4, plist_w)
       else
         break
@@ -5232,13 +5260,14 @@
         local c = gui.color.white
         if gfx_select == i + glist_offset then
           f_Get_SSV(gui.color.white)
-          gfx.rect(xywh.x,
-                   xywh.y, 
-                   xywh.w,
-                   xywh.h, 1, 1)
+          gfx.rect(xywh.x+2,
+                   xywh.y+1, 
+                   xywh.w-6,
+                   xywh.h-2, 1, 1)
 
           c = gui.color.black        
         end
+        xywh.y=xywh.y-1
         GUI_textsm_LJ(gui, xywh, graphics_files[graphics_folder_files[i + glist_offset]].fn, c, -4, plist_w)
                     
       end                      
@@ -5321,13 +5350,14 @@
         local c = gui.color.white
         if stripfol_select == i + sflist_offset then
           f_Get_SSV(gui.color.white)
-          gfx.rect(xywh.x,
-                   xywh.y, 
-                   xywh.w,
-                   xywh.h, 1, 1)
+          gfx.rect(xywh.x+2,
+                   xywh.y+1, 
+                   xywh.w-6,
+                   xywh.h-2, 1, 1)
 
           c = gui.color.black        
         end
+        xywh.y = xywh.y-1
         GUI_textsm_LJ(gui, xywh, strip_folders[i + sflist_offset].fn, c, -4, plist_w)
                     
       end                      
@@ -5356,10 +5386,10 @@
         local c = gui.color.white
         if strip_select == i + slist_offset then
           f_Get_SSV(gui.color.white)
-          gfx.rect(xywh.x,
-                   xywh.y, 
-                   xywh.w,
-                   xywh.h, 1, 1)
+          gfx.rect(xywh.x+2,
+                   xywh.y+1, 
+                   xywh.w-6,
+                   xywh.h-2, 1, 1)
 
           c = gui.color.black        
         end
@@ -5369,7 +5399,7 @@
         else
           gfx.blit(skin.starout,1,0,0,0,w,h,xywh.x+xywh.w-w,xywh.y+xywh.h/2-h/2)        
         end
-        
+        xywh.y = xywh.y-1
         GUI_textsm_LJ(gui, xywh, strip_files[i + slist_offset].fn, c, -4, plist_w-butt_h)
                     
       end                      
@@ -7114,7 +7144,7 @@ end
     gfx.dest = 1000
     gfx.a = 1
     xywharea = {}
-    
+
     if update_gfx or update_bg then
       gfx.blit(1004,1,0,0,0,surface_size.w,surface_size.h,0,0)    
     end    
@@ -7603,7 +7633,7 @@ end
           end
         end
         
-        if not update_gfx and not update_bg and update_ctls then
+        if not update_gfx and not update_bg and update_ctls and show_striplayout == false then
           --loop through blit area table - blit to backbuffer
           gfx.a=1
           local ox, oy = 0,0
@@ -7922,21 +7952,21 @@ end
                 if morphing == false then
                   f_Get_SSV(gui.color.white)
                   gfx.rect(xywh.x,
-                   xywh.y, 
+                   xywh.y+1, 
                    xywh.w,
-                   xywh.h, 1 )
+                   xywh.h-1, 1 )
                   c = gui.color.black
                 else 
                   f_Get_SSV(bbcol)
                   gfx.rect(xywh.x,
-                   xywh.y, 
+                   xywh.y+1, 
                    xywh.w,
-                   xywh.h, 1 )
+                   xywh.h-1, 1 )
                   f_Get_SSV(gui.color.white)
                   gfx.rect(xywh.x,
-                   xywh.y, 
+                   xywh.y+1, 
                    xywh.w*p,
-                   xywh.h, 1 )
+                   xywh.h-1, 1 )
                   c = gui.color.black
                 end
                 if snapshots[strip][page][sstype_select][i+ssoffset] then
@@ -7956,21 +7986,21 @@ end
                 if morphing == false then
                   f_Get_SSV(gui.color.white)
                   gfx.rect(xywh.x,
-                   xywh.y, 
+                   xywh.y+1, 
                    xywh.w,
-                   xywh.h, 1 )
+                   xywh.h-1, 1 )
                   c = gui.color.black
                 else 
                   f_Get_SSV(bbcol)
                   gfx.rect(xywh.x,
-                   xywh.y, 
+                   xywh.y+1, 
                    xywh.w,
-                   xywh.h, 1 )
+                   xywh.h-1, 1 )
                   f_Get_SSV(gui.color.white)
                   gfx.rect(xywh.x,
-                   xywh.y, 
+                   xywh.y+1, 
                    xywh.w*p,
-                   xywh.h, 1 )
+                   xywh.h-1, 1 )
                   c = gui.color.black
                   if snapshots[strip][page][sstype_select].snapshot[i+ssoffset] then
                     GUI_textsm_LJ(gui,xywh,roundX(i+ssoffset,0)..': '..snapshots[strip][page][sstype_select].snapshot[i+ssoffset].name,c,-2,xywh.w)
@@ -8106,21 +8136,21 @@ end
                 if morphing == false then
                   f_Get_SSV(gui.color.white)
                   gfx.rect(xywh.x,
-                   xywh.y, 
+                   xywh.y+1, 
                    xywh.w,
-                   xywh.h, 1 )
+                   xywh.h-1, 1 )
                   c = gui.color.black
                 else 
                   f_Get_SSV(bbcol)
                   gfx.rect(xywh.x,
-                   xywh.y, 
+                   xywh.y+1, 
                    xywh.w,
-                   xywh.h, 1 )
+                   xywh.h-1, 1 )
                   f_Get_SSV(gui.color.white)
                   gfx.rect(xywh.x,
-                   xywh.y, 
+                   xywh.y+1, 
                    xywh.w*p,
-                   xywh.h, 1 )
+                   xywh.h-1, 1 )
                   c = gui.color.black
                 end
               end
@@ -8148,21 +8178,21 @@ end
                 if morphing == false then
                   f_Get_SSV(gui.color.white)
                   gfx.rect(xywh.x,
-                   xywh.y, 
+                   xywh.y+1, 
                    xywh.w,
-                   xywh.h, 1 )
+                   xywh.h-1, 1 )
                   c = gui.color.black
                 else 
                   f_Get_SSV(bbcol)
                   gfx.rect(xywh.x,
-                   xywh.y, 
+                   xywh.y+1, 
                    xywh.w,
-                   xywh.h, 1 )
+                   xywh.h-1, 1 )
                   f_Get_SSV(gui.color.white)
                   gfx.rect(xywh.x,
-                   xywh.y, 
+                   xywh.y+1, 
                    xywh.w*p,
-                   xywh.h, 1 )
+                   xywh.h-1, 1 )
                   c = gui.color.black
                 end
               end
@@ -10359,6 +10389,178 @@ end
 
   ------------------------------------------------------------
   
+  function StripLayout_GetData()
+  
+    local x,y,w,h
+    if obj.sections[10].w > obj.sections[10].h then
+      x = math.floor((obj.sections[10].w-obj.sections[10].h)/2)
+      y = 0
+      w = obj.sections[10].h
+      h = w
+    else
+      x = 0
+      y = math.floor((obj.sections[10].h-obj.sections[10].w)/2)
+      w = obj.sections[10].w
+      h = w          
+    end
+    
+    local scale = 1-(w/surface_size.w)
+    local striplayout_data = {scale = scale,
+                        x = x,
+                        y = y,
+                        w = w,
+                        h = h}
+    return striplayout_data
+  end
+  
+  function StripLayout_DrawImage(d)
+  
+    gfx.dest = 995
+    gfx.setimgdim(995,d.w,d.h)
+    gfx.blit(1000,0,0,0,0,surface_size.w,surface_size.h,0,0,d.w,d.h)
+    gfx.dest = 1
+    
+  end
+  
+  function GUI_DrawStripLayout()
+  
+    if show_striplayout == true then
+      striplayout_data = StripLayout_GetData()
+      
+      if update_gfx == true then
+        StripLayout_DrawImage(striplayout_data)
+      end  
+      
+      --local scale = striplayout_data.scale
+      local scale = surface_size.w/striplayout_data.w
+    --DBG(scale)
+      local px,py
+                          
+      if striplayout_mt and striplayout_mp then
+        --scale = 1-(scale*striplayout_mp)
+        scale = 1+((scale-1)*(1-striplayout_mp))
+        px = striplayout_data.x*striplayout_mp - (surface_offset.x * (1-striplayout_mp))
+        py = striplayout_data.y*striplayout_mp - (surface_offset.y * (1-striplayout_mp))
+      
+        f_Get_SSV(gui.color.black)
+        gfx.rect(obj.sections[10].x,
+                 obj.sections[10].y,
+                 obj.sections[10].w,
+                 obj.sections[10].h,1)
+                
+        gfx.blit(995,scale,0,0,
+                          0,
+                          surface_size.w,
+                          surface_size.h,
+                          math.floor(obj.sections[10].x + px),
+                          math.floor(obj.sections[10].y + py))
+        
+      else
+        scale = 1-striplayout_data.scale
+        px = striplayout_data.x
+        py = striplayout_data.y
+      
+        f_Get_SSV(gui.color.black)
+        gfx.rect(obj.sections[10].x,
+                 obj.sections[10].y,
+                 obj.sections[10].w,
+                 obj.sections[10].h,1)
+        f_Get_SSV(backcol)
+        gfx.rect(obj.sections[10].x+px,
+                 obj.sections[10].y+py,
+                 surface_size.w*scale,
+                 surface_size.h*scale,1)
+        
+        if as_slocs then         
+          for i = 1, #as_slocs.loc do
+          
+            local ro = as_slocs.reordered[i].ro
+            if not ro then
+              ro = i
+            end
+            gfx.blit(995,1,0,
+                      math.floor(as_slocs.loc[ro].l*scale),
+                      math.floor(as_slocs.loc[ro].t*scale),
+                      math.floor(as_slocs.loc[ro].w*scale),
+                      math.floor(as_slocs.loc[ro].h*scale),
+                      math.floor(obj.sections[10].x + px+as_slocs.reordered[i].l*scale),
+                      math.floor(obj.sections[10].y + py+as_slocs.reordered[i].t*scale))
+            
+          
+          end
+        end
+        --DBG('')
+        --[[gfx.blit(995,1,0,0,
+                  0,
+                  striplayout_data.w,
+                  striplayout_data.h,
+                  obj.sections[10].x + px,
+                  obj.sections[10].y + py)]]
+      end
+                        
+      if striplayout_selstripid and striplayout_mt == nil then
+      
+        gfx.a = 0.8
+        local ro
+        for i = 1, #as_slocs.reordered do
+          if striplayout_selstrip == as_slocs.reordered[i].stripid then
+            ro = i
+            break
+          end
+        end
+        if ro then
+          local xywh = {x = as_slocs.reordered[ro].l,
+                        y = as_slocs.reordered[ro].t,
+                        w = as_slocs.reordered[ro].w,
+                        h = as_slocs.reordered[ro].h}
+          f_Get_SSV(gui.color.yellow)
+          gfx.roundrect(math.floor(obj.sections[10].x + px + xywh.x*scale),
+                         math.floor(obj.sections[10].y + py + xywh.y*scale),
+                         math.floor(xywh.w*scale),
+                         math.floor(xywh.h*scale),8,1)
+        end
+        --[[local x,y
+        if striplayout_tgtstripid and striplayout_tgtstripid ~= striplayout_selstripid then
+          f_Get_SSV(gui.color.red)
+          if striplayout_tgtpos == 0 then
+            x = obj.sections[10].x + px + as_slocs.loc[striplayout_tgtstripid].l * scale 
+          else
+            x = obj.sections[10].x + px + as_slocs.loc[striplayout_tgtstripid].r * scale
+          end
+          y = obj.sections[10].y + py + as_slocs.loc[striplayout_tgtstripid].t * scale             
+          gfx.rect(x,y,4,(autosnap_rowheight * scale),1)            
+        end]]
+        gfx.a = 1
+      end
+    else
+      local x,y,w,h
+      
+      striplayout_mp = 1-striplayout_mp
+      
+      striplayout_data = StripLayout_GetData()
+      local scale = (surface_size.w/striplayout_data.w)
+      
+      --local scale = striplayout_data.scale
+      
+      local px,py
+      
+      --scale = 1-(striplayout_data.scale*striplayout_mp)
+      scale = 1+((scale-1)*(1-striplayout_mp))
+      px = striplayout_data.x*striplayout_mp - (surface_offset.x * (1-striplayout_mp))
+      py = striplayout_data.y*striplayout_mp - (surface_offset.y * (1-striplayout_mp))
+      gfx.blit(995,scale,0,0,
+                          0,
+                          surface_size.w,
+                          surface_size.h,
+                          math.floor(obj.sections[10].x + px),
+                          math.floor(obj.sections[10].y + py))
+      
+    
+    end    
+  end
+  
+  ------------------------------------------------------------
+
   function GUI_draw(obj, gui)
     gfx.mode = gmode
     
@@ -10429,16 +10631,23 @@ end
                 
         gfx.dest = 1        
         
-        if (macro_edit_mode == false or macro_lrn_mode == true) and (update_gfx or update_surface or update_bg or update_msnaps or update_mfsnaps) then
+        if (macro_edit_mode == false or macro_lrn_mode == true) and show_striplayout == false and (update_gfx or update_surface or update_bg or update_msnaps or update_mfsnaps) then
           --local w, h = obj.sections[10].w, lockh
           --local x, y = obj.sections[10].x + obj.sections[10].w/2 - w/2, obj.sections[10].y + (obj.sections[10].h/2) - h/2
           if show_bitmap == false then
-            gfx.blit(1000,1,0,surface_offset.x,
-                              surface_offset.y,
-                              obj.sections[10].w,
-                              obj.sections[10].h,
-                              obj.sections[10].x,
-                              obj.sections[10].y)
+            if striplayout_mt then
+
+              GUI_DrawStripLayout()
+
+            else
+              gfx.blit(1000,1,0,surface_offset.x,
+                                surface_offset.y,
+                                obj.sections[10].w,
+                                obj.sections[10].h,
+                                math.floor(obj.sections[10].x),
+                                math.floor(obj.sections[10].y))
+            end
+            
           else
             f_Get_SSV(gui.color.white)
             gfx.rect(obj.sections[10].x,
@@ -10453,6 +10662,11 @@ end
                               obj.sections[10].x,
                               obj.sections[10].y)          
           end
+          
+        elseif show_striplayout == true and (update_gfx or update_surface or update_bg) then
+        
+          GUI_DrawStripLayout()
+        
         end
         
         --[[if plist_w > 0 then                  
@@ -10609,13 +10823,17 @@ end
           local xywh = {x = dragfader.x-sz, y = dragfader.y-butt_h/2, w = sz*2, h = butt_h}
           if dragfader.ctl == nil then
             f_Get_SSV(faderselcol)
+            gfx.a = 1          
           elseif dragfader.ctl == -1 then
             f_Get_SSV('255 0 0')    
+            gfx.a = 0.3          
           else      
             f_Get_SSV('0 255 0')    
-          end          
+            gfx.a = 0.3          
+          end
           gfx.rect(xywh.x,xywh.y,xywh.w,xywh.h,1,1)
           f_Get_SSV(gui.color.black)          
+          gfx.a = 1          
           gfx.rect(xywh.x,xywh.y,xywh.w,xywh.h,0,1)
           GUI_textC(gui,xywh,'FADER ' ..string.format('%i',fader_select),gui.color.black,-2,1,0)
         end
@@ -11004,15 +11222,31 @@ end
           
           gfx.dest = 1
           gfx.a = 1
-          gfx.blit(1000,1,0,surface_offset.x,
-                            surface_offset.y,
-                            obj.sections[10].w,
-                            obj.sections[10].h,
-                            obj.sections[10].x,
-                            obj.sections[10].y)
+          if show_striplayout == false then
+          
+            if striplayout_mt then
+            
+              GUI_DrawStripLayout()
+            
+            else
+            
+              gfx.blit(1000,1,0,surface_offset.x,
+                                surface_offset.y,
+                                obj.sections[10].w,
+                                obj.sections[10].h,
+                                obj.sections[10].x,
+                                obj.sections[10].y)
+            end
+            
+          elseif show_striplayout == true and (update_gfx or update_surface or update_bg) then
+          
+            GUI_DrawStripLayout()
+          
+          end
+          
           --gfx.blit(1001,1,0,0,0,obj.sections[43].w,obj.sections[43].h,0,butt_h)          
 
-          if update_gfx or update_surface then
+          if update_gfx or update_surface and show_striplayout == false then
             if lockh > 0 or lockw > 0 or surface_size.exceed == true then
               UpdateLEdges()
             end
@@ -11023,10 +11257,22 @@ end
             local w, h = gfx.getimgdim(1022)
             gfx.a = 0.5
             
-            gfx.blit(1022,1,0,0,0,w,h,x,y)          
+            if show_striplayout == true then
+              if settings_stripautosnap == true then
+                local scale = striplayout_data.w / surface_size.w
+                local px = striplayout_data.x+obj.sections[10].x
+                local py = striplayout_data.y+obj.sections[10].y
+                gfx.blit(1022,scale,0,0,0,w,h,px+dragstrip.xx*scale,py+dragstrip.yy*scale)          
+              else
+                local scale = striplayout_data.w / surface_size.w
+                gfx.blit(1022,scale,0,0,0,w,h,dragstrip.xx,dragstrip.yy)                        
+              end
+            else
+              gfx.blit(1022,1,0,0,0,w,h,x,y)          
+            end
           end
 
-          if ctl_select ~= nil then
+          if ctl_select ~= nil and show_striplayout == false and not striplayout_mt then
             selrect = CalcSelRect()
             if dragctl ~= nil then 
               local x, y = selrect.x - surface_offset.x + obj.sections[10].x -b_sz, selrect.y - surface_offset.y + obj.sections[10].y-b_sz
@@ -11066,7 +11312,7 @@ end
                    obj.sections[511].h, 1, 1)
           GUI_textC(gui,obj.sections[511],'SAVE STRIP',gui.color.black,-2)  ]]      
 
-          if ctl_select ~= nil then
+          if ctl_select ~= nil and show_striplayout == false then
             --gfx.dest = 1
             local w,h = gfx.getimgdim(1021)
             gfx.a = 0.5
@@ -11964,7 +12210,11 @@ end
     GUI_DrawTick(gui, 'Touch feedback indicator', obj.sections[704], gui.color.white, settings_touchFB)
     GUI_DrawTick(gui, 'Send MIDI feedback on track change', obj.sections[705], gui.color.white, settings_trackchangemidi)
     GUI_DrawTick(gui, 'Show fader assignments on grid', obj.sections[706], gui.color.white, settings_showfaderassignments)
-    
+
+    GUI_DrawTick(gui, 'Autosnap strips when adding', obj.sections[707], gui.color.white, settings_stripautosnap)
+    GUI_DrawButton(gui, autosnap_rowheight, obj.sections[708], gui.color.white, gui.color.black, false, 'Autosnap row height')
+    GUI_DrawButton(gui, autosnap_itemgap, obj.sections[709], gui.color.white, gui.color.black, false, 'Autosnap strip item gap min')
+    GUI_DrawButton(gui, autosnap_itemgapmax, obj.sections[710], gui.color.white, gui.color.black, false, 'Autosnap strip item gap max')
   end
   
   function GetMOFaders()
@@ -14875,6 +15125,8 @@ end
                                                      wheel = settings_defknobsens.wheel,
                                                      wheelfine = settings_defknobsens.wheelfine}
       end
+
+      strips[strip][page].controls[cc].macrofader = nil
       
     end
     for j = cstart, #strips[strip][page].controls do
@@ -15462,9 +15714,12 @@ end
         end
           
       end
+
+      return maxx+offsetx,maxy+offsety
     
     end
     gfx.dest = 1
+  
   
   end
     
@@ -19123,6 +19378,7 @@ end
       sstype_select = 1
       CloseActChooser()
       show_ctlbrowser = false
+      SetASLocs()
   
       if strips and tracks[track_select] and strips[tracks[track_select].strip] then
         strips[tracks[track_select].strip].page = 1
@@ -19146,6 +19402,20 @@ end
     
     end
 
+  end
+  
+  function SetASLocs()
+  
+    as_slocs = nil
+    striplayout_selstripid = nil
+    if show_striplayout == true then
+          
+      as_slocs = AutoSnap_GetStripLocs(true) 
+      striplayout_data = StripLayout_GetData()
+      StripLayout_DrawImage(striplayout_data)
+
+    end
+  
   end
   
   function SetPage(lpage)
@@ -19189,6 +19459,8 @@ end
     sstype_select = 1
     CloseActChooser()
     show_ctlbrowser = false
+    SetASLocs()
+    striplayout_selstripid = nil
     
     if strips and tracks[track_select] and strips[tracks[track_select].strip] then
       strips[tracks[track_select].strip].page = page
@@ -20116,6 +20388,8 @@ end
         
     gfx3_select = nil
     ctl_select = nil
+    SetASLocs()
+    striplayout_selstripid = nil
     
     if T_butt_cnt then
       tlist_offset = CalcTListPos(track_select)
@@ -20314,6 +20588,26 @@ end
     else
       return -1
     end    
+  end
+  
+  function Faders_SetOVAL()
+  
+    if LBX_CTL_TRACK then
+      local track = GetTrack(tracks[LBX_CTL_TRACK].tracknum)
+      if tracks[LBX_CTL_TRACK].guid ~= reaper.GetTrackGUID(track) then
+        PopulateTracks()
+      end
+      if LBX_CTL_TRACK then
+        for fxnum = 0, LBX_CTL_TRACK_INF.count-1 do
+          for pf = 0, LBX_FB_CNT-1 do
+            p = fxnum * LBX_FB_CNT + pf
+            faders[p+1].val = round(reaper.TrackFX_GetParam(track, fxnum, pf),5)
+            faders[p+1].oval = faders[p+1].val
+          end
+        end
+      end
+    end
+    
   end
   
   function ReadAutomationFaders()
@@ -20725,6 +21019,57 @@ end
     
   end
 
+  function SetSurfaceSize2(obj)
+  
+    --if hide_topbar then
+    --  topbarheight = 0
+    --else
+    --  topbarheight = butt_h      
+    --end
+
+    if settings_showbars then
+      obj.sections[10] = {x = plist_w+2 + sb_size + 2,
+                          y = topbarheight + sb_size + 2,
+                          w = gfx1.main_w-(plist_w+2+(sb_size+2)*2),
+                          h = gfx1.main_h-(topbarheight+(sb_size+2)*2)}
+      if show_striplayout == false then
+        if lockx then
+          obj.sections[10].x = math.max(obj.sections[10].x, obj.sections[10].x+(obj.sections[10].w/2-lockw/2))
+          obj.sections[10].w = math.min(lockw,gfx1.main_w-(plist_w+2+(sb_size+4)*2))
+        end
+        if locky then
+          obj.sections[10].y = math.max(obj.sections[10].y, obj.sections[10].y+(obj.sections[10].h/2-lockh/2))
+          obj.sections[10].h = math.min(lockh,gfx1.main_h-(topbarheight+2+(sb_size+2)*2))
+        end
+      end
+    else
+      obj.sections[10] = {x = plist_w,
+                          y = topbarheight+1,
+                          w = gfx1.main_w-(plist_w+2)+2,
+                          h = gfx1.main_h-(topbarheight+1)}
+      if show_striplayout == false then
+        if lockx then
+          obj.sections[10].x = math.max(obj.sections[10].x, obj.sections[10].x+(obj.sections[10].w/2-lockw/2))
+          obj.sections[10].w = math.min(lockw,gfx1.main_w-(plist_w+2))
+        end
+        if locky then
+          obj.sections[10].y = math.max(obj.sections[10].y, obj.sections[10].y+(obj.sections[10].h/2-lockh/2))
+          obj.sections[10].h = math.min(lockh,gfx1.main_h-(topbarheight+2))
+        end
+      end
+    end
+    surface_size.exceed = false
+    if obj.sections[10].w > surface_size.w then
+      obj.sections[10].w = surface_size.w
+      surface_size.exceed = true
+    end
+    if obj.sections[10].h > surface_size.h then        
+      obj.sections[10].h = surface_size.h        
+      surface_size.exceed = true
+    end
+
+  end
+
   function keypress(char)
     --DBG(char)
     
@@ -20842,6 +21187,23 @@ end
       elseif char == 13 then
         show_bitmap = not show_bitmap
         update_gfx = true
+      elseif char == 96 then
+        if mode == 0 or (mode == 1 and submode == 2) then
+          show_striplayout = not show_striplayout
+          SetSurfaceSize2(obj)
+          if show_striplayout == true then
+          
+            --if as_slocs == nil then 
+              as_slocs = AutoSnap_GetStripLocs(true) 
+            --end
+            striplayout_data = StripLayout_GetData()
+            StripLayout_DrawImage(striplayout_data)
+          end
+          --if show_striplayout == true then
+            striplayout_mt = reaper.time_precise()+striplayout_mtime
+          --end
+          update_surface = true
+        end
       end
     --[[else -- shift
       if char == 19 then
@@ -21289,7 +21651,27 @@ end
     end  
   end
   
-  function GetControlAtXY(strip,page,x,y)
+  function GetStripAtXY(strip,page,x,y)
+  
+    if as_slocs == nil then 
+      as_slocs = AutoSnap_GetStripLocs(true) 
+    end
+    if as_slocs then
+      for i = 1, #as_slocs.loc do
+        local xywh = {x = as_slocs.reordered[i].l,
+                      y = as_slocs.reordered[i].t,
+                      w = as_slocs.reordered[i].w,
+                      h = as_slocs.reordered[i].h} 
+        if MOUSE_over(xywh,x,y) then
+       
+          return as_slocs.reordered[i].stripid, i
+          
+        end
+      end
+    end
+  end
+  
+  function GetControlAtXY(strip,page,x,y,absolute)
     
     if strips and strips[strip] then              
       local ctls = strips[strip][page].controls
@@ -21297,8 +21679,13 @@ end
       if settings_usectlbitmap then
       
         gfx.dest = ctl_bitmap
-        gfx.x = x + surface_offset.x -obj.sections[10].x
-        gfx.y = y + surface_offset.y -obj.sections[10].y
+        if absolute then
+          gfx.x = x
+          gfx.y = y        
+        else
+          gfx.x = x + surface_offset.x -obj.sections[10].x
+          gfx.y = y + surface_offset.y -obj.sections[10].y
+        end
         local r,g,b = gfx.getpixel()
         --DBG(r*255 ..'  '..g*255 ..'  '..b*255)
         gfx.dest = 1
@@ -21314,10 +21701,17 @@ end
         for ii = 1, #strips[strip][page].controls do
   
           local ctl = strips[strip][page].controls[ii]
-          ctlxywh = {x = ctl.xsc - surface_offset.x +obj.sections[10].x, 
-                     y = ctl.ysc - surface_offset.y +obj.sections[10].y, 
-                     w = ctl.wsc, 
-                     h = ctl.hsc}
+          if absolute then
+            ctlxywh = {x = ctl.xsc, 
+                       y = ctl.ysc, 
+                       w = ctl.wsc, 
+                       h = ctl.hsc}          
+          else
+            ctlxywh = {x = ctl.xsc - surface_offset.x +obj.sections[10].x, 
+                       y = ctl.ysc - surface_offset.y +obj.sections[10].y, 
+                       w = ctl.wsc, 
+                       h = ctl.hsc}
+          end
           if MOUSE_over(ctlxywh, x, y) then
            
             if Switcher_CtlsHidden(ctl.switcher, ctl.grpid) == false and ctl.clickthrough ~= true then
@@ -21555,6 +21949,10 @@ end
         
         if surface_size.w < obj.sections[10].w then
           surface_offset.x = -math.floor((obj.sections[10].w - surface_size.w)/2)
+        end
+        if show_striplayout == true then
+          striplayout_data = StripLayout_GetData()
+          StripLayout_DrawImage(striplayout_data)
         end
       end
     end
@@ -22486,9 +22884,11 @@ end
   
     local ctl = strips[tracks[track_select].strip][page].controls[c]
     if ctl then
-            
+      
       if ctl.ctlcat == ctlcats.snapshot then
         tt = 7
+      elseif ctl.ctlcat == ctlcats.switcher then
+        tt = 6
       else
         tt = 4
       end
@@ -22498,14 +22898,168 @@ end
                  ctl = c,
                  c_id = ctl.c_id,
                  voffset = 0}
-                   
+                                          
       AssignFader(fd, f)
     
     end
   
   end
   
+  function A_Run_StripLayout(noscroll, rt)
+  
+    local xywh = {x = striplayout_data.x+obj.sections[10].x,
+                  y = striplayout_data.y+obj.sections[10].y,
+                  w = striplayout_data.w,
+                  h = striplayout_data.h}
+    if mouse.context == nil and MOUSE_click(xywh) then
+
+      if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.3 then
+      
+        local mx = math.floor((((mouse.mx-obj.sections[10].x) - striplayout_data.x)/striplayout_data.w)*surface_size.w)    
+        local my = math.floor((((mouse.my-obj.sections[10].y) - striplayout_data.y)/striplayout_data.h)*surface_size.h)    
+      
+        --striplayout_selstrip, striplayout_selstripid = GetStripAtXY(tracks[track_select].strip,page,mx,my)
+        show_striplayout = false
+        SetSurfaceSize2(obj)
+        if striplayout_selstripid then
+        
+          surface_offset.x = math.floor(F_limit(as_slocs.loc[striplayout_selstripid].l - (obj.sections[10].w/2) + (as_slocs.loc[striplayout_selstripid].w/2),0,surface_size.w-obj.sections[10].w))
+          surface_offset.y = math.floor(F_limit(as_slocs.loc[striplayout_selstripid].t - (obj.sections[10].h/2) + (as_slocs.loc[striplayout_selstripid].h/2),0,surface_size.h-obj.sections[10].h))
+        
+        else
+        
+          surface_offset.x = math.floor(F_limit(mx- (obj.sections[10].w/2),0,surface_size.w-obj.sections[10].w))
+          surface_offset.y = math.floor(F_limit(my- (obj.sections[10].h/2),0,surface_size.h-obj.sections[10].h))        
+        
+        end
+        striplayout_mt = reaper.time_precise()+striplayout_mtime
+        show_striplayout = false
+      
+      else
+        local mx = math.floor((((mouse.mx-obj.sections[10].x) - (striplayout_data.x))/striplayout_data.w)*surface_size.w)    
+        local my = math.floor((((mouse.my-obj.sections[10].y) - (striplayout_data.y))/striplayout_data.h)*surface_size.h)    
+
+        striplayout_selstrip, striplayout_selstripid = GetStripAtXY(tracks[track_select].strip,page,mx,my)
+        
+        if striplayout_selstripid then
+          update_surface = true
+          mouse.context = contexts.sa_dragstrip
+          --sa_dragstrip = true
+        end
+      end
+            
+    elseif mouse.context == nil and MOUSE_click_RB(xywh) then
+    
+      local mx = math.floor((((mouse.mx-obj.sections[10].x) - striplayout_data.x)/striplayout_data.w)*surface_size.w)    
+      local my = math.floor((((mouse.my-obj.sections[10].y) - striplayout_data.y)/striplayout_data.h)*surface_size.h)    
+      
+      striplayout_selstrip, striplayout_selstripid = GetStripAtXY(tracks[track_select].strip,page,mx,my)
+      
+      if striplayout_selstripid then
+        local slx = as_slocs.reordered[striplayout_selstripid].l
+        dragstrip2 = {x = mx, y = my, slx = slx}
+        
+        mouse.context = contexts.sa_dragstrip2
+        --sa_dragstrip = true
+      end
+      
+    end
+  
+    if mouse.context and mouse.context == contexts.sa_dragstrip then
+  
+      if mouse.mx ~= mouse.last_x or mouse.my ~= mouse.last_y then
+        sa_dragstrip = true
+        local mx = math.floor((((mouse.mx-obj.sections[10].x) - striplayout_data.x)/striplayout_data.w)*surface_size.w)    
+        local my = math.floor((((mouse.my-obj.sections[10].y) - striplayout_data.y)/striplayout_data.h)*surface_size.h)    
+        
+        striplayout_tgtstrip, striplayout_tgtstripid = GetStripAtXY(tracks[track_select].strip,page,mx,my)
+    
+        if striplayout_tgtstrip ~= striplayout_selstrip and striplayout_tgtstrip ~= lasttgtstrip then
+          if striplayout_tgtstripid then
+          
+            striplayout_tgtpos = 0
+            if mx > as_slocs.loc[striplayout_tgtstripid].l+as_slocs.loc[striplayout_tgtstripid].w/2 then
+              --striplayout_tgtpos = 1
+            end
+          end
+          
+          if striplayout_selstripid and striplayout_tgtstripid then
+            if striplayout_tgtstripid ~= osltgtsid or striplayout_tgtpos ~= osltgtp then
+              update_surface = true
+              osltgtsid = striplayout_tgtstripid
+              osltgtp = striplayout_tgtpos
+              
+              local pos = striplayout_tgtstripid
+              if pos then
+                if striplayout_tgtpos == 1 then
+                  pos = math.min(pos + 1,#as_slocs.loc)
+                end
+                --DBG(striplayout_selstripid..'  '..pos)
+                AutoSnap_ReorderStripLocs(striplayout_selstripid,pos)
+              
+              end
+            end
+          end
+
+        end
+        lasttgtstrip = striplayout_tgtstrip
+        
+      end
+      
+    elseif mouse.context and mouse.context == contexts.sa_dragstrip2 then
+    
+      local mx = math.floor((((mouse.mx-obj.sections[10].x) - striplayout_data.x)/striplayout_data.w)*surface_size.w)    
+      local my = math.floor((((mouse.my-obj.sections[10].y) - striplayout_data.y)/striplayout_data.h)*surface_size.h)    
+
+      dx = mx-dragstrip2.x
+      
+      if dx ~= 0 then
+        
+        sa_dragstrip = true
+        local nx = dragstrip2.slx + dx 
+        if as_slocs.reordered[striplayout_selstripid-1] and as_slocs.reordered[striplayout_selstripid-1].t == as_slocs.reordered[striplayout_selstripid].t then
+          nx = math.max(nx,as_slocs.reordered[striplayout_selstripid-1].l+as_slocs.reordered[striplayout_selstripid-1].w+autosnap_itemgap)
+        end
+        if as_slocs.reordered[striplayout_selstripid+1] and as_slocs.reordered[striplayout_selstripid+1].t == as_slocs.reordered[striplayout_selstripid].t then
+          nx = math.min(nx,as_slocs.reordered[striplayout_selstripid+1].l-autosnap_itemgap-as_slocs.reordered[striplayout_selstripid].w)        
+        end
+        as_slocs.reordered[striplayout_selstripid].l = F_limit(nx,0,surface_size.w-as_slocs.reordered[striplayout_selstripid].w)
+        update_surface = true
+      
+      end
+    
+    elseif sa_dragstrip ~= nil then
+  
+      AutoSnap_MoveStrips()
+      as_slocs = AutoSnap_GetStripLocs(true) 
+      SetCtlBitmapRedraw()
+      
+      sa_dragstrip = nil
+      striplayout_tgtstrip = nil
+      striplayout_tgtstripid = nil
+      lasttgtstrip = nil
+      osltgtsid = nil
+      osltgtp = nil
+      update_gfx = true
+      
+      
+    end
+    
+    return true
+  end
+  
   function A_Run_Mode0(noscroll, rt)
+  
+    if striplayout_mt then
+      striplayout_mp = 1-(((striplayout_mt-reaper.time_precise()))/striplayout_mtime)
+      if striplayout_mp >= 1 then
+        striplayout_mp = 1
+        striplayout_mt = nil
+      else
+        --striplayout_mp = macScale(3,striplayout_mp)
+      end
+      update_surface = true
+    end
   
     if settings_touchFB == true and mouse.LB then
       touch_trigger = true
@@ -22732,6 +23286,10 @@ end
 
       noscroll = A_Run_MacroEdit(noscroll, rt)
 
+    elseif show_striplayout == true then
+    
+      noscroll = A_Run_StripLayout(noscroll, rt)
+    
     elseif mouse.context == nil and (MOUSE_click(obj.sections[10]) or MOUSE_click_RB(obj.sections[10]) or gfx.mouse_wheel ~= 0) then
       
       local togfsnap = false
@@ -23510,8 +24068,10 @@ end
         elseif faders[i + fdlist_offset] then
           local fd = i + fdlist_offset
           fader_select = fd
-          mouse.context = contexts.dragfader
-          dragfader = {x = mouse.mx, y = mouse.my}
+          if show_striplayout == false then
+            mouse.context = contexts.dragfader
+            dragfader = {x = mouse.mx, y = mouse.my}
+          end
           update_gfx = true
         end
 
@@ -23588,7 +24148,8 @@ end
                       ctl.ctlcat == ctlcats.trackparam or 
                       ctl.ctlcat == ctlcats.tracksend or
                       ctl.ctlcat == ctlcats.macro or  
-                      ctl.ctlcat == ctlcats.snapshot) then 
+                      ctl.ctlcat == ctlcats.snapshot or
+                      ctl.ctlcat == ctlcats.switcher) then 
             dragfader = {x = mouse.mx, y = mouse.my, ctl = c}
           else
             dragfader = {x = mouse.mx, y = mouse.my, ctl = -1}          
@@ -27125,8 +27686,274 @@ end
     
   end
 
+  function AutoSnap_SortStripLocs(s)
+      local t = s
+      table.sort(t, function(a, b)
+          if a.t ~= b.t then
+              return a.t < b.t
+          end
+  
+          return a.l < b.l
+      end)
+      return t
+  end
+  
+  function AutoSnap_CopyElement(e)
+  
+    local r = {stripid = e.stripid,
+               l = e.l, t = e.t, r = e.r, b = e.b, w = e.w, h = e.h}
+    return r
+    
+  end
+  
+  function AutoSnap_ReorderStripLocs(i,j)
+  
+    --[[DBG('before ')
+    for i = 1,#tab do
+      DBG(tab[i].stripid..'l='..tab[i].l..'  t='..tab[i].t)
+    end]]
+
+    local ro = table.copy(as_slocs.sorted)
+    local r = ro[i]
+    local cnt = #ro
+    ro = Table_RemoveEntry(ro,cnt,i)
+    if i < j then
+      --j=j-1
+    end
+    table.insert(ro,j,r)
+    
+    local rotab = {}
+    local runx, runy = 0, 0
+    for i = 1, #ro do
+    
+      if i == 1 then
+        rotab[i] = {ro = ro[i],
+                    stripid = as_slocs.loc[ro[i]].stripid,
+                    l = 0,
+                    t = 0,
+                    r = as_slocs.loc[ro[i]].w,
+                    b = as_slocs.loc[ro[i]].h,
+                    w = as_slocs.loc[ro[i]].w,
+                    h = as_slocs.loc[ro[i]].h}
+      else
+        rotab[i] = {ro = ro[i],
+                    stripid = as_slocs.loc[ro[i]].stripid,
+                    l = runx+autosnap_itemgap,
+                    t = runy,
+                    r = runx+autosnap_itemgap+as_slocs.loc[ro[i]].w,
+                    b = runy+as_slocs.loc[ro[i]].h,
+                    w = as_slocs.loc[ro[i]].w,
+                    h = as_slocs.loc[ro[i]].h}
+        if rotab[i].r > surface_size.w then
+          rotab[i].l = 0
+          rotab[i].r = rotab[i].w
+          rotab[i].t = rotab[i].t + autosnap_rowheight
+          rotab[i].b = rotab[i].t + rotab[i].h
+        end
+        
+      end
+      runx = rotab[i].l+rotab[i].w
+      runy = rotab[i].t
+    
+    end
+
+    local ot
+    local itgap,sidx,eidx
+    for i = 1, #ro do
+      if i == 1 then
+        ot = math.floor(rotab[i].t / autosnap_rowheight)
+        stripw = rotab[i].w
+        sidx = 1
+      elseif math.floor(rotab[i].t / autosnap_rowheight) ~= ot or i == #ro then
+        if i == #ro and math.floor(rotab[i].t / autosnap_rowheight) ~= ot then
+
+          eidx = i-1
+          local eg = math.min((surface_size.w - stripw) / ((eidx-(sidx-1))+2),autosnap_itemgapmax)
+          for j = sidx, eidx do
+            if j == sidx then
+              rotab[j].l = eg
+            else
+              rotab[j].l = rotab[j-1].l+rotab[j-1].w+eg
+            end
+          end
+
+          stripw2 = rotab[i].w
+          local eg = math.min((surface_size.w - stripw2) / 2,autosnap_itemgapmax)
+          rotab[i].l = eg
+
+        else
+          if i == #ro then
+            stripw = stripw + rotab[i].w      
+            eidx = i
+          else
+            eidx = i-1
+          end
+          local eg = math.min((surface_size.w - stripw) / ((eidx-(sidx-1))+2),autosnap_itemgapmax)
+          for j = sidx, eidx do
+            if j == sidx then
+              rotab[j].l = eg
+            else
+              rotab[j].l = rotab[j-1].l+rotab[j-1].w+eg
+            end
+          end
+          ot = math.floor(rotab[i].t / autosnap_rowheight)
+          stripw = rotab[i].w
+          sidx = i
+        end        
+      else
+        stripw = stripw + rotab[i].w
+      end
+    end
+
+    as_slocs.reordered = rotab    
+  end
+
+  function AutoSnap_MoveStrips()
+  
+    local strip = tracks[track_select].strip
+    for i = 1, #as_slocs.loc do
+    
+      local stripid = as_slocs.loc[i].stripid
+      local ro
+      for r = 1, #as_slocs.reordered do
+        if as_slocs.reordered[r].stripid == stripid then
+          ro = r
+          break
+        end
+      end
+      
+      
+      for c = 1, #strips[strip][page].controls do
+        local ctl = strips[strip][page].controls[c]
+        if ctl.id == stripid then
+    
+          ctl.x = (ctl.x - as_slocs.loc[i].l) + as_slocs.reordered[ro].l
+          ctl.y = (ctl.y - as_slocs.loc[i].t) + as_slocs.reordered[ro].t
+          ctl.xsc = (ctl.xsc - as_slocs.loc[i].l) + as_slocs.reordered[ro].l            
+          ctl.ysc = (ctl.ysc - as_slocs.loc[i].t) + as_slocs.reordered[ro].t
+        end
+      end
+      for g = 1, #strips[strip][page].graphics do
+        local ctl = strips[strip][page].graphics[g]
+        if ctl.id == stripid then
+          ctl.x = (ctl.x - as_slocs.loc[i].l) + as_slocs.reordered[ro].l
+          ctl.y = (ctl.y - as_slocs.loc[i].t) + as_slocs.reordered[ro].t    
+        end
+      end
+    
+    end
+  
+  end
+
+  function AutoSnap_GetStripLocs(force)
+  
+    local strip = tracks[track_select].strip
+    if strips[strip] then
+      local ctls = strips[strip][page].controls
+      local gfxs = strips[strip][page].graphics
+    
+      if force == true then as_slocs = nil end
+      
+      if as_slocs == nil then
+        as_slocs = {stripidx = {},
+                    loc = {}}
+      end
+      
+      for i = 1, #ctls do
+        local ctl = ctls[i]
+        if ctl.id then
+          if as_slocs.stripidx[ctl.id] == nil then
+      
+            local l,t,r,b = ctl.xsc,ctl.ysc,ctl.xsc+ctl.wsc,ctl.ysc+ctl.hsc
+            for c = 1, #ctls do
+              local sctl = ctls[c]
+              if sctl.id == ctl.id then
+            
+                l = math.min(l,sctl.xsc)
+                r = math.max(r,sctl.xsc+sctl.wsc)
+                t = math.min(t,sctl.ysc)
+                b = math.max(b,sctl.ysc+sctl.hsc)
+            
+              end
+            end
+  
+            for c = 1, #gfxs do
+              local sctl = gfxs[c]
+              if sctl.id == ctl.id then
+            
+                l = math.min(l,sctl.x)
+                r = math.max(r,sctl.x+sctl.stretchw)
+                t = math.min(t,sctl.y)
+                b = math.max(b,sctl.y+sctl.stretchh)
+            
+              end
+            end
+            local cnt = #as_slocs.loc+1
+            as_slocs.stripidx[ctl.id] = true
+            as_slocs.loc[cnt] = {stripid = ctl.id,
+                                  l=l,t=t,r=r,b=b,w=r-l,h=b-t}
+          end
+        end
+      end
+      
+      local sloc = AutoSnap_SortStripLocs(as_slocs.loc)
+
+      as_slocs.loc = sloc
+
+      as_slocs.sorted = {}
+      as_slocs.reordered = {}
+      for i = 1,#sloc do
+      
+        as_slocs.sorted[i] = i
+        as_slocs.reordered[i] = {stripid = as_slocs.loc[i].stripid,
+                                 l = as_slocs.loc[i].l,
+                                 t = as_slocs.loc[i].t,
+                                 r = as_slocs.loc[i].r,
+                                 b = as_slocs.loc[i].b,
+                                 w = as_slocs.loc[i].w,
+                                 h = as_slocs.loc[i].h}
+      
+      end
+            
+    end
+    
+    return as_slocs   
+  end
+
+  function AutoSnap_GetEndInsertPos(strip_w,strip_h)
+  
+    local t, l = 0,0
+    if as_slocs then
+      for i = 1, #as_slocs.loc do
+      
+        t = math.max(as_slocs.loc[i].t)
+        l = math.max(as_slocs.loc[i].r)+autosnap_itemgap
+      
+      end
+      if l+strip_w > surface_size.w then
+        t = t + autosnap_rowheight
+        l = 0
+      end
+ --     DBG(#as_slocs.loc..'  '..l..'  '..t)
+    end
+    
+    return l, t
+  
+  end
+
   function A_Run_Submode2(noscroll, rt, char)
   
+    if striplayout_mt then
+      striplayout_mp = 1-(((striplayout_mt-reaper.time_precise()))/striplayout_mtime)
+      if striplayout_mp >= 1 then
+        striplayout_mp = 1
+        striplayout_mt = nil
+      else
+        --striplayout_mp = macScale(3,striplayout_mp)
+      end
+      update_surface = true
+    end
+    
     if gfx.mouse_wheel ~= 0 then
       local v = gfx.mouse_wheel/120
       if MOUSE_over(obj.sections[512]) then
@@ -27150,7 +27977,11 @@ end
       update_gfx = true
     end
     
-    if mouse.mx > obj.sections[10].x then
+    if show_striplayout == true then
+    
+      noscroll = A_Run_StripLayout(noscroll, rt)
+    
+    elseif mouse.mx > obj.sections[10].x then
       if mouse.context == nil and MOUSE_click(obj.sections[10]) then
         if strips and tracks[track_select] and strips[tracks[track_select].strip] then
           local ctls = strips[tracks[track_select].strip][page].controls
@@ -27398,8 +28229,11 @@ end
           --gen preview
           loadstrip = LoadStrip(strip_select)
           if loadstrip then
-            GenStripPreview(gui, loadstrip.strip, loadstrip.switchers, loadstrip.switchconvtab)
-                      
+            loadstrip.strip_w, loadstrip.strip_h = GenStripPreview(gui, loadstrip.strip, loadstrip.switchers, loadstrip.switchconvtab)
+            
+            if settings_stripautosnap == true then          
+              as_slocs = AutoSnap_GetStripLocs(true)
+            end
             mouse.context = contexts.dragstrip
           end
           update_gfx = true
@@ -27461,15 +28295,122 @@ end
     if mouse.context and mouse.context == contexts.dragstrip then
       dragstripx = true --to force dropped action even if not 
       if mouse.mx ~= mouse.last_x or mouse.my ~= mouse.last_y then
-        dragstrip = {x = mouse.mx, y = mouse.my}
-        update_surface = true
+        
+        if settings_stripautosnap == false then
+          newgrp = nil
+          local c = GetControlAtXY(tracks[track_select].strip, page, mouse.mx, mouse.my)
+          if c then
+            local i = c
+            local ctl = strips[tracks[track_select].strip][page].controls[i]
+            if ctl.ctlcat == ctlcats.switcher and show_striplayout == false then 
+              local x = mouse.mx -obj.sections[10].x +surface_offset.x
+              local y = mouse.my -obj.sections[10].y +surface_offset.y                                
+              vert = true
+              if x > ctl.x+ctl.w/2 then
+                vert = false
+              end
+              newgrp = {grpid = switchers[ctl.switcherid].current,
+                        switchid = i,
+                        vert = vert}
+              
+              local rl, rt, rr, rb = GetLTRBControlInGrp(newgrp.grpid, newgrp.switchid)
+              local zx, zy = rl, rb                  
+              if newgrp.vert == false then
+                zx, zy = rr, rt
+              end
+              dragstrip = {x = zx+obj.sections[10].x-surface_offset.x, y = zy+obj.sections[10].y-surface_offset.y,xx = zx,yy = zy}
+            else
+              dragstrip = {x = mouse.mx, y = mouse.my, xx=mouse.mx,yy=mouse.my}        
+            end
+          else
+            dragstrip = {x = mouse.mx, y = mouse.my, xx=mouse.mx,yy=mouse.my}
+          end
+          update_surface = true
+
+        else
+          
+          local x,y = AutoSnap_GetEndInsertPos(loadstrip.strip_w,loadstrip.strip_h)
+          dragstrip = {x = x+obj.sections[10].x-surface_offset.x, y = y+obj.sections[10].y-surface_offset.y, xx = x, yy = y}
+          update_surface = true
+          
+        end
       end
+      
     elseif dragstripx ~= nil then
       --Dropped
       --image_count = image_count_add
-      if dragstrip then
+      if dragstrip and newgrp == nil then
+        local ignore = nil
+        if settings_stripautosnap == true then
+          ignore = true
+        end
+        if show_striplayout == true then
+          if settings_stripautosnap == true then
+            if mouse.mx >= obj.sections[10].x and mouse.mx < obj.sections[10].w and mouse.my >= obj.sections[10].y and mouse.my < obj.sections[10].h then
+              Strip_AddStrip(loadstrip, dragstrip.x-obj.sections[10].x, dragstrip.y-obj.sections[10].y,ignore)
+              SetASLocs()
+            end
+          else
+            if mouse.mx >= obj.sections[10].x+striplayout_data.x and mouse.mx <= obj.sections[10].x+striplayout_data.x+striplayout_data.w and
+               mouse.my >= obj.sections[10].y+striplayout_data.y and mouse.my <= obj.sections[10].y+striplayout_data.y+striplayout_data.h then
+               
+              local x = mouse.mx- (obj.sections[10].x+striplayout_data.x)
+              local y = mouse.my- (obj.sections[10].y+striplayout_data.y)
+              x = (x/striplayout_data.w)*surface_size.w
+              y = (y/striplayout_data.h)*surface_size.h
+              Strip_AddStrip(loadstrip, x-surface_offset.x, y-surface_offset.y, false)
+              SetASLocs()
+               
+            end 
+          end
+        else
+          if dragstrip.x >= obj.sections[10].x and dragstrip.x < obj.sections[10].w and dragstrip.y >= obj.sections[10].y and dragstrip.y < obj.sections[10].h then
+            if mouse.mx >= obj.sections[10].x and mouse.mx < obj.sections[10].w and mouse.my >= obj.sections[10].y and mouse.my < obj.sections[10].h then
+              Strip_AddStrip(loadstrip, dragstrip.x-obj.sections[10].x, dragstrip.y-obj.sections[10].y,ignore)
+            end
+          end
+        end        
+      elseif dragstrip and newgrp then
         if dragstrip.x > obj.sections[10].x and dragstrip.x < obj.sections[10].w and dragstrip.y > obj.sections[10].y and dragstrip.y < obj.sections[10].h then
-          Strip_AddStrip(loadstrip, dragstrip.x-obj.sections[10].x, dragstrip.y-obj.sections[10].y)
+          local stripid, _, grpid = Strip_AddStrip(loadstrip, dragstrip.x-obj.sections[10].x, dragstrip.y-obj.sections[10].y, true)
+          
+          local ctls = strips[tracks[track_select].strip][page].controls
+          local gfxx = strips[tracks[track_select].strip][page].graphics
+          local switchid = ctls[newgrp.switchid].switcherid
+          local ctl_sw = ctls[newgrp.switchid]
+          
+          local x,y = ctl_sw.x - surface_offset.x, ctl_sw.y - surface_offset.y
+          y = y + ctl_sw.ctl_info.cellh
+          
+          local sw_cur = #switchers[switchid].grpids+1
+          switchers[switchid].grpids[sw_cur] = {}
+          switchers[switchid].grpids[sw_cur].id = grpid
+          switchers[switchid].grpids[sw_cur].name = string.match(strip_files[strip_select].fn,'(.-).strip')
+          
+          if ctl_sw then
+            ctl_sw.param_info.paramname = string.format('%i',sw_cur)..': '..switchers[switchid].grpids[sw_cur].name
+          end
+          switchers[switchid].current = grpid
+          
+          for c = 1, #ctls do
+            if ctls[c].grpid == grpid then
+              ctls[c].switcher = switchid
+    
+              if ctls[c].ctlcat == ctlcats.switcher then
+                --add parent info
+                local sid = ctls[c].switcherid
+                switchers[sid].parent = {switcherid = switchid,
+                                         grpid = grpid}
+              end        
+            end      
+          end
+          for c = 1, #gfxx do
+            if gfxx[c].grpid == grpid then
+              gfxx[c].switcher = switchid
+            end        
+          end
+          
+          update_bg = true
         end
       end
       loadstrip = nil
@@ -27479,6 +28420,7 @@ end
       update_gfx = true
       
       SetCtlBitmapRedraw()
+      reaper.MarkProjectDirty(0)
       
     end
     
@@ -30391,6 +31333,15 @@ end
           end            
         end
         update_gfx = true
+      elseif EB_Open == 100 then
+        autosnap_rowheight = F_limit(nz(tonumber(editbox.text),autosnap_rowheight),50,2048)
+        update_gfx = true
+      elseif EB_Open == 101 then
+        autosnap_itemgap = F_limit(nz(tonumber(editbox.text),autosnap_itemgap),0,1000)
+        update_gfx = true
+      elseif EB_Open == 102 then
+        autosnap_itemgapmax = F_limit(nz(tonumber(editbox.text),autosnap_itemgapmax),0,1000)
+        update_gfx = true
       end
       editbox = nil
       EB_Open = 0
@@ -30598,6 +31549,24 @@ end
       update_gfx = true
     elseif mouse.context == nil and MOUSE_click(obj.sections[706]) then
       settings_showfaderassignments = not settings_showfaderassignments
+      update_gfx = true
+    elseif mouse.context == nil and MOUSE_click(obj.sections[707]) then
+      settings_stripautosnap = not settings_stripautosnap
+      update_gfx = true
+
+    elseif mouse.context == nil and MOUSE_click(obj.sections[708]) then
+      
+      OpenEB(100, 'Please choose new row height:', autosnap_rowheight)
+      update_gfx = true
+
+    elseif mouse.context == nil and MOUSE_click(obj.sections[709]) then
+      
+      OpenEB(101, 'Please choose min gap size between strip items:', autosnap_itemgap)
+      update_gfx = true
+
+    elseif mouse.context == nil and MOUSE_click(obj.sections[710]) then
+      
+      OpenEB(102, 'Please choose max gap size between strip items:', autosnap_itemgapmax)
       update_gfx = true
       
     elseif mouse.context == nil and MOUSE_click(obj.sections[700]) then
@@ -34657,9 +35626,10 @@ end
       end
     end  
     CheckFaders()
+    Faders_SetOVAL()
     
   end
-
+  
   function CheckFaders()
   
     if faders == nil then return end
@@ -35606,6 +36576,10 @@ end
     settings_trackchangemidi = tobool(nz(GES('settings_trackchangemidi',true),settings_trackchangemidi))
     settings_savefaderboxassinsnapshots = tobool(nz(GES('settings_savefaderboxassinsnapshots',true),settings_savefaderboxassinsnapshots))
     settings_showfaderassignments = tobool(nz(GES('settings_showfaderassignments',false),settings_showfaderassignments))
+    settings_stripautosnap = tobool(nz(GES('settings_stripautosnap',false),settings_stripautosnap))
+    autosnap_rowheight = tonumber(nz(GES('autosnap_rowheight',true),autosnap_rowheight))    
+    autosnap_itemgap = tonumber(nz(GES('autosnap_itemgap',true),autosnap_itemgap))        
+    autosnap_itemgapmax = tonumber(nz(GES('autosnap_itemgapmax',true),autosnap_itemgapmax))        
     
     if settings_hideeditbaronnewproject then
       plist_w = 0
@@ -35722,7 +36696,11 @@ end
     reaper.SetExtState(SCRIPT,'settings_touchfb',tostring(settings_touchFB), true)    
     reaper.SetExtState(SCRIPT,'settings_trackchangemidi',tostring(settings_trackchangemidi), true)    
     reaper.SetExtState(SCRIPT,'settings_savefaderboxassinsnapshots',tostring(settings_savefaderboxassinsnapshots), true)    
-    reaper.SetExtState(SCRIPT,'settings_showfaderassignments',tostring(settings_showfaderassignments), false)    
+    reaper.SetExtState(SCRIPT,'settings_showfaderassignments',tostring(settings_showfaderassignments), true)    
+    reaper.SetExtState(SCRIPT,'settings_stripautosnap',tostring(settings_stripautosnap), true)    
+    reaper.SetExtState(SCRIPT,'autosnap_rowheight',tostring(autosnap_rowheight), true)    
+    reaper.SetExtState(SCRIPT,'autosnap_itemgap',tostring(autosnap_itemgap), true)    
+    reaper.SetExtState(SCRIPT,'autosnap_itemgapmax',tostring(autosnap_itemgapmax), true)    
     
     if strip_default then
       reaper.SetExtState(SCRIPT,'strip_default',tostring(strip_default.strip_select), true)
@@ -39949,6 +40927,13 @@ end
   settings_trackchangemidi = false
   settings_savefaderboxassinsnapshots = false
   settings_showfaderassignments = false
+  settings_stripautosnap = true
+  autosnap_rowheight = 410
+  autosnap_itemgap = 20
+  autosnap_itemgapmax = 20
+ 
+  show_striplayout = false
+  striplayout_mtime = 0.1
   
   textoptlink_select = true
   
@@ -39978,7 +40963,14 @@ end
   fontname_def = 'Calibri'
   fontsize_def  = 18
   
-  surface_size = {w = 2048, h = 2048, limit = true}
+  local surfn = icon_path..'canvas.png'
+  if reaper.file_exists(surfn) then
+    gfx.loadimg(1000,surfn)
+    local w,h = gfx.getimgdim(1000)
+    surface_size = {w = w, h = h, limit = true}    
+  else
+    surface_size = {w = 2048, h = 2048, limit = true}
+  end
   
   gfx.loadimg(0,controls_path.."__default.png") -- default control
   --gfx.loadimg(1010,controls_path.."__default.png")
