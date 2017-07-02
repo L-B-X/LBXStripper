@@ -21187,7 +21187,7 @@ end
       elseif char == 13 then
         show_bitmap = not show_bitmap
         update_gfx = true
-      elseif char == 96 then
+      elseif char == 9 then
         if mode == 0 or (mode == 1 and submode == 2) then
           show_striplayout = not show_striplayout
           SetSurfaceSize2(obj)
