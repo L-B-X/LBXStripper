@@ -7150,7 +7150,6 @@ end
             SetColor2(i)
             if hidden == false then
               if (mode == 1 or (ctl.hidden ~= true and ctl.clickthrough ~= true)) then
-                --gfx.rect(px,py,w*scale,h*scale,1)
                 gfx.rect(px,py,w,h,1)
               end
             end
@@ -7159,8 +7158,8 @@ end
         end
       end    
     
-      if stripgallery_view ~= 0 then
-      
+      if stripgallery_view ~= 0 and (mode == 0 or (mode == 1 and submode == 2)) then
+
         GUI_DrawCtlBitmap2()
       
       end
@@ -7171,7 +7170,6 @@ end
   end
 
   function GUI_DrawCtlBitmap2()
-  
     gfx.setimgdim(ctl_bitmap2,-1,-1)
     gfx.setimgdim(ctl_bitmap2,obj.sections[10].w, obj.sections[10].h)
     gfx.dest = ctl_bitmap2
@@ -22360,7 +22358,7 @@ end
       local ret
       if settings_usectlbitmap then
       
-        if stripgallery_view == 0 or show_striplayout == true then
+        if stripgallery_view == 0 or show_striplayout == true or (mode == 1 and submode == 0) then
           gfx.dest = ctl_bitmap
           if absolute then
             gfx.x = x
@@ -22708,8 +22706,6 @@ end
       
       Process_EB()
       
-      --mouse.OLB = mouse.LB
-      --mouse.ORB = mouse.RB
       noscroll = true
       mouse.LB = nil
       mouse.RB = nil
@@ -22722,39 +22718,23 @@ end
     
     if show_trackfxorder then
 
-      --if settings_UCV == 0 then
-      --  UpdateControlValues(rt)
-      --else      
-        UpdateControlValues2(rt)
-      --end
-    
+      UpdateControlValues2(rt)    
       A_Run_TFXOrder(char)
     
     elseif show_midiout then
     
-      --if settings_UCV == 0 then
-      --  UpdateControlValues(rt)
-      --else      
-        UpdateControlValues2(rt)
-      --end
-
+      UpdateControlValues2(rt)
       A_Run_MidiOut(char)
     
     elseif lbx_midilrnctl then
     
       UpdateControlValues2(rt)
-
       A_Run_MidiLrn(char)
     
     elseif show_xxy == false then
 
       if settings_followselectedtrack and navigate and gpage == false then
       
-        --[[if track_select ~= LBX_GTRACK then
-          gpage_opage = page
-          gpage_otrackselect = track_select
-        end]]
-
         FollowTrack(ct)
         
       end
@@ -22765,11 +22745,7 @@ end
         checksends = true
       end      
       
-      --if settings_UCV == 0 then
-      --  UpdateControlValues(rt)
-      --else      
-        UpdateControlValues2(rt)
-      --end
+      UpdateControlValues2(rt)
       
       if show_settings then
         
@@ -22777,329 +22753,333 @@ end
         
       else
       
-      if show_eqcontrol ~= true and macro_edit_mode ~= true and MOUSE_clickXY(obj.sections[21],plist_w,0 ) and (hide_topbar == false or settings_showminimaltopbar) then
+        if (mouse.LB and not mouse.lastLB) or (mouse.RB and not mouse.lastRB) then
+          if show_eqcontrol ~= true and macro_edit_mode ~= true and MOUSE_clickXY(obj.sections[21],plist_w,0 ) and (hide_topbar == false or settings_showminimaltopbar) then
+          
+            TopMenu()
+            mouse.context = contexts.dummy
       
-        TopMenu()
-        mouse.context = contexts.dummy
-  
-      elseif MOUSE_clickXY(obj.sections[14],plist_w,0) and navigate then
-        --page
-        if track_select ~= LBX_GTRACK then
-          local page = F_limit(math.ceil((mouse.mx-(obj.sections[14].x+plist_w))/(obj.sections[14].w/4)),1,4)
-          SetPage(page)            
-        end
-        
-      elseif MOUSE_clickXY(obj.sections[1000],plist_w,0) and navigate then
-        --page
-        SetGlobalPage()            
-      
-      elseif MOUSE_click(obj.sections[11]) then
-        
-        if mouse.mx > obj.sections[11].w-6 then
-          mouse.context = contexts.dragsidebar
-          offx = 0
-        else--if navigate then
-        
-          if mode == 0 then
-            if submode == 0 then
-              if fxmode == 0 then
-                setmode(2)
-              else
-                setmode(3)
-              end
-            elseif submode == 1 then
-              setmode(4)
-            else
-              setmode(5)
+          elseif MOUSE_clickXY(obj.sections[14],plist_w,0) and navigate then
+            --page
+            if track_select ~= LBX_GTRACK then
+              local page = F_limit(math.ceil((mouse.mx-(obj.sections[14].x+plist_w))/(obj.sections[14].w/4)),1,4)
+              SetPage(page)            
             end
-          else
-            setmode(1)
+            
+          elseif MOUSE_clickXY(obj.sections[1000],plist_w,0) and navigate then
+            --page
+            SetGlobalPage()            
+          
+          elseif MOUSE_click(obj.sections[11]) then
+            
+            if mouse.mx > obj.sections[11].w-6 then
+              mouse.context = contexts.dragsidebar
+              offx = 0
+            else
+            
+              if mode == 0 then
+                if submode == 0 then
+                  if fxmode == 0 then
+                    setmode(2)
+                  else
+                    setmode(3)
+                  end
+                elseif submode == 1 then
+                  setmode(4)
+                else
+                  setmode(5)
+                end
+              else
+                setmode(1)
+              end
+            
+            end
+    
+          elseif MOUSE_click_RB(obj.sections[11]) then
+            if mode == 0 then
+              mode0_submode = mode0_submode+1
+              if mode0_submode > #mode0_submode_table-1 then
+                mode0_submode = 0
+              end
+              update_gfx = true
+            end
+                    
+          elseif MOUSE_clickXY(obj.sections[18],plist_w,0) and (hide_topbar == false or settings_showminimaltopbar) then
+            if mode == 1 then
+              mouse.context = contexts.dragsidebar
+              offx = mouse.mx-plist_w
+            else
+              ToggleSidebar()
+            end
+          
+          elseif (obj.sections[17].x > obj.sections[20].x+obj.sections[20].w) and MOUSE_clickXY(obj.sections[17],plist_w,0) then
+            SaveProj(true, true)        
+            OpenMsgBox(1,'Data Saved.',1)
+            update_surface = true
+            
+          elseif MOUSE_clickXY(obj.sections[20],plist_w,0) then
+            local butt = F_limit(math.ceil((mouse.mx-(obj.sections[20].x+plist_w))/(obj.sections[20].w/4)),1,4)
+            if butt == 1 then
+              LockX()
+              
+            elseif butt == 2 then
+              LockY()
+              
+            elseif butt == 3 then
+              ScrollUp()
+              
+            elseif butt == 4 then
+              ScrollDown()
+              
+            end
+            update_gfx = true
           end
-        
-        end
-
-      elseif MOUSE_click_RB(obj.sections[11]) then
-        if mode == 0 then
-          mode0_submode = mode0_submode+1
-          if mode0_submode > #mode0_submode_table-1 then
-            mode0_submode = 0
-          end
-          update_gfx = true
         end
                 
-      elseif MOUSE_clickXY(obj.sections[18],plist_w,0) and (hide_topbar == false or settings_showminimaltopbar) then
-        if mode == 1 then
-          mouse.context = contexts.dragsidebar
-          offx = mouse.mx-plist_w
-        else
-          ToggleSidebar()
+        if mouse.context and mouse.context == contexts.dragsidebar then
+        
+          plist_w = math.max(mouse.mx-offx,0) 
+          plist_w = math.min(plist_w, gfx1.main_w-obj.sections[19].w-obj.sections[14].w-obj.sections[18].w)
+          oplist_w = math.max(plist_w,100)
+          if plist_w <= 4 then
+            show_editbar = false
+          else
+            show_editbar = true
+          end
+          obj = GetObjects()
+          resize_display = true
+          update_surface = true
+        
         end
-      
-      elseif (obj.sections[17].x > obj.sections[20].x+obj.sections[20].w) and MOUSE_clickXY(obj.sections[17],plist_w,0) then
-        SaveProj(true, true)        
-        OpenMsgBox(1,'Data Saved.',1)
-        update_surface = true
         
-      elseif MOUSE_clickXY(obj.sections[20],plist_w,0) then
-        local butt = F_limit(math.ceil((mouse.mx-(obj.sections[20].x+plist_w))/(obj.sections[20].w/4)),1,4)
-        if butt == 1 then
-          LockX()
+        if mode == 0 then
           
-        elseif butt == 2 then
-          LockY()
+          noscroll = A_Run_Mode0(noscroll, rt)
           
-        elseif butt == 3 then
-          ScrollUp()
+        elseif mode == 1 then
           
-        elseif butt == 4 then
-          ScrollDown()
+          reaper.MarkProjectDirty(0)
+          show_fsnapshots = false
           
-        end
-        update_gfx = true
-      end
-      
-      if mouse.context and mouse.context == contexts.dragsidebar then
-      
-        plist_w = math.max(mouse.mx-offx,0) 
-        plist_w = math.min(plist_w, gfx1.main_w-obj.sections[19].w-obj.sections[14].w-obj.sections[18].w)
-        oplist_w = math.max(plist_w,100)
-        if plist_w <= 4 then
-          show_editbar = false
-        else
-          show_editbar = true
-        end
-        obj = GetObjects()
-        resize_display = true
-        update_surface = true
-      
-      end
-      
-      if mode == 0 then
-        
-        noscroll = A_Run_Mode0(noscroll, rt)
-        
-      elseif mode == 1 then
-        
-        reaper.MarkProjectDirty(0)
-        show_fsnapshots = false
-        
-        if ct == 0 and track_select ~= -1 then
-          --track_select = -1
-          ChangeTrack(-1)
-          update_gfx = true
-        end
-      
-        local tr = GetTrack(trackedit_select)
-        if tr then
-          local fxc = reaper.TrackFX_GetCount(tr)
-          if fxc ~= ofxcnt then
-            PopulateTrackFX()
+          if ct == 0 and track_select ~= -1 then
+            --track_select = -1
+            ChangeTrack(-1)
             update_gfx = true
           end
-        end
-      
-        if mouse.shift then
-          settings_gridsize = 1
-        else
-          settings_gridsize = ogrid      
-        end
-  
-        if strips and tracks[track_select] and strips[tracks[track_select].strip] and #strips[tracks[track_select].strip][page].controls > 0 then
-          CheckTrack(strips[tracks[track_select].strip].track, tracks[track_select].strip)
-        end
         
-        g_edstrips[track_select] = true
+          local tr = GetTrack(trackedit_select)
+          if tr then
+            local fxc = reaper.TrackFX_GetCount(tr)
+            if fxc ~= ofxcnt then
+              PopulateTrackFX()
+              update_gfx = true
+            end
+          end
         
-        if submode == 0 then
-                    
-          noscroll = A_Run_Submode0(noscroll, rt, char)
-                  
-        elseif submode == 1 then
-  
-          noscroll = A_Run_Submode1(noscroll, rt, char)
-          
-        elseif submode == 2 then
+          if mouse.shift then
+            settings_gridsize = 1
+          else
+            settings_gridsize = ogrid      
+          end
     
-          noscroll = A_Run_Submode2(noscroll, rt, char)
+          if strips and tracks[track_select] and strips[tracks[track_select].strip] and #strips[tracks[track_select].strip][page].controls > 0 then
+            CheckTrack(strips[tracks[track_select].strip].track, tracks[track_select].strip)
+          end
           
-        end
-
-        if MOUSE_click(obj.sections[13]) then
-          if submode ~= 0 or (submode == 0 and mouse.mx < obj.sections[13].x + obj.sections[13].w - 30) then
-            if submode == 0 then
+          g_edstrips[track_select] = true
+          
+          if submode == 0 then
+                      
+            noscroll = A_Run_Submode0(noscroll, rt, char)
+                    
+          elseif submode == 1 then
+    
+            noscroll = A_Run_Submode1(noscroll, rt, char)
+            
+          elseif submode == 2 then
+      
+            noscroll = A_Run_Submode2(noscroll, rt, char)
+            
+          end
+  
+          if MOUSE_click(obj.sections[13]) then
+            if submode ~= 0 or (submode == 0 and mouse.mx < obj.sections[13].x + obj.sections[13].w - 30) then
+              if submode == 0 then
+                setmode(4)
+              elseif submode == 1 then
+                setmode(5)
+              elseif submode == 2 then
+                if fxmode == 0 then
+                  setmode(2)
+                else
+                  setmode(3)
+                end
+              end
+            elseif submode == 0 and mouse.mx > obj.sections[13].x + obj.sections[13].w - 30 then
+              if fxmode == 0 then
+                setmode(3)
+              else
+                setmode(2)
+              end
+              
+            end
+    
+          elseif MOUSE_click_RB(obj.sections[13]) then
+            if submode == 2 then
               setmode(4)
-            elseif submode == 1 then
+            elseif submode == 0 then
               setmode(5)
-            elseif submode == 2 then
+            elseif submode == 1 then
               if fxmode == 0 then
                 setmode(2)
               else
                 setmode(3)
               end
             end
-          elseif submode == 0 and mouse.mx > obj.sections[13].x + obj.sections[13].w - 30 then
-            if fxmode == 0 then
-              setmode(3)
-            else
-              setmode(2)
-            end
             
-          end
-  
-        elseif MOUSE_click_RB(obj.sections[13]) then
-          if submode == 2 then
-            setmode(4)
-          elseif submode == 0 then
-            setmode(5)
-          elseif submode == 1 then
-            if fxmode == 0 then
-              setmode(2)
-            else
-              setmode(3)
-            end
-          end
-          
-        end          
-      end
-      
-      if mouse.context == nil then
-        if ((submode == 0 and ctl_select ~= nil) and (MOUSE_click(obj.sections[45]) or (MOUSE_click(obj.sections[100]) and show_cycleoptions) 
-            or (MOUSE_click(obj.sections[200]) and show_ctlbrowser)) or (MOUSE_click(obj.sections[800]) and show_gaugeedit)) or 
-           ((submode == 1 and gfx2_select ~= nil) and (MOUSE_over(obj.sections[49]) and (show_lbloptions == true or show_gfxoptions == true))) then
-
-        elseif mouse.mx > obj.sections[10].x and show_actionchooser == false then
-          if MOUSE_click(obj.sections[10]) then
-            if noscroll == false then
-              mouse.context = "dragsurface"
-              surx = surface_offset.x
-              sury = surface_offset.y
-              if stlay_data then
-                gsurx = stlay_data.xpos or 0
-              end
-              mmx = mouse.mx
-              mmy = mouse.my
-              update_surface = true
-            end
-
-            if show_gaugeedit ~= true then
-              ctl_select = nil
-              show_cycleoptions = false
-              show_ctlbrowser = false
-              gfx2_select = nil
-              gfx3_select = nil
-            else
-              show_gaugeedit = false
-            end
-            
-            if mode ~= 0 then
-              update_surface = true
-            end
-          end
-  
-        end    
-      end
-      if mouse.context and mouse.context == "dragsurface" then
-        if noscroll == false and settings_locksurface == false then
+          end          
+        end
         
-          if stripgallery_view == 0 or mode ~= 0 or macro_lrn_mode == true or snaplrn_mode == true then
-            local offx, offy
-            if lockx == false then
-              offx = MOUSE_surfaceX(obj.sections[10])
-            end
-            if locky == false then  
-              offy = MOUSE_surfaceY(obj.sections[10])
-            end
-            
-            if surface_size.w < obj.sections[10].w then
-              surface_offset.x = -math.floor((obj.sections[10].w - surface_size.w)/2)
-            elseif offx ~= nil then
-              --if locky == false then
-              --  surface_offset.x = F_limit(surx + offx,0-math.ceil(obj.sections[10].w*0.25),surface_size.w - math.ceil(obj.sections[10].w*0.75))
-              --else
-                surface_offset.x = F_limit(surx + offx,0,surface_size.w - obj.sections[10].w)        
-              --end
-            end
-            
-            if offy ~= nil then
-              --if lockx == false then
-              --  surface_offset.y = F_limit(sury + offy,0-math.ceil(obj.sections[10].h*0.25),surface_size.h - math.ceil(obj.sections[10].h*0.75))
-              --else
-                surface_offset.y = F_limit(sury + offy,0,surface_size.h - obj.sections[10].h)        
-              --end
-            end
-      
-            if surface_offset.oldx ~= surface_offset.x or surface_offset.oldy ~= surface_offset.y or (ctls and not ctl_select) then
-              surface_offset.oldx = surface_offset.x
-              surface_offset.oldy = surface_offset.y
+        if mouse.context == nil then
+          if ((submode == 0 and ctl_select ~= nil) and (MOUSE_click(obj.sections[45]) or (MOUSE_click(obj.sections[100]) and show_cycleoptions) 
+              or (MOUSE_click(obj.sections[200]) and show_ctlbrowser)) or (MOUSE_click(obj.sections[800]) and show_gaugeedit)) or 
+             ((submode == 1 and gfx2_select ~= nil) and (MOUSE_over(obj.sections[49]) and (show_lbloptions == true or show_gfxoptions == true))) then
+  
+          elseif mouse.mx > obj.sections[10].x and show_actionchooser == false then
+            if MOUSE_click(obj.sections[10]) then
+              if noscroll == false then
+                mouse.context = "dragsurface"
+                surx = surface_offset.x
+                sury = surface_offset.y
+                if stlay_data then
+                  gsurx = stlay_data.xpos or 0
+                end
+                mmx = mouse.mx
+                mmy = mouse.my
+                update_surface = true
+              end
+  
+              if show_gaugeedit ~= true then
+                ctl_select = nil
+                show_cycleoptions = false
+                show_ctlbrowser = false
+                gfx2_select = nil
+                gfx3_select = nil
+              else
+                show_gaugeedit = false
+              end
               
-              if strips and tracks[track_select] and strips[tracks[track_select].strip] then
-                strips[tracks[track_select].strip][page].surface_x = surface_offset.x
-                strips[tracks[track_select].strip][page].surface_y = surface_offset.y
+              if mode ~= 0 then
+                update_surface = true
               end
-              if surface_offset.x < 0 or surface_offset.y < 0 
-                  or surface_offset.x > surface_size.w-obj.sections[10].w 
-                  or surface_offset.y > surface_size.h-obj.sections[10].h then 
-                update_surfaceedge = true 
+            end
+    
+          end    
+        end
+      
+        
+        if mouse.context and mouse.context == "dragsurface" then
+          if noscroll == false and settings_locksurface == false then
+          
+            if stripgallery_view == 0 or mode ~= 0 or macro_lrn_mode == true or snaplrn_mode == true then
+              local offx, offy
+              if lockx == false then
+                offx = MOUSE_surfaceX(obj.sections[10])
               end
-              update_surface = true
+              if locky == false then  
+                offy = MOUSE_surfaceY(obj.sections[10])
+              end
+              
+              if surface_size.w < obj.sections[10].w then
+                surface_offset.x = -math.floor((obj.sections[10].w - surface_size.w)/2)
+              elseif offx ~= nil then
+                --if locky == false then
+                --  surface_offset.x = F_limit(surx + offx,0-math.ceil(obj.sections[10].w*0.25),surface_size.w - math.ceil(obj.sections[10].w*0.75))
+                --else
+                  surface_offset.x = F_limit(surx + offx,0,surface_size.w - obj.sections[10].w)        
+                --end
+              end
+              
+              if offy ~= nil then
+                --if lockx == false then
+                --  surface_offset.y = F_limit(sury + offy,0-math.ceil(obj.sections[10].h*0.25),surface_size.h - math.ceil(obj.sections[10].h*0.75))
+                --else
+                  surface_offset.y = F_limit(sury + offy,0,surface_size.h - obj.sections[10].h)        
+                --end
+              end
+        
+              if surface_offset.oldx ~= surface_offset.x or surface_offset.oldy ~= surface_offset.y or (ctls and not ctl_select) then
+                surface_offset.oldx = surface_offset.x
+                surface_offset.oldy = surface_offset.y
+                
+                if strips and tracks[track_select] and strips[tracks[track_select].strip] then
+                  strips[tracks[track_select].strip][page].surface_x = surface_offset.x
+                  strips[tracks[track_select].strip][page].surface_y = surface_offset.y
+                end
+                if surface_offset.x < 0 or surface_offset.y < 0 
+                    or surface_offset.x > surface_size.w-obj.sections[10].w 
+                    or surface_offset.y > surface_size.h-obj.sections[10].h then 
+                  update_surfaceedge = true 
+                end
+                update_surface = true
+              end
+            else
+              local offx = MOUSE_surfaceX2(obj.sections[10])
+              if offx and stlay_data then
+                local min = math.floor(0-(obj.sections[10].w/2 - stlay_data.loc[1].w/2))
+                local max = math.floor(stlay_data.loc[#stlay_data.loc].runx_e-obj.sections[10].w + (obj.sections[10].w/2 - stlay_data.loc[#stlay_data.loc].w/2))
+                stlay_data.xpos = F_limit(gsurx + offx,min,max)
+                if strips and tracks[track_select] and strips[tracks[track_select].strip] then
+                  strips[tracks[track_select].strip][page].xpos = stlay_data.xpos
+                end
+                update_surface = true
+                dragsurf = true
+              end
+            end
+          end
+        elseif mouse.context == nil and dragsurf then
+          dragsurf = nil
+          GUI_DrawCtlBitmap2()
+        end
+        
+        if settings_mousewheelknob == false and gfx.mouse_wheel ~= 0 and show_ctlbrowser == false and show_cycleoptions == false and show_ctloptions == false then
+          if noscroll == false then
+            if lockx == false or locky == false then
+              local v = gfx.mouse_wheel/120
+              if mouse.mx > obj.sections[10].x and MOUSE_over(obj.sections[10]) then
+                if ctl_select then
+                  ctl_select = nil
+                  update_gfx = true
+                end
+                if locky then
+                  surface_offset.x = F_limit(surface_offset.x - v * 50,0,surface_size.w - obj.sections[10].w)
+                elseif lockx then
+                  surface_offset.y = F_limit(surface_offset.y - v * 50,0,surface_size.h - obj.sections[10].h)        
+                else
+                  surface_offset.y = F_limit(surface_offset.y - v * 50,0,surface_size.h - obj.sections[10].h)        
+                end
+                if strips and tracks[track_select] and strips[tracks[track_select].strip] then
+                  strips[tracks[track_select].strip][page].surface_x = surface_offset.x
+                  strips[tracks[track_select].strip][page].surface_y = surface_offset.y
+                end
+                if surface_offset.x < 0 or surface_offset.y < 0 
+                    or surface_offset.x > surface_size.w-obj.sections[10].w 
+                    or surface_offset.y > surface_size.h-obj.sections[10].h then 
+                  update_surfaceedge = true 
+                end
+                update_surface = true
+              end
             end
           else
-            local offx = MOUSE_surfaceX2(obj.sections[10])
-            if offx and stlay_data then
-              local min = math.floor(0-(obj.sections[10].w/2 - stlay_data.loc[1].w/2))
-              local max = math.floor(stlay_data.loc[#stlay_data.loc].runx_e-obj.sections[10].w + (obj.sections[10].w/2 - stlay_data.loc[#stlay_data.loc].w/2))
-              stlay_data.xpos = F_limit(gsurx + offx,min,max)
-              if strips and tracks[track_select] and strips[tracks[track_select].strip] then
-                strips[tracks[track_select].strip][page].xpos = stlay_data.xpos
-              end
-              update_surface = true
-              dragsurf = true
+            if ctl_select then
+              ctl_select = nil
+              update_gfx = true
             end
-          end
-        end
-      elseif mouse.context == nil and dragsurf then
-        dragsurf = nil
-        GUI_DrawCtlBitmap2()
-      end
-      
-      if settings_mousewheelknob == false and gfx.mouse_wheel ~= 0 and show_ctlbrowser == false and show_cycleoptions == false and show_ctloptions == false then
-        if noscroll == false then
-          if lockx == false or locky == false then
-            local v = gfx.mouse_wheel/120
-            if mouse.mx > obj.sections[10].x and MOUSE_over(obj.sections[10]) then
-              if ctl_select then
-                ctl_select = nil
-                update_gfx = true
-              end
-              if locky then
-                surface_offset.x = F_limit(surface_offset.x - v * 50,0,surface_size.w - obj.sections[10].w)
-              elseif lockx then
-                surface_offset.y = F_limit(surface_offset.y - v * 50,0,surface_size.h - obj.sections[10].h)        
-              else
-                surface_offset.y = F_limit(surface_offset.y - v * 50,0,surface_size.h - obj.sections[10].h)        
-              end
-              if strips and tracks[track_select] and strips[tracks[track_select].strip] then
-                strips[tracks[track_select].strip][page].surface_x = surface_offset.x
-                strips[tracks[track_select].strip][page].surface_y = surface_offset.y
-              end
-              if surface_offset.x < 0 or surface_offset.y < 0 
-                  or surface_offset.x > surface_size.w-obj.sections[10].w 
-                  or surface_offset.y > surface_size.h-obj.sections[10].h then 
-                update_surfaceedge = true 
-              end
-              update_surface = true
-            end
-          end
-        else
-          if ctl_select then
-            ctl_select = nil
-            update_gfx = true
-          end
-        
-        end
-        gfx.mouse_wheel = 0
-      end
           
+          end
+          gfx.mouse_wheel = 0
+        end
+            
       end
 
     else --XXY MODE
@@ -23116,7 +23096,9 @@ end
     end]]
     if show_cycleoptions == false then cycle_editmode = false end
     
-    ReadAutomationFaders()
+    if settings_disablefaderautomationineditmode == false or mode == 0 then
+      ReadAutomationFaders()
+    end
     
     if #morph_data > 0 then
       A_RunMorph()
@@ -24030,6 +24012,7 @@ end
   end
   
   function A_Run_Mode0(noscroll, rt)
+  
     if striplayout_mt then
       striplayout_mp = 1-(((striplayout_mt-reaper.time_precise()))/striplayout_mtime)
       if striplayout_mp >= 1 then
@@ -24117,6 +24100,7 @@ end
     if insertstrip then
     
       A_Run_InsertStrip()
+    
     
     elseif mouse.context == nil and show_xysnapshots == true and show_eqcontrol ~= true and macro_edit_mode ~= true and (MOUSE_click(obj.sections[180]) or MOUSE_click_RB(obj.sections[180])) then
     
@@ -28419,7 +28403,7 @@ end
         update_gfx = true
       end
     elseif mouse.context and mouse.context == contexts.gfxopt_g then
-      local val = F_limit(MOUSE_sliderHBar(obj.sections[914]),0,1)
+      local val = F_limit(MOUSE_sliderf(obj.sections[914]),0,1)
       if val ~= nil then
         gfxg_select = val
         strips[tracks[track_select].strip][page].graphics[gfx2_select].gmult = gfxg_select
@@ -42130,6 +42114,7 @@ end
   settings_deletefxwithstrip = false
   settings_morphfaderassignedctls = true
   settings_followsnapshot = true
+  settings_disablefaderautomationineditmode = true
   
   autosnap_rowheight = 410
   autosnap_itemgap = 20
