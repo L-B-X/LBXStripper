@@ -13173,11 +13173,12 @@ end
 
   end
 
-  function STSI_norm(track,trctl_idx,v,min,max,c)
+  function STSI_norm(track,trctl_idx,v,min,max,c, strip, page)
   
-    local idx = strips[tracks[track_select].strip][page].controls[c].param_info.paramidx
-    local paramstr = strips[tracks[track_select].strip][page].controls[c].param_info.paramstr
+    local idx = strips[strip][page].controls[c].param_info.paramidx
+    local paramstr = strips[strip][page].controls[c].param_info.paramstr
 
+    if idx then
     local val = DenormalizeValue(min,max,v)
     if paramstr == 'D_VOL' then
       reaper.SetTrackSendUIVol(track, idx, val, 0)
@@ -13188,6 +13189,8 @@ end
     else
       reaper.SetTrackSendInfo_Value(track, 0, idx, paramstr, val)
     end
+    end
+    
   end
 
   function STSI_denorm(track,trctl_idx,val,c, strip, page)
@@ -13635,7 +13638,7 @@ end
         local param = ctl.param
         ctl.dirty = true
         local min, max = A_GetParamMinMax(cc,track,ctl,nil,param,true,c)
-        STSI_norm(track,param,val,min,max,c)
+        STSI_norm(track,param,val,min,max,c,strip,page)
 
       elseif cc == ctlcats.action then
       
@@ -13732,7 +13735,7 @@ end
         local param = strips[tracks[track_select].strip][page].controls[trackfxparam_select].param
         strips[tracks[track_select].strip][page].controls[trackfxparam_select].dirty = true
         local min, max = GetParamMinMax(cc,track,nil,param,true,trackfxparam_select)
-        STSI_norm(track,param,val,min,max,trackfxparam_select)
+        STSI_norm(track,param,val,min,max,trackfxparam_select, tracks[track_select].strip, page)
 
       elseif cc == ctlcats.action then
       
@@ -13794,9 +13797,9 @@ end
         strips[tracks[track_select].strip][page].controls[trackfxparam_select].dirty = true
         local min, max = GetParamMinMax(cc,track,nil,param,true,trackfxparam_select)
         if force and force == true then
-          STSI_norm(track,param,1-math.abs(val-0.1),min,max,trackfxparam_select)
+          STSI_norm(track,param,1-math.abs(val-0.1),min,max,trackfxparam_select, tracks[track_select].strip, page)
         end      
-        STSI_norm(track,param,val,min,max,trackfxparam_select)
+        STSI_norm(track,param,val,min,max,trackfxparam_select, tracks[track_select].strip, page)
       end
     end
       
@@ -13829,7 +13832,7 @@ end
         local param = ctl.param
         ctl.dirty = true
         local min, max = A_GetParamMinMax(cc,track,ctl,nil,param,true,c)
-        STSI_norm(track,param,v,min,max,c)
+        STSI_norm(track,param,v,min,max,c,strip,page)
       elseif cc == ctlcats.fxoffline then
         SetFXOffline2(strip, page, c, track, v)
       elseif cc == ctlcats.midictl then
@@ -13927,7 +13930,7 @@ end
         local param = strips[tracks[track_select].strip][page].controls[trackfxparam_select].param
         strips[tracks[track_select].strip][page].controls[trackfxparam_select].dirty = true
         --local min, max = trctls_table[param].min,trctls_table[param].max
-        STSI_norm(track,param,v,0,1,trackfxparam_select)
+        STSI_norm(track,param,v,0,1,trackfxparam_select, tracks[track_select].strip, page)
       end        
     end
       
@@ -13962,7 +13965,7 @@ end
         local param = ctl.param
         ctl.dirty = true
         local min, max = GetParamMinMax(cc,track,nil,param,false,trackfxparam_select)
-        STSI_norm(track,param,v,min,max,trackfxparam_select)
+        STSI_norm(track,param,v,min,max,trackfxparam_select,strip,page)
       end    
       if ctl.midiout then SendMIDIMsg(ctl.midiout,v) end
     end
