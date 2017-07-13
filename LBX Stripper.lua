@@ -30295,15 +30295,12 @@ end
         end
 
       elseif mouse.context == nil and MOUSE_click(obj.sections[166]) then
-      DBG('a')
         if snapshots[tracks[track_select].strip] then
           sstype_select = math.max(#snapshots[tracks[track_select].strip][page]+1,2)
-      DBG('b'..sstype_select)
         else
           Snapshots_INIT()
           sstype_select = 2
           ssoffset = 0
-      DBG('c'..sstype_select)
         end
         Snapshots_CREATE(tracks[track_select].strip, page, sstype_select)
         update_snaps = true
