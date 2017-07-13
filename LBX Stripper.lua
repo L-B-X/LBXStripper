@@ -10617,7 +10617,7 @@ end
                  surface_size.w*scale,
                  surface_size.h*scale,1)
         
-        if stlay_data then         
+        if stlay_data and #stlay_data.reordered > 0 then         
           for i = 1, #stlay_data.loc do
           
             local ro = stlay_data.reordered[i].ro
@@ -10634,6 +10634,10 @@ end
             
           
           end
+        else
+          
+          GUI_textC(gui,obj.sections[10],'STRIP LAYOUT VIEW: No strips on page.', '96 96 96', 0)
+          
         end
       end
                         
@@ -10701,7 +10705,7 @@ end
 
         local w, h = gfx.getimgdim(993)
         local d = stlay_data
-        if d then
+        if d and #d.reordered > 0 then
           local scale = math.max((d.reordered[#d.reordered].runx_e)/w,.4)
           scale = 1+((scale-1)*(1-striplayout_mp))
           local hh = h*scale
@@ -10718,9 +10722,8 @@ end
                     w,
                     h,
                     ix,
-                    iy)
-          
-          
+                    iy)          
+        
         end
       
       else
@@ -10736,7 +10739,7 @@ end
         
         local w, h = gfx.getimgdim(993)
         local d = stlay_data
-        if d then
+        if d and #d.reordered > 0 then
           
           local ix = math.floor(obj.sections[10].x + math.floor(obj.sections[10].w - w)/2)
           local iy = math.floor(obj.sections[10].y + math.floor(obj.sections[10].h - h)/2)
@@ -10776,6 +10779,10 @@ end
             gfx.a = 1
             
           end
+        else
+        
+          GUI_textC(gui,obj.sections[10],'GALLERY LAYOUT VIEW: No strips on page.', '96 96 96', 0)
+        
         end            
 
       end
@@ -10795,7 +10802,7 @@ end
 
       local w, h = gfx.getimgdim(993)
       local d = stlay_data
-      if d then
+      if d and #d.reordered > 0 then
         local scale = math.max((d.reordered[#d.reordered].runx_e)/w,.4)
         --local scale = math.max(d.hmax / h,.4) 
         scale = 1+((scale-1)*striplayout_mp)
@@ -10817,6 +10824,10 @@ end
                   iy)
         
         
+      else
+              
+        GUI_textC(gui,obj.sections[10],'GALLERY VIEW: No strips on page.', '96 96 96', 0)
+      
       end
     end    
   end
@@ -10839,7 +10850,7 @@ end
       d.xpos = (xs - (xd * stripgallery_swipe.mp))
 
     end
-    if stlay_data then
+    if stlay_data and #stlay_data.reordered > 0 then
       local st,en = 1,1
       local px = stlay_data.xpos or 0
       while stlay_data.reordered[st] and px > stlay_data.reordered[st].runx_e do --+ gallery_itemgap do
@@ -10885,6 +10896,10 @@ end
           x=x+stlay_data.reordered[i].w + gallery_itemgap
         end
       end
+    else
+    
+      GUI_textC(gui,obj.sections[10],'GALLERY VIEW: No strips on page.', '96 96 96', 0)
+    
     end
   end
   
@@ -11072,23 +11087,25 @@ end
         
         if snaplrn_mode == true then
           local strip = tracks[track_select].strip
-          local scnt = #snapshots[strip][page][sstype_select].ctls
-          if scnt > 0 then
-            for ssc = 1, scnt do
-              local ctl = snapshots[strip][page][sstype_select].ctls[ssc].ctl
-              if ctl then
-                if nz(snapshots[strip][page][sstype_select].ctls[ssc].delete,false) == false then
-                  local x = strips[strip][page].controls[ctl].xsc
-                  local y = strips[strip][page].controls[ctl].ysc
-                  local w = strips[strip][page].controls[ctl].wsc
-                  local h = strips[strip][page].controls[ctl].hsc
-                  x=x-surface_offset.x+obj.sections[10].x
-                  y=y-surface_offset.y+obj.sections[10].y
-                  f_Get_SSV(gui.color.green)
-                  gfx.a = 1
-                  gfx.roundrect(x, y, w, h, 5, 1)
-                end
-              end           
+          if snapshots[strip] and snapshots[strip][page][sstype_select] then
+            local scnt = #snapshots[strip][page][sstype_select].ctls
+            if scnt > 0 then
+              for ssc = 1, scnt do
+                local ctl = snapshots[strip][page][sstype_select].ctls[ssc].ctl
+                if ctl then
+                  if nz(snapshots[strip][page][sstype_select].ctls[ssc].delete,false) == false then
+                    local x = strips[strip][page].controls[ctl].xsc
+                    local y = strips[strip][page].controls[ctl].ysc
+                    local w = strips[strip][page].controls[ctl].wsc
+                    local h = strips[strip][page].controls[ctl].hsc
+                    x=x-surface_offset.x+obj.sections[10].x
+                    y=y-surface_offset.y+obj.sections[10].y
+                    f_Get_SSV(gui.color.green)
+                    gfx.a = 1
+                    gfx.roundrect(x, y, w, h, 5, 1)
+                  end
+                end           
+              end
             end
           end
         end
@@ -13178,7 +13195,6 @@ end
     local idx = strips[strip][page].controls[c].param_info.paramidx
     local paramstr = strips[strip][page].controls[c].param_info.paramstr
 
-    if idx then
     local val = DenormalizeValue(min,max,v)
     if paramstr == 'D_VOL' then
       reaper.SetTrackSendUIVol(track, idx, val, 0)
@@ -13188,7 +13204,6 @@ end
       reaper.ToggleTrackSendUIMute(track, idx)
     else
       reaper.SetTrackSendInfo_Value(track, 0, idx, paramstr, val)
-    end
     end
     
   end
@@ -19946,7 +19961,11 @@ end
     if stripgallery_view ~= 0 then
     
       stlay_data = AutoSnap_GetStripLocs(true)
-      GUI_DrawCtlBitmap2()
+      if show_striplayout == false or (stlay_data and #stlay_data.reordered > 0) then 
+        GUI_DrawCtlBitmap2()
+      else
+        show_striplayout = false 
+      end
       
     end
   
@@ -20934,6 +20953,10 @@ end
 
     track_select = t
     trackedit_select = t
+    
+    --[[if stripgallery_view == 1 then
+      show_striplayout = false
+    end]]
         
     gfx3_select = nil
     ctl_select = nil
@@ -21507,12 +21530,18 @@ end
       elseif faders[f].targettype == 2 or faders[f].targettype == 4 or faders[f].targettype == 7 then
         if strips and strips[faders[f].strip] and strips[faders[f].strip][faders[f].page].controls[faders[f].ctl] then
           strips[faders[f].strip][faders[f].page].controls[faders[f].ctl].macrofader = nil
+          --DBG('s'..faders[f].strip..' p'..faders[f].page..' c'..faders[f].ctl)
+          --DBG(strips[faders[f].strip][faders[f].page].controls[faders[f].ctl].param_info.paramname)
         end
       elseif faders[f].targettype == 5 then
         snapshot_fader = nil
       elseif faders[f].targettype == 6 then
         if strips and strips[faders[f].strip] and strips[faders[f].strip][faders[f].page].controls[faders[f].ctl] then
           strips[faders[f].strip][faders[f].page].controls[faders[f].ctl].switchfader = nil
+        end
+      elseif faders[f].targettype == 8 then
+        if snapshots[faders[f].strip] and snapshots[faders[f].strip][faders[f].page][faders[f].sstype] then
+          snapshots[faders[f].strip][faders[f].page][faders[f].sstype].morph_time_fader = nil
         end
       end
       faders[f] = {}
@@ -21751,12 +21780,18 @@ end
             stlay_data = AutoSnap_GetStripLocs(true) 
             striplayout_data = StripLayout_GetData()
             if stripgallery_view == 1 then
-              StripLayout_DrawImageGallery(stlay_data)
+              --if stlay_data and #stlay_data.reordered > 0 then
+                StripLayout_DrawImageGallery(stlay_data)
+              --else
+              --  show_striplayout = false
+              --end
             else
               StripLayout_DrawImage(striplayout_data)
             end
                       
-            striplayout_mt = reaper.time_precise()+striplayout_mtime
+            if show_striplayout == true then                      
+              striplayout_mt = reaper.time_precise()+striplayout_mtime
+            end
           else          
             if striplayout_selstripid and stlay_data then
               local sel = striplayout_selstripid
@@ -25092,7 +25127,7 @@ end
             end
           end
         elseif i == -1 then
-          local mstr = 'Clear All'
+          local mstr = 'Clear All|Clear Parameter Faders'
           gfx.x = mouse.mx
           gfx.y = mouse.my
           local ret = gfx.showmenu(mstr)
@@ -25100,6 +25135,14 @@ end
             if ret == 1 then     
               for i = 1, #faders do   
                 DeleteFader(i)
+              end
+              update_sidebar = true
+              update_gfx = true
+            elseif ret == 2 then     
+              for i = 1, #faders do
+                if faders[i].targettype == 4 then   
+                  DeleteFader(i)
+                end
               end
               update_sidebar = true
               update_gfx = true
@@ -30252,13 +30295,15 @@ end
         end
 
       elseif mouse.context == nil and MOUSE_click(obj.sections[166]) then
-      
+      DBG('a')
         if snapshots[tracks[track_select].strip] then
           sstype_select = math.max(#snapshots[tracks[track_select].strip][page]+1,2)
+      DBG('b'..sstype_select)
         else
           Snapshots_INIT()
           sstype_select = 2
           ssoffset = 0
+      DBG('c'..sstype_select)
         end
         Snapshots_CREATE(tracks[track_select].strip, page, sstype_select)
         update_snaps = true
@@ -34687,8 +34732,8 @@ end
         for pf = 0, LBX_FB_CNT-1 do
           p = fxnum * LBX_FB_CNT + pf
           if faders[p+1].targettype then
-            if faders[p+1].targettype == 2 then
-              --macro check
+            if faders[p+1].targettype == 2 or faders[p+1].targettype == 4 then
+              --macro/fx param check
               if faders[p+1].c_id then
                 local ctls = strips[faders[p+1].strip][faders[p+1].page].controls
                 if ctls[faders[p+1].ctl] == nil or (ctls[faders[p+1].ctl] and faders[p+1].c_id ~= ctls[faders[p+1].ctl].c_id) then
@@ -40054,23 +40099,7 @@ end
               end
             end
           end
-          --[[if settings_savefaderboxassinsnapshots == true then
-            local mf = strips[strip][page].controls[c].macrofader
-            if mf then
-              if faders[mf] and faders[mf].targettype == 4 then
-              
-                local sscntx = sscnt
-                if sflag then
-                  sscntx = ssxntx -1
-                end
-                if not snaps[snappos].data[sscntx] then
-                
-                end 
-                
-              
-              end
-            end
-          end]]
+          
         end
         
         if offflag == true then
@@ -40190,8 +40219,8 @@ end
       
       g_savedirty = true
     end
-    if settings_followsnapshot then
-      if ss_select < ssoffset+1 or ss_select > ssoffset+SS_butt_cnt then
+    if snaps and settings_followsnapshot then
+      if ss_select and (ss_select < ssoffset+1 or ss_select > ssoffset+SS_butt_cnt) then
         if sstype_select == 1 then
           ssoffset = math.max(math.min(ss_select-math.floor(SS_butt_cnt/2),#snaps-SS_butt_cnt),0)
         else
@@ -40200,7 +40229,9 @@ end
         update_snaps = true
       end
     end
-    
+    if snaps then
+      snapshots[strip][page][sstype] = snaps
+    end
   end
   
   ------------------------------------------------------------
