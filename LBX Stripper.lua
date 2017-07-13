@@ -24062,7 +24062,7 @@ end
       update_surface = true
     
     elseif stripgallery_swipemt then
-        stripgallery_swipe.mp = 1-(((stripgallery_swipemt-reaper.time_precise()))/striplayout_mtime)
+      stripgallery_swipe.mp = 1-(((stripgallery_swipemt-reaper.time_precise()))/striplayout_mtime)
       if stripgallery_swipe.mp >= 1 then
         stripgallery_swipe.mp = 1
         stripgallery_swipemt = nil
@@ -28895,14 +28895,15 @@ end
     if strips[strip] then
       local ctls = strips[strip][page].controls
       local gfxs = strips[strip][page].graphics
-    
-      local xpos = 0
+      local xflag = false
+      local xpos
       if stlay_data and stlay_data.xpos then
         xpos = stlay_data.xpos
       end
     
       if force == true then stlay_data = nil end
       if stlay_data == nil then
+        xflag = true
         stlay_data = {stripidx = {},
                       loc = {},
                       xpos = strips[strip][page].xpos or 0}
@@ -28970,7 +28971,18 @@ end
         stlay_data.reordered[i].runx_e = runx
         stlay_data.hmax = math.max(stlay_data.loc[i].h, stlay_data.hmax)
       end
-            
+      
+      if xflag then
+        if stlay_data.reordered[1] then
+          stlay_data.xpos = strips[strip][page].xpos or -math.floor(obj.sections[10].w/2 - stlay_data.reordered[1].w/2)
+        else
+          stlay_data.xpos = strips[strip][page].xpos or 0
+        end
+      else
+        if obj then
+          stlay_data.xpos = math.floor(obj.sections[10].w/2 - stlay_data.reordered[1].w/2)
+        end
+      end
     end
     
     return stlay_data   
@@ -42255,6 +42267,7 @@ end
     if sg_view then
       stripgallery_view = sg_view
       if stripgallery_view > 0 then
+        obj = GetObjects()
         stlay_data = AutoSnap_GetStripLocs(true)
       end
       sg_view = nil
