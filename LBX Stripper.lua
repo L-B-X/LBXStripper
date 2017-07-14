@@ -28449,7 +28449,7 @@ end
         update_gfx = true
       end
     elseif mouse.context and mouse.context == contexts.gfxopt_g then
-      local val = F_limit(MOUSE_sliderf(obj.sections[914]),0,1)
+      local val = F_limit(MOUSE_sliderHBar(obj.sections[914]),0,1)
       if val ~= nil then
         gfxg_select = val
         strips[tracks[track_select].strip][page].graphics[gfx2_select].gmult = gfxg_select
