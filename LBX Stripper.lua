@@ -40048,7 +40048,7 @@ end
           end
           
           if ctl.noss ~= true and c and nv and tostring(nv) ~= tostring(ctl.val) and (settings_morphfaderassignedctls == true or ctl.macrofader == nil) then
-            trackfxparam_select = c
+            --trackfxparam_select = c
             SetParam3(strip,page,c,ctl,nv)
           end
           
@@ -40106,7 +40106,7 @@ end
           end
 
           if c and nv and tostring(nv) ~= tostring(ctl.val) and (settings_morphfaderassignedctls == true or ctl.macrofader == nil) then
-            trackfxparam_select = c
+            --trackfxparam_select = c
             SetParam3(strip,page,c,ctl,nv)        
           end
           
