@@ -30140,31 +30140,35 @@ end
       
       elseif mouse.context == nil and MOUSE_click(obj.sections[1010]) then
       
-        if snapshots[tracks[track_select].strip][page][sstype_select].morph_sync == false then
-          if snapshots[tracks[track_select].strip][page][sstype_select].morph_time == nil then
-            snapshots[tracks[track_select].strip][page][sstype_select].morph_time = 0
+        if snapshots[tracks[track_select].strip] and snapshots[tracks[track_select].strip][page][sstype_select] then        
+          if snapshots[tracks[track_select].strip][page][sstype_select].morph_sync == false then
+            if snapshots[tracks[track_select].strip][page][sstype_select].morph_time == nil then
+              snapshots[tracks[track_select].strip][page][sstype_select].morph_time = 0
+            end
+            mouse.context = contexts.morph_time
+            dragmorphtime = snapshots[tracks[track_select].strip][page][sstype_select].morph_time
+            oms = mouse.shift
+            mouse.slideoff = obj.sections[1010].y+obj.sections[1010].h/2 - mouse.my
+          else
+            snapshots[tracks[track_select].strip][page][sstype_select].morph_syncv = math.min(snapshots[tracks[track_select].strip][page][sstype_select].morph_syncv + 1,#sync_table)
+            update_snaps = true
           end
-          mouse.context = contexts.morph_time
-          dragmorphtime = snapshots[tracks[track_select].strip][page][sstype_select].morph_time
-          oms = mouse.shift
-          mouse.slideoff = obj.sections[1010].y+obj.sections[1010].h/2 - mouse.my
-        else
-          snapshots[tracks[track_select].strip][page][sstype_select].morph_syncv = math.min(snapshots[tracks[track_select].strip][page][sstype_select].morph_syncv + 1,#sync_table)
-          update_snaps = true
         end
-
+        
       elseif mouse.context == nil and MOUSE_click_RB(obj.sections[1010]) and mouse.ctrl == false then
       
-        if snapshots[tracks[track_select].strip][page][sstype_select].morph_sync == false then
-
-        else
-          snapshots[tracks[track_select].strip][page][sstype_select].morph_syncv = math.max(snapshots[tracks[track_select].strip][page][sstype_select].morph_syncv - 1,1)
-          update_snaps = true        
-        end      
-
+        if snapshots[tracks[track_select].strip] and snapshots[tracks[track_select].strip][page][sstype_select] then        
+          if snapshots[tracks[track_select].strip][page][sstype_select].morph_sync == false then
+  
+          else
+            snapshots[tracks[track_select].strip][page][sstype_select].morph_syncv = math.max(snapshots[tracks[track_select].strip][page][sstype_select].morph_syncv - 1,1)
+            update_snaps = true        
+          end      
+        end
+        
       elseif mouse.context == nil and MOUSE_click_RB(obj.sections[1010]) and mouse.ctrl == true then
         
-        if snapshots[tracks[track_select].strip][page][sstype_select] then
+        if snapshots[tracks[track_select].strip] and snapshots[tracks[track_select].strip][page][sstype_select] then        
           local snap = snapshots[tracks[track_select].strip][page][sstype_select]
           local res, lastp = FaderMenu_2(snap.morph_time_fader,mouse.mx+obj.sections[160].x,mouse.my+obj.sections[160].y)
           if res > 0 then
@@ -30183,28 +30187,32 @@ end
         
       elseif mouse.context == nil and MOUSE_click(obj.sections[1011]) then
 
-        snapshots[tracks[track_select].strip][page][sstype_select].morph_sync = not snapshots[tracks[track_select].strip][page][sstype_select].morph_sync
-        update_snaps = true
-
-      elseif mouse.context == nil and MOUSE_click(obj.sections[1012]) then
-
-        snapshots[tracks[track_select].strip][page][sstype_select].morph_scale = nz(snapshots[tracks[track_select].strip][page][sstype_select].morph_scale,1) + 1
-        if snapshots[tracks[track_select].strip][page][sstype_select].morph_scale > #macroscale_table then
-          snapshots[tracks[track_select].strip][page][sstype_select].morph_scale = 1
-        end
-        if #morph_data > 0 then
-          for i = 1, #morph_data do
-            if morph_data[i].strip == tracks[track_select].strip and
-               morph_data[i].page == page and
-               morph_data[i].sstype == sstype_select then 
-              morph_data[i].morph_scale = snapshots[tracks[track_select].strip][page][sstype_select].morph_scale
-              break
-            end
-          end
+        if snapshots[tracks[track_select].strip] and snapshots[tracks[track_select].strip][page][sstype_select] then        
+          snapshots[tracks[track_select].strip][page][sstype_select].morph_sync = not snapshots[tracks[track_select].strip][page][sstype_select].morph_sync
+          update_snaps = true
         end
         
-        update_snaps = true
+      elseif mouse.context == nil and MOUSE_click(obj.sections[1012]) then
 
+        if snapshots[tracks[track_select].strip] and snapshots[tracks[track_select].strip][page][sstype_select] then        
+          snapshots[tracks[track_select].strip][page][sstype_select].morph_scale = nz(snapshots[tracks[track_select].strip][page][sstype_select].morph_scale,1) + 1
+          if snapshots[tracks[track_select].strip][page][sstype_select].morph_scale > #macroscale_table then
+            snapshots[tracks[track_select].strip][page][sstype_select].morph_scale = 1
+          end
+          if #morph_data > 0 then
+            for i = 1, #morph_data do
+              if morph_data[i].strip == tracks[track_select].strip and
+                 morph_data[i].page == page and
+                 morph_data[i].sstype == sstype_select then 
+                morph_data[i].morph_scale = snapshots[tracks[track_select].strip][page][sstype_select].morph_scale
+                break
+              end
+            end
+          end
+          
+          update_snaps = true
+        end
+        
       elseif mouse.context == nil and MOUSE_click(obj.sections[1013]) then
       
         for i = 1, #morph_data do
