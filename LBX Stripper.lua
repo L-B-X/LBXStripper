@@ -30271,39 +30271,43 @@ end
         
       elseif mouse.context == nil and MOUSE_click(obj.sections[1015]) then
 
-        local nl = snapshots[tracks[track_select].strip][page][sstype_select].morph_loop + 1
-        if nl > 3 then
-          nl = 2
-        end 
-        snapshots[tracks[track_select].strip][page][sstype_select].morph_loop = nl
-        if #morph_data > 0 then
-          for i = 1, #morph_data do
-            if morph_data[i].strip == tracks[track_select].strip and
-               morph_data[i].page == page and
-               morph_data[i].sstype == sstype_select then 
-              morph_data[i].morph_loop = nl
-              break
+        if snapshots[tracks[track_select].strip] and snapshots[tracks[track_select].strip][page][sstype_select] then
+          local nl = (snapshots[tracks[track_select].strip][page][sstype_select].morph_loop or 1) + 1
+          if nl > 3 then
+            nl = 2
+          end 
+          snapshots[tracks[track_select].strip][page][sstype_select].morph_loop = nl
+          if #morph_data > 0 then
+            for i = 1, #morph_data do
+              if morph_data[i].strip == tracks[track_select].strip and
+                 morph_data[i].page == page and
+                 morph_data[i].sstype == sstype_select then 
+                morph_data[i].morph_loop = nl
+                break
+              end
             end
           end
+          update_snaps = true
         end
-        update_snaps = true
-
+        
       elseif mouse.context == nil and MOUSE_click_RB(obj.sections[1015]) then
 
-        nl = 1
-        snapshots[tracks[track_select].strip][page][sstype_select].morph_loop = nl
-        if #morph_data > 0 then
-          for i = 1, #morph_data do
-            if morph_data[i].strip == tracks[track_select].strip and
-               morph_data[i].page == page and
-               morph_data[i].sstype == sstype_select then 
-              morph_data[i].morph_loop = nl
-              break
+        if snapshots[tracks[track_select].strip] and snapshots[tracks[track_select].strip][page][sstype_select] then
+          nl = 1
+          snapshots[tracks[track_select].strip][page][sstype_select].morph_loop = nl
+          if #morph_data > 0 then
+            for i = 1, #morph_data do
+              if morph_data[i].strip == tracks[track_select].strip and
+                 morph_data[i].page == page and
+                 morph_data[i].sstype == sstype_select then 
+                morph_data[i].morph_loop = nl
+                break
+              end
             end
           end
+          update_snaps = true
         end
-        update_snaps = true
-        
+                
       elseif mouse.context == nil and MOUSE_click_RB(obj.sections[1012]) then
 
         snapshots[tracks[track_select].strip][page][sstype_select].morph_scale = nz(snapshots[tracks[track_select].strip][page][sstype_select].morph_scale,1) - 1
