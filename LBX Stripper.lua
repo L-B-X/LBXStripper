@@ -2016,6 +2016,10 @@
                             y = obj.sections[1010].y + butt_h,
                             w = math.floor((obj.sections[163].w/3)+2),
                             h = butt_h}
+      obj.sections[1015] = {x = 10+obj.sections[1014].w*2,
+                            y = obj.sections[1010].y + butt_h,
+                            w = math.floor((obj.sections[163].w/3)-2),
+                            h = butt_h}
                              
       obj.sections[164] = {x = 10,
                           y = butt_h+10 + (butt_h/2+2 + 10) * 3,
@@ -4744,46 +4748,48 @@
       FD_butt_cnt = math.floor(obj.sections[500].h / butt_h) - 1
     end
     
-    for i = 1, FD_butt_cnt-1 do
-      local f = faders[i+fdlist_offset]
-    
-      if f and i+fdlist_offset <= LBX_FB_CNT*LBX_CTL_TRACK_INF.count then
-        local xywh = {x = obj.sections[500].x+2,
-                      y = obj.sections[500].y + butt_h + 2 + butt_h*(i)+1,
-                      w = obj.sections[500].w-6,
-                      h = butt_h-2}
-        local c = gui.color.white
-        if fader_select == i + fdlist_offset then
-          --GUI_DrawBar(gui,'',xywh,skin.highlight,true,gui.color.black,nil,-2)
-          if faders[fader_select] and faders[fader_select].targettype then
-            f_Get_SSV(faderselcol)
-          else
-            f_Get_SSV('0 160 255')          
-          end          
-          gfx.rect(xywh.x,xywh.y,xywh.w,xywh.h,1,1)
-          
-          c = gui.color.black        
-        else
-          if f.targettype then
-            
-            c = gui.color.black
-            f_Get_SSV(faderhighcol)
-            
-            gfx.rect(xywh.x,xywh.y,xywh.w,xywh.h,1,1)
+    if LBX_CTL_TRACK_INF then
+      for i = 1, FD_butt_cnt-1 do
+        local f = faders[i+fdlist_offset]
+      
+        if f and i+fdlist_offset <= LBX_FB_CNT*LBX_CTL_TRACK_INF.count then
+          local xywh = {x = obj.sections[500].x+2,
+                        y = obj.sections[500].y + butt_h + 2 + butt_h*(i)+1,
+                        w = obj.sections[500].w-6,
+                        h = butt_h-2}
+          local c = gui.color.white
+          if fader_select == i + fdlist_offset then
             --GUI_DrawBar(gui,'',xywh,skin.highlight,true,gui.color.black,nil,-2)
-          
+            if faders[fader_select] and faders[fader_select].targettype then
+              f_Get_SSV(faderselcol)
+            else
+              f_Get_SSV('0 160 255')          
+            end          
+            gfx.rect(xywh.x,xywh.y,xywh.w,xywh.h,1,1)
+            
+            c = gui.color.black        
           else
-            c = gui.color.white
-          end 
-        
-        end
-        local txt = 'FADER '..string.format('%i',i + fdlist_offset)
-        xywh.y = xywh.y -1
-        GUI_textsm_LJ(gui, xywh, txt, c, -4, plist_w)
-                    
-      end                      
-    end           
-
+            if f.targettype then
+              
+              c = gui.color.black
+              f_Get_SSV(faderhighcol)
+              
+              gfx.rect(xywh.x,xywh.y,xywh.w,xywh.h,1,1)
+              --GUI_DrawBar(gui,'',xywh,skin.highlight,true,gui.color.black,nil,-2)
+            
+            else
+              c = gui.color.white
+            end 
+          
+          end
+          local txt = 'FADER '..string.format('%i',i + fdlist_offset)
+          xywh.y = xywh.y -1
+          GUI_textsm_LJ(gui, xywh, txt, c, -4, plist_w)
+                      
+        end                      
+      end           
+    end
+    
     local xywh = {x = obj.sections[13].x,
                           y = obj.sections[13].y, 
                           w = obj.sections[13].w,
@@ -8189,6 +8195,8 @@ end
     
     local pause = false
     local dir = '>'
+    local txt = 'LOOP'
+    local loop = false
     
     SS_butt_cnt = math.floor(obj.sections[163].h / butt_h) - 1
     if snaplrn_mode == false then
@@ -8219,6 +8227,17 @@ end
               break
             end
           end
+        end
+        
+        loop = snapshots[tracks[track_select].strip][page][sstype_select].morph_loop
+        if loop == 2 then
+          txt = dir..dir
+          loop = true
+        elseif loop == 3 then
+          txt = '<>'
+          loop = true
+        else
+          loop = false
         end
 
         if sstype_select == 1 then
@@ -8316,9 +8335,27 @@ end
       if pause then
         bc = -2
       end
+      --[[if morphing == true then
+        local loop = snapshots[tracks[track_select].strip][page][sstype_select].morph_loop
+        local txt
+        if loop == 1 then
+          txt = 'LOOP'
+          loop = false
+        elseif loop == 2 then
+          txt = dir..dir
+          loop = true
+        else
+          txt = '<>'
+          loop = true
+        end
+      else
+        txt = 'LOOP'
+        loop = false        
+      end]]
       GUI_DrawButton(gui, 'PAUSED', obj.sections[1013], bc, gui.color.black, pause, '', false)
       
       GUI_DrawButton(gui, dir, obj.sections[1014], gui.color.white, gui.color.black, true, '', false)
+      GUI_DrawButton(gui, txt, obj.sections[1015], gui.color.white, gui.color.black, loop, '', false)
       
       f_Get_SSV('64 64 64')
       gfx.a = 1 
@@ -23196,12 +23233,23 @@ end
         update_ctls = true
 
         if p == 1 then
-          morph_data[i].active = false
-          runcnt = runcnt - 1
-          update_snaps = true
-          update_gfx = true
-          if mode0_submode == 1 then
-            update_sidebar = true
+          if morph_data[i].morph_loop == 1 then
+            morph_data[i].active = false
+            runcnt = runcnt - 1
+            update_snaps = true
+            update_gfx = true
+            if mode0_submode == 1 then
+              update_sidebar = true
+            end
+          elseif morph_data[i].morph_loop == 2 then
+            morph_data[i].start_time = morph_data[i].end_time
+            morph_data[i].end_time = morph_data[i].start_time + morph_data[i].morph_time
+            update_snaps = true             
+          elseif morph_data[i].morph_loop == 3 then
+            morph_data[i].start_time = morph_data[i].end_time
+            morph_data[i].end_time = morph_data[i].start_time + morph_data[i].morph_time
+            morph_data[i].dir = 1-(morph_data[i].dir or 0)
+            update_snaps = true             
           end
         end    
       end
@@ -24102,7 +24150,9 @@ end
         if mode0_submode == 0 then
           tlist_offset = F_limit(tlist_offset - v, 0, #tracks+1)
         else
-          fdlist_offset = F_limit(fdlist_offset - v, 0, LBX_FB_CNT*LBX_CTL_TRACK_INF.count -1)        
+          if LBX_CTL_TRACK_INF then
+            fdlist_offset = F_limit(fdlist_offset - v, 0, LBX_FB_CNT*LBX_CTL_TRACK_INF.count -1)        
+          end
         end
         update_gfx = true
         gfx.mouse_wheel = 0
@@ -25082,75 +25132,82 @@ end
         
         local i = math.floor((mouse.my - obj.sections[500].y) / butt_h)-1
         if i == 0 then
-          if mouse.mx < obj.sections[500].w/2 then
-            fdlist_offset = fdlist_offset - (FD_butt_cnt-3)
-            if fdlist_offset < 0 then
-              fdlist_offset = 0
+          if LBX_CTL_TRACK_INF then
+            if mouse.mx < obj.sections[500].w/2 then
+              fdlist_offset = fdlist_offset - (FD_butt_cnt-3)
+              if fdlist_offset < 0 then
+                fdlist_offset = 0
+              end
+            else
+              if fdlist_offset + FD_butt_cnt < #faders-1 then
+                fdlist_offset = fdlist_offset + (FD_butt_cnt-3)
+              end
             end
-          else
-            if fdlist_offset + FD_butt_cnt < #faders-1 then
-              fdlist_offset = fdlist_offset + (FD_butt_cnt-3)
-            end
+            update_sidebar = true
           end
-          update_sidebar = true
-          
+                
         elseif faders[i + fdlist_offset] then
-          local fd = i + fdlist_offset
-          fader_select = fd
-          if show_striplayout == false then
-            mouse.context = contexts.dragfader
-            dragfader = {x = mouse.mx, y = mouse.my}
+          if LBX_CTL_TRACK_INF then
+            local fd = i + fdlist_offset
+            fader_select = fd
+            if show_striplayout == false then
+              mouse.context = contexts.dragfader
+              dragfader = {x = mouse.mx, y = mouse.my}
+            end
+            update_gfx = true
           end
-          update_gfx = true
         end
 
       elseif MOUSE_click_RB(obj.sections[500]) then
       
-        local i = math.floor((mouse.my - obj.sections[500].y) / butt_h)-1
-        if i > 0 and faders[i + fdlist_offset] and faders[i + fdlist_offset].targettype then
-          local fd = i + fdlist_offset
-          fader_select = fd
+        if LBX_CTL_TRACK_INF then
 
-          update_sidebar = true
-          GUI_draw(obj, gui)
-          gfx.update()
-
-          local mstr = 'Clear'
-          gfx.x = mouse.mx
-          gfx.y = mouse.my
-          local ret = gfx.showmenu(mstr)
-          if ret > 0 then
-            if ret == 1 then        
-              DeleteFader(i + fdlist_offset)
-              update_sidebar = true
-              update_gfx = true
-            end
-          end
-        elseif i == -1 then
-          local mstr = 'Clear All|Clear Parameter Faders'
-          gfx.x = mouse.mx
-          gfx.y = mouse.my
-          local ret = gfx.showmenu(mstr)
-          if ret > 0 then
-            if ret == 1 then     
-              for i = 1, #faders do   
-                DeleteFader(i)
+          local i = math.floor((mouse.my - obj.sections[500].y) / butt_h)-1
+          if i > 0 and faders[i + fdlist_offset] and faders[i + fdlist_offset].targettype then
+            local fd = i + fdlist_offset
+            fader_select = fd
+  
+            update_sidebar = true
+            GUI_draw(obj, gui)
+            gfx.update()
+  
+            local mstr = 'Clear'
+            gfx.x = mouse.mx
+            gfx.y = mouse.my
+            local ret = gfx.showmenu(mstr)
+            if ret > 0 then
+              if ret == 1 then        
+                DeleteFader(i + fdlist_offset)
+                update_sidebar = true
+                update_gfx = true
               end
-              update_sidebar = true
-              update_gfx = true
-            elseif ret == 2 then     
-              for i = 1, #faders do
-                if faders[i].targettype == 4 then   
+            end
+          elseif i == -1 then
+            local mstr = 'Clear All|Clear Parameter Faders'
+            gfx.x = mouse.mx
+            gfx.y = mouse.my
+            local ret = gfx.showmenu(mstr)
+            if ret > 0 then
+              if ret == 1 then     
+                for i = 1, #faders do   
                   DeleteFader(i)
                 end
+                update_sidebar = true
+                update_gfx = true
+              elseif ret == 2 then     
+                for i = 1, #faders do
+                  if faders[i].targettype == 4 then   
+                    DeleteFader(i)
+                  end
+                end
+                update_sidebar = true
+                update_gfx = true
               end
-              update_sidebar = true
-              update_gfx = true
             end
+            
           end
-          
-        end
-      
+
+        end        
       end    
     end
   
@@ -25219,6 +25276,7 @@ end
       obj.sections[1012].y = obj.sections[1010].y
       obj.sections[1013].y = obj.sections[1010].y+butt_h
       obj.sections[1014].y = obj.sections[1013].y
+      obj.sections[1015].y = obj.sections[1013].y
       
       obj.sections[165].y = obj.sections[160].h - obj.sections[165].h
       snaph = obj.sections[160].h
@@ -30134,6 +30192,17 @@ end
         if snapshots[tracks[track_select].strip][page][sstype_select].morph_scale > #macroscale_table then
           snapshots[tracks[track_select].strip][page][sstype_select].morph_scale = 1
         end
+        if #morph_data > 0 then
+          for i = 1, #morph_data do
+            if morph_data[i].strip == tracks[track_select].strip and
+               morph_data[i].page == page and
+               morph_data[i].sstype == sstype_select then 
+              morph_data[i].morph_scale = snapshots[tracks[track_select].strip][page][sstype_select].morph_scale
+              break
+            end
+          end
+        end
+        
         update_snaps = true
 
       elseif mouse.context == nil and MOUSE_click(obj.sections[1013]) then
@@ -30200,12 +30269,58 @@ end
         end
         ]]
         
+      elseif mouse.context == nil and MOUSE_click(obj.sections[1015]) then
+
+        local nl = snapshots[tracks[track_select].strip][page][sstype_select].morph_loop + 1
+        if nl > 3 then
+          nl = 2
+        end 
+        snapshots[tracks[track_select].strip][page][sstype_select].morph_loop = nl
+        if #morph_data > 0 then
+          for i = 1, #morph_data do
+            if morph_data[i].strip == tracks[track_select].strip and
+               morph_data[i].page == page and
+               morph_data[i].sstype == sstype_select then 
+              morph_data[i].morph_loop = nl
+              break
+            end
+          end
+        end
+        update_snaps = true
+
+      elseif mouse.context == nil and MOUSE_click_RB(obj.sections[1015]) then
+
+        nl = 1
+        snapshots[tracks[track_select].strip][page][sstype_select].morph_loop = nl
+        if #morph_data > 0 then
+          for i = 1, #morph_data do
+            if morph_data[i].strip == tracks[track_select].strip and
+               morph_data[i].page == page and
+               morph_data[i].sstype == sstype_select then 
+              morph_data[i].morph_loop = nl
+              break
+            end
+          end
+        end
+        update_snaps = true
+        
       elseif mouse.context == nil and MOUSE_click_RB(obj.sections[1012]) then
 
         snapshots[tracks[track_select].strip][page][sstype_select].morph_scale = nz(snapshots[tracks[track_select].strip][page][sstype_select].morph_scale,1) - 1
         if snapshots[tracks[track_select].strip][page][sstype_select].morph_scale < 1 then
           snapshots[tracks[track_select].strip][page][sstype_select].morph_scale = #macroscale_table
         end
+        if #morph_data > 0 then
+          for i = 1, #morph_data do
+            if morph_data[i].strip == tracks[track_select].strip and
+               morph_data[i].page == page and
+               morph_data[i].sstype == sstype_select then 
+              morph_data[i].morph_scale = snapshots[tracks[track_select].strip][page][sstype_select].morph_scale
+              break
+            end
+          end
+        end
+        
         update_snaps = true
 
       elseif mouse.context == nil and MOUSE_click_RB(obj.sections[168]) and mouse.shift == false then
@@ -36444,6 +36559,7 @@ end
           snaps[sst].morph_syncv = tonumber(zn(data[key..'morph_syncv'],14))
           snaps[sst].morph_scale = tonumber(zn(data[key..'morph_scale'],1))
           snaps[sst].morph_time_fader = tonumber(zn(data[key..'morph_time_fader']))
+          snaps[sst].morph_loop = tonumber(zn(data[key..'morph_loop'],1))
           
           local sscnt = tonumber(zn(data[key..'ss_count'],0))
           if sscnt > 0 then
@@ -36808,40 +36924,42 @@ end
         local p = faders[f].page
         local c = faders[f].ctl
         local cid = faders[f].c_id
-        if strips[s][p].controls[c] and cid == strips[s][p].controls[c].c_id and 
+        if strips[s] and strips[s][p].controls[c] and cid == strips[s][p].controls[c].c_id and 
            strips[s][p].controls[c].macrofader == f then
           --all good
           fnd = true
         else
-          for cc = 1, #strips[s][p].controls do
-            if strips[s][p].controls[cc].c_id == cid then
-            
-              strips[s][p].controls[cc].macrofader = f
-              faders[f].ctl = cc
-              fnd = true
-              break
+          if strips[s] then
+            for cc = 1, #strips[s][p].controls do
+              if strips[s][p].controls[cc].c_id == cid then
+              
+                strips[s][p].controls[cc].macrofader = f
+                faders[f].ctl = cc
+                fnd = true
+                break
+              end
             end
-          end
-          if fnd == false then
-            for ss = 1, #strips do
-              for pp = 1, 4 do
-                for cc = 1, #strips[ss][pp].controls do
-                  if strips[ss][pp].controls[cc].c_id == cid then
-                  
-                    strips[ss][pp].controls[cc].macrofader = f
-                    faders[f].strip = ss
-                    faders[f].page = pp
-                    faders[f].ctl = cc
-                    fnd = true
+            if fnd == false then
+              for ss = 1, #strips do
+                for pp = 1, 4 do
+                  for cc = 1, #strips[ss][pp].controls do
+                    if strips[ss][pp].controls[cc].c_id == cid then
+                    
+                      strips[ss][pp].controls[cc].macrofader = f
+                      faders[f].strip = ss
+                      faders[f].page = pp
+                      faders[f].ctl = cc
+                      fnd = true
+                      break
+                    end      
+                  end
+                  if fnd == true then
                     break
-                  end      
+                  end
                 end
                 if fnd == true then
                   break
                 end
-              end
-              if fnd == true then
-                break
               end
             end
           end
@@ -38300,6 +38418,7 @@ end
       file:write('['..key..'morph_scale]'..nz(snapshots[s][p][sst].morph_scale,1)..'\n')
       file:write('['..key..'morph_time_fader]'..nz(snapshots[s][p][sst].morph_time_fader,'')..'\n')
       file:write('['..key..'ss_selected]'..nz(snapshots[s][p][sst].selected,'')..'\n')
+      file:write('['..key..'morph_loop]'..nz(snapshots[s][p][sst].morph_loop,1)..'\n')
       
       if sst == 1 then          
         file:write('['..key..'ss_count]'..#snapshots[s][p][sst]..'\n')
@@ -39802,6 +39921,7 @@ end
                            morph_sync = snaps.morph_sync,
                            morph_syncv = snaps.morph_syncv,
                            morph_scale = snaps.morph_scale,
+                           morph_loop = snaps.morph_loop,
                            strip = strip,
                            page = page,
                            sstype = sstype_select,
