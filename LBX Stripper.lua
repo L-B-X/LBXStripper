@@ -29380,7 +29380,18 @@ end
       if strip_select then
         local i = math.floor(((mouse.my - obj.sections[512].y)) / butt_h)
         if strip_select == i-1 + slist_offset then
-          mstr = 'Set Default (Track)|Set Default (Master)|Set Default (Global)||Clear Default (Track)|Clear Default (Master)|Clear Default (Global)||Save (Overwrite)||Add to favorites||Export Shareable Strip File|Import Shared Strip File'
+          local sd_m, sd_g, sd = '', '', ''
+          if strip_default_mast then
+            sd_m = '!'
+          end
+          if strip_default_glob then
+            sd_g = '!'
+          end
+          if strip_default then
+            sd = '!'
+          end
+          
+          mstr = sd..'Set Default (Track)|'..sd_m..'Set Default (Master)|'..sd_g..'Set Default (Global)||Clear Default (Track)|Clear Default (Master)|Clear Default (Global)||Save (Overwrite)||Add to favorites||Export Shareable Strip File|Import Shared Strip File'
         else
           mstr = '#Set Default (Track)|#Set Default (Master)|#Set Default (Global)||Clear Default (Track)|Clear Default (Master)|Clear Default (Global)||#Save (Overwrite)||#Add to favorites||#Export Shareable Strip File|Import Shared Strip File'            
         end
