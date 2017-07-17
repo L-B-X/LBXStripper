@@ -23181,6 +23181,7 @@ end
       A_RunMorph()
     end
     
+    
     if rcmrefreshtimercount > 0 then
       RCMRefresh()
     end
@@ -23222,6 +23223,7 @@ end
   function A_RunMorph()
     --DBG(#morph_data)
     local runcnt = 0
+    local actcnt = 0
     local t = reaper.time_precise()
     for i = 1, #morph_data do
       if morph_data[i].active then
@@ -23235,15 +23237,7 @@ end
         update_ctls = true
 
         if p == 1 then
-          if morph_data[i].morph_loop == 1 then
-            morph_data[i].active = false
-            runcnt = runcnt - 1
-            update_snaps = true
-            update_gfx = true
-            if mode0_submode == 1 then
-              update_sidebar = true
-            end
-          elseif morph_data[i].morph_loop == 2 then
+          if morph_data[i].morph_loop == 2 then
             morph_data[i].start_time = morph_data[i].end_time
             morph_data[i].end_time = morph_data[i].start_time + morph_data[i].morph_time
             update_snaps = true             
@@ -23252,11 +23246,19 @@ end
             morph_data[i].end_time = morph_data[i].start_time + morph_data[i].morph_time
             morph_data[i].dir = 1-(morph_data[i].dir or 0)
             update_snaps = true             
+          else
+            morph_data[i].active = false
+            runcnt = runcnt - 1
+            update_snaps = true
+            update_gfx = true
+            if mode0_submode == 1 then
+              update_sidebar = true
+            end
           end
         end    
       end
     end
-    if runcnt == 0 then
+    if runcnt < 1 then
       morph_data = {}
     end
     
