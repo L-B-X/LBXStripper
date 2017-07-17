@@ -30463,9 +30463,22 @@ end
       elseif mouse.context == nil and MOUSE_click(obj.sections[167]) then
     
         if sstype_select > 1 then
-          snaplrn_mode = true
-          navigate = false
-          update_gfx = true
+          local ok = true
+          if morph_data and #morph_data > 0 then
+            for i = 1, #morph_data do
+              if morph_data[i].strip == tracks[track_select].strip and 
+                 morph_data[i].page == page and 
+                 morph_data[i].sstype == sstype_select and
+                 morph_data[i].active then
+                ok = false 
+              end 
+            end
+          end
+          if ok then
+            snaplrn_mode = true
+            navigate = false
+            update_gfx = true
+          end
         end
 
       elseif mouse.context == nil and MOUSE_click(obj.sections[164]) then
