@@ -15227,78 +15227,80 @@ end
     
     local stripdata = nil
     local load_path=strips_path
-    local fn=load_path..strip_folders[stripfol_select].fn..'/'..strip_files[strip_select].fn
-    if reaper.file_exists(fn) then
-    
-      GUI_DrawMsgX(obj, gui, 'Generating Preview...')
-    
-      local file
-      file=io.open(fn,"r")
-      local content=file:read("*a")
-      file:close()
-      local _,e = find(content,'.-\n')
-      local line = string.sub(content,0,e)
-      local newvers = match(line,'[[STRIPFILE_VERSION]](%d)')
-      if newvers then
-        --DBG(newvers)
-        local pickledcontent = match(content,'%[FXDATA%](.-)%[\\FXDATA%]')
-        local stripcontent = match(content,'%[STRIPDATA%](.-)%[\\STRIPDATA%]')
-        local snapcontent = match(content,'%[SNAPSHOTDATA%](.-)%[\\SNAPSHOTDATA%]')
-        --SNAPSHOTS --only load if strip imported?
-        if pickledcontent and stripcontent then
-          stripdata = unpickle(pickledcontent)
-          stripdata.version = tonumber(newvers)
-          stripdata.snapcontent = snapcontent
-          local data = {}
-          local cnt = 0          
-          local lines = split(stripcontent, "\n")
-          if lines and #lines > 0 then
-            for ln = 1, #lines do
-              local idx, val = match(lines[ln],'%[(.-)%](.*)') 
-              if idx then
-                data[idx] = val
+    if strip_folders[stripfol_select] and strip_files[strip_select] then
+      local fn=load_path..strip_folders[stripfol_select].fn..'/'..strip_files[strip_select].fn
+      if reaper.file_exists(fn) then
+      
+        GUI_DrawMsgX(obj, gui, 'Generating Preview...')
+      
+        local file
+        file=io.open(fn,"r")
+        local content=file:read("*a")
+        file:close()
+        local _,e = find(content,'.-\n')
+        local line = string.sub(content,0,e)
+        local newvers = match(line,'[[STRIPFILE_VERSION]](%d)')
+        if newvers then
+          --DBG(newvers)
+          local pickledcontent = match(content,'%[FXDATA%](.-)%[\\FXDATA%]')
+          local stripcontent = match(content,'%[STRIPDATA%](.-)%[\\STRIPDATA%]')
+          local snapcontent = match(content,'%[SNAPSHOTDATA%](.-)%[\\SNAPSHOTDATA%]')
+          --SNAPSHOTS --only load if strip imported?
+          if pickledcontent and stripcontent then
+            stripdata = unpickle(pickledcontent)
+            stripdata.version = tonumber(newvers)
+            stripdata.snapcontent = snapcontent
+            local data = {}
+            local cnt = 0          
+            local lines = split(stripcontent, "\n")
+            if lines and #lines > 0 then
+              for ln = 1, #lines do
+                local idx, val = match(lines[ln],'%[(.-)%](.*)') 
+                if idx then
+                  data[idx] = val
+                end
               end
             end
+            stripdata.strip = LoadStripDataX(nil,data)
           end
-          stripdata.strip = LoadStripDataX(nil,data)
+          --return nil --remove
+        else
+          stripdata = unpickle(content)
         end
-        --return nil --remove
+        
+        if newvers == nil or tonumber(newvers) < 5 then
+          --compatibility
+          --DBG('compat b')
+          
+          local ctls = stripdata.strip.controls
+          if ctls and #ctls > 0 then
+          
+            for c = 1, #ctls do
+              gfx.setfont(1, ctls[c].font, gui.fontsz_knob + ctls[c].textsize-4)
+              local _, th = gfx.measurestr('|')
+              ctls[c].textoff = ctls[c].textoff - math.floor(th/2)
+            end
+          
+          end
+          
+          local gfx = stripdata.strip.graphics
+          if gfx and #gfx > 0 then
+          
+            for g = 1, #gfx do
+          
+              if gfx[g].stretchmode == nil then gfx[g].stretchmode = 1 end
+              if gfx[g].edgesz == nil then gfx[g].edgesz = 8 end              
+          
+            end
+          end
+          
+        end
       else
-        stripdata = unpickle(content)
+        OpenMsgBox(1,'File not found.',1)
       end
-      
-      if newvers == nil or tonumber(newvers) < 5 then
-        --compatibility
-        --DBG('compat b')
-        
-        local ctls = stripdata.strip.controls
-        if ctls and #ctls > 0 then
-        
-          for c = 1, #ctls do
-            gfx.setfont(1, ctls[c].font, gui.fontsz_knob + ctls[c].textsize-4)
-            local _, th = gfx.measurestr('|')
-            ctls[c].textoff = ctls[c].textoff - math.floor(th/2)
-          end
-        
-        end
-        
-        local gfx = stripdata.strip.graphics
-        if gfx and #gfx > 0 then
-        
-          for g = 1, #gfx do
-        
-            if gfx[g].stretchmode == nil then gfx[g].stretchmode = 1 end
-            if gfx[g].edgesz == nil then gfx[g].edgesz = 8 end              
-        
-          end
-        end
-        
-      end
-    else
-      OpenMsgBox(1,'File not found.',1)
+      return stripdata
     end
-    return stripdata
-  
+      
   end
 
   function LoadStripFN(sfn, ffn, skipcompat)
@@ -30434,16 +30436,19 @@ end
         end
 
       elseif mouse.context == nil and MOUSE_click(obj.sections[166]) then
-        if snapshots[tracks[track_select].strip] then
-          sstype_select = math.max(#snapshots[tracks[track_select].strip][page]+1,2)
-        else
-          Snapshots_INIT()
-          sstype_select = 2
-          ssoffset = 0
+        local strip = tracks[track_select].strip
+        if strips[strip] and #strips[strip][page].controls > 0 then
+          if snapshots[tracks[track_select].strip] then
+            sstype_select = math.max(#snapshots[tracks[track_select].strip][page]+1,2)
+          else
+            Snapshots_INIT()
+            sstype_select = 2
+            ssoffset = 0
+          end
+          Snapshots_CREATE(tracks[track_select].strip, page, sstype_select)
+          update_snaps = true
         end
-        Snapshots_CREATE(tracks[track_select].strip, page, sstype_select)
-        update_snaps = true
-      
+              
       elseif mouse.context == nil and MOUSE_click(obj.sections[167]) then
     
         if sstype_select > 1 then
@@ -39343,7 +39348,7 @@ end
 
   function Snap_RemoveDeletedSS(strip, page, sstype)
   
-    if snapshots[strip][page][sstype] then
+    if snapshots[strip] and snapshots[strip][page][sstype] then
     
       if #snapshots[strip][page][sstype].ctls > 0 then
       local ctlcnt = #snapshots[strip][page][sstype].ctls
@@ -39377,7 +39382,7 @@ end
   function CleanSS(strip, page, sstype)
   
     if sstype > 1 then
-      if snapshots[strip][page][sstype] then
+      if snapshots[strip] and snapshots[strip][page][sstype] then
   
         if #snapshots[strip][page][sstype].ctls > 0 then
   
