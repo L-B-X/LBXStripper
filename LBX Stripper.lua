@@ -15,7 +15,7 @@
   noteletters_tab = {'C','C#','D','D#','E','F','F#','G','G#','A','A#','B'}
         
   submode_table = {'FX PARAMS','GRAPHICS','STRIPS'}
-  mode0_submode_table = {'LIVE MODE','FADERS'}
+  mode0_submode_table = {'LIVE MODE','FADERS','MODULATORS'}
   xxymode_table = {'SNAPSHOTS','PATHS'}
   ctltype_table = {'KNOB/SLIDER','BUTTON','BUTTON INV','CYCLE BUTTON','METER','MEM BUTTON','MOMENT BTN','MOMENT INV','FLASH BUTTON','FLASH INV'}
   trctltype_table = {'Track Controls','Track Sends','Track Meters','Other Controls'}
@@ -36,6 +36,8 @@
   sync_table = {"Off","1/64t","1/64","1/64d","1/32t","1/32","1/32d","1/16t","1/16","1/16d","1/8t","1/8","1/8d","1/4t","1/4","1/4d","1/2t","1/2","1/2d",
                 "1","2","3","4","5","6","7","8","12","16","20","24","28","32","48","64","96","128"}
   sync_mult_table = {0,1/64*2/3,1/64,1/64*1.5,1/32*2/3,1/32,1/32*1.5,1/16*2/3,1/16,1/16*1.5,1/8*2/3,1/8,1/8*1.5,1/4*2/3,1/4,1/4*1.5,1/2*2/3,1/2,1/2*1.5,1,2,3,4,5,6,7,8,12,16,20,24,28,32,48,64,96,128}
+  
+  divmult_table = {1,2,3,4,5,6,7,8,16,32,64,128}
   
   focus_table = {'Off','Arrange','MIDI Editor'}
   ctlfile_type_table = {'Knob','Slider','Button','Meter','Misc'}
@@ -152,7 +154,12 @@
               morph_time = 107,
               dragfader = 108,
               sa_dragstrip = 109, 
-              sa_dragstrip2 = 110, 
+              sa_dragstrip2 = 110,
+              mod_draw = 111,
+              dragmod = 112,
+              modoffset_slider = 113, 
+              modmin_slider = 114, 
+              modmax_slider = 115, 
               dummy = 999
               }
   
@@ -2573,7 +2580,60 @@
                            y = obj.sections[980].y+butt_h*5.5,
                            w = 60,
                            h = butt_h} 
-       
+      
+      local mow, moh = math.max(obj.sections[10].w-80,536), obj.sections[10].h - 150
+      --DBG(mow)
+      obj.sections[1100] = {x = math.floor(obj.sections[10].x+obj.sections[10].w/2 - mow/2),
+                           y = math.floor(obj.sections[10].y+obj.sections[10].h/2 - moh/2),
+                           w = mow,
+                           h = moh}
+      if obj.sections[1100].x < plist_w + 2 then
+        obj.sections[1100].x = plist_w + 2
+      end 
+      obj.sections[1101] = {x = 10,
+                           y = 30,
+                           w = obj.sections[1100].w-20,
+                           h = obj.sections[1100].h-90} 
+
+      obj.sections[1102] = {x = obj.sections[1101].x + obj.sections[1101].w - 102,
+                           y = obj.sections[1101].y + obj.sections[1101].h + 10,
+                           w = 100,
+                           h = 20} 
+      --[[obj.sections[1103] = {x = obj.sections[1102].x - 42,
+                           y = obj.sections[1101].y + obj.sections[1101].h + 10,
+                           w = 40,
+                           h = 20} ]]
+      obj.sections[1106] = {x = obj.sections[1101].x,
+                           y = obj.sections[1101].y + obj.sections[1101].h + 10,
+                           w = 40,
+                           h = 42} 
+      obj.sections[1104] = {x = obj.sections[1106].x + obj.sections[1106].w + 6,
+                           y = obj.sections[1101].y + obj.sections[1101].h + 10,
+                           w = 80,
+                           h = 20} 
+      obj.sections[1105] = {x = obj.sections[1104].x + obj.sections[1104].w + 2,
+                           y = obj.sections[1101].y + obj.sections[1101].h + 10,
+                           w = 80,
+                           h = 20} 
+      obj.sections[1107] = {x = obj.sections[1102].x -82,
+                           y = obj.sections[1101].y + obj.sections[1101].h + 10,
+                           w = 80,
+                           h = 20} 
+
+      obj.sections[1108] = {x = obj.sections[1105].x + obj.sections[1105].w + 2,
+                           y = obj.sections[1101].y + obj.sections[1101].h + 10,
+                           w = 120,
+                           h = 20} 
+
+      obj.sections[1109] = {x = obj.sections[1104].x,
+                           y = obj.sections[1102].y + obj.sections[1102].h + 2,
+                           w = 80,
+                           h = 20} 
+      obj.sections[1110] = {x = obj.sections[1109].x + obj.sections[1109].w + 2,
+                           y = obj.sections[1109].y,
+                           w = 80,
+                           h = 20} 
+
     return obj
   end
   
@@ -4808,6 +4868,79 @@
      
   end
 
+  function GUI_DrawMods(obj, gui)
+  
+    gfx.dest = 1001
+  
+    if MD_butt_cnt == nil then
+      MD_butt_cnt = math.floor(obj.sections[500].h / butt_h) - 1
+      mdlist_offset = 0
+    else
+      MD_butt_cnt = math.floor(obj.sections[500].h / butt_h) - 1
+    end
+    
+    for i = 1, MD_butt_cnt-1 do
+      local m = modulators[i+mdlist_offset]
+    
+      if m and i+mdlist_offset <= #modulators then
+        local xywh = {x = obj.sections[500].x+2,
+                      y = obj.sections[500].y + butt_h + 2 + butt_h*(i)+1,
+                      w = obj.sections[500].w-6,
+                      h = butt_h-2}
+        local c = gui.color.white
+        if mod_select == i + mdlist_offset then
+          if modulators[mod_select] and #modulators[mod_select].targets > 0 then
+            f_Get_SSV(faderselcol)
+          else
+            f_Get_SSV('0 160 255')          
+          end          
+          gfx.rect(xywh.x,xywh.y,xywh.w,xywh.h,1,1)
+          
+          c = gui.color.black        
+        else
+          if #m.targets > 0 then
+            
+            c = gui.color.black
+            f_Get_SSV(modhighcol)
+            
+            gfx.rect(xywh.x,xywh.y,xywh.w,xywh.h,1,1)
+          
+          else
+            c = gui.color.white
+          end 
+        
+        end
+        local txt = 'MOD '..string.format('%i',i + mdlist_offset)
+        xywh.y = xywh.y -1
+        GUI_textsm_LJ(gui, xywh, txt, c, -4, plist_w)
+                    
+      end                      
+    end           
+    
+    local xywh = {x = obj.sections[13].x,
+                          y = obj.sections[13].y, 
+                          w = obj.sections[13].w,
+                          h = obj.sections[13].h}
+    local txt
+    if show_lfoedit == true then
+      txt = 'CLOSE'
+    else
+      txt = 'OPEN'    
+    end
+    GUI_DrawBar(gui,txt..' EDITOR',xywh,skin.bar,true,gui.color.black,nil,-2)
+                              
+    local xywh = {x = obj.sections[500].x,
+                  y = obj.sections[500].y+butt_h+2,
+                  w = obj.sections[500].w,
+                  h = butt_h}
+    GUI_DrawBar(gui,'',xywh,skin.barUD,true,gui.color.black,nil,-2)
+    gfx.line(xywh.x+xywh.w/2,xywh.y,xywh.x+xywh.w/2,xywh.y+xywh.h-2)
+    local w, h = gfx.getimgdim(skin.arrowup)
+    gfx.blit(skin.arrowup,1,0,0,0,w,h,xywh.x+xywh.w/4-w/2,xywh.y+xywh.h/2-h/2)
+    gfx.blit(skin.arrowdn,1,0,0,0,w,h,xywh.x+xywh.w*0.75-w/2,xywh.y+xywh.h/2-h/2)
+     
+  end
+
   ------------------------------------------------------------
   
   function GetFXEnabled(tracknum, fxnum)
@@ -4915,6 +5048,19 @@
       f_Get_SSV(gui.color.white)
                
       GUI_DrawFaders(obj, gui)    
+
+    elseif mode == 0 and mode0_submode == 2 then
+
+      GUI_DrawBar(gui,'MODULATORS',obj.sections[11],skin.bar,true,gui.color.black,nil,-2)
+
+      f_Get_SSV(gui.color.black)
+      gfx.rect(obj.sections[11].x+obj.sections[11].w-6,
+               obj.sections[11].y,
+               1,
+               obj.sections[11].h,1)        
+      f_Get_SSV(gui.color.white)
+               
+      GUI_DrawMods(obj, gui)    
     
     else
     
@@ -7256,8 +7402,19 @@ end
           end 
         end
       
-        for i = 1, #strips[strip][page].controls do
+        local cdu = ctls_dirty.update
+        local cnt = #ctls_dirty.update
+        if update_gfx == true then
+          cnt = #strips[strip][page].controls
+        end
+        --DBG(tostring(update_gfx)..'  '..cnt)
+        for cdi = 1, cnt do
 
+          if update_gfx == true then
+            i = cdi
+          else
+            i = cdu[cdi]
+          end
           local ctl = strips[strip][page].controls[i]
           local hidden = Switcher_CtlsHidden(ctl.switcher, ctl.grpid)
 
@@ -7683,6 +7840,14 @@ end
                     end
                     gfx.roundrect(px+1,py+1,w*scale-2,h*scale-2,5,1)
                   end
+                  if settings_showfaderassignments == true and ctl.mod then
+                    if mode0_submode == 2 and mod_select == ctl.mod then
+                      f_Get_SSV(modselcol)
+                    else 
+                      f_Get_SSV(modhighcol)                    
+                    end
+                    gfx.roundrect(px+1,py+1,w*scale-2,h*scale-2,5,1)
+                  end
 
                   if spn then
                     gfx.setfont(1, font, gui.fontsz_knob +tsz-4)                    
@@ -7724,6 +7889,9 @@ end
             end
           end
         end
+        
+        ctls_dirty.update = {}
+        ctls_dirty.idx = {}
         
         if not update_gfx and not update_bg and update_ctls and show_striplayout == false and stripgallery_view == 0 then
           --loop through blit area table - blit to backbuffer
@@ -10941,13 +11109,244 @@ end
   end
   
   ------------------------------------------------------------
+  
+  function GUI_DrawLFOBar(obj, gui)
+
+    gfx.dest = 992
+    local m = modulators[mod_select]
+    if m then
+
+      local barw = ((obj.sections[1101].w-2) / m.steps)
+      --local dbw = math.max(barw,1)
+      local bw = 0
+      if m.steps < (obj.sections[1101].w/3) then
+        bw = 1
+      end
+
+      if modbaredit then
+      
+        for i = 1, #modbaredit do
+          
+          local x = obj.sections[1101].x + math.floor((modbaredit[i]-1) * barw)
+          local w = math.floor(modbaredit[i]*barw) - math.floor((modbaredit[i]-1) * barw) - bw        
+          local h = math.floor(obj.sections[1101].h * m.data[modbaredit[i]]) 
+          f_Get_SSV(gui.color.black)
+          gfx.rect(x+bw,obj.sections[1101].y,math.max(w,1),obj.sections[1101].h,1)
+           
+          local c = 0.1 + m.data[modbaredit[i]] * 0.9
+          gfx.r = c*.25
+          gfx.g = c*.25
+          gfx.b = c
+          gfx.rect(x+bw,obj.sections[1101].y + (obj.sections[1101].h-h),math.max(w,1),h,1) 
+      
+        end
+      
+        modbaredit = {}
+        modbaridx = {}  
+
+        local bars = sync_mult_table[m.syncv]
+        local barsteps = m.steps / bars
+        if bars >= 2 then
+          f_Get_SSV(barcol)
+          for i = 2, bars do
+            local x = obj.sections[1101].x + ((i-1)*barsteps) * barw
+            --local x = obj.sections[1101].x + (math.floor((obj.sections[1101].w-2) / bars) * (i-1)) + 1
+            gfx.line(x,obj.sections[1101].y,x,obj.sections[1101].y+obj.sections[1101].h)          
+          end
+        end          
+      end
+    end    
+    gfx.dest = 1
+  end
+
+  function GUI_DrawLFOPos(obj, gui)
+
+    gfx.dest = 992
+    local m = modulators[mod_select]
+    if m then
+      
+      local barw = ((obj.sections[1101].w-2) / m.steps)
+      --local dbw = math.max(barw,1)
+      local bw = 0
+      if m.steps < (obj.sections[1101].w/3) then
+        bw = 1
+      end
+
+      if m.opos and m.data[m.opos] then
+      
+        local x = obj.sections[1101].x + math.floor((m.opos-1) * barw)
+        local w = math.floor(m.opos*barw) - math.floor((m.opos-1) * barw) - bw
+        local h = math.floor(obj.sections[1101].h * m.data[m.opos]) 
+
+        f_Get_SSV(gui.color.black)
+        gfx.rect(x+bw,obj.sections[1101].y,math.max(w,1),obj.sections[1101].h,1)
+        
+        local c = 0.1 + m.data[m.opos] * 0.9
+        gfx.r = c*.25
+        gfx.g = c*.25
+        gfx.b = c
+        gfx.rect(x+bw,obj.sections[1101].y + (obj.sections[1101].h-h),math.max(w,1),h,1) 
+      
+      end
+      if m.pos and m.data[m.pos] then
+      
+        local x = obj.sections[1101].x + math.floor((m.pos-1) * barw)
+        local w = math.floor(m.pos*barw) - math.floor((m.pos-1) * barw) - bw
+        local h = math.floor(obj.sections[1101].h * m.data[m.pos]) 
+
+        f_Get_SSV(gui.color.black)
+        gfx.rect(x+bw,obj.sections[1101].y,math.max(w,1),obj.sections[1101].h,1)
+         
+        local c = 0.1 + m.data[m.pos] * 0.9
+        f_Get_SSV(gui.color.white)
+        gfx.rect(x+bw,obj.sections[1101].y + (obj.sections[1101].h-h),math.max(w,1),h,1) 
+    
+      end
+      m.opos = m.pos
+      
+      local bars = sync_mult_table[m.syncv]
+      local barsteps = m.steps / bars
+      if bars >= 2 then
+        f_Get_SSV(barcol)
+        for i = 2, bars do
+          local x = obj.sections[1101].x + ((i-1)*barsteps) * barw
+          --local x = obj.sections[1101].x + (math.floor((obj.sections[1101].w-2) / bars) * (i-1)) + 1
+          gfx.line(x,obj.sections[1101].y,x,obj.sections[1101].y+obj.sections[1101].h)          
+        end
+      end          
+      
+    end    
+    gfx.dest = 1
+  end
+  
+  function GUI_DrawLFOCtls(obj, gui)
+  
+    gfx.dest = 992
+
+    local m = modulators[mod_select]
+    if m then
+      GUI_DrawButton(gui,'STEP MULT: x'..divmult_table[m.stepsmult],obj.sections[1102],-1,gui.color.white,true)
+      --GUI_DrawButton(gui,'-',obj.sections[1103],-1,gui.color.white,true)
+
+      local c = -1
+      if modulators[mod_select].active then
+        c = -4
+      end
+      GUI_DrawButton(gui,'ON',obj.sections[1106],c,gui.color.white,true)
+  
+      GUI_DrawButton(gui,'LENGTH: '..sync_table[m.syncv],obj.sections[1104],-1,gui.color.white,true)
+      local c = -1
+      if m.interpolate == true then
+        c = -4
+      end
+      GUI_DrawButton(gui,'SMOOTH',obj.sections[1105],c,gui.color.white,true)
+
+      local c = -1
+      GUI_DrawButton(gui,'STEPS: '..m.div,obj.sections[1107],c,gui.color.white,true)
+      
+      local txt
+      if m.offset == 0.5 then
+        txt = 'NO SHIFT'
+      else
+        local bt = CalcBeatTime()
+        shifttime = -(((0.5-m.offset)*2) * bt * 1000)
+        txt = 'SHIFT: '..round(shifttime)..'ms'
+      end
+      GUI_DrawButton(gui,txt,obj.sections[1108],c,gui.color.white,true)
+
+      local c = -1
+      if m.min > 0 then
+        c = -4
+      end
+      GUI_DrawButton(gui,'MIN: '..math.floor(m.min*127),obj.sections[1109],c,gui.color.white,true)
+
+      local c = -1
+      if m.max < 1 then
+        c = -4
+      end
+      GUI_DrawButton(gui,'MAX: '..math.floor(m.max*127),obj.sections[1110],c,gui.color.white,true)
+
+    end
+        
+    gfx.dest = 1
+  
+  end
+  
+  function GUI_DrawLFOEdit(obj, gui)
+
+    gfx.dest = 992
+    if resize_display or update_gfx then
+      gfx.setimgdim(992, -1, -1)  
+      gfx.setimgdim(992, obj.sections[1100].w,obj.sections[1100].h)
+    end
+        
+    GUI_DrawPanel(obj.sections[1100],false,'MODULATORS')
+    
+    local m = modulators[mod_select]
+
+    if m then 
+      
+      local barw = ((obj.sections[1101].w-2) / m.steps)
+      --local dbw = math.max(barw,1)
+      local bw = 0
+      --if barw >= 2 then
+      --  bw = -1
+      --end
+      f_Get_SSV('0 0 0')
+      gfx.rect(obj.sections[1101].x-2,obj.sections[1101].y,math.ceil(barw*m.steps+4),obj.sections[1101].h,1)
+      f_Get_SSV(gui.color.white)
+      gfx.rect(obj.sections[1101].x-2,obj.sections[1101].y-2,math.ceil(barw*m.steps+4),obj.sections[1101].h+4,0)      
+      
+      if m.steps < (obj.sections[1101].w/3) then
+        bw = 1
+      end
+      for i = 1, m.steps do
+        local c = 0.1 + m.data[i] * 0.9
+        gfx.r = c*.25
+        gfx.g = c*.25
+        gfx.b = c
+      
+        --f_Get_SSV(gui.color.white)
+        local x = obj.sections[1101].x + math.floor((i-1) * barw)
+        local w = math.floor(i*barw) - math.floor((i-1) * barw) - bw
+        local h = math.floor(obj.sections[1101].h * m.data[i]) 
+        gfx.rect(x+bw,obj.sections[1101].y + (obj.sections[1101].h-h),math.max(w,1),h,1)
+      
+      end
+      
+      local bars = sync_mult_table[m.syncv]
+      local barsteps = m.steps / bars
+      if bars >= 2 then
+        f_Get_SSV(barcol)
+        for i = 2, bars do
+          local x = obj.sections[1101].x + ((i-1)*barsteps) * barw
+          --local x = obj.sections[1101].x + (math.floor((obj.sections[1101].w-2) / bars) * (i-1)) + 1
+          gfx.line(x,obj.sections[1101].y,x,obj.sections[1101].y+obj.sections[1101].h)          
+        end
+      end          
+    else
+    
+      f_Get_SSV('0 0 0')
+      gfx.rect(obj.sections[1101].x,obj.sections[1101].y,obj.sections[1101].w,obj.sections[1101].h,1)
+      f_Get_SSV(gui.color.white)
+      gfx.rect(obj.sections[1101].x-2,obj.sections[1101].y-2,obj.sections[1101].w+4,obj.sections[1101].h+4,0)
+    
+    end
+    
+    GUI_DrawLFOCtls(obj, gui)
+        
+    gfx.dest = 1
+  
+  end
+
+  ------------------------------------------------------------
 
   function GUI_draw(obj, gui)
     gfx.mode = gmode
     
     if show_xxy == false and (update_gfx or update_surface or update_sidebar or update_topbar or update_ctlopts or update_ctls or update_bg or 
        update_settings or update_snaps or update_msnaps or update_actcho or update_fsnaps or update_mfsnaps or update_eqcontrol or update_macroedit or
-       update_macrobutt or update_snapmorph) then    
+       update_macrobutt or update_snapmorph or update_lfoedit or update_lfoeditbar or update_lfopos) then    
       local p = 0
         
       gfx.dest = 1
@@ -11235,6 +11634,24 @@ end
           gfx.a = 1          
           gfx.rect(xywh.x,xywh.y,xywh.w,xywh.h,0,1)
           GUI_textC(gui,xywh,'FADER ' ..string.format('%i',fader_select),gui.color.black,-2,1,0)
+        elseif dragmod then
+          local sz = 30
+          local xywh = {x = dragmod.x-sz, y = dragmod.y-butt_h/2, w = sz*2, h = butt_h}
+          if dragmod.ctl == nil then
+            f_Get_SSV(faderselcol)
+            gfx.a = 1          
+          elseif dragmod.ctl == -1 then
+            f_Get_SSV('255 0 0')    
+            gfx.a = 0.3          
+          else      
+            f_Get_SSV('0 255 0')    
+            gfx.a = 0.3          
+          end
+          gfx.rect(xywh.x,xywh.y,xywh.w,xywh.h,1,1)
+          f_Get_SSV(gui.color.black)          
+          gfx.a = 1          
+          gfx.rect(xywh.x,xywh.y,xywh.w,xywh.h,0,1)
+          GUI_textC(gui,xywh,'MOD ' ..string.format('%i',mod_select),gui.color.black,-2,1,0)
         end
         
         if show_snapshots and macro_lrn_mode ~= true then
@@ -11281,6 +11698,19 @@ end
           gfx.a=1
 
           gfx.blit(1008,1,0,0,0,obj.sections[300].w,obj.sections[300].h,obj.sections[300].x,obj.sections[300].y) 
+        
+        end
+        
+        if show_lfoedit then
+          if update_gfx or update_lfoedit or resize_display then
+            GUI_DrawLFOEdit(obj, gui)
+          elseif update_lfoeditbar then
+            GUI_DrawLFOBar(obj, gui)
+          end 
+          if update_lfopos then
+            GUI_DrawLFOPos(obj, gui)          
+          end
+          gfx.blit(992,1,0,0,0,obj.sections[1100].w,obj.sections[1100].h,obj.sections[1100].x,obj.sections[1100].y) 
         
         end
         
@@ -12001,6 +12431,9 @@ end
     update_trackfxorder = false
     update_dd = false
     update_snapmorph = false
+    update_lfoedit = false
+    update_lfoeditbar = false
+    update_lfopos = false
     
   end
   
@@ -13728,6 +14161,9 @@ end
       if ctl.macrofader then
         SetFader(ctl.macrofader, ctl.val)
       end
+      --[[if ctl.dirty == true then
+        SetCtlDirty(c)
+      end]]
     end
       
   end
@@ -14109,6 +14545,7 @@ end
     Macros_Check(tracks[track_select].strip,page)
     Faders_Check(tracks[track_select].strip,page)
     CheckFaders()
+    CheckMods()
     Switcher_Check()
     SetCtlBitmapRedraw()
     update_gfx = true
@@ -15679,7 +16116,9 @@ end
       end
 
       strips[strip][page].controls[cc].macrofader = nil
-      
+      strips[strip][page].controls[cc].switchfader = nil
+      strips[strip][page].controls[cc].mod = nil
+            
     end
     for j = cstart, #strips[strip][page].controls do
 
@@ -19344,13 +19783,18 @@ end
           ff = '   [Fader '..string.format('%i',ctl.macrofader)..']'
         end
         local fd, lastp = FaderMenu(-1,true)
-          
+    
+        local mod = '||Clear Modulator'
+        if not strips[tracks[track_select].strip][page].controls[i].mod then
+          mod = '||#Clear Modulator'
+        end    
+      
         if ccat == ctlcats.fxparam then
-          mstr = fft..'Faderbox learn (global)'..ff..'||'..fd..'||Modulation||Enter value||'..mido..'||Open FX window||Add Envelope|Add All Envelopes For Plugin||'..mm..'Snapshots||>Tools|<Regenerate ID   (emergency only)||Toggle Topbar|Toggle Sidebar||'..lspfx..'Lock Surface'
+          mstr = fft..'Faderbox learn (global)'..ff..'||'..fd..mod..'||Param Modulation||Enter value||'..mido..'||Open FX window||Add Envelope|Add All Envelopes For Plugin||'..mm..'Snapshots||>Tools|<Regenerate ID   (emergency only)||Toggle Topbar|Toggle Sidebar||'..lspfx..'Lock Surface'
         elseif ccat == ctlcats.trackparam or ccat == ctlcats.tracksend or ccat == ctlcats.macro or ccat == ctlcats.snapshot then
-          mstr = fft..'Faderbox learn (global)'..ff..'|#Modulation||Enter value||'..mido..'||#Open FX window||#Add Envelope|#Add All Envelopes For Plugin||'..mm..'Snapshots||>Tools|<Regenerate ID   (emergency only)||Toggle Topbar|Toggle Sidebar||'..lspfx..'Lock Surface'                  
+          mstr = fft..'Faderbox learn (global)'..ff..mod..'|#Param Modulation||Enter value||'..mido..'||#Open FX window||#Add Envelope|#Add All Envelopes For Plugin||'..mm..'Snapshots||>Tools|<Regenerate ID   (emergency only)||Toggle Topbar|Toggle Sidebar||'..lspfx..'Lock Surface'                  
         else
-          mstr = fft..'#Faderbox learn (global)'..ff..'|#Modulation||Enter value||'..mido..'||#Open FX window||#Add Envelope|#Add All Envelopes For Plugin||'..mm..'Snapshots||>Tools|<Regenerate ID   (emergency only)||Toggle Topbar|Toggle Sidebar||'..lspfx..'Lock Surface'                  
+          mstr = fft..'#Faderbox learn (global)'..ff..mod..'|#Param Modulation||Enter value||'..mido..'||#Open FX window||#Add Envelope|#Add All Envelopes For Plugin||'..mm..'Snapshots||>Tools|<Regenerate ID   (emergency only)||Toggle Topbar|Toggle Sidebar||'..lspfx..'Lock Surface'                  
         end
         --if ccat ~= ctlcats.macro then
           if #strip_favs > 0 then
@@ -19398,12 +19842,19 @@ end
               end
               
             elseif res == 2 +lastp then
+            
+              Mod_RemoveAssign(tracks[track_select].strip,page,i)
+              strips[tracks[track_select].strip][page].controls[i].mod = nil
+              strips[tracks[track_select].strip][page].controls[i].dirty = true
+              update_ctls = true
+              
+            elseif res == 3 +lastp then
               SetParam2(true)
               reaper.Main_OnCommand(41143,0)
-            elseif res == 3 +lastp then
+            elseif res == 4 +lastp then
               --EditValue(5)
               OpenEB(5,'Please enter value:')
-            elseif res == 4 +lastp then
+            elseif res == 5 +lastp then
               midioutedit_select = i
               midiout_select = ctl.midiout
               if midiout_select == nil then
@@ -19419,10 +19870,10 @@ end
               end
               show_midiout = true
               update_gfx = true
-            elseif res == 5 +lastp then
+            elseif res == 6 +lastp then
               ctl.midiout = nil
               
-            elseif res == 6 +lastp then
+            elseif res == 7 +lastp then
               OpenFXGUI(strips[tracks[track_select].strip][page].controls[i])
               --[[local track
               if strips[tracks[track_select].strip][page].controls[i].tracknum == nil then
@@ -19434,24 +19885,24 @@ end
               if not reaper.TrackFX_GetOpen(track, fxnum) then
                 reaper.TrackFX_Show(track, fxnum, 3)
               end]]
-            elseif res == 7 +lastp then
-              Envelope_Add(tracks[track_select].strip,page,i)
             elseif res == 8 +lastp then
-              Envelope_AddAllFX(tracks[track_select].strip,page,i)
+              Envelope_Add(tracks[track_select].strip,page,i)
             elseif res == 9 +lastp then
+              Envelope_AddAllFX(tracks[track_select].strip,page,i)
+            elseif res == 10 +lastp then
               show_snapshots = not show_snapshots
               update_gfx = true
-            elseif res == 10 +lastp then
+            elseif res == 11 +lastp then
               i = tonumber(string.format('%i',i))
               strips[tracks[track_select].strip][page].controls[i] = GetControlTable(tracks[track_select].strip, page, i)
               strips[tracks[track_select].strip][page].controls[i].c_id = GenID()
               update_gfx = true
-            elseif res == 11 +lastp then
-              ToggleTopbar()
             elseif res == 12 +lastp then
+              ToggleTopbar()
+            elseif res == 13 +lastp then
               ToggleSidebar()
               update_surface = true
-            elseif res == 13 +lastp then
+            elseif res == 14 +lastp then
               settings_locksurface = not settings_locksurface
             end
           end
@@ -21892,7 +22343,11 @@ end
         if mode == 0 and show_striplayout == false and stripgallery_view == 1 then
           GallerySwipe(1)
         end
+      elseif char == 50 then
+        show_lfoedit = not show_lfoedit
+        update_gfx = true
       end
+      
     --[[else -- shift
       if char == 19 then
         ToggleSidebar()
@@ -23180,7 +23635,8 @@ end
     if #morph_data > 0 then
       A_RunMorph()
     end
-    
+
+    A_RunMod()
     
     if rcmrefreshtimercount > 0 then
       RCMRefresh()
@@ -23206,7 +23662,7 @@ end
     if closectlbrowser then closectlbrowser = nil show_ctlbrowser = false end
     if closegaugeedit then closegaugeedit  = nil show_gaugeedit = false end
     if redraw_ctlbitmap and reaper.time_precise() >= redraw_ctlbitmap then
-      redraw_ctlbitmap = nil
+      redraw_ctlbitmap = nil  
       GUI_DrawCtlBitmap()
     end
     if midimsg == true and reaper.time_precise() >= midimsgto then
@@ -23220,10 +23676,67 @@ end
 
   end
 
+  function A_RunMod()
+  
+    local pp = reaper.GetPlayPosition()
+    local tsm = reaper.FindTempoTimeSigMarker(0,pp)
+    if tsm then
+      retval, timepos = reaper.GetTempoTimeSigMarker(0, tsm)
+      pp = pp - timepos
+    end
+    local bt = CalcBeatTime()
+    local ms = modulators
+    local offset = 0
+
+    for i = 1, #ms do
+      if ms[i].active == true then
+        local m = ms[i]
+        local time = CalcSyncTime(m.syncv)
+        if m.offset ~= 0.5 then
+          offset = -((0.5-m.offset)*2) * bt
+        end  
+        m.dpos = ((pp+offset) % time) / time
+        m.pos = math.floor(m.dpos * m.steps)+1
+        if m.pos ~= m.opos and #m.targets > 0 or m.interpolate == true then
+          local val = m.data[m.pos]
+          if m.interpolate then
+            local dv
+            local dp = (m.dpos * m.steps + 1) - m.pos  
+            if m.pos < m.steps then
+              dv = (m.data[m.pos + 1] - m.data[m.pos]) * dp
+            else
+              dv = (m.data[1] - m.data[m.pos]) * dp
+            end
+            val = val + dv
+          end
+
+          --if m.targets then          
+            for t = 1, #m.targets do
+
+              if val then
+                val = m.min + (m.max-m.min)*val
+                if m.targets[t].targettype == 1 then
+                  local ctl = strips[m.targets[t].strip][m.targets[t].page].controls[m.targets[t].ctl]
+                  if val ~= ctl.val then
+                    SetParam3(m.targets[t]. strip,m.targets[t].page,m.targets[t].ctl,ctl,val)
+                    ctl.val = val
+                  end
+                end
+              end
+            end
+          --end
+        end
+        if m.pos ~= m.opos then 
+          update_lfopos = true
+        end
+      end
+    end
+  
+  end 
+
   function A_RunMorph()
     --DBG(#morph_data)
     local runcnt = 0
-    local actcnt = 0
     local t = reaper.time_precise()
     for i = 1, #morph_data do
       if morph_data[i].active then
@@ -23258,7 +23771,7 @@ end
         end    
       end
     end
-    if runcnt < 1 then
+    if runcnt == 0 then
       morph_data = {}
     end
     
@@ -23688,6 +24201,70 @@ end
                                           
       AssignFader(fd, f)
     
+    end
+  
+  end
+
+  function DragMod_Assign(md, c)
+  
+    local ctl = strips[tracks[track_select].strip][page].controls[c]
+    if ctl then
+      
+      local strip = tracks[track_select].strip 
+      local mt = modulators[md].targets
+      local c_id = strips[strip][page].controls[c].c_id
+      local fnd = false
+      for i = 1, #mt do
+        if mt[i].targettype == 1 then
+          if mt[i].strip == strip and
+             mt[i].page == page and
+             mt[i].ctl == c and 
+             mt[i].c_id == c_id then
+            fnd = true
+            break
+          end
+        end
+      end 
+      if fnd == false then
+        
+        Mod_RemoveAssign(strip, page, c)
+        mt[#mt+1] = {targettype = 1,
+                     strip = strip,
+                     page = page,
+                     ctl = c,
+                     c_id = c_id}
+        strips[strip][page].controls[c].mod = md
+      
+      end
+        
+    end
+  
+  end
+  
+  function Mod_RemoveAssign(strip, page, ctl)
+  
+    local m = modulators
+    local c_id = strips[strip][page].controls[ctl].c_id
+    for i = 1, #m do
+      if m[i] and #m[i].targets > 0 then
+    
+        local remflag = false
+        local tcnt = #m[i].targets
+        for t = 1, tcnt do
+          if m[i].targets[t].targettype == 1 then
+            if m[i].targets[t].strip == strip and 
+               m[i].targets[t].page == page and 
+               m[i].targets[t].c_id == c_id then
+              m[i].targets[t] = nil
+              remflag = true
+            end
+          end
+        end
+    
+        if remflag == true then
+          m[i].targets = Table_RemoveNils(m[i].targets,tcnt)
+        end
+      end
     end
   
   end
@@ -24153,10 +24730,12 @@ end
       if MOUSE_over(obj.sections[500]) then
         if mode0_submode == 0 then
           tlist_offset = F_limit(tlist_offset - v, 0, #tracks+1)
-        else
+        elseif mode0_submode == 1 then
           if LBX_CTL_TRACK_INF then
             fdlist_offset = F_limit(fdlist_offset - v, 0, LBX_FB_CNT*LBX_CTL_TRACK_INF.count -1)        
           end
+        elseif mode0_submode == 2 then
+          mdlist_offset = F_limit(mdlist_offset - v, 0, #modulators-1)        
         end
         update_gfx = true
         gfx.mouse_wheel = 0
@@ -24193,7 +24772,192 @@ end
     
       A_Run_InsertStrip()
     
+    --[[elseif mouse.context == nil and show_lfoedit == true and mouse.LB and not MOUSE_over(obj.sections[1100]) then
     
+      if mouse.lastLBclicktime == nil or (mouse.lastLBclicktime and reaper.time_precise() - mouse.lastLBclicktime > 0.5)  then
+        show_lfoedit = false
+        update_gfx = true
+      end]]
+          
+    elseif mouse.context == nil and show_lfoedit == true and (MOUSE_click(obj.sections[1100]) or MOUSE_click_RB(obj.sections[1100])) then
+
+      noscroll = true
+
+      if modulators[mod_select] then
+
+        local mx, my = mouse.mx, mouse.my          
+        mouse.mx = mouse.mx - obj.sections[1100].x
+        mouse.my = mouse.my - obj.sections[1100].y
+
+        local m = modulators[mod_select]
+        --local barw = math.floor((obj.sections[1101].w-2) / m.steps)
+        local barw = ((obj.sections[1101].w-2) / m.steps)
+        --local offs = math.floor(((obj.sections[1101].w-2)-(barw*m.steps)) / 2)
+        xywh = {x = obj.sections[1101].x,
+                y = obj.sections[1101].y,
+                w = barw * m.steps,
+                h = obj.sections[1101].h}
+      
+        if MOUSE_click(xywh) then
+        
+          mouse.context = contexts.mod_draw          
+          moddraw = {offs = offs, barw = barw}
+            
+        elseif MOUSE_click(obj.sections[1102]) then
+        
+          local os = m.steps
+          m.stepsmult = math.min(m.stepsmult + 1,#divmult_table)
+          if mouse.shift == false then
+            if m.stepsmult == 5 or m.stepsmult == 6 or m.stepsmult == 7 then
+              m.stepsmult = 8
+            elseif m.stepsmult == 3 then
+              m.stepsmult = 4
+            end
+          end
+          m.steps = (m.div * divmult_table[m.stepsmult])
+          if os ~= m.steps then
+            local d = {}
+            local cnt = #m.data
+            for i = 1, cnt do
+              d[i*2-1] = m.data[i]
+              if m.interpolate == true then
+                if m.data[i+1] then
+                  d[i*2] = m.data[i] + ((m.data[i+1] - m.data[i])/2)
+                else
+                  d[i*2] = m.data[i] + ((m.data[1] - m.data[i])/2)            
+                end
+              else
+                d[i*2] = m.data[i]              
+              end
+            end
+            if m.steps > cnt*2 then
+              local v = m.data[cnt*2]
+              for i = cnt*2+1, m.steps do
+                d[i] = v 
+              end
+            end
+            m.data = d
+          end
+          update_lfoedit = true
+
+        elseif MOUSE_click_RB(obj.sections[1102]) then
+
+          local os = m.steps
+          m.stepsmult = math.max(m.stepsmult - 1,1)
+          if mouse.shift == false then
+            if m.stepsmult == 5 or m.stepsmult == 6 or m.stepsmult == 7 then
+              m.stepsmult = 4
+            elseif m.stepsmult == 3 then
+              m.stepsmult = 2
+            end
+          end
+          m.steps = (m.div * divmult_table[m.stepsmult])
+          if os ~= m.steps then
+            local d = {}
+            for i = 1, m.steps do
+              d[i] = m.data[i*2-1] or 0.5
+            end
+            m.data = d          
+          end
+          update_lfoedit = true
+          
+        elseif MOUSE_click(obj.sections[1104]) then
+        
+          m.syncv = math.min(m.syncv + 1,#sync_table)
+          update_lfoedit = true
+
+        elseif MOUSE_click_RB(obj.sections[1104]) then
+        
+          m.syncv = math.max(m.syncv - 1,12)
+          update_lfoedit = true
+        
+        elseif MOUSE_click(obj.sections[1105]) then
+        
+          m.interpolate = not m.interpolate
+          update_lfoedit = true
+
+        elseif MOUSE_click(obj.sections[1108]) then
+
+          mouse.context = contexts.modoffset_slider
+          modoffs = {x = obj.sections[1100].x + obj.sections[1108].x,
+                     y = obj.sections[1100].y + obj.sections[1108].y,
+                     w = obj.sections[1108].w,
+                     h = obj.sections[1108].h,
+                     val = m.offset}
+          modoffs.yoff = -(my - (modoffs.y+modoffs.h/2))
+          oms = mouse.shift
+
+        elseif MOUSE_click(obj.sections[1109]) then
+
+          mouse.context = contexts.modmin_slider
+          modoffs = {x = obj.sections[1100].x + obj.sections[1109].x,
+                     y = obj.sections[1100].y + obj.sections[1109].y,
+                     w = obj.sections[1109].w,
+                     h = obj.sections[1109].h,
+                     val = m.min}
+          modoffs.yoff = -(my - (modoffs.y+modoffs.h/2))
+          oms = mouse.shift
+
+        elseif MOUSE_click(obj.sections[1110]) then
+
+          mouse.context = contexts.modmax_slider
+          modoffs = {x = obj.sections[1100].x + obj.sections[1110].x,
+                     y = obj.sections[1100].y + obj.sections[1110].y,
+                     w = obj.sections[1110].w,
+                     h = obj.sections[1110].h,
+                     val = m.max}
+          modoffs.yoff = -(my - (modoffs.y+modoffs.h/2))
+          oms = mouse.shift
+
+        elseif MOUSE_click(obj.sections[1107]) then
+
+          m.div = math.min(m.div + 1,12)
+          m.steps = (m.div * divmult_table[m.stepsmult])
+          local dcnt = #m.data
+          if m.steps > dcnt then
+            local d = {}
+            local v = m.data[dcnt]
+            for i = 1, m.steps do
+              if m.data[i] then
+                d[i] = m.data[i]
+              else
+                d[i] = v
+              end 
+            end
+            m.data = d
+          end
+          update_lfoedit = true
+
+        elseif MOUSE_click_RB(obj.sections[1107]) then
+        
+          m.div = math.max(m.div - 1,3)
+          m.steps = (m.div * divmult_table[m.stepsmult])
+          local dcnt = #m.data
+          if m.steps > dcnt then
+            local d = {}
+            local v = m.data[#m.data]
+            for i = 1, m.steps do
+              if m.data[i] then
+                d[i] = m.data[i]
+              else
+                d[i] = v
+              end 
+            end
+            m.data = d
+          end
+          update_lfoedit = true
+
+        elseif MOUSE_click(obj.sections[1106]) then
+        
+          m.active = not m.active
+          update_lfoedit = true
+          
+        end
+
+        mouse.mx, mouse.my = mx, my
+        
+      end
+      
     elseif mouse.context == nil and show_xysnapshots == true and show_eqcontrol ~= true and macro_edit_mode ~= true and (MOUSE_click(obj.sections[180]) or MOUSE_click_RB(obj.sections[180])) then
     
       if mouse.context == nil and MOUSE_click_RB(obj.sections[180]) then
@@ -25127,6 +25891,7 @@ end
           end
         end
       end
+      
     elseif mode0_submode == 1 then
       if MOUSE_click(obj.sections[500]) then
         if show_fsnapshots then
@@ -25161,7 +25926,6 @@ end
             update_gfx = true
           end
         end
-
       elseif MOUSE_click_RB(obj.sections[500]) then
       
         if LBX_CTL_TRACK_INF then
@@ -25212,10 +25976,202 @@ end
           end
 
         end        
+      end
+      
+    elseif mode0_submode == 2 then
+      
+      if MOUSE_click(obj.sections[500]) then
+        if show_fsnapshots then
+          show_fsnapshots = false
+          update_surface = true
+        end
+        
+        local i = math.floor((mouse.my - obj.sections[500].y) / butt_h)-1
+        if i == 0 then
+          if mouse.mx < obj.sections[500].w/2 then
+            mdlist_offset = mdlist_offset - (MD_butt_cnt-3)
+            if mdlist_offset < 0 then
+              mdlist_offset = 0
+            end
+          else
+            if mdlist_offset + MD_butt_cnt < #modulators-1 then
+              mdlist_offset = mdlist_offset + (MD_butt_cnt-3)
+            end
+          end
+          update_sidebar = true
+                
+        elseif i == -1 then
+        
+          show_lfoedit = not show_lfoedit
+          update_gfx = true
+        
+        elseif modulators[i + mdlist_offset] then
+        
+          local md = i + mdlist_offset
+          mod_select = md
+          if show_striplayout == false then
+            mouse.context = contexts.dragmod
+            dragmod = {x = mouse.mx, y = mouse.my}
+          end
+          update_gfx = true
+        end
+
+      elseif MOUSE_click_RB(obj.sections[500]) then
+      
+        show_lfoedit = not show_lfoedit
+        update_gfx = true
+      
       end    
     end
   
-    if mouse.context and mouse.context == contexts.movesnapwindow then
+    if mouse.context and mouse.context == contexts.modoffset_slider then
+    
+      local val = MOUSE_slider(modoffs, modoffs.yoff)
+      if val ~= nil then
+        local m = modulators[mod_select]
+
+        if oms ~= mouse.shift then
+          oms = mouse.shift
+          modoffs.val = val
+          modoffs.yoff = -(mouse.my - (modoffs.y+modoffs.h/2)) --modoffs.y+modoffs.h/2 - mouse.my
+        else
+          if mouse.shift then
+            local mult = settings_defknobsens.fine
+            val = modoffs.val + ((0.5-val)*2)*mult
+          else
+            local mult = settings_defknobsens.norm
+            val = modoffs.val + (0.5-val)*mult
+          end
+          if val < 0 then val = 0 end
+          if val > 1 then val = 1 end
+          if val ~= octlval then
+            m.offset = val
+            octlval = val
+            update_lfoedit = true
+          end
+        end
+      end
+
+    elseif mouse.context and mouse.context == contexts.modmin_slider then
+    
+      local val = MOUSE_slider(modoffs, modoffs.yoff)
+      if val ~= nil then
+        local m = modulators[mod_select]
+
+        if oms ~= mouse.shift then
+          oms = mouse.shift
+          modoffs.val = val
+          modoffs.yoff = -(mouse.my - (modoffs.y+modoffs.h/2))
+        else
+          if mouse.shift then
+            local mult = settings_defknobsens.fine
+            val = modoffs.val + ((0.5-val)*2)*mult
+          else
+            local mult = settings_defknobsens.norm
+            val = modoffs.val + (0.5-val)*mult
+          end
+          if val < 0 then val = 0 end
+          if val > 1 then val = 1 end
+          if val ~= octlval and val < m.max then
+            m.min = val
+            octlval = val
+            update_lfoedit = true
+          end
+        end
+      end
+
+    elseif mouse.context and mouse.context == contexts.modmax_slider then
+    
+      local val = MOUSE_slider(modoffs, modoffs.yoff)
+      if val ~= nil then
+        local m = modulators[mod_select]
+
+        if oms ~= mouse.shift then
+          oms = mouse.shift
+          modoffs.val = val
+          modoffs.yoff = -(mouse.my - (modoffs.y+modoffs.h/2))
+        else
+          if mouse.shift then
+            local mult = settings_defknobsens.fine
+            val = modoffs.val + ((0.5-val)*2)*mult
+          else
+            local mult = settings_defknobsens.norm
+            val = modoffs.val + (0.5-val)*mult
+          end
+          if val < 0 then val = 0 end
+          if val > 1 then val = 1 end
+          if val ~= octlval and val > m.min then
+            m.max = val
+            octlval = val
+            update_lfoedit = true
+          end
+        end
+      end
+      
+    elseif mouse.context and mouse.context == contexts.mod_draw then
+    
+      local m = modulators[mod_select]
+      xywh = {x = obj.sections[1100].x + obj.sections[1101].x, -- + moddraw.offs,
+              y = obj.sections[1100].y + obj.sections[1101].y,
+              w = math.floor(moddraw.barw * m.steps),
+              h = obj.sections[1101].h}
+      --if MOUSE_over(xywh) then
+        local xbar = math.floor((mouse.mx-xywh.x)/moddraw.barw) + 1
+        local yp = F_limit(1- ((mouse.my - xywh.y) / xywh.h),0,1)
+        if mouse.shift then
+          if not moddraw.yp then
+            moddraw.yp = yp
+          end
+          yp = moddraw.yp
+        end
+        if mouse.ctrl then
+          if moddraw.lastx then
+            xbar = moddraw.lastx
+          end
+        end
+        if xbar >= 1 and xbar <= m.steps then
+          m.data[xbar] = yp        
+          if not modbaridx[xbar] then
+            modbaridx[xbar] = true
+            modbaredit[#modbaredit+1] = xbar
+          end
+        end
+        if moddraw.lastx then
+          local xd = xbar - moddraw.lastx
+          if math.abs(xd) > 1 then
+            local step = 1
+            if xd < 0 then
+              step = -1
+            end
+            local dy = (moddraw.lasty - yp) / -(xd)
+            local min, max
+            if yp > moddraw.lasty then
+              min, max = moddraw.lasty, yp
+            else
+              min, max = yp, moddraw.lasty
+            end 
+            for ii = step, xd-1, step do
+              i = moddraw.lastx + ii
+              if i >= 1 and i <= m.steps then
+                if mouse.shift then
+                  m.data[i] = yp                
+                else
+                  m.data[i] = F_limit(moddraw.lasty + (ii * dy),min,max)
+                end
+                if not modbaridx[i] then
+                  modbaridx[i] = true
+                  modbaredit[#modbaredit+1] = i
+                end
+              end
+            end
+          end
+        end
+        moddraw.lastx = xbar
+        moddraw.lasty = yp
+        update_lfoeditbar = true   
+      --end
+    
+    elseif mouse.context and mouse.context == contexts.movesnapwindow then
       
       obj.sections[160].x = F_limit(mouse.mx - movesnapwin.offx, obj.sections[10].x, gfx1.main_w-obj.sections[160].w)
       obj.sections[160].y = F_limit(mouse.my - movesnapwin.offy, obj.sections[10].y, gfx1.main_h-obj.sections[160].h)
@@ -25267,6 +26223,37 @@ end
       end
     
       dragfader = nil
+      update_sidebar = true
+      update_surface = true
+
+    elseif mouse.context and mouse.context == contexts.dragmod then
+      if mouse.mx ~= dragmod.x or mouse.my ~= dragmod.y then
+        local c = GetControlAtXY(tracks[track_select].strip,page,mouse.mx,mouse.my)
+        if c then
+          local ctl = strips[tracks[track_select].strip][page].controls[c]
+          if ctl and (ctl.ctlcat == ctlcats.fxparam or 
+                      ctl.ctlcat == ctlcats.trackparam or 
+                      ctl.ctlcat == ctlcats.tracksend or
+                      ctl.ctlcat == ctlcats.macro) then 
+            dragmod = {x = mouse.mx, y = mouse.my, ctl = c}
+          else
+            dragmod = {x = mouse.mx, y = mouse.my, ctl = -1}          
+          end
+        else
+          dragmod = {x = mouse.mx, y = mouse.my, ctl = nil}        
+        end
+        update_surface = true
+      end
+
+    elseif dragmod ~= nil then
+    
+      if dragmod.ctl and dragmod.ctl ~= -1 then
+      
+        DragMod_Assign(mod_select, dragmod.ctl)
+      
+      end
+    
+      dragmod = nil
       update_sidebar = true
       update_surface = true
     
@@ -33453,6 +34440,10 @@ end
                       --SetFader(ctl.macrofader, ctl.val)                    
                     end
                     
+                    if ctl.dirty == true then
+                      SetCtlDirty(i)           
+                    end
+                  
                   end
                 end
                 chktbl = nil
@@ -33466,6 +34457,13 @@ end
       end
     end
 
+  end
+
+  function SetCtlDirty(c)
+    if not ctls_dirty.idx[c] then
+      ctls_dirty.idx[c] = true
+      ctls_dirty.update[#ctls_dirty.update+1] = c 
+    end
   end
 
   function DropCtls()
@@ -36113,6 +37111,7 @@ end
                                     poslock = tobool(zn(data[key..'poslock'],false)),
                                     horiz = tobool(zn(data[key..'horiz'],false)),
                                     macrofader = tonumber(zn(data[key..'macrofader'])),
+                                    mod = tonumber(zn(data[key..'mod'])),
                                     switchfader = tonumber(zn(data[key..'switchfader'])),
                                     hidden = tobool(zn(data[key..'hidden'],false)),
                                     switcherid = tonumber(zn(data[key..'switcherid'])),
@@ -37016,6 +38015,133 @@ end
   
   end
 
+  function CheckMods()
+  
+    if modulators == nil then return end
+    
+    for m = 1, #modulators do
+      if #modulators[m].targets > 0 then
+        
+        local tcnt = #modulators[m].targets
+        local tchange = false
+        for t = 1, tcnt do
+          fnd = false
+          
+          local s = modulators[m].targets[t].strip
+          local p = modulators[m].targets[t].page
+          local c = modulators[m].targets[t].ctl
+          local cid = modulators[m].targets[t].c_id
+          if strips[s] and strips[s][p].controls[c] and cid == strips[s][p].controls[c].c_id and 
+             strips[s][p].controls[c].mod == m then
+            --all good
+            fnd = true
+          else
+            if strips[s] then
+              for cc = 1, #strips[s][p].controls do
+                if strips[s][p].controls[cc].c_id == cid then
+                
+                  strips[s][p].controls[cc].mod = m
+                  modulators[m].targets[t].ctl = cc
+                  fnd = true
+                  break
+                end
+              end
+              if fnd == false then
+                for ss = 1, #strips do
+                  for pp = 1, 4 do
+                    for cc = 1, #strips[ss][pp].controls do
+                      if strips[ss][pp].controls[cc].c_id == cid then
+                      
+                        strips[ss][pp].controls[cc].mod = m
+                        modulators[m].targets[t].strip = ss
+                        modulators[m].targets[t].page = pp
+                        modulators[m].targets[t].ctl = cc
+                        fnd = true
+                        break
+                      end      
+                    end
+                    if fnd == true then
+                      break
+                    end
+                  end
+                  if fnd == true then
+                    break
+                  end
+                end
+              end
+            end
+          end
+          if fnd == false then
+            --not found
+            tchange = true
+            modulators[m].targets[t] = nil
+          end
+          
+        end
+        
+        if tchange == true then
+          modulators[m].targets = Table_RemoveNils(modulators[m].targets, tcnt)
+        end
+        
+      end
+    end
+  
+  end
+
+  function LoadMods(data)
+
+    local key = 'modcnt'
+    local modcnt = tonumber(zn(data[key]))
+
+    if modcnt and modcnt > 0 then
+
+      --modulators = {}
+      
+      for m = 1, modcnt do      
+        
+        local key = 'mod_'..m..'_'
+      
+        modulators[m] = {}
+        modulators[m].active = tobool(zn(data[key..'active']))
+        modulators[m].steps = tonumber(zn(data[key..'steps']))
+        modulators[m].stepsmult = tonumber(zn(data[key..'stepsmult'],1))
+        modulators[m].div = tonumber(zn(data[key..'div'],4))
+        modulators[m].offset = tonumber(zn(data[key..'offset'],0.5))
+        modulators[m].min = tonumber(zn(data[key..'min'],0))
+        modulators[m].max = tonumber(zn(data[key..'max'],1))
+        modulators[m].interpolate = tobool(zn(data[key..'interpolate']))
+        modulators[m].syncv = tonumber(zn(data[key..'syncv']))
+        modulators[m].sync = tobool(zn(data[key..'sync']))
+        local targetcnt = tonumber(zn(data[key..'target_cnt']))
+
+        modulators[m].targets = {}
+        modulators[m].data = {}
+        if targetcnt > 0 then
+          for t = 1, targetcnt do
+            local key = 'mod_'..m..'_target_'..t..'_'
+            modulators[m].targets[t] = {targettype = tonumber(zn(data[key..'targettype'],1)),
+                                        strip = tonumber(zn(data[key..'strip'])),
+                                        page = tonumber(zn(data[key..'page'])),
+                                        ctl = tonumber(zn(data[key..'ctl'])),
+                                        c_id = tonumber(zn(data[key..'c_id']))
+                                        }
+          end
+        end        
+
+        for d = 1, modulators[m].steps do
+          local key = 'mod_'..m..'_data_'..d..'_'
+          modulators[m].data[d] = tonumber(zn(data[key..'val']))
+        end
+        
+      end 
+  
+    end
+
+    CheckMods()
+    --Faders_SetOVAL()
+    
+  end
+
   function LoadSwitchers(data)
 
     local key = 'switcher_cnt'
@@ -37166,6 +38292,7 @@ end
     
     LoadXXYPathData(data)
     LoadFaders(data)
+    LoadMods(data)
     LoadSwitchers(data)
     
     data = nil
@@ -37747,6 +38874,7 @@ end
 
           LoadXXYPathData(data)
           LoadFaders(data)
+          LoadMods(data)
           LoadSwitchers(data)
 
         end
@@ -38156,6 +39284,52 @@ end
           file:write('['..key..'xy]'.. nz(faders[f].xy,'') ..'\n')
           file:write('['..key..'mode]'.. nz(faders[f].mode,'') ..'\n')
           file:write('['..key..'voffset]'.. nz(faders[f].voffset,'') ..'\n')
+  
+        end
+      end  
+    end
+    
+  end
+
+  function SaveMods(file)
+  
+    if file and modulators and #modulators > 0 then
+  
+      CheckMods()
+  
+      local key = 'modcnt'
+      file:write('['..key..']'.. #modulators ..'\n')
+      
+      for m = 1, #modulators do
+    
+        if modulators[m] then
+  
+          local key = 'mod_'..m..'_'
+          file:write('['..key..'active]'.. tostring(nz(modulators[m].active,false)) ..'\n')
+          file:write('['..key..'steps]'.. modulators[m].steps ..'\n')
+          file:write('['..key..'stepsmult]'.. modulators[m].stepsmult ..'\n')
+          file:write('['..key..'div]'.. modulators[m].div ..'\n')
+          file:write('['..key..'interpolate]'.. tostring(nz(modulators[m].interpolate,true)) ..'\n')
+          file:write('['..key..'syncv]'.. nz(modulators[m].syncv,15) ..'\n')
+          file:write('['..key..'sync]'.. tostring(nz(modulators[m].sync,true)) ..'\n')
+          file:write('['..key..'offset]'.. nz(modulators[m].offset,0.5) ..'\n')
+          file:write('['..key..'min]'.. nz(modulators[m].min,0) ..'\n')
+          file:write('['..key..'max]'.. nz(modulators[m].max,1) ..'\n')
+          file:write('['..key..'target_cnt]'.. #modulators[m].targets ..'\n')
+
+          for t = 1, #modulators[m].targets do
+            local key = 'mod_'..m..'_target_'..t..'_'
+            file:write('['..key..'targettype]'.. nz(modulators[m].targets[t].targettype,'') ..'\n')
+            file:write('['..key..'strip]'.. nz(modulators[m].targets[t].strip,'') ..'\n')
+            file:write('['..key..'page]'.. nz(modulators[m].targets[t].page,'') ..'\n')
+            file:write('['..key..'ctl]'.. nz(modulators[m].targets[t].ctl,'') ..'\n')
+            file:write('['..key..'c_id]'.. nz(modulators[m].targets[t].c_id,'') ..'\n')        
+          end
+
+          for d = 1, modulators[m].steps do
+            local key = 'mod_'..m..'_data_'..d..'_'
+            file:write('['..key..'val]'.. nz(modulators[m].data[d],0.5) ..'\n')          
+          end
   
         end
       end  
@@ -38695,6 +39869,7 @@ end
               file:write('['..key..'xydata_snapd]'..nz(stripdata.controls[c].xydata.snapd,1)..'\n')
 
               file:write('['..key..'macrofader]'..nz(stripdata.controls[c].macrofader,'')..'\n')
+              file:write('['..key..'mod]'..nz(stripdata.controls[c].mod,'')..'\n')
               file:write('['..key..'switchfader]'..nz(stripdata.controls[c].switchfader,'')..'\n')
   
               if stripdata.controls[c].cycledata and stripdata.controls[c].cycledata.statecnt then
@@ -39186,6 +40361,9 @@ end
     
     if faders then
       SaveFaders(file)
+    end
+    if modulators then
+      SaveMods(file)
     end
     if switchers then
       SaveSwitchers(file)
@@ -40612,6 +41790,10 @@ end
                   end
                 end
                 
+                ctl.macrofader = nil
+                ctl.switchfader = nil
+                ctl.mod = nil
+                
               end
               
             end
@@ -41005,6 +42187,38 @@ end
     
   end
 
+  function INIT_Modulators(mods)
+  
+    if mods == nil then
+      mods = {}
+    end
+    for i = 1, modulator_cnt do
+    
+      if mods[i] == nil then
+        mods[i] = {active = false,
+                   steps = 16,
+                   div = 4,
+                   stepsmult = 1,
+                   interpolate = false,
+                   syncv = 20,
+                   sync = true,
+                   offset = 0.5,
+                   min = 0,
+                   max = 1,
+                   data = {},
+                   targets = {},
+                   }
+        for d = 1, mods[i].steps do
+          mods[i].data[d] = 0.5
+        end
+      end
+      
+    end
+    
+    return mods
+  
+  end
+
   function INIT(keepprojid)
 
     DBGOut('')
@@ -41047,11 +42261,15 @@ end
     F_butt_cnt = 0
     G_butt_cnt = 0
     S_butt_cnt = 0
+    FD_butt_cnt = 0
+    MD_butt_cnt = 0
     SF_butt_cnt = 0
     SS_butt_cnt = 0
     FSS_butt_cnt = 0
     tlist_offset = 0
     sflist_offset = 0
+    mdlist_offset = 0
+    fdlist_offset = 0
     cyclist_offset = 0
     trctltypelist_offset = 0
     trctlslist_offset = 0
@@ -41068,6 +42286,10 @@ end
     snapshots = nil
     xxy = nil
     xxy_gravity = 1.5
+    modulator_cnt = 32
+    modulators = INIT_Modulators()
+    modbaridx = {}
+    modbaredit = {}
     
     surface_offset = {x = 0, y = 0}
     
@@ -41145,6 +42367,7 @@ end
     gfxa_select = 1
     gfxstretchmode_select = 1
     gfxedgesz_select = 8
+    mod_select = 1
     
     plist_w = 140
     oplist_w = 140
@@ -41171,6 +42394,7 @@ end
     show_midiout = false
     show_bitmap = false
     show_dd = false
+    show_lfoedit = false
     
     show_paramname = true
     show_paramval = true
@@ -42344,6 +43568,11 @@ end
   backcol = '16 16 16'
   faderhighcol = '160 64 255'
   faderselcol = '255 160 255'
+
+  modhighcol = '64 160 255'
+  modselcol = '160 255 255'
+  
+  barcol = '64 0 0'
   
   eq_scale = true
   eq_single = false
@@ -42435,6 +43664,9 @@ end
       end
       sg_view = nil
     end
+    
+    ctls_dirty = {idx = {}, update = {}}
+    
     run()
 
     reaper.atexit(quit)
