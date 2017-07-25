@@ -159,7 +159,9 @@
               dragmod = 112,
               modoffset_slider = 113, 
               modmin_slider = 114, 
-              modmax_slider = 115, 
+              modmax_slider = 115,
+              modwin_resize = 116, 
+              modwin_move = 117, 
               dummy = 999
               }
   
@@ -2581,10 +2583,21 @@
                            w = 60,
                            h = butt_h} 
       
-      local mow, moh = math.max(obj.sections[10].w-80,536), obj.sections[10].h - 150
-      --DBG(mow)
-      obj.sections[1100] = {x = math.floor(obj.sections[10].x+obj.sections[10].w/2 - mow/2),
-                           y = math.floor(obj.sections[10].y+obj.sections[10].h/2 - moh/2),
+      local mow, moh, x, y
+      if modwinsz then
+        mow = modwinsz.w
+        moh = modwinsz.h
+        x = modwinsz.x
+        y = modwinsz.y
+      else
+        mow, moh = math.max(obj.sections[10].w-80,modwin.minw), obj.sections[10].h - 150
+        x = math.floor(obj.sections[10].x+obj.sections[10].w/2 - mow/2)
+        y = math.floor(obj.sections[10].y+obj.sections[10].h/2 - moh/2)
+        modwinsz = {x = x, y = y, w = mow, h = moh}
+      end
+
+      obj.sections[1100] = {x = x,
+                           y = y,
                            w = mow,
                            h = moh}
       if obj.sections[1100].x < plist_w + 2 then
@@ -2633,6 +2646,14 @@
                            y = obj.sections[1109].y,
                            w = 80,
                            h = 20} 
+      obj.sections[1111] = {x = obj.sections[1100].w -20,
+                           y = obj.sections[1100].h -20,
+                           w = 20,
+                           h = 20} 
+      obj.sections[1112] = {x = 0,
+                           y = 0,
+                           w = obj.sections[1100].w,
+                           h = 24} 
 
     return obj
   end
@@ -11275,9 +11296,10 @@ end
   function GUI_DrawLFOEdit(obj, gui)
 
     gfx.dest = 992
-    if resize_display or update_gfx then
+    if resize_display or update_gfx or modwinsz.resize then
       gfx.setimgdim(992, -1, -1)  
       gfx.setimgdim(992, obj.sections[1100].w,obj.sections[1100].h)
+      modwinsz.resize = nil
     end
         
     GUI_DrawPanel(obj.sections[1100],false,'MODULATORS')
@@ -24802,6 +24824,16 @@ end
         
           mouse.context = contexts.mod_draw          
           moddraw = {offs = offs, barw = barw}
+        
+        elseif MOUSE_click(obj.sections[1111]) then
+          
+          mouse.context = contexts.modwin_resize
+          modwinrsz = {mx = mx, my = my, w = modwinsz.w, h = modwinsz.h}          
+
+        elseif MOUSE_click(obj.sections[1112]) then
+          
+          mouse.context = contexts.modwin_move
+          modwinmv = {mx = mx, my = my, x = modwinsz.x, y = modwinsz.y}          
             
         elseif MOUSE_click(obj.sections[1102]) then
         
@@ -26024,7 +26056,31 @@ end
       end    
     end
   
-    if mouse.context and mouse.context == contexts.modoffset_slider then
+    if mouse.context and mouse.context == contexts.modwin_resize then
+  
+      modwinsz.w = math.max(modwinrsz.w + (mouse.mx - modwinrsz.mx),modwin.minw) 
+      modwinsz.h = modwinrsz.h + (mouse.my - modwinrsz.my)
+      if modwinsz.w ~= modwinsz.ow or modwinsz.h ~= modwinsz.oh then
+        modwinsz.resize = true      
+        obj = GetObjects() 
+        update_lfoedit = true
+        update_surface = true
+        
+        modwinsz.ow = modwinsz.w
+        modwinsz.oh = modwinsz.h
+      end
+
+    elseif mouse.context and mouse.context == contexts.modwin_move then
+
+      modwinsz.x = math.min(math.max(modwinmv.x + (mouse.mx - modwinmv.mx),0),obj.sections[10].x+obj.sections[10].w-10)
+      modwinsz.y = math.min(math.max(modwinmv.y + (mouse.my - modwinmv.my),obj.sections[10].y),obj.sections[10].y+obj.sections[10].h-10)
+      --obj.sections[1100].x = modwinsz.x
+      --obj.sections[1100].y = modwinsz.y
+      obj = GetObjects() 
+      update_lfoedit = true
+      update_surface = true
+           
+    elseif mouse.context and mouse.context == contexts.modoffset_slider then
     
       local val = MOUSE_slider(modoffs, modoffs.yoff)
       if val ~= nil then
@@ -43571,6 +43627,7 @@ end
 
   modhighcol = '64 160 255'
   modselcol = '160 255 255'
+  modwin = {minw = 536}
   
   barcol = '64 0 0'
   
