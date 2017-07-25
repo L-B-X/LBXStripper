@@ -2590,7 +2590,7 @@
         x = modwinsz.x
         y = modwinsz.y
       else
-        mow, moh = math.max(obj.sections[10].w-80,modwin.minw), obj.sections[10].h - 150
+        mow, moh = modwin.minw, 300
         x = math.floor(obj.sections[10].x+obj.sections[10].w/2 - mow/2)
         y = math.floor(obj.sections[10].y+obj.sections[10].h/2 - moh/2)
         modwinsz = {x = x, y = y, w = mow, h = moh}
@@ -4844,7 +4844,7 @@
             if faders[fader_select] and faders[fader_select].targettype then
               f_Get_SSV(faderselcol)
             else
-              f_Get_SSV('0 160 255')          
+              f_Get_SSV(gui.color.white)          
             end          
             gfx.rect(xywh.x,xywh.y,xywh.w,xywh.h,1,1)
             
@@ -4911,9 +4911,9 @@
         local c = gui.color.white
         if mod_select == i + mdlist_offset then
           if modulators[mod_select] and #modulators[mod_select].targets > 0 then
-            f_Get_SSV(faderselcol)
+            f_Get_SSV(modselcol)
           else
-            f_Get_SSV('0 160 255')          
+            f_Get_SSV(gui.color.white)          
           end          
           gfx.rect(xywh.x,xywh.y,xywh.w,xywh.h,1,1)
           
@@ -11302,7 +11302,7 @@ end
       modwinsz.resize = nil
     end
         
-    GUI_DrawPanel(obj.sections[1100],false,'MODULATORS')
+    GUI_DrawPanel(obj.sections[1100],false,'MODULATORS - MOD '..mod_select)
     
     local m = modulators[mod_select]
 
@@ -11660,7 +11660,7 @@ end
           local sz = 30
           local xywh = {x = dragmod.x-sz, y = dragmod.y-butt_h/2, w = sz*2, h = butt_h}
           if dragmod.ctl == nil then
-            f_Get_SSV(faderselcol)
+            f_Get_SSV(modselcol)
             gfx.a = 1          
           elseif dragmod.ctl == -1 then
             f_Get_SSV('255 0 0')    
@@ -25223,6 +25223,15 @@ end
                     trackfxparam_select = i
                     oms = mouse.shift                      
                   end
+                  if ctls[i].mod and mod_select ~= ctls[i].mod then
+                    mod_select = ctls[i].mod
+                    --if show_lfoedit then
+                    --  update_lfoedit = true
+                    --end
+                    --update_sidebar = true
+                    update_gfx = true
+                    
+                  end
                   
                   --undotxt = 'Parameter Change'
                   --reaper.Undo_BeginBlock2()
@@ -26074,12 +26083,17 @@ end
 
       modwinsz.x = math.min(math.max(modwinmv.x + (mouse.mx - modwinmv.mx),0),obj.sections[10].x+obj.sections[10].w-10)
       modwinsz.y = math.min(math.max(modwinmv.y + (mouse.my - modwinmv.my),obj.sections[10].y),obj.sections[10].y+obj.sections[10].h-10)
-      --obj.sections[1100].x = modwinsz.x
-      --obj.sections[1100].y = modwinsz.y
-      obj = GetObjects() 
-      update_lfoedit = true
-      update_surface = true
-           
+      if modwinsz.x ~= modwinsz.ox or modwinsz.y ~= modwinsz.oy then
+        --obj.sections[1100].x = modwinsz.x
+        --obj.sections[1100].y = modwinsz.y
+        obj = GetObjects() 
+        update_lfoedit = true
+        update_surface = true
+      
+        modwinsz.ox = modwinsz.x
+        modwinsz.oy = modwinsz.y
+      end
+                 
     elseif mouse.context and mouse.context == contexts.modoffset_slider then
     
       local val = MOUSE_slider(modoffs, modoffs.yoff)
