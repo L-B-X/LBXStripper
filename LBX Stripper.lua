@@ -7428,7 +7428,7 @@ end
         if update_gfx == true then
           cnt = #strips[strip][page].controls
         end
-        --DBG(tostring(update_gfx)..'  '..cnt)
+
         for cdi = 1, cnt do
 
           if update_gfx == true then
@@ -7440,11 +7440,11 @@ end
           local hidden = Switcher_CtlsHidden(ctl.switcher, ctl.grpid)
 
           if not ctl.hide and hidden ~= true and (mode == 1 or ctl.hidden ~= true or macro_lrn_mode == true or snaplrn_mode == true) then
+
             local ctlcat = ctl.ctlcat
-            
-            if update_gfx or ctl.dirty or force_gfx_update or (ctlcat == ctlcats.snapshot and (update_snaps or update_fsnaps)) then
+            if update_gfx or cdu[cdi] or force_gfx_update or (ctlcat == ctlcats.snapshot and (update_snaps or update_fsnaps)) then
               ctl.dirty = false
-              
+
               local scale = ctl.scale
               local x = ctl.x 
               local y = ctl.y
@@ -7861,13 +7861,19 @@ end
                     end
                     gfx.roundrect(px+1,py+1,w*scale-2,h*scale-2,5,1)
                   end
+
                   if settings_showfaderassignments == true and ctl.mod then
                     if mode0_submode == 2 and mod_select == ctl.mod then
                       f_Get_SSV(modselcol)
                     else 
                       f_Get_SSV(modhighcol)                    
                     end
+
+                    if modulators[ctl.mod].active == false then
+                      gfx.a = 0.3                        
+                    end
                     gfx.roundrect(px+1,py+1,w*scale-2,h*scale-2,5,1)
+                    gfx.a = 1
                   end
 
                   if spn then
@@ -8322,11 +8328,15 @@ end
                   h = obj.sections[168].h}
     GUI_textC(gui,xywh,'*',gui.color.black,9)
     GUI_DrawButton(gui, 'RANDOMIZE', obj.sections[169], gui.color.white, gui.color.black, true, '', false)
-    if settings_savefaderboxassinsnapshots then
-      GUI_DrawButton(gui, 'CAPTURE (+FB)', obj.sections[162], gui.color.white, gui.color.black, true, '', false)
-    else
-      GUI_DrawButton(gui, 'CAPTURE', obj.sections[162], gui.color.white, gui.color.black, true, '', false)
+    
+    local txt = 'CAPTURE'
+    if settings_savemodsinsnapshots then
+      txt = txt..' (+MOD)'
     end
+    if settings_savefaderboxassinsnapshots then
+      txt = txt..' (+FB)'
+    end
+    GUI_DrawButton(gui, txt, obj.sections[162], gui.color.white, gui.color.black, true, '', false)
     GUI_DrawButton(gui, 'NEW SUBSET', obj.sections[166], gui.color.white, gui.color.black, true, '', false)
     local bc, bc2 = gui.color.white, gui.color.white
     if sstype_select == 1 then
@@ -11140,7 +11150,7 @@ end
       local barw = ((obj.sections[1101].w-2) / m.steps)
       --local dbw = math.max(barw,1)
       local bw = 0
-      if m.steps < (obj.sections[1101].w/3) then
+      if m.steps < (obj.sections[1101].w/2) then
         bw = 1
       end
 
@@ -11157,7 +11167,7 @@ end
           local c = 0.1 + m.data[modbaredit[i]] * 0.9
           gfx.r = c*.25
           gfx.g = c*.25
-          gfx.b = c
+          gfx.b = 0.4+c*0.6
           gfx.rect(x+bw,obj.sections[1101].y + (obj.sections[1101].h-h),math.max(w,1),h,1) 
       
         end
@@ -11189,7 +11199,7 @@ end
       local barw = ((obj.sections[1101].w-2) / m.steps)
       --local dbw = math.max(barw,1)
       local bw = 0
-      if m.steps < (obj.sections[1101].w/3) then
+      if m.steps < (obj.sections[1101].w/2) then
         bw = 1
       end
 
@@ -11205,7 +11215,7 @@ end
         local c = 0.1 + m.data[m.opos] * 0.9
         gfx.r = c*.25
         gfx.g = c*.25
-        gfx.b = c
+        gfx.b = 0.4+c*0.6
         gfx.rect(x+bw,obj.sections[1101].y + (obj.sections[1101].h-h),math.max(w,1),h,1) 
       
       end
@@ -11319,18 +11329,19 @@ end
       f_Get_SSV(gui.color.white)
       gfx.rect(obj.sections[1101].x-2,obj.sections[1101].y-2,math.ceil(barw*m.steps+4),obj.sections[1101].h+4,0)      
       
-      if m.steps < (obj.sections[1101].w/3) then
+      if m.steps < (obj.sections[1101].w/2) then
         bw = 1
       end
       for i = 1, m.steps do
         local c = 0.1 + m.data[i] * 0.9
         gfx.r = c*.25
         gfx.g = c*.25
-        gfx.b = c
+        gfx.b = 0.4+c*0.6
       
         --f_Get_SSV(gui.color.white)
         local x = obj.sections[1101].x + math.floor((i-1) * barw)
         local w = math.floor(i*barw) - math.floor((i-1) * barw) - bw
+        --DBG(w..'  '..bw)
         local h = math.floor(obj.sections[1101].h * m.data[i]) 
         gfx.rect(x+bw,obj.sections[1101].y + (obj.sections[1101].h-h),math.max(w,1),h,1)
       
@@ -19757,7 +19768,11 @@ end
   
   function RBMenu_Capture()
   
-    local mstr = 'Capture faderbox settings'
+    local mod = ''
+    if settings_savemodsinsnapshots then
+      mod = '!'
+    end
+    local mstr = 'Capture faderbox settings|'..mod..'Capture modulators'
     if settings_savefaderboxassinsnapshots == true then
       mstr = '!'..mstr
     end
@@ -19766,6 +19781,9 @@ end
     if res ~= 0 then
       if res == 1 then
         settings_savefaderboxassinsnapshots = not settings_savefaderboxassinsnapshots
+        update_gfx = true
+      elseif res == 2 then
+        settings_savemodsinsnapshots = not settings_savemodsinsnapshots
         update_gfx = true
       end
     end    
@@ -21079,11 +21097,11 @@ end
   
     local no = {}
     seen[o] = no
-    setmetatable(no, deepcopy(getmetatable(o), seen))
+    setmetatable(no, table.deepcopy(getmetatable(o), seen))
   
     for k, v in next, o, nil do
-      k = (type(k) == 'table') and k:deepcopy(seen) or k
-      v = (type(v) == 'table') and v:deepcopy(seen) or v
+      k = (type(k) == 'table') and table.deepcopy(k, seen) or k
+      v = (type(v) == 'table') and table.deepcopy(v, seen) or v
       no[k] = v
     end
     return no
@@ -24262,7 +24280,42 @@ end
     end
   
   end
+
+  function Mod_ClearTarget(mod, tt, s, p, c)
+    local m = modulators[mod]
+    local trem
+    for t = 1, #m.targets do
+      if m.targets[t].targettype == tt then
+        if tt == 1 then
+          if m.targets[t].strip == s and m.targets[t].page == p and m.targets[t].ctl == c then
+            if m.targets[t].strip == tracks[track_select].strip and m.targets[t].page == page then
+              SetCtlDirty(m.targets[t].ctl)
+            end
+            m.targets[t] = nil
+            trem = true
+            break
+          end
+        end
+      end
+    end
+    if trem then
+      m.targets = Table_RemoveNils(m.targets, tcnt)
+      update_ctls = true
+    end
+  end
   
+  function Mod_SetTargetsDirty(mod)
+    local m = modulators[mod]
+    for t = 1, #m.targets do
+      if m.targets[t].targettype == 1 then
+        if m.targets[t].strip == tracks[track_select].strip and m.targets[t].page == page then
+          SetCtlDirty(m.targets[t].ctl)
+        end
+      end
+    end
+    update_ctls = true
+  end
+
   function Mod_RemoveAssign(strip, page, ctl)
   
     local m = modulators
@@ -24982,6 +25035,7 @@ end
         elseif MOUSE_click(obj.sections[1106]) then
         
           m.active = not m.active
+          Mod_SetTargetsDirty(mod_select)
           update_lfoedit = true
           
         end
@@ -37701,6 +37755,55 @@ end
                                                    c_id = tonumber(data[key..'mfdata_c_id'])}
                 end
               end
+              
+              local key = pfx..'sst_'..sst..'_ss_'..ss..'_'
+              local modcnt = tonumber(zn(data[key..'modcnt']))
+          
+              if modcnt and modcnt > 0 then
+          
+                snaps[sst][ss].moddata = {}
+                snaps[sst][ss].modset = true
+                
+                for m = 1, modcnt do
+                  
+                  local key = pfx..'sst_'..sst..'_ss_'..ss..'_mod_'..m..'_'
+                
+                  snaps[sst][ss].moddata[m] = {}
+                  snaps[sst][ss].moddata[m].active = tobool(zn(data[key..'active']))
+                  snaps[sst][ss].moddata[m].steps = tonumber(zn(data[key..'steps']))
+                  snaps[sst][ss].moddata[m].stepsmult = tonumber(zn(data[key..'stepsmult'],1))
+                  snaps[sst][ss].moddata[m].div = tonumber(zn(data[key..'div'],4))
+                  snaps[sst][ss].moddata[m].offset = tonumber(zn(data[key..'offset'],0.5))
+                  snaps[sst][ss].moddata[m].min = tonumber(zn(data[key..'min'],0))
+                  snaps[sst][ss].moddata[m].max = tonumber(zn(data[key..'max'],1))
+                  snaps[sst][ss].moddata[m].interpolate = tobool(zn(data[key..'interpolate']))
+                  snaps[sst][ss].moddata[m].syncv = tonumber(zn(data[key..'syncv']))
+                  snaps[sst][ss].moddata[m].sync = tobool(zn(data[key..'sync']))
+                  local targetcnt = tonumber(zn(data[key..'target_cnt']))
+          
+                  snaps[sst][ss].moddata[m].targets = {}
+                  snaps[sst][ss].moddata[m].data = {}
+                  if targetcnt > 0 then
+                    for t = 1, targetcnt do
+                      local key = pfx..'sst_'..sst..'_ss_'..ss..'_mod_'..m..'_target_'..t..'_'
+                      snaps[sst][ss].moddata[m].targets[t] = {targettype = tonumber(zn(data[key..'targettype'],1)),
+                                                              strip = tonumber(zn(data[key..'strip'])),
+                                                              page = tonumber(zn(data[key..'page'])),
+                                                              ctl = tonumber(zn(data[key..'ctl'])),
+                                                              c_id = tonumber(zn(data[key..'c_id']))
+                                                              }
+                    end
+                  end        
+          
+                  for d = 1, snaps[sst][ss].moddata[m].steps do
+                    local key = pfx..'sst_'..sst..'_ss_'..ss..'_mod_'..m..'_data_'..d..'_'
+                    snaps[sst][ss].moddata[m].data[d] = tonumber(zn(data[key..'val']))
+                  end
+                  
+                end 
+            
+              end
+              
             end
             
             --Snapshots_Check(s,p)
@@ -39103,6 +39206,7 @@ end
     settings_touchFB = tobool(nz(GES('settings_touchfb',true),settings_touchFB))
     settings_trackchangemidi = tobool(nz(GES('settings_trackchangemidi',true),settings_trackchangemidi))
     settings_savefaderboxassinsnapshots = tobool(nz(GES('settings_savefaderboxassinsnapshots',true),settings_savefaderboxassinsnapshots))
+    settings_savemodsinsnapshots = tobool(nz(GES('settings_savemodsinsnapshots',true),settings_savemodsinsnapshots))
     settings_showfaderassignments = tobool(nz(GES('settings_showfaderassignments',false),settings_showfaderassignments))
     settings_stripautosnap = tobool(nz(GES('settings_stripautosnap',false),settings_stripautosnap))
     autosnap_rowheight = tonumber(nz(GES('autosnap_rowheight',true),autosnap_rowheight))    
@@ -39231,7 +39335,9 @@ end
     reaper.SetExtState(SCRIPT,'nebscanboot',tostring(nebscanboot_file), true)    
     reaper.SetExtState(SCRIPT,'settings_touchfb',tostring(settings_touchFB), true)    
     reaper.SetExtState(SCRIPT,'settings_trackchangemidi',tostring(settings_trackchangemidi), true)    
-    reaper.SetExtState(SCRIPT,'settings_savefaderboxassinsnapshots',tostring(settings_savefaderboxassinsnapshots), true)    
+    reaper.SetExtState(SCRIPT,'settings_savefaderboxassinsnapshots',tostring(settings_savefaderboxassinsnapshots), true)
+    reaper.SetExtState(SCRIPT,'settings_savemodsinsnapshots',tostring(settings_savemodsinsnapshots), true)
+    
     reaper.SetExtState(SCRIPT,'settings_showfaderassignments',tostring(settings_showfaderassignments), true)    
     reaper.SetExtState(SCRIPT,'settings_stripautosnap',tostring(settings_stripautosnap), true)    
     reaper.SetExtState(SCRIPT,'autosnap_rowheight',tostring(autosnap_rowheight), true)    
@@ -39740,6 +39846,48 @@ end
                 end
           
               end
+            end
+            
+            file:write('['..key..'modset]'.. tostring(nz(snapshots[s][p][sst][ss].modset,'')) ..'\n')
+            if snapshots[s][p][sst][ss].modset then
+              local mm = snapshots[s][p][sst][ss].moddata
+
+              local key = pfx..'sst_'..sst..'_ss_'..ss..'_'              
+              file:write('['..key..'modcnt]'.. #mm ..'\n')
+              
+              for m = 1, #mm do
+            
+                if mm[m] then
+          
+                  local key = pfx..'sst_'..sst..'_ss_'..ss..'_mod_'..m..'_'
+                  file:write('['..key..'active]'.. tostring(nz(mm[m].active,false)) ..'\n')
+                  file:write('['..key..'steps]'.. mm[m].steps ..'\n')
+                  file:write('['..key..'stepsmult]'.. mm[m].stepsmult ..'\n')
+                  file:write('['..key..'div]'.. mm[m].div ..'\n')
+                  file:write('['..key..'interpolate]'.. tostring(nz(mm[m].interpolate,true)) ..'\n')
+                  file:write('['..key..'syncv]'.. nz(mm[m].syncv,15) ..'\n')
+                  file:write('['..key..'sync]'.. tostring(nz(mm[m].sync,true)) ..'\n')
+                  file:write('['..key..'offset]'.. nz(mm[m].offset,0.5) ..'\n')
+                  file:write('['..key..'min]'.. nz(mm[m].min,0) ..'\n')
+                  file:write('['..key..'max]'.. nz(mm[m].max,1) ..'\n')
+                  file:write('['..key..'target_cnt]'.. #mm[m].targets ..'\n')
+        
+                  for t = 1, #mm[m].targets do
+                    local key = pfx..'sst_'..sst..'_ss_'..ss..'_mod_'..m..'_target_'..t..'_'
+                    file:write('['..key..'targettype]'.. nz(mm[m].targets[t].targettype,'') ..'\n')
+                    file:write('['..key..'strip]'.. nz(mm[m].targets[t].strip,'') ..'\n')
+                    file:write('['..key..'page]'.. nz(mm[m].targets[t].page,'') ..'\n')
+                    file:write('['..key..'ctl]'.. nz(mm[m].targets[t].ctl,'') ..'\n')
+                    file:write('['..key..'c_id]'.. nz(mm[m].targets[t].c_id,'') ..'\n')        
+                  end
+        
+                  for d = 1, mm[m].steps do
+                    local key = pfx..'sst_'..sst..'_ss_'..ss..'_mod_'..m..'_data_'..d..'_'
+                    file:write('['..key..'val]'.. nz(mm[m].data[d],0.5) ..'\n')          
+                  end
+          
+                end
+              end  
             end
           end
         end      
@@ -41111,7 +41259,30 @@ end
               SetFader(ctl.macrofader, nv)
             end
           end
-        end    
+          
+          if snaptbl.modset then
+            for m = 1, #modulators do
+              local mm = modulators[m]
+              for t = 1, #mm.targets do
+                if mm.targets[t].targettype == 1 then
+                  strips[mm.targets[t].strip][mm.targets[t].page].controls[mm.targets[t].ctl].mod = nil
+                end
+              end
+            end
+            modulators = table.deepcopy(snaptbl.moddata)
+            for m = 1, #modulators do
+              local mm = modulators[m]
+              for t = 1, #mm.targets do
+                if mm.targets[t].targettype == 1 then
+                  strips[mm.targets[t].strip][mm.targets[t].page].controls[mm.targets[t].ctl].mod = m
+                end
+              end
+            end
+            update_lfoedit = true
+            update_sidebar = true
+          end
+        end 
+           
       elseif sstype_select > 1 then
         local snaptbl = snaps.snapshot[ss_select]
         if snaptbl then
@@ -41461,44 +41632,46 @@ end
           snappos = ss_ovr
           if snaps[snappos] then
             snaps[snappos].data = {}
+            snaps[snappos].modset = nil
+            snaps[snappos].moddata = nil
           else
             return false
           end
         else
           snappos = #snaps + 1
           snaps[snappos] = {name = 'Snapshot '..snappos,
-                                                     data = {}} 
+                            data = {}} 
         end
         
         local offflag = false
         local sscnt = 1
         for c = 1, #strips[strip][page].controls do
-        
+          local ctl = strips[strip][page].controls[c]
           local sflag = false
-          if strips[strip][page].controls[c].noss ~= true then
-            if strips[strip][page].controls[c].ctlcat == ctlcats.fxparam or
-               strips[strip][page].controls[c].ctlcat == ctlcats.trackparam or
-               strips[strip][page].controls[c].ctlcat == ctlcats.tracksend or 
-               strips[strip][page].controls[c].ctlcat == ctlcats.fxoffline or 
-               strips[strip][page].controls[c].ctlcat == ctlcats.midictl then
-              if strips[strip][page].controls[c].ctltype ~= 5 then
-                local track = GetTrack(nz(strips[strip][page].controls[c].tracknum,strips[strip].track.tracknum))
-                local cc = strips[strip][page].controls[c].ctlcat
-                local fxnum = strips[strip][page].controls[c].fxnum
-                local param = strips[strip][page].controls[c].param
+          if ctl.noss ~= true then
+            if ctl.ctlcat == ctlcats.fxparam or
+               ctl.ctlcat == ctlcats.trackparam or
+               ctl.ctlcat == ctlcats.tracksend or 
+               ctl.ctlcat == ctlcats.fxoffline or 
+               ctl.ctlcat == ctlcats.midictl then
+              if ctl.ctltype ~= 5 then
+                local track = GetTrack(nz(ctl.tracknum,strips[strip].track.tracknum))
+                local cc = ctl.ctlcat
+                local fxnum = ctl.fxnum
+                local param = ctl.param
                 local min, max = GetParamMinMax(cc,track,nz(fxnum,-1),param,true,c)
-                local dval = DenormalizeValue(min,max,strips[strip][page].controls[c].val)
-                snaps[snappos].data[sscnt] = {c_id = strips[strip][page].controls[c].c_id,
-                                                                        ctl = c,
-                                                                        val = strips[strip][page].controls[c].val,
-                                                                        dval = dval}
+                local dval = DenormalizeValue(min,max,ctl.val)
+                snaps[snappos].data[sscnt] = {c_id = ctl.c_id,
+                                              ctl = c,
+                                              val = ctl.val,
+                                              dval = dval}
                 if cc == ctlcats.fxoffline then
                   offflag = true
                 end
 
                 if settings_savefaderboxassinsnapshots == true then
                   snaps[snappos].data[sscnt].mfset = true
-                  local mf = strips[strip][page].controls[c].macrofader
+                  local mf = ctl.macrofader
                   if mf then
                     if faders[mf] and (faders[mf].targettype == 4 or 
                                        faders[mf].targettype == 7) then
@@ -41520,6 +41693,10 @@ end
             end
           end
           
+          if settings_savemodsinsnapshots == true then
+            snaps[snappos].modset = true
+            snaps[snappos].moddata = table.deepcopy(modulators)
+          end
         end
         
         if offflag == true then
@@ -41572,30 +41749,31 @@ end
           local sscnt = 1
           for cctl = 1, sctls do
             local c = snaps.ctls[cctl].ctl
+            local ctl = strips[strip][page].controls[c]
             if nz(snaps.ctls[cctl].delete,false) == false then
-              if strips[strip][page].controls[c].ctlcat == ctlcats.fxparam or
-                 strips[strip][page].controls[c].ctlcat == ctlcats.trackparam or
-                 strips[strip][page].controls[c].ctlcat == ctlcats.tracksend or 
-                 strips[strip][page].controls[c].ctlcat == ctlcats.fxoffline or 
-                 strips[strip][page].controls[c].ctlcat == ctlcats.midictl then
-                if strips[strip][page].controls[c].ctltype ~= 5 then
-                  local track = GetTrack(nz(strips[strip][page].controls[c].tracknum,strips[strip].track.tracknum))
-                  local cc = strips[strip][page].controls[c].ctlcat
-                  local fxnum = strips[strip][page].controls[c].fxnum
-                  local param = strips[strip][page].controls[c].param
+              if ctl.ctlcat == ctlcats.fxparam or
+                 ctl.ctlcat == ctlcats.trackparam or
+                 ctl.ctlcat == ctlcats.tracksend or 
+                 ctl.ctlcat == ctlcats.fxoffline or 
+                 ctl.ctlcat == ctlcats.midictl then
+                if ctl.ctltype ~= 5 then
+                  local track = GetTrack(nz(ctl.tracknum,strips[strip].track.tracknum))
+                  local cc = ctl.ctlcat
+                  local fxnum = ctl.fxnum
+                  local param = ctl.param
                   local min, max = GetParamMinMax(cc,track,nz(fxnum,-1),param,true,c)
-                  local dval = DenormalizeValue(min,max,strips[strip][page].controls[c].val)
-                  snaps.snapshot[snappos].data[sscnt] = {c_id = strips[strip][page].controls[c].c_id,
-                                                                                ctl = c,
-                                                                                val = strips[strip][page].controls[c].val,
-                                                                                dval = dval}
+                  local dval = DenormalizeValue(min,max,ctl.val)
+                  snaps.snapshot[snappos].data[sscnt] = {c_id = ctl.c_id,
+                                                          ctl = c,
+                                                          val = ctl.val,
+                                                          dval = dval}
                   if cc == ctlcats.fxoffline then
                     offflag = true
                   end
 
                   if settings_savefaderboxassinsnapshots == true then
                     snaps.snapshot[snappos].data[sscnt].mfset = true
-                    local mf = strips[strip][page].controls[c].macrofader
+                    local mf = ctl.macrofader
                     if mf then
                       if faders[mf] and (faders[mf].targettype == 4 or 
                                          faders[mf].targettype == 7) then
@@ -43503,6 +43681,27 @@ end
   
   end
   
+  function tablecopytest()
+  
+    local rt = reaper.time_precise()
+    local t = {}
+    for i = 1, 32 do
+      t = table.deepcopy(modulators[1])
+    end
+    local ft = reaper.time_precise()
+    DBG(string.format("%0f",ft-rt))
+  
+    --[[for i = 1, #t.data do
+    
+      DBG(t.data[i])
+    
+    end
+    for i = 1, #t.targets do
+      DBG(t.targets[i].ctl)
+    end]]
+  
+  end
+  
   ------------------------------------------------------------
 
   SCRIPT = 'LBX_STRIPPER'
@@ -43608,6 +43807,7 @@ end
   settings_touchFB = false
   settings_trackchangemidi = false
   settings_savefaderboxassinsnapshots = false
+  settings_savemodsinsnapshots = false
   settings_showfaderassignments = false
   settings_stripautosnap = true
   settings_disablekeysonlockedsurface = false
@@ -43737,6 +43937,8 @@ end
     end
     
     ctls_dirty = {idx = {}, update = {}}
+    
+    --tablecopytest()
     
     run()
 
