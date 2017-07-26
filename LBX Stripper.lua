@@ -41506,6 +41506,28 @@ end
             SetFader(ctl.macrofader, nv)
           end
 
+          if p == 1 and snaptbl.modset then
+            for m = 1, #modulators do
+              local mm = modulators[m]
+              for t = 1, #mm.targets do
+                if mm.targets[t].targettype == 1 then
+                  strips[mm.targets[t].strip][mm.targets[t].page].controls[mm.targets[t].ctl].mod = nil
+                end
+              end
+            end
+            modulators = table.deepcopy(snaptbl.moddata)
+            for m = 1, #modulators do
+              local mm = modulators[m]
+              for t = 1, #mm.targets do
+                if mm.targets[t].targettype == 1 then
+                  strips[mm.targets[t].strip][mm.targets[t].page].controls[mm.targets[t].ctl].mod = m
+                end
+              end
+            end
+            update_lfoedit = true
+            update_sidebar = true
+          end
+
         end
       end    
     elseif sstype_select > 1 then
