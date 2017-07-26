@@ -123,15 +123,20 @@ slider(37) == 1 ? (
         );
       );
     );
-    0;
+    //0;
   );
+  
   s = 0;
   loop(16,
     s+=1;
-    time_precise() >= timer[s] ?
+    timer[s] > 0 ? 
     (
-      slider(s) = -1;
-      slider_automate(slider(s));      
+      time_precise() >= timer[s] ?
+      (
+        timer[s] = 0;
+        slider(s) = -1;
+        slider_automate(slider(s));      
+      );
     );
   );
   /*notes_on <= 0 ? 
@@ -142,3 +147,4 @@ slider(37) == 1 ? (
 );
   
 @sample
+
