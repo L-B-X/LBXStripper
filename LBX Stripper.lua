@@ -3616,6 +3616,7 @@
                                                 clickthrough = clickthrough_select,
                                                 knobsens = settings_defknobsens
                                                }
+        StoreSnapshotControlIdxs(strip,page)
 
       elseif dragparam.type == 'xyctl' then
         local pname = 'XY'
@@ -14581,11 +14582,41 @@ end
 
   ------------------------------------------------------------    
   
+  function StoreSnapshotControls()
+
+    if strips then
+      for s = 1, #strips do
+        if strips[s] then
+          for p = 1,4 do
+            StoreSnapshotControlIdxs(s, p)
+          end
+        end
+      end
+    end
+  end
+  
+  function StoreSnapshotControlIdxs(s, p)
+    if strips and strips[s] then
+      strips[s][p].snapctls = {}
+      if #strips[s][p].controls > 0 then
+        for c = 1, #strips[s][p].controls do
+          local ctl = strips[s][p].controls[c]
+          if ctl.ctlcat == ctlcats.snapshot then
+            local sst = ctl.param        
+            strips[s][p].snapctls[#strips[s][p].snapctls+1] = c 
+          end
+        end
+      end
+    end
+      
+  end
+  
   function CheckDataTables()
   
     Snapshots_Check(tracks[track_select].strip,page)
     Macros_Check(tracks[track_select].strip,page)
     Faders_Check(tracks[track_select].strip,page)
+    StoreSnapshotControlIdxs(tracks[track_select].strip,page)
     CheckFaders()
     CheckMods()
     Switcher_Check()
@@ -16406,11 +16437,15 @@ end
           end
         end
       end
+    
+      StoreSnapshotControlIdxs(strip,page)
+      
     end  
       
     PopulateTrackFX()
     
     GUI_DrawCtlBitmap()
+    
     --DBG('addstrip '..grpid)
     return stripid, strip, grpid
     
@@ -25243,6 +25278,7 @@ end
               if fssoffset+i <= maxss then
                 fss_select = fssoffset+i
                 Snapshot_Set(tracks[track_select].strip, page, fsstype_select, fss_select)
+                SetCtlDirty(fss_ctl)
                 update_ctls = true --to update snapshot ctls
                 update_fsnaps = true          
                 if sstype_select == fsstype_select then
@@ -25491,6 +25527,7 @@ end
                     
                   elseif ctls[i].ctlcat == ctlcats.snapshot then
                     --SNAPSHOTS
+                    fss_ctl = i
                     local mmx = mouse.mx - ctlxywh.x
                     local mmy = mouse.my - ctlxywh.y
                     local ci
@@ -31718,7 +31755,7 @@ end
                 
                 if not mouse.shift then
                   Snapshot_Set(tracks[track_select].strip, page, sstype_select, ss_select)
-                end
+                end 
               --end
                 update_ctls = true --to update snapshot ctls
                 update_snaps = true
@@ -38638,8 +38675,7 @@ end
   end
     
   function LoadData()
-    
-  
+
     local find = string.find
     local match = string.match
     local LDF
@@ -39252,6 +39288,7 @@ end
     end]]
     GUI_DrawCtlBitmap()
     
+    StoreSnapshotControls()
     ZeroProjectFlags()
 
     if track_select and track_select == LBX_GTRACK then
@@ -41378,17 +41415,17 @@ end
   
   end
     
-  function Snapshot_Set(strip, page, sstype_select, ss_select)
+  function Snapshot_Set(strip, page, sstype_sel, ss_sel)
 
     --local r = reaper
     --local t = reaper.time_precise()
     local reaper = reaper
-    local snaps = snapshots[strip][page][sstype_select]
+    local snaps = snapshots[strip][page][sstype_sel]
     if (snaps.morph_sync == false and snaps.morph_time == 0) or 
        (snaps.morph_sync == true and snaps.morph_syncv == 1) then
       local mfs
-      if sstype_select == 1 then
-        local snaptbl = snaps[ss_select]
+      if sstype_sel == 1 then
+        local snaptbl = snaps[ss_sel]
         if snaptbl then
           local gtrack = GetTrack(strips[strip].track.tracknum)
           mfchk = {}
@@ -41464,8 +41501,8 @@ end
           end
         end 
            
-      elseif sstype_select > 1 then
-        local snaptbl = snaps.snapshot[ss_select]
+      elseif sstype_sel > 1 then
+        local snaptbl = snaps.snapshot[ss_sel]
         if snaptbl then
           local gtrack = GetTrack(strips[strip].track.tracknum)
           mfchk = {}
@@ -41545,13 +41582,20 @@ end
         end    
       
       end
-      snaps.selected = ss_select
+      snaps.selected = ss_sel
     
       for i = 1, #morph_data do
         if morph_data[i].strip == strip and 
            morph_data[i].page == page and 
-           morph_data[i].sstype == sstype_select then
+           morph_data[i].sstype == sstype_sel then
           morph_data[i] = {}
+        end
+      end
+      
+      local sctls = strips[strip][page].snapctls
+      if sctls and #sctls > 0 then
+        for sn = 1, #sctls do
+          SetCtlDirty(sctls[sn])
         end
       end
       
@@ -41562,7 +41606,7 @@ end
       local fnd = -1
       for md = 1, #morph_data do
         if morph_data[md] then
-          if morph_data[md].sstype == sstype_select and
+          if morph_data[md].sstype == sstype_sel and
              morph_data[md].strip == strip and
              morph_data[md].page == page then
             
@@ -41592,19 +41636,20 @@ end
                            morph_loop = snaps.morph_loop,
                            strip = strip,
                            page = page,
-                           sstype = sstype_select,
-                           targetss = ss_select,
+                           sstype = sstype_sel,
+                           targetss = ss_sel,
                            sourcess = snaps.selected,
                            p = 0,
                            data = {}}
-      snaps.selected = ss_select
+      snaps.selected = ss_sel
     end
-    if settings_followsnapshot then
-      if ss_select < ssoffset+1 or ss_select > ssoffset+SS_butt_cnt then
-        if sstype_select == 1 then
-          ssoffset = math.max(math.min(ss_select-math.floor(SS_butt_cnt/2),#snaps-SS_butt_cnt),0)
+
+    if settings_followsnapshot and sstype_sel == sstype_select then
+      if ss_sel < ssoffset+1 or ss_sel > ssoffset+SS_butt_cnt then
+        if sstype_sel == 1 then
+          ssoffset = math.max(math.min(ss_sel-math.floor(SS_butt_cnt/2),#snaps-SS_butt_cnt),0)
         else
-          ssoffset = math.max(math.min(ss_select-math.floor(SS_butt_cnt/2),#snaps.snapshot-SS_butt_cnt),0)
+          ssoffset = math.max(math.min(ss_sel-math.floor(SS_butt_cnt/2),#snaps.snapshot-SS_butt_cnt),0)
         end
         update_snaps = true
       end
@@ -42570,6 +42615,10 @@ end
         local sc = #strips + 1 
         strips[sc] = loaddata.stripdata[s]
         snapshots[sc] = loaddata.snapdata[s]
+        
+        for p = 1, 4 do
+          StoreSnapshotControlIdxs(sc,p)
+        end
       end
     end    
     
