@@ -37864,6 +37864,55 @@ end
                 end
 
               end
+              
+              local key = pfx..'sst_'..sst..'_ss_'..ss..'_'
+              local modcnt = tonumber(zn(data[key..'modcnt']))
+              
+              if modcnt and modcnt > 0 then
+              
+                snaps[sst].snapshot[ss].moddata = {}
+                snaps[sst].snapshot[ss].modset = true
+                
+                for m = 1, modcnt do
+                  
+                  local key = pfx..'sst_'..sst..'_ss_'..ss..'_mod_'..m..'_'
+                
+                  snaps[sst].snapshot[ss].moddata[m] = {}
+                  snaps[sst].snapshot[ss].moddata[m].active = tobool(zn(data[key..'active']))
+                  snaps[sst].snapshot[ss].moddata[m].steps = tonumber(zn(data[key..'steps']))
+                  snaps[sst].snapshot[ss].moddata[m].stepsmult = tonumber(zn(data[key..'stepsmult'],1))
+                  snaps[sst].snapshot[ss].moddata[m].div = tonumber(zn(data[key..'div'],4))
+                  snaps[sst].snapshot[ss].moddata[m].offset = tonumber(zn(data[key..'offset'],0.5))
+                  snaps[sst].snapshot[ss].moddata[m].min = tonumber(zn(data[key..'min'],0))
+                  snaps[sst].snapshot[ss].moddata[m].max = tonumber(zn(data[key..'max'],1))
+                  snaps[sst].snapshot[ss].moddata[m].interpolate = tobool(zn(data[key..'interpolate']))
+                  snaps[sst].snapshot[ss].moddata[m].syncv = tonumber(zn(data[key..'syncv']))
+                  snaps[sst].snapshot[ss].moddata[m].sync = tobool(zn(data[key..'sync']))
+                  local targetcnt = tonumber(zn(data[key..'target_cnt']))
+              
+                  snaps[sst].snapshot[ss].moddata[m].targets = {}
+                  snaps[sst].snapshot[ss].moddata[m].data = {}
+                  if targetcnt > 0 then
+                    for t = 1, targetcnt do
+                      local key = pfx..'sst_'..sst..'_ss_'..ss..'_mod_'..m..'_target_'..t..'_'
+                      snaps[sst].snapshot[ss].moddata[m].targets[t] = {targettype = tonumber(zn(data[key..'targettype'],1)),
+                                                                      strip = tonumber(zn(data[key..'strip'])),
+                                                                      page = tonumber(zn(data[key..'page'])),
+                                                                      ctl = tonumber(zn(data[key..'ctl'])),
+                                                                      c_id = tonumber(zn(data[key..'c_id']))
+                                                                      }
+                    end
+                  end        
+              
+                  for d = 1, snaps[sst].snapshot[ss].moddata[m].steps do
+                    local key = pfx..'sst_'..sst..'_ss_'..ss..'_mod_'..m..'_data_'..d..'_'
+                    snaps[sst].snapshot[ss].moddata[m].data[d] = tonumber(zn(data[key..'val']))
+                  end
+                  
+                end 
+              
+              end
+              
             end
           end                 
            
@@ -39941,6 +39990,49 @@ end
           
               end
             end
+            
+            file:write('['..key..'modset]'.. tostring(nz(snapshots[s][p][sst].snapshot[ss].modset,'')) ..'\n')
+            if snapshots[s][p][sst].snapshot[ss].modset then
+              local mm = snapshots[s][p][sst].snapshot[ss].moddata
+            
+              local key = pfx..'sst_'..sst..'_ss_'..ss..'_'              
+              file:write('['..key..'modcnt]'.. #mm ..'\n')
+              
+              for m = 1, #mm do
+            
+                if mm[m] then
+            
+                  local key = pfx..'sst_'..sst..'_ss_'..ss..'_mod_'..m..'_'
+                  file:write('['..key..'active]'.. tostring(nz(mm[m].active,false)) ..'\n')
+                  file:write('['..key..'steps]'.. mm[m].steps ..'\n')
+                  file:write('['..key..'stepsmult]'.. mm[m].stepsmult ..'\n')
+                  file:write('['..key..'div]'.. mm[m].div ..'\n')
+                  file:write('['..key..'interpolate]'.. tostring(nz(mm[m].interpolate,true)) ..'\n')
+                  file:write('['..key..'syncv]'.. nz(mm[m].syncv,15) ..'\n')
+                  file:write('['..key..'sync]'.. tostring(nz(mm[m].sync,true)) ..'\n')
+                  file:write('['..key..'offset]'.. nz(mm[m].offset,0.5) ..'\n')
+                  file:write('['..key..'min]'.. nz(mm[m].min,0) ..'\n')
+                  file:write('['..key..'max]'.. nz(mm[m].max,1) ..'\n')
+                  file:write('['..key..'target_cnt]'.. #mm[m].targets ..'\n')
+            
+                  for t = 1, #mm[m].targets do
+                    local key = pfx..'sst_'..sst..'_ss_'..ss..'_mod_'..m..'_target_'..t..'_'
+                    file:write('['..key..'targettype]'.. nz(mm[m].targets[t].targettype,'') ..'\n')
+                    file:write('['..key..'strip]'.. nz(mm[m].targets[t].strip,'') ..'\n')
+                    file:write('['..key..'page]'.. nz(mm[m].targets[t].page,'') ..'\n')
+                    file:write('['..key..'ctl]'.. nz(mm[m].targets[t].ctl,'') ..'\n')
+                    file:write('['..key..'c_id]'.. nz(mm[m].targets[t].c_id,'') ..'\n')        
+                  end
+            
+                  for d = 1, mm[m].steps do
+                    local key = pfx..'sst_'..sst..'_ss_'..ss..'_mod_'..m..'_data_'..d..'_'
+                    file:write('['..key..'val]'.. nz(mm[m].data[d],0.5) ..'\n')          
+                  end
+            
+                end
+              end  
+            end
+            
           end
         end
       end
@@ -41293,54 +41385,79 @@ end
         if snaptbl then
           local gtrack = GetTrack(strips[strip].track.tracknum)
           mfchk = {}
-          for ss = 1, #snaptbl.data do
-            local c = snaptbl.data[ss].ctl
-            local v = snaptbl.data[ss].dval
-            local nv = snaptbl.data[ss].val
-            local ctl = strips[strip][page].controls[c]
-  
-            mfs = snaptbl.data[ss].mfset
-            if mfs then
-              local mf = snaptbl.data[ss].mf
-              if mf and ctl.macrofader ~= mf then
-                local f = snaptbl.data[ss].mfdata
+          if #snaptbl.data > 0 then
+            for ss = 1, #snaptbl.data do
+              local c = snaptbl.data[ss].ctl
+              local v = snaptbl.data[ss].dval
+              local nv = snaptbl.data[ss].val
+              local ctl = strips[strip][page].controls[c]
+    
+              mfs = snaptbl.data[ss].mfset
+              if mfs then
+                local mf = snaptbl.data[ss].mf
+                if mf and ctl.macrofader ~= mf then
+                  local f = snaptbl.data[ss].mfdata
+                  
+                  if ctl.macrofader and not mfchk[ctl.macrofader] then
+                    faders[ctl.macrofader] = {}
+                  end
+                  
+                  ctl.macrofader = mf
+                  mfchk[mf] = true
+                  faders[mf] = {targettype = 4,
+                                strip = f.strip,
+                                page = f.page,
+                                ctl = f.ctl,
+                                c_id = f.c_id}              
                 
-                if ctl.macrofader and not mfchk[ctl.macrofader] then
-                  faders[ctl.macrofader] = {}
+                elseif mf == nil then
+                  if ctl.macrofader and not mfchk[ctl.macrofader] then
+                    faders[ctl.macrofader] = {}
+                  end
+                  
+                  ctl.macrofader = nil
                 end
-                
-                ctl.macrofader = mf
-                mfchk[mf] = true
-                faders[mf] = {targettype = 4,
-                              strip = f.strip,
-                              page = f.page,
-                              ctl = f.ctl,
-                              c_id = f.c_id}              
+              end
+  
+              if c and v and tostring(nv) ~= tostring(ctl.val) and (settings_morphfaderassignedctls == true or ctl.macrofader == nil) then
+                trackfxparam_select = c
+                if ctl.tracknum then
+                  track = GetTrack(ctl.tracknum)
+                else
+                  track = gtrack
+                end
+                SetParam3_Denorm2_Safe2(track, v, strip, page, reaper, c)        
+              end
               
-              elseif mf == nil then
-                if ctl.macrofader and not mfchk[ctl.macrofader] then
-                  faders[ctl.macrofader] = {}
-                end
-                
-                ctl.macrofader = nil
+              if ctl.macrofader and (settings_morphfaderassignedctls == true) then
+                SetFader(ctl.macrofader, nv)
               end
+    
             end
-
-            if c and v and tostring(nv) ~= tostring(ctl.val) and (settings_morphfaderassignedctls == true or ctl.macrofader == nil) then
-              trackfxparam_select = c
-              if ctl.tracknum then
-                track = GetTrack(ctl.tracknum)
-              else
-                track = gtrack
-              end
-              SetParam3_Denorm2_Safe2(track, v, strip, page, reaper, c)        
-            end
-            
-            if ctl.macrofader and (settings_morphfaderassignedctls == true) then
-              SetFader(ctl.macrofader, nv)
-            end
-  
           end
+          
+          if snaptbl.modset then
+            for m = 1, #modulators do
+              local mm = modulators[m]
+              for t = 1, #mm.targets do
+                if mm.targets[t].targettype == 1 then
+                  strips[mm.targets[t].strip][mm.targets[t].page].controls[mm.targets[t].ctl].mod = nil
+                end
+              end
+            end
+            modulators = table.deepcopy(snaptbl.moddata)
+            for m = 1, #modulators do
+              local mm = modulators[m]
+              for t = 1, #mm.targets do
+                if mm.targets[t].targettype == 1 then
+                  strips[mm.targets[t].strip][mm.targets[t].page].controls[mm.targets[t].ctl].mod = m
+                end
+              end
+            end
+            update_lfoedit = true
+            update_sidebar = true
+          end
+          
         end    
       
       end
@@ -41541,58 +41658,83 @@ end
       if snaptbl then
         local gtrack = GetTrack(strips[strip].track.tracknum)
         mfchk = {}
-        for ss = 1, #snaptbl.data do
-          local c = snaptbl.data[ss].ctl
-          local ctl = strips[strip][page].controls[c]
-
-          if gather == true then
-            morph_data[data_id].data[ss] = {}
-            morph_data[data_id].data[ss].val = tonumber(ctl.val)
-            ctl.dirty = true
-            update_ctls = true
-          end
-
-          local nv = morph_data[data_id].data[ss].val + ((snaptbl.data[ss].val - morph_data[data_id].data[ss].val)*p)
-
-          local mfs = snaptbl.data[ss].mfset
-
-          local mfs = snaptbl.data[ss].mfset
-          if mfs and gather == true then
-            local mf = snaptbl.data[ss].mf
-            if mf and ctl.macrofader ~= mf then
-              local f = snaptbl.data[ss].mfdata
+        if #snaptbl.data > 0 then
+          for ss = 1, #snaptbl.data do
+            local c = snaptbl.data[ss].ctl
+            local ctl = strips[strip][page].controls[c]
+  
+            if gather == true then
+              morph_data[data_id].data[ss] = {}
+              morph_data[data_id].data[ss].val = tonumber(ctl.val)
+              ctl.dirty = true
+              update_ctls = true
+            end
+  
+            local nv = morph_data[data_id].data[ss].val + ((snaptbl.data[ss].val - morph_data[data_id].data[ss].val)*p)
+  
+            local mfs = snaptbl.data[ss].mfset
+  
+            local mfs = snaptbl.data[ss].mfset
+            if mfs and gather == true then
+              local mf = snaptbl.data[ss].mf
+              if mf and ctl.macrofader ~= mf then
+                local f = snaptbl.data[ss].mfdata
+                
+                if ctl.macrofader and not mfchk[ctl.macrofader] then
+                  faders[ctl.macrofader] = {}
+                end
+                
+                ctl.macrofader = mf
+                mfchk[mf] = true
+                faders[mf] = {targettype = 4,
+                              strip = f.strip,
+                              page = f.page,
+                              ctl = f.ctl,
+                              c_id = f.c_id}              
               
-              if ctl.macrofader and not mfchk[ctl.macrofader] then
-                faders[ctl.macrofader] = {}
+              elseif mf == nil then
+                if ctl.macrofader and not mfchk[ctl.macrofader] then
+                  faders[ctl.macrofader] = {}
+                end
+                
+                ctl.macrofader = nil
               end
-              
-              ctl.macrofader = mf
-              mfchk[mf] = true
-              faders[mf] = {targettype = 4,
-                            strip = f.strip,
-                            page = f.page,
-                            ctl = f.ctl,
-                            c_id = f.c_id}              
+            end
+  
+            if c and nv and tostring(nv) ~= tostring(ctl.val) and (settings_morphfaderassignedctls == true or ctl.macrofader == nil) then
+              --trackfxparam_select = c
+              SetParam3(strip,page,c,ctl,nv)        
+            end
             
-            elseif mf == nil then
-              if ctl.macrofader and not mfchk[ctl.macrofader] then
-                faders[ctl.macrofader] = {}
+            if ctl.macrofader and (settings_morphfaderassignedctls == true) then
+              SetFader(ctl.macrofader, nv)
+            end
+            
+          end
+        end
+        
+        if p == 1 and snaptbl.modset then
+          for m = 1, #modulators do
+            local mm = modulators[m]
+            for t = 1, #mm.targets do
+              if mm.targets[t].targettype == 1 then
+                strips[mm.targets[t].strip][mm.targets[t].page].controls[mm.targets[t].ctl].mod = nil
               end
-              
-              ctl.macrofader = nil
             end
           end
-
-          if c and nv and tostring(nv) ~= tostring(ctl.val) and (settings_morphfaderassignedctls == true or ctl.macrofader == nil) then
-            --trackfxparam_select = c
-            SetParam3(strip,page,c,ctl,nv)        
+          modulators = table.deepcopy(snaptbl.moddata)
+          for m = 1, #modulators do
+            local mm = modulators[m]
+            for t = 1, #mm.targets do
+              if mm.targets[t].targettype == 1 then
+                strips[mm.targets[t].strip][mm.targets[t].page].controls[mm.targets[t].ctl].mod = m
+              end
+            end
           end
-          
-          if ctl.macrofader and (settings_morphfaderassignedctls == true) then
-            SetFader(ctl.macrofader, nv)
-          end
-          
+          update_lfoedit = true
+          update_sidebar = true
         end
+        
       end    
     end
     update_snapmorph = true
@@ -41758,7 +41900,7 @@ end
         end
 
         local sctls = #snaps.ctls
-        if sctls > 0 then
+        if sctls > 0 or settings_savemodsinsnapshots == true then
 
           if ss_ovr then
             snappos = ss_ovr
@@ -41770,9 +41912,11 @@ end
           else
             snappos = #snaps.snapshot + 1
             snaps.snapshot[snappos] = {name = 'Snapshot '..snappos,
-                                                                data = {}} 
+                                       data = {}} 
           end
-    
+        end
+        
+        if sctls > 0 then
           local offflag = false
           local sscnt = 1
           for cctl = 1, sctls do
@@ -41822,6 +41966,7 @@ end
               end
             end
           end
+          
           if offflag == true then
             --place offline buttons at top of list otherwise snapshots not recalled correctly first click
             local tmp = {}
@@ -41839,7 +41984,13 @@ end
             snaps.snapshot[snappos].data = tmp
           end
           ss_select = snappos
-        end      
+        end
+        
+        if settings_savemodsinsnapshots == true then
+          snaps.snapshot[snappos].modset = true
+          snaps.snapshot[snappos].moddata = table.deepcopy(modulators)
+        end        
+              
       end
       snaps.selected = ss_select
       
