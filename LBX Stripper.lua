@@ -13091,7 +13091,7 @@ end
     GUI_DrawButton(gui, gallery_itemgap, obj.sections[711], gui.color.white, gui.color.black, false, 'Strip gallery item gap')
     GUI_DrawTick(gui, 'Disable key input when surface locked', obj.sections[712], gui.color.white, settings_disablekeysonlockedsurface)
     GUI_DrawTick(gui, 'Delete FX with strip', obj.sections[713], gui.color.white, settings_deletefxwithstrip)
-    GUI_DrawTick(gui, 'Morph fader assigned controls', obj.sections[714], gui.color.white, settings_morphfaderassignedctls)
+    GUI_DrawTick(gui, 'Morph fader/mod assigned controls', obj.sections[714], gui.color.white, settings_morphfaderassignedctls)
 
   end
   
@@ -14345,7 +14345,7 @@ end
 
       elseif cc == ctlcats.trackparam then
         local param = ctl.param
-        ctl.dirty = true
+        SetCtlDirty(c)
         local min, max = A_GetParamMinMax(cc,track,ctl,nil,param,true,c)
         SMTI_norm(track,param,v,min,max)
 
@@ -19832,7 +19832,7 @@ end
         if ccat == ctlcats.fxparam then
           mstr = fft..'Faderbox learn (global)'..ff..'||'..fd..mod..'||Param Modulation||Enter value||'..mido..'||Open FX window||Add Envelope|Add All Envelopes For Plugin||'..mm..'Snapshots||>Tools|<Regenerate ID   (emergency only)||Toggle Topbar|Toggle Sidebar||'..lspfx..'Lock Surface'
         elseif ccat == ctlcats.trackparam or ccat == ctlcats.tracksend or ccat == ctlcats.macro or ccat == ctlcats.snapshot then
-          mstr = fft..'Faderbox learn (global)'..ff..mod..'|#Param Modulation||Enter value||'..mido..'||#Open FX window||#Add Envelope|#Add All Envelopes For Plugin||'..mm..'Snapshots||>Tools|<Regenerate ID   (emergency only)||Toggle Topbar|Toggle Sidebar||'..lspfx..'Lock Surface'                  
+          mstr = fft..'Faderbox learn (global)'..ff..'||'..fd..mod..'|#Param Modulation||Enter value||'..mido..'||#Open FX window||#Add Envelope|#Add All Envelopes For Plugin||'..mm..'Snapshots||>Tools|<Regenerate ID   (emergency only)||Toggle Topbar|Toggle Sidebar||'..lspfx..'Lock Surface'                  
         else
           mstr = fft..'#Faderbox learn (global)'..ff..mod..'|#Param Modulation||Enter value||'..mido..'||#Open FX window||#Add Envelope|#Add All Envelopes For Plugin||'..mm..'Snapshots||>Tools|<Regenerate ID   (emergency only)||Toggle Topbar|Toggle Sidebar||'..lspfx..'Lock Surface'                  
         end
@@ -23771,7 +23771,8 @@ end
         end
       end
     end
-  
+    update_ctls = true
+    
   end 
 
   function A_RunMorph()
@@ -24275,6 +24276,9 @@ end
                      c_id = c_id}
         strips[strip][page].controls[c].mod = md
       
+        SetCtlDirty(c)
+        update_ctls = true
+        
       end
         
     end
@@ -24317,7 +24321,7 @@ end
   end
 
   function Mod_RemoveAssign(strip, page, ctl)
-  
+
     local m = modulators
     local c_id = strips[strip][page].controls[ctl].c_id
     for i = 1, #m do
@@ -24326,6 +24330,7 @@ end
         local remflag = false
         local tcnt = #m[i].targets
         for t = 1, tcnt do
+
           if m[i].targets[t].targettype == 1 then
             if m[i].targets[t].strip == strip and 
                m[i].targets[t].page == page and 
@@ -41493,12 +41498,12 @@ end
               end
               
               ctl.macrofader = nil
-            ctl.dirty = true
+              ctl.dirty = true
             end
           end
           
-          if ctl.noss ~= true and c and nv and tostring(nv) ~= tostring(ctl.val) and (settings_morphfaderassignedctls == true or ctl.macrofader == nil) then
-            --trackfxparam_select = c
+          if ctl.noss ~= true and c and nv and tostring(nv) ~= tostring(ctl.val) 
+             and (settings_morphfaderassignedctls == true or (ctl.macrofader == nil and ctl.mod == nil)) then
             SetParam3(strip,page,c,ctl,nv)
           end
           
@@ -41506,29 +41511,30 @@ end
             SetFader(ctl.macrofader, nv)
           end
 
-          if p == 1 and snaptbl.modset then
-            for m = 1, #modulators do
-              local mm = modulators[m]
-              for t = 1, #mm.targets do
-                if mm.targets[t].targettype == 1 then
-                  strips[mm.targets[t].strip][mm.targets[t].page].controls[mm.targets[t].ctl].mod = nil
-                end
-              end
-            end
-            modulators = table.deepcopy(snaptbl.moddata)
-            for m = 1, #modulators do
-              local mm = modulators[m]
-              for t = 1, #mm.targets do
-                if mm.targets[t].targettype == 1 then
-                  strips[mm.targets[t].strip][mm.targets[t].page].controls[mm.targets[t].ctl].mod = m
-                end
-              end
-            end
-            update_lfoedit = true
-            update_sidebar = true
-          end
-
         end
+      
+        if p == 1 and snaptbl.modset then
+          for m = 1, #modulators do
+            local mm = modulators[m]
+            for t = 1, #mm.targets do
+              if mm.targets[t].targettype == 1 then
+                strips[mm.targets[t].strip][mm.targets[t].page].controls[mm.targets[t].ctl].mod = nil
+              end
+            end
+          end
+          modulators = table.deepcopy(snaptbl.moddata)
+          for m = 1, #modulators do
+            local mm = modulators[m]
+            for t = 1, #mm.targets do
+              if mm.targets[t].targettype == 1 then
+                strips[mm.targets[t].strip][mm.targets[t].page].controls[mm.targets[t].ctl].mod = m
+              end
+            end
+          end
+          update_lfoedit = true
+          update_sidebar = true
+        end
+        
       end    
     elseif sstype_select > 1 then
       local snaptbl = snapshots[strip][page][sstype_select].snapshot[ss_select]
