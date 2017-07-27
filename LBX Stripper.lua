@@ -11181,14 +11181,15 @@ end
 
         local bars = sync_mult_table[m.syncv]
         local barsteps = m.steps / bars
+        f_Get_SSV(barcol)
         if bars >= 2 then
-          f_Get_SSV(barcol)
           for i = 2, bars do
             local x = obj.sections[1101].x + ((i-1)*barsteps) * barw
-            --local x = obj.sections[1101].x + (math.floor((obj.sections[1101].w-2) / bars) * (i-1)) + 1
             gfx.line(x,obj.sections[1101].y,x,obj.sections[1101].y+obj.sections[1101].h)          
           end
         end          
+        local y = obj.sections[1101].y + math.floor(obj.sections[1101].h/2)
+        gfx.line(obj.sections[1101].x+1,y,obj.sections[1101].x+obj.sections[1101].w-2,y)          
       end
     end    
     gfx.dest = 1
@@ -11241,14 +11242,15 @@ end
       
       local bars = sync_mult_table[m.syncv]
       local barsteps = m.steps / bars
+      f_Get_SSV(barcol)
       if bars >= 2 then
-        f_Get_SSV(barcol)
         for i = 2, bars do
           local x = obj.sections[1101].x + ((i-1)*barsteps) * barw
-          --local x = obj.sections[1101].x + (math.floor((obj.sections[1101].w-2) / bars) * (i-1)) + 1
           gfx.line(x,obj.sections[1101].y,x,obj.sections[1101].y+obj.sections[1101].h)          
         end
       end          
+      local y = obj.sections[1101].y + math.floor(obj.sections[1101].h/2)
+      gfx.line(obj.sections[1101].x+1,y,obj.sections[1101].x+obj.sections[1101].w-2,y)          
       
     end    
     gfx.dest = 1
@@ -11353,14 +11355,16 @@ end
       
       local bars = sync_mult_table[m.syncv]
       local barsteps = m.steps / bars
+      f_Get_SSV(barcol)
       if bars >= 2 then
-        f_Get_SSV(barcol)
         for i = 2, bars do
           local x = obj.sections[1101].x + ((i-1)*barsteps) * barw
-          --local x = obj.sections[1101].x + (math.floor((obj.sections[1101].w-2) / bars) * (i-1)) + 1
           gfx.line(x,obj.sections[1101].y,x,obj.sections[1101].y+obj.sections[1101].h)          
         end
-      end          
+      end
+      local y = obj.sections[1101].y + math.floor(obj.sections[1101].h/2)
+      gfx.line(obj.sections[1101].x+1,y,obj.sections[1101].x+obj.sections[1101].w-2,y)          
+                
     else
     
       f_Get_SSV('0 0 0')
@@ -24262,6 +24266,63 @@ end
   
   end
 
+  function ModMenu(mx, my)
+  
+    local mstr = 'Sine|Triangle|Ramp Up|Ramp Down'
+    gfx.x, gfx.y = mx, my
+    local res = gfx.showmenu(mstr)
+    if res > 0 then
+      local m = modulators[mod_select]
+      local bars = sync_mult_table[m.syncv]
+      local barsteps = m.steps / bars
+      if res == 1 then
+
+        for i = 1, m.steps do
+        
+          m.data[i] = (math.sin((((i-1) % barsteps)/barsteps)*2*pi)+1)/2
+        
+        end        
+        update_lfoedit = true
+      
+      elseif res == 2 then
+      
+        barsteps = barsteps*0.5
+        for i = 1, m.steps do
+        
+          local v = ((i-1+barsteps/2) % barsteps)/barsteps
+          if math.floor((i-1+barsteps/2) / barsteps) % 2 == 0 then
+            m.data[i] = v  
+          else
+            m.data[i] = 1-v
+          end
+        
+        end        
+        update_lfoedit = true
+      
+      elseif res == 3 then
+
+        for i = 1, m.steps do
+        
+          m.data[i] = ((i-1) % barsteps) /barsteps
+          
+        end
+        update_lfoedit = true
+
+      elseif res == 4 then
+
+        for i = 1, m.steps do
+        
+          m.data[i] = 1-(((i-1) % barsteps) /barsteps)
+          
+        end
+        update_lfoedit = true
+        
+      end    
+    
+    end
+  
+  end
+
   function DragMod_Assign(md, c)
   
     local ctl = strips[tracks[track_select].strip][page].controls[c]
@@ -24886,9 +24947,7 @@ end
         mouse.my = mouse.my - obj.sections[1100].y
 
         local m = modulators[mod_select]
-        --local barw = math.floor((obj.sections[1101].w-2) / m.steps)
         local barw = ((obj.sections[1101].w-2) / m.steps)
-        --local offs = math.floor(((obj.sections[1101].w-2)-(barw*m.steps)) / 2)
         xywh = {x = obj.sections[1101].x,
                 y = obj.sections[1101].y,
                 w = barw * m.steps,
@@ -24898,6 +24957,10 @@ end
         
           mouse.context = contexts.mod_draw          
           moddraw = {offs = offs, barw = barw}
+        
+        elseif MOUSE_click_RB(obj.sections[1101]) then
+        
+          ModMenu(mx, my)
         
         elseif MOUSE_click(obj.sections[1111]) then
           
