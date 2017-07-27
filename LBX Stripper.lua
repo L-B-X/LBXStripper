@@ -1693,10 +1693,14 @@
                                 w = bw,
                                 h = bh}
       obj.sections[713] = {x = obj.sections[70].x+obj.sections[70].w/2+xofft,
-                                y = obj.sections[70].y+yoff + yoffm*18,
+                                y = obj.sections[70].y+yoff + yoffm*17,
                                 w = bw,
                                 h = bh}
       obj.sections[714] = {x = obj.sections[70].x+obj.sections[70].w/2+xofft,
+                                y = obj.sections[70].y+yoff + yoffm*18,
+                                w = bw,
+                                h = bh}
+      obj.sections[715] = {x = obj.sections[70].x+obj.sections[70].w/2+xofft,
                                 y = obj.sections[70].y+yoff + yoffm*19,
                                 w = bw,
                                 h = bh}
@@ -13092,6 +13096,7 @@ end
     GUI_DrawTick(gui, 'Disable key input when surface locked', obj.sections[712], gui.color.white, settings_disablekeysonlockedsurface)
     GUI_DrawTick(gui, 'Delete FX with strip', obj.sections[713], gui.color.white, settings_deletefxwithstrip)
     GUI_DrawTick(gui, 'Morph fader/mod assigned controls', obj.sections[714], gui.color.white, settings_morphfaderassignedctls)
+    GUI_DrawTick(gui, 'Run modulators when stopped', obj.sections[715], gui.color.white, settings_alwaysrunmods)
 
   end
   
@@ -23718,12 +23723,23 @@ end
 
   function A_RunMod()
   
-    local pp = reaper.GetPlayPosition()
-    local tsm = reaper.FindTempoTimeSigMarker(0,pp)
-    if tsm then
-      retval, timepos = reaper.GetTempoTimeSigMarker(0, tsm)
-      pp = pp - timepos
+    local pp, tsm
+    if reaper.GetPlayState() > 0 or settings_alwaysrunmods == false then
+      pp = reaper.GetPlayPosition()
+      tsm = reaper.FindTempoTimeSigMarker(0,pp)
+      if tsm then
+        local retval, timepos = reaper.GetTempoTimeSigMarker(0, tsm)
+        pp = pp - timepos
+      end    
+      stop_pp = nil
+    else
+      if stop_pp == nil then
+        stop_pp = reaper.time_precise()
+      end
+      pp = reaper.GetCursorPosition()
+      pp = reaper.time_precise() - stop_pp 
     end
+     
     local bt = CalcBeatTime()
     local ms = modulators
     local offset = 0
@@ -26146,7 +26162,7 @@ end
         --obj.sections[1100].x = modwinsz.x
         --obj.sections[1100].y = modwinsz.y
         obj = GetObjects() 
-        update_lfoedit = true
+        --update_lfoedit = true
         update_surface = true
       
         modwinsz.ox = modwinsz.x
@@ -33989,6 +34005,9 @@ end
       elseif mouse.context == nil and MOUSE_click(obj.sections[714]) then
         settings_morphfaderassignedctls = not settings_morphfaderassignedctls
         update_gfx = true
+      elseif mouse.context == nil and MOUSE_click(obj.sections[715]) then
+        settings_alwaysrunmods = not settings_alwaysrunmods
+        update_gfx = true
       elseif mouse.context == nil and MOUSE_click(obj.sections[708]) then
         
         OpenEB(100, 'Please choose new row height:', autosnap_rowheight)
@@ -39274,6 +39293,7 @@ end
     settings_deletefxwithstrip = tobool(nz(GES('settings_deletefxwithstrip',false),settings_deletefxwithstrip))
     settings_morphfaderassignedctls = tobool(nz(GES('settings_morphfaderassignedctls',true),settings_morphfaderassignedctls))
     settings_followsnapshot = tobool(nz(GES('settings_followsnapshot',true),settings_followsnapshot))
+    settings_alwaysrunmods = tobool(nz(GES('settings_alwaysrunmods',true),settings_alwaysrunmods))
     
     if settings_hideeditbaronnewproject then
       plist_w = 0
@@ -39403,6 +39423,7 @@ end
     reaper.SetExtState(SCRIPT,'settings_disablekeysonlockedsurface',tostring(settings_disablekeysonlockedsurface), true)    
     reaper.SetExtState(SCRIPT,'settings_deletefxwithstrip',tostring(settings_deletefxwithstrip), true)    
     reaper.SetExtState(SCRIPT,'settings_morphfaderassignedctls',tostring(settings_morphfaderassignedctls), true)    
+    reaper.SetExtState(SCRIPT,'settings_alwaysrunmods',tostring(settings_alwaysrunmods), true)    
     reaper.SetExtState(SCRIPT,'settings_followsnapshot',tostring(settings_followsnapshot), true)    
     
     if strip_default then
@@ -42625,7 +42646,7 @@ end
         mods[i] = {active = false,
                    steps = 16,
                    div = 4,
-                   stepsmult = 1,
+                   stepsmult = 4,
                    interpolate = false,
                    syncv = 20,
                    sync = true,
@@ -43994,6 +44015,7 @@ end
   settings_morphfaderassignedctls = true
   settings_followsnapshot = true
   settings_disablefaderautomationineditmode = true
+  settings_alwaysrunmods = false
   
   autosnap_rowheight = 410
   autosnap_itemgap = 20
