@@ -41708,6 +41708,29 @@ end
       local snaptbl = snapshots[strip][page][sstype_select][ss_select]
       if snaptbl then
         local gtrack = GetTrack(strips[strip].track.tracknum)
+        
+        if p == 1 and snaptbl.modset then
+          for m = 1, #modulators do
+            local mm = modulators[m]
+            for t = 1, #mm.targets do
+              if mm.targets[t].targettype == 1 then
+                strips[mm.targets[t].strip][mm.targets[t].page].controls[mm.targets[t].ctl].mod = nil
+              end
+            end
+          end
+          modulators = table.deepcopy(snaptbl.moddata)
+          for m = 1, #modulators do
+            local mm = modulators[m]
+            for t = 1, #mm.targets do
+              if mm.targets[t].targettype == 1 then
+                strips[mm.targets[t].strip][mm.targets[t].page].controls[mm.targets[t].ctl].mod = m
+              end
+            end
+          end
+          update_lfoedit = true
+          update_sidebar = true
+        end
+        
         mfchk = {}
         for ss = 1, #snaptbl.data do
           local c = snaptbl.data[ss].ctl
@@ -41759,6 +41782,13 @@ end
 
         end
       
+        
+      end    
+    elseif sstype_select > 1 then
+      local snaptbl = snapshots[strip][page][sstype_select].snapshot[ss_select]
+      if snaptbl then
+        local gtrack = GetTrack(strips[strip].track.tracknum)
+        
         if p == 1 and snaptbl.modset then
           for m = 1, #modulators do
             local mm = modulators[m]
@@ -41781,11 +41811,6 @@ end
           update_sidebar = true
         end
         
-      end    
-    elseif sstype_select > 1 then
-      local snaptbl = snapshots[strip][page][sstype_select].snapshot[ss_select]
-      if snaptbl then
-        local gtrack = GetTrack(strips[strip].track.tracknum)
         mfchk = {}
         if #snaptbl.data > 0 then
           for ss = 1, #snaptbl.data do
@@ -41842,27 +41867,6 @@ end
           end
         end
         
-        if p == 1 and snaptbl.modset then
-          for m = 1, #modulators do
-            local mm = modulators[m]
-            for t = 1, #mm.targets do
-              if mm.targets[t].targettype == 1 then
-                strips[mm.targets[t].strip][mm.targets[t].page].controls[mm.targets[t].ctl].mod = nil
-              end
-            end
-          end
-          modulators = table.deepcopy(snaptbl.moddata)
-          for m = 1, #modulators do
-            local mm = modulators[m]
-            for t = 1, #mm.targets do
-              if mm.targets[t].targettype == 1 then
-                strips[mm.targets[t].strip][mm.targets[t].page].controls[mm.targets[t].ctl].mod = m
-              end
-            end
-          end
-          update_lfoedit = true
-          update_sidebar = true
-        end
         
       end    
     end
