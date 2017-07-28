@@ -1689,21 +1689,25 @@
                           w = 40,
                           h = bh}
       obj.sections[712] = {x = obj.sections[70].x+obj.sections[70].w/2+xofft,
-                                y = obj.sections[70].y+yoff + yoffm*16,
+                                y = obj.sections[70].y+yoff + yoffm*15,
                                 w = bw,
                                 h = bh}
       obj.sections[713] = {x = obj.sections[70].x+obj.sections[70].w/2+xofft,
-                                y = obj.sections[70].y+yoff + yoffm*17,
+                                y = obj.sections[70].y+yoff + yoffm*16,
                                 w = bw,
                                 h = bh}
       obj.sections[714] = {x = obj.sections[70].x+obj.sections[70].w/2+xofft,
-                                y = obj.sections[70].y+yoff + yoffm*18,
+                                y = obj.sections[70].y+yoff + yoffm*17,
                                 w = bw,
                                 h = bh}
       obj.sections[715] = {x = obj.sections[70].x+obj.sections[70].w/2+xofft,
-                                y = obj.sections[70].y+yoff + yoffm*19,
+                                y = obj.sections[70].y+yoff + yoffm*18,
                                 w = bw,
                                 h = bh}
+      obj.sections[716] = {x = obj.sections[70].x+obj.sections[70].w/2+xofft,
+                          y = obj.sections[70].y+yoff + yoffm*19,
+                          w = 40,
+                          h = bh}
             
                                 
       --Cycle
@@ -11319,7 +11323,7 @@ end
       modwinsz.resize = nil
     end
         
-    GUI_DrawPanel(obj.sections[1100],false,'MODULATORS - MOD '..mod_select)
+    GUI_DrawPanel(obj.sections[1100],false,'MODULATORS - MOD '..string.format('%i',mod_select))
     
     local m = modulators[mod_select]
 
@@ -13102,6 +13106,7 @@ end
     GUI_DrawTick(gui, 'Delete FX with strip', obj.sections[713], gui.color.white, settings_deletefxwithstrip)
     GUI_DrawTick(gui, 'Morph fader/mod assigned controls', obj.sections[714], gui.color.white, settings_morphfaderassignedctls)
     GUI_DrawTick(gui, 'Run modulators when stopped', obj.sections[715], gui.color.white, settings_alwaysrunmods)
+    GUI_DrawButton(gui, modulator_cnt, obj.sections[716], gui.color.white, gui.color.black, false, 'Modulators')
 
   end
   
@@ -24460,7 +24465,60 @@ end
     end
   
   end
-  
+
+  function Mod_ChangeCount(newcnt)
+
+    if newcnt < modulator_cnt then
+      local ret = reaper.MB('Reducing modulator count might delete used modulators in stored snapshots - Continue?','Modulators',4)
+      if ret == 7 then return end
+    end
+
+    modulator_cnt = newcnt
+    INIT_Modulators(modulators)
+    
+    if strips then
+      for s = 1, #strips do
+        if snapshots[s] then
+          for p = 1, 4 do
+          
+            if snapshots[s][p] then
+            
+              for sst = 1, #snapshots[s][p] do
+            
+                local snaptbl
+                if sst == 1 then
+                  snaptbl = snapshots[s][p][sst]
+                else
+                  snaptbl = snapshots[s][p][sst].snapshot
+                end
+                if snaptbl and #snaptbl > 0 then
+                  for ss = 1, #snaptbl do
+                    if snaptbl.moddata then
+                      snaptbl.moddata = INIT_Modulators(snaptbl.moddata)
+                    end
+                  end
+                end
+              end
+            end
+            
+            if strips[s] then
+              if #strips[s][p].controls > 0 then
+                for c = 1, #strips[s][p].controls do
+                  local ctl = strips[s][p].controls[c]
+                  if ctl.mod then
+                    if ctl.mod > modulator_cnt then
+                      ctl.mod = nil
+                    end
+                  end
+                end
+              end
+            end
+          end
+        end    
+      end
+    end
+  end
+    
   function A_Run_StripLayout(noscroll, rt)
   
     if stripgallery_view == 0 then
@@ -33885,7 +33943,15 @@ end
       elseif EB_Open == 103 then
         gallery_itemgap = F_limit(nz(tonumber(editbox.text),gallery_itemgap),0,1000)
         update_gfx = true
+
+      elseif EB_Open == 104 then
+        local mcnt = nz(tonumber(editbox.text),modulator_cnt)
+        if mcnt ~= modulator_cnt then
+          Mod_ChangeCount(mcnt)
+        end
+        update_gfx = true
       end
+      
       editbox = nil
       EB_Open = 0
       mouse.release = true
@@ -34108,6 +34174,11 @@ end
       elseif mouse.context == nil and MOUSE_click(obj.sections[715]) then
         settings_alwaysrunmods = not settings_alwaysrunmods
         update_gfx = true
+      elseif mouse.context == nil and MOUSE_click(obj.sections[716]) then
+        
+        OpenEB(104, 'Number of modulators:', modulator_cnt)
+        update_gfx = true
+      
       elseif mouse.context == nil and MOUSE_click(obj.sections[708]) then
         
         OpenEB(100, 'Please choose new row height:', autosnap_rowheight)
@@ -38441,45 +38512,51 @@ end
 
     if modcnt and modcnt > 0 then
 
+      modulator_cnt = modcnt
       --modulators = {}
       
       for m = 1, modcnt do      
-        
+
         local key = 'mod_'..m..'_'
+        local steps = tonumber(zn(data[key..'steps']))
       
-        modulators[m] = {}
-        modulators[m].active = tobool(zn(data[key..'active']))
-        modulators[m].steps = tonumber(zn(data[key..'steps']))
-        modulators[m].stepsmult = tonumber(zn(data[key..'stepsmult'],1))
-        modulators[m].div = tonumber(zn(data[key..'div'],4))
-        modulators[m].offset = tonumber(zn(data[key..'offset'],0.5))
-        modulators[m].min = tonumber(zn(data[key..'min'],0))
-        modulators[m].max = tonumber(zn(data[key..'max'],1))
-        modulators[m].interpolate = tobool(zn(data[key..'interpolate']))
-        modulators[m].syncv = tonumber(zn(data[key..'syncv']))
-        modulators[m].sync = tobool(zn(data[key..'sync']))
-        local targetcnt = tonumber(zn(data[key..'target_cnt']))
-
-        modulators[m].targets = {}
-        modulators[m].data = {}
-        if targetcnt > 0 then
-          for t = 1, targetcnt do
-            local key = 'mod_'..m..'_target_'..t..'_'
-            modulators[m].targets[t] = {targettype = tonumber(zn(data[key..'targettype'],1)),
-                                        strip = tonumber(zn(data[key..'strip'])),
-                                        page = tonumber(zn(data[key..'page'])),
-                                        ctl = tonumber(zn(data[key..'ctl'])),
-                                        c_id = tonumber(zn(data[key..'c_id']))
-                                        }
+        if steps then
+          modulators[m] = {}
+          modulators[m].steps = steps
+  
+          modulators[m].active = tobool(zn(data[key..'active']))
+          modulators[m].stepsmult = tonumber(zn(data[key..'stepsmult'],1))
+          modulators[m].div = tonumber(zn(data[key..'div'],4))
+          modulators[m].offset = tonumber(zn(data[key..'offset'],0.5))
+          modulators[m].min = tonumber(zn(data[key..'min'],0))
+          modulators[m].max = tonumber(zn(data[key..'max'],1))
+          modulators[m].interpolate = tobool(zn(data[key..'interpolate']))
+          modulators[m].syncv = tonumber(zn(data[key..'syncv']))
+          modulators[m].sync = tobool(zn(data[key..'sync']))
+          local targetcnt = tonumber(zn(data[key..'target_cnt']))
+  
+          modulators[m].targets = {}
+          modulators[m].data = {}
+          if targetcnt and targetcnt > 0 then
+            for t = 1, targetcnt do
+              local key = 'mod_'..m..'_target_'..t..'_'
+              modulators[m].targets[t] = {targettype = tonumber(zn(data[key..'targettype'],1)),
+                                          strip = tonumber(zn(data[key..'strip'])),
+                                          page = tonumber(zn(data[key..'page'])),
+                                          ctl = tonumber(zn(data[key..'ctl'])),
+                                          c_id = tonumber(zn(data[key..'c_id']))
+                                          }
+            end
+          end        
+  
+          for d = 1, modulators[m].steps do
+            local key = 'mod_'..m..'_data_'..d..'_'
+            modulators[m].data[d] = tonumber(zn(data[key..'val']))
           end
-        end        
-
-        for d = 1, modulators[m].steps do
-          local key = 'mod_'..m..'_data_'..d..'_'
-          modulators[m].data[d] = tonumber(zn(data[key..'val']))
         end
-        
+                
       end 
+      modulators = INIT_Modulators(modulators)
   
     end
 
@@ -39395,6 +39472,8 @@ end
     settings_followsnapshot = tobool(nz(GES('settings_followsnapshot',true),settings_followsnapshot))
     settings_alwaysrunmods = tobool(nz(GES('settings_alwaysrunmods',true),settings_alwaysrunmods))
     
+    modulator_cnt = tonumber(nz(GES('modulator_cnt',true),modulator_cnt))
+    
     if settings_hideeditbaronnewproject then
       plist_w = 0
       show_editbar = false
@@ -39525,6 +39604,8 @@ end
     reaper.SetExtState(SCRIPT,'settings_morphfaderassignedctls',tostring(settings_morphfaderassignedctls), true)    
     reaper.SetExtState(SCRIPT,'settings_alwaysrunmods',tostring(settings_alwaysrunmods), true)    
     reaper.SetExtState(SCRIPT,'settings_followsnapshot',tostring(settings_followsnapshot), true)    
+
+    reaper.SetExtState(SCRIPT,'modulator_cnt',tostring(modulator_cnt), true)    
     
     if strip_default then
       reaper.SetExtState(SCRIPT,'strip_default',tostring(strip_default.strip_select), true)
@@ -39644,14 +39725,14 @@ end
 
   function SaveMods(file)
   
-    if file and modulators and #modulators > 0 then
+    if file and modulators and modulator_cnt > 0 then
   
       CheckMods()
   
       local key = 'modcnt'
-      file:write('['..key..']'.. #modulators ..'\n')
+      file:write('['..key..']'.. modulator_cnt ..'\n')
       
-      for m = 1, #modulators do
+      for m = 1, modulator_cnt do
     
         if modulators[m] then
   
@@ -42778,6 +42859,11 @@ end
       end
       
     end
+    if #mods > modulator_cnt then
+      for i = modulator_cnt+1, #mods do
+        mods[i] = nil
+      end
+    end
     
     return mods
   
@@ -42850,7 +42936,6 @@ end
     snapshots = nil
     xxy = nil
     xxy_gravity = 1.5
-    modulator_cnt = 32
     modulators = INIT_Modulators()
     modbaridx = {}
     modbaredit = {}
@@ -44141,6 +44226,8 @@ end
   
   show_striplayout = false
   striplayout_mtime = 0.1
+  
+  modulator_cnt = 32
   
   textoptlink_select = true
   
