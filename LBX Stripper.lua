@@ -25632,7 +25632,7 @@ end
                           and snapshots[tracks[track_select].strip][page][fsstype_select].selected then
                         
                           local w = ctls[i].w
-                          obj.sections[180].w = math.max(w - (170-138),138)
+                          obj.sections[180].w = math.max(w,100)
                           obj.sections[181].w = obj.sections[180].w-6
                           obj.sections[182].w = obj.sections[180].w
                           
