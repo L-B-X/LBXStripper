@@ -19873,6 +19873,17 @@ end
         end
         local fd, lastp = FaderMenu(-1,true)
     
+        local snap = ''
+        if ccat == ctlcats.snapshot then
+          local asc, bsc = '', ''
+          if ctl.param_info.paramnum == 1 then
+            bsc = '!'
+          else
+            asc = '!'
+          end
+          snap = '||>Control Specific|'..asc..'Advanced Snapshot Control|'..bsc..'Basic Snapshot Control'
+        end
+        
         local mod = '||Clear Modulator'
         if not strips[tracks[track_select].strip][page].controls[i].mod then
           mod = '||#Clear Modulator'
@@ -19881,7 +19892,7 @@ end
         if ccat == ctlcats.fxparam then
           mstr = fft..'Faderbox learn (global)'..ff..'||'..fd..mod..'||Param Modulation||Enter value||'..mido..'||Open FX window||Add Envelope|Add All Envelopes For Plugin||'..mm..'Snapshots||>Tools|<Regenerate ID   (emergency only)||Toggle Topbar|Toggle Sidebar||'..lspfx..'Lock Surface'
         elseif ccat == ctlcats.trackparam or ccat == ctlcats.tracksend or ccat == ctlcats.macro or ccat == ctlcats.snapshot then
-          mstr = fft..'Faderbox learn (global)'..ff..'||'..fd..mod..'|#Param Modulation||Enter value||'..mido..'||#Open FX window||#Add Envelope|#Add All Envelopes For Plugin||'..mm..'Snapshots||>Tools|<Regenerate ID   (emergency only)||Toggle Topbar|Toggle Sidebar||'..lspfx..'Lock Surface'                  
+          mstr = fft..'Faderbox learn (global)'..ff..'||'..fd..mod..'|#Param Modulation||Enter value||'..mido..'||#Open FX window||#Add Envelope|#Add All Envelopes For Plugin||'..mm..'Snapshots||>Tools|<Regenerate ID   (emergency only)||Toggle Topbar|Toggle Sidebar||'..lspfx..'Lock Surface'..snap                  
         else
           mstr = fft..'#Faderbox learn (global)'..ff..mod..'|#Param Modulation||Enter value||'..mido..'||#Open FX window||#Add Envelope|#Add All Envelopes For Plugin||'..mm..'Snapshots||>Tools|<Regenerate ID   (emergency only)||Toggle Topbar|Toggle Sidebar||'..lspfx..'Lock Surface'                  
         end
@@ -19993,6 +20004,10 @@ end
               update_surface = true
             elseif res == 14 +lastp then
               settings_locksurface = not settings_locksurface
+            elseif res == 15 +lastp then
+              ctl.param_info.paramnum = nil
+            elseif res == 16 +lastp then
+              ctl.param_info.paramnum = 1
             end
           end
         --end
@@ -25343,6 +25358,11 @@ end
                   ss_select = fss_select
                   update_snaps = true       
                 end
+                
+                if strips[tracks[track_select].strip][page].controls[fss_ctl].param_info.paramnum == 1 then
+                  show_fsnapshots = false
+                  update_surface = true
+                end                
               end
             end
           end
@@ -25593,92 +25613,9 @@ end
                       mmx, mmy, ci = TranslateGalleryPos(mouse.mx, mouse.my, i)
                       mmx, mmy = mmx - ctlxywh.x, mmy - ctlxywh.y
                     end
-                    if mmy < ctlxywh.h/2 then
-                      sstype_select = ctls[i].param
-                      if snapshots and snapshots[tracks[track_select].strip] and snapshots[tracks[track_select].strip][page][sstype_select] 
-                                                  and snapshots[tracks[track_select].strip][page][sstype_select].selected then
-                        ss_select = snapshots[tracks[track_select].strip][page][sstype_select].selected
-                        show_snapshots = true
-                        update_snaps = true
-                      end                      
-                    elseif mmx < 20 then
-                      local xsstype_select,xss_select
-                      xsstype_select = ctls[i].param
-                      if snapshots and snapshots[tracks[track_select].strip] and snapshots[tracks[track_select].strip][page][xsstype_select] 
-                                                  and snapshots[tracks[track_select].strip][page][xsstype_select].selected then
-                        if snapshots[tracks[track_select].strip][page][xsstype_select].selected then
-                          if xsstype_select == 1 then
-                            xss_select = snapshots[tracks[track_select].strip][page][xsstype_select].selected-1
-                            if xss_select < 1 then
-                              xss_select = #snapshots[tracks[track_select].strip][page][xsstype_select]
-                            end
-                          else
-                            xss_select = snapshots[tracks[track_select].strip][page][xsstype_select].selected-1
-                            if xss_select < 1 then                            
-                              xss_select = #snapshots[tracks[track_select].strip][page][xsstype_select].snapshot
-                            end
-                          end
-                        else
-                          if xsstype_select == 1 then
-                            if #snapshots[tracks[track_select].strip][page][xsstype_select] > 0 then
-                              xss_select = 1
-                            end
-                          else
-                            if #snapshots[tracks[track_select].strip][page][xsstype_select].snapshot > 0 then
-                              xss_select = 1                            
-                            end
-                          end
-                        end
-                        if xss_select then
-                          Snapshot_Set(tracks[track_select].strip, page, xsstype_select, xss_select)
-                          if xsstype_select == sstype_select then
-                            ss_select = xss_select
-                          end
-                          update_ctls = true
-                          update_snaps = true
-                          --update_fsnaps = true                       
-                        end
-                      end                                            
-                    elseif mmx > ctlxywh.w-20 then
-                      local xsstype_select,xss_select
-                      xsstype_select = ctls[i].param
-                      if snapshots and snapshots[tracks[track_select].strip] and snapshots[tracks[track_select].strip][page][xsstype_select] 
-                                                  and snapshots[tracks[track_select].strip][page][xsstype_select].selected then
-                        if snapshots[tracks[track_select].strip][page][xsstype_select].selected then
-                          if xsstype_select == 1 then
-                            xss_select = snapshots[tracks[track_select].strip][page][xsstype_select].selected+1
-                            if xss_select > #snapshots[tracks[track_select].strip][page][xsstype_select] then
-                              xss_select = 1
-                            end
-                          else
-                            xss_select = snapshots[tracks[track_select].strip][page][xsstype_select].selected+1
-                            if xss_select > #snapshots[tracks[track_select].strip][page][xsstype_select].snapshot then
-                              xss_select = 1
-                            end
-                          end
-                        else
-                          if xsstype_select == 1 then
-                            if #snapshots[tracks[track_select].strip][page][xsstype_select] > 0 then
-                              xss_select = 1
-                            end
-                          else
-                            if #snapshots[tracks[track_select].strip][page][xsstype_select].snapshot > 0 then
-                              xss_select = 1                            
-                            end
-                          end
-                        end
-                        if xss_select then
-                          Snapshot_Set(tracks[track_select].strip, page, xsstype_select, xss_select)                          
-                          if xsstype_select == sstype_select then
-                            ss_select = xss_select
-                          end
-                          update_ctls = true
-                          update_snaps = true
-                          --update_fsnaps = true                       
-                        end
-                      end
-                                            
-                    else
+                    
+                    if ctls[i].param_info.paramnum == 1 then
+                      --BASIC SNAPSHOT CTL
                       --open fss
                       togfsnap = true
                       if fsstype_select == ctls[i].param then
@@ -25720,6 +25657,137 @@ end
                       end
                       update_fsnaps = true
                       update_surface = true
+                      
+                    else
+                      --ADVANCED SNAPSHOT CTL
+                      if mmy < ctlxywh.h/2 then
+                        sstype_select = ctls[i].param
+                        if snapshots and snapshots[tracks[track_select].strip] and snapshots[tracks[track_select].strip][page][sstype_select] 
+                                                    and snapshots[tracks[track_select].strip][page][sstype_select].selected then
+                          ss_select = snapshots[tracks[track_select].strip][page][sstype_select].selected
+                          show_snapshots = true
+                          update_snaps = true
+                        end                      
+                      elseif mmx < 20 then
+                        local xsstype_select,xss_select
+                        xsstype_select = ctls[i].param
+                        if snapshots and snapshots[tracks[track_select].strip] and snapshots[tracks[track_select].strip][page][xsstype_select] 
+                                                    and snapshots[tracks[track_select].strip][page][xsstype_select].selected then
+                          if snapshots[tracks[track_select].strip][page][xsstype_select].selected then
+                            if xsstype_select == 1 then
+                              xss_select = snapshots[tracks[track_select].strip][page][xsstype_select].selected-1
+                              if xss_select < 1 then
+                                xss_select = #snapshots[tracks[track_select].strip][page][xsstype_select]
+                              end
+                            else
+                              xss_select = snapshots[tracks[track_select].strip][page][xsstype_select].selected-1
+                              if xss_select < 1 then                            
+                                xss_select = #snapshots[tracks[track_select].strip][page][xsstype_select].snapshot
+                              end
+                            end
+                          else
+                            if xsstype_select == 1 then
+                              if #snapshots[tracks[track_select].strip][page][xsstype_select] > 0 then
+                                xss_select = 1
+                              end
+                            else
+                              if #snapshots[tracks[track_select].strip][page][xsstype_select].snapshot > 0 then
+                                xss_select = 1                            
+                              end
+                            end
+                          end
+                          if xss_select then
+                            Snapshot_Set(tracks[track_select].strip, page, xsstype_select, xss_select)
+                            if xsstype_select == sstype_select then
+                              ss_select = xss_select
+                            end
+                            update_ctls = true
+                            update_snaps = true
+                            --update_fsnaps = true                       
+                          end
+                        end                                            
+                      elseif mmx > ctlxywh.w-20 then
+                        local xsstype_select,xss_select
+                        xsstype_select = ctls[i].param
+                        if snapshots and snapshots[tracks[track_select].strip] and snapshots[tracks[track_select].strip][page][xsstype_select] 
+                                                    and snapshots[tracks[track_select].strip][page][xsstype_select].selected then
+                          if snapshots[tracks[track_select].strip][page][xsstype_select].selected then
+                            if xsstype_select == 1 then
+                              xss_select = snapshots[tracks[track_select].strip][page][xsstype_select].selected+1
+                              if xss_select > #snapshots[tracks[track_select].strip][page][xsstype_select] then
+                                xss_select = 1
+                              end
+                            else
+                              xss_select = snapshots[tracks[track_select].strip][page][xsstype_select].selected+1
+                              if xss_select > #snapshots[tracks[track_select].strip][page][xsstype_select].snapshot then
+                                xss_select = 1
+                              end
+                            end
+                          else
+                            if xsstype_select == 1 then
+                              if #snapshots[tracks[track_select].strip][page][xsstype_select] > 0 then
+                                xss_select = 1
+                              end
+                            else
+                              if #snapshots[tracks[track_select].strip][page][xsstype_select].snapshot > 0 then
+                                xss_select = 1                            
+                              end
+                            end
+                          end
+                          if xss_select then
+                            Snapshot_Set(tracks[track_select].strip, page, xsstype_select, xss_select)                          
+                            if xsstype_select == sstype_select then
+                              ss_select = xss_select
+                            end
+                            update_ctls = true
+                            update_snaps = true
+                            --update_fsnaps = true                       
+                          end
+                        end
+                                              
+                      else
+                        --open fss
+                        togfsnap = true
+                        if fsstype_select == ctls[i].param then
+                          show_fsnapshots = not show_fsnapshots
+                          show_xysnapshots = false
+                        else
+                          show_fsnapshots = true
+                          show_xysnapshots = false
+                        end
+                        fsstype_select = ctls[i].param
+                        fsstype_color = ctls[i].textcol
+                        if show_fsnapshots then
+                          if snapshots and snapshots[tracks[track_select].strip] and snapshots[tracks[track_select].strip][page][fsstype_select] 
+                            and snapshots[tracks[track_select].strip][page][fsstype_select].selected then
+                          
+                            local w = ctls[i].w
+                            obj.sections[180].w = math.max(w - (170-138),138)
+                            obj.sections[181].w = obj.sections[180].w-6
+                            obj.sections[182].w = obj.sections[180].w
+                            
+                            fss_select = snapshots[tracks[track_select].strip][page][fsstype_select].selected
+                            
+                            if stripgallery_view == 0 then
+                            
+                              obj.sections[180].x = F_limit(ctls[i].x - surface_offset.x + obj.sections[10].x + 
+                                                            math.floor((ctls[i].w - obj.sections[180].w)/2),
+                                                            obj.sections[10].x,obj.sections[10].x+obj.sections[10].w-obj.sections[180].w)
+                              obj.sections[180].y = F_limit(ctls[i].y+ctls[i].ctl_info.cellh
+                                                            - surface_offset.y  + obj.sections[10].y - 3,
+                                                            obj.sections[10].y,obj.sections[10].y+obj.sections[10].h-obj.sections[180].h)
+                            else
+                              local x,y = TranslateGalleryCtlPos(i,ci)
+                              obj.sections[180].x = x + math.floor((ctls[i].w - obj.sections[180].w)/2)
+                              obj.sections[180].y = y + ctls[i].ctl_info.cellh
+                            end
+                          else
+                            show_fsnapshots = false
+                          end
+                        end
+                        update_fsnaps = true
+                        update_surface = true
+                      end
                     end
                                       
                   elseif ctls[i].ctlcat == ctlcats.eqcontrol then
