@@ -8339,11 +8339,15 @@ end
     GUI_DrawButton(gui, 'RANDOMIZE', obj.sections[169], gui.color.white, gui.color.black, true, '', false)
     
     local txt = 'CAPTURE'
-    if settings_savemodsinsnapshots then
-      txt = txt..' (+MOD)'
-    end
-    if settings_savefaderboxassinsnapshots then
-      txt = txt..' (+FB)'
+    if tracks[track_select] and tracks[track_select].strip and snapshots[tracks[track_select].strip] and 
+       snapshots[tracks[track_select].strip][page][sstype_select] then
+      local snaps = snapshots[tracks[track_select].strip][page][sstype_select]
+      if snaps.capturemods then
+        txt = txt..' (+MOD)'
+      end
+      if snaps.capturefaders then
+        txt = txt..' (+FB)'
+      end
     end
     GUI_DrawButton(gui, txt, obj.sections[162], gui.color.white, gui.color.black, true, '', false)
     GUI_DrawButton(gui, 'NEW SUBSET', obj.sections[166], gui.color.white, gui.color.black, true, '', false)
@@ -14945,6 +14949,9 @@ end
         tbl.morph_sync = snapshots[tracks[track_select].strip][page][sstype_select].morph_sync
         tbl.morph_syncv = snapshots[tracks[track_select].strip][page][sstype_select].morph_syncv
         tbl.morph_scale = snapshots[tracks[track_select].strip][page][sstype_select].morph_scale
+        tbl.capturefaders = snapshots[tracks[track_select].strip][page][sstype_select].capturefaders
+        tbl.capturemods = snapshots[tracks[track_select].strip][page][sstype_select].capturemods
+        
         snapshots[tracks[track_select].strip][page][sstype_select] = tbl
         ss_select = nil
         
@@ -19817,26 +19824,33 @@ end
   
   function RBMenu_Capture()
   
-    local mod = ''
-    if settings_savemodsinsnapshots then
-      mod = '!'
-    end
-    local mstr = 'Capture faderbox settings|'..mod..'Capture modulators'
-    if settings_savefaderboxassinsnapshots == true then
-      mstr = '!'..mstr
-    end
-    gfx.x, gfx.y = obj.sections[160].x + mouse.mx, obj.sections[160].y + mouse.my
-    res = OpenMenu(mstr)
-    if res ~= 0 then
-      if res == 1 then
-        settings_savefaderboxassinsnapshots = not settings_savefaderboxassinsnapshots
-        update_gfx = true
-      elseif res == 2 then
-        settings_savemodsinsnapshots = not settings_savemodsinsnapshots
-        update_gfx = true
+    if tracks[track_select] and snapshots[tracks[track_select].strip] and snapshots[tracks[track_select].strip][page][sstype_select] then
+      local snaps = snapshots[tracks[track_select].strip][page][sstype_select]
+      
+      local mod = ''
+      if snaps.capturemods then
+        mod = '!'
       end
-    end    
-    
+      local mstr = 'Capture faderbox settings|'..mod..'Capture modulators'
+      if snaps.capturefaders then
+        mstr = '!'..mstr
+      end
+      gfx.x, gfx.y = obj.sections[160].x + mouse.mx, obj.sections[160].y + mouse.my
+      res = OpenMenu(mstr)
+      
+      if res ~= 0 then
+        if res == 1 then
+          settings_savefaderboxassinsnapshots = not settings_savefaderboxassinsnapshots
+          snaps.capturefaders = not nz(snaps.capturefaders, false)
+          update_gfx = true
+        elseif res == 2 then
+          settings_savemodsinsnapshots = not settings_savemodsinsnapshots
+          snaps.capturemods = not nz(snaps.capturemods, false)
+          update_gfx = true
+        end
+      end    
+      
+    end
   end
   
   function RBMenu(mtype,ccat,i)
@@ -37989,6 +38003,8 @@ end
           snaps[sst].morph_scale = tonumber(zn(data[key..'morph_scale'],1))
           snaps[sst].morph_time_fader = tonumber(zn(data[key..'morph_time_fader']))
           snaps[sst].morph_loop = tonumber(zn(data[key..'morph_loop'],1))
+          snaps[sst].capturefaders = tobool(zn(data[key..'capturefaders'],false))
+          snaps[sst].capturemods = tobool(zn(data[key..'capturemods'],false))
           
           local sscnt = tonumber(zn(data[key..'ss_count'],0))
           if sscnt > 0 then
@@ -38080,6 +38096,8 @@ end
                         morph_sync = tobool(zn(data[key..'morph_sync'],false)),
                         morph_syncv = tonumber(zn(data[key..'morph_syncv'],14)),
                         morph_scale = tonumber(zn(data[key..'morph_scale'],1)),  
+                        capturefaders = tobool(zn(data[key..'capturefaders'],false)),
+                        capturemods = tobool(zn(data[key..'capturemods'],false)),
                         snapshot = {}, ctls = {}}
           
           snapsubsets_table[sst] = snaps[sst].subsetname
@@ -40136,6 +40154,8 @@ end
       file:write('['..key..'morph_time_fader]'..nz(snapshots[s][p][sst].morph_time_fader,'')..'\n')
       file:write('['..key..'ss_selected]'..nz(snapshots[s][p][sst].selected,'')..'\n')
       file:write('['..key..'morph_loop]'..nz(snapshots[s][p][sst].morph_loop,1)..'\n')
+      file:write('['..key..'capturefaders]'..tostring(nz(snapshots[s][p][sst].capturefaders,false))..'\n')
+      file:write('['..key..'capturemods]'..tostring(nz(snapshots[s][p][sst].capturemods,false))..'\n')
       
       if sst == 1 then          
         file:write('['..key..'ss_count]'..#snapshots[s][p][sst]..'\n')
@@ -41506,7 +41526,9 @@ end
       local ssdst = {morph_time = snaptbl.morph_time,
                      morph_sync = snaptbl.morph_sync,
                      morph_syncv = snaptbl.morph_syncv,
-                     morph_scale = snaptbl.morph_scale}
+                     morph_scale = snaptbl.morph_scale,
+                     capturefaders = snaptbl.capturefaders,
+                     capturemods = snaptbl.capturemods}
       local inserted = false
       local npos = 0
       for i = 1, #snaptbl do
@@ -41535,7 +41557,8 @@ end
       local ssdst = {morph_time = snaptbl.morph_time,
                      morph_sync = snaptbl.morph_sync,
                      morph_syncv = snaptbl.morph_syncv,
-                     morph_scale = snaptbl.morph_scale}
+                     morph_scale = snaptbl.morph_scale,
+                     }
       local inserted = false
       local npos = 0
       for i = 1, #snaptbl do
@@ -41633,6 +41656,10 @@ end
               for t = 1, #mm.targets do
                 if mm.targets[t].targettype == 1 then
                   strips[mm.targets[t].strip][mm.targets[t].page].controls[mm.targets[t].ctl].mod = nil
+                  if mm.targets[t].strip == tracks[track_select].strip and 
+                     mm.targets[t].page == page then
+                    SetCtlDirty(mm.targets[t].ctl)
+                  end
                 end
               end
             end
@@ -41642,6 +41669,10 @@ end
               for t = 1, #mm.targets do
                 if mm.targets[t].targettype == 1 then
                   strips[mm.targets[t].strip][mm.targets[t].page].controls[mm.targets[t].ctl].mod = m
+                  if mm.targets[t].strip == tracks[track_select].strip and 
+                     mm.targets[t].page == page then
+                    SetCtlDirty(mm.targets[t].ctl)
+                  end
                 end
               end
             end
@@ -41712,6 +41743,10 @@ end
               for t = 1, #mm.targets do
                 if mm.targets[t].targettype == 1 then
                   strips[mm.targets[t].strip][mm.targets[t].page].controls[mm.targets[t].ctl].mod = nil
+                  if mm.targets[t].strip == tracks[track_select].strip and 
+                     mm.targets[t].page == page then
+                    SetCtlDirty(mm.targets[t].ctl)
+                  end
                 end
               end
             end
@@ -41721,6 +41756,10 @@ end
               for t = 1, #mm.targets do
                 if mm.targets[t].targettype == 1 then
                   strips[mm.targets[t].strip][mm.targets[t].page].controls[mm.targets[t].ctl].mod = m
+                  if mm.targets[t].strip == tracks[track_select].strip and 
+                     mm.targets[t].page == page then
+                    SetCtlDirty(mm.targets[t].ctl)
+                  end
                 end
               end
             end
@@ -42121,7 +42160,7 @@ end
                   offflag = true
                 end
 
-                if settings_savefaderboxassinsnapshots == true then
+                if snaps.capturefaders == true then
                   snaps[snappos].data[sscnt].mfset = true
                   local mf = ctl.macrofader
                   if mf then
@@ -42145,7 +42184,7 @@ end
             end
           end
           
-          if settings_savemodsinsnapshots == true then
+          if snaps.capturemods == true then
             snaps[snappos].modset = true
             snaps[snappos].moddata = table.deepcopy(modulators)
           end
@@ -42182,7 +42221,7 @@ end
         end
 
         local sctls = #snaps.ctls
-        if sctls > 0 or settings_savemodsinsnapshots == true then
+        if sctls > 0 or snaps.capturemods == true then
 
           if ss_ovr then
             snappos = ss_ovr
@@ -42225,7 +42264,7 @@ end
                     offflag = true
                   end
 
-                  if settings_savefaderboxassinsnapshots == true then
+                  if snaps.capturefaders == true then
                     snaps.snapshot[snappos].data[sscnt].mfset = true
                     local mf = ctl.macrofader
                     if mf then
@@ -42268,7 +42307,7 @@ end
           ss_select = snappos
         end
         
-        if settings_savemodsinsnapshots == true then
+        if snaps.capturemods == true then
           snaps.snapshot[snappos].modset = true
           snaps.snapshot[snappos].moddata = table.deepcopy(modulators)
         end        
