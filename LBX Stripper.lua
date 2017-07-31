@@ -210,6 +210,40 @@
   pi = 3.14159265359
 
   -----------------------------------
+  
+  function GetTrackChunk(track, usefix)
+    if not track then return end
+    local track_chunk
+    --DBG('G')
+    if usefix == true then
+      local fast_str = reaper.SNM_CreateFastString("")
+      if reaper.SNM_GetSetObjectState(track, fast_str, false, false) then
+        track_chunk = reaper.SNM_GetFastString(fast_str)
+      end
+      reaper.SNM_DeleteFastString(fast_str)  
+    else
+      _, track_chunk = reaper.GetTrackStateChunk(track,'',false)
+    end
+    return track_chunk
+  end
+  
+  function SetTrackChunk(track, track_chunk, usefix)
+    usefix = false --force as fix isn't needed 
+    if not (track and track_chunk) then return end
+    local ret
+    --DBG('S')
+    if usefix == true then
+      local fast_str = reaper.SNM_CreateFastString("")
+      if reaper.SNM_SetFastString(fast_str, track_chunk) then
+        ret = reaper.SNM_GetSetObjectState(track, fast_str, true, false)
+      end
+      reaper.SNM_DeleteFastString(fast_str)
+    else
+      ret = reaper.SetTrackStateChunk(track,track_chunk,false)    
+    end
+    return ret
+  end
+  
   -----------------------------------  
   
   function cfact(n) if n == 0 then return 1 else return n * cfact(n-1) end end
@@ -4455,7 +4489,7 @@
       for t = 0, reaper.CountTracks(0)-1 do    
       
         local track = GetTrack(t)
-        local _, chunk = reaper.GetTrackStateChunk(track,'')
+        local chunk = GetTrackChunk(track, settings_usetrackchunkfix)
         local guid = reaper.GetTrackGUID(track)
         local s, e, le = _, 1, 0
         s,e = string.find(string.sub(chunk,e),'AUXRECV .-\n')
@@ -14814,16 +14848,26 @@ end
     
   end
 
+  function GetFXGUIDS(track)
+  
+    local guids = {}
+    for i = 1, reaper.TrackFX_GetCount(track) do
+      guids[i] = reaper.TrackFX_GetFXGUID(track, i-1)
+    end
+    return guids
+    
+  end
+
   function DeleteFXPlugins(delfx, delfxtracks)
   
     for ti = 1, #delfxtracks.idx do
     
       local idxtrn = delfxtracks.idx[ti]
       local track = GetTrack(idxtrn)
-      
+    
       if track then
         local removed = 0
-        local _, trchunk = reaper.GetTrackStateChunk(track, '', false)
+        local trchunk = GetTrackChunk(track, settings_usetrackchunkfix)
       
         local fxnums = {}
       
@@ -14860,9 +14904,10 @@ end
             
               --Delete fx plugin
               local fxnum
-              for f = 0, reaper.TrackFX_GetCount(track) do
+              for f = 0, reaper.TrackFX_GetCount(track)-1 do
                 if reaper.TrackFX_GetFXGUID(track,f) == fxguid then
                   fxnums[#fxnums+1] = f+1
+                  
                   break
                 end
               end
@@ -14883,7 +14928,7 @@ end
         end
         
         if trchunk and removed > 0 then
-          reaper.SetTrackStateChunk(track, trchunk, false)
+          SetTrackChunk(track, trchunk, false)
         end
       end
     end
@@ -15279,7 +15324,7 @@ end
       local i, j
       local fxcnt = 1
       local fxtbl = {}
-      local _, chunk = reaper.GetTrackStateChunk(tr,'',false)
+      local chunk = GetTrackChunk(tr, settings_usetrackchunkfix)
       for i = 0, reaper.TrackFX_GetCount(tr)-1 do
         if settings_saveallfxinststrip then 
           --local _, fxname = reaper.TrackFX_GetFXName(tr, i, '')
@@ -15970,7 +16015,7 @@ end
         end
       end
       
-      local _, chunk = reaper.GetTrackStateChunk(tr,'',false)
+      local chunk = GetTrackChunk(tr, settings_usetrackchunkfix)
       missing = 0
       for i = 1, #stripdata.fx do
         if stripdata.fx[i].nfxguid ~= '' then
@@ -15980,7 +16025,7 @@ end
         end
       end
       if chunk ~= nil then
-        reaper.SetTrackStateChunk(tr, chunk, false)
+        SetTrackChunk(tr, chunk, false)
       end
 
     elseif stripdata.version >= 3 then
@@ -16009,26 +16054,42 @@ end
       local missing = 0
       for i = 1, #stripdata.fx do
     
-        local _, chunk = reaper.GetTrackStateChunk(tr,'',false)
-        --DBG(stripdata.fx[i].fxchunk)
+        local chunk = GetTrackChunk(tr, settings_usetrackchunkfix)
+       
         local nchunk, nfxguid, ofxguid = Chunk_InsertFXChunkAtEndOfFXChain(strips[strip].track.tracknum, chunk, stripdata.fx[i].fxchunk)
+        --DBG(nfxguid)
         if nchunk ~= nil then
-          local retval = reaper.SetTrackStateChunk(tr, nchunk, false)
+          local retval = SetTrackChunk(tr, nchunk, false)
           if retval == true then
             fxguids[ofxguid] = {guid = nfxguid, found = true, fxnum = fxcnt+i-1-missing}
           end
         end
         
         --check guid
-        nguid = reaper.TrackFX_GetFXGUID(tr, fxcnt+i-1+missing)
-        if nguid == nil then
-          missing = missing + 1
-          if fxguids[ofxguid] then
-            fxguids[ofxguid].found = false
-            fxguids[ofxguid].fxnum = -1
-          end 
-        end
-        
+        if settings_usetrackchunkfix == false then
+          nguid = reaper.TrackFX_GetFXGUID(tr, fxcnt+i-1+missing)
+          if nguid == nil then
+            missing = missing + 1
+            if fxguids[ofxguid] then
+              fxguids[ofxguid].found = false
+              fxguids[ofxguid].fxnum = -1
+            end 
+          end
+        else
+          nguid = reaper.TrackFX_GetFXGUID(tr, fxcnt+i-1+missing)
+          if nguid == nil then
+            missing = missing + 1
+            if fxguids[ofxguid] then
+              fxguids[ofxguid].found = false
+              fxguids[ofxguid].fxnum = -1
+            end 
+          else
+            --fxguids[ofxguid].found = true
+            fxguids[ofxguid].guid = nguid
+            --DBG(fxguids[ofxguid].guid)
+          end
+          
+        end        
       end
       
       for j = 1, #stripdata.strip.controls do
@@ -22530,7 +22591,7 @@ end
     
       local track = GetTrack(tracks[track_select].tracknum)
       local fxc = reaper.TrackFX_GetCount(track)
-      local _, chunk = reaper.GetTrackStateChunk(track,'',false)
+      local chunk = GetTrackChunk(track, settings_usetrackchunkfix)
       local s,e = 0,0
 
       for i = 1, fxc do
@@ -24893,7 +24954,7 @@ end
     
     if trbeg and fxchunks and trend then
       local nchunk = trbeg..fxchunks..trend
-      reaper.SetTrackStateChunk(track,nchunk,false)
+      SetTrackChunk(track,nchunk, false)
     end
         
   end
@@ -35352,12 +35413,12 @@ end
               local trn = tracks[track_select].tracknum
               local fxc = loaddata.chunk
               local track = GetTrack(trn)
-              local _, chunk = reaper.GetTrackStateChunk(track,'',false)
+              local chunk = GetTrackChunk(track, settings_usetrackchunkfix)
               local nchunk, nfxguid, ofxguid = Chunk_InsertFXChunkAtEndOfFXChain(trn, chunk, fxc)
               if nchunk then
-                reaper.SetTrackStateChunk(track,nchunk,false)
+                SetTrackChunk(track,nchunk, false)
                 loaddata.eqband.fxguid = nfxguid
-                loaddata.eqband.fxnum = reaper.TrackFX_GetCount(tr)-1
+                loaddata.eqband.fxnum = reaper.TrackFX_GetCount(track)-1
                 if strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands == nil then
                   strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands = {}
                 end
@@ -35512,10 +35573,10 @@ end
       if unique and fxnum then
         --can delete
         local tr = GetTrack(tracks[track_select].tracknum)
-        local _, chunk = reaper.GetTrackStateChunk(tr,'',false)
+        local chunk = GetTrackChunk(tr, settings_usetrackchunkfix)
         local _, nchunk = RemoveFXChunkFromTrackChunk(chunk, fxnum+1)
         if nchunk then
-          reaper.SetTrackStateChunk(tr,nchunk,false)
+          SetTrackChunk(tr,nchunk, false)
           
           --Reorganise FXNUM
           for i = 1, #strips[strip][page].controls[eqcontrol_select].eqbands do
@@ -35550,7 +35611,7 @@ end
     
       local savedata = {}
       local track = GetTrack(tracks[track_select].tracknum)
-      local _, chunk = reaper.GetTrackStateChunk(track,'',false)
+      local chunk = GetTrackChunk(track, settings_usetrackchunkfix)
       local fnd, fxc, s, e = GetFXChunkFromTrackChunk(chunk,fxnum+1)
       
       if fnd then
@@ -35609,18 +35670,27 @@ end
         
         local trn = tracks[track_select].tracknum
         local track = GetTrack(trn)
-        local _, chunk = reaper.GetTrackStateChunk(track,'',false)
+        local chunk = GetTrackChunk(track, settings_usetrackchunkfix)
 
         local nguids = {}
+        local oguids = {}
+        local fxcnt = reaper.TrackFX_GetCount(track)
         for ck = 1, #loaddata.chunks do
         
           local fxc = loaddata.chunks[ck]
           local nchunk, nfxguid, ofxguid = Chunk_InsertFXChunkAtEndOfFXChain(trn, chunk, fxc)
           chunk = nchunk
           nguids[ofxguid] = nfxguid        
-        
+          oguids[fxcnt+ck] = ofxguid
         end
-        reaper.SetTrackStateChunk(track,chunk,false)
+        SetTrackChunk(track,chunk, false)
+        
+        if settings_usetrackchunkfix then
+          for i = fxcnt+1, reaper.TrackFX_GetCount(track) do
+            nguids[oguids[i]] = reaper.TrackFX_GetFXGUID(track,i)
+          end
+        end
+        
         local bandcnt = eqcontrolband_select
         if loaddata.bands and #loaddata.bands > 0 then
           if strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands == nil then
@@ -35667,7 +35737,7 @@ end
       local track = GetTrack(tracks[track_select].tracknum)
       local fx = {}
 
-      local _, chunk = reaper.GetTrackStateChunk(track,'',false)
+      local chunk = GetTrackChunk(track, settings_usetrackchunkfix)
 
       savedata.eqgraph = strips[strip][page].controls[eqcontrol_select].eqgraph
       for b = 1, #eqc do
@@ -42368,7 +42438,7 @@ end
       for t = 0, reaper.CountTracks(0)-1 do
       
         local tr = GetTrack(t)
-        local r, chunk = reaper.GetTrackStateChunk(tr, '', false)
+        local chunk = GetTrackChunk(tr, settings_usetrackchunkfix)
         savedata.trackdata[t] = {track = t,
                                  guid = reaper.GetTrackGUID(tr),
                                  chunkdata = chunk}
@@ -42478,7 +42548,7 @@ end
     for i = 0, #loaddata.trackdata do
 
       local tr = GetTrack(t_offset+i)
-      reaper.SetTrackStateChunk(tr, loaddata.trackdata[i].chunkdata, false) 
+      SetTrackChunk(tr, loaddata.trackdata[i].chunkdata, false) 
 
     end        
     
@@ -43395,7 +43465,7 @@ end
       local str = GetTrack(i)
       --local dtr = GetTrack(dsttrn)
       
-      local _, chunk = reaper.GetTrackStateChunk(str,'',false)
+      local chunk = GetTrackChunk(str, settings_usetrackchunkfix)
       local fnd, fxc, s, e = testchunkfxextract(chunk,1)
       --[[DBG('')
       DBG('TRACK '..i+1)
@@ -43411,16 +43481,16 @@ end
   function testfxinsert()
   
     local str = GetTrack(1)
-    local _, chunk = reaper.GetTrackStateChunk(str,'',false)
+    local chunk = GetTrackChunk(str, settings_usetrackchunkfix)
     local fnd, fxc, s, e = GetFXChunkFromTrackChunk(chunk,1)
     local trn = -1
     local str = GetTrack(trn)
-    local _, chunk = reaper.GetTrackStateChunk(str,'',false)
+    local chunk = GetTrackChunk(str, settings_usetrackchunkfix)
     local nchunk, nfxguid, ofxguid = Chunk_InsertFXChunkAtEndOfFXChain(trn, chunk,fxc)
     DBG(nchunk)
     --DBG('guid='..nfxguid..'  '..ofxguid)
     
-    DBG(tostring(reaper.SetTrackStateChunk(str,nchunk,false)))
+    DBG(tostring(SetTrackChunk(str,nchunk, false)))
   
   end
 
@@ -43478,8 +43548,10 @@ end
     local trn = tracks[track_select].tracknum
     local tr = GetTrack(trn)
     local fxcnt = reaper.TrackFX_GetCount(tr)
-    local _, chunk = reaper.GetTrackStateChunk(tr,'',false)
+    local chunk = GetTrackChunk(tr, settings_usetrackchunkfix)
+
     local _, nchunk, movechunk = RemoveFXChunkFromTrackChunk(chunk, srcfxnum)
+
     if nchunk then
       if dstfxnum == fxcnt then
         --insert at end
@@ -43496,8 +43568,9 @@ end
       end
     
       if writechunk == true then
-        reaper.SetTrackStateChunk(tr,nchunk,true)
+        SetTrackChunk(tr,nchunk, false)
         --DBG(nchunk)
+        --DBG(string.len(nchunk))
       end
     end
   end
@@ -43529,7 +43602,7 @@ end
     local fxn = reaper.TrackFX_GetCount(tr) 
     local fxtbl = {}
     local guididx = {}
-    local _, chunk = reaper.GetTrackStateChunk(tr,'',false)
+    local chunk = GetTrackChunk(tr, settings_usetrackchunkfix)
     local s,e, fnd = 0,0,nil
     local trchunk_beg, trchunk_end
     for i = 1,fxn do
@@ -43582,7 +43655,7 @@ end
     local trn = nz(strips[strip][page].controls[ctl].tracknum, trn)
     local fxn = strips[strip][page].controls[ctl].fxnum
     local str = GetTrack(trn)
-    local _, chunk = reaper.GetTrackStateChunk(str,'',false)
+    local chunk = GetTrackChunk(str, settings_usetrackchunkfix)
 
     local s,e, fnd = 0,0,nil
     for i = 0,fxn do
@@ -43596,7 +43669,7 @@ end
             byp = string.gsub(byp,'(%d) (%d) (%d)', function(d,e,f) return d..' 0 '..f end)          
           end
           local nchunk = string.sub(chunk,0,s-1)..byp..string.sub(chunk,e+1)
-          reaper.SetTrackStateChunk(str,nchunk,false)
+          SetTrackChunk(str,nchunk, false)
           fnd = true 
           break 
         end
@@ -43613,7 +43686,7 @@ end
 
     local fxn = strips[strip][page].controls[ctl].fxnum
     local str = track
-    local _, chunk = reaper.GetTrackStateChunk(str,'',false)
+    local chunk = GetTrackChunk(str, settings_usetrackchunkfix)
 
     local s,e, fnd = 0,0,nil
     for i = 0,fxn do
@@ -43627,7 +43700,7 @@ end
             byp = string.gsub(byp,'(%d) (%d) (%d)', function(d,e,f) return d..' 0 '..f end)          
           end
           local nchunk = string.sub(chunk,0,s-1)..byp..string.sub(chunk,e+1)
-          reaper.SetTrackStateChunk(str,nchunk,false)
+          SetTrackChunk(str,nchunk, false)
           fnd = true 
           break 
         end
@@ -43644,7 +43717,7 @@ end
     local trn = nz(strips[strip][page].controls[ctl].tracknum, trn)
     local fxn = strips[strip][page].controls[ctl].fxnum
     local str = GetTrack(trn)
-    local _, chunk = reaper.GetTrackStateChunk(str,'',false)
+    local chunk = GetTrackChunk(str, settings_usetrackchunkfix)
 
     --local chlines = {}
     local s,e=0,0
@@ -43680,7 +43753,7 @@ end
           local byp = string.sub(chunk,s,e)
           byp = string.gsub(byp,'(%d) (%d) (%d)', function(d,e,f) if e == '0' then return d..' 1 '..f else return d..' 0 '..f end end)
           local nchunk = string.sub(chunk,0,s-1)..byp..string.sub(chunk,e+1)
-          reaper.SetTrackStateChunk(str,nchunk,false)
+          SetTrackChunk(str,nchunk, false)
           fnd = true 
           break 
         end
@@ -43698,7 +43771,7 @@ end
     local str = GetTrack(srctrn)
     --local dtr = GetTrack(dsttrn)
     
-    local _, chunk = reaper.GetTrackStateChunk(str,'',false)
+    local chunk = GetTrackChunk(str, settings_usetrackchunkfix)
     --[[DBG('')
     DBG('SOURCE')
     DBG('')]]
@@ -43789,7 +43862,7 @@ end
       end
       
       --should be just one
-      for i, v in pairs(guids) do 
+      for i, v in pairs(guids) do
         ofxid = i
         nfxid = v 
       end
@@ -43812,7 +43885,6 @@ end
         rchunk = string.sub(trchunk,0,che)..'<FXCHAIN\nSHOW 0\nLASTSEL 0\nDOCKED 0\n'.. insfxchunk ..'\n>\n'..string.sub(trchunk,che+1)
       end    
     end
-    
     return rchunk, nfxid, ofxid
     
   end
@@ -44324,6 +44396,7 @@ end
   settings_followsnapshot = true
   settings_disablefaderautomationineditmode = true
   settings_alwaysrunmods = false
+  settings_usetrackchunkfix = true
   
   autosnap_rowheight = 410
   autosnap_itemgap = 20
