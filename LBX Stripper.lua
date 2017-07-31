@@ -210,12 +210,14 @@
   pi = 3.14159265359
 
   -----------------------------------
-  
+  --Thanks Eugen for this fix
   function GetTrackChunk(track, usefix)
     if not track then return end
     local track_chunk
     --DBG('G')
-    if usefix == true then
+    
+    if usefix == true and reaper.APIExists('SNM_CreateFastString') == true then
+      --DBG('using fix')
       local fast_str = reaper.SNM_CreateFastString("")
       if reaper.SNM_GetSetObjectState(track, fast_str, false, false) then
         track_chunk = reaper.SNM_GetFastString(fast_str)
