@@ -25599,11 +25599,13 @@ end
                   else
                     ctls[i].val = 0
                   end
-                  A_SetParam(tracks[track_select].strip,page,i,ctls[i])
-                  ctls[i].dirty = true
-                  if ctls[i].param_info.paramname == 'Bypass' then
-                    SetCtlEnabled(ctls[i].fxnum) 
-                  end
+                  if ctls[i].mod == nil or (ctls[i].mod and modulators[ctls[i].mod].active ~= true) then
+                    A_SetParam(tracks[track_select].strip,page,i,ctls[i])
+                    ctls[i].dirty = true
+                    if ctls[i].param_info.paramname == 'Bypass' then
+                      SetCtlEnabled(ctls[i].fxnum) 
+                    end
+                  end 
                   if ctls[i].mod and mod_select ~= ctls[i].mod then
                     mod_select = ctls[i].mod
                     update_gfx = true
