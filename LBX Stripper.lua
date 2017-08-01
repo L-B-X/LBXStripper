@@ -7710,21 +7710,41 @@ end
                   else
                     Disp_Name = ctlnmov
                   end
-                  local v = nz(ctl.val,-1)
-                  Disp_ParamV = ''
-                  if v > -1 then
-                    if snapshots and snapshots[strip] and snapshots[strip][page][param] and snapshots[strip][page][param].selected then
-                      if param == 1 then 
-                        if snapshots[strip][page][param][snapshots[strip][page][param].selected] then
-                          Disp_ParamV = snapshots[strip][page][param][snapshots[strip][page][param].selected].name
+                  local v
+                  if ctl.param_info.paramnum == 2 then
+                    v = nz(tonumber(ctl.param_info.paramidx),-1)
+                    Disp_ParamV = ''
+                    if v > -1 then
+                      if snapshots and snapshots[strip] and snapshots[strip][page][param] then
+                        if param == 1 then 
+                          if snapshots[strip][page][param][v] then
+                            Disp_ParamV = snapshots[strip][page][param][v].name
+                          end
+                        else
+                          if snapshots[strip][page][param].snapshot[v] then
+                            Disp_ParamV = snapshots[strip][page][param].snapshot[v].name
+                          end
                         end
-                      else
-                        if snapshots[strip][page][param].snapshot[snapshots[strip][page][param].selected] then
-                          Disp_ParamV = snapshots[strip][page][param].snapshot[snapshots[strip][page][param].selected].name
+                      end
+                    end
+                  else
+                    v = nz(ctl.val,-1)                  
+                    Disp_ParamV = ''
+                    if v > -1 then
+                      if snapshots and snapshots[strip] and snapshots[strip][page][param] and snapshots[strip][page][param].selected then
+                        if param == 1 then 
+                          if snapshots[strip][page][param][snapshots[strip][page][param].selected] then
+                            Disp_ParamV = snapshots[strip][page][param][snapshots[strip][page][param].selected].name
+                          end
+                        else
+                          if snapshots[strip][page][param].snapshot[snapshots[strip][page][param].selected] then
+                            Disp_ParamV = snapshots[strip][page][param].snapshot[snapshots[strip][page][param].selected].name
+                          end
                         end
                       end
                     end
                   end
+                  
                 elseif ctlcat == ctlcats.xy or ctlcat == ctlcats.snapshotrand or ctlcat == ctlcats.fxgui then
                   if nz(ctlnmov,'') == '' then
                     Disp_Name = pname
@@ -19952,13 +19972,15 @@ end
     
         local snap = ''
         if ccat == ctlcats.snapshot then
-          local asc, bsc = '', ''
+          local asc, bsc, fsc = '', '', ''
           if ctl.param_info.paramnum == 1 then
             bsc = '!'
-          else
+          elseif ctl.param_info.paramnum == 2 then
+            fsc = '!'
+          else 
             asc = '!'
           end
-          snap = '||>Control Specific|'..asc..'Advanced Snapshot Control|'..bsc..'Basic Snapshot Control'
+          snap = '||>Control Specific|'..asc..'Advanced Snapshot Control|'..bsc..'Basic Snapshot Control||<'..fsc..'Fixed Snapshot Control'
         end
         
         local mod = '||Clear Modulator'
@@ -20085,6 +20107,15 @@ end
               ctl.param_info.paramnum = nil
             elseif res == 16 +lastp then
               ctl.param_info.paramnum = 1
+            elseif res == 17 +lastp then
+              local xsstype_select = ctl.param
+              if snapshots and snapshots[tracks[track_select].strip] and snapshots[tracks[track_select].strip][page][xsstype_select] 
+                                          and snapshots[tracks[track_select].strip][page][xsstype_select].selected then
+                local xss_select = snapshots[tracks[track_select].strip][page][xsstype_select].selected
+                ctl.param_info.paramnum = 2
+                ctl.param_info.paramidx = xss_select
+                SetCtlDirty(i)
+              end
             end
           end
         --end
@@ -25554,12 +25585,7 @@ end
                   end
                   if ctls[i].mod and mod_select ~= ctls[i].mod then
                     mod_select = ctls[i].mod
-                    --if show_lfoedit then
-                    --  update_lfoedit = true
-                    --end
-                    --update_sidebar = true
                     update_gfx = true
-                    
                   end
                   
                   --undotxt = 'Parameter Change'
@@ -25578,8 +25604,13 @@ end
                   if ctls[i].param_info.paramname == 'Bypass' then
                     SetCtlEnabled(ctls[i].fxnum) 
                   end
+                  if ctls[i].mod and mod_select ~= ctls[i].mod then
+                    mod_select = ctls[i].mod
+                    update_gfx = true
+                  end
                   noscroll = true
                   update_ctls = true
+                  
                 elseif ctltype == 4 then
                   --cycle
                   if ctls[i].cycledata.draggable then
@@ -25616,6 +25647,10 @@ end
                       update_ctls = true
                     end
                   end
+                  if ctls[i].mod and mod_select ~= ctls[i].mod then
+                    mod_select = ctls[i].mod
+                    update_gfx = true
+                  end
                   noscroll = true
                 elseif ctltype == 6 then
                   --mem button
@@ -25632,7 +25667,12 @@ end
                     ctls[i].val = ctls[i].membtn.mem
                     A_SetParam(strip,page,i,ctls[i])
                   end
-                  update_ctls = true                    
+                  if ctls[i].mod and mod_select ~= ctls[i].mod then
+                    mod_select = ctls[i].mod
+                    update_gfx = true
+                  end
+                  update_ctls = true        
+                              
                 elseif ctltype == 5 then
                   if ctls[i].ctlcat == ctlcats.xy then
                     if mouse.my - obj.sections[10].y + surface_offset.y - ctls[i].y < ctls[i].ctl_info.cellh - 38 then
@@ -25735,6 +25775,34 @@ end
                       update_fsnaps = true
                       update_surface = true
                       
+                    elseif ctls[i].param_info.paramnum == 2 then
+                      --FIXED SNAPSHOT CTL
+                      local xsstype_select = ctls[i].param
+                      local xss_select = tonumber(ctls[i].param_info.paramidx)
+                      if xss_select then
+                        if xsstype_select == 1 then
+                          if snapshots and snapshots[tracks[track_select].strip] and snapshots[tracks[track_select].strip][page][xsstype_select]
+                             and snapshots[tracks[track_select].strip][page][xsstype_select][xss_select] then
+                            Snapshot_Set(tracks[track_select].strip, page, xsstype_select, xss_select)                          
+                            if xsstype_select == sstype_select then
+                              ss_select = xss_select
+                            end
+                            update_ctls = true
+                            update_snaps = true 
+                          end
+                        else
+                          if snapshots and snapshots[tracks[track_select].strip] and snapshots[tracks[track_select].strip][page][xsstype_select] 
+                             and snapshots[tracks[track_select].strip][page][xsstype_select].snapshot[xss_select] then
+                            Snapshot_Set(tracks[track_select].strip, page, xsstype_select, xss_select)                          
+                            if xsstype_select == sstype_select then
+                              ss_select = xss_select
+                            end
+                            update_ctls = true
+                            update_snaps = true 
+                          end                      
+                        end
+                      end
+                                            
                     else
                       --ADVANCED SNAPSHOT CTL
                       if mmy < ctlxywh.h/2 then
@@ -25742,6 +25810,19 @@ end
                         if snapshots and snapshots[tracks[track_select].strip] and snapshots[tracks[track_select].strip][page][sstype_select] 
                                                     and snapshots[tracks[track_select].strip][page][sstype_select].selected then
                           ss_select = snapshots[tracks[track_select].strip][page][sstype_select].selected
+                          
+                          if settings_followsnapshot then
+                            local snaps = snapshots[tracks[track_select].strip][page][sstype_select]
+                            if ss_select < ssoffset+1 or ss_select > ssoffset+SS_butt_cnt then
+                              if sstype_select == 1 then
+                                ssoffset = math.max(math.min(ss_select-math.floor(SS_butt_cnt/2),#snaps-SS_butt_cnt),0)
+                              else
+                                ssoffset = math.max(math.min(ss_select-math.floor(SS_butt_cnt/2),#snaps.snapshot-SS_butt_cnt),0)
+                              end
+                              --update_snaps = true
+                            end
+                          end
+                          
                           show_snapshots = true
                           update_snaps = true
                         end                      
@@ -25990,7 +26071,57 @@ end
                     end
                   end
                   noscroll = true
-                  gfx.mouse_wheel = 0                  
+                  gfx.mouse_wheel = 0       
+                             
+                elseif ctls[i].ctlcat == ctlcats.snapshot then
+                
+                  if ctls[i].param_info.paramnum == 1 then
+                    local v = gfx.mouse_wheel/120
+                    local xsstype_select,xss_select
+                    xsstype_select = ctls[i].param
+                    if snapshots and snapshots[tracks[track_select].strip] and snapshots[tracks[track_select].strip][page][xsstype_select] 
+                                                and snapshots[tracks[track_select].strip][page][xsstype_select].selected then
+                      if snapshots[tracks[track_select].strip][page][xsstype_select].selected then
+                        if xsstype_select == 1 then
+                          xss_select = snapshots[tracks[track_select].strip][page][xsstype_select].selected-v
+                          if xss_select < 1 then
+                            xss_select = #snapshots[tracks[track_select].strip][page][xsstype_select]
+                          elseif xss_select > #snapshots[tracks[track_select].strip][page][xsstype_select] then
+                            xss_select = 1
+                          end
+                          
+                        else
+                          xss_select = snapshots[tracks[track_select].strip][page][xsstype_select].selected-v
+                          if xss_select < 1 then                            
+                            xss_select = #snapshots[tracks[track_select].strip][page][xsstype_select].snapshot
+                          elseif xss_select > #snapshots[tracks[track_select].strip][page][xsstype_select].snapshot then
+                            xss_select = 1
+                          end
+                        end
+                      else
+                        if xsstype_select == 1 then
+                          if #snapshots[tracks[track_select].strip][page][xsstype_select] > 0 then
+                            xss_select = 1
+                          end
+                        else
+                          if #snapshots[tracks[track_select].strip][page][xsstype_select].snapshot > 0 then
+                            xss_select = 1                            
+                          end
+                        end
+                      end
+                      if xss_select then
+                        Snapshot_Set(tracks[track_select].strip, page, xsstype_select, xss_select)
+                        if xsstype_select == sstype_select then
+                          ss_select = xss_select
+                        end
+                        update_ctls = true
+                        update_snaps = true
+                        --update_fsnaps = true                       
+                      end
+                    end   
+                  end                                       
+                  noscroll = true
+                  gfx.mouse_wheel = 0                                  
                 end
               end
 
@@ -26446,7 +26577,7 @@ end
     if mouse.context and mouse.context == contexts.modwin_resize then
   
       modwinsz.w = math.max(modwinrsz.w + (mouse.mx - modwinrsz.mx),modwin.minw) 
-      modwinsz.h = modwinrsz.h + (mouse.my - modwinrsz.my)
+      modwinsz.h = math.max(modwinrsz.h + (mouse.my - modwinrsz.my),modwin.minh) 
       if modwinsz.w ~= modwinsz.ow or modwinsz.h ~= modwinsz.oh then
         modwinsz.resize = true      
         obj = GetObjects() 
@@ -44427,7 +44558,7 @@ end
 
   modhighcol = '64 160 255'
   modselcol = '160 255 255'
-  modwin = {minw = 536}
+  modwin = {minw = 536, minh = 180}
   
   barcol = '64 0 0'
   
