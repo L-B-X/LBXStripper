@@ -2651,14 +2651,15 @@
                            h = moh}
       if obj.sections[1100].x < plist_w + 2 then
         obj.sections[1100].x = plist_w + 2
-      end 
+      end
+      modpos = 8 
       obj.sections[1101] = {x = 10,
                            y = 30,
                            w = obj.sections[1100].w-20,
-                           h = obj.sections[1100].h-90} 
+                           h = obj.sections[1100].h-90-modpos} 
 
       obj.sections[1102] = {x = obj.sections[1101].x + obj.sections[1101].w - 102,
-                           y = obj.sections[1101].y + obj.sections[1101].h + 10,
+                           y = obj.sections[1101].y + obj.sections[1101].h + 10 + modpos,
                            w = 100,
                            h = 20} 
       --[[obj.sections[1103] = {x = obj.sections[1102].x - 42,
@@ -2666,24 +2667,24 @@
                            w = 40,
                            h = 20} ]]
       obj.sections[1106] = {x = obj.sections[1101].x,
-                           y = obj.sections[1101].y + obj.sections[1101].h + 10,
+                           y = obj.sections[1101].y + obj.sections[1101].h + 10 + modpos,
                            w = 40,
                            h = 42} 
       obj.sections[1104] = {x = obj.sections[1106].x + obj.sections[1106].w + 6,
-                           y = obj.sections[1101].y + obj.sections[1101].h + 10,
+                           y = obj.sections[1101].y + obj.sections[1101].h + 10 + modpos,
                            w = 80,
                            h = 20} 
       obj.sections[1105] = {x = obj.sections[1104].x + obj.sections[1104].w + 2,
-                           y = obj.sections[1101].y + obj.sections[1101].h + 10,
+                           y = obj.sections[1101].y + obj.sections[1101].h + 10 + modpos,
                            w = 80,
                            h = 20} 
       obj.sections[1107] = {x = obj.sections[1102].x -82,
-                           y = obj.sections[1101].y + obj.sections[1101].h + 10,
+                           y = obj.sections[1101].y + obj.sections[1101].h + 10 + modpos,
                            w = 80,
                            h = 20} 
 
       obj.sections[1108] = {x = obj.sections[1105].x + obj.sections[1105].w + 2,
-                           y = obj.sections[1101].y + obj.sections[1101].h + 10,
+                           y = obj.sections[1101].y + obj.sections[1101].h + 10 + modpos,
                            w = 120,
                            h = 20} 
 
@@ -11293,7 +11294,9 @@ end
         local h = math.floor(obj.sections[1101].h * m.data[m.opos]) 
 
         f_Get_SSV(gui.color.black)
-        gfx.rect(x+bw,obj.sections[1101].y,math.max(w,1),obj.sections[1101].h,1)
+        gfx.rect(x+bw,obj.sections[1101].y,math.max(w,1),obj.sections[1101].h+modpos,1)
+        f_Get_SSV('32 32 32')
+        gfx.rect(x+bw,obj.sections[1101].y+obj.sections[1101].h+1,math.max(w,1),modpos,1)        
         
         local c = 0.1 + m.data[m.opos] * 0.9
         gfx.r = c*.25
@@ -11313,7 +11316,9 @@ end
          
         local c = 0.1 + m.data[m.pos] * 0.9
         f_Get_SSV(gui.color.white)
-        gfx.rect(x+bw,obj.sections[1101].y + (obj.sections[1101].h-h),math.max(w,1),h,1) 
+        gfx.rect(x+bw,obj.sections[1101].y + (obj.sections[1101].h-h),math.max(w,1),h,1)
+        f_Get_SSV(gui.color.yellow) 
+        gfx.rect(x+bw,obj.sections[1101].y + obj.sections[1101].h+1,math.max(w,1),modpos-1,1) 
     
       end
       m.opos = m.pos
@@ -11410,8 +11415,10 @@ end
       --end
       f_Get_SSV('0 0 0')
       gfx.rect(obj.sections[1101].x-2,obj.sections[1101].y,math.ceil(barw*m.steps+4),obj.sections[1101].h,1)
+      f_Get_SSV('32 32 32')
+      gfx.rect(obj.sections[1101].x-2,obj.sections[1101].y+obj.sections[1101].h+1,math.ceil(barw*m.steps+4),modpos-1,1)
       f_Get_SSV(gui.color.white)
-      gfx.rect(obj.sections[1101].x-2,obj.sections[1101].y-2,math.ceil(barw*m.steps+4),obj.sections[1101].h+4,0)      
+      gfx.rect(obj.sections[1101].x-2,obj.sections[1101].y-2,math.ceil(barw*m.steps+4),obj.sections[1101].h+4+modpos,0)      
       
       if m.steps < (obj.sections[1101].w/2) then
         bw = 1
