@@ -11484,8 +11484,14 @@ end
         local xoff = (1-(math.min(reaper.time_precise() - morph_data[d].popstart,slidetime)/slidetime)) * w
       
         gfx.a = 1
-        gfx.blit(1000, 1, 0, surface_offset.x + x - obj.sections[10].x, surface_offset.y + y - obj.sections[10].y, w+10, h, x, y)
-        gfx.a = 0.8
+        if xoff > 0 then
+          gfx.blit(1000, 1, 0, surface_offset.x + x - obj.sections[10].x, surface_offset.y + y - obj.sections[10].y, w+10, h, x, y)
+          morph_data[d].drawback = true
+        elseif morph_data[d].drawback then
+          gfx.blit(1000, 1, 0, surface_offset.x + x - obj.sections[10].x, surface_offset.y + y - obj.sections[10].y, w+10, h, x, y)
+          morph_data[d].drawback = nil
+        end
+        --gfx.a = 0.8
         gfx.blit(skin.morph_pop, 1, 0, 0, 0, w, h, x+xoff, y)
         
         gfx.a = 1
@@ -11507,7 +11513,6 @@ end
         if morph_data[d].paused then
           gfx.blit(skin.morph_popbarr, 1, 0, 0, 0, math.floor(w*p), h, x+xoff+1, y)
           f_Get_SSV('255 0 0')
-          --gfx.rect(x + 72, y + 30, 21, 20, 0)
           gfx.rect(x + 75, y + 33, 6, 14, 1)
           gfx.rect(x + 84, y + 33, 6, 14, 1)
         else
@@ -24070,7 +24075,7 @@ end
     for i = 1, #morph_data do
       if morph_data[i].active then
         runcnt = runcnt + 1
-        local p
+        local p, man
         if not morph_data[i].paused then
           p = math.min((t-morph_data[i].start_time) / morph_data[i].morph_time,1)
           Snapshot_Morph(morph_data[i].strip, morph_data[i].page, morph_data[i].sstype, morph_data[i].targetss, i, p)
@@ -24078,11 +24083,12 @@ end
           p = morph_data[i].p
           Snapshot_Morph(morph_data[i].strip, morph_data[i].page, morph_data[i].sstype, morph_data[i].targetss, i, p)        
           morph_data[i].manual = nil
+          man = true
         end
         
         update_ctls = true
 
-        if p == 1 then
+        if p == 1 and man == nil then
           if morph_data[i].morph_loop == 2 then
             morph_data[i].start_time = morph_data[i].end_time
             morph_data[i].end_time = morph_data[i].start_time + morph_data[i].morph_time
@@ -26635,21 +26641,20 @@ end
       if morph_data[i] then
         local val = MOUSE_slider_horiz2(puwdata,puwdata.x+puwdata.xoff)
         if val ~= nil then
+          local p
           if morph_data[i].dir ~= 1 then
             morph_data[i].p = F_limit(puwdata.pos + val,0,1)
           else
             morph_data[i].p = 1-F_limit(puwdata.pos + val,0,1)          
           end
-          
-          --local t = reaper.time_precise()
-          --if morph_data[i].dir ~= 1 then
+          if morph_data[i].p ~= morph_data[i].op then 
+     
             morph_data[i].paused = morph_data[i].morph_time-(morph_data[i].morph_time*(morph_data[i].p)) -- morph_data[i].paused
-          --else
-          --  morph_data[i].paused = morph_data[i].morph_time-(morph_data[i].morph_time*(morph_data[i].p)) -- morph_data[i].paused              
-          --end
-          
-          morph_data[i].manual = true
-          update_snapmorph = true
+            
+            morph_data[i].manual = true
+            update_snapmorph = true
+            morph_data[i].op = morph_data[i].p
+          end
         end
       end
             
