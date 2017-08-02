@@ -161,7 +161,8 @@
               modmin_slider = 114, 
               modmax_slider = 115,
               modwin_resize = 116, 
-              modwin_move = 117, 
+              modwin_move = 117,
+              morph_puw_slider = 118, 
               dummy = 999
               }
   
@@ -1574,7 +1575,7 @@
                           h = butt_h}                            
      
       --settings
-      local setw, seth = 600, 530                            
+      local setw, seth = 600, 540                            
       obj.sections[70] = {x = gfx1.main_w/2-setw/2,
                           y = gfx1.main_h/2-seth/2,
                           w = setw,
@@ -1744,6 +1745,10 @@
                           y = obj.sections[70].y+yoff + yoffm*19,
                           w = 40,
                           h = bh}
+      obj.sections[717] = {x = obj.sections[70].x+obj.sections[70].w/2+xofft,
+                                y = obj.sections[70].y+yoff + yoffm*20,
+                                w = bw,
+                                h = bh}
             
                                 
       --Cycle
@@ -4266,6 +4271,10 @@
     skin.slidbutt = LoadSkinIMG(866, 'SliderButton.png')
     skin.star = LoadSkinIMG(867, 'Star.png')
     skin.starout = LoadSkinIMG(868, 'StarOut.png')
+    skin.morph_pop = LoadSkinIMG(869, 'morph_pop.png')
+    skin.morph_popbar = LoadSkinIMG(870, 'morph_popbar.png')
+    skin.morph_popbarr = LoadSkinIMG(871, 'morph_popbarr.png')
+    skin.morph_lp = LoadSkinIMG(872, 'morph_lp.png')
     --skin.led = LoadSkinIMG(869, 'LBX_Button32_Yellow.png')
   
     if skin.panela_top == -1 or 
@@ -4287,7 +4296,11 @@
        skin.slidbutt == -1 or
        skin.star == -1 or
        --skin.led == -1 or
-       skin.starout == -1
+       skin.starout == -1 or
+       skin.morph_pop == -1 or
+       skin.morph_popbar == -1 or
+       skin.morph_popbarr == -1 or
+       skin.morph_lp == -1
        then
       ret = false   
     end
@@ -11445,6 +11458,80 @@ end
   
   end
 
+  function GUI_DrawMorph(obj, gui)
+  
+    gfx.dest = 1
+    local w,h = gfx.getimgdim(skin.morph_pop)
+    local lw, lh = gfx.getimgdim(skin.morph_lp)
+    lw = lw /3
+    local y = obj.sections[10].y + 6
+    local x = obj.sections[10].x + obj.sections[10].w - w - 6
+    morph_puw = {x = x, y = y, w = w, h = 0}
+    local xywh = {x = x, y = y, w = w, h = h}
+    local xywhsc = {x = x, y = y, w = 40, h = h}
+    local slidetime = 0.15
+    for d = 1, #morph_data do
+    
+      if morph_data[d].active then
+      
+        morph_puw.h = morph_puw.h + h
+        local strip = morph_data[d].strip
+        local page = morph_data[d].page
+        local sstype = morph_data[d].sstype
+        local ss = morph_data[d].targetss
+      
+        local p = macScale(morph_data[d].morph_scale,morph_data[d].p)
+        local xoff = (1-(math.min(reaper.time_precise() - morph_data[d].popstart,slidetime)/slidetime)) * w
+      
+        gfx.a = 1
+        gfx.blit(1000, 1, 0, surface_offset.x + x - obj.sections[10].x, surface_offset.y + y - obj.sections[10].y, w+10, h, x, y)
+        gfx.a = 0.8
+        gfx.blit(skin.morph_pop, 1, 0, 0, 0, w, h, x+xoff, y)
+        
+        gfx.a = 1
+        if morph_data[d].morph_loop == 2 then
+          if morph_data[d].dir == 1 then
+            gfx.blit(skin.morph_lp, 1, 0, lw*1, 0, lw, h, x+xoff+97, y+33)              
+          else
+            gfx.blit(skin.morph_lp, 1, 0, lw*0, 0, lw, h, x+xoff+97, y+33)                        
+          end
+        elseif morph_data[d].morph_loop == 3 then
+          gfx.blit(skin.morph_lp, 1, 0, lw*2, 0, lw, h, x+xoff+97, y+33)      
+        else
+          if morph_data[d].dir == 1 then
+            gfx.blit(skin.morph_lp, 1, 0, lw*1, 0, lw, h, x+xoff+97, y+33)              
+          else
+            gfx.blit(skin.morph_lp, 1, 0, lw*0, 0, lw, h, x+xoff+97, y+33)                        
+          end        
+        end
+        if morph_data[d].paused then
+          gfx.blit(skin.morph_popbarr, 1, 0, 0, 0, math.floor(w*p), h, x+xoff+1, y)
+          f_Get_SSV('255 0 0')
+          --gfx.rect(x + 72, y + 30, 21, 20, 0)
+          gfx.rect(x + 75, y + 33, 6, 14, 1)
+          gfx.rect(x + 84, y + 33, 6, 14, 1)
+        else
+          gfx.blit(skin.morph_popbar, 1, 0, 0, 0, math.floor(w*p), h, x+xoff+1, y)
+        end
+        
+        gfx.a = 1
+        local txt = 'PAGE'
+        if sstype > 1 then
+          txt = string.upper(snapshots[strip][page][sstype].subsetname)
+        end
+        xywh.x = x+xoff
+        GUI_textC(gui, xywh, txt, gui.color.black, -5, 1, -14)
+        xywhsc.x = x+xoff
+        GUI_textC(gui, xywhsc, string.upper(macroscale_sm_table[morph_data[d].morph_scale]), gui.color.black, -8, 1, 11)
+      
+        y = y + h
+        xywh.y = y
+        xywhsc.y = y
+      end
+    end
+  
+  end
+
   ------------------------------------------------------------
 
   function GUI_draw(obj, gui)
@@ -11758,6 +11845,12 @@ end
           gfx.a = 1          
           gfx.rect(xywh.x,xywh.y,xywh.w,xywh.h,0,1)
           GUI_textC(gui,xywh,'MOD ' ..string.format('%i',mod_select),gui.color.black,-2,1,0)
+        end
+        
+        if settings_showmorphpop then
+          if #morph_data > 0 then
+            GUI_DrawMorph(obj, gui)
+          end
         end
         
         if show_snapshots and macro_lrn_mode ~= true then
@@ -13167,6 +13260,7 @@ end
     GUI_DrawTick(gui, 'Morph fader/mod assigned controls', obj.sections[714], gui.color.white, settings_morphfaderassignedctls)
     GUI_DrawTick(gui, 'Run modulators when stopped', obj.sections[715], gui.color.white, settings_alwaysrunmods)
     GUI_DrawButton(gui, modulator_cnt, obj.sections[716], gui.color.white, gui.color.black, false, 'Modulators')
+    GUI_DrawTick(gui, 'Activate snapshot morphing pop-ups', obj.sections[717], gui.color.white, settings_showmorphpop)
 
   end
   
@@ -13413,6 +13507,14 @@ end
       if xoff == nil then xoff = 0 end
       local mx = mouse.mx - (b.x-200) + xoff
      return (mx) / (b.w+400)
+    end 
+  end
+
+  function MOUSE_slider_horiz2(b, xoff)
+    if mouse.LB then
+      if xoff == nil then xoff = 0 end
+      local mx = mouse.mx - xoff
+     return (mx) / (b.w)
     end 
   end
 
@@ -22558,6 +22660,9 @@ end
       elseif char == 50 then
         show_lfoedit = not show_lfoedit
         update_gfx = true
+      elseif char == 51 then
+        settings_showmorphpop = not settings_showmorphpop
+        update_gfx = true
       end
       
     --[[else -- shift
@@ -23969,6 +24074,10 @@ end
         if not morph_data[i].paused then
           p = math.min((t-morph_data[i].start_time) / morph_data[i].morph_time,1)
           Snapshot_Morph(morph_data[i].strip, morph_data[i].page, morph_data[i].sstype, morph_data[i].targetss, i, p)
+        elseif morph_data[i].manual then
+          p = morph_data[i].p
+          Snapshot_Morph(morph_data[i].strip, morph_data[i].page, morph_data[i].sstype, morph_data[i].targetss, i, p)        
+          morph_data[i].manual = nil
         end
         
         update_ctls = true
@@ -23997,6 +24106,7 @@ end
     end
     if runcnt == 0 then
       morph_data = {}
+      morph_puw = nil
     end
     
   end
@@ -25051,6 +25161,108 @@ end
   
   end
   
+  function A_Run_MorphPU(noscroll, rt) 
+
+    local w, h = gfx.getimgdim(skin.morph_pop)
+    local d = math.floor((mouse.my-morph_puw.y) / h)+1
+    local yp = (mouse.my-morph_puw.y) - (d-1)*h
+    local xp = mouse.mx-morph_puw.x
+    local dd = 0
+    local i, context
+    for ii = 1, #morph_data do
+      if morph_data[ii].active then
+        dd = dd + 1
+        if dd == d then
+          i = ii
+          break
+        end
+      end
+    end
+
+    if i then
+      if yp >= 28 and yp <= 50 then
+        if xp <= 40 then
+          --shape
+          if mouse.LB then
+            morph_data[i].morph_scale = nz(morph_data[i].morph_scale,1) + 1
+            if morph_data[i].morph_scale > #macroscale_table then
+              morph_data[i].morph_scale = 1
+            end
+            update_snaps = true
+          else
+            morph_data[i].morph_scale = nz(morph_data[i].morph_scale,1) - 1
+            if morph_data[i].morph_scale < 1 then
+              morph_data[i].morph_scale = #macroscale_table
+            end
+            update_snaps = true
+          end
+        
+        elseif xp <= 68 then
+          --stop
+          nl = 1
+          morph_data[i].morph_loop = nl
+          morph_data[i].active = false
+          update_surface = true
+          update_snaps = true
+        
+        elseif xp <= 96 then
+          --pause
+          if not morph_data[i].paused then
+            morph_data[i].paused = morph_data[i].end_time-reaper.time_precise()
+          else
+            morph_data[i].end_time = reaper.time_precise() + morph_data[i].paused
+            morph_data[i].start_time = morph_data[i].end_time - morph_data[i].morph_time
+            morph_data[i].paused = nil          
+          end
+          update_snaps = true
+          
+        else
+          --play
+          if mouse.LB then
+            local nl = (morph_data[i].morph_loop or 1) + 1
+            if nl > 3 then
+              nl = 2
+            end 
+            morph_data[i].morph_loop = nl
+            update_snaps = true
+          else
+            morph_data[i].dir = 1-(morph_data[i].dir or 0)
+            morph_data[i].origst = morph_data[i].start_time
+            local t = reaper.time_precise()
+            if morph_data[i].dir ~= 1 then
+              if morph_data[i].paused then
+                morph_data[i].paused = morph_data[i].morph_time - morph_data[i].paused
+              else
+                morph_data[i].start_time = t - (morph_data[i].morph_time*morph_data[i].p)
+                morph_data[i].end_time = morph_data[i].start_time + morph_data[i].morph_time
+              end
+            else
+              if morph_data[i].paused then
+                morph_data[i].paused = morph_data[i].morph_time - morph_data[i].paused              
+              else
+                morph_data[i].start_time = t - (morph_data[i].morph_time*(1-morph_data[i].p))
+                morph_data[i].end_time = morph_data[i].start_time + morph_data[i].morph_time
+              end
+            end
+            update_snaps = true
+          end
+        end
+      
+      elseif yp < 28 then
+      
+        if morph_data[i].paused then
+        
+          context = contexts.morph_puw_slider
+          puwdata = {xoff = xp, pos = morph_data[i].p, i = i, x = morph_puw.x, y = morph_puw.y, w = w, h = h}
+        
+        end
+      
+      end
+    end
+    return true, context
+    
+  end
+  
   function A_Run_Mode0(noscroll, rt)
   
     if striplayout_mt then
@@ -25511,6 +25723,10 @@ end
 
       noscroll = A_Run_MacroEdit(noscroll, rt)
 
+    elseif morph_puw and settings_showmorphpop and (MOUSE_click(morph_puw) or MOUSE_click_RB(morph_puw)) then
+    
+      noscroll, mouse.context = A_Run_MorphPU(noscroll, rt) 
+      
     elseif show_striplayout == true then
     
       noscroll = A_Run_StripLayout(noscroll, rt)
@@ -26412,6 +26628,31 @@ end
         ctl.dirty = true        
         update_ctls = true
       end
+    
+    elseif mouse.context == contexts.morph_puw_slider then
+    
+      local i = puwdata.i
+      if morph_data[i] then
+        local val = MOUSE_slider_horiz2(puwdata,puwdata.x+puwdata.xoff)
+        if val ~= nil then
+          if morph_data[i].dir ~= 1 then
+            morph_data[i].p = F_limit(puwdata.pos + val,0,1)
+          else
+            morph_data[i].p = 1-F_limit(puwdata.pos + val,0,1)          
+          end
+          
+          --local t = reaper.time_precise()
+          --if morph_data[i].dir ~= 1 then
+            morph_data[i].paused = morph_data[i].morph_time-(morph_data[i].morph_time*(morph_data[i].p)) -- morph_data[i].paused
+          --else
+          --  morph_data[i].paused = morph_data[i].morph_time-(morph_data[i].morph_time*(morph_data[i].p)) -- morph_data[i].paused              
+          --end
+          
+          morph_data[i].manual = true
+          update_snapmorph = true
+        end
+      end
+            
     end
     
     if mode0_submode == 0 then
@@ -31821,8 +32062,6 @@ end
              morph_data[i].page == page and
              morph_data[i].sstype == sstype_select then 
             local dir = nz(morph_data[i].dir, 0)
-            --morph_data[i].morph_time = morph_data[i].end_time - reaper.time_precise() -- morph_data[i].start_time
-            --DBG(morph_data[i].morph_time)
             morph_data[i].dir = 1-dir
             morph_data[i].origst = morph_data[i].start_time
             local t = reaper.time_precise()
@@ -31841,7 +32080,6 @@ end
                 morph_data[i].end_time = morph_data[i].start_time + morph_data[i].morph_time
               end
             end
-            --morph_data[i].end_time = reaper.time_precise() + morph_data[i].morph_time
             update_snaps = true
             break
           end
@@ -34452,6 +34690,11 @@ end
       elseif mouse.context == nil and MOUSE_click(obj.sections[715]) then
         settings_alwaysrunmods = not settings_alwaysrunmods
         update_gfx = true
+        
+      elseif mouse.context == nil and MOUSE_click(obj.sections[717]) then
+        settings_showmorphpop = not settings_showmorphpop
+        update_gfx = true
+        
       elseif mouse.context == nil and MOUSE_click(obj.sections[716]) then
         
         OpenEB(104, 'Number of modulators:', modulator_cnt)
@@ -38300,7 +38543,8 @@ end
                         morph_time = tonumber(zn(data[key..'morph_time'],0)), 
                         morph_sync = tobool(zn(data[key..'morph_sync'],false)),
                         morph_syncv = tonumber(zn(data[key..'morph_syncv'],14)),
-                        morph_scale = tonumber(zn(data[key..'morph_scale'],1)),  
+                        morph_scale = tonumber(zn(data[key..'morph_scale'],1)),
+                        morph_loop = tonumber(zn(data[key..'morph_loop'],1)),  
                         capturefaders = tobool(zn(data[key..'capturefaders'],false)),
                         capturemods = tobool(zn(data[key..'capturemods'],false)),
                         snapshot = {}, ctls = {}}
@@ -39762,7 +40006,8 @@ end
     settings_morphfaderassignedctls = tobool(nz(GES('settings_morphfaderassignedctls',true),settings_morphfaderassignedctls))
     settings_followsnapshot = tobool(nz(GES('settings_followsnapshot',true),settings_followsnapshot))
     settings_alwaysrunmods = tobool(nz(GES('settings_alwaysrunmods',true),settings_alwaysrunmods))
-    
+    settings_showmorphpop = tobool(nz(GES('settings_showmorphpop',true),settings_showmorphpop))
+
     modulator_cnt = tonumber(nz(GES('modulator_cnt',true),modulator_cnt))
     
     if settings_hideeditbaronnewproject then
@@ -39895,6 +40140,7 @@ end
     reaper.SetExtState(SCRIPT,'settings_morphfaderassignedctls',tostring(settings_morphfaderassignedctls), true)    
     reaper.SetExtState(SCRIPT,'settings_alwaysrunmods',tostring(settings_alwaysrunmods), true)    
     reaper.SetExtState(SCRIPT,'settings_followsnapshot',tostring(settings_followsnapshot), true)    
+    reaper.SetExtState(SCRIPT,'settings_showmorphpop',tostring(settings_showmorphpop), true)    
 
     reaper.SetExtState(SCRIPT,'modulator_cnt',tostring(modulator_cnt), true)    
     
@@ -42020,6 +42266,7 @@ end
         mt = (snaps.morph_time*100)
       end
       morph_data[mdcnt] = {active = true,
+                           popstart = start_time,
                            start_time = start_time,
                            end_time = start_time + mt,
                            morph_time = mt,
@@ -42089,7 +42336,7 @@ end
       morph_data[data_id].data = {}
     end
     --if morph_data[data_id].p then
-    if not morph_data[data_id].paused then
+    if not morph_data[data_id].paused or morph_data[data_id].manual then
       if morph_data[data_id].dir == 1 then
         p = 1-p
       end
@@ -44532,6 +44779,7 @@ end
   settings_disablefaderautomationineditmode = true
   settings_alwaysrunmods = false
   settings_usetrackchunkfix = true
+  settings_showmorphpop = false
   
   autosnap_rowheight = 410
   autosnap_itemgap = 20
