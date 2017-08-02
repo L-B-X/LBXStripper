@@ -25267,7 +25267,8 @@ end
         
           context = contexts.morph_puw_slider
           puwdata = {xoff = xp, pos = morph_data[i].p, i = i, x = morph_puw.x, y = morph_puw.y, w = w, h = h}
-        
+          oms = mouse.shift
+          
         end
       
       end
@@ -26649,13 +26650,24 @@ end
         local val = MOUSE_slider_horiz2(puwdata,puwdata.x+puwdata.xoff)
         if val ~= nil then
           local p
-          if morph_data[i].dir ~= 1 then
-            morph_data[i].p = F_limit(puwdata.pos + val,0,1)
+          if oms ~= mouse.shift then
+            oms = mouse.shift
+            puwdata.pos = morph_data[i].p
+            puwdata.xoff = mouse.mx-morph_puw.x
+            p = morph_data[i].p
           else
-            morph_data[i].p = 1-F_limit(puwdata.pos + val,0,1)          
+            if mouse.shift then
+              val = val * 0.1
+            end
+            
+            if morph_data[i].dir ~= 1 then
+              p = F_limit(puwdata.pos + val,0,1)
+            else
+              p = 1-F_limit(puwdata.pos + val,0,1)          
+            end
           end
-          if morph_data[i].p ~= morph_data[i].op then 
-     
+          if p ~= morph_data[i].op then 
+            morph_data[i].p = p
             morph_data[i].paused = morph_data[i].morph_time-(morph_data[i].morph_time*(morph_data[i].p)) -- morph_data[i].paused
             
             morph_data[i].manual = true
@@ -36761,20 +36773,24 @@ end
             if faders[p+1].targettype == 2 or faders[p+1].targettype == 4 then
               --macro/fx param check
               if faders[p+1].c_id then
-                local ctls = strips[faders[p+1].strip][faders[p+1].page].controls
-                if ctls[faders[p+1].ctl] == nil or (ctls[faders[p+1].ctl] and faders[p+1].c_id ~= ctls[faders[p+1].ctl].c_id) then
-                  local fnd = false
-                  for c = 1, #ctls do
-                    if ctls[c].c_id == faders[p+1].c_id then
-                      fnd = true
-                      faders[p+1].ctl = c
-                      break
+                if strips[faders[p+1].strip] then
+                  local ctls = strips[faders[p+1].strip][faders[p+1].page].controls
+                  if ctls[faders[p+1].ctl] == nil or (ctls[faders[p+1].ctl] and faders[p+1].c_id ~= ctls[faders[p+1].ctl].c_id) then
+                    local fnd = false
+                    for c = 1, #ctls do
+                      if ctls[c].c_id == faders[p+1].c_id then
+                        fnd = true
+                        faders[p+1].ctl = c
+                        break
+                      end
+                    end
+                    if fnd == false then
+                      --not found - delete assignment - macro control deleted
+                      faders[p+1] = {}
                     end
                   end
-                  if fnd == false then
-                    --not found - delete assignment - macro control deleted
-                    faders[p+1] = {}
-                  end
+                else
+                  faders[p+1] = {}
                 end
               end
             end
@@ -36806,41 +36822,42 @@ end
 
   function Macros_Check(strip, page)
   
-    local ctls = strips[strip][page].controls
-    if ctls and #ctls > 0 then
+    if strips[strip] then
+      local ctls = strips[strip][page].controls
+      if ctls and #ctls > 0 then
+        
+        local cids = {}
+        for c = 1,#ctls do
+          cids[ctls[c].c_id] = c
+        end    
+        
+        for c = 1,#ctls do
       
-      local cids = {}
-      for c = 1,#ctls do
-        cids[ctls[c].c_id] = c
-      end    
+          if ctls[c].ctlcat == ctlcats.macro then  
       
-      for c = 1,#ctls do
-    
-        if ctls[c].ctlcat == ctlcats.macro then  
-    
-          local macro = ctls[c].macroctl
-          
-          if macro and #macro > 0 then
-          
-            local mcnt = #macro
-            for m = 1, mcnt do
-          
-              if macro[m].c_id ~= ctls[macro[m].ctl] then
-          
-                if cids[macro[m].c_id] then
-                  macro[m].ctl = cids[macro[m].c_id]
-                else
-                  --deleted
-                  macro[m] = nil
+            local macro = ctls[c].macroctl
+            
+            if macro and #macro > 0 then
+            
+              local mcnt = #macro
+              for m = 1, mcnt do
+            
+                if macro[m].c_id ~= ctls[macro[m].ctl] then
+            
+                  if cids[macro[m].c_id] then
+                    macro[m].ctl = cids[macro[m].c_id]
+                  else
+                    --deleted
+                    macro[m] = nil
+                  end
                 end
               end
+              strips[strip][page].controls[c].macroctl = Table_RemoveNils(macro, mcnt)
             end
-            strips[strip][page].controls[c].macroctl = Table_RemoveNils(macro, mcnt)
           end
         end
       end
-    end
-  
+    end  
   end
   
   function Macro_UpdateCtls(strip, page, ctl)
@@ -43364,6 +43381,8 @@ end
     if xxy then
       xxy = xxytbl
     end
+    
+    CheckDataTables()
     
   end
   
