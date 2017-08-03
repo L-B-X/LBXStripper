@@ -215,10 +215,10 @@
   function GetTrackChunk(track, usefix)
     if not track then return end
     local track_chunk
-    --DBG('G')
+    
     
     if usefix == true and reaper.APIExists('SNM_CreateFastString') == true then
-      --DBG('using fix')
+      
       local fast_str = reaper.SNM_CreateFastString("")
       if reaper.SNM_GetSetObjectState(track, fast_str, false, false) then
         track_chunk = reaper.SNM_GetFastString(fast_str)
@@ -234,7 +234,7 @@
     usefix = false --force as fix isn't needed 
     if not (track and track_chunk) then return end
     local ret
-    --DBG('S')
+    
     if usefix == true then
       local fast_str = reaper.SNM_CreateFastString("")
       if reaper.SNM_SetFastString(fast_str, track_chunk) then
@@ -527,7 +527,7 @@
         local cx = stripdata.strip.controls[c]
         if nz(cx.ctl_info.fn,'') ~= '' and reaper.file_exists(controls_path..cx.ctl_info.fn) then
           local knbfn = string.match(cx.ctl_info.fn, '(.+)%.') ..'.knb'
-          --DBG(knbfn)
+          
           if reaper.file_exists(controls_path..knbfn) then
             if ctlchk[cx.ctl_info.fn] == nil then
               ctlchk[cx.ctl_info.fn] = true 
@@ -568,7 +568,7 @@
       file:close()
     end
 
-    --DBG('pickke time: '..reaper.time_precise()-t)
+    
     OpenMsgBox(1,'Strip share file saved.',1)
   
   end
@@ -650,11 +650,6 @@
         GUI_DrawStateWin(obj,gui,'Importing graphics data... ')
         GUI_DrawStateWin(obj,gui,'')
 
-        --[[DBG('Importing shared strip data... ')
-        DBG('')
-        DBG('Importing graphics data... ')
-        DBG('')]]
-
         for g = 1, #stripdata.sharedata.gfx do
           local gfxv = 0
           local base = string.match(stripdata.sharedata.gfx[g].fn,'(.+)_v%d%d%d%d')
@@ -724,12 +719,12 @@
           
           if copy == 1 then
             GUI_DrawStateWin(obj,gui,'Importing graphic: '..stripdata.sharedata.gfx[g].fn..'   ('..gfxfn..')')
-            --DBG('Importing graphic: '..stripdata.sharedata.gfx[g].fn..'   ('..gfxfn..')')
+            
             gfn = graphics_path..gfxfn
             writebinaryfile(gfn, stripdata.sharedata.gfx[g].bindata)
           else
             GUI_DrawStateWin(obj,gui,'Already in graphics library: '..stripdata.sharedata.gfx[g].fn..'   ('..gfxfn..')')          
-            --DBG('Already in graphics library: '..stripdata.sharedata.gfx[g].fn..'   ('..gfxfn..')')
+            
           end    
           if copy > 0 then
             local src = stripdata.sharedata.gfx[g].fn
@@ -752,9 +747,6 @@
         GUI_DrawStateWin(obj,gui,'')
         GUI_DrawStateWin(obj,gui,'Importing controls data... ')
         GUI_DrawStateWin(obj,gui,'')
-        --[[DBG('')
-        DBG('Importing controls data... ')
-        DBG('')]]
     
         for c = 1, #stripdata.sharedata.ctls do
           
@@ -790,7 +782,7 @@
           end
           if copy == 1 then
             GUI_DrawStateWin(obj,gui,'Importing control: '..stripdata.sharedata.ctls[c].fn..'   ('..cfxfn..')')
-            --DBG('Importing control: '..stripdata.sharedata.ctls[c].fn..'   ('..cfxfn..')')
+            
             writebinaryfile(cfn, stripdata.sharedata.ctls[c].bindata)
             local knbfn = string.match(cfn, '(.+)%.') ..'.knb'
             writebinaryfile(knbfn, stripdata.sharedata.ctls[c].knbdata)
@@ -798,12 +790,12 @@
             setknbfn(knbfn,cfxfn)
           else
             GUI_DrawStateWin(obj,gui,'Already in controls library: '..stripdata.sharedata.ctls[c].fn..'   ('..cfxfn..')')
-            --DBG('Already in controls library: '..stripdata.sharedata.ctls[c].fn..'   ('..cfxfn..')')
+            
           end
           
           local src = stripdata.sharedata.ctls[c].fn
           if cfxfn ~= src then
-            --DBG(src..'  '..cfxfn)
+            
             --update ctl fn in stripdata
             for i = 1, #stripdata.sharedata.ctls do
               if stripdata.sharedata.ctls[i].fn == src then
@@ -826,9 +818,7 @@
         GUI_DrawStateWin(obj,gui,'')
         GUI_DrawStateWin(obj,gui,'Importing strip data... ')
         GUI_DrawStateWin(obj,gui,'')
-        --[[DBG('')
-        DBG('Importing strip data... ')
-        DBG('')]]
+        
         
         local savefn = stripdata.sharedata.stripfn
         local save_path=strips_path..strip_folders[stripfol_select].fn..'/'
@@ -850,9 +840,9 @@
           local file
           
           if DELETE then
-          --DBG(fn)
+          
             file=io.open(fn,"w")
-          --DBG('pickling')
+          
             if stripdata.version == 3 then
               local pickled_table=pickle(stripdata)
               file:write(pickled_table)                        
@@ -874,12 +864,11 @@
               --file:write(stripfiledata)                        
             end
             --local pickled_table=pickle(stripdata)
-          --DBG('writing')
+          
             file:close()
-          --DBG('done')
+          
           end
       
-         -- DBG('Strip share file imported.')
           OpenMsgBox(1,'Strip share file imported.',1)
         end
       
@@ -896,7 +885,7 @@
   
     if reaper.file_exists(kfn) then
       local file
-      --DBG(controls_path..kfn)
+      
       file=io.open(kfn,"r")
       local content=file:read("*a")
       file:close()
@@ -948,8 +937,7 @@
   s = string.format("%s[%s]=%s,\n", s, self:value_(i), self:value_(v))
   end
   s = s.."},\n"
-  --DBG('*****************************************************************')
-  --DBG(savecount)
+
   end
   return string.format("{%s}", s)
   end
@@ -2911,7 +2899,7 @@
           if iidx then
             local w, h = gfx.getimgdim(iidx)      
             if w == 0 or h == 0 then OpenMsgBox(1, 'Invalid gfx file: '..graphics_files[graphics_folder_files[gfx_select]].fn, 1) return end
-            --DBG(iidx..'  '..image_count)
+            
             if iidx > image_count then
               image_count = iidx
             end
@@ -4072,7 +4060,7 @@
       local gf = reaper.EnumerateFiles(graphics_path..gfo,gi)
       while gf ~= nil do
         graphics_files[i] = {fn = gf, fol = gfo, imageidx = nil}
-        --DBG(gfo..'  '..gf)
+        
         i=i+1
         gi=gi+1
         gf = reaper.EnumerateFiles(graphics_path..gfo,gi)
@@ -4238,7 +4226,7 @@
   function LoadSkinIMG(iidx, fn)
 
     if reaper.file_exists(skins_path..fn) then
-    --DBG(iidx)
+    
       gfx.loadimg(iidx,skins_path..fn)
       return iidx
     else
@@ -4675,7 +4663,7 @@
   -------------------------------------------------------
 
   function PopulateTracks()
-  --DBG('*** PT ***')
+  
   
     if LBX_CTL_TRACK_INF then
       local LBX_CTL_TRACK_INF_CNT = LBX_CTL_TRACK_INF.count
@@ -4807,7 +4795,7 @@
     if T_butt_cnt == nil then
       T_butt_cnt = math.floor(obj.sections[500].h / butt_h) - 1
       tlist_offset = CalcTListPos(track_select)
-      --DBG(tlist_offset)
+      
     else
       T_butt_cnt = math.floor(obj.sections[500].h / butt_h) - 1
     end
@@ -4883,7 +4871,7 @@
       FD_butt_cnt = math.floor(obj.sections[500].h / butt_h) - 1
       fdlist_offset = 0
       --fdlist_offset = CalcTListPos(track_select)
-      --DBG(tlist_offset)
+      
     else
       FD_butt_cnt = math.floor(obj.sections[500].h / butt_h) - 1
     end
@@ -5464,7 +5452,7 @@
     GF_butt_cnt = math.floor(obj.sections[531].h / butt_h) - 1
 
     for i = 0, GF_butt_cnt-1 do
-      --DBG(graphics_folders[i + gflist_offset])
+      
       if graphics_folders[i + gflist_offset] then
         local xywh = {x = obj.sections[531].x,
                       y = obj.sections[531].y +2+ (i+1) * butt_h,
@@ -5837,7 +5825,7 @@
     
       local butt_cnt, butt_h = GetTFXOButtCnt()
       local offs = 0
-      --DBG(tostring(tfxo_sel)..'  '..tostring(tfxo_pos))
+      
       for i = 1, butt_cnt do
     
         if tfxreorder[i+tfxo_listpos] then
@@ -6392,7 +6380,6 @@
           gtab.vals = {}      
           for i = 1, cycdata.statecnt do
           
-            --DBG(tostring(cycdata[i].dval)..'  '..tostring(cycdata[i].dv)) 
             local gcnt = #gtab.vals+1
             gtab.vals[gcnt] = {val = cycdata[i].val,
                                dval = cycdata[i].dv,
@@ -7554,23 +7541,11 @@ end
                 else
                   tnum = strips[strip].track.tracknum
                 end
-      
-                --[[gfx.setfont(1, font, gui.fontsz_knob +tsz-4)
-                local _, th_a = gfx.measurestr('|')
-                gfx.setfont(1, font, gui.fontsz_knob +tsz2-4)
-                local _, th_a2 = gfx.measurestr('|')
-                th_a, th_a2 = th_a+1, th_a2+1
-                local to = th_a2]]
   
                 local Disp_ParamV
                 local Disp_Name
                 local v2, val2 = 0, 0
-                --[[DBG(settings_UCV)
-                if ctlcat == ctlcats.fxparam and settings_UCV then
-                  _, ctl.dval = reaper.TrackFX_GetFormattedParamValue(track, fxnum, param, "")
-                  --strips[strip][page].controls[i] = ctl.dval
-                  DBG('setitigng: '..tostring(ctl.dval))
-                end]]
+                
                 
                 if ctlcat == ctlcats.fxparam or ctlcat == ctlcats.trackparam or ctlcat == ctlcats.tracksend or ctlcat == ctlcats.pkmeter then
                   v2 = nz(frameScale(ctl.framemode, GetParamValue2(ctlcat,track,fxnum,param,i)),0)
@@ -7675,14 +7650,14 @@ end
                       Disp_Name = ctlnmov
                     end
                     _, Disp_ParamV = reaper.TrackFX_GetFormattedParamValue(track, fxnum, param, "")
-                   --DBG(Disp_Name..'  '..Disp_ParamV..'  '..fxnum..' '..param)
+                   
                     if dvoff and dvoff ~= 0 then
                       Disp_ParamV = dvaloffset(Disp_ParamV, ctl.dvaloffset)  
                     end
                     if maxdp > -1 then
                       Disp_ParamV = roundX(Disp_ParamV, maxdp)                  
                     end
-                    --DBG(Disp_Name..'  '..Disp_ParamV..'  '..fxnum..' '..param)
+                    
                   end
                 elseif ctlcat == ctlcats.trackparam or ctlcat == ctlcats.tracksend then
                   if nz(ctlnmov,'') == '' then
@@ -7859,9 +7834,9 @@ end
   
                 local tl1 = nz(ctl.tl1,text_len1x)
                 local tl2 = nz(ctl.tl2,text_len2x)
-                --DBG(tostring(ctl.th1)..'  '..text_len1y)
+                
                 local th1 = nz(ctl.th1,text_len1y)
-                --DBG(th1)f
+                
                 local th2 = nz(ctl.th2,text_len2y)
 
                 local xywh1 = {x = math.floor(mid-(text_len1x/2))-toffx, y = math.floor(y+(h/2)-toff-1), w = text_len1x, h = 1}
@@ -7928,9 +7903,6 @@ end
                   elseif offl or ctl.hidden then
                     alpha = 0.4
                   end
-                  --[[if tsz ~= tsz2 then
-                    DBG(tsz..'  '..tsz2)
-                  end]]
 
                   if settings_showfaderassignments == true and ctl.macrofader then
                     if mode0_submode == 1 and fader_select == ctl.macrofader then
@@ -9264,7 +9236,6 @@ end
   
   function calc_eqgraph(tr, fx, param, min, max, khz, param2, min2, max2)
   
-    --DBG('mm'..min..'  '..max)
     --local ad = auto_delay*100000
     local track = GetTrack(tr)
     --pixmap = {}
@@ -9321,21 +9292,19 @@ end
         if s and s>0 then mult = 1000 end
       end
       d = tonumber(GetNumericPart(nz(d,'')))*mult
-      --if p%100 == 0 then
-        --DBG(d..'  '..look)
-      --end
+      
       if d and d >= look and not fnd then
         lookmap[#lookmap+1] = {pix = math.min(p,2000),
                                hz = look}
         
         if look >= max then fnd = true end
-        --DBG(max..'  '..tostring(fnd)..'  '..p..'  '..look)   
+          
         local inc = math.min(10^math.floor(math.log(look,10)),1000)
         look = look + inc
       end
       
       d2 = tonumber(GetNumericPart(nz(d2,'')))
-      --DBG(tostring(d2)..' '..look2)
+      
       if tonumber(look2) == nil then
         if d2 then look2 = d2 end
       else
@@ -10401,7 +10370,7 @@ end
             f_Get_SSV('16 16 64') 
 
           end
-          --DBG(x)
+          
           gfx.line( obj.sections[302].x + x, obj.sections[302].y, obj.sections[302].x + x, obj.sections[302].y + obj.sections[302].h-1 + yinc)
           if yinc > 0 then
             f_Get_SSV('64 64 128')
@@ -11432,7 +11401,7 @@ end
         --f_Get_SSV(gui.color.white)
         local x = obj.sections[1101].x + math.floor((i-1) * barw)
         local w = math.floor(i*barw) - math.floor((i-1) * barw) - bw
-        --DBG(w..'  '..bw)
+        
         local h = math.floor(obj.sections[1101].h * m.data[i]) 
         gfx.rect(x+bw,obj.sections[1101].y + (obj.sections[1101].h-h),math.max(w,1),h,1)
       
@@ -12456,12 +12425,12 @@ end
       DBG('eqcontrol'..tostring(update_eqcontrol))
       DBG('macroedit'..tostring(update_macroedit))
       DBG('macrobutt'..tostring(update_macrobutt))]]
-   --DBG('*')
+   
       --update_gfx or update_surface or update_sidebar or update_topbar or update_ctlopts or update_ctls or update_bg or 
        --update_settings or update_snaps or update_msnaps or update_actcho or update_fsnaps or update_mfsnaps or update_eqcontrol or update_macroedit or
        --update_macrobutt 
       if show_trackfxorder then
-       --DBG('fghf')
+       
         GUI_DrawTrackFXOrder(gui, obj)
        
       end
@@ -14427,7 +14396,7 @@ end
       end
       local cc = strips[tracks[track_select].strip][page].controls[trackfxparam_select].ctlcat
       if cc == ctlcats.fxparam then
-        --DBG(val)
+        
         local fxnum = strips[tracks[track_select].strip][page].controls[trackfxparam_select].fxnum
         local param = strips[tracks[track_select].strip][page].controls[trackfxparam_select].param
         strips[tracks[track_select].strip][page].controls[trackfxparam_select].dirty = true
@@ -14797,7 +14766,7 @@ end
     Faders_Check(tracks[track_select].strip,page)
     StoreSnapshotControlIdxs(tracks[track_select].strip,page)
     CheckFaders()
-    CheckMods()
+    modulators = CheckMods(modulators)
     Switcher_Check()
     SetCtlBitmapRedraw()
     update_gfx = true
@@ -14899,7 +14868,7 @@ end
         for c = 1, cnt do
           local ctl = strips[tracks[track_select].strip][page].controls[c]
           _, deleted = Switcher_CtlsDeleted(ctl.switcher,ctl.grpid)
-          --DBG(c..'  '..tostring(deleted))
+        
           if deleted == true then
             if delfx_flag and settings_deletefxwithstrip then
               if ctl.ctlcats == ctlcats.fxparam and delfxidx[ctl.fxsguid] == nil then
@@ -15553,9 +15522,7 @@ end
         SaveSnapshotDataX(tracks[track_select].strip,page,nil,file)
         file:write('[\\SNAPSHOTDATA]\n')      
       end
-      --if t then
-      --  DBG(t)
-      --end
+      
       file:close()
 
       OpenMsgBox(1,'Strip saved.',1)
@@ -15566,221 +15533,6 @@ end
     PopulateStrips()
 
   end
-      
-    --OLD NEVER RUNS
---[[
-    if fn and string.len(fn)>0 then
-      local tr = GetTrack(strips[tracks[track_select].strip].track.tracknum)
-      local i, j
-      local fxcnt = 1
-      local fxtbl = {}
-      local _, chunk = reaper.GetTrackStateChunk(tr,'',false)
-      for i = 0, reaper.TrackFX_GetCount(tr)-1 do
-        if settings_saveallfxinststrip then 
-          --local _, fxname = reaper.TrackFX_GetFXName(tr, i, '')
-          local _, fxchunk = GetFXChunkFromTrackChunk(chunk, i+1)
-          --local fxn = GetPlugNameFromChunk(fxchunk)
-          fxtbl[i+1] = {fxname = nil,
-                        fxchunk = fxchunk,
-                        fxguid = convertguid(reaper.TrackFX_GetFXGUID(tr, i)),
-                        fxenabled = reaper.TrackFX_GetEnabled(tr, i)
-                        }
-        else
-          --check fx has controls in strip
-          local instrip = false
-          for j = 1, #strips[tracks[track_select].strip][page].controls do
-            if reaper.TrackFX_GetFXGUID(tr, i) == strips[tracks[track_select].strip][page].controls[j].fxguid then
-              instrip = true
-              break
-            end
-            if strips[tracks[track_select].strip][page].controls[j].ctlcat == ctlcats.eqcontrol then
-              local bands = strips[tracks[track_select].strip][page].controls[j].eqbands
-              if bands and #bands > 0 then
-                for b = 1, #bands do
-                
-                  if reaper.TrackFX_GetFXGUID(tr, i) == bands[b].fxguid then
-                    instrip = true
-                    break                  
-                  end
-                
-                end
-                if instrip then
-                  break
-                end
-              end
-            end
-          end
-          if instrip then
-            --local _, fxname = reaper.TrackFX_GetFXName(tr, i, '')
-            local _, fxchunk = GetFXChunkFromTrackChunk(chunk, i+1)
-            --local fxn = GetPlugNameFromChunk(fxchunk)
-            fxtbl[fxcnt] = {fxname = nil,
-                            fxchunk = fxchunk,
-                            fxguid = convertguid(reaper.TrackFX_GetFXGUID(tr, i)),
-                            fxenabled = reaper.TrackFX_GetEnabled(tr, i)
-                            }          
-            fxcnt = fxcnt + 1
-          end
-        end
-      end
-
-      --check tracknums
-      for j = 1, #strips[tracks[track_select].strip][page].controls do
-        local ctl = strips[tracks[track_select].strip][page].controls[j]
-        if ctl.tracknum and ctl.tracknum == strips[tracks[track_select].strip].track.tracknum then
-          ctl.tracknum = nil
-        end
-      end
-    
-      savestrip = {}
-      savestrip.version = 3
-      savestrip.strip = strips[tracks[track_select].strip][page]
-      savestrip.fx = fxtbl
-      if snapshots and snapshots[tracks[track_select].strip] then
-        savestrip.snapshots = snapshots[tracks[track_select].strip][page]
-      end
-      
-      local t = reaper.time_precise()
-      
-      local switchtab = {}
-      local saveswitchers = {}
-      local switchcnt = 1
-      
-      --Pickle doesn't like {} in strings (much) - remove before pickling
-      for i = 1, #savestrip.strip.controls do
-        savestrip.strip.controls[i].fxguid = convertguid(savestrip.strip.controls[i].fxguid)
-        if savestrip.strip.controls[i].ctlcat == ctlcats.pkmeter then
-          savestrip.strip.controls[i].val = -150
-        end
-        
-        if savestrip.strip.controls[i].ctlcat == ctlcats.switcher then
-          switchtab[savestrip.strip.controls[i].switcherid] = switchcnt
-          saveswitchers[switchcnt] = switchers[savestrip.strip.controls[i].switcherid]
-          --savestrip.strip.controls[i].switcherid = switchcnt -- eek
-          switchcnt = switchcnt + 1    
-        end
-      end
-      savestrip.switchers = saveswitchers
-      savestrip.switchconvtab = switchtab
-  
-      local save_path=strips_path..strip_folders[stripfol_select].fn..'/'
-      local fn=save_path..fn..".strip"
-    
-      local DELETE=true
-      local file
-      
-      if reaper.file_exists(fn) then
-      
-      end
-      
-      if DELETE then
-        file=io.open(fn,"w")
-        local pickled_table=pickle(savestrip)
-        file:write(pickled_table)
-        file:close()
-      end
-
-      --reinstate {} after pickling
-      for i = 1, #savestrip.strip.controls do
-        if savestrip.strip.controls[i].fxguid then
-          savestrip.strip.controls[i].fxguid = '{'..savestrip.strip.controls[i].fxguid..'}'
-        end
-      end
-
-      --DBG('pickke time: '..reaper.time_precise()-t)
-      OpenMsgBox(1,'Strip saved.',1)
-
-    end
-    PopulateStrips()]]
-    
-  --end
-
-  --[[function SaveStrip2(fn)
-
-    if fn and string.len(fn)>0 then
-      local tr = GetTrack(strips[tracks[track_select].strip].track.tracknum)
-      local i, j
-      local fxcnt = 1
-      local fxtbl = {}
-      local _, chunk = reaper.GetTrackStateChunk(tr,'',false)
-      for i = 0, reaper.TrackFX_GetCount(tr)-1 do
-        if settings_saveallfxinststrip then 
-          --local _, fxname = reaper.TrackFX_GetFXName(tr, i, '')
-          local fxchunk = GetChunkPresetData(chunk, i)
-          local fxn = GetPlugNameFromChunk(fxchunk)
-          fxtbl[i+1] = {fxname = fxn,
-                        fxchunk = fxchunk,
-                        fxguid = convertguid(reaper.TrackFX_GetFXGUID(tr, i)),
-                        fxenabled = reaper.TrackFX_GetEnabled(tr, i)
-                        }
-        else
-          --check fx has controls in strip
-          local instrip = false
-          for j = 1, #strips[tracks[track_select].strip][page].controls do
-            if reaper.TrackFX_GetFXGUID(tr, i) == strips[tracks[track_select].strip][page].controls[j].fxguid then
-              instrip = true
-              break
-            end
-          end
-          if instrip then
-            --local _, fxname = reaper.TrackFX_GetFXName(tr, i, '')
-            local fxchunk = GetChunkPresetData(chunk, i)
-            local fxn = GetPlugNameFromChunk(fxchunk)
-            fxtbl[fxcnt] = {fxname = fxn,
-                            fxchunk = fxchunk,
-                            fxguid = convertguid(reaper.TrackFX_GetFXGUID(tr, i)),
-                            fxenabled = reaper.TrackFX_GetEnabled(tr, i)
-                            }          
-            fxcnt = fxcnt + 1
-          end
-        end
-      end
-    
-      savestrip = {}
-      savestrip.strip = strips[tracks[track_select].strip][page]
-      savestrip.fx = fxtbl
-      if snapshots and snapshots[tracks[track_select].strip] then
-        savestrip.snapshots = snapshots[tracks[track_select].strip][page]
-      end
-      
-      --Pickle doesn't like {} in strings (much) - remove before pickling
-      for i = 1, #savestrip.strip.controls do
-        savestrip.strip.controls[i].fxguid = convertguid(savestrip.strip.controls[i].fxguid)
-        if savestrip.strip.controls[i].ctlcat == ctlcats.pkmeter then
-          savestrip.strip.controls[i].val = -150
-        end
-      end
-  
-      local save_path=strips_path..strip_folders[stripfol_select].fn..'/'
-      local fn=save_path..fn..".strip"
-    
-      local DELETE=true
-      local file
-      
-      if reaper.file_exists(fn) then
-      
-      end
-      
-      if DELETE then
-        file=io.open(fn,"w")
-        local pickled_table=pickle(savestrip)
-        file:write(pickled_table)
-        file:close()
-      end
-
-      --reinstate {} after pickling
-      for i = 1, #savestrip.strip.controls do
-        if savestrip.strip.controls[i].fxguid then
-          savestrip.strip.controls[i].fxguid = '{'..savestrip.strip.controls[i].fxguid..'}'
-        end
-      end
-
-      OpenMsgBox(1,'Strip saved.',1)
-
-    end
-    PopulateStrips()
-    
-  end]]
   
   function GetPlugNameFromChunk(fxchunk)
 
@@ -15823,7 +15575,7 @@ end
         l = true
       end
     end
-    --DBG(id)
+    
     return id
     
   end
@@ -15853,7 +15605,7 @@ end
       local newvers = string.match(line,'[[STRIPSHAREFILE_VERSION]](%d)')
       if newvers then
       
-        --DBG(newvers)
+        
         local sharedata = match(content,'%[SHAREDATA%](.-)%[\\SHAREDATA%]')
         sharestripdata = match(content,'%[SHARESTRIPDATA%]\n(.-)%[\\SHARESTRIPDATA%]')
         
@@ -15902,7 +15654,7 @@ end
       
       if newvers == nil or tonumber(newvers) < 2 then
       
-        --DBG('compat a')
+        
         --compatibility
         local ctls = stripdata.strip.controls
         if ctls and #ctls > 0 then
@@ -15944,7 +15696,7 @@ end
         local line = string.sub(content,0,e)
         local newvers = match(line,'[[STRIPFILE_VERSION]](%d)')
         if newvers then
-          --DBG(newvers)
+          
           local pickledcontent = match(content,'%[FXDATA%](.-)%[\\FXDATA%]')
           local stripcontent = match(content,'%[STRIPDATA%](.-)%[\\STRIPDATA%]')
           local snapcontent = match(content,'%[SNAPSHOTDATA%](.-)%[\\SNAPSHOTDATA%]')
@@ -15973,7 +15725,7 @@ end
         
         if newvers == nil or tonumber(newvers) < 5 then
           --compatibility
-          --DBG('compat b')
+          
           
           local ctls = stripdata.strip.controls
           if ctls and #ctls > 0 then
@@ -16029,7 +15781,7 @@ end
       local line = string.sub(content,0,e)
       local newvers = match(line,'[[STRIPFILE_VERSION]](%d)')
       if newvers then
-        --DBG(newvers)
+        
         local pickledcontent = match(content,'%[FXDATA%](.-)%[\\FXDATA%]')
         local stripcontent = match(content,'%[STRIPDATA%](.-)%[\\STRIPDATA%]')
         local snapcontent = match(content,'%[SNAPSHOTDATA%](.-)%[\\SNAPSHOTDATA%]')
@@ -16057,10 +15809,10 @@ end
       end
       
       if nz(skipcompat,false) == false then
-      --DBG('sc')
+      
         if newvers == nil or tonumber(newvers) < 5 then
           --compatibility
-          --DBG('compat c')
+          
           
           local ctls = stripdata.strip.controls
           if ctls and #ctls > 0 then
@@ -16193,7 +15945,7 @@ end
         local chunk = GetTrackChunk(tr, settings_usetrackchunkfix)
        
         local nchunk, nfxguid, ofxguid = Chunk_InsertFXChunkAtEndOfFXChain(strips[strip].track.tracknum, chunk, stripdata.fx[i].fxchunk)
-        --DBG(nfxguid)
+        
         if nchunk ~= nil then
           local retval = SetTrackChunk(tr, nchunk, false)
           if retval == true then
@@ -16222,7 +15974,7 @@ end
           else
             --fxguids[ofxguid].found = true
             fxguids[ofxguid].guid = nguid
-            --DBG(fxguids[ofxguid].guid)
+            
           end
           
         end        
@@ -16296,14 +16048,14 @@ end
     --add switchers
     local switchstart
     if stripdata.switchers and #stripdata.switchers > 0 then
-      --DBG('A')
+     
       switchstart = #switchers+1
       for s = 1, #stripdata.switchers do
         local scnt = #switchers+1
         switchers[scnt] = stripdata.switchers[s]
       end
     end
-    --DBG(switchstart..'  '..#switchers)
+    
         
     local cstart = #strips[strip][page].controls + 1
     for j = 1, #stripdata.strip.controls do
@@ -16329,7 +16081,7 @@ end
       
       local ogid = strips[strip][page].controls[cc].grpid
       if ogid and strips[strip][page].controls[cc].switcher ~= nil then
-      --DBG('B '..ogid)
+      
         if gidtrack[ogid] then
           strips[strip][page].controls[cc].grpid = gidtrack[ogid].grpid
         else
@@ -16337,12 +16089,12 @@ end
           gidtrack[ogid] = {grpid = strips[strip][page].controls[cc].grpid}
         end
       else
-      --DBG('C '..grpid)
+      
         strips[strip][page].controls[cc].grpid = grpid --give main group id
       end      
       
       if switchstart and strips[strip][page].controls[cc].switcher then
-      --DBG('D')
+      
         local swid = stripdata.switchconvtab[strips[strip][page].controls[cc].switcher]
         if swid then
           swid = swid + switchstart-1
@@ -16350,9 +16102,9 @@ end
         end
       end
       if switchstart and strips[strip][page].controls[cc].switcherid then
-      --DBG('E')
+      
         local swid = stripdata.switchconvtab[strips[strip][page].controls[cc].switcherid]
-        --DBG(swid..'  '..switchstart)
+        
         if swid then
           swid = swid + switchstart-1
           strips[strip][page].controls[cc].switcherid = swid
@@ -16454,7 +16206,7 @@ end
   
         local ogid = stripdata.strip.graphics[j].grpid
         if ogid then
-        --DBG('G')
+        
           if gidtrack[ogid] then
             stripdata.strip.graphics[j].grpid = gidtrack[ogid].grpid
           else
@@ -16462,12 +16214,12 @@ end
             gidtrack[ogid] = {grpid = stripdata.strip.graphics[j].grpid}
           end
         else
-        --DBG('H')
+        
           stripdata.strip.graphics[j].grpid = grpid --give main group id
         end      
   
         if switchstart and stripdata.strip.graphics[j].switcher then
-        --DBG('D')
+        
           local swid = stripdata.switchconvtab[stripdata.strip.graphics[j].switcher]
           if swid then
             swid = swid + switchstart-1
@@ -16526,7 +16278,7 @@ end
           end
         
         end
-        --DBG(tostring(switchers[s].current)..'  '..tostring(gidtrack[switchers[s].current].grpid))
+        
         switchers[s].current = gidtrack[switchers[s].current].grpid
       end
     end
@@ -16655,7 +16407,7 @@ end
     
     GUI_DrawCtlBitmap()
     
-    --DBG('addstrip '..grpid)
+    
     return stripid, strip, grpid
     
   end
@@ -17449,7 +17201,7 @@ end
       
       --Check track guid - none for master
       --if strips[tracks[track_select].strip].track.tracknum == -1 then return end
-      --DBG(strips[tracks[track_select].strip].track.tracknum)
+      
       if strips[tracks[track_select].strip].track.tracknum ~= -1 then 
         tr_found = CheckTrack(strips[tracks[track_select].strip].track, tracks[track_select].strip)
       end
@@ -17953,7 +17705,6 @@ end
       end
     end
     if set == true and gset == true then
---DBG(round(tt-reaper.time_precise(),5))
       return math.min(l,gl), math.min(t,gt), math.max(r,gr), math.max(b,gb), l-gl, b-gb
     elseif set == true then
       return l, t, r, b
@@ -18559,9 +18310,7 @@ end
           end
         end  
       end
-      --[[for i = 1, #nctlsel do
-        DBG(i..'  '..ctls[nctlsel[i].ctl].ysc)
-      end]]
+      
       
       ctl_select = nctlsel
     
@@ -18631,9 +18380,7 @@ end
           end
         end  
       end
-      --[[for i = 1, #nctlsel do
-        DBG(i..'  '..ctls[nctlsel[i].ctl].ysc)
-      end]]
+      
       
       ctl_select = nctlsel
     
@@ -18822,11 +18569,11 @@ end
                 for c = 1, #strips[s][p].controls do
                   local ctl = strips[s][p].controls[c]
                   if ctl.switcher then
-                    --DBG(ctl.switcher..'  '..swidtab[ctl.switcher])
+                    
                     ctl.switcher = swidtab[ctl.switcher]
                   end
                   if ctl.switcherid then
-                    --DBG(ctl.switcherid..'  '..swidtab[ctl.switcherid])
+                    
                     ctl.switcherid = swidtab[ctl.switcherid]
                   end
                 end
@@ -19271,7 +19018,7 @@ end
         
         gfx.x, gfx.y = mouse.mx, mouse.my
         local res = OpenMenu(mstr)
-        --DBG(res..'  '..edprog_off..'  '..edprogN_off..'  '..remprog_off)
+        
         if res > 0 then
           if res == 1 then
             RCM_AddProgram()
@@ -19654,7 +19401,7 @@ end
       if res > 0 then
         if res == 1 then
         
-          --DBG('DELETE')
+         
           Snapshot_DeleteSubset(tracks[track_select].strip, page, sstype_select)
           SetCtlBitmapRedraw()
           update_gfx = true
@@ -20912,7 +20659,7 @@ end
       horiz_select = nz(ctl.horiz,false)
       noss_select = ctl.noss
       knobsens_select = nz(ctl.knobsens,settings_defknobsens)
-      --DBG(ctl.cycledata.statecnt)
+      
       if ctl.cycledata and ctl.cycledata.statecnt > 0 then
         mapptof_select = ctl.cycledata.mapptof
         draggable_select = ctl.cycledata.draggable
@@ -21323,16 +21070,14 @@ end
     local ret = 'Action: '..comid
     local acttbl = LoadActionIDs()
     for i = 1, #acttbl do
-      --if i%20 == 0 then
-      --DBG(tostring(acttbl[i].command_id)..'  '..tostring(acttbl[i].dcommand_id))
-      --end
+      
       if acttbl[i].command_id then
         if string.sub(acttbl[i].command_id,1,1) == '_' then
           acttbl[i].command_id = string.sub(acttbl[i].command_id,2)
         end        
         if acttbl[i].command_id == comid then
           ret = acttbl[i].command_desc
-          --DBG(ret)
+          
           break
         end
       elseif acttbl[i].dcommand_id then
@@ -21341,7 +21086,7 @@ end
         end 
         if acttbl[i].dcommand_id == comid then
           ret = acttbl[i].command_desc
-          --DBG(ret)
+          
           break
         end
       end
@@ -21956,7 +21701,7 @@ end
       gfx.x = mouse.mx
       gfx.y = mouse.my
       local ret = gfx.showmenu(mstr)
-      --DBG(lastp..'  '..ret)
+     
       if nz(returnonly,false) == false then
         if ret > 0 and ret ~= lastp then
           faders[ret] = fad_tab
@@ -22016,7 +21761,7 @@ end
               p = fxnum * LBX_FB_CNT + pf
               faders[p+1].val = round(reaper.TrackFX_GetParam(track, fxnum, pf),5)
               if faders[p+1].val and faders[p+1].val >= 0 and (tostring(faders[p+1].val) ~= tostring(faders[p+1].oval) --[[or faders[p+1].targettype == 5 or faders[p+1].targettype == 6]]) then
-                --DBG(faders[p+1].oval)
+                
                 
                 if faders[p+1].targettype then
                   if faders[p+1].targettype == 0 then
@@ -22054,7 +21799,7 @@ end
                     end 
                     
                   elseif faders[p+1].targettype == 4 then
-                  --DBG('p')
+                  
                     local strip = faders[p+1].strip
                     local page = faders[p+1].page
                     local c = faders[p+1].ctl
@@ -22116,7 +21861,7 @@ end
                             --relative
                             local vi = 0.002
                             local v = F_limit(faders[p+1].val-0.5,-vi,vi)
-                            --DBG(faders[p+1].val..'  '..v)
+                            
                             ctl.val = F_limit(ctl.val + (v),0,1)
                             --if ctl.oval ~= ctl.val then
                               A_SetParam(strip,page,c,ctl)
@@ -22225,7 +21970,7 @@ end
               faders[p+1].oval = faders[p+1].val    
                           
               if faders[p+1].targettype == 4 then
-              --DBG('bb')
+              
                 local strip = faders[p+1].strip
                 local page = faders[p+1].page
                 local c = faders[p+1].ctl
@@ -22237,7 +21982,7 @@ end
                   end                
                   local vv = round(GetParamValue_XX(ctl.ctlcat, t, ctl.fxnum, ctl.param, c, strip, page),4)
                   if tostring(vv) ~= tostring(round(faders[p+1].val,4)) then
-                    --DBG(vv..'  '..faders[p+1].val)
+                    
                     faders[p+1].val = vv
                     SetFader(p+1, vv) 
                   end
@@ -22258,8 +22003,7 @@ end
           for pf = 0, LBX_FB_CNT-1 do
             p = fxnum * LBX_FB_CNT + pf
             faders[p+1].val = reaper.TrackFX_GetParam(track, fxnum, pf)
-          -- DBG('v'..tostring(faders[p+1].val))
-          -- DBG('o'..tostring(faders[p+1].oval))
+         
             if faders[p+1].val and tostring(round(faders[p+1].val,5)) ~= tostring(round(faders[p+1].oval,5)) then
               lbx_midilrnval = p+1
               faders[p+1].oval = faders[p+1].val
@@ -22346,8 +22090,7 @@ end
       elseif faders[f].targettype == 2 or faders[f].targettype == 4 or faders[f].targettype == 7 then
         if strips and strips[faders[f].strip] and strips[faders[f].strip][faders[f].page].controls[faders[f].ctl] then
           strips[faders[f].strip][faders[f].page].controls[faders[f].ctl].macrofader = nil
-          --DBG('s'..faders[f].strip..' p'..faders[f].page..' c'..faders[f].ctl)
-          --DBG(strips[faders[f].strip][faders[f].page].controls[faders[f].ctl].param_info.paramname)
+          
         end
       elseif faders[f].targettype == 5 then
         snapshot_fader = nil
@@ -22746,7 +22489,7 @@ end
 
       for i = 1, fxc do
         local _, name = reaper.TrackFX_GetFXName(track,i-1,'')
-        --DBG(i)
+        
         tfxorder[i] = {name = name,
                        guid = reaper.TrackFX_GetFXGUID(track,i-1),
                        fxnum = i-1,
@@ -22759,7 +22502,7 @@ end
          tfxorder[i].offline = string.match(bypstr,'%d (%d) %d')
          s=e+1
        end           
-       --DBG(i..'  '..tfxorder[i].bypass..'  '..tfxorder[i].offline)    
+         
       end
     end
     return tfxorder
@@ -23100,8 +22843,7 @@ end
             nsflag = true
             switchers[ns] = stab
             swids[ctls[c].switcherid] = ns
-            --DBG('1'..tostring(switchers[ctls[c].switcherid]))
-            --DBG('2'..tostring(switchers[ns]))
+            
           end      
         end
         if nsflag then
@@ -23301,7 +23043,7 @@ end
     
     local load_path
     local sf = ''
-    --DBG('ssf:'..save_subfolder)
+    
     if save_subfolder and save_subfolder ~= '' then
       sf = save_subfolder
       if sf == '#' then
@@ -23312,24 +23054,24 @@ end
     end
     
     fn = sf..fn
-    --DBG('ffff'..fn)
+    
     
     if settings_savedatainprojectfolder == true then
       load_path=reaper.GetProjectPath('')..'/'
-      --DBG(load_path..fn..'.lbxstripper')
+      
       if reaper.file_exists(load_path..fn..'.lbxstripper') ~= true and reaper.file_exists(load_path..fn..'.lbxstripper__') ~= true then
         load_path=projsave_path
       end
     else
       load_path=projsave_path
-      --DBG(load_path..fn..'.lbxstripper')
+     
       if reaper.file_exists(load_path..fn..'.lbxstripper') ~= true and reaper.file_exists(load_path..fn..'.lbxstripper__') ~= true then
         load_path=reaper.GetProjectPath('')..'/'
       end      
     end
   
     local ffn=load_path..fn
-    --DBG('ffn: '..tostring(ffn))
+    
     local fndffn, fndfn
     if reaper.file_exists(ffn..'.lbxstripper') then
       fndffn = ffn..'.lbxstripper'
@@ -23338,7 +23080,7 @@ end
       fndffn = ffn..'.lbxstripper__'
       fndfn = fn..'.lbxstripper__'    
     end
-    --DBG(fndfn)
+    
     if fndfn then
       return true, fndfn, fndffn, nil
     else
@@ -23407,7 +23149,7 @@ end
         
         if found == true then
           --load
-          --DBG('a')
+          
           INIT()
           LoadData()
           update_gfx = true
@@ -23425,15 +23167,15 @@ end
           end          
           
         elseif pr_pfx ~= ls_pfx then
-          --DBG('b')
+          
           SaveProj()
         
         elseif (pr_n and ls_n) and pr_n > ls_n then
-          --DBG('c')
+          
           SaveProj()
 
         elseif (pr_n and ls_n) and pr_n < ls_n then
-          --DBG('d')
+         
           INIT()
           LoadData()
           update_gfx = true
@@ -23441,8 +23183,6 @@ end
           
         else
         
-          --DBG(PROJNAME)
-          --DBG('e')
           if nz(PROJNAME,'') ~= '' then
             SaveProj()
           else
@@ -23454,7 +23194,7 @@ end
 
         lastprojname = PROJNAME
         update_gfx = true
-        --DBG('projmodified')
+        
       end
       lastprojdirty = projdirty
       --end
@@ -24076,7 +23816,7 @@ end
   end 
 
   function A_RunMorph()
-    --DBG(#morph_data)
+    
     local runcnt = 0
     local t = reaper.time_precise()
     for i = 1, #morph_data do
@@ -24125,7 +23865,7 @@ end
   end
 
   function RCMRefresh()
-  --DBG('rcmrefresh')
+  
     if rcmrefreshtimer then
       local cnt = 0
       for r = 1, rcmrefreshtimercount do
@@ -24196,14 +23936,14 @@ end
   end
   
   function RefreshControlsByGUID(guid)
-    --DBG(guid..'   '..rcmrefreshtimercount)
+    
     --local fxnum = GetFXNum(guid)
     --if fxnum then
     local strip = tracks[track_select].strip
     for c = 1, #strips[strip][page].controls do
       local ctl = strips[strip][page].controls[c]
       if ctl and ctl.fxguid and ctl.fxguid == guid then
-        --DBG(c)
+        
         ctl.dirty = true
       end
     end
@@ -25748,7 +25488,7 @@ end
     elseif mouse.context == nil and (MOUSE_click(obj.sections[10]) or MOUSE_click_RB(obj.sections[10]) or gfx.mouse_wheel ~= 0) then
       
       local togfsnap = false
-      --DBG(gfx.mouse_wheel ..'  '.. mouse.mx..'  '..obj.sections[10].x)
+      
       if mouse.mx > obj.sections[10].x then
         if strips and tracks[track_select] and strips[tracks[track_select].strip] then
                 
@@ -28816,7 +28556,7 @@ end
         local val = F_limit(MOUSE_sliderHBar(xywh),0,1)
         if val ~= nil then
           local v = math.floor(val * 20)*0.5
-          --DBG('v='..v)
+          
           knobsens_select.norm = v
           for i = 1, #ctl_select do
             strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].knobsens.norm = v
@@ -29348,7 +29088,7 @@ end
         end
       elseif lasso ~= nil then
         --Dropped
-        --DBG(lasso.l-lasso.r..'  '.. lasso.t-lasso.b)
+       
         if math.abs(lasso.l-lasso.r) < 10 and math.abs(lasso.t-lasso.b) < 10 then
         -- == mouse.mx and lasso.t == mouse.my then
           if ctl_select ~= nil then
@@ -30460,7 +30200,7 @@ end
         local i = math.floor((mouse.my - obj.sections[531].y) / butt_h)-1
         if graphics_folders[i + gflist_offset] then
           local dropfolder = i + gflist_offset
-          --DBG(graphics_folders[i + gflist_offset])
+          
           MoveGFXFileToFolder(gfx_select, dropfolder)
         end
         
@@ -31499,7 +31239,7 @@ end
         mouse.my = mouse.my-obj.sections[221].y
         
         local strip = tracks[track_select].strip
-        --DBG(mouse.mx..'  '..mouse.my)
+        
         if MOUSE_click(obj.sections[223]) then
           local i = math.floor((mouse.my - obj.sections[223].y)/butt_h)
         
@@ -32498,7 +32238,7 @@ end
       lasso = {l = mouse.mx, t = mouse.my, r = mouse.mx+5, b = mouse.my+5}
       
     --[[elseif mouse.context and mouse.context == contexts.draglasso then
-    DBG('A')
+   
       if math.abs(lasso.l - mouse.mx) > 10 or math.abs(lasso.t - mouse.my) > 10 then
         lasso.r = mouse.mx
         lasso.b = mouse.my
@@ -32583,7 +32323,7 @@ end
         
           v = gfx.mouse_wheel/120
           macroedit_poffs = F_limit(macroedit_poffs-v,0,#macroctl-1)
-          --DBG(macroedit_poffs)
+       
         
           update_gfx = true
         end
@@ -34844,221 +34584,6 @@ end
         
   end
 
-  --[[function UpdateControlValues(rt)
-
-    if rt >= time_nextupdate then
-      local suf = settings_updatefreq
-      --if mode == 1 then suf = 0.2 end
-
-      time_nextupdate = rt + suf
-      if strips and tracks[track_select] and strips[tracks[track_select].strip] and #strips[tracks[track_select].strip][page].controls > 0 then
-        --check track
-        local strip = tracks[track_select].strip
-        
-        if CheckTrack(strips[strip].track, strip) then        
-          if tracks[track_select] and strips[tracks[track_select].strip] then
-            local strip = tracks[track_select].strip
-
-            local tr2 = GetTrack(strips[strip].track.tracknum)
-            if tr2 ~= nil then
-              if strips and strips[strip] then
-                local chktbl = {}
-                local pkmts = false
-
-                for i = 1, #strips[strip][page].controls do
-                  --check fx
-                  local ctl = strips[strip][page].controls[i]
-                  
-                  tr = tr2
-                  local tr_found = true
-                  if ctl.tracknum ~= nil then
-                    --tr = GetTrack(strips[tracks[track_select].strip][page].controls[i].tracknum)
-                    tr_found = CheckTrack(tracks[ctl.tracknum], strip, page, i)
-                    if tr_found then
-                      tr = GetTrack(ctl.tracknum)
-                    end 
-                  end
---DBG(tr_found)
-                  
-                  DBG(ctl.ctlcat)
-                  if tr_found then
-                  DBG(ctl.ctlcat)
-                    if ctl.ctlcat == ctlcats.fxparam then
-                      local fxguid = reaper.TrackFX_GetFXGUID(tr, ctl.fxnum)
-                      if ctl.fxguid == fxguid then
-  --DBG(i)
-                        local pn = reaper.TrackFX_GetNumParams(tr,ctl.fxnum)
-                        if pn ~= 2 then
-                          if ctl.offline ~= nil then
-                            ctl.dirty = true
-                          end
-                          ctl.offline = nil
-                        else
-                          if ctl.offline == nil then
-                            ctl.dirty = true
-                          end
-                          ctl.offline = true
-                        end
-                      
-                        local v = GetParamValue2(ctl.ctlcat,
-                                                 tr,
-                                                 ctl.fxnum,
-                                                 ctl.param, i)
-                        if ctl.ctltype == 4 then
-                          if tostring(ctl.val) ~= tostring(v) then
-                            ctl.val = v
-                            ctl.dirty = true
-                            ctl.cycledata.posdirty = true 
-                            update_ctls = true
-                          end
-                        else
-                          if ctl.val ~= v then
-                            ctl.val = v
-                            ctl.dirty = true
-                            if ctl.param_info.paramname == 'Bypass' then
-                              SetCtlEnabled(ctl.fxnum) 
-                            end
-                            update_ctls = true
-                          end                      
-                        end
-                      else
-                        if ctl.fxfound then
-                          CheckStripControls()
-                        end
-                      end
-                    elseif ctl.ctlcat == ctlcats.trackparam then
-                      local v = GetParamValue2(ctl.ctlcat,
-                                               tr,
-                                               nil,
-                                               ctl.param, i)
-                      if ctl.ctltype == 4 then
-                        if tostring(ctl.val) ~= tostring(v) then
-                          ctl.val = v
-                          ctl.dirty = true
-                          ctl.cycledata.posdirty = true 
-                          update_ctls = true
-                        end
-                      else
-                        if ctl.val ~= v then
-                          ctl.val = v
-                          ctl.dirty = true
-                          update_ctls = true
-                        end
-                      end                    
-                    elseif ctl.ctlcat == ctlcats.tracksend then
-  
-                      if settings_disablesendchecks == false and checksends == true then
-                        local tt = ctl.tracknum
-                        if tt == nil then
-                          tt = strips[strip].track.tracknum
-                        end
-                        local chk
-                        
-                        chk, chktbl[tt] = CheckSendGUID(tt,nil,ctl.param_info.paramnum,
-                                                              ctl.param_info.paramdestguid,
-                                                              ctl.param_info.paramdestchan,
-                                                              ctl.param_info.paramsrcchan,
-                                                              chktbl[tt])
-                        if chk == false then
-                          chktbl = CheckStripSends(chktbl)
-                        end
-                      end                    
-  
-                      local v = GetParamValue2(ctl.ctlcat,
-                                               tr,
-                                               nil,
-                                               ctl.param, i)
-  
-                      if ctl.ctltype == 4 then
-                        if tostring(ctl.val) ~= tostring(v) then
-                          ctl.val = v
-                          ctl.dirty = true
-                          ctl.cycledata.posdirty = true 
-                          update_ctls = true                    
-                        end
-                      else
-                        if ctl.val ~= v then
-                          ctl.val = v
-                          ctl.dirty = true
-                          update_ctls = true
-                        end
-                      end
-                    elseif ctl.ctlcat == ctlcats.pkmeter then
-                      if rt >= time_nextupdate_pkmeter then
-                        pkmts = true
-                        local chd = 0
-                        local trn = strips[strip].track.tracknum
-                        if ctl.tracknum ~= nil then
-                          trn = ctl.tracknum
-                        end
-                        local p = ctl.param
-                        local v = GetParamValue2(ctl.ctlcat,
-                                                 tr,
-                                                 nil,
-                                                 p, i)
-                        if peak_info[trn] and peak_info[trn][p % 64] then
-                          chd = peak_info[trn][p % 64].ch_d
-                        else
-                          chd = -150
-                        end
-                        if tostring(ctl.val) ~= tostring(chd) then
-                          ctl.val = chd
-                          ctl.dirty = true
-                          update_ctls = true
-                          --update_mtrs = true
-                        end
-                      end
-                    elseif ctl.ctlcat == ctlcats.fxoffline then
-                      local fxguid = reaper.TrackFX_GetFXGUID(tr, ctl.fxnum)
-                      if ctl.fxguid == fxguid then
-  
-                        local pn = reaper.TrackFX_GetNumParams(tr,ctl.fxnum)
-                        if pn ~= 2 then
-                          if ctl.offline ~= nil then
-                            ctl.dirty = true
-                            update_ctls = true
-                          end
-                          ctl.offline = nil
-                          ctl.val = 0
-                        else
-                          if ctl.offline == nil then
-                            ctl.dirty = true
-                            update_ctls = true
-                          end
-                          ctl.offline = true
-                          ctl.val = 1
-                        end
-                      else
-                        if ctl.fxfound then
-                          CheckStripControls()
-                        end
-                      end                  
-                    
-                    elseif ctl.ctlcat == ctlcats.fxgui or ctl.ctlcat == ctlcats.rcm_switch then
-                      local fxguid = reaper.TrackFX_GetFXGUID(tr, ctl.fxnum)
-                        DBG('1')
-                      if ctl.fxguid and ctl.fxguid ~= fxguid then
-                        DBG('1')
-                        if ctl.fxfound then
-                        DBG('csc')
-                          CheckStripControls()
-                        end
-                      end
-                    end
-                  end
-                end
-                chktbl = nil
-                if pkmts then
-                  time_nextupdate_pkmeter = rt + settings_updatefreq_pkmeter
-                end
-              end
-            end
-          end
-        end
-      end
-    end
-
-  end]]
 
   function UpdateControlValues2(rt)
   
@@ -35094,13 +34619,12 @@ end
                       tr = GetTrack(ctl.tracknum)
                     end 
                   end
---DBG(tr_found)
                   
                   if tr_found then
                     if ctl.ctlcat == ctlcats.fxparam then
                       local fxguid = reaper.TrackFX_GetFXGUID(tr, ctl.fxnum)
                       if ctl.fxguid == fxguid then
-  --DBG(i)
+  
                         local pn = reaper.TrackFX_GetNumParams(tr,ctl.fxnum)
                         if pn ~= 2 then
                           if ctl.offline ~= nil then
@@ -35115,7 +34639,7 @@ end
                         end
                       
                         local _, v = reaper.TrackFX_GetFormattedParamValue(tr, ctl.fxnum, ctl.param, "")
-                        --DBG(v.. '  '..ctl.dval)
+                        
                         local v2 = GetParamValue2(ctl.ctlcat,
                                                  tr,
                                                  ctl.fxnum,
@@ -35123,7 +34647,7 @@ end
                           
                         if ctl.ctltype == 4 then
                           if tostring(ctl.dval) ~= tostring(v) then
-                          --DBG(tostring(ctl.dval)..'  '..tostring(v))
+                          
                             ctl.val = v2
                             ctl.dval = v
                             ctl.dirty = true
@@ -35136,7 +34660,7 @@ end
                           end
                         else
                           if ctl.dval ~= v then
-                          --DBG(tostring(ctl.dval)..'  '..tostring(v))
+                          
                             ctl.val = v2
                             ctl.dval = v
                             ctl.dirty = true
@@ -35611,10 +35135,10 @@ end
             --if #lookmap_src - src_pts[1] > #lookmap_src / 2 and lookmap_src[#lookmap_src].hz <= lookmap_tgt[#lookmap_tgt].hz then
             if #lookmap_src > src_pts[1] and lookmap_src[#lookmap_src].hz <= lookmap_tgt[#lookmap_tgt].hz and (aligntype == 1 or src_pts[1] == 1) then
               src_pts[2] = #lookmap_src
-              --DBG('AA')
+             
             else
               src_pts[2] = 1
-              --DBG('BB')
+             
             end
             if src_pts[1] > src_pts[2] then
               local sp = src_pts[1]
@@ -36226,13 +35750,13 @@ end
           if fxnum ~= -1 then
         
             if eqc[i].freq_param then
-              --DBG('f')
+              
               local v = reaper.TrackFX_GetParamNormalized(track, fxnum, eqc[i].freq_param)
               --local v2 = reaper.TrackFX_GetParam(track, fxnum, eqc[i].freq_param)
-              --DBG(v..'  '..eqc[i].freq_val..'  '..v2)
+              
               if v ~= eqc[i].freq_val then
                 --eqc[i].freq_val = v
-                --DBG('A')
+                
                 update_eqcontrol = true
                 break
               end
@@ -37262,7 +36786,7 @@ end
   
     local sldiv = 400
     --local ad = auto_delay*1000000
-    --DBG(auto_delay)
+    
     if cycle_select.statecnt == 0 then
     
       trackfxparam_select = ctl_select[1].ctl
@@ -37673,7 +37197,7 @@ end
   end
   
   function editbox_onchar(e, c)
-    --DBG(c)
+   
     if c == 0x6C656674 then -- left arrow
       if mouse.shift then
         if e.caret > 0 then e.caret=e.caret-1 e.sel=e.sel+1 end        
@@ -38011,7 +37535,7 @@ end
         if strip.controls[c].maxdp == nil or (strip.controls[c].maxdp and strip.controls[c].maxdp == '') then
           strip.controls[c].maxdp = -1
         end
-        --DBG(data[key..'fxname'])
+        
         strip.controls[c].xsc = strip.controls[c].x + strip.controls[c].w/2 - (strip.controls[c].w*strip.controls[c].scale)/2
         strip.controls[c].ysc = strip.controls[c].y + strip.controls[c].ctl_info.cellh/2 - (strip.controls[c].ctl_info.cellh*strip.controls[c].scale)/2
         strip.controls[c].wsc = strip.controls[c].w*strip.controls[c].scale
@@ -38453,7 +37977,7 @@ end
       snapshots[s][p] = LoadSnapDataX(key, data)
       
     end
-    --DBG('Snapshot load time: '..reaper.time_precise() - t)
+    
 
   end
   
@@ -38996,22 +38520,31 @@ end
   
   end
 
-  function CheckMods()
+  function CheckMods(mods)
   
-    if modulators == nil then return end
+    if mods == nil then return end
     
-    for m = 1, #modulators do
-      if #modulators[m].targets > 0 then
+    for m = 1, #mods do
+      mods[m] = CheckMod(mods[m],m)
+    end
+    return mods
+  
+  end
+
+  function CheckMod(mod,m)
+    if mod == nil then return end
+    
+      if mod.targets and #mod.targets > 0 then
         
-        local tcnt = #modulators[m].targets
+        local tcnt = #mod.targets
         local tchange = false
         for t = 1, tcnt do
           fnd = false
           
-          local s = modulators[m].targets[t].strip
-          local p = modulators[m].targets[t].page
-          local c = modulators[m].targets[t].ctl
-          local cid = modulators[m].targets[t].c_id
+          local s = mod.targets[t].strip
+          local p = mod.targets[t].page
+          local c = mod.targets[t].ctl
+          local cid = mod.targets[t].c_id
           if strips[s] and strips[s][p].controls[c] and cid == strips[s][p].controls[c].c_id and 
              strips[s][p].controls[c].mod == m then
             --all good
@@ -39020,9 +38553,8 @@ end
             if strips[s] then
               for cc = 1, #strips[s][p].controls do
                 if strips[s][p].controls[cc].c_id == cid then
-                
                   strips[s][p].controls[cc].mod = m
-                  modulators[m].targets[t].ctl = cc
+                  mod.targets[t].ctl = cc
                   fnd = true
                   break
                 end
@@ -39032,11 +38564,10 @@ end
                   for pp = 1, 4 do
                     for cc = 1, #strips[ss][pp].controls do
                       if strips[ss][pp].controls[cc].c_id == cid then
-                      
                         strips[ss][pp].controls[cc].mod = m
-                        modulators[m].targets[t].strip = ss
-                        modulators[m].targets[t].page = pp
-                        modulators[m].targets[t].ctl = cc
+                        mod.targets[t].strip = ss
+                        mod.targets[t].page = pp
+                        mod.targets[t].ctl = cc
                         fnd = true
                         break
                       end      
@@ -39055,18 +38586,17 @@ end
           if fnd == false then
             --not found
             tchange = true
-            modulators[m].targets[t] = nil
+            mod.targets[t] = nil
           end
           
         end
         
         if tchange == true then
-          modulators[m].targets = Table_RemoveNils(modulators[m].targets, tcnt)
+          mod.targets = Table_RemoveNils(mod.targets, tcnt)
         end
         
       end
-    end
-  
+    return mod
   end
 
   function LoadMods(data)
@@ -39124,7 +38654,7 @@ end
   
     end
 
-    CheckMods()
+    modulators = CheckMods(modulators)
     --Faders_SetOVAL()
     
   end
@@ -39192,7 +38722,7 @@ end
   
     local t = reaper.time_precise()
     local data = {}
-    --DBG('a')
+   
     
     DBGOut('')
     DBGOut('*** LOADING DATA ***')    
@@ -39242,7 +38772,7 @@ end
     strips = {}
     local ss = 1
     if scnt > 0 then
-      --DBG(scnt)
+      
       for s = 1, scnt do
     
         GUI_DrawMsgX(obj, gui, 'Loading Strip Data...', s, scnt)      
@@ -39333,7 +38863,7 @@ end
     DBGOut('LoadData: Saved OK: '..tostring(GPES('savedok')))
   
     if GPES('savedok') ~= '' then
-  --DBG(lbxwin_dim)
+  
       if lbxwin_dim then
         gfx1 = {main_w = lbxwin_dim.w,
                 main_h = lbxwin_dim.h}
@@ -39438,7 +38968,7 @@ end
         strips = {}
         local ss = 1
         if scnt > 0 then
-          --DBG(scnt)
+         
           for s = 1, scnt do
 
             GUI_DrawMsgX(obj, gui, 'Loading Strip Data...', s, scnt)
@@ -39446,7 +38976,7 @@ end
             if tonumber(v) == 0.93 then
               LoadStripData(s, ss)
               ss=ss+1
-              --DBG(scnt..' '..s..'  '..ss..'yeah')
+              
               --if not CheckTrackExists(ss) then
               --  ss = ss - 1
               --end
@@ -39955,7 +39485,7 @@ end
           for p = 1, 4 do            
             
             --compatibility
-            --DBG('compat d')
+            
             
             local ctls = strips[s][p].controls
             if ctls and #ctls > 0 then
@@ -40293,7 +39823,7 @@ end
   
     if file and modulators and modulator_cnt > 0 then
   
-      CheckMods()
+      modulators = CheckMods(modulators)
   
       local key = 'modcnt'
       file:write('['..key..']'.. modulator_cnt ..'\n')
@@ -40532,78 +40062,6 @@ end
       local key = pfx..'p'..p..'_'
       SaveSnapshotDataX(s,p,key,file)
                 
-      --[[file:write('['..key..'sstype_count]'..#snapshots[s][p]..'\n')
-    
-      for sst = 1, #snapshots[s][p] do
-    
-        local key = pfx..'p'..p..'_sst_'..sst..'_'
-        file:write('['..key..'ss_selected]'..nz(snapshots[s][p][sst].selected,'')..'\n')
-        
-        if sst == 1 then          
-          file:write('['..key..'ss_count]'..#snapshots[s][p][sst]..'\n')
-        
-          if #snapshots[s][p][sst] > 0 then
-
-            for ss = 1, #snapshots[s][p][sst] do
-
-              local key = pfx..'p'..p..'_sst_'..sst..'_ss_'..ss..'_'
-            
-              file:write('['..key..'name]'.. snapshots[s][p][sst][ss].name ..'\n')
-              file:write('['..key..'data_count]'.. #snapshots[s][p][sst][ss].data ..'\n')
-          
-              if #snapshots[s][p][sst][ss].data > 0 then
-                for d = 1, #snapshots[s][p][sst][ss].data do
-  
-                  local key = pfx..'p'..p..'_sst_'..sst..'_ss_'..ss..'_d_'..d..'_'
-
-                  file:write('['..key..'cid]'.. snapshots[s][p][sst][ss].data[d].c_id ..'\n')
-                  file:write('['..key..'ctl]'.. snapshots[s][p][sst][ss].data[d].ctl ..'\n')
-                  file:write('['..key..'val]'.. snapshots[s][p][sst][ss].data[d].val ..'\n')
-                  file:write('['..key..'dval]'.. nz(snapshots[s][p][sst][ss].data[d].dval,'') ..'\n')
-            
-                end
-              end
-            end
-          end      
-
-        elseif sst > 1 then
-        
-          file:write('['..key..'subsetname]'.. snapshots[s][p][sst].subsetname ..'\n')
-          file:write('['..key..'ss_count]'.. #snapshots[s][p][sst].snapshot ..'\n')
-          file:write('['..key..'ctl_count]'.. #snapshots[s][p][sst].ctls ..'\n')
-          
-          if #snapshots[s][p][sst].ctls > 0 then
-    
-            for ctl = 1, #snapshots[s][p][sst].ctls do
-              local key = pfx..'p'..p..'_sst_'..sst..'_c_'..ctl..'_'
-              file:write('['..key..'cid]'.. snapshots[s][p][sst].ctls[ctl].c_id ..'\n')
-              file:write('['..key..'ctl]'.. snapshots[s][p][sst].ctls[ctl].ctl ..'\n')                            
-            end
-          end
-          if #snapshots[s][p][sst].snapshot > 0 then
-          
-            for ss = 1, #snapshots[s][p][sst].snapshot do
-            
-              local key = pfx..'p'..p..'_sst_'..sst..'_ss_'..ss..'_'
-              file:write('['..key..'name]'.. snapshots[s][p][sst].snapshot[ss].name ..'\n')
-              file:write('['..key..'data_count]'.. #snapshots[s][p][sst].snapshot[ss].data ..'\n')
-            
-              if #snapshots[s][p][sst].snapshot[ss].data > 0 then
-                for d = 1, #snapshots[s][p][sst].snapshot[ss].data do
-  
-                  local key = pfx..'p'..p..'_sst_'..sst..'_ss_'..ss..'_d_'..d..'_'
-            
-                  file:write('['..key..'cid]'.. snapshots[s][p][sst].snapshot[ss].data[d].c_id ..'\n')
-                  file:write('['..key..'ctl]'.. snapshots[s][p][sst].snapshot[ss].data[d].ctl ..'\n')
-                  file:write('['..key..'val]'.. snapshots[s][p][sst].snapshot[ss].data[d].val ..'\n')
-                  file:write('['..key..'dval]'.. nz(snapshots[s][p][sst].snapshot[ss].data[d].dval,'') ..'\n')
-            
-                end
-              end
-            end
-          end
-        end
-      end]]
     end
   
     if nofile == true then
@@ -40817,9 +40275,6 @@ end
     local pfx = ''
     if file == nil then
       local ffn=save_path..fn
-  
-      --DBG(fn)
-      --DBG(ffn)
       
       file=io.open(ffn,"w")
     else
@@ -41345,7 +40800,7 @@ end
         
     local s, p, c, g
     reaper.SetProjExtState(0,SCRIPT,"","") -- clear first
-    --DBG('saving')
+    
     reaper.SetProjExtState(0,SCRIPT,'version',VERSION)
     reaper.SetProjExtState(0,SCRIPT,'projectid',PROJECTID)
     reaper.SetProjExtState(0,SCRIPT,'gridsize',settings_gridsize)
@@ -41386,16 +40841,7 @@ end
       end
       --local t = reaper.time_precise()
       copyfile(srcffn, ffn)
-      --[[DBG('bkp: '..reaper.time_precise()-t)
-      local t = reaper.time_precise()
-      file=io.open(ffn,"w")
-      if file == nil then
-        DBG('Failed to create backup file:/n/n'..ffn)
-        return nil
-      end
-      SaveDataFile(file, save_path)
-      file:close()
-      DBG('bkp: '..reaper.time_precise()-t)]]
+      
       
       DBGOut('SaveData: Backup created: '..tostring(true))      
     end
@@ -41532,6 +40978,10 @@ end
                     snapshots[strip][page][sst][ss].data = Table_RemoveNils(snapshots[strip][page][sst][ss].data, dcnt)
                   end
                 end
+                
+                if snapshots[strip][page][sst][ss].modset then
+                  snapshots[strip][page][sst][ss].moddata = CheckMods(snapshots[strip][page][sst][ss].moddata)
+                end
               end
             end
           elseif sst > 1 then
@@ -41588,6 +41038,9 @@ end
                   if ss_entry_deleted == true then
                     snapshots[strip][page][sst].snapshot[ss].data = Table_RemoveNils(snapshots[strip][page][sst].snapshot[ss].data, dcnt)
                   end
+                end
+                if snapshots[strip][page][sst].snapshot[ss].modset then
+                  snapshots[strip][page][sst].snapshot[ss].moddata = CheckMods(snapshots[strip][page][sst].snapshot[ss].moddata)
                 end
               end
             end
@@ -41712,7 +41165,7 @@ end
   end
 
   function AddCtlValToSS(strip, page, sstype, ss, c)
-  --DBG('adding '..c)
+ 
     local track = GetTrack(nz(strips[strip][page].controls[c].tracknum,strips[strip].track.tracknum))
     local cc = strips[strip][page].controls[c].ctlcat
     local fxnum = strips[strip][page].controls[c].fxnum
@@ -42135,10 +41588,12 @@ end
               local mm = modulators[m]
               for t = 1, #mm.targets do
                 if mm.targets[t].targettype == 1 then
-                  strips[mm.targets[t].strip][mm.targets[t].page].controls[mm.targets[t].ctl].mod = nil
-                  if mm.targets[t].strip == tracks[track_select].strip and 
-                     mm.targets[t].page == page then
-                    SetCtlDirty(mm.targets[t].ctl)
+                  if strips[mm.targets[t].strip] and strips[mm.targets[t].strip][mm.targets[t].page].controls[mm.targets[t].ctl] then
+                    strips[mm.targets[t].strip][mm.targets[t].page].controls[mm.targets[t].ctl].mod = nil
+                    if mm.targets[t].strip == tracks[track_select].strip and 
+                       mm.targets[t].page == page then
+                      SetCtlDirty(mm.targets[t].ctl)
+                    end
                   end
                 end
               end
@@ -42148,10 +41603,12 @@ end
               local mm = modulators[m]
               for t = 1, #mm.targets do
                 if mm.targets[t].targettype == 1 then
-                  strips[mm.targets[t].strip][mm.targets[t].page].controls[mm.targets[t].ctl].mod = m
-                  if mm.targets[t].strip == tracks[track_select].strip and 
-                     mm.targets[t].page == page then
-                    SetCtlDirty(mm.targets[t].ctl)
+                  if strips[mm.targets[t].strip] and strips[mm.targets[t].strip][mm.targets[t].page].controls[mm.targets[t].ctl] then
+                    strips[mm.targets[t].strip][mm.targets[t].page].controls[mm.targets[t].ctl].mod = m
+                    if mm.targets[t].strip == tracks[track_select].strip and 
+                       mm.targets[t].page == page then
+                      SetCtlDirty(mm.targets[t].ctl)
+                    end
                   end
                 end
               end
@@ -42222,10 +41679,12 @@ end
               local mm = modulators[m]
               for t = 1, #mm.targets do
                 if mm.targets[t].targettype == 1 then
-                  strips[mm.targets[t].strip][mm.targets[t].page].controls[mm.targets[t].ctl].mod = nil
-                  if mm.targets[t].strip == tracks[track_select].strip and 
-                     mm.targets[t].page == page then
-                    SetCtlDirty(mm.targets[t].ctl)
+                  if strips[mm.targets[t].strip] and strips[mm.targets[t].strip][mm.targets[t].page].controls[mm.targets[t].ctl] then
+                    strips[mm.targets[t].strip][mm.targets[t].page].controls[mm.targets[t].ctl].mod = nil
+                    if mm.targets[t].strip == tracks[track_select].strip and 
+                       mm.targets[t].page == page then
+                      SetCtlDirty(mm.targets[t].ctl)
+                    end
                   end
                 end
               end
@@ -42235,10 +41694,12 @@ end
               local mm = modulators[m]
               for t = 1, #mm.targets do
                 if mm.targets[t].targettype == 1 then
-                  strips[mm.targets[t].strip][mm.targets[t].page].controls[mm.targets[t].ctl].mod = m
-                  if mm.targets[t].strip == tracks[track_select].strip and 
-                     mm.targets[t].page == page then
-                    SetCtlDirty(mm.targets[t].ctl)
+                  if strips[mm.targets[t].strip] and strips[mm.targets[t].strip][mm.targets[t].page].controls[mm.targets[t].ctl] then
+                    strips[mm.targets[t].strip][mm.targets[t].page].controls[mm.targets[t].ctl].mod = m
+                    if mm.targets[t].strip == tracks[track_select].strip and 
+                       mm.targets[t].page == page then
+                      SetCtlDirty(mm.targets[t].ctl)
+                    end
                   end
                 end
               end
@@ -43309,9 +42770,6 @@ end
   function InsertDefaultStrip()
     if settings_insertdefaultoneverytrack then
       if tracks[track_select] and (strips[tracks[track_select].strip] == nil or (strips[tracks[track_select].strip][page].controls and #strips[tracks[track_select].strip][page].controls == 0)) then
-        --[[DBG('page'..page)
-        DBG(track_select)
-        DBG(LBX_GTRACK)]]
         if settings_insertdefaultoneverypage or page == 1 then
           local ls = false
           if track_select == -1 then
@@ -43880,12 +43338,6 @@ end
       
       local chunk = GetTrackChunk(str, settings_usetrackchunkfix)
       local fnd, fxc, s, e = testchunkfxextract(chunk,1)
-      --[[DBG('')
-      DBG('TRACK '..i+1)
-      DBG('')
-      DBG(fnd)
-      DBG('')
-      DBG(fxc)]]
       
     end
   
@@ -43907,56 +43359,10 @@ end
   
   end
 
-  --returns new track chunk, new fxguid, old fxguid
-  --[[function InsertFXChunkAtEndOfChain(trn, trchunk, insfxchunk)
-
-    guids = {}
-    local ofxid, nfxid = nil, nil
-    local rchunk = nil
-    
-    if insfxchunk then
-      insfxchunk = string.gsub(insfxchunk,
-                              'FXID ({%x%x%x%x%x%x%x%x%-%x%x%x%x%-%x%x%x%x%-%x%x%x%x%-%x%x%x%x%x%x%x%x%x%x%x%x})',
-                              function(d) if guids[d] == nil then guids[d]=reaper.genGuid('') end return 'FXID '..guids[d] end)
-      --insfxchunk = string.gsub(insfxchunk,'PRESETNAME.-\n','')
-    end
-    --trchunk = string.gsub(trchunk,'PRESETNAME.-\n','')
-    
-    --should be just one
-    for i, v in pairs(guids) do 
-      ofxid = i
-      nfxid = v 
-    end
-    s, e = string.find(trchunk,'(BYPASS.+WAK %d)',s)
-    if s and e then 
-      rchunk = string.sub(trchunk,0,e+1)..insfxchunk..string.sub(trchunk,e+1)
-    else
-      s, e = string.find(trchunk,'(<FXCHAIN.-DOCKED %d)',s)
-      if s and e then
-        rchunk = string.sub(trchunk,0,e+1)..insfxchunk..string.sub(trchunk,e+1)      
-      else
-        if trn == -1 then
-          local ms, me = string.find(trchunk,'.+>')
-          if me then  
-            --master track -- insert at very end
-              rchunk = string.sub(trchunk,0,me-1).. '<FXCHAIN\nSHOW 0\nLASTSEL 0\nDOCKED 0\n'.. insfxchunk ..'\n>\n'..string.sub(trchunk,me)  
-          end
-        else
-          --normal track -- insert after MAINSEND
-          s, e = string.find(trchunk,'(MAINSEND %d %d)',s)
-          if e then
-            rchunk = string.sub(trchunk,0,e+1)..'<FXCHAIN\nSHOW 0\nLASTSEL 0\nDOCKED 0\n'.. insfxchunk ..'\n>\n'..string.sub(trchunk,e+2)
-          end
-        end
-      end
-    end
-    return rchunk, nfxid, ofxid
-    
-  end]]
+  
   
   function MoveFXChunk(srcfxnum, dstfxnum)
   
-    --DBG(srcfxnum..'  '..dstfxnum)
     local writechunk = false
     local trn = tracks[track_select].tracknum
     local tr = GetTrack(trn)
@@ -43982,8 +43388,7 @@ end
     
       if writechunk == true then
         SetTrackChunk(tr,nchunk, false)
-        --DBG(nchunk)
-        --DBG(string.len(nchunk))
+        
       end
     end
   end
@@ -44133,31 +43538,8 @@ end
     local chunk = GetTrackChunk(str, settings_usetrackchunkfix)
 
     --local chlines = {}
-    local s,e=0,0
-    --[[while e<string.len(chunk) or chline == nil do
-      chline = string.find(chunk,s,)
-    end]]
-    --ts = reaper.time_precise()
-    --[[chlines = split(chunk, "\n")
-    local c = 0
-    for i = 1, #chlines do
-      if string.sub(chlines[i],0,5) == 'BYPASS' then
-        if c == fxn then
-          byp = string.gsub(byp,'(%d) (%d) (%d)', function(d,e,f) if e == '0' then return d..' 1 '..f else return d..' 0 '..f end end)
-          chlines[i] = byp
-          break
-        end 
-        c=c+1        
-      end
-    end
-    local nchunk = ''
-    for i = 1, #chlines do
+    --local s,e=0,0
     
-      nchunk = nchunk .. #chlines[i]
-    
-    end
-    DBG(reaper.time_precise()-ts..'  '..#chlines)]]
-
     local s,e, fnd = 0,0,nil
     for i = 0,fxn do
       s, e = string.find(chunk,'BYPASS %d %d %d',s)
@@ -44304,7 +43686,7 @@ end
 
     
   function SaveProj(tmp, bak, noclean)
-    --DBG(reaper.GetProjectPath(''))
+    
     if #strips > 0 then
       GUI_DrawMsgX(obj, gui, 'Saving Data...')
       if tmp == nil then
@@ -44313,7 +43695,7 @@ end
           reaper.Main_SaveProject(0,false)
           pn = GetProjectName()
         end
-        --DBG(pn..'  '..lastprojname)
+        
         if pn ~= '' then
           if lastprojname ~= pn then
             projnamechange = true
@@ -44464,7 +43846,7 @@ end
     
       local retval ,moutname = reaper.GetMIDIOutputName(i,'')
       if retval == true then
-        --DBG(tostring(retval)..'  '..moutname)
+        
         midiouts[mcnt] = {outnum = i,
                            foutnum = i+16,
                            mchan = 1,
@@ -44535,7 +43917,7 @@ end
   
         if miditab.osc then
           local msg = string.gsub(miditab.osc, '%[val%]', vald)
-          --DBG(msg)    
+              
           reaper.OscLocalMessageToHost(msg)
         end
         
@@ -44550,7 +43932,7 @@ end
         
         if miditab.osc then
           local msg = string.gsub(miditab.osc, '%[val%]', vald)
-          --DBG(msg)    
+              
           reaper.OscLocalMessageToHost(msg)
         end
         
