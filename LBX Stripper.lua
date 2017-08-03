@@ -14767,10 +14767,63 @@ end
     StoreSnapshotControlIdxs(tracks[track_select].strip,page)
     CheckFaders()
     modulators = CheckMods(modulators)
+    Controls_ModCheck()
     Switcher_Check()
     SetCtlBitmapRedraw()
     update_gfx = true
     update_bg = true
+    
+  end
+
+  function Controls_ModCheck()
+  
+    if strips and #strips > 0 then
+      for s = 1, #strips do
+        for p = 1, 4 do
+          if #strips[s][p].controls > 0 then
+      
+            for c = 1, #strips[s][p].controls do
+              local ctl = strips[s][p].controls[c]
+              if ctl.mod then
+            
+                if modulators[ctl.mod] then
+                
+                  local fnd
+                  local mod = modulators[ctl.mod]
+                  if #mod.targets > 0 then      
+                    for t = 1, #mod.targets do
+                
+                      local ms = mod.targets[t].strip
+                      local mp = mod.targets[t].page
+                      local mc = mod.targets[t].ctl
+                      
+                      if ms == s and mp == p and mc == c then
+                      
+                        fnd = true
+                        break
+                      end
+                
+                    end
+                  else
+                    --no targets
+                  end
+                  
+                  if not fnd then
+                    ctl.mod = nil
+                  end
+                else
+                  --mod not found
+                  ctl.mod = nil
+                end
+          
+              end
+            
+            end
+      
+          end
+        end
+      end
+    end
     
   end
 
