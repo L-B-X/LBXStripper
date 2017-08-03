@@ -14766,8 +14766,8 @@ end
     Faders_Check(tracks[track_select].strip,page)
     StoreSnapshotControlIdxs(tracks[track_select].strip,page)
     CheckFaders()
-    modulators = CheckMods(modulators)
-    Controls_ModCheck()
+    modulators = CheckMods(modulators, true)
+    --Controls_ModCheck()
     Switcher_Check()
     SetCtlBitmapRedraw()
     update_gfx = true
@@ -25222,22 +25222,28 @@ end
           if os ~= m.steps then
             local d = {}
             local cnt = #m.data
-            for i = 1, cnt do
-              d[i*2-1] = m.data[i]
-              if m.interpolate == true then
-                if m.data[i+1] then
-                  d[i*2] = m.data[i] + ((m.data[i+1] - m.data[i])/2)
+            if not mouse.ctrl then
+              for i = 1, cnt do
+                d[i*2-1] = m.data[i]
+                if m.interpolate == true then
+                  if m.data[i+1] then
+                    d[i*2] = m.data[i] + ((m.data[i+1] - m.data[i])/2)
+                  else
+                    d[i*2] = m.data[i] + ((m.data[1] - m.data[i])/2)            
+                  end
                 else
-                  d[i*2] = m.data[i] + ((m.data[1] - m.data[i])/2)            
+                  d[i*2] = m.data[i]              
                 end
-              else
-                d[i*2] = m.data[i]              
               end
-            end
-            if m.steps > cnt*2 then
-              local v = m.data[cnt*2]
-              for i = cnt*2+1, m.steps do
-                d[i] = v 
+              if m.steps > cnt*2 then
+                local v = m.data[cnt*2]
+                for i = cnt*2+1, m.steps do
+                  d[i] = v 
+                end
+              end
+            else
+              for i = 1, m.steps do
+                d[i] = m.data[i] or 0.5
               end
             end
             m.data = d
@@ -25258,8 +25264,14 @@ end
           m.steps = (m.div * divmult_table[m.stepsmult])
           if os ~= m.steps then
             local d = {}
-            for i = 1, m.steps do
-              d[i] = m.data[i*2-1] or 0.5
+            if not mouse.ctrl then
+              for i = 1, m.steps do
+                d[i] = m.data[i*2-1] or 0.5
+              end
+            else
+              for i = 1, m.steps do
+                d[i] = m.data[i] or 0.5
+              end            
             end
             m.data = d          
           end
@@ -38573,9 +38585,24 @@ end
   
   end
 
-  function CheckMods(mods)
+  function CheckMods(mods, removefirst)
   
     if mods == nil then return end
+    
+    if removefirst == true then
+      if strips and #strips > 0 then
+        for s = 1, #strips do
+          for p = 1, 4 do
+            if #strips[s][p].controls > 0 then
+        
+              for c = 1, #strips[s][p].controls do
+                strips[s][p].controls[c].mod = nil
+              end
+            end
+          end
+        end
+      end
+    end
     
     for m = 1, #mods do
       mods[m] = CheckMod(mods[m],m)
@@ -38585,6 +38612,74 @@ end
   end
 
   function CheckMod(mod,m)
+      if mod == nil then return end
+      
+        if mod.targets and #mod.targets > 0 then
+          
+          local tcnt = #mod.targets
+          local tchange = false
+          for t = 1, tcnt do
+            fnd = false
+            
+            local s = mod.targets[t].strip
+            local p = mod.targets[t].page
+            local c = mod.targets[t].ctl
+            local cid = mod.targets[t].c_id
+            if strips[s] and strips[s][p].controls[c] and cid == strips[s][p].controls[c].c_id then
+              --all good
+              strips[s][p].controls[c].mod = m
+              fnd = true
+            else
+              if strips[s] then
+                for cc = 1, #strips[s][p].controls do
+                  if strips[s][p].controls[cc].c_id == cid then
+                    strips[s][p].controls[cc].mod = m
+                    mod.targets[t].ctl = cc
+                    fnd = true
+                    break
+                  end
+                end
+                if fnd == false then
+                  for ss = 1, #strips do
+                    for pp = 1, 4 do
+                      for cc = 1, #strips[ss][pp].controls do
+                        if strips[ss][pp].controls[cc].c_id == cid then
+                          strips[ss][pp].controls[cc].mod = m
+                          mod.targets[t].strip = ss
+                          mod.targets[t].page = pp
+                          mod.targets[t].ctl = cc
+                          fnd = true
+                          break
+                        end      
+                      end
+                      if fnd == true then
+                        break
+                      end
+                    end
+                    if fnd == true then
+                      break
+                    end
+                  end
+                end
+              end
+            end
+            if fnd == false then
+              --not found
+              tchange = true
+              mod.targets[t] = nil
+            end
+            
+          end
+          
+          if tchange == true then
+            mod.targets = Table_RemoveNils(mod.targets, tcnt)
+          end
+          
+        end
+      return mod
+    end
+    
+ --[[ function CheckMod(mod,m)
     if mod == nil then return end
     
       if mod.targets and #mod.targets > 0 then
@@ -38651,7 +38746,7 @@ end
       end
     return mod
   end
-
+]]
   function LoadMods(data)
 
     local key = 'modcnt'
