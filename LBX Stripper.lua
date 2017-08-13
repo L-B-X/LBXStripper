@@ -25,8 +25,8 @@
   scalemode_preset_table = {'','NORMAL','REAPER VOL'}
   scalemode_table = {1/8,1/7,1/6,1/5,1/4,1/3,1/2,1,2,3,4,5,6,7,8}
   scalemode_dtable = {'1/8','1/7','1/6','1/5','1/4','1/3','1/2','1','2','3','4','5','6','7','8'}
-  macroscale_table = {'Linear','Slow','Fast','Smooth','Slow 2 (Cubic)','Fast 2 (Cubic)', 'Smooth 2 (Cubic)', 'Slow 3', 'Fast 3', 'Smooth 3'}
-  macroscale_sm_table = {'Linear','Slow','Fast','Smooth','Slow2','Fast2', 'Smooth2', 'Slow3', 'Fast3', 'Smooth3'}
+  macroscale_table = {'Linear','Slow','Fast','Smooth','Slow 2 (Cubic)','Fast 2 (Cubic)', 'Smooth 2 (Cubic)', 'Slow 3', 'Fast 3', 'Smooth 3', 'Instant'}
+  macroscale_sm_table = {'Linear','Slow','Fast','Smooth','Slow2','Fast2', 'Smooth2', 'Slow3', 'Fast3', 'Smooth3','Instant'}
   eqcontrol_colours = {'160 0 0','0 160 0','0 0 160','160 160 0','0 160 160','160 0 160','255 165 0','160 160 160','196 80 80','80 196 80','80 80 196','196 196 80','196 80 196'
                        ,'255 64 64','64 0 255','80 160 0','102 0 51','255 255 255','255 255 255','255 255 255'}
   
@@ -1563,7 +1563,7 @@
                           h = butt_h}                            
      
       --settings
-      local setw, seth = 600, 540                            
+      local setw, seth = 600, 570                            
       obj.sections[70] = {x = gfx1.main_w/2-setw/2,
                           y = gfx1.main_h/2-seth/2,
                           w = setw,
@@ -1735,6 +1735,10 @@
                           h = bh}
       obj.sections[717] = {x = obj.sections[70].x+obj.sections[70].w/2+xofft,
                                 y = obj.sections[70].y+yoff + yoffm*20,
+                                w = bw,
+                                h = bh}
+      obj.sections[718] = {x = obj.sections[70].x+obj.sections[70].w/2+xofft,
+                                y = obj.sections[70].y+yoff + yoffm*21,
                                 w = bw,
                                 h = bh}
             
@@ -3936,7 +3940,7 @@
                                                 show_paramval = false,
                                                 ctlname_override = '',
                                                 textcol = textcol_select,
-                                                textoff = 8,
+                                                textoff = 0,
                                                 textoffval = -6.0,
                                                 textoffx = textoff_selectx,
                                                 textoffvalx = textoffval_selectx,
@@ -7607,9 +7611,12 @@ end
                       end
                     end
                   else
+                  --DBG(ctl.cycledata.pos)
+                    local p = tonumber(ctl.cycledata.pos)
                     if ctl.cycledata and 
-                       ctl.cycledata[nz(ctl.cycledata.pos,0)] then
-                      DVOV = nz(ctl.cycledata[nz(ctl.cycledata.pos,0)].dispval,'')
+                       ctl.cycledata[nz(p,0)] then
+                      DVOV = nz(ctl.cycledata[nz(p,0)].dispval,'')
+                      
                     end                  
                   end
                 elseif ctltype == 6 then
@@ -7805,13 +7812,13 @@ end
   
                 if ctltype == 4 and cycle_editmode == false then
                   if DVOV and DVOV ~= '' then
-                    if ctl.cycledata.posdirty == false then 
+                    --if ctl.cycledata.posdirty == false then 
                       Disp_ParamV = DVOV
                       
                       if maxdp > -1 then
                         Disp_ParamV = roundX(Disp_ParamV, maxdp)                  
                       end
-                    end
+                    --end
                   --else
                   end
                 end
@@ -8489,6 +8496,12 @@ end
           loop = true
         elseif loop == 3 then
           txt = '<>'
+          loop = true
+        elseif loop == 4 then
+          txt = '>> N'
+          loop = true
+        elseif loop == 5 then
+          txt = '>> R'
           loop = true
         else
           loop = false
@@ -11445,7 +11458,7 @@ end
     morph_puw = {x = x, y = y, w = w, h = 0}
     local xywh = {x = x, y = y, w = w, h = h}
     local xywhsc = {x = x, y = y, w = 40, h = h}
-    local slidetime = 0.15
+    local slidetime = 0.2
     for d = 1, #morph_data do
     
       if morph_data[d].active then
@@ -11455,9 +11468,14 @@ end
         local page = morph_data[d].page
         local sstype = morph_data[d].sstype
         local ss = morph_data[d].targetss
+        local p
       
-        local p = macScale(morph_data[d].morph_scale,morph_data[d].p)
-        local xoff = (1-(math.min(reaper.time_precise() - morph_data[d].popstart,slidetime)/slidetime)) * w
+        if morph_data[d].morph_scale ~= 11 then
+          p = macScale(morph_data[d].morph_scale,morph_data[d].p)
+        else
+          p = morph_data[d].p        
+        end
+        local xoff = macScale(4,(1-(math.min(reaper.time_precise() - morph_data[d].popstart,slidetime)/slidetime))) * (w+6)
       
         gfx.a = 1
         if xoff > 0 then
@@ -13242,6 +13260,7 @@ end
     GUI_DrawTick(gui, 'Run modulators when stopped', obj.sections[715], gui.color.white, settings_alwaysrunmods)
     GUI_DrawButton(gui, modulator_cnt, obj.sections[716], gui.color.white, gui.color.black, false, 'Modulators')
     GUI_DrawTick(gui, 'Activate snapshot morphing pop-ups', obj.sections[717], gui.color.white, settings_showmorphpop)
+    GUI_DrawTick(gui, 'Simple select grouped controls', obj.sections[718], gui.color.white, settings_groupsel)
 
   end
   
@@ -15176,6 +15195,56 @@ end
         
       end    
     end    
+  end
+
+  function DeleteSnaps(mode)
+  
+    local msg
+    if mode == 1 then
+      msg = 'Delete all snapshots (except selected)?'
+    else
+      msg = 'Delete all snapshots?'    
+    end
+    if reaper.MB(msg,'Delete Snapshots',4) == 6 then
+      if sstype_select == 1 then
+        if snapshots and snapshots[tracks[track_select].strip] and #snapshots[tracks[track_select].strip][page][sstype_select] > 0 then
+        
+          local tbl = {}
+          if mode == 1 and ss_select and snapshots[tracks[track_select].strip][page][sstype_select][ss_select] then
+            table.insert(tbl, snapshots[tracks[track_select].strip][page][sstype_select][ss_select])
+          end
+          tbl.morph_time = snapshots[tracks[track_select].strip][page][sstype_select].morph_time
+          tbl.morph_sync = snapshots[tracks[track_select].strip][page][sstype_select].morph_sync
+          tbl.morph_syncv = snapshots[tracks[track_select].strip][page][sstype_select].morph_syncv
+          tbl.morph_scale = snapshots[tracks[track_select].strip][page][sstype_select].morph_scale
+          tbl.capturefaders = snapshots[tracks[track_select].strip][page][sstype_select].capturefaders
+          tbl.capturemods = snapshots[tracks[track_select].strip][page][sstype_select].capturemods
+          
+          snapshots[tracks[track_select].strip][page][sstype_select] = tbl
+          ss_select = nil
+          
+        end
+      elseif sstype_select > 1 then
+        if snapshots and snapshots[tracks[track_select].strip] and #snapshots[tracks[track_select].strip][page][sstype_select].snapshot > 0 then
+        
+          local tbl = {}
+          local cnt = #snapshots[tracks[track_select].strip][page][sstype_select].snapshot
+          if mode == 1 and ss_select and snapshots[tracks[track_select].strip][page][sstype_select].snapshot[ss_select] then
+            table.insert(tbl, snapshots[tracks[track_select].strip][page][sstype_select].snapshot[ss_select])
+          end
+          snapshots[tracks[track_select].strip][page][sstype_select].snapshot = tbl
+  
+          for ss = 1, cnt do
+            if ss ~= ss_select then
+              DeleteXXY(ss)
+            end
+          end
+          ss_select = nil
+          
+        end    
+      end    
+    end
+    
   end
   
   function DeleteXXY(ss)
@@ -23898,6 +23967,61 @@ end
             morph_data[i].end_time = morph_data[i].start_time + morph_data[i].morph_time
             morph_data[i].dir = 1-(morph_data[i].dir or 0)
             update_snaps = true             
+          elseif morph_data[i].morph_loop == 4 then
+            if morph_data[i].dir == 1 then
+              morph_data[i].dir = 0
+            else
+              morph_data[i].data = {}
+              morph_data[i].targetss = morph_data[i].targetss + 1
+              morph_data[i].p = 0
+              if morph_data[i].sstype == 1 then
+                if morph_data[i].targetss > #snapshots[morph_data[i].strip][morph_data[i].page][morph_data[i].sstype] then
+                  morph_data[i].targetss = 1
+                end
+              else
+                if morph_data[i].targetss > #snapshots[morph_data[i].strip][morph_data[i].page][morph_data[i].sstype].snapshot then
+                  morph_data[i].targetss = 1
+                end            
+              end
+            end
+            snapshots[morph_data[i].strip][morph_data[i].page][morph_data[i].sstype].selected = morph_data[i].targetss
+            if morph_data[i].strip == tracks[track_select].strip and 
+               morph_data[i].page == page and
+               morph_data[i].sstype == sstype_select then
+              ss_select = morph_data[i].targetss
+            end
+            morph_data[i].start_time = morph_data[i].end_time
+            morph_data[i].end_time = morph_data[i].start_time + morph_data[i].morph_time
+            update_snaps = true           
+              
+          elseif morph_data[i].morph_loop == 5 then
+            if morph_data[i].dir == 1 then
+              morph_data[i].dir = 0
+            else
+              morph_data[i].data = {}
+              local sscnt
+              if morph_data[i].sstype == 1 then
+                sscnt = #snapshots[morph_data[i].strip][morph_data[i].page][morph_data[i].sstype]
+              else
+                sscnt = #snapshots[morph_data[i].strip][morph_data[i].page][morph_data[i].sstype].snapshot
+              end
+              local oss = morph_data[i].targetss
+              morph_data[i].p = 0
+              
+              morph_data[i].targetss = math.min(math.floor(math.random() * (sscnt))+1,sscnt)
+              while oss == morph_data[i].targetss do
+                morph_data[i].targetss = math.min(math.floor(math.random() * (sscnt))+1,sscnt)
+              end
+            end
+            snapshots[morph_data[i].strip][morph_data[i].page][morph_data[i].sstype].selected = morph_data[i].targetss
+            if morph_data[i].strip == tracks[track_select].strip and 
+               morph_data[i].page == page and
+               morph_data[i].sstype == sstype_select then
+              ss_select = morph_data[i].targetss
+            end
+            morph_data[i].start_time = morph_data[i].end_time
+            morph_data[i].end_time = morph_data[i].start_time + morph_data[i].morph_time
+            update_snaps = true             
           else
             morph_data[i].active = false
             runcnt = runcnt - 1
@@ -24353,7 +24477,14 @@ end
     if res > 0 then
       local m = modulators[mod_select]
       local bars = sync_mult_table[m.syncv]
-      local barsteps = m.steps / bars
+      local barsteps 
+      if mouse.shift then
+        barsteps = m.steps
+      else  
+        barsteps = m.steps / bars
+      end
+      if barsteps > m.steps then barsteps = m.steps end
+      --local barsteps = m.steps
       if res == 1 then
 
         for i = 1, m.steps do
@@ -25802,8 +25933,17 @@ end
                                                           obj.sections[10].y,obj.sections[10].y+obj.sections[10].h-obj.sections[180].h)
                           else
                             local x,y = TranslateGalleryCtlPos(i,ci)
-                            obj.sections[180].x = x + math.floor((ctls[i].w - obj.sections[180].w)/2)
-                            obj.sections[180].y = y + ctls[i].ctl_info.cellh
+                            if x and y then
+                              obj.sections[180].x = x + math.floor((ctls[i].w - obj.sections[180].w)/2)
+                              obj.sections[180].y = y + ctls[i].ctl_info.cellh
+                            else
+                              x = mouse.mx
+                              y = mouse.my
+                              obj.sections[180].x = x + math.floor((ctls[i].w - obj.sections[180].w)/2)
+                              obj.sections[180].y = y + ctls[i].ctl_info.cellh
+                              
+                              --DBG('xy error')
+                            end
                           end
                         else
                           show_fsnapshots = false
@@ -28530,15 +28670,17 @@ end
                       end
                     end
 
-                  elseif mouse.shift or (mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.2) then
+                  elseif settings_groupsel == true or (settings_groupsel == false and mouse.shift or (mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.2)) then
                     local switcherid = strips[tracks[track_select].strip][page].controls[i].switcherid
                     if switcherid then
                       SelectSwitchElements(switcherid,i)
                     else
                       local grpid = strips[tracks[track_select].strip][page].controls[i].grpid
                       if grpid ~= nil then
-                        ctl_select = nil
-                        gfx3_select = nil
+                        --if not mouse.shift then
+                          ctl_select = nil
+                          gfx3_select = nil
+                        --end
                         SelectGroupElements(grpid)
                       else
                         if ctl_select == nil then
@@ -31931,7 +32073,7 @@ end
 
         if snapshots[tracks[track_select].strip] and snapshots[tracks[track_select].strip][page][sstype_select] then
           local nl = (snapshots[tracks[track_select].strip][page][sstype_select].morph_loop or 1) + 1
-          if nl > 3 then
+          if nl > 5 then
             nl = 2
           end 
           snapshots[tracks[track_select].strip][page][sstype_select].morph_loop = nl
@@ -32183,7 +32325,7 @@ end
           if settings_followsnapshot then
             st = '!'
           end
-          mstr = 'Rename||Delete||Capture (Overwrite)||'..st..'Follow Selected'
+          mstr = 'Rename||Delete||Delete All|Delete All Except Selected||Capture (Overwrite)||'..st..'Follow Selected'
           gfx.x, gfx.y = snapmx, snapmy
           res = OpenMenu(mstr)
           if res ~= 0 then
@@ -32194,8 +32336,14 @@ end
               DeleteSS()
               update_snaps = true
             elseif res == 3 then
-              Snapshots_CREATE(tracks[track_select].strip, page, sstype_select, ss_select)
+              DeleteSnaps()
+              update_snaps = true
             elseif res == 4 then
+              DeleteSnaps(1)
+              update_snaps = true
+            elseif res == 5 then
+              Snapshots_CREATE(tracks[track_select].strip, page, sstype_select, ss_select)
+            elseif res == 6 then
               settings_followsnapshot = not settings_followsnapshot
             end
           end
@@ -34522,6 +34670,10 @@ end
         
       elseif mouse.context == nil and MOUSE_click(obj.sections[717]) then
         settings_showmorphpop = not settings_showmorphpop
+        update_gfx = true
+
+      elseif mouse.context == nil and MOUSE_click(obj.sections[718]) then
+        settings_groupsel = not settings_groupsel
         update_gfx = true
         
       elseif mouse.context == nil and MOUSE_click(obj.sections[716]) then
@@ -39714,6 +39866,7 @@ end
     settings_followsnapshot = tobool(nz(GES('settings_followsnapshot',true),settings_followsnapshot))
     settings_alwaysrunmods = tobool(nz(GES('settings_alwaysrunmods',true),settings_alwaysrunmods))
     settings_showmorphpop = tobool(nz(GES('settings_showmorphpop',true),settings_showmorphpop))
+    settings_groupsel = tobool(nz(GES('settings_groupsel',true),settings_groupsel))
 
     modulator_cnt = tonumber(nz(GES('modulator_cnt',true),modulator_cnt))
     
@@ -39848,6 +40001,7 @@ end
     reaper.SetExtState(SCRIPT,'settings_alwaysrunmods',tostring(settings_alwaysrunmods), true)    
     reaper.SetExtState(SCRIPT,'settings_followsnapshot',tostring(settings_followsnapshot), true)    
     reaper.SetExtState(SCRIPT,'settings_showmorphpop',tostring(settings_showmorphpop), true)    
+    reaper.SetExtState(SCRIPT,'settings_groupsel',tostring(settings_groupsel), true)    
 
     reaper.SetExtState(SCRIPT,'modulator_cnt',tostring(modulator_cnt), true)    
     
@@ -43357,6 +43511,8 @@ end
       return outQuart(v)
     elseif m == 10 then
       return inOutQuart(v)
+    elseif m == 11 then
+      return 1
     else
       return v
     end
@@ -44341,6 +44497,7 @@ end
   settings_alwaysrunmods = false
   settings_usetrackchunkfix = true
   settings_showmorphpop = false
+  settings_groupsel = true
   
   autosnap_rowheight = 410
   autosnap_itemgap = 20
