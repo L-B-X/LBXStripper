@@ -26141,6 +26141,7 @@ end
                     update_gfx = true
                   end
                   noscroll = true
+                  SetCtlDirty(i)
                   update_ctls = true
                   
                 elseif ctltype == 4 then
@@ -26203,6 +26204,7 @@ end
                     mod_select = ctls[i].mod
                     update_gfx = true
                   end
+                  SetCtlDirty(i)
                   update_ctls = true        
                               
                 elseif ctltype == 5 then
@@ -26512,6 +26514,7 @@ end
                   mouse.context = contexts.hold
                   ctls[i].val = 1
                   ctls[i].dirty = true
+                  SetCtlDirty(i)
                   update_ctls = true
                   A_SetParam(strip, page, i, ctls[i])
                 end
@@ -37653,6 +37656,7 @@ end
       local ctl = strips[strip][page].controls[i]
       if ctl.fxnum == fxnum then
         ctl.dirty = true
+        SetCtlDirty(i)
       end
     end
     
