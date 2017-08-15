@@ -162,7 +162,12 @@
               modmax_slider = 115,
               modwin_resize = 116, 
               modwin_move = 117,
-              morph_puw_slider = 118, 
+              morph_puw_slider = 118,
+              move_eb = 119, 
+              move_ctlopts = 120,
+              move_gaugeed = 121,
+              move_gfxopts = 122,
+              move_paramlrn = 123,
               dummy = 999
               }
   
@@ -1261,7 +1266,9 @@
                           y = math.max(gfx1.main_h/2 - gah/2, obj.sections[10].y),
                           w = gaw,
                           h = gah}
-      obj.sections[806] = {x = obj.sections[800].x + 60,
+      obj = PosGaugeEdCtls(obj)
+      
+      --[[obj.sections[806] = {x = obj.sections[800].x + 60,
                            y = obj.sections[800].y + butt_h,
                            w = gaw-120,
                            h = gofs-100}
@@ -1400,7 +1407,7 @@
       obj.sections[831] = {x = obj.sections[800].x + obj.sections[800].w/2 + 35,
                            y = obj.sections[800].y + gofs + (butt_h/2+13)*3 -26,
                            w = gsw+20,
-                           h = butt_h}
+                           h = butt_h}]]
       
       local gaw,gah = 400, math.max(200, obj.sections[10].h-40)
       obj.sections[900] = {x = math.max(gfx1.main_w/2 -gaw/2,obj.sections[43].w),
@@ -1431,7 +1438,9 @@
       obj.sections[49] = {x = gfx1.main_w - cow - 20,
                           y = gfx1.main_h - 300 -20,
                           w = cow,
-                          h = 300}                           
+                          h = 300}
+      obj = PosGfxOptCtls(obj)
+                                 
       --scale
       obj.sections[50] = {x = 50,
                           y = 150+butt_h+8,
@@ -1750,7 +1759,9 @@
                            w = cw,
                            h = ch}
 
-      local kw,_ = gfx.getimgdim(0)
+      obj = PosCycleCtls(obj)
+      
+      --[[local kw,_ = gfx.getimgdim(0)
       local kh = defctls[def_knob].cellh
       obj.sections[101] = {x = obj.sections[100].x+obj.sections[100].w/2-kw/2,
                            y = obj.sections[100].y+butt_h/2,
@@ -1795,13 +1806,16 @@
       obj.sections[108] = {x = obj.sections[107].x,
                            y = obj.sections[109].y+obj.sections[107].h+4,
                            w = bh,
-                           h = bh}
+                           h = bh}]]
+      
       
       obj.sections[115] = {x = obj.sections[43].x+obj.sections[43].w+20,
                            y = obj.sections[43].y+20,
                            w = 160,
                            h = 200}
-      obj.sections[116] = {x = obj.sections[115].x,
+      obj = PosParamLrnCtls(obj)
+      
+      --[[obj.sections[116] = {x = obj.sections[115].x,
                            y = obj.sections[115].y+butt_h*4,
                            w = obj.sections[115].w,
                            h = obj.sections[115].h-(obj.sections[115].y+butt_h*4)}
@@ -1819,7 +1833,7 @@
       obj.sections[119] = {x = obj.sections[115].x,
                            y = obj.sections[115].y+butt_h*3,
                            w = obj.sections[115].w,
-                           h = butt_h}
+                           h = butt_h}]]
       
       --CTL OPTIONS PG 2
       obj.sections[125] = {x = 60,
@@ -1905,7 +1919,7 @@
                           w = butt_h/2+4,
                           h = butt_h/2+4}
       
-      --LBL OPTIONS 
+      --[[LBL OPTIONS 
       --EDIT
       obj.sections[140] = {x = obj.sections[49].x+20,
                           y = obj.sections[49].y+butt_h+10 + (butt_h/2+4 + 10) * 0,
@@ -1995,7 +2009,7 @@
       obj.sections[918] = {x = obj.sections[49].x+75,
                           y = obj.sections[49].y+butt_h+10 + (butt_h/2+4 + 10) * 10,
                           w = obj.sections[49].w-125,
-                          h = butt_h/2+8}   
+                          h = butt_h/2+8} ]]  
                                            
       --SNAPSHOTS
       local ssh = snaph-200
@@ -2700,6 +2714,331 @@
     return obj
   end
   
+  function PosParamLrnCtls(obj)
+  
+    obj.sections[116] = {x = obj.sections[115].x,
+                         y = obj.sections[115].y+butt_h*4,
+                         w = obj.sections[115].w,
+                         h = obj.sections[115].h-(obj.sections[115].y+butt_h*4)}
+    --learn track
+    obj.sections[117] = {x = obj.sections[115].x,
+                         y = obj.sections[115].y+butt_h,
+                         w = obj.sections[115].w,
+                         h = butt_h}
+    --learn fx
+    obj.sections[118] = {x = obj.sections[115].x,
+                         y = obj.sections[115].y+butt_h*2,
+                         w = obj.sections[115].w,
+                         h = butt_h}
+    --learn param
+    obj.sections[119] = {x = obj.sections[115].x,
+                         y = obj.sections[115].y+butt_h*3,
+                         w = obj.sections[115].w,
+                         h = butt_h}
+                         
+    return obj
+    
+  end
+  
+  function PosGfxOptCtls(obj)
+  
+    --LBL OPTIONS 
+    --EDIT
+    obj.sections[140] = {x = obj.sections[49].x+20,
+                        y = obj.sections[49].y+butt_h+10 + (butt_h/2+4 + 10) * 0,
+                        w = obj.sections[49].w-40,
+                        h = butt_h/2+8}                       
+
+    local yo = 5
+    obj.sections[141] = {x = obj.sections[49].x+50,
+                        y = obj.sections[49].y+butt_h+10 + (butt_h/2+4 + 10) * 2 + yo,
+                        w = obj.sections[49].w-60,
+                        h = butt_h/2+4}                           
+
+    obj.sections[142] = {x = obj.sections[49].x+obj.sections[49].w-40-butt_h/2+4,
+                        y = obj.sections[49].y+butt_h+10 + (butt_h/2+4 + 10) * 3 + yo,
+                        w = butt_h/2+4,
+                        h = butt_h/2+4}                           
+    obj.sections[143] = {x = obj.sections[49].x+obj.sections[49].w-40-butt_h/2+4,
+                        y = obj.sections[49].y+butt_h+10 + (butt_h/2+4 + 10) * 4 + yo,
+                        w = butt_h/2+4,
+                        h = butt_h/2+4}                           
+    obj.sections[144] = {x = obj.sections[49].x+obj.sections[49].w-40-butt_h/2+4,
+                        y = obj.sections[49].y+butt_h+10 + (butt_h/2+4 + 10) * 5 + yo,
+                        w = butt_h/2+4,
+                        h = butt_h/2+4}                           
+    obj.sections[145] = {x = obj.sections[49].x+obj.sections[49].w-40-butt_h/2+4,
+                        y = obj.sections[49].y+butt_h+10 + (butt_h/2+4 + 10) * 6 + yo,
+                        w = butt_h/2+4,
+                        h = butt_h/2+4}                           
+    obj.sections[146] = {x = obj.sections[49].x+obj.sections[49].w-40-butt_h/2+4,
+                        y = obj.sections[49].y+butt_h+10 + (butt_h/2+4 + 10) * 7 + yo,
+                        w = butt_h/2+4,
+                        h = butt_h/2+4}                           
+
+    obj.sections[147] = {x = obj.sections[49].x+20,
+                        y = obj.sections[49].y+butt_h+10 + (butt_h/2+4 + 10) * 1,
+                        w = obj.sections[49].w-40,
+                        h = butt_h/2+8}                       
+
+    obj.sections[148] = {x = obj.sections[49].x+50,
+                        y = obj.sections[49].y+butt_h+10 + (butt_h/2+4 + 10) * 8 + yo,
+                        w = obj.sections[49].w-60,
+                        h = butt_h/2+4}                           
+    obj.sections[149] = {x = obj.sections[49].x+50,
+                        y = obj.sections[49].y+butt_h+10 + (butt_h/2+4 + 10) * 9 + yo,
+                        w = obj.sections[49].w-60,
+                        h = butt_h/2+4}                           
+    obj.sections[150] = {x = obj.sections[49].x+50,
+                        y = obj.sections[49].y+butt_h+10 + (butt_h/2+4 + 10) * 10 + yo,
+                        w = obj.sections[49].w-60,
+                        h = butt_h/2+4}
+
+    obj.sections[910] = {x = obj.sections[49].x+75,
+                        y = obj.sections[49].y+butt_h+10 + (butt_h/2+4 + 10) * 0 + yo,
+                        w = obj.sections[49].w-85,
+                        h = butt_h/2+4}                           
+    obj.sections[911] = {x = obj.sections[49].x+75,
+                        y = obj.sections[49].y+butt_h+10 + (butt_h/2+4 + 10) * 1 + yo,
+                        w = obj.sections[49].w-85,
+                        h = butt_h/2+4}                           
+
+    obj.sections[913] = {x = obj.sections[49].x+75,
+                        y = obj.sections[49].y+butt_h+10 + (butt_h/2+4 + 10) * 3 + yo,
+                        w = obj.sections[49].w-85,
+                        h = butt_h/2+4}                           
+    obj.sections[914] = {x = obj.sections[49].x+75,
+                        y = obj.sections[49].y+butt_h+10 + (butt_h/2+4 + 10) * 4 + yo,
+                        w = obj.sections[49].w-85,
+                        h = butt_h/2+4}                           
+    obj.sections[915] = {x = obj.sections[49].x+75,
+                        y = obj.sections[49].y+butt_h+10 + (butt_h/2+4 + 10) * 5 + yo,
+                        w = obj.sections[49].w-85,
+                        h = butt_h/2+4}                           
+    obj.sections[916] = {x = obj.sections[49].x+75,
+                        y = obj.sections[49].y+butt_h+10 + (butt_h/2+4 + 10) * 6 + yo,
+                        w = obj.sections[49].w-85,
+                        h = butt_h/2+4}                           
+    
+    obj.sections[912] = {x = obj.sections[49].x+20,
+                        y = obj.sections[49].y+butt_h+10 + (butt_h/2+4 + 10) * 7 + 12,
+                        w = obj.sections[49].w-40,
+                        h = butt_h/2+8}                       
+    
+    obj.sections[917] = {x = obj.sections[49].x+75,
+                              y = obj.sections[49].y+butt_h+10 + (butt_h/2+4 + 10) * 9,
+                              w = obj.sections[49].w-85,
+                              h = butt_h/2+8}                           
+    obj.sections[918] = {x = obj.sections[49].x+75,
+                        y = obj.sections[49].y+butt_h+10 + (butt_h/2+4 + 10) * 10,
+                        w = obj.sections[49].w-125,
+                        h = butt_h/2+8}
+                        
+    return obj
+    
+  end
+  
+  function PosGaugeEdCtls(obj)
+  
+    local gaw, gah = 320, 500
+    local gsw = 90
+    local gofs = 270
+    obj.sections[806] = {x = obj.sections[800].x + 60,
+                               y = obj.sections[800].y + butt_h,
+                               w = gaw-120,
+                               h = gofs-100}
+    
+    obj.sections[801] = {x = obj.sections[800].x + 60,
+                         y = obj.sections[800].y + gofs - 8,
+                         w = gsw,
+                         h = butt_h}
+    --radius, len
+    obj.sections[802] = {x = obj.sections[800].x + 60,
+                         y = obj.sections[800].y + gofs + (butt_h/2+13)*4 -20,
+                         w = gsw,
+                         h = butt_h/2+8}
+    obj.sections[803] = {x = obj.sections[800].x + 60,
+                         y = obj.sections[800].y + gofs + (butt_h/2+13)*5 -20,
+                         w = gsw,
+                         h = butt_h/2+8}
+    obj.sections[804] = {x = obj.sections[800].x + 60,
+                         y = obj.sections[800].y + gofs + (butt_h/2+13)*6 -20,
+                         w = gsw,
+                         h = butt_h/2+8}
+    obj.sections[805] = {x = obj.sections[800].x + 60 + gsw/2,
+                         y = obj.sections[800].y + gofs + (butt_h/2+8) +18,
+                         w = gsw/2,
+                         h = butt_h}
+    obj.sections[807] = {x = obj.sections[800].x + 60,
+                         y = obj.sections[800].y + gofs + (butt_h/2+13)*7 -20,
+                         w = gsw,
+                         h = butt_h/2+8}
+    obj.sections[808] = {x = obj.sections[800].x + 60,
+                         y = obj.sections[800].y + gofs + (butt_h/2+13)*8 -20,
+                         w = gsw,
+                         h = butt_h/2+8}
+    --x, y
+    obj.sections[809] = {x = obj.sections[800].x + obj.sections[800].w/2 + 55,
+                         y = obj.sections[800].y + gofs -8 + (butt_h/2+13)*0,
+                         w = gsw,
+                         h = butt_h/2+8}
+    obj.sections[810] = {x = obj.sections[800].x + obj.sections[800].w/2 + 55,
+                         y = obj.sections[800].y + gofs -8 + (butt_h/2+13)*1,
+                         w = gsw,
+                         h = butt_h/2+8}
+
+    obj.sections[811] = {x = obj.sections[800].x + obj.sections[800].w - 40,
+                         y = obj.sections[800].y + 25,
+                         w = 35,
+                         h = butt_h/2+8}
+    obj.sections[812] = {x = obj.sections[800].x + obj.sections[800].w - 40,
+                         y = obj.sections[800].y + 25+ butt_h,
+                         w = 35,
+                         h = butt_h/2+8}
+    obj.sections[813] = {x = obj.sections[800].x + obj.sections[800].w - 40,
+                         y = obj.sections[800].y + 25 + butt_h*2,
+                         w = 35,
+                         h = butt_h/2+8}
+                         
+    obj.sections[814] = {x = obj.sections[800].x + obj.sections[800].w/2 + 55,
+                         y = obj.sections[800].y + gofs + (butt_h/2+13)*4 -20,
+                         w = gsw,
+                         h = butt_h/2+8}
+    obj.sections[815] = {x = obj.sections[800].x + obj.sections[800].w/2 - 60,
+                         y = obj.sections[800].y + gofs -butt_h*2,
+                         w = 120,
+                         h = butt_h}
+    obj.sections[816] = {x = obj.sections[800].x +5,
+                         y = obj.sections[800].y + 25,
+                         w = 35,
+                         h = butt_h/2+8}
+    obj.sections[817] = {x = obj.sections[800].x + obj.sections[800].w/2 + 55,
+                         y = obj.sections[800].y + gofs + (butt_h/2+13)*5 -20,
+                         w = 35,
+                         h = butt_h/2+8}
+
+    obj.sections[827] = {x = obj.sections[800].x + obj.sections[800].w/2 + 105,
+                         y = obj.sections[800].y + gofs + (butt_h/2+13)*6 -20,
+                         w = butt_h/2+4,
+                         h = butt_h/2+4}
+
+    obj.sections[832] = {x = obj.sections[800].x + obj.sections[800].w/2 + 105 + butt_h,
+                         y = obj.sections[800].y + gofs + (butt_h/2+13)*6 -20,
+                         w = butt_h/2+4,
+                         h = butt_h/2+4}
+
+    obj.sections[818] = {x = obj.sections[800].x + 60,
+                         y = obj.sections[800].y + gofs + (butt_h/2+8) - 4,
+                         w = gsw,
+                         h = butt_h}
+
+    obj.sections[823] = {x = obj.sections[800].x + 15,
+                         y = obj.sections[800].y + obj.sections[800].h - butt_h*1.5 - 8,
+                         w = gsw,
+                         h = butt_h*1.5}
+    obj.sections[824] = {x = obj.sections[823].x + obj.sections[823].w + 10,
+                         y = obj.sections[823].y,
+                         w = gsw,
+                         h = butt_h*1.5}
+    obj.sections[819] = {x = obj.sections[824].x + obj.sections[824].w + 10,
+                         y = obj.sections[823].y,
+                         w = gsw,
+                         h = butt_h*1.5}
+
+    obj.sections[820] = {x = obj.sections[800].x + obj.sections[800].w - 38 - butt_h,
+                         y = obj.sections[800].y + 27,
+                         w = butt_h/2+4,
+                         h = butt_h/2+4}
+    obj.sections[821] = {x = obj.sections[800].x + obj.sections[800].w - 38 - butt_h,
+                         y = obj.sections[800].y + 27+ butt_h,
+                         w = butt_h/2+4,
+                         h = butt_h/2+4}
+    obj.sections[822] = {x = obj.sections[800].x + obj.sections[800].w - 38 - butt_h,
+                         y = obj.sections[800].y + 27 + butt_h*2,
+                         w = butt_h/2+4,
+                         h = butt_h/2+4}
+    obj.sections[825] = {x = obj.sections[800].x + obj.sections[800].w/2 + 55,
+                         y = obj.sections[800].y + gofs + (butt_h/2+13)*7 -20,
+                         w = gsw,
+                         h = butt_h/2+8}
+    
+    obj.sections[826] = {x = obj.sections[800].x + obj.sections[800].w/2 + 79,
+                         y = obj.sections[800].y + gofs -butt_h*2-1,
+                         w = 60,
+                         h = butt_h}
+
+    obj.sections[828] = {x = obj.sections[800].x + obj.sections[800].w/2 - 140,
+                         y = obj.sections[800].y + gofs -butt_h*2-1,
+                         w = 30,
+                         h = butt_h}
+    obj.sections[829] = {x = obj.sections[800].x + obj.sections[800].w/2 - 108,
+                         y = obj.sections[800].y + gofs -butt_h*2-1,
+                         w = 30,
+                         h = butt_h}
+    obj.sections[830] = {x = obj.sections[800].x + obj.sections[800].w/2 - 140 +1,
+                         y = obj.sections[800].y + gofs -butt_h*2-3 - (butt_h/2+8),
+                         w = 60,
+                         h = butt_h/2+8}
+    obj.sections[831] = {x = obj.sections[800].x + obj.sections[800].w/2 + 35,
+                         y = obj.sections[800].y + gofs + (butt_h/2+13)*3 -26,
+                         w = gsw+20,
+                         h = butt_h}
+    
+    return obj
+  end
+  
+  function PosCycleCtls(obj)
+
+    local xofft, yoff, yoffm, bh, bw, sw = 200, 28, butt_h/2+14, butt_h/2+4, butt_h/2+4, 80
+    local kw,_ = gfx.getimgdim(0)
+    local kh = defctls[def_knob].cellh
+    obj.sections[101] = {x = obj.sections[100].x+obj.sections[100].w/2-kw/2,
+                         y = obj.sections[100].y+butt_h/2,
+                         w = kw,
+                         h = kh}
+    obj.sections[102] = {x = obj.sections[100].x+obj.sections[100].w-40-10,
+                         y = obj.sections[101].y+obj.sections[101].h+butt_h,
+                         w = 40,
+                         h = bh}
+
+    obj.sections[103] = {x = obj.sections[100].x+8,
+                         y = obj.sections[102].y+bh+60+butt_h,
+                         w = obj.sections[100].w-16,
+                         h = butt_h*8}
+
+    obj.sections[104] = {x = obj.sections[102].x,
+                         y = obj.sections[102].y-bh-2,
+                         w = 40,
+                         h = obj.sections[102].h}
+    obj.sections[110] = {x = obj.sections[100].x +45,
+                         y = obj.sections[102].y-bh-2,
+                         w = 40,
+                         h = obj.sections[102].h}
+                         
+    
+    obj.sections[105] = {x = obj.sections[103].x,
+                         y = obj.sections[103].y-butt_h,
+                         w = obj.sections[103].w,
+                         h = butt_h}
+    obj.sections[106] = {x = obj.sections[103].x-2,
+                         y = obj.sections[103].y+obj.sections[103].h+2,
+                         w = obj.sections[103].w+4,
+                         h = butt_h}
+    obj.sections[107] = {x = obj.sections[102].x,
+                         y = obj.sections[102].y+obj.sections[102].h+4,
+                         w = bh,
+                         h = bh}
+    obj.sections[109] = {x = obj.sections[107].x,
+                         y = obj.sections[107].y+obj.sections[107].h+4,
+                         w = bh,
+                         h = bh}
+    obj.sections[108] = {x = obj.sections[107].x,
+                         y = obj.sections[109].y+obj.sections[107].h+4,
+                         w = bh,
+                         h = bh}
+    return obj
+    
+  end
   -----------------------------------------------------------------------     
   
   function GetGUI_vars()
@@ -6796,7 +7135,7 @@
       --gfx.setimgdim(1011,obj.sections[45].w, obj.sections[45].h)
     --end
 
-    GUI_DrawPanel(obj.sections[45],nil,'CTL OPTIONS')
+    GUI_DrawPanel(obj.sections[45],nil,'CTL OPTIONS          ')
 
     local xywh = {x = 0,
                   y = 2,
@@ -6826,8 +7165,11 @@
      xywh.h, 1 )]]
 
     --GUI_textC(gui,xywh,'CTL OPTIONS',gui.color.black,-2)
-    xywh.x = xywh.x+xywh.w-20
-    xywh.w = 20
+    xywh.x = xywh.x+xywh.w-40
+    xywh.w = 30
+    
+    f_Get_SSV(gui.color.black)
+    gfx.rect(xywh.x,xywh.y,xywh.w,xywh.h,0)
     GUI_textC(gui,xywh,ctl_page+1,gui.color.black,-2)
     
     if ctl_page == 0 then
@@ -11540,7 +11882,6 @@ end
        update_settings or update_snaps or update_msnaps or update_actcho or update_fsnaps or update_mfsnaps or update_eqcontrol or update_macroedit or
        update_macrobutt or update_snapmorph or update_lfoedit or update_lfoeditbar or update_lfopos) then    
       local p = 0
-        
       gfx.dest = 1
 
       if update_gfx or resize_display then
@@ -14200,7 +14541,7 @@ end
       
       local track = GetTrack(t)
       local min, max = GetParamMinMax(cc,track,nz(f,-1),p,checkov,c)
-      return min, max
+      return tonumber(min), tonumber(max)
 
     elseif cc == ctlcats.trackparam then
       local param = strips[tracks[track_select].strip][page].controls[c].param
@@ -14250,7 +14591,7 @@ end
       
       local track = GetTrack(t)
       local min, max = GetParamMinMax(cc,track,nz(f,-1),p,checkov,c)
-      return min, max
+      return tonumber(min), tonumber(max)
 
     elseif cc == ctlcats.trackparam then
       local param = strips[strip][page].controls[c].param
@@ -16065,9 +16406,8 @@ end
       for i = 1, #stripdata.fx do
     
         local chunk = GetTrackChunk(tr, settings_usetrackchunkfix)
-       
         local nchunk, nfxguid, ofxguid = Chunk_InsertFXChunkAtEndOfFXChain(strips[strip].track.tracknum, chunk, stripdata.fx[i].fxchunk)
-        
+                
         if nchunk ~= nil then
           local retval = SetTrackChunk(tr, nchunk, false)
           if retval == true then
@@ -19600,6 +19940,7 @@ end
     end
     ss = 'Group As Strip||'
     local sw
+    local ra
     local c = GetControlAtXY(tracks[track_select].strip, page, mouse.mx, mouse.my)
     local ctl
     if c then
@@ -19607,11 +19948,26 @@ end
       if ctl.ctlcat == ctlcats.switcher and SwitcherInSelected(ctl.switcherid) == false then
         sw = 'Add To Switcher||'
       end
+      if ctl.ctlcat == ctlcats.fxparam and tfxp_sel and ctl_select and #ctl_select == 1 then
+        local i
+        local cnt = 0        
+        for i = 0, #trackfxparams do
+          if tfxp_sel[i] then
+            cnt = cnt + 1
+          end
+        end
+        if cnt == 1 then
+          ra = '||Reassign Parameter'
+        end
+      end
     end 
     if sw == nil then
       sw = '#Add Controls To Switcher||'
     end
-    local mstr = 'Duplicate||Align Top|Align Left|Distribute Vertically|Distribute Horizontally||'..gg..ss..sw..mm..'||'..vv..'||Delete'..ac..cp..cpg..'||Control Info'
+    if ra == nil then
+      ra = '||#Reassign Parameter'
+    end
+    local mstr = 'Duplicate||Align Top|Align Left|Distribute Vertically|Distribute Horizontally||'..gg..ss..sw..mm..'||'..vv..'||Delete'..ra..ac..cp..cpg..'||Control Info'
     gfx.x, gfx.y = mouse.mx, mouse.my
     local res = OpenMenu(mstr)
     if res == 1 then
@@ -19762,6 +20118,10 @@ end
       update_gfx = true
     
     elseif res == 13 then
+      ReassParam(tracks[track_select].strip, page, ctl_select[1].ctl, trackedit_select, trackfx_select, trackfxparam_select)
+      update_gfx = true
+      
+    elseif res == 14 then
       trackfxparam_select = ctl_select[1].ctl
       show_actionchooser = true
       action_tbl = LoadActionIDs()
@@ -19770,7 +20130,7 @@ end
       
       update_gfx = true
       --OpenEB(12,'Please enter action name:')
-    elseif res == 14 then
+    elseif res == 15 then
       trackfxparam_select = ctl_select[1].ctl
       retval, comid = reaper.GetUserInputs('Action Button', 1, 'Please enter action command ID: ,extrawidth=196', '')
       if retval == true and comid then
@@ -19779,21 +20139,21 @@ end
         update_gfx = true          
       end
       --OpenEB(13,'Please enter action command ID:')
-    elseif res == 15 then
-      Copy_Selected()
     elseif res == 16 then
+      Copy_Selected()
+    elseif res == 17 then
       Paste_Selected()
       SetCtlBitmapRedraw()
       update_gfx = true
-    elseif res == 17 then
-      gauge_copy = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].gauge
     elseif res == 18 then
+      gauge_copy = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].gauge
+    elseif res == 19 then
       for i = 1, #ctl_select do
         strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].gauge = gauge_copy
       end
       update_bg = true
       update_gfx = true
-    elseif res == 19 then
+    elseif res == 20 then
       if ctl_select and #ctl_select > 0 then
         for c = 1, #ctl_select do
           CtlInfo(tracks[track_select].strip, page, ctl_select[c].ctl)
@@ -23219,6 +23579,7 @@ end
   
   function run()  
 
+    local preservecontext
     local rt = reaper.time_precise()
     
     ReadProjectFlags()
@@ -23427,12 +23788,14 @@ end
       
     elseif EB_Open > 0 then
       
-      Process_EB()
+      mouse.context = Process_EB(mouse.context)
       
       noscroll = true
+      if mouse.LB == true and mouse.context ~= nil then
+        preservecontext = true
+      end  
       mouse.LB = nil
       mouse.RB = nil
-  
     end
 
     if show_dd and mouse.context == nil then
@@ -23467,9 +23830,9 @@ end
         time_checksend = rt + 2
         checksends = true
       end      
-      
+
       UpdateControlValues2(rt)
-      
+
       if show_settings then
         
         Process_Settings()
@@ -23810,8 +24173,8 @@ end
       A_Run_XXYMode(rt)
       
     end
-
-    if not mouse.LB and not mouse.RB then mouse.context = nil end
+    if not mouse.LB and not mouse.RB and not preservecontext then mouse.context = nil end
+    
     --[[if mouse.context == nil and undotxt then
       reaper.Undo_OnStateChange2(0, undotxt)
       reaper.Undo_EndBlock2(0,undotxt, -1)
@@ -23826,7 +24189,7 @@ end
     if #morph_data > 0 then
       A_RunMorph()
     end
-
+  
     A_RunMod()
     
     if rcmrefreshtimercount > 0 then
@@ -23921,6 +24284,8 @@ end
                   local ctl = strips[m.targets[t].strip][m.targets[t].page].controls[m.targets[t].ctl]
                   if val ~= ctl.val then
                     SetParam3(m.targets[t]. strip,m.targets[t].page,m.targets[t].ctl,ctl,val)
+                    update_ctls = true
+                    
                     ctl.val = val
                   end
                 end
@@ -23933,7 +24298,6 @@ end
         end
       end
     end
-    update_ctls = true
     
   end 
 
@@ -27266,6 +27630,12 @@ end
         end
       end
     
+      if mouse.context == nil and mouse.LB and mouse.mx >= obj.sections[800].x and mouse.mx <= obj.sections[800].x+obj.sections[800].w 
+         and mouse.my >= obj.sections[800].y and mouse.my <= obj.sections[800].y+butt_h then
+        movegaugeed = {dx = mouse.mx - obj.sections[800].x, dy = mouse.my - obj.sections[800].y} 
+        mouse.context = contexts.move_gaugeed 
+      end
+    
       if mouse.context == nil and MOUSE_click(obj.sections[802]) then mouse.context = contexts.gauge_arcrad
       elseif mouse.context == nil and MOUSE_click(obj.sections[803]) then mouse.context = contexts.gauge_arclen
       elseif mouse.context == nil and MOUSE_click(obj.sections[804]) then mouse.context = contexts.gauge_arcrot
@@ -27510,7 +27880,15 @@ end
 
       end
     
-      if mouse.context and mouse.context == contexts.gauge_val then
+      if mouse.context and mouse.context == contexts.move_gaugeed then
+      
+        obj.sections[800].x = F_limit(mouse.mx - movegaugeed.dx,obj.sections[10].x,gfx1.main_w-obj.sections[800].w)
+        obj.sections[800].y = F_limit(mouse.my - movegaugeed.dy,obj.sections[10].y,gfx1.main_h-obj.sections[800].h)
+        
+        obj = PosGaugeEdCtls(obj)
+        update_surface = true
+      
+      elseif mouse.context and mouse.context == contexts.gauge_val then
       
         local val = MOUSE_slider(gaugeglob.sec,gaugeglob.offset)
         if val ~= nil then
@@ -27936,8 +28314,20 @@ end
       if show_paramlearn and (MOUSE_click(obj.sections[115]) or MOUSE_click_RB(obj.sections[115])) then
       
         --LEARN
+        local xywh = {x = obj.sections[115].x,
+                      y = obj.sections[115].y+25,
+                      w = obj.sections[115].w,
+                      h = obj.sections[115].h-25}
+        local xywh2 = {x = obj.sections[115].x,
+                        y = obj.sections[115].y,
+                        w = obj.sections[115].w,
+                        h = butt_h}
         
-        if MOUSE_click(obj.sections[115]) then
+        if MOUSE_click(xywh2) then
+          moveparamlrn = {dx = mouse.mx - obj.sections[115].x, dy = mouse.my - obj.sections[115].y}
+          mouse.context = contexts.move_paramlrn
+        
+        elseif MOUSE_click(xywh) then
           ctl_select = nil
           update_gfx = true
           
@@ -27959,9 +28349,9 @@ end
           update_gfx = true
         end          
       
-      end
-      
-      if (ctl_select ~= nil or gfx3_select ~= nil) and char ~= 0 then
+        noscroll = true
+        
+      elseif (ctl_select ~= nil or gfx3_select ~= nil) and char ~= 0 then
       
         ArrowKey_Shift(char,ctl_select,gfx3_select)
                                    
@@ -28105,7 +28495,7 @@ end
         
         --CONTROL OPTIONS
         
-        if mouse.LB and mouse.my > obj.sections[45].y and mouse.my < obj.sections[45].y+butt_h then
+        if mouse.LB and mouse.my > obj.sections[45].y and mouse.my < obj.sections[45].y+butt_h and mouse.mx > obj.sections[45].x+obj.sections[45].w-40 then
           
           show_cycleoptions = false
           ctl_page = ctl_page + 1
@@ -28113,6 +28503,21 @@ end
             ctl_page = 0
           end
           update_gfx = true
+        
+        elseif mouse.RB and mouse.my > obj.sections[45].y and mouse.my < obj.sections[45].y+butt_h and mouse.mx > obj.sections[45].x+obj.sections[45].w-40 then
+
+          show_cycleoptions = false
+          ctl_page = ctl_page - 1
+          if ctl_page < 0 then
+            ctl_page = 2
+          end
+          update_gfx = true
+        
+        elseif mouse.LB and mouse.my > obj.sections[45].y and mouse.my < obj.sections[45].y+butt_h then
+        
+          movectlopts = {dx = mouse.mx-obj.sections[45].x,dy = mouse.my-obj.sections[45].y}
+          mouse.context = contexts.move_ctlopts
+          
         end
         
         local mx, my = mouse.mx, mouse.my
@@ -28940,8 +29345,8 @@ end
             if ctl.ctlcat == ctlcats.fxparam then
               min, max = GetParamMinMax_ctl(c)
             end
-            if val < min then val = min end
-            if val > max then val = max end
+            if val < tonumber(min) then val = tonumber(min) end
+            if val > tonumber(max) then val = tonumber(max) end
             if val ~= octlval then
               SetParam3(strip,page,c,ctl,val)
               local t = strips[strip].track.tracknum
@@ -28972,7 +29377,22 @@ end
       
       end
       
-      if mouse.context and mouse.context == contexts.scaleslider then
+      if mouse.context and mouse.context == contexts.move_ctlopts then
+      
+        obj.sections[45].x = F_limit(mouse.mx-movectlopts.dx,obj.sections[10].x,gfx1.main_w-obj.sections[45].w)
+        obj.sections[45].y = F_limit(mouse.my-movectlopts.dy,obj.sections[10].y,gfx1.main_h-obj.sections[45].h)
+        
+        local cw, ch = 160, 380
+        obj.sections[100].x = obj.sections[45].x - cw - 10
+        if obj.sections[100].x < obj.sections[10].x then
+          obj.sections[100].x = obj.sections[45].x + obj.sections[45].w + 10 
+        end
+        obj.sections[100].y = obj.sections[45].y + obj.sections[45].h - ch
+        obj = PosCycleCtls(obj)
+        
+        update_surface = true
+      
+      elseif mouse.context and mouse.context == contexts.scaleslider then
         local objsec = obj.sections[50]
         local xywh = {x = obj.sections[45].x + objsec.x,
                       y = obj.sections[45].y + objsec.y,
@@ -29676,6 +30096,13 @@ end
         end                    
         update_surface = true
       
+      elseif mouse.context and mouse.context == contexts.move_paramlrn then
+      
+        obj.sections[115].x = F_limit(mouse.mx - moveparamlrn.dx,obj.sections[10].x,gfx1.main_w - obj.sections[115].w)
+        obj.sections[115].y = F_limit(mouse.my - moveparamlrn.dy,obj.sections[10].y,gfx1.main_h - obj.sections[115].h)
+        obj = PosParamLrnCtls(obj)
+        update_surface = true
+        
       elseif mouse.context and mouse.context == contexts.dragparamlrn then
         dragparam = {x = mouse.mx-ksel_size.w, y = mouse.my-ksel_size.h, type = 'learn'}
         reass_param = nil
@@ -29812,17 +30239,19 @@ end
               
             end
           else
-            if dragparam.x+ksel_size.w > obj.sections[10].x and dragparam.x+ksel_size.w < obj.sections[10].x+obj.sections[10].w and dragparam.y+ksel_size.h > obj.sections[10].y and dragparam.y+ksel_size.h < obj.sections[10].y+obj.sections[10].h then
+            if dragparam.x+ksel_size.w > obj.sections[10].x and dragparam.x+ksel_size.w < obj.sections[10].x+obj.sections[10].w 
+               and dragparam.y+ksel_size.h > obj.sections[10].y and dragparam.y+ksel_size.h < obj.sections[10].y+obj.sections[10].h then
             
               local i
               local cnt = 0
-              for i = 1, #trackfxparams do
+              for i = 0, #trackfxparams do
                 if tfxp_sel[i] then
                   cnt = cnt + 1
                 end
               end
               if cnt <= 1 then
-                strips[tracks[track_select].strip][page].controls[reass_param].c_id = GenID()
+                ReassParam(tracks[track_select].strip, page, reass_param, trackedit_select, trackfx_select, trackfxparam_select)
+                --[[strips[tracks[track_select].strip][page].controls[reass_param].c_id = GenID()
                 if tracks[trackedit_select].tracknum ~= tracks[track_select].tracknum then
                   strips[tracks[track_select].strip][page].controls[reass_param].tracknum=tracks[trackedit_select].tracknum
                   strips[tracks[track_select].strip][page].controls[reass_param].trackguid=tracks[trackedit_select].guid
@@ -29844,7 +30273,7 @@ end
                 strips[tracks[track_select].strip][page].controls[reass_param].defval = GetParamValue(ctlcats.fxparam,
                                                                                                    tracks[trackedit_select].tracknum,
                                                                                                    trackfx[trackfx_select].fxnum,
-                                                                                                   trackfxparam_select, reass_param)
+                                                                                                   trackfxparam_select, reass_param)]]
               else
                 OpenMsgBox(1, 'You cannot reassign multiple controls at once.', 1)
               end
@@ -30038,7 +30467,34 @@ end
     return noscroll
     
   end
-
+  
+  function ReassParam(strip, page, reass_param, trackedit_select, trackfx_select, trackfxparam_select)
+  
+    strips[strip][page].controls[reass_param].c_id = GenID()
+    if tracks[trackedit_select].tracknum ~= tracks[track_select].tracknum then
+      strips[strip][page].controls[reass_param].tracknum=tracks[trackedit_select].tracknum
+      strips[strip][page].controls[reass_param].trackguid=tracks[trackedit_select].guid
+    else
+      strips[strip][page].controls[reass_param].tracknum=nil
+      strips[strip][page].controls[reass_param].trackguid=nil                  
+    end
+    strips[strip][page].controls[reass_param].ctlcat = ctlcats.fxparam
+    strips[strip][page].controls[reass_param].fxname=trackfx[trackfx_select].name
+    strips[strip][page].controls[reass_param].fxguid=trackfx[trackfx_select].guid
+    strips[strip][page].controls[reass_param].fxnum=trackfx[trackfx_select].fxnum
+    strips[strip][page].controls[reass_param].fxfound = true
+    strips[strip][page].controls[reass_param].param = trackfxparam_select
+    strips[strip][page].controls[reass_param].param_info = trackfxparams[trackfxparam_select]
+    strips[strip][page].controls[reass_param].val = GetParamValue(ctlcats.fxparam,
+                                                                   tracks[trackedit_select].tracknum,
+                                                                   trackfx[trackfx_select].fxnum,
+                                                                   trackfxparam_select, reass_param)
+    strips[strip][page].controls[reass_param].defval = GetParamValue(ctlcats.fxparam,
+                                                                     tracks[trackedit_select].tracknum,
+                                                                     trackfx[trackfx_select].fxnum,
+                                                                     trackfxparam_select, reass_param)
+  end
+  
   function A_Run_Submode1(noscroll, rt, char)
   
     if gfx.mouse_wheel ~= 0 then
@@ -30121,14 +30577,23 @@ end
       -- LBL OPTIONS
       clicklblopts = true
     
-      if MOUSE_click(obj.sections[140]) then
+      local xywh = {x = obj.sections[49].x,
+                    y = obj.sections[49].y,
+                    w = obj.sections[49].w,
+                    h = butt_h}
+      
+      if mouse.context == nil and MOUSE_click(xywh) then
+        
+        movegfxopts = {dx = mouse.mx - obj.sections[49].x, dy = mouse.my - obj.sections[49].y}
+        mouse.context = contexts.move_gfxopts
+      
+      elseif mouse.context == nil and MOUSE_click(obj.sections[140]) then
         --EditLabel(7,gfx_text_select)
         if strips and strips[tracks[track_select].strip] then
           OpenEB(7,'Please enter text for label:',gfx_text_select)
         end
-      end          
-
-      if MOUSE_click(obj.sections[147]) then
+      
+      elseif mouse.context == nil and MOUSE_click(obj.sections[147]) then
         if fontlist then
           local fnt = ChooseFontMenu(mouse.mx,mouse.my)
           if fnt then
@@ -30141,38 +30606,31 @@ end
           end
         end
       --elseif MOUSE_click_RB(obj.sections[147]) then
-      
-                
-      end          
-    
-      if MOUSE_click(obj.sections[142]) then
+        
+      elseif mouse.context == nil and MOUSE_click(obj.sections[142]) then
         local retval, c = reaper.GR_SelectColor(_,ConvertColorString(gfx_textcol_select))
         if retval ~= 0 then
           gfx_textcol_select = ConvertColor(c)
           strips[tracks[track_select].strip][page].graphics[gfx2_select].text_col = gfx_textcol_select
           update_gfx = true
         end
-      end
       
-      if MOUSE_click(obj.sections[143]) then
+      elseif mouse.context == nil and MOUSE_click(obj.sections[143]) then
         gfx_font_select.bold = not gfx_font_select.bold
         strips[tracks[track_select].strip][page].graphics[gfx2_select].font.bold = gfx_font_select.bold
         update_gfx = true
-      end
-
-      if MOUSE_click(obj.sections[144]) then
+      
+      elseif mouse.context == nil and MOUSE_click(obj.sections[144]) then
         gfx_font_select.italics = not gfx_font_select.italics
         strips[tracks[track_select].strip][page].graphics[gfx2_select].font.italics = gfx_font_select.italics
         update_gfx = true
-      end
-
-      if MOUSE_click(obj.sections[145]) then
+      
+      elseif mouse.context == nil and MOUSE_click(obj.sections[145]) then
         gfx_font_select.underline = not gfx_font_select.underline
         strips[tracks[track_select].strip][page].graphics[gfx2_select].font.underline = gfx_font_select.underline
         update_gfx = true
-      end
-
-      if MOUSE_click(obj.sections[146]) then
+      
+      elseif mouse.context == nil and MOUSE_click(obj.sections[146]) then
         gfx_font_select.shadow = not gfx_font_select.shadow
         strips[tracks[track_select].strip][page].graphics[gfx2_select].font.shadow = gfx_font_select.shadow
         update_gfx = true
@@ -30187,7 +30645,17 @@ end
 
       clicklblopts = true
     
-      if mouse.context == nil and MOUSE_click(obj.sections[912]) then 
+      local xywh = {x = obj.sections[49].x,
+                    y = obj.sections[49].y,
+                    w = obj.sections[49].w,
+                    h = butt_h}
+      
+      if mouse.context == nil and MOUSE_click(xywh) then
+        
+        movegfxopts = {dx = mouse.mx - obj.sections[49].x, dy = mouse.my - obj.sections[49].y}
+        mouse.context = contexts.move_gfxopts
+      
+      elseif mouse.context == nil and MOUSE_click(obj.sections[912]) then 
         
         gfxbright_select = 0.5
         gfxcontr_select = 0.5
@@ -30230,7 +30698,14 @@ end
     
     end
   
-    if mouse.context and mouse.context == contexts.textsizeslider then
+    if mouse.context and mouse.context == contexts.move_gfxopts then
+    
+      obj.sections[49].x = F_limit(mouse.mx-movegfxopts.dx,obj.sections[10].x,gfx1.main_w-obj.sections[49].w)
+      obj.sections[49].y = F_limit(mouse.my-movegfxopts.dy,obj.sections[10].y,gfx1.main_h-obj.sections[49].h)
+      obj = PosGfxOptCtls(obj)
+      update_surface = true
+    
+    elseif mouse.context and mouse.context == contexts.textsizeslider then
       local val = F_limit(MOUSE_sliderHBar(obj.sections[141]),0,1)
       if val ~= nil then
         gfx_font_select.size = F_limit((val*250),8,250)
@@ -32325,7 +32800,11 @@ end
           if settings_followsnapshot then
             st = '!'
           end
-          mstr = 'Rename||Delete||Delete All|Delete All Except Selected||Capture (Overwrite)||'..st..'Follow Selected'
+          local sp = ''
+          if settings_savesnapafterselected then
+            sp = '!'
+          end
+          mstr = 'Rename||Delete||Delete All|Delete All Except Selected||Capture (Overwrite)||'..sp..'Save Snapshot After Selected||'..st..'Follow Selected'
           gfx.x, gfx.y = snapmx, snapmy
           res = OpenMenu(mstr)
           if res ~= 0 then
@@ -32344,6 +32823,8 @@ end
             elseif res == 5 then
               Snapshots_CREATE(tracks[track_select].strip, page, sstype_select, ss_select)
             elseif res == 6 then
+              settings_savesnapafterselected = not settings_savesnapafterselected
+            elseif res == 7 then
               settings_followsnapshot = not settings_followsnapshot
             end
           end
@@ -32352,12 +32833,18 @@ end
           if settings_followsnapshot then
             st = '!'
           end
-          mstr = st..'Follow Selected'
+          local sp = ''
+          if settings_savesnapafterselected then
+            sp = '!'
+          end
+          mstr = sp..'Save Snapshot After Selected||'..st..'Follow Selected'
           gfx.x, gfx.y = snapmx, snapmy
           res = OpenMenu(mstr)
           if res ~= 0 then
-            if res == 1 then
+            if res == 2 then
               settings_followsnapshot = not settings_followsnapshot
+            elseif res == 1 then
+              settings_savesnapafterselected = not settings_savesnapafterselected
             end
           end        
         end        
@@ -34263,201 +34750,239 @@ end
     
   end
 
-  function Process_EB()
-  
-    if gfx.mouse_cap&1 == 1 then
-      if not mouse.down then
-        OnMouseDown()      
-        if mouse.uptime and os.clock()-mouse.uptime < 0.25 then 
-          OnMouseDoubleClick()
-        end
-      elseif gfx.mouse_x ~= mouse.lx or gfx.mouse_y ~= mouse.ly then
-        OnMouseMove() 
-      end
-    elseif mouse.down then 
-      OnMouseUp() 
-    end
-    if mouse.LB == true and MOUSE_over(obj.sections[6]) or EB_Enter then
-      --OK
-      EB_Enter = false
-      if EB_Open == 1 then
-        SaveStrip3(editbox.text)
-      elseif EB_Open == 2 then
-        EditCtlName2(editbox.text)
-        update_gfx = true
-      elseif EB_Open == 3 then
-        EditDValOffset2(editbox.text)
-        update_gfx = true
-      elseif EB_Open == 4 then
-        EditMinDVal2(editbox.text)
-        update_gfx = true
-      elseif EB_Open == 16 then
-        EditMaxDVal2(editbox.text)
-        update_gfx = true
-      elseif EB_Open == 5 then
-        EditValue2(editbox.text)
-        --update_ctls = true
-      elseif EB_Open == 6 then
-        InsertLabel2(editbox.text)
-      elseif EB_Open == 7 then
-        EditLabel2(editbox.text)
-        update_gfx = true
-      elseif EB_Open == 8 then
-        EditFont2(editbox.text)
-        update_gfx = true
-      elseif EB_Open == 10 then
-        EditCycleDV(editbox.text)        
-      elseif EB_Open == 11 then
-        EditSSName2(editbox.text)
-        update_snaps = true
-      --elseif EB_Open == 12 then
-        --[[trackfxparam_select = ctl_select[1].ctl
-        retval, comid = reaper.GetUserInputs('Action Button', 1, 'Please enter action command ID: ,extrawidth=196', '')
-        if retval == true and comid then
-          local actnm = AssAction_GetNameFromID(comid)
-          AssActionByID(comid,actnm)
-          update_gfx = true          
-        end]]
-        --OpenEB(13,'Please enter action command ID:')
-      --[[elseif EB_Open == 13 then
-        trackfxparam_select = ctl_select[1].ctl
-        retval, comid = reaper.GetUserInputs('Action Button', 1, 'Please enter action command ID: ,extrawidth=196', '')
-        if retval == true and comid then
-          local actnm = AssAction_GetNameFromID(comid)
-          AssActionByID(comid,actnm)
-          update_gfx = true          
-        end]]
-        --AssActionByID(editbox.text)
-        --update_gfx = true          
-      elseif EB_Open == 14 then
-        action_tblF = ActionListFilter(editbox.text)
-        al_offset = 0
-        update_gfx = true
-      elseif EB_Open == 15 then
-        EditSubName(editbox.text)
-        update_snaps = true
-      elseif EB_Open == 17 then
-        local sc = tonumber(editbox.text)
-        if sc then
-          cycle_select.statecnt = F_limit(sc,0,max_cycle)
-          Cycle_InitData()
-        end
-        update_surface = true
-      elseif EB_Open == 18 then
-        SavePath(editbox.text)
-      elseif EB_Open == 20 then
-        SaveSet(editbox.text)
-      elseif EB_Open == 30 then
-        strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands[eqcontrolband_select].bandname = editbox.text
-        update_gfx = true
-      elseif EB_Open == 31 then
-        strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands[eqcontrolband_select].bandtype = editbox.text
-        local path = eqbands_path
-        reaper.RecursiveCreateDirectory(path..string.upper(editbox.text),1)
-        
-        update_gfx = true
-      elseif EB_Open == 32 then        
-        EQC_SaveEQ(editbox.text)
-      
-      elseif EB_Open == 50 then
-      
-        save_subfolder = editbox.text
-        if save_subfolder == '' then
-          save_subfolder = nil
-        end
-        update_gfx = true
+  function Process_EB(context)
 
-      elseif EB_Open == 51 then
-      
-        local ctl = strips[tracks[track_select].strip][page].controls[switcher_select]
-        local switchid = ctl.switcherid
-        local newname = editbox.text
-        for g = 1, #switchers[switchid].grpids do
-          if switchers[switchid].grpids[g].id == switchers[switchid].current then
-            switchers[switchid].grpids[g].name = newname
-            ctl.param_info.paramname = string.format('%i',g)..': '..switchers[switchid].grpids[g].name
-            update_gfx = true
-            break
+    if context == nil then
+      if gfx.mouse_cap&1 == 1 then
+        if not mouse.down then
+          OnMouseDown()      
+          if mouse.uptime and os.clock()-mouse.uptime < 0.25 then 
+            OnMouseDoubleClick()
           end
+        elseif gfx.mouse_x ~= mouse.lx or gfx.mouse_y ~= mouse.ly then
+          OnMouseMove() 
         end
-      
-      elseif EB_Open == 60 then
-        local txt = editbox.text
-        local mo = tonumber(txt)
-        if mo then
-          local nval, dval = GetValFromDVal(ctl_select[1].ctl,txt)
-          if nval then
-          
-            local gtab = gauge_select
-            local gcnt = #gtab.vals+1
-            gtab.vals[gcnt] = {val = nval, dval = dval, dover = nil}
-            local nonly
-            if gtab.numonly then
-              nonly = ''
-            end
-            if gtab.val_dp > -1 then
-              gtab.vals[gcnt].dover = roundX(dval, gtab.val_dp, nonly)
-            end
-            Gauge_SortVals()
-            for i = 1, #gtab.vals do
-              if gtab.vals[i].val == gtab.val then
-                gauge_ticksel = i
-              end
-            end
-            gtab.ticks = gtab.ticks+1
-            update_surface = true
-          
+      elseif mouse.down then 
+        OnMouseUp() 
+      end
+      if mouse.LB == true and MOUSE_over(obj.sections[6]) or EB_Enter then
+        --OK
+        EB_Enter = false
+        if EB_Open == 1 then
+          SaveStrip3(editbox.text)
+        elseif EB_Open == 2 then
+          EditCtlName2(editbox.text)
+          update_gfx = true
+        elseif EB_Open == 3 then
+          EditDValOffset2(editbox.text)
+          update_gfx = true
+        elseif EB_Open == 4 then
+          EditMinDVal2(editbox.text)
+          update_gfx = true
+        elseif EB_Open == 16 then
+          EditMaxDVal2(editbox.text)
+          update_gfx = true
+        elseif EB_Open == 5 then
+          EditValue2(editbox.text)
+          --update_ctls = true
+        elseif EB_Open == 6 then
+          InsertLabel2(editbox.text)
+        elseif EB_Open == 7 then
+          EditLabel2(editbox.text)
+          update_gfx = true
+        elseif EB_Open == 8 then
+          EditFont2(editbox.text)
+          update_gfx = true
+        elseif EB_Open == 10 then
+          EditCycleDV(editbox.text)        
+        elseif EB_Open == 11 then
+          EditSSName2(editbox.text)
+          update_snaps = true
+        --elseif EB_Open == 12 then
+          --[[trackfxparam_select = ctl_select[1].ctl
+          retval, comid = reaper.GetUserInputs('Action Button', 1, 'Please enter action command ID: ,extrawidth=196', '')
+          if retval == true and comid then
+            local actnm = AssAction_GetNameFromID(comid)
+            AssActionByID(comid,actnm)
+            update_gfx = true          
+          end]]
+          --OpenEB(13,'Please enter action command ID:')
+        --[[elseif EB_Open == 13 then
+          trackfxparam_select = ctl_select[1].ctl
+          retval, comid = reaper.GetUserInputs('Action Button', 1, 'Please enter action command ID: ,extrawidth=196', '')
+          if retval == true and comid then
+            local actnm = AssAction_GetNameFromID(comid)
+            AssActionByID(comid,actnm)
+            update_gfx = true          
+          end]]
+          --AssActionByID(editbox.text)
+          --update_gfx = true          
+        elseif EB_Open == 14 then
+          action_tblF = ActionListFilter(editbox.text)
+          al_offset = 0
+          update_gfx = true
+        elseif EB_Open == 15 then
+          EditSubName(editbox.text)
+          update_snaps = true
+        elseif EB_Open == 17 then
+          local sc = tonumber(editbox.text)
+          if sc then
+            cycle_select.statecnt = F_limit(sc,0,max_cycle)
+            Cycle_InitData()
           end
-        end  
-      elseif EB_Open == 61 then
-        local f = CheckFont(editbox.text)
-        if f then
-          gauge_select.font = f
+          update_surface = true
+        elseif EB_Open == 18 then
+          SavePath(editbox.text)
+        elseif EB_Open == 20 then
+          SaveSet(editbox.text)
+        elseif EB_Open == 30 then
+          strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands[eqcontrolband_select].bandname = editbox.text
+          update_gfx = true
+        elseif EB_Open == 31 then
+          strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands[eqcontrolband_select].bandtype = editbox.text
+          local path = eqbands_path
+          reaper.RecursiveCreateDirectory(path..string.upper(editbox.text),1)
+          
+          update_gfx = true
+        elseif EB_Open == 32 then        
+          EQC_SaveEQ(editbox.text)
+        
+        elseif EB_Open == 50 then
+        
+          save_subfolder = editbox.text
+          if save_subfolder == '' then
+            save_subfolder = nil
+          end
+          update_gfx = true
+  
+        elseif EB_Open == 51 then
+        
+          local ctl = strips[tracks[track_select].strip][page].controls[switcher_select]
+          local switchid = ctl.switcherid
+          local newname = editbox.text
+          for g = 1, #switchers[switchid].grpids do
+            if switchers[switchid].grpids[g].id == switchers[switchid].current then
+              switchers[switchid].grpids[g].name = newname
+              ctl.param_info.paramname = string.format('%i',g)..': '..switchers[switchid].grpids[g].name
+              update_gfx = true
+              break
+            end
+          end
+        
+        elseif EB_Open == 60 then
+          local txt = editbox.text
+          local mo = tonumber(txt)
+          if mo then
+            local nval, dval = GetValFromDVal(ctl_select[1].ctl,txt)
+            if nval then
+            
+              local gtab = gauge_select
+              local gcnt = #gtab.vals+1
+              gtab.vals[gcnt] = {val = nval, dval = dval, dover = nil}
+              local nonly
+              if gtab.numonly then
+                nonly = ''
+              end
+              if gtab.val_dp > -1 then
+                gtab.vals[gcnt].dover = roundX(dval, gtab.val_dp, nonly)
+              end
+              Gauge_SortVals()
+              for i = 1, #gtab.vals do
+                if gtab.vals[i].val == gtab.val then
+                  gauge_ticksel = i
+                end
+              end
+              gtab.ticks = gtab.ticks+1
+              update_surface = true
+            
+            end
+          end  
+        elseif EB_Open == 61 then
+          local f = CheckFont(editbox.text)
+          if f then
+            gauge_select.font = f
+            update_gfx = true
+          end
+        elseif EB_Open == 62 then
+          local f = CheckFont(editbox.text)
+          if f then
+            ctlfont_select = f
+            for i = 1, #ctl_select do
+              strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].font = ctlfont_select
+            end            
+          end
+          update_gfx = true
+        elseif EB_Open == 100 then
+          autosnap_rowheight = F_limit(nz(tonumber(editbox.text),autosnap_rowheight),50,2048)
+          update_gfx = true
+        elseif EB_Open == 101 then
+          autosnap_itemgap = F_limit(nz(tonumber(editbox.text),autosnap_itemgap),0,1000)
+          update_gfx = true
+        elseif EB_Open == 102 then
+          autosnap_itemgapmax = F_limit(nz(tonumber(editbox.text),autosnap_itemgapmax),0,1000)
+          update_gfx = true
+        elseif EB_Open == 103 then
+          gallery_itemgap = F_limit(nz(tonumber(editbox.text),gallery_itemgap),0,1000)
+          update_gfx = true
+  
+        elseif EB_Open == 104 then
+          local mcnt = nz(tonumber(editbox.text),modulator_cnt)
+          if mcnt ~= modulator_cnt then
+            Mod_ChangeCount(mcnt)
+          end
           update_gfx = true
         end
-      elseif EB_Open == 62 then
-        local f = CheckFont(editbox.text)
-        if f then
-          ctlfont_select = f
-          for i = 1, #ctl_select do
-            strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].font = ctlfont_select
-          end            
-        end
-        update_gfx = true
-      elseif EB_Open == 100 then
-        autosnap_rowheight = F_limit(nz(tonumber(editbox.text),autosnap_rowheight),50,2048)
-        update_gfx = true
-      elseif EB_Open == 101 then
-        autosnap_itemgap = F_limit(nz(tonumber(editbox.text),autosnap_itemgap),0,1000)
-        update_gfx = true
-      elseif EB_Open == 102 then
-        autosnap_itemgapmax = F_limit(nz(tonumber(editbox.text),autosnap_itemgapmax),0,1000)
-        update_gfx = true
-      elseif EB_Open == 103 then
-        gallery_itemgap = F_limit(nz(tonumber(editbox.text),gallery_itemgap),0,1000)
-        update_gfx = true
-
-      elseif EB_Open == 104 then
-        local mcnt = nz(tonumber(editbox.text),modulator_cnt)
-        if mcnt ~= modulator_cnt then
-          Mod_ChangeCount(mcnt)
-        end
-        update_gfx = true
-      end
-      
-      editbox = nil
-      EB_Open = 0
-      mouse.release = true
-      
-    elseif mouse.LB == true and MOUSE_over(obj.sections[7]) then
-      editbox = nil
-      EB_Open = 0
-      mouse.release = true
-    end
         
+        editbox = nil
+        EB_Open = 0
+        mouse.release = true
+        
+      elseif mouse.LB == true and MOUSE_over(obj.sections[7]) then
+        editbox = nil
+        EB_Open = 0
+        mouse.release = true
+  
+      elseif mouse.LB == true and MOUSE_over(obj.sections[8]) then
+        context = contexts.move_eb
+        ebpos = {dx = mouse.mx-obj.sections[8].x, dy = mouse.my-obj.sections[8].y}
+      end
+    
+    elseif context and context == contexts.move_eb then    
+
+      local sizex, sizey = 350, 100
+      local bsizex, bsizey = 60, 20
+      --[[local x, y = F_limit(mouse.mx - ebpos.dx,obj.sections[10].x,obj.sections[10].x+obj.sections[10].w-sizex), 
+                   F_limit(mouse.my - ebpos.dy,obj.sections[10].y,obj.sections[10].y+obj.sections[10].h-sizey)]]
+      local x, y = F_limit(mouse.mx - ebpos.dx,0,gfx1.main_w-sizex), 
+                         F_limit(mouse.my - ebpos.dy,0,gfx1.main_h-sizey)
+      obj.sections[8] = {x = x,
+                         y = y,
+                         w = sizex, 
+                         h = sizey}
+      obj.sections[5] = {x = x + 25,
+                         y = y + 10,
+                         w = sizex-50, 
+                         h = 20}
+      obj.sections[6] = {x = x+obj.sections[8].w - bsizex - 50,
+                               y = y+obj.sections[8].h - bsizey - 10,
+                               w = bsizex, 
+                               h = bsizey}
+      obj.sections[7] = {x = x+obj.sections[8].w - (bsizex*2) - 60,
+                               y = y+obj.sections[8].h - bsizey - 10,
+                               w = bsizex, 
+                               h = bsizey}
+      obj.sections[9] = {x = x + 25,
+                         y = y+obj.sections[8].h - 60,
+                         w = sizex-50, 
+                         h = 20}
+      update_surface = true
+    end
+    
     local c=gfx.getchar()  
     if editbox and editbox.hasfocus and c > 0 then editbox_onchar(editbox, c) end  
     update_surface = true
+  
+    return context
 
   end
   
@@ -39867,6 +40392,7 @@ end
     settings_alwaysrunmods = tobool(nz(GES('settings_alwaysrunmods',true),settings_alwaysrunmods))
     settings_showmorphpop = tobool(nz(GES('settings_showmorphpop',true),settings_showmorphpop))
     settings_groupsel = tobool(nz(GES('settings_groupsel',true),settings_groupsel))
+    settings_savesnapafterselected = tobool(nz(GES('settings_savesnapafterselected',true),settings_savesnapafterselected))
 
     modulator_cnt = tonumber(nz(GES('modulator_cnt',true),modulator_cnt))
     
@@ -40002,6 +40528,7 @@ end
     reaper.SetExtState(SCRIPT,'settings_followsnapshot',tostring(settings_followsnapshot), true)    
     reaper.SetExtState(SCRIPT,'settings_showmorphpop',tostring(settings_showmorphpop), true)    
     reaper.SetExtState(SCRIPT,'settings_groupsel',tostring(settings_groupsel), true)    
+    reaper.SetExtState(SCRIPT,'settings_savesnapafterselected',tostring(settings_savesnapafterselected), true)    
 
     reaper.SetExtState(SCRIPT,'modulator_cnt',tostring(modulator_cnt), true)    
     
@@ -42120,7 +42647,6 @@ end
   end
   
   function Snapshot_Morph(strip, page, sstype_select, ss_select, data_id, p)
-
     local reaper = reaper
     local gather = false
     if #morph_data[data_id].data == 0 then
@@ -42332,6 +42858,7 @@ end
   function Snapshots_CREATE(strip, page, sstype, ss_ovr)
 
     local snaps
+    local oss_select = ss_select
     if strips and strips[strip] and strips[strip][page] and #strips[strip][page].controls > 0 then
 
       if snapshots == nil then
@@ -42561,6 +43088,12 @@ end
       
       g_savedirty = true
     end
+    if snaps then
+      snapshots[strip][page][sstype] = snaps
+      if settings_savesnapafterselected == true and oss_select then
+        Snapshot_Move(ss_select,oss_select+1)
+      end
+    end
     if snaps and settings_followsnapshot then
       if ss_select and (ss_select < ssoffset+1 or ss_select > ssoffset+SS_butt_cnt) then
         if sstype_select == 1 then
@@ -42570,9 +43103,6 @@ end
         end
         update_snaps = true
       end
-    end
-    if snaps then
-      snapshots[strip][page][sstype] = snaps
     end
   end
   
@@ -44498,6 +45028,7 @@ end
   settings_usetrackchunkfix = true
   settings_showmorphpop = false
   settings_groupsel = true
+  settings_savesnapafterselected = false
   
   autosnap_rowheight = 410
   autosnap_itemgap = 20
