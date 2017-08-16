@@ -8432,6 +8432,7 @@ end
                 elseif (mode == 1 and submode == 1) or ctl.hidden then
                   gfx.a = 0.5
                 end
+
                 gfx.blit(iidx,_,0, 0, val2*gh, w, h, px, py, math.floor(w*scale), math.floor(h*scale))
                 if ctlcat == ctlcats.xy then
                 
@@ -14895,6 +14896,7 @@ end
         local param = ctl.param
         if fxnum == nil then fxnum = -1 end
         ctl.dirty = true
+        --SetCtlDirty(c)
         local min, max = A_GetParamMinMax(cc,track,ctl,fxnum,param,true,c)
         reaper.TrackFX_SetParam(track, fxnum, param, DenormalizeValue(min, max, val))
         
@@ -18802,6 +18804,10 @@ end
     if gfx_clip == nil then
       gp = '#'.. gp
     end
+    local lb = ''
+    if settings_drawbglabelsontop then
+      lb = '!'
+    end
     if gfx2_select then
       local mm = '#Copy formatting|#Paste formatting'
       if strips[tracks[track_select].strip][page].graphics[gfx2_select].gfxtype == gfxtype.txt then
@@ -18811,9 +18817,9 @@ end
       if nz(strips[tracks[track_select].strip][page].graphics[gfx2_select].poslock,false) == true then
         mm2 = '!'..mm2
       end
-      mstr = 'Move up|Move down|Bring to front|Send to back||Insert label||'..mm..'||'..mm2..'||Delete||Copy|'..gp
+      mstr = 'Move up|Move down|Bring to front|Send to back||Insert label||'..lb..'Labels on top||'..mm..'||'..mm2..'||Delete||Copy|'..gp
     else
-      mstr = '#Move up|#Move down|#Bring to front|#Send to back||Insert label||#Copy formatting|#Paste formatting||#Lock position||#Delete|#Copy'..gp    
+      mstr = '#Move up|#Move down|#Bring to front|#Send to back||Insert label||'..lb..'Labels on top||#Copy formatting|#Paste formatting||#Lock position||#Delete|#Copy'..gp    
     end
     gfx.x, gfx.y = mouse.mx, mouse.my
     local mx, my = mouse.mx, mouse.my
@@ -18880,12 +18886,17 @@ end
         InsertLabel(mx,my)
 
       elseif res == 6 then
+        
+        settings_drawbglabelsontop = not settings_drawbglabelsontop
+        update_bg = true
+      
+      elseif res == 7 then
 
         local tbl = {}     
         table.insert(tbl, strips[tracks[track_select].strip][page].graphics[gfx2_select])
         gfx_lblformat_copy = tbl[1]
       
-      elseif res == 7 then
+      elseif res == 8 then
       
         if gfx_lblformat_copy then
         
@@ -18902,18 +18913,18 @@ end
           
         end
 
-      elseif res == 8 then
+      elseif res == 9 then
 
         strips[tracks[track_select].strip][page].graphics[gfx2_select].poslock = not strips[tracks[track_select].strip][page].graphics[gfx2_select].poslock
         poslock_select = strips[tracks[track_select].strip][page].graphics[gfx2_select].poslock
         update_gfx = true
         
-      elseif res == 9 then
+      elseif res == 10 then
         DeleteSelectedCtls()
         update_gfx = true
-      elseif res == 10 then
-        gfx_clip = GetGraphicsTable(tracks[track_select].strip, page, gfx2_select)
       elseif res == 11 then
+        gfx_clip = GetGraphicsTable(tracks[track_select].strip, page, gfx2_select)
+      elseif res == 12 then
         if gfx_clip then
           local gfxx = strips[tracks[track_select].strip][page].graphics
           local gcnt = #gfxx+1
@@ -20545,7 +20556,13 @@ end
           fft = '!'
           ff = '   [Fader '..string.format('%i',ctl.macrofader)..']'
         end
-        local fd, lastp = FaderMenu(-1,true)
+        local fdinact = false
+        if ccat == ctlcats.fxparam then
+        elseif ccat == ctlcats.trackparam or ccat == ctlcats.tracksend or ccat == ctlcats.macro or ccat == ctlcats.snapshot then
+        else
+          fdinact = true
+        end
+        local fd, lastp = FaderMenu(-1,true,fdinact)
     
         local snap = ''
         if ccat == ctlcats.snapshot then
@@ -20570,7 +20587,7 @@ end
         elseif ccat == ctlcats.trackparam or ccat == ctlcats.tracksend or ccat == ctlcats.macro or ccat == ctlcats.snapshot then
           mstr = fft..'Faderbox learn (global)'..ff..'||'..fd..mod..'|#Param Modulation||Enter value||'..mido..'||#Open FX window||#Add Envelope|#Add All Envelopes For Plugin||'..mm..'Snapshots||>Tools|<Regenerate ID   (emergency only)||Toggle Topbar|Toggle Sidebar||'..lspfx..'Lock Surface'..snap                  
         else
-          mstr = fft..'#Faderbox learn (global)'..ff..mod..'|#Param Modulation||Enter value||'..mido..'||#Open FX window||#Add Envelope|#Add All Envelopes For Plugin||'..mm..'Snapshots||>Tools|<Regenerate ID   (emergency only)||Toggle Topbar|Toggle Sidebar||'..lspfx..'Lock Surface'                  
+          mstr = fft..'#Faderbox learn (global)'..ff..'||'..fd..mod..'|#Param Modulation||Enter value||'..mido..'||#Open FX window||#Add Envelope|#Add All Envelopes For Plugin||'..mm..'Snapshots||>Tools|<Regenerate ID   (emergency only)||Toggle Topbar|Toggle Sidebar||'..lspfx..'Lock Surface'                  
         end
         --if ccat ~= ctlcats.macro then
           if #strip_favs > 0 then
@@ -22352,17 +22369,21 @@ end
     
   end
   
-  function FaderMenu(sel, returnonly)
+  function FaderMenu(sel, returnonly, inactive)
 
     if LBX_CTL_TRACK_INF and LBX_CTL_TRACK_INF.count > 0 then
       local mstr = ''
+      local act = ''
+      if inactive == true then
+        act = '#'
+      end
       for fxnum = 0, LBX_CTL_TRACK_INF.count-1 do
         local fs = fxnum*LBX_FB_CNT+1
         local fe = fs+LBX_FB_CNT-1
         if mstr ~= '' then
           mstr = mstr .. '|'
         end
-        mstr = mstr .. '>Fader '..string.format('%i',fs)..'-'..string.format('%i',fe)
+        mstr = mstr .. '>'..act..'Fader '..string.format('%i',fs)..'-'..string.format('%i',fe)
         
         for pf = 0, LBX_FB_CNT-1 do
           local p = fs + pf
@@ -22399,7 +22420,7 @@ end
         end
       end
       local lastp = LBX_CTL_TRACK_INF.count * LBX_FB_CNT+1
-      mstr = mstr .. '|Clear Fader'
+      mstr = mstr .. '|'..act..'Clear Fader'
       return mstr, lastp
     else
       mstr = '#No Faderbox'
@@ -26743,7 +26764,7 @@ end
                   end
                 elseif ctltype == 7 or ctltype == 8 or ctltype == 9 or ctltype == 10 then
                   --hold button
-                  holdbtn = 'holdbtn'
+                  holdbtn = i
                   trackfxparam_select = i
                   mouse.context = contexts.hold
                   ctls[i].val = 1
@@ -27161,18 +27182,22 @@ end
       end
     elseif mouse.context and mouse.context == contexts.hold then
     elseif mouse.context == nil and holdbtn ~= nil then
-      holdbtn = nil
+      
       local strip = tracks[track_select].strip
-      if tracks[track_select] and strips[strip] and strips[strip][page].controls[trackfxparam_select] then
-        local ctl = strips[strip][page].controls[trackfxparam_select]
+      if tracks[track_select] and strips[strip] and strips[strip][page].controls[holdbtn] then
+        local ctl = strips[strip][page].controls[holdbtn]
         ctl.val = 0
         ctl.dirty = true
+        SetCtlDirty(holdbtn)
+        
         if ctl.ctltype == 7 or 
            ctl.ctltype == 8 then
-          A_SetParam(strip, page, trackfxparam_select, ctl)
+          A_SetParam(strip, page, holdbtn, ctl)
         end
       end
+      holdbtn = nil
       update_ctls = true
+      
     elseif mouse.context and mouse.context == contexts.dragxy then
     
       local strip = tracks[track_select].strip
@@ -31252,7 +31277,7 @@ end
                     update_gfx = true
                     clickxywh = true
                     break
-                  elseif MOUSE_click_RB(xywh) then
+                  elseif lp == 1 and MOUSE_click_RB(xywh) then
                     GFXMenu()
                     clickxywh = true
                     break
@@ -31261,7 +31286,7 @@ end
                 end
                 
               end
-              if clickxywh == false and MOUSE_click_RB(obj.sections[10]) then
+              if lp == 1 and clickxywh == false and MOUSE_click_RB(obj.sections[10]) then
                 GFXMenu()
               end
             end
