@@ -2730,7 +2730,7 @@
                         y = settingswin_off +yoff + yoffm*0,
                         w = bw,
                         h = bh}
-    obj.sections[72] = {x = obj.sections[70].x+xofft,
+    obj.sections[72] = {x = xofft,
                               y = settingswin_off + yoff + yoffm*1,
                               w = bw,
                               h = bh}
