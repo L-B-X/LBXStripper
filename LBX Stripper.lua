@@ -13734,9 +13734,9 @@ end
     
     GUI_DrawPanel(obj.sections[70],true,'SETTINGS')
     
-    gfx.dest = 991
-    gfx.setimgdim(991,-1,-1)
-    gfx.setimgdim(991,obj.sections[70].w,obj.sections[70].h)
+    gfx.dest = 990
+    gfx.setimgdim(990,-1,-1)
+    gfx.setimgdim(990,obj.sections[70].w,obj.sections[70].h)
     
     f_Get_SSV('0 0 0')
     gfx.a = 1 
@@ -13811,7 +13811,7 @@ end
     GUI_DrawTick(gui, 'Simple select grouped controls', obj.sections[718], gui.color.white, settings_groupsel)
 
     gfx.dest = 1
-    gfx.blit(991,1,0,0,23,obj.sections[70].w,obj.sections[70].h-24,obj.sections[70].x,obj.sections[70].y+23)
+    gfx.blit(990,1,0,0,23,obj.sections[70].w,obj.sections[70].h-24,obj.sections[70].x,obj.sections[70].y+23)
     --f_Get_SSV(gui.color.black)
     --[[gfx.rect(obj.sections[70].x+1,
              obj.sections[70].y+22, 
