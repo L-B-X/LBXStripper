@@ -168,6 +168,7 @@
               move_gaugeed = 121,
               move_gfxopts = 122,
               move_paramlrn = 123,
+              settingswin_dragoff = 124,
               dummy = 999
               }
   
@@ -1572,12 +1573,20 @@
                           h = butt_h}                            
      
       --settings
-      local setw, seth = 600, 570                            
+      settingswin_w = 600
+      settingswin_h = math.min(settingswin_maxh,gfx1.main_h)
+      
+      local setw, seth = settingswin_w, settingswin_h
+      settingswin_off = F_limit(settingswin_off,(-settingswin_maxh)+settingswin_h,0)
+       
       obj.sections[70] = {x = gfx1.main_w/2-setw/2,
                           y = gfx1.main_h/2-seth/2,
                           w = setw,
                           h = seth}
-      local xofft, yoff, yoffm, bh, bw, sw = 200, 28, butt_h/2+14, butt_h/2+4, butt_h/2+4, 80
+      
+      local xofft, yoff, yoffm, bh, bw, sw = 200, 32, butt_h/2+14, butt_h/2+4, butt_h/2+4, 80
+      obj = PosSetWinCtls(obj)
+      --[[
       obj.sections[71] = {x = obj.sections[70].x+xofft,
                           y = obj.sections[70].y+yoff + yoffm*0,
                           w = bw,
@@ -1750,7 +1759,7 @@
                                 y = obj.sections[70].y+yoff + yoffm*21,
                                 w = bw,
                                 h = bh}
-            
+      ]]      
                                 
       --Cycle
       local cw, ch = 160, 380
@@ -2712,6 +2721,186 @@
                            h = 24} 
 
     return obj
+  end
+  
+  function PosSetWinCtls(obj)
+  
+    local xofft, yoff, yoffm, bh, bw, sw = 200, 34, butt_h/2+14, butt_h/2+4, butt_h/2+4, 80
+    obj.sections[71] = {x = xofft,
+                        y = settingswin_off +yoff + yoffm*0,
+                        w = bw,
+                        h = bh}
+    obj.sections[72] = {x = obj.sections[70].x+xofft,
+                              y = settingswin_off + yoff + yoffm*1,
+                              w = bw,
+                              h = bh}
+    obj.sections[73] = {x = xofft,
+                              y = settingswin_off + yoff + yoffm*2,
+                              w = bw,
+                              h = bh}
+    obj.sections[74] = {x = xofft,
+                              y = settingswin_off + yoff + yoffm*3,
+                              w = sw,
+                              h = bh}
+    obj.sections[75] = {x = xofft,
+                              y = settingswin_off + yoff + yoffm*4,
+                              w = bw,
+                              h = bh}
+    obj.sections[76] = {x = xofft,
+                              y = settingswin_off + yoff + yoffm*5,
+                              w = bw,
+                              h = bh}
+    obj.sections[77] = {x = xofft+bw+10,
+                              y = settingswin_off + yoff + yoffm*4,
+                              w = 40,
+                              h = bh}
+    obj.sections[78] = {x = xofft+bw+10,
+                              y = settingswin_off + yoff + yoffm*5,
+                              w = 40,
+                              h = bh}
+    obj.sections[79] = {x = xofft+bw+10,
+                              y = settingswin_off + yoff + yoffm*6,
+                              w = 40,
+                              h = bh}
+    obj.sections[80] = {x = xofft,
+                              y = settingswin_off + yoff + yoffm*6,
+                              w = bw,
+                              h = bh}
+    obj.sections[81] = {x = xofft,
+                              y = settingswin_off + yoff + yoffm*7,
+                              w = bw,
+                              h = bh}
+    obj.sections[82] = {x = xofft,
+                              y = settingswin_off + yoff + yoffm*8,
+                              w = bw,
+                              h = bh}
+    obj.sections[83] = {x = xofft,
+                              y = settingswin_off + yoff + yoffm*9,
+                              w = bw,
+                              h = bh}
+    obj.sections[84] = {x = xofft,
+                              y = settingswin_off + yoff + yoffm*10,
+                              w = bw,
+                              h = bh}
+    obj.sections[85] = {x = xofft,
+                              y = settingswin_off + yoff + yoffm*11,
+                              w = bw,
+                              h = bh}
+    obj.sections[86] = {x = xofft+bw+10,
+                              y = settingswin_off + yoff + yoffm*12,
+                              w = 40,
+                              h = bh}
+    obj.sections[87] = {x = xofft,
+                              y = settingswin_off + yoff + yoffm*17,
+                              w = bw,
+                              h = bh}
+    obj.sections[88] = {x = xofft,
+                              y = settingswin_off + yoff + yoffm*13,
+                              w = bw,
+                              h = bh}
+    obj.sections[89] = {x = xofft,
+                              y = settingswin_off + yoff + yoffm*14,
+                              w = bw,
+                              h = bh}
+    obj.sections[95] = {x = xofft-75,
+                                    y = settingswin_off + yoff + yoffm*18,
+                                    w = 150,
+                                    h = bh+10}
+    obj.sections[96] = {x = xofft,
+                               y = settingswin_off + yoff + yoffm*15,
+                               w = bw,
+                               h = bh}
+    obj.sections[97] = {x = xofft,
+                               y = settingswin_off + yoff + yoffm*16,
+                               w = bw,
+                               h = bh}
+    obj.sections[98] = {x = xofft, 
+                               y = settingswin_off + yoff+10 + yoffm*19,
+                               w = bw,
+                               h = bh}
+                               
+    obj.sections[700] = {x = obj.sections[70].w/2+xofft,
+                        y = settingswin_off + yoff + yoffm*0,
+                        w = sw,
+                        h = butt_h}
+    obj.sections[701] = {x = obj.sections[70].w/2+xofft,
+                        y = settingswin_off + yoff + yoffm*1,
+                        w = sw,
+                        h = butt_h}
+    obj.sections[702] = {x = obj.sections[70].w/2+xofft,
+                        y = settingswin_off + yoff + yoffm*2,
+                        w = 40,
+                        h = bh}
+    obj.sections[703] = {x = obj.sections[70].w/2+xofft,
+                        y = settingswin_off + yoff + yoffm*4,
+                        w = sw,
+                        h = butt_h}
+    obj.sections[704] = {x = obj.sections[70].w/2+xofft,
+                              y = settingswin_off + yoff + yoffm*6,
+                              w = bw,
+                              h = bh}
+                              
+    --send midi data on track change
+    obj.sections[705] = {x = obj.sections[70].w/2+xofft,
+                              y = settingswin_off + yoff + yoffm*7,
+                              w = bw,
+                              h = bh}
+    obj.sections[706] = {x = obj.sections[70].w/2+xofft,
+                              y = settingswin_off + yoff + yoffm*8,
+                              w = bw,
+                              h = bh}
+
+    obj.sections[707] = {x = obj.sections[70].w/2+xofft,
+                              y = settingswin_off + yoff + yoffm*10,
+                              w = bw,
+                              h = bh}
+    obj.sections[708] = {x = obj.sections[70].w/2+xofft,
+                        y = settingswin_off + yoff + yoffm*11,
+                        w = 40,
+                        h = bh}
+    obj.sections[709] = {x = obj.sections[70].w/2+xofft,
+                        y = settingswin_off + yoff + yoffm*12,
+                        w = 40,
+                        h = bh}
+    obj.sections[710] = {x = obj.sections[70].w/2+xofft,
+                        y = settingswin_off + yoff + yoffm*13,
+                        w = 40,
+                        h = bh}
+    obj.sections[711] = {x = obj.sections[70].w/2+xofft,
+                        y = settingswin_off + yoff + yoffm*14,
+                        w = 40,
+                        h = bh}
+    obj.sections[712] = {x = obj.sections[70].w/2+xofft,
+                              y = settingswin_off + yoff + yoffm*15,
+                              w = bw,
+                              h = bh}
+    obj.sections[713] = {x = obj.sections[70].w/2+xofft,
+                              y = settingswin_off + yoff + yoffm*16,
+                              w = bw,
+                              h = bh}
+    obj.sections[714] = {x = obj.sections[70].w/2+xofft,
+                              y = settingswin_off + yoff + yoffm*17,
+                              w = bw,
+                              h = bh}
+    obj.sections[715] = {x = obj.sections[70].w/2+xofft,
+                              y = settingswin_off + yoff + yoffm*18,
+                              w = bw,
+                              h = bh}
+    obj.sections[716] = {x = obj.sections[70].w/2+xofft,
+                        y = settingswin_off + yoff + yoffm*19,
+                        w = 40,
+                        h = bh}
+    obj.sections[717] = {x = obj.sections[70].w/2+xofft,
+                              y = settingswin_off + yoff + yoffm*20,
+                              w = bw,
+                              h = bh}
+    obj.sections[718] = {x = obj.sections[70].w/2+xofft,
+                              y = settingswin_off + yoff + yoffm*21,
+                              w = bw,
+                              h = bh}
+  
+    return obj
+    
   end
   
   function PosParamLrnCtls(obj)
@@ -6792,160 +6981,170 @@
     
       if #strips[tracks[track_select].strip][page].graphics > 0 then
       
-        for i = 1, #strips[tracks[track_select].strip][page].graphics do
-
-          gfx.a = 1
-        
-          local gfxx = strips[tracks[track_select].strip][page].graphics[i]
-          local hidden = Switcher_CtlsHidden(gfxx.switcher, gfxx.grpid)
-        
-          if gfxx.hide == nil and hidden == false then
-            local gtype = gfxx.gfxtype
-            local x = gfxx.x
-            local y = gfxx.y
-            if not surface_size.limit then
-              x = x + surface_offset.x 
-              y = y + surface_offset.y 
-            end
-            
-            if gtype == gfxtype.img then
-              local w = gfxx.w
-              local h = gfxx.h
-              local sw = gfxx.stretchw
-              local sh = gfxx.stretchh
-              local imageidx = gfxx.imageidx
-              
-              local yoff = 0
-              local xoff = 0
-              
-              if (gfxx.bright and gfxx.bright ~= 0.5) or (gfxx.contr and gfxx.contr ~= 0.5) 
-                 or (gfxx.rmult and gfxx.rmult ~= 0.5) or (gfxx.gmult and gfxx.gmult ~= 0.5) or (gfxx.bmult and gfxx.bmult ~= 0.5) 
-                 or (gfxx.alpha and gfxx.alpha ~= 1) then
-                iidx = 899
-                local ba = -F_limit((0.5-gfxx.bright)*2,-1,1)
-                local bc = gfxx.contr
-                
-                if bc > 0.5 then
-                  bc = 1+(bc-0.5)*10
-                else
-                  bc = bc*2
-                end
-
-                local mr = gfxx.rmult
-                local mg = gfxx.gmult
-                local mb = gfxx.bmult
-                if mr > 0.5 then
-                  mr = 1+(mr-0.5)*10
-                else
-                  mr = mr*2
-                end
-                if mg > 0.5 then
-                  mg = 1+(mg-0.5)*10
-                else
-                  mg = mg*2
-                end
-                if mb > 0.5 then
-                  mb = 1+(mb-0.5)*10
-                else
-                  mb = mb*2
-                end
-
-                local ma = gfxx.alpha
-                
-                gfx.setimgdim(iidx, -1, -1)
-                gfx.setimgdim(iidx, sw, sh)
-                gfx.dest = iidx
-                if gfxx.stretchmode == 1 then
-                  gfx.blit(imageidx,1,0, xoff, yoff, w, h-yoff, 0, 0, sw, sh)
-                else
-                  local edge = gfxx.edgesz
-                  --corners
-                  gfx.blit(imageidx,1,0, 0, 0, edge, edge, 0, 0)
-                  gfx.blit(imageidx,1,0, w-edge, 0, edge, edge, sw-edge, 0)
-                  gfx.blit(imageidx,1,0, w-edge, h-edge, edge, edge, sw-edge, sh-edge)
-                  gfx.blit(imageidx,1,0, 0, h-edge, edge, edge, 0, sh-edge)
-                  --sides
-                  gfx.blit(imageidx,1,0, edge, 0, w-edge-edge, edge, edge, 0, sw-edge-edge, edge)
-                  gfx.blit(imageidx,1,0, w-edge, edge, edge, h-edge-edge, sw-edge, edge, edge, sh-edge-edge)
-                  gfx.blit(imageidx,1,0, edge, h-edge, w-edge-edge, edge, edge, sh-edge, sw-edge-edge, edge)
-                  gfx.blit(imageidx,1,0, 0, edge, edge, h-edge-edge, 0, edge, edge, sh-edge-edge)
-                  --middle
-                  gfx.blit(imageidx,1,0, edge, edge, w-edge-edge, h-edge-edge, edge, edge, sw-edge-edge, sh-edge-edge)                  
-                end
-                
-                gfx.muladdrect(0,0,sw,sh,bc*mr,bc*mg,bc*mb,1,ba,ba,ba)
-                gfx.dest = 1004
-                gfx.a = ma
-                gfx.blit(iidx,1,0, 0, 0, sw, sh, x+xoff, y+yoff)            
-              else
-                --gfx.blit(imageidx,1,0, xoff, yoff, w, h-yoff, x+xoff, y+yoff, sw, sh)            
-                if gfxx.stretchmode == 1 then
-                  gfx.blit(imageidx,1,0, xoff, yoff, w, h-yoff, x+xoff, y+yoff, sw, sh)
-                else
-                  local edge = gfxx.edgesz
-                  --cornersh
-                  gfx.blit(imageidx,1,0, 0, 0, edge, edge, x+0, y+0)
-                  gfx.blit(imageidx,1,0, w-edge, 0, edge, edge, x+sw-edge, y+0)
-                  gfx.blit(imageidx,1,0, w-edge, h-edge, edge, edge, x+sw-edge, y+sh-edge)
-                  gfx.blit(imageidx,1,0, 0, h-edge, edge, edge, x+0, y+sh-edge)
-                  --sides
-                  gfx.blit(imageidx,1,0, edge, 0, w-edge-edge, edge, x+edge, y+0, sw-edge-edge, edge)
-                  gfx.blit(imageidx,1,0, w-edge, edge, edge, h-edge-edge, x+sw-edge, y+edge, edge, sh-edge-edge)
-                  gfx.blit(imageidx,1,0, edge, h-edge, w-edge-edge, edge, x+edge, y+sh-edge, sw-edge-edge, edge)
-                  gfx.blit(imageidx,1,0, 0, edge, edge, h-edge-edge, x+0, y+edge, edge, sh-edge-edge)
-                  --middle
-                  gfx.blit(imageidx,1,0, edge, edge, w-edge-edge, h-edge-edge, x+edge, y+edge, sw-edge-edge, sh-edge-edge)                  
-                end
-              end
-                          
-            elseif gtype == gfxtype.txt then
-              --local w = gfxx.w
-              --local h = gfxx.h
-              local text = gfxx.text
-              local textcol = gfxx.text_col
-              
-              local flagb,flagi,flagu = 0,0,0
-              if gfxx.font.bold then
-                flagb = 98
-              end
-              if gfxx.font.italics then
-                flagi = 105
-              end
-              if gfxx.font.underline then
-                flagu = 117
-              end
-              local flags = flagb + (flagi*256) + (flagu*(256^2))
-              gfx.setfont(1,gfxx.font.name,
-                            gfxx.font.size,flags)
-              local w, h = gfx.measurestr(text)
-              gfxx.w = w
-              gfxx.h = h            
-              gfxx.stretchw = w
-              gfxx.stretchh = h            
-              if gfxx.font.shadow then
-              
-                local shada = nz(gfxx.font.shadow_a,0.6)
-                local shadx = nz(gfxx.font.shadow_x,1)
-                local shady = nz(gfxx.font.shadow_y,1)
-                --local shadoff = F_limit(math.ceil((gfxx.font.size/250)*10),1,15)
-              
-                f_Get_SSV(gui.color.black)
-                --gfx.a = math.max(shada-(1-backalpha),0)
-                gfx.a = shada
-                gfx.x, gfx.y = x+shadx,y+shady
-                gfx.drawstr(text)
-              end
-              
-              gfx.a = 1
-              --gfx.a = backalpha
-              gfx.x, gfx.y = x,y
-              f_Get_SSV(textcol)
-              
-              gfx.drawstr(text)
-            
-            end
-          end          
+        local loop = 1
+        if settings_drawbglabelsontop then
+          loop = 2
         end
+      
+        for lp = 1, loop do
+          for i = 1, #strips[tracks[track_select].strip][page].graphics do
+  
+            gfx.a = 1
+          
+            local gfxx = strips[tracks[track_select].strip][page].graphics[i]
+            local hidden = Switcher_CtlsHidden(gfxx.switcher, gfxx.grpid)
+          
+            if gfxx.hide == nil and hidden == false then
+              local gtype = gfxx.gfxtype
+              local x = gfxx.x
+              local y = gfxx.y
+              if not surface_size.limit then
+                x = x + surface_offset.x 
+                y = y + surface_offset.y 
+              end
+              
+              if gtype == gfxtype.img and lp == 1 then
+
+                local w = gfxx.w
+                local h = gfxx.h
+                local sw = gfxx.stretchw
+                local sh = gfxx.stretchh
+                local imageidx = gfxx.imageidx
+                
+                local yoff = 0
+                local xoff = 0
+                
+                if (gfxx.bright and gfxx.bright ~= 0.5) or (gfxx.contr and gfxx.contr ~= 0.5) 
+                   or (gfxx.rmult and gfxx.rmult ~= 0.5) or (gfxx.gmult and gfxx.gmult ~= 0.5) or (gfxx.bmult and gfxx.bmult ~= 0.5) 
+                   or (gfxx.alpha and gfxx.alpha ~= 1) then
+                  iidx = 899
+                  local ba = -F_limit((0.5-gfxx.bright)*2,-1,1)
+                  local bc = gfxx.contr
+                  
+                  if bc > 0.5 then
+                    bc = 1+(bc-0.5)*10
+                  else
+                    bc = bc*2
+                  end
+  
+                  local mr = gfxx.rmult
+                  local mg = gfxx.gmult
+                  local mb = gfxx.bmult
+                  if mr > 0.5 then
+                    mr = 1+(mr-0.5)*10
+                  else
+                    mr = mr*2
+                  end
+                  if mg > 0.5 then
+                    mg = 1+(mg-0.5)*10
+                  else
+                    mg = mg*2
+                  end
+                  if mb > 0.5 then
+                    mb = 1+(mb-0.5)*10
+                  else
+                    mb = mb*2
+                  end
+  
+                  local ma = gfxx.alpha
+                  
+                  gfx.setimgdim(iidx, -1, -1)
+                  gfx.setimgdim(iidx, sw, sh)
+                  gfx.dest = iidx
+                  if gfxx.stretchmode == 1 then
+                    gfx.blit(imageidx,1,0, xoff, yoff, w, h-yoff, 0, 0, sw, sh)
+                  else
+                    local edge = gfxx.edgesz
+                    --corners
+                    gfx.blit(imageidx,1,0, 0, 0, edge, edge, 0, 0)
+                    gfx.blit(imageidx,1,0, w-edge, 0, edge, edge, sw-edge, 0)
+                    gfx.blit(imageidx,1,0, w-edge, h-edge, edge, edge, sw-edge, sh-edge)
+                    gfx.blit(imageidx,1,0, 0, h-edge, edge, edge, 0, sh-edge)
+                    --sides
+                    gfx.blit(imageidx,1,0, edge, 0, w-edge-edge, edge, edge, 0, sw-edge-edge, edge)
+                    gfx.blit(imageidx,1,0, w-edge, edge, edge, h-edge-edge, sw-edge, edge, edge, sh-edge-edge)
+                    gfx.blit(imageidx,1,0, edge, h-edge, w-edge-edge, edge, edge, sh-edge, sw-edge-edge, edge)
+                    gfx.blit(imageidx,1,0, 0, edge, edge, h-edge-edge, 0, edge, edge, sh-edge-edge)
+                    --middle
+                    gfx.blit(imageidx,1,0, edge, edge, w-edge-edge, h-edge-edge, edge, edge, sw-edge-edge, sh-edge-edge)                  
+                  end
+                  
+                  gfx.muladdrect(0,0,sw,sh,bc*mr,bc*mg,bc*mb,1,ba,ba,ba)
+                  gfx.dest = 1004
+                  gfx.a = ma
+                  gfx.blit(iidx,1,0, 0, 0, sw, sh, x+xoff, y+yoff)            
+                else
+                  --gfx.blit(imageidx,1,0, xoff, yoff, w, h-yoff, x+xoff, y+yoff, sw, sh)            
+                  if gfxx.stretchmode == 1 then
+                    gfx.blit(imageidx,1,0, xoff, yoff, w, h-yoff, x+xoff, y+yoff, sw, sh)
+                  else
+                    local edge = gfxx.edgesz
+                    --cornersh
+                    gfx.blit(imageidx,1,0, 0, 0, edge, edge, x+0, y+0)
+                    gfx.blit(imageidx,1,0, w-edge, 0, edge, edge, x+sw-edge, y+0)
+                    gfx.blit(imageidx,1,0, w-edge, h-edge, edge, edge, x+sw-edge, y+sh-edge)
+                    gfx.blit(imageidx,1,0, 0, h-edge, edge, edge, x+0, y+sh-edge)
+                    --sides
+                    gfx.blit(imageidx,1,0, edge, 0, w-edge-edge, edge, x+edge, y+0, sw-edge-edge, edge)
+                    gfx.blit(imageidx,1,0, w-edge, edge, edge, h-edge-edge, x+sw-edge, y+edge, edge, sh-edge-edge)
+                    gfx.blit(imageidx,1,0, edge, h-edge, w-edge-edge, edge, x+edge, y+sh-edge, sw-edge-edge, edge)
+                    gfx.blit(imageidx,1,0, 0, edge, edge, h-edge-edge, x+0, y+edge, edge, sh-edge-edge)
+                    --middle
+                    gfx.blit(imageidx,1,0, edge, edge, w-edge-edge, h-edge-edge, x+edge, y+edge, sw-edge-edge, sh-edge-edge)                  
+                  end
+                end
+                            
+              elseif gtype == gfxtype.txt and (loop == 1 or lp == 2) then
+
+                --local w = gfxx.w
+                --local h = gfxx.h
+                local text = gfxx.text
+                local textcol = gfxx.text_col
+                
+                local flagb,flagi,flagu = 0,0,0
+                if gfxx.font.bold then
+                  flagb = 98
+                end
+                if gfxx.font.italics then
+                  flagi = 105
+                end
+                if gfxx.font.underline then
+                  flagu = 117
+                end
+                local flags = flagb + (flagi*256) + (flagu*(256^2))
+                gfx.setfont(1,gfxx.font.name,
+                              gfxx.font.size,flags)
+                local w, h = gfx.measurestr(text)
+                gfxx.w = w
+                gfxx.h = h            
+                gfxx.stretchw = w
+                gfxx.stretchh = h            
+                if gfxx.font.shadow then
+                
+                  local shada = nz(gfxx.font.shadow_a,0.6)
+                  local shadx = nz(gfxx.font.shadow_x,1)
+                  local shady = nz(gfxx.font.shadow_y,1)
+                  --local shadoff = F_limit(math.ceil((gfxx.font.size/250)*10),1,15)
+                
+                  f_Get_SSV(gui.color.black)
+                  --gfx.a = math.max(shada-(1-backalpha),0)
+                  gfx.a = shada
+                  gfx.x, gfx.y = x+shadx,y+shady
+                  gfx.drawstr(text)
+                end
+                
+                gfx.a = 1
+                --gfx.a = backalpha
+                gfx.x, gfx.y = x,y
+                f_Get_SSV(textcol)
+                
+                gfx.drawstr(text)
+              
+              end
+            end          
+          end
+        end
+        
       end      
     end
 
@@ -6962,7 +7161,9 @@
       end
     end
     local ba = math.max(backalpha - backalpha2,0)
-    gfx.muladdrect(0,0,surface_size.w,surface_size.h,ba,ba,ba)
+    if ba ~= 1 then
+      gfx.muladdrect(0,0,surface_size.w,surface_size.h,ba,ba,ba)
+    end
     --gfx.muladdrect(0,0,surface_size.w,surface_size.h,1,1,1,1,1,1,1,1)
     
     GUI_DrawGauge()
@@ -7479,10 +7680,12 @@
              b.y, 
              b.w,
              b.h, f)
-    f_Get_SSV(gui.color.black)
-    gfx.line(b.x,b.y,b.x+b.w,b.y+b.h)
-    gfx.line(b.x,b.y+b.h,b.x+b.w,b.y)
-  
+    if f == 1 then
+      f_Get_SSV(gui.color.black)
+      gfx.line(b.x,b.y,b.x+b.w,b.y+b.h)
+      gfx.line(b.x,b.y+b.h,b.x+b.w,b.y)
+    end
+      
   end
 
   function GUI_DrawColorBox(gui, t, b, col, cols)
@@ -13526,17 +13729,20 @@ end
   
   function GUI_DrawSettings(gui, obj)
   
+    gfx.dest = 1
+    
+    GUI_DrawPanel(obj.sections[70],true,'SETTINGS')
+    
+    gfx.dest = 991
+    gfx.setimgdim(991,-1,-1)
+    gfx.setimgdim(991,obj.sections[70].w,obj.sections[70].h)
+    
     f_Get_SSV('0 0 0')
     gfx.a = 1 
-    gfx.rect(obj.sections[70].x,
-             obj.sections[70].y, 
+    --[[gfx.rect(0,
+             0, 
              obj.sections[70].w,
-             obj.sections[70].h, 1)
-    f_Get_SSV(gui.color.white)
-    gfx.rect(obj.sections[70].x,
-             obj.sections[70].y, 
-             obj.sections[70].w,
-             obj.sections[70].h, 0)
+             obj.sections[70].h, 1)]]
 
     GUI_DrawTick(gui, 'Follow selected track', obj.sections[71], gui.color.white, settings_followselectedtrack)             
     GUI_DrawTick(gui, 'Disable send checks', obj.sections[72], gui.color.white, settings_disablesendchecks)             
@@ -13603,6 +13809,32 @@ end
     GUI_DrawTick(gui, 'Activate snapshot morphing pop-ups', obj.sections[717], gui.color.white, settings_showmorphpop)
     GUI_DrawTick(gui, 'Simple select grouped controls', obj.sections[718], gui.color.white, settings_groupsel)
 
+    gfx.dest = 1
+    gfx.blit(991,1,0,0,23,obj.sections[70].w,obj.sections[70].h-24,obj.sections[70].x,obj.sections[70].y+23)
+    --f_Get_SSV(gui.color.black)
+    --[[gfx.rect(obj.sections[70].x+1,
+             obj.sections[70].y+22, 
+             obj.sections[70].w-2,
+             obj.sections[70].h-23, 0)]]
+    
+    --[[f_Get_SSV(gui.color.white)
+    local xywh = {x = obj.sections[70].x+4,
+                  y = obj.sections[70].y+1,
+                  w = obj.sections[70].w-8,
+                  h = 21}]]
+                  
+    --[[gfx.rect(xywh.x,
+             xywh.y, 
+             xywh.w,
+             xywh.h, 1)
+    GUI_textC(gui,xywh,'SETTINGS',gui.color.black,-2)]]
+    
+    --[[f_Get_SSV(gui.color.white)
+    gfx.rect(obj.sections[70].x,
+             obj.sections[70].y, 
+             obj.sections[70].w,
+             obj.sections[70].h, 0)]]
+    
   end
   
   function GetMOFaders()
@@ -13803,7 +14035,9 @@ end
     if x == nil or y == nil then  
       x, y = (screen_w - w) / 2, (screen_h - h) / 2
     end
-    gfx.init("- LBX Stripper -", w, h, 0, x, y)  
+    gfx.init("- LBX Stripper -", w, h, 0, x, y)
+    
+    gfx.ext_retina = 1  
   end
 
  -------------------------------------------------------------     
@@ -30960,58 +31194,79 @@ end
         
         local clickxywh = false
         if mouse.context == nil then
-          for i = #strips[tracks[track_select].strip][page].graphics,1,-1 do
-            local xywh
-            local gfxx = strips[tracks[track_select].strip][page].graphics[i]
-            xywh = {x = gfxx.x - surface_offset.x + obj.sections[10].x, 
-                    y = gfxx.y - surface_offset.y + obj.sections[10].y, 
-                    w = gfxx.stretchw, 
-                    h = gfxx.stretchh}
-            
-            if xywh.w < 16 then
-              xywh.x = xywh.x - 8
-              xywh.w = 16
+        
+          if mouse.LB or mouse.RB then
+            local clickedon = false
+            local loop = 1
+            if settings_drawbglabelsontop then
+              loop = 2
             end
-            if xywh.h < 16 then 
-              xywh.y = xywh.y - 8
-              xywh.h = 16
-            end
-            
-            if MOUSE_click(xywh) and Switcher_CtlsHidden(gfxx.switcher, gfxx.grpid) == false then
-              gfx2_select = i              
-
-              poslock_select = nz(strips[tracks[track_select].strip][page].graphics[gfx2_select].poslock,false)
-              
-              mouse.context = contexts.draggfx2
-              draggfx2 = 'draggfx'
-              dragoff = {x = mouse.mx - strips[tracks[track_select].strip][page].graphics[gfx2_select].x - surface_offset.x,
-                         y = mouse.my - strips[tracks[track_select].strip][page].graphics[gfx2_select].y - surface_offset.y}
-              
-              if strips[tracks[track_select].strip][page].graphics[gfx2_select].gfxtype == gfxtype.txt then
-                show_lbloptions = true
-                show_gfxoptions = false
-                SetGfxSelectVals()
-              else
-                show_lbloptions = false
-                show_gfxoptions = true
-                SetGfxSelectVals2()
+            for lp = 1, loop do
+              if clickedon == true then
+                break
               end
-              
-              GenGFXDragPreview(gui)
-              gfxx.hide = true
-              
-              update_gfx = true
-              clickxywh = true
-              break
-            elseif MOUSE_click_RB(xywh) then
-              GFXMenu()
-              clickxywh = true
-              break
+             
+              for i = #strips[tracks[track_select].strip][page].graphics,1,-1 do
+                local xywh
+                local gfxx = strips[tracks[track_select].strip][page].graphics[i]
+                
+                if loop == 1 or (lp == 1 and gfxx.gfxtype == gfxtype.txt) or (lp == 2 and gfxx.gfxtype == gfxtype.img) then 
+                  xywh = {x = gfxx.x - surface_offset.x + obj.sections[10].x, 
+                          y = gfxx.y - surface_offset.y + obj.sections[10].y, 
+                          w = gfxx.stretchw, 
+                          h = gfxx.stretchh}
+                  
+                  if xywh.w < 16 then
+                    xywh.x = xywh.x - 8
+                    xywh.w = 16
+                  end
+                  if xywh.h < 16 then 
+                    xywh.y = xywh.y - 8
+                    xywh.h = 16
+                  end
+                  
+                  if MOUSE_click(xywh) and Switcher_CtlsHidden(gfxx.switcher, gfxx.grpid) == false then
+                    clickedon = true
+                    gfx2_select = i              
+      
+                    poslock_select = nz(strips[tracks[track_select].strip][page].graphics[gfx2_select].poslock,false)
+                    
+                    mouse.context = contexts.draggfx2
+                    draggfx2 = 'draggfx'
+                    dragoff = {x = mouse.mx - strips[tracks[track_select].strip][page].graphics[gfx2_select].x - surface_offset.x,
+                               y = mouse.my - strips[tracks[track_select].strip][page].graphics[gfx2_select].y - surface_offset.y}
+                    
+                    if strips[tracks[track_select].strip][page].graphics[gfx2_select].gfxtype == gfxtype.txt then
+                      show_lbloptions = true
+                      show_gfxoptions = false
+                      SetGfxSelectVals()
+                    else
+                      show_lbloptions = false
+                      show_gfxoptions = true
+                      SetGfxSelectVals2()
+                    end
+                    
+                    GenGFXDragPreview(gui)
+                    gfxx.hide = true
+                    
+                    update_gfx = true
+                    clickxywh = true
+                    break
+                  elseif MOUSE_click_RB(xywh) then
+                    GFXMenu()
+                    clickxywh = true
+                    break
+                  end
+                  
+                end
+                
+              end
+              if clickxywh == false and MOUSE_click_RB(obj.sections[10]) then
+                GFXMenu()
+              end
             end
           end
-          if clickxywh == false and MOUSE_click_RB(obj.sections[10]) then
-            GFXMenu()
-          end
+          
         end
         
       end
@@ -35099,8 +35354,19 @@ end
       show_settings = false
       SaveSettings()
       update_gfx = true      
+    elseif gfx.mouse_wheel ~= 0 then
+      local v = gfx.mouse_wheel/120
+      settingswin_off = F_limit(settingswin_off + (v*25),(-settingswin_maxh)+settingswin_h,0)
+      --DBG(settingswin_off)
+      obj = PosSetWinCtls(obj)
+      update_surface = true
+      gfx.mouse_wheel = 0
     elseif mouse.LB or mouse.RB then
     
+      local mx, my = mouse.mx, mouse.my
+      mouse.mx = mouse.mx - obj.sections[70].x
+      mouse.my = mouse.my - obj.sections[70].y
+      
       if MOUSE_click(obj.sections[71]) then
         settings_followselectedtrack = not settings_followselectedtrack
         update_settings = true
@@ -35284,9 +35550,22 @@ end
       
         OpenEB(50, 'Please choose a save subfolder name:', nz(save_subfolder,''))
       
+      elseif mouse.context == nil and MOUSE_click(obj.sections[70]) then
+        --drag offset
+        mouse.context = contexts.settingswin_dragoff
+        dragsetoff = {dy = mouse.my-obj.sections[70].y, offs = settingswin_off}
+
       end
       
-      if mouse.context and mouse.context == contexts.updatefreq then
+      if mouse.context and mouse.context == contexts.settingswin_dragoff then
+      
+        settingswin_off = dragsetoff.offs + (mouse.my - dragsetoff.dy)
+        settingswin_off = F_limit(settingswin_off,(-settingswin_maxh)+settingswin_h,0)
+        obj = PosSetWinCtls(obj)
+        --DBG(settingswin_off)
+        update_surface = true
+      
+      elseif mouse.context and mouse.context == contexts.updatefreq then
         local val = F_limit(MOUSE_sliderHBar(obj.sections[74]),0,1)
         if val ~= nil then
           settings_updatefreq = (1-val)/10
@@ -35325,6 +35604,8 @@ end
           update_gfx = true
         end
       end
+      
+      mouse.mx, mouse.my = mx, my
     end
         
   end
@@ -40397,6 +40678,7 @@ end
     settings_showmorphpop = tobool(nz(GES('settings_showmorphpop',true),settings_showmorphpop))
     settings_groupsel = tobool(nz(GES('settings_groupsel',true),settings_groupsel))
     settings_savesnapafterselected = tobool(nz(GES('settings_savesnapafterselected',true),settings_savesnapafterselected))
+    settings_drawbglabelsontop = tobool(nz(GES('settings_drawbglabelsontop',true),settings_drawbglabelsontop))
 
     modulator_cnt = tonumber(nz(GES('modulator_cnt',true),modulator_cnt))
     
@@ -40533,6 +40815,7 @@ end
     reaper.SetExtState(SCRIPT,'settings_showmorphpop',tostring(settings_showmorphpop), true)    
     reaper.SetExtState(SCRIPT,'settings_groupsel',tostring(settings_groupsel), true)    
     reaper.SetExtState(SCRIPT,'settings_savesnapafterselected',tostring(settings_savesnapafterselected), true)    
+    reaper.SetExtState(SCRIPT,'settings_drawbglabelsontop',tostring(settings_drawbglabelsontop), true)    
 
     reaper.SetExtState(SCRIPT,'modulator_cnt',tostring(modulator_cnt), true)    
     
@@ -45033,6 +45316,10 @@ end
   settings_showmorphpop = false
   settings_groupsel = true
   settings_savesnapafterselected = false
+  settings_drawbglabelsontop = true
+  
+  settingswin_off = 0
+  settingswin_maxh = 570
   
   autosnap_rowheight = 410
   autosnap_itemgap = 20
