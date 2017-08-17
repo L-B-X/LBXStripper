@@ -29350,10 +29350,10 @@ end
                         --end
                         SelectGroupElements(grpid)
                       else
-                        if ctl_select == nil then
+                        --if ctl_select == nil then
                           ctl_select = {}
                           ctl_select[1] = {ctl = i}
-                        end
+                        --end
                       end
                     end
                                                       
