@@ -23796,7 +23796,7 @@ end
         
         elseif (mouse.MB and not mouse.last_MB) then
 
-          if MOUSE_over(obj.sections[10]) then
+          if macro_edit_mode ~= true and show_eqcontrol ~= true and MOUSE_over(obj.sections[10]) then
             obj.sections[2000].x = mouse.mx-obj.sections[2000].w/2
             obj.sections[2000].y = mouse.my-obj.sections[2000].h/2
             show_arrowupdn = not show_arrowupdn
@@ -33057,7 +33057,7 @@ end
       else
 
         local macroctl = strips[tracks[track_select].strip][page].controls[macroctl_select].macroctl
-        if gfx.mouse_wheel ~= 0 and MOUSE_over(obj.sections[300]) then
+        if macroctl and gfx.mouse_wheel ~= 0 and MOUSE_over(obj.sections[300]) then
         
           v = gfx.mouse_wheel/120
           macroedit_poffs = F_limit(macroedit_poffs-v,0,#macroctl-1)
@@ -36628,30 +36628,34 @@ end
   end
   
   function GetEQC_FXNum(band)
-    local fxnum = strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands[band].fxnum
-    local track = GetTrack(tracks[track_select].tracknum)
-    if track and fxnum then
-      if reaper.TrackFX_GetFXGUID(track, fxnum) == strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands[band].fxguid then
-        return fxnum
-      else
-        local fxcnt = reaper.TrackFX_GetCount(track)
-        local guids = {}
-        for i = 0, fxcnt-1 do
-          local guid = reaper.TrackFX_GetFXGUID(track, i)
-          guids[guid] = i
-        end
-        for i = 1, #strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands do
-          local guid = strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands[i].fxguid
-          if guids[guid] then
-            strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands[i].fxnum = guids[guid]
-          else
-            strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands[i].fxnum = -1
+    if strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands then
+      local fxnum = strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands[band].fxnum
+      local track = GetTrack(tracks[track_select].tracknum)
+      if track and fxnum then
+        if reaper.TrackFX_GetFXGUID(track, fxnum) == strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands[band].fxguid then
+          return fxnum
+        else
+          local fxcnt = reaper.TrackFX_GetCount(track)
+          local guids = {}
+          for i = 0, fxcnt-1 do
+            local guid = reaper.TrackFX_GetFXGUID(track, i)
+            guids[guid] = i
           end
+          for i = 1, #strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands do
+            local guid = strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands[i].fxguid
+            if guids[guid] then
+              strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands[i].fxnum = guids[guid]
+            else
+              strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands[i].fxnum = -1
+            end
+          end
+          
+          fxnum = strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands[band].fxnum
+          return fxnum
         end
-        
-        fxnum = strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands[band].fxnum
-        return fxnum
       end
+    else
+      return -1
     end
   end
   
