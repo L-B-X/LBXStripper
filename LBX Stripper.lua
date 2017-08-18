@@ -1052,6 +1052,8 @@
       
       obj.sections = {}
       
+      obj.sections[2000] = {x = 0, y = 0,
+                            w = 66, h = 86}
       local sizex, sizey = 350, 100
       local bsizex, bsizey = 60, 20
       obj.sections[5] = {x = gfx1.main_w/2 - sizex/2 + 25,
@@ -4352,6 +4354,7 @@
     skin.morph_popbar = LoadSkinIMG(870, 'morph_popbar.png')
     skin.morph_popbarr = LoadSkinIMG(871, 'morph_popbarr.png')
     skin.morph_lp = LoadSkinIMG(872, 'morph_lp.png')
+    skin.updn = LoadSkinIMG(873, 'arrow_updown.png')
     --skin.led = LoadSkinIMG(869, 'LBX_Button32_Yellow.png')
   
     if skin.panela_top == -1 or 
@@ -4377,7 +4380,8 @@
        skin.morph_pop == -1 or
        skin.morph_popbar == -1 or
        skin.morph_popbarr == -1 or
-       skin.morph_lp == -1
+       skin.morph_lp == -1 or
+       skin.updn == -1
        then
       ret = false   
     end
@@ -12589,6 +12593,10 @@ end
         GUI_DrawMIDILrn(gui, obj)
       end
       
+      if show_arrowupdn then
+        gfx.blit(skin.updn,1,0,0,moupdn_img*obj.sections[2000].h,obj.sections[2000].w,obj.sections[2000].h,obj.sections[2000].x,obj.sections[2000].y)
+      end
+      
     elseif show_xxy and (update_gfx or update_xxy or update_xxypos or update_surface or update_snaps or update_msnaps or resize_snaps or resize_display) then
     
       gfx.dest = 1
@@ -14564,6 +14572,17 @@ end
     end
     local fxnum = ctl.fxnum
     reaper.TrackFX_Show(track, fxnum, 3)  
+  end
+
+  function CloseFXGUI(ctl)
+    local track
+    if ctl.tracknum == nil then
+      track = GetTrack(tracks[track_select].tracknum)
+    else
+      track = GetTrack(ctl.tracknum)                      
+    end
+    local fxnum = ctl.fxnum
+    reaper.TrackFX_Show(track, fxnum, 2)  
   end
   
 ------------------------------------------------------------
@@ -22743,6 +22762,16 @@ end
       elseif char == 51 then
         settings_showmorphpop = not settings_showmorphpop
         update_gfx = true
+      elseif char == 30064 then
+        if mode == 0 then
+          --tlist_offset = F_limit(tlist_offset - 1, 0, #tracks+1)
+          --update_sidebar = true      
+        end
+      elseif char == 1685026670 then
+        if mode == 0 then
+          --tlist_offset = F_limit(tlist_offset + 1, 0, #tracks+1)  
+          --update_sidebar = true      
+        end
       end
       
     --[[else -- shift
@@ -23610,6 +23639,7 @@ end
     if not mouse.release then
     mouse.LB = gfx.mouse_cap&1==1
     mouse.RB = gfx.mouse_cap&2==2
+    mouse.MB = gfx.mouse_cap&64==64
     end
     mouse.ctrl = gfx.mouse_cap&4==4
     mouse.shift = gfx.mouse_cap&8==8
@@ -23763,6 +23793,18 @@ end
             end
             update_gfx = true
           end
+        
+        elseif (mouse.MB and not mouse.last_MB) then
+
+          if MOUSE_over(obj.sections[10]) then
+            obj.sections[2000].x = mouse.mx-obj.sections[2000].w/2
+            obj.sections[2000].y = mouse.my-obj.sections[2000].h/2
+            show_arrowupdn = not show_arrowupdn
+            moupdn_img = 0
+            omoupdn_img = 0
+            update_surface = true
+          end
+          
         end
                 
         if mouse.context and mouse.context == contexts.dragsidebar then
@@ -23781,7 +23823,54 @@ end
         
         end
         
-        if mode == 0 then
+        local moupdn = false
+        if show_arrowupdn and MOUSE_over(obj.sections[2000]) then
+          if moupdn_timer and reaper.time_precise() > moupdn_timer then  
+            moupdn_img = 0
+            update_surface = true
+            moupdn_timer = nil
+          end
+          moupdn = true
+        end
+        
+        if show_arrowupdn and not moupdn then
+        
+          show_arrowupdn = false
+          update_surface = true
+          
+        elseif show_arrowupdn and moupdn then
+        
+          noscroll = true
+          
+          if gfx.mouse_wheel ~= 0 then
+            local v = gfx.mouse_wheel/120
+            if v > 0 then
+              moupdn_img = 1
+            else
+              moupdn_img = 2
+            end
+            moupdn_timer = reaper.time_precise() + 0.2
+            omoupdn_img = moupdn_img
+            surface_offset.y = F_limit(surface_offset.y - v*50,0,surface_size.h-obj.sections[10].h)
+            update_surface = true
+            gfx.mouse_wheel = 0
+            
+          elseif mouse.LB and not mouse.last_LB then
+            local my = mouse.my-obj.sections[2000].y
+            if my < obj.sections[2000].h/2 then
+              moupdn_img = 1
+              surface_offset.y = F_limit(surface_offset.y - obj.sections[10].h,0,surface_size.h-obj.sections[10].h)
+            else
+              moupdn_img = 2
+              surface_offset.y = F_limit(surface_offset.y + obj.sections[10].h,0,surface_size.h-obj.sections[10].h)
+            end  
+            omoupdn_img = moupdn_img
+            moupdn_timer = reaper.time_precise() + 0.2
+            update_surface = true
+          
+          end
+        
+        elseif mode == 0 then
           
           noscroll = A_Run_Mode0(noscroll, rt)
           
@@ -24048,6 +24137,7 @@ end
     
     gfx.update()
     mouse.last_LB = mouse.LB
+    mouse.last_MB = mouse.MB
     mouse.last_RB = mouse.RB
     mouse.last_x = mouse.mx
     mouse.last_y = mouse.my
@@ -26436,6 +26526,8 @@ end
                     update_gfx = true
                     --RBMenu(0, ccat, i)                  
                   end
+                elseif ccat == ctlcats.fxgui then
+                  CloseFXGUI(ctls[i])
                 else
                   RBMenu(0, ccat, i)
                 end
