@@ -52,6 +52,14 @@
                         tr_rcvs = 3,
                         tr_hwouts = 4
                        }  
+  
+  mutate_settings = {dir = 0,
+                     range_min = 0,
+                     range_max = 100,
+                     mutate = true,
+                     mutate_min = 0,
+                     mutate_max = 5,
+                    }
       
   contexts = {updatefreq = 0,
               lockw = 1,
@@ -169,6 +177,8 @@
               move_gfxopts = 122,
               move_paramlrn = 123,
               settingswin_dragoff = 124,
+              move_mutatewin = 125,
+              mutate_amt = 126,
               dummy = 999
               }
   
@@ -1269,147 +1279,6 @@
                           h = gah}
       obj = PosGaugeEdCtls(obj)
       
-      --[[obj.sections[806] = {x = obj.sections[800].x + 60,
-                           y = obj.sections[800].y + butt_h,
-                           w = gaw-120,
-                           h = gofs-100}
-
-      obj.sections[801] = {x = obj.sections[800].x + 60,
-                           y = obj.sections[800].y + gofs - 8,
-                           w = gsw,
-                           h = butt_h}
-      --radius, len
-      obj.sections[802] = {x = obj.sections[800].x + 60,
-                           y = obj.sections[800].y + gofs + (butt_h/2+13)*4 -20,
-                           w = gsw,
-                           h = butt_h/2+8}
-      obj.sections[803] = {x = obj.sections[800].x + 60,
-                           y = obj.sections[800].y + gofs + (butt_h/2+13)*5 -20,
-                           w = gsw,
-                           h = butt_h/2+8}
-      obj.sections[804] = {x = obj.sections[800].x + 60,
-                           y = obj.sections[800].y + gofs + (butt_h/2+13)*6 -20,
-                           w = gsw,
-                           h = butt_h/2+8}
-      obj.sections[805] = {x = obj.sections[800].x + 60 + gsw/2,
-                           y = obj.sections[800].y + gofs + (butt_h/2+8) +18,
-                           w = gsw/2,
-                           h = butt_h}
-      obj.sections[807] = {x = obj.sections[800].x + 60,
-                           y = obj.sections[800].y + gofs + (butt_h/2+13)*7 -20,
-                           w = gsw,
-                           h = butt_h/2+8}
-      obj.sections[808] = {x = obj.sections[800].x + 60,
-                           y = obj.sections[800].y + gofs + (butt_h/2+13)*8 -20,
-                           w = gsw,
-                           h = butt_h/2+8}
-      --x, y
-      obj.sections[809] = {x = obj.sections[800].x + obj.sections[800].w/2 + 55,
-                           y = obj.sections[800].y + gofs -8 + (butt_h/2+13)*0,
-                           w = gsw,
-                           h = butt_h/2+8}
-      obj.sections[810] = {x = obj.sections[800].x + obj.sections[800].w/2 + 55,
-                           y = obj.sections[800].y + gofs -8 + (butt_h/2+13)*1,
-                           w = gsw,
-                           h = butt_h/2+8}
-
-      obj.sections[811] = {x = obj.sections[800].x + obj.sections[800].w - 40,
-                           y = obj.sections[800].y + 25,
-                           w = 35,
-                           h = butt_h/2+8}
-      obj.sections[812] = {x = obj.sections[800].x + obj.sections[800].w - 40,
-                           y = obj.sections[800].y + 25+ butt_h,
-                           w = 35,
-                           h = butt_h/2+8}
-      obj.sections[813] = {x = obj.sections[800].x + obj.sections[800].w - 40,
-                           y = obj.sections[800].y + 25 + butt_h*2,
-                           w = 35,
-                           h = butt_h/2+8}
-                           
-      obj.sections[814] = {x = obj.sections[800].x + obj.sections[800].w/2 + 55,
-                           y = obj.sections[800].y + gofs + (butt_h/2+13)*4 -20,
-                           w = gsw,
-                           h = butt_h/2+8}
-      obj.sections[815] = {x = obj.sections[800].x + obj.sections[800].w/2 - 60,
-                           y = obj.sections[800].y + gofs -butt_h*2,
-                           w = 120,
-                           h = butt_h}
-      obj.sections[816] = {x = obj.sections[800].x +5,
-                           y = obj.sections[800].y + 25,
-                           w = 35,
-                           h = butt_h/2+8}
-      obj.sections[817] = {x = obj.sections[800].x + obj.sections[800].w/2 + 55,
-                           y = obj.sections[800].y + gofs + (butt_h/2+13)*5 -20,
-                           w = 35,
-                           h = butt_h/2+8}
-
-      obj.sections[827] = {x = obj.sections[800].x + obj.sections[800].w/2 + 105,
-                           y = obj.sections[800].y + gofs + (butt_h/2+13)*6 -20,
-                           w = butt_h/2+4,
-                           h = butt_h/2+4}
-
-      obj.sections[832] = {x = obj.sections[800].x + obj.sections[800].w/2 + 105 + butt_h,
-                           y = obj.sections[800].y + gofs + (butt_h/2+13)*6 -20,
-                           w = butt_h/2+4,
-                           h = butt_h/2+4}
-
-      obj.sections[818] = {x = obj.sections[800].x + 60,
-                           y = obj.sections[800].y + gofs + (butt_h/2+8) - 4,
-                           w = gsw,
-                           h = butt_h}
-
-      obj.sections[823] = {x = obj.sections[800].x + 15,
-                           y = obj.sections[800].y + obj.sections[800].h - butt_h*1.5 - 8,
-                           w = gsw,
-                           h = butt_h*1.5}
-      obj.sections[824] = {x = obj.sections[823].x + obj.sections[823].w + 10,
-                           y = obj.sections[823].y,
-                           w = gsw,
-                           h = butt_h*1.5}
-      obj.sections[819] = {x = obj.sections[824].x + obj.sections[824].w + 10,
-                           y = obj.sections[823].y,
-                           w = gsw,
-                           h = butt_h*1.5}
-
-      obj.sections[820] = {x = obj.sections[800].x + obj.sections[800].w - 38 - butt_h,
-                           y = obj.sections[800].y + 27,
-                           w = butt_h/2+4,
-                           h = butt_h/2+4}
-      obj.sections[821] = {x = obj.sections[800].x + obj.sections[800].w - 38 - butt_h,
-                           y = obj.sections[800].y + 27+ butt_h,
-                           w = butt_h/2+4,
-                           h = butt_h/2+4}
-      obj.sections[822] = {x = obj.sections[800].x + obj.sections[800].w - 38 - butt_h,
-                           y = obj.sections[800].y + 27 + butt_h*2,
-                           w = butt_h/2+4,
-                           h = butt_h/2+4}
-      obj.sections[825] = {x = obj.sections[800].x + obj.sections[800].w/2 + 55,
-                           y = obj.sections[800].y + gofs + (butt_h/2+13)*7 -20,
-                           w = gsw,
-                           h = butt_h/2+8}
-      
-      obj.sections[826] = {x = obj.sections[800].x + obj.sections[800].w/2 + 79,
-                           y = obj.sections[800].y + gofs -butt_h*2-1,
-                           w = 60,
-                           h = butt_h}
-
-      obj.sections[828] = {x = obj.sections[800].x + obj.sections[800].w/2 - 140,
-                           y = obj.sections[800].y + gofs -butt_h*2-1,
-                           w = 30,
-                           h = butt_h}
-      obj.sections[829] = {x = obj.sections[800].x + obj.sections[800].w/2 - 108,
-                           y = obj.sections[800].y + gofs -butt_h*2-1,
-                           w = 30,
-                           h = butt_h}
-      obj.sections[830] = {x = obj.sections[800].x + obj.sections[800].w/2 - 140 +1,
-                           y = obj.sections[800].y + gofs -butt_h*2-3 - (butt_h/2+8),
-                           w = 60,
-                           h = butt_h/2+8}
-      obj.sections[831] = {x = obj.sections[800].x + obj.sections[800].w/2 + 35,
-                           y = obj.sections[800].y + gofs + (butt_h/2+13)*3 -26,
-                           w = gsw+20,
-                           h = butt_h}]]
-      
       local gaw,gah = 400, math.max(200, obj.sections[10].h-40)
       obj.sections[900] = {x = math.max(gfx1.main_w/2 -gaw/2,obj.sections[43].w),
                           y = math.max(gfx1.main_h/2 - gah/2, obj.sections[10].y),
@@ -1586,180 +1455,7 @@
       
       local xofft, yoff, yoffm, bh, bw, sw = 200, 32, butt_h/2+14, butt_h/2+4, butt_h/2+4, 80
       obj = PosSetWinCtls(obj)
-      --[[
-      obj.sections[71] = {x = obj.sections[70].x+xofft,
-                          y = obj.sections[70].y+yoff + yoffm*0,
-                          w = bw,
-                          h = bh}
-      obj.sections[72] = {x = obj.sections[70].x+xofft,
-                                y = obj.sections[70].y+yoff + yoffm*1,
-                                w = bw,
-                                h = bh}
-      obj.sections[73] = {x = obj.sections[70].x+xofft,
-                                y = obj.sections[70].y+yoff + yoffm*2,
-                                w = bw,
-                                h = bh}
-      obj.sections[74] = {x = obj.sections[70].x+xofft,
-                                y = obj.sections[70].y+yoff + yoffm*3,
-                                w = sw,
-                                h = bh}
-      obj.sections[75] = {x = obj.sections[70].x+xofft,
-                                y = obj.sections[70].y+yoff + yoffm*4,
-                                w = bw,
-                                h = bh}
-      obj.sections[76] = {x = obj.sections[70].x+xofft,
-                                y = obj.sections[70].y+yoff + yoffm*5,
-                                w = bw,
-                                h = bh}
-      obj.sections[77] = {x = obj.sections[70].x+xofft+bw+10,
-                                y = obj.sections[70].y+yoff + yoffm*4,
-                                w = 40,
-                                h = bh}
-      obj.sections[78] = {x = obj.sections[70].x+xofft+bw+10,
-                                y = obj.sections[70].y+yoff + yoffm*5,
-                                w = 40,
-                                h = bh}
-      obj.sections[79] = {x = obj.sections[70].x+xofft+bw+10,
-                                y = obj.sections[70].y+yoff + yoffm*6,
-                                w = 40,
-                                h = bh}
-      obj.sections[80] = {x = obj.sections[70].x+xofft,
-                                y = obj.sections[70].y+yoff + yoffm*6,
-                                w = bw,
-                                h = bh}
-      obj.sections[81] = {x = obj.sections[70].x+xofft,
-                                y = obj.sections[70].y+yoff + yoffm*7,
-                                w = bw,
-                                h = bh}
-      obj.sections[82] = {x = obj.sections[70].x+xofft,
-                                y = obj.sections[70].y+yoff + yoffm*8,
-                                w = bw,
-                                h = bh}
-      obj.sections[83] = {x = obj.sections[70].x+xofft,
-                                y = obj.sections[70].y+yoff + yoffm*9,
-                                w = bw,
-                                h = bh}
-      obj.sections[84] = {x = obj.sections[70].x+xofft,
-                                y = obj.sections[70].y+yoff + yoffm*10,
-                                w = bw,
-                                h = bh}
-      obj.sections[85] = {x = obj.sections[70].x+xofft,
-                                y = obj.sections[70].y+yoff + yoffm*11,
-                                w = bw,
-                                h = bh}
-      obj.sections[86] = {x = obj.sections[70].x+xofft+bw+10,
-                                y = obj.sections[70].y+yoff + yoffm*12,
-                                w = 40,
-                                h = bh}
-      obj.sections[87] = {x = obj.sections[70].x+xofft,
-                                y = obj.sections[70].y+yoff + yoffm*17,
-                                w = bw,
-                                h = bh}
-      obj.sections[88] = {x = obj.sections[70].x+xofft,
-                                y = obj.sections[70].y+yoff + yoffm*13,
-                                w = bw,
-                                h = bh}
-      obj.sections[89] = {x = obj.sections[70].x+xofft,
-                                y = obj.sections[70].y+yoff + yoffm*14,
-                                w = bw,
-                                h = bh}
-      obj.sections[95] = {x = obj.sections[70].x+xofft-75,
-                                      y = obj.sections[70].y+yoff + yoffm*18,
-                                      w = 150,
-                                      h = bh+10}
-      obj.sections[96] = {x = obj.sections[70].x+xofft,
-                                 y = obj.sections[70].y+yoff + yoffm*15,
-                                 w = bw,
-                                 h = bh}
-      obj.sections[97] = {x = obj.sections[70].x+xofft,
-                                 y = obj.sections[70].y+yoff + yoffm*16,
-                                 w = bw,
-                                 h = bh}
-      obj.sections[98] = {x = obj.sections[70].x+xofft, 
-                                 y = obj.sections[70].y+yoff+10 + yoffm*19,
-                                 w = bw,
-                                 h = bh}
-                                 
-      obj.sections[700] = {x = obj.sections[70].x+obj.sections[70].w/2+xofft,
-                          y = obj.sections[70].y+yoff + yoffm*0,
-                          w = sw,
-                          h = butt_h}
-      obj.sections[701] = {x = obj.sections[70].x+obj.sections[70].w/2+xofft,
-                          y = obj.sections[70].y+yoff + yoffm*1,
-                          w = sw,
-                          h = butt_h}
-      obj.sections[702] = {x = obj.sections[70].x+obj.sections[70].w/2+xofft,
-                          y = obj.sections[70].y+yoff + yoffm*2,
-                          w = 40,
-                          h = bh}
-      obj.sections[703] = {x = obj.sections[70].x+obj.sections[70].w/2+xofft,
-                          y = obj.sections[70].y+yoff + yoffm*4,
-                          w = sw,
-                          h = butt_h}
-      obj.sections[704] = {x = obj.sections[70].x+obj.sections[70].w/2+xofft,
-                                y = obj.sections[70].y+yoff + yoffm*6,
-                                w = bw,
-                                h = bh}
-                                
-      --send midi data on track change
-      obj.sections[705] = {x = obj.sections[70].x+obj.sections[70].w/2+xofft,
-                                y = obj.sections[70].y+yoff + yoffm*7,
-                                w = bw,
-                                h = bh}
-      obj.sections[706] = {x = obj.sections[70].x+obj.sections[70].w/2+xofft,
-                                y = obj.sections[70].y+yoff + yoffm*8,
-                                w = bw,
-                                h = bh}
-
-      obj.sections[707] = {x = obj.sections[70].x+obj.sections[70].w/2+xofft,
-                                y = obj.sections[70].y+yoff + yoffm*10,
-                                w = bw,
-                                h = bh}
-      obj.sections[708] = {x = obj.sections[70].x+obj.sections[70].w/2+xofft,
-                          y = obj.sections[70].y+yoff + yoffm*11,
-                          w = 40,
-                          h = bh}
-      obj.sections[709] = {x = obj.sections[70].x+obj.sections[70].w/2+xofft,
-                          y = obj.sections[70].y+yoff + yoffm*12,
-                          w = 40,
-                          h = bh}
-      obj.sections[710] = {x = obj.sections[70].x+obj.sections[70].w/2+xofft,
-                          y = obj.sections[70].y+yoff + yoffm*13,
-                          w = 40,
-                          h = bh}
-      obj.sections[711] = {x = obj.sections[70].x+obj.sections[70].w/2+xofft,
-                          y = obj.sections[70].y+yoff + yoffm*14,
-                          w = 40,
-                          h = bh}
-      obj.sections[712] = {x = obj.sections[70].x+obj.sections[70].w/2+xofft,
-                                y = obj.sections[70].y+yoff + yoffm*15,
-                                w = bw,
-                                h = bh}
-      obj.sections[713] = {x = obj.sections[70].x+obj.sections[70].w/2+xofft,
-                                y = obj.sections[70].y+yoff + yoffm*16,
-                                w = bw,
-                                h = bh}
-      obj.sections[714] = {x = obj.sections[70].x+obj.sections[70].w/2+xofft,
-                                y = obj.sections[70].y+yoff + yoffm*17,
-                                w = bw,
-                                h = bh}
-      obj.sections[715] = {x = obj.sections[70].x+obj.sections[70].w/2+xofft,
-                                y = obj.sections[70].y+yoff + yoffm*18,
-                                w = bw,
-                                h = bh}
-      obj.sections[716] = {x = obj.sections[70].x+obj.sections[70].w/2+xofft,
-                          y = obj.sections[70].y+yoff + yoffm*19,
-                          w = 40,
-                          h = bh}
-      obj.sections[717] = {x = obj.sections[70].x+obj.sections[70].w/2+xofft,
-                                y = obj.sections[70].y+yoff + yoffm*20,
-                                w = bw,
-                                h = bh}
-      obj.sections[718] = {x = obj.sections[70].x+obj.sections[70].w/2+xofft,
-                                y = obj.sections[70].y+yoff + yoffm*21,
-                                w = bw,
-                                h = bh}
-      ]]      
+      
                                 
       --Cycle
       local cw, ch = 160, 380
@@ -1770,52 +1466,6 @@
 
       obj = PosCycleCtls(obj)
       
-      --[[local kw,_ = gfx.getimgdim(0)
-      local kh = defctls[def_knob].cellh
-      obj.sections[101] = {x = obj.sections[100].x+obj.sections[100].w/2-kw/2,
-                           y = obj.sections[100].y+butt_h/2,
-                           w = kw,
-                           h = kh}
-      obj.sections[102] = {x = obj.sections[100].x+obj.sections[100].w-40-10,
-                           y = obj.sections[101].y+obj.sections[101].h+butt_h,
-                           w = 40,
-                           h = bh}
-
-      obj.sections[103] = {x = obj.sections[100].x+8,
-                           y = obj.sections[102].y+bh+60+butt_h,
-                           w = obj.sections[100].w-16,
-                           h = butt_h*8}
-
-      obj.sections[104] = {x = obj.sections[102].x,
-                           y = obj.sections[102].y-bh-2,
-                           w = 40,
-                           h = obj.sections[102].h}
-      obj.sections[110] = {x = obj.sections[100].x +45,
-                           y = obj.sections[102].y-bh-2,
-                           w = 40,
-                           h = obj.sections[102].h}
-                           
-      
-      obj.sections[105] = {x = obj.sections[103].x,
-                           y = obj.sections[103].y-butt_h,
-                           w = obj.sections[103].w,
-                           h = butt_h}
-      obj.sections[106] = {x = obj.sections[103].x-2,
-                           y = obj.sections[103].y+obj.sections[103].h+2,
-                           w = obj.sections[103].w+4,
-                           h = butt_h}
-      obj.sections[107] = {x = obj.sections[102].x,
-                           y = obj.sections[102].y+obj.sections[102].h+4,
-                           w = bh,
-                           h = bh}
-      obj.sections[109] = {x = obj.sections[107].x,
-                           y = obj.sections[107].y+obj.sections[107].h+4,
-                           w = bh,
-                           h = bh}
-      obj.sections[108] = {x = obj.sections[107].x,
-                           y = obj.sections[109].y+obj.sections[107].h+4,
-                           w = bh,
-                           h = bh}]]
       
       
       obj.sections[115] = {x = obj.sections[43].x+obj.sections[43].w+20,
@@ -1824,25 +1474,7 @@
                            h = 200}
       obj = PosParamLrnCtls(obj)
       
-      --[[obj.sections[116] = {x = obj.sections[115].x,
-                           y = obj.sections[115].y+butt_h*4,
-                           w = obj.sections[115].w,
-                           h = obj.sections[115].h-(obj.sections[115].y+butt_h*4)}
-      --learn track
-      obj.sections[117] = {x = obj.sections[115].x,
-                           y = obj.sections[115].y+butt_h,
-                           w = obj.sections[115].w,
-                           h = butt_h}
-      --learn fx
-      obj.sections[118] = {x = obj.sections[115].x,
-                           y = obj.sections[115].y+butt_h*2,
-                           w = obj.sections[115].w,
-                           h = butt_h}
-      --learn param
-      obj.sections[119] = {x = obj.sections[115].x,
-                           y = obj.sections[115].y+butt_h*3,
-                           w = obj.sections[115].w,
-                           h = butt_h}]]
+      
       
       --CTL OPTIONS PG 2
       obj.sections[125] = {x = 60,
@@ -1928,97 +1560,6 @@
                           w = butt_h/2+4,
                           h = butt_h/2+4}
       
-      --[[LBL OPTIONS 
-      --EDIT
-      obj.sections[140] = {x = obj.sections[49].x+20,
-                          y = obj.sections[49].y+butt_h+10 + (butt_h/2+4 + 10) * 0,
-                          w = obj.sections[49].w-40,
-                          h = butt_h/2+8}                       
-
-      local yo = 5
-      obj.sections[141] = {x = obj.sections[49].x+50,
-                          y = obj.sections[49].y+butt_h+10 + (butt_h/2+4 + 10) * 2 + yo,
-                          w = obj.sections[49].w-60,
-                          h = butt_h/2+4}                           
-
-      obj.sections[142] = {x = obj.sections[49].x+obj.sections[49].w-40-butt_h/2+4,
-                          y = obj.sections[49].y+butt_h+10 + (butt_h/2+4 + 10) * 3 + yo,
-                          w = butt_h/2+4,
-                          h = butt_h/2+4}                           
-      obj.sections[143] = {x = obj.sections[49].x+obj.sections[49].w-40-butt_h/2+4,
-                          y = obj.sections[49].y+butt_h+10 + (butt_h/2+4 + 10) * 4 + yo,
-                          w = butt_h/2+4,
-                          h = butt_h/2+4}                           
-      obj.sections[144] = {x = obj.sections[49].x+obj.sections[49].w-40-butt_h/2+4,
-                          y = obj.sections[49].y+butt_h+10 + (butt_h/2+4 + 10) * 5 + yo,
-                          w = butt_h/2+4,
-                          h = butt_h/2+4}                           
-      obj.sections[145] = {x = obj.sections[49].x+obj.sections[49].w-40-butt_h/2+4,
-                          y = obj.sections[49].y+butt_h+10 + (butt_h/2+4 + 10) * 6 + yo,
-                          w = butt_h/2+4,
-                          h = butt_h/2+4}                           
-      obj.sections[146] = {x = obj.sections[49].x+obj.sections[49].w-40-butt_h/2+4,
-                          y = obj.sections[49].y+butt_h+10 + (butt_h/2+4 + 10) * 7 + yo,
-                          w = butt_h/2+4,
-                          h = butt_h/2+4}                           
-
-      obj.sections[147] = {x = obj.sections[49].x+20,
-                          y = obj.sections[49].y+butt_h+10 + (butt_h/2+4 + 10) * 1,
-                          w = obj.sections[49].w-40,
-                          h = butt_h/2+8}                       
-
-      obj.sections[148] = {x = obj.sections[49].x+50,
-                          y = obj.sections[49].y+butt_h+10 + (butt_h/2+4 + 10) * 8 + yo,
-                          w = obj.sections[49].w-60,
-                          h = butt_h/2+4}                           
-      obj.sections[149] = {x = obj.sections[49].x+50,
-                          y = obj.sections[49].y+butt_h+10 + (butt_h/2+4 + 10) * 9 + yo,
-                          w = obj.sections[49].w-60,
-                          h = butt_h/2+4}                           
-      obj.sections[150] = {x = obj.sections[49].x+50,
-                          y = obj.sections[49].y+butt_h+10 + (butt_h/2+4 + 10) * 10 + yo,
-                          w = obj.sections[49].w-60,
-                          h = butt_h/2+4}
-
-      obj.sections[910] = {x = obj.sections[49].x+75,
-                          y = obj.sections[49].y+butt_h+10 + (butt_h/2+4 + 10) * 0 + yo,
-                          w = obj.sections[49].w-85,
-                          h = butt_h/2+4}                           
-      obj.sections[911] = {x = obj.sections[49].x+75,
-                          y = obj.sections[49].y+butt_h+10 + (butt_h/2+4 + 10) * 1 + yo,
-                          w = obj.sections[49].w-85,
-                          h = butt_h/2+4}                           
-
-      obj.sections[913] = {x = obj.sections[49].x+75,
-                          y = obj.sections[49].y+butt_h+10 + (butt_h/2+4 + 10) * 3 + yo,
-                          w = obj.sections[49].w-85,
-                          h = butt_h/2+4}                           
-      obj.sections[914] = {x = obj.sections[49].x+75,
-                          y = obj.sections[49].y+butt_h+10 + (butt_h/2+4 + 10) * 4 + yo,
-                          w = obj.sections[49].w-85,
-                          h = butt_h/2+4}                           
-      obj.sections[915] = {x = obj.sections[49].x+75,
-                          y = obj.sections[49].y+butt_h+10 + (butt_h/2+4 + 10) * 5 + yo,
-                          w = obj.sections[49].w-85,
-                          h = butt_h/2+4}                           
-      obj.sections[916] = {x = obj.sections[49].x+75,
-                          y = obj.sections[49].y+butt_h+10 + (butt_h/2+4 + 10) * 6 + yo,
-                          w = obj.sections[49].w-85,
-                          h = butt_h/2+4}                           
-      
-      obj.sections[912] = {x = obj.sections[49].x+20,
-                          y = obj.sections[49].y+butt_h+10 + (butt_h/2+4 + 10) * 7 + 12,
-                          w = obj.sections[49].w-40,
-                          h = butt_h/2+8}                       
-      
-      obj.sections[917] = {x = obj.sections[49].x+75,
-                                y = obj.sections[49].y+butt_h+10 + (butt_h/2+4 + 10) * 9,
-                                w = obj.sections[49].w-85,
-                                h = butt_h/2+8}                           
-      obj.sections[918] = {x = obj.sections[49].x+75,
-                          y = obj.sections[49].y+butt_h+10 + (butt_h/2+4 + 10) * 10,
-                          w = obj.sections[49].w-125,
-                          h = butt_h/2+8} ]]  
                                            
       --SNAPSHOTS
       local ssh = snaph-200
@@ -2719,6 +2260,21 @@
                            y = 0,
                            w = obj.sections[1100].w,
                            h = 24} 
+
+      local mw,mh = 160,84
+      obj.sections[1120] = {x = obj.sections[10].x+obj.sections[10].w - mw - 10,
+                           y = obj.sections[10].y + 10,
+                           w = mw,
+                           h = mh}
+      obj.sections[1121] = {x = 80,
+                           y = 30,
+                           w = 60,
+                           h = butt_h}
+      obj.sections[1122] = {x = 80,
+                           y = obj.sections[1121].y+obj.sections[1121].h+4,
+                           w = 60,
+                           h = butt_h}
+      
 
     return obj
   end
@@ -12077,6 +11633,26 @@ end
   
   end
 
+  function GUI_DrawMutate(obj, gui)
+  
+    gfx.dest = 989
+    gfx.setimgdim(989,obj.sections[1120].w,obj.sections[1120].h)
+    
+    GUI_DrawPanel(obj.sections[1120],false,'MUTATE SETTINGS')
+    
+    GUI_DrawButton(gui, mutate_settings.mutate_max..' %', obj.sections[1121], gui.color.white, gui.color.black, true, 'Amount')
+    local dir = '+ / -'
+    if mutate_settings.dir == 1 then
+      dir = '+'
+    elseif mutate_settings.dir == 2 then
+      dir = '-'    
+    end
+    GUI_DrawButton(gui, dir, obj.sections[1122], gui.color.white, gui.color.black, true, 'Direction')
+    
+    gfx.dest = 1
+  
+  end
+  
   ------------------------------------------------------------
 
   function GUI_draw(obj, gui)
@@ -12084,7 +11660,7 @@ end
     
     if show_xxy == false and (update_gfx or update_surface or update_sidebar or update_topbar or update_ctlopts or update_ctls or update_bg or 
        update_settings or update_snaps or update_msnaps or update_actcho or update_fsnaps or update_mfsnaps or update_eqcontrol or update_macroedit or
-       update_macrobutt or update_snapmorph or update_lfoedit or update_lfoeditbar or update_lfopos) then    
+       update_macrobutt or update_snapmorph or update_lfoedit or update_lfoeditbar or update_lfopos or update_mutate) then    
       local p = 0
       gfx.dest = 1
 
@@ -12395,6 +11971,13 @@ end
           if #morph_data > 0 then
             GUI_DrawMorph(obj, gui)
           end
+        end
+        
+        if show_mutate then
+          if update_gfx or update_mutate then
+            GUI_DrawMutate(obj, gui)
+          end
+          gfx.blit(989,1,0,0,0,obj.sections[1120].w,obj.sections[1120].h,obj.sections[1120].x,obj.sections[1120].y)
         end
         
         if show_snapshots and macro_lrn_mode ~= true then
@@ -13177,6 +12760,7 @@ end
     update_lfoedit = false
     update_lfoeditbar = false
     update_lfopos = false
+    update_mutate = false
     
   end
   
@@ -14062,7 +13646,7 @@ end
     
   function MOUSE_slider(b,yoff)
     if mouse.LB then
-      if yoff == nil then yoff = 0 end
+      yoff = yoff or 0
       local my = mouse.my - (b.y-200) + yoff
      return (my) / (b.h+400)
       --local my = mouse.my - b.y - yoff
@@ -14936,7 +14520,11 @@ end
         
         local sst = ctl.param
         if sst then
-          Snapshot_RANDOMIZE(strip, page, sst, true)
+          if mouse.LB then
+            Snapshot_RANDOMIZE(strip, page, sst, true)
+          else
+            Snapshot_MUTATE(strip, page, sst, true)          
+          end
         end
       
       elseif cc == ctlcats.fxgui then
@@ -25920,7 +25508,45 @@ end
         show_lfoedit = false
         update_gfx = true
       end]]
-          
+    
+    elseif mouse.context == nil and show_mutate == true and (MOUSE_click(obj.sections[1120]) or MOUSE_click_RB(obj.sections[1120])) then
+
+      noscroll = true
+      mx,my = mouse.mx, mouse.my
+      mouse.mx = mouse.mx - obj.sections[1120].x 
+      mouse.my = mouse.my - obj.sections[1120].y
+      
+      xywh = {x = 0, y = 0, w = obj.sections[1120].w, h = 25}
+      if MOUSE_click(xywh) then 
+        mouse.context = contexts.move_mutatewin
+        movemutatewin = {dx = mouse.mx, dy = mouse.my}
+      
+      elseif MOUSE_click_RB(xywh) then 
+        show_mutate = false
+        update_gfx = true
+        
+      elseif MOUSE_click(obj.sections[1121]) then 
+        mouse.context = contexts.mutate_amt
+        mutateamt = {pos = mutate_settings.mutate_max, yoff = my-(obj.sections[1121].y+obj.sections[1121].h/2)}
+
+      elseif MOUSE_click(obj.sections[1122]) then 
+        mutate_settings.dir = mutate_settings.dir + 1
+        if mutate_settings.dir > 2 then
+          mutate_settings.dir = 0
+        end
+        update_mutate = true
+
+      elseif MOUSE_click_RB(obj.sections[1122]) then 
+        mutate_settings.dir = mutate_settings.dir - 1
+        if mutate_settings.dir < 0 then
+          mutate_settings.dir = 2
+        end
+        update_mutate = true
+      end
+      
+      mouse.mx = mx
+      mouse.my = my
+      
     elseif mouse.context == nil and show_lfoedit == true and (MOUSE_click(obj.sections[1100]) or MOUSE_click_RB(obj.sections[1100])) then
 
       noscroll = true
@@ -26786,6 +26412,30 @@ end
                   macroctl_select = trackfxparam_select
                   --update_surface = true
                   update_gfx = true 
+                elseif ccat == ctlcats.snapshotrand then
+                  if not mouse.shift then
+                    if show_mutate then
+                      local ctltype = ctls[i].ctltype
+                      if ctltype == 7 or ctltype == 8 or ctltype == 9 or ctltype == 10 then
+                        --hold button
+                        holdbtn = i
+                        trackfxparam_select = i
+                        mouse.context = contexts.hold
+                        ctls[i].val = 1
+                        ctls[i].dirty = true
+                        SetCtlDirty(i)
+                        update_ctls = true
+                      end
+                      A_SetParam(strip, page, i, ctls[i])
+                    else
+                      show_mutate = not show_mutate
+                      update_gfx = true                      
+                    end
+                  else
+                    show_mutate = not show_mutate
+                    update_gfx = true
+                    --RBMenu(0, ccat, i)                  
+                  end
                 else
                   RBMenu(0, ccat, i)
                 end
@@ -27182,7 +26832,6 @@ end
       end
     elseif mouse.context and mouse.context == contexts.hold then
     elseif mouse.context == nil and holdbtn ~= nil then
-      
       local strip = tracks[track_select].strip
       if tracks[track_select] and strips[strip] and strips[strip][page].controls[holdbtn] then
         local ctl = strips[strip][page].controls[holdbtn]
@@ -27769,6 +27418,20 @@ end
       
       dragparam = nil
       update_gfx = true
+    
+    elseif mouse.context and mouse.context == contexts.move_mutatewin then
+    
+      obj.sections[1120].x = mouse.mx - movemutatewin.dx
+      obj.sections[1120].y = mouse.my - movemutatewin.dy
+      update_surface = true
+    
+    elseif mouse.context and mouse.context == contexts.mutate_amt then
+      local val = MOUSE_slider(obj.sections[1121],-mutateamt.yoff)
+      if val ~= nil then
+        val = 1-val
+        mutate_settings.mutate_max = F_limit(mutateamt.pos + math.floor((val-0.5)*100),1,100)
+        update_mutate = true
+      end
     end
   
     return noscroll
@@ -40706,6 +40369,8 @@ end
     settings_drawbglabelsontop = tobool(nz(GES('settings_drawbglabelsontop',true),settings_drawbglabelsontop))
 
     modulator_cnt = tonumber(nz(GES('modulator_cnt',true),modulator_cnt))
+    mutate_settings.mutate_max = tonumber(nz(GES('mutate_max',true),mutate_settings.mutate_max))
+    mutate_settings.dir = tonumber(nz(GES('mutate_dir',true),mutate_settings.dir))
     
     if settings_hideeditbaronnewproject then
       plist_w = 0
@@ -40843,6 +40508,9 @@ end
     reaper.SetExtState(SCRIPT,'settings_drawbglabelsontop',tostring(settings_drawbglabelsontop), true)    
 
     reaper.SetExtState(SCRIPT,'modulator_cnt',tostring(modulator_cnt), true)    
+
+    reaper.SetExtState(SCRIPT,'mutate_max',tostring(mutate_settings.mutate_max), true)    
+    reaper.SetExtState(SCRIPT,'mutate_dir',tostring(mutate_settings.dir), true)    
     
     if strip_default then
       reaper.SetExtState(SCRIPT,'strip_default',tostring(strip_default.strip_select), true)
@@ -42425,6 +42093,96 @@ end
             local cctl = strips[strip][page].controls[c]
             trackfxparam_select = c
             local v = math.random()
+            if cctl.ctltype == 2 or 
+               cctl.ctltype == 3 or 
+               cctl.ctltype == 7 or
+               cctl.ctltype == 8 or
+               cctl.ctltype == 9 or
+               cctl.ctltype == 10 then
+               v = round(v)
+            end
+            if respectminmax == true then
+              SetParam3(strip,page,c,cctl,v)        
+            else
+              SetParam5(v)                          
+            end
+          end
+        end
+      end    
+    
+    end
+
+  end
+
+  function Snapshot_MUTATE(strip, page, sstype_select, respectminmax)
+
+    if not strips[strip] then return end
+    
+    local mutate_range = (mutate_settings.mutate_max-mutate_settings.mutate_min)/100
+    local mutate_range2 = ((mutate_settings.mutate_max-mutate_settings.mutate_min)/100)*2
+    local min = mutate_settings.range_min/100
+    local max = mutate_settings.range_max/100
+    local range = max-min
+    
+    if sstype_select == 1 then
+      --page
+      if #strips[strip][page].controls > 0 then
+        for c = 1, #strips[strip][page].controls do
+          local ctl = strips[strip][page].controls[c]
+          if ctl.noss ~= true then
+            if ctl.ctlcat == ctlcats.fxparam or 
+               ctl.ctlcat == ctlcats.trackparam or
+               ctl.ctlcat == ctlcats.tracksend then
+              trackfxparam_select = ctl
+              local v
+              if mutate_settings.mutate == true then               
+                if mutate_settings.dir == 0 then
+                  v = math.min(math.max(ctl.val + (math.random()*mutate_range2)-mutate_range,min),max)
+                elseif mutate_settings.dir == 1 then
+                  v = math.min(math.max(ctl.val + math.random()*mutate_range,min),max)              
+                else
+                  v = math.min(math.max(ctl.val - math.random()*mutate_range,min),max)                            
+                end
+              else
+                v = math.random()*range+min 
+              end              
+              if ctl.ctltype == 2 or 
+                 ctl.ctltype == 3 or 
+                 ctl.ctltype == 7 or
+                 ctl.ctltype == 8 or
+                 ctl.ctltype == 9 or
+                 ctl.ctltype == 10 then
+                 v = round(v)
+              end
+              if respectminmax == true then
+                SetParam3(strip,page,c,ctl,v)
+              else
+                SetParam5(v)                          
+              end
+            end
+          end
+        end
+      end
+      
+    elseif sstype_select > 1 then
+      if snapshots[strip][page][sstype_select] then
+        if #snapshots[strip][page][sstype_select].ctls > 0 then
+          for ctl = 1, #snapshots[strip][page][sstype_select].ctls do
+            local c = snapshots[strip][page][sstype_select].ctls[ctl].ctl
+            local cctl = strips[strip][page].controls[c]
+            trackfxparam_select = c
+            local v               
+            if mutate_settings.mutate == true then               
+              if mutate_settings.dir == 0 then
+                v = math.min(math.max(cctl.val + (math.random()*mutate_range2)-mutate_range,min),max)
+              elseif mutate_settings.dir == 1 then
+                v = math.min(math.max(cctl.val + math.random()*mutate_range,min),max)              
+              else
+                v = math.min(math.max(cctl.val - math.random()*mutate_range,min),max)                            
+              end
+            else
+              v = math.random()*range+min 
+            end              
             if cctl.ctltype == 2 or 
                cctl.ctltype == 3 or 
                cctl.ctltype == 7 or
