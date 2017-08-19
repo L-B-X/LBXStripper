@@ -44762,7 +44762,7 @@ end
       local indent, op, cl = 1
       while indent > 0 do
         op = string.find(chunk, '<', s+1, true)
-        cl = string.find(chunk, '>', s+1, true)
+        cl = string.find(chunk, '\n>\n', s+1, true) + 1
         if op == nil and cl == nil then break end
         if op ~= nil then
           if op <= cl then
