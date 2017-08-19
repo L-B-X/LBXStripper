@@ -17643,7 +17643,7 @@ end
 
                 else
                   --track not found
-                  
+                  ctl.fxfound = false
                 end              
               else
                 if ctl.ctlcat == ctlcats.fxparam or ctl.ctlcat == ctlcats.fxoffline 
@@ -20061,7 +20061,7 @@ end
   end
   
   function CtlInfo(strip, page, c)
-  
+   
     local ctl = strips[strip][page].controls[c]
     DBG('')
     DBG('----------------------------------------------')
@@ -20086,10 +20086,19 @@ end
     DBG('Width (scaled): '..ctl.wsc)
     DBG('Height (scaled): '..ctl.hsc)
     DBG('')
+    if ctl.ctlcat == ctlcats.fxparam then
+      DBG('FX GUID: '..ctl.fxguid)
+      local track = GetTrack(nz(ctl.tracknum,tracks[track_select].tracknum))
+      if track then
+        local fxguid = reaper.TrackFX_GetFXGUID(track, ctl.fxnum)
+        DBG('LINKED FX GUID: '..tostring(fxguid))
+      end
+      DBG('OFFLINE: '..tostring(ctl.offline))
+    end
     DBG('----------------------------------------------')
     
   end
-    
+  
   function MenuStripFolders()
   
     local mstripfolders = {}
@@ -35769,6 +35778,9 @@ end
                       SetCtlDirty(i)           
                     end
                   
+                  else
+                    --track not found
+                    ctl.fxfound = false
                   end
                 end
                 chktbl = nil
