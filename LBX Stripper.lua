@@ -1053,7 +1053,10 @@
       obj.sections = {}
       
       obj.sections[2000] = {x = 0, y = 0,
-                            w = 66, h = 86}
+                            w = 70, h = 87}
+      obj.sections[2001] = {x = 0, y = 0,
+                            w = 87, h = 70}
+                            
       local sizex, sizey = 350, 100
       local bsizex, bsizey = 60, 20
       obj.sections[5] = {x = gfx1.main_w/2 - sizex/2 + 25,
@@ -2457,6 +2460,11 @@
                               w = bw,
                               h = bh}
   
+    obj.sections[719] = {x = xofft, 
+                               y = settingswin_off + yoff+10 + yoffm*20,
+                               w = bw,
+                               h = bh}
+    
     return obj
     
   end
@@ -4355,6 +4363,7 @@
     skin.morph_popbarr = LoadSkinIMG(871, 'morph_popbarr.png')
     skin.morph_lp = LoadSkinIMG(872, 'morph_lp.png')
     skin.updn = LoadSkinIMG(873, 'arrow_updown.png')
+    skin.lr = LoadSkinIMG(874, 'arrow_lr.png')
     --skin.led = LoadSkinIMG(869, 'LBX_Button32_Yellow.png')
   
     if skin.panela_top == -1 or 
@@ -4381,7 +4390,8 @@
        skin.morph_popbar == -1 or
        skin.morph_popbarr == -1 or
        skin.morph_lp == -1 or
-       skin.updn == -1
+       skin.updn == -1 or
+       skin.lr == -1 
        then
       ret = false   
     end
@@ -12594,7 +12604,12 @@ end
       end
       
       if show_arrowupdn then
-        gfx.blit(skin.updn,1,0,0,moupdn_img*obj.sections[2000].h,obj.sections[2000].w,obj.sections[2000].h,obj.sections[2000].x,obj.sections[2000].y)
+        local sk, o = skin.updn, 2000
+        if stripgallery_view == 1 or settings_pagescrolldir == 1 then
+          sk = skin.lr
+          o = 2001
+        end
+        gfx.blit(sk,1,0,0,moupdn_img*obj.sections[o].h,obj.sections[o].w,obj.sections[o].h,obj.sections[o].x,obj.sections[o].y)
       end
       
     elseif show_xxy and (update_gfx or update_xxy or update_xxypos or update_surface or update_snaps or update_msnaps or resize_snaps or resize_display) then
@@ -13360,6 +13375,11 @@ end
     GUI_DrawTick(gui, 'Hide edit bar on new projects', obj.sections[96], gui.color.white, settings_hideeditbaronnewproject)
     GUI_DrawTick(gui, 'Lock surface on new projects', obj.sections[97], gui.color.white, settings_locksurfaceonnewproject)
     GUI_DrawTick(gui, 'Create backup when manually saving', obj.sections[98], gui.color.white, settings_createbackuponmanualsave)
+    local t = false
+    if settings_pagescrolldir == 1 then
+      t = true
+    end
+    GUI_DrawTick(gui, 'Mousewheel scrolls page horizontally', obj.sections[719], gui.color.white, t)
     
     GUI_DrawButton(gui, nz(save_subfolder,''), obj.sections[95], gui.color.white, gui.color.white, false, 'Save subfolder', true)  
 
@@ -14962,12 +14982,26 @@ end
       
   end
   
-  function CheckDataTables()
+  function CheckDataTables(allstrips)
   
-    Snapshots_Check(tracks[track_select].strip,page)
-    Macros_Check(tracks[track_select].strip,page)
-    Faders_Check(tracks[track_select].strip,page)
-    StoreSnapshotControlIdxs(tracks[track_select].strip,page)
+    if allstrips == true then
+
+      for s = 1, #strips do    
+        CheckStripControls(s)
+        for p = 1, 4 do
+          Snapshots_Check(s,p)
+          Macros_Check(s,p)
+          Faders_Check(s,p)
+          StoreSnapshotControlIdxs(s,p)
+        end
+      end
+      
+    else
+      Snapshots_Check(tracks[track_select].strip,page)
+      Macros_Check(tracks[track_select].strip,page)
+      Faders_Check(tracks[track_select].strip,page)
+      StoreSnapshotControlIdxs(tracks[track_select].strip,page)
+    end
     CheckFaders()
     modulators = CheckMods(modulators, true)
     --Controls_ModCheck()
@@ -16374,8 +16408,8 @@ end
                                                                             - stripdata.strip.controls[j].w*stripdata.strip.controls[j].scale/2)
       strips[strip][page].controls[cc].ysc = stripdata.strip.controls[j].y + math.floor(stripdata.strip.controls[j].ctl_info.cellh/2 
                                                                             - stripdata.strip.controls[j].ctl_info.cellh*stripdata.strip.controls[j].scale/2)
-      strips[strip][page].controls[cc].wsc = stripdata.strip.controls[j].w*stripdata.strip.controls[j].scale
-      strips[strip][page].controls[cc].hsc = stripdata.strip.controls[j].ctl_info.cellh*stripdata.strip.controls[j].scale
+      strips[strip][page].controls[cc].wsc = math.floor(stripdata.strip.controls[j].w*stripdata.strip.controls[j].scale)
+      strips[strip][page].controls[cc].hsc = math.floor(stripdata.strip.controls[j].ctl_info.cellh*stripdata.strip.controls[j].scale)
       
       local ocid = strips[strip][page].controls[cc].c_id
       strips[strip][page].controls[cc].c_id = GenID() --give a new control id
@@ -17499,20 +17533,28 @@ end
     
   ------------------------------------------------------------    
 
-  function CheckStripControls()
+  function CheckStripControls(strip)
   
-    if strips and tracks[track_select] and strips[tracks[track_select].strip] then
+    if strip == nil then
+      if tracks[track_select] then
+        strip = tracks[track_select].strip
+      else
+        return
+      end
+    end
+    
+    if strips and strips[strip] then
       local tr_found = false
       
       --Check track guid - none for master
-      --if strips[tracks[track_select].strip].track.tracknum == -1 then return end
+      --if strips[strip].track.tracknum == -1 then return end
       
-      if strips[tracks[track_select].strip].track.tracknum ~= -1 then 
-        tr_found = CheckTrack(strips[tracks[track_select].strip].track, tracks[track_select].strip)
+      if strips[strip].track.tracknum ~= -1 then 
+        tr_found = CheckTrack(strips[strip].track, strip)
       end
         
-      if (tr_found or strips[tracks[track_select].strip].track.tracknum == -1) and strips and strips[tracks[track_select].strip] then
-        local tr = GetTrack(strips[tracks[track_select].strip].track.tracknum)
+      if (tr_found or strips[strip].track.tracknum == -1) and strips and strips[strip] then
+        local tr = GetTrack(strips[strip].track.tracknum)
 
         local fxoffline = {}
         for fxn = 0, reaper.TrackFX_GetCount(tr)-1 do
@@ -17524,17 +17566,17 @@ end
   
         for p = 1, 4 do
         
-          if #strips[tracks[track_select].strip][p].controls > 0 then
+          if #strips[strip][p].controls > 0 then
           
-            for c = 1, #strips[tracks[track_select].strip][p].controls do
+            for c = 1, #strips[strip][p].controls do
              
-              local ctl = strips[tracks[track_select].strip][p].controls[c]
+              local ctl = strips[strip][p].controls[c]
               ctl.offline = nil
               
               local tr2 = tr
               if ctl.tracknum ~= nil then
                 tr_found = CheckTrack(tracks[ctl.tracknum],
-                                      tracks[track_select].strip, p, c)                      
+                                      strip, p, c)                      
                 if tr_found then
                   tr2 = GetTrack(ctl.tracknum)
                   if ctl.ctlcat == ctlcats.fxparam or ctl.ctlcat == ctlcats.fxoffline 
@@ -17576,9 +17618,11 @@ end
                         end
                       end
                       
-                      PopulateTrackFX()
-                      update_gfx = true
-                      
+                      if tracks[track_select] and tracks[track_select].strip == strip then
+                        PopulateTrackFX()
+                        update_gfx = true
+                      end
+                                            
                       if fx_found then
                         ctl.fxfound = true
                       else
@@ -17625,7 +17669,7 @@ end
                         for f = 0, reaper.TrackFX_GetCount(tr3) do
                           if ctl.fxguid == reaper.TrackFX_GetFXGUID(tr3, f) then
                             fx_found = true
-                            --local ctl = strips[tracks[track_select].strip][p].controls[c]
+                            --local ctl = strips[strip][p].controls[c]
                             ctl.fxnum = f
                             if t == tracks[track_select].tracknum then
                               ctl.tracknum = nil
@@ -17640,8 +17684,10 @@ end
                       end                                      
                     end
                     
-                    PopulateTrackFX()
-                    update_gfx = true
+                    if tracks[track_select] and tracks[track_select].strip == strip then
+                      PopulateTrackFX()
+                      update_gfx = true
+                    end
                     
                     if fx_found then
                       ctl.fxfound = true
@@ -23797,8 +23843,13 @@ end
         elseif (mouse.MB and not mouse.last_MB) then
 
           if macro_edit_mode ~= true and show_eqcontrol ~= true and MOUSE_over(obj.sections[10]) then
-            obj.sections[2000].x = mouse.mx-obj.sections[2000].w/2
-            obj.sections[2000].y = mouse.my-obj.sections[2000].h/2
+            local o = 2000
+            if stripgallery_view == 1 or settings_pagescrolldir == 1 then
+              o = 2001
+            end
+            
+            obj.sections[o].x = mouse.mx-obj.sections[o].w/2
+            obj.sections[o].y = mouse.my-obj.sections[o].h/2
             show_arrowupdn = not show_arrowupdn
             moupdn_img = 0
             omoupdn_img = 0
@@ -23824,7 +23875,11 @@ end
         end
         
         local moupdn = false
-        if show_arrowupdn and MOUSE_over(obj.sections[2000]) then
+        local o = 2000
+        if stripgallery_view == 1 or settings_pagescrolldir == 1 then
+          o = 2001
+        end
+        if show_arrowupdn and MOUSE_over(obj.sections[o]) then
           if moupdn_timer and reaper.time_precise() > moupdn_timer then  
             moupdn_img = 0
             update_surface = true
@@ -23851,23 +23906,95 @@ end
             end
             moupdn_timer = reaper.time_precise() + 0.2
             omoupdn_img = moupdn_img
-            surface_offset.y = F_limit(surface_offset.y - v*50,0,surface_size.h-obj.sections[10].h)
-            update_surface = true
+            if stripgallery_view == 0 then
+              if settings_pagescrolldir == 0 then
+                surface_offset.y = F_limit(surface_offset.y - v*50,0,surface_size.h-obj.sections[10].h)
+              else
+                surface_offset.x = F_limit(surface_offset.x - v*50,0,surface_size.w-obj.sections[10].w)              
+              end
+            else
+              local min = math.floor(0-(obj.sections[10].w/2 - stlay_data.loc[1].w/2))
+              local max = math.floor(stlay_data.loc[#stlay_data.loc].runx_e-obj.sections[10].w + (obj.sections[10].w/2 - stlay_data.loc[#stlay_data.loc].w/2))
+              stlay_data.xpos = F_limit(stlay_data.xpos - v*50,min,max)
+              if strips and tracks[track_select] and strips[tracks[track_select].strip] then
+                strips[tracks[track_select].strip][page].xpos = stlay_data.xpos
+              end
+              GUI_DrawCtlBitmap2()
+              --stlay_data.xpos = stlay_data.xpos - v*50
+            end
+            update_gfx = true
             gfx.mouse_wheel = 0
             
           elseif mouse.LB and not mouse.last_LB then
-            local my = mouse.my-obj.sections[2000].y
-            if my < obj.sections[2000].h/2 then
-              moupdn_img = 1
-              surface_offset.y = F_limit(surface_offset.y - obj.sections[10].h,0,surface_size.h-obj.sections[10].h)
+            
+            if stripgallery_view == 0 or mode == 1 then
+              if settings_pagescrolldir == 0 then
+                local my = mouse.my-obj.sections[2000].y
+                if my < obj.sections[2000].h/2 then
+                  moupdn_img = 1
+                  surface_offset.y = F_limit(surface_offset.y - obj.sections[10].h,0,surface_size.h-obj.sections[10].h)
+                else
+                  moupdn_img = 2
+                  surface_offset.y = F_limit(surface_offset.y + obj.sections[10].h,0,surface_size.h-obj.sections[10].h)
+                end
+              else
+                local mx = mouse.mx-obj.sections[2001].x
+                if mx < obj.sections[2001].w/2 then
+                  moupdn_img = 1
+                  surface_offset.x = F_limit(surface_offset.x - obj.sections[10].w,0,surface_size.w-obj.sections[10].w)
+                else
+                  moupdn_img = 2
+                  surface_offset.x = F_limit(surface_offset.x + obj.sections[10].w,0,surface_size.w-obj.sections[10].w)
+                end              
+              end
             else
-              moupdn_img = 2
-              surface_offset.y = F_limit(surface_offset.y + obj.sections[10].h,0,surface_size.h-obj.sections[10].h)
-            end  
+              local mx = mouse.mx-obj.sections[2001].x
+              if mx < obj.sections[2001].w/2 then
+                if mode == 0 and show_striplayout == false and stripgallery_view == 1 then
+                  moupdn_img = 1
+                  GallerySwipe(0)
+                  update_gfx = true
+                end
+              else
+                if mode == 0 and show_striplayout == false and stripgallery_view == 1 then
+                  moupdn_img = 2
+                  GallerySwipe(1)
+                  update_gfx = true
+                end              
+              end
+            end
             omoupdn_img = moupdn_img
             moupdn_timer = reaper.time_precise() + 0.2
             update_surface = true
           
+          end
+        
+          if mode == 0 then
+          
+            if striplayout_mt then
+              striplayout_mp = 1-(((striplayout_mt-reaper.time_precise()))/striplayout_mtime)
+              if striplayout_mp >= 1 then
+                striplayout_mp = 1
+                striplayout_mt = nil
+              else
+                striplayout_mp = macScale(4,striplayout_mp)
+              end
+              update_surface = true
+            
+            elseif stripgallery_swipemt then
+              stripgallery_swipe.mp = 1-(((stripgallery_swipemt-reaper.time_precise()))/striplayout_mtime)
+              if stripgallery_swipe.mp >= 1 then
+                stripgallery_swipe.mp = 1
+                stripgallery_swipemt = nil
+                stlay_data.xpos = stripgallery_swipe.xend
+                strips[tracks[track_select].strip][page].xpos = stripgallery_swipe.xend
+                GUI_DrawCtlBitmap2()
+              else
+                stripgallery_swipe.mp = macScale(3,stripgallery_swipe.mp)
+              end
+              update_surface = true
+            end
+            
           end
         
         elseif mode == 0 then
@@ -35217,6 +35344,10 @@ end
       elseif mouse.context == nil and MOUSE_click(obj.sections[98]) then
         settings_createbackuponmanualsave = not settings_createbackuponmanualsave
         update_gfx = true
+      elseif mouse.context == nil and MOUSE_click(obj.sections[719]) then
+        settings_pagescrolldir = 1-settings_pagescrolldir
+        update_gfx = true
+
       elseif mouse.context == nil and MOUSE_click(obj.sections[704]) then
         settings_touchFB = not settings_touchFB
         update_gfx = true
@@ -38347,10 +38478,10 @@ end
           strip.controls[c].maxdp = -1
         end
         
-        strip.controls[c].xsc = strip.controls[c].x + strip.controls[c].w/2 - (strip.controls[c].w*strip.controls[c].scale)/2
-        strip.controls[c].ysc = strip.controls[c].y + strip.controls[c].ctl_info.cellh/2 - (strip.controls[c].ctl_info.cellh*strip.controls[c].scale)/2
-        strip.controls[c].wsc = strip.controls[c].w*strip.controls[c].scale
-        strip.controls[c].hsc = strip.controls[c].ctl_info.cellh*strip.controls[c].scale
+        strip.controls[c].xsc = math.floor(strip.controls[c].x + strip.controls[c].w/2 - (strip.controls[c].w*strip.controls[c].scale)/2)
+        strip.controls[c].ysc = math.floor(strip.controls[c].y + strip.controls[c].ctl_info.cellh/2 - (strip.controls[c].ctl_info.cellh*strip.controls[c].scale)/2)
+        strip.controls[c].wsc = math.floor(strip.controls[c].w*strip.controls[c].scale)
+        strip.controls[c].hsc = math.floor(strip.controls[c].ctl_info.cellh*strip.controls[c].scale)
         
         strip.controls[c].tracknum = tonumber(zn(data[key..'tracknum']))
         strip.controls[c].trackguid = data[key..'trackguid']                    
@@ -39974,10 +40105,10 @@ end
                       if strips[ss][p].controls[c].maxdp == nil or (strips[ss][p].controls[c].maxdp and strips[ss][p].controls[c].maxdp == '') then
                         strips[ss][p].controls[c].maxdp = -1
                       end
-                      strips[ss][p].controls[c].xsc = strips[ss][p].controls[c].x + strips[ss][p].controls[c].w/2 - (strips[ss][p].controls[c].w*strips[ss][p].controls[c].scale)/2
-                      strips[ss][p].controls[c].ysc = strips[ss][p].controls[c].y + strips[ss][p].controls[c].ctl_info.cellh/2 - (strips[ss][p].controls[c].ctl_info.cellh*strips[ss][p].controls[c].scale)/2
-                      strips[ss][p].controls[c].wsc = strips[ss][p].controls[c].w*strips[ss][p].controls[c].scale
-                      strips[ss][p].controls[c].hsc = strips[ss][p].controls[c].ctl_info.cellh*strips[ss][p].controls[c].scale
+                      strips[ss][p].controls[c].xsc = math.floor(strips[ss][p].controls[c].x + strips[ss][p].controls[c].w/2 - (strips[ss][p].controls[c].w*strips[ss][p].controls[c].scale)/2)
+                      strips[ss][p].controls[c].ysc = math.floor(strips[ss][p].controls[c].y + strips[ss][p].controls[c].ctl_info.cellh/2 - (strips[ss][p].controls[c].ctl_info.cellh*strips[ss][p].controls[c].scale)/2)
+                      strips[ss][p].controls[c].wsc = math.floor(strips[ss][p].controls[c].w*strips[ss][p].controls[c].scale)
+                      strips[ss][p].controls[c].hsc = math.floor(strips[ss][p].controls[c].ctl_info.cellh*strips[ss][p].controls[c].scale)
                       
                       strips[ss][p].controls[c].tracknum = tonumber(GPES(key..'tracknum',true))
                       strips[ss][p].controls[c].trackguid = GPES(key..'trackguid')                    
@@ -40463,10 +40594,11 @@ end
     settings_groupsel = tobool(nz(GES('settings_groupsel',true),settings_groupsel))
     settings_savesnapafterselected = tobool(nz(GES('settings_savesnapafterselected',true),settings_savesnapafterselected))
     settings_drawbglabelsontop = tobool(nz(GES('settings_drawbglabelsontop',true),settings_drawbglabelsontop))
+    autosnap_itemgapmax = tonumber(nz(GES('autosnap_itemgapmax',true),autosnap_itemgapmax))        
 
     modulator_cnt = tonumber(nz(GES('modulator_cnt',true),modulator_cnt))
     mutate_settings.mutate_max = tonumber(nz(GES('mutate_max',true),mutate_settings.mutate_max))
-    mutate_settings.dir = tonumber(nz(GES('mutate_dir',true),mutate_settings.dir))
+    settings_pagescrolldir = tonumber(nz(GES('settings_pagescrolldir',true),settings_pagescrolldir))
     
     if settings_hideeditbaronnewproject then
       plist_w = 0
@@ -40602,6 +40734,7 @@ end
     reaper.SetExtState(SCRIPT,'settings_groupsel',tostring(settings_groupsel), true)    
     reaper.SetExtState(SCRIPT,'settings_savesnapafterselected',tostring(settings_savesnapafterselected), true)    
     reaper.SetExtState(SCRIPT,'settings_drawbglabelsontop',tostring(settings_drawbglabelsontop), true)    
+    reaper.SetExtState(SCRIPT,'settings_pagescrolldir',tostring(settings_pagescrolldir), true)    
 
     reaper.SetExtState(SCRIPT,'modulator_cnt',tostring(modulator_cnt), true)    
 
@@ -43838,7 +43971,7 @@ end
       xxy = xxytbl
     end
     
-    CheckDataTables()
+    CheckDataTables(true)
     
   end
   
@@ -45196,6 +45329,7 @@ end
   settings_groupsel = true
   settings_savesnapafterselected = false
   settings_drawbglabelsontop = true
+  settings_pagescrolldir = 1
   
   settingswin_off = 0
   settingswin_maxh = 570
