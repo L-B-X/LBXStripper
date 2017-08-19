@@ -23931,7 +23931,7 @@ end
               GUI_DrawCtlBitmap2()
               --stlay_data.xpos = stlay_data.xpos - v*50
             end
-            update_gfx = true
+            update_surface = true
             gfx.mouse_wheel = 0
             
           elseif mouse.LB and not mouse.last_LB then
