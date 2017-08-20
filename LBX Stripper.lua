@@ -14136,11 +14136,12 @@ end
     if ctlcat == ctlcats.fxparam then
       local v, min, max = reaper.TrackFX_GetParam(track, fxnum, paramnum)
       if c then
-        if strips[strip][page].controls[c].minov then
-          min = strips[strip][page].controls[c].minov
+        local ctl = strips[strip][page].controls[c] 
+        if ctl.minov then
+          min = ctl.minov
         end
-        if strips[strip][page].controls[c].maxov then
-          max = strips[strip][page].controls[c].maxov
+        if ctl.maxov then
+          max = ctl.maxov
         end
       end
       return normalize(min, max, v)
@@ -14175,12 +14176,15 @@ end
     if ctlcat == ctlcats.fxparam then
       local v, min, max = reaper.TrackFX_GetParam(track, fxnum, paramnum)
       if c then
-        if strips[tracks[track_select].strip][page].controls[c].minov then
+        local ctl = strips[tracks[track_select].strip][page].controls[c]
+        min = ctl.minov or min
+        max = ctl.maxov or max
+        --[[if strips[tracks[track_select].strip][page].controls[c].minov then
           min = strips[tracks[track_select].strip][page].controls[c].minov
         end
         if strips[tracks[track_select].strip][page].controls[c].maxov then
           max = strips[tracks[track_select].strip][page].controls[c].maxov
-        end
+        end]]
       end  
       return normalize(min, max, v)
 
@@ -14216,24 +14220,28 @@ end
       if track == nil then return end
       local _, min, max = reaper.TrackFX_GetParam(track, fxnum, paramnum)
       if checkov and checkov == true and c then
-        if ctl.minov then
+        min = ctl.minov or min
+        max = ctl.maxov or max
+        --[[if ctl.minov then
           min = ctl.minov
         end
         if ctl.maxov then
           max = ctl.maxov
-        end      
+        end ]]     
       end
       return min, max  
     
     elseif ctlcat == ctlcats.trackparam then
       local min, max = trctls_table[paramnum].min, trctls_table[paramnum].max
       if checkov and checkov == true and c then
-        if ctl.minov then
+        min = ctl.minov or min
+        max = ctl.maxov or max
+        --[[if ctl.minov then
           min = ctl.minov
         end
         if ctl.maxov then
           max = ctl.maxov
-        end      
+        end ]]     
       end
       return tonumber(min), tonumber(max)  
       
@@ -14241,12 +14249,14 @@ end
       local idx = math.floor((paramnum-1) % 3)+1
       local min, max = trsends_mmtable[idx].min, trsends_mmtable[idx].max
       if checkov and checkov == true and c then
-        if ctl.minov then
+        min = ctl.minov or min
+        max = ctl.maxov or max
+        --[[if ctl.minov then
           min = ctl.minov
         end
         if ctl.maxov then
           max = ctl.maxov
-        end      
+        end ]]     
       end
       return tonumber(min), tonumber(max)  
     else 
@@ -14259,24 +14269,30 @@ end
       if track == nil then return end
       local _, min, max = reaper.TrackFX_GetParam(track, fxnum, paramnum)
       if checkov and checkov == true and c then
-        if strips[tracks[track_select].strip][page].controls[c].minov then
-          min = strips[tracks[track_select].strip][page].controls[c].minov
+        local ctl = strips[tracks[track_select].strip][page].controls[c]
+        min = ctl.minov or min
+        max = ctl.maxov or max
+        --[[if ctl.minov then
+          min = ctl.minov
         end
-        if strips[tracks[track_select].strip][page].controls[c].maxov then
-          max = strips[tracks[track_select].strip][page].controls[c].maxov
-        end      
+        if ctl.maxov then
+          max = ctl.maxov
+        end ]]     
       end
       return min, max  
     
     elseif ctlcat == ctlcats.trackparam then
       local min, max = trctls_table[paramnum].min, trctls_table[paramnum].max
       if checkov and checkov == true and c then
-        if strips[tracks[track_select].strip][page].controls[c].minov then
-          min = strips[tracks[track_select].strip][page].controls[c].minov
+        local ctl = strips[tracks[track_select].strip][page].controls[c]
+        min = ctl.minov or min
+        max = ctl.maxov or max
+        --[[if ctl.minov then
+          min = ctl.minov
         end
-        if strips[tracks[track_select].strip][page].controls[c].maxov then
-          max = strips[tracks[track_select].strip][page].controls[c].maxov
-        end      
+        if ctl.maxov then
+          max = ctl.maxov
+        end ]]     
       end
       return tonumber(min), tonumber(max)  
       
@@ -14284,12 +14300,15 @@ end
       local idx = math.floor((paramnum-1) % 3)+1
       local min, max = trsends_mmtable[idx].min, trsends_mmtable[idx].max
       if checkov and checkov == true and c then
-        if strips[tracks[track_select].strip][page].controls[c].minov then
-          min = strips[tracks[track_select].strip][page].controls[c].minov
+        local ctl = strips[tracks[track_select].strip][page].controls[c]
+        min = ctl.minov or min
+        max = ctl.maxov or max
+        --[[if ctl.minov then
+          min = ctl.minov
         end
-        if strips[tracks[track_select].strip][page].controls[c].maxov then
-          max = strips[tracks[track_select].strip][page].controls[c].maxov
-        end      
+        if ctl.maxov then
+          max = ctl.maxov
+        end ]]     
       end
       return tonumber(min), tonumber(max)  
     else 
@@ -14495,12 +14514,12 @@ end
     if strips and strips[strip] and ctl then
       local val = ctl.val
       ctl.mval = val
-      local track 
-      if ctl.tracknum == nil then
+      local track = GetTrack(ctl.tracknum or strips[strip].track.tracknum)
+      --[[if ctl.tracknum == nil then
         track = GetTrack(strips[strip].track.tracknum)
       else
         track = GetTrack(ctl.tracknum)
-      end
+      end]]
       local cc = ctl.ctlcat
 
       if cc == ctlcats.fxparam then
@@ -20298,9 +20317,9 @@ end
               
             elseif res == 2 +lastp then
             
-              Mod_RemoveAssign(tracks[track_select].strip,page,i)
-              strips[tracks[track_select].strip][page].controls[i].mod = nil
-              strips[tracks[track_select].strip][page].controls[i].dirty = true
+              Mod_RemoveAssign(strip,page,i)
+              ctl.mod = nil
+              ctl.dirty = true
               update_ctls = true
               
             elseif res == 3 +lastp then
@@ -20329,28 +20348,21 @@ end
               ctl.midiout = nil
               
             elseif res == 7 +lastp then
-              OpenFXGUI(strips[tracks[track_select].strip][page].controls[i])
-              --[[local track
-              if strips[tracks[track_select].strip][page].controls[i].tracknum == nil then
-                track = GetTrack(tracks[track_select].tracknum)
-              else
-                track = GetTrack(strips[tracks[track_select].strip][page].controls[i].tracknum)                      
+              if ctl.fxfound then
+                OpenFXGUI(ctl)
               end
-              local fxnum = strips[tracks[track_select].strip][page].controls[i].fxnum
-              if not reaper.TrackFX_GetOpen(track, fxnum) then
-                reaper.TrackFX_Show(track, fxnum, 3)
-              end]]
+
             elseif res == 8 +lastp then
-              Envelope_Add(tracks[track_select].strip,page,i)
+              Envelope_Add(strip,page,i)
             elseif res == 9 +lastp then
-              Envelope_AddAllFX(tracks[track_select].strip,page,i)
+              Envelope_AddAllFX(strip,page,i)
             elseif res == 10 +lastp then
               show_snapshots = not show_snapshots
               update_gfx = true
             elseif res == 11 +lastp then
               i = tonumber(string.format('%i',i))
-              strips[tracks[track_select].strip][page].controls[i] = GetControlTable(tracks[track_select].strip, page, i)
-              strips[tracks[track_select].strip][page].controls[i].c_id = GenID()
+              ctl = GetControlTable(strip, page, i)
+              ctl.c_id = GenID()
               update_gfx = true
             elseif res == 12 +lastp then
               ToggleTopbar()
@@ -20365,9 +20377,9 @@ end
               ctl.param_info.paramnum = 1
             elseif res == 17 +lastp then
               local xsstype_select = ctl.param
-              if snapshots and snapshots[tracks[track_select].strip] and snapshots[tracks[track_select].strip][page][xsstype_select] 
-                                          and snapshots[tracks[track_select].strip][page][xsstype_select].selected then
-                local xss_select = snapshots[tracks[track_select].strip][page][xsstype_select].selected
+              if snapshots and snapshots[strip] and snapshots[strip][page][xsstype_select] 
+                                          and snapshots[strip][page][xsstype_select].selected then
+                local xss_select = snapshots[strip][page][xsstype_select].selected
                 ctl.param_info.paramnum = 2
                 ctl.param_info.paramidx = xss_select
                 SetCtlDirty(i)
@@ -22280,26 +22292,27 @@ end
                     end
                   elseif faders[p+1].targettype == 5 then
                     local ss = round(faders[p+1].val*127)+1
+                    local strip = tracks[track_select].strip
                     local fnd = false
                     if sstype_select == 1 then
-                      if snapshots[tracks[track_select].strip] and 
-                         snapshots[tracks[track_select].strip][page] and
-                         snapshots[tracks[track_select].strip][page][sstype_select] and
-                         snapshots[tracks[track_select].strip][page][sstype_select][ss] then
+                      if snapshots[strip] and 
+                         snapshots[strip][page] and
+                         snapshots[strip][page][sstype_select] and
+                         snapshots[strip][page][sstype_select][ss] then
                         ss_select = ss
                         fnd = true
                       end
                     else
-                      if snapshots[tracks[track_select].strip] and 
-                         snapshots[tracks[track_select].strip][page] and
-                         snapshots[tracks[track_select].strip][page][sstype_select] and
-                         snapshots[tracks[track_select].strip][page][sstype_select].snapshot[ss] then
+                      if snapshots[strip] and 
+                         snapshots[strip][page] and
+                         snapshots[strip][page][sstype_select] and
+                         snapshots[strip][page][sstype_select].snapshot[ss] then
                         ss_select = ss
                         fnd = true
                       end                    
                     end
                     if fnd then
-                      Snapshot_Set(tracks[track_select].strip,page,sstype_select,ss_select)
+                      Snapshot_Set(strip,page,sstype_select,ss_select)
                       update_gfx = true
                     end                    
                     
@@ -30130,8 +30143,8 @@ end
                 trctlslist_offset = 0
               end
             else
-              if trctlslist_offset + P_butt_cnt < #trctls_table-1 then
-                trctlslist_offset = trctlslist_offset + P_butt_cnt
+              if trctlslist_offset + P_butt_cnt < pcnt-1 then
+                trctlslist_offset = trctlslist_offset + P_butt_cnt-1
                 if trctlslist_offset > pcnt-1 then
                   trctlslist_offset = pcnt-1
                 end
@@ -35534,10 +35547,10 @@ end
   function UpdateControlValues2(rt)
   
     if rt >= time_nextupdate then
-      local suf = settings_updatefreq
+      --local suf = settings_updatefreq
       --if mode == 1 then suf = 0.2 end
 
-      time_nextupdate = rt + suf
+      time_nextupdate = rt + settings_updatefreq
       if strips and tracks[track_select] and strips[tracks[track_select].strip] and #strips[tracks[track_select].strip][page].controls > 0 then
         --check track
         local strip = tracks[track_select].strip
@@ -35556,231 +35569,238 @@ end
                   --check fx
                   local ctl = strips[strip][page].controls[i]
                   
-                  tr = tr2
-                  local tr_found = true
-                  if ctl.tracknum ~= nil then
-                    --tr = GetTrack(strips[tracks[track_select].strip][page].controls[i].tracknum)
-                    tr_found = CheckTrack(tracks[ctl.tracknum], strip, page, i)
-                    if tr_found then
-                      tr = GetTrack(ctl.tracknum)
-                    end 
-                  end
+                  if not ctl.trackmissing then
                   
-                  if tr_found then
-                    if ctl.ctlcat == ctlcats.fxparam then
-                      local fxguid = reaper.TrackFX_GetFXGUID(tr, ctl.fxnum)
-                      if ctl.fxguid == fxguid then
-  
-                        local pn = reaper.TrackFX_GetNumParams(tr,ctl.fxnum)
-                        if pn ~= 2 then
-                          if ctl.offline ~= nil then
-                            ctl.dirty = true
-                          end
-                          ctl.offline = nil
-                        else
-                          if ctl.offline == nil then
-                            ctl.dirty = true
-                          end
-                          ctl.offline = true
-                        end
-                      
-                        local _, v = reaper.TrackFX_GetFormattedParamValue(tr, ctl.fxnum, ctl.param, "")
-                        
-                        local v2 = GetParamValue2(ctl.ctlcat,
-                                                 tr,
-                                                 ctl.fxnum,
-                                                 ctl.param, i)
-                          
-                        if ctl.ctltype == 4 then
-                          if tostring(ctl.dval) ~= tostring(v) then
-                          
-                            ctl.val = v2
-                            ctl.dval = v
-                            ctl.dirty = true
-                            ctl.cycledata.posdirty = true 
-                            update_ctls = true
+                    tr = tr2
+                    local tr_found = true
+                    if ctl.tracknum ~= nil then
+                      tr_found = CheckTrack(tracks[ctl.tracknum], strip, page, i)
+                      if tr_found then
+                        tr = GetTrack(ctl.tracknum)
+                      end 
+                    end
+                    
+                    if tr_found then
+                      if ctl.ctlcat == ctlcats.fxparam then
+                        local fxguid = reaper.TrackFX_GetFXGUID(tr, ctl.fxnum)
+                        if ctl.fxguid == fxguid then
     
-                            if ctl.midiout then
-                              SendMIDIMsg(ctl.midiout, ctl.val)
+                          local pn = reaper.TrackFX_GetNumParams(tr,ctl.fxnum)
+                          if pn ~= 2 then
+                            if ctl.offline ~= nil then
+                              ctl.dirty = true
                             end
+                            ctl.offline = nil
+                          else
+                            if ctl.offline == nil then
+                              ctl.dirty = true
+                            end
+                            ctl.offline = true
+                          end
+                        
+                          local _, v = reaper.TrackFX_GetFormattedParamValue(tr, ctl.fxnum, ctl.param, "")                          
+                          local v2, min, max = reaper.TrackFX_GetParam(track, ctl.fxnum, ctl.param)
+                          min = ctl.minov or min
+                          max = ctl.maxov or max
+                          v2 = normalize(min, max, v2)
+                          
+                          --[[local v2 = GetParamValue2(ctl.ctlcat,
+                                                   tr,
+                                                   ctl.fxnum,
+                                                   ctl.param, i)]]
+                            
+                          if ctl.ctltype == 4 then
+                            if tostring(ctl.dval) ~= tostring(v) then
+                            
+                              ctl.val = v2
+                              ctl.dval = v
+                              ctl.dirty = true
+                              ctl.cycledata.posdirty = true 
+                              update_ctls = true
+      
+                              if ctl.midiout then
+                                SendMIDIMsg(ctl.midiout, ctl.val)
+                              end
+                            end
+                          else
+                            if ctl.dval ~= v then
+                            
+                              ctl.val = v2
+                              ctl.dval = v
+                              ctl.dirty = true
+                              if ctl.param_info.paramname == 'Bypass' then
+                                SetCtlEnabled(ctl.fxnum) 
+                              end
+                              update_ctls = true
+  
+                              if ctl.midiout then
+                                SendMIDIMsg(ctl.midiout, ctl.val)
+                              end
+                            end                      
                           end
                         else
-                          if ctl.dval ~= v then
-                          
-                            ctl.val = v2
-                            ctl.dval = v
-                            ctl.dirty = true
-                            if ctl.param_info.paramname == 'Bypass' then
-                              SetCtlEnabled(ctl.fxnum) 
-                            end
-                            update_ctls = true
-
-                            if ctl.midiout then
-                              SendMIDIMsg(ctl.midiout, ctl.val)
-                            end
-                          end                      
-                        end
-                      else
-                        if ctl.fxfound then
-                          CheckStripControls()
-                        end
-                      end
-                    elseif ctl.ctlcat == ctlcats.trackparam then
-                      local v = GetParamValue2(ctl.ctlcat,
-                                               tr,
-                                               nil,
-                                               ctl.param, i)
-                      if ctl.ctltype == 4 then
-                        if tostring(ctl.val) ~= tostring(v) then
-                          ctl.val = v
-                          ctl.dirty = true
-                          ctl.cycledata.posdirty = true 
-                          update_ctls = true
-
-                          if ctl.midiout then
-                            SendMIDIMsg(ctl.midiout, ctl.val)
-                          end                          
-                        end
-                      else
-                        if ctl.val ~= v then
-                          ctl.val = v
-                          ctl.dirty = true
-                          update_ctls = true
-
-                          if ctl.midiout then
-                            SendMIDIMsg(ctl.midiout, ctl.val)
+                          if ctl.fxfound then
+                            CheckStripControls()
                           end
                         end
-                      end
-                                          
-                    elseif ctl.ctlcat == ctlcats.tracksend then
-  
-                      if settings_disablesendchecks == false and checksends == true then
-                        local tt = ctl.tracknum
-                        if tt == nil then
-                          tt = strips[strip].track.tracknum
-                        end
-                        local chk
-                        
-                        chk, chktbl[tt] = CheckSendGUID(tt,nil,ctl.param_info.paramnum,
-                                                              ctl.param_info.paramdestguid,
-                                                              ctl.param_info.paramdestchan,
-                                                              ctl.param_info.paramsrcchan,
-                                                              chktbl[tt])
-                        if chk == false then
-                          chktbl = CheckStripSends(chktbl)
-                        end
-                      end                    
-  
-                      local v = GetParamValue2(ctl.ctlcat,
-                                               tr,
-                                               nil,
-                                               ctl.param, i)
-  
-                      if ctl.ctltype == 4 then
-                        if tostring(ctl.val) ~= tostring(v) then
-                          ctl.val = v
-                          ctl.dirty = true
-                          ctl.cycledata.posdirty = true 
-                          update_ctls = true                    
-
-                          if ctl.midiout then
-                            SendMIDIMsg(ctl.midiout, ctl.val)
-                          end
-                        end
-                      else
-                        if ctl.val ~= v then
-                          ctl.val = v
-                          ctl.dirty = true
-                          update_ctls = true
-
-                          if ctl.midiout then
-                            SendMIDIMsg(ctl.midiout, ctl.val)
-                          end
-                        end
-                      end
-                    elseif ctl.ctlcat == ctlcats.pkmeter then
-                      if rt >= time_nextupdate_pkmeter then
-                        pkmts = true
-                        local chd = 0
-                        local trn = strips[strip].track.tracknum
-                        if ctl.tracknum ~= nil then
-                          trn = ctl.tracknum
-                        end
-                        local p = ctl.param
+                      elseif ctl.ctlcat == ctlcats.trackparam then
                         local v = GetParamValue2(ctl.ctlcat,
                                                  tr,
                                                  nil,
-                                                 p, i)
-                        if peak_info[trn] and peak_info[trn][p % 64] then
-                          chd = peak_info[trn][p % 64].ch_d
-                        else
-                          chd = -150
-                        end
-                        if tostring(ctl.val) ~= tostring(chd) then
-                          ctl.val = chd
-                          ctl.dirty = true
-                          update_ctls = true
-
-                          if ctl.midiout then
-                            SendMIDIMsg(ctl.midiout, ctl.val)
-                          end
-                          --update_mtrs = true
-                        end
-                      end
-                    elseif ctl.ctlcat == ctlcats.fxoffline then
-                      local fxguid = reaper.TrackFX_GetFXGUID(tr, ctl.fxnum)
-                      if ctl.fxguid == fxguid then
+                                                 ctl.param, i)
+                        if ctl.ctltype == 4 then
+                          if tostring(ctl.val) ~= tostring(v) then
+                            ctl.val = v
+                            ctl.dirty = true
+                            ctl.cycledata.posdirty = true 
+                            update_ctls = true
   
-                        local pn = reaper.TrackFX_GetNumParams(tr,ctl.fxnum)
-                        if pn ~= 2 then
-                          if ctl.offline ~= nil then
-                            ctl.dirty = true
-                            update_ctls = true
-                            
                             if ctl.midiout then
                               SendMIDIMsg(ctl.midiout, ctl.val)
-                            end
+                            end                          
                           end
-                          ctl.offline = nil
-                          ctl.val = 0
                         else
-                          if ctl.offline == nil then
+                          if ctl.val ~= v then
+                            ctl.val = v
                             ctl.dirty = true
                             update_ctls = true
-                            
+  
                             if ctl.midiout then
                               SendMIDIMsg(ctl.midiout, ctl.val)
                             end
                           end
-                          ctl.offline = true
-                          ctl.val = 1
                         end
-                      else
-                        if ctl.fxfound then
-                          CheckStripControls()
+                                            
+                      elseif ctl.ctlcat == ctlcats.tracksend then
+    
+                        if settings_disablesendchecks == false and checksends == true then
+                          local tt = ctl.tracknum
+                          if tt == nil then
+                            tt = strips[strip].track.tracknum
+                          end
+                          local chk
+                          
+                          chk, chktbl[tt] = CheckSendGUID(tt,nil,ctl.param_info.paramnum,
+                                                                ctl.param_info.paramdestguid,
+                                                                ctl.param_info.paramdestchan,
+                                                                ctl.param_info.paramsrcchan,
+                                                                chktbl[tt])
+                          if chk == false then
+                            chktbl = CheckStripSends(chktbl)
+                          end
+                        end                    
+    
+                        local v = GetParamValue2(ctl.ctlcat,
+                                                 tr,
+                                                 nil,
+                                                 ctl.param, i)
+    
+                        if ctl.ctltype == 4 then
+                          if tostring(ctl.val) ~= tostring(v) then
+                            ctl.val = v
+                            ctl.dirty = true
+                            ctl.cycledata.posdirty = true 
+                            update_ctls = true                    
+  
+                            if ctl.midiout then
+                              SendMIDIMsg(ctl.midiout, ctl.val)
+                            end
+                          end
+                        else
+                          if ctl.val ~= v then
+                            ctl.val = v
+                            ctl.dirty = true
+                            update_ctls = true
+  
+                            if ctl.midiout then
+                              SendMIDIMsg(ctl.midiout, ctl.val)
+                            end
+                          end
                         end
-                      end                  
-                    elseif ctl.ctlcat == ctlcats.fxgui or (ctl.ctlcat == ctlcats.rcm_switch and ctl.fxnum) then
-                      local fxguid = reaper.TrackFX_GetFXGUID(tr, ctl.fxnum)
-                      if ctl.fxguid and ctl.fxguid ~= fxguid then
-                        if ctl.fxfound then
-                          CheckStripControls()
+                      elseif ctl.ctlcat == ctlcats.pkmeter then
+                        if rt >= time_nextupdate_pkmeter then
+                          pkmts = true
+                          local chd = 0
+                          local trn = strips[strip].track.tracknum
+                          if ctl.tracknum ~= nil then
+                            trn = ctl.tracknum
+                          end
+                          local p = ctl.param
+                          local v = GetParamValue2(ctl.ctlcat,
+                                                   tr,
+                                                   nil,
+                                                   p, i)
+                          if peak_info[trn] and peak_info[trn][p % 64] then
+                            chd = peak_info[trn][p % 64].ch_d
+                          else
+                            chd = -150
+                          end
+                          if tostring(ctl.val) ~= tostring(chd) then
+                            ctl.val = chd
+                            ctl.dirty = true
+                            update_ctls = true
+  
+                            if ctl.midiout then
+                              SendMIDIMsg(ctl.midiout, ctl.val)
+                            end
+                            --update_mtrs = true
+                          end
+                        end
+                      elseif ctl.ctlcat == ctlcats.fxoffline then
+                        local fxguid = reaper.TrackFX_GetFXGUID(tr, ctl.fxnum)
+                        if ctl.fxguid == fxguid then
+    
+                          local pn = reaper.TrackFX_GetNumParams(tr,ctl.fxnum)
+                          if pn ~= 2 then
+                            if ctl.offline ~= nil then
+                              ctl.dirty = true
+                              update_ctls = true
+                              
+                              if ctl.midiout then
+                                SendMIDIMsg(ctl.midiout, ctl.val)
+                              end
+                            end
+                            ctl.offline = nil
+                            ctl.val = 0
+                          else
+                            if ctl.offline == nil then
+                              ctl.dirty = true
+                              update_ctls = true
+                              
+                              if ctl.midiout then
+                                SendMIDIMsg(ctl.midiout, ctl.val)
+                              end
+                            end
+                            ctl.offline = true
+                            ctl.val = 1
+                          end
+                        else
+                          if ctl.fxfound then
+                            CheckStripControls()
+                          end
+                        end                  
+                      elseif ctl.ctlcat == ctlcats.fxgui or (ctl.ctlcat == ctlcats.rcm_switch and ctl.fxnum) then
+                        local fxguid = reaper.TrackFX_GetFXGUID(tr, ctl.fxnum)
+                        if ctl.fxguid and ctl.fxguid ~= fxguid then
+                          if ctl.fxfound then
+                            CheckStripControls()
+                          end
                         end
                       end
-                    end
+                      
+                      --if ctl.macrofader then                    
+                        --SetFader(ctl.macrofader, ctl.val)                    
+                      --end
+                      
+                      if ctl.dirty == true then
+                        SetCtlDirty(i)           
+                      end
                     
-                    if ctl.macrofader then                    
-                      --SetFader(ctl.macrofader, ctl.val)                    
+                    else
+                      --track not found
+                      ctl.fxfound = false
+                      ctl.trackmissing = true
                     end
-                    
-                    if ctl.dirty == true then
-                      SetCtlDirty(i)           
-                    end
-                  
-                  else
-                    --track not found
-                    ctl.fxfound = false
                   end
                 end
                 chktbl = nil
