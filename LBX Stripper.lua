@@ -6568,10 +6568,10 @@
               local gtype = gfxx.gfxtype
               local x = gfxx.x
               local y = gfxx.y
-              if not surface_size.limit then
+              --[[if not surface_size.limit then
                 x = x + surface_offset.x 
                 y = y + surface_offset.y 
-              end
+              end]]
               
               if gtype == gfxtype.img and lp == 1 then
 
@@ -7618,54 +7618,46 @@ end
               local w = ctl.w
               local h = ctl.ctl_info.cellh
     
-              local visible = true
-              if surface_size.limit == false then
-                if x+w < obj.sections[10].x or x > obj.sections[10].x + obj.sections[10].w or y+h < obj.sections[10].y or y > obj.sections[10].y + obj.sections[10].h then
-                  visible = false
-                end
+              local gh = h
+              local val = math.floor(100*nz(ctl.val,0))
+              local fxnum = nz(ctl.fxnum,-1)
+              local param = ctl.param
+              local pname = ctl.param_info.paramname
+              local iidx = ctl.ctl_info.imageidx
+              local spn = ctl.show_paramname
+              local spv = ctl.show_paramval
+              local tc = ctl.textcol
+              local tc2 = ctl.textcolv
+              local toff = math.floor(ctl.textoff)
+              local toffv = math.floor(ctl.textoffval)
+              local toffx = math.floor(ctl.textoffx)
+              local toffvx = math.floor(ctl.textoffvalx)
+              local tsz = nz(ctl.textsize,0)
+              local tsz2 = nz(ctl.textsizev,0)
+              local frames = math.floor(ctl.ctl_info.frames)
+              local ctltype = ctl.ctltype
+              local ctlnmov = ctl.ctlname_override
+              local found = ctl.fxfound
+              local maxdp = nz(ctl.maxdp,-1)
+              local dvoff = ctl.dvaloffset
+              local tnum = ctl.tracknum
+              local font = ctl.font
+
+--              if fxnum == nil then return end
+    
+              local track = trackM
+              if tnum ~= nil then
+                track = GetTrack(tnum)
+                --if track == nil then return end
+              else
+                tnum = strips[strip].track.tracknum
               end
               
-              if visible then
-                local gh = h
-                local val = math.floor(100*nz(ctl.val,0))
-                local fxnum = nz(ctl.fxnum,-1)
-                local param = ctl.param
-                local pname = ctl.param_info.paramname
-                local iidx = ctl.ctl_info.imageidx
-                local spn = ctl.show_paramname
-                local spv = ctl.show_paramval
-                local tc = ctl.textcol
-                local tc2 = ctl.textcolv
-                local toff = math.floor(ctl.textoff)
-                local toffv = math.floor(ctl.textoffval)
-                local toffx = math.floor(ctl.textoffx)
-                local toffvx = math.floor(ctl.textoffvalx)
-                local tsz = nz(ctl.textsize,0)
-                local tsz2 = nz(ctl.textsizev,0)
-                local frames = math.floor(ctl.ctl_info.frames)
-                local ctltype = ctl.ctltype
-                local ctlnmov = ctl.ctlname_override
-                local found = ctl.fxfound
-                local maxdp = nz(ctl.maxdp,-1)
-                local dvoff = ctl.dvaloffset
-                local tnum = ctl.tracknum
-                local font = ctl.font
-  
-                if fxnum == nil then return end
-      
-                local track = trackM
-                if tnum ~= nil then
-                  track = GetTrack(tnum)
-                  if track == nil then return end
-                else
-                  tnum = strips[strip].track.tracknum
-                end
-  
-                local Disp_ParamV
-                local Disp_Name
-                local v2, val2 = 0, 0
-                
-                
+              local Disp_ParamV
+              local Disp_Name
+              local v2, val2 = 0, 0
+              
+              if track ~= nil then
                 if ctlcat == ctlcats.fxparam or ctlcat == ctlcats.trackparam or ctlcat == ctlcats.tracksend or ctlcat == ctlcats.pkmeter then
                   v2 = nz(frameScale(ctl.framemode, GetParamValue2(ctlcat,track,fxnum,param,i)),0)
                   val2 = F_limit(round(frames*v2),0,frames-1)
@@ -7937,7 +7929,7 @@ end
                   --else
                   end
                 end
-
+  
                 local offl = false
                 if ctlcat == ctlcats.fxparam and ctl.offline then
                   offl = true
@@ -7946,146 +7938,150 @@ end
                   end
                   Disp_ParamV = ''
                 end
-                  
-                local mid = x+(w/2)
-  
-                gfx.setfont(1, font, gui.fontsz_knob +tsz-4)
-                local text_len1x, text_len1y = gfx.measurestr(Disp_Name)
-                gfx.setfont(1, font, gui.fontsz_knob +tsz2-4)
-                local text_len2x, text_len2y = gfx.measurestr(Disp_ParamV)
-  
-                local tl1 = nz(ctl.tl1,text_len1x)
-                local tl2 = nz(ctl.tl2,text_len2x)
-                
-                local th1 = nz(ctl.th1,text_len1y)
-                
-                local th2 = nz(ctl.th2,text_len2y)
+              
+              else
+                Disp_ParamV = ''
+                Disp_Name = ''
+              end --track ~= nil
+              
+              local mid = x+(w/2)
 
-                local xywh1 = {x = math.floor(mid-(text_len1x/2))-toffx, y = math.floor(y+(h/2)-toff-1), w = text_len1x, h = 1}
-                local xywh2 = {x = math.floor(mid-(text_len2x/2))+toffx+toffvx, y = math.floor(y+(h/2)+toff+toffv-1), w = text_len2x, h = 1}
-                
-                local tx1, tx2 = math.floor(mid-(tl1/2))-toffx,
-                                     math.floor(mid-(tl2/2))+toffx+toffvx --gui.fontsz_knob+tsz-4
-                                     
+              gfx.setfont(1, font, gui.fontsz_knob +tsz-4)
+              local text_len1x, text_len1y = gfx.measurestr(Disp_Name)
+              gfx.setfont(1, font, gui.fontsz_knob +tsz2-4)
+              local text_len2x, text_len2y = gfx.measurestr(Disp_ParamV)
+
+              local tl1 = nz(ctl.tl1,text_len1x)
+              local tl2 = nz(ctl.tl2,text_len2x)
+              
+              local th1 = nz(ctl.th1,text_len1y)
+              
+              local th2 = nz(ctl.th2,text_len2y)
+
+              local xywh1 = {x = math.floor(mid-(text_len1x/2))-toffx, y = math.floor(y+(h/2)-toff-1), w = text_len1x, h = 1}
+              local xywh2 = {x = math.floor(mid-(text_len2x/2))+toffx+toffvx, y = math.floor(y+(h/2)+toff+toffv-1), w = text_len2x, h = 1}
+              
+              local tx1, tx2 = math.floor(mid-(tl1/2))-toffx,
+                                   math.floor(mid-(tl2/2))+toffx+toffvx --gui.fontsz_knob+tsz-4
+                                   
+              gfx.a=1
+              if not update_gfx and not update_bg and ctlcat ~= ctlcats.xy then
+                if ctl.bypassbg_c ~= true then
+                  gfx.blit(1004,1,0, px,
+                                     py,
+                                     w*scale,
+                                     h*scale,
+                                     px,
+                                     py)
+                end
+                if spn and ctl.bypassbg_n ~= true then                   
+                  gfx.blit(1004,1,0, tx1,
+                                     xywh1.y-math.floor(th1/2),
+                                     tl1,
+                                     --[[th_a]]th1,
+                                     tx1,
+                                     xywh1.y-math.floor(th1/2))
+                end
+                if spv and ctl.bypassbg_v ~= true then                
+                  gfx.blit(1004,1,0, tx2,
+                                     xywh2.y-math.floor(th2/2),
+                                     tl2,
+                                     --[[th_a2]]th2,
+                                     tx2,
+                                     xywh2.y-math.floor(th2/2))
+                end
                 gfx.a=1
-                if not update_gfx and not update_bg and ctlcat ~= ctlcats.xy then
-                  if ctl.bypassbg_c ~= true then
-                    gfx.blit(1004,1,0, px,
-                                       py,
-                                       w*scale,
-                                       h*scale,
-                                       px,
-                                       py)
-                  end
-                  if spn and ctl.bypassbg_n ~= true then                   
-                    gfx.blit(1004,1,0, tx1,
-                                       xywh1.y-math.floor(th1/2),
-                                       tl1,
-                                       --[[th_a]]th1,
-                                       tx1,
-                                       xywh1.y-math.floor(th1/2))
-                  end
-                  if spv and ctl.bypassbg_v ~= true then                
-                    gfx.blit(1004,1,0, tx2,
-                                       xywh2.y-math.floor(th2/2),
-                                       tl2,
-                                       --[[th_a2]]th2,
-                                       tx2,
-                                       xywh2.y-math.floor(th2/2))
-                  end
-                  gfx.a=1
-                end
-  
-                gfx.a=1
-                if ctlcat == ctlcats.fxparam and ((not reaper.TrackFX_GetEnabled(track, fxnum) and pname ~= 'Bypass') or strips[strip][page].controls[i].offline) then
-                  gfx.a = 0.5
-                elseif (mode == 1 and submode == 1) or ctl.hidden then
-                  gfx.a = 0.5
+              end
+
+              gfx.a=1
+              if ctlcat == ctlcats.fxparam and ((track ~= nil and not reaper.TrackFX_GetEnabled(track, fxnum) and pname ~= 'Bypass') or ctl.offline) then
+                gfx.a = 0.5
+              elseif (mode == 1 and submode == 1) or ctl.hidden then
+                gfx.a = 0.5
+              end
+
+              gfx.blit(iidx,_,0, 0, val2*gh, w, h, px, py, math.floor(w*scale), math.floor(h*scale))
+              if ctlcat == ctlcats.xy then
+              
+                --draw pos
+                local ppw, pph = gfx.getimgdim(def_xytarget)
+                local ppx = 12+px+math.floor(ctl.xydata.x * (w-24)) - math.floor(ppw/2)
+                local ppy = 12+py+math.floor(ctl.xydata.y * (h-34-24)) - math.floor(pph/2)
+
+                gfx.blit(def_xytarget,1,0, 0, 0, ppw, pph, ppx, ppy)
+              
+              end
+              
+              ctl.tl1 = text_len1x
+              ctl.tl2 = text_len2x
+              ctl.th1 = text_len1y
+              ctl.th2 = text_len2y                
+              
+                local alpha = 1
+                if settings_hideofflinelabel and offl then
+                  spn = false
+                elseif offl or ctl.hidden then
+                  alpha = 0.4
                 end
 
-                gfx.blit(iidx,_,0, 0, val2*gh, w, h, px, py, math.floor(w*scale), math.floor(h*scale))
-                if ctlcat == ctlcats.xy then
-                
-                  --draw pos
-                  local ppw, pph = gfx.getimgdim(def_xytarget)
-                  local ppx = 12+px+math.floor(ctl.xydata.x * (w-24)) - math.floor(ppw/2)
-                  local ppy = 12+py+math.floor(ctl.xydata.y * (h-34-24)) - math.floor(pph/2)
+                if settings_showfaderassignments == true and ctl.macrofader then
+                  if mode0_submode == 1 and fader_select == ctl.macrofader then
+                    f_Get_SSV(faderselcol)
+                  else 
+                    f_Get_SSV(faderhighcol)                    
+                  end
+                  gfx.roundrect(px+1,py+1,w*scale-2,h*scale-2,5,1)
+                end
 
-                  gfx.blit(def_xytarget,1,0, 0, 0, ppw, pph, ppx, ppy)
+                if settings_showfaderassignments == true and ctl.mod then
+                  if mode0_submode == 2 and mod_select == ctl.mod then
+                    f_Get_SSV(modselcol)
+                  else 
+                    f_Get_SSV(modhighcol)                    
+                  end
+
+                  if modulators[ctl.mod].active == false then
+                    gfx.a = 0.3                        
+                  end
+                  gfx.roundrect(px+1,py+1,w*scale-2,h*scale-2,5,1)
+                  gfx.a = 1
+                end
+
+                if spn then
+                  gfx.setfont(1, font, gui.fontsz_knob +tsz-4)                    
+                  GUI_textCtl(gui,xywh1, Disp_Name,tc,-4 + tsz, alpha)
+                end
+                if spv then
+                  gfx.setfont(1, font, gui.fontsz_knob +tsz2-4)                    
+                  GUI_textCtl(gui,xywh2, Disp_ParamV,tc2,-4 + tsz2, alpha)          
+                end
+
+              if setting_reddotindicator == true and ctltype == 4 and DVOV and DVOV ~= '' and cycle_editmode == false then
+                if ctl.cycledata.posdirty == true then 
+                  gfx.a = 0.8
+                  f_Get_SSV(gui.color.red)
+                  gfx.circle(x+4,y+4,2,1,1)              
+                end
+              end
+                          
+              if mode == 1 and submode == 2 then
+                if tnum and tnum ~= tracks[track_select].tracknum then
+                
+                  gfx.a = 0.8
+                  f_Get_SSV(gui.color.red)
+                  gfx.circle(x,y,2,1,1)              
                 
                 end
-                
-                ctl.tl1 = text_len1x
-                ctl.tl2 = text_len2x
-                ctl.th1 = text_len1y
-                ctl.th2 = text_len2y                
-                
-                  local alpha = 1
-                  if settings_hideofflinelabel and offl then
-                    spn = false
-                  elseif offl or ctl.hidden then
-                    alpha = 0.4
-                  end
-
-                  if settings_showfaderassignments == true and ctl.macrofader then
-                    if mode0_submode == 1 and fader_select == ctl.macrofader then
-                      f_Get_SSV(faderselcol)
-                    else 
-                      f_Get_SSV(faderhighcol)                    
-                    end
-                    gfx.roundrect(px+1,py+1,w*scale-2,h*scale-2,5,1)
-                  end
-
-                  if settings_showfaderassignments == true and ctl.mod then
-                    if mode0_submode == 2 and mod_select == ctl.mod then
-                      f_Get_SSV(modselcol)
-                    else 
-                      f_Get_SSV(modhighcol)                    
-                    end
-
-                    if modulators[ctl.mod].active == false then
-                      gfx.a = 0.3                        
-                    end
-                    gfx.roundrect(px+1,py+1,w*scale-2,h*scale-2,5,1)
-                    gfx.a = 1
-                  end
-
-                  if spn then
-                    gfx.setfont(1, font, gui.fontsz_knob +tsz-4)                    
-                    GUI_textCtl(gui,xywh1, Disp_Name,tc,-4 + tsz, alpha)
-                  end
-                  if spv then
-                    gfx.setfont(1, font, gui.fontsz_knob +tsz2-4)                    
-                    GUI_textCtl(gui,xywh2, Disp_ParamV,tc2,-4 + tsz2, alpha)          
-                  end
-  
-                if setting_reddotindicator == true and ctltype == 4 and DVOV and DVOV ~= '' and cycle_editmode == false then
-                  if ctl.cycledata.posdirty == true then 
-                    gfx.a = 0.8
-                    f_Get_SSV(gui.color.red)
-                    gfx.circle(x+4,y+4,2,1,1)              
-                  end
-                end
-                            
-                if mode == 1 and submode == 2 then
-                  if tnum and tnum ~= tracks[track_select].tracknum then
-                  
-                    gfx.a = 0.8
-                    f_Get_SSV(gui.color.red)
-                    gfx.circle(x,y,2,1,1)              
-                  
-                  end
-                end
-                
-                if not update_gfx and not update_bg and update_ctls then
-                
-                  --just blit control area to main backbuffer - create area table
-                  local al = math.min(px, xywh1.x, xywh2.x, tx1, tx2)
-                  local ar = math.max(px+w*scale, tx1+tl1, tx2+tl2, xywh1.x+xywh1.w, xywh2.x+xywh2.w)
-                  local at = math.min(py, xywh1.y-math.floor(th1/2), xywh2.y-math.floor(th2/2))
-                  local ab = math.max(py+(h)*scale,xywh1.y+math.floor(th1/2), xywh2.y+math.floor(th2/2))
-                  xywharea[#xywharea+1] = {x=al,y=at,w=ar-al,h=ab-at,r=ar,b=ab}
-                end
+              end
+              
+              if not update_gfx and not update_bg and update_ctls then
+              
+                --just blit control area to main backbuffer - create area table
+                local al = math.min(px, xywh1.x, xywh2.x, tx1, tx2)
+                local ar = math.max(px+w*scale, tx1+tl1, tx2+tl2, xywh1.x+xywh1.w, xywh2.x+xywh2.w)
+                local at = math.min(py, xywh1.y-math.floor(th1/2), xywh2.y-math.floor(th2/2))
+                local ab = math.max(py+(h)*scale,xywh1.y+math.floor(th1/2), xywh2.y+math.floor(th2/2))
+                xywharea[#xywharea+1] = {x=al,y=at,w=ar-al,h=ab-at,r=ar,b=ab}
               end
             end
           end
@@ -11700,7 +11696,7 @@ end
       if mode == 0 then
         --Live
         if (macro_edit_mode == false or macro_lrn_mode == true) then
-          if update_gfx or (surface_size.limit == false and update_surface) then
+          if update_gfx then
             GUI_DrawControlBackG(obj, gui)
             GUI_DrawControls(obj, gui)
             if show_snapshots then
@@ -12059,7 +12055,7 @@ end
         
         if submode == 0 then
 
-          if update_gfx or (surface_size.limit == false and update_surface) or update_bg then
+          if update_gfx or update_bg then
             GUI_DrawControlBackG(obj, gui)
             GUI_DrawControls(obj, gui)
           elseif update_ctls then        
@@ -12296,7 +12292,7 @@ end
           
         elseif submode == 1 then
         
-          if update_gfx or (surface_size.limit == false and update_surface) or update_bg then
+          if update_gfx or update_bg then
             GUI_DrawControlBackG(obj, gui)
             GUI_DrawControls(obj, gui)
           elseif update_ctls then        
@@ -12380,7 +12376,7 @@ end
                   
         elseif submode == 2 then
 
-          if update_gfx or (surface_size.limit == false and update_surface) or update_bg then
+          if update_gfx or update_bg then
             GUI_DrawControlBackG(obj, gui)
             GUI_DrawControls(obj, gui)
           elseif update_ctls then        
@@ -18442,11 +18438,7 @@ end
     if strips and tracks[track_select] and strips[tracks[track_select].strip] then
       local xywh = CalcCtlRect()
       if xywh then
-        if surface_size.limit then
-        else
-          surface_offset.x = ((obj.sections[10].w + plist_w)/2 - xywh.w/2) - xywh.x 
-          surface_offset.y = ((obj.sections[10].h + butt_h)/2 - xywh.h/2) - xywh.y 
-        end
+        
         strips[tracks[track_select].strip][page].surface_x = surface_offset.x
         strips[tracks[track_select].strip][page].surface_y = surface_offset.y
         update_gfx = true
