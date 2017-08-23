@@ -18400,15 +18400,17 @@ end
     
   end
   
-  function SelectGroupElements(grpid)
+  function SelectGroupElements(grpid, ctl_select)
     --find left most
     local lctl = GetLeftControlInGroup(strips[tracks[track_select].strip][page].controls, grpid)
     
     if lctl ~= -1 then
-      ctl_select = {}
-      ctl_select[1] = {}
-      ctl_select[1].ctl = lctl
-    
+      if ctl_select == nil then
+        ctl_select = {}
+        ctl_select[1] = {}
+        ctl_select[1].ctl = lctl
+      end
+          
       for j = 1, #strips[tracks[track_select].strip][page].controls do
         if strips[tracks[track_select].strip][page].controls[j].grpid == grpid and j ~= lctl then
           local cs = #ctl_select+1
@@ -18431,6 +18433,8 @@ end
         end
       end
     end
+    return ctl_select
+    
   end
 
   function AutoCentreCtls()
@@ -29184,15 +29188,6 @@ end
       
         if mouse.context == nil and MOUSE_click(obj.sections[10]) then
           if strips and tracks[track_select] and strips[tracks[track_select].strip] then
-            --for i = 1, #strips[tracks[track_select].strip][page].controls do
-            
-              --[[local xywh
-              local ctl = strips[tracks[track_select].strip][page].controls[i]
-              xywh = {x = ctl.x - surface_offset.x +obj.sections[10].x, 
-                      y = ctl.y - surface_offset.y +obj.sections[10].y, 
-                      w = ctl.w, 
-                      h = ctl.ctl_info.cellh}
-              if MOUSE_click(xywh) then]]
               
             local c = GetControlAtXY(tracks[track_select].strip, page, mouse.mx, mouse.my)
             if c then
@@ -29235,21 +29230,54 @@ end
 
                   elseif settings_groupsel == true or (settings_groupsel == false and mouse.shift or (mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.2)) then
                     local switcherid = strips[tracks[track_select].strip][page].controls[i].switcherid
-                    if switcherid then
+                    if mouse.ctrl == true then
+                      if ctl_select == nil then ctl_select = {} end
+                      if found == false then
+                        local cs = #ctl_select+1
+                        ctl_select[cs] = {}
+                        ctl_select[cs].ctl = i
+                        ctl_select[cs].relx = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].x - strips[tracks[track_select].strip][page].controls[i].x
+                        ctl_select[cs].rely = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].y - strips[tracks[track_select].strip][page].controls[i].y
+                      else
+                        local cnt = #ctl_select
+                        ctl_select[ctlsel] = nil
+                        ctl_select = Table_RemoveNils(ctl_select, cnt)
+                        if #ctl_select == 0 then ctl_select = nil end                    
+                      end                    
+                      
+                    elseif switcherid then
                       SelectSwitchElements(switcherid,i)
                     else
-                      local grpid = strips[tracks[track_select].strip][page].controls[i].grpid
-                      if grpid ~= nil then
-                        --if not mouse.shift then
-                          ctl_select = nil
-                          gfx3_select = nil
-                        --end
-                        SelectGroupElements(grpid)
+                      if settings_groupsel == true and mouse.shift == true then
+                        local grpid = strips[tracks[track_select].strip][page].controls[i].grpid
+                        if grpid ~= nil then
+                          ctl_select = SelectGroupElements(grpid, ctl_select)
+                        else
+                          if found == false then
+                            if ctl_select == nil then ctl_select = {} end
+                            local cs = #ctl_select+1
+                            ctl_select[cs] = {}
+                            ctl_select[cs].ctl = i
+                            if cs ~= 1 then
+                              ctl_select[cs].relx = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].x - strips[tracks[track_select].strip][page].controls[i].x
+                              ctl_select[cs].rely = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].y - strips[tracks[track_select].strip][page].controls[i].y                    
+                            end
+                          end
+                        end
                       else
-                        --if ctl_select == nil then
-                          ctl_select = {}
-                          ctl_select[1] = {ctl = i}
-                        --end
+                        local grpid = strips[tracks[track_select].strip][page].controls[i].grpid
+                        if grpid ~= nil then
+                          --if not mouse.shift then
+                            ctl_select = nil
+                            gfx3_select = nil
+                          --end
+                          ctl_select = SelectGroupElements(grpid)
+                        else
+                          --if ctl_select == nil then
+                            ctl_select = {}
+                            ctl_select[1] = {ctl = i}
+                          --end
+                        end
                       end
                     end
                                                       
@@ -31571,7 +31599,7 @@ end
                 if switchid then
                   SelectSwitchElements(switchid, i)
                 elseif mouse.shift then
-                  SelectGroupElements(grpid)
+                  ctl_select = SelectGroupElements(grpid)
                 else
                   SelectStripElements(stripid)
                 end
@@ -35013,7 +35041,7 @@ end
         elseif EB_Open == 18 then
           SavePath(editbox.text)
         elseif EB_Open == 20 then
-          SaveSet(editbox.text)
+          SaveSet2(editbox.text)
         elseif EB_Open == 30 then
           strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands[eqcontrolband_select].bandname = editbox.text
           update_gfx = true
@@ -43523,6 +43551,104 @@ end
   
   end
 
+  function SaveSet2(fn)
+  
+    if fn and string.len(fn)>0 then
+      
+      CleanData()
+      
+      local save_path=sets_path
+      local fn=save_path..fn..".stripset"  
+      local file
+      file=io.open(fn,"w")
+      file:write('[STRIPSET_VERSION]2\n')
+
+      local trcnt = reaper.CountTracks(0)
+      file:write('[TRACKS]'..trcnt..'\n')
+
+      local savestrip = {}
+      
+      for t = -1, trcnt-1 do
+
+        strip = tracks[t].strip
+
+        local tr = GetTrack(t)
+        local i, j
+        local chunk = GetTrackChunk(tr, settings_usetrackchunkfix)
+        local trackdata = {track = t,
+                           guid = reaper.GetTrackGUID(tr),
+                           chunkdata = chunk}
+        --check tracknums 
+
+        if strip ~= -1 then
+          for p = 1,4 do
+            for j = 1, #strips[strip][p].controls do
+              local ctl = strips[strip][p].controls[j]
+              if ctl.tracknum and ctl.tracknum == strips[strip].track.tracknum then
+                ctl.tracknum = nil
+              end
+            end
+          end
+        end
+                        
+        --local switchtab = {}
+        --local saveswitchers = {}
+        --local switchcnt = 1
+        
+        if strip ~= -1 then
+          for p = 1,4 do
+            for j = 1, #strips[strip][p].controls do
+              local ctl = strips[strip][p].controls[j]
+              if ctl.ctlcat == ctlcats.pkmeter then
+                ctl.val = -150
+              end
+              
+              --[[if ctl.ctlcat == ctlcats.switcher then
+                switchtab[ctl.switcherid] = switchcnt
+                saveswitchers[switchcnt] = switchers[ctl.switcherid]
+                switchcnt = switchcnt + 1    
+              end]]
+            end
+          end          
+        end
+                
+        --[[savestrip.switchers = saveswitchers
+        savestrip.switchconvtab = switchtab]]
+        --savestrip.trackdata = {}
+        --savestrip.trackdata[t] = trackdata
+        local pickleddata = pickle(trackdata)
+      
+        file:write('[TRACK]'..t..'\n')
+        file:write('[DATA]\n'..pickleddata..'\n[\\DATA]\n')
+        file:write('[STRIPDATA]'.. strip ..'\n')
+        local t = SaveStripData_FN(strip,nil,nil,file)
+        file:write('[\\STRIPDATA]\n')      
+        
+        if snapshots and snapshots[strip] then
+          file:write('[SNAPSHOTDATA]\n')      
+          SaveSnapshotData_FN(strip,nil,nil,file)
+          file:write('[\\SNAPSHOTDATA]\n')      
+        end
+        file:write('[\\TRACK]\n')
+        
+        --faders
+        --modulators
+      
+      end
+
+      local switchdata = pickle(switchers)
+      file:write('[SWITCHDATA]\n'..switchdata..'\n[\\SWITCHDATA]\n')
+      
+      file:close()
+
+      OpenMsgBox(1,'Strip set saved.',1)
+      
+    else
+      return nil
+    end
+  
+  end
+
   function LoadSet(merge)
   
     local retval, fn = reaper.GetUserFileNameForRead(sets_path..'*', 'Load Strip Set', '.stripset')
@@ -43546,37 +43672,142 @@ end
 
     if merge == nil then merge = false end
     
+    local match = string.match
+    
     local file
     file=io.open(fn,"r")
     local content=file:read("*a")
     file:close()
     
-    local loaddata = unpickle(content)
+    local loaddata = {}
+
+    local header = string.match(content,'(.-\n.-\n)')
+    local version, trcnt = string.match(header,'%[.-%](%d+)\n%[.-%](%d+)\n')
+    version = tonumber(version)
+    
+    if version and version == 2 then
+    
+      loaddata.version = version
+      loaddata.trackdata = {}
+      loaddata.stripdata = {}
+      loaddata.snapdata = {}
+      loaddata.switchers = {}
+
+      for t = -1, trcnt-1 do
+      
+        local trdata
+        if t == -1 then
+          trdata = match(content,'%[TRACK%]%'..t..'\n(.-)%[\\TRACK%]')
+        else
+          trdata = match(content,'%[TRACK%]'..t..'\n(.-)%[\\TRACK%]')      
+        end
+        if trdata then
+      
+          local data = match(trdata,'%[DATA%]\n(.-)%[\\DATA%]')      
+          
+          local strip, sdata = match(trdata,'%[STRIPDATA%](%d+)\n(.-)%[\\STRIPDATA%]')
+          local ssdata = match(trdata,'%[SNAPSHOTDATA%]\n(.-)%[\\SNAPSHOTDATA%]')
+      
+          strip = tonumber(strip)
+      
+          --load data
+          local ddata = {}
+          if sdata then
+            local lines = split(sdata, "\n")
+            if lines and #lines > 0 then
+              for ln = 1, #lines do
+                local idx, val = match(lines[ln],'%[(.-)%](.*)') 
+                if idx then
+                  ddata[idx] = val
+                end
+              end
+            end
+          end
+          if ssdata then
+            local lines = split(ssdata, "\n")
+            if lines and #lines > 0 then
+              for ln = 1, #lines do
+                local idx, val = match(lines[ln],'%[(.-)%](.*)') 
+                if idx then
+                  ddata[idx] = val
+                end
+              end
+            end
+          end
+
+          loaddata.trackdata[t] = unpickle(data)
+          if strip then
+            local pfx = 'strip_s'..strip..'_'
+            local pfx2 = 'snap_s'..strip..'_'
+            
+            loaddata.stripdata[strip] = {{}}
+            loaddata.snapdata[strip] = {}
+            
+            loaddata.stripdata[strip].page = tonumber(zn(ddata[pfx..'page'],1))
+            loaddata.stripdata[strip].track = {
+                                             name = ddata[pfx..'track_name'],
+                                             guid = ddata[pfx..'track_guid'],
+                                             tracknum = tonumber(ddata[pfx..'track_num']),
+                                             strip = tonumber(ddata[pfx..'track_strip']),
+                                             }
+            
+            for p = 1, 4 do
+              local key = pfx..'p'..p..'_'
+              local key2 = pfx2..'p'..p..'_'
+            
+              loaddata.stripdata[strip][p] = LoadStripDataX(key,ddata)
+              loaddata.snapdata[strip][p] = LoadSnapDataX(key2,ddata)
+        
+            end
+          end
+        else
+          DBG('Error reading track data: track '..t)
+        end
+      end  
+
+      local swdata = match(content,'%[SWITCHDATA%]\n(.-)%[\\SWITCHDATA%]')
+      loaddata.switchers = unpickle(swdata)
+        
+    else
+    
+      loaddata = unpickle(content)
+  
+    end
 
     if loaddata == nil then return end
-    
+      
     guids = {}
     --INIT()
     local t_offset = reaper.CountTracks(0)
+    local tstart = 0
+    if version then
+      t_offset = t_offset + 1
+      tstart = -1
+    end
     
-    for i = 0, #loaddata.trackdata do
+    for i = tstart, #loaddata.trackdata do
       loaddata.trackdata[i].chunkdata = string.gsub(loaddata.trackdata[i].chunkdata,
                                                     '({%x%x%x%x%x%x%x%x%-%x%x%x%x%-%x%x%x%x%-%x%x%x%x%-%x%x%x%x%x%x%x%x%x%x%x%x})',
                                                     function(d) if guids[d] == nil then guids[d]=reaper.genGuid('') end return guids[d] end)
       loaddata.trackdata[i].chunkdata = ReplaceRCVs(loaddata.trackdata[i].chunkdata, t_offset)
     end    
         
-    for i = 0, #loaddata.trackdata do
+    for i = tstart, #loaddata.trackdata do
     
       reaper.InsertTrackAtIndex(t_offset+i+1, false)
     
     end
     
-    for i = 0, #loaddata.trackdata do
+    for i = tstart, #loaddata.trackdata do
 
       local tr = GetTrack(t_offset+i)
       SetTrackChunk(tr, loaddata.trackdata[i].chunkdata, false) 
-
+      if i == -1 then
+        reaper.GetSetMediaTrackInfo_String(tr, "P_NAME", 'SET MASTER', true)
+        reaper.SetOnlyTrackSelected(tr)
+        --if reaper.ActionExists()
+        reaper.Main_OnCommand(reaper.NamedCommandLookup('_S&M_FOLDERON'),0)
+      end
     end        
     
     local cids = {}
@@ -43910,9 +44141,9 @@ end
         end
       end
     end    
-    
+  
     PopulateTracks()
-    
+      
   end
   
   function ReplaceRCVs(chunk, t_offset)
@@ -44773,10 +45004,11 @@ end
       local s = s1
       local indent, op, cl = 1
       while indent > 0 do
-        op = string.find(chunk, '<', s+1, true)
+        op = string.find(chunk, '\n<', s+1, true)
         cl = string.find(chunk, '\n>\n', s+1, true) + 1
         if op == nil and cl == nil then break end
         if op ~= nil then
+          op = op + 1
           if op <= cl then
             indent = indent + 1
             s = op
@@ -45470,6 +45702,19 @@ end
     if reaper.file_exists(startbat) then
       os.execute(startbat)
     end  
+
+  --[[local content = '[TRACK]-1\nsdfsdfsdf\n[\\TRACK]\n[TRACK]0\nsdffsdfhguheargrnasff\n[\\TRACK]'
+  DBG(content)
+  local t = -1
+  local data = string.match(content,'(%[TRACK%]'..t..'.-%[\\TRACK%])')
+  DBG(data)]]
+  
+  --[[local tst = '[STRIPSET_VERSION]22\n[TRACKS]125\n[dfsgsdfgfsdfgsfhwtwt]'
+  --local tst = 'dfgd\nsdfsggsh\n[dfsgsdfgfsdfgsfhwtwt]'
+  local header = string.match(tst,'(.-\n.-\n)')
+  local version, trcnt = string.match(header,'%[.-%](%d+)\n%[.-%](%d+)\n')
+  DBG(header)
+  DBG(tostring(version)..'  '..tostring(trcnt))]]
   
     if sg_view then
       stripgallery_view = sg_view
