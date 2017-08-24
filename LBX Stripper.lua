@@ -38543,11 +38543,12 @@ end
         strip.controls[c].membtn = {state = tobool(zn(data[key..'memstate'],false)),
                                             mem = tonumber(zn(data[key..'memmem'],0))
                                             }
+
         strip.controls[c].knobsens = {norm = tonumber(zn(data[key..'knobsens_norm'],settings_defknobsens.norm)),
-                                              fine = tonumber(zn(data[key..'knobsens_fine'],settings_defknobsens.fine)),
-                                              wheel = tonumber(zn(data[key..'knobsens_wheel'],settings_defknobsens.wheel)),
-                                              wheelfine = tonumber(zn(data[key..'knobsens_wheelfine'],settings_defknobsens.wheelfine))}
-        
+                                      fine = tonumber(zn(data[key..'knobsens_fine'],settings_defknobsens.fine)),
+                                      wheel = tonumber(zn(data[key..'knobsens_wheel'],settings_defknobsens.wheel)),
+                                      wheelfine = tonumber(zn(data[key..'knobsens_wheelfine'],settings_defknobsens.wheelfine))}
+
         strip.controls[c].cycledata.statecnt = tonumber(zn(data[key..'cycledata_statecnt'],0))
         strip.controls[c].cycledata.mapptof = tobool(zn(data[key..'cycledata_mapptof'],false))
         strip.controls[c].cycledata.draggable = tobool(zn(data[key..'cycledata_draggable'],false))
@@ -43673,6 +43674,9 @@ end
     if merge == nil then merge = false end
     
     local match = string.match
+    local find = string.find
+    
+    GUI_DrawMsgX(obj, gui, 'Loading Data...')
     
     local file
     file=io.open(fn,"r")
@@ -43695,22 +43699,33 @@ end
 
       for t = -1, trcnt-1 do
       
+        GUI_DrawMsgX(obj, gui, 'Loading Track Data...', t+1, trcnt)
+        
         local trdata
         if t == -1 then
-          trdata = match(content,'%[TRACK%]%'..t..'\n(.-)%[\\TRACK%]')
+          --trdata = match(content,'%[TRACK%]%'..t..'\n(.-)%[\\TRACK%]')
+          local s, e = find(content,'%[TRACK%]%'..t..'\n.-%[\\TRACK%]')
+          trdata = string.sub(content,s,e)
+          content = string.sub(content,e)
         else
-          trdata = match(content,'%[TRACK%]'..t..'\n(.-)%[\\TRACK%]')      
+          --trdata = match(content,'%[TRACK%]'..t..'\n(.-)%[\\TRACK%]')      
+          local s, e = find(content,'%[TRACK%]'..t..'\n.-%[\\TRACK%]')
+          trdata = string.sub(content,s,e)
+          content = string.sub(content,e)
         end
         if trdata then
       
+          --local tt = reaper.time_precise()
           local data = match(trdata,'%[DATA%]\n(.-)%[\\DATA%]')      
           
           local strip, sdata = match(trdata,'%[STRIPDATA%](%d+)\n(.-)%[\\STRIPDATA%]')
           local ssdata = match(trdata,'%[SNAPSHOTDATA%]\n(.-)%[\\SNAPSHOTDATA%]')
+          --DBG('Find Data'..t+1 ..': '..round(reaper.time_precise()-tt,6))
       
           strip = tonumber(strip)
       
           --load data
+          --local tt = reaper.time_precise()
           local ddata = {}
           if sdata then
             local lines = split(sdata, "\n")
@@ -43734,8 +43749,12 @@ end
               end
             end
           end
+          --DBG('Track Data'..t+1 ..': '..round(reaper.time_precise()-tt,6))
 
+          --local tt = reaper.time_precise()
           loaddata.trackdata[t] = unpickle(data)
+          --DBG('Unpickle'..': '..round(reaper.time_precise()-tt,6))
+
           if strip then
             local pfx = 'strip_s'..strip..'_'
             local pfx2 = 'snap_s'..strip..'_'
@@ -43819,6 +43838,8 @@ end
     
       if loaddata.stripdata and loaddata.stripdata[s] then
     
+        GUI_DrawMsgX(obj, gui, 'Parsing Strip Data...', s, #loaddata.stripdata)
+    
         loaddata.stripdata[s].track.tracknum = loaddata.stripdata[s].track.tracknum + t_offset
         loaddata.stripdata[s].track.guid = guids[loaddata.stripdata[s].track.guid]
     
@@ -43855,6 +43876,12 @@ end
                 if ctl.textoffvalx == nil then ctl.textoffvalx = 0 end      
                 if ctl.textcolv == nil then ctl.textcolv = ctl.textcol end
                 if ctl.textsizev == nil then ctl.textsizev = ctl.textsize end
+                if ctl.knobsens == nil then
+                  ctl.knobsens = {norm = tonumber(settings_defknobsens.norm),
+                                  fine = tonumber(settings_defknobsens.fine),
+                                  wheel = tonumber(settings_defknobsens.wheel),
+                                  wheelfine = tonumber(settings_defknobsens.wheelfine)}
+                end
                 
                 if ctl.grpid then
                   if grids[ctl.grpid] then
@@ -43908,6 +43935,9 @@ end
     if merge then
       if #loaddata.snapdata > 0 then
         for s = 1, #loaddata.snapdata do
+        
+          GUI_DrawMsgX(obj, gui, 'Merging Snapshot Data...', s, #loaddata.snapdata)
+        
           for p = 1, 4 do
           
             if loaddata.snapdata[s][p] and #loaddata.snapdata[s][p] > 0 then
@@ -43960,6 +43990,8 @@ end
     for s = 1, #loaddata.stripdata do
     
       if loaddata.stripdata and loaddata.stripdata[s] then
+      
+        GUI_DrawMsgX(obj, gui, 'Merging Switcher Data...', s, #loaddata.stripdata)
     
         for p = 1, 4 do
     
@@ -44016,6 +44048,8 @@ end
     
       if loaddata.stripdata and loaddata.stripdata[s] then
     
+        GUI_DrawMsgX(obj, gui, 'Merging Switcher Data...', s, #loaddata.stripdata)
+    
         for p = 1, 4 do
     
           if loaddata.stripdata[s][p] then
@@ -44061,6 +44095,9 @@ end
     image_count_add = image_count    
     if #loaddata.stripdata > 0 then
       for s = 1, #loaddata.stripdata do
+      
+        GUI_DrawMsgX(obj, gui, 'Loading Graphics Images...', s, #loaddata.stripdata)
+        
         for p = 1, 4 do
           if #loaddata.stripdata[s][p].graphics > 0 then
             for i = 1, #loaddata.stripdata[s][p].graphics do
@@ -44087,6 +44124,9 @@ end
       end
 
       for s = 1, #loaddata.stripdata do
+      
+        GUI_DrawMsgX(obj, gui, 'Loading Control Images...', s, #loaddata.stripdata)
+        
         for p = 1, 4 do
 
           if #loaddata.stripdata[s][p].controls > 0 then      
