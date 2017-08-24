@@ -38538,8 +38538,8 @@ end
         strip.controls[c].tracknum = tonumber(zn(data[key..'tracknum']))
         strip.controls[c].trackguid = data[key..'trackguid']                    
         strip.controls[c].dvaloffset = tonumber(zn(data[key..'dvaloffset'],0))
-        strip.controls[c].minov = zn(data[key..'minov'])
-        strip.controls[c].maxov = zn(data[key..'maxov'])
+        strip.controls[c].minov = tonumber(zn(data[key..'minov']))
+        strip.controls[c].maxov = tonumber(zn(data[key..'maxov']))
         strip.controls[c].membtn = {state = tobool(zn(data[key..'memstate'],false)),
                                             mem = tonumber(zn(data[key..'memmem'],0))
                                             }
