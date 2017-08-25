@@ -11278,12 +11278,15 @@ end
       for i = st,en do
         local t = math.floor((obj.sections[10].h/2) - (stlay_data.reordered[i].h/2))
         if i == st then
-          local sx = (px-stlay_data.reordered[i].runx_s)
+          local sx = px-stlay_data.reordered[i].runx_s
           local sw = stlay_data.reordered[i].w - sx
+          if px < 0 then --eliminate width error
+            sw = sw - 1
+          end
           gfx.blit(1000,1,0,
-                    stlay_data.reordered[i].l+sx,
+                    math.floor(stlay_data.reordered[i].l+sx),
                     stlay_data.reordered[i].t,
-                    sw,
+                    math.floor(sw),
                     stlay_data.reordered[i].h,
                     math.floor(obj.sections[10].x + x),
                     math.floor(obj.sections[10].y + t))
@@ -11291,6 +11294,7 @@ end
         elseif i == en then
           local sx = 0
           local sw = ((px+obj.sections[10].w)-stlay_data.reordered[i].runx_s)
+          --DBG(sx..'  '..sw..'  '..stlay_data.reordered[i].l)
           gfx.blit(1000,1,0,
                     stlay_data.reordered[i].l,
                     stlay_data.reordered[i].t,
@@ -11751,7 +11755,7 @@ end
                                   math.floor(obj.sections[10].x),
                                   math.floor(obj.sections[10].y))
               else
-              
+
                 GUI_DrawGallery()
               
               end
@@ -43567,10 +43571,15 @@ end
       local trcnt = reaper.CountTracks(0)
       file:write('[TRACKS]'..trcnt..'\n')
 
+      local bpm, _ = reaper.GetProjectTimeSignature2(0)
+      file:write('[BPM]'..bpm..'\n')      
+      
       local savestrip = {}
       
       for t = -1, trcnt-1 do
 
+        GUI_DrawMsgX(obj, gui, 'Saving Track Data...', t+1, trcnt)
+        
         strip = tracks[t].strip
 
         local tr = GetTrack(t)
@@ -43669,6 +43678,35 @@ end
     
   end
 
+  function GetTimebase()
+  
+    if reaper.GetToggleCommandState(reaper.NamedCommandLookup('SWS_AWTBASETIME')) == 1 then
+      return 0
+    elseif reaper.GetToggleCommandState(reaper.NamedCommandLookup('_SWS_AWTBASEBEATPOS')) == 1 then
+      return 1
+    elseif reaper.GetToggleCommandState(reaper.NamedCommandLookup('_SWS_AWTBASEBEATALL')) == 1 then
+      return 2
+    else
+      return -1
+    end
+  
+  end
+  
+  function SetTimebase(tb)
+  
+    local id
+    if tb == 0 then
+      id = '_SWS_AWTBASETIME'
+    elseif tb == 1 then
+      id = '_SWS_AWTBASEBEATPOS'    
+    elseif tb == 2 then
+      id = '_SWS_AWTBASEBEATALL'
+    end
+    if id then
+      reaper.Main_OnCommand(reaper.NamedCommandLookup(id),0)
+    end
+  end
+
   function LoadSet2(fn, merge)
 
     if merge == nil then merge = false end
@@ -43684,9 +43722,14 @@ end
     file:close()
     
     local loaddata = {}
+    --local msg, msg2
 
-    local header = string.match(content,'(.-\n.-\n)')
-    local version, trcnt = string.match(header,'%[.-%](%d+)\n%[.-%](%d+)\n')
+    local header = match(content,'(.-)%[TRACK%]')
+    --DBG(header)
+    
+    local version, trcnt = match(header,'%[STRIPSET_VERSION%](%d+)\n%[TRACKS%](%d+)\n')
+    local pbpm = match(header,'%[BPM%](%d+.%d+)\n')
+    
     version = tonumber(version)
     
     if version and version == 2 then
@@ -43810,7 +43853,17 @@ end
                                                     function(d) if guids[d] == nil then guids[d]=reaper.genGuid('') end return guids[d] end)
       loaddata.trackdata[i].chunkdata = ReplaceRCVs(loaddata.trackdata[i].chunkdata, t_offset)
     end    
-        
+    
+    local obpm, tb
+    if pbpm then
+      tb = GetTimebase()
+      if tb ~= 0 then
+        SetTimebase(0)
+      end
+      obpm, _ = reaper.GetProjectTimeSignature2(0)
+      reaper.SetCurrentBPM(0, pbpm, false)
+    end
+    
     for i = tstart, #loaddata.trackdata do
     
       reaper.InsertTrackAtIndex(t_offset+i+1, false)
@@ -43828,6 +43881,13 @@ end
         reaper.Main_OnCommand(reaper.NamedCommandLookup('_S&M_FOLDERON'),0)
       end
     end        
+
+    if pbpm and obpm then
+      reaper.SetCurrentBPM(0, obpm, false)
+      if tb ~= 0 and tb ~= -1 then
+        SetTimebase(tb)
+      end
+    end
     
     local cids = {}
     local grids = {}
@@ -44184,6 +44244,10 @@ end
   
     PopulateTracks()
       
+    --[[if msg then
+      OpenMsgBox(1, msg, 1, msg2)
+    end]]
+    
   end
   
   function ReplaceRCVs(chunk, t_offset)
@@ -45743,6 +45807,9 @@ end
       os.execute(startbat)
     end  
 
+  --reaper.SetCurrentBPM(0, 130, false)
+  --local bpm, _ = reaper.GetProjectTimeSignature2(0)
+  --DBG(bpm)
   --[[local content = '[TRACK]-1\nsdfsdfsdf\n[\\TRACK]\n[TRACK]0\nsdffsdfhguheargrnasff\n[\\TRACK]'
   DBG(content)
   local t = -1
