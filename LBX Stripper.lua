@@ -37457,8 +37457,8 @@ end
                   byp[#byp+1] = c.fxnum
                 end
               end
-            end
-
+            end           
+            
           elseif mon ~= true then
 
             local c = ctls[macro[m].ctl]
@@ -37493,6 +37493,8 @@ end
               end            
             end          
           end
+          SetCtlDirty(macro[m].ctl)
+          
         end
       end
       if #byp > 0 then
