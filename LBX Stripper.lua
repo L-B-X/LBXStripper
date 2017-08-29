@@ -33626,13 +33626,17 @@ end
       if ctl then
         local switchid = ctl.switcherid
         
-        if switchers[switchid].grpids[sel] and ctl then
-          switchers[switchid].current = switchers[switchid].grpids[sel].id
-          ctl.param_info.paramname = string.format('%i',sel)..': '..switchers[switchid].grpids[sel].name
-          update_gfx = true
-          update_bg = true
-      
-          SetCtlBitmapRedraw()
+        if switchers[switchid] then
+          if switchers[switchid].grpids[sel] and ctl then
+            switchers[switchid].current = switchers[switchid].grpids[sel].id
+            ctl.param_info.paramname = string.format('%i',sel)..': '..switchers[switchid].grpids[sel].name
+            update_gfx = true
+            update_bg = true
+        
+            SetCtlBitmapRedraw()
+          end
+        else
+          ctl.switcherid = nil
         end
       end
     end      
