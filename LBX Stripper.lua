@@ -39741,7 +39741,15 @@ end
       end
     end     
     
-    LoadMod('',mod_select,data)
+    local targets = {}
+    local m = mod_select
+    if modulators[m] and modulators[m].targets then
+      targets = modulators[m].targets
+    end
+          
+    LoadMod('',m,data)
+  
+    modulators[m].targets = targets
   
   end
 
@@ -39751,6 +39759,7 @@ end
     local steps = tonumber(zn(data[key..'steps']))
   
     if steps then
+    
       modulators[m] = {}
       modulators[m].steps = steps
 
