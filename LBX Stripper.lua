@@ -2266,6 +2266,11 @@
                            w = obj.sections[1100].w,
                            h = 24} 
 
+      obj.sections[1113] = {x = obj.sections[1102].x,
+                           y = obj.sections[1102].y + obj.sections[1102].h + 2,
+                           w = 100,
+                           h = 20} 
+
       local mw,mh = 160,84
       obj.sections[1120] = {x = obj.sections[10].x+obj.sections[10].w - mw - 10,
                            y = obj.sections[10].y + 10,
@@ -4124,8 +4129,8 @@
   
     local gfxidx = {}
     if graphics_files and #graphics_files > 0 then
-      for i = 1, #graphics_files do
-      
+      for i = 0, #graphics_files do
+
         gfxidx[graphics_files[i].fn] = i
       
       end
@@ -11471,6 +11476,7 @@ end
         txt = 'SHIFT: '..round(shifttime)..'ms'
       end
       GUI_DrawButton(gui,txt,obj.sections[1108],c,gui.color.white,true)
+      GUI_DrawButton(gui,'RANDOMIZE',obj.sections[1113],c,gui.color.white,true)
 
       local c = -1
       if m.min > 0 then
@@ -24917,7 +24923,7 @@ end
 
   function ModMenu(mx, my)
   
-    local mstr = 'Sine|Triangle|Ramp Up|Ramp Down'
+    local mstr = 'Sine|Triangle|Ramp Up|Ramp Down||Save Preset|Load Preset'
     gfx.x, gfx.y = mx, my
     local res = gfx.showmenu(mstr)
     if res > 0 then
@@ -24972,6 +24978,17 @@ end
           
         end
         update_lfoedit = true
+      
+      elseif res == 5 then
+        
+        OpenEB(120,'Please give the modulator preset a name:','Mod Preset')
+
+      elseif res == 6 then
+        local ret, fn = reaper.GetUserFileNameForRead(mod_path..'*','Load Mod Preset','.lbxmod')
+        if ret == true and fn then
+          LoadModPreset(fn)
+          update_lfoedit = true
+        end
         
       end    
     
@@ -25956,6 +25973,13 @@ end
               end 
             end
             m.data = d
+          end
+          update_lfoedit = true
+
+        elseif MOUSE_click(obj.sections[1113]) then
+        
+          for i = 1, #m.data do
+            m.data[i] = math.random()
           end
           update_lfoedit = true
 
@@ -35146,6 +35170,18 @@ end
             Mod_ChangeCount(mcnt)
           end
           update_gfx = true
+
+
+        elseif EB_Open == 120 then
+          local fn = editbox.text
+          if fn and fn ~= '' then
+          
+            local file
+            local ffn = mod_path..fn..'.lbxmod'
+            file=io.open(ffn,"w")
+            SaveMod(file,'',modulators[mod_select],true)
+            file:close()
+          end
         end
         
         editbox = nil
@@ -39687,6 +39723,70 @@ end
     return mod
   end
 ]]
+
+  function LoadModPreset(ffn)
+  
+    if reaper.file_exists(ffn) ~= true then              
+      DBG('Missing file: '..ffn)
+      return 0
+    end
+    
+    local data = {}
+    local match = string.match
+    
+    for line in io.lines(ffn) do
+      local idx, val = match(line,'%[(.-)%](.*)') --decipher(line)
+      if idx then
+        data[idx] = val
+      end
+    end     
+    
+    LoadMod('',mod_select,data)
+  
+  end
+
+  function LoadMod(pfx,m,data)
+
+    local key = pfx
+    local steps = tonumber(zn(data[key..'steps']))
+  
+    if steps then
+      modulators[m] = {}
+      modulators[m].steps = steps
+
+      modulators[m].active = tobool(zn(data[key..'active']))
+      modulators[m].stepsmult = tonumber(zn(data[key..'stepsmult'],1))
+      modulators[m].div = tonumber(zn(data[key..'div'],4))
+      modulators[m].offset = tonumber(zn(data[key..'offset'],0.5))
+      modulators[m].min = tonumber(zn(data[key..'min'],0))
+      modulators[m].max = tonumber(zn(data[key..'max'],1))
+      modulators[m].interpolate = tobool(zn(data[key..'interpolate']))
+      modulators[m].syncv = tonumber(zn(data[key..'syncv']))
+      modulators[m].sync = tobool(zn(data[key..'sync']))
+      local targetcnt = tonumber(zn(data[key..'target_cnt']))
+
+      modulators[m].targets = {}
+      modulators[m].data = {}
+      if targetcnt and targetcnt > 0 then
+        for t = 1, targetcnt do
+          local key = pfx..'target_'..t..'_'
+          modulators[m].targets[t] = {targettype = tonumber(zn(data[key..'targettype'],1)),
+                                      strip = tonumber(zn(data[key..'strip'])),
+                                      page = tonumber(zn(data[key..'page'])),
+                                      ctl = tonumber(zn(data[key..'ctl'])),
+                                      c_id = tonumber(zn(data[key..'c_id']))
+                                      }
+        end
+      end        
+
+      for d = 1, modulators[m].steps do
+        local key = pfx..'data_'..d..'_'
+        modulators[m].data[d] = tonumber(zn(data[key..'val']))
+      end
+    end
+  
+  end
+  
   function LoadMods(data)
 
     local key = 'modcnt'
@@ -39700,42 +39800,7 @@ end
       for m = 1, modcnt do      
 
         local key = 'mod_'..m..'_'
-        local steps = tonumber(zn(data[key..'steps']))
-      
-        if steps then
-          modulators[m] = {}
-          modulators[m].steps = steps
-  
-          modulators[m].active = tobool(zn(data[key..'active']))
-          modulators[m].stepsmult = tonumber(zn(data[key..'stepsmult'],1))
-          modulators[m].div = tonumber(zn(data[key..'div'],4))
-          modulators[m].offset = tonumber(zn(data[key..'offset'],0.5))
-          modulators[m].min = tonumber(zn(data[key..'min'],0))
-          modulators[m].max = tonumber(zn(data[key..'max'],1))
-          modulators[m].interpolate = tobool(zn(data[key..'interpolate']))
-          modulators[m].syncv = tonumber(zn(data[key..'syncv']))
-          modulators[m].sync = tobool(zn(data[key..'sync']))
-          local targetcnt = tonumber(zn(data[key..'target_cnt']))
-  
-          modulators[m].targets = {}
-          modulators[m].data = {}
-          if targetcnt and targetcnt > 0 then
-            for t = 1, targetcnt do
-              local key = 'mod_'..m..'_target_'..t..'_'
-              modulators[m].targets[t] = {targettype = tonumber(zn(data[key..'targettype'],1)),
-                                          strip = tonumber(zn(data[key..'strip'])),
-                                          page = tonumber(zn(data[key..'page'])),
-                                          ctl = tonumber(zn(data[key..'ctl'])),
-                                          c_id = tonumber(zn(data[key..'c_id']))
-                                          }
-            end
-          end        
-  
-          for d = 1, modulators[m].steps do
-            local key = 'mod_'..m..'_data_'..d..'_'
-            modulators[m].data[d] = tonumber(zn(data[key..'val']))
-          end
-        end
+        LoadMod(key,m,data)
                 
       end 
       modulators = INIT_Modulators(modulators)
@@ -40920,6 +40985,41 @@ end
     
   end
 
+  function SaveMod(file,pfx,moddata,excludetargets)
+
+    local key = pfx
+    file:write('['..key..'active]'.. tostring(nz(moddata.active,false)) ..'\n')
+    file:write('['..key..'steps]'.. moddata.steps ..'\n')
+    file:write('['..key..'stepsmult]'.. moddata.stepsmult ..'\n')
+    file:write('['..key..'div]'.. moddata.div ..'\n')
+    file:write('['..key..'interpolate]'.. tostring(nz(moddata.interpolate,true)) ..'\n')
+    file:write('['..key..'syncv]'.. nz(moddata.syncv,15) ..'\n')
+    file:write('['..key..'sync]'.. tostring(nz(moddata.sync,true)) ..'\n')
+    file:write('['..key..'offset]'.. nz(moddata.offset,0.5) ..'\n')
+    file:write('['..key..'min]'.. nz(moddata.min,0) ..'\n')
+    file:write('['..key..'max]'.. nz(moddata.max,1) ..'\n')
+
+    if excludetargets ~= true then
+      file:write('['..key..'target_cnt]'.. #moddata.targets ..'\n')
+      for t = 1, #moddata.targets do
+        local key = pfx..'target_'..t..'_'
+        file:write('['..key..'targettype]'.. nz(moddata.targets[t].targettype,'') ..'\n')
+        file:write('['..key..'strip]'.. nz(moddata.targets[t].strip,'') ..'\n')
+        file:write('['..key..'page]'.. nz(moddata.targets[t].page,'') ..'\n')
+        file:write('['..key..'ctl]'.. nz(moddata.targets[t].ctl,'') ..'\n')
+        file:write('['..key..'c_id]'.. nz(moddata.targets[t].c_id,'') ..'\n')        
+      end
+    else
+      file:write('['..key..'target_cnt]'.. 0 ..'\n')    
+    end
+    
+    for d = 1, moddata.steps do
+      local key = pfx..'data_'..d..'_'
+      file:write('['..key..'val]'.. nz(moddata.data[d],0.5) ..'\n')          
+    end
+
+  end
+  
   function SaveMods(file)
   
     if file and modulators and modulator_cnt > 0 then
@@ -40932,33 +41032,9 @@ end
       for m = 1, modulator_cnt do
     
         if modulators[m] then
-  
+      
           local key = 'mod_'..m..'_'
-          file:write('['..key..'active]'.. tostring(nz(modulators[m].active,false)) ..'\n')
-          file:write('['..key..'steps]'.. modulators[m].steps ..'\n')
-          file:write('['..key..'stepsmult]'.. modulators[m].stepsmult ..'\n')
-          file:write('['..key..'div]'.. modulators[m].div ..'\n')
-          file:write('['..key..'interpolate]'.. tostring(nz(modulators[m].interpolate,true)) ..'\n')
-          file:write('['..key..'syncv]'.. nz(modulators[m].syncv,15) ..'\n')
-          file:write('['..key..'sync]'.. tostring(nz(modulators[m].sync,true)) ..'\n')
-          file:write('['..key..'offset]'.. nz(modulators[m].offset,0.5) ..'\n')
-          file:write('['..key..'min]'.. nz(modulators[m].min,0) ..'\n')
-          file:write('['..key..'max]'.. nz(modulators[m].max,1) ..'\n')
-          file:write('['..key..'target_cnt]'.. #modulators[m].targets ..'\n')
-
-          for t = 1, #modulators[m].targets do
-            local key = 'mod_'..m..'_target_'..t..'_'
-            file:write('['..key..'targettype]'.. nz(modulators[m].targets[t].targettype,'') ..'\n')
-            file:write('['..key..'strip]'.. nz(modulators[m].targets[t].strip,'') ..'\n')
-            file:write('['..key..'page]'.. nz(modulators[m].targets[t].page,'') ..'\n')
-            file:write('['..key..'ctl]'.. nz(modulators[m].targets[t].ctl,'') ..'\n')
-            file:write('['..key..'c_id]'.. nz(modulators[m].targets[t].c_id,'') ..'\n')        
-          end
-
-          for d = 1, modulators[m].steps do
-            local key = 'mod_'..m..'_data_'..d..'_'
-            file:write('['..key..'val]'.. nz(modulators[m].data[d],0.5) ..'\n')          
-          end
+          SaveMod(file,key,modulators[m])
   
         end
       end  
@@ -45624,6 +45700,7 @@ end
   eq_path = resource_path.."eq/"
   skins_path = resource_path.."skins/LBXDEF/"
   share_path = resource_path.."share/"
+  mod_path = resource_path.."modpresets/"
   nebscanboot_file = nil
   
   --font_folder = "C:/Windows/Fonts/"
@@ -45640,6 +45717,7 @@ end
   reaper.RecursiveCreateDirectory(eqbands_path,1)
   reaper.RecursiveCreateDirectory(eq_path,1)
   reaper.RecursiveCreateDirectory(share_path,1)
+  reaper.RecursiveCreateDirectory(mod_path,1)
 
   LBX_CTL_TRNAME='__LBX_CTL'
   LBX_GTRACK_NAME = '__GLOBAL'
