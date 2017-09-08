@@ -877,6 +877,12 @@
               GenStripSaveData2(stripdata.strip,nil,file)
               file:write('[\\STRIPDATA]\n')
               
+              if stripdata.snapshots then
+                file:write('[SNAPSHOTDATA]\n')      
+                SaveSnapshotDataX(stripdata.snapshots,nil,file)
+                file:write('[\\SNAPSHOTDATA]\n')      
+              end
+              
               --file:write(stripfiledata)                        
             end
             --local pickled_table=pickle(stripdata)
@@ -2206,6 +2212,8 @@
         modwinsz = {x = x, y = y, w = mow, h = moh}
       end
 
+      if x < obj.sections[10].x then x = obj.sections[10].x end
+      if y < obj.sections[10].y then y = obj.sections[10].y end
       obj.sections[1100] = {x = x,
                            y = y,
                            w = mow,
@@ -2841,6 +2849,8 @@
                  ['dblue1'] = '0 25 50',
                  ['backg'] = '5 0 10'
                }
+      
+      SetSkinCols(gui)
     return gui
   end  
   ------------------------------------------------------------
@@ -4992,28 +5002,28 @@
                         y = obj.sections[500].y + butt_h + 2 + butt_h*(i)+1,
                         w = obj.sections[500].w-6,
                         h = butt_h-2}
-          local c = gui.color.white
+          local c = gui.skol.lst_txt
           if fader_select == i + fdlist_offset then
             --GUI_DrawBar(gui,'',xywh,skin.highlight,true,gui.color.black,nil,-2)
             if faders[fader_select] and faders[fader_select].targettype then
-              f_Get_SSV(faderselcol)
+              f_Get_SSV(gui.skol.faderselcol)
             else
-              f_Get_SSV(gui.color.white)          
+              f_Get_SSV(gui.skol.lst_barhl)          
             end          
             gfx.rect(xywh.x,xywh.y,xywh.w,xywh.h,1,1)
             
-            c = gui.color.black        
+            c = gui.skol.lst_txthl
           else
             if f.targettype then
               
-              c = gui.color.black
-              f_Get_SSV(faderhighcol)
+              c = gui.skol.lst_txthl
+              f_Get_SSV(gui.skol.faderhighcol)
               
               gfx.rect(xywh.x,xywh.y,xywh.w,xywh.h,1,1)
               --GUI_DrawBar(gui,'',xywh,skin.highlight,true,gui.color.black,nil,-2)
             
             else
-              c = gui.color.white
+              c = gui.skol.lst_txt
             end 
           
           end
@@ -5029,7 +5039,7 @@
                           y = obj.sections[13].y, 
                           w = obj.sections[13].w,
                           h = obj.sections[13].h}
-    GUI_DrawBar(gui,'GLOBAL',xywh,skin.bar,true,gui.color.black,nil,-2)
+    GUI_DrawBar(gui,'GLOBAL',xywh,skin.bar,true,gui.skol.sb_txt_on,nil,-2)
                               
     local xywh = {x = obj.sections[500].x,
                   y = obj.sections[500].y+butt_h+2,
@@ -5062,26 +5072,26 @@
                       y = obj.sections[500].y + butt_h + 2 + butt_h*(i)+1,
                       w = obj.sections[500].w-6,
                       h = butt_h-2}
-        local c = gui.color.white
+        local c = gui.skol.lst_txt
         if mod_select == i + mdlist_offset then
           if modulators[mod_select] and #modulators[mod_select].targets > 0 then
-            f_Get_SSV(modselcol)
+            f_Get_SSV(gui.skol.modselcol)
           else
-            f_Get_SSV(gui.color.white)          
+            f_Get_SSV(gui.skol.lst_barhl)          
           end          
           gfx.rect(xywh.x,xywh.y,xywh.w,xywh.h,1,1)
           
-          c = gui.color.black        
+          c = gui.skol.lst_txthl
         else
           if #m.targets > 0 then
             
-            c = gui.color.black
-            f_Get_SSV(modhighcol)
+            c = gui.skol.lst_txthl
+            f_Get_SSV(gui.skol.modhighcol)
             
             gfx.rect(xywh.x,xywh.y,xywh.w,xywh.h,1,1)
           
           else
-            c = gui.color.white
+            c = gui.skol.lst_txt
           end 
         
         end
@@ -5102,7 +5112,7 @@
     else
       txt = 'OPEN'    
     end
-    GUI_DrawBar(gui,txt..' EDITOR',xywh,skin.bar,true,gui.color.black,nil,-2)
+    GUI_DrawBar(gui,txt..' EDITOR',xywh,skin.bar,true,gui.skol.sb_txt_on,nil,-2)
                               
     local xywh = {x = obj.sections[500].x,
                   y = obj.sections[500].y+butt_h+2,
@@ -5191,7 +5201,7 @@
                   y = obj.sections[43].y,
                   w = obj.sections[43].w,
                   h = obj.sections[43].h}
-    f_Get_SSV(gui.color.cbobg)
+    f_Get_SSV(gui.skol.lst_bg)
     gfx.a = 1 
     gfx.rect(xywh.x,
              xywh.y, 
@@ -5200,7 +5210,7 @@
              
     if mode == 0 and mode0_submode == 0 then
 
-      GUI_DrawBar(gui,'LIVE MODE',obj.sections[11],skin.bar,true,gui.color.black,nil,-2)
+      GUI_DrawBar(gui,'LIVE MODE',obj.sections[11],skin.bar,true,gui.skol.sb_txt_on,nil,-2)
 
       f_Get_SSV(gui.color.black)
       gfx.rect(obj.sections[11].x+obj.sections[11].w-6,
@@ -5213,7 +5223,7 @@
     
     elseif mode == 0 and mode0_submode == 1 then
 
-      GUI_DrawBar(gui,'FADERS',obj.sections[11],skin.bar,true,gui.color.black,nil,-2)
+      GUI_DrawBar(gui,'FADERS',obj.sections[11],skin.bar,true,gui.skol.sb_txt_on,nil,-2)
 
       f_Get_SSV(gui.color.black)
       gfx.rect(obj.sections[11].x+obj.sections[11].w-6,
@@ -5226,7 +5236,7 @@
 
     elseif mode == 0 and mode0_submode == 2 then
 
-      GUI_DrawBar(gui,'MODULATORS',obj.sections[11],skin.bar,true,gui.color.black,nil,-2)
+      GUI_DrawBar(gui,'MODULATORS',obj.sections[11],skin.bar,true,gui.skol.sb_txt_on,nil,-2)
 
       f_Get_SSV(gui.color.black)
       gfx.rect(obj.sections[11].x+obj.sections[11].w-6,
@@ -5239,22 +5249,22 @@
     
     else
     
-      GUI_DrawBar(gui,'EDIT MODE',obj.sections[11],skin.barR,true,gui.color.black,nil,-2)
+      GUI_DrawBar(gui,'EDIT MODE',obj.sections[11],skin.barR,true,gui.skol.sb_txt_on,nil,-2)
       gfx.a=1
      
-      GUI_DrawBar(gui,'',obj.sections[13],skin.bar,true,gui.color.black,nil,-2)
+      GUI_DrawBar(gui,'',obj.sections[13],skin.bar,true,gui.skol.sb_txt_on,nil,-2)
       if mode == 1 and submode == 0 then
         local xywh = {x = obj.sections[13].x,
                       y = obj.sections[13].y, 
                       w = obj.sections[13].x+obj.sections[13].w-30,
                       h = obj.sections[13].h}
         if fxmode == 0 then
-          GUI_textsm_CJ(gui,xywh,submode_table[submode+1],gui.color.black,-2,xywh.w)
+          GUI_textsm_CJ(gui,xywh,submode_table[submode+1],gui.skol.sb_txt_on,-2,xywh.w)
         elseif fxmode == 1 then
-          GUI_textsm_CJ(gui,xywh,'TR PARAMS',gui.color.black,-2,xywh.w) --hardcoded - sort out eventually
+          GUI_textsm_CJ(gui,xywh,'TR PARAMS',gui.skol.sb_txt_on,-2,xywh.w) --hardcoded - sort out eventually
         end
       else
-        GUI_textC(gui,obj.sections[13],submode_table[submode+1],gui.color.black,-2)
+        GUI_textC(gui,obj.sections[13],submode_table[submode+1],gui.skol.sb_txt_on,-2)
       end
       if submode == 0 then
         f_Get_SSV(gui.color.black)
@@ -5266,7 +5276,7 @@
                  xywh.y, 
                  1,
                  xywh.h, 1, 1)
-        GUI_textC(gui,xywh,'*',gui.color.black,-2)
+        GUI_textC(gui,xywh,'*',gui.skol.sb_txt_on,-2)
 
       end
       
@@ -5314,19 +5324,19 @@
           local c
           local bypassed = not GetFXEnabled(tracks[trackedit_select].tracknum, i+ flist_offset)
           if bypassed == false then        
-            c = gui.color.white
+            c = gui.skol.lst_txt
           else
-            c = gui.color.red        
+            c = gui.skol.lst_txtalt1      
           end
           if trackfx_select == i + flist_offset then
-            f_Get_SSV(gui.color.white)
+            f_Get_SSV(gui.skol.lst_barhl)
             gfx.rect(xywh.x+2,
                      xywh.y+1, 
                      xywh.w-6,
                      xywh.h-2, 1, 1)
   
             if bypassed == false then        
-              c = gui.color.black
+              c = gui.skol.lst_txthl
             end
           end
           xywh.y = xywh.y-1
@@ -5345,15 +5355,15 @@
                         y = obj.sections[520].y +2+ (i+1) * butt_h,
                         w = obj.sections[520].w,
                         h = butt_h}
-          local c = gui.color.white
+          local c = gui.skol.lst_txt
           if trctltype_select == i + trctltypelist_offset then
-            f_Get_SSV(gui.color.white)
+            f_Get_SSV(gui.skol.lst_barhl)
             gfx.rect(xywh.x+2,
                      xywh.y+1, 
                      xywh.w-6,
                      xywh.h-2, 1, 1)
   
-            c = gui.color.black
+            c = gui.skol.lst_txthl
           end
           xywh.y = xywh.y-1
           GUI_textsm_LJ(gui, xywh, trctltype_table[i + trctltypelist_offset + 1], c, -4, plist_w)
@@ -5385,16 +5395,16 @@
                         y = obj.sections[522].y +2 + (i+1) * butt_h,
                         w = obj.sections[522].w,
                         h = butt_h}  
-          local c = gui.color.white
+          local c = gui.skol.lst_txt
           --if trackfxparam_select == i + plist_offset then
           if tfxp_sel and tfxp_sel[i + plist_offset] then  
-            f_Get_SSV(gui.color.white)
+            f_Get_SSV(gui.skol.lst_barhl)
             gfx.rect(xywh.x+2,
                      xywh.y+1, 
                      xywh.w-6,
                      xywh.h-2, 1, 1)
   
-            c = gui.color.black        
+            c = gui.skol.lst_txthl
           end
           xywh.y=xywh.y-1
           GUI_textsm_LJ(gui, xywh, trackfxparams[i + plist_offset].paramname, c, -4, plist_w)
@@ -5426,14 +5436,14 @@
                           y = obj.sections[522].y +2 + (i+1) * butt_h,
                           w = obj.sections[522].w,
                           h = butt_h}  
-            local c = gui.color.white
+            local c = gui.skol.lst_txt
             if trctl_select-1 == i + trctlslist_offset then  
-              f_Get_SSV(gui.color.white)
+              f_Get_SSV(gui.skol.lst_barhl)
               gfx.rect(xywh.x+2,
                        xywh.y+1, 
                        xywh.w-6,
                        xywh.h-2, 1, 1)
-              c = gui.color.black        
+              c = gui.skol.lst_txthl
             end
             xywh.y=xywh.y-1
             GUI_textsm_LJ(gui, xywh, tbl[i + trctlslist_offset+1].name, c, -4, plist_w)
@@ -5451,14 +5461,14 @@
                           y = obj.sections[522].y +2 + (i+1) * butt_h,
                           w = obj.sections[522].w,
                           h = butt_h}  
-            local c = gui.color.white
+            local c = gui.skol.lst_txt
             if trctl_select-1 == i + trctlslist_offset then  
-              f_Get_SSV(gui.color.white)
+              f_Get_SSV(gui.skol.lst_barhl)
               gfx.rect(xywh.x+2,
                        xywh.y+1, 
                        xywh.w-6,
                        xywh.h-2, 1, 1)
-              c = gui.color.black        
+              c = gui.skol.lst_txthl
             end
             xywh.y=xywh.y-1
             GUI_textsm_LJ(gui, xywh, tbl[sidx][pidx].name, c, -4, plist_w)
@@ -5474,14 +5484,14 @@
                           y = obj.sections[522].y +2 + (i) * butt_h,
                           w = obj.sections[522].w,
                           h = butt_h}  
-            local c = gui.color.white
+            local c = gui.skol.lst_txt
             if trctl_select == i + trctlslist_offset then  
-              f_Get_SSV(gui.color.white)
+              f_Get_SSV(gui.skol.lst_barhl)
               gfx.rect(xywh.x+2,
                        xywh.y+1, 
                        xywh.w-6,
                        xywh.h-2, 1, 1)
-              c = gui.color.black        
+              c = gui.skol.lst_txthl
             end
             xywh.y=xywh.y-1
             GUI_textsm_LJ(gui, xywh, tbl[i + trctlslist_offset], c, -4, plist_w)
@@ -5516,14 +5526,14 @@
                   y = obj.sections[521].y, 
                   w = 40,
                   h = obj.sections[521].h}
-    GUI_DrawBar(gui,'',xywh,skin.bar,true,gui.color.black,nil,-2)
+    GUI_DrawBar(gui,'',xywh,skin.bar,true,gui.skol.sb_txt_on,nil,-2)
     
     --[[gfx.rect(xywh.x,
              xywh.y, 
              2,
              xywh.h, 1)]]
     if fxmode == 0 then
-      GUI_textC(gui,xywh,'LRN',gui.color.black,-2)
+      GUI_textC(gui,xywh,'LRN',gui.skol.sb_txt_on,-2)
     end
     
     local xywh = {x = obj.sections[521].x,
@@ -5534,12 +5544,12 @@
     if trackedit_select ~= track_select then
       sb = skin.barR
     end
-    GUI_DrawBar(gui,'',xywh,sb,true,gui.color.black,nil,-2)
+    GUI_DrawBar(gui,'',xywh,sb,true,gui.skol.sb_txt_on,nil,-2)
     f_Get_SSV(gui.color.black)
     if trackedit_select >= 0 and tracks[trackedit_select] then
-      GUI_textsm_CJ(gui,xywh,'TR'..trackedit_select+1 ..':'..tracks[trackedit_select].name,gui.color.black,-2,xywh.w)
+      GUI_textsm_CJ(gui,xywh,'TR'..trackedit_select+1 ..':'..tracks[trackedit_select].name,gui.skol.sb_txt_on,-2,xywh.w)
     else
-      GUI_textsm_CJ(gui,xywh,'TR: Master',gui.color.black,-2,xywh.w)        
+      GUI_textsm_CJ(gui,xywh,'TR: Master',gui.skol.sb_txt_on,-2,xywh.w)        
     end                 
 
   end
@@ -5565,15 +5575,15 @@
                       y = obj.sections[531].y +2+ (i+1) * butt_h,
                       w = obj.sections[531].w,
                       h = butt_h}
-        local c = gui.color.white
+        local c = gui.skol.lst_txt
         if gfxfol_select == i + gflist_offset then
-          f_Get_SSV(gui.color.white)
+          f_Get_SSV(gui.skol.lst_barhl)
           gfx.rect(xywh.x+2,
                    xywh.y+1, 
                    xywh.w-6,
                    xywh.h-2, 1, 1)
 
-          c = gui.color.black
+          c = gui.skol.lst_txthl
         end
         if gfx_dropfolder == i + gflist_offset then
           f_Get_SSV(gui.color.red)
@@ -5609,15 +5619,15 @@
                       y = obj.sections[530].y+2 + (i+1) * butt_h,
                       w = obj.sections[530].w,
                       h = butt_h}
-        local c = gui.color.white
+        local c = gui.skol.lst_txt
         if gfx_select == i + glist_offset then
-          f_Get_SSV(gui.color.white)
+          f_Get_SSV(gui.skol.lst_barhl)
           gfx.rect(xywh.x+2,
                    xywh.y+1, 
                    xywh.w-6,
                    xywh.h-2, 1, 1)
 
-          c = gui.color.black        
+          c = gui.skol.lst_txthl
         end
         xywh.y=xywh.y-1
         GUI_textsm_LJ(gui, xywh, graphics_files[graphics_folder_files[i + glist_offset]].fn, c, -4, plist_w)
@@ -5689,7 +5699,7 @@
 
     gfx.dest = 1001
 
-    GUI_DrawBar(gui,'SAVE STRIP',obj.sections[511],skin.bar,true,gui.color.black,nil,-2)
+    GUI_DrawBar(gui,'SAVE STRIP',obj.sections[511],skin.bar,true,gui.skol.sb_txt_on,nil,-2)
 
     SF_butt_cnt = math.floor(obj.sections[510].h / butt_h) 
     for i = 0, SF_butt_cnt-1 do
@@ -5699,15 +5709,15 @@
                       y = obj.sections[510].y+2 + (i+1) * butt_h,
                       w = obj.sections[510].w,
                       h = butt_h}
-        local c = gui.color.white
+        local c = gui.skol.lst_txt
         if stripfol_select == i + sflist_offset then
-          f_Get_SSV(gui.color.white)
+          f_Get_SSV(gui.skol.lst_barhl)
           gfx.rect(xywh.x+2,
                    xywh.y+1, 
                    xywh.w-6,
                    xywh.h-2, 1, 1)
 
-          c = gui.color.black        
+          c = gui.skol.lst_txthl
         end
         xywh.y = xywh.y-1
         GUI_textsm_LJ(gui, xywh, strip_folders[i + sflist_offset].fn, c, -4, plist_w)
@@ -5735,15 +5745,15 @@
                       y = obj.sections[512].y+2 + (i+1) * butt_h,
                       w = obj.sections[512].w,
                       h = butt_h}
-        local c = gui.color.white
+        local c = gui.skol.lst_txt
         if strip_select == i + slist_offset then
-          f_Get_SSV(gui.color.white)
+          f_Get_SSV(gui.skol.lst_barhl)
           gfx.rect(xywh.x+2,
                    xywh.y+1, 
                    xywh.w-6,
                    xywh.h-2, 1, 1)
 
-          c = gui.color.black        
+          c = gui.skol.lst_txthl
         end
         
         if InFavs(strip_folders[stripfol_select].fn..'/'..strip_files[i + slist_offset].fn) then
@@ -6907,9 +6917,6 @@
   function GUI_DrawCtlOptions(obj, gui)
 
     gfx.dest = 1011
-    --if resize_display then
-      --gfx.setimgdim(1011,obj.sections[45].w, obj.sections[45].h)
-    --end
 
     GUI_DrawPanel(obj.sections[45],nil,'CTL OPTIONS          ')
 
@@ -6917,36 +6924,17 @@
                   y = 2,
                   w = obj.sections[45].w,
                   h = obj.sections[45].h}
-    
-    --[[f_Get_SSV('0 0 0')
-    gfx.a = 1  
-    gfx.rect(xywh.x,
-     xywh.y, 
-     xywh.w,
-     xywh.h, 1 )
-
-    f_Get_SSV('64 64 64')
-    gfx.a = 1  
-    gfx.rect(xywh.x,
-     xywh.y, 
-     xywh.w,
-     xywh.h, 0 )]]
-    
+        
     xywh.h = butt_h     
-    f_Get_SSV(gui.color.white)
+    --f_Get_SSV(gui.color.white)
     gfx.a = 1 
-    --[[gfx.rect(xywh.x,
-     xywh.y, 
-     xywh.w,
-     xywh.h, 1 )]]
 
-    --GUI_textC(gui,xywh,'CTL OPTIONS',gui.color.black,-2)
     xywh.x = xywh.x+xywh.w-40
     xywh.w = 30
     
     f_Get_SSV(gui.color.black)
     gfx.rect(xywh.x,xywh.y,xywh.w,xywh.h,0)
-    GUI_textC(gui,xywh,ctl_page+1,gui.color.black,-2)
+    GUI_textC(gui,xywh,ctl_page+1,gui.skol.pnl_tittxt,-2)
     
     if ctl_page == 0 then
       xywh = {x = 0,
@@ -6993,20 +6981,20 @@
   
       end
 
-      GUI_DrawButton(gui, '<', obj.sections[90], gui.color.white, gui.color.black, true)
-      GUI_DrawButton(gui, '>', obj.sections[91], gui.color.white, gui.color.black, true)
+      GUI_DrawButton(gui, '<', obj.sections[90], gui.color.white, gui.skol.butt1_txt, true)
+      GUI_DrawButton(gui, '>', obj.sections[91], gui.color.white, gui.skol.butt1_txt, true)
           
-      GUI_DrawSliderH(gui, 'SCALE', obj.sections[50], gui.color.black, gui.color.white, (scale_select-0.5)*2)
+      GUI_DrawSliderH(gui, 'SCALE', obj.sections[50], gui.color.black, gui.skol.pnl_txt, (scale_select-0.5)*2)
       local xywh = {x = obj.sections[52].x-10, y = obj.sections[52].y-butt_h, w = obj.sections[52].w, h = obj.sections[52].h}
-      GUI_textC(gui,xywh,'SHOW',gui.color.white,-5)
-      GUI_DrawTick(gui, 'NAME', obj.sections[52], gui.color.white, show_paramname)
-      GUI_DrawTick(gui, 'VALUE', obj.sections[53], gui.color.white, show_paramval)
+      GUI_textC(gui,xywh,'SHOW',gui.skol.pnl_txt,-5)
+      GUI_DrawTick(gui, 'NAME', obj.sections[52], gui.skol.pnl_txt, show_paramname)
+      GUI_DrawTick(gui, 'VALUE', obj.sections[53], gui.skol.pnl_txt, show_paramval)
       local xywh = {x = obj.sections[54].x, y = obj.sections[54].y-butt_h, w = obj.sections[54].w, h = obj.sections[54].h}
-      GUI_textC(gui,xywh,'COL',gui.color.white,-5)
-      GUI_DrawColorBox(gui, '', obj.sections[54], gui.color.white, textcol_select)
-      GUI_DrawColorBox(gui, '', obj.sections[850], gui.color.white, textcolv_select)
-      GUI_DrawButton(gui, ctltype_table[ctltype_select], obj.sections[55], gui.color.white, gui.color.black, true)
-      GUI_DrawButton(gui, 'LINK', obj.sections[852], -4, gui.color.black, textoptlink_select)
+      GUI_textC(gui,xywh,'COL',gui.skol.pnl_txt,-5)
+      GUI_DrawColorBox(gui, '', obj.sections[54], gui.skol.pnl_txt, textcol_select)
+      GUI_DrawColorBox(gui, '', obj.sections[850], gui.skol.pnl_txt, textcolv_select)
+      GUI_DrawButton(gui, ctltype_table[ctltype_select], obj.sections[55], gui.color.white, gui.skol.butt1_txt, true)
+      GUI_DrawButton(gui, 'LINK', obj.sections[852], -4, gui.skol.butt4_txt, textoptlink_select)
 
       local off, valoff
       if toffY then 
@@ -7016,18 +7004,18 @@
         off = textoff_selectx
         valoff = textoffval_selectx      
       end
-      GUI_DrawSliderH(gui, 'OFFSET', obj.sections[56], gui.color.black, gui.color.white, F_limit((off+150)/300,0,1))
-      GUI_DrawSliderH(gui, 'VAL OFF', obj.sections[65], gui.color.black, gui.color.white, F_limit((valoff+150)/300,0,1))
+      GUI_DrawSliderH(gui, 'OFFSET', obj.sections[56], gui.color.black, gui.skol.pnl_txt, F_limit((off+150)/300,0,1))
+      GUI_DrawSliderH(gui, 'VAL OFF', obj.sections[65], gui.color.black, gui.skol.pnl_txt, F_limit((valoff+150)/300,0,1))
 
-      GUI_DrawButton(gui, ctlfont_select, obj.sections[48], gui.color.white, gui.color.black, true, 'FONT', true)
+      GUI_DrawButton(gui, ctlfont_select, obj.sections[48], gui.color.white, gui.skol.butt1_txt, true, 'FONT', true)
       local xywh = {x = obj.sections[58].x-10, y = obj.sections[58].y-butt_h, w = obj.sections[58].w, h = obj.sections[52].h}
-      GUI_textC(gui,xywh,'F SIZE',gui.color.white,-5)
+      GUI_textC(gui,xywh,'F SIZE',gui.skol.pnl_txt,-5)
 
-      GUI_DrawSliderH(gui, '', obj.sections[58], gui.color.black, gui.color.white, (textsize_select+2)/35)
-      GUI_DrawSliderH(gui, '', obj.sections[851], gui.color.black, gui.color.white, (textsizev_select+2)/35)
-      GUI_DrawSliderH(gui, 'DEF VAL', obj.sections[57], gui.color.black, gui.color.white, F_limit(defval_select,0,1))
-      GUI_DrawButton(gui, 'SET IMAGE', obj.sections[51], gui.color.white, gui.color.black, true)
-      GUI_DrawButton(gui, 'EDIT NAME', obj.sections[59], gui.color.white, gui.color.black, true)
+      GUI_DrawSliderH(gui, '', obj.sections[58], gui.color.black, gui.skol.pnl_txt, (textsize_select+2)/35)
+      GUI_DrawSliderH(gui, '', obj.sections[851], gui.color.black, gui.skol.pnl_txt, (textsizev_select+2)/35)
+      GUI_DrawSliderH(gui, 'DEF VAL', obj.sections[57], gui.color.black, gui.skol.pnl_txt, F_limit(defval_select,0,1))
+      GUI_DrawButton(gui, 'SET IMAGE', obj.sections[51], gui.color.white, gui.skol.butt1_txt, true)
+      GUI_DrawButton(gui, 'EDIT NAME', obj.sections[59], gui.color.white, gui.skol.butt1_txt, true)
 
       if ctl_select and ctl_select[1].ctl then
         local ctl = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl]
@@ -7036,19 +7024,19 @@
           if ctl.midiout then
             midiset = true
           end      
-          GUI_DrawButton(gui, 'SET MIDI', obj.sections[960], gui.color.blue, gui.color.black, midiset)
+          GUI_DrawButton(gui, 'SET MIDI', obj.sections[960], gui.color.blue, gui.skol.butt1_txt, midiset)
         end
       end
       
       local dir
       if toffY then dir = 'Y' else dir = 'X' end
-      GUI_DrawButton(gui, dir, obj.sections[68], gui.color.white, gui.color.black, true)
+      GUI_DrawButton(gui, dir, obj.sections[68], gui.color.white, gui.skol.butt1_txt, true)
       
       if ctltype_select == 4 then
         if show_cycleoptions then
-          GUI_DrawButton(gui, '>>', obj.sections[67], gui.color.white, gui.color.black, true)
+          GUI_DrawButton(gui, '>>', obj.sections[67], gui.color.white, gui.skol.butt1_txt, true)
         else
-          GUI_DrawButton(gui, '<<', obj.sections[67], gui.color.white, gui.color.black, true)
+          GUI_DrawButton(gui, '<<', obj.sections[67], gui.color.white, gui.skol.butt1_txt, true)
         end  
       end
       
@@ -7056,17 +7044,17 @@
       if maxdp_select < 0 then
         mdptxt = 'OFF'
       end
-      GUI_DrawButton(gui, mdptxt, obj.sections[66], gui.color.white, gui.color.black, true, 'MAX DP')
+      GUI_DrawButton(gui, mdptxt, obj.sections[66], gui.color.white, gui.skol.butt1_txt, true, 'MAX DP')
       
       local v = false
       if gauge_select then
         v = true
       end
-      GUI_DrawButton(gui, 'GAUGE', obj.sections[99], gui.color.white, gui.color.black, v)
+      GUI_DrawButton(gui, 'GAUGE', obj.sections[99], gui.color.white, gui.skol.butt1_txt, v)
 
     elseif ctl_page == 1 then
 
-      GUI_DrawButton(gui, dvaloff_select, obj.sections[125], gui.color.white, gui.color.black, true, 'VDISP OFF')
+      GUI_DrawButton(gui, dvaloff_select, obj.sections[125], gui.color.white, gui.skol.butt1_txt, true, 'VDISP OFF')
 
       local min, max = GetParamMinMax_ctlselect()
       if minov_select == nil then
@@ -7075,33 +7063,33 @@
       if maxov_select == nil then
         maxov_select = max
       end
-      GUI_DrawButton(gui, minov_select, obj.sections[126], gui.color.white, gui.color.black, true, 'MIN OV', true)
-      GUI_DrawButton(gui, maxov_select, obj.sections[127], gui.color.white, gui.color.black, true, 'MAX OV', true)
-      GUI_DrawButton(gui, nz(ov_disp,''), obj.sections[130], -3, gui.color.white, true, '')
-      GUI_DrawButton(gui, scalemode_preset_table[knob_scalemode_select], obj.sections[131], gui.color.white, gui.color.black, true, 'SCALE PSET')
-      GUI_DrawButton(gui, scalemode_dtable[scalemode_select], obj.sections[132], gui.color.white, gui.color.black, true, 'SCALE MOD')
-      GUI_DrawButton(gui, framemode_table[framemode_select], obj.sections[133], gui.color.white, gui.color.black, true, 'FRAME MOD')
-      GUI_DrawTick(gui, 'HORIZ SLIDER', obj.sections[134], gui.color.white, horiz_select)
-      GUI_DrawTick(gui, 'PAGE SNAP EXCLUDE', obj.sections[139], gui.color.white, noss_select)
+      GUI_DrawButton(gui, minov_select, obj.sections[126], gui.color.white, gui.skol.butt1_txt, true, 'MIN OV', true)
+      GUI_DrawButton(gui, maxov_select, obj.sections[127], gui.color.white, gui.skol.butt1_txt, true, 'MAX OV', true)
+      GUI_DrawButton(gui, nz(ov_disp,''), obj.sections[130], -3, gui.skol.butt1_txt, true, '')
+      GUI_DrawButton(gui, scalemode_preset_table[knob_scalemode_select], obj.sections[131], gui.color.white, gui.skol.butt1_txt, true, 'SCALE PSET')
+      GUI_DrawButton(gui, scalemode_dtable[scalemode_select], obj.sections[132], gui.color.white, gui.skol.butt1_txt, true, 'SCALE MOD')
+      GUI_DrawButton(gui, framemode_table[framemode_select], obj.sections[133], gui.color.white, gui.skol.butt1_txt, true, 'FRAME MOD')
+      GUI_DrawTick(gui, 'HORIZ SLIDER', obj.sections[134], gui.skol.pnl_txt, horiz_select)
+      GUI_DrawTick(gui, 'PAGE SNAP EXCLUDE', obj.sections[139], gui.skol.pnl_txt, noss_select)
 
       xywh = {x = 0,
               y = obj.sections[135].y-butt_h-5,
               w = obj.sections[45].w,
               h = butt_h}
-      GUI_textC(gui,xywh,'KNOB SENSITIVITY',gui.color.white,-2)
-      GUI_DrawSliderH(gui, 'NORMAL', obj.sections[135], gui.color.black, gui.color.white, ((knobsens_select.norm)/20)*2)
+      GUI_textC(gui,xywh,'KNOB SENSITIVITY',gui.skol.pnl_txt,-2)
+      GUI_DrawSliderH(gui, 'NORMAL', obj.sections[135], gui.color.black, gui.skol.pnl_txt, ((knobsens_select.norm)/20)*2)
       local txt = string.format('%i',round(knobsens_select.norm*2))
       if txt == '0' then txt = 'GLOBAL' end
       GUI_textC(gui,obj.sections[135],txt,gui.color.red,-2)
-      GUI_DrawSliderH(gui, 'FINE', obj.sections[136], gui.color.black, gui.color.white, ((knobsens_select.fine)/20)*100)
+      GUI_DrawSliderH(gui, 'FINE', obj.sections[136], gui.color.black, gui.skol.pnl_txt, ((knobsens_select.fine)/20)*100)
       txt = string.format('%i',round(knobsens_select.fine*100))
       if txt == '0' then txt = 'GLOBAL' end
       GUI_textC(gui,obj.sections[136],txt,gui.color.red,-2)
-      GUI_DrawSliderH(gui, 'WHEEL', obj.sections[137], gui.color.black, gui.color.white, ((knobsens_select.wheel)/20)*100)
+      GUI_DrawSliderH(gui, 'WHEEL', obj.sections[137], gui.color.black, gui.skol.pnl_txt, ((knobsens_select.wheel)/20)*100)
       txt = string.format('%i',round(knobsens_select.wheel*100))
       if txt == '0' then txt = 'GLOBAL' end
       GUI_textC(gui,obj.sections[137],txt,gui.color.red,-2)
-      GUI_DrawSliderH(gui, 'WHEEL FINE', obj.sections[138], gui.color.black, gui.color.white, ((knobsens_select.wheelfine)/20)*1000)
+      GUI_DrawSliderH(gui, 'WHEEL FINE', obj.sections[138], gui.color.black, gui.skol.pnl_txt, ((knobsens_select.wheelfine)/20)*1000)
       txt = string.format('%i',round(knobsens_select.wheelfine*1000))
       if txt == '0' then txt = 'GLOBAL' end
       GUI_textC(gui,obj.sections[138],txt,gui.color.red,-2)
@@ -7117,11 +7105,11 @@
     
     elseif ctl_page == 2 then
 
-      GUI_DrawTick(gui, 'BYPASS BG CTL', obj.sections[860], gui.color.white, bypass_bgdraw_c_select)
-      GUI_DrawTick(gui, 'BYPASS BG NAME', obj.sections[861], gui.color.white, bypass_bgdraw_n_select)
-      GUI_DrawTick(gui, 'BYPASS BG VAL', obj.sections[862], gui.color.white, bypass_bgdraw_v_select)
+      GUI_DrawTick(gui, 'BYPASS BG CTL', obj.sections[860], gui.skol.pnl_txt, bypass_bgdraw_c_select)
+      GUI_DrawTick(gui, 'BYPASS BG NAME', obj.sections[861], gui.skol.pnl_txt, bypass_bgdraw_n_select)
+      GUI_DrawTick(gui, 'BYPASS BG VAL', obj.sections[862], gui.skol.pnl_txt, bypass_bgdraw_v_select)
       
-      GUI_DrawTick(gui, 'CLICK THROUGH', obj.sections[863], gui.color.white, clickthrough_select)
+      GUI_DrawTick(gui, 'CLICK THROUGH', obj.sections[863], gui.skol.pnl_txt, clickthrough_select)
 
     end
     
@@ -7167,7 +7155,7 @@
       local xywh = {x=b.x-10,y=b.y-2,w=1,h=b.h}
       local c = colb
       if tonumber(c) ~= nil then
-        c = gui.color.white
+        c = gui.skol.pnl_txt
       end
       GUI_textsm_RJ(gui,xywh,opttxt,c,-4)
     end
@@ -7225,9 +7213,9 @@
              b.h, f)]]
     if f == 0 or tonumber(colb) ~= nil then
       if tonumber(colb) ~= nil and colb == -1 or colb == -3 then
-        colt = gui.color.white
+        colt = gui.skol.butt3_txt
       elseif tonumber(colb) ~= nil and colb == -2 or colb == -4 then
-        colt = gui.color.black
+        colt = gui.skol.butt1_txt
       else
         colt = colb
       end
@@ -8357,7 +8345,7 @@ end
               y = y+2,
               w = pw,
               h = butt_h}
-      GUI_textC(gui,xywh,tit,gui.color.black,-2)
+      GUI_textC(gui,xywh,tit,gui.skol.pnl_tittxt,-2)
     end
     
   end
@@ -8495,14 +8483,14 @@ end
       end
     end
       
-    GUI_DrawButton(gui, sstypestr, obj.sections[161], gui.color.white, gui.color.black, true, '', false)
-    GUI_DrawButton(gui, '', obj.sections[168], gui.color.white, gui.color.black, true, '', false)
+    GUI_DrawButton(gui, sstypestr, obj.sections[161], gui.color.white, gui.skol.butt1_txt, true, '', false)
+    GUI_DrawButton(gui, '', obj.sections[168], gui.color.white, gui.skol.butt1_txt, true, '', false)
     local xywh = {x = obj.sections[168].x, 
                   y = obj.sections[168].y+3,
                   w = obj.sections[168].w,
                   h = obj.sections[168].h}
-    GUI_textC(gui,xywh,'*',gui.color.black,9)
-    GUI_DrawButton(gui, 'RANDOMIZE', obj.sections[169], gui.color.white, gui.color.black, true, '', false)
+    GUI_textC(gui,xywh,'*',gui.skol.butt1_txt,9)
+    GUI_DrawButton(gui, 'RANDOMIZE', obj.sections[169], gui.color.white, gui.skol.butt1_txt, true, '', false)
     
     local txt = 'CAPTURE'
     if tracks[track_select] and tracks[track_select].strip and snapshots[tracks[track_select].strip] and 
@@ -8515,8 +8503,8 @@ end
         txt = txt..' (+FB)'
       end
     end
-    GUI_DrawButton(gui, txt, obj.sections[162], gui.color.white, gui.color.black, true, '', false)
-    GUI_DrawButton(gui, 'NEW SUBSET', obj.sections[166], gui.color.white, gui.color.black, true, '', false)
+    GUI_DrawButton(gui, txt, obj.sections[162], gui.color.white, gui.skol.butt1_txt, true, '', false)
+    GUI_DrawButton(gui, 'NEW SUBSET', obj.sections[166], gui.color.white, gui.skol.butt1_txt, true, '', false)
     local bc, bc2 = gui.color.white, gui.color.white
     if sstype_select == 1 then
       bc = -1
@@ -8524,9 +8512,9 @@ end
     elseif snaplrn_mode then
       bc = -2
     end
-    GUI_DrawButton(gui, 'RENAME SUB', obj.sections[164], bc2, gui.color.black, true, '', false)
-    GUI_DrawButton(gui, 'LEARN CTLS', obj.sections[167], bc, gui.color.black, true, '', false)
-    GUI_DrawButton(gui, 'META LITE XY', obj.sections[224], bc2, gui.color.black, true, '', false)
+    GUI_DrawButton(gui, 'RENAME SUB', obj.sections[164], bc2, gui.skol.butt1_txt, true, '', false)
+    GUI_DrawButton(gui, 'LEARN CTLS', obj.sections[167], bc, gui.skol.butt1_txt, true, '', false)
+    GUI_DrawButton(gui, 'META LITE XY', obj.sections[224], bc2, gui.skol.butt1_txt, true, '', false)
     
     local mv = 0
     local sync = false
@@ -8551,9 +8539,9 @@ end
     else
       t = mv
     end
-    GUI_DrawButton(gui, t, obj.sections[1010], gui.color.white, gui.color.black, true, '', false)
-    GUI_DrawButton(gui, 'SYNC', obj.sections[1011], gui.color.white, gui.color.black, sync, '', false)
-    GUI_DrawButton(gui, macroscale_sm_table[scale], obj.sections[1012], gui.color.white, gui.color.black, true, '', false)
+    GUI_DrawButton(gui, t, obj.sections[1010], gui.color.white, gui.skol.butt1_txt, true, '', false)
+    GUI_DrawButton(gui, 'SYNC', obj.sections[1011], gui.color.white, gui.skol.butt1_txt, sync, '', false)
+    GUI_DrawButton(gui, macroscale_sm_table[scale], obj.sections[1012], gui.color.white, gui.skol.butt1_txt, true, '', false)
     
     xywh = {x = obj.sections[163].x,
             y = obj.sections[163].y,
@@ -8629,27 +8617,27 @@ end
             for i = 1,SS_butt_cnt do
             
               xywh.y = obj.sections[163].y + i*butt_h
-              local c = gui.color.white
+              local c = gui.skol.butt1_txt_off
               if ss_select == ssoffset+i then
                 if morphing == false then
-                  f_Get_SSV(gui.color.white)
+                  f_Get_SSV(gui.skol.lst_barhl)
                   gfx.rect(xywh.x,
                    xywh.y+1, 
                    xywh.w,
                    xywh.h-1, 1 )
-                  c = gui.color.black
+                  c = gui.skol.lst_txthl
                 else 
                   f_Get_SSV(bbcol)
                   gfx.rect(xywh.x,
                    xywh.y+1, 
                    xywh.w,
                    xywh.h-1, 1 )
-                  f_Get_SSV(gui.color.white)
+                  f_Get_SSV(gui.skol.lst_barhl)
                   gfx.rect(xywh.x,
                    xywh.y+1, 
                    xywh.w*p,
                    xywh.h-1, 1 )
-                  c = gui.color.black
+                  c = gui.skol.lst_txthl
                 end
               end
               if snapshots[strip][page][sstype_select][i+ssoffset] then
@@ -8671,27 +8659,27 @@ end
             for i = 1,SS_butt_cnt do
             
               xywh.y = obj.sections[163].y + i*butt_h
-              local c = gui.color.white
+              local c = gui.skol.butt1_txt_off
               if ss_select == ssoffset+i then
                 if morphing == false then
-                  f_Get_SSV(gui.color.white)
+                  f_Get_SSV(gui.skol.lst_barhl)
                   gfx.rect(xywh.x,
                    xywh.y+1, 
                    xywh.w,
                    xywh.h-1, 1 )
-                  c = gui.color.black
+                  c = gui.skol.lst_txthl
                 else 
                   f_Get_SSV(bbcol)
                   gfx.rect(xywh.x,
                    xywh.y+1, 
                    xywh.w,
                    xywh.h-1, 1 )
-                  f_Get_SSV(gui.color.white)
+                  f_Get_SSV(gui.skol.lst_barhl)
                   gfx.rect(xywh.x,
                    xywh.y+1, 
                    xywh.w*p,
                    xywh.h-1, 1 )
-                  c = gui.color.black
+                  c = gui.skol.lst_txthl
                 end
               end
               if snapshots[strip][page][sstype_select].snapshot[i+ssoffset] then
@@ -8736,10 +8724,10 @@ end
         txt = 'LOOP'
         loop = false        
       end]]
-      GUI_DrawButton(gui, 'PAUSED', obj.sections[1013], bc, gui.color.black, pause, '', false)
+      GUI_DrawButton(gui, 'PAUSED', obj.sections[1013], bc, gui.skol.butt1_txt, pause, '', false)
       
-      GUI_DrawButton(gui, dir, obj.sections[1014], gui.color.white, gui.color.black, true, '', false)
-      GUI_DrawButton(gui, txt, obj.sections[1015], gui.color.white, gui.color.black, loop, '', false)
+      GUI_DrawButton(gui, dir, obj.sections[1014], gui.color.white, gui.skol.butt1_txt, true, '', false)
+      GUI_DrawButton(gui, txt, obj.sections[1015], gui.color.white, gui.skol.butt1_txt, loop, '', false)
       
       f_Get_SSV('64 64 64')
       gfx.a = 1 
@@ -13090,19 +13078,19 @@ end
     gfx.a = 0.6
     if mode == 0 then
       if show_editbar then
-        GUI_DrawBar(gui,'<',obj.sections[18],skin.bar,true,gui.color.black,nil,-2)
+        GUI_DrawBar(gui,'<',obj.sections[18],skin.bar,true,gui.skol.sb_txt_on,nil,-2)
       else
-        GUI_DrawBar(gui,'>',obj.sections[18],skin.bar,true,gui.color.black,nil,-2)      
+        GUI_DrawBar(gui,'>',obj.sections[18],skin.bar,true,gui.skol.sb_txt_on,nil,-2)      
       end
     else
-      GUI_DrawBar(gui,'<>',obj.sections[18],skin.bar,true,gui.color.black,nil,-2)
+      GUI_DrawBar(gui,'<>',obj.sections[18],skin.bar,true,gui.skol.sb_txt_on,nil,-2)
     end
     gfx.line(obj.sections[18].x+obj.sections[18].w,obj.sections[18].y,obj.sections[18].x+obj.sections[18].w,obj.sections[18].y+obj.sections[18].h-1)
     gfx.line(obj.sections[18].x,obj.sections[18].y+obj.sections[18].h-1,obj.sections[18].x+obj.sections[18].w,obj.sections[18].y+obj.sections[18].h-1)
     
     if show_eqcontrol ~= true and macro_edit_mode ~= true then
       gfx.a = 0.6
-      GUI_DrawBar(gui,'...',obj.sections[21],skin.bar,true,gui.color.black,nil,-2)
+      GUI_DrawBar(gui,'...',obj.sections[21],skin.bar,true,gui.skol.sb_txt_on,nil,-2)
       gfx.line(obj.sections[21].x-1,obj.sections[21].y,obj.sections[21].x-1,obj.sections[21].y+obj.sections[21].h-1)
       gfx.line(obj.sections[21].x,obj.sections[21].y+obj.sections[21].h-1,obj.sections[21].x+obj.sections[21].w,obj.sections[21].y+obj.sections[21].h-1)
     end
@@ -13123,19 +13111,19 @@ end
                   y = obj.sections[18].y,
                   w = obj.sections[18].w,
                   h = obj.sections[18].h}
-    GUI_DrawBar(gui,'',obj.sections[12],skin.bar,true,gui.color.black,nil,-2)
+    GUI_DrawBar(gui,'',obj.sections[12],skin.bar,true,gui.skol.sb_txt_on,nil,-2)
     
     if xywh.w > 0 then
-      GUI_DrawBar(gui,'',xywh,skin.bar,true,gui.color.black,nil,-2)
+      GUI_DrawBar(gui,'',xywh,skin.bar,true,gui.skol.sb_txt_on,nil,-2)
     end
     if mode == 0 then
       if show_editbar then
-        GUI_DrawBar(gui,'<',obj.sections[18],skin.bar,true,gui.color.black,nil,-2)
+        GUI_DrawBar(gui,'<',obj.sections[18],skin.bar,true,gui.skol.sb_txt_on,nil,-2)
       else
-        GUI_DrawBar(gui,'>',obj.sections[18],skin.bar,true,gui.color.black,nil,-2)      
+        GUI_DrawBar(gui,'>',obj.sections[18],skin.bar,true,gui.skol.sb_txt_on,nil,-2)      
       end
     else
-      GUI_DrawBar(gui,'<>',obj.sections[18],skin.bar,true,gui.color.black,nil,-2)
+      GUI_DrawBar(gui,'<>',obj.sections[18],skin.bar,true,gui.skol.sb_txt_on,nil,-2)
     end    
     
     local t
@@ -13151,30 +13139,30 @@ end
       if i == 0 and lockx == false then 
         GUI_DrawBar(gui,'',xywh,skin.bar,true,gui.color.black,nil,-2)
         f_Get_SSV(gui.color.white)
-        c = gui.color.black
+        c = gui.skol.sb_txt_on
         t = 'X'
       elseif i == 0 then
         f_Get_SSV(gui.color.black)
-        c = gui.color.white
+        c = gui.skol.sb_txt_off
         t = 'X'
       elseif i == 1 and locky == false then         
         GUI_DrawBar(gui,'',xywh,skin.bar,true,gui.color.black,nil,-2)
         f_Get_SSV(gui.color.white)
-        c = gui.color.black
+        c = gui.skol.sb_txt_on
         t = 'Y'
       elseif i == 1 then
         f_Get_SSV(gui.color.black)
-        c = gui.color.white
+        c = gui.skol.sb_txt_off
         t = 'Y'
       elseif i == 2 then
         GUI_DrawBar(gui,'',xywh,skin.bar,true,gui.color.black,nil,-2)
         f_Get_SSV(gui.color.white)
-        c = gui.color.black
+        c = gui.skol.sb_txt_on
         t = ''
       elseif i == 3 then
         GUI_DrawBar(gui,'',xywh,skin.bar,true,gui.color.black,nil,-2)
         f_Get_SSV(gui.color.white)
-        c = gui.color.black        
+        c = gui.skol.sb_txt_on
         t = ''
       end
 
@@ -13188,7 +13176,7 @@ end
     
     if obj.sections[12].w > 0 then
       if infomsg ~= nil then
-        GUI_textC_LIM(gui,obj.sections[12],infomsg,gui.color.black,-2)
+        GUI_textC_LIM(gui,obj.sections[12],infomsg,gui.skol.sb_txt_on,-2)
         infomsg = nil        
       elseif tracks and tracks[track_select] then
         local trn = tracks[track_select].name
@@ -13199,7 +13187,7 @@ end
         elseif trn == '' then
           trn = '[unnamed track]'
         end
-        GUI_textC_LIM(gui,obj.sections[12],GetProjectName()..' - '..STRIPSET..' - TRACK: ' .. tracks[track_select].tracknum+1 .. ' - '.. trn,gui.color.black,-2)
+        GUI_textC_LIM(gui,obj.sections[12],GetProjectName()..' - '..STRIPSET..' - TRACK: ' .. tracks[track_select].tracknum+1 .. ' - '.. trn,gui.skol.sb_txt_on,-2)
       end
     end  
 
@@ -13213,14 +13201,14 @@ end
              xywh.w,
              xywh.h, 1, 1)                  
 
-    GUI_DrawBar(gui,'...',obj.sections[21],skin.bar,true,gui.color.black,nil,-2)
+    GUI_DrawBar(gui,'...',obj.sections[21],skin.bar,true,gui.skol.sb_txt_on,nil,-2)
     if obj.sections[17].x > obj.sections[20].x+obj.sections[20].w then
       local sb = skin.bar
       if g_savedirty then
         sb = skin.barR
       else
       end
-      GUI_DrawBar(gui,'SAVE',obj.sections[17],sb,true,gui.color.black,nil,-2)
+      GUI_DrawBar(gui,'SAVE',obj.sections[17],sb,true,gui.skol.sb_txt_on,nil,-2)
       f_Get_SSV(gui.color.black)
       gfx.line(obj.sections[17].x,obj.sections[17].y,obj.sections[17].x,obj.sections[17].y+obj.sections[17].h)
     else
@@ -13234,7 +13222,7 @@ end
                   h = obj.sections[1000].h}
     if gpage == true or track_select == LBX_GTRACK then
       f_Get_SSV(gui.color.white)
-      GUI_DrawBar(gui,'GLOBAL',xywh,skin.barR,true,gui.color.black,nil,-5)
+      GUI_DrawBar(gui,'GLOBAL',xywh,skin.barR,true,gui.skol.sb_txt_on,nil,-5)
       gflag = true                 
     else
       c = gui.color.white
@@ -13247,11 +13235,11 @@ end
                     h = obj.sections[14].h}
       if gpage == false and page == i+1 and gflag == false then
         f_Get_SSV(gui.color.white)
-        GUI_DrawBar(gui,i+1,xywh,skin.bar,true,gui.color.black,nil,-2)
+        GUI_DrawBar(gui,i+1,xywh,skin.bar,true,gui.skol.sb_txt_on,nil,-2)
         
       else
         f_Get_SSV(gui.color.black)
-        c = gui.color.white
+        c = gui.skol.sb_txt_off
         --[[gfx.rect(xywh.x,
                  xywh.y, 
                  xywh.w,
@@ -15884,7 +15872,7 @@ end
       
       if snapshots and snapshots[tracks[track_select].strip] then
         file:write('[SNAPSHOTDATA]\n')      
-        SaveSnapshotDataX(tracks[track_select].strip,page,nil,file)
+        SaveSnapshotDataX(snapshots[tracks[track_select].strip][page],nil,file)
         file:write('[\\SNAPSHOTDATA]\n')      
       end
       
@@ -41246,7 +41234,7 @@ end
     for p = 1, #snapshots[s] do
     
       local key = pfx..'p'..p..'_'
-      SaveSnapshotDataX(s,p,key,file)
+      SaveSnapshotDataX(snapshots[s][p],key,file)
                 
     end
   
@@ -41260,65 +41248,65 @@ end
     
   end
   
-  function SaveSnapshotDataX(s, p, pfx, file)
+  function SaveSnapshotDataX(snaps, pfx, file)
   
     if pfx == nil then pfx = '' end
     local key = pfx
     
-    file:write('['..key..'sstype_count]'..#snapshots[s][p]..'\n')
-    
-    for sst = 1, #snapshots[s][p] do
+    file:write('['..key..'sstype_count]'..#snaps..'\n')
+
+    for sst = 1, #snaps do
     
       local key = pfx..'sst_'..sst..'_'
       
-      file:write('['..key..'morph_time]'..nz(snapshots[s][p][sst].morph_time,0)..'\n')
-      file:write('['..key..'morph_sync]'..tostring(nz(snapshots[s][p][sst].morph_sync,false))..'\n')
-      file:write('['..key..'morph_syncv]'..nz(snapshots[s][p][sst].morph_syncv,14)..'\n')
-      file:write('['..key..'morph_scale]'..nz(snapshots[s][p][sst].morph_scale,1)..'\n')
-      file:write('['..key..'morph_time_fader]'..nz(snapshots[s][p][sst].morph_time_fader,'')..'\n')
-      file:write('['..key..'ss_selected]'..nz(snapshots[s][p][sst].selected,'')..'\n')
-      file:write('['..key..'morph_loop]'..nz(snapshots[s][p][sst].morph_loop,1)..'\n')
-      file:write('['..key..'capturefaders]'..tostring(nz(snapshots[s][p][sst].capturefaders,false))..'\n')
-      file:write('['..key..'capturemods]'..tostring(nz(snapshots[s][p][sst].capturemods,false))..'\n')
+      file:write('['..key..'morph_time]'..nz(snaps[sst].morph_time,0)..'\n')
+      file:write('['..key..'morph_sync]'..tostring(nz(snaps[sst].morph_sync,false))..'\n')
+      file:write('['..key..'morph_syncv]'..nz(snaps[sst].morph_syncv,14)..'\n')
+      file:write('['..key..'morph_scale]'..nz(snaps[sst].morph_scale,1)..'\n')
+      file:write('['..key..'morph_time_fader]'..nz(snaps[sst].morph_time_fader,'')..'\n')
+      file:write('['..key..'ss_selected]'..nz(snaps[sst].selected,'')..'\n')
+      file:write('['..key..'morph_loop]'..nz(snaps[sst].morph_loop,1)..'\n')
+      file:write('['..key..'capturefaders]'..tostring(nz(snaps[sst].capturefaders,false))..'\n')
+      file:write('['..key..'capturemods]'..tostring(nz(snaps[sst].capturemods,false))..'\n')
       
       if sst == 1 then          
-        file:write('['..key..'ss_count]'..#snapshots[s][p][sst]..'\n')
+        file:write('['..key..'ss_count]'..#snaps[sst]..'\n')
       
-        if #snapshots[s][p][sst] > 0 then
+        if #snaps[sst] > 0 then
     
-          for ss = 1, #snapshots[s][p][sst] do
+          for ss = 1, #snaps[sst] do
     
             local key = pfx..'sst_'..sst..'_ss_'..ss..'_'
           
-            file:write('['..key..'name]'.. snapshots[s][p][sst][ss].name ..'\n')
-            file:write('['..key..'data_count]'.. #snapshots[s][p][sst][ss].data ..'\n')
+            file:write('['..key..'name]'.. snaps[sst][ss].name ..'\n')
+            file:write('['..key..'data_count]'.. #snaps[sst][ss].data ..'\n')
         
-            if #snapshots[s][p][sst][ss].data > 0 then
-              for d = 1, #snapshots[s][p][sst][ss].data do
+            if #snaps[sst][ss].data > 0 then
+              for d = 1, #snaps[sst][ss].data do
     
                 local key = pfx..'sst_'..sst..'_ss_'..ss..'_d_'..d..'_'
     
-                file:write('['..key..'cid]'.. snapshots[s][p][sst][ss].data[d].c_id ..'\n')
-                file:write('['..key..'ctl]'.. snapshots[s][p][sst][ss].data[d].ctl ..'\n')
-                file:write('['..key..'val]'.. snapshots[s][p][sst][ss].data[d].val ..'\n')
-                file:write('['..key..'dval]'.. nz(snapshots[s][p][sst][ss].data[d].dval,'') ..'\n')
+                file:write('['..key..'cid]'.. snaps[sst][ss].data[d].c_id ..'\n')
+                file:write('['..key..'ctl]'.. snaps[sst][ss].data[d].ctl ..'\n')
+                file:write('['..key..'val]'.. snaps[sst][ss].data[d].val ..'\n')
+                file:write('['..key..'dval]'.. nz(snaps[sst][ss].data[d].dval,'') ..'\n')
                           
-                file:write('['..key..'mfset]'.. tostring(nz(snapshots[s][p][sst][ss].data[d].mfset,'')) ..'\n')                
-                if snapshots[s][p][sst][ss].data[d].mf then
-                  file:write('['..key..'mf]'.. snapshots[s][p][sst][ss].data[d].mf ..'\n')
-                  file:write('['..key..'mfdata_targettype]'.. snapshots[s][p][sst][ss].data[d].mfdata.targettype ..'\n')
-                  file:write('['..key..'mfdata_strip]'.. snapshots[s][p][sst][ss].data[d].mfdata.strip ..'\n')                
-                  file:write('['..key..'mfdata_page]'.. snapshots[s][p][sst][ss].data[d].mfdata.page ..'\n')                
-                  file:write('['..key..'mfdata_ctl]'.. snapshots[s][p][sst][ss].data[d].mfdata.ctl ..'\n')                
-                  file:write('['..key..'mfdata_c_id]'.. snapshots[s][p][sst][ss].data[d].mfdata.c_id ..'\n')                
+                file:write('['..key..'mfset]'.. tostring(nz(snaps[sst][ss].data[d].mfset,'')) ..'\n')                
+                if snaps[sst][ss].data[d].mf then
+                  file:write('['..key..'mf]'.. snaps[sst][ss].data[d].mf ..'\n')
+                  file:write('['..key..'mfdata_targettype]'.. snaps[sst][ss].data[d].mfdata.targettype ..'\n')
+                  file:write('['..key..'mfdata_strip]'.. snaps[sst][ss].data[d].mfdata.strip ..'\n')                
+                  file:write('['..key..'mfdata_page]'.. snaps[sst][ss].data[d].mfdata.page ..'\n')                
+                  file:write('['..key..'mfdata_ctl]'.. snaps[sst][ss].data[d].mfdata.ctl ..'\n')                
+                  file:write('['..key..'mfdata_c_id]'.. snaps[sst][ss].data[d].mfdata.c_id ..'\n')                
                 end
           
               end
             end
             
-            file:write('['..key..'modset]'.. tostring(nz(snapshots[s][p][sst][ss].modset,'')) ..'\n')
-            if snapshots[s][p][sst][ss].modset then
-              local mm = snapshots[s][p][sst][ss].moddata
+            file:write('['..key..'modset]'.. tostring(nz(snaps[sst][ss].modset,'')) ..'\n')
+            if snaps[sst][ss].modset then
+              local mm = snaps[sst][ss].moddata
 
               local key = pfx..'sst_'..sst..'_ss_'..ss..'_'              
               file:write('['..key..'modcnt]'.. #mm ..'\n')
@@ -41362,52 +41350,52 @@ end
     
       elseif sst > 1 then
       
-        file:write('['..key..'subsetname]'.. snapshots[s][p][sst].subsetname ..'\n')
-        file:write('['..key..'ss_count]'.. #snapshots[s][p][sst].snapshot ..'\n')
-        file:write('['..key..'ctl_count]'.. #snapshots[s][p][sst].ctls ..'\n')
+        file:write('['..key..'subsetname]'.. snaps[sst].subsetname ..'\n')
+        file:write('['..key..'ss_count]'.. #snaps[sst].snapshot ..'\n')
+        file:write('['..key..'ctl_count]'.. #snaps[sst].ctls ..'\n')
         
-        if #snapshots[s][p][sst].ctls > 0 then
+        if #snaps[sst].ctls > 0 then
     
-          for ctl = 1, #snapshots[s][p][sst].ctls do
+          for ctl = 1, #snaps[sst].ctls do
             local key = pfx..'sst_'..sst..'_c_'..ctl..'_'
-            file:write('['..key..'cid]'.. snapshots[s][p][sst].ctls[ctl].c_id ..'\n')
-            file:write('['..key..'ctl]'.. snapshots[s][p][sst].ctls[ctl].ctl ..'\n')                            
+            file:write('['..key..'cid]'.. snaps[sst].ctls[ctl].c_id ..'\n')
+            file:write('['..key..'ctl]'.. snaps[sst].ctls[ctl].ctl ..'\n')                            
           end
         end
-        if #snapshots[s][p][sst].snapshot > 0 then
+        if #snaps[sst].snapshot > 0 then
         
-          for ss = 1, #snapshots[s][p][sst].snapshot do
+          for ss = 1, #snaps[sst].snapshot do
           
             local key = pfx..'sst_'..sst..'_ss_'..ss..'_'
-            file:write('['..key..'name]'.. snapshots[s][p][sst].snapshot[ss].name ..'\n')
-            file:write('['..key..'data_count]'.. #snapshots[s][p][sst].snapshot[ss].data ..'\n')
+            file:write('['..key..'name]'.. snaps[sst].snapshot[ss].name ..'\n')
+            file:write('['..key..'data_count]'.. #snaps[sst].snapshot[ss].data ..'\n')
           
-            if #snapshots[s][p][sst].snapshot[ss].data > 0 then
-              for d = 1, #snapshots[s][p][sst].snapshot[ss].data do
+            if #snaps[sst].snapshot[ss].data > 0 then
+              for d = 1, #snaps[sst].snapshot[ss].data do
     
                 local key = pfx..'sst_'..sst..'_ss_'..ss..'_d_'..d..'_'
           
-                file:write('['..key..'cid]'.. snapshots[s][p][sst].snapshot[ss].data[d].c_id ..'\n')
-                file:write('['..key..'ctl]'.. snapshots[s][p][sst].snapshot[ss].data[d].ctl ..'\n')
-                file:write('['..key..'val]'.. snapshots[s][p][sst].snapshot[ss].data[d].val ..'\n')
-                file:write('['..key..'dval]'.. nz(snapshots[s][p][sst].snapshot[ss].data[d].dval,'') ..'\n')
+                file:write('['..key..'cid]'.. snaps[sst].snapshot[ss].data[d].c_id ..'\n')
+                file:write('['..key..'ctl]'.. snaps[sst].snapshot[ss].data[d].ctl ..'\n')
+                file:write('['..key..'val]'.. snaps[sst].snapshot[ss].data[d].val ..'\n')
+                file:write('['..key..'dval]'.. nz(snaps[sst].snapshot[ss].data[d].dval,'') ..'\n')
 
-                file:write('['..key..'mfset]'.. tostring(nz(snapshots[s][p][sst].snapshot[ss].data[d].mfset,'')) ..'\n')                
-                if snapshots[s][p][sst].snapshot[ss].data[d].mf then
-                  file:write('['..key..'mf]'.. snapshots[s][p][sst].snapshot[ss].data[d].mf ..'\n')
-                  file:write('['..key..'mfdata_targettype]'.. snapshots[s][p][sst].snapshot[ss].data[d].mfdata.targettype ..'\n')
-                  file:write('['..key..'mfdata_strip]'.. snapshots[s][p][sst].snapshot[ss].data[d].mfdata.strip ..'\n')                
-                  file:write('['..key..'mfdata_page]'.. snapshots[s][p][sst].snapshot[ss].data[d].mfdata.page ..'\n')                
-                  file:write('['..key..'mfdata_ctl]'.. snapshots[s][p][sst].snapshot[ss].data[d].mfdata.ctl ..'\n')                
-                  file:write('['..key..'mfdata_c_id]'.. snapshots[s][p][sst].snapshot[ss].data[d].mfdata.c_id ..'\n')                
+                file:write('['..key..'mfset]'.. tostring(nz(snaps[sst].snapshot[ss].data[d].mfset,'')) ..'\n')                
+                if snaps[sst].snapshot[ss].data[d].mf then
+                  file:write('['..key..'mf]'.. snaps[sst].snapshot[ss].data[d].mf ..'\n')
+                  file:write('['..key..'mfdata_targettype]'.. snaps[sst].snapshot[ss].data[d].mfdata.targettype ..'\n')
+                  file:write('['..key..'mfdata_strip]'.. snaps[sst].snapshot[ss].data[d].mfdata.strip ..'\n')                
+                  file:write('['..key..'mfdata_page]'.. snaps[sst].snapshot[ss].data[d].mfdata.page ..'\n')                
+                  file:write('['..key..'mfdata_ctl]'.. snaps[sst].snapshot[ss].data[d].mfdata.ctl ..'\n')                
+                  file:write('['..key..'mfdata_c_id]'.. snaps[sst].snapshot[ss].data[d].mfdata.c_id ..'\n')                
                 end
           
               end
             end
             
-            file:write('['..key..'modset]'.. tostring(nz(snapshots[s][p][sst].snapshot[ss].modset,'')) ..'\n')
-            if snapshots[s][p][sst].snapshot[ss].modset then
-              local mm = snapshots[s][p][sst].snapshot[ss].moddata
+            file:write('['..key..'modset]'.. tostring(nz(snaps[sst].snapshot[ss].modset,'')) ..'\n')
+            if snaps[sst].snapshot[ss].modset then
+              local mm = snaps[sst].snapshot[ss].moddata
             
               local key = pfx..'sst_'..sst..'_ss_'..ss..'_'              
               file:write('['..key..'modcnt]'.. #mm ..'\n')
@@ -44741,6 +44729,32 @@ end
     
   end
   
+  function SetSkinCols(gui)
+  
+    gui.skol = {}
+    gui.skol.sb_txt_on = gui.color.black
+    gui.skol.sb_txt_off = gui.color.white
+    gui.skol.lst_bg = gui.color.cbobg
+    gui.skol.lst_txt = gui.color.white
+    gui.skol.lst_txtalt1 = gui.color.red
+    gui.skol.lst_txthl = gui.color.black
+    gui.skol.lst_barhl = gui.color.white
+    gui.skol.butt1_txt = gui.color.black
+    gui.skol.butt1_txt_off = gui.color.white
+    gui.skol.butt2_txt = gui.color.black
+    gui.skol.butt3_txt = gui.color.white
+    gui.skol.butt4_txt = gui.color.black
+  
+    gui.skol.faderhighcol = faderhighcol --'160 64 255'
+    gui.skol.faderselcol = faderselcol --'255 160 255'
+  
+    gui.skol.modhighcol = modhighcol --'64 160 255'
+    gui.skol.modselcol = modselcol --'160 255 255'
+    gui.skol.pnl_txt = gui.color.white
+    gui.skol.pnl_tittxt = gui.color.black
+    
+  end
+  
   ------------------------------------------------------------
   
   function frameScale(m, v)
@@ -45809,11 +45823,13 @@ end
   backalpha = 1
   backalpha2 = 0
   backcol = '16 16 16'
+  
   faderhighcol = '160 64 255'
   faderselcol = '255 160 255'
 
   modhighcol = '64 160 255'
   modselcol = '160 255 255'
+  
   modwin = {minw = 536, minh = 180}
   
   barcol = '64 0 0'
