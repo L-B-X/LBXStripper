@@ -15866,7 +15866,7 @@ end
     
       file:write('[STRIPFILE_VERSION]5\n')
       file:write('[FXDATA]\n'..pickledfx..'\n[\\FXDATA]\n')
-      file:write('[STRIPDATA]\n')      
+      file:write('[STRIPDATA]\n')
       local t = GenStripSaveData2(strips[tracks[track_select].strip][page],nil,file)
       file:write('[\\STRIPDATA]\n')      
       
@@ -16210,6 +16210,13 @@ end
     local fxcnt = reaper.TrackFX_GetCount(tr)
     local fxguids = {}
     
+    if stripdata.strip.nchan then
+      local nchan = reaper.GetMediaTrackInfo_Value(tr, "I_NCHAN")
+      if stripdata.strip.nchan > nchan then
+        --DBG('setting chans to '..stripdata.strip.nchan)
+        reaper.SetMediaTrackInfo_Value( tr, "I_NCHAN", stripdata.strip.nchan )
+      end
+    end
     
     if stripdata.version == nil then
       local retfx
@@ -16883,6 +16890,8 @@ end
       if gui == nil then
         gui = GetGUI_vars()
       end
+      maxx = maxx or 0
+      maxy = maxy or 0
       
       gfx.dest = 1022
       gfx.setimgdim(1022,-1,-1)
@@ -38470,9 +38479,9 @@ end
                     surface_x = tonumber(data[key..'surface_x']),
                     surface_y = tonumber(data[key..'surface_y']),
                     controls = {},
-                    graphics = {}
+                    graphics = {},
+                    nchan = tonumber(data[key..'NCHAN'])
                    }          
-  
     local ccnt = tonumber(data[key..'controls_count'])
     local gcnt = tonumber(data[key..'graphics_count'])
     
@@ -41500,6 +41509,9 @@ end
           file:write('['..key..'surface_y]'..stripdata.surface_y..'\n')
           file:write('['..key..'controls_count]'..#stripdata.controls..'\n')
           file:write('['..key..'graphics_count]'..#stripdata.graphics..'\n')
+          local tr = GetTrack(tracks[track_select].tracknum)
+          local nchan = reaper.GetMediaTrackInfo_Value(tr, "I_NCHAN")
+          file:write('['..key..'NCHAN]'..nchan..'\n')
           
           if #stripdata.controls > 0 then
             for c = 1, #stripdata.controls do
