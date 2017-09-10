@@ -16209,7 +16209,6 @@ end
     
     local fxcnt = reaper.TrackFX_GetCount(tr)
     local fxguids = {}
-    
     if stripdata.strip.nchan then
       local nchan = reaper.GetMediaTrackInfo_Value(tr, "I_NCHAN")
       if stripdata.strip.nchan > nchan then
@@ -41511,6 +41510,7 @@ end
           file:write('['..key..'graphics_count]'..#stripdata.graphics..'\n')
           local tr = GetTrack(tracks[track_select].tracknum)
           local nchan = reaper.GetMediaTrackInfo_Value(tr, "I_NCHAN")
+          nchan = math.max(nchan, stripdata.nchan)          
           file:write('['..key..'NCHAN]'..nchan..'\n')
           
           if #stripdata.controls > 0 then
