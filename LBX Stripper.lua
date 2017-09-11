@@ -13791,24 +13791,28 @@ end
     local ctl = strips[strip][page].controls[c]
     local oval = ctl.val
     
-    local tracknum = strips[strip].track.tracknum
-    if ctl.tracknum ~= nil then
-      tracknum = ctl.tracknum
-    end
-    local cc = ctl.ctlcat
-    local fxnum = ctl.fxnum
-    local param = ctl.param
-    local dvoff = ctl.dvaloffset
-    local sldiv = 400
-    
-    SetParam3(strip,page,c,ctl,val)
-    if sleep then
-      os.sleep((auto_delay/sldiv)*10)
-    end
-    local dval = GetParamDisp(cc, tracknum, fxnum, param, dvoff, c)
-    --SetParam3(strip,page,c,ctl,oval)
+    if ctl.ctlcat == ctlcats.pkmeter then
+      return DenormalizeValue(-60,0,val)
+    else
+      local tracknum = strips[strip].track.tracknum
+      if ctl.tracknum ~= nil then
+        tracknum = ctl.tracknum
+      end
+      local cc = ctl.ctlcat
+      local fxnum = ctl.fxnum
+      local param = ctl.param
+      local dvoff = ctl.dvaloffset
+      local sldiv = 400
+      
+      SetParam3(strip,page,c,ctl,val)
+      if sleep then
+        os.sleep((auto_delay/sldiv)*10)
+      end
+      local dval = GetParamDisp(cc, tracknum, fxnum, param, dvoff, c)
+      --SetParam3(strip,page,c,ctl,oval)
 
-    return dval    
+      return dval    
+    end
     
   end
 
@@ -26367,7 +26371,7 @@ end
                         show_fsnapshots = false
                       end
                       fsstype_select = ctls[i].param
-                      fsstype_color = ctls[i].textcol
+                      fsstype_color = ctls[i].textcolv
                       if show_xysnapshots then
                         if snapshots and snapshots[tracks[track_select].strip] and snapshots[tracks[track_select].strip][page][fsstype_select] then
                         
@@ -26417,7 +26421,7 @@ end
                         show_xysnapshots = false
                       end
                       fsstype_select = ctls[i].param
-                      fsstype_color = ctls[i].textcol
+                      fsstype_color = ctls[i].textcolv
                       if show_fsnapshots then
                         if snapshots and snapshots[tracks[track_select].strip] and snapshots[tracks[track_select].strip][page][fsstype_select] 
                           and snapshots[tracks[track_select].strip][page][fsstype_select].selected then
@@ -26597,7 +26601,7 @@ end
                           show_xysnapshots = false
                         end
                         fsstype_select = ctls[i].param
-                        fsstype_color = ctls[i].textcol
+                        fsstype_color = ctls[i].textcolv
                         if show_fsnapshots then
                           if snapshots and snapshots[tracks[track_select].strip] and snapshots[tracks[track_select].strip][page][fsstype_select] 
                             and snapshots[tracks[track_select].strip][page][fsstype_select].selected then
@@ -28018,6 +28022,10 @@ end
       elseif mouse.context == nil and MOUSE_click(obj.sections[815]) then
         
         OpenEB(60,'Enter numeric display value to add tick','')
+
+      --elseif mouse.context == nil and MOUSE_click_RB(obj.sections[815]) then
+
+        --OpenEB(130,'Add tick at current position with label:','')
         
       elseif mouse.context == nil and MOUSE_click(obj.sections[826]) then
 
@@ -35132,6 +35140,24 @@ end
             
             end
           end  
+
+        elseif EB_Open == 130 then
+          --[[local txt = editbox.text
+          local gtab = gauge_select
+          local gcnt = #gtab.vals+1
+          local nval = gauge_select.val
+          gtab.vals[gcnt] = {val = nval, dval = txt, dover = txt}
+          Gauge_SortVals()
+          for i = 1, #gtab.vals do
+            if gtab.vals[i].val == gtab.val then
+              gauge_ticksel = i
+            end
+          end
+          gtab.ticks = gtab.ticks+1
+          update_surface = true]]
+        
+          DBG(VAL2DB(gauge_select.val))
+        
         elseif EB_Open == 61 then
           local f = CheckFont(editbox.text)
           if f then
@@ -35232,6 +35258,15 @@ end
     return context
 
   end
+  
+--[[  function VAL2DB(x)
+    local xx = DenormalizeValue(-60,0,x)
+    return xx
+  end
+  
+  function DB2VAL(x)
+   return math.exp((x)*0.11512925464970228420089957273422 )
+  end]]
   
   function Process_MB()
   
