@@ -28023,9 +28023,9 @@ end
         
         OpenEB(60,'Enter numeric display value to add tick','')
 
-      --elseif mouse.context == nil and MOUSE_click_RB(obj.sections[815]) then
+      elseif mouse.context == nil and MOUSE_click_RB(obj.sections[815]) then
 
-        --OpenEB(130,'Add tick at current position with label:','')
+        OpenEB(130,'Add tick at current position with label:','')
         
       elseif mouse.context == nil and MOUSE_click(obj.sections[826]) then
 
@@ -35142,7 +35142,8 @@ end
           end  
 
         elseif EB_Open == 130 then
-          --[[local txt = editbox.text
+        
+          local txt = editbox.text
           local gtab = gauge_select
           local gcnt = #gtab.vals+1
           local nval = gauge_select.val
@@ -35154,9 +35155,7 @@ end
             end
           end
           gtab.ticks = gtab.ticks+1
-          update_surface = true]]
-        
-          DBG(VAL2DB(gauge_select.val))
+          update_surface = true
         
         elseif EB_Open == 61 then
           local f = CheckFont(editbox.text)
