@@ -8021,6 +8021,8 @@ end
                     Disp_Name = pname
                     if ctl.iteminfo then
                       Disp_ParamV = ctl.iteminfo.curtake
+                    else
+                      Disp_ParamV = ''
                     end
                     
                  end
@@ -20403,7 +20405,6 @@ end
         end
         
       elseif res == 2 then
-
         if ctl.iteminfo then
         
           local item = GetMediaItemByGUID(ctl.iteminfo.guid)
@@ -20413,8 +20414,7 @@ end
           end
           SetCtlDirty(c)
           update_ctls = true
-        end
-        
+        end        
       end
     end
       
@@ -32752,7 +32752,8 @@ end
                        ctl.ctlcat == ctlcats.trackparam or 
                        ctl.ctlcat == ctlcats.tracksend or 
                        ctl.ctlcat == ctlcats.fxoffline or
-                       ctl.ctlcat == ctlcats.midictl then 
+                       ctl.ctlcat == ctlcats.midictl or 
+                       ctl.ctlcat == ctlcats.takeswitcher then 
                       local strip = tracks[track_select].strip
                       --Add / Remove
                       local ctlidx = GetSnapshotCtlIdx(strip, page, sstype_select, i)
@@ -32799,7 +32800,8 @@ end
                strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.trackparam or 
                strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.tracksend or 
                strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.fxoffline or 
-               strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.midictl then 
+               strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.midictl or 
+               strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.takeswitcher then 
               --Add / Remove
               local ctlidx = GetSnapshotCtlIdx(strip, page, sstype_select, i)
               if ctlidx then
@@ -42802,9 +42804,9 @@ end
                 SetParam5(v)                          
               end
             elseif cctl.ctlcat == ctlcats.takeswitcher then
-              if ctl.iteminfo then
+              if cctl.iteminfo then
                 local v = round(math.random()*cctl.iteminfo.numtakes)/takeswitch_max
-                ctl.val = v
+                cctl.val = v
                 SetItemTake(strip, page, c)
                 SetCtlDirty(c)
                 update_ctls = true
