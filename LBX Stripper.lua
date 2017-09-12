@@ -21,7 +21,7 @@
   trctltype_table = {'Track Controls','Track Sends','Track Meters','Other Controls'}
   --special_table = {'Action Trigger','Peak Meter L','Peak Meter R','Clip Indicator L','Clip Indicator R'}
   special_table = {}
-  otherctl_table = {'Action Trigger','Macro Control','EQ Engine','Strip Switcher','ReaControlMidi Switch','Midi/OSC Control'}
+  otherctl_table = {'Action Trigger','Macro Control','EQ Engine','Strip Switcher','ReaControlMidi Switch','Midi/OSC Control','Take Switcher'}
   scalemode_preset_table = {'','NORMAL','REAPER VOL'}
   scalemode_table = {1/8,1/7,1/6,1/5,1/4,1/3,1/2,1,2,3,4,5,6,7,8}
   scalemode_dtable = {'1/8','1/7','1/6','1/5','1/4','1/3','1/2','1','2','3','4','5','6','7','8'}
@@ -199,7 +199,8 @@
              fxgui = 14,
              rcm_switch = 15,
              midictl = 16,
-             oscctl = 17}
+             oscctl = 17,
+             takeswitcher = 18}
 
   ctlcats_nm = {'fxparam',
                 'trackparam',
@@ -218,7 +219,8 @@
                  'fxgui',
                  'rcm_switch',
                  'midictl',
-                 'oscctl'}
+                 'oscctl',
+                 'takeswitcher'}
              
   gfxtype = {img = 0,
              txt = 1
@@ -4076,12 +4078,112 @@
                                                 clickthrough = clickthrough_select,
                                                 knobsens = settings_defknobsens
                                                }
+      elseif dragparam.type == 'takeswitcher' then
+              local pname = 'Take Selector'
+              local item = reaper.GetSelectedMediaItem(0, 0)
+              local iteminfo
+              local itemno, tracknum, trackguid
+              if item then
+                iteminfo = GetMediaItemDetails(item)
+                itemno = iteminfo.itemno
+                tracknum = iteminfo.tracknum
+                trackguid = iteminfo.trackguid
+              else
+                pname = 'Unassigned Take Selector'
+              end
+              strips[strip][page].controls[ctlnum] = {c_id = GenID(),
+                                                      ctlcat = ctlcats.takeswitcher,
+                                                      fxname=pname,
+                                                      fxguid=nil, 
+                                                      fxnum=nil, 
+                                                      fxfound = true,
+                                                      iteminfo = iteminfo,
+                                                      param = itemno,
+                                                      param_info = {paramname = pname},
+                                                      ctltype = 1,
+                                                      knob_select = knob_select,
+                                                      ctl_info = {fn = ctl_files[knob_select].fn,
+                                                                  frames = ctl_files[knob_select].frames,
+                                                                  imageidx = ctl_files[knob_select].imageidx, 
+                                                                  cellh = ctl_files[knob_select].cellh},
+                                                      x = x,
+                                                      y = y,
+                                                      w = w,
+                                                      poslock = false,
+                                                      scale = 1,
+                                                      xsc = x + math.floor(w/2 - (w*1)/2),
+                                                      ysc = y + math.floor(ctl_files[knob_select].cellh/2 - (ctl_files[knob_select].cellh*1)/2),
+                                                      wsc = w*1,
+                                                      hsc = ctl_files[knob_select].cellh*1,
+                                                      show_paramname = show_paramname,
+                                                      show_paramval = show_paramval,
+                                                      ctlname_override = '',
+                                                      textcol = textcol_select,
+                                                      textoff = 40,
+                                                      textoffval = 0,
+                                                      textoffx = textoff_selectx,
+                                                      textoffvalx = textoffval_selectx,
+                                                      textsize = textsize_select,
+                                                      textsizev = textsizev_select,
+                                                      textcolv = textcolv_select,
+                                                      val = 0,
+                                                      defval = 0,
+                                                      maxdp = maxdp_select,
+                                                      cycledata = {statecnt = 0,val = 0,mapptof = false,draggable = false,spread = false, {}},
+                                                      xydata = {snapa = 1, snapb = 1, snapc = 1, snapd = 1, x = 0.5, y = 0.5},
+                                                      membtn = {state = false,
+                                                                mem = nil},
+                                                      id = nil,
+                                                      tracknum = tracknum,
+                                                      trackguid = trackguid,
+                                                      scalemode = 8,
+                                                      framemode = 1,
+                                                      horiz = horiz_select,
+                                                      poslock = false,
+                                                      bypassbg_c = bypass_bgdraw_c_select,
+                                                      bypassbg_n = bypass_bgdraw_n_select,
+                                                      bypassbg_v = bypass_bgdraw_v_select,
+                                                      clickthrough = clickthrough_select,
+                                                      knobsens = settings_defknobsens
+                                                     }
+        strips[strip][page].controls[ctlnum].knobsens.norm = 0.1
+        strips[strip][page].controls[ctlnum].knobsens.wheel = 0.01
+        
+        if tracknum == track_select then
+          strips[strip][page].controls[ctlnum].tracknum = nil
+          strips[strip][page].controls[ctlnum].trackguid = nil         
+        end
       end
     end  
   
     GUI_DrawCtlBitmap()
   end
 
+  function GetMediaItemDetails(item)
+  
+    tr = reaper.GetMediaItem_Track(item)
+
+    local iteminfo = {}
+    iteminfo.itemno = reaper.GetMediaItemInfo_Value(item, 'IP_ITEMNUMBER')
+    iteminfo.tracknum = reaper.GetMediaTrackInfo_Value(tr, 'IP_TRACKNUMBER')
+    iteminfo.trackguid = reaper.GetTrackGUID(tr)
+    if reaper.APIExists('BR_GetMediaItemGUID') then
+      iteminfo.guid = reaper.BR_GetMediaItemGUID(item)
+    else
+      --item guid via track chunk?
+    end
+    iteminfo.numtakes = reaper.GetMediaItemNumTakes(item)
+    local tkidx = reaper.GetMediaItemInfo_Value(item,'I_CURTAKE')
+    if tkidx then
+      local take = reaper.GetTake(item, tkidx)
+      if take then
+        _, iteminfo.curtake = reaper.GetSetMediaItemTakeInfo_String(take, 'P_NAME', '', false)
+      end
+    end
+    
+    return iteminfo
+  end
+  
   -------------------------------------------------------
   
   function PopulateStripFolders()
@@ -7286,6 +7388,7 @@
   end
 
   function roundX(num, idp, suffix, abbrev)
+    if num == nil then return end
     local s, e = string.find(num,'%d+.%d+')
     if s and e then  
       local n = string.sub(num,s,e)
@@ -7657,6 +7760,12 @@ end
                 elseif ctlcat == ctlcats.fxoffline or ctlcat == ctlcats.macro or ctlcat == ctlcats.midictl then
                   v2 = ctl.val                  
                   val2 = F_limit(round(frames*v2),0,frames-1)
+                elseif ctlcat == ctlcats.takeswitcher then
+                  if ctl.iteminfo then
+                    v2 = (math.floor(ctl.val*takeswitch_max)/(ctl.iteminfo.numtakes-1))
+                    --v2 = ctl.val                  
+                    val2 = F_limit(round(frames*v2),0,frames-1)
+                  end
                 end
                   
                 local DVOV
@@ -7908,6 +8017,12 @@ end
                   --  Disp_Name = ctlnmov
                   --end
                   
+                 elseif ctlcat == ctlcats.takeswitcher then
+                    Disp_Name = pname
+                    if ctl.iteminfo then
+                      Disp_ParamV = ctl.iteminfo.curtake
+                    end
+                    
                  end
   
                 if ctltype == 4 and cycle_editmode == false then
@@ -14561,6 +14676,10 @@ end
       elseif cc == ctlcats.macro then
         SetMacro(strip, page, c)
 
+      elseif cc == ctlcats.takeswitcher then
+        SetItemTake(strip, page, c)      
+        SetCtlDirty(c)
+        update_ctls = true
       elseif cc == ctlcats.snapshotrand then
         
         local sst = ctl.param
@@ -14616,12 +14735,38 @@ end
     if ctl.tracknum == nil then
       track = GetTrack(tracks[track_select].tracknum)
     else
-      track = GetTrack(ctl.tracknum)                      
+      track = GetTrack(ctl.tracknum)       
     end
     local fxnum = ctl.fxnum
     reaper.TrackFX_Show(track, fxnum, 2)  
   end
   
+  function SetItemTake(strip, page, c)
+  
+    local ctl = strips[strip][page].controls[c]
+    if ctl.iteminfo then
+    --DBG(ctl.iteminfo.guid)
+      local item = GetMediaItemByGUID(ctl.iteminfo.guid)
+      local takeval = math.min(round(ctl.val * takeswitch_max),ctl.iteminfo.numtakes-1)
+      ctl.val = takeval/takeswitch_max
+      if item then
+        reaper.SetMediaItemInfo_Value(item,'I_CURTAKE',takeval)
+        local take = reaper.GetTake(item, takeval)
+        if take then
+          _, ctl.iteminfo.curtake = reaper.GetSetMediaItemTakeInfo_String(take, 'P_NAME', '', false)
+        else
+          ctl.iteminfo.curtake = 'empty'
+        end
+
+        reaper.UpdateArrange()
+        --DBG(takeval)sf
+      end
+      --DBG(takeval)
+    
+    end
+  
+  end      
+
 ------------------------------------------------------------
 --replace with A_SetParam
   function SetParam()
@@ -14754,6 +14899,12 @@ end
         STSI_norm(track,param,v,min,max,c,strip,page)
       elseif cc == ctlcats.fxoffline then
         SetFXOffline2(strip, page, c, track, v)
+      
+      elseif cc == ctlcats.takeswitcher then
+        ctl.val = v
+        SetItemTake(strip, page, c)
+        SetCtlDirty(c)
+        
       elseif cc == ctlcats.midictl then
         ctl.val = v
         ctl.dirty = true
@@ -14811,6 +14962,11 @@ end
         ctl.dirty = true
         STSI_denorm(track,param,v,c,strip,page)
       
+      elseif cc == ctlcats.takeswitcher then
+        ctl.val = v
+        SetItemTake(strip, page, c)
+        SetCtlDirty(c)
+
       elseif cc == ctlcats.fxoffline then
         SetFXOffline2(strip, page, c, track, v)
       elseif cc == ctlcats.midictl then
@@ -20211,12 +20367,67 @@ end
     end
   end
   
+  function TakeSwitcherMenu_RB(c)
+    local strip = tracks[track_select].strip
+    local ctl = strips[strip][page].controls[c]
+
+    local mstr = 'Reassign to currently selected item||Refresh item info'
+    gfx.x, gfx.y = mouse.mx, mouse.my
+    res = OpenMenu(mstr)
+    if res ~= 0 then
+      if res == 1 then
+        local pname = 'Take Selector'
+        local item = reaper.GetSelectedMediaItem(0, 0)
+        local iteminfo
+        local itemno, tracknum, trackguid
+        if item then
+          iteminfo = GetMediaItemDetails(item)
+          itemno = iteminfo.itemno
+          tracknum = iteminfo.tracknum
+          trackguid = iteminfo.trackguid
+      
+          ctl.iteminfo = iteminfo
+          ctl.param = itemno
+          ctl.fxname = pname
+          
+          if tracknum == track_select then
+            ctl.tracknum = nil
+            ctl.trackguid = nil
+          else
+            ctl.tracknum = tracknum
+            ctl.trackguid = trackguid
+          end
+          
+          SetCtlDirty(c)
+          update_ctls = true
+        end
+        
+      elseif res == 2 then
+
+        if ctl.iteminfo then
+        
+          local item = GetMediaItemByGUID(ctl.iteminfo.guid)
+          if item then
+            iteminfo = GetMediaItemDetails(item)
+            ctl.iteminfo = iteminfo
+          end
+          SetCtlDirty(c)
+          update_ctls = true
+        end
+        
+      end
+    end
+      
+  end
+  
   function RBMenu(mtype,ccat,i)
     if mtype == 0 then
     
       if ccat == ctlcats.switcher then
         switcher_select = i
         SwitcherMenu_RB()
+      elseif ccat == ctlcats.takeswitcher then
+        TakeSwitcherMenu_RB(i)
       else
         local strip = tracks[track_select].strip
         local ctl = strips[strip][page].controls[i]
@@ -30372,6 +30583,9 @@ end
         elseif trctl_select == 6 then
           --knob_select = def_boxctl
           dragparam = {x = mouse.mx-ksel_size.w, y = mouse.my-ksel_size.h, type = 'midimsgctl'}
+        elseif trctl_select == 7 then
+          --knob_select = def_boxctl
+          dragparam = {x = mouse.mx-ksel_size.w, y = mouse.my-ksel_size.h, type = 'takeswitcher'}
         end
         
         reass_param = nil
@@ -30649,6 +30863,15 @@ end
           
           end
         elseif dragparam.type == 'midimsgctl' then
+          if reass_param == nil then
+            if dragparam.x+ksel_size.w > obj.sections[10].x and dragparam.x+ksel_size.w < obj.sections[10].x+obj.sections[10].w and dragparam.y+ksel_size.h > obj.sections[10].y and dragparam.y+ksel_size.h < obj.sections[10].y+obj.sections[10].h then
+              trackfxparam_select = i
+              Strip_AddParam()              
+            end
+          else
+          
+          end
+        elseif dragparam.type == 'takeswitcher' then
           if reass_param == nil then
             if dragparam.x+ksel_size.w > obj.sections[10].x and dragparam.x+ksel_size.w < obj.sections[10].x+obj.sections[10].w and dragparam.y+ksel_size.h > obj.sections[10].y and dragparam.y+ksel_size.h < obj.sections[10].y+obj.sections[10].h then
               trackfxparam_select = i
@@ -35840,6 +36063,29 @@ end
                             --update_mtrs = true
                           end
                         end
+                      elseif ctl.ctlcat == ctlcats.takeswitcher then
+                        
+                        if ctl.iteminfo then
+                          local item = GetMediaItemByGUID(ctl.iteminfo.guid)
+                          if item then
+                            local tkidx = reaper.GetMediaItemInfo_Value(item,'I_CURTAKE')
+                            if tkidx then
+                              tkidx2 = tkidx/takeswitch_max
+                              if tkidx2 ~= ctl.val then
+                                ctl.val = tkidx2
+                                local take = reaper.GetTake(item, tkidx)
+                                if take then
+                                  _, ctl.iteminfo.curtake = reaper.GetSetMediaItemTakeInfo_String(take, 'P_NAME', '', false)
+                                else
+                                  ctl.iteminfo.curtake = 'empty'
+                                end
+                                ctl.dirty = true
+                                update_ctls = true
+                              end
+                            end
+                          end
+                        end
+                        
                       elseif ctl.ctlcat == ctlcats.fxoffline then
                         local fxguid = reaper.TrackFX_GetFXGUID(tr, ctl.fxnum)
                         if ctl.fxguid == fxguid then
@@ -35910,6 +36156,12 @@ end
 
   end
 
+  function GetMediaItemByGUID(guid)
+    if reaper.APIExists('BR_GetMediaItemByGUID') then
+      return reaper.BR_GetMediaItemByGUID(0, guid)
+    end
+  end
+  
   function SetCtlDirty(c)
     if not ctls_dirty.idx[c] then
       ctls_dirty.idx[c] = true
@@ -38624,6 +38876,17 @@ end
                                       fine = tonumber(zn(data[key..'knobsens_fine'],settings_defknobsens.fine)),
                                       wheel = tonumber(zn(data[key..'knobsens_wheel'],settings_defknobsens.wheel)),
                                       wheelfine = tonumber(zn(data[key..'knobsens_wheelfine'],settings_defknobsens.wheelfine))}
+
+        local itemguid = zn(data[key..'iteminfo_guid'])
+        if itemguid then
+          strip.controls[c].val = -1
+          strip.controls[c].iteminfo = {}
+          strip.controls[c].iteminfo.guid = itemguid
+          strip.controls[c].iteminfo.itemno = tonumber(zn(data[key..'iteminfo_itemno']))
+          strip.controls[c].iteminfo.tracknum = tonumber(zn(data[key..'iteminfo_tracknum']))
+          strip.controls[c].iteminfo.trackguid = zn(data[key..'iteminfo_trackguid'])
+          strip.controls[c].iteminfo.numtakes = tonumber(zn(data[key..'iteminfo_numtakes']))
+        end
 
         strip.controls[c].cycledata.statecnt = tonumber(zn(data[key..'cycledata_statecnt'],0))
         strip.controls[c].cycledata.mapptof = tobool(zn(data[key..'cycledata_mapptof'],false))
@@ -41557,7 +41820,7 @@ end
               file:write('['..key..'fxguid]'..nz(stripdata.controls[c].fxguid,'')..'\n')
               file:write('['..key..'fxnum]'..nz(stripdata.controls[c].fxnum,'')..'\n')
               file:write('['..key..'fxfound]'..tostring(stripdata.controls[c].fxfound)..'\n')
-              file:write('['..key..'param]'..stripdata.controls[c].param..'\n')
+              file:write('['..key..'param]'..tostring(stripdata.controls[c].param)..'\n')
   
               file:write('['..key..'param_info_name]'..stripdata.controls[c].param_info.paramname..'\n')
               file:write('['..key..'param_info_paramnum]'..nz(stripdata.controls[c].param_info.paramnum,'')..'\n')
@@ -41631,6 +41894,16 @@ end
               file:write('['..key..'macrofader]'..nz(stripdata.controls[c].macrofader,'')..'\n')
               file:write('['..key..'mod]'..nz(stripdata.controls[c].mod,'')..'\n')
               file:write('['..key..'switchfader]'..nz(stripdata.controls[c].switchfader,'')..'\n')
+  
+              if stripdata.controls[c].iteminfo then
+              
+                file:write('['..key..'iteminfo_itemno]'..nz(stripdata.controls[c].iteminfo.itemno,'')..'\n')
+                file:write('['..key..'iteminfo_guid]'..nz(stripdata.controls[c].iteminfo.guid,'')..'\n')
+                file:write('['..key..'iteminfo_tracknum]'..nz(stripdata.controls[c].iteminfo.tracknum,'')..'\n')
+                file:write('['..key..'iteminfo_trackguid]'..nz(stripdata.controls[c].iteminfo.trackguid,'')..'\n')
+                file:write('['..key..'iteminfo_numtakes]'..nz(stripdata.controls[c].iteminfo.numtakes,'')..'\n')
+              
+              end
   
               if stripdata.controls[c].cycledata and stripdata.controls[c].cycledata.statecnt then
                 file:write('['..key..'cycledata_statecnt]'..nz(stripdata.controls[c].cycledata.statecnt,0)..'\n')
@@ -42491,6 +42764,14 @@ end
               else
                 SetParam5(v)                          
               end
+            elseif ctl.ctlcat == ctlcats.takeswitcher then
+              if ctl.iteminfo then
+                local v = round(math.random()*(ctl.iteminfo.numtakes-1))/takeswitch_max
+                ctl.val = v
+                SetItemTake(strip, page, c)
+                SetCtlDirty(c)
+                update_ctls = true
+              end
             end
           end
         end
@@ -42502,20 +42783,32 @@ end
           for ctl = 1, #snapshots[strip][page][sstype_select].ctls do
             local c = snapshots[strip][page][sstype_select].ctls[ctl].ctl
             local cctl = strips[strip][page].controls[c]
-            trackfxparam_select = c
-            local v = math.random()
-            if cctl.ctltype == 2 or 
-               cctl.ctltype == 3 or 
-               cctl.ctltype == 7 or
-               cctl.ctltype == 8 or
-               cctl.ctltype == 9 or
-               cctl.ctltype == 10 then
-               v = round(v)
-            end
-            if respectminmax == true then
-              SetParam3(strip,page,c,cctl,v)        
-            else
-              SetParam5(v)                          
+            if cctl.ctlcat == ctlcats.fxparam or 
+               cctl.ctlcat == ctlcats.trackparam or
+               cctl.ctlcat == ctlcats.tracksend then
+              trackfxparam_select = c
+              local v = math.random()
+              if cctl.ctltype == 2 or 
+                 cctl.ctltype == 3 or 
+                 cctl.ctltype == 7 or
+                 cctl.ctltype == 8 or
+                 cctl.ctltype == 9 or
+                 cctl.ctltype == 10 then
+                 v = round(v)
+              end
+              if respectminmax == true then
+                SetParam3(strip,page,c,cctl,v)        
+              else
+                SetParam5(v)                          
+              end
+            elseif cctl.ctlcat == ctlcats.takeswitcher then
+              if ctl.iteminfo then
+                local v = round(math.random()*cctl.iteminfo.numtakes)/takeswitch_max
+                ctl.val = v
+                SetItemTake(strip, page, c)
+                SetCtlDirty(c)
+                update_ctls = true
+              end
             end
           end
         end
@@ -43396,7 +43689,8 @@ end
                ctl.ctlcat == ctlcats.trackparam or
                ctl.ctlcat == ctlcats.tracksend or 
                ctl.ctlcat == ctlcats.fxoffline or 
-               ctl.ctlcat == ctlcats.midictl then
+               ctl.ctlcat == ctlcats.midictl or 
+               ctl.ctlcat == ctlcats.takeswitcher then
               if ctl.ctltype ~= 5 then
                 local track = GetTrack(nz(ctl.tracknum,strips[strip].track.tracknum))
                 local cc = ctl.ctlcat
@@ -45846,6 +46140,8 @@ end
   
   settingswin_off = 0
   settingswin_maxh = 570
+  
+  takeswitch_max = 511
   
   autosnap_rowheight = 410
   autosnap_itemgap = 20
