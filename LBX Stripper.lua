@@ -27776,7 +27776,8 @@ end
           if ctl and (ctl.ctlcat == ctlcats.fxparam or 
                       ctl.ctlcat == ctlcats.trackparam or 
                       ctl.ctlcat == ctlcats.tracksend or
-                      ctl.ctlcat == ctlcats.macro) then 
+                      ctl.ctlcat == ctlcats.macro or
+                      ctl.ctlcat == ctlcats.takeswitcher) then 
             dragmod = {x = mouse.mx, y = mouse.my, ctl = c}
           else
             dragmod = {x = mouse.mx, y = mouse.my, ctl = -1}          
