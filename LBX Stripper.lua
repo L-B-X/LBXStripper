@@ -15948,109 +15948,111 @@ end
       local file
       file=io.open(fn,"w")
 
-
-      local tr = GetTrack(strips[tracks[track_select].strip].track.tracknum)
-      local i, j
-      local fxcnt = 1
-      local fxtbl = {}
-      local chunk = GetTrackChunk(tr, settings_usetrackchunkfix)
-      for i = 0, reaper.TrackFX_GetCount(tr)-1 do
-        if settings_saveallfxinststrip then 
-          --local _, fxname = reaper.TrackFX_GetFXName(tr, i, '')
-          local _, fxchunk = GetFXChunkFromTrackChunk(chunk, i+1)
-          --local fxn = GetPlugNameFromChunk(fxchunk)
-          fxtbl[i+1] = {fxname = nil,
-                        fxchunk = fxchunk,
-                        fxguid = convertguid(reaper.TrackFX_GetFXGUID(tr, i)),
-                        fxenabled = reaper.TrackFX_GetEnabled(tr, i)
-                        }
-        else
-          --check fx has controls in strip
-          local instrip = false
-          for j = 1, #strips[tracks[track_select].strip][page].controls do
-            if reaper.TrackFX_GetFXGUID(tr, i) == strips[tracks[track_select].strip][page].controls[j].fxguid then
-              instrip = true
-              break
-            end
-            if strips[tracks[track_select].strip][page].controls[j].ctlcat == ctlcats.eqcontrol then
-              local bands = strips[tracks[track_select].strip][page].controls[j].eqbands
-              if bands and #bands > 0 then
-                for b = 1, #bands do
-                
-                  if reaper.TrackFX_GetFXGUID(tr, i) == bands[b].fxguid then
-                    instrip = true
-                    break                  
-                  end
-                
-                end
-                if instrip then
-                  break
-                end
-              end
-            end
-          end
-          if instrip then
+      if file then
+        local tr = GetTrack(strips[tracks[track_select].strip].track.tracknum)
+        local i, j
+        local fxcnt = 1
+        local fxtbl = {}
+        local chunk = GetTrackChunk(tr, settings_usetrackchunkfix)
+        for i = 0, reaper.TrackFX_GetCount(tr)-1 do
+          if settings_saveallfxinststrip then 
             --local _, fxname = reaper.TrackFX_GetFXName(tr, i, '')
             local _, fxchunk = GetFXChunkFromTrackChunk(chunk, i+1)
             --local fxn = GetPlugNameFromChunk(fxchunk)
-            fxtbl[fxcnt] = {fxname = nil,
-                            fxchunk = fxchunk,
-                            fxguid = convertguid(reaper.TrackFX_GetFXGUID(tr, i)),
-                            fxenabled = reaper.TrackFX_GetEnabled(tr, i)
-                            }          
-            fxcnt = fxcnt + 1
+            fxtbl[i+1] = {fxname = nil,
+                          fxchunk = fxchunk,
+                          fxguid = convertguid(reaper.TrackFX_GetFXGUID(tr, i)),
+                          fxenabled = reaper.TrackFX_GetEnabled(tr, i)
+                          }
+          else
+            --check fx has controls in strip
+            local instrip = false
+            for j = 1, #strips[tracks[track_select].strip][page].controls do
+              if reaper.TrackFX_GetFXGUID(tr, i) == strips[tracks[track_select].strip][page].controls[j].fxguid then
+                instrip = true
+                break
+              end
+              if strips[tracks[track_select].strip][page].controls[j].ctlcat == ctlcats.eqcontrol then
+                local bands = strips[tracks[track_select].strip][page].controls[j].eqbands
+                if bands and #bands > 0 then
+                  for b = 1, #bands do
+                  
+                    if reaper.TrackFX_GetFXGUID(tr, i) == bands[b].fxguid then
+                      instrip = true
+                      break                  
+                    end
+                  
+                  end
+                  if instrip then
+                    break
+                  end
+                end
+              end
+            end
+            if instrip then
+              --local _, fxname = reaper.TrackFX_GetFXName(tr, i, '')
+              local _, fxchunk = GetFXChunkFromTrackChunk(chunk, i+1)
+              --local fxn = GetPlugNameFromChunk(fxchunk)
+              fxtbl[fxcnt] = {fxname = nil,
+                              fxchunk = fxchunk,
+                              fxguid = convertguid(reaper.TrackFX_GetFXGUID(tr, i)),
+                              fxenabled = reaper.TrackFX_GetEnabled(tr, i)
+                              }          
+              fxcnt = fxcnt + 1
+            end
           end
         end
-      end
-    
-      --check tracknums
-      for j = 1, #strips[tracks[track_select].strip][page].controls do
-        local ctl = strips[tracks[track_select].strip][page].controls[j]
-        if ctl.tracknum and ctl.tracknum == strips[tracks[track_select].strip].track.tracknum then
-          ctl.tracknum = nil
-        end
-      end
-    
-      local savestrip = {}
-      local switchtab = {}
-      local saveswitchers = {}
-      local switchcnt = 1
       
-      for j = 1, #strips[tracks[track_select].strip][page].controls do
-        local ctl = strips[tracks[track_select].strip][page].controls[j]
-        if ctl.ctlcat == ctlcats.pkmeter then
-          ctl.val = -150
+        --check tracknums
+        for j = 1, #strips[tracks[track_select].strip][page].controls do
+          local ctl = strips[tracks[track_select].strip][page].controls[j]
+          if ctl.tracknum and ctl.tracknum == strips[tracks[track_select].strip].track.tracknum then
+            ctl.tracknum = nil
+          end
+        end
+      
+        local savestrip = {}
+        local switchtab = {}
+        local saveswitchers = {}
+        local switchcnt = 1
+        
+        for j = 1, #strips[tracks[track_select].strip][page].controls do
+          local ctl = strips[tracks[track_select].strip][page].controls[j]
+          if ctl.ctlcat == ctlcats.pkmeter then
+            ctl.val = -150
+          end
+          
+          if ctl.ctlcat == ctlcats.switcher then
+            switchtab[ctl.switcherid] = switchcnt
+            saveswitchers[switchcnt] = switchers[ctl.switcherid]
+            --savestrip.strip.controls[i].switcherid = switchcnt -- eek
+            switchcnt = switchcnt + 1    
+          end
         end
         
-        if ctl.ctlcat == ctlcats.switcher then
-          switchtab[ctl.switcherid] = switchcnt
-          saveswitchers[switchcnt] = switchers[ctl.switcherid]
-          --savestrip.strip.controls[i].switcherid = switchcnt -- eek
-          switchcnt = switchcnt + 1    
+        savestrip.switchers = saveswitchers
+        savestrip.switchconvtab = switchtab
+        savestrip.fx = fxtbl
+        local pickledfx = pickle(savestrip)
+      
+        file:write('[STRIPFILE_VERSION]5\n')
+        file:write('[FXDATA]\n'..pickledfx..'\n[\\FXDATA]\n')
+        file:write('[STRIPDATA]\n')
+        local t = GenStripSaveData2(strips[tracks[track_select].strip][page],nil,file)
+        file:write('[\\STRIPDATA]\n')      
+        
+        if snapshots and snapshots[tracks[track_select].strip] then
+          file:write('[SNAPSHOTDATA]\n')      
+          SaveSnapshotDataX(snapshots[tracks[track_select].strip][page],nil,file)
+          file:write('[\\SNAPSHOTDATA]\n')      
         end
+        
+        file:close()
+  
+        OpenMsgBox(1,'Strip saved.',1)
+      else
+        OpenMsgBox(1,'Error opening file for saving.  Possibly invalid filename.',1)
       end
-      
-      savestrip.switchers = saveswitchers
-      savestrip.switchconvtab = switchtab
-      savestrip.fx = fxtbl
-      local pickledfx = pickle(savestrip)
-    
-      file:write('[STRIPFILE_VERSION]5\n')
-      file:write('[FXDATA]\n'..pickledfx..'\n[\\FXDATA]\n')
-      file:write('[STRIPDATA]\n')
-      local t = GenStripSaveData2(strips[tracks[track_select].strip][page],nil,file)
-      file:write('[\\STRIPDATA]\n')      
-      
-      if snapshots and snapshots[tracks[track_select].strip] then
-        file:write('[SNAPSHOTDATA]\n')      
-        SaveSnapshotDataX(snapshots[tracks[track_select].strip][page],nil,file)
-        file:write('[\\SNAPSHOTDATA]\n')      
-      end
-      
-      file:close()
-
-      OpenMsgBox(1,'Strip saved.',1)
-      
     else
       return nil
     end
@@ -35435,8 +35437,12 @@ end
             local file
             local ffn = mod_path..fn..'.lbxmod'
             file=io.open(ffn,"w")
-            SaveMod(file,'',modulators[mod_select],true)
-            file:close()
+            if file then
+              SaveMod(file,'',modulators[mod_select],true)
+              file:close()
+            else
+              OpenMsgBox(1,'Error opening file for saving.  Possibly invalid filename.',1)
+            end
           end
         end
         
