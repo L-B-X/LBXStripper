@@ -4159,7 +4159,7 @@
     GUI_DrawCtlBitmap()
   end
 
-  function GetMediaItemDetails(item)
+  function GetMediaItemDetails(item, preservemaxtakes)
   
     tr = reaper.GetMediaItem_Track(item)
 
@@ -4167,6 +4167,11 @@
     iteminfo.itemno = reaper.GetMediaItemInfo_Value(item, 'IP_ITEMNUMBER')
     iteminfo.tracknum = reaper.GetMediaTrackInfo_Value(tr, 'IP_TRACKNUMBER')
     iteminfo.trackguid = reaper.GetTrackGUID(tr)
+    
+    if preservemaxtakes ~= true then
+      iteminfo.maxtakes = takeswitch_max
+    end
+    
     if reaper.APIExists('BR_GetMediaItemGUID') then
       iteminfo.guid = reaper.BR_GetMediaItemGUID(item)
     else
@@ -7762,7 +7767,7 @@ end
                   val2 = F_limit(round(frames*v2),0,frames-1)
                 elseif ctlcat == ctlcats.takeswitcher then
                   if ctl.iteminfo then
-                    v2 = (math.floor(ctl.val*takeswitch_max)/(ctl.iteminfo.numtakes-1))
+                    v2 = (math.floor(ctl.val*ctl.iteminfo.maxtakes)/(ctl.iteminfo.numtakes-1))
                     --v2 = ctl.val                  
                     val2 = F_limit(round(frames*v2),0,frames-1)
                   end
@@ -8018,7 +8023,11 @@ end
                   --end
                   
                  elseif ctlcat == ctlcats.takeswitcher then
-                    Disp_Name = pname
+                    if nz(ctlnmov,'') == '' then
+                      Disp_Name = pname
+                    else
+                      Disp_Name = ctlnmov
+                    end
                     if ctl.iteminfo then
                       Disp_ParamV = ctl.iteminfo.curtake
                     else
@@ -14749,8 +14758,8 @@ end
     if ctl.iteminfo then
     --DBG(ctl.iteminfo.guid)
       local item = GetMediaItemByGUID(ctl.iteminfo.guid)
-      local takeval = math.min(round(ctl.val * takeswitch_max),ctl.iteminfo.numtakes-1)
-      ctl.val = takeval/takeswitch_max
+      local takeval = math.min(round(ctl.val * ctl.iteminfo.maxtakes),ctl.iteminfo.numtakes-1)
+      ctl.val = takeval/ctl.iteminfo.maxtakes
       if item then
         reaper.SetMediaItemInfo_Value(item,'I_CURTAKE',takeval)
         local take = reaper.GetTake(item, takeval)
@@ -20383,7 +20392,7 @@ end
         local iteminfo
         local itemno, tracknum, trackguid
         if item then
-          iteminfo = GetMediaItemDetails(item)
+          iteminfo = GetMediaItemDetails(item, true)
           itemno = iteminfo.itemno
           tracknum = iteminfo.tracknum
           trackguid = iteminfo.trackguid
@@ -20409,7 +20418,7 @@ end
         
           local item = GetMediaItemByGUID(ctl.iteminfo.guid)
           if item then
-            iteminfo = GetMediaItemDetails(item)
+            iteminfo = GetMediaItemDetails(item, true)
             ctl.iteminfo = iteminfo
           end
           SetCtlDirty(c)
@@ -36073,7 +36082,7 @@ end
                           if item then
                             local tkidx = reaper.GetMediaItemInfo_Value(item,'I_CURTAKE')
                             if tkidx then
-                              tkidx2 = tkidx/takeswitch_max
+                              tkidx2 = tkidx/ctl.iteminfo.maxtakes
                               if tkidx2 ~= ctl.val then
                                 ctl.val = tkidx2
                                 local take = reaper.GetTake(item, tkidx)
@@ -38889,6 +38898,10 @@ end
           strip.controls[c].iteminfo.tracknum = tonumber(zn(data[key..'iteminfo_tracknum']))
           strip.controls[c].iteminfo.trackguid = zn(data[key..'iteminfo_trackguid'])
           strip.controls[c].iteminfo.numtakes = tonumber(zn(data[key..'iteminfo_numtakes']))
+          
+          local maxtakes = tonumber(zn(data[key..'iteminfo_maxtakes']))
+          if maxtakes == nil then maxtakes = 511 end
+          strip.controls[c].iteminfo.maxtakes = maxtakes
         end
 
         strip.controls[c].cycledata.statecnt = tonumber(zn(data[key..'cycledata_statecnt'],0))
@@ -41905,7 +41918,8 @@ end
                 file:write('['..key..'iteminfo_tracknum]'..nz(stripdata.controls[c].iteminfo.tracknum,'')..'\n')
                 file:write('['..key..'iteminfo_trackguid]'..nz(stripdata.controls[c].iteminfo.trackguid,'')..'\n')
                 file:write('['..key..'iteminfo_numtakes]'..nz(stripdata.controls[c].iteminfo.numtakes,'')..'\n')
-              
+                file:write('['..key..'iteminfo_maxtakes]'..nz(stripdata.controls[c].iteminfo.maxtakes,511)..'\n')
+                   
               end
   
               if stripdata.controls[c].cycledata and stripdata.controls[c].cycledata.statecnt then
@@ -42769,7 +42783,7 @@ end
               end
             elseif ctl.ctlcat == ctlcats.takeswitcher then
               if ctl.iteminfo then
-                local v = round(math.random()*(ctl.iteminfo.numtakes-1))/takeswitch_max
+                local v = round(math.random()*(ctl.iteminfo.numtakes-1))/ctl.iteminfo.maxtakes
                 ctl.val = v
                 SetItemTake(strip, page, c)
                 SetCtlDirty(c)
@@ -42806,7 +42820,7 @@ end
               end
             elseif cctl.ctlcat == ctlcats.takeswitcher then
               if cctl.iteminfo then
-                local v = round(math.random()*cctl.iteminfo.numtakes)/takeswitch_max
+                local v = round(math.random()*cctl.iteminfo.numtakes)/ctl.iteminfo.maxtakes
                 cctl.val = v
                 SetItemTake(strip, page, c)
                 SetCtlDirty(c)
@@ -45072,6 +45086,75 @@ end
     
   end
   
+  function LoadSkinCols(gui)
+  
+    local fn=skins_path..'skincols.lbx'
+    file=io.open(fn,"r")
+    if file then
+      content=file:read("*a")
+      file:close()    
+    
+      if content then
+        local lines = split(content, "\n")
+        if lines and #lines > 0 then
+          for ln = 1, #lines do
+            local idx, val = string.match(lines[ln],'%[(.-)%](.*)') 
+            if idx then
+              data[idx] = val
+            end
+          end
+        end
+        
+        gui.skol.sb_txt_on = data['sb_txt_on']
+        gui.skol.sb_txt_off = data['sb_txt_off']
+        gui.skol.lst_bg = data['lst_bg']
+        gui.skol.lst_txt = data['lst_txt']
+        gui.skol.lst_txtalt1 = data['lst_txtalt1']
+        gui.skol.lst_txthl = data['lst_txthl']
+        gui.skol.lst_barhl = data['lst_barhl']
+        gui.skol.butt1_txt = data['butt1_txt']
+        gui.skol.butt1_txt_off = data['butt1_txt_off']
+        gui.skol.butt2_txt = data['butt2_txt']
+        gui.skol.butt3_txt = data['butt3_txt']
+        gui.skol.butt4_txt = data['butt4_txt']
+      
+        gui.skol.faderhighcol = data['faderhighcol']
+        gui.skol.faderselcol = data['faderselcol']
+      
+        gui.skol.modhighcol = data['modhighcol']
+        gui.skol.modselcol = data['modselcol']
+        gui.skol.pnl_txt = data['pnl_txt']
+        gui.skol.pnl_tittxt = data['pnl_tittxt']
+      end
+    end    
+  end
+
+  function SaveSkinCols(gui)
+  
+    local ffn=skins_path..'skincols.lbx'
+    file=io.open(ffn,"w")    
+    file:write('[sb_txt_on]'..gui.skol.sb_txt_on..'\n')
+    file:write('[sb_txt_off]'..gui.skol.sb_txt_off..'\n')
+    file:write('[lst_bg]'..gui.skol.lst_bg..'\n')
+    file:write('[lst_txt]'..gui.skol.lst_txt..'\n')
+    file:write('[lst_txtalt1]'..gui.skol.lst_txtalt1..'\n')
+    file:write('[lst_txthl]'..gui.skol.lst_txthl..'\n')
+    file:write('[lst_barhl]'..gui.skol.lst_barhl..'\n')
+    file:write('[butt1_txt]'..gui.skol.butt1_txt..'\n')
+    file:write('[butt1_txt_off]'..gui.skol.butt1_txt_off..'\n')
+    file:write('[butt2_txt]'..gui.skol.butt2_txt..'\n')
+    file:write('[butt3_txt]'..gui.skol.butt3_txt..'\n')
+    file:write('[butt4_txt]'..gui.skol.butt4_txt..'\n')
+    file:write('[faderhighcol]'..gui.skol.faderhighcol..'\n')
+    file:write('[faderselcol]'..gui.skol.faderselcol..'\n')
+    file:write('[modhighcol]'..gui.skol.modhighcol..'\n')
+    file:write('[modselcol]'..gui.skol.modselcol..'\n')
+    file:write('[pnl_txt]'..gui.skol.pnl_txt..'\n')
+    file:write('[pnl_tittxt]'..gui.skol.pnl_tittxt..'\n')
+    file:close()
+        
+  end
+  
   function SetSkinCols(gui)
   
     gui.skol = {}
@@ -45096,6 +45179,8 @@ end
     gui.skol.pnl_txt = gui.color.white
     gui.skol.pnl_tittxt = gui.color.black
     
+    LoadSkinCols(gui)
+    --SaveSkinCols(gui)
   end
   
   ------------------------------------------------------------
