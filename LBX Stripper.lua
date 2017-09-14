@@ -23,6 +23,7 @@
   special_table = {}
   otherctl_table = {'Action Trigger','Macro Control','EQ Engine','Strip Switcher','ReaControlMidi Switch','Midi/OSC Control','Take Switcher'}
   scalemode_preset_table = {'','NORMAL','REAPER VOL'}
+  lfomode_table = {'NORMAL MODE','TAKESWITCH MODE'}
   scalemode_table = {1/8,1/7,1/6,1/5,1/4,1/3,1/2,1,2,3,4,5,6,7,8}
   scalemode_dtable = {'1/8','1/7','1/6','1/5','1/4','1/3','1/2','1','2','3','4','5','6','7','8'}
   macroscale_table = {'Linear','Slow','Fast','Smooth','Slow 2 (Cubic)','Fast 2 (Cubic)', 'Smooth 2 (Cubic)', 'Slow 3', 'Fast 3', 'Smooth 3', 'Instant'}
@@ -1276,7 +1277,7 @@
 
 
       --CONTROL OPTIONS
-      local cow = 160
+      local cow = gui.winsz.ctlopts
       obj.sections[45] = {x = math.max(gfx1.main_w - cow - 10, obj.sections[10].x + cow + 20),
                           y = math.max(gfx1.main_h - 470 - 10, obj.sections[10].y),
                           w = cow,
@@ -1393,7 +1394,7 @@
                           w = obj.sections[45].w-(obj.sections[52].x+obj.sections[52].w+36),
                           h = butt_h/2+4}                           
       obj.sections[59] = {x = 50,
-                          y = 150+butt_h+11 + (butt_h/2+4 + 10) * 8,
+                          y = 150+butt_h+11 + (butt_h/2+4 + 10) * 8 - 2,
                           w = obj.sections[45].w-60,
                           h = butt_h}
       obj.sections[960] = {x = 50,
@@ -1500,7 +1501,7 @@
                           w = obj.sections[45].w-70,
                           h = butt_h}
       obj.sections[127] = {x = 60,
-                          y = butt_h+6 + (butt_h/2+4 + 10) * 6,
+                          y = butt_h+6 + (butt_h/2+4 + 10) * 6+2,
                           w = obj.sections[45].w-70,
                           h = butt_h}
       local kwh = defctls[def_knobsm].cellh
@@ -1518,11 +1519,11 @@
                           h = butt_h}
 
       obj.sections[131] = {x = 70,
-                          y = butt_h + (butt_h/2+4 + 10) * 8 -8,
+                          y = butt_h + (butt_h/2+4 + 10) * 8 -12,
                           w = obj.sections[45].w-80,
                           h = butt_h}
       obj.sections[132] = {x = 70,
-                          y = butt_h + (butt_h/2+4 + 10) * 9 -12,
+                          y = butt_h + (butt_h/2+4 + 10) * 9 -14,
                           w = obj.sections[45].w-80,
                           h = butt_h}
       obj.sections[133] = {x = 70,
@@ -1577,12 +1578,12 @@
       --SNAPSHOTS
       local ssh = snaph-200
       obj.sections[160] = {}
-      obj.sections[160].w = 160
+      obj.sections[160].w = gui.winsz.snaps
       obj.sections[160].h = snaph
       if ss160 == nil then
-        obj.sections[160] = {x = gfx1.main_w - 160 - (sb_size+2),
+        obj.sections[160] = {x = gfx1.main_w - gui.winsz.snaps - (sb_size+2),
                             y = gfx1.main_h - snaph - (sb_size+2),
-                            w = 160,
+                            w = gui.winsz.snaps,
                             h = snaph}                            
         if snapshot_win_pos and snapshot_win_pos.x and snapshot_win_pos.y then
           obj.sections[160].x = snapshot_win_pos.x
@@ -1624,28 +1625,28 @@
                           h = ssh}
       
       obj.sections[1010] = {x = 10,
-                            y = obj.sections[163].y + obj.sections[163].h,
-                            w = math.floor((obj.sections[163].w/3)+2),
+                            y = obj.sections[163].y + obj.sections[163].h-2,
+                            w = math.floor((obj.sections[163].w/3)+2)-1,
                             h = butt_h}
-      obj.sections[1011] = {x = 10+obj.sections[1010].w,
+      obj.sections[1011] = {x = 10+obj.sections[1010].w+2,
                             y = obj.sections[1010].y,
-                            w = obj.sections[1010].w*.7,
+                            w = obj.sections[1010].w*.7-1,
                             h = butt_h}
-      obj.sections[1012] = {x = obj.sections[1011].x+obj.sections[1011].w,
+      obj.sections[1012] = {x = obj.sections[1011].x+obj.sections[1011].w+2,
                             y = obj.sections[1010].y,
                             w = math.floor(obj.sections[1010].w*1.3-3),
                             h = butt_h}
       obj.sections[1014] = {x = 10,
-                            y = obj.sections[1010].y + butt_h,
-                            w = math.floor((obj.sections[163].w/3)+2),
+                            y = obj.sections[1010].y + butt_h+2,
+                            w = math.floor((obj.sections[163].w/3)+2)-1,
                             h = butt_h}
-      obj.sections[1013] = {x = 10+obj.sections[1014].w,
-                            y = obj.sections[1010].y + butt_h,
-                            w = math.floor((obj.sections[163].w/3)+2),
+      obj.sections[1013] = {x = 10+obj.sections[1014].w+2,
+                            y = obj.sections[1014].y,
+                            w = math.floor((obj.sections[163].w/3)+2)-2,
                             h = butt_h}
-      obj.sections[1015] = {x = 10+obj.sections[1014].w*2,
-                            y = obj.sections[1010].y + butt_h,
-                            w = math.floor((obj.sections[163].w/3)-2),
+      obj.sections[1015] = {x = 10+obj.sections[1014].w*2+3,
+                            y = obj.sections[1014].y,
+                            w = math.floor((obj.sections[163].w/3)-3),
                             h = butt_h}
                              
       obj.sections[164] = {x = 10,
@@ -2279,6 +2280,11 @@
       obj.sections[1113] = {x = obj.sections[1102].x,
                            y = obj.sections[1102].y + obj.sections[1102].h + 2,
                            w = 100,
+                           h = 20} 
+
+      obj.sections[1114] = {x = obj.sections[1110].x+obj.sections[1110].w + 2,
+                           y = obj.sections[1102].y + obj.sections[1102].h + 2,
+                           w = 120,
                            h = 20} 
 
       local mw,mh = 160,84
@@ -7081,7 +7087,7 @@
         
         f_Get_SSV('0 0 0')
         gfx.rect(xywh.x+2,
-                 xywh.y+3,
+                 xywh.y+4,
                  xywh.w-4,
                  xywh.h-3,1)        
         GUI_textC(gui,xywh,ctl_files[knob_select].fn,gui.color.white,-5)
@@ -7273,22 +7279,27 @@
       colb = -3
     end
     
-    local sl, sr, sm, wl ,hl, wr, hr, wm, hm, w, h
+    local sl, sr, sm, wl ,hl, wr, hr, wm, hm, w, h, fcol
     if colb == -1 then
       w, h = gfx.getimgdim(skin.butt18G)
       sl = skin.butt18G
+      fcol = gui.skol.butt1_txt
     elseif colb == -2 then
       w, h = gfx.getimgdim(skin.butt18R)
       sl = skin.butt18R
+      fcol = gui.skol.butt2_txt
     elseif colb == -3 then
       w, h = gfx.getimgdim(skin.butt18T)
       sl = skin.butt18T
+      fcol = gui.skol.butt3_txt
     elseif colb == -4 then
       w, h = gfx.getimgdim(skin.butt18Y)
       sl = skin.butt18Y
+      fcol = gui.skol.butt4_txt
     else
       w, h = gfx.getimgdim(skin.butt18)
       sl = skin.butt18
+      fcol = gui.skol.butt1_txt
     end
 
     local corner = 6
@@ -7320,9 +7331,9 @@
              b.h, f)]]
     if f == 0 or tonumber(colb) ~= nil then
       if tonumber(colb) ~= nil and colb == -1 or colb == -3 then
-        colt = gui.skol.butt3_txt
+        colt = fcol
       elseif tonumber(colb) ~= nil and colb == -2 or colb == -4 then
-        colt = gui.skol.butt1_txt
+        colt = fcol
       else
         colt = colb
       end
@@ -7767,7 +7778,7 @@ end
                   val2 = F_limit(round(frames*v2),0,frames-1)
                 elseif ctlcat == ctlcats.takeswitcher then
                   if ctl.iteminfo then
-                    v2 = (math.floor(ctl.val*ctl.iteminfo.maxtakes)/(ctl.iteminfo.numtakes-1))
+                    v2 = (math.floor(ctl.val*takeswitch_max)/(ctl.iteminfo.numtakes-1))
                     --v2 = ctl.val                  
                     val2 = F_limit(round(frames*v2),0,frames-1)
                   end
@@ -8675,6 +8686,13 @@ end
             h = obj.sections[163].h}
     
     xywh.h = butt_h
+    f_Get_SSV('0 0 0')
+    gfx.a = 1 
+    gfx.rect(obj.sections[163].x-2,
+             obj.sections[163].y-2, 
+             obj.sections[163].w+4,
+             obj.sections[163].h, 1 )
+    
     GUI_DrawBar(gui,'',xywh,skin.barUD,true,gui.color.black,nil,-2)
     gfx.line(xywh.x+xywh.w/2,xywh.y,xywh.x+xywh.w/2,xywh.y+xywh.h)
     gfx.triangle(xywh.x+xywh.w/4,xywh.y+4,xywh.x+xywh.w/4-6,xywh.y+xywh.h-4,xywh.x+xywh.w/4+6,xywh.y+xywh.h-4,1)
@@ -8688,7 +8706,7 @@ end
     local pause = false
     local dir = '>'
     local txt = 'LOOP'
-    local loop = false
+    local loop = false    
     
     SS_butt_cnt = math.floor(obj.sections[163].h / butt_h) - 1
     if snaplrn_mode == false then
@@ -8833,34 +8851,18 @@ end
       if pause then
         bc = -2
       end
-      --[[if morphing == true then
-        local loop = snapshots[tracks[track_select].strip][page][sstype_select].morph_loop
-        local txt
-        if loop == 1 then
-          txt = 'LOOP'
-          loop = false
-        elseif loop == 2 then
-          txt = dir..dir
-          loop = true
-        else
-          txt = '<>'
-          loop = true
-        end
-      else
-        txt = 'LOOP'
-        loop = false        
-      end]]
+      
       GUI_DrawButton(gui, 'PAUSED', obj.sections[1013], bc, gui.skol.butt1_txt, pause, '', false)
       
       GUI_DrawButton(gui, dir, obj.sections[1014], gui.color.white, gui.skol.butt1_txt, true, '', false)
       GUI_DrawButton(gui, txt, obj.sections[1015], gui.color.white, gui.skol.butt1_txt, loop, '', false)
       
-      f_Get_SSV('64 64 64')
+      --[[f_Get_SSV('64 64 64')
       gfx.a = 1 
       gfx.rect(obj.sections[163].x,
                obj.sections[163].y, 
                obj.sections[163].w,
-               obj.sections[163].h, 0 )
+               obj.sections[163].h, 0 )]]
       
     else
       --learn mode
@@ -11460,7 +11462,13 @@ end
           
           local x = obj.sections[1101].x + math.floor((modbaredit[i]-1) * barw)
           local w = math.floor(modbaredit[i]*barw) - math.floor((modbaredit[i]-1) * barw) - bw        
-          local h = math.floor(obj.sections[1101].h * m.data[modbaredit[i]]) 
+          local h
+          if m.mode == 2 then
+            h = math.floor(obj.sections[1101].h * ((m.data[modbaredit[i]])/(m.max-m.min))) 
+          else
+            h = math.floor(obj.sections[1101].h * m.data[modbaredit[i]]) 
+          end
+          h = math.min(h, obj.sections[1101].h) 
           f_Get_SSV(gui.color.black)
           gfx.rect(x+bw,obj.sections[1101].y,math.max(w,1),obj.sections[1101].h,1)
            
@@ -11508,7 +11516,13 @@ end
       
         local x = obj.sections[1101].x + math.floor((m.opos-1) * barw)
         local w = math.floor(m.opos*barw) - math.floor((m.opos-1) * barw) - bw
-        local h = math.floor(obj.sections[1101].h * m.data[m.opos]) 
+        local h
+        if m.mode == 2 then
+          h = math.floor(obj.sections[1101].h * ((m.data[m.opos])/(m.max-m.min))) 
+        else
+          h = math.floor(obj.sections[1101].h * m.data[m.opos]) 
+        end         
+        h = math.min(h, obj.sections[1101].h)
 
         f_Get_SSV(gui.color.black)
         gfx.rect(x+bw,obj.sections[1101].y,math.max(w,1),obj.sections[1101].h+modpos,1)
@@ -11526,8 +11540,14 @@ end
       
         local x = obj.sections[1101].x + math.floor((m.pos-1) * barw)
         local w = math.floor(m.pos*barw) - math.floor((m.pos-1) * barw) - bw
-        local h = math.floor(obj.sections[1101].h * m.data[m.pos]) 
-
+--        local h = math.floor(obj.sections[1101].h * m.data[m.pos]) 
+        local h
+        if m.mode == 2 then
+          h = math.floor(obj.sections[1101].h * ((m.data[m.pos])/(m.max-m.min))) 
+        else
+          h = math.floor(obj.sections[1101].h * m.data[m.pos]) 
+        end
+        h = math.min(h, obj.sections[1101].h)
         f_Get_SSV(gui.color.black)
         gfx.rect(x+bw,obj.sections[1101].y,math.max(w,1),obj.sections[1101].h,1)
          
@@ -11569,7 +11589,7 @@ end
       if modulators[mod_select].active then
         c = -4
       end
-      GUI_DrawButton(gui,'ON',obj.sections[1106],c,gui.color.white,true)
+      GUI_DrawButton(gui,'ON',obj.sections[1106],c,gui.skol.butt2_txt,true)
   
       GUI_DrawButton(gui,'LENGTH: '..sync_table[m.syncv],obj.sections[1104],-1,gui.color.white,true)
       local c = -1
@@ -11591,18 +11611,22 @@ end
       end
       GUI_DrawButton(gui,txt,obj.sections[1108],c,gui.color.white,true)
       GUI_DrawButton(gui,'RANDOMIZE',obj.sections[1113],c,gui.color.white,true)
+      if m.mode == 2 then
+        c = -4
+      end
+      GUI_DrawButton(gui,lfomode_table[m.mode],obj.sections[1114],c,gui.color.white,true)
 
       local c = -1
       if m.min > 0 then
         c = -4
       end
-      GUI_DrawButton(gui,'MIN: '..math.floor(m.min*127),obj.sections[1109],c,gui.color.white,true)
+      GUI_DrawButton(gui,'MIN: '..math.floor(m.min*takeswitch_max),obj.sections[1109],c,gui.color.white,true)
 
       local c = -1
       if m.max < 1 then
         c = -4
       end
-      GUI_DrawButton(gui,'MAX: '..math.floor(m.max*127),obj.sections[1110],c,gui.color.white,true)
+      GUI_DrawButton(gui,'MAX: '..math.floor(m.max*takeswitch_max),obj.sections[1110],c,gui.color.white,true)
 
     end
         
@@ -11650,8 +11674,14 @@ end
         --f_Get_SSV(gui.color.white)
         local x = obj.sections[1101].x + math.floor((i-1) * barw)
         local w = math.floor(i*barw) - math.floor((i-1) * barw) - bw
+        local h
+        if m.mode == 2 then
+          h = math.floor(obj.sections[1101].h * ((m.data[i])/(m.max-m.min))) 
+        else
+          h = math.floor(obj.sections[1101].h * m.data[i])         
+        end
+        h = math.min(h, obj.sections[1101].h)
         
-        local h = math.floor(obj.sections[1101].h * m.data[i]) 
         gfx.rect(x+bw,obj.sections[1101].y + (obj.sections[1101].h-h),math.max(w,1),h,1)
       
       end
@@ -12170,8 +12200,7 @@ end
           if update_lfopos then
             GUI_DrawLFOPos(obj, gui)          
           end
-          gfx.blit(992,1,0,0,0,obj.sections[1100].w,obj.sections[1100].h,obj.sections[1100].x,obj.sections[1100].y) 
-        
+          gfx.blit(992,1,0,0,0,obj.sections[1100].w,obj.sections[1100].h,obj.sections[1100].x,obj.sections[1100].y)         
         end
         
       elseif mode == 1 then        
@@ -14691,6 +14720,7 @@ end
         SetItemTake(strip, page, c)      
         SetCtlDirty(c)
         update_ctls = true
+        
       elseif cc == ctlcats.snapshotrand then
         
         local sst = ctl.param
@@ -14753,13 +14783,40 @@ end
   end
   
   function SetItemTake(strip, page, c)
+    local ctl = strips[strip][page].controls[c]
+    if ctl.iteminfo then
+    --DBG(ctl.iteminfo.guid)
+      local item = GetMediaItemByGUID(ctl.iteminfo.guid)
+      local takeval = math.min(math.floor(ctl.val * takeswitch_max),ctl.iteminfo.numtakes-1)
+      
+      --DBG(takeval)
+      ctl.val = takeval/takeswitch_max
+      if item then
+        reaper.SetMediaItemInfo_Value(item,'I_CURTAKE',takeval)
+        local take = reaper.GetTake(item, takeval)
+        if take then
+          _, ctl.iteminfo.curtake = reaper.GetSetMediaItemTakeInfo_String(take, 'P_NAME', '', false)
+        else
+          ctl.iteminfo.curtake = 'empty'
+        end
+
+        reaper.UpdateArrange()
+        --DBG(takeval)sf
+      end
+      --DBG(takeval)
+    
+    end
+  
+  end      
+
+  function SetItemTake2(strip, page, c)
   
     local ctl = strips[strip][page].controls[c]
     if ctl.iteminfo then
     --DBG(ctl.iteminfo.guid)
       local item = GetMediaItemByGUID(ctl.iteminfo.guid)
-      local takeval = math.min(round(ctl.val * ctl.iteminfo.maxtakes),ctl.iteminfo.numtakes-1)
-      ctl.val = takeval/ctl.iteminfo.maxtakes
+      local takeval = math.min(math.floor(ctl.val * takeswitch_max),ctl.iteminfo.numtakes-1)
+      ctl.val = takeval/takeswitch_max
       if item then
         reaper.SetMediaItemInfo_Value(item,'I_CURTAKE',takeval)
         local take = reaper.GetTake(item, takeval)
@@ -14912,9 +14969,12 @@ end
         SetFXOffline2(strip, page, c, track, v)
       
       elseif cc == ctlcats.takeswitcher then
-        ctl.val = v
-        SetItemTake(strip, page, c)
-        SetCtlDirty(c)
+        local vv = math.floor(v*takeswitch_max)/takeswitch_max 
+        if vv ~= ctl.val then
+          ctl.val = vv 
+          SetItemTake2(strip, page, c)
+          SetCtlDirty(c)
+        end
         
       elseif cc == ctlcats.midictl then
         ctl.val = v
@@ -20384,7 +20444,12 @@ end
     local strip = tracks[track_select].strip
     local ctl = strips[strip][page].controls[c]
 
-    local mstr = 'Reassign to currently selected item||Refresh item info'
+    local mod = '||Clear Modulator'
+    if not strips[tracks[track_select].strip][page].controls[i].mod then
+      mod = '||#Clear Modulator'
+    end  
+    
+    local mstr = 'Reassign to currently selected item||Refresh item info'..mod
     gfx.x, gfx.y = mouse.mx, mouse.my
     res = OpenMenu(mstr)
     if res ~= 0 then
@@ -20425,7 +20490,13 @@ end
           end
           SetCtlDirty(c)
           update_ctls = true
-        end        
+        end 
+      elseif res == 3 then
+        Mod_RemoveAssign(strip,page,c)
+        ctl.mod = nil
+        ctl.dirty = true
+        update_ctls = true
+        SetCtlDirty(c)
       end
     end
       
@@ -20549,6 +20620,7 @@ end
               ctl.mod = nil
               ctl.dirty = true
               update_ctls = true
+              SetCtlDirty(i)
               
             elseif res == 3 +lastp then
               SetParam2(true)
@@ -24565,6 +24637,7 @@ end
 
     for i = 1, #ms do
       if ms[i].active == true then
+
         local m = ms[i]
         local time = CalcSyncTime(m.syncv)
         if m.offset ~= 0.5 then
@@ -24572,7 +24645,8 @@ end
         end  
         m.dpos = ((pp+offset) % time) / time
         m.pos = math.floor(m.dpos * m.steps)+1
-        if m.pos ~= m.opos and #m.targets > 0 or m.interpolate == true then
+        if #m.targets > 0 and (m.pos ~= m.opos or m.interpolate == true) then
+
           local val = m.data[m.pos]
           if m.interpolate then
             local dv
@@ -24589,22 +24663,28 @@ end
             for t = 1, #m.targets do
 
               if val then
-                val = m.min + (m.max-m.min)*val
+                if m.mode == 1 then
+                  val = m.min + (m.max-m.min)*val
+                end
                 if m.targets[t].targettype == 1 then
                   local ctl = strips[m.targets[t].strip][m.targets[t].page].controls[m.targets[t].ctl]
                   if val ~= ctl.val then
+                    --DBG(val..'  '..ctl.val)
                     SetParam3(m.targets[t]. strip,m.targets[t].page,m.targets[t].ctl,ctl,val)
                     update_ctls = true
                     
-                    ctl.val = val
+                    --ctl.val = val
                   end
                 end
               end
             end
           --end
         end
-        if m.pos ~= m.opos then 
+        if m.pos ~= m.opos then
           update_lfopos = true
+          if show_lfoedit ~= true then
+            m.opos = m.pos
+          end
         end
       end
     end
@@ -26200,8 +26280,41 @@ end
 
         elseif MOUSE_click(obj.sections[1113]) then
         
+          local min = m.min
+          local max = m.max
+          --DBG(max..'  '..min)
           for i = 1, #m.data do
-            m.data[i] = math.random()
+            if m.mode == 2 then
+              m.data[i] = math.floor((math.random() * ((max-min)+1/takeswitch_max))*takeswitch_max)/takeswitch_max + min
+            else
+              m.data[i] = ((math.random() * (max-min)) + min)
+            end
+          end 
+          update_lfoedit = true
+
+        elseif MOUSE_click(obj.sections[1114]) then
+
+          m.mode = 1-(m.mode-1)+1
+          update_lfoedit = true
+
+        elseif MOUSE_click_RB(obj.sections[1114]) then
+
+          if m.targets then
+            local max = 0
+            for t = 1,#m.targets do
+              if m.targets[t].targettype == 1 then
+                if strips[m.targets[t].strip] and strips[m.targets[t].strip][m.targets[t].page].controls[m.targets[t].ctl] then
+                  local ctl = strips[m.targets[t].strip][m.targets[t].page].controls[m.targets[t].ctl]
+                  if ctl.ctlcat == ctlcats.takeswitcher then
+                    max = math.max(ctl.iteminfo.numtakes)
+                  end
+                end
+              end
+            end
+            if max > 1 then
+              m.max = (max-1)/takeswitch_max
+              m.min = 0
+            end
           end
           update_lfoedit = true
 
@@ -27670,7 +27783,13 @@ end
               h = obj.sections[1101].h}
       --if MOUSE_over(xywh) then
         local xbar = math.floor((mouse.mx-xywh.x)/moddraw.barw) + 1
-        local yp = F_limit(1- ((mouse.my - xywh.y) / xywh.h),0,1)
+        local yp
+        if m.mode == 2 then
+          yp = (F_limit(1- ((mouse.my - xywh.y) / xywh.h),0,1) * (m.max-m.min))
+          yp = math.floor(yp*takeswitch_max)/takeswitch_max
+        else
+          yp = F_limit(1- ((mouse.my - xywh.y) / xywh.h),0,1)
+        end
         if mouse.shift then
           if not moddraw.yp then
             moddraw.yp = yp
@@ -27819,7 +27938,7 @@ end
       obj.sections[1010].y = obj.sections[163].y + obj.sections[163].h
       obj.sections[1011].y = obj.sections[1010].y 
       obj.sections[1012].y = obj.sections[1010].y
-      obj.sections[1013].y = obj.sections[1010].y+butt_h
+      obj.sections[1013].y = obj.sections[1010].y+butt_h+2
       obj.sections[1014].y = obj.sections[1013].y
       obj.sections[1015].y = obj.sections[1013].y
       
@@ -36087,10 +36206,11 @@ end
                           local item = GetMediaItemByGUID(ctl.iteminfo.guid)
                           if item then
                             local tkidx = reaper.GetMediaItemInfo_Value(item,'I_CURTAKE')
-                            if tkidx then
-                              tkidx2 = tkidx/ctl.iteminfo.maxtakes
+                            if tkidx and tkidx >= 0 then
+                              tkidx2 = tkidx/takeswitch_max
                               if tkidx2 ~= ctl.val then
                                 ctl.val = tkidx2
+                                ctl.tkidx = tkidx
                                 local take = reaper.GetTake(item, tkidx)
                                 if take then
                                   _, ctl.iteminfo.curtake = reaper.GetSetMediaItemTakeInfo_String(take, 'P_NAME', '', false)
@@ -40084,6 +40204,7 @@ end
       modulators[m].offset = tonumber(zn(data[key..'offset'],0.5))
       modulators[m].min = tonumber(zn(data[key..'min'],0))
       modulators[m].max = tonumber(zn(data[key..'max'],1))
+      modulators[m].mode = tonumber(zn(data[key..'mode'],1))
       modulators[m].interpolate = tobool(zn(data[key..'interpolate']))
       modulators[m].syncv = tonumber(zn(data[key..'syncv']))
       modulators[m].sync = tobool(zn(data[key..'sync']))
@@ -41322,6 +41443,7 @@ end
     file:write('['..key..'offset]'.. nz(moddata.offset,0.5) ..'\n')
     file:write('['..key..'min]'.. nz(moddata.min,0) ..'\n')
     file:write('['..key..'max]'.. nz(moddata.max,1) ..'\n')
+    file:write('['..key..'mode]'.. nz(moddata.mode,1) ..'\n')
 
     if excludetargets ~= true then
       file:write('['..key..'target_cnt]'.. #moddata.targets ..'\n')
@@ -44830,6 +44952,7 @@ end
                    offset = 0.5,
                    min = 0,
                    max = 1,
+                   mode = 1,
                    data = {},
                    targets = {},
                    }
@@ -45101,6 +45224,7 @@ end
       file:close()    
     
       if content then
+        local data = {}
         local lines = split(content, "\n")
         if lines and #lines > 0 then
           for ln = 1, #lines do
@@ -45131,6 +45255,9 @@ end
         gui.skol.modselcol = data['modselcol']
         gui.skol.pnl_txt = data['pnl_txt']
         gui.skol.pnl_tittxt = data['pnl_tittxt']
+
+        gui.winsz.ctlopts = data['guisz_ctlopts_w']
+        gui.winsz.snaps = data['guisz_snapwin_w']
       end
     end    
   end
@@ -45184,7 +45311,11 @@ end
     gui.skol.modselcol = modselcol --'160 255 255'
     gui.skol.pnl_txt = gui.color.white
     gui.skol.pnl_tittxt = gui.color.black
-    
+
+    gui.winsz = {}
+    gui.winsz.ctlopts = 160
+    gui.winsz.snaps = 160
+        
     LoadSkinCols(gui)
     --SaveSkinCols(gui)
   end
@@ -46155,7 +46286,7 @@ end
   paths_path = resource_path.."paths/"
   eqbands_path = resource_path.."eqbands/"
   eq_path = resource_path.."eq/"
-  skins_path = resource_path.."skins/LBXDEF/"
+  skins_path = resource_path.."skins/LBX2/"
   share_path = resource_path.."share/"
   mod_path = resource_path.."modpresets/"
   nebscanboot_file = nil
@@ -46235,7 +46366,7 @@ end
   settingswin_off = 0
   settingswin_maxh = 570
   
-  takeswitch_max = 511
+  takeswitch_max = 512
   
   autosnap_rowheight = 410
   autosnap_itemgap = 20
