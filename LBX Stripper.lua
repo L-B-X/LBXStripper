@@ -39563,6 +39563,7 @@ end
                   snaps[sst][ss].moddata[m].offset = tonumber(zn(data[key..'offset'],0.5))
                   snaps[sst][ss].moddata[m].min = tonumber(zn(data[key..'min'],0))
                   snaps[sst][ss].moddata[m].max = tonumber(zn(data[key..'max'],1))
+                  snaps[sst][ss].moddata[m].mode = tonumber(zn(data[key..'mode'],1))
                   snaps[sst][ss].moddata[m].interpolate = tobool(zn(data[key..'interpolate']))
                   snaps[sst][ss].moddata[m].syncv = tonumber(zn(data[key..'syncv']))
                   snaps[sst][ss].moddata[m].sync = tobool(zn(data[key..'sync']))
@@ -39670,6 +39671,7 @@ end
                   snaps[sst].snapshot[ss].moddata[m].offset = tonumber(zn(data[key..'offset'],0.5))
                   snaps[sst].snapshot[ss].moddata[m].min = tonumber(zn(data[key..'min'],0))
                   snaps[sst].snapshot[ss].moddata[m].max = tonumber(zn(data[key..'max'],1))
+                  snaps[sst].snapshot[ss].moddata[m].mode = tonumber(zn(data[key..'mode'],1))
                   snaps[sst].snapshot[ss].moddata[m].interpolate = tobool(zn(data[key..'interpolate']))
                   snaps[sst].snapshot[ss].moddata[m].syncv = tonumber(zn(data[key..'syncv']))
                   snaps[sst].snapshot[ss].moddata[m].sync = tobool(zn(data[key..'sync']))
@@ -41806,6 +41808,7 @@ end
                   file:write('['..key..'offset]'.. nz(mm[m].offset,0.5) ..'\n')
                   file:write('['..key..'min]'.. nz(mm[m].min,0) ..'\n')
                   file:write('['..key..'max]'.. nz(mm[m].max,1) ..'\n')
+                  file:write('['..key..'mode]'.. nz(mm[m].mode,1) ..'\n')
                   file:write('['..key..'target_cnt]'.. #mm[m].targets ..'\n')
         
                   for t = 1, #mm[m].targets do
@@ -41895,6 +41898,7 @@ end
                   file:write('['..key..'offset]'.. nz(mm[m].offset,0.5) ..'\n')
                   file:write('['..key..'min]'.. nz(mm[m].min,0) ..'\n')
                   file:write('['..key..'max]'.. nz(mm[m].max,1) ..'\n')
+                  file:write('['..key..'mode]'.. nz(mm[m].mode,1) ..'\n')
                   file:write('['..key..'target_cnt]'.. #mm[m].targets ..'\n')
             
                   for t = 1, #mm[m].targets do
