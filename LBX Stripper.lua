@@ -42923,7 +42923,7 @@ end
       if #strips[strip][page].controls > 0 then
         for c = 1, #strips[strip][page].controls do
           local ctl = strips[strip][page].controls[c]
-          if ctl.noss ~= true then
+          if ctl and ctl.noss ~= true then
             if ctl.ctlcat == ctlcats.fxparam or 
                ctl.ctlcat == ctlcats.trackparam or
                ctl.ctlcat == ctlcats.tracksend then
@@ -42946,7 +42946,7 @@ end
               end
             elseif ctl.ctlcat == ctlcats.takeswitcher then
               if ctl.iteminfo then
-                local v = round(math.random()*(ctl.iteminfo.numtakes-1))/ctl.iteminfo.maxtakes
+                local v = round(math.random()*(ctl.iteminfo.numtakes-1))/takeswitch_max
                 ctl.val = v
                 SetItemTake(strip, page, c)
                 SetCtlDirty(c)
@@ -42963,9 +42963,9 @@ end
           for ctl = 1, #snapshots[strip][page][sstype_select].ctls do
             local c = snapshots[strip][page][sstype_select].ctls[ctl].ctl
             local cctl = strips[strip][page].controls[c]
-            if cctl.ctlcat == ctlcats.fxparam or 
+            if cctl and (cctl.ctlcat == ctlcats.fxparam or 
                cctl.ctlcat == ctlcats.trackparam or
-               cctl.ctlcat == ctlcats.tracksend then
+               cctl.ctlcat == ctlcats.tracksend) then
               trackfxparam_select = c
               local v = math.random()
               if cctl.ctltype == 2 or 
@@ -42981,9 +42981,9 @@ end
               else
                 SetParam5(v)                          
               end
-            elseif cctl.ctlcat == ctlcats.takeswitcher then
+            elseif cctl and cctl.ctlcat == ctlcats.takeswitcher then
               if cctl.iteminfo then
-                local v = round(math.random()*cctl.iteminfo.numtakes)/ctl.iteminfo.maxtakes
+                local v = round(math.random()*cctl.iteminfo.numtakes-1)/takeswitch_max
                 cctl.val = v
                 SetItemTake(strip, page, c)
                 SetCtlDirty(c)
