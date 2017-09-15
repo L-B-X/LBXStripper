@@ -14722,8 +14722,10 @@ end
         SetMacro(strip, page, c)
 
       elseif cc == ctlcats.takeswitcher then
-        SetItemTake(strip, page, c)      
-        SetCtlDirty(c)
+        SetItemTake(strip, page, c)
+        if strip == tracks[track_select].strip and page == page then      
+          SetCtlDirty(c)
+        end
         update_ctls = true
         
       elseif cc == ctlcats.snapshotrand then
@@ -14961,7 +14963,9 @@ end
 
       elseif cc == ctlcats.trackparam then
         local param = ctl.param
-        SetCtlDirty(c)
+        if strip == tracks[track_select].strip and page == page then
+          SetCtlDirty(c)
+        end
         local min, max = A_GetParamMinMax(cc,track,ctl,nil,param,true,c)
         SMTI_norm(track,param,v,min,max)
 
@@ -14978,7 +14982,9 @@ end
         if vv ~= ctl.val then
           ctl.val = vv 
           SetItemTake2(strip, page, c)
-          SetCtlDirty(c)
+          if strip == tracks[track_select].strip and page == page then      
+            SetCtlDirty(c)
+          end
         end
         
       elseif cc == ctlcats.midictl then
@@ -15041,7 +15047,9 @@ end
       elseif cc == ctlcats.takeswitcher then
         ctl.val = v
         SetItemTake(strip, page, c)
-        SetCtlDirty(c)
+        if strip == tracks[track_select].strip and page == page then      
+          SetCtlDirty(c)
+        end
 
       elseif cc == ctlcats.fxoffline then
         SetFXOffline2(strip, page, c, track, v)
@@ -36233,7 +36241,7 @@ end
                               tkidx2 = tkidx/takeswitch_max
                               if tkidx2 ~= ctl.val then
                                 ctl.val = tkidx2
-                                ctl.tkidx = tkidx
+                                --ctl.tkidx = tkidx
                                 local take = reaper.GetTake(item, tkidx)
                                 if take then
                                   _, ctl.iteminfo.curtake = reaper.GetSetMediaItemTakeInfo_String(take, 'P_NAME', '', false)
