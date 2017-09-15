@@ -43402,11 +43402,13 @@ end
         end 
            
       elseif sstype_sel > 1 then
+      
         local snaptbl = snaps.snapshot[ss_sel]
         if snaptbl then
           local gtrack = GetTrack(strips[strip].track.tracknum)
           mfchk = {}
           if #snaptbl.data > 0 then
+
             for ss = 1, #snaptbl.data do
               local c = snaptbl.data[ss].ctl
               local v = snaptbl.data[ss].dval
@@ -43974,7 +43976,8 @@ end
                  ctl.ctlcat == ctlcats.trackparam or
                  ctl.ctlcat == ctlcats.tracksend or 
                  ctl.ctlcat == ctlcats.fxoffline or 
-                 ctl.ctlcat == ctlcats.midictl then
+                 ctl.ctlcat == ctlcats.midictl or 
+                 ctl.ctlcat == ctlcats.takeswitcher then
                 if ctl.ctltype ~= 5 then
                   local track = GetTrack(nz(ctl.tracknum,strips[strip].track.tracknum))
                   local cc = ctl.ctlcat
