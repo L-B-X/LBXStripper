@@ -46286,7 +46286,7 @@ end
   paths_path = resource_path.."paths/"
   eqbands_path = resource_path.."eqbands/"
   eq_path = resource_path.."eq/"
-  skins_path = resource_path.."skins/LBX2/"
+  skins_path = resource_path.."skins/LBXDEF/"
   share_path = resource_path.."share/"
   mod_path = resource_path.."modpresets/"
   nebscanboot_file = nil
