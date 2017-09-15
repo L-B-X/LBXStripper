@@ -27845,7 +27845,17 @@ end
         end
         moddraw.lastx = xbar
         moddraw.lasty = yp
-        update_lfoeditbar = true   
+        update_lfoeditbar = true
+        
+        local txt = ''
+        if m.mode == 2 then
+          txt = 'TAKE '..math.floor(yp*takeswitch_max+1)
+        else
+          txt = round(yp*(m.max*takeswitch_max),2)
+        end
+        local mx, my = gfx.mouse_x, gfx.mouse_y
+        local dock_state, wx,wy,ww,wh = gfx.dock(-1,0,0,0,0)
+        reaper.TrackCtl_SetToolTip(txt, wx+mx-15, wy+my+10, true)  
       --end
     
     elseif mouse.context and mouse.context == contexts.movesnapwindow then
@@ -27891,6 +27901,10 @@ end
         update_surface = true
       end
           
+    elseif moddraw ~= nil then
+      moddraw = nil
+      reaper.TrackCtl_SetToolTip('',0,0, true) 
+    
     elseif dragfader ~= nil then
     
       if dragfader.ctl and dragfader.ctl ~= -1 then
