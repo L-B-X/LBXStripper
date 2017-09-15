@@ -26299,7 +26299,11 @@ end
 
         elseif MOUSE_click(obj.sections[1114]) then
 
-          m.mode = 1-(m.mode-1)+1
+          if tonumber(m.mode) == nil then 
+            m.mode = 1 
+          else
+            m.mode = 1-(m.mode-1)+1
+          end
           update_lfoedit = true
 
         elseif MOUSE_click_RB(obj.sections[1114]) then
