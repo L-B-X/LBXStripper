@@ -4464,6 +4464,11 @@
 
   function LoadSkin()
   
+    local fn = skins_path..'skincols.lbx'
+    if not reaper.file_exists(fn) then
+      skins_path = defskins_path 
+    end
+  
     local skin = {}
     local ret = true
     
@@ -7283,7 +7288,7 @@
     if colb == -1 then
       w, h = gfx.getimgdim(skin.butt18G)
       sl = skin.butt18G
-      fcol = gui.skol.butt1_txt
+      fcol = gui.skol.buttG_txt
     elseif colb == -2 then
       w, h = gfx.getimgdim(skin.butt18R)
       sl = skin.butt18R
@@ -45242,6 +45247,7 @@ end
         gui.skol.lst_txtalt1 = data['lst_txtalt1']
         gui.skol.lst_txthl = data['lst_txthl']
         gui.skol.lst_barhl = data['lst_barhl']
+        gui.skol.buttG_txt = data['buttG_txt']
         gui.skol.butt1_txt = data['butt1_txt']
         gui.skol.butt1_txt_off = data['butt1_txt_off']
         gui.skol.butt2_txt = data['butt2_txt']
@@ -45273,6 +45279,7 @@ end
     file:write('[lst_txtalt1]'..gui.skol.lst_txtalt1..'\n')
     file:write('[lst_txthl]'..gui.skol.lst_txthl..'\n')
     file:write('[lst_barhl]'..gui.skol.lst_barhl..'\n')
+    file:write('[buttG_txt]'..gui.skol.buttG_txt..'\n')
     file:write('[butt1_txt]'..gui.skol.butt1_txt..'\n')
     file:write('[butt1_txt_off]'..gui.skol.butt1_txt_off..'\n')
     file:write('[butt2_txt]'..gui.skol.butt2_txt..'\n')
@@ -45298,6 +45305,7 @@ end
     gui.skol.lst_txtalt1 = gui.color.red
     gui.skol.lst_txthl = gui.color.black
     gui.skol.lst_barhl = gui.color.white
+    gui.skol.buttG_txt = gui.color.white
     gui.skol.butt1_txt = gui.color.black
     gui.skol.butt1_txt_off = gui.color.white
     gui.skol.butt2_txt = gui.color.black
@@ -46286,7 +46294,8 @@ end
   paths_path = resource_path.."paths/"
   eqbands_path = resource_path.."eqbands/"
   eq_path = resource_path.."eq/"
-  skins_path = resource_path.."skins/LBXDEF/"
+  skins_path = resource_path.."skins/LBX2x/"
+  defskins_path = resource_path.."skins/LBXDEF/"
   share_path = resource_path.."share/"
   mod_path = resource_path.."modpresets/"
   nebscanboot_file = nil
