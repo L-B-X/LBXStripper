@@ -14755,6 +14755,28 @@ end
       
   end
   
+  function SendAllNotesOffToTrack(trn)
+    
+    reaper.PreventUIRefresh(1)
+    local osel = reaper.GetSelectedTrack(0, 0)
+    local track = GetTrack(trn)
+    if track then
+      reaper.SetOnlyTrackSelected(track)
+      reaper.Main_OnCommand(reaper.NamedCommandLookup('_S&M_CC123_SEL_TRACKS'),0)
+      if osel then
+        reaper.SetOnlyTrackSelected(osel)
+      end
+    end  
+    reaper.PreventUIRefresh(-1)
+
+  end
+  
+  function SendAllNotesOff()
+    
+    reaper.Main_OnCommand(40345,0)
+
+  end
+  
   function SetFader(f, val)
     if LBX_CTL_TRACK then 
       local track = GetTrack(LBX_CTL_TRACK) 
@@ -14799,7 +14821,17 @@ end
       --DBG(takeval)
       ctl.val = takeval/takeswitch_max
       if item then
+
+        if ctl.iteminfo.noteoff then
+          local trn = ctl.tracknum or tracks[track_select].tracknum
+          if trn then
+            --SendAllNotesOffToTrack(trn)
+            SendAllNotesOff()
+          end
+        end
+        
         reaper.SetMediaItemInfo_Value(item,'I_CURTAKE',takeval)
+        
         local take = reaper.GetTake(item, takeval)
         if take then
           _, ctl.iteminfo.curtake = reaper.GetSetMediaItemTakeInfo_String(take, 'P_NAME', '', false)
@@ -14825,7 +14857,17 @@ end
       local takeval = math.min(math.floor(ctl.val * takeswitch_max),ctl.iteminfo.numtakes-1)
       ctl.val = takeval/takeswitch_max
       if item then
+
+        if ctl.iteminfo.noteoff then
+          local trn = ctl.tracknum or tracks[track_select].tracknum
+          if trn then
+            --SendAllNotesOffToTrack(trn)
+            SendAllNotesOff()
+          end
+        end
+        
         reaper.SetMediaItemInfo_Value(item,'I_CURTAKE',takeval)
+
         local take = reaper.GetTake(item, takeval)
         if take then
           _, ctl.iteminfo.curtake = reaper.GetSetMediaItemTakeInfo_String(take, 'P_NAME', '', false)
@@ -16883,7 +16925,9 @@ end
         
         end
         
-        switchers[s].current = gidtrack[switchers[s].current].grpid
+        if gidtrack[switchers[s].current] then
+          switchers[s].current = gidtrack[switchers[s].current].grpid
+        end
       end
     end
         
@@ -20461,8 +20505,11 @@ end
     if not strips[tracks[track_select].strip][page].controls[i].mod then
       mod = '||#Clear Modulator'
     end  
-    
-    local mstr = 'Reassign to currently selected item||Refresh item info'..mod
+    local sno = ''
+    if ctl.iteminfo.noteoff then
+      sno = '!'
+    end
+    local mstr = 'Reassign to currently selected item||Refresh item info'..mod..'||'..sno..'Send Note Offs'
     gfx.x, gfx.y = mouse.mx, mouse.my
     res = OpenMenu(mstr)
     if res ~= 0 then
@@ -20510,6 +20557,8 @@ end
         ctl.dirty = true
         update_ctls = true
         SetCtlDirty(c)
+      elseif res == 4 then
+        ctl.iteminfo.noteoff = not (ctl.iteminfo.noteoff or false)
       end
     end
       
@@ -43142,7 +43191,8 @@ end
           if ctls[i].ctlcat == ctlcats.fxparam or 
              ctls[i].ctlcat == ctlcats.trackparam or 
              ctls[i].ctlcat == ctlcats.tracksend or 
-             ctls[i].ctlcat == ctlcats.fxoffline then 
+             ctls[i].ctlcat == ctlcats.fxoffline or 
+             ctls[i].ctlcat == ctlcats.takeswitcher then 
             --add
             local ctlidx = #snapshots[strip][page][newsst].ctls + 1
             snapshots[strip][page][newsst].ctls[ctlidx] = {c_id = ctls[i].c_id,
