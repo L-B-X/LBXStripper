@@ -235,10 +235,10 @@
   
     local track = GetTrack(trn)
     local fnd = false
-    if trguid ~= reaper.GetTrackGUID(track) then
+    if track and trguid ~= reaper.GetTrackGUID(track) then
       for i = -1, reaper.CountTracks(0) do
         track = GetTrack(i)  
-        if trguid == reaper.GetTrackGUID(track) then
+        if track and trguid == reaper.GetTrackGUID(track) then
           trn = i
           fnd = true
           break
@@ -248,7 +248,7 @@
       fnd = true
     end
     
-    if fnd then
+    if track and fnd then
       local fxcnt = reaper.TrackFX_GetCount(track)
       local fnd = -1
       for i = 0, fxcnt do
@@ -20625,10 +20625,11 @@ end
         if ctl.iteminfo then
           ctl.iteminfo.noteoff = not (ctl.iteminfo.noteoff or false)
           if ctl.iteminfo.noteoff == true then
-            local fxn, fxg
-            fxn, fxg, ctl.iteminfo.tracknum = InsertTrackUtil(ctl.iteminfo.tracknum, ctl.iteminfo.trackguid)
-            if fxn then
+            local fxn, fxg, tracknum
+            fxn, fxg, tracknum = InsertTrackUtil(ctl.iteminfo.tracknum, ctl.iteminfo.trackguid)
+            if fxn and tracknum then
             
+              ctl.iteminfo.tracknum = tracknum
               ctl.iteminfo.utilfxn = fxn
               ctl.iteminfo.utilguid = fxg
             
