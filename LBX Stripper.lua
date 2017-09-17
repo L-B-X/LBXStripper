@@ -48,6 +48,8 @@
   gaugetype_table = {'ARC','LINEAR VERT', 'LINEAR HORIZ'}
   gfxstretch_table = {'normal','fix edge'}
   
+  lbxutil_chunk = 'BYPASS 0 0 0\n<JS LBX_TrackUtility ""\n0.000000 0.000000 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -\n>\nFLOATPOS 0 0 0 0\nFXID {800E025A-6418-48A4-B72E-71E93B970664}\nWAK 0'
+  
   trctltypeidx_table = {tr_ctls = 1,
                         tr_sends = 2,
                         tr_rcvs = 3,
@@ -228,6 +230,52 @@
              }
 
   pi = 3.14159265359
+
+  function InsertTrackUtil(trn, trguid)
+  
+    local track = GetTrack(trn)
+    local fnd = false
+    if trguid ~= reaper.GetTrackGUID(track) then
+      for i = -1, reaper.CountTracks(0) do
+        track = GetTrack(i)  
+        if trguid == reaper.GetTrackGUID(track) then
+          trn = i
+          fnd = true
+          break
+        end
+      end
+    else
+      fnd = true
+    end
+    
+    if fnd then
+      local fxcnt = reaper.TrackFX_GetCount(track)
+      local fnd = -1
+      for i = 0, fxcnt do
+        local _,n = reaper.TrackFX_GetFXName(track,i,'')
+        if n == 'JS: LBX Track Utility' or n == 'JS: LBX_TrackUtility' then
+          fnd = i
+          break
+        end
+      end
+      if fnd == -1 then
+        local chunk = GetTrackChunk(track,true)
+        local insfxchunk = lbxutil_chunk
+        local nchunk, nguid = Chunk_InsertFXChunkAtEndOfFXChain(trn,chunk,insfxchunk)
+        fxcnt = fxcnt + 1
+        --Move to top
+        nchunk = MoveFXChunk2(nchunk, trn, fxcnt, 1)
+        if nchunk then
+          SetTrackChunk(track, nchunk, false)      
+        end
+        return 0,nguid,trn
+      else
+        local guid = reaper.TrackFX_GetFXGUID(track,fnd)
+        return fnd, guid, trn  
+      end
+    end
+        
+  end
 
   -----------------------------------
   --Thanks Eugen for this fix
@@ -14825,8 +14873,15 @@ end
         if ctl.iteminfo.noteoff then
           local trn = ctl.tracknum or tracks[track_select].tracknum
           if trn then
-            --SendAllNotesOffToTrack(trn)
-            SendAllNotesOff()
+            if ctl.iteminfo.utilfxn then
+              local track = GetTrack(trn)
+              if ctl.iteminfo.utilguid == reaper.TrackFX_GetFXGUID(track,ctl.iteminfo.utilfxn) then              
+                reaper.TrackFX_SetParamNormalized(track,ctl.iteminfo.utilfxn,0,1)
+              end 
+              
+            else
+              SendAllNotesOff()
+            end
           end
         end
         
@@ -14862,7 +14917,15 @@ end
           local trn = ctl.tracknum or tracks[track_select].tracknum
           if trn then
             --SendAllNotesOffToTrack(trn)
-            SendAllNotesOff()
+            if ctl.iteminfo.utilfxn then
+              local track = GetTrack(trn)
+              if ctl.iteminfo.utilguid == reaper.TrackFX_GetFXGUID(track,ctl.iteminfo.utilfxn) then              
+                reaper.TrackFX_SetParamNormalized(track,ctl.iteminfo.utilfxn,0,1)
+              end 
+              
+            else
+              SendAllNotesOff()
+            end
           end
         end
         
@@ -20506,7 +20569,7 @@ end
       mod = '||#Clear Modulator'
     end  
     local sno = ''
-    if ctl.iteminfo.noteoff then
+    if ctl.iteminfo and ctl.iteminfo.noteoff then
       sno = '!'
     end
     local mstr = 'Reassign to currently selected item||Refresh item info'..mod..'||'..sno..'Send Note Offs'
@@ -20558,7 +20621,19 @@ end
         update_ctls = true
         SetCtlDirty(c)
       elseif res == 4 then
-        ctl.iteminfo.noteoff = not (ctl.iteminfo.noteoff or false)
+        if ctl.iteminfo then
+          ctl.iteminfo.noteoff = not (ctl.iteminfo.noteoff or false)
+          if ctl.iteminfo.noteoff == true then
+            local fxn, fxg
+            fxn, fxg, ctl.iteminfo.tracknum = InsertTrackUtil(ctl.iteminfo.tracknum, ctl.iteminfo.trackguid)
+            if fxn then
+            
+              ctl.iteminfo.utilfxn = fxn
+              ctl.iteminfo.utilguid = fxg
+            
+            end
+          end
+        end
       end
     end
       
@@ -38645,6 +38720,9 @@ end
     if ctl.ctlcat == ctlcats.midictl and ctl.midiout then
       tbl.midiout = table.copy(ctl.midiout)
     end
+    if ctl.ctlcat == ctlcats.takeswitcher and ctl.iteminfo then
+      tbl.iteminfo = table.copy(ctl.iteminfo)
+    end 
     
     return tbl
   end
@@ -39104,6 +39182,9 @@ end
           strip.controls[c].iteminfo.tracknum = tonumber(zn(data[key..'iteminfo_tracknum']))
           strip.controls[c].iteminfo.trackguid = zn(data[key..'iteminfo_trackguid'])
           strip.controls[c].iteminfo.numtakes = tonumber(zn(data[key..'iteminfo_numtakes']))
+          strip.controls[c].iteminfo.utilfxn = tonumber(zn(data[key..'iteminfo_utilfxn']))
+          strip.controls[c].iteminfo.utilguid = tostring(zn(data[key..'iteminfo_utilguid']))
+          strip.controls[c].iteminfo.noteoff = (zn(data[key..'iteminfo_noteoff']))
           
           local maxtakes = tonumber(zn(data[key..'iteminfo_maxtakes']))
           if maxtakes == nil then maxtakes = 511 end
@@ -42131,6 +42212,9 @@ end
                 file:write('['..key..'iteminfo_trackguid]'..nz(stripdata.controls[c].iteminfo.trackguid,'')..'\n')
                 file:write('['..key..'iteminfo_numtakes]'..nz(stripdata.controls[c].iteminfo.numtakes,'')..'\n')
                 file:write('['..key..'iteminfo_maxtakes]'..nz(stripdata.controls[c].iteminfo.maxtakes,511)..'\n')
+                file:write('['..key..'iteminfo_noteoff]'..tostring(nz(stripdata.controls[c].iteminfo.noteoff,''))..'\n')
+                file:write('['..key..'iteminfo_utilfxn]'..nz(stripdata.controls[c].iteminfo.utilfxn,'')..'\n')
+                file:write('['..key..'iteminfo_utilguid]'..nz(stripdata.controls[c].iteminfo.utilguid,'')..'\n')
                    
               end
   
@@ -45622,7 +45706,7 @@ end
     local fxcnt = reaper.TrackFX_GetCount(tr)
     local chunk = GetTrackChunk(tr, settings_usetrackchunkfix)
 
-    local _, nchunk, movechunk = RemoveFXChunkFromTrackChunk(chunk, srcfxnum)
+    --[[local _, nchunk, movechunk = RemoveFXChunkFromTrackChunk(chunk, srcfxnum)
 
     if nchunk then
       if dstfxnum == fxcnt then
@@ -45640,10 +45724,41 @@ end
       end
     
       if writechunk == true then
-        SetTrackChunk(tr,nchunk, false)
-        
+        SetTrackChunk(tr,nchunk, false)      
+      end
+    end]]
+    
+    local nchunk = MoveFXChunk2(chunk, trn, srcfxnum, dstfxnum)
+    if nchunk then
+      SetTrackChunk(tr, nchunk, false)      
+    end
+    
+  end
+  
+  function MoveFXChunk2(chunk, trn, srcfxnum, dstfxnum)
+
+    local _, nchunk, movechunk = RemoveFXChunkFromTrackChunk(chunk, srcfxnum)
+    
+    if nchunk then
+      if dstfxnum == fxcnt then
+        --insert at end
+        nchunk = Chunk_InsertFXChunkAtEndOfFXChain(trn, nchunk, movechunk, true)
+        if nchunk then
+          writechunk = true
+        end
+      else
+        local fnd, _, s, e = GetFXChunkFromTrackChunk(nchunk, dstfxnum)
+        if fnd then
+          nchunk = string.sub(nchunk,0,s-1)..movechunk..string.sub(nchunk,s)
+          writechunk = true
+        end
       end
     end
+  
+    if writechunk then
+      return nchunk
+    end
+  
   end
     
   --returns success, fxchunk, start loc, end loc
