@@ -11564,16 +11564,17 @@ end
       if m.steps < (obj.sections[1101].w/2) then
         bw = 1
       end
+      local opos = m.oopos
 
-      if m.opos and m.data[m.opos] then
+      if opos and m.data[opos] then
       
-        local x = obj.sections[1101].x + math.floor((m.opos-1) * barw)
-        local w = math.floor(m.opos*barw) - math.floor((m.opos-1) * barw) - bw
+        local x = obj.sections[1101].x + math.floor((opos-1) * barw)
+        local w = math.floor(opos*barw) - math.floor((opos-1) * barw) - bw
         local h
         if m.mode == 2 then
-          h = math.floor(obj.sections[1101].h * ((m.data[m.opos])/(m.max-m.min))) 
+          h = math.floor(obj.sections[1101].h * ((m.data[opos])/(m.max-m.min))) 
         else
-          h = math.floor(obj.sections[1101].h * m.data[m.opos]) 
+          h = math.floor(obj.sections[1101].h * m.data[opos]) 
         end         
         h = math.min(h, obj.sections[1101].h)
 
@@ -11582,7 +11583,7 @@ end
         f_Get_SSV('32 32 32')
         gfx.rect(x+bw,obj.sections[1101].y+obj.sections[1101].h+1,math.max(w,1),modpos,1)        
         
-        local c = 0.1 + m.data[m.opos] * 0.9
+        local c = 0.1 + m.data[opos] * 0.9
         gfx.r = c*.25
         gfx.g = c*.25
         gfx.b = 0.4+c*0.6
@@ -24783,7 +24784,6 @@ end
         m.dpos = ((pp+offset) % time) / time
         m.pos = math.floor(m.dpos * m.steps)+1
         if #m.targets > 0 and (m.pos ~= m.opos or m.interpolate == true) then
-
           local val = m.data[m.pos]
           if m.interpolate then
             local dv
@@ -24819,9 +24819,10 @@ end
         end
         if m.pos ~= m.opos then
           update_lfopos = true
-          if show_lfoedit ~= true then
+          --if show_lfoedit ~= true then
+            m.oopos = m.opos
             m.opos = m.pos
-          end
+          --end
         end
       end
     end
