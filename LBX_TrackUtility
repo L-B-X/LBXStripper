@@ -1,0 +1,33 @@
+desc:LBX Track Utility
+
+slider1:0<0,1,1>Notes Off Trigger
+slider2:0<0,15,0{All,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16}>Midi Channel
+
+@init
+trig=0;
+
+@slider
+slider1 == 1 ? (
+  slider1 = 0;
+  trig = 1;
+)
+
+@block
+trig == 1 ? 
+(
+  trig = 0;
+  slider2 == 0 ? (
+    ch = 0;
+    loop(16,
+      midisend(0, 0xB0 | ch, 123);
+      ch+=1;
+    );
+  ) : (
+    midisend(0, 0xB0 | slider2-1, 123);
+  );
+);
+
+@sample
+spl0=spl0;
+spl1=spl1;
+
