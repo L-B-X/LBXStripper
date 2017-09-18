@@ -1305,7 +1305,7 @@
                           h = gfx1.main_h}
       --NEW STRIPS
       if (butt_h+2)*3+sf_h+4+8 > gfx1.main_h then
-        sf_h = gfx1.main_h - ((butt_h+2)*3+4+8)
+        sf_h = math.max(gfx1.main_h - ((butt_h+2)*3+4+8),40)
       end
 
       obj.sections[510] = {x = 0,
@@ -1330,7 +1330,7 @@
 
       --NEW FX - plugins/track controls
       if (butt_h+2)*2+fx_h+2+8 > gfx1.main_h then
-        fx_h = gfx1.main_h - ((butt_h+2)*2+2+8)
+        fx_h = math.max(gfx1.main_h - ((butt_h+2)*2+2+8),40)
       end
 
       obj.sections[520] = {x = 0,
@@ -1354,7 +1354,7 @@
                            h = gfx1.main_h - (obj.sections[521].y+obj.sections[521].h+2)}
       --NEW GRAPHICS
       if (butt_h+2)*2+gx_h+2+28 > gfx1.main_h then
-        gx_h = gfx1.main_h - ((butt_h+2)*2+2+28)
+        gx_h = math.max(gfx1.main_h - ((butt_h+2)*2+2+28),20)
       end
 
       obj.sections[531] = {x = 0,
