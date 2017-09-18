@@ -14890,7 +14890,7 @@ end
               end 
               
             else
-              SendAllNotesOff()
+              --SendAllNotesOff()
             end
           end
         end
@@ -20642,6 +20642,9 @@ end
               ctl.iteminfo.utilfxn = fxn
               ctl.iteminfo.utilguid = fxg
             
+            else
+              ctl.iteminfo.utilfxn = nil
+              ctl.iteminfo.utilguid = nil              
             end
           end
         end
