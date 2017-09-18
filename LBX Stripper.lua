@@ -1304,6 +1304,9 @@
                           w = plist_w,
                           h = gfx1.main_h}
       --NEW STRIPS
+      if (butt_h+2)*3+sf_h+4+8 > gfx1.main_h then
+        sf_h = gfx1.main_h - ((butt_h+2)*3+4+8)
+      end
 
       obj.sections[510] = {x = 0,
                            y = (butt_h+2)*3,
@@ -1326,6 +1329,10 @@
                            h = gfx1.main_h - (obj.sections[510].y+obj.sections[510].h+2) - 8}
 
       --NEW FX - plugins/track controls
+      if (butt_h+2)*2+fx_h+2+8 > gfx1.main_h then
+        fx_h = gfx1.main_h - ((butt_h+2)*2+2+8)
+      end
+
       obj.sections[520] = {x = 0,
                            y = (butt_h+2)*2,
                            w = plist_w,
@@ -1346,6 +1353,9 @@
                            w = plist_w,
                            h = gfx1.main_h - (obj.sections[521].y+obj.sections[521].h+2)}
       --NEW GRAPHICS
+      if (butt_h+2)*2+gx_h+2+28 > gfx1.main_h then
+        gx_h = gfx1.main_h - ((butt_h+2)*2+2+28)
+      end
 
       obj.sections[531] = {x = 0,
                            y = (butt_h+2)*2,
@@ -31251,7 +31261,7 @@ end
       elseif mouse.context and mouse.context == contexts.dragsep_fx then
   
         local dy = mouse.my - dragsep_fx.y
-        fx_h = math.max(dragsep_fx.oh + dy, 40)
+        fx_h = math.min(math.max(dragsep_fx.oh + dy, 40),gfx1.main_h-obj.sections[520].y-2-8)
         
         obj = GetObjects()
         update_sidebar = true
@@ -31871,7 +31881,7 @@ end
     elseif mouse.context and mouse.context == contexts.dragsep_gfx then
     
       local dy = mouse.my - dragsep_gfx.y
-      gx_h = math.max(dragsep_gfx.oh + dy, 40)
+      gx_h = math.min(math.max(dragsep_gfx.oh + dy, 20),gfx1.main_h-obj.sections[531].y-2-28)
       
       obj = GetObjects()
       update_sidebar = true
@@ -32660,8 +32670,7 @@ end
     elseif mouse.context and mouse.context == contexts.dragsep_strip then
 
       local dy = mouse.my - dragsep_strip.y
-      sf_h = math.max(dragsep_strip.oh + dy, 40)
-      
+      sf_h = math.min(math.max(dragsep_strip.oh + dy, 40),gfx1.main_h-obj.sections[510].y-4-8)
       obj = GetObjects()
       update_sidebar = true
 
