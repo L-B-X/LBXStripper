@@ -182,6 +182,9 @@
               settingswin_dragoff = 124,
               move_mutatewin = 125,
               mutate_amt = 126,
+              dragsep_strip = 127,
+              dragsep_gfx = 128,
+              dragsep_fx = 129,
               dummy = 999
               }
   
@@ -1158,9 +1161,9 @@
                          w = sizex, 
                          h = sizey}
       obj.sections[9] = {x = gfx1.main_w/2 - sizex/2 + 25,
-                         y = gfx1.main_h/2 + sizey/2 - 60,
+                         y = gfx1.main_h/2 + sizey/2 - 66,
                          w = sizex-50, 
-                         h = 20}
+                         h = 26}
       
       --surface
       if hide_topbar then
@@ -1269,9 +1272,6 @@
                             h = butt_h}
       end
       
-      local fx_h = 160
-      local sf_h = 140
-
       --FX
       --[[obj.sections[41] = {x = 0,
                           y = (butt_h+2)*2,
@@ -1304,6 +1304,7 @@
                           w = plist_w,
                           h = gfx1.main_h}
       --NEW STRIPS
+
       obj.sections[510] = {x = 0,
                            y = (butt_h+2)*3,
                            w = plist_w,
@@ -1313,19 +1314,30 @@
                            y = (butt_h+2)*2,
                            w = plist_w,
                            h = butt_h}
-      obj.sections[512] = {x = 0,
+      
+      obj.sections[513] = {x = 0,
                            y = obj.sections[510].y+obj.sections[510].h+4,
                            w = plist_w,
-                           h = gfx1.main_h - (obj.sections[510].y+obj.sections[510].h+2)}
+                           h = 6}
+
+      obj.sections[512] = {x = 0,
+                           y = obj.sections[510].y+obj.sections[510].h+4 + 8,
+                           w = plist_w,
+                           h = gfx1.main_h - (obj.sections[510].y+obj.sections[510].h+2) - 8}
 
       --NEW FX - plugins/track controls
       obj.sections[520] = {x = 0,
                            y = (butt_h+2)*2,
                            w = plist_w,
                            h = fx_h}
+
+      obj.sections[523] = {x = 0,
+                           y = obj.sections[520].y+obj.sections[520].h+2,
+                           w = plist_w,
+                           h = 6}
       --track select/lrn      
       obj.sections[521] = {x = 0,
-                           y = obj.sections[520].y+obj.sections[520].h+2,
+                           y = obj.sections[520].y+obj.sections[520].h+2 + 8,
                            w = plist_w,
                            h = butt_h}
       --params
@@ -1335,14 +1347,21 @@
                            h = gfx1.main_h - (obj.sections[521].y+obj.sections[521].h+2)}
       --NEW GRAPHICS
 
-      obj.sections[530] = {x = 0,
-                           y = obj.sections[521].y+obj.sections[521].h+2,
-                           w = plist_w,
-                           h = gfx1.main_h - (obj.sections[521].y+obj.sections[521].h+2)}
       obj.sections[531] = {x = 0,
                            y = (butt_h+2)*2,
                            w = plist_w,
-                           h = fx_h+butt_h}
+                           h = gx_h+butt_h}
+
+      obj.sections[533] = {x = 0,
+                           y = obj.sections[531].y+obj.sections[531].h+2,
+                           w = plist_w,
+                           h = 6}
+
+      obj.sections[530] = {x = 0,
+                           y = obj.sections[531].y+obj.sections[531].h+2 + 8,
+                           w = plist_w,
+                           h = gfx1.main_h - (obj.sections[521].y+obj.sections[521].h+2) - 8}
+
       --[[obj.sections[530] = {x = 0,
                            y = (butt_h+2)*2,
                            w = plist_w,
@@ -1475,11 +1494,11 @@
                           w = obj.sections[45].w-60,
                           h = butt_h}
 
-      obj.sections[90] = {x = 2,
+      obj.sections[90] = {x = 4,
                           y = 75,
                           w = 12,
                           h = butt_h/2+8}                           
-      obj.sections[91] = {x = obj.sections[45].w-14,
+      obj.sections[91] = {x = obj.sections[45].w-16,
                           y = 75,
                           w = 12,
                           h = butt_h/2+8}                           
@@ -1742,7 +1761,7 @@
       obj.sections[168] = {x = 10,
                           y = butt_h+10 + (butt_h/2+2 + 10) * 0,
                           w = 18,
-                          h = butt_h/2+8}                       
+                          h = butt_h}                       
       obj.sections[169] = {x = 12 + (obj.sections[160].w-20)/2 +1,
                           y = butt_h+10 + (butt_h/2+2 + 10) * 1,
                           w = (obj.sections[160].w-20)/2 - 3,
@@ -5575,6 +5594,10 @@
     gfx.blit(skin.arrowup,1,0,0,0,w,h,xywh.x+xywh.w/4-w/2,xywh.y+xywh.h/2-h/2)
     gfx.blit(skin.arrowdn,1,0,0,0,w,h,xywh.x+xywh.w*0.75-w/2,xywh.y+xywh.h/2-h/2)
     
+    f_Get_SSV(gui.color.black)
+    gfx.rect(obj.sections[523].x,obj.sections[523].y-2,obj.sections[523].w,obj.sections[523].h+4,1)
+    GUI_DrawBar(gui,'---',obj.sections[523],skin.barUD,true,gui.skol.sb_txt_on,nil,-2)
+    
     --Params
     P_butt_cnt = math.floor(obj.sections[522].h / butt_h)
 
@@ -5800,6 +5823,10 @@
     local w, h = gfx.getimgdim(skin.arrowup)
     gfx.blit(skin.arrowup,1,0,0,0,w,h,xywh.x+xywh.w/4-w/2,xywh.y+xywh.h/2-h/2)
     gfx.blit(skin.arrowdn,1,0,0,0,w,h,xywh.x+xywh.w*0.75-w/2,xywh.y+xywh.h/2-h/2)
+    
+    f_Get_SSV(gui.color.black)
+    gfx.rect(obj.sections[533].x,obj.sections[533].y-2,obj.sections[533].w,obj.sections[533].h+4,1)
+    GUI_DrawBar(gui,'---',obj.sections[533],skin.barUD,true,gui.skol.sb_txt_on,nil,-2)
         
     G_butt_cnt = math.floor(obj.sections[530].h / butt_h) - 2
       
@@ -5926,6 +5953,10 @@
     local w, h = gfx.getimgdim(skin.arrowup)
     gfx.blit(skin.arrowup,1,0,0,0,w,h,xywh.x+xywh.w/4-w/2,xywh.y+xywh.h/2-h/2)
     gfx.blit(skin.arrowdn,1,0,0,0,w,h,xywh.x+xywh.w*0.75-w/2,xywh.y+xywh.h/2-h/2)
+
+    f_Get_SSV(gui.color.black)
+    gfx.rect(obj.sections[513].x,obj.sections[513].y-2,obj.sections[513].w,obj.sections[513].h+4,1)
+    GUI_DrawBar(gui,'---',obj.sections[513],skin.barUD,true,gui.skol.sb_txt_on,nil,-2)
 
     S_butt_cnt = math.floor(obj.sections[512].h / butt_h) 
     local w, h = gfx.getimgdim(skin.star)
@@ -7163,12 +7194,14 @@
                 h = butt_h}
         gfx.a = 0.75
         
-        f_Get_SSV('0 0 0')
-        gfx.rect(xywh.x+2,
+        --[[f_Get_SSV('0 0 0')
+        gfx.rect(xywh.x,
                  xywh.y+4,
-                 xywh.w-4,
-                 xywh.h-3,1)        
-        GUI_textC(gui,xywh,ctl_files[knob_select].fn,gui.color.white,-5)
+                 xywh.w,
+                 xywh.h-3,1)]]
+        xywh.x = xywh.x + 6
+        xywh.w = xywh.w - 12        
+        GUI_textC_LIM(gui,xywh,ctl_files[knob_select].fn,gui.color.white,-5)
   
       end
 
@@ -30529,6 +30562,12 @@ end
         PopulateTrackSendsInfo()
         PopulateSpecial()
         update_gfx = true    
+      
+      elseif MOUSE_click(obj.sections[523]) then
+    
+        mouse.context = contexts.dragsep_fx
+        dragsep_fx = {y = mouse.my, oh = fx_h}
+      
       end
       
       if fxmode == 0 then
@@ -31208,6 +31247,14 @@ end
         reass_param = nil
         dragparam = nil
         update_gfx = true
+      
+      elseif mouse.context and mouse.context == contexts.dragsep_fx then
+  
+        local dy = mouse.my - dragsep_fx.y
+        fx_h = math.max(dragsep_fx.oh + dy, 40)
+        
+        obj = GetObjects()
+        update_sidebar = true
       end
     
       
@@ -31608,6 +31655,11 @@ end
         mouse.context = contexts.draggfx
       end
       
+    elseif MOUSE_click(obj.sections[533]) then
+        
+      mouse.context = contexts.dragsep_gfx
+      dragsep_gfx = {y = mouse.my, oh = gx_h}
+    
     end
     
     if mouse.context and mouse.context == contexts.draggfx then
@@ -31815,6 +31867,15 @@ end
         strips[tracks[track_select].strip][page].graphics[gfx2_select].hide = nil
         update_gfx = true
       end
+    
+    elseif mouse.context and mouse.context == contexts.dragsep_gfx then
+    
+      local dy = mouse.my - dragsep_gfx.y
+      gx_h = math.max(dragsep_gfx.oh + dy, 40)
+      
+      obj = GetObjects()
+      update_sidebar = true
+    
     end             
     
     
@@ -32369,9 +32430,7 @@ end
         update_gfx = true
       end
       
-    end
-
-    if MOUSE_click(obj.sections[512]) then
+    elseif MOUSE_click(obj.sections[512]) then
       local i = math.floor(((mouse.my - obj.sections[512].y)) / butt_h)
       if i == 0 then
         if mouse.mx < obj.sections[512].w/2 then
@@ -32463,6 +32522,11 @@ end
           end
         end
       end        
+    elseif MOUSE_click(obj.sections[513]) then
+    
+      mouse.context = contexts.dragsep_strip
+      dragsep_strip = {y = mouse.my, oh = sf_h}
+      
     end
     
     if mouse.context and mouse.context == contexts.dragstrip then
@@ -32593,6 +32657,14 @@ end
       SetCtlBitmapRedraw()
       reaper.MarkProjectDirty(0)
       
+    elseif mouse.context and mouse.context == contexts.dragsep_strip then
+
+      local dy = mouse.my - dragsep_strip.y
+      sf_h = math.max(dragsep_strip.oh + dy, 40)
+      
+      obj = GetObjects()
+      update_sidebar = true
+
     end
     
     
@@ -35789,9 +35861,9 @@ end
                                w = bsizex, 
                                h = bsizey}
       obj.sections[9] = {x = x + 25,
-                         y = y+obj.sections[8].h - 60,
+                         y = y+obj.sections[8].h - 66,
                          w = sizex-50, 
-                         h = 20}
+                         h = 26}
       update_surface = true
     end
     
@@ -38769,14 +38841,17 @@ end
   
     f_Get_SSV('0 0 0')
     gfx.a = 1
-    gfx.rect(obj.sections[8].x,obj.sections[8].y,obj.sections[8].w,obj.sections[8].h,true)
+    GUI_DrawPanel(obj.sections[8],true,e.title)
+    
+    --[[rect(obj.sections[8].x,obj.sections[8].y,obj.sections[8].w,obj.sections[8].h,true)
     f_Get_SSV(gui.color.white)
-    gfx.rect(obj.sections[8].x,obj.sections[8].y,obj.sections[8].w,obj.sections[8].h,0)
+    gfx.rect(obj.sections[8].x,obj.sections[8].y,obj.sections[8].w,obj.sections[8].h,0)]]
   
     GUI_DrawButton(gui, 'OK', obj.sections[6], gui.color.blue, gui.color.black, true)
     GUI_DrawButton(gui, 'Cancel', obj.sections[7], gui.color.blue, gui.color.black, true)
   
-    GUI_textsm_LJ(gui, obj.sections[5], e.title, gui.color.white, 0)
+    --GUI_textsm_LJ(gui, obj.sections[5], e.title, gui.color.white, 0)
+    gfx.setfont(1, gui.fontname, gui.fontsz_knob)
   
     e.x = obj.sections[9].x
     e.y = obj.sections[9].y
@@ -46651,6 +46726,10 @@ end
   
   fontname_def = 'Calibri'
   fontsize_def  = 18
+  
+  fx_h = 160
+  gx_h = 160
+  sf_h = 140
   
   local surfn = icon_path..'canvas.png'
   if reaper.file_exists(surfn) then
