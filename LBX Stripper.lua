@@ -232,7 +232,7 @@
   pi = 3.14159265359
 
   function InsertTrackUtil(trn, trguid)
-  
+
     local track = GetTrack(trn)
     local fnd = false
     if track and trguid ~= reaper.GetTrackGUID(track) then
@@ -247,9 +247,10 @@
     else
       fnd = true
     end
-    
-    if track and fnd then
+
+    if track and fnd == true then
       local fxcnt = reaper.TrackFX_GetCount(track)
+
       local fnd = -1
       for i = 0, fxcnt do
         local _,n = reaper.TrackFX_GetFXName(track,i,'')
@@ -258,13 +259,19 @@
           break
         end
       end
+
       if fnd == -1 then
         local chunk = GetTrackChunk(track,true)
         local insfxchunk = lbxutil_chunk
         local nchunk, nguid = Chunk_InsertFXChunkAtEndOfFXChain(trn,chunk,insfxchunk)
         fxcnt = fxcnt + 1
+
         --Move to top
-        nchunk = MoveFXChunk2(nchunk, trn, fxcnt, 1)
+
+        if fxcnt > 1 then
+          nchunk = MoveFXChunk2(nchunk, trn, fxcnt, 1)
+        end
+        
         if nchunk then
           SetTrackChunk(track, nchunk, false)      
         end
@@ -273,6 +280,8 @@
         local guid = reaper.TrackFX_GetFXGUID(track,fnd)
         return fnd, guid, trn  
       end
+    else
+      DBG('Track not found!')
     end
         
   end
