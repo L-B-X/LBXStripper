@@ -235,15 +235,29 @@
 
     local track = GetTrack(trn)
     local fnd = false
+    
     if track and trguid ~= reaper.GetTrackGUID(track) then
       for i = -1, reaper.CountTracks(0) do
         track = GetTrack(i)  
-        if track and trguid == reaper.GetTrackGUID(track) then
-          trn = i
-          fnd = true
-          break
+        if track then
+          if trguid == reaper.GetTrackGUID(track) then
+            trn = i
+            fnd = true
+            break
+          end
         end
       end
+    elseif track == nil then
+      for i = -1, reaper.CountTracks(0) do
+        track = GetTrack(i)  
+        if track then
+          if trguid == reaper.GetTrackGUID(track) then
+            trn = i
+            fnd = true
+            break
+          end
+        end
+      end    
     else
       fnd = true
     end
