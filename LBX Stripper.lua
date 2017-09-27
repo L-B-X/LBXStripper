@@ -1139,6 +1139,7 @@
       
       obj.sections = {}
       
+      --Middle Button Arrows
       obj.sections[2000] = {x = 0, y = 0,
                             w = 70, h = 87}
       obj.sections[2001] = {x = 0, y = 0,
@@ -1146,22 +1147,27 @@
                             
       local sizex, sizey = 350, 100
       local bsizex, bsizey = 60, 20
+      --EDIT BOX - textbox
       obj.sections[5] = {x = gfx1.main_w/2 - sizex/2 + 25,
                          y = gfx1.main_h/2 - sizey/2 + 10,
                          w = sizex-50, 
                          h = 20}
+      --OK
       obj.sections[6] = {x = gfx1.main_w/2 + sizex/2 - bsizex - 50,
                                y = gfx1.main_h/2 + sizey/2 - bsizey - 10,
                                w = bsizex, 
                                h = bsizey}
+      --CANCEL
       obj.sections[7] = {x = gfx1.main_w/2 + sizex/2 - (bsizex*2) - 60,
                                y = gfx1.main_h/2 + sizey/2 - bsizey - 10,
                                w = bsizex, 
                                h = bsizey}
+      --EB BG
       obj.sections[8] = {x = gfx1.main_w/2 - sizex/2,
                          y = gfx1.main_h/2 - sizey/2,
                          w = sizex, 
                          h = sizey}
+      --EB Text
       obj.sections[9] = {x = gfx1.main_w/2 - sizex/2 + 25,
                          y = gfx1.main_h/2 + sizey/2 - 66,
                          w = sizex-50, 
@@ -1192,6 +1198,7 @@
                           y = butt_h+2+1,
                           w = plist_w-1,
                           h = butt_h+1}
+      --SB button
       obj.sections[15] = {x = 0,
                           y = (butt_h+2)*2 + 2,
                           w = plist_w,
@@ -1207,10 +1214,6 @@
                           w = 50,
                           h = topbarheight}
       
-      --[[obj.sections[15] = {x = 0,
-                          y = (butt_h+2)*2,
-                          w = plist_w,
-                          h = butt_h}]]
       --save
       obj.sections[17] = {x = gfx1.main_w - plist_w - 250,
                           y = obj.sections[11].y,
@@ -1221,6 +1224,7 @@
                           y = obj.sections[11].y,
                           w = 25,
                           h = butt_h}
+      --SB resize
       obj.sections[19] = {x = gfx1.main_w - plist_w - 125,
                           y = obj.sections[11].y,
                           w = 25,
@@ -1231,6 +1235,7 @@
                           w = 100,
                           h = topbarheight}
       if hide_topbar then
+        --...
         obj.sections[21] = {x = gfx1.main_w - plist_w - 26,
                             y = obj.sections[11].y,
                             w = 26,
@@ -1245,27 +1250,11 @@
                             h = butt_h}
       end
       
-      --FX
-      --[[obj.sections[41] = {x = 0,
-                          y = (butt_h+2)*2,
-                          w = plist_w,
-                          h = fx_h}
-      --PARAMS
-      obj.sections[42] = {x = 0,
-                          y = obj.sections[41].y + obj.sections[41].h + 10,
-                          w = plist_w,
-                          h = gfx1.main_h - (obj.sections[41].y + obj.sections[41].h + 10)}]]
       --TRACKS                    
       obj.sections[43] = {x = 0,
                           y = 0, --butt_h+2,
                           w = plist_w,
                           h = gfx1.main_h}                           
-      --GRAPHICS
-      --[[obj.sections[44] = {x = 0,
-                          y = obj.sections[13].y+obj.sections[13].h+2,
-                          w = plist_w,
-                          h = gfx1.main_h - (obj.sections[13].y+obj.sections[13].h+2)} ]]                         
-
       --edit chooser
       obj.sections[501] = {x = 0,
                            y = (butt_h*2+2),
@@ -1281,6 +1270,7 @@
         sf_h = math.max(gfx1.main_h - ((butt_h+2)*3+4+8),40)
       end
 
+      --Strip folder list
       obj.sections[510] = {x = 0,
                            y = (butt_h+2)*3 + 2,
                            w = plist_w,
@@ -1291,11 +1281,13 @@
                            w = plist_w,
                            h = butt_h}
       
+      --Strip list resize
       obj.sections[513] = {x = 0,
                            y = obj.sections[510].y+obj.sections[510].h+4,
                            w = plist_w,
                            h = 6}
-
+      
+      --Strip list
       obj.sections[512] = {x = 0,
                            y = obj.sections[510].y+obj.sections[510].h+4 + 8,
                            w = plist_w,
@@ -1306,11 +1298,12 @@
         fx_h = math.max(gfx1.main_h - ((butt_h+2)*2+2+8),40)
       end
 
+      --FX list
       obj.sections[520] = {x = 0,
                            y = (butt_h+2)*2 + 2,
                            w = plist_w,
                            h = fx_h}
-
+      --FX list resize
       obj.sections[523] = {x = 0,
                            y = obj.sections[520].y+obj.sections[520].h+2,
                            w = plist_w,
@@ -1320,43 +1313,49 @@
                            y = obj.sections[520].y+obj.sections[520].h+2 + 8,
                            w = plist_w,
                            h = butt_h}
-      --params
+      --FX list params
       obj.sections[522] = {x = 0,
                            y = obj.sections[521].y+obj.sections[521].h+2,
                            w = plist_w,
                            h = gfx1.main_h - (obj.sections[521].y+obj.sections[521].h+2)}
-      --NEW GRAPHICS
+      
+      --GRAPHICS
       if (butt_h+2)*2+gx_h+2+28 > gfx1.main_h then
         gx_h = math.max(gfx1.main_h - ((butt_h+2)*2+2+28),20)
       end
 
+      --Graphics folder list
       obj.sections[531] = {x = 0,
                            y = (butt_h+2)*2 + 2,
                            w = plist_w,
                            h = gx_h+butt_h}
 
+      --Graphics list resize
       obj.sections[533] = {x = 0,
                            y = obj.sections[531].y+obj.sections[531].h+2,
                            w = plist_w,
                            h = 6}
 
+      --Graphics files list
       obj.sections[530] = {x = 0,
                            y = obj.sections[531].y+obj.sections[531].h+2 + 8,
                            w = plist_w,
                            h = gfx1.main_h - (obj.sections[531].y+obj.sections[531].h+2) - 8}
 
-      --[[obj.sections[530] = {x = 0,
-                           y = (butt_h+2)*2,
-                           w = plist_w,
-                           h = gfx1.main_h - ((butt_h+2)*2)}]]
-
-
-      --CONTROL OPTIONS
+      --CONTROL OPTIONS Panel
       local cow = gui.winsz.ctlopts
       obj.sections[45] = {x = math.max(gfx1.main_w - cow - 10, obj.sections[10].x + cow + 20),
                           y = math.max(gfx1.main_h - 470 - 10, obj.sections[10].y),
                           w = cow,
                           h = 470}                           
+
+      --GFX / LABEL OPTS Panel
+      obj.sections[49] = {x = gfx1.main_w - cow - 20,
+                          y = gfx1.main_h - 300 -20,
+                          w = cow,
+                          h = 300}
+      obj = PosGfxOptCtls(obj)
+                                 
       
       --GAUGE EDIT
       local gaw, gah = 320, 500
@@ -1369,37 +1368,15 @@
       obj = PosGaugeEdCtls(obj)
       
       local gaw,gah = 400, math.max(200, obj.sections[10].h-40)
+
+      --Track FX ORDER panel
       obj.sections[900] = {x = math.max(gfx1.main_w/2 -gaw/2,obj.sections[43].w),
                           y = math.max(gfx1.main_h/2 - gah/2, obj.sections[10].y),
                           w = gaw,
                           h = gah}
       
-      local sf_h = 140
-      --STRIP FOLDERS
-      --[[obj.sections[47] = {x = 0,
-                          y = obj.sections[15].y+obj.sections[15].h+2,
-                          w = plist_w,
-                          h = sf_h}    ]]                       
+      --local sf_h = 140
 
-      --STRIPS
-      --[[obj.sections[46] = {x = 0,
-                          y = obj.sections[47].y+obj.sections[47].h+10,
-                          w = plist_w,
-                          h = gfx1.main_h - (obj.sections[47].y+obj.sections[47].h+10)} ]]                          
-
-      --LEARN+TRX
-      --[[obj.sections[48] = {x = 0,
-                          y = obj.sections[41].y+obj.sections[41].h+8,
-                          w = plist_w,
-                          h = butt_h}     ]]                      
-
-      --LABEL OPTS
-      obj.sections[49] = {x = gfx1.main_w - cow - 20,
-                          y = gfx1.main_h - 300 -20,
-                          w = cow,
-                          h = 300}
-      obj = PosGfxOptCtls(obj)
-                                 
       --scale
       obj.sections[50] = {x = 60,
                           y = 150+butt_h+8,
@@ -1411,132 +1388,166 @@
                           w = 80,
                           h = butt_h}                           
       
+      --Gauge button
       obj.sections[99] = {x = obj.sections[51].x+obj.sections[51].w+2,
                           y = 150,
                           w = 54,
                           h = butt_h}
-      
+      --SHOW NAME Tick 
       obj.sections[52] = {x = obj.sections[45].w-104-butt_h/2+4,
                           y = 150+butt_h+10 + (butt_h/2+4 + 10)+24,
                           w = butt_h/2+4,
                           h = butt_h/2+4}                           
-
+      --SHOW VALUE Tick
       obj.sections[53] = {x = obj.sections[45].w-104-butt_h/2+4,
                           y = 150+butt_h+10 + (butt_h/2+4 + 10) * 2+20,
                           w = butt_h/2+4,
                           h = butt_h/2+4}                           
 
-      obj.sections[850] = {x = obj.sections[45].w-84-butt_h/2+4,
-                          y = 150+butt_h+10 + (butt_h/2+4 + 10) * 2+20,
-                          w = butt_h/2+4,
-                          h = butt_h/2+4}                           
-
-      obj.sections[851] = {x = obj.sections[52].x+obj.sections[52].w+26,
-                          y = 150+butt_h+10 + (butt_h/2+4 + 10) * 2+20,
-                          w = obj.sections[45].w-(obj.sections[52].x+obj.sections[52].w+36),
-                          h = butt_h/2+4}                           
-
-      obj.sections[852] = {x = obj.sections[851].x+obj.sections[851].w-22,
-                          y = 150+butt_h+10 + (butt_h/2+4 + 10)+24-butt_h,
-                          w = 26,
-                          h = butt_h/2+4}                           
-
+      --COLOR BOX NAME
       obj.sections[54] = {x = obj.sections[45].w-84-butt_h/2+4,
                           y = 150+butt_h+10 + (butt_h/2+4 + 10)+24,
                           w = butt_h/2+4,
                           h = butt_h/2+4}                           
 
-      obj.sections[55] = {x = 60,
-                          y = 150+butt_h+7 + (butt_h/2+4 + 10) * 9,
-                          w = obj.sections[45].w-70,
-                          h = butt_h}
-      obj.sections[56] = {x = 60,
-                          y = 150+butt_h+10 + (butt_h/2+4 + 10) * 4,
-                          w = obj.sections[45].w-90,
-                          h = butt_h/2+8}                           
-      obj.sections[57] = {x = 60,
-                          y = 150+butt_h+10 + (butt_h/2+4 + 10) * 10,
-                          w = obj.sections[45].w-70,
-                          h = butt_h/2+8}                           
+      --COLOR BOX VALUE
+      obj.sections[850] = {x = obj.sections[45].w-84-butt_h/2+4,
+                          y = 150+butt_h+10 + (butt_h/2+4 + 10) * 2+20,
+                          w = butt_h/2+4,
+                          h = butt_h/2+4}                           
 
-      obj.sections[48] = {x = 60,
-                          y = 150+butt_h+10 + (butt_h/2+4 + 10) * 6 -1,
-                          w = obj.sections[45].w-70,
-                          h = butt_h}
-                                                     
+      --Text size slider                                                           
       obj.sections[58] = {x = obj.sections[52].x+obj.sections[52].w+26,
                           y = 150+butt_h+10 + (butt_h/2+4 + 10)+24,
                           w = obj.sections[45].w-(obj.sections[52].x+obj.sections[52].w+36),
                           h = butt_h/2+4}                           
-      obj.sections[59] = {x = 60,
-                          y = 150+butt_h+11 + (butt_h/2+4 + 10) * 8 - 2,
-                          w = obj.sections[45].w-70,
-                          h = butt_h}
-      obj.sections[960] = {x = 60,
-                          y = 150+butt_h+11 + (butt_h/2+4 + 10) * 7,
+
+      --Text size slider      
+      obj.sections[851] = {x = obj.sections[52].x+obj.sections[52].w+26,
+                          y = 150+butt_h+10 + (butt_h/2+4 + 10) * 2+20,
+                          w = obj.sections[45].w-(obj.sections[52].x+obj.sections[52].w+36),
+                          h = butt_h/2+4}                           
+
+      --Link button
+      obj.sections[852] = {x = obj.sections[851].x+obj.sections[851].w-22,
+                          y = 150+butt_h+10 + (butt_h/2+4 + 10)+24-butt_h,
+                          w = 26,
+                          h = butt_h/2+4}                           
+
+      --Ctl Type button
+      obj.sections[55] = {x = 60,
+                          y = 150+butt_h+7 + (butt_h/2+4 + 10) * 9,
                           w = obj.sections[45].w-70,
                           h = butt_h}
 
-      obj.sections[90] = {x = 4,
-                          y = 75,
-                          w = 12,
-                          h = butt_h/2+8}                           
-      obj.sections[91] = {x = obj.sections[45].w-16,
-                          y = 75,
-                          w = 12,
+      --Offset slider
+      obj.sections[56] = {x = 60,
+                          y = 150+butt_h+10 + (butt_h/2+4 + 10) * 4,
+                          w = obj.sections[45].w-90,
                           h = butt_h/2+8}                           
 
+      --Value offset slider
       obj.sections[65] = {x = 60,
                           y = 150+butt_h+10 + (butt_h/2+4 + 10) * 5,
                           w = obj.sections[45].w-90,
                           h = butt_h/2+8}                           
 
+      --Default value slider
+      obj.sections[57] = {x = 60,
+                          y = 150+butt_h+10 + (butt_h/2+4 + 10) * 10,
+                          w = obj.sections[45].w-70,
+                          h = butt_h/2+8}                           
+
+      --Font button
+      obj.sections[48] = {x = 60,
+                          y = 150+butt_h+10 + (butt_h/2+4 + 10) * 6 -1,
+                          w = obj.sections[45].w-70,
+                          h = butt_h}
+
+      --Edit name button
+      obj.sections[59] = {x = 60,
+                          y = 150+butt_h+11 + (butt_h/2+4 + 10) * 8 - 2,
+                          w = obj.sections[45].w-70,
+                          h = butt_h}
+      
+      --Set MIDI button
+      obj.sections[960] = {x = 60,
+                          y = 150+butt_h+11 + (butt_h/2+4 + 10) * 7,
+                          w = obj.sections[45].w-70,
+                          h = butt_h}
+
+      --Scroll control graphic <
+      obj.sections[90] = {x = 4,
+                          y = 75,
+                          w = 12,
+                          h = butt_h/2+8}                           
+
+      --Scroll control graphic >
+      obj.sections[91] = {x = obj.sections[45].w-16,
+                          y = 75,
+                          w = 12,
+                          h = butt_h/2+8}                           
+      
+      --XY toggle button                    
       obj.sections[68] = {x = 50+obj.sections[45].w-74,
                           y = 150+butt_h+10 + (butt_h/2+4 + 10) * 4.5,
                           w = butt_h/2+4,
                           h = butt_h/2+4}                           
 
+      --Max DP button
       obj.sections[66] = {x = 60,
                           y = 150+butt_h+10 + (butt_h/2+4 + 10) * 11,
                           w = 40,
                           h = butt_h/2+4}
+      
+      --Open CYCLE OPTIONS button
       obj.sections[67] = {x = 10,
                           y = 150+butt_h+7 + (butt_h/2+4 + 10) * 9,
                           w = 35,
                           h = butt_h}
 
       local binh = 45
+      
+      --Delete BIN
       obj.sections[60] = {x = plist_w + 10,
                           y = gfx1.main_h - (binh + 10),
                           w = binh,
                           h = binh}
+                          
       local msgwinw, msgwinh = 500, 200
+      
+      --Message window panel
       obj.sections[61] = {x = gfx1.main_w/2-msgwinw/2,
                           y = gfx1.main_h/2-msgwinh/2,
                           w = msgwinw,
                           h = msgwinh}
-      --ok
+      --OK button
       local butt_w = 100
       obj.sections[62] = {x = gfx1.main_w/2+20,
                           y = obj.sections[61].y+obj.sections[61].h - butt_h*2,
                           w = butt_w,
                           h = butt_h}                            
+      
+      --MsgBox text box
       obj.sections[63] = {x = gfx1.main_w/2-msgwinw/2,
                           y = gfx1.main_h/2-msgwinh/2 + butt_h*2,
                           w = msgwinw,
                           h = butt_h}
+      
+      --NO button
       obj.sections[64] = {x = gfx1.main_w/2-butt_w - 20,
                           y = obj.sections[61].y+obj.sections[61].h - butt_h*2,
                           w = butt_w,
                           h = butt_h}                            
      
-      --settings
+      --SETTINGS 
       settingswin_w = 700
       settingswin_h = math.min(settingswin_maxh,gfx1.main_h)
       
       local setw, seth = settingswin_w, settingswin_h
       settingswin_off = F_limit(settingswin_off,(-settingswin_maxh)+settingswin_h,0)
-       
+      
+      --Settings Panel 
       obj.sections[70] = {x = gfx1.main_w/2-setw/2,
                           y = gfx1.main_h/2-seth/2,
                           w = setw,
@@ -1548,6 +1559,8 @@
                                 
       --Cycle
       local cw, ch = 160, 380
+      
+      --Cycle Options panel
       obj.sections[100] = {x = obj.sections[45].x - cw - 10,
                            y = obj.sections[45].y + obj.sections[45].h - ch,
                            w = cw,
@@ -1556,101 +1569,129 @@
       obj = PosCycleCtls(obj)
       
       
-      
+      --Param Learn panel
       obj.sections[115] = {x = obj.sections[43].x+obj.sections[43].w+20,
                            y = obj.sections[43].y+20,
                            w = 160,
                            h = 200}
       obj = PosParamLrnCtls(obj)
       
-      
-      
       --CTL OPTIONS PG 2
+      
+      --Display value offset 
       obj.sections[125] = {x = 60,
                           y = butt_h+10 + (butt_h/2+4 + 10) * 0,
                           w = obj.sections[45].w-70,
                           h = butt_h/2+8}
 
+      --MINOV value
       obj.sections[126] = {x = 60,
                           y = butt_h+10 + (butt_h/2+4 + 10) * 5,
                           w = obj.sections[45].w-70,
                           h = butt_h}
+      
+      --MAXOV value
       obj.sections[127] = {x = 60,
                           y = butt_h+6 + (butt_h/2+4 + 10) * 6+2,
                           w = obj.sections[45].w-70,
                           h = butt_h}
+      
       local kwh = defctls[def_knobsm].cellh
+      
+      --MINOV knob control
       obj.sections[128] = {x = (obj.sections[45].w/4) - kwh/2,
                            y = butt_h+20 + (butt_h/2+4 + 10) * 1,
                           w = kwh,
                           h = kwh}
+
+      --MAXOV knob control
       obj.sections[129] = {x = (obj.sections[45].w*(3/4)) - kwh/2,
                            y = butt_h+20 + (butt_h/2+4 + 10) * 1,
                           w = kwh,
                           h = kwh}
+      
+      --OVERRIDE VALUE
       obj.sections[130] = {x = 20,
                           y = butt_h+10 + (butt_h/2+4 + 10) * 4,
                           w = obj.sections[45].w-40,
                           h = butt_h}
 
+      --Scale mode Preset
       obj.sections[131] = {x = 70,
                           y = butt_h + (butt_h/2+4 + 10) * 8 -12,
                           w = obj.sections[45].w-80,
                           h = butt_h}
+      
+      --Scale mode
       obj.sections[132] = {x = 70,
                           y = butt_h + (butt_h/2+4 + 10) * 9 -14,
                           w = obj.sections[45].w-80,
                           h = butt_h}
+      
+      --Frame mode
       obj.sections[133] = {x = 70,
                           y = butt_h + (butt_h/2+4 + 10) * 10 -16,
                           w = obj.sections[45].w-80,
                           h = butt_h}
+      
+      --Horiz tickbox
       obj.sections[134] = {x = obj.sections[45].w-40-butt_h/2+4,
                           y = butt_h+6 + (butt_h/2+4 + 10) * 11 -16,
                           w = butt_h/2+4,
                           h = butt_h/2+4}                           
+      
+      --Page snapshot exclude tickbox
       obj.sections[139] = {x = obj.sections[45].w-40-butt_h/2+4,
                           y = butt_h+6 + (butt_h/2+4 + 10) * 11 + 4,
                           w = butt_h/2+4,
                           h = butt_h/2+4}                           
 
+      --NORMAL sensitivity
       obj.sections[135] = {x = 70,
                           y = butt_h+10 + (butt_h/2+4 + 10) * 13,
                           w = obj.sections[45].w-80,
                           h = butt_h/2+8}
+      --FINE sensitivity
       obj.sections[136] = {x = 70,
                           y = butt_h+10 + (butt_h/2+4 + 10) * 14,
                           w = obj.sections[45].w-80,
                           h = butt_h/2+8}
+      --WHEEL sensitivity
       obj.sections[137] = {x = 70,
                           y = butt_h+10 + (butt_h/2+4 + 10) * 15,
                           w = obj.sections[45].w-80,
                           h = butt_h/2+8}
+      --WHEEL FINE sensitivity
       obj.sections[138] = {x = 70,
                           y = butt_h+10 + (butt_h/2+4 + 10) * 16,
                           w = obj.sections[45].w-80,
                           h = butt_h/2+8}
 
       --CTL OPTIONS PG 3
+      
+      --Bypass BG Ctl
       obj.sections[860] = {x = obj.sections[45].w-40-butt_h/2+4,
                           y = butt_h+10 + (butt_h/2+4 + 10) * 0,
                           w = butt_h/2+4,
                           h = butt_h/2+4}
+      --Bypass BG Name
       obj.sections[861] = {x = obj.sections[45].w-40-butt_h/2+4,
                           y = butt_h+10 + (butt_h/2+4 + 10) * 1,
                           w = butt_h/2+4,
                           h = butt_h/2+4}
+      --Bypass BG Value
       obj.sections[862] = {x = obj.sections[45].w-40-butt_h/2+4,
                           y = butt_h+10 + (butt_h/2+4 + 10) * 2,
                           w = butt_h/2+4,
                           h = butt_h/2+4}
+      --Clickthrough
       obj.sections[863] = {x = obj.sections[45].w-40-butt_h/2+4,
                           y = butt_h+10 + (butt_h/2+4 + 10) * 4,
                           w = butt_h/2+4,
                           h = butt_h/2+4}
-      
-                                           
+                             
       --SNAPSHOTS
+      
       local ssh 
       if settings_ssdock == true then
         snaph = math.min(math.max(gfx1.main_h-obj.sections[10].y,252),2048)
@@ -1699,80 +1740,111 @@
         obj.sections[160].x = math.max(obj.sections[160].x,obj.sections[10].x)      
         obj.sections[160].y = math.max(obj.sections[160].y,obj.sections[10].y)
       end
-          
+      
+      --Subset button
       obj.sections[161] = {x = 30,
                           y = butt_h+10 + (butt_h/2+2 + 10) * 0,
                           w = obj.sections[160].w-20-20,
                           h = butt_h}                       
+      
+      --Capture button
       obj.sections[162] = {x = 10,
                           y = butt_h+10 + (butt_h/2+2 + 10) * 4,
                           w = obj.sections[160].w-20,
                           h = butt_h+8}                       
+      
+      --SS List
       obj.sections[163] = {x = 10,
                           y = butt_h+10 + (butt_h/2+4 + 10) * 5 + 4,
                           w = obj.sections[160].w-20,
                           h = ssh}
       
+      --Rate button
       obj.sections[1010] = {x = 10,
                             y = obj.sections[163].y + obj.sections[163].h+3,
                             w = math.floor((obj.sections[163].w/3)+2)-1,
                             h = butt_h}
+      
+      --Sync button
       obj.sections[1011] = {x = 10+obj.sections[1010].w+2,
                             y = obj.sections[1010].y,
                             w = obj.sections[1010].w*.7-1,
                             h = butt_h}
+      
+      --Transfer shape button
       obj.sections[1012] = {x = obj.sections[1011].x+obj.sections[1011].w+2,
                             y = obj.sections[1010].y,
                             w = math.floor(obj.sections[1010].w*1.3-3),
                             h = butt_h}
+      
+      --Dir button
       obj.sections[1014] = {x = 10,
                             y = obj.sections[1010].y + butt_h+2,
                             w = math.floor((obj.sections[163].w/3)+2)-1,
                             h = butt_h}
+      
+      --Paused button
       obj.sections[1013] = {x = 10+obj.sections[1014].w+2,
                             y = obj.sections[1014].y,
                             w = math.floor((obj.sections[163].w/3)+2)-2,
                             h = butt_h}
+      
+      --Loop button
       obj.sections[1015] = {x = 10+obj.sections[1014].w*2+3,
                             y = obj.sections[1014].y,
                             w = math.floor((obj.sections[163].w/3)-3),
                             h = butt_h}
+      
+      --Dock button
       obj.sections[1160] = {x = obj.sections[160].w - 34,
                             y = gui.winsz.pnltit-butt_h+1,
                             w = 30,
                             h = butt_h/2+8}
-                                   
+      
+      --Rename subset button                             
       obj.sections[164] = {x = 10,
                           y = butt_h+10 + (butt_h/2+2 + 10) * 3,
                           w = (obj.sections[160].w-20)/2 - 1,
                           h = butt_h}                      
 
+      --Resize window area
       obj.sections[165] = {x = 0,
                           y = obj.sections[160].h-12,
                           w = obj.sections[160].w,
                           h = 12}                       
+      
+      --New subset button
       obj.sections[166] = {x = 10,
                           y = butt_h+10 + (butt_h/2+2 + 10) * 2,
                           w = (obj.sections[160].w-20)/2 - 1,
                           h = butt_h}                       
+      
+      --Learn Ctls button
       obj.sections[167] = {x = 12 + (obj.sections[160].w-20)/2 +1,
                           y = butt_h+10 + (butt_h/2+2 + 10) * 2,
                           w = (obj.sections[160].w-20)/2 - 3,
                           h = butt_h*2+2}                       
+      
+      --* button
       obj.sections[168] = {x = 10,
                           y = butt_h+10 + (butt_h/2+2 + 10) * 0,
                           w = 18,
                           h = butt_h}                       
+      
+      --Randomize button
       obj.sections[169] = {x = 12 + (obj.sections[160].w-20)/2 +1,
                           y = butt_h+10 + (butt_h/2+2 + 10) * 1,
                           w = (obj.sections[160].w-20)/2 - 3,
                           h = butt_h}                       
+      
+      --Metalite button
       obj.sections[224] = {x = 10,
                           y = butt_h+10 + (butt_h/2+2 + 10) * 1,
                           w = (obj.sections[160].w-20)/2 - 1,
                           h = butt_h}                       
       
-      --Action chooser
+      --ACTION CHOOSER
+      
       obj.sections[170] = {x = obj.sections[10].x+20,
                            y = obj.sections[10].y+20,
                            w = math.min(obj.sections[10].w-40,750),
@@ -1797,7 +1869,9 @@
                            y = obj.sections[172].y,
                            w = 150,
                            h = butt_h}
+      
       --FLOATING SNAPS
+      
       obj.sections[180] = {x = 0,
                           y = 0,
                           w = 138,
@@ -1810,7 +1884,9 @@
                           y = obj.sections[180].h-6,
                           w = obj.sections[180].w,
                           h = 6}
+      
       --CTL BROWSER
+      
       ctl_browser_size = {w = obj.sections[10].w - 100 - obj.sections[45].w, h = obj.sections[10].h -100}
       local slsz = 100
       local cb_bw = 160
@@ -11175,17 +11251,19 @@ end
         GUI_textC(gui,xywh,'AUTOMATION',gui.color.white,-2)
         local macrofader = strips[tracks[track_select].strip][page].controls[macroctl_select].macrofader
         if macrofader then
-          GUI_DrawButton(gui, 'FADER '..string.format('%i',macrofader), obj.sections[408], gui.color.white, gui.color.black, true, '', false)      
+          GUI_DrawButton(gui, 'FADER '..string.format('%i',macrofader), obj.sections[408], gui.color.white, gui.skol.butt1_txt, true, '', false)      
         else
           GUI_DrawButton(gui, 'NONE', obj.sections[408], -3, gui.color.black, false, '', false)
         end
-        GUI_DrawButton(gui, 'ADD PARAMETERS', obj.sections[409], '160 160 160', gui.color.black, true, '', false)      
-        GUI_DrawButton(gui, 'CAPTURE A', obj.sections[411], '160 160 160', gui.color.black, true, '', false)      
-        GUI_DrawButton(gui, 'CAPTURE B', obj.sections[412], '160 160 160', gui.color.black, true, '', false)      
+        GUI_DrawButton(gui, 'ADD PARAMETERS', obj.sections[409], gui.color.white, gui.skol.butt1_txt, true, '', false)      
+        GUI_DrawButton(gui, 'CAPTURE A', obj.sections[411], gui.color.white, gui.skol.butt1_txt, true, '', false)      
+        GUI_DrawButton(gui, 'CAPTURE B', obj.sections[412], gui.color.white, gui.skol.butt1_txt, true, '', false)      
         if settings_macroeditmonitor == true then
-          GUI_DrawBar(gui, 'MONITOR', obj.sections[413], skin.butt18Y, true, gui.color.black, nil, -2)     
+          GUI_DrawButton(gui, 'MONITOR', obj.sections[413], -4, gui.skol.butt1_txt, true, '', false)      
+          --GUI_DrawBar(gui, 'MONITOR', obj.sections[413], skin.butt18Y, true, gui.color.black, nil, -2)     
         else
-          GUI_DrawBar(gui, 'MONITOR', obj.sections[413], skin.butt18, true, gui.color.black, nil, -2)              
+          --GUI_DrawBar(gui, 'MONITOR', obj.sections[413], skin.butt18, true, gui.color.black, nil, -2)              
+          GUI_DrawButton(gui, 'MONITOR', obj.sections[413], gui.color.white, gui.skol.butt1_txt, true, '', false)      
         end      
       end
   
@@ -11231,13 +11309,15 @@ end
                        xywh.y, 
                        xywh.w,
                        xywh.h, 1)
-              GUI_textC(gui, xywh, macroscale_table[macro[m+macroedit_poffs].shape], gui.color.white, -2)          
+              --GUI_textC(gui, xywh, macroscale_table[macro[m+macroedit_poffs].shape], gui.color.white, -2)          
+              GUI_Str(gui, xywh, macroscale_table[macro[m+macroedit_poffs].shape], 5, gui.color.white, -2, 1)
               
               xywh = {x = obj.sections[402].x+30,
                       y = obj.sections[402].y + mm*macroedit.sech,
                       w = obj.sections[402].w,
                       h = macroedit.sech}
-              GUI_textsm_LJ(gui, xywh, ctl.param_info.paramname, gui.color.white, -2, xywh.w)
+              --GUI_textsm_LJ(gui, xywh, ctl.param_info.paramname, gui.color.white, -2, xywh.w)
+              GUI_Str(gui, xywh, ctl.param_info.paramname, 4, gui.color.white, -2, 1)
             end
             
             if update_gfx or update_macrobutt then
@@ -11248,7 +11328,7 @@ end
               if macro[m+macroedit_poffs].mute then
                 GUI_DrawBar(gui,'M',xywh,skin.butt18R,true,gui.color.black,gui.color.black,-2)
               else
-                GUI_DrawBar(gui,'M',xywh,skin.butt18,true,gui.color.black,gui.color.black,-2)
+                GUI_DrawBar(gui,'M',xywh,skin.butt18,true,gui.skol.sb_txt_on,gui.skol.sb_txt_off,-2)
               end
     
               xywh = {x = obj.sections[414].x,
@@ -11258,7 +11338,7 @@ end
               if macro[m+macroedit_poffs].bi then
                 GUI_DrawBar(gui,'BI',xywh,skin.butt18Y,true,gui.color.black,gui.color.black,-5)
               else
-                GUI_DrawBar(gui,'BI',xywh,skin.butt18,true,gui.color.black,gui.color.black,-5)
+                GUI_DrawBar(gui,'BI',xywh,skin.butt18,true,gui.skol.sb_txt_on,gui.color.black,-5)
               end
 
               xywh = {x = obj.sections[416].x,
@@ -11268,7 +11348,7 @@ end
               if macro[m+macroedit_poffs].relative then
                 GUI_DrawBar(gui,'REL',xywh,skin.butt18Y,true,gui.color.black,gui.color.black,-5)
               else
-                GUI_DrawBar(gui,'REL',xywh,skin.butt18,true,gui.color.black,gui.color.black,-5)
+                GUI_DrawBar(gui,'REL',xywh,skin.butt18,true,gui.skol.sb_txt_on,gui.color.black,-5)
               end
     
               xywh = {x = obj.sections[415].x,
@@ -11278,14 +11358,14 @@ end
               if macro[m+macroedit_poffs].inv then
                 GUI_DrawBar(gui,'INV',xywh,skin.butt18Y,true,gui.color.black,gui.color.black,-6)
               else
-                GUI_DrawBar(gui,'INV',xywh,skin.butt18,true,gui.color.black,gui.color.black,-6)
+                GUI_DrawBar(gui,'INV',xywh,skin.butt18,true,gui.skol.sb_txt_on,gui.color.black,-6)
               end
     
               xywh = {x = obj.sections[407].x,
                       y = obj.sections[407].y + mm*macroedit.sech + 0.5*macroedit.sech - 10,
                       w = obj.sections[407].w,
                       h = 20}
-              GUI_DrawBar(gui,'X',xywh,skin.butt18,true,gui.color.black,gui.color.black,-2)
+              GUI_DrawBar(gui,'X',xywh,skin.butt18,true,gui.skol.sb_txt_on,gui.color.black,-2)
     
             end
   
@@ -12526,28 +12606,30 @@ end
           GUI_DrawButton(gui,'EXIT MACRO LRN',obj.sections[250],-2,gui.color.white,true)
           
           local strip = tracks[track_select].strip
-          if strips[strip][page].controls[macroctl_select].macroctl then
-            local mcnt = #strips[strip][page].controls[macroctl_select].macroctl
-            if mcnt > 0 then
-              for mc = 1, mcnt do
-                local ctl = strips[strip][page].controls[macroctl_select].macroctl[mc].ctl
-                if ctl then
-                  if nz(strips[strip][page].controls[macroctl_select].macroctl[mc].delete,false) == false then
-                    local x = strips[strip][page].controls[ctl].xsc
-                    local y = strips[strip][page].controls[ctl].ysc
-                    local w = strips[strip][page].controls[ctl].wsc
-                    local h = strips[strip][page].controls[ctl].hsc
-                    x=x-surface_offset.x+obj.sections[10].x
-                    y=y-surface_offset.y+obj.sections[10].y
-                    f_Get_SSV(gui.color.blue)
-                    gfx.a = 1
-                    gfx.roundrect(x, y, w, h, 5, 1)
-                    --gfx.roundrect(x+1, y+1, w-2, h-2, 5, 1)
-                  end
-                end           
+          if strips and strips[strip] and strips[strip][page].controls[macroctl_select] then
+            if strips[strip][page].controls[macroctl_select].macroctl then
+              local mcnt = #strips[strip][page].controls[macroctl_select].macroctl
+              if mcnt > 0 then
+                for mc = 1, mcnt do
+                  local ctl = strips[strip][page].controls[macroctl_select].macroctl[mc].ctl
+                  if ctl then
+                    if nz(strips[strip][page].controls[macroctl_select].macroctl[mc].delete,false) == false then
+                      local x = strips[strip][page].controls[ctl].xsc
+                      local y = strips[strip][page].controls[ctl].ysc
+                      local w = strips[strip][page].controls[ctl].wsc
+                      local h = strips[strip][page].controls[ctl].hsc
+                      x=x-surface_offset.x+obj.sections[10].x
+                      y=y-surface_offset.y+obj.sections[10].y
+                      f_Get_SSV(gui.color.blue)
+                      gfx.a = 1
+                      gfx.roundrect(x, y, w, h, 5, 1)
+                      --gfx.roundrect(x+1, y+1, w-2, h-2, 5, 1)
+                    end
+                  end           
+                end
               end
-            end
-          end          
+            end          
+          end
         end
 
         if plist_w > 0 then                  
@@ -12659,7 +12741,7 @@ end
         
         end
         
-        if show_lfoedit and show_eqcontrol ~= true then
+        if show_lfoedit and show_eqcontrol ~= true and macro_edit_mode ~= true then
           if update_gfx or update_lfoedit or resize_display then
             GUI_DrawLFOEdit(obj, gui)
           elseif update_lfoeditbar then
@@ -34322,6 +34404,11 @@ end
     
       navigate = true
       macro_lrn_mode = false
+      
+      show_lfoedit = oslfoeedit 
+      show_snapshots = ossnaps 
+      
+      obj = GetObjects()
       Macro_UpdateCtls(tracks[track_select].strip, page, macroctl_select)
       
       update_surface = true
@@ -34680,6 +34767,12 @@ end
         elseif mouse.context == nil and MOUSE_click(obj.sections[409]) then
 
           macro_lrn_mode = true
+          oslfoeedit = show_lfoedit
+          ossnaps = show_snapshots
+          show_lfoedit = false
+          show_snapshots = false
+          
+          obj = GetObjects()
           update_gfx = true
 
         elseif mouse.context == nil and MOUSE_click(obj.sections[411]) then
@@ -38656,21 +38749,22 @@ end
   function Macro_Capture(strip, page, ctl, ab)
   
     local macro = strips[strip][page].controls[ctl].macroctl
-    for m = 1, #macro do
-
-      local ctl = macro[m].ctl
-      local v = strips[strip][page].controls[ctl].val
-      
-      if ab == 0 then
-        macro[m].A_val = v
-      else
-        if macro[m].bi == false then
-          macro[m].B_val = v
+    if macro then
+      for m = 1, #macro do
+  
+        local ctl = macro[m].ctl
+        local v = strips[strip][page].controls[ctl].val
+        
+        if ab == 0 then
+          macro[m].A_val = v
+        else
+          if macro[m].bi == false then
+            macro[m].B_val = v
+          end
         end
+      
       end
-    
-    end
-    
+    end    
   end
 
   function Macros_Check(strip, page)
