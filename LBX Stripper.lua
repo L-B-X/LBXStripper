@@ -186,7 +186,10 @@
               dragsep_strip = 127,
               dragsep_gfx = 128,
               dragsep_fx = 129,
-              modwin_resize2 = 130, 
+              modwin_resize2 = 130,
+              sbpanszslider = 131, 
+              panszslider = 132, 
+              panfontszslider = 133, 
               dummy = 999
               }
   
@@ -1128,10 +1131,42 @@
   val_to_dB = function(val) return 20*math.log(val, 10) end
   dB_to_val = function(dB_val) return 10^(dB_val/20) end
   
+  function PosEBCtls(obj)
+
+    local sizex, sizey = math.floor(350*pnl_scale), math.floor(100*pnl_scale)
+    local bsizex, bsizey = math.floor(60*pnl_scale), math.floor(20*pnl_scale)
+    
+    --EDIT BOX - textbox
+    obj.sections[5] = {x = math.floor(obj.sections[8].x + 25*pnl_scale),
+                       y = math.floor(obj.sections[8].y + 10*pnl_scale),
+                       w = math.floor(sizex-50*pnl_scale), 
+                       h = math.floor(20*pnl_scale)}
+
+    --OK
+    obj.sections[6] = {x = obj.sections[8].x + obj.sections[8].w*0.5 + 10*pnl_scale,
+                             y = obj.sections[8].y + sizey - bsizey - 10*pnl_scale,
+                             w = bsizex, 
+                             h = bsizey}
+    --CANCEL
+    obj.sections[7] = {x = obj.sections[8].x + obj.sections[8].w*0.5 - bsizex - 10*pnl_scale,
+                             y = obj.sections[8].y + sizey - bsizey - 10*pnl_scale,
+                             w = bsizex, 
+                             h = bsizey}
+    --EB Text
+    obj.sections[9] = {x = obj.sections[8].x + 25*pnl_scale,
+                       y = obj.sections[8].y+obj.sections[8].h - 66*pnl_scale,
+                       w = sizex-50*pnl_scale, 
+                       h = 26*pnl_scale}
+  
+    return obj
+  end
+  
   function GetObjects()
+
+      if pnl_scale == nil then pnl_scale = 1 end
     
       local ss160
-      if obj and obj.sections then
+      if obj and obj.sections and pnlscaleflag ~= true then
         ss160 = obj.sections[160]
       end
       
@@ -1144,40 +1179,25 @@
                             w = 70, h = 87}
       obj.sections[2001] = {x = 0, y = 0,
                             w = 87, h = 70}
-                            
-      local sizex, sizey = 350, 100
-      local bsizex, bsizey = 60, 20
-      --EDIT BOX - textbox
-      obj.sections[5] = {x = gfx1.main_w/2 - sizex/2 + 25,
-                         y = gfx1.main_h/2 - sizey/2 + 10,
-                         w = sizex-50, 
-                         h = 20}
-      --OK
-      obj.sections[6] = {x = gfx1.main_w/2 + sizex/2 - bsizex - 50,
-                               y = gfx1.main_h/2 + sizey/2 - bsizey - 10,
-                               w = bsizex, 
-                               h = bsizey}
-      --CANCEL
-      obj.sections[7] = {x = gfx1.main_w/2 + sizex/2 - (bsizex*2) - 60,
-                               y = gfx1.main_h/2 + sizey/2 - bsizey - 10,
-                               w = bsizex, 
-                               h = bsizey}
+      
+      local sizex, sizey = math.floor(350*pnl_scale), math.floor(100*pnl_scale)
       --EB BG
       obj.sections[8] = {x = gfx1.main_w/2 - sizex/2,
                          y = gfx1.main_h/2 - sizey/2,
                          w = sizex, 
                          h = sizey}
-      --EB Text
-      obj.sections[9] = {x = gfx1.main_w/2 - sizex/2 + 25,
-                         y = gfx1.main_h/2 + sizey/2 - 66,
-                         w = sizex-50, 
-                         h = 26}
+                            
+      obj = PosEBCtls(obj)
       
       --surface
+      if tb_butt_h == nil then
+        tb_butt_h = 20
+      end
+      
       if hide_topbar then
         topbarheight = 0
       else
-        topbarheight = butt_h      
+        topbarheight = tb_butt_h      
       end
       SetSurfaceSize2(obj)
 
@@ -1185,7 +1205,7 @@
       obj.sections[11] = {x = 1,
                           y = 1,
                           w = plist_w-1,
-                          h = butt_h}
+                          h = tb_butt_h}
       
       --track title
       obj.sections[12] = {x = 126,
@@ -1195,14 +1215,14 @@
 
       --submode
       obj.sections[13] = {x = 1,
-                          y = butt_h+2+1,
+                          y = tb_butt_h+2+1,
                           w = plist_w-1,
-                          h = butt_h+1}
+                          h = tb_butt_h+1}
       --SB button
       obj.sections[15] = {x = 0,
-                          y = (butt_h+2)*2 + 2,
+                          y = (tb_butt_h+2) *2 + 2,
                           w = plist_w,
-                          h = butt_h}
+                          h = tb_butt_h}
       --pages
       obj.sections[14] = {x = gfx1.main_w - plist_w - 100,
                           y = obj.sections[11].y,
@@ -1223,12 +1243,12 @@
       obj.sections[18] = {x = 0,
                           y = obj.sections[11].y,
                           w = 25,
-                          h = butt_h}
+                          h = tb_butt_h}
       --SB resize
       obj.sections[19] = {x = gfx1.main_w - plist_w - 125,
                           y = obj.sections[11].y,
                           w = 25,
-                          h = butt_h}
+                          h = tb_butt_h}
       --XYUD
       obj.sections[20] = {x = obj.sections[18].x+obj.sections[18].w+1,
                           y = obj.sections[11].y,
@@ -1239,7 +1259,7 @@
         obj.sections[21] = {x = gfx1.main_w - plist_w - 26,
                             y = obj.sections[11].y,
                             w = 26,
-                            h = butt_h}
+                            h = tb_butt_h}
         if settings_ssdock == true then
           obj.sections[21].x = obj.sections[21].x - gui.winsz.snaps
         end
@@ -1247,7 +1267,7 @@
         obj.sections[21] = {x = gfx1.main_w - plist_w - 175,
                             y = obj.sections[11].y,
                             w = 26,
-                            h = butt_h}
+                            h = tb_butt_h}
       end
       
       --TRACKS                    
@@ -1257,39 +1277,40 @@
                           h = gfx1.main_h}                           
       --edit chooser
       obj.sections[501] = {x = 0,
-                           y = (butt_h*2+2),
+                           y = (tb_butt_h*2+2),
                            w = plist_w,
                            h = butt_h}
       --NEW TRACKS
       obj.sections[500] = {x = 0,
-                          y = butt_h*2+6,
+                          y = tb_butt_h*2+6,
                           w = plist_w,
-                          h = gfx1.main_h-(butt_h*2+6)}
+                          h = gfx1.main_h-(tb_butt_h*2+6)}
       --NEW STRIPS
-      if (butt_h+2)*3+sf_h+4+8 > gfx1.main_h then
-        sf_h = math.max(gfx1.main_h - ((butt_h+2)*3+4+8),40)
+      if (tb_butt_h+2)*3+sf_h+4+8 > gfx1.main_h then
+        sf_h = math.max(gfx1.main_h - ((tb_butt_h+2)*3+4+8),40)
       end
 
       --Strip folder list
       obj.sections[510] = {x = 0,
-                           y = (butt_h+2)*3 + 2,
+                           y = (tb_butt_h+2)*3 + 2,
                            w = plist_w,
                            h = sf_h}
       --save
       obj.sections[511] = {x = 0,
-                           y = (butt_h+2)*2 + 2,
+                           y = (tb_butt_h+2)*2 + 2,
                            w = plist_w,
-                           h = butt_h}
+                           h = tb_butt_h}
       
       --Strip list resize
+      local rsz = math.min(math.max(((tb_butt_h - 20)),6),20)
       obj.sections[513] = {x = 0,
                            y = obj.sections[510].y+obj.sections[510].h+4,
                            w = plist_w,
-                           h = 6}
+                           h = rsz}
       
       --Strip list
       obj.sections[512] = {x = 0,
-                           y = obj.sections[510].y+obj.sections[510].h+4 + 8,
+                           y = obj.sections[510].y+obj.sections[510].h+4 + 2 + rsz,
                            w = plist_w,
                            h = gfx1.main_h - (obj.sections[510].y+obj.sections[510].h+2) - 8}
 
@@ -1300,19 +1321,20 @@
 
       --FX list
       obj.sections[520] = {x = 0,
-                           y = (butt_h+2)*2 + 2,
+                           y = (tb_butt_h+2)*2 + 2,
                            w = plist_w,
                            h = fx_h}
       --FX list resize
+      --local rsz = math.max((6 + (tb_butt_h - 20)),6)
       obj.sections[523] = {x = 0,
                            y = obj.sections[520].y+obj.sections[520].h+2,
                            w = plist_w,
-                           h = 6}
+                           h = rsz}
       --track select/lrn      
       obj.sections[521] = {x = 0,
-                           y = obj.sections[520].y+obj.sections[520].h+2 + 8,
+                           y = obj.sections[520].y+obj.sections[520].h+2 + 2 + rsz,
                            w = plist_w,
-                           h = butt_h}
+                           h = tb_butt_h}
       --FX list params
       obj.sections[522] = {x = 0,
                            y = obj.sections[521].y+obj.sections[521].h+2,
@@ -1320,47 +1342,51 @@
                            h = gfx1.main_h - (obj.sections[521].y+obj.sections[521].h+2)}
       
       --GRAPHICS
-      if (butt_h+2)*2+gx_h+2+28 > gfx1.main_h then
-        gx_h = math.max(gfx1.main_h - ((butt_h+2)*2+2+28),20)
+      if (tb_butt_h+2)*2+gx_h+2+28 > gfx1.main_h then
+        gx_h = math.max(gfx1.main_h - ((tb_butt_h+2)*2+2+28),20)
       end
 
       --Graphics folder list
       obj.sections[531] = {x = 0,
-                           y = (butt_h+2)*2 + 2,
+                           y = (tb_butt_h+2)*2 + 2,
                            w = plist_w,
-                           h = gx_h+butt_h}
+                           h = gx_h+tb_butt_h}
 
       --Graphics list resize
+      --local rsz = math.max((6 + (tb_butt_h - 20)),6)
       obj.sections[533] = {x = 0,
                            y = obj.sections[531].y+obj.sections[531].h+2,
                            w = plist_w,
-                           h = 6}
+                           h = rsz}
 
       --Graphics files list
       obj.sections[530] = {x = 0,
-                           y = obj.sections[531].y+obj.sections[531].h+2 + 8,
+                           y = obj.sections[531].y+obj.sections[531].h+2 + 2 + rsz,
                            w = plist_w,
                            h = gfx1.main_h - (obj.sections[531].y+obj.sections[531].h+2) - 8}
+                           
 
       --CONTROL OPTIONS Panel
-      local cow = gui.winsz.ctlopts
+      local cow = math.floor(gui.winsz.ctlopts*pnl_scale)
+      local coh = math.floor(470*pnl_scale) --(470-150)*pnl_scale+150
+      local coff = math.floor(150*pnl_scale+(gui.winsz.pnltit*pnl_scale-gui.winsz.pnltit))
       obj.sections[45] = {x = math.max(gfx1.main_w - cow - 10, obj.sections[10].x + cow + 20),
-                          y = math.max(gfx1.main_h - 470 - 10, obj.sections[10].y),
+                          y = math.max(gfx1.main_h - coh - 10, obj.sections[10].y),
                           w = cow,
-                          h = 470}                           
+                          h = coh}                           
 
       --GFX / LABEL OPTS Panel
       obj.sections[49] = {x = gfx1.main_w - cow - 20,
-                          y = gfx1.main_h - 300 -20,
+                          y = math.floor(gfx1.main_h - 300*pnl_scale -20),
                           w = cow,
-                          h = 300}
+                          h = math.floor(300*pnl_scale)}
       obj = PosGfxOptCtls(obj)
                                  
       
       --GAUGE EDIT
-      local gaw, gah = 320, 500
-      local gsw = 90
-      local gofs = 270
+      local gaw, gah = math.floor(320*pnl_scale), math.floor(500*pnl_scale)
+      local gsw = math.floor(90*pnl_scale)
+      local gofs = math.floor(270*pnl_scale)
       obj.sections[800] = {x = math.max(gfx1.main_w/2 -gaw/2,obj.sections[43].w),
                           y = math.max(gfx1.main_h/2 - gah/2, obj.sections[10].y),
                           w = gaw,
@@ -1378,133 +1404,133 @@
       --local sf_h = 140
 
       --scale
-      obj.sections[50] = {x = 60,
-                          y = 150+butt_h+8,
-                          w = obj.sections[45].w-70,
-                          h = butt_h/2+8}                           
+      obj.sections[50] = {x = math.floor(60*pnl_scale),
+                          y = math.floor(coff+(butt_h+8)*pnl_scale),
+                          w = math.floor(obj.sections[45].w-(70*pnl_scale)),
+                          h = math.floor((butt_h/2+8)*pnl_scale)}                           
       --apply
-      obj.sections[51] = {x = 20,
-                          y = 150,
-                          w = 80,
-                          h = butt_h}                           
+      obj.sections[51] = {x = math.floor(20*pnl_scale),
+                          y = coff,
+                          w = math.floor(80*pnl_scale),
+                          h = math.floor(butt_h*pnl_scale)}                           
       
       --Gauge button
-      obj.sections[99] = {x = obj.sections[51].x+obj.sections[51].w+2,
-                          y = 150,
-                          w = 54,
-                          h = butt_h}
+      obj.sections[99] = {x = obj.sections[51].x+obj.sections[51].w+math.floor(2*pnl_scale),
+                          y = coff,
+                          w = math.floor(54*pnl_scale),
+                          h = math.floor(butt_h*pnl_scale)}
       --SHOW NAME Tick 
-      obj.sections[52] = {x = obj.sections[45].w-104-butt_h/2+4,
-                          y = 150+butt_h+10 + (butt_h/2+4 + 10)+24,
-                          w = butt_h/2+4,
-                          h = butt_h/2+4}                           
+      obj.sections[52] = {x = math.floor(obj.sections[45].w-(104+butt_h/2)*pnl_scale+4*pnl_scale),
+                          y = math.floor(coff + (butt_h+10 + (butt_h/2+4 + 10)+24)*pnl_scale),
+                          w = math.floor((butt_h/2+4)*pnl_scale),
+                          h = math.floor((butt_h/2+4)*pnl_scale)}                           
       --SHOW VALUE Tick
-      obj.sections[53] = {x = obj.sections[45].w-104-butt_h/2+4,
-                          y = 150+butt_h+10 + (butt_h/2+4 + 10) * 2+20,
-                          w = butt_h/2+4,
-                          h = butt_h/2+4}                           
+      obj.sections[53] = {x = math.floor(obj.sections[45].w-(104+butt_h/2)*pnl_scale+4*pnl_scale),
+                          y = math.floor(coff+(butt_h+10 + (butt_h/2+4 + 10) * 2+20)*pnl_scale),
+                          w = math.floor((butt_h/2+4)*pnl_scale),
+                          h = math.floor((butt_h/2+4)*pnl_scale)}                           
 
       --COLOR BOX NAME
-      obj.sections[54] = {x = obj.sections[45].w-84-butt_h/2+4,
-                          y = 150+butt_h+10 + (butt_h/2+4 + 10)+24,
-                          w = butt_h/2+4,
-                          h = butt_h/2+4}                           
+      obj.sections[54] = {x = math.floor(obj.sections[45].w-(84+butt_h/2)*pnl_scale+4*pnl_scale),
+                          y = math.floor(coff+(butt_h+10 + (butt_h/2+4 + 10)+24)*pnl_scale),
+                          w = math.floor((butt_h/2+4)*pnl_scale),
+                          h = math.floor((butt_h/2+4)*pnl_scale)}                           
 
       --COLOR BOX VALUE
-      obj.sections[850] = {x = obj.sections[45].w-84-butt_h/2+4,
-                          y = 150+butt_h+10 + (butt_h/2+4 + 10) * 2+20,
-                          w = butt_h/2+4,
-                          h = butt_h/2+4}                           
+      obj.sections[850] = {x = math.floor(obj.sections[45].w-(84+butt_h/2)*pnl_scale+4*pnl_scale),
+                          y = math.floor(coff+(butt_h+10 + (butt_h/2+4 + 10) * 2+20)*pnl_scale),
+                          w = math.floor((butt_h/2+4)*pnl_scale),
+                          h = math.floor((butt_h/2+4)*pnl_scale)}                           
 
       --Text size slider                                                           
-      obj.sections[58] = {x = obj.sections[52].x+obj.sections[52].w+26,
-                          y = 150+butt_h+10 + (butt_h/2+4 + 10)+24,
-                          w = obj.sections[45].w-(obj.sections[52].x+obj.sections[52].w+36),
-                          h = butt_h/2+4}                           
+      obj.sections[58] = {x = math.floor(obj.sections[52].x+obj.sections[52].w+26*pnl_scale),
+                          y = math.floor(coff+(butt_h+10 + (butt_h/2+4 + 10)+24)*pnl_scale),
+                          w = math.floor(obj.sections[45].w-(obj.sections[52].x+obj.sections[52].w+36*pnl_scale)),
+                          h = math.floor((butt_h/2+4)*pnl_scale)}                           
 
       --Text size slider      
-      obj.sections[851] = {x = obj.sections[52].x+obj.sections[52].w+26,
-                          y = 150+butt_h+10 + (butt_h/2+4 + 10) * 2+20,
-                          w = obj.sections[45].w-(obj.sections[52].x+obj.sections[52].w+36),
-                          h = butt_h/2+4}                           
+      obj.sections[851] = {x = math.floor(obj.sections[52].x+obj.sections[52].w+26*pnl_scale),
+                          y = math.floor(coff+(butt_h+10 + (butt_h/2+4 + 10) * 2+20)*pnl_scale),
+                          w = math.floor(obj.sections[45].w-(obj.sections[52].x+obj.sections[52].w+36*pnl_scale)),
+                          h = math.floor((butt_h/2+4)*pnl_scale)}                           
 
       --Link button
-      obj.sections[852] = {x = obj.sections[851].x+obj.sections[851].w-22,
-                          y = 150+butt_h+10 + (butt_h/2+4 + 10)+24-butt_h,
-                          w = 26,
-                          h = butt_h/2+4}                           
+      obj.sections[852] = {x = math.floor(obj.sections[851].x+obj.sections[851].w-22*pnl_scale),
+                          y = math.floor(coff+(butt_h+10 + (butt_h/2+4 + 10)+24)*pnl_scale-butt_h*pnl_scale),
+                          w = math.floor(26*pnl_scale),
+                          h = math.floor((butt_h/2+4)*pnl_scale)}                           
 
       --Ctl Type button
-      obj.sections[55] = {x = 60,
-                          y = 150+butt_h+7 + (butt_h/2+4 + 10) * 9,
-                          w = obj.sections[45].w-70,
-                          h = butt_h}
+      obj.sections[55] = {x = math.floor(60*pnl_scale),
+                          y = math.floor(coff+(butt_h+7 + (butt_h/2+4 + 10) * 9)*pnl_scale),
+                          w = math.floor(obj.sections[45].w-70*pnl_scale),
+                          h = math.floor(butt_h*pnl_scale)}
 
       --Offset slider
-      obj.sections[56] = {x = 60,
-                          y = 150+butt_h+10 + (butt_h/2+4 + 10) * 4,
-                          w = obj.sections[45].w-90,
-                          h = butt_h/2+8}                           
+      obj.sections[56] = {x = math.floor(60*pnl_scale),
+                          y = math.floor(coff+(butt_h+10 + (butt_h/2+4 + 10) * 4)*pnl_scale),
+                          w = math.floor(obj.sections[45].w-90*pnl_scale),
+                          h = math.floor((butt_h/2+8)*pnl_scale)}                           
 
       --Value offset slider
-      obj.sections[65] = {x = 60,
-                          y = 150+butt_h+10 + (butt_h/2+4 + 10) * 5,
-                          w = obj.sections[45].w-90,
-                          h = butt_h/2+8}                           
+      obj.sections[65] = {x = math.floor(60*pnl_scale),
+                          y = math.floor(coff+(butt_h+10 + (butt_h/2+4 + 10) * 5)*pnl_scale),
+                          w = math.floor(obj.sections[45].w-90*pnl_scale),
+                          h = math.floor((butt_h/2+8)*pnl_scale)}                           
 
       --Default value slider
-      obj.sections[57] = {x = 60,
-                          y = 150+butt_h+10 + (butt_h/2+4 + 10) * 10,
-                          w = obj.sections[45].w-70,
-                          h = butt_h/2+8}                           
+      obj.sections[57] = {x = math.floor(60*pnl_scale),
+                          y = math.floor(coff+(butt_h+10 + (butt_h/2+4 + 10) * 10)*pnl_scale),
+                          w = math.floor(obj.sections[45].w-70*pnl_scale),
+                          h = math.floor((butt_h/2+8)*pnl_scale)}                           
 
       --Font button
-      obj.sections[48] = {x = 60,
-                          y = 150+butt_h+10 + (butt_h/2+4 + 10) * 6 -1,
-                          w = obj.sections[45].w-70,
-                          h = butt_h}
+      obj.sections[48] = {x = math.floor(60*pnl_scale),
+                          y = math.floor(coff+(butt_h+10 + (butt_h/2+4 + 10) * 6)*pnl_scale -1*pnl_scale),
+                          w = math.floor(obj.sections[45].w-70*pnl_scale),
+                          h = math.floor(butt_h*pnl_scale)}
 
       --Edit name button
-      obj.sections[59] = {x = 60,
-                          y = 150+butt_h+11 + (butt_h/2+4 + 10) * 8 - 2,
-                          w = obj.sections[45].w-70,
-                          h = butt_h}
+      obj.sections[59] = {x = math.floor(60*pnl_scale),
+                          y = math.floor(coff+(butt_h+11 + (butt_h/2+4 + 10) * 8)*pnl_scale - 2*pnl_scale),
+                          w = math.floor(obj.sections[45].w-70*pnl_scale),
+                          h = math.floor(butt_h*pnl_scale)}
       
       --Set MIDI button
-      obj.sections[960] = {x = 60,
-                          y = 150+butt_h+11 + (butt_h/2+4 + 10) * 7,
-                          w = obj.sections[45].w-70,
-                          h = butt_h}
+      obj.sections[960] = {x = math.floor(60*pnl_scale),
+                          y = math.floor(coff+(butt_h+11 + (butt_h/2+4 + 10) * 7)*pnl_scale),
+                          w = math.floor(obj.sections[45].w-70*pnl_scale),
+                          h = math.floor(butt_h*pnl_scale)}
 
       --Scroll control graphic <
-      obj.sections[90] = {x = 4,
-                          y = 75,
-                          w = 12,
-                          h = butt_h/2+8}                           
+      obj.sections[90] = {x = math.floor(4*pnl_scale),
+                          y = math.floor(coff/2),
+                          w = math.floor(12*pnl_scale),
+                          h = math.floor((butt_h/2+8)*pnl_scale)}                           
 
       --Scroll control graphic >
-      obj.sections[91] = {x = obj.sections[45].w-16,
-                          y = 75,
-                          w = 12,
-                          h = butt_h/2+8}                           
+      obj.sections[91] = {x = math.floor(obj.sections[45].w-16*pnl_scale),
+                          y = math.floor(coff/2),
+                          w = math.floor(12*pnl_scale),
+                          h = math.floor((butt_h/2+8)*pnl_scale)}                           
       
       --XY toggle button                    
-      obj.sections[68] = {x = 50+obj.sections[45].w-74,
-                          y = 150+butt_h+10 + (butt_h/2+4 + 10) * 4.5,
-                          w = butt_h/2+4,
-                          h = butt_h/2+4}                           
+      obj.sections[68] = {x = math.floor(50*pnl_scale+obj.sections[45].w-74*pnl_scale),
+                          y = math.floor(coff+(butt_h+10 + (butt_h/2+4 + 10) * 4.5)*pnl_scale),
+                          w = math.floor((butt_h/2+4)*pnl_scale),
+                          h = math.floor((butt_h/2+4)*pnl_scale)}                           
 
       --Max DP button
-      obj.sections[66] = {x = 60,
-                          y = 150+butt_h+10 + (butt_h/2+4 + 10) * 11,
-                          w = 40,
-                          h = butt_h/2+4}
+      obj.sections[66] = {x = math.floor(60*pnl_scale),
+                          y = math.floor(coff+(butt_h+10 + (butt_h/2+4 + 10) * 11)*pnl_scale),
+                          w = math.floor(40*pnl_scale),
+                          h = math.floor((butt_h/2+4)*pnl_scale)}
       
       --Open CYCLE OPTIONS button
-      obj.sections[67] = {x = 10,
-                          y = 150+butt_h+7 + (butt_h/2+4 + 10) * 9,
-                          w = 35,
-                          h = butt_h}
+      obj.sections[67] = {x = math.floor(10*pnl_scale),
+                          y = math.floor(coff+(butt_h+7 + (butt_h/2+4 + 10) * 9)*pnl_scale),
+                          w = math.floor(35*pnl_scale),
+                          h = math.floor(butt_h*pnl_scale)}
 
       local binh = 45
       
@@ -1558,7 +1584,7 @@
       
                                 
       --Cycle
-      local cw, ch = 160, 380
+      local cw, ch = math.floor(160*pnl_scale), math.floor(380*pnl_scale)
       
       --Cycle Options panel
       obj.sections[100] = {x = obj.sections[45].x - cw - 10,
@@ -1570,148 +1596,147 @@
       
       
       --Param Learn panel
-      obj.sections[115] = {x = obj.sections[43].x+obj.sections[43].w+20,
-                           y = obj.sections[43].y+20,
-                           w = 160,
-                           h = 200}
+      obj.sections[115] = {x = obj.sections[10].x+10,
+                           y = obj.sections[10].y+10,
+                           w = math.floor(160*pnl_scale),
+                           h = math.floor(200*pnl_scale)}
       obj = PosParamLrnCtls(obj)
       
       --CTL OPTIONS PG 2
       
       --Display value offset 
-      obj.sections[125] = {x = 60,
-                          y = butt_h+10 + (butt_h/2+4 + 10) * 0,
-                          w = obj.sections[45].w-70,
-                          h = butt_h/2+8}
+      obj.sections[125] = {x = math.floor(60*pnl_scale),
+                          y = math.floor((butt_h+10 + (butt_h/2+4 + 10) * 0)*pnl_scale),
+                          w = math.floor(obj.sections[45].w-(70*pnl_scale)),
+                          h = math.floor((butt_h/2+8)*pnl_scale)}
 
       --MINOV value
-      obj.sections[126] = {x = 60,
-                          y = butt_h+10 + (butt_h/2+4 + 10) * 5,
-                          w = obj.sections[45].w-70,
-                          h = butt_h}
+      obj.sections[126] = {x = math.floor(60*pnl_scale),
+                          y = math.floor((butt_h+10 + (butt_h/2+4 + 10) * 5)*pnl_scale),
+                          w = math.floor(obj.sections[45].w-70*pnl_scale),
+                          h = math.floor(butt_h*pnl_scale)}
       
       --MAXOV value
-      obj.sections[127] = {x = 60,
-                          y = butt_h+6 + (butt_h/2+4 + 10) * 6+2,
-                          w = obj.sections[45].w-70,
-                          h = butt_h}
+      obj.sections[127] = {x = math.floor(60*pnl_scale),
+                          y = math.floor((butt_h+6 + (butt_h/2+4 + 10) * 6+2)*pnl_scale),
+                          w = math.floor(obj.sections[45].w-70*pnl_scale),
+                          h = math.floor(butt_h*pnl_scale)}
       
       local kwh = defctls[def_knobsm].cellh
       
       --MINOV knob control
-      obj.sections[128] = {x = (obj.sections[45].w/4) - kwh/2,
-                           y = butt_h+20 + (butt_h/2+4 + 10) * 1,
+      obj.sections[128] = {x = math.floor((obj.sections[45].w/4) - (kwh/2)),
+                           y = math.floor((butt_h+20 + (butt_h/2+4 + 10) * 1)*pnl_scale),
                           w = kwh,
                           h = kwh}
 
       --MAXOV knob control
-      obj.sections[129] = {x = (obj.sections[45].w*(3/4)) - kwh/2,
-                           y = butt_h+20 + (butt_h/2+4 + 10) * 1,
+      obj.sections[129] = {x = math.floor((obj.sections[45].w*(3/4)) - (kwh/2)),
+                           y = math.floor((butt_h+20 + (butt_h/2+4 + 10) * 1)*pnl_scale),
                           w = kwh,
                           h = kwh}
       
       --OVERRIDE VALUE
-      obj.sections[130] = {x = 20,
-                          y = butt_h+10 + (butt_h/2+4 + 10) * 4,
-                          w = obj.sections[45].w-40,
-                          h = butt_h}
+      obj.sections[130] = {x = math.floor(20*pnl_scale),
+                          y = math.floor((butt_h+10 + (butt_h/2+4 + 10) * 4)*pnl_scale),
+                          w = math.floor(obj.sections[45].w-40*pnl_scale),
+                          h = math.floor(butt_h*pnl_scale)}
 
       --Scale mode Preset
-      obj.sections[131] = {x = 70,
-                          y = butt_h + (butt_h/2+4 + 10) * 8 -12,
-                          w = obj.sections[45].w-80,
-                          h = butt_h}
+      obj.sections[131] = {x = math.floor(70*pnl_scale),
+                          y = math.floor((butt_h + (butt_h/2+4 + 10) * 8 -12)*pnl_scale),
+                          w = math.floor(obj.sections[45].w-80*pnl_scale),
+                          h = math.floor(butt_h*pnl_scale)}
       
       --Scale mode
-      obj.sections[132] = {x = 70,
-                          y = butt_h + (butt_h/2+4 + 10) * 9 -14,
-                          w = obj.sections[45].w-80,
-                          h = butt_h}
+      obj.sections[132] = {x = math.floor(70*pnl_scale),
+                          y = math.floor((butt_h + (butt_h/2+4 + 10) * 9 -14)*pnl_scale),
+                          w = math.floor(obj.sections[45].w-80*pnl_scale),
+                          h = math.floor(butt_h*pnl_scale)}
       
       --Frame mode
-      obj.sections[133] = {x = 70,
-                          y = butt_h + (butt_h/2+4 + 10) * 10 -16,
-                          w = obj.sections[45].w-80,
-                          h = butt_h}
+      obj.sections[133] = {x = math.floor(70*pnl_scale),
+                          y = math.floor((butt_h + (butt_h/2+4 + 10) * 10 -16)*pnl_scale),
+                          w = math.floor(obj.sections[45].w-80*pnl_scale),
+                          h = math.floor(butt_h*pnl_scale)}
       
       --Horiz tickbox
-      obj.sections[134] = {x = obj.sections[45].w-40-butt_h/2+4,
-                          y = butt_h+6 + (butt_h/2+4 + 10) * 11 -16,
-                          w = butt_h/2+4,
-                          h = butt_h/2+4}                           
+      obj.sections[134] = {x = math.floor(obj.sections[45].w-(40-butt_h/2+4)*pnl_scale),
+                          y = math.floor((butt_h+6 + (butt_h/2+4 + 10) * 11 -16)*pnl_scale),
+                          w = math.floor((butt_h/2+4)*pnl_scale),
+                          h = math.floor((butt_h/2+4)*pnl_scale)}                           
       
       --Page snapshot exclude tickbox
-      obj.sections[139] = {x = obj.sections[45].w-40-butt_h/2+4,
-                          y = butt_h+6 + (butt_h/2+4 + 10) * 11 + 4,
-                          w = butt_h/2+4,
-                          h = butt_h/2+4}                           
+      obj.sections[139] = {x = math.floor(obj.sections[45].w-(40-butt_h/2+4)*pnl_scale),
+                          y = math.floor((butt_h+6 + (butt_h/2+4 + 10) * 11 + 4)*pnl_scale),
+                          w = math.floor((butt_h/2+4)*pnl_scale),
+                          h = math.floor((butt_h/2+4)*pnl_scale)}                           
 
       --NORMAL sensitivity
-      obj.sections[135] = {x = 70,
-                          y = butt_h+10 + (butt_h/2+4 + 10) * 13,
-                          w = obj.sections[45].w-80,
-                          h = butt_h/2+8}
+      obj.sections[135] = {x = math.floor(70*pnl_scale),
+                          y = math.floor((butt_h+10 + (butt_h/2+4 + 10) * 13)*pnl_scale),
+                          w = math.floor(obj.sections[45].w-80*pnl_scale),
+                          h = math.floor((butt_h/2+8)*pnl_scale)}
       --FINE sensitivity
-      obj.sections[136] = {x = 70,
-                          y = butt_h+10 + (butt_h/2+4 + 10) * 14,
-                          w = obj.sections[45].w-80,
-                          h = butt_h/2+8}
+      obj.sections[136] = {x = math.floor(70*pnl_scale),
+                          y = math.floor((butt_h+10 + (butt_h/2+4 + 10) * 14)*pnl_scale),
+                          w = math.floor(obj.sections[45].w-80*pnl_scale),
+                          h = math.floor((butt_h/2+8)*pnl_scale)}
       --WHEEL sensitivity
-      obj.sections[137] = {x = 70,
-                          y = butt_h+10 + (butt_h/2+4 + 10) * 15,
-                          w = obj.sections[45].w-80,
-                          h = butt_h/2+8}
+      obj.sections[137] = {x = math.floor(70*pnl_scale),
+                          y = math.floor((butt_h+10 + (butt_h/2+4 + 10) * 15)*pnl_scale),
+                          w = math.floor(obj.sections[45].w-80*pnl_scale),
+                          h = math.floor((butt_h/2+8)*pnl_scale)}
       --WHEEL FINE sensitivity
-      obj.sections[138] = {x = 70,
-                          y = butt_h+10 + (butt_h/2+4 + 10) * 16,
-                          w = obj.sections[45].w-80,
-                          h = butt_h/2+8}
+      obj.sections[138] = {x = math.floor(70*pnl_scale),
+                          y = math.floor((butt_h+10 + (butt_h/2+4 + 10) * 16)*pnl_scale),
+                          w = math.floor(obj.sections[45].w-80*pnl_scale),
+                          h = math.floor((butt_h/2+8)*pnl_scale)}
 
       --CTL OPTIONS PG 3
       
       --Bypass BG Ctl
-      obj.sections[860] = {x = obj.sections[45].w-40-butt_h/2+4,
-                          y = butt_h+10 + (butt_h/2+4 + 10) * 0,
-                          w = butt_h/2+4,
-                          h = butt_h/2+4}
+      obj.sections[860] = {x = obj.sections[45].w-(40-butt_h/2+4)*pnl_scale,
+                          y = (butt_h+10 + (butt_h/2+4 + 10) * 0)*pnl_scale,
+                          w = (butt_h/2+4)*pnl_scale,
+                          h = (butt_h/2+4)*pnl_scale}
       --Bypass BG Name
-      obj.sections[861] = {x = obj.sections[45].w-40-butt_h/2+4,
-                          y = butt_h+10 + (butt_h/2+4 + 10) * 1,
-                          w = butt_h/2+4,
-                          h = butt_h/2+4}
+      obj.sections[861] = {x = obj.sections[45].w-(40-butt_h/2+4)*pnl_scale,
+                          y = (butt_h+10 + (butt_h/2+4 + 10) * 1)*pnl_scale,
+                          w = (butt_h/2+4)*pnl_scale,
+                          h = (butt_h/2+4)*pnl_scale}
       --Bypass BG Value
-      obj.sections[862] = {x = obj.sections[45].w-40-butt_h/2+4,
-                          y = butt_h+10 + (butt_h/2+4 + 10) * 2,
-                          w = butt_h/2+4,
-                          h = butt_h/2+4}
+      obj.sections[862] = {x = obj.sections[45].w-(40-butt_h/2+4)*pnl_scale,
+                          y = (butt_h+10 + (butt_h/2+4 + 10) * 2)*pnl_scale,
+                          w = (butt_h/2+4)*pnl_scale,
+                          h = (butt_h/2+4)*pnl_scale}
       --Clickthrough
-      obj.sections[863] = {x = obj.sections[45].w-40-butt_h/2+4,
-                          y = butt_h+10 + (butt_h/2+4 + 10) * 4,
-                          w = butt_h/2+4,
-                          h = butt_h/2+4}
+      obj.sections[863] = {x = obj.sections[45].w-(40-butt_h/2+4)*pnl_scale,
+                          y = (butt_h+10 + (butt_h/2+4 + 10) * 4)*pnl_scale,
+                          w = (butt_h/2+4)*pnl_scale,
+                          h = (butt_h/2+4)*pnl_scale}
                              
       --SNAPSHOTS
       
       local ssh 
       if settings_ssdock == true then
-        snaph = math.min(math.max(gfx1.main_h-obj.sections[10].y,252),2048)
-        ssh = snaph-208
-        obj.sections[160] = {x = gfx1.main_w - gui.winsz.snaps,
+        snaph = math.min(math.max((gfx1.main_h-obj.sections[10].y),252*pnl_scale),2048)
+        ssh = snaph-(208*pnl_scale)
+        obj.sections[160] = {x = gfx1.main_w - math.floor(gui.winsz.snaps*pnl_scale),
                             y = obj.sections[10].y,
-                            w = gui.winsz.snaps,
+                            w = math.floor(gui.winsz.snaps*pnl_scale),
                             h = snaph}
         update_snaps = true
-        --DBG(obj.sections[160].y..'  '..obj.sections[160].h)
       else
-        snaph = math.max(math.min(snaph,obj.sections[10].h),252)
-        ssh = snaph-208
+        snaph = math.max(math.min(snaph,obj.sections[10].h),252*pnl_scale)
+        ssh = snaph-(208*pnl_scale)
         obj.sections[160] = {}
-        obj.sections[160].w = gui.winsz.snaps
+        obj.sections[160].w = gui.winsz.snaps*pnl_scale
         obj.sections[160].h = snaph
         if ss160 == nil then
-          obj.sections[160] = {x = gfx1.main_w - gui.winsz.snaps - (sb_size+2),
+          obj.sections[160] = {x = gfx1.main_w - gui.winsz.snaps*pnl_scale - (sb_size+2),
                               y = gfx1.main_h - snaph - (sb_size+2),
-                              w = gui.winsz.snaps,
+                              w = math.floor(gui.winsz.snaps*pnl_scale),
                               h = snaph}                            
           if snapshot_win_pos and snapshot_win_pos.x and snapshot_win_pos.y then
             obj.sections[160].x = snapshot_win_pos.x
@@ -1725,7 +1750,7 @@
           end
         else
           obj.sections[160] = ss160
-          obj.sections[160].w = gui.winsz.snaps
+          obj.sections[160].w = gui.winsz.snaps*pnl_scale
           if snapshot_win_pos and snapshot_win_pos.x and snapshot_win_pos.y then
             obj.sections[160].x = snapshot_win_pos.x
             obj.sections[160].y = snapshot_win_pos.y
@@ -1742,58 +1767,58 @@
       end
       
       --Subset button
-      obj.sections[161] = {x = 30,
-                          y = butt_h+10 + (butt_h/2+2 + 10) * 0,
-                          w = obj.sections[160].w-20-20,
-                          h = butt_h}                       
+      obj.sections[161] = {x = math.floor(30*pnl_scale),
+                          y = math.floor((butt_h+10 + (butt_h/2+2 + 10) * 0)*pnl_scale),
+                          w = math.floor(obj.sections[160].w-(40*pnl_scale)),
+                          h = math.floor(butt_h*pnl_scale)}                       
       
       --Capture button
-      obj.sections[162] = {x = 10,
-                          y = butt_h+10 + (butt_h/2+2 + 10) * 4,
-                          w = obj.sections[160].w-20,
-                          h = butt_h+8}                       
+      obj.sections[162] = {x = math.floor(10*pnl_scale),
+                          y = math.floor((butt_h+10 + (butt_h/2+2 + 10) * 4)*pnl_scale),
+                          w = math.floor(obj.sections[160].w-(20*pnl_scale)),
+                          h = math.floor((butt_h+8)*pnl_scale)}                       
       
       --SS List
-      obj.sections[163] = {x = 10,
-                          y = butt_h+10 + (butt_h/2+4 + 10) * 5 + 4,
-                          w = obj.sections[160].w-20,
-                          h = ssh}
+      obj.sections[163] = {x = math.floor(10*pnl_scale),
+                          y = math.floor((butt_h+10 + (butt_h/2+4 + 10) * 5 + 4)*pnl_scale),
+                          w = math.floor(obj.sections[160].w-(20*pnl_scale)),
+                          h = math.floor(ssh)}
       
       --Rate button
-      obj.sections[1010] = {x = 10,
-                            y = obj.sections[163].y + obj.sections[163].h+3,
+      obj.sections[1010] = {x = math.floor(10*pnl_scale),
+                            y = math.floor(obj.sections[163].y + obj.sections[163].h+3),
                             w = math.floor((obj.sections[163].w/3)+2)-1,
-                            h = butt_h}
+                            h = math.floor(butt_h*pnl_scale)}
       
       --Sync button
-      obj.sections[1011] = {x = 10+obj.sections[1010].w+2,
-                            y = obj.sections[1010].y,
-                            w = obj.sections[1010].w*.7-1,
-                            h = butt_h}
+      obj.sections[1011] = {x = math.floor(12*pnl_scale+obj.sections[1010].w),
+                            y = math.floor(obj.sections[1010].y),
+                            w = math.floor(obj.sections[1010].w*.7)-1,
+                            h = math.floor(butt_h*pnl_scale)}
       
       --Transfer shape button
-      obj.sections[1012] = {x = obj.sections[1011].x+obj.sections[1011].w+2,
+      obj.sections[1012] = {x = math.floor((obj.sections[1011].x+obj.sections[1011].w)+2*pnl_scale),
                             y = obj.sections[1010].y,
                             w = math.floor(obj.sections[1010].w*1.3-3),
-                            h = butt_h}
+                            h = math.floor(butt_h*pnl_scale)}
       
       --Dir button
-      obj.sections[1014] = {x = 10,
-                            y = obj.sections[1010].y + butt_h+2,
+      obj.sections[1014] = {x = math.floor(10*pnl_scale),
+                            y = math.floor(obj.sections[1010].y + (butt_h+2)*pnl_scale),
                             w = math.floor((obj.sections[163].w/3)+2)-1,
-                            h = butt_h}
+                            h = math.floor(butt_h*pnl_scale)}
       
       --Paused button
-      obj.sections[1013] = {x = 10+obj.sections[1014].w+2,
+      obj.sections[1013] = {x = math.floor(obj.sections[1014].w+12*pnl_scale),
                             y = obj.sections[1014].y,
                             w = math.floor((obj.sections[163].w/3)+2)-2,
-                            h = butt_h}
+                            h = math.floor(butt_h*pnl_scale)}
       
       --Loop button
-      obj.sections[1015] = {x = 10+obj.sections[1014].w*2+3,
+      obj.sections[1015] = {x = math.floor((obj.sections[1014].w*2)+13*pnl_scale),
                             y = obj.sections[1014].y,
                             w = math.floor((obj.sections[163].w/3)-3),
-                            h = butt_h}
+                            h = math.floor(butt_h*pnl_scale)}
       
       --Dock button
       obj.sections[1160] = {x = obj.sections[160].w - 34,
@@ -1802,10 +1827,10 @@
                             h = butt_h/2+8}
       
       --Rename subset button                             
-      obj.sections[164] = {x = 10,
-                          y = butt_h+10 + (butt_h/2+2 + 10) * 3,
-                          w = (obj.sections[160].w-20)/2 - 1,
-                          h = butt_h}                      
+      obj.sections[164] = {x = math.floor(10*pnl_scale),
+                          y = math.floor((butt_h+10 + (butt_h/2+2 + 10) * 3)*pnl_scale),
+                          w = math.floor((obj.sections[160].w-(20*pnl_scale))/2) - 1,
+                          h = math.floor(butt_h*pnl_scale)}                      
 
       --Resize window area
       obj.sections[165] = {x = 0,
@@ -1814,34 +1839,34 @@
                           h = 12}                       
       
       --New subset button
-      obj.sections[166] = {x = 10,
-                          y = butt_h+10 + (butt_h/2+2 + 10) * 2,
-                          w = (obj.sections[160].w-20)/2 - 1,
-                          h = butt_h}                       
+      obj.sections[166] = {x = math.floor(10*pnl_scale),
+                          y = math.floor((butt_h+10 + (butt_h/2+2 + 10) * 2)*pnl_scale),
+                          w = math.floor((obj.sections[160].w-(20*pnl_scale))/2 - 1),
+                          h = math.floor(butt_h*pnl_scale)}                       
       
       --Learn Ctls button
-      obj.sections[167] = {x = 12 + (obj.sections[160].w-20)/2 +1,
-                          y = butt_h+10 + (butt_h/2+2 + 10) * 2,
-                          w = (obj.sections[160].w-20)/2 - 3,
-                          h = butt_h*2+2}                       
+      obj.sections[167] = {x = math.floor(12*pnl_scale + (obj.sections[160].w-(20*pnl_scale))/2) +1,
+                          y = math.floor((butt_h+10 + (butt_h/2+2 + 10) * 2)*pnl_scale),
+                          w = math.floor((obj.sections[160].w-(20*pnl_scale))/2 - 3),
+                          h = math.floor((butt_h*2+2)*pnl_scale)}                       
       
       --* button
-      obj.sections[168] = {x = 10,
-                          y = butt_h+10 + (butt_h/2+2 + 10) * 0,
-                          w = 18,
-                          h = butt_h}                       
+      obj.sections[168] = {x = math.floor(10*pnl_scale),
+                          y = math.floor((butt_h+10 + (butt_h/2+2 + 10) * 0)*pnl_scale),
+                          w = math.floor(18*pnl_scale),
+                          h = math.floor(butt_h*pnl_scale)}                       
       
       --Randomize button
-      obj.sections[169] = {x = 12 + (obj.sections[160].w-20)/2 +1,
-                          y = butt_h+10 + (butt_h/2+2 + 10) * 1,
-                          w = (obj.sections[160].w-20)/2 - 3,
-                          h = butt_h}                       
+      obj.sections[169] = {x = math.floor(12*pnl_scale + (obj.sections[160].w-(20*pnl_scale))/2) +1,
+                          y = math.floor((butt_h+10 + (butt_h/2+2 + 10) * 1)*pnl_scale),
+                          w = math.floor((obj.sections[160].w-(20*pnl_scale))/2 - 3),
+                          h = math.floor(butt_h*pnl_scale)}                       
       
       --Metalite button
-      obj.sections[224] = {x = 10,
-                          y = butt_h+10 + (butt_h/2+2 + 10) * 1,
-                          w = (obj.sections[160].w-20)/2 - 1,
-                          h = butt_h}                       
+      obj.sections[224] = {x = math.floor(10*pnl_scale),
+                          y = math.floor((butt_h+10 + (butt_h/2+2 + 10) * 1)*pnl_scale),
+                          w = math.floor((obj.sections[160].w-(20*pnl_scale))/2) - 1,
+                          h = math.floor(butt_h*pnl_scale)}                       
       
       --ACTION CHOOSER
       
@@ -2222,6 +2247,7 @@
       macroedit.sliderw = 12
       macroedit.sliderh = 24
 
+      --close macro edit button
       obj.sections[401] = {x = obj.sections[300].w-16,
                            y = 0,
                            w = 16,
@@ -2234,35 +2260,42 @@
                            y = macroedit.secyoff,
                            w = 250,
                            h = macroedit.sech}
-      --A
+      --A - slider
       obj.sections[403] = {x = obj.sections[402].x+obj.sections[402].w+20,
                            y = macroedit.secyoff,
                            w = sw,
                            h = macroedit.h}
-      --B
+      --B - slider
       obj.sections[404] = {x = obj.sections[403].x+obj.sections[403].w+26,
                            y = macroedit.secyoff,
                            w = sw,
                            h = macroedit.h}
+      
+      --shape button
       obj.sections[405] = {x = obj.sections[404].x + obj.sections[404].w + 14,
                            y = macroedit.secyoff,
                            w = math.max(obj.sections[300].w - (obj.sections[404].x+obj.sections[404].w)-30,100),
                            h = macroedit.h}
 
+      --X button
       obj.sections[407] = {x = obj.sections[402].x+5,
                            y = macroedit.secyoff,
                            w = 20,
                            h = macroedit.h}
+      
+      --M button
       obj.sections[406] = {x = obj.sections[402].x+obj.sections[402].w-25,
                            y = macroedit.secyoff,
                            w = 20,
                            h = macroedit.h}
       
+      --Faders
       obj.sections[408] = {x = obj.sections[404].x + 10,
                            y = 30,
                            w = obj.sections[404].w-20,
                            h = butt_h+2} 
 
+      --Add parameters button
       obj.sections[409] = {x = 40,
                            y = 20,
                            w = obj.sections[402].w-40,
@@ -2271,32 +2304,43 @@
       local w = gfx.getimgdim(def_eqcknobf)
       local h = ctl_files[def_eqcknobfctl].cellh
             
+      --Knob control
       obj.sections[410] = {x = obj.sections[405].x + math.floor(obj.sections[405].w/2 - w/2),
                            y = obj.sections[405].y /2 - math.floor(h/2),
                            w = w,
                            h = h}
 
+      --Capture A button
       obj.sections[411] = {x = obj.sections[403].x + 10,
                            y = obj.sections[409].y+obj.sections[409].h-(butt_h+4),
                            w = obj.sections[403].w-20,
                            h = butt_h+4} 
+      
+      --Capture B button
       obj.sections[412] = {x = obj.sections[404].x + 10,
                            y = obj.sections[411].y,
                            w = obj.sections[404].w - 20,
                            h = butt_h+4} 
+      
+      --Monitor button
       obj.sections[413] = {x = obj.sections[403].x + 10,
                            y = 30,
                            w = obj.sections[403].w-20,
                            h = butt_h+2} 
 
+      --BI button
       obj.sections[414] = {x = obj.sections[402].x+obj.sections[402].w-75,
                            y = macroedit.secyoff,
                            w = 20,
                            h = macroedit.h} 
+      
+      --INV button
       obj.sections[415] = {x = obj.sections[402].x+obj.sections[402].w-50,
                            y = macroedit.secyoff,
                            w = 20,
                            h = macroedit.h} 
+      
+      --REL button
       obj.sections[416] = {x = obj.sections[402].x+obj.sections[402].w-100,
                            y = macroedit.secyoff,
                            w = 20,
@@ -2371,21 +2415,23 @@
                            w = 60,
                            h = butt_h} 
       
+      --MOD EDIT (LFO)
+      
       local mow, moh, x, y
       if settings_moddock == true and modwinsz and modwinsz.minimized == true then
-        mow = math.max(obj.sections[10].w+1,modwin.minw)
-        moh = gui.winsz.pnltit
+        mow = math.max(obj.sections[10].w+1,modwin.minw*pnl_scale)
+        moh = gui.winsz.pnltit*pnl_scale
         x = obj.sections[10].x
         y = gfx1.main_h - moh
 
       elseif settings_moddock == true then
-        mow = math.max(obj.sections[10].w+1,modwin.minw)
+        mow = math.max(obj.sections[10].w+1,modwin.minw*pnl_scale)
         if modwinsz then
           moh = modwinsz.h
         else
-          moh = 300
+          moh = 300*pnl_scale
         end
-        moh = math.max(math.min(moh,gfx1.main_h-obj.sections[10].y),modwin.minh)
+        moh = math.max(math.min(moh,gfx1.main_h-obj.sections[10].y),modwin.minh*pnl_scale)
         x = obj.sections[10].x
         y = gfx1.main_h - moh
         if not modwinsz then
@@ -2393,13 +2439,18 @@
         end
       
       else
-        if modwinsz then
-          mow = modwinsz.w
-          moh = modwinsz.h
+        if modwinsz and modwinsz.resize ~= true then
+          mow = modwinsz.w*pnl_scale
+          moh = modwinsz.h*pnl_scale
           x = modwinsz.x
           y = modwinsz.y
+        elseif modwinsz then
+          mow = modwinsz.w*pnl_scale
+          moh = modwinsz.h*pnl_scale
+          x = modwinsz.x
+          y = modwinsz.y        
         else
-          mow, moh = modwin.minw, 300
+          mow, moh = modwin.minw*pnl_scale, 300*pnl_scale
           x = math.floor(obj.sections[10].x+obj.sections[10].w/2 - mow/2)
           y = math.floor(obj.sections[10].y+obj.sections[10].h/2 - moh/2)
           modwinsz = {x = x, y = y, w = mow, h = moh}
@@ -2416,87 +2467,109 @@
         obj.sections[1100].x = plist_w + 2
       end
       modpos = 8 
+      
+      --Dock button
       obj.sections[1123] = {x = obj.sections[1100].w - 35,
                             y = gui.winsz.pnltit-butt_h+1,
                             w = 30,
                             h = butt_h/2+8}
+      
+      --Main bar display
       obj.sections[1101] = {x = 10,
-                           y = 30,
-                           w = obj.sections[1100].w-20,
-                           h = obj.sections[1100].h-90-modpos} 
+                           y = 30*pnl_scale,
+                           w = obj.sections[1100].w-(20),
+                           h = obj.sections[1100].h-(90*pnl_scale)-(modpos*pnl_scale)} 
 
-      obj.sections[1102] = {x = obj.sections[1101].x + obj.sections[1101].w - 102,
-                           y = obj.sections[1101].y + obj.sections[1101].h + 10 + modpos,
-                           w = 100,
-                           h = 20} 
-      --[[obj.sections[1103] = {x = obj.sections[1102].x - 42,
-                           y = obj.sections[1101].y + obj.sections[1101].h + 10,
-                           w = 40,
-                           h = 20} ]]
+      --Step mult button
+      obj.sections[1102] = {x = math.floor(obj.sections[1101].x + obj.sections[1101].w - (102*pnl_scale)),
+                           y = math.floor(obj.sections[1101].y + obj.sections[1101].h + (10 + modpos)*pnl_scale),
+                           w = math.floor(100*pnl_scale),
+                           h = math.floor(20*pnl_scale)} 
+                           
+            
+      --ON button
       obj.sections[1106] = {x = obj.sections[1101].x,
-                           y = obj.sections[1101].y + obj.sections[1101].h + 10 + modpos,
-                           w = 40,
-                           h = 42} 
-      obj.sections[1104] = {x = obj.sections[1106].x + obj.sections[1106].w + 6,
-                           y = obj.sections[1101].y + obj.sections[1101].h + 10 + modpos,
-                           w = 80,
-                           h = 20} 
-      obj.sections[1105] = {x = obj.sections[1104].x + obj.sections[1104].w + 2,
-                           y = obj.sections[1101].y + obj.sections[1101].h + 10 + modpos,
-                           w = 80,
-                           h = 20} 
-      obj.sections[1107] = {x = obj.sections[1102].x -82,
-                           y = obj.sections[1101].y + obj.sections[1101].h + 10 + modpos,
-                           w = 80,
-                           h = 20} 
+                           y = math.floor(obj.sections[1101].y + obj.sections[1101].h + (10 + modpos)*pnl_scale),
+                           w = math.floor(40*pnl_scale),
+                           h = math.floor(42*pnl_scale)} 
+      
+      --Length button
+      obj.sections[1104] = {x = math.floor(obj.sections[1106].x + obj.sections[1106].w + (6*pnl_scale)),
+                           y = math.floor(obj.sections[1101].y + obj.sections[1101].h + (10 + modpos)*pnl_scale),
+                           w = math.floor(80*pnl_scale),
+                           h = math.floor(20*pnl_scale)} 
+      
+      --Smooth button
+      obj.sections[1105] = {x = math.floor(obj.sections[1104].x + obj.sections[1104].w + 2*pnl_scale),
+                           y = math.floor(obj.sections[1101].y + obj.sections[1101].h + (10 + modpos)*pnl_scale),
+                           w = math.floor(80*pnl_scale),
+                           h = math.floor(20*pnl_scale)} 
+      
+      --Steps button
+      obj.sections[1107] = {x = math.floor(obj.sections[1102].x -(82*pnl_scale)),
+                           y = math.floor(obj.sections[1101].y + obj.sections[1101].h + (10 + modpos)*pnl_scale),
+                           w = math.floor(80*pnl_scale),
+                           h = math.floor(20*pnl_scale)} 
 
-      obj.sections[1108] = {x = obj.sections[1105].x + obj.sections[1105].w + 2,
-                           y = obj.sections[1101].y + obj.sections[1101].h + 10 + modpos,
-                           w = 120,
-                           h = 20} 
+      --Shift button
+      obj.sections[1108] = {x = math.floor(obj.sections[1105].x + obj.sections[1105].w + 2*pnl_scale),
+                           y = math.floor(obj.sections[1101].y + obj.sections[1101].h + (10 + modpos)*pnl_scale),
+                           w = math.floor(120*pnl_scale),
+                           h = math.floor(20*pnl_scale)} 
 
+      --Min button
       obj.sections[1109] = {x = obj.sections[1104].x,
-                           y = obj.sections[1102].y + obj.sections[1102].h + 2,
-                           w = 80,
-                           h = 20} 
-      obj.sections[1110] = {x = obj.sections[1109].x + obj.sections[1109].w + 2,
+                           y = math.floor(obj.sections[1102].y + obj.sections[1102].h + 2*pnl_scale),
+                           w = math.floor(80*pnl_scale),
+                           h = math.floor(20*pnl_scale)} 
+      
+      --Max button
+      obj.sections[1110] = {x = math.floor(obj.sections[1109].x + obj.sections[1109].w + 2*pnl_scale),
                            y = obj.sections[1109].y,
-                           w = 80,
-                           h = 20} 
+                           w = math.floor(80*pnl_scale),
+                           h = math.floor(20*pnl_scale)} 
+      
+      --Corner resize 
       obj.sections[1111] = {x = obj.sections[1100].w -20,
                            y = obj.sections[1100].h -20,
                            w = 20,
                            h = 20} 
+      
+      --Title bar
       obj.sections[1112] = {x = 0,
                            y = 0,
                            w = obj.sections[1100].w,
-                           h = 24} 
-
+                           h = gui.winsz.pnltit*pnl_scale} 
+      
+      --Randomize button
       obj.sections[1113] = {x = obj.sections[1102].x,
-                           y = obj.sections[1102].y + obj.sections[1102].h + 2,
-                           w = 100,
-                           h = 20} 
+                           y = math.floor(obj.sections[1102].y + obj.sections[1102].h + 2*pnl_scale),
+                           w = math.floor(100*pnl_scale),
+                           h = math.floor(20*pnl_scale)} 
 
-      obj.sections[1114] = {x = obj.sections[1110].x+obj.sections[1110].w + 2,
-                           y = obj.sections[1102].y + obj.sections[1102].h + 2,
-                           w = 120,
-                           h = 20} 
+      --Mode button
+      obj.sections[1114] = {x = math.floor(obj.sections[1110].x+obj.sections[1110].w + 2*pnl_scale),
+                           y = math.floor(obj.sections[1102].y + obj.sections[1102].h + 2*pnl_scale),
+                           w = math.floor(120*pnl_scale),
+                           h = math.floor(20*pnl_scale)} 
 
-      local mw,mh = 160,84
-      obj.sections[1120] = {x = obj.sections[10].x+obj.sections[10].w - mw - 10,
-                           y = obj.sections[10].y + 10,
+      --MUTATE panel
+
+      local mw,mh = math.floor(160*pnl_scale),math.floor(84*pnl_scale)
+      obj.sections[1120] = {x = obj.sections[10].x+obj.sections[10].w - mw - math.floor(10*pnl_scale),
+                           y = obj.sections[10].y + math.floor(10*pnl_scale),
                            w = mw,
                            h = mh}
-      obj.sections[1121] = {x = 80,
-                           y = 30,
-                           w = 60,
-                           h = butt_h}
-      obj.sections[1122] = {x = 80,
-                           y = obj.sections[1121].y+obj.sections[1121].h+4,
-                           w = 60,
-                           h = butt_h}
+      obj.sections[1121] = {x = math.floor(80*pnl_scale),
+                           y = math.floor(30*pnl_scale),
+                           w = math.floor(60*pnl_scale),
+                           h = math.floor(butt_h*pnl_scale)}
+      obj.sections[1122] = {x = math.floor(80*pnl_scale),
+                           y = obj.sections[1121].y+obj.sections[1121].h+math.floor(4*pnl_scale),
+                           w = math.floor(60*pnl_scale),
+                           h = math.floor(butt_h*pnl_scale)}
       
-
+    pnlscaleflag = nil
     return obj
   end
   
@@ -2685,6 +2758,20 @@
                                y = settingswin_off + yoff+10 + yoffm*21,
                                w = 150,
                                h = bh+10}
+
+    obj.sections[721] = {x = xofft-75, 
+                               y = settingswin_off + yoff+10 + yoffm*22 + 6,
+                               w = 150,
+                               h = bh+10}
+
+    obj.sections[722] = {x = xofft-75, 
+                               y = settingswin_off + yoff+10 + yoffm*23 + 12,
+                               w = 70,
+                               h = bh+10}
+    obj.sections[723] = {x = xofft+5, 
+                               y = settingswin_off + yoff+10 + yoffm*23 + 12,
+                               w = 70,
+                               h = bh+10}
     
     return obj
     
@@ -2693,24 +2780,24 @@
   function PosParamLrnCtls(obj)
   
     obj.sections[116] = {x = obj.sections[115].x,
-                         y = obj.sections[115].y+butt_h*4,
+                         y = obj.sections[115].y+(butt_h*4)*pnl_scale,
                          w = obj.sections[115].w,
-                         h = obj.sections[115].h-(obj.sections[115].y+butt_h*4)}
+                         h = obj.sections[115].h-(obj.sections[115].y+(butt_h*4)*pnl_scale)}
     --learn track
     obj.sections[117] = {x = obj.sections[115].x,
-                         y = obj.sections[115].y+butt_h,
+                         y = obj.sections[115].y+butt_h*pnl_scale,
                          w = obj.sections[115].w,
-                         h = butt_h}
+                         h = butt_h*pnl_scale}
     --learn fx
     obj.sections[118] = {x = obj.sections[115].x,
-                         y = obj.sections[115].y+butt_h*2,
+                         y = obj.sections[115].y+(butt_h*2)*pnl_scale,
                          w = obj.sections[115].w,
-                         h = butt_h}
+                         h = butt_h*pnl_scale}
     --learn param
     obj.sections[119] = {x = obj.sections[115].x,
-                         y = obj.sections[115].y+butt_h*3,
+                         y = obj.sections[115].y+(butt_h*3)*pnl_scale,
                          w = obj.sections[115].w,
-                         h = butt_h}
+                         h = butt_h*pnl_scale}
                          
     return obj
     
@@ -2720,95 +2807,95 @@
   
     --LBL OPTIONS 
     --EDIT
-    obj.sections[140] = {x = obj.sections[49].x+20,
-                        y = obj.sections[49].y+butt_h+10 + (butt_h/2+4 + 10) * 0,
-                        w = obj.sections[49].w-40,
-                        h = butt_h/2+8}                       
+    obj.sections[140] = {x = math.floor(obj.sections[49].x+20*pnl_scale),
+                        y = math.floor(obj.sections[49].y+(butt_h+10 + (butt_h/2+4 + 10) * 0)*pnl_scale),
+                        w = math.floor(obj.sections[49].w-40*pnl_scale),
+                        h = math.floor((butt_h/2+8)*pnl_scale)}                       
 
     local yo = 5
-    obj.sections[141] = {x = obj.sections[49].x+50,
-                        y = obj.sections[49].y+butt_h+10 + (butt_h/2+4 + 10) * 2 + yo,
-                        w = obj.sections[49].w-60,
-                        h = butt_h/2+4}                           
+    obj.sections[141] = {x = math.floor(obj.sections[49].x+50*pnl_scale),
+                        y = math.floor(obj.sections[49].y+(butt_h+10 + (butt_h/2+4 + 10) * 2 + yo)*pnl_scale),
+                        w = math.floor(obj.sections[49].w-60*pnl_scale),
+                        h = math.floor((butt_h/2+4)*pnl_scale)}                           
 
-    obj.sections[142] = {x = obj.sections[49].x+obj.sections[49].w-40-butt_h/2+4,
-                        y = obj.sections[49].y+butt_h+10 + (butt_h/2+4 + 10) * 3 + yo,
-                        w = butt_h/2+4,
-                        h = butt_h/2+4}                           
-    obj.sections[143] = {x = obj.sections[49].x+obj.sections[49].w-40-butt_h/2+4,
-                        y = obj.sections[49].y+butt_h+10 + (butt_h/2+4 + 10) * 4 + yo,
-                        w = butt_h/2+4,
-                        h = butt_h/2+4}                           
-    obj.sections[144] = {x = obj.sections[49].x+obj.sections[49].w-40-butt_h/2+4,
-                        y = obj.sections[49].y+butt_h+10 + (butt_h/2+4 + 10) * 5 + yo,
-                        w = butt_h/2+4,
-                        h = butt_h/2+4}                           
-    obj.sections[145] = {x = obj.sections[49].x+obj.sections[49].w-40-butt_h/2+4,
-                        y = obj.sections[49].y+butt_h+10 + (butt_h/2+4 + 10) * 6 + yo,
-                        w = butt_h/2+4,
-                        h = butt_h/2+4}                           
-    obj.sections[146] = {x = obj.sections[49].x+obj.sections[49].w-40-butt_h/2+4,
-                        y = obj.sections[49].y+butt_h+10 + (butt_h/2+4 + 10) * 7 + yo,
-                        w = butt_h/2+4,
-                        h = butt_h/2+4}                           
+    obj.sections[142] = {x = math.floor(obj.sections[49].x+obj.sections[49].w-(40-butt_h/2+4)*pnl_scale),
+                        y = math.floor(obj.sections[49].y+(butt_h+10 + (butt_h/2+4 + 10) * 3 + yo)*pnl_scale),
+                        w = math.floor((butt_h/2+4)*pnl_scale),
+                        h = math.floor((butt_h/2+4)*pnl_scale)}                           
+    obj.sections[143] = {x = math.floor(obj.sections[49].x+obj.sections[49].w-(40-butt_h/2+4)*pnl_scale),
+                        y = math.floor(obj.sections[49].y+(butt_h+10 + (butt_h/2+4 + 10) * 4 + yo)*pnl_scale),
+                        w = math.floor((butt_h/2+4)*pnl_scale),
+                        h = math.floor((butt_h/2+4)*pnl_scale)}                           
+    obj.sections[144] = {x = math.floor(obj.sections[49].x+obj.sections[49].w-(40-butt_h/2+4)*pnl_scale),
+                        y = math.floor(obj.sections[49].y+(butt_h+10 + (butt_h/2+4 + 10) * 5 + yo)*pnl_scale),
+                        w = math.floor((butt_h/2+4)*pnl_scale),
+                        h = math.floor((butt_h/2+4)*pnl_scale)}                           
+    obj.sections[145] = {x = math.floor(obj.sections[49].x+obj.sections[49].w-(40-butt_h/2+4)*pnl_scale),
+                        y = math.floor(obj.sections[49].y+(butt_h+10 + (butt_h/2+4 + 10) * 6 + yo)*pnl_scale),
+                        w = math.floor((butt_h/2+4)*pnl_scale),
+                        h = math.floor((butt_h/2+4)*pnl_scale)}                           
+    obj.sections[146] = {x = math.floor(obj.sections[49].x+obj.sections[49].w-(40-butt_h/2+4)*pnl_scale),
+                        y = math.floor(obj.sections[49].y+(butt_h+10 + (butt_h/2+4 + 10) * 7 + yo)*pnl_scale),
+                        w = math.floor((butt_h/2+4)*pnl_scale),
+                        h = math.floor((butt_h/2+4)*pnl_scale)}                           
 
-    obj.sections[147] = {x = obj.sections[49].x+20,
-                        y = obj.sections[49].y+butt_h+10 + (butt_h/2+4 + 10) * 1,
-                        w = obj.sections[49].w-40,
-                        h = butt_h/2+8}                       
+    obj.sections[147] = {x = math.floor(obj.sections[49].x+20*pnl_scale),
+                        y = math.floor(obj.sections[49].y+(butt_h+10 + (butt_h/2+4 + 10) * 1)*pnl_scale),
+                        w = math.floor(obj.sections[49].w-40*pnl_scale),
+                        h = math.floor((butt_h/2+8)*pnl_scale)}                       
 
-    obj.sections[148] = {x = obj.sections[49].x+50,
-                        y = obj.sections[49].y+butt_h+10 + (butt_h/2+4 + 10) * 8 + yo,
-                        w = obj.sections[49].w-60,
-                        h = butt_h/2+4}                           
-    obj.sections[149] = {x = obj.sections[49].x+50,
-                        y = obj.sections[49].y+butt_h+10 + (butt_h/2+4 + 10) * 9 + yo,
-                        w = obj.sections[49].w-60,
-                        h = butt_h/2+4}                           
-    obj.sections[150] = {x = obj.sections[49].x+50,
-                        y = obj.sections[49].y+butt_h+10 + (butt_h/2+4 + 10) * 10 + yo,
-                        w = obj.sections[49].w-60,
-                        h = butt_h/2+4}
+    obj.sections[148] = {x = math.floor(obj.sections[49].x+50*pnl_scale),
+                        y = math.floor(obj.sections[49].y+(butt_h+10 + (butt_h/2+4 + 10) * 8 + yo)*pnl_scale),
+                        w = math.floor(obj.sections[49].w-60*pnl_scale),
+                        h = math.floor((butt_h/2+4)*pnl_scale)}                           
+    obj.sections[149] = {x = math.floor(obj.sections[49].x+50*pnl_scale),
+                        y = math.floor(obj.sections[49].y+(butt_h+10 + (butt_h/2+4 + 10) * 9 + yo)*pnl_scale),
+                        w = math.floor(obj.sections[49].w-60*pnl_scale),
+                        h = math.floor((butt_h/2+4)*pnl_scale)}                           
+    obj.sections[150] = {x = math.floor(obj.sections[49].x+50*pnl_scale),
+                        y = math.floor(obj.sections[49].y+(butt_h+10 + (butt_h/2+4 + 10) * 10 + yo)*pnl_scale),
+                        w = math.floor(obj.sections[49].w-60*pnl_scale),
+                        h = math.floor((butt_h/2+4)*pnl_scale)}                           
 
-    obj.sections[910] = {x = obj.sections[49].x+75,
-                        y = obj.sections[49].y+butt_h+10 + (butt_h/2+4 + 10) * 0 + yo,
-                        w = obj.sections[49].w-85,
-                        h = butt_h/2+4}                           
-    obj.sections[911] = {x = obj.sections[49].x+75,
-                        y = obj.sections[49].y+butt_h+10 + (butt_h/2+4 + 10) * 1 + yo,
-                        w = obj.sections[49].w-85,
-                        h = butt_h/2+4}                           
+    obj.sections[910] = {x = math.floor(obj.sections[49].x+75*pnl_scale),
+                        y = math.floor(obj.sections[49].y+(butt_h+10 + (butt_h/2+4 + 10) * 0 + yo)*pnl_scale),
+                        w = math.floor(obj.sections[49].w-85*pnl_scale),
+                        h = math.floor((butt_h/2+4)*pnl_scale)}                           
+    obj.sections[911] = {x = math.floor(obj.sections[49].x+75*pnl_scale),
+                        y = math.floor(obj.sections[49].y+(butt_h+10 + (butt_h/2+4 + 10) * 1 + yo)*pnl_scale),
+                        w = math.floor(obj.sections[49].w-85*pnl_scale),
+                        h = math.floor((butt_h/2+4)*pnl_scale)}                           
 
-    obj.sections[913] = {x = obj.sections[49].x+75,
-                        y = obj.sections[49].y+butt_h+10 + (butt_h/2+4 + 10) * 3 + yo,
-                        w = obj.sections[49].w-85,
-                        h = butt_h/2+4}                           
-    obj.sections[914] = {x = obj.sections[49].x+75,
-                        y = obj.sections[49].y+butt_h+10 + (butt_h/2+4 + 10) * 4 + yo,
-                        w = obj.sections[49].w-85,
-                        h = butt_h/2+4}                           
-    obj.sections[915] = {x = obj.sections[49].x+75,
-                        y = obj.sections[49].y+butt_h+10 + (butt_h/2+4 + 10) * 5 + yo,
-                        w = obj.sections[49].w-85,
-                        h = butt_h/2+4}                           
-    obj.sections[916] = {x = obj.sections[49].x+75,
-                        y = obj.sections[49].y+butt_h+10 + (butt_h/2+4 + 10) * 6 + yo,
-                        w = obj.sections[49].w-85,
-                        h = butt_h/2+4}                           
+    obj.sections[913] = {x = math.floor(obj.sections[49].x+75*pnl_scale),
+                        y = math.floor(obj.sections[49].y+(butt_h+10 + (butt_h/2+4 + 10) * 3 + yo)*pnl_scale),
+                        w = math.floor(obj.sections[49].w-85*pnl_scale),
+                        h = math.floor((butt_h/2+4)*pnl_scale)}                           
+    obj.sections[914] = {x = math.floor(obj.sections[49].x+75*pnl_scale),
+                        y = math.floor(obj.sections[49].y+(butt_h+10 + (butt_h/2+4 + 10) * 4 + yo)*pnl_scale),
+                        w = math.floor(obj.sections[49].w-85*pnl_scale),
+                        h = math.floor((butt_h/2+4)*pnl_scale)}                           
+    obj.sections[915] = {x = math.floor(obj.sections[49].x+75*pnl_scale),
+                        y = math.floor(obj.sections[49].y+(butt_h+10 + (butt_h/2+4 + 10) * 5 + yo)*pnl_scale),
+                        w = math.floor(obj.sections[49].w-85*pnl_scale),
+                        h = math.floor((butt_h/2+4)*pnl_scale)}                           
+    obj.sections[916] = {x = math.floor(obj.sections[49].x+75*pnl_scale),
+                        y = math.floor(obj.sections[49].y+(butt_h+10 + (butt_h/2+4 + 10) * 6 + yo)*pnl_scale),
+                        w = math.floor(obj.sections[49].w-85*pnl_scale),
+                        h = math.floor((butt_h/2+4)*pnl_scale)}                           
     
-    obj.sections[912] = {x = obj.sections[49].x+20,
-                        y = obj.sections[49].y+butt_h+10 + (butt_h/2+4 + 10) * 7 + 12,
-                        w = obj.sections[49].w-40,
-                        h = butt_h/2+8}                       
+    obj.sections[912] = {x = math.floor(obj.sections[49].x+20*pnl_scale),
+                        y = math.floor(obj.sections[49].y+(butt_h+10 + (butt_h/2+4 + 10) * 7 + 12)*pnl_scale),
+                        w = math.floor(obj.sections[49].w-40*pnl_scale),
+                        h = math.floor((butt_h/2+8)*pnl_scale)}                       
     
-    obj.sections[917] = {x = obj.sections[49].x+75,
-                              y = obj.sections[49].y+butt_h+10 + (butt_h/2+4 + 10) * 9,
-                              w = obj.sections[49].w-85,
-                              h = butt_h/2+8}                           
-    obj.sections[918] = {x = obj.sections[49].x+75,
-                        y = obj.sections[49].y+butt_h+10 + (butt_h/2+4 + 10) * 10,
-                        w = obj.sections[49].w-125,
-                        h = butt_h/2+8}
+    obj.sections[917] = {x = math.floor(obj.sections[49].x+75*pnl_scale),
+                              y = math.floor(obj.sections[49].y+(butt_h+10 + (butt_h/2+4 + 10) * 9)*pnl_scale),
+                              w = math.floor(obj.sections[49].w-85*pnl_scale),
+                              h = math.floor((butt_h/2+8)*pnl_scale)}                           
+    obj.sections[918] = {x = math.floor(obj.sections[49].x+75*pnl_scale),
+                        y = math.floor(obj.sections[49].y+(butt_h+10 + (butt_h/2+4 + 10) * 10)*pnl_scale),
+                        w = math.floor(obj.sections[49].w-125*pnl_scale),
+                        h = math.floor((butt_h/2+8)*pnl_scale)}
                         
     return obj
     
@@ -2816,200 +2903,202 @@
   
   function PosGaugeEdCtls(obj)
   
-    local gaw, gah = 320, 500
-    local gsw = 90
-    local gofs = 270
-    obj.sections[806] = {x = obj.sections[800].x + 60,
-                               y = obj.sections[800].y + butt_h,
-                               w = gaw-120,
-                               h = gofs-100}
+    local gaw, gah = math.floor(320*pnl_scale), math.floor(500*pnl_scale)
+    local gsw = math.floor(90*pnl_scale)
+    local gofs = math.floor(270*pnl_scale)
+    obj.sections[806] = {x = math.floor(obj.sections[800].x + 60*pnl_scale),
+                         y = math.floor(obj.sections[800].y + butt_h*pnl_scale),
+                         w = math.floor(gaw-120*pnl_scale),
+                         h = math.floor(gofs-100*pnl_scale)}
     
-    obj.sections[801] = {x = obj.sections[800].x + 60,
-                         y = obj.sections[800].y + gofs - 8,
+    obj.sections[801] = {x = math.floor(obj.sections[800].x + 60*pnl_scale),
+                         y = math.floor(obj.sections[800].y + gofs - 8*pnl_scale),
                          w = gsw,
-                         h = butt_h}
+                         h = math.floor(butt_h*pnl_scale)}
     --radius, len
-    obj.sections[802] = {x = obj.sections[800].x + 60,
-                         y = obj.sections[800].y + gofs + (butt_h/2+13)*4 -20,
+    obj.sections[802] = {x = math.floor(obj.sections[800].x + 60*pnl_scale),
+                         y = math.floor(obj.sections[800].y + gofs + ((butt_h/2+13)*4 -20)*pnl_scale),
                          w = gsw,
-                         h = butt_h/2+8}
-    obj.sections[803] = {x = obj.sections[800].x + 60,
-                         y = obj.sections[800].y + gofs + (butt_h/2+13)*5 -20,
+                         h = math.floor((butt_h/2+8)*pnl_scale)}
+    obj.sections[803] = {x = math.floor(obj.sections[800].x + 60*pnl_scale),
+                         y = math.floor(obj.sections[800].y + gofs + ((butt_h/2+13)*5 -20)*pnl_scale),
                          w = gsw,
-                         h = butt_h/2+8}
-    obj.sections[804] = {x = obj.sections[800].x + 60,
-                         y = obj.sections[800].y + gofs + (butt_h/2+13)*6 -20,
+                         h = math.floor((butt_h/2+8)*pnl_scale)}
+    obj.sections[804] = {x = math.floor(obj.sections[800].x + 60*pnl_scale),
+                         y = math.floor(obj.sections[800].y + gofs + ((butt_h/2+13)*6 -20)*pnl_scale),
                          w = gsw,
-                         h = butt_h/2+8}
-    obj.sections[805] = {x = obj.sections[800].x + 60 + gsw/2,
-                         y = obj.sections[800].y + gofs + (butt_h/2+8) +18,
-                         w = gsw/2,
-                         h = butt_h}
-    obj.sections[807] = {x = obj.sections[800].x + 60,
-                         y = obj.sections[800].y + gofs + (butt_h/2+13)*7 -20,
+                         h = math.floor((butt_h/2+8)*pnl_scale)}
+    obj.sections[805] = {x = math.floor(obj.sections[800].x + 60*pnl_scale + gsw/2),
+                         y = math.floor(obj.sections[800].y + gofs + ((butt_h/2+8) +18)*pnl_scale),
+                         w = math.floor(gsw/2),
+                         h = math.floor(butt_h*pnl_scale)}
+    obj.sections[807] = {x = math.floor(obj.sections[800].x + 60*pnl_scale),
+                         y = math.floor(obj.sections[800].y + gofs + ((butt_h/2+13)*7 -20)*pnl_scale),
                          w = gsw,
-                         h = butt_h/2+8}
-    obj.sections[808] = {x = obj.sections[800].x + 60,
-                         y = obj.sections[800].y + gofs + (butt_h/2+13)*8 -20,
+                         h = math.floor((butt_h/2+8)*pnl_scale)}
+    obj.sections[808] = {x = math.floor(obj.sections[800].x + 60*pnl_scale),
+                         y = math.floor(obj.sections[800].y + gofs + ((butt_h/2+13)*8 -20)*pnl_scale),
                          w = gsw,
-                         h = butt_h/2+8}
+                         h = math.floor((butt_h/2+8)*pnl_scale)}
     --x, y
-    obj.sections[809] = {x = obj.sections[800].x + obj.sections[800].w/2 + 55,
-                         y = obj.sections[800].y + gofs -8 + (butt_h/2+13)*0,
+    obj.sections[809] = {x = math.floor(obj.sections[800].x + obj.sections[800].w/2 + 55*pnl_scale),
+                         y = math.floor(obj.sections[800].y + gofs +(-8 + (butt_h/2+13)*0)*pnl_scale),
                          w = gsw,
-                         h = butt_h/2+8}
-    obj.sections[810] = {x = obj.sections[800].x + obj.sections[800].w/2 + 55,
-                         y = obj.sections[800].y + gofs -8 + (butt_h/2+13)*1,
+                         h = math.floor((butt_h/2+8)*pnl_scale)}
+    obj.sections[810] = {x = math.floor(obj.sections[800].x + obj.sections[800].w/2 + 55*pnl_scale),
+                         y = math.floor(obj.sections[800].y + gofs +(-8 + (butt_h/2+13)*1)*pnl_scale),
                          w = gsw,
-                         h = butt_h/2+8}
+                         h = math.floor((butt_h/2+8)*pnl_scale)}
 
-    obj.sections[811] = {x = obj.sections[800].x + obj.sections[800].w - 40,
-                         y = obj.sections[800].y + 25,
-                         w = 35,
-                         h = butt_h/2+8}
-    obj.sections[812] = {x = obj.sections[800].x + obj.sections[800].w - 40,
-                         y = obj.sections[800].y + 25+ butt_h,
-                         w = 35,
-                         h = butt_h/2+8}
-    obj.sections[813] = {x = obj.sections[800].x + obj.sections[800].w - 40,
-                         y = obj.sections[800].y + 25 + butt_h*2,
-                         w = 35,
-                         h = butt_h/2+8}
+    obj.sections[811] = {x = math.floor(obj.sections[800].x + obj.sections[800].w - 40*pnl_scale),
+                         y = math.floor(obj.sections[800].y + 25*pnl_scale),
+                         w = math.floor(35*pnl_scale),
+                         h = math.floor((butt_h/2+8)*pnl_scale)}
+    obj.sections[812] = {x = math.floor(obj.sections[800].x + obj.sections[800].w - 40*pnl_scale),
+                         y = math.floor(obj.sections[800].y + (25+ butt_h)*pnl_scale),
+                         w = math.floor(35*pnl_scale),
+                         h = math.floor((butt_h/2+8)*pnl_scale)}
+    obj.sections[813] = {x = math.floor(obj.sections[800].x + obj.sections[800].w - 40*pnl_scale),
+                         y = math.floor(obj.sections[800].y + (25 + butt_h*2)*pnl_scale),
+                         w = math.floor(35*pnl_scale),
+                         h = math.floor((butt_h/2+8)*pnl_scale)}
                          
-    obj.sections[814] = {x = obj.sections[800].x + obj.sections[800].w/2 + 55,
-                         y = obj.sections[800].y + gofs + (butt_h/2+13)*4 -20,
+    obj.sections[814] = {x = math.floor(obj.sections[800].x + obj.sections[800].w/2 + 55*pnl_scale),
+                         y = math.floor(obj.sections[800].y + gofs + ((butt_h/2+13)*4 -20)*pnl_scale),
                          w = gsw,
-                         h = butt_h/2+8}
-    obj.sections[815] = {x = obj.sections[800].x + obj.sections[800].w/2 - 60,
-                         y = obj.sections[800].y + gofs -butt_h*2,
-                         w = 120,
-                         h = butt_h}
-    obj.sections[816] = {x = obj.sections[800].x +5,
-                         y = obj.sections[800].y + 25,
-                         w = 35,
-                         h = butt_h/2+8}
-    obj.sections[817] = {x = obj.sections[800].x + obj.sections[800].w/2 + 55,
-                         y = obj.sections[800].y + gofs + (butt_h/2+13)*5 -20,
-                         w = 35,
-                         h = butt_h/2+8}
+                         h = math.floor((butt_h/2+8)*pnl_scale)}
+    obj.sections[815] = {x = math.floor(obj.sections[800].x + obj.sections[800].w/2 - 60*pnl_scale),
+                         y = math.floor(obj.sections[800].y + gofs -(butt_h*2)*pnl_scale),
+                         w = math.floor(120*pnl_scale),
+                         h = math.floor(butt_h*pnl_scale)}
+    obj.sections[816] = {x = math.floor(obj.sections[800].x +5*pnl_scale),
+                         y = math.floor(obj.sections[800].y + 25*pnl_scale),
+                         w = math.floor(35*pnl_scale),
+                         h = math.floor((butt_h/2+8)*pnl_scale)}
+    obj.sections[817] = {x = math.floor(obj.sections[800].x + obj.sections[800].w/2 + 55*pnl_scale),
+                         y = math.floor(obj.sections[800].y + gofs + ((butt_h/2+13)*5 -20)*pnl_scale),
+                         w = math.floor(35*pnl_scale),
+                         h = math.floor((butt_h/2+8)*pnl_scale)}
 
-    obj.sections[827] = {x = obj.sections[800].x + obj.sections[800].w/2 + 105,
-                         y = obj.sections[800].y + gofs + (butt_h/2+13)*6 -20,
-                         w = butt_h/2+4,
-                         h = butt_h/2+4}
+    obj.sections[827] = {x = math.floor(obj.sections[800].x + obj.sections[800].w/2 + 105*pnl_scale),
+                         y = math.floor(obj.sections[800].y + gofs + ((butt_h/2+13)*6 -20)*pnl_scale),
+                         w = math.floor((butt_h/2+4)*pnl_scale),
+                         h = math.floor((butt_h/2+4)*pnl_scale)}
 
-    obj.sections[832] = {x = obj.sections[800].x + obj.sections[800].w/2 + 105 + butt_h,
-                         y = obj.sections[800].y + gofs + (butt_h/2+13)*6 -20,
-                         w = butt_h/2+4,
-                         h = butt_h/2+4}
+    obj.sections[832] = {x = math.floor(obj.sections[800].x + obj.sections[800].w/2 + (105 + butt_h)*pnl_scale),
+                         y = math.floor(obj.sections[800].y + gofs + ((butt_h/2+13)*6 -20)*pnl_scale),
+                         w = math.floor((butt_h/2+4)*pnl_scale),
+                         h = math.floor((butt_h/2+4)*pnl_scale)}
 
-    obj.sections[818] = {x = obj.sections[800].x + 60,
-                         y = obj.sections[800].y + gofs + (butt_h/2+8) - 4,
+    obj.sections[818] = {x = math.floor(obj.sections[800].x + 60*pnl_scale),
+                         y = math.floor(obj.sections[800].y + gofs + ((butt_h/2+8) - 4)*pnl_scale),
                          w = gsw,
-                         h = butt_h}
+                         h = math.floor(butt_h*pnl_scale)}
 
-    obj.sections[823] = {x = obj.sections[800].x + 15,
-                         y = obj.sections[800].y + obj.sections[800].h - butt_h*1.5 - 8,
+    obj.sections[823] = {x = math.floor(obj.sections[800].x + 15*pnl_scale),
+                         y = math.floor(obj.sections[800].y + obj.sections[800].h - (butt_h*1.5 + 8)*pnl_scale),
                          w = gsw,
-                         h = butt_h*1.5}
-    obj.sections[824] = {x = obj.sections[823].x + obj.sections[823].w + 10,
-                         y = obj.sections[823].y,
+                         h = math.floor((butt_h*1.5)*pnl_scale)}
+    obj.sections[824] = {x = math.floor(obj.sections[823].x + obj.sections[823].w + 10*pnl_scale),
+                         y = math.floor(obj.sections[823].y),
                          w = gsw,
-                         h = butt_h*1.5}
-    obj.sections[819] = {x = obj.sections[824].x + obj.sections[824].w + 10,
-                         y = obj.sections[823].y,
+                         h = math.floor((butt_h*1.5)*pnl_scale)}
+    obj.sections[819] = {x = math.floor(obj.sections[824].x + obj.sections[824].w + 10*pnl_scale),
+                         y = math.floor(obj.sections[823].y),
                          w = gsw,
-                         h = butt_h*1.5}
+                         h = math.floor((butt_h*1.5)*pnl_scale)}
 
-    obj.sections[820] = {x = obj.sections[800].x + obj.sections[800].w - 38 - butt_h,
-                         y = obj.sections[800].y + 27,
-                         w = butt_h/2+4,
-                         h = butt_h/2+4}
-    obj.sections[821] = {x = obj.sections[800].x + obj.sections[800].w - 38 - butt_h,
-                         y = obj.sections[800].y + 27+ butt_h,
-                         w = butt_h/2+4,
-                         h = butt_h/2+4}
-    obj.sections[822] = {x = obj.sections[800].x + obj.sections[800].w - 38 - butt_h,
-                         y = obj.sections[800].y + 27 + butt_h*2,
-                         w = butt_h/2+4,
-                         h = butt_h/2+4}
-    obj.sections[825] = {x = obj.sections[800].x + obj.sections[800].w/2 + 55,
-                         y = obj.sections[800].y + gofs + (butt_h/2+13)*7 -20,
+    obj.sections[820] = {x = math.floor(obj.sections[800].x + obj.sections[800].w - (38 + butt_h)*pnl_scale),
+                         y = math.floor(obj.sections[800].y + 27*pnl_scale),
+                         w = math.floor((butt_h/2+4)*pnl_scale),
+                         h = math.floor((butt_h/2+4)*pnl_scale)}
+    obj.sections[821] = {x = math.floor(obj.sections[800].x + obj.sections[800].w - (38 + butt_h)*pnl_scale),
+                         y = math.floor(obj.sections[800].y + (27+ butt_h)*pnl_scale),
+                         w = math.floor((butt_h/2+4)*pnl_scale),
+                         h = math.floor((butt_h/2+4)*pnl_scale)}
+    obj.sections[822] = {x = math.floor(obj.sections[800].x + obj.sections[800].w - (38 + butt_h)*pnl_scale),
+                         y = math.floor(obj.sections[800].y + (27 + butt_h*2)*pnl_scale),
+                         w = math.floor((butt_h/2+4)*pnl_scale),
+                         h = math.floor((butt_h/2+4)*pnl_scale)}
+    obj.sections[825] = {x = math.floor(obj.sections[800].x + obj.sections[800].w/2 + 55*pnl_scale),
+                         y = math.floor(obj.sections[800].y + gofs + ((butt_h/2+13)*7 -20)*pnl_scale),
                          w = gsw,
-                         h = butt_h/2+8}
+                         h = math.floor((butt_h/2+8)*pnl_scale)}
     
-    obj.sections[826] = {x = obj.sections[800].x + obj.sections[800].w/2 + 79,
-                         y = obj.sections[800].y + gofs -butt_h*2-1,
-                         w = 60,
-                         h = butt_h}
+    obj.sections[826] = {x = math.floor(obj.sections[800].x + obj.sections[800].w/2 + 79*pnl_scale),
+                         y = math.floor(obj.sections[800].y + gofs -(butt_h*2+1)*pnl_scale),
+                         w = math.floor(60*pnl_scale),
+                         h = math.floor(butt_h*pnl_scale)}
 
-    obj.sections[828] = {x = obj.sections[800].x + obj.sections[800].w/2 - 140,
-                         y = obj.sections[800].y + gofs -butt_h*2-1,
-                         w = 30,
-                         h = butt_h}
-    obj.sections[829] = {x = obj.sections[800].x + obj.sections[800].w/2 - 108,
-                         y = obj.sections[800].y + gofs -butt_h*2-1,
-                         w = 30,
-                         h = butt_h}
-    obj.sections[830] = {x = obj.sections[800].x + obj.sections[800].w/2 - 140 +1,
-                         y = obj.sections[800].y + gofs -butt_h*2-3 - (butt_h/2+8),
-                         w = 60,
-                         h = butt_h/2+8}
-    obj.sections[831] = {x = obj.sections[800].x + obj.sections[800].w/2 + 35,
-                         y = obj.sections[800].y + gofs + (butt_h/2+13)*3 -26,
-                         w = gsw+20,
-                         h = butt_h}
+    obj.sections[828] = {x = math.floor(obj.sections[800].x + obj.sections[800].w/2 - 140*pnl_scale),
+                         y = math.floor(obj.sections[800].y + gofs -(butt_h*2+1)*pnl_scale),
+                         w = math.floor(30*pnl_scale),
+                         h = math.floor(butt_h*pnl_scale)}
+    obj.sections[829] = {x = math.floor(obj.sections[800].x + obj.sections[800].w/2 - 108*pnl_scale),
+                         y = math.floor(obj.sections[800].y + gofs -(butt_h*2+1)*pnl_scale),
+                         w = math.floor(30*pnl_scale),
+                         h = math.floor(butt_h*pnl_scale)}
+    obj.sections[830] = {x = math.floor(obj.sections[800].x + obj.sections[800].w/2 - (140 +1)*pnl_scale),
+                         y = math.floor(obj.sections[800].y + gofs -(butt_h*2+3 + (butt_h/2+8))*pnl_scale),
+                         w = math.floor(60*pnl_scale),
+                         h = math.floor((butt_h/2+8)*pnl_scale)}
+    obj.sections[831] = {x = math.floor(obj.sections[800].x + obj.sections[800].w/2 + 35*pnl_scale),
+                         y = math.floor(obj.sections[800].y + gofs + ((butt_h/2+13)*3 -26)*pnl_scale),
+                         w = math.floor(gsw+20*pnl_scale),
+                         h = math.floor(butt_h*pnl_scale)}
     
     return obj
   end
   
   function PosCycleCtls(obj)
 
-    local xofft, yoff, yoffm, bh, bw, sw = 200, 28, butt_h/2+14, butt_h/2+4, butt_h/2+4, 80
+    local xofft, yoff, yoffm, bh, bw, sw = math.floor(200*pnl_scale), math.floor(28*pnl_scale), math.floor((butt_h/2+14)*pnl_scale), math.floor((butt_h/2+4)*pnl_scale), math.floor((butt_h/2+4)*pnl_scale), math.floor(80*pnl_scale)
     local kw,_ = gfx.getimgdim(0)
     local kh = defctls[def_knob].cellh
     obj.sections[101] = {x = obj.sections[100].x+obj.sections[100].w/2-kw/2,
-                         y = obj.sections[100].y+butt_h/2,
+                         y = math.floor(obj.sections[100].y+(butt_h/2 +4)*pnl_scale),
                          w = kw,
                          h = kh}
-    obj.sections[102] = {x = obj.sections[100].x+obj.sections[100].w-40-10,
-                         y = obj.sections[101].y+obj.sections[101].h+butt_h,
-                         w = 40,
+    obj.sections[102] = {x = math.floor(obj.sections[100].x+obj.sections[100].w-(40+10)*pnl_scale),
+                         y = math.floor(obj.sections[101].y+obj.sections[101].h+butt_h*pnl_scale),
+                         w = math.floor(40*pnl_scale),
                          h = bh}
 
-    obj.sections[103] = {x = obj.sections[100].x+8,
-                         y = obj.sections[102].y+bh+60+butt_h,
-                         w = obj.sections[100].w-16,
-                         h = butt_h*8}
+    local yy = math.floor(obj.sections[102].y+bh+(60+butt_h)*pnl_scale)
+    
+    obj.sections[103] = {x = math.floor(obj.sections[100].x+8*pnl_scale),
+                         y = yy,
+                         w = math.floor(obj.sections[100].w-16*pnl_scale),
+                         h = math.floor(obj.sections[100].h - (yy-obj.sections[100].y + butt_h*pnl_scale + 10))} --(butt_h*8)*pnl_scale}
 
     obj.sections[104] = {x = obj.sections[102].x,
-                         y = obj.sections[102].y-bh-2,
-                         w = 40,
+                         y = math.floor(obj.sections[102].y-bh-2*pnl_scale),
+                         w = math.floor(40*pnl_scale),
                          h = obj.sections[102].h}
-    obj.sections[110] = {x = obj.sections[100].x +45,
-                         y = obj.sections[102].y-bh-2,
-                         w = 40,
+    obj.sections[110] = {x = math.floor(obj.sections[100].x +45*pnl_scale),
+                         y = math.floor(obj.sections[102].y-bh-2*pnl_scale),
+                         w = math.floor(40*pnl_scale),
                          h = obj.sections[102].h}
                          
     
     obj.sections[105] = {x = obj.sections[103].x,
-                         y = obj.sections[103].y-butt_h,
+                         y = math.floor(obj.sections[103].y-butt_h*pnl_scale),
                          w = obj.sections[103].w,
-                         h = butt_h}
-    obj.sections[106] = {x = obj.sections[103].x-2,
-                         y = obj.sections[103].y+obj.sections[103].h+2,
-                         w = obj.sections[103].w+4,
-                         h = butt_h}
+                         h = math.floor(butt_h*pnl_scale)}
+    obj.sections[106] = {x = math.floor(obj.sections[103].x-2*pnl_scale),
+                         y = math.floor(obj.sections[103].y+obj.sections[103].h+2*pnl_scale),
+                         w = math.floor(obj.sections[103].w+4*pnl_scale),
+                         h = math.floor(butt_h*pnl_scale)}
     obj.sections[107] = {x = obj.sections[102].x,
-                         y = obj.sections[102].y+obj.sections[102].h+4,
+                         y = math.floor(obj.sections[102].y+obj.sections[102].h+4*pnl_scale),
                          w = bh,
                          h = bh}
     obj.sections[109] = {x = obj.sections[107].x,
-                         y = obj.sections[107].y+obj.sections[107].h+4,
+                         y = math.floor(obj.sections[107].y+obj.sections[107].h+4*pnl_scale),
                          w = bh,
                          h = bh}
     obj.sections[108] = {x = obj.sections[107].x,
-                         y = obj.sections[109].y+obj.sections[107].h+4,
+                         y = math.floor(obj.sections[109].y+obj.sections[107].h+4*pnl_scale),
                          w = bh,
                          h = bh}
     return obj
@@ -5275,6 +5364,8 @@
   
     gfx.dest = 1001
   
+    local butt_h = tb_butt_h
+  
     if T_butt_cnt == nil then
       T_butt_cnt = math.floor(obj.sections[500].h / butt_h) - 1
       tlist_offset = CalcTListPos(track_select)
@@ -5357,6 +5448,8 @@
   
     gfx.dest = 1001
   
+    local butt_h = tb_butt_h
+  
     if FD_butt_cnt == nil then
       FD_butt_cnt = math.floor(obj.sections[500].h / butt_h) - 1
       fdlist_offset = 0
@@ -5431,6 +5524,8 @@
   function GUI_DrawMods(obj, gui)
   
     gfx.dest = 1001
+  
+    local butt_h = tb_butt_h
   
     if MD_butt_cnt == nil then
       MD_butt_cnt = math.floor(obj.sections[500].h / butt_h) - 1
@@ -5777,6 +5872,9 @@
 
   function GUI_DrawFXParams(obj, gui)
     if track_select == nil then return end
+    
+    local butt_h = tb_butt_h
+    
     gfx.dest = 1001
     --[[if resize_display then
       gfx.setimgdim(1001,obj.sections[43].w+2, obj.sections[43].h)
@@ -6075,6 +6173,9 @@
   function GUI_DrawGraphicsChooser(obj, gui)
 
     gfx.dest = 1001
+    
+    local butt_h = tb_butt_h
+    
     --[[if resize_display then
       gfx.setimgdim(1001,obj.sections[43].w+2, obj.sections[43].h)
     end]]
@@ -6225,6 +6326,8 @@
 
     gfx.dest = 1001
 
+    local butt_h = tb_butt_h
+    
     GUI_DrawBar(gui,'SAVE STRIP',obj.sections[511],skin.bar,true,gui.skol.sb_txt_on,nil,-2 + gui.fontsz.sb,nil, gui.skol.sb_shad,gui.fontnm.sb,gui.fontflag.sb)
 
     SF_butt_cnt = math.floor(obj.sections[510].h / butt_h)
@@ -6518,16 +6621,13 @@
         local iidx = ctl.ctl_info.imageidx
         local ctlw, _ = ctl.wsc
         local ctlh = ctl.hsc
-        local ctlx, ctly = obj.sections[800].x+obj.sections[800].w/2 - ctlw/2, obj.sections[800].y+120 - ctlh/2
-        --local bgx = ctl.xsc+ctl.wsc/2 - obj.sections[800].w/2
-        --local bgy = ctl.ysc+ctl.hsc/2 - 120 -butt_h
+        local ctlx, ctly = obj.sections[800].x+obj.sections[800].w/2 - ctlw/2, obj.sections[800].y+120*pnl_scale - ctlh/2
                 
         GUI_DrawGauge2(gauge_select, ctlx+ctlw/2, ctly+ctlh/2, ctl, true)
         
         local v2 = nz(frameScale(ctl.framemode, gauge_select.val),0)
         local frame = F_limit(round(ctl.ctl_info.frames*v2),0,ctl.ctl_info.frames-1)
         
-        --local frame = F_limit(math.floor(gauge_select.val * ctl.ctl_info.frames),0,ctl.ctl_info.frames-1)
         gfx.blit(iidx,ctl.scale,0,0,frame*ctl.ctl_info.cellh,ctl.w,ctl.ctl_info.cellh,ctlx,ctly)
         
         f_Get_SSV(gui.color.white)
@@ -6535,30 +6635,27 @@
         
         GUI_textC(gui,obj.sections[815],gauge_select.dval,gui.color.white,0)
         
-        GUI_DrawButton(gui, gaugetype_table[gauge_select.type], obj.sections[801], gui.color.white, gui.color.black, true, 'TYPE')
+        GUI_DrawButton(gui, gaugetype_table[gauge_select.type], obj.sections[801], gui.color.white, gui.skol.butt1_txt, true, 'TYPE',false,gui.fontsz.butt)
         if gauge_select.type == 1 then
-          GUI_DrawSliderH(gui, 'RADIUS', obj.sections[802], gui.color.black, gui.color.white, F_limit(((gauge_select.radius-10)/110),0,1))
-          GUI_DrawSliderH(gui, 'ROTATE', obj.sections[804], gui.color.black, gui.color.white, F_limit(((gauge_select.rotation)),0,1))
+          GUI_DrawSliderH(gui, 'RADIUS', obj.sections[802], gui.color.black, gui.color.white, F_limit(((gauge_select.radius-10)/110),0,1),gui.fontsz.butt)
+          GUI_DrawSliderH(gui, 'ROTATE', obj.sections[804], gui.color.black, gui.color.white, F_limit(((gauge_select.rotation)),0,1),gui.fontsz.butt)
         end
         GUI_DrawSliderH(gui, 'LENGTH', obj.sections[803], gui.color.black, gui.color.white, F_limit(((gauge_select.arclen)),0,1))
         
-        --local xywh = {x = obj.sections[805].x, y = obj.sections[805].y - butt_h, w = obj.sections[805].w*2, h = butt_h}
-        --GUI_textC(gui,xywh,'AUTO',gui.color.white,-2)
-        
-        GUI_DrawButton(gui, gauge_select.ticks, obj.sections[805], gui.color.white, gui.color.black, true, 'TICKS (AUTO)')
-        GUI_DrawSliderH(gui, 'TICK SIZE', obj.sections[807], gui.color.black, gui.color.white, F_limit(((gauge_select.tick_size-2)/10),0,1))
-        GUI_DrawSliderH(gui, 'OFFSET', obj.sections[808], gui.color.black, gui.color.white, F_limit(((gauge_select.tick_offs)/12),0,1))
-        GUI_DrawSliderH(gui, 'X OFFSET', obj.sections[809], gui.color.black, gui.color.white, F_limit(((gauge_select.x_offs+30)/60),0,1))
-        GUI_DrawSliderH(gui, 'Y OFFSET', obj.sections[810], gui.color.black, gui.color.white, F_limit(((gauge_select.y_offs+30)/60),0,1))
-        GUI_DrawButton(gui, gauge_select.font, obj.sections[831], gui.color.white, gui.color.black, true, 'FONT')
-        GUI_DrawSliderH(gui, 'FONT SIZE', obj.sections[814], gui.color.black, gui.color.white, F_limit(((gauge_select.fontsz+8)/8),0,1))
-        GUI_DrawSliderH(gui, 'VAL FREQ', obj.sections[825], gui.color.black, gui.color.white, F_limit(((gauge_select.val_freq-1)/23),0,1))
+        GUI_DrawButton(gui, gauge_select.ticks, obj.sections[805], gui.color.white, gui.skol.butt1_txt, true, 'TICKS (AUTO)',false,gui.fontsz.butt)
+        GUI_DrawSliderH(gui, 'TICK SIZE', obj.sections[807], gui.color.black, gui.color.white, F_limit(((gauge_select.tick_size-2)/10),0,1),gui.fontsz.butt)
+        GUI_DrawSliderH(gui, 'OFFSET', obj.sections[808], gui.color.black, gui.color.white, F_limit(((gauge_select.tick_offs)/12),0,1),gui.fontsz.butt)
+        GUI_DrawSliderH(gui, 'X OFFSET', obj.sections[809], gui.color.black, gui.color.white, F_limit(((gauge_select.x_offs+30)/60),0,1),gui.fontsz.butt)
+        GUI_DrawSliderH(gui, 'Y OFFSET', obj.sections[810], gui.color.black, gui.color.white, F_limit(((gauge_select.y_offs+30)/60),0,1),gui.fontsz.butt)
+        GUI_DrawButton(gui, gauge_select.font, obj.sections[831], gui.color.white, gui.skol.butt1_txt, true, 'FONT',false,gui.fontsz.butt)
+        GUI_DrawSliderH(gui, 'FONT SIZE', obj.sections[814], gui.color.black, gui.color.white, F_limit(((gauge_select.fontsz+8)/8),0,1),gui.fontsz.butt)
+        GUI_DrawSliderH(gui, 'VAL FREQ', obj.sections[825], gui.color.black, gui.color.white, F_limit(((gauge_select.val_freq-1)/23),0,1),gui.fontsz.butt)
         
         local mdptxt = gauge_select.val_dp
         if gauge_select.val_dp < 0 then
           mdptxt = 'OFF'
         end
-        GUI_DrawButton(gui, mdptxt, obj.sections[817], gui.color.white, gui.color.black, true, 'MAX DP')
+        GUI_DrawButton(gui, mdptxt, obj.sections[817], gui.color.white, gui.skol.butt1_txt, true, 'MAX DP',false,gui.fontsz.butt)
         GUI_DrawTick(gui, 'NUMERIC ONLY', obj.sections[827], gui.color.white, nz(gauge_select.numonly, false))
         local xywh = {x = obj.sections[832].x,
                       y = obj.sections[832].y-butt_h,
@@ -6568,36 +6665,36 @@
         GUI_DrawTick(gui, '', obj.sections[832], gui.color.white, nz(gauge_select.abbrev, false))
         
         if ctl.ctltype == 4 then
-          GUI_DrawButton(gui, 'COPY CYCLE DATA', obj.sections[818], gui.color.white, gui.color.black, true)
+          GUI_DrawButton(gui, 'COPY CYCLE DATA', obj.sections[818], gui.color.white, gui.skol.butt1_txt, true, '',false,gui.fontsz.butt)
         end
-        GUI_DrawButton(gui, 'DEL SEL', obj.sections[826], gui.color.white, gui.color.black, true)
-        GUI_DrawButton(gui, '<<', obj.sections[828], gui.color.white, gui.color.black, true)
-        GUI_DrawButton(gui, '>>', obj.sections[829], gui.color.white, gui.color.black, true)
+        GUI_DrawButton(gui, 'DEL SEL', obj.sections[826], gui.color.white, gui.skol.butt1_txt, true,'',false,gui.fontsz.butt)
+        GUI_DrawButton(gui, '<<', obj.sections[828], gui.color.white, gui.skol.butt1_txt, true,'',false,gui.fontsz.butt)
+        GUI_DrawButton(gui, '>>', obj.sections[829], gui.color.white, gui.skol.butt1_txt, true,'',false,gui.fontsz.butt)
         if gauge_ticksel and gauge_select.vals and gauge_select.vals[gauge_ticksel] then
-          GUI_DrawSliderH(gui, '', obj.sections[830], gui.color.black, gui.color.white, F_limit(((nz(gauge_select.vals[gauge_ticksel].nudge,0)+10)/20),0,1))
+          GUI_DrawSliderH(gui, '', obj.sections[830], gui.color.black, gui.color.white, F_limit(((nz(gauge_select.vals[gauge_ticksel].nudge,0)+10)/20),0,1),gui.fontsz.butt)
         end
         
         local txt = 'ARC'
         if gauge_select.type > 1 then
           txt = 'LINE'        
         end
-        GUI_DrawButton(gui, txt, obj.sections[811], gui.color.white, gui.color.black, gauge_select.show_arc)
+        GUI_DrawButton(gui, txt, obj.sections[811], gui.color.white, gui.skol.butt1_txt, gauge_select.show_arc,'',false,gui.fontsz.butt)
         
-        GUI_DrawButton(gui, 'TICKS', obj.sections[812], gui.color.white, gui.color.black, gauge_select.show_tick)
-        GUI_DrawButton(gui, 'VALS', obj.sections[813], gui.color.white, gui.color.black, gauge_select.show_val)
+        GUI_DrawButton(gui, 'TICKS', obj.sections[812], gui.color.white, gui.skol.butt1_txt, gauge_select.show_tick,'',false,gui.fontsz.butt)
+        GUI_DrawButton(gui, 'VALS', obj.sections[813], gui.color.white, gui.skol.butt1_txt, gauge_select.show_val,'',false,gui.fontsz.butt)
         GUI_DrawColorBox(gui, '', obj.sections[820], gui.color.white, gauge_select.col_arc)
         GUI_DrawColorBox(gui, '', obj.sections[821], gui.color.white, gauge_select.col_tick)
         GUI_DrawColorBox(gui, '', obj.sections[822], gui.color.white, gauge_select.col_val)
-        GUI_DrawSliderH(gui, '', obj.sections[816], gui.color.black, gui.color.white, F_limit(auto_delay/10,0,1))
+        GUI_DrawSliderH(gui, '', obj.sections[816], gui.color.black, gui.color.white, F_limit(auto_delay/10,0,1),gui.fontsz.butt)
         GUI_textC(gui,obj.sections[816],auto_delay,gui.color.red,-2)
         xywh = {x = obj.sections[816].x+obj.sections[816].w+5,
                 y = obj.sections[816].y,
                 w = 30, h = obj.sections[816].h}
         GUI_textC(gui,xywh,'SENS',gui.color.white,-5)
 
-        GUI_DrawButton(gui, 'REMOVE', obj.sections[823], gui.color.white, gui.color.black, true)
-        GUI_DrawButton(gui, 'RESET', obj.sections[824], gui.color.white, gui.color.black, true)
-        GUI_DrawButton(gui, 'SAVE', obj.sections[819], gui.color.white, gui.color.black, true)
+        GUI_DrawButton(gui, 'REMOVE', obj.sections[823], gui.color.white, gui.skol.butt1_txt, true,'',false,gui.fontsz.butt)
+        GUI_DrawButton(gui, 'RESET', obj.sections[824], gui.color.white, gui.skol.butt1_txt, true,'',false,gui.fontsz.butt)
+        GUI_DrawButton(gui, 'SAVE', obj.sections[819], gui.color.white, gui.skol.butt1_txt, true,'',false,gui.fontsz.butt)
         
       end
     
@@ -7311,23 +7408,23 @@
     local kh = defctls[def_knob].cellh
     gfx.blit(def_knob,1,0,0,p*kh,kw,kh,obj.sections[101].x,obj.sections[101].y)
     
-    GUI_DrawButton(gui, cycle_select.statecnt, obj.sections[102], gui.color.white, gui.color.black, true, 'STATES')
-    GUI_DrawButton(gui, 'AUTO', obj.sections[104], gui.color.white, gui.color.black, true)
+    GUI_DrawButton(gui, cycle_select.statecnt, obj.sections[102], gui.color.white, gui.skol.butt1_txt, true, 'STATES',false,gui.fontsz.butt)
+    GUI_DrawButton(gui, 'AUTO', obj.sections[104], gui.color.white, gui.skol.butt1_txt, true,'',false,gui.fontsz.butt)
     GUI_DrawSliderH(gui, 'SENS', obj.sections[110], gui.color.black, gui.color.white, F_limit(auto_delay/10,0,1))
     GUI_textC(gui,obj.sections[110],auto_delay,gui.color.red,-2)
     
-    GUI_DrawTick(gui, 'POS TO FRAME', obj.sections[107], gui.color.white, nz(cycle_select.mapptof, false))
-    GUI_DrawTick(gui, 'DRAGGABLE', obj.sections[108], gui.color.white, nz(cycle_select.draggable, false))
-    GUI_DrawTick(gui, 'EVEN SPREAD', obj.sections[109], gui.color.white, nz(cycle_select.spread, false))
-    GUI_DrawButton(gui, 'SAVE', obj.sections[106], gui.color.white, gui.color.black, true)
+    GUI_DrawTick(gui, 'POS TO FRAME', obj.sections[107], gui.color.white, nz(cycle_select.mapptof, false),gui.fontsz.butt)
+    GUI_DrawTick(gui, 'DRAGGABLE', obj.sections[108], gui.color.white, nz(cycle_select.draggable, false),gui.fontsz.butt)
+    GUI_DrawTick(gui, 'EVEN SPREAD', obj.sections[109], gui.color.white, nz(cycle_select.spread, false),gui.fontsz.butt)
+    GUI_DrawButton(gui, 'SAVE', obj.sections[106], gui.color.white, gui.skol.butt1_txt, true,'',false,gui.fontsz.butt)
 
     local c
 
     f_Get_SSV('16 16 16')
     gfx.rect(obj.sections[103].x-2,
-             obj.sections[103].y-2-butt_h, 
+             obj.sections[103].y-2-butt_h*pnl_scale, 
              obj.sections[103].w+4,
-             obj.sections[103].h+4+butt_h, 1 )
+             obj.sections[103].h+4+butt_h*pnl_scale, 1 )
 
     --[[f_Get_SSV('64 64 64')
     gfx.rect(obj.sections[105].x-2,
@@ -7339,7 +7436,7 @@
     local xywh = {x = obj.sections[105].x,
                   y = obj.sections[105].y,
                   w = obj.sections[105].w,
-                  h = butt_h}
+                  h = butt_h*pnl_scale}
     GUI_DrawBar(gui,'',xywh,skin.barUD,true,gui.color.black,nil,-2)
     gfx.line(xywh.x+xywh.w/2,xywh.y,xywh.x+xywh.w/2,xywh.y+xywh.h)
     local w, h = gfx.getimgdim(skin.arrowup)
@@ -7354,33 +7451,37 @@
     
     if cycle_select.statecnt > 0 then
       
+      local rows = math.floor(obj.sections[103].h / (butt_h*pnl_scale))
+
       f_Get_SSV('0 0 0')
       gfx.rect(obj.sections[103].x,
                obj.sections[103].y, 
                obj.sections[103].w,
-               butt_h*F_limit(cycle_select.statecnt,0,8), 1 )
-      if cycle_select.selected and cycle_select.selected-cyclist_offset <= 8 and cycle_select.selected-cyclist_offset > 0 then
+               math.floor((butt_h*pnl_scale)*F_limit(cycle_select.statecnt,0,rows), 1 ))
+      if cycle_select.selected and cycle_select.selected-cyclist_offset <= rows and cycle_select.selected-cyclist_offset > 0 then
         f_Get_SSV(gui.color.white)
         gfx.rect(obj.sections[103].x,
-                 obj.sections[103].y+(cycle_select.selected-cyclist_offset-1)*butt_h, 
+                 math.floor(obj.sections[103].y+(cycle_select.selected-cyclist_offset-1)*(butt_h*pnl_scale)), 
                  obj.sections[103].w,
-                 butt_h, 1)
+                 math.floor(butt_h*pnl_scale), 1)
       end
-      for i = 1, 8 do
+      
+      local tscale = (pnl_scale-1)*fontscale
+      for i = 1, rows do
       
         xywh = {x = obj.sections[103].x,
-                y = obj.sections[103].y+(i-1)*butt_h,
+                y = math.floor(obj.sections[103].y+(i-1)*(butt_h*pnl_scale)),
                 w = obj.sections[103].w,
-                h = butt_h}
+                h = math.floor(butt_h*pnl_scale)}
         if cycle_select[i+cyclist_offset] and i+cyclist_offset <= cycle_select.statecnt then
           c = gui.color.white
           if cycle_select.selected and cycle_select.selected == i+cyclist_offset then
             c = gui.color.black
           end
           
-          GUI_textsm_LJ(gui,xywh,math.floor(i+cyclist_offset),c,-5)
+          GUI_textsm_LJ(gui,xywh,math.floor(i+cyclist_offset),c,-5+tscale)
           xywh.x = xywh.x + 20
-          GUI_textsm_LJ(gui,xywh,cycle_select[i+cyclist_offset].dispval,c,-5,xywh.w-20)
+          GUI_textsm_LJ(gui,xywh,cycle_select[i+cyclist_offset].dispval,c,-5+tscale,xywh.w-20)
         end
                 
       end
@@ -7404,8 +7505,8 @@
     f_Get_SSV(gui.color.white)
     gfx.a = 1 
 
-    GUI_DrawButton(gui, 'EDIT LABEL', obj.sections[140], gui.color.white, gui.color.black, true)
-    GUI_DrawButton(gui, gfx_font_select.name, obj.sections[147], gui.color.white, gui.color.black, true)
+    GUI_DrawButton(gui, 'EDIT LABEL', obj.sections[140], gui.color.white, gui.skol.butt1_txt, true)
+    GUI_DrawButton(gui, gfx_font_select.name, obj.sections[147], gui.color.white, gui.skol.butt1_txt, true)
     GUI_DrawSliderH(gui, 'F SIZE', obj.sections[141], gui.color.black, gui.color.white, F_limit(gfx_font_select.size/250,0,1))
     GUI_DrawColorBox(gui, 'LBL COL', obj.sections[142], gui.color.white, gfx_textcol_select)
     GUI_DrawTick(gui, 'BOLD', obj.sections[143], gui.color.white, gfx_font_select.bold)
@@ -7440,10 +7541,10 @@
     GUI_DrawSliderH(gui, 'G', obj.sections[914], gui.color.black, gui.color.white, F_limit(gfxg_select,0,1))
     GUI_DrawSliderH(gui, 'B', obj.sections[915], gui.color.black, gui.color.white, F_limit(gfxb_select,0,1))
     GUI_DrawSliderH(gui, 'A', obj.sections[916], gui.color.black, gui.color.white, F_limit(gfxa_select,0,1))
-    GUI_DrawButton(gui, 'RESET', obj.sections[912], gui.color.white, gui.color.black, true)
+    GUI_DrawButton(gui, 'RESET', obj.sections[912], gui.color.white, gui.skol.butt1_txt, true)
 
-    GUI_DrawButton(gui, gfxstretch_table[gfxstretchmode_select], obj.sections[917], gui.color.white, gui.color.black, true, 'STRETCH')
-    GUI_DrawButton(gui, gfxedgesz_select, obj.sections[918], gui.color.white, gui.color.black, true, 'EDGE SIZE')
+    GUI_DrawButton(gui, gfxstretch_table[gfxstretchmode_select], obj.sections[917], gui.color.white, gui.skol.butt1_txt, true, 'STRETCH')
+    GUI_DrawButton(gui, gfxedgesz_select, obj.sections[918], gui.color.white, gui.skol.butt1_txt, true, 'EDGE SIZE')
   
   end
   
@@ -7453,6 +7554,8 @@
 
     gfx.dest = 1011
 
+    local tscale = (pnl_scale-1)*fontscale
+
     GUI_DrawPanel(obj.sections[45],nil,'CTL OPTIONS          ')
 
     local xywh = {x = 0,
@@ -7460,7 +7563,7 @@
                   w = obj.sections[45].w,
                   h = obj.sections[45].h}
         
-    xywh.h = butt_h     
+    xywh.h = math.floor(gui.winsz.pnltit*pnl_scale)     
     --f_Get_SSV(gui.color.white)
     gfx.a = 1 
 
@@ -7472,8 +7575,9 @@
     GUI_textC(gui,xywh,ctl_page+1,gui.skol.pnl_tittxt,-2)
     
     if ctl_page == 0 then
+      local coff = 150*pnl_scale+(gui.winsz.pnltit*pnl_scale-gui.winsz.pnltit)
       xywh = {x = 0,
-              y = butt_h,
+              y = butt_h*pnl_scale,
               w = obj.sections[45].w,
               h = obj.sections[45].h}
       
@@ -7491,20 +7595,20 @@
         local scale_select = 1
         
         if w > h then
-          if w > 125 then
-            scale_select = 125 / w
+          if w > 125*pnl_scale then
+            scale_select = (125*pnl_scale) / w
           end
         else
-          if h > 125 then
-            scale_select = 125 / h
+          if h > 125*pnl_scale then
+            scale_select = (125*pnl_scale) / h
           end        
         end
         
-        gfx.blit(iidx,scale_select,0, 0, h*math.ceil((ctl_files[knob_select].frames-1)*0.55), w, h, xywh.x + (xywh.w/2-(w*scale_select)/2), xywh.y + (62.5 - (h*scale_select)/2))
+        gfx.blit(iidx,scale_select,0, 0, h*math.ceil((ctl_files[knob_select].frames-1)*0.55), w, h, xywh.x + (xywh.w/2-(w*scale_select)/2), xywh.y + ((62.5*pnl_scale) - (h*scale_select)/2))
         xywh = {x = 0,
-                y = butt_h+4,
+                y = (butt_h+4)*pnl_scale,
                 w = obj.sections[45].w,
-                h = butt_h}
+                h = butt_h*pnl_scale}
         gfx.a = 0.75
         
         --[[f_Get_SSV('0 0 0')
@@ -7522,12 +7626,12 @@
       GUI_DrawButton(gui, '>', obj.sections[91], gui.color.white, gui.skol.butt1_txt, true)
           
       GUI_DrawSliderH(gui, 'SCALE', obj.sections[50], gui.color.black, gui.skol.pnl_txt, (scale_select-0.5)*2)
-      local xywh = {x = obj.sections[52].x-10, y = obj.sections[52].y-butt_h, w = obj.sections[52].w, h = obj.sections[52].h}
-      GUI_textC(gui,xywh,'SHOW',gui.skol.pnl_txt,-5)
+      local xywh = {x = obj.sections[52].x-10*pnl_scale, y = obj.sections[52].y-butt_h*pnl_scale, w = obj.sections[52].w, h = obj.sections[52].h}
+      GUI_textC(gui,xywh,'SHOW',gui.skol.pnl_txt,-5 +tscale)
       GUI_DrawTick(gui, 'NAME', obj.sections[52], gui.skol.pnl_txt, show_paramname)
       GUI_DrawTick(gui, 'VALUE', obj.sections[53], gui.skol.pnl_txt, show_paramval)
-      local xywh = {x = obj.sections[54].x, y = obj.sections[54].y-butt_h, w = obj.sections[54].w, h = obj.sections[54].h}
-      GUI_textC(gui,xywh,'COL',gui.skol.pnl_txt,-5)
+      local xywh = {x = obj.sections[54].x, y = obj.sections[54].y-butt_h*pnl_scale, w = obj.sections[54].w, h = obj.sections[54].h}
+      GUI_textC(gui,xywh,'COL',gui.skol.pnl_txt,-5+tscale)
       GUI_DrawColorBox(gui, '', obj.sections[54], gui.skol.pnl_txt, textcol_select)
       GUI_DrawColorBox(gui, '', obj.sections[850], gui.skol.pnl_txt, textcolv_select)
       GUI_DrawButton(gui, ctltype_table[ctltype_select], obj.sections[55], gui.color.white, gui.skol.butt1_txt, true)
@@ -7545,8 +7649,8 @@
       GUI_DrawSliderH(gui, 'VAL OFF', obj.sections[65], gui.color.black, gui.skol.pnl_txt, F_limit((valoff+150)/300,0,1))
 
       GUI_DrawButton(gui, ctlfont_select, obj.sections[48], gui.color.white, gui.skol.butt1_txt, true, 'FONT', true)
-      local xywh = {x = obj.sections[58].x-10, y = obj.sections[58].y-butt_h, w = obj.sections[58].w, h = obj.sections[52].h}
-      GUI_textC(gui,xywh,'F SIZE',gui.skol.pnl_txt,-5)
+      local xywh = {x = obj.sections[58].x-10*pnl_scale, y = obj.sections[58].y-butt_h*pnl_scale, w = obj.sections[58].w, h = obj.sections[52].h}
+      GUI_textC(gui,xywh,'F SIZE',gui.skol.pnl_txt,-5+tscale)
 
       GUI_DrawSliderH(gui, '', obj.sections[58], gui.color.black, gui.skol.pnl_txt, (textsize_select+2)/35)
       GUI_DrawSliderH(gui, '', obj.sections[851], gui.color.black, gui.skol.pnl_txt, (textsizev_select+2)/35)
@@ -7613,23 +7717,23 @@
               y = obj.sections[135].y-butt_h-5,
               w = obj.sections[45].w,
               h = butt_h}
-      GUI_textC(gui,xywh,'KNOB SENSITIVITY',gui.skol.pnl_txt,-2)
+      GUI_textC(gui,xywh,'KNOB SENSITIVITY',gui.skol.pnl_txt,-2+tscale)
       GUI_DrawSliderH(gui, 'NORMAL', obj.sections[135], gui.color.black, gui.skol.pnl_txt, ((knobsens_select.norm)/20)*2)
       local txt = string.format('%i',round(knobsens_select.norm*2))
       if txt == '0' then txt = 'GLOBAL' end
-      GUI_textC(gui,obj.sections[135],txt,gui.color.red,-2)
+      GUI_textC(gui,obj.sections[135],txt,gui.color.red,-2+tscale)
       GUI_DrawSliderH(gui, 'FINE', obj.sections[136], gui.color.black, gui.skol.pnl_txt, ((knobsens_select.fine)/20)*100)
       txt = string.format('%i',round(knobsens_select.fine*100))
       if txt == '0' then txt = 'GLOBAL' end
-      GUI_textC(gui,obj.sections[136],txt,gui.color.red,-2)
+      GUI_textC(gui,obj.sections[136],txt,gui.color.red,-2+tscale)
       GUI_DrawSliderH(gui, 'WHEEL', obj.sections[137], gui.color.black, gui.skol.pnl_txt, ((knobsens_select.wheel)/20)*100)
       txt = string.format('%i',round(knobsens_select.wheel*100))
       if txt == '0' then txt = 'GLOBAL' end
-      GUI_textC(gui,obj.sections[137],txt,gui.color.red,-2)
+      GUI_textC(gui,obj.sections[137],txt,gui.color.red,-2+tscale)
       GUI_DrawSliderH(gui, 'WHL FINE', obj.sections[138], gui.color.black, gui.skol.pnl_txt, ((knobsens_select.wheelfine)/20)*1000)
       txt = string.format('%i',round(knobsens_select.wheelfine*1000))
       if txt == '0' then txt = 'GLOBAL' end
-      GUI_textC(gui,obj.sections[138],txt,gui.color.red,-2)
+      GUI_textC(gui,obj.sections[138],txt,gui.color.red,-2+tscale)
 
       local pmin, pmax = 0, 0
       if min and max then
@@ -7653,11 +7757,17 @@
     gfx.dest = 1
   end
  
-  function GUI_DrawSliderH(gui, t, b, colb, cols, v, t_sz)
+  function GUI_DrawSliderH(gui, t, b, colb, cols, v, t_sz, noscale)
 
+    local tscale = 0
+    if noscale ~= true then
+      tscale = (pnl_scale-1)*fontscale
+    end
+    
     local xywh = {x=b.x-300,y=b.y-2,w=290,h=b.h}
     --GUI_textsm_RJ(gui,xywh,t,cols,-4+(t_sz or 0))
-    GUI_Str(gui,xywh,t,6,cols,-4 + (t_sz or 0),1,nil,gui.fontnm.sb,98)
+    cols = gui.skol.pnl_txt
+    GUI_Str(gui,xywh,t,6,cols,-4 + (t_sz or 0) +tscale,1,nil,gui.fontnm.sb,98)
     
     local w, h = gfx.getimgdim(skin.slider_fg)
     --gfx.blit(skin.slider_bg, 1, 0, 0, 0, w, h, b.x, b.y, b.w, b.h) 
@@ -7687,15 +7797,20 @@
     
   end
 
-  function GUI_DrawButton(gui, t, b, colb, colt, v, opttxt, limit, t_sz)
+  function GUI_DrawButton(gui, t, b, colb, colt, v, opttxt, limit, t_sz,noscale)
 
+    local tscale = 0
+    if noscale ~= true then
+      tscale = (pnl_scale-1)*fontscale
+    end
+    
     if (opttxt or '') ~= '' then
       local xywh = {x=b.x-300,y=b.y-2,w=290,h=b.h+5}
-      local c = colb
-      if tonumber(c) ~= nil then
+      --local c = colb
+      --if tonumber(c) ~= nil then
         c = gui.skol.pnl_txt
-      end
-      GUI_Str(gui,xywh,opttxt,6,c,-4 + (t_sz or 0),1,nil,gui.fontnm.sb,98)
+      --end
+      GUI_Str(gui,xywh,opttxt,6,c,-4 + (t_sz or 0) +tscale,1,nil,gui.fontnm.sb,98)
     end
 
     local f = 1
@@ -7760,16 +7875,21 @@
       end
     end
     local xywh = {x=b.x,y=b.y,w=b.w,h=b.h}
-    GUI_Str(gui,xywh,t,5,colt,-4 + (t_sz or 0) + gui.fontsz.butt,1,gui.skol.butt_shad,gui.fontnm.butt,gui.fontflag.butt)
+    GUI_Str(gui,xywh,t,5,colt,-4 + (t_sz or 0) + gui.fontsz.butt +tscale,1,gui.skol.butt_shad,gui.fontnm.butt,gui.fontflag.butt)
     
   end
   
-  function GUI_DrawTick(gui, t, b, col, v, t_sz)
+  function GUI_DrawTick(gui, t, b, col, v, t_sz, noscale)
   
     --local xywh = {x=b.x-10,y=b.y-2,w=1,h=b.h}
     --GUI_textsm_RJ(gui,xywh,t,col,-4+(t_sz or 0))
     local xywh = {x=b.x-300,y=b.y-2,w=290,h=b.h+5}
-    GUI_Str(gui,xywh,t,6,col,-4 + (t_sz or 0),1,nil,gui.fontnm.sb,98)
+    local tscale = 0
+    if noscale ~= true then
+      tscale = (pnl_scale-1)*fontscale
+    end
+    
+    GUI_Str(gui,xywh,t,6,gui.skol.pnl_txt,-4 + (t_sz or 0) +tscale,1,nil,gui.fontnm.sb,98)
 
     local f = 1
     if v == nil or v == false then
@@ -7789,11 +7909,16 @@
       
   end
 
-  function GUI_DrawColorBox(gui, t, b, col, cols, t_sz)
+  function GUI_DrawColorBox(gui, t, b, col, cols, t_sz, noscale)
   
     local xywh = {x=b.x-300,y=b.y-2,w=290,h=b.h+5}
     --GUI_textsm_RJ(gui,xywh,t,col,-4 + (t_sz or 0))
-    GUI_Str(gui,xywh,t,6,col,-4 + (t_sz or 0),1,nil,gui.fontnm.sb,98)
+    local tscale = 0
+    if noscale ~= true then
+      tscale = (pnl_scale-1)*fontscale
+    end
+    col = gui.skol.pnl_txt
+    GUI_Str(gui,xywh,t,6,col,-4 + (t_sz or 0) +tscale,1,nil,gui.fontnm.sb,98)
 
     local f = 1
     f_Get_SSV(cols)
@@ -8870,7 +8995,7 @@ end
     
   ------------------------------------------------------------
   
-  function GUI_DrawPanel(objPanel, tobgd, tit)
+  function GUI_DrawPanel(objPanel, tobgd, tit, noscale)
 
     gfx.a=1
     local x,y = 0,0
@@ -8884,16 +9009,44 @@ end
     local ph = tonumber(objPanel.h)
     if hh > ph then ht = ph - hb end
     local edge = 10
-    --DBG(objPanel.h..'  '..gui.winsz.pnltit)
-    if objPanel.h <= gui.winsz.pnltit then
+
+    if objPanel.h <= gui.winsz.pnltit*pnl_scale then
       ht = objPanel.h
-      gfx.blit(skin.panela_top, 1, 0, 0, 0, edge, ht, x, y) 
-      gfx.blit(skin.panela_top, 1, 0, wt-edge, 0, edge, ht, x+(pw-edge), y) 
-      gfx.blit(skin.panela_top, 1, 0, 10, 0, wt-(2*edge), ht, x+edge, y, pw-(2*edge))     
+
+      local thh = gui.winsz.pnltit*pnl_scale
+      gfx.blit(skin.panela_top, 1, 0, 0, 0, edge, edge, x, y) 
+      gfx.blit(skin.panela_top, 1, 0, 0, edge, edge, gui.winsz.pnltit-edge, x, y+edge, edge, math.floor((thh)-edge)) 
+      
+      gfx.blit(skin.panela_top, 1, 0, wt-edge, 0, edge, edge, x+(pw-edge), y)
+      gfx.blit(skin.panela_top, 1, 0, wt-edge, edge, edge, gui.winsz.pnltit-edge, x+(pw-edge), y+edge, edge, math.floor((thh)-edge))
+     
+      gfx.blit(skin.panela_top, 1, 0, edge, 0, wt-(2*edge), edge, x+edge, y, pw-(2*edge))
+      gfx.blit(skin.panela_top, 1, 0, edge, edge, wt-(2*edge), gui.winsz.pnltit-edge, x+edge, y+edge, pw-(2*edge),math.floor((thh)-edge))
+
+      --gfx.blit(skin.panela_top, 1, 0, 0, 0, edge, ht, x, y) 
+      --gfx.blit(skin.panela_top, 1, 0, wt-edge, 0, edge, ht, x+(pw-edge), y) 
+      --gfx.blit(skin.panela_top, 1, 0, 10, 0, wt-(2*edge), ht, x+edge, y, pw-(2*edge))     
     else
-      gfx.blit(skin.panela_top, 1, 0, 0, 0, edge, ht, x, y) 
-      gfx.blit(skin.panela_top, 1, 0, wt-edge, 0, edge, ht, x+(pw-edge), y) 
-      gfx.blit(skin.panela_top, 1, 0, 10, 0, wt-(2*edge), ht, x+edge, y, pw-(2*edge)) 
+    
+      if noscale ~= true then
+        local thh = gui.winsz.pnltit*pnl_scale
+        gfx.blit(skin.panela_top, 1, 0, 0, 0, edge, edge, x, y) 
+        gfx.blit(skin.panela_top, 1, 0, 0, edge, edge, gui.winsz.pnltit-edge, x, y+edge, edge, math.floor((thh)-edge)+2) 
+        gfx.blit(skin.panela_top, 1, 0, 0, gui.winsz.pnltit+1, edge, ht-gui.winsz.pnltit, x, math.ceil(y+thh), edge, math.ceil(ht-(thh))+3) 
+        
+        gfx.blit(skin.panela_top, 1, 0, wt-edge, 0, edge, edge, x+(pw-edge), y)
+        gfx.blit(skin.panela_top, 1, 0, wt-edge, edge, edge, gui.winsz.pnltit-edge, x+(pw-edge), y+edge, edge, math.floor((thh)-edge)+2)
+        gfx.blit(skin.panela_top, 1, 0, wt-edge, gui.winsz.pnltit+1, edge, ht-gui.winsz.pnltit, x+(pw-edge), math.ceil(y+thh), edge, math.ceil(ht-(thh))+3)
+        
+        gfx.blit(skin.panela_top, 1, 0, edge, 0, wt-(2*edge), edge, x+edge, y, pw-(2*edge))
+        gfx.blit(skin.panela_top, 1, 0, edge, edge, wt-(2*edge), gui.winsz.pnltit-edge, x+edge, y+edge, pw-(2*edge),math.floor((thh)-edge)+2)
+        gfx.blit(skin.panela_top, 1, 0, edge, gui.winsz.pnltit+1, wt-(2*edge), ht-gui.winsz.pnltit, x+edge, math.ceil(y+thh), pw-(2*edge),math.ceil(ht-(thh))+3)
+      else      
+        gfx.blit(skin.panela_top, 1, 0, 0, 0, edge, ht, x, y) 
+        gfx.blit(skin.panela_top, 1, 0, wt-edge, 0, edge, ht, x+(pw-edge), y) 
+        gfx.blit(skin.panela_top, 1, 0, 10, 0, wt-(2*edge), ht, x+edge, y, pw-(2*edge)) 
+      end
+      
       local th = ht
       gfx.blit(skin.panela_bot, 1, 0, 0, 0, edge, hb, x, y+ph-hb) 
       gfx.blit(skin.panela_bot, 1, 0, wt-edge, 0, edge, hb, x+(pw-edge), y+ph-hb) 
@@ -8916,15 +9069,17 @@ end
     
     if tit then
       local yoff = gui.winsz.pnltit - butt_h
+      local tscale = 0
+      local pscale = 1
+      if noscale ~= true then
+        tscale = (pnl_scale-1)*fontscale 
+        pscale = pnl_scale
+      end
       xywh = {x = x,
               y = y+yoff,
               w = pw,
-              h = butt_h}
-      --[[GUI_textC(gui,xywh,tit,gui.color.black,-2)              
-      xywh.x = xywh.x - 1
-      xywh.y = xywh.y - 1]]
-      --GUI_textC_shadow(gui,xywh,tit,gui.skol.pnl_tittxt,gui.fontsz.pnltit,1,0,gui.skol.pnltit_shad,nil, gui.fontnm.pnltit)
-      GUI_Str(gui,xywh,tit,5,gui.skol.pnl_tittxt,gui.fontsz.pnltit,1,gui.skol.pnltit_shad,gui.fontnm.pnltit,gui.fontflag.pnltit)
+              h = butt_h*pscale}
+      GUI_Str(gui,xywh,tit,5,gui.skol.pnl_tittxt,gui.fontsz.pnltit + tscale ,1,gui.skol.pnltit_shad,gui.fontnm.pnltit,gui.fontflag.pnltit)
     end
     
   end
@@ -8969,13 +9124,13 @@ end
         xywh = {x = obj.sections[163].x+2,
                 y = obj.sections[163].y,
                 w = obj.sections[163].w-4,
-                h = butt_h}
+                h = butt_h*pnl_scale}
 
         if sstype_select == 1 then
           if #snapshots[strip][page][sstype_select] > 0 then
             for i = 1,SS_butt_cnt do
             
-              xywh.y = obj.sections[163].y + i*butt_h
+              xywh.y = obj.sections[163].y + i*(butt_h*pnl_scale)
               local c = gui.color.white
               if ss_select == ssoffset+i then
                 if morphing == false then
@@ -8999,7 +9154,7 @@ end
                   c = gui.color.black
                 end
                 if snapshots[strip][page][sstype_select][i+ssoffset] then
-                  GUI_textsm_LJ(gui,xywh,roundX(i+ssoffset,0)..': '..snapshots[strip][page][sstype_select][i+ssoffset].name,c,-2,xywh.w)
+                  GUI_textsm_LJ(gui,xywh,roundX(i+ssoffset,0)..': '..snapshots[strip][page][sstype_select][i+ssoffset].name,c,-2 +(pnl_scale-1)*fontscale ,xywh.w)
                 end        
               end
             end
@@ -9009,7 +9164,7 @@ end
           if #snapshots[strip][page][sstype_select].snapshot > 0 then
             for i = 1,SS_butt_cnt do
             
-              xywh.y = obj.sections[163].y + i*butt_h
+              xywh.y = obj.sections[163].y + i*(butt_h*pnl_scale)
               local c = gui.color.white
               if ss_select == ssoffset+i then
                 if morphing == false then
@@ -9032,7 +9187,7 @@ end
                    xywh.h-1, 1 )
                   c = gui.color.black
                   if snapshots[strip][page][sstype_select].snapshot[i+ssoffset] then
-                    GUI_textsm_LJ(gui,xywh,roundX(i+ssoffset,0)..': '..snapshots[strip][page][sstype_select].snapshot[i+ssoffset].name,c,-2,xywh.w)
+                    GUI_textsm_LJ(gui,xywh,roundX(i+ssoffset,0)..': '..snapshots[strip][page][sstype_select].snapshot[i+ssoffset].name,c,-2 +(pnl_scale-1)*fontscale,xywh.w)
                   end
                 end
               end
@@ -9050,6 +9205,8 @@ end
     
     gfx.a=1
 
+    local butt_h = butt_h*pnl_scale
+
     gfx.setimgdim(1003,-1,-1)
     gfx.setimgdim(1003,obj.sections[160].w,obj.sections[160].h)
     GUI_DrawPanel(obj.sections[160], nil, 'SNAPSHOTS')
@@ -9059,7 +9216,7 @@ end
     else
       b = -5
     end
-    GUI_DrawButton(gui, 'DOCK', obj.sections[1160], b, gui.skol.butt1_txt, true, '', false, -2)
+    GUI_DrawButton(gui, 'DOCK', obj.sections[1160], b, gui.skol.butt1_txt, true, '', false, -2, true)
     
     local sstypestr = 'PAGE'
     if sstype_select > 1 then
@@ -9157,8 +9314,12 @@ end
         
     GUI_DrawBar(gui,'',xywh,skin.barUD,true,gui.color.black,nil,-2)
     gfx.line(xywh.x+xywh.w/2,xywh.y,xywh.x+xywh.w/2,xywh.y+xywh.h)
-    gfx.triangle(xywh.x+xywh.w/4,xywh.y+4,xywh.x+xywh.w/4-6,xywh.y+xywh.h-4,xywh.x+xywh.w/4+6,xywh.y+xywh.h-4,1)
-    gfx.triangle(xywh.x+xywh.w*0.75,xywh.y+xywh.h-4,xywh.x+xywh.w*0.75-6,xywh.y+4,xywh.x+xywh.w*0.75+6,xywh.y+4,1)
+    --gfx.triangle(xywh.x+xywh.w/4,xywh.y+4,xywh.x+xywh.w/4-6,xywh.y+xywh.h-4,xywh.x+xywh.w/4+6,xywh.y+xywh.h-4,1)
+    --gfx.triangle(xywh.x+xywh.w*0.75,xywh.y+xywh.h-4,xywh.x+xywh.w*0.75-6,xywh.y+4,xywh.x+xywh.w*0.75+6,xywh.y+4,1)
+    local w, h = gfx.getimgdim(skin.arrowup)
+    gfx.blit(skin.arrowup,1,0,0,0,w,h,xywh.x+xywh.w/4-w/2,xywh.y+xywh.h/2-h/2)
+    gfx.blit(skin.arrowdn,1,0,0,0,w,h,xywh.x+xywh.w*0.75-w/2,xywh.y+xywh.h/2-h/2)
+    
     
     xywh.x = xywh.x + 2
     xywh.w = xywh.w - 4
@@ -9168,7 +9329,7 @@ end
     local pause = false
     local dir = '>'
     local txt = 'LOOP'
-    local loop = false    
+    local loop = false        
     
     SS_butt_cnt = math.floor(obj.sections[163].h / butt_h) - 1
     if snaplrn_mode == false then
@@ -9247,7 +9408,7 @@ end
                 end
               end
               if snapshots[strip][page][sstype_select][i+ssoffset] then
-                GUI_textsm_LJ(gui,xywh,roundX(i+ssoffset,0)..': '..snapshots[strip][page][sstype_select][i+ssoffset].name,c,-2,xywh.w)
+                GUI_textsm_LJ(gui,xywh,roundX(i+ssoffset,0)..': '..snapshots[strip][page][sstype_select][i+ssoffset].name,c,-2 +(pnl_scale-1)*fontscale,xywh.w)
               end
           
               if snap_move and snap_move.epos == i+ssoffset and snap_move.epos ~= snap_move.spos and snap_move.epos ~= snap_move.spos+1 then
@@ -9289,7 +9450,7 @@ end
                 end
               end
               if snapshots[strip][page][sstype_select].snapshot[i+ssoffset] then
-                GUI_textsm_LJ(gui,xywh,roundX(i+ssoffset,0)..': '..snapshots[strip][page][sstype_select].snapshot[i+ssoffset].name,c,-2,xywh.w)
+                GUI_textsm_LJ(gui,xywh,roundX(i+ssoffset,0)..': '..snapshots[strip][page][sstype_select].snapshot[i+ssoffset].name,c,-2 +(pnl_scale-1)*fontscale,xywh.w)
               end
 
               if snap_move and snap_move.epos == i+ssoffset and snap_move.epos ~= snap_move.spos and snap_move.epos ~= snap_move.spos+1 then
@@ -12167,7 +12328,7 @@ end
     else
       b = -5
     end
-    GUI_DrawButton(gui, 'DOCK', obj.sections[1123], b, gui.skol.butt1_txt, true, '', false, -2)
+    GUI_DrawButton(gui, 'DOCK', obj.sections[1123], b, gui.skol.butt1_txt, true, '', false, -2, true)
     
     if modwinsz.minimized == true then
       gfx.dest = 1
@@ -12339,14 +12500,14 @@ end
     
     GUI_DrawPanel(obj.sections[1120],false,'MUTATE SETTINGS')
     
-    GUI_DrawButton(gui, mutate_settings.mutate_max..' %', obj.sections[1121], gui.color.white, gui.color.black, true, 'Amount')
+    GUI_DrawButton(gui, mutate_settings.mutate_max..' %', obj.sections[1121], gui.color.white, gui.skol.butt1_txt, true, 'Amount',false,gui.fontsz.butt)
     local dir = '+ / -'
     if mutate_settings.dir == 1 then
       dir = '+'
     elseif mutate_settings.dir == 2 then
       dir = '-'    
     end
-    GUI_DrawButton(gui, dir, obj.sections[1122], gui.color.white, gui.color.black, true, 'Direction')
+    GUI_DrawButton(gui, dir, obj.sections[1122], gui.color.white, gui.skol.butt1_txt, true, 'Direction',false,gui.fontsz.butt)
     
     gfx.dest = 1
   
@@ -12369,11 +12530,11 @@ end
       end
             
       if resize_display then
-        --[[gfx.setimgdim(1003,-1,-1)
+        gfx.setimgdim(1003,-1,-1)
         gfx.setimgdim(1005,-1,-1)
         gfx.setimgdim(1006,-1,-1)
         gfx.setimgdim(1007,-1,-1)
-        gfx.setimgdim(1011,-1,-1)]]
+        gfx.setimgdim(1011,-1,-1)
         gfx.setimgdim(1003,obj.sections[160].w, obj.sections[160].h)
         gfx.setimgdim(1005,obj.sections[180].w, obj.sections[180].h)
         gfx.setimgdim(1006,obj.sections[221].w, obj.sections[221].h)
@@ -13232,7 +13393,7 @@ end
       end]]
       if resize_display or update_gfx or update_topbar then
         gfx.setimgdim(999,-1,-1)
-        gfx.setimgdim(999,gfx1.main_w-plist_w, butt_h+1)         
+        gfx.setimgdim(999,gfx1.main_w-plist_w, tb_butt_h+1)         
         GUI_DrawTopBar(gui,obj)
       end
       gfx.dest=1
@@ -13887,9 +14048,13 @@ end
       --GUI_textC_shadow(gui,xywh,t,c,-2 + gui.fontsz.sb,1,0,gui.skol.sb_shad,98)
       GUI_Str(gui,xywh,t,5,c,-2 + gui.fontsz.sb,1,gui.skol.sb_shad,gui.fontnm.sb,98)
       if i == 2 then
-        gfx.triangle(xywh.x+xywh.w/2,xywh.y+6,xywh.x+xywh.w/2-4,xywh.y+xywh.h-6,xywh.x+xywh.w/2+4,xywh.y+xywh.h-6,1)
+        local w, h = gfx.getimgdim(skin.arrowup)
+        gfx.blit(skin.arrowup,1,0,0,0,w,h,xywh.x+xywh.w/2-w/2,xywh.y+xywh.h/2-h/2)
+        --gfx.triangle(xywh.x+xywh.w/2,xywh.y+6,xywh.x+xywh.w/2-4,xywh.y+xywh.h-6,xywh.x+xywh.w/2+4,xywh.y+xywh.h-6,1)
       elseif i == 3 then
-        gfx.triangle(xywh.x+xywh.w/2,xywh.y+xywh.h-6,xywh.x+xywh.w/2-4,xywh.y+6,xywh.x+xywh.w/2+4,xywh.y+6,1)
+        --gfx.triangle(xywh.x+xywh.w/2,xywh.y+xywh.h-6,xywh.x+xywh.w/2-4,xywh.y+6,xywh.x+xywh.w/2+4,xywh.y+6,1)
+        local w, h = gfx.getimgdim(skin.arrowup)
+        gfx.blit(skin.arrowdn,1,0,0,0,w,h,xywh.x+xywh.w*0.5-w/2,xywh.y+xywh.h*0.5-h/2)
       end
     end      
     
@@ -14056,7 +14221,7 @@ end
   
     gfx.dest = 1
     
-    GUI_DrawPanel(obj.sections[70],true,'SETTINGS')
+    GUI_DrawPanel(obj.sections[70],true,'SETTINGS',true)
     
     f_Get_SSV(gui.skol.lst_bg)
     local ind = 6
@@ -14085,45 +14250,48 @@ end
              obj.sections[70].w,
              obj.sections[70].h, 1)]]
 
-    GUI_DrawTick(gui, 'Follow selected track', obj.sections[71], gui.color.white, settings_followselectedtrack, gui.fontsz.settings)             
-    GUI_DrawTick(gui, 'Disable send checks', obj.sections[72], gui.color.white, settings_disablesendchecks, gui.fontsz.settings)             
-    GUI_DrawTick(gui, 'Save all track fx with strip', obj.sections[73], gui.color.white, settings_saveallfxinststrip, gui.fontsz.settings)
-    GUI_DrawSliderH(gui, 'Control refresh rate', obj.sections[74], gui.color.black, gui.color.white, (1-(settings_updatefreq*10)), gui.fontsz.settings)
-    GUI_DrawTick(gui, 'Lock control window width', obj.sections[75], gui.color.white, lockx, gui.fontsz.settings)
-    GUI_DrawTick(gui, 'Lock control window height', obj.sections[76], gui.color.white, locky, gui.fontsz.settings)
-    GUI_DrawButton(gui, lockw, obj.sections[77], -3, gui.color.black, lockx, '', true, gui.fontsz.settings)
-    GUI_DrawButton(gui, lockh, obj.sections[78], -3, gui.color.black, locky, '', true, gui.fontsz.settings)
+    GUI_DrawTick(gui, 'Follow selected track', obj.sections[71], gui.color.white, settings_followselectedtrack, gui.fontsz.settings,true)             
+    GUI_DrawTick(gui, 'Disable send checks', obj.sections[72], gui.color.white, settings_disablesendchecks, gui.fontsz.settings,true)             
+    GUI_DrawTick(gui, 'Save all track fx with strip', obj.sections[73], gui.color.white, settings_saveallfxinststrip, gui.fontsz.settings,true)
+    GUI_DrawSliderH(gui, 'Control refresh rate', obj.sections[74], gui.color.black, gui.color.white, (1-(settings_updatefreq*10)), gui.fontsz.settings,true)
+    GUI_DrawTick(gui, 'Lock control window width', obj.sections[75], gui.color.white, lockx, gui.fontsz.settings,true)
+    GUI_DrawTick(gui, 'Lock control window height', obj.sections[76], gui.color.white, locky, gui.fontsz.settings,true)
+    GUI_DrawButton(gui, lockw, obj.sections[77], -3, gui.color.black, lockx, '', true, gui.fontsz.settings,true)
+    GUI_DrawButton(gui, lockh, obj.sections[78], -3, gui.color.black, locky, '', true, gui.fontsz.settings,true)
     
-    GUI_DrawTick(gui, 'Show grid / grid size', obj.sections[80], gui.color.white, settings_showgrid, gui.fontsz.settings)
-    GUI_DrawButton(gui, settings_gridsize, obj.sections[79], -3, gui.color.black, true, '', false, gui.fontsz.settings)
-    GUI_DrawTick(gui, 'Can mousewheel on knob', obj.sections[81], gui.color.white, settings_mousewheelknob, gui.fontsz.settings)
-    GUI_DrawTick(gui, 'Swap ctrl click and dbl click actions', obj.sections[82], gui.color.white, settings_swapctrlclick, gui.fontsz.settings)
-    GUI_DrawTick(gui, 'Insert default strip on every track', obj.sections[83], gui.color.white, settings_insertdefaultoneverytrack, gui.fontsz.settings)
-    GUI_DrawTick(gui, '...and on every page', obj.sections[84], gui.color.white, settings_insertdefaultoneverypage, gui.fontsz.settings)
-    GUI_DrawTick(gui, 'Display scroll bars', obj.sections[85], gui.color.white, settings_showbars, gui.fontsz.settings)
-    GUI_DrawColorBox(gui, 'Snapshot list background colour', obj.sections[86], gui.color.white, settings_snaplistbgcol, gui.fontsz.settings)
-    GUI_DrawTick(gui, 'Save script data in project folder', obj.sections[87], gui.color.white, settings_savedatainprojectfolder, gui.fontsz.settings)
-    GUI_DrawTick(gui, 'Use bitmap mask control detection', obj.sections[88], gui.color.white, settings_usectlbitmap, gui.fontsz.settings)
-    GUI_DrawTick(gui, 'Show minimal top bar when hidden', obj.sections[89], gui.color.white, settings_showminimaltopbar, gui.fontsz.settings)
-    GUI_DrawTick(gui, 'Hide edit bar on new projects', obj.sections[96], gui.color.white, settings_hideeditbaronnewproject, gui.fontsz.settings)
-    GUI_DrawTick(gui, 'Lock surface on new projects', obj.sections[97], gui.color.white, settings_locksurfaceonnewproject, gui.fontsz.settings)
-    GUI_DrawTick(gui, 'Create backup when manually saving', obj.sections[98], gui.color.white, settings_createbackuponmanualsave, gui.fontsz.settings)
+    GUI_DrawTick(gui, 'Show grid / grid size', obj.sections[80], gui.color.white, settings_showgrid, gui.fontsz.settings,true)
+    GUI_DrawButton(gui, settings_gridsize, obj.sections[79], -3, gui.color.black, true, '', false, gui.fontsz.settings,true)
+    GUI_DrawTick(gui, 'Can mousewheel on knob', obj.sections[81], gui.color.white, settings_mousewheelknob, gui.fontsz.settings,true)
+    GUI_DrawTick(gui, 'Swap ctrl click and dbl click actions', obj.sections[82], gui.color.white, settings_swapctrlclick, gui.fontsz.settings,true)
+    GUI_DrawTick(gui, 'Insert default strip on every track', obj.sections[83], gui.color.white, settings_insertdefaultoneverytrack, gui.fontsz.settings,true)
+    GUI_DrawTick(gui, '...and on every page', obj.sections[84], gui.color.white, settings_insertdefaultoneverypage, gui.fontsz.settings,true)
+    GUI_DrawTick(gui, 'Display scroll bars', obj.sections[85], gui.color.white, settings_showbars, gui.fontsz.settings,true)
+    GUI_DrawColorBox(gui, 'Snapshot list background colour', obj.sections[86], gui.color.white, settings_snaplistbgcol, gui.fontsz.settings,true)
+    GUI_DrawTick(gui, 'Save script data in project folder', obj.sections[87], gui.color.white, settings_savedatainprojectfolder, gui.fontsz.settings,true)
+    GUI_DrawTick(gui, 'Use bitmap mask control detection', obj.sections[88], gui.color.white, settings_usectlbitmap, gui.fontsz.settings,true)
+    GUI_DrawTick(gui, 'Show minimal top bar when hidden', obj.sections[89], gui.color.white, settings_showminimaltopbar, gui.fontsz.settings,true)
+    GUI_DrawTick(gui, 'Hide edit bar on new projects', obj.sections[96], gui.color.white, settings_hideeditbaronnewproject, gui.fontsz.settings,true)
+    GUI_DrawTick(gui, 'Lock surface on new projects', obj.sections[97], gui.color.white, settings_locksurfaceonnewproject, gui.fontsz.settings,true)
+    GUI_DrawTick(gui, 'Create backup when manually saving', obj.sections[98], gui.color.white, settings_createbackuponmanualsave, gui.fontsz.settings,true)
     local t = false
     if settings_pagescrolldir == 1 then
       t = true
     end
-    GUI_DrawTick(gui, 'Mousewheel scrolls page horizontally', obj.sections[719], gui.color.white, t, gui.fontsz.settings)
-    GUI_DrawButton(gui, string.sub(skin_select,0,string.len(skin_select)-1), obj.sections[720], -3, gui.color.black, true, 'Skin', true, gui.fontsz.settings)
+    GUI_DrawTick(gui, 'Mousewheel scrolls page horizontally', obj.sections[719], gui.color.white, t, gui.fontsz.settings,true)
+    GUI_DrawButton(gui, string.sub(skin_select,0,string.len(skin_select)-1), obj.sections[720], -3, gui.color.black, true, 'Skin', true, gui.fontsz.settings,true)
+    GUI_DrawButton(gui, tb_butt_h, obj.sections[721], -3, gui.color.black, true, 'Top/sidebar size', true, gui.fontsz.settings,true)
+    GUI_DrawButton(gui, pnl_scale, obj.sections[722], -3, gui.color.black, true, 'Panel size', true, gui.fontsz.settings,true)
+    GUI_DrawButton(gui, fontscale, obj.sections[723], -3, gui.color.black, true, '', true, gui.fontsz.settings,true)
     
-    GUI_DrawButton(gui, nz(save_subfolder,''), obj.sections[95], gui.color.white, gui.color.white, false, 'Save subfolder', true, gui.fontsz.settings)  
+    GUI_DrawButton(gui, nz(save_subfolder,''), obj.sections[95], gui.color.white, gui.color.white, false, 'Save subfolder', true, gui.fontsz.settings,true)  
 
     --column2
     
     local abs, rel = GetMOFaders()
     if abs then
-      GUI_DrawButton(gui, 'FADER '..abs, obj.sections[700], gui.color.white, gui.color.black, true, 'Global mouseover fader (absolute)',true, gui.fontsz.settings)
+      GUI_DrawButton(gui, 'FADER '..abs, obj.sections[700], gui.color.white, gui.color.black, true, 'Global mouseover fader (absolute)',true, gui.fontsz.settings,true)
     else
-      GUI_DrawButton(gui, 'NO FADER', obj.sections[700], gui.color.white, gui.color.black, false, 'Global mouseover fader (absolute)',true, gui.fontsz.settings)    
+      GUI_DrawButton(gui, 'NO FADER', obj.sections[700], gui.color.white, gui.color.black, false, 'Global mouseover fader (absolute)',true, gui.fontsz.settings,true)    
     end
     --[[if rel then
       GUI_DrawButton(gui, 'FADER '..rel, obj.sections[701], gui.color.white, gui.color.black, true, 'Global mouseover fader (relative)')
@@ -14131,30 +14299,30 @@ end
       GUI_DrawButton(gui, 'NO FADER', obj.sections[701], gui.color.white, gui.color.black, false, 'Global mouseover fader (relative)')    
     end]]
 
-    GUI_DrawColorBox(gui, 'Main background colour', obj.sections[702], gui.color.white, backcol, gui.fontsz.settings)
+    GUI_DrawColorBox(gui, 'Main background colour', obj.sections[702], gui.color.white, backcol, gui.fontsz.settings,true)
     local sb = false
     local sbt = 'NOT SET'
     if neb_scanboot_tab then
       sb = true
       sbt = 'SET'
     end
-    GUI_DrawButton(gui, sbt, obj.sections[703], gui.color.white, gui.color.black, sb, 'Nebula scanboot location', true, gui.fontsz.settings)
-    GUI_DrawTick(gui, 'Touch feedback indicator', obj.sections[704], gui.color.white, settings_touchFB, gui.fontsz.settings)
-    GUI_DrawTick(gui, 'Send MIDI feedback on track change', obj.sections[705], gui.color.white, settings_trackchangemidi, gui.fontsz.settings)
-    GUI_DrawTick(gui, 'Show fader assignments on grid', obj.sections[706], gui.color.white, settings_showfaderassignments, gui.fontsz.settings)
+    GUI_DrawButton(gui, sbt, obj.sections[703], gui.color.white, gui.color.black, sb, 'Nebula scanboot location', true, gui.fontsz.settings,true)
+    GUI_DrawTick(gui, 'Touch feedback indicator', obj.sections[704], gui.color.white, settings_touchFB, gui.fontsz.settings,true)
+    GUI_DrawTick(gui, 'Send MIDI feedback on track change', obj.sections[705], gui.color.white, settings_trackchangemidi, gui.fontsz.settings,true)
+    GUI_DrawTick(gui, 'Show fader assignments on grid', obj.sections[706], gui.color.white, settings_showfaderassignments, gui.fontsz.settings,true)
 
-    GUI_DrawTick(gui, 'Autosnap strips when adding', obj.sections[707], gui.color.white, settings_stripautosnap, gui.fontsz.settings)
-    GUI_DrawButton(gui, autosnap_rowheight, obj.sections[708], gui.color.white, gui.color.black, false, 'Autosnap row height', true, gui.fontsz.settings)
-    GUI_DrawButton(gui, autosnap_itemgap, obj.sections[709], gui.color.white, gui.color.black, false, 'Autosnap strip item gap min', true, gui.fontsz.settings)
-    GUI_DrawButton(gui, autosnap_itemgapmax, obj.sections[710], gui.color.white, gui.color.black, false, 'Autosnap strip item gap max', true, gui.fontsz.settings)
-    GUI_DrawButton(gui, gallery_itemgap, obj.sections[711], gui.color.white, gui.color.black, false, 'Strip gallery item gap', true, gui.fontsz.settings)
-    GUI_DrawTick(gui, 'Disable key input when surface locked', obj.sections[712], gui.color.white, settings_disablekeysonlockedsurface, gui.fontsz.settings)
-    GUI_DrawTick(gui, 'Delete FX with strip', obj.sections[713], gui.color.white, settings_deletefxwithstrip, gui.fontsz.settings)
-    GUI_DrawTick(gui, 'Morph fader/mod assigned controls', obj.sections[714], gui.color.white, settings_morphfaderassignedctls, gui.fontsz.settings)
-    GUI_DrawTick(gui, 'Run modulators when stopped', obj.sections[715], gui.color.white, settings_alwaysrunmods, gui.fontsz.settings)
-    GUI_DrawButton(gui, modulator_cnt, obj.sections[716], gui.color.white, gui.color.black, false, 'Modulators', true, gui.fontsz.settings)
-    GUI_DrawTick(gui, 'Activate snapshot morphing pop-ups', obj.sections[717], gui.color.white, settings_showmorphpop, gui.fontsz.settings, gui.fontsz.settings)
-    GUI_DrawTick(gui, 'Simple select grouped controls', obj.sections[718], gui.color.white, settings_groupsel, gui.fontsz.settings)
+    GUI_DrawTick(gui, 'Autosnap strips when adding', obj.sections[707], gui.color.white, settings_stripautosnap, gui.fontsz.settings,true)
+    GUI_DrawButton(gui, autosnap_rowheight, obj.sections[708], gui.color.white, gui.color.black, false, 'Autosnap row height', true, gui.fontsz.settings,true)
+    GUI_DrawButton(gui, autosnap_itemgap, obj.sections[709], gui.color.white, gui.color.black, false, 'Autosnap strip item gap min', true, gui.fontsz.settings,true)
+    GUI_DrawButton(gui, autosnap_itemgapmax, obj.sections[710], gui.color.white, gui.color.black, false, 'Autosnap strip item gap max', true, gui.fontsz.settings,true)
+    GUI_DrawButton(gui, gallery_itemgap, obj.sections[711], gui.color.white, gui.color.black, false, 'Strip gallery item gap', true, gui.fontsz.settings,true)
+    GUI_DrawTick(gui, 'Disable key input when surface locked', obj.sections[712], gui.color.white, settings_disablekeysonlockedsurface, gui.fontsz.settings,true)
+    GUI_DrawTick(gui, 'Delete FX with strip', obj.sections[713], gui.color.white, settings_deletefxwithstrip, gui.fontsz.settings,true)
+    GUI_DrawTick(gui, 'Morph fader/mod assigned controls', obj.sections[714], gui.color.white, settings_morphfaderassignedctls, gui.fontsz.settings,true)
+    GUI_DrawTick(gui, 'Run modulators when stopped', obj.sections[715], gui.color.white, settings_alwaysrunmods, gui.fontsz.settings,true)
+    GUI_DrawButton(gui, modulator_cnt, obj.sections[716], gui.color.white, gui.color.black, false, 'Modulators', true, gui.fontsz.settings,true)
+    GUI_DrawTick(gui, 'Activate snapshot morphing pop-ups', obj.sections[717], gui.color.white, settings_showmorphpop, gui.fontsz.settings, true)
+    GUI_DrawTick(gui, 'Simple select grouped controls', obj.sections[718], gui.color.white, settings_groupsel, gui.fontsz.settings,true)
 
     gfx.dest = 1
     gfx.a = 1
@@ -23538,10 +23706,10 @@ end
                           w = gfx1.main_w-(plist_w+2+(sb_size+2)*2),
                           h = gfx1.main_h-(topbarheight+(sb_size+2)*2)}
       if settings_ssdock == true and show_snapshots and mode == 0 then
-        obj.sections[10].w = obj.sections[10].w - gui.winsz.snaps
+        obj.sections[10].w = obj.sections[10].w - gui.winsz.snaps*pnl_scale
       end
       if settings_moddock == true and show_lfoedit == true and mode == 0 then
-        obj.sections[10].h = obj.sections[10].h - (modwinsz.h or 300)      
+        obj.sections[10].h = obj.sections[10].h - (modwinsz.h or 300)*pnl_scale      
       end
       if show_striplayout == false then
         if lockx then
@@ -23555,11 +23723,11 @@ end
       end
     else
       obj.sections[10] = {x = plist_w,
-                          y = topbarheight+1,
+                          y = topbarheight+2,
                           w = gfx1.main_w-(plist_w+2)+2,
                           h = gfx1.main_h-(topbarheight+1)}
       if settings_ssdock == true and show_snapshots and mode == 0 then
-        obj.sections[10].w = obj.sections[10].w - gui.winsz.snaps
+        obj.sections[10].w = obj.sections[10].w - gui.winsz.snaps*pnl_scale
       end
       if settings_moddock == true and show_lfoedit == true and mode == 0 then
         local msz
@@ -26925,8 +27093,8 @@ end
             modwinsz.h = modwinsz.oh
             modwinsz.minimized = false
             
-            modwinsz.resize = true      
-            obj = GetObjects() 
+            --modwinsz.resize = true      
+            --obj = GetObjects() 
             update_lfoedit = true
             update_surface = true
             
@@ -28312,7 +28480,7 @@ end
           update_surface = true
         end
         
-        local i = math.floor((mouse.my - obj.sections[500].y) / butt_h)-1
+        local i = math.floor((mouse.my - obj.sections[500].y) / tb_butt_h)-1
         if i == -1 then
           if mouse.mx < obj.sections[500].w/2 then
             tlist_offset = tlist_offset - T_butt_cnt
@@ -28342,7 +28510,7 @@ end
           update_surface = true
         end
         
-        local i = math.floor((mouse.my - obj.sections[500].y) / butt_h)-1
+        local i = math.floor((mouse.my - obj.sections[500].y) / tb_butt_h)-1
         if i == 0 then
           if LBX_CTL_TRACK_INF then
             if mouse.mx < obj.sections[500].w/2 then
@@ -28373,7 +28541,7 @@ end
       
         if LBX_CTL_TRACK_INF then
 
-          local i = math.floor((mouse.my - obj.sections[500].y) / butt_h)-1
+          local i = math.floor((mouse.my - obj.sections[500].y) / tb_butt_h)-1
           if i > 0 and faders[i + fdlist_offset] and faders[i + fdlist_offset].targettype then
             local fd = i + fdlist_offset
             fader_select = fd
@@ -28429,7 +28597,7 @@ end
           update_surface = true
         end
         
-        local i = math.floor((mouse.my - obj.sections[500].y) / butt_h)-1
+        local i = math.floor((mouse.my - obj.sections[500].y) / tb_butt_h)-1
         if i == 0 then
           if mouse.mx < obj.sections[500].w/2 then
             mdlist_offset = mdlist_offset - (MD_butt_cnt-3)
@@ -28474,7 +28642,8 @@ end
       modwinsz.w = math.min(math.max(modwinrsz.w + (mouse.mx - modwinrsz.mx),modwin.minw),2048)
       modwinsz.h = math.min(math.max(modwinrsz.h + (mouse.my - modwinrsz.my),modwin.minh),2048)
       if modwinsz.w ~= modwinsz.ow or modwinsz.h ~= modwinsz.oh then
-        modwinsz.resize = true      
+        modwinsz.resize = true
+              
         obj = GetObjects() 
         update_lfoedit = true
         update_surface = true
@@ -28490,13 +28659,13 @@ end
       if modwinsz.minimized == true then
         s = gfx1.main_h - mouse.my
       end
-      if s > 50 or (modwinsz.minimized == true and s >= modwin.minh) then
+      if s > 50*pnl_scale or (modwinsz.minimized == true and s >= modwin.minh*pnl_scale) then
         s = modwinrsz.h - (mouse.my - modwinrsz.my) 
-        modwinsz.h = math.min(math.min(math.max(s,modwin.minh),gfx1.main_h-obj.sections[10].y),2048)
+        modwinsz.h = math.min(math.min(math.max(s,modwin.minh*pnl_scale),gfx1.main_h-obj.sections[10].y),2048)
         modwinsz.minimized = false
         --modwinsz.oh = modwinsz.h
       else
-        modwinsz.h = gui.winsz.pnltit
+        modwinsz.h = gui.winsz.pnltit*pnl_scale
         modwinsz.minimized = true
       end 
       if modwinsz.h ~= modwinsz.oh or modwinsz.minimized == true then
@@ -28684,7 +28853,7 @@ end
         end
         local mx, my = gfx.mouse_x, gfx.mouse_y
         local dock_state, wx,wy,ww,wh = gfx.dock(-1,0,0,0,0)
-        reaper.TrackCtl_SetToolTip(txt, wx+mx-15, wy+my+10, true)  
+        reaper.TrackCtl_SetToolTip(txt, wx+mx-15, wy+my+5, true)  
       --end
     
     elseif mouse.context and mouse.context == contexts.movesnapwindow then
@@ -28780,13 +28949,13 @@ end
     
     elseif mouse.context and mouse.context == contexts.resizesnapwindow then
 
-      local ly = obj.sections[10].h - obj.sections[160].y + butt_h
-      obj.sections[160].h = F_limit(resizesnapwin.origh + (mouse.my - resizesnapwin.offy) - obj.sections[160].y, 252, ly)
-      obj.sections[163].h = obj.sections[160].h - 208
-      obj.sections[1010].y = obj.sections[163].y + obj.sections[163].h + 3
+      local ly = obj.sections[10].h - obj.sections[160].y + butt_h*pnl_scale
+      obj.sections[160].h = F_limit(resizesnapwin.origh + (mouse.my - resizesnapwin.offy) - obj.sections[160].y, 252*pnl_scale, ly)
+      obj.sections[163].h = obj.sections[160].h - 208*pnl_scale
+      obj.sections[1010].y = obj.sections[163].y + obj.sections[163].h + 3*pnl_scale
       obj.sections[1011].y = obj.sections[1010].y 
       obj.sections[1012].y = obj.sections[1010].y
-      obj.sections[1013].y = obj.sections[1010].y+butt_h+2
+      obj.sections[1013].y = obj.sections[1010].y+(butt_h+2)*pnl_scale
       obj.sections[1014].y = obj.sections[1013].y
       obj.sections[1015].y = obj.sections[1013].y
       
@@ -28809,7 +28978,7 @@ end
     
     elseif mouse.context and mouse.context == contexts.snap_move then
       local my = mouse.my-obj.sections[160].y
-      local i = math.floor((my-obj.sections[163].y)/butt_h)
+      local i = math.floor((my-obj.sections[163].y)/(butt_h*pnl_scale))
       local snapcnt
       if sstype_select == 1 then
         snapcnt = #snapshots[tracks[track_select].strip][page][sstype_select]
@@ -29879,7 +30048,7 @@ end
         
         --CONTROL OPTIONS
         
-        if mouse.LB and mouse.my > obj.sections[45].y and mouse.my < obj.sections[45].y+butt_h and mouse.mx > obj.sections[45].x+obj.sections[45].w-40 then
+        if mouse.LB and mouse.my > obj.sections[45].y and mouse.my < obj.sections[45].y+butt_h*pnl_scale and mouse.mx > obj.sections[45].x+obj.sections[45].w-40 then
           
           show_cycleoptions = false
           ctl_page = ctl_page + 1
@@ -29888,7 +30057,7 @@ end
           end
           update_gfx = true
         
-        elseif mouse.RB and mouse.my > obj.sections[45].y and mouse.my < obj.sections[45].y+butt_h and mouse.mx > obj.sections[45].x+obj.sections[45].w-40 then
+        elseif mouse.RB and mouse.my > obj.sections[45].y and mouse.my < obj.sections[45].y+butt_h*pnl_scale and mouse.mx > obj.sections[45].x+obj.sections[45].w-40 then
 
           show_cycleoptions = false
           ctl_page = ctl_page - 1
@@ -29897,7 +30066,7 @@ end
           end
           update_gfx = true
         
-        elseif mouse.LB and mouse.my > obj.sections[45].y and mouse.my < obj.sections[45].y+butt_h then
+        elseif mouse.LB and mouse.my > obj.sections[45].y and mouse.my < obj.sections[45].y+butt_h*pnl_scale then
         
           movectlopts = {dx = mouse.mx-obj.sections[45].x,dy = mouse.my-obj.sections[45].y}
           mouse.context = contexts.move_ctlopts
@@ -29926,7 +30095,7 @@ end
             end
             update_ctlopts = true
 
-          elseif mouse.LB and mouse.my > butt_h and mouse.my < 150 then
+          elseif mouse.LB and mouse.my > butt_h*pnl_scale and mouse.my < 150*pnl_scale then
           
             PopulateCtlBrowser_Imgs()
             cbi_select = knob_select
@@ -30337,7 +30506,7 @@ end
         end
         
         if MOUSE_click(obj.sections[103]) then
-          local i = math.floor((mouse.my - obj.sections[103].y) / butt_h)+1
+          local i = math.floor((mouse.my - obj.sections[103].y) / (butt_h*pnl_scale))+1
           cycle_select.selected = F_limit(i+cyclist_offset,1,cycle_select.statecnt)
           --strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].cycledata.pos = cycle_select.selected
           update_gfx = true
@@ -31210,7 +31379,7 @@ end
         if MOUSE_click(obj.sections[520]) then
           
           if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.15 then
-            local i = math.floor((mouse.my - obj.sections[520].y) / butt_h)-1
+            local i = math.floor((mouse.my - obj.sections[520].y) / tb_butt_h)-1
             if i == -1 then
             elseif i >= F_butt_cnt then
             elseif trackfx[i + flist_offset] then
@@ -31221,7 +31390,7 @@ end
             end        
             
           else
-            local i = math.floor((mouse.my - obj.sections[520].y) / butt_h)-1
+            local i = math.floor((mouse.my - obj.sections[520].y) / tb_butt_h)-1
             if i == -1 then
               if mouse.mx < obj.sections[520].w/2 then
                 flist_offset = flist_offset - F_butt_cnt
@@ -31261,7 +31430,7 @@ end
         end
     
         if MOUSE_click(obj.sections[522]) then
-          local i = math.floor((mouse.my - obj.sections[522].y) / butt_h)-1
+          local i = math.floor((mouse.my - obj.sections[522].y) / tb_butt_h)-1
           local dp = true
           if i == -1 then
             if mouse.mx < obj.sections[522].w/2 then
@@ -31343,7 +31512,7 @@ end
           end
         
         elseif MOUSE_click_RB(obj.sections[522]) then
-          local i = math.floor((mouse.my - obj.sections[522].y) / butt_h)-1 
+          local i = math.floor((mouse.my - obj.sections[522].y) / tb_butt_h)-1 
           if i == -1 then
             if mouse.mx < obj.sections[520].w/2 then
               plist_offset = 0
@@ -31355,7 +31524,7 @@ end
         end
       elseif fxmode == 1 then
         if MOUSE_click(obj.sections[520]) then
-          local i = math.floor((mouse.my - obj.sections[520].y) / butt_h)-1
+          local i = math.floor((mouse.my - obj.sections[520].y) / tb_butt_h)-1
           if i == -1 then
             if mouse.mx < obj.sections[520].w/2 then
               trctltypelist_offset = trctltypelist_offset - F_butt_cnt
@@ -31389,7 +31558,7 @@ end
           elseif trctltype_select == 3 then
             pcnt = #otherctl_table
           end
-          local i = math.floor((mouse.my - obj.sections[522].y) / butt_h)-1
+          local i = math.floor((mouse.my - obj.sections[522].y) / tb_butt_h)-1
           if i == -1 then
             if mouse.mx < obj.sections[522].w/2 then
               trctlslist_offset = trctlslist_offset - P_butt_cnt
@@ -32239,7 +32408,7 @@ end
     end
     
     if MOUSE_click(obj.sections[531]) then
-      local i = math.floor((mouse.my - obj.sections[531].y) / butt_h)-1
+      local i = math.floor((mouse.my - obj.sections[531].y) / tb_butt_h)-1
       if i == -1 then
         if mouse.mx < obj.sections[531].w/2 then
           gflist_offset = gflist_offset - GF_butt_cnt
@@ -32273,7 +32442,7 @@ end
       end
       
     elseif MOUSE_click(obj.sections[530]) then
-      local i = math.floor((mouse.my - obj.sections[530].y) / butt_h)-1
+      local i = math.floor((mouse.my - obj.sections[530].y) / tb_butt_h)-1
       
       if i == -1 then
         if mouse.mx < obj.sections[530].w/2 then
@@ -32313,7 +32482,7 @@ end
     if mouse.context and mouse.context == contexts.draggfx then
       draggfx = {x = mouse.mx - draggfx_w/2, y = mouse.my - draggfx_h/2}
       if MOUSE_over(obj.sections[531]) then
-        local i = math.floor((mouse.my - obj.sections[531].y) / butt_h)-1
+        local i = math.floor((mouse.my - obj.sections[531].y) / tb_butt_h)-1
         ogdf = gfx_dropfolder
         if graphics_folders[i + gflist_offset] then
           local dropfolder = i + gflist_offset
@@ -32336,7 +32505,7 @@ end
         Strip_AddGFX(gfxtype.img)
       elseif MOUSE_over(obj.sections[531]) then
       
-        local i = math.floor((mouse.my - obj.sections[531].y) / butt_h)-1
+        local i = math.floor((mouse.my - obj.sections[531].y) / tb_butt_h)-1
         if graphics_folders[i + gflist_offset] then
           local dropfolder = i + gflist_offset
           
@@ -33059,7 +33228,7 @@ end
     end      
     
     if MOUSE_click(obj.sections[510]) then
-      local i = math.floor(((mouse.my - obj.sections[510].y)) / butt_h)-1
+      local i = math.floor(((mouse.my - obj.sections[510].y)) / tb_butt_h)-1
       if i == -1 then
         if mouse.mx < obj.sections[510].w/2 then
           sflist_offset = sflist_offset - SF_butt_cnt
@@ -33091,7 +33260,7 @@ end
       end
     
     elseif MOUSE_click(obj.sections[512]) then
-      local i = math.floor(((mouse.my - obj.sections[512].y)) / butt_h)
+      local i = math.floor(((mouse.my - obj.sections[512].y)) / tb_butt_h)
       if i == 0 then
         if mouse.mx < obj.sections[512].w/2 then
           slist_offset = slist_offset - S_butt_cnt
@@ -33132,7 +33301,7 @@ end
     elseif MOUSE_click_RB(obj.sections[512]) then
     
       if strip_select then
-        local i = math.floor(((mouse.my - obj.sections[512].y)) / butt_h)
+        local i = math.floor(((mouse.my - obj.sections[512].y)) / tb_butt_h)
         if strip_select == i-1 + slist_offset then
           local sd_m, sd_g, sd = '', '', ''
           if strip_default_mast then
@@ -33890,7 +34059,7 @@ end
     xywh = {x = obj.sections[160].x,
             y = obj.sections[160].y,
             w = obj.sections[160].w,
-            h = butt_h}
+            h = butt_h*pnl_scale}
     xywh2 = {x = obj.sections[160].x+obj.sections[1160].x,
                 y = obj.sections[160].y+obj.sections[1160].y,
                 w = obj.sections[160].w,
@@ -33900,16 +34069,17 @@ end
       if settings_ssdock == true then
         osnaph = snaph
       elseif osnaph then
-        snaph = math.max(math.min(osnaph,obj.sections[10].h,2048),252)
+        snaph = math.max(math.min(osnaph,obj.sections[10].h,2048),252*pnl_scale)
         obj.sections[160].h = snaph
         resize_display = true
       else
-        snaph = math.max(obj.sections[10].h,252)
+        snaph = math.max(obj.sections[10].h,252*pnl_scale)
         obj.sections[160].h = snaph
         resize_display = true
       end
       obj = GetObjects()
       update_gfx = true
+      
     elseif mouse.context == nil and MOUSE_click(xywh) and settings_ssdock ~= true then
       mouse.context = contexts.movesnapwindow
       movesnapwin = {offx = mouse.mx - obj.sections[160].x,
@@ -34273,7 +34443,7 @@ end
               
       elseif mouse.context == nil and MOUSE_click(obj.sections[163]) then
         if snapshots and snapshots[tracks[track_select].strip] then
-          local i = math.floor((mouse.my-obj.sections[163].y)/butt_h)
+          local i = math.floor((mouse.my-obj.sections[163].y)/(butt_h*pnl_scale))
       
           if i == 0 then
             local ix = math.floor((mouse.mx-obj.sections[163].x)/(obj.sections[160].w/2))
@@ -36549,7 +36719,11 @@ end
                    F_limit(mouse.my - ebpos.dy,obj.sections[10].y,obj.sections[10].y+obj.sections[10].h-sizey)]]
       local x, y = F_limit(mouse.mx - ebpos.dx,0,gfx1.main_w-sizex), 
                          F_limit(mouse.my - ebpos.dy,0,gfx1.main_h-sizey)
-      obj.sections[8] = {x = x,
+      obj.sections[8].x = x
+      obj.sections[8].y = y
+      obj = PosEBCtls(obj)
+      
+      --[[obj.sections[8] = {x = x,
                          y = y,
                          w = sizex, 
                          h = sizey}
@@ -36568,7 +36742,7 @@ end
       obj.sections[9] = {x = x + 25,
                          y = y+obj.sections[8].h - 66,
                          w = sizex-50, 
-                         h = 26}
+                         h = 26}]]
       update_surface = true
     end
     
@@ -36764,6 +36938,16 @@ end
       elseif mouse.context == nil and MOUSE_click(obj.sections[79]) then
         mouse.context = contexts.gridslider
         ctlpos = settings_gridsize
+      elseif mouse.context == nil and MOUSE_click(obj.sections[721]) then
+        mouse.context = contexts.sbpanszslider
+        ctlpos = tb_butt_h
+      elseif mouse.context == nil and MOUSE_click(obj.sections[722]) then
+        mouse.context = contexts.panszslider
+        ctlpos = pnl_scale
+      elseif mouse.context == nil and MOUSE_click(obj.sections[723]) then
+        mouse.context = contexts.panfontszslider
+        ctlpos = fontscale
+
       elseif mouse.context == nil and MOUSE_click(obj.sections[86]) then
         local retval, c = reaper.GR_SelectColor(_,ConvertColorString(settings_snaplistbgcol))
         if retval ~= 0 then
@@ -36955,6 +37139,46 @@ end
           end
           update_gfx = true
         end
+      elseif mouse.context and mouse.context == contexts.sbpanszslider then
+        local val = F_limit(MOUSE_slider(obj.sections[721]),0,1)
+        if val ~= nil then
+          val = 1-val
+          tb_butt_h = F_limit(ctlpos + math.floor((val-0.5)*200),16,60)
+          obj = GetObjects()
+          update_sidebar = true
+          update_topbar = true
+          update_surface = true
+          --update_gfx = true
+        end
+      
+      elseif mouse.context and mouse.context == contexts.panszslider then
+        local val = F_limit(MOUSE_slider(obj.sections[722]),0,1)
+        if val ~= nil then
+          val = 1-val
+          pnl_scale = round(F_limit(ctlpos + (val-0.5)*2,0.9,2),2)
+          if pnl_scale ~= ops then
+            resize_display = true
+            pnlscaleflag = true
+            obj = GetObjects()
+            update_gfx = true
+            ops = pnl_scale
+          end
+        end
+
+      elseif mouse.context and mouse.context == contexts.panfontszslider then
+        local val = F_limit(MOUSE_slider(obj.sections[723]),0,1)
+        if val ~= nil then
+          val = 1-val
+          fontscale = round(F_limit(ctlpos + (val-0.5)*20,0,20),0)
+          if fontscale ~= ofs then
+            resize_display = true
+            --pnlscaleflag = true
+            --obj = GetObjects()
+            update_gfx = true
+            ofs = fontscale
+          end
+        end
+      
       end
       
       mouse.mx, mouse.my = mx, my
@@ -39552,15 +39776,10 @@ end
     gfx.a = 1
     GUI_DrawPanel(obj.sections[8],true,e.title)
     
-    --[[rect(obj.sections[8].x,obj.sections[8].y,obj.sections[8].w,obj.sections[8].h,true)
-    f_Get_SSV(gui.color.white)
-    gfx.rect(obj.sections[8].x,obj.sections[8].y,obj.sections[8].w,obj.sections[8].h,0)]]
+    GUI_DrawButton(gui, 'OK', obj.sections[6], gui.color.white, gui.skol.butt1_txt, true,'',false,gui.fontsz.butt)
+    GUI_DrawButton(gui, 'Cancel', obj.sections[7], gui.color.white, gui.skol.butt1_txt, true,'',false,gui.fontsz.butt)
   
-    GUI_DrawButton(gui, 'OK', obj.sections[6], gui.color.blue, gui.color.black, true)
-    GUI_DrawButton(gui, 'Cancel', obj.sections[7], gui.color.blue, gui.color.black, true)
-  
-    --GUI_textsm_LJ(gui, obj.sections[5], e.title, gui.color.white, 0)
-    gfx.setfont(1, gui.fontname, gui.fontsz_knob)
+    gfx.setfont(1, gui.fontname, gui.fontsz_knob + (pnl_scale-1)*fontscale)
   
     e.x = obj.sections[9].x
     e.y = obj.sections[9].y
@@ -42104,7 +42323,12 @@ end
     locky = tobool(nz(GES('locky',true),false))
     lockw = tonumber(nz(GES('lockw',true),400))
     lockh = tonumber(nz(GES('lockh',true),400))
+
     auto_delay = tonumber(nz(GES('auto_sensitivity',true),auto_delay))    
+    tb_butt_h = tonumber(nz(GES('tb_butt_h',true),tb_butt_h))    
+    pnl_scale = tonumber(nz(GES('pnl_scale',true),pnl_scale))    
+    fontscale = tonumber(nz(GES('fontscale',true),fontscale))    
+
     settings_swapctrlclick = tobool(nz(GES('swapctrlclick',true),settings_swapctrlclick))
     settings_showbars = tobool(nz(GES('showbars',true),settings_showbars))
     settings_insertdefaultoneverytrack = tobool(nz(GES('insertdefstripontrack',true),settings_insertdefaultoneverytrack))
@@ -42255,6 +42479,11 @@ end
     reaper.SetExtState(SCRIPT,'locky',tostring(locky), true)
     reaper.SetExtState(SCRIPT,'lockw',tostring(lockw), true)
     reaper.SetExtState(SCRIPT,'lockh',tostring(lockh), true)
+
+    reaper.SetExtState(SCRIPT,'tb_butt_h',tb_butt_h, true)
+    reaper.SetExtState(SCRIPT,'pnl_scale',nz(pnl_scale,1), true)
+    reaper.SetExtState(SCRIPT,'fontscale',nz(fontscale,8), true)
+
     reaper.SetExtState(SCRIPT,'auto_sensitivity',auto_delay, true)
     reaper.SetExtState(SCRIPT,'swapctrlclick',tostring(settings_swapctrlclick), true)
     reaper.SetExtState(SCRIPT,'showbars',tostring(settings_showbars), true)
@@ -47545,8 +47774,10 @@ end
   settings_ssdock = false
   settings_moddock = false
   
+  fontscale = 8
+  
   settingswin_off = 0
-  settingswin_maxh = 600
+  settingswin_maxh = 660
   
   takeswitch_max = 512
   
