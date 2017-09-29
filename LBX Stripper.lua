@@ -1393,7 +1393,7 @@
                           h = gah}
       obj = PosGaugeEdCtls(obj)
       
-      local gaw,gah = 400, math.max(200, obj.sections[10].h-40)
+      local gaw,gah = 420, math.max(200, gfx1.main_h-obj.sections[10].y-40) --obj.sections[10].h-40)
 
       --Track FX ORDER panel
       obj.sections[900] = {x = math.max(gfx1.main_w/2 -gaw/2,obj.sections[43].w),
@@ -6570,13 +6570,13 @@
   end
   
   function GetTFXOButtCnt()
-    local tfxo_butth = 30
+    local tfxo_butth = 30+math.floor((pnl_scale-1)*10)
     return math.floor((obj.sections[900].h-30)/tfxo_butth), tfxo_butth
   end
 
   function GUI_DrawTrackFXOrder(gui, obj)
 
-    GUI_DrawPanel(obj.sections[900],true,'TRACK FX ORDER')
+    GUI_DrawPanel(obj.sections[900],true,'TRACK FX ORDER',true)
     if tfxreorder then
     
       local butt_cnt, butt_h = GetTFXOButtCnt()
@@ -6585,9 +6585,9 @@
       for i = 1, butt_cnt do
     
         if tfxreorder[i+tfxo_listpos] then
-          local xywh = {x = obj.sections[900].x+30,
+          local xywh = {x = obj.sections[900].x+40,
                         y = obj.sections[900].y + 30 + ((i-1) * (butt_h)),
-                        w = obj.sections[900].w-50,
+                        w = obj.sections[900].w-60,
                         h = butt_h-5}
           local tc = gui.skol.butt1_txt
           if tostring(tfxreorder[i+tfxo_listpos].offline) == '1' then
@@ -9811,15 +9811,15 @@ end
     
     GUI_textC(gui,xywh,'CONTROL BROWSER',gui.color.black,-2)
     
-    GUI_DrawButton(gui, 'ALL', obj.sections[201], gui.color.white, gui.color.black, true, '', false)
-    GUI_DrawButton(gui, 'KNOBS', obj.sections[202], gui.color.white, gui.color.black, true, '', false)
-    GUI_DrawButton(gui, 'SLIDERS', obj.sections[203], gui.color.white, gui.color.black, true, '', false)
-    GUI_DrawButton(gui, 'BUTTONS', obj.sections[204], gui.color.white, gui.color.black, true, '', false)
-    GUI_DrawButton(gui, 'METERS', obj.sections[205], gui.color.white, gui.color.black, true, '', false)
-    GUI_DrawButton(gui, 'MISC', obj.sections[206], gui.color.white, gui.color.black, true, '', false)
+    GUI_DrawButton(gui, 'ALL', obj.sections[201], gui.color.white, gui.skol.butt1_txt, true, '', false)
+    GUI_DrawButton(gui, 'KNOBS', obj.sections[202], gui.color.white, gui.skol.butt1_txt, true, '', false)
+    GUI_DrawButton(gui, 'SLIDERS', obj.sections[203], gui.color.white, gui.skol.butt1_txt, true, '', false)
+    GUI_DrawButton(gui, 'BUTTONS', obj.sections[204], gui.color.white, gui.skol.butt1_txt, true, '', false)
+    GUI_DrawButton(gui, 'METERS', obj.sections[205], gui.color.white, gui.skol.butt1_txt, true, '', false)
+    GUI_DrawButton(gui, 'MISC', obj.sections[206], gui.color.white, gui.skol.butt1_txt, true, '', false)
 
-    GUI_DrawButton(gui, '<<', obj.sections[211], gui.color.white, gui.color.black, true, '', false)
-    GUI_DrawButton(gui, '>>', obj.sections[212], gui.color.white, gui.color.black, true, '', false)
+    GUI_DrawButton(gui, '<<', obj.sections[211], gui.color.white, gui.skol.butt1_txt, true, '', false)
+    GUI_DrawButton(gui, '>>', obj.sections[212], gui.color.white, gui.skol.butt1_txt, true, '', false)
     
     
     xywh = {x = obj.sections[212].x+obj.sections[212].w+20,
@@ -14306,7 +14306,7 @@ end
       sb = true
       sbt = 'SET'
     end
-    GUI_DrawButton(gui, sbt, obj.sections[703], gui.color.white, gui.color.black, sb, 'Nebula scanboot location', true, gui.fontsz.settings,true)
+    GUI_DrawButton(gui, sbt, obj.sections[703], gui.color.white, gui.skol.butt1_txt, sb, 'Nebula scanboot location', true, gui.fontsz.settings,true)
     GUI_DrawTick(gui, 'Touch feedback indicator', obj.sections[704], gui.color.white, settings_touchFB, gui.fontsz.settings,true)
     GUI_DrawTick(gui, 'Send MIDI feedback on track change', obj.sections[705], gui.color.white, settings_trackchangemidi, gui.fontsz.settings,true)
     GUI_DrawTick(gui, 'Show fader assignments on grid', obj.sections[706], gui.color.white, settings_showfaderassignments, gui.fontsz.settings,true)
