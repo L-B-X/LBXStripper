@@ -190,6 +190,8 @@
               sbpanszslider = 131, 
               panszslider = 132, 
               panfontszslider = 133, 
+              sbfontszslider = 134,
+              lstfontszslider = 135,
               dummy = 999
               }
   
@@ -2761,14 +2763,24 @@
 
     obj.sections[721] = {x = xofft-75, 
                                y = settingswin_off + yoff+10 + yoffm*22 + 6,
-                               w = 150,
+                               w = 70,
+                               h = bh+10}
+
+    obj.sections[724] = {x = xofft, 
+                               y = settingswin_off + yoff+10 + yoffm*22 + 6,
+                               w = 70,
+                               h = bh+10}
+
+    obj.sections[725] = {x = xofft + 75, 
+                               y = settingswin_off + yoff+10 + yoffm*22 + 6,
+                               w = 70,
                                h = bh+10}
 
     obj.sections[722] = {x = xofft-75, 
                                y = settingswin_off + yoff+10 + yoffm*23 + 12,
                                w = 70,
                                h = bh+10}
-    obj.sections[723] = {x = xofft+5, 
+    obj.sections[723] = {x = xofft, 
                                y = settingswin_off + yoff+10 + yoffm*23 + 12,
                                w = 70,
                                h = bh+10}
@@ -5428,7 +5440,7 @@
         --GUI_textC_LIM(gui, xywh, tracks[i-1 + tlist_offset].tracknum+1 ..' - '..nm, c, -4 + gui.fontsz.lst, '', nil, gui.fontnm.lst,4)            
         xywh.x=xywh.x+2
         xywh.w=xywh.w-4
-        GUI_Str(gui, xywh, tracks[i-1 + tlist_offset].tracknum+1 ..' - '..nm, 4, c, -4 + gui.fontsz.lst, 1, nil, gui.fontnm.lst, gui.fontflag.lst)
+        GUI_Str(gui, xywh, tracks[i-1 + tlist_offset].tracknum+1 ..' - '..nm, 4, c, -4 + gui.fontsz.lst + lst_fontscale, 1, nil, gui.fontnm.lst, gui.fontflag.lst)
       end                      
     end           
 
@@ -5498,7 +5510,7 @@
           --GUI_textsm_LJ(gui, xywh, txt, c, -4 + gui.fontsz.lst, plist_w)
           --GUI_textC_LIM(gui, xywh, txt, c, -4 + gui.fontsz.lst, '', nil, gui.fontnm.lst,4)       
           xywh.x=xywh.x+2     
-          GUI_Str(gui, xywh, txt, 4, c, -4 + gui.fontsz.lst, 1, nil, gui.fontnm.lst, gui.fontflag.lst)            
+          GUI_Str(gui, xywh, txt, 4, c, -4 + gui.fontsz.lst + lst_fontscale, 1, nil, gui.fontnm.lst, gui.fontflag.lst)            
         end                      
       end           
     end
@@ -5570,7 +5582,7 @@
         --GUI_textsm_LJ(gui, xywh, txt, c, -4 + gui.fontsz.lst, plist_w)
         --GUI_textC_LIM(gui, xywh, txt, c, -4 + gui.fontsz.lst, '', nil, gui.fontnm.lst,4)
         xywh.x=xywh.x+2
-        GUI_Str(gui, xywh, txt, 4, c, -4 + gui.fontsz.lst, 1, nil, gui.fontnm.lst,gui.fontflag.lst)            
+        GUI_Str(gui, xywh, txt, 4, c, -4 + gui.fontsz.lst + lst_fontscale, 1, nil, gui.fontnm.lst,gui.fontflag.lst)            
       end                      
     end           
     
@@ -5620,7 +5632,7 @@
   
   ------------------------------------------------------------
 
-  function GUI_DrawBar(gui, t, b, png, v, fg1, fg2, ts, limit, shad, fontnm, fontflags)
+  function GUI_DrawBar(gui, t, b, png, v, fg1, fg2, ts, limit, shad, fontnm, fontflags, noscale)
   
     local c = fg1
     if v == false then
@@ -5652,7 +5664,11 @@
     --M
     gfx.blit(sl, 1, 0, corner, corner, w-corner2, h-corner2, b.x+corner, b.y+corner, b.w-corner2, b.h-corner2) 
         
-    GUI_Str(gui,b,t,5,c,ts,1,shad,fontnm,fontflags or 0)
+    local tscale = 0
+    if noscale ~= true then
+      tscale = tb_fontscale
+    end
+    GUI_Str(gui,b,t,5,c,ts+tscale,1,shad,fontnm,fontflags or 0)
     --local xywh = {x=b.x,y=b.y,w=b.w,h=b.h}
     --[[if limit~=nil and limit==true then
       GUI_textsm_LJ(gui,xywh,t,c,ts,b.w)
@@ -5682,6 +5698,11 @@
              xywh.w,
              xywh.h, 1 )
     
+    local tscale = 0
+    if noscale ~= true then
+      tscale = tb_fontscale
+    end
+    
     if mode == 0 and plist_w >= 160 then
     
       local w = math.floor(obj.sections[13].w / 3)
@@ -5696,28 +5717,28 @@
               w = w,
               h = obj.sections[13].h}
       if mode0_submode == 0 then
-        GUI_DrawBar(gui,'TRACKS',xywh,skin.bar,true,gui.skol.sb_txt_on,nil,-3 + gui.fontsz.sb,nil,gui.skol.sb_shad,gui.fontnm.sb,gui.fontflag.sb)
+        GUI_DrawBar(gui,'TRACKS',xywh,skin.bar,true,gui.skol.sb_txt_on,nil,math.min(-3 + gui.fontsz.sb+tscale,1),nil,gui.skol.sb_shad,gui.fontnm.sb,gui.fontflag.sb,true)
       else
         --local xywh2 = {x = xywh.x, y = xywh.y-1, w = xywh.w, h = xywh.h}
         --GUI_textC(gui,xywh2,'TRACKS',gui.skol.sb_txt_off,-3 + gui.fontsz.sb)
-        GUI_Str(gui,xywh,'TRACKS',5,gui.skol.sb_txt_off,-3 + gui.fontsz.sb,1,nil,gui.fontnm.sb,gui.fontflag.sb)      
+        GUI_Str(gui,xywh,'TRACKS',5,gui.skol.sb_txt_off,math.min(-3 + gui.fontsz.sb+tscale,1),1,nil,gui.fontnm.sb,gui.fontflag.sb)      
       end
       xywh.x = xywh.x + w
       if mode0_submode == 1 then
-        GUI_DrawBar(gui,'FADERS',xywh,skin.bar,true,gui.skol.sb_txt_on,nil,-3 + gui.fontsz.sb,nil,gui.skol.sb_shad,gui.fontnm.sb,gui.fontflag.sb)
+        GUI_DrawBar(gui,'FADERS',xywh,skin.bar,true,gui.skol.sb_txt_on,nil,math.min(-3 + gui.fontsz.sb+tscale,1),nil,gui.skol.sb_shad,gui.fontnm.sb,gui.fontflag.sb,true)
       else
         --local xywh2 = {x = xywh.x, y = xywh.y-1, w = xywh.w, h = xywh.h}
         --GUI_textC(gui,xywh2,'FADERS',gui.skol.sb_txt_off,-3 + gui.fontsz.sb)      
-        GUI_Str(gui,xywh,'FADERS',5,gui.skol.sb_txt_off,-3 + gui.fontsz.sb,1,nil,gui.fontnm.sb,gui.fontflag.sb)      
+        GUI_Str(gui,xywh,'FADERS',5,gui.skol.sb_txt_off,math.min(-3 + gui.fontsz.sb+tscale,1),1,nil,gui.fontnm.sb,gui.fontflag.sb)      
       end
       xywh.x = xywh.x + w
       --xywh.w = obj.sections[11].w - xywh.x + 1
       if mode0_submode == 2 then
-        GUI_DrawBar(gui,'MODS',xywh,skin.bar,true,gui.skol.sb_txt_on,nil,-3 + gui.fontsz.sb,nil,gui.skol.sb_shad,gui.fontnm.sb,gui.fontflag.sb)
+        GUI_DrawBar(gui,'MODS',xywh,skin.bar,true,gui.skol.sb_txt_on,nil,math.min(-3 + gui.fontsz.sb+tscale,1),nil,gui.skol.sb_shad,gui.fontnm.sb,gui.fontflag.sb,true)
       else
         --local xywh2 = {x = xywh.x, y = xywh.y-1, w = xywh.w, h = xywh.h}
         --GUI_textC(gui,xywh2,'MODS',gui.skol.sb_txt_off,-3 + gui.fontsz.sb)      
-        GUI_Str(gui,xywh,'MODS',5,gui.skol.sb_txt_off,-3 + gui.fontsz.sb,1,nil,gui.fontnm.sb,gui.fontflag.sb)
+        GUI_Str(gui,xywh,'MODS',5,gui.skol.sb_txt_off,math.min(-3 + gui.fontsz.sb+tscale,1),1,nil,gui.fontnm.sb,gui.fontflag.sb)
       end
     
       if mode0_submode == 0 then
@@ -5790,14 +5811,14 @@
                         h = obj.sections[13].h}
           if fxmode == 0 then
             --GUI_textsm_CJ(gui,xywh,submode_table[submode+1],gui.skol.sb_txt_on,-2 + gui.fontsz.sb,xywh.w)
-            GUI_Str(gui,xywh,submode_table[submode+1],5,gui.skol.sb_txt_on,-2 + gui.fontsz.sb,1,nil,gui.fontnm.sb,gui.fontflag.sb)
+            GUI_Str(gui,xywh,submode_table[submode+1],5,gui.skol.sb_txt_on,math.min(-2 + gui.fontsz.sb+tscale,1),1,nil,gui.fontnm.sb,gui.fontflag.sb)
           elseif fxmode == 1 then
             --GUI_textsm_CJ(gui,xywh,'TR PARAMS',gui.skol.sb_txt_on,-2 + gui.fontsz.sb,xywh.w) --hardcoded - sort out eventually
-            GUI_Str(gui,xywh,'TR PARAMS',5,gui.skol.sb_txt_on,-2 + gui.fontsz.sb,1,nil,gui.fontnm.sb,gui.fontflag.sb)
+            GUI_Str(gui,xywh,'TR PARAMS',5,gui.skol.sb_txt_on,math.min(-2 + gui.fontsz.sb+tscale,1),1,nil,gui.fontnm.sb,gui.fontflag.sb)
           end
         else
           --GUI_textC(gui,obj.sections[13],submode_table[submode+1],gui.skol.sb_txt_on,-2 + gui.fontsz.sb)
-          GUI_Str(gui,obj.sections[13],submode_table[submode+1],5,gui.skol.sb_txt_on,-2 + gui.fontsz.sb,1,nil,gui.fontnm.sb,gui.fontflag.sb)
+          GUI_Str(gui,obj.sections[13],submode_table[submode+1],5,gui.skol.sb_txt_on,math.min(-2 + gui.fontsz.sb+tscale,1),1,nil,gui.fontnm.sb,gui.fontflag.sb)
         end
         if submode == 0 then
           f_Get_SSV(gui.color.black)
@@ -5810,7 +5831,7 @@
                    1,
                    xywh.h, 1, 1)
           --GUI_textC(gui,xywh,'*',gui.skol.sb_txt_on,-2 + gui.fontsz.sb)
-          GUI_Str(gui,xywh,'*',5,gui.skol.sb_txt_on,-2 + gui.fontsz.sb,1,nil,gui.fontnm.sb,gui.fontflag.sb)
+          GUI_Str(gui,xywh,'*',5,gui.skol.sb_txt_on,-2 + gui.fontsz.sb+tscale,1,nil,gui.fontnm.sb,gui.fontflag.sb)
   
         end
       else
@@ -5842,8 +5863,7 @@
           if i-1 ~= sm then
             c = gui.skol.sb_txt_off
           end
-          --GUI_textC_shadow(gui,xywh,submode_table2[i],c,-3 + gui.fontsz.sb,1,0,gui.skol.sb_shad,98,gui.fontnm.sb)
-          GUI_Str(gui,xywh,submode_table2[i],5,c,-3 + gui.fontsz.sb,1,gui.skol.sb_shad,gui.fontnm.sb,gui.fontflag.sb)
+          GUI_Str(gui,xywh,submode_table2[i],5,c,math.min(-3 + gui.fontsz.sb+tscale,1),1,gui.skol.sb_shad,gui.fontnm.sb,gui.fontflag.sb)
         end
       end
     end
@@ -5919,7 +5939,7 @@
           xywh.x = xywh.x + 2
           xywh.w = xywh.w - 4          
                       
-          GUI_Str(gui, xywh, CropFXName(trackfx[i + flist_offset].name), 4, c, -4 + gui.fontsz.lst, 1, nil, gui.fontnm.lst, gui.fontflag.lst)
+          GUI_Str(gui, xywh, CropFXName(trackfx[i + flist_offset].name), 4, c, -4 + gui.fontsz.lst + lst_fontscale, 1, nil, gui.fontnm.lst, gui.fontflag.lst)
         else
           break
         end
@@ -5953,7 +5973,7 @@
           --GUI_textC_LIM(gui, xywh, trctltype_table[i + trctltypelist_offset + 1], c, -4 + gui.fontsz.lst, '', nil, gui.fontnm.lst,4)
           xywh.x = xywh.x + 2            
           xywh.w = xywh.w - 4           
-          GUI_Str(gui, xywh, trctltype_table[i + trctltypelist_offset + 1], 4, c, -4 + gui.fontsz.lst, 1, nil, gui.fontnm.lst, gui.fontflag.lst)
+          GUI_Str(gui, xywh, trctltype_table[i + trctltypelist_offset + 1], 4, c, -4 + gui.fontsz.lst + lst_fontscale, 1, nil, gui.fontnm.lst, gui.fontflag.lst)
         else
           break
         end
@@ -6006,7 +6026,7 @@
           --GUI_textC_LIM(gui, xywh, trackfxparams[i + plist_offset].paramname, c, -4 + gui.fontsz.lst, '', nil, gui.fontnm.lst,4)
           xywh.x = xywh.x + 2            
           xywh.w = xywh.w - 4            
-          GUI_Str(gui, xywh, trackfxparams[i + plist_offset].paramname, 4, c, -4 + gui.fontsz.lst, 1, nil, gui.fontnm.lst, gui.fontflag.lst)
+          GUI_Str(gui, xywh, trackfxparams[i + plist_offset].paramname, 4, c, -4 + gui.fontsz.lst+ lst_fontscale, 1, nil, gui.fontnm.lst, gui.fontflag.lst)
         else
           break
         end
@@ -6049,7 +6069,7 @@
             --GUI_textC_LIM(gui, xywh, tbl[i + trctlslist_offset+1].name, c, -4 + gui.fontsz.lst, '', nil, gui.fontnm.lst,4)
             xywh.x = xywh.x + 2            
             xywh.w = xywh.w - 4            
-            GUI_Str(gui, xywh, tbl[i + trctlslist_offset+1].name, 4, c, -4 + gui.fontsz.lst, 1, nil, gui.fontnm.lst, gui.fontflag.lst)
+            GUI_Str(gui, xywh, tbl[i + trctlslist_offset+1].name, 4, c, -4 + gui.fontsz.lst+ lst_fontscale, 1, nil, gui.fontnm.lst, gui.fontflag.lst)
           else
             break
           end
@@ -6078,7 +6098,7 @@
             --GUI_textC_LIM(gui, xywh, tbl[sidx][pidx].name, c, -4 + gui.fontsz.lst, '', nil, gui.fontnm.lst,4)
             xywh.x = xywh.x + 2            
             xywh.w = xywh.w - 4            
-            GUI_Str(gui, xywh, tbl[sidx][pidx].name, 4, c, -4 + gui.fontsz.lst, 1, nil, gui.fontnm.lst, gui.fontflag.lst)
+            GUI_Str(gui, xywh, tbl[sidx][pidx].name, 4, c, -4 + gui.fontsz.lst+ lst_fontscale, 1, nil, gui.fontnm.lst, gui.fontflag.lst)
           else
             break
           end
@@ -6105,7 +6125,7 @@
             --GUI_textC_LIM(gui, xywh, tbl[i + trctlslist_offset], c, -4 + gui.fontsz.lst, '', nil, gui.fontnm.lst,4)
             xywh.x = xywh.x + 2            
             xywh.w = xywh.w - 4            
-            GUI_Str(gui, xywh, tbl[i + trctlslist_offset], 4, c, -4 + gui.fontsz.lst, 1, nil, gui.fontnm.lst, gui.fontflag.lst)
+            GUI_Str(gui, xywh, tbl[i + trctlslist_offset], 4, c, -4 + gui.fontsz.lst+ lst_fontscale, 1, nil, gui.fontnm.lst, gui.fontflag.lst)
           else
             break
           end
@@ -6213,7 +6233,7 @@
         --GUI_textsm_LJ(gui, xywh, graphics_folders[i + gflist_offset], c, -4 + gui.fontsz.lst, plist_w)
         xywh.x = xywh.x + 4
         xywh.w = xywh.w - 10            
-        GUI_Str(gui, xywh, graphics_folders[i + gflist_offset], 4, c, -4 + gui.fontsz.lst, 1, nil, gui.fontnm.lst, gui.fontflag.lst)
+        GUI_Str(gui, xywh, graphics_folders[i + gflist_offset], 4, c, -4 + gui.fontsz.lst+ lst_fontscale, 1, nil, gui.fontnm.lst, gui.fontflag.lst)
       else
         break
       end
@@ -6257,7 +6277,7 @@
         --GUI_textsm_LJ(gui, xywh, graphics_files[graphics_folder_files[i + glist_offset]].fn, c, -4 + gui.fontsz.lst, plist_w)
         xywh.x = xywh.x + 4            
         xywh.w = xywh.w - 10            
-        GUI_Str(gui, xywh, graphics_files[graphics_folder_files[i + glist_offset]].fn, 4, c, -4 + gui.fontsz.lst, 1, nil, gui.fontnm.lst, gui.fontflag.lst)
+        GUI_Str(gui, xywh, graphics_files[graphics_folder_files[i + glist_offset]].fn, 4, c, -4 + gui.fontsz.lst+ lst_fontscale, 1, nil, gui.fontnm.lst, gui.fontflag.lst)
                     
       end                      
     end           
@@ -6352,7 +6372,7 @@
         --GUI_textsm_LJ(gui, xywh, strip_folders[i + sflist_offset].fn, c, -4 + gui.fontsz.lst, plist_w)
         xywh.x = xywh.x + 4
         xywh.w = xywh.w - 10            
-        GUI_Str(gui, xywh, strip_folders[i + sflist_offset].fn, 4, c, -4 + gui.fontsz.lst, 1, nil, gui.fontnm.lst, gui.fontflag.lst)
+        GUI_Str(gui, xywh, strip_folders[i + sflist_offset].fn, 4, c, -4 + gui.fontsz.lst+ lst_fontscale, 1, nil, gui.fontnm.lst, gui.fontflag.lst)
                     
       end                      
     end           
@@ -6401,7 +6421,7 @@
         --GUI_textsm_LJ(gui, xywh, strip_files[i + slist_offset].fn, c, -4 + gui.fontsz.lst, plist_w-butt_h)
         xywh.x = xywh.x + 4 
         xywh.w = xywh.w - 24           
-        GUI_Str(gui, xywh, strip_files[i + slist_offset].fn, 4, c, -4 + gui.fontsz.lst, 1, nil, gui.fontnm.lst, gui.fontflag.lst)
+        GUI_Str(gui, xywh, strip_files[i + slist_offset].fn, 4, c, -4 + gui.fontsz.lst+ lst_fontscale, 1, nil, gui.fontnm.lst, gui.fontflag.lst)
                     
       end                      
     end           
@@ -13986,6 +14006,11 @@ end
     local w, h = gfx.getimgdim(999)
     gfx.rect(0,0,w,h,1)
 
+    local tscale = 0
+    if noscale ~= true then
+      tscale = tb_fontscale
+    end
+
     local xywh = {x = obj.sections[18].x,
                   y = obj.sections[18].y,
                   w = obj.sections[18].w,
@@ -14046,7 +14071,7 @@ end
       end
 
       --GUI_textC_shadow(gui,xywh,t,c,-2 + gui.fontsz.sb,1,0,gui.skol.sb_shad,98)
-      GUI_Str(gui,xywh,t,5,c,-2 + gui.fontsz.sb,1,gui.skol.sb_shad,gui.fontnm.sb,98)
+      GUI_Str(gui,xywh,t,5,c,-2 + gui.fontsz.sb + tscale,1,gui.skol.sb_shad,gui.fontnm.sb,98)
       if i == 2 then
         local w, h = gfx.getimgdim(skin.arrowup)
         gfx.blit(skin.arrowup,1,0,0,0,w,h,xywh.x+xywh.w/2-w/2,xywh.y+xywh.h/2-h/2)
@@ -14061,7 +14086,7 @@ end
     if obj.sections[12].w > 0 then
       if infomsg ~= nil then
         --GUI_textC_LIM(gui,obj.sections[12],infomsg,gui.skol.sb_txt_on,-2 + gui.fontsz.sb,gui.skol.sb_shad,98,gui.fontnm.sb,5)
-        GUI_Str(gui,obj.sections[12],infomsg,5,gui.skol.sb_txt_on,-2 + gui.fontsz.sb,1,gui.skol.sb_shad,gui.fontnm.sb,98)
+        GUI_Str(gui,obj.sections[12],infomsg,5,gui.skol.sb_txt_on,-2 + gui.fontsz.sb + tscale,1,gui.skol.sb_shad,gui.fontnm.sb,98)
         
         infomsg = nil        
       elseif tracks and tracks[track_select] then
@@ -14074,7 +14099,7 @@ end
           trn = '[unnamed track]'
         end
         --GUI_textC_LIM(gui,obj.sections[12],GetProjectName()..' - '..STRIPSET..' - TRACK: ' .. tracks[track_select].tracknum+1 .. ' - '.. trn,gui.skol.sb_txt_on,-2 + gui.fontsz.sb,gui.skol.sb_shad,98,gui.fontnm.sb,5)
-        GUI_Str(gui,obj.sections[12],GetProjectName()..' - '..STRIPSET..' - TRACK: ' .. tracks[track_select].tracknum+1 .. ' - '.. trn,5,gui.skol.sb_txt_on,-2 + gui.fontsz.sb,1,gui.skol.sb_shad,gui.fontnm.sb,98)
+        GUI_Str(gui,obj.sections[12],GetProjectName()..' - '..STRIPSET..' - TRACK: ' .. tracks[track_select].tracknum+1 .. ' - '.. trn,5,gui.skol.sb_txt_on,-2 + gui.fontsz.sb + tscale,1,gui.skol.sb_shad,gui.fontnm.sb,98)
       end
     end  
 
@@ -14109,7 +14134,7 @@ end
                   h = obj.sections[1000].h}
     if gpage == true or track_select == LBX_GTRACK then
       f_Get_SSV(gui.color.white)
-      GUI_DrawBar(gui,'GLOBAL',xywh,skin.barR,true,gui.skol.sb_txt_on,nil,-5 + gui.fontsz.sb, nil,gui.skol.sb_shad,gui.fontnm.sb,gui.fontflag.sb)
+      GUI_DrawBar(gui,'GLOBAL',xywh,skin.barR,true,gui.skol.sb_txt_on,nil,-5 + gui.fontsz.sb, nil,gui.skol.sb_shad,gui.fontnm.sb,gui.fontflag.sb, true)
       gflag = true                 
     else
       c = gui.skol.sb_txt_off
@@ -14132,7 +14157,7 @@ end
                  xywh.y, 
                  xywh.w,
                  xywh.h, 1, 1)]]
-        GUI_textC(gui,xywh,i+1,c,-2 + gui.fontsz.sb)
+        GUI_textC(gui,xywh,i+1,c,-2 + gui.fontsz.sb + tscale)
       end
     end
       
@@ -14280,6 +14305,8 @@ end
     GUI_DrawTick(gui, 'Mousewheel scrolls page horizontally', obj.sections[719], gui.color.white, t, gui.fontsz.settings,true)
     GUI_DrawButton(gui, string.sub(skin_select,0,string.len(skin_select)-1), obj.sections[720], -3, gui.color.black, true, 'Skin', true, gui.fontsz.settings,true)
     GUI_DrawButton(gui, tb_butt_h, obj.sections[721], -3, gui.color.black, true, 'Top/sidebar size', true, gui.fontsz.settings,true)
+    GUI_DrawButton(gui, tb_fontscale, obj.sections[724], -3, gui.color.black, true, '', true, gui.fontsz.settings,true)
+    GUI_DrawButton(gui, lst_fontscale, obj.sections[725], -3, gui.color.black, true, '', true, gui.fontsz.settings,true)
     GUI_DrawButton(gui, pnl_scale, obj.sections[722], -3, gui.color.black, true, 'Panel size', true, gui.fontsz.settings,true)
     GUI_DrawButton(gui, fontscale, obj.sections[723], -3, gui.color.black, true, '', true, gui.fontsz.settings,true)
     
@@ -36947,6 +36974,12 @@ end
       elseif mouse.context == nil and MOUSE_click(obj.sections[723]) then
         mouse.context = contexts.panfontszslider
         ctlpos = fontscale
+      elseif mouse.context == nil and MOUSE_click(obj.sections[724]) then
+        mouse.context = contexts.sbfontszslider
+        ctlpos = tb_fontscale
+      elseif mouse.context == nil and MOUSE_click(obj.sections[725]) then
+        mouse.context = contexts.lstfontszslider
+        ctlpos = lst_fontscale
 
       elseif mouse.context == nil and MOUSE_click(obj.sections[86]) then
         local retval, c = reaper.GR_SelectColor(_,ConvertColorString(settings_snaplistbgcol))
@@ -37176,6 +37209,34 @@ end
             --obj = GetObjects()
             update_gfx = true
             ofs = fontscale
+          end
+        end
+
+      elseif mouse.context and mouse.context == contexts.sbfontszslider then
+        local val = F_limit(MOUSE_slider(obj.sections[724]),0,1)
+        if val ~= nil then
+          val = 1-val
+          tb_fontscale = round(F_limit(ctlpos + (val-0.5)*20,-1,20),0)
+          if tb_fontscale ~= tbofs then
+            resize_display = true
+            --pnlscaleflag = true
+            --obj = GetObjects()
+            update_gfx = true
+            tbofs = tb_fontscale
+          end
+        end
+
+      elseif mouse.context and mouse.context == contexts.lstfontszslider then
+        local val = F_limit(MOUSE_slider(obj.sections[725]),0,1)
+        if val ~= nil then
+          val = 1-val
+          lst_fontscale = round(F_limit(ctlpos + (val-0.5)*20,-1,20),0)
+          if lst_fontscale ~= lstofs then
+            resize_display = true
+            --pnlscaleflag = true
+            --obj = GetObjects()
+            update_gfx = true
+            lstofs = lst_fontscale
           end
         end
       
@@ -42328,6 +42389,8 @@ end
     tb_butt_h = tonumber(nz(GES('tb_butt_h',true),tb_butt_h))    
     pnl_scale = tonumber(nz(GES('pnl_scale',true),pnl_scale))    
     fontscale = tonumber(nz(GES('fontscale',true),fontscale))    
+    tb_fontscale = tonumber(nz(GES('tb_fontscale',true),tb_fontscale))    
+    lst_fontscale = tonumber(nz(GES('lst_fontscale',true),lst_fontscale))    
 
     settings_swapctrlclick = tobool(nz(GES('swapctrlclick',true),settings_swapctrlclick))
     settings_showbars = tobool(nz(GES('showbars',true),settings_showbars))
@@ -42483,6 +42546,8 @@ end
     reaper.SetExtState(SCRIPT,'tb_butt_h',tb_butt_h, true)
     reaper.SetExtState(SCRIPT,'pnl_scale',nz(pnl_scale,1), true)
     reaper.SetExtState(SCRIPT,'fontscale',nz(fontscale,8), true)
+    reaper.SetExtState(SCRIPT,'tb_fontscale',nz(tb_fontscale,0), true)
+    reaper.SetExtState(SCRIPT,'lst_fontscale',nz(lst_fontscale,0), true)
 
     reaper.SetExtState(SCRIPT,'auto_sensitivity',auto_delay, true)
     reaper.SetExtState(SCRIPT,'swapctrlclick',tostring(settings_swapctrlclick), true)
@@ -47775,6 +47840,8 @@ end
   settings_moddock = false
   
   fontscale = 8
+  tb_fontscale = 0
+  lst_fontscale = 0
   
   settingswin_off = 0
   settingswin_maxh = 660
