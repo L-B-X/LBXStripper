@@ -2441,12 +2441,12 @@
       else
         if modwinsz and modwinsz.resize ~= true then
           mow = modwinsz.w*pnl_scale
-          moh = modwinsz.h*pnl_scale
+          moh = (modwinsz.h or 300)*pnl_scale
           x = modwinsz.x
           y = modwinsz.y
         elseif modwinsz then
           mow = modwinsz.w*pnl_scale
-          moh = modwinsz.h*pnl_scale
+          moh = (modwinsz.h or 300)*pnl_scale
           x = modwinsz.x
           y = modwinsz.y        
         else
