@@ -1192,9 +1192,9 @@
       obj = PosEBCtls(obj)
       
       --surface
-      if tb_butt_h == nil then
-        tb_butt_h = 20
-      end
+      --if tb_butt_h == nil then
+      --  tb_butt_h = 20
+      --end
       
       if hide_topbar then
         topbarheight = 0
@@ -42585,7 +42585,7 @@ end
     reaper.SetExtState(SCRIPT,'lockw',tostring(lockw), true)
     reaper.SetExtState(SCRIPT,'lockh',tostring(lockh), true)
 
-    reaper.SetExtState(SCRIPT,'tb_butt_h',tb_butt_h, true)
+    reaper.SetExtState(SCRIPT,'tb_butt_h',nz(tb_butt_h,20), true)
     reaper.SetExtState(SCRIPT,'pnl_scale',nz(pnl_scale,1), true)
     reaper.SetExtState(SCRIPT,'fontscale',nz(fontscale,8), true)
     reaper.SetExtState(SCRIPT,'tb_fontscale',nz(tb_fontscale,0), true)
@@ -47884,6 +47884,7 @@ end
   settings_moddock = false
   settings_dragmode = false
   
+  tb_butt_h = 20
   fontscale = 8
   tb_fontscale = 0
   lst_fontscale = 0
