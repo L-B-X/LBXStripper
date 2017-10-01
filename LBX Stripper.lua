@@ -5319,6 +5319,40 @@
     --end
   end
   
+  function UpdateCtlTrackGUIDs()
+  
+    PopulateTracks()
+      
+    for s = 1, #strips do
+      
+      local trn = strips[s].track.tracknum
+      if trn then
+        strips[s].track.guid = tracks[trn].guid
+      end
+      
+      for p = 1, 4 do
+      
+        if strips[s][p].controls then
+          for c = 1, #strips[s][p].controls do
+    
+            local ctl = strips[s][p].controls[c]
+            local trn = ctl.tracknum
+            if trn then
+              ctl.trackguid = tracks[trn].guid
+            end
+            if ctl.iteminfo then
+              local trn = ctl.iteminfo.tracknum
+              if trn then
+                ctl.iteminfo.trackguid = tracks[trn].guid
+              end
+            end
+          end
+        end
+      end
+    end
+  
+  end
+  
   function PopulateTrackFX()
   
     trackfx = {}
@@ -45471,6 +45505,8 @@ end
       
       CleanData()
       
+      UpdateCtlTrackGUIDs()
+      
       local save_path=sets_path
       local fn=save_path..fn..".stripset"  
       local file
@@ -45976,6 +46012,17 @@ end
                   nsflag = true
                   switchers[ns] = stab
                   swids[ctl.switcherid] = ns
+                end
+                --Take switchers
+                if ctl.ctlcat == ctlcats.takeswitcher then
+                
+                  if ctl.iteminfo then
+                  
+                    ctl.iteminfo.guid = guids[ctl.iteminfo.guid]
+                    ctl.iteminfo.trackguid = guids[ctl.iteminfo.trackguid]
+                  
+                  end
+                
                 end      
               end
             end
