@@ -2784,6 +2784,11 @@
                                y = settingswin_off + yoff+10 + yoffm*23 + 12,
                                w = 70,
                                h = bh+10}
+
+    obj.sections[726] = {x = obj.sections[70].w/2+xofft,
+                              y = settingswin_off + yoff + yoffm*22,
+                              w = bw,
+                              h = bh}
     
     return obj
     
@@ -12971,10 +12976,13 @@ end
           --gfx.blit(1001,1,0,0,0,obj.sections[43].w,obj.sections[43].h,0,butt_h+2)
           if ctl_select ~= nil then
             selrect, selrect_sc = CalcSelRect()
+            if movefrom_sc == nil then
+              movefrom_sc = table.copy(selrect_sc)
+            end
             if dragctl ~= nil then 
               local x, y = selrect.x - surface_offset.x + obj.sections[10].x -b_sz, selrect.y - surface_offset.y + obj.sections[10].y-b_sz
               local w, h = gfx.getimgdim(1022)
-              gfx.a = 1
+              gfx.a = 0.5
               
               gfx.blit(1022,1,0,0,0,w,h,x,y) 
 
@@ -13045,6 +13053,9 @@ end
               end
                             
               gfx.a = 1
+              f_Get_SSV(gui.color.red)
+              gfx.roundrect(movefrom_sc.x - surface_offset.x + obj.sections[10].x, movefrom_sc.y - surface_offset.y + obj.sections[10].y, movefrom_sc.w, movefrom_sc.h, 8, 1, 0)
+              
               f_Get_SSV(gui.color.yellow)
               gfx.roundrect(selrect_sc.x - surface_offset.x + obj.sections[10].x, selrect_sc.y - surface_offset.y + obj.sections[10].y, selrect_sc.w, selrect_sc.h, 8, 1, 0)
             end
@@ -14350,6 +14361,7 @@ end
     GUI_DrawButton(gui, modulator_cnt, obj.sections[716], gui.color.white, gui.color.black, false, 'Modulators', true, gui.fontsz.settings,true)
     GUI_DrawTick(gui, 'Activate snapshot morphing pop-ups', obj.sections[717], gui.color.white, settings_showmorphpop, gui.fontsz.settings, true)
     GUI_DrawTick(gui, 'Simple select grouped controls', obj.sections[718], gui.color.white, settings_groupsel, gui.fontsz.settings,true)
+    GUI_DrawTick(gui, 'Alternative edit mode drag', obj.sections[726], gui.color.white, settings_dragmode, gui.fontsz.settings,true)
 
     gfx.dest = 1
     gfx.a = 1
@@ -24257,9 +24269,10 @@ end
           
         end
       end
-      update_gfx = true                
+      update_gfx = true
       SetCtlBitmapRedraw()
     end
+    movefrom_sc = nil                
   
   end
 
@@ -30609,6 +30622,10 @@ end
               
             local c = GetControlAtXY(tracks[track_select].strip, page, mouse.mx, mouse.my)
             if c then
+            
+              octlsel = table.copy(ctl_select)
+              ogfxsel = table.copy(gfx3_select)
+            
               local i = c
               local ctl = strips[tracks[track_select].strip][page].controls[i]
               
@@ -30740,10 +30757,27 @@ end
                       end
                       --SetCtlBitmapRedraw()
                     end
-                    update_bg = true
+                    if settings_dragmode == false then
+                      update_bg = true
+                    end
                   end
                   
-                  update_gfx = true
+                  if settings_dragmode == false then
+                    update_gfx = true
+                  else
+                    if octlsel then
+                      for c = 1, #octlsel do
+                        SetCtlDirty(octlsel[c].ctl)
+                      end
+                    end
+                    if ctl_select then
+                      for c = 1, #ctl_select do
+                        SetCtlDirty(ctl_select[c].ctl)
+                      end                    
+                    end
+                    update_ctls = true
+                    movefrom_sc = nil
+                  end
                   --break                  
                 end
               --end
@@ -31302,6 +31336,7 @@ end
         
       elseif dragctl ~= nil then
         dragctl = nil
+        movefrom_sc = nil
         if MOUSE_over(obj.sections[60]) then
           --delete
           DeleteSelectedCtls()
@@ -31321,6 +31356,7 @@ end
             SetCtlSelectVals()
           end
           SetPosLockCtl()
+          movefrom_sc = nil
           update_ctls = true
         end
       elseif lasso ~= nil then
@@ -37038,6 +37074,10 @@ end
       elseif mouse.context == nil and MOUSE_click(obj.sections[718]) then
         settings_groupsel = not settings_groupsel
         update_gfx = true
+
+      elseif mouse.context == nil and MOUSE_click(obj.sections[726]) then
+        settings_dragmode = not settings_dragmode
+        update_gfx = true
         
       elseif mouse.context == nil and MOUSE_click(obj.sections[716]) then
         
@@ -42447,6 +42487,8 @@ end
     modulator_cnt = tonumber(nz(GES('modulator_cnt',true),modulator_cnt))
     mutate_settings.mutate_max = tonumber(nz(GES('mutate_max',true),mutate_settings.mutate_max))
     settings_pagescrolldir = tonumber(nz(GES('settings_pagescrolldir',true),settings_pagescrolldir))
+
+    settings_dragmode = tobool(nz(GES('settings_dragmode',true),settings_dragmode))
     
     if settings_hideeditbaronnewproject then
       plist_w = 0
@@ -42605,6 +42647,8 @@ end
 
     reaper.SetExtState(SCRIPT,'mutate_max',tostring(mutate_settings.mutate_max), true)    
     reaper.SetExtState(SCRIPT,'mutate_dir',tostring(mutate_settings.dir), true)    
+
+    reaper.SetExtState(SCRIPT,'settings_dragmode',tostring(settings_dragmode), true)    
     
     if strip_default then
       reaper.SetExtState(SCRIPT,'strip_default',tostring(strip_default.strip_select), true)
@@ -47838,6 +47882,7 @@ end
   settings_pagescrolldir = 1
   settings_ssdock = false
   settings_moddock = false
+  settings_dragmode = false
   
   fontscale = 8
   tb_fontscale = 0
