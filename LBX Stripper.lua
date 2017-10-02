@@ -46020,7 +46020,7 @@ end
                   
                     ctl.iteminfo.guid = guids[ctl.iteminfo.guid]
                     ctl.iteminfo.trackguid = guids[ctl.iteminfo.trackguid]
-                  
+                    ctl.iteminfo.utilguid = guids[ctl.iteminfo.utilguid]
                   end
                 
                 end      
