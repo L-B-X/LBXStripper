@@ -1171,6 +1171,10 @@
       if obj and obj.sections and pnlscaleflag ~= true then
         ss160 = obj.sections[160]
       end
+      local mm1120
+      if obj and obj.sections then
+        mm1120 = obj.sections[1120]
+      end
       
       local obj = {}
       
@@ -2555,13 +2559,45 @@
                            w = math.floor(120*pnl_scale),
                            h = math.floor(20*pnl_scale)} 
 
+      --Mod title <
+      obj.sections[1115] = {x = 10,
+                            y = 2,
+                            w = 30,
+                            h = math.floor(gui.winsz.pnltit*pnl_scale-2)}
+      
+      --Mod title >
+      obj.sections[1116] = {x = obj.sections[1115].x+obj.sections[1115].w+2,
+                            y = 2,
+                            w = 30,
+                            h = math.floor(gui.winsz.pnltit*pnl_scale-2)}
+      
+      --Mod title Assign
+      obj.sections[1117] = {x = obj.sections[1116].x+obj.sections[1116].w+12,
+                            y = 2,
+                            w = 60,
+                            h = math.floor(gui.winsz.pnltit*pnl_scale-2)}
+      
+      --Mod title Clear all
+      obj.sections[1118] = {x = obj.sections[1117].x+obj.sections[1117].w+12,
+                            y = 2,
+                            w = 60,
+                            h = math.floor(gui.winsz.pnltit*pnl_scale-2)}
+      
+
       --MUTATE panel
 
       local mw,mh = math.floor(160*pnl_scale),math.floor(84*pnl_scale)
-      obj.sections[1120] = {x = obj.sections[10].x+obj.sections[10].w - mw - math.floor(10*pnl_scale),
-                           y = obj.sections[10].y + math.floor(10*pnl_scale),
-                           w = mw,
-                           h = mh}
+      if mm1120 then
+        obj.sections[1120] = {x = math.max(F_limit(mm1120.x,obj.sections[10].x,obj.sections[10].x+obj.sections[10].w-mw),obj.sections[10].x),
+                              y = math.max(F_limit(mm1120.y,obj.sections[10].y,obj.sections[10].y+obj.sections[10].h-mh),obj.sections[10].y),
+                              w = mw,
+                              h = mh}
+      else
+        obj.sections[1120] = {x = obj.sections[10].x+obj.sections[10].w - mw - math.floor(10*pnl_scale),
+                             y = obj.sections[10].y + math.floor(10*pnl_scale),
+                             w = mw,
+                             h = mh}
+      end
       obj.sections[1121] = {x = math.floor(80*pnl_scale),
                            y = math.floor(30*pnl_scale),
                            w = math.floor(60*pnl_scale),
@@ -12397,6 +12433,12 @@ end
     local m = modulators[mod_select]
 
     if m then 
+
+      local b = gui.color.white
+      GUI_DrawButton(gui, '<', obj.sections[1115], b, gui.skol.butt1_txt, true, '', false, -2, true)
+      GUI_DrawButton(gui, '>', obj.sections[1116], b, gui.skol.butt1_txt, true, '', false, -2, true)
+      GUI_DrawButton(gui, 'ASSIGN', obj.sections[1117], b, gui.skol.butt1_txt, true, '', false, -2, true)
+      GUI_DrawButton(gui, 'CLEAR', obj.sections[1118], b, gui.skol.butt1_txt, true, '', false, -2, true)
       
       local barw = ((obj.sections[1101].w-2) / m.steps)
       --local dbw = math.max(barw,1)
@@ -12856,43 +12898,7 @@ end
           gfx.blit(1001,1,0,0,0,obj.sections[43].w,obj.sections[43].h,0,0)
         end
         
-        if dragfader then
-          local sz = 30
-          local xywh = {x = dragfader.x-sz, y = dragfader.y-butt_h/2, w = sz*2, h = butt_h}
-          if dragfader.ctl == nil then
-            f_Get_SSV(faderselcol)
-            gfx.a = 1          
-          elseif dragfader.ctl == -1 then
-            f_Get_SSV('255 0 0')    
-            gfx.a = 0.3          
-          else      
-            f_Get_SSV('0 255 0')    
-            gfx.a = 0.3          
-          end
-          gfx.rect(xywh.x,xywh.y,xywh.w,xywh.h,1,1)
-          f_Get_SSV(gui.color.black)          
-          gfx.a = 1          
-          gfx.rect(xywh.x,xywh.y,xywh.w,xywh.h,0,1)
-          GUI_textC(gui,xywh,'FADER ' ..string.format('%i',fader_select),gui.color.black,-2,1,0)
-        elseif dragmod then
-          local sz = 30
-          local xywh = {x = dragmod.x-sz, y = dragmod.y-butt_h/2, w = sz*2, h = butt_h}
-          if dragmod.ctl == nil then
-            f_Get_SSV(modselcol)
-            gfx.a = 1          
-          elseif dragmod.ctl == -1 then
-            f_Get_SSV('255 0 0')    
-            gfx.a = 0.3          
-          else      
-            f_Get_SSV('0 255 0')    
-            gfx.a = 0.3          
-          end
-          gfx.rect(xywh.x,xywh.y,xywh.w,xywh.h,1,1)
-          f_Get_SSV(gui.color.black)          
-          gfx.a = 1          
-          gfx.rect(xywh.x,xywh.y,xywh.w,xywh.h,0,1)
-          GUI_textC(gui,xywh,'MOD ' ..string.format('%i',mod_select),gui.color.black,-2,1,0)
-        end
+        
         
         if settings_showmorphpop then
           if #morph_data > 0 then
@@ -12978,6 +12984,45 @@ end
                             obj.sections[1100].y)]]        
           gfx.blit(992,1,0,0,0,obj.sections[1100].w,obj.sections[1100].h,obj.sections[1100].x-2,obj.sections[1100].y)         
         end
+        
+        if dragfader then
+          local sz = 30
+          local xywh = {x = dragfader.x-sz, y = dragfader.y-butt_h/2, w = sz*2, h = butt_h}
+          if dragfader.ctl == nil then
+            f_Get_SSV(faderselcol)
+            gfx.a = 1          
+          elseif dragfader.ctl == -1 then
+            f_Get_SSV('255 0 0')    
+            gfx.a = 0.3          
+          else      
+            f_Get_SSV('0 255 0')    
+            gfx.a = 0.3          
+          end
+          gfx.rect(xywh.x,xywh.y,xywh.w,xywh.h,1,1)
+          f_Get_SSV(gui.color.black)          
+          gfx.a = 1          
+          gfx.rect(xywh.x,xywh.y,xywh.w,xywh.h,0,1)
+          GUI_textC(gui,xywh,'FADER ' ..string.format('%i',fader_select),gui.color.black,-2,1,0)
+        elseif dragmod then
+          local sz = 30
+          local xywh = {x = dragmod.x-sz, y = dragmod.y-butt_h/2, w = sz*2, h = butt_h}
+          if dragmod.ctl == nil then
+            f_Get_SSV(modselcol)
+            gfx.a = 1          
+          elseif dragmod.ctl == -1 then
+            f_Get_SSV('255 0 0')    
+            gfx.a = 0.3          
+          else      
+            f_Get_SSV('0 255 0')    
+            gfx.a = 0.3          
+          end
+          gfx.rect(xywh.x,xywh.y,xywh.w,xywh.h,1,1)
+          f_Get_SSV(gui.color.black)          
+          gfx.a = 1          
+          gfx.rect(xywh.x,xywh.y,xywh.w,xywh.h,0,1)
+          GUI_textC(gui,xywh,'MOD ' ..string.format('%i',mod_select),gui.color.black,-2,1,0)
+        end
+        
         
       elseif mode == 1 then        
         --Edit
@@ -27145,6 +27190,44 @@ end
           obj = GetObjects()
           update_gfx = true
 
+        elseif MOUSE_click(obj.sections[1115]) and modwinsz.minimized ~= true then
+
+          mod_select = mod_select - 1
+          if mod_select < 1 then
+            mod_select = #modulators
+          end
+          update_gfx = true
+
+        elseif MOUSE_click(obj.sections[1116]) and modwinsz.minimized ~= true then
+
+          mod_select = mod_select + 1
+          if mod_select > #modulators then
+            mod_select = 1
+          end
+          update_gfx = true
+
+        elseif MOUSE_click(obj.sections[1117]) and modwinsz.minimized ~= true then
+        
+          if show_striplayout == false then
+            mouse.context = contexts.dragmod
+            dragmod = {x = mouse.mx, y = mouse.my}
+          end
+          update_surface = true
+
+        elseif MOUSE_click(obj.sections[1118]) and modwinsz.minimized ~= true then
+        
+          if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.20 then
+            local m = modulators[mod_select]
+            if m then
+              if m.targets and #m.targets > 0 then
+                for t = #m.targets, 1, -1 do
+                  Mod_RemoveAssign(m.targets[t].strip, m.targets[t].page, m.targets[t].ctl)
+                end
+                update_sidebar = true
+              end
+            end
+          end
+          
         elseif MOUSE_click(obj.sections[1111])  then
           
           if modwinsz and modwinsz.minimized ~= true then
@@ -28992,7 +29075,7 @@ end
     elseif mouse.context and mouse.context == contexts.dragmod then
       if mouse.mx ~= dragmod.x or mouse.my ~= dragmod.y then
         local c = GetControlAtXY(tracks[track_select].strip,page,mouse.mx,mouse.my)
-        if c then
+        if c and not MOUSE_over(obj.sections[1100]) and not MOUSE_over(obj.sections[160]) and not MOUSE_over(obj.sections[1120]) then
           local ctl = strips[tracks[track_select].strip][page].controls[c]
           if ctl and (ctl.ctlcat == ctlcats.fxparam or 
                       ctl.ctlcat == ctlcats.trackparam or 
@@ -29119,8 +29202,8 @@ end
     
     elseif mouse.context and mouse.context == contexts.move_mutatewin then
     
-      obj.sections[1120].x = mouse.mx - movemutatewin.dx
-      obj.sections[1120].y = mouse.my - movemutatewin.dy
+      obj.sections[1120].x = F_limit(mouse.mx - movemutatewin.dx,obj.sections[10].x,obj.sections[10].x+obj.sections[10].w-obj.sections[1120].w)
+      obj.sections[1120].y = F_limit(mouse.my - movemutatewin.dy,obj.sections[10].y,obj.sections[10].y+obj.sections[10].h-obj.sections[1120].h)
       update_surface = true
     
     elseif mouse.context and mouse.context == contexts.mutate_amt then
