@@ -2572,15 +2572,15 @@
                             h = math.floor(gui.winsz.pnltit*pnl_scale-2)}
       
       --Mod title Assign
-      obj.sections[1117] = {x = obj.sections[1116].x+obj.sections[1116].w+12,
+      obj.sections[1117] = {x = obj.sections[1116].x+obj.sections[1116].w+8,
                             y = 2,
                             w = 60,
                             h = math.floor(gui.winsz.pnltit*pnl_scale-2)}
       
       --Mod title Clear all
-      obj.sections[1118] = {x = obj.sections[1117].x+obj.sections[1117].w+12,
+      obj.sections[1118] = {x = obj.sections[1117].x+obj.sections[1117].w+8,
                             y = 2,
-                            w = 60,
+                            w = 80,
                             h = math.floor(gui.winsz.pnltit*pnl_scale-2)}
       
 
@@ -8805,7 +8805,7 @@ end
                 end
 
                 if settings_showfaderassignments == true and ctl.mod then
-                  if mode0_submode == 2 and mod_select == ctl.mod then
+                  if (mode0_submode == 2 or (show_lfoedit == true and modwinsz.minimized ~= true)) and mod_select == ctl.mod then
                     f_Get_SSV(modselcol)
                   else 
                     f_Get_SSV(modhighcol)                    
@@ -12438,7 +12438,9 @@ end
       GUI_DrawButton(gui, '<', obj.sections[1115], b, gui.skol.butt1_txt, true, '', false, -2, true)
       GUI_DrawButton(gui, '>', obj.sections[1116], b, gui.skol.butt1_txt, true, '', false, -2, true)
       GUI_DrawButton(gui, 'ASSIGN', obj.sections[1117], b, gui.skol.butt1_txt, true, '', false, -2, true)
-      GUI_DrawButton(gui, 'CLEAR', obj.sections[1118], b, gui.skol.butt1_txt, true, '', false, -2, true)
+      if m.targets and #m.targets > 0 then
+        GUI_DrawButton(gui, 'CLEAR TARGETS', obj.sections[1118], b, gui.skol.butt1_txt, true, '', false, -2, true)
+      end
       
       local barw = ((obj.sections[1101].w-2) / m.steps)
       --local dbw = math.max(barw,1)
@@ -15891,6 +15893,14 @@ end
       elseif cc == ctlcats.midictl then
         ctl.val = v
         ctl.dirty = true
+      
+      elseif cc == ctlcats.macro then
+        
+        ctl.val = v
+        SetMacro(strip, page, c)
+        if strip == tracks[track_select].strip and page == page then      
+          SetCtlDirty(c)
+        end
       end    
       
       if ctl.midiout then SendMIDIMsg(ctl.midiout,v) end    
@@ -21419,6 +21429,8 @@ end
         ctl.mod = nil
         ctl.dirty = true
         update_ctls = true
+        update_lfoedit = true
+        
         SetCtlDirty(c)
       elseif res == 4 then
         if ctl.iteminfo then
@@ -21561,6 +21573,8 @@ end
               ctl.mod = nil
               ctl.dirty = true
               update_ctls = true
+              update_lfoedit = true
+              
               SetCtlDirty(i)
               
             elseif res == 3 +lastp then
@@ -27221,9 +27235,18 @@ end
             if m then
               if m.targets and #m.targets > 0 then
                 for t = #m.targets, 1, -1 do
+                  if m.targets[t].strip == tracks[track_select].strip and m.targets[t].page == page then
+                    SetCtlDirty(m.targets[t].ctl)
+                  end
+                  local ctl = strips[m.targets[t].strip][m.targets[t].page].controls[m.targets[t].ctl]
                   Mod_RemoveAssign(m.targets[t].strip, m.targets[t].page, m.targets[t].ctl)
+                  if ctl then
+                    ctl.mod = nil
+                  end
                 end
                 update_sidebar = true
+                update_lfoedit = true
+                update_ctls = true
               end
             end
           end
@@ -29101,6 +29124,7 @@ end
       end
     
       dragmod = nil
+      update_lfoedit = true
       update_sidebar = true
       update_surface = true
     
