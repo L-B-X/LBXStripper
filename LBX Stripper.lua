@@ -27463,7 +27463,10 @@ end
                 if strips[m.targets[t].strip] and strips[m.targets[t].strip][m.targets[t].page].controls[m.targets[t].ctl] then
                   local ctl = strips[m.targets[t].strip][m.targets[t].page].controls[m.targets[t].ctl]
                   if ctl.ctlcat == ctlcats.takeswitcher then
-                    max = math.max(ctl.iteminfo.numtakes)
+                    if ctl.iteminfo then
+                      max = math.max(ctl.iteminfo.numtakes)
+                    
+                    end
                   end
                 end
               end
