@@ -8355,506 +8355,510 @@ end
             i = cdu[cdi]
           end
           local ctl = strips[strip][page].controls[i]
-          local hidden = Switcher_CtlsHidden(ctl.switcher, ctl.grpid)
-
-          if not ctl.hide and hidden ~= true and (mode == 1 or ctl.hidden ~= true or macro_lrn_mode == true or snaplrn_mode == true) then
-
-            local ctlcat = ctl.ctlcat
-            if update_gfx or cdu[cdi] or force_gfx_update or (ctlcat == ctlcats.snapshot and (update_snaps or update_fsnaps)) then
-              ctl.dirty = false
-
-              local scale = ctl.scale
-              local x = ctl.x 
-              local y = ctl.y
-              local px = ctl.xsc
-              local py = ctl.ysc
-              local w = ctl.w
-              local h = ctl.ctl_info.cellh
-    
-              local gh = h
-              local val = math.floor(100*nz(ctl.val,0))
-              local fxnum = nz(ctl.fxnum,-1)
-              local param = ctl.param
-              local pname = ctl.param_info.paramname
-              local iidx = ctl.ctl_info.imageidx
-              local spn = ctl.show_paramname
-              local spv = ctl.show_paramval
-              local tc = ctl.textcol
-              local tc2 = ctl.textcolv
-              local toff = math.floor(ctl.textoff)
-              local toffv = math.floor(ctl.textoffval)
-              local toffx = math.floor(ctl.textoffx)
-              local toffvx = math.floor(ctl.textoffvalx)
-              local tsz = nz(ctl.textsize,0)
-              local tsz2 = nz(ctl.textsizev,0)
-              local frames = math.floor(ctl.ctl_info.frames)
-              local ctltype = ctl.ctltype
-              local ctlnmov = ctl.ctlname_override
-              local found = ctl.fxfound
-              local maxdp = nz(ctl.maxdp,-1)
-              local dvoff = ctl.dvaloffset
-              local tnum = ctl.tracknum
-              local font = ctl.font
-
---              if fxnum == nil then return end
-    
-              local track = trackM
-              if tnum ~= nil then
-                track = GetTrack(tnum)
-                --if track == nil then return end
-              else
-                tnum = strips[strip].track.tracknum
-              end
-              
-              local Disp_ParamV
-              local Disp_Name
-              local v2, val2 = 0, 0
-              
-              if track ~= nil then
-                if ctlcat == ctlcats.fxparam or ctlcat == ctlcats.trackparam or ctlcat == ctlcats.tracksend or ctlcat == ctlcats.pkmeter then
-                  v2 = nz(frameScale(ctl.framemode, GetParamValue2(ctlcat,track,fxnum,param,i)),0)
-                  val2 = F_limit(round(frames*v2),0,frames-1)
-                elseif ctlcat == ctlcats.fxoffline or ctlcat == ctlcats.macro or ctlcat == ctlcats.midictl then
-                  v2 = ctl.val                  
-                  val2 = F_limit(round(frames*v2),0,frames-1)
-                elseif ctlcat == ctlcats.takeswitcher then
-                  if ctl.iteminfo then
-                    v2 = (math.floor(ctl.val*takeswitch_max)/(ctl.iteminfo.numtakes-1))
-                    --v2 = ctl.val                  
-                    val2 = F_limit(round(frames*v2),0,frames-1)
-                  end
-                end
-                  
-                local DVOV
-                if ctltype == 3 then
-                  --invert button
-                  val2 = 1-val2
-                elseif ctltype == 4 then
-                  --cycle button
-                  if ctl.cycledata.mapptof then
-                    --override val2
-                    --prelim code for single state notify
-                    if ctl.cycledata.statecnt == 1 then
-                      local v3 = ctl.val
-                      --must convert to string to compare               
-                      if tostring(v3) ~= tostring(ctl.cycledata[1].val) then
-                        --not selected
-                        val2 = frames-1
-                      else
-                        --selected
-                        val2 = 0
-                      end
-                    else
-                    
-                      Disp_ParamV = GetParamDisp(ctlcat, tnum, fxnum, param, dvoff, i)
-                      local p = ctl.cycledata.pos
-                      
-                      if ctl.cycledata[p] and
-                         Disp_ParamV ~= ctl.cycledata[p].dv then
-                        for p = 1, ctl.cycledata.statecnt do
-                          local vc = ctl.cycledata[p].val
-                          if p < ctl.cycledata.statecnt then
-                            vc = vc + (ctl.cycledata[p+1].val - vc)/2
-                          end
-                          
-                          if Disp_ParamV == ctl.cycledata[p].dv or 
-                             (ctl.val and ctl.val <= vc) then
-                            ctl.cycledata.pos = p
-                            break
-                          end
-                        end
-                      end
-                      
-                      if ctl.cycledata.spread then
-                        val2 = F_limit(math.floor(((nz(ctl.cycledata.pos,0)-1) / 
-                                  (ctl.cycledata.statecnt-1)) * (frames-1)),0,frames-1)
-                      else
-                        val2 = F_limit(nz(ctl.cycledata.pos,0)-1,0,frames-1)
-                      end
-                      if ctl.cycledata and 
-                         ctl.cycledata[nz(ctl.cycledata.pos,0)] then
-                        DVOV = nz(ctl.cycledata[nz(ctl.cycledata.pos,0)].dispval,'')
-                      end
-                    end
-                  else
-                  --DBG(ctl.cycledata.pos)
-                    local p = tonumber(ctl.cycledata.pos)
-                    if ctl.cycledata and 
-                       ctl.cycledata[nz(p,0)] then
-                      DVOV = nz(ctl.cycledata[nz(p,0)].dispval,'')
-                      
-                    end                  
-                  end
-                elseif ctltype == 6 then
-                  --mem button
-                  if ctl.membtn == nil then
-                    ctl.membtn = {state = false, mem = 0}
-                  end
-                  local v3 = GetParamValue_Ctl(i)
-                  if tostring(v3) ~= tostring(ctl.defval) then
-                    ctl.membtn = {state = false, mem = v3}
-                  end
-                  if ctl.membtn.state == true then
-                    val2 = frames-1
-                  else
-                    val2 = 0                
-                  end
-                elseif ctltype == 7 or ctltype == 9 then
-                  val2 = ctl.val
-                elseif ctltype == 8 or ctltype == 10 then
-                  if ctl.val then
-                    val2 = 1-ctl.val
-                  end
+          
+          if ctl then
+            local hidden = Switcher_CtlsHidden(ctl.switcher, ctl.grpid)
+  
+            if not ctl.hide and hidden ~= true and (mode == 1 or ctl.hidden ~= true or macro_lrn_mode == true or snaplrn_mode == true) then
+  
+              local ctlcat = ctl.ctlcat
+              if update_gfx or cdu[cdi] or force_gfx_update or (ctlcat == ctlcats.snapshot and (update_snaps or update_fsnaps)) then
+                ctl.dirty = false
+  
+                local scale = ctl.scale
+                local x = ctl.x 
+                local y = ctl.y
+                local px = ctl.xsc
+                local py = ctl.ysc
+                local w = ctl.w
+                local h = ctl.ctl_info.cellh
+      
+                local gh = h
+                local val = math.floor(100*nz(ctl.val,0))
+                local fxnum = nz(ctl.fxnum,-1)
+                local param = ctl.param
+                local pname = ctl.param_info.paramname
+                local iidx = ctl.ctl_info.imageidx
+                local spn = ctl.show_paramname
+                local spv = ctl.show_paramval
+                local tc = ctl.textcol
+                local tc2 = ctl.textcolv
+                local toff = math.floor(ctl.textoff)
+                local toffv = math.floor(ctl.textoffval)
+                local toffx = math.floor(ctl.textoffx)
+                local toffvx = math.floor(ctl.textoffvalx)
+                local tsz = nz(ctl.textsize,0)
+                local tsz2 = nz(ctl.textsizev,0)
+                local frames = math.floor(ctl.ctl_info.frames)
+                local ctltype = ctl.ctltype
+                local ctlnmov = ctl.ctlname_override
+                local found = ctl.fxfound
+                local maxdp = nz(ctl.maxdp,-1)
+                local dvoff = ctl.dvaloffset
+                local tnum = ctl.tracknum
+                local font = ctl.font
+  
+  --              if fxnum == nil then return end
+      
+                local track = trackM
+                if tnum ~= nil then
+                  track = GetTrack(tnum)
+                  --if track == nil then return end
+                else
+                  tnum = strips[strip].track.tracknum
                 end
                 
-                if not found then
-                  gfx.a = 0.2
-                end
-                if ctlcat == ctlcats.fxparam then
-                  if not found then
-                    Disp_Name = CropFXName(ctl.fxname)
-                    Disp_ParamV = 'PLUGIN NOT FOUND'
-                    tc = gui.color.red
-                    val2 = 0
-                  else
-                    if nz(ctlnmov,'') == '' then
-                      _, Disp_Name = reaper.TrackFX_GetParamName(track, fxnum, param, "")
+                local Disp_ParamV
+                local Disp_Name
+                local v2, val2 = 0, 0
+                
+                if track ~= nil then
+                  if ctlcat == ctlcats.fxparam or ctlcat == ctlcats.trackparam or ctlcat == ctlcats.tracksend or ctlcat == ctlcats.pkmeter then
+                    v2 = nz(frameScale(ctl.framemode, GetParamValue2(ctlcat,track,fxnum,param,i)),0)
+                    val2 = F_limit(round(frames*v2),0,frames-1)
+                  elseif ctlcat == ctlcats.fxoffline or ctlcat == ctlcats.macro or ctlcat == ctlcats.midictl then
+                    v2 = ctl.val                  
+                    val2 = F_limit(round(frames*v2),0,frames-1)
+                  elseif ctlcat == ctlcats.takeswitcher then
+                    if ctl.iteminfo then
+                      v2 = (math.floor(ctl.val*takeswitch_max)/(ctl.iteminfo.numtakes-1))
+                      --v2 = ctl.val                  
+                      val2 = F_limit(round(frames*v2),0,frames-1)
+                    end
+                  end
+                    
+                  local DVOV
+                  if ctltype == 3 then
+                    --invert button
+                    val2 = 1-val2
+                  elseif ctltype == 4 then
+                    --cycle button
+                    if ctl.cycledata.mapptof then
+                      --override val2
+                      --prelim code for single state notify
+                      if ctl.cycledata.statecnt == 1 then
+                        local v3 = ctl.val
+                        --must convert to string to compare               
+                        if tostring(v3) ~= tostring(ctl.cycledata[1].val) then
+                          --not selected
+                          val2 = frames-1
+                        else
+                          --selected
+                          val2 = 0
+                        end
+                      else
+                      
+                        Disp_ParamV = GetParamDisp(ctlcat, tnum, fxnum, param, dvoff, i)
+                        local p = ctl.cycledata.pos
+                        
+                        if ctl.cycledata[p] and
+                           Disp_ParamV ~= ctl.cycledata[p].dv then
+                          for p = 1, ctl.cycledata.statecnt do
+                            local vc = ctl.cycledata[p].val
+                            if p < ctl.cycledata.statecnt then
+                              vc = vc + (ctl.cycledata[p+1].val - vc)/2
+                            end
+                            
+                            if Disp_ParamV == ctl.cycledata[p].dv or 
+                               (ctl.val and ctl.val <= vc) then
+                              ctl.cycledata.pos = p
+                              break
+                            end
+                          end
+                        end
+                        
+                        if ctl.cycledata.spread then
+                          val2 = F_limit(math.floor(((nz(ctl.cycledata.pos,0)-1) / 
+                                    (ctl.cycledata.statecnt-1)) * (frames-1)),0,frames-1)
+                        else
+                          val2 = F_limit(nz(ctl.cycledata.pos,0)-1,0,frames-1)
+                        end
+                        if ctl.cycledata and 
+                           ctl.cycledata[nz(ctl.cycledata.pos,0)] then
+                          DVOV = nz(ctl.cycledata[nz(ctl.cycledata.pos,0)].dispval,'')
+                        end
+                      end
                     else
-                      Disp_Name = ctlnmov
+                    --DBG(ctl.cycledata.pos)
+                      local p = tonumber(ctl.cycledata.pos)
+                      if ctl.cycledata and 
+                         ctl.cycledata[nz(p,0)] then
+                        DVOV = nz(ctl.cycledata[nz(p,0)].dispval,'')
+                        
+                      end                  
                     end
-                    _, Disp_ParamV = reaper.TrackFX_GetFormattedParamValue(track, fxnum, param, "")
-                   
-                    if dvoff and dvoff ~= 0 then
-                      Disp_ParamV = dvaloffset(Disp_ParamV, ctl.dvaloffset)  
+                  elseif ctltype == 6 then
+                    --mem button
+                    if ctl.membtn == nil then
+                      ctl.membtn = {state = false, mem = 0}
                     end
+                    local v3 = GetParamValue_Ctl(i)
+                    if tostring(v3) ~= tostring(ctl.defval) then
+                      ctl.membtn = {state = false, mem = v3}
+                    end
+                    if ctl.membtn.state == true then
+                      val2 = frames-1
+                    else
+                      val2 = 0                
+                    end
+                  elseif ctltype == 7 or ctltype == 9 then
+                    val2 = ctl.val
+                  elseif ctltype == 8 or ctltype == 10 then
+                    if ctl.val then
+                      val2 = 1-ctl.val
+                    end
+                  end
+                  
+                  if not found then
+                    gfx.a = 0.2
+                  end
+                  if ctlcat == ctlcats.fxparam then
+                    if not found then
+                      Disp_Name = CropFXName(ctl.fxname)
+                      Disp_ParamV = 'PLUGIN NOT FOUND'
+                      tc = gui.color.red
+                      val2 = 0
+                    else
+                      if nz(ctlnmov,'') == '' then
+                        _, Disp_Name = reaper.TrackFX_GetParamName(track, fxnum, param, "")
+                      else
+                        Disp_Name = ctlnmov
+                      end
+                      _, Disp_ParamV = reaper.TrackFX_GetFormattedParamValue(track, fxnum, param, "")
+                     
+                      if dvoff and dvoff ~= 0 then
+                        Disp_ParamV = dvaloffset(Disp_ParamV, ctl.dvaloffset)  
+                      end
+                      if maxdp > -1 then
+                        Disp_ParamV = roundX(Disp_ParamV, maxdp)                  
+                      end
+                      
+                    end
+                  elseif ctlcat == ctlcats.trackparam or ctlcat == ctlcats.tracksend then
+                    if nz(ctlnmov,'') == '' then
+                      Disp_Name = pname
+                    else
+                      Disp_Name = ctlnmov                  
+                    end
+                    Disp_ParamV = GetParamDisp(ctlcat, tnum, nil, param, dvoff, i)
                     if maxdp > -1 then
                       Disp_ParamV = roundX(Disp_ParamV, maxdp)                  
-                    end
-                    
-                  end
-                elseif ctlcat == ctlcats.trackparam or ctlcat == ctlcats.tracksend then
-                  if nz(ctlnmov,'') == '' then
-                    Disp_Name = pname
-                  else
-                    Disp_Name = ctlnmov                  
-                  end
-                  Disp_ParamV = GetParamDisp(ctlcat, tnum, nil, param, dvoff, i)
-                  if maxdp > -1 then
-                    Disp_ParamV = roundX(Disp_ParamV, maxdp)                  
-                  end                  
-                elseif ctlcat == ctlcats.action then
-                  if nz(ctlnmov,'') == '' then
-                    Disp_Name = pname
-                  else
-                    Disp_Name = ctlnmov
-                  end
-                  if DVOV and DVOV ~= '' and cycle_editmode == false then
-                  else
-                    spv = false  
-                  end
-                elseif ctlcat == ctlcats.pkmeter then
-                  if nz(ctlnmov,'') == '' then
-                    Disp_Name = pname
-                  else
-                    Disp_Name = ctlnmov
-                  end
-                  if param < 64 then
-                    Disp_ParamV = GetParamDisp(ctlcat, tnum, nil, param, dvoff, i)
-                    if tonumber(Disp_ParamV) ~= nil and tonumber(Disp_ParamV) < -120 then
-                      Disp_ParamV = '-inf'
-                    end
-                  else
-                    Disp_ParamV = ''
-                  end
-                elseif ctlcat == ctlcats.snapshot then
-                  if nz(ctlnmov,'') == '' then
-                    Disp_Name = pname
-                  else
-                    Disp_Name = ctlnmov
-                  end
-                  local v
-                  if ctl.param_info.paramnum == 2 then
-                    v = nz(tonumber(ctl.param_info.paramidx),-1)
-                    Disp_ParamV = ''
-                    if v > -1 then
-                      if snapshots and snapshots[strip] and snapshots[strip][page][param] then
-                        if param == 1 then 
-                          if snapshots[strip][page][param][v] then
-                            Disp_ParamV = snapshots[strip][page][param][v].name
-                          end
-                        else
-                          if snapshots[strip][page][param].snapshot[v] then
-                            Disp_ParamV = snapshots[strip][page][param].snapshot[v].name
-                          end
-                        end
-                      end
-                    end
-                  else
-                    v = nz(ctl.val,-1)                  
-                    Disp_ParamV = ''
-                    if v > -1 then
-                      if snapshots and snapshots[strip] and snapshots[strip][page][param] and snapshots[strip][page][param].selected then
-                        if param == 1 then 
-                          if snapshots[strip][page][param][snapshots[strip][page][param].selected] then
-                            Disp_ParamV = snapshots[strip][page][param][snapshots[strip][page][param].selected].name
-                          end
-                        else
-                          if snapshots[strip][page][param].snapshot[snapshots[strip][page][param].selected] then
-                            Disp_ParamV = snapshots[strip][page][param].snapshot[snapshots[strip][page][param].selected].name
-                          end
-                        end
-                      end
-                    end
-                  end
-                  
-                elseif ctlcat == ctlcats.xy or ctlcat == ctlcats.snapshotrand or ctlcat == ctlcats.fxgui then
-                  if nz(ctlnmov,'') == '' then
-                    Disp_Name = pname
-                  else
-                    Disp_Name = ctlnmov
-                  end
-                elseif ctlcat == ctlcats.fxoffline then
-                  spv = false
-                  if nz(ctlnmov,'') == '' then
-                    Disp_Name = pname
-                  else
-                    Disp_Name = ctlnmov
-                  end
-                elseif ctlcat == ctlcats.rcm_switch then
-                  if nz(ctlnmov,'') == '' then
-                    Disp_Name = pname
-                  else
-                    Disp_Name = ctlnmov
-                  end
-                  if ctl.rcmdata and ctl.val and ctl.rcmdata[ctl.val] then
-                    Disp_ParamV = ctl.rcmdata[ctl.val].name
-                  else
-                    Disp_ParamV = ''
-                  end
-                  
-                elseif ctlcat == ctlcats.midictl then
-                  --spv = false
-                  local ctv = ctl.val
-                  if ctl.midiout then
-                    ctv = math.floor((ctl.midiout.vmax - ctl.midiout.vmin)*ctv)+ctl.midiout.vmin
-                    --[[if ctl.midiout.msgtype <= 6 then
-                      ctv = math.floor(ctv * 127)
-                    else
-                      ctv = math.floor(ctv * 16383)
-                    end
-                    ctv = roundX(ctv,0)]]
-                  end
-                  Disp_ParamV = ctv
-                  if nz(ctlnmov,'') == '' then
-                    Disp_Name = pname
-                  else
-                    Disp_Name = ctlnmov
-                  end
-                  
-                elseif ctlcat == ctlcats.macro then
-                  --spv = false
-                  Disp_ParamV = round(ctl.val,2)
-                  if nz(ctlnmov,'') == '' then
-                    Disp_Name = pname
-                  else
-                    Disp_Name = ctlnmov
-                  end
-                elseif ctlcat == ctlcats.eqcontrol then
-                  spv = false
-                  if nz(ctlnmov,'') == '' then
-                    Disp_Name = pname
-                  else
-                    Disp_Name = ctlnmov
-                  end
-                 elseif ctlcat == ctlcats.switcher then
-                  spv = false
-                  --if nz(ctlnmov,'') == '' then
-                    Disp_Name = pname
-                  --else
-                  --  Disp_Name = ctlnmov
-                  --end
-                  
-                 elseif ctlcat == ctlcats.takeswitcher then
+                    end                  
+                  elseif ctlcat == ctlcats.action then
                     if nz(ctlnmov,'') == '' then
                       Disp_Name = pname
                     else
                       Disp_Name = ctlnmov
                     end
-                    if ctl.iteminfo then
-                      Disp_ParamV = ctl.iteminfo.curtake
+                    if DVOV and DVOV ~= '' and cycle_editmode == false then
+                    else
+                      spv = false  
+                    end
+                  elseif ctlcat == ctlcats.pkmeter then
+                    if nz(ctlnmov,'') == '' then
+                      Disp_Name = pname
+                    else
+                      Disp_Name = ctlnmov
+                    end
+                    if param < 64 then
+                      Disp_ParamV = GetParamDisp(ctlcat, tnum, nil, param, dvoff, i)
+                      if tonumber(Disp_ParamV) ~= nil and tonumber(Disp_ParamV) < -120 then
+                        Disp_ParamV = '-inf'
+                      end
+                    else
+                      Disp_ParamV = ''
+                    end
+                  elseif ctlcat == ctlcats.snapshot then
+                    if nz(ctlnmov,'') == '' then
+                      Disp_Name = pname
+                    else
+                      Disp_Name = ctlnmov
+                    end
+                    local v
+                    if ctl.param_info.paramnum == 2 then
+                      v = nz(tonumber(ctl.param_info.paramidx),-1)
+                      Disp_ParamV = ''
+                      if v > -1 then
+                        if snapshots and snapshots[strip] and snapshots[strip][page][param] then
+                          if param == 1 then 
+                            if snapshots[strip][page][param][v] then
+                              Disp_ParamV = snapshots[strip][page][param][v].name
+                            end
+                          else
+                            if snapshots[strip][page][param].snapshot[v] then
+                              Disp_ParamV = snapshots[strip][page][param].snapshot[v].name
+                            end
+                          end
+                        end
+                      end
+                    else
+                      v = nz(ctl.val,-1)                  
+                      Disp_ParamV = ''
+                      if v > -1 then
+                        if snapshots and snapshots[strip] and snapshots[strip][page][param] and snapshots[strip][page][param].selected then
+                          if param == 1 then 
+                            if snapshots[strip][page][param][snapshots[strip][page][param].selected] then
+                              Disp_ParamV = snapshots[strip][page][param][snapshots[strip][page][param].selected].name
+                            end
+                          else
+                            if snapshots[strip][page][param].snapshot[snapshots[strip][page][param].selected] then
+                              Disp_ParamV = snapshots[strip][page][param].snapshot[snapshots[strip][page][param].selected].name
+                            end
+                          end
+                        end
+                      end
+                    end
+                    
+                  elseif ctlcat == ctlcats.xy or ctlcat == ctlcats.snapshotrand or ctlcat == ctlcats.fxgui then
+                    if nz(ctlnmov,'') == '' then
+                      Disp_Name = pname
+                    else
+                      Disp_Name = ctlnmov
+                    end
+                  elseif ctlcat == ctlcats.fxoffline then
+                    spv = false
+                    if nz(ctlnmov,'') == '' then
+                      Disp_Name = pname
+                    else
+                      Disp_Name = ctlnmov
+                    end
+                  elseif ctlcat == ctlcats.rcm_switch then
+                    if nz(ctlnmov,'') == '' then
+                      Disp_Name = pname
+                    else
+                      Disp_Name = ctlnmov
+                    end
+                    if ctl.rcmdata and ctl.val and ctl.rcmdata[ctl.val] then
+                      Disp_ParamV = ctl.rcmdata[ctl.val].name
                     else
                       Disp_ParamV = ''
                     end
                     
-                 end
-  
-                if ctltype == 4 and cycle_editmode == false then
-                  if DVOV and DVOV ~= '' then
-                    --if ctl.cycledata.posdirty == false then 
-                      Disp_ParamV = DVOV
-                      
-                      if maxdp > -1 then
-                        Disp_ParamV = roundX(Disp_ParamV, maxdp)                  
+                  elseif ctlcat == ctlcats.midictl then
+                    --spv = false
+                    local ctv = ctl.val
+                    if ctl.midiout then
+                      ctv = math.floor((ctl.midiout.vmax - ctl.midiout.vmin)*ctv)+ctl.midiout.vmin
+                      --[[if ctl.midiout.msgtype <= 6 then
+                        ctv = math.floor(ctv * 127)
+                      else
+                        ctv = math.floor(ctv * 16383)
                       end
+                      ctv = roundX(ctv,0)]]
+                    end
+                    Disp_ParamV = ctv
+                    if nz(ctlnmov,'') == '' then
+                      Disp_Name = pname
+                    else
+                      Disp_Name = ctlnmov
+                    end
+                    
+                  elseif ctlcat == ctlcats.macro then
+                    --spv = false
+                    Disp_ParamV = round(ctl.val,2)
+                    if nz(ctlnmov,'') == '' then
+                      Disp_Name = pname
+                    else
+                      Disp_Name = ctlnmov
+                    end
+                  elseif ctlcat == ctlcats.eqcontrol then
+                    spv = false
+                    if nz(ctlnmov,'') == '' then
+                      Disp_Name = pname
+                    else
+                      Disp_Name = ctlnmov
+                    end
+                   elseif ctlcat == ctlcats.switcher then
+                    spv = false
+                    --if nz(ctlnmov,'') == '' then
+                      Disp_Name = pname
+                    --else
+                    --  Disp_Name = ctlnmov
                     --end
-                  --else
+                    
+                   elseif ctlcat == ctlcats.takeswitcher then
+                      if nz(ctlnmov,'') == '' then
+                        Disp_Name = pname
+                      else
+                        Disp_Name = ctlnmov
+                      end
+                      if ctl.iteminfo then
+                        Disp_ParamV = ctl.iteminfo.curtake
+                      else
+                        Disp_ParamV = ''
+                      end
+                      
+                   end
+    
+                  if ctltype == 4 and cycle_editmode == false then
+                    if DVOV and DVOV ~= '' then
+                      --if ctl.cycledata.posdirty == false then 
+                        Disp_ParamV = DVOV
+                        
+                        if maxdp > -1 then
+                          Disp_ParamV = roundX(Disp_ParamV, maxdp)                  
+                        end
+                      --end
+                    --else
+                    end
                   end
+    
+                  local offl = false
+                  if ctlcat == ctlcats.fxparam and ctl.offline then
+                    offl = true
+                    if settings_showparamnamelabelwhenoffline == false then
+                      Disp_Name = 'Offline'
+                    end
+                    Disp_ParamV = ''
+                  end
+                
+                else
+                  Disp_ParamV = ''
+                  Disp_Name = ''
+                end --track ~= nil
+                
+                local mid = x+(w/2)
+  
+                gfx.setfont(1, font, gui.fontsz_knob +tsz-4)
+                local text_len1x, text_len1y = gfx.measurestr(Disp_Name)
+                gfx.setfont(1, font, gui.fontsz_knob +tsz2-4)
+                local text_len2x, text_len2y = gfx.measurestr(Disp_ParamV)
+  
+                local tl1 = nz(ctl.tl1,text_len1x)
+                local tl2 = nz(ctl.tl2,text_len2x)
+                
+                local th1 = nz(ctl.th1,text_len1y)
+                
+                local th2 = nz(ctl.th2,text_len2y)
+  
+                local xywh1 = {x = math.floor(mid-(text_len1x/2))-toffx, y = math.floor(y+(h/2)-toff-1), w = text_len1x, h = 1}
+                local xywh2 = {x = math.floor(mid-(text_len2x/2))+toffx+toffvx, y = math.floor(y+(h/2)+toff+toffv-1), w = text_len2x, h = 1}
+                
+                local tx1, tx2 = math.floor(mid-(tl1/2))-toffx,
+                                     math.floor(mid-(tl2/2))+toffx+toffvx --gui.fontsz_knob+tsz-4
+                                     
+                gfx.a=1
+                if not update_gfx and not update_bg and ctlcat ~= ctlcats.xy then
+                  if ctl.bypassbg_c ~= true then
+                    gfx.blit(1004,1,0, px,
+                                       py,
+                                       w*scale,
+                                       h*scale,
+                                       px,
+                                       py)
+                  end
+                  if spn and ctl.bypassbg_n ~= true then                   
+                    gfx.blit(1004,1,0, tx1,
+                                       xywh1.y-math.floor(th1/2),
+                                       tl1,
+                                       --[[th_a]]th1,
+                                       tx1,
+                                       xywh1.y-math.floor(th1/2))
+                  end
+                  if spv and ctl.bypassbg_v ~= true then                
+                    gfx.blit(1004,1,0, tx2,
+                                       xywh2.y-math.floor(th2/2),
+                                       tl2,
+                                       --[[th_a2]]th2,
+                                       tx2,
+                                       xywh2.y-math.floor(th2/2))
+                  end
+                  gfx.a=1
                 end
   
-                local offl = false
-                if ctlcat == ctlcats.fxparam and ctl.offline then
-                  offl = true
-                  if settings_showparamnamelabelwhenoffline == false then
-                    Disp_Name = 'Offline'
-                  end
-                  Disp_ParamV = ''
-                end
-              
-              else
-                Disp_ParamV = ''
-                Disp_Name = ''
-              end --track ~= nil
-              
-              local mid = x+(w/2)
-
-              gfx.setfont(1, font, gui.fontsz_knob +tsz-4)
-              local text_len1x, text_len1y = gfx.measurestr(Disp_Name)
-              gfx.setfont(1, font, gui.fontsz_knob +tsz2-4)
-              local text_len2x, text_len2y = gfx.measurestr(Disp_ParamV)
-
-              local tl1 = nz(ctl.tl1,text_len1x)
-              local tl2 = nz(ctl.tl2,text_len2x)
-              
-              local th1 = nz(ctl.th1,text_len1y)
-              
-              local th2 = nz(ctl.th2,text_len2y)
-
-              local xywh1 = {x = math.floor(mid-(text_len1x/2))-toffx, y = math.floor(y+(h/2)-toff-1), w = text_len1x, h = 1}
-              local xywh2 = {x = math.floor(mid-(text_len2x/2))+toffx+toffvx, y = math.floor(y+(h/2)+toff+toffv-1), w = text_len2x, h = 1}
-              
-              local tx1, tx2 = math.floor(mid-(tl1/2))-toffx,
-                                   math.floor(mid-(tl2/2))+toffx+toffvx --gui.fontsz_knob+tsz-4
-                                   
-              gfx.a=1
-              if not update_gfx and not update_bg and ctlcat ~= ctlcats.xy then
-                if ctl.bypassbg_c ~= true then
-                  gfx.blit(1004,1,0, px,
-                                     py,
-                                     w*scale,
-                                     h*scale,
-                                     px,
-                                     py)
-                end
-                if spn and ctl.bypassbg_n ~= true then                   
-                  gfx.blit(1004,1,0, tx1,
-                                     xywh1.y-math.floor(th1/2),
-                                     tl1,
-                                     --[[th_a]]th1,
-                                     tx1,
-                                     xywh1.y-math.floor(th1/2))
-                end
-                if spv and ctl.bypassbg_v ~= true then                
-                  gfx.blit(1004,1,0, tx2,
-                                     xywh2.y-math.floor(th2/2),
-                                     tl2,
-                                     --[[th_a2]]th2,
-                                     tx2,
-                                     xywh2.y-math.floor(th2/2))
-                end
                 gfx.a=1
-              end
-
-              gfx.a=1
-              if ctlcat == ctlcats.fxparam and ((track ~= nil and not reaper.TrackFX_GetEnabled(track, fxnum) and pname ~= 'Bypass') or ctl.offline) then
-                gfx.a = 0.5
-              elseif (mode == 1 and submode == 1) or ctl.hidden then
-                gfx.a = 0.5
-              end
-
-              gfx.blit(iidx,_,0, 0, val2*gh, w, h, px, py, math.floor(w*scale), math.floor(h*scale))
-              if ctlcat == ctlcats.xy then
-              
-                --draw pos
-                local ppw, pph = gfx.getimgdim(def_xytarget)
-                local ppx = 12+px+math.floor(ctl.xydata.x * (w-24)) - math.floor(ppw/2)
-                local ppy = 12+py+math.floor(ctl.xydata.y * (h-34-24)) - math.floor(pph/2)
-
-                gfx.blit(def_xytarget,1,0, 0, 0, ppw, pph, ppx, ppy)
-              
-              end
-              
-              ctl.tl1 = text_len1x
-              ctl.tl2 = text_len2x
-              ctl.th1 = text_len1y
-              ctl.th2 = text_len2y                
-              
-                local alpha = 1
-                if settings_hideofflinelabel and offl then
-                  spn = false
-                elseif offl or ctl.hidden then
-                  alpha = 0.4
+                if ctlcat == ctlcats.fxparam and ((track ~= nil and not reaper.TrackFX_GetEnabled(track, fxnum) and pname ~= 'Bypass') or ctl.offline) then
+                  gfx.a = 0.5
+                elseif (mode == 1 and submode == 1) or ctl.hidden then
+                  gfx.a = 0.5
                 end
-
-                if settings_showfaderassignments == true and ctl.macrofader then
-                  if mode0_submode == 1 and fader_select == ctl.macrofader then
-                    f_Get_SSV(faderselcol)
-                  else 
-                    f_Get_SSV(faderhighcol)                    
-                  end
-                  gfx.roundrect(px+1,py+1,math.floor((w*scale-2)),math.floor(h*scale-2),5,1)
-                end
-
-                if settings_showfaderassignments == true and ctl.mod then
-                  if (mode0_submode == 2 or (show_lfoedit == true and modwinsz.minimized ~= true)) and mod_select == ctl.mod then
-                    f_Get_SSV(modselcol)
-                  else 
-                    f_Get_SSV(modhighcol)                    
-                  end
-
-                  if modulators[ctl.mod].active == false then
-                    gfx.a = 0.3                        
-                  end
-                  gfx.roundrect(px+1,py+1,math.floor(w*scale-2),math.floor(h*scale-2),5,1)
-                  gfx.a = 1
-                end
-
-                if spn then
-                  gfx.setfont(1, font, gui.fontsz_knob +tsz-4)                    
-                  GUI_textCtl(gui,xywh1, Disp_Name,tc,-4 + tsz, alpha)
-                end
-                if spv then
-                  gfx.setfont(1, font, gui.fontsz_knob +tsz2-4)                    
-                  GUI_textCtl(gui,xywh2, Disp_ParamV,tc2,-4 + tsz2, alpha)          
-                end
-
-              if setting_reddotindicator == true and ctltype == 4 and DVOV and DVOV ~= '' and cycle_editmode == false then
-                if ctl.cycledata.posdirty == true then 
-                  gfx.a = 0.8
-                  f_Get_SSV(gui.color.red)
-                  gfx.circle(x+4,y+4,2,1,1)              
-                end
-              end
-                          
-              if mode == 1 and submode == 2 then
-                if tnum and tnum ~= tracks[track_select].tracknum then
+  
+                gfx.blit(iidx,_,0, 0, val2*gh, w, h, px, py, math.floor(w*scale), math.floor(h*scale))
+                if ctlcat == ctlcats.xy then
                 
-                  gfx.a = 0.8
-                  f_Get_SSV(gui.color.red)
-                  gfx.circle(x,y,2,1,1)              
+                  --draw pos
+                  local ppw, pph = gfx.getimgdim(def_xytarget)
+                  local ppx = 12+px+math.floor(ctl.xydata.x * (w-24)) - math.floor(ppw/2)
+                  local ppy = 12+py+math.floor(ctl.xydata.y * (h-34-24)) - math.floor(pph/2)
+  
+                  gfx.blit(def_xytarget,1,0, 0, 0, ppw, pph, ppx, ppy)
                 
                 end
-              end
-              
-              if not update_gfx and not update_bg and update_ctls then
-              
-                --just blit control area to main backbuffer - create area table
-                local al = math.min(px, xywh1.x, xywh2.x, tx1, tx2)
-                local ar = math.max(px+w*scale, tx1+tl1, tx2+tl2, xywh1.x+xywh1.w, xywh2.x+xywh2.w)
-                local at = math.min(py, xywh1.y-math.floor(th1/2), xywh2.y-math.floor(th2/2))
-                local ab = math.max(py+(h)*scale,xywh1.y+math.floor(th1/2), xywh2.y+math.floor(th2/2))
-                xywharea[#xywharea+1] = {x=al,y=at,w=ar-al,h=ab-at,r=ar,b=ab}
+                
+                ctl.tl1 = text_len1x
+                ctl.tl2 = text_len2x
+                ctl.th1 = text_len1y
+                ctl.th2 = text_len2y                
+                
+                  local alpha = 1
+                  if settings_hideofflinelabel and offl then
+                    spn = false
+                  elseif offl or ctl.hidden then
+                    alpha = 0.4
+                  end
+  
+                  if settings_showfaderassignments == true and ctl.macrofader then
+                    if mode0_submode == 1 and fader_select == ctl.macrofader then
+                      f_Get_SSV(faderselcol)
+                    else 
+                      f_Get_SSV(faderhighcol)                    
+                    end
+                    gfx.roundrect(px+1,py+1,math.floor((w*scale-2)),math.floor(h*scale-2),5,1)
+                  end
+  
+                  if settings_showfaderassignments == true and ctl.mod then
+                    if (mode0_submode == 2 or (show_lfoedit == true and modwinsz.minimized ~= true)) and mod_select == ctl.mod then
+                      f_Get_SSV(modselcol)
+                    else 
+                      f_Get_SSV(modhighcol)                    
+                    end
+  
+                    if modulators[ctl.mod].active == false then
+                      gfx.a = 0.3                        
+                    end
+                    gfx.roundrect(px+1,py+1,math.floor(w*scale-2),math.floor(h*scale-2),5,1)
+                    gfx.a = 1
+                  end
+  
+                  if spn then
+                    gfx.setfont(1, font, gui.fontsz_knob +tsz-4)                    
+                    GUI_textCtl(gui,xywh1, Disp_Name,tc,-4 + tsz, alpha)
+                  end
+                  if spv then
+                    gfx.setfont(1, font, gui.fontsz_knob +tsz2-4)                    
+                    GUI_textCtl(gui,xywh2, Disp_ParamV,tc2,-4 + tsz2, alpha)          
+                  end
+  
+                if setting_reddotindicator == true and ctltype == 4 and DVOV and DVOV ~= '' and cycle_editmode == false then
+                  if ctl.cycledata.posdirty == true then 
+                    gfx.a = 0.8
+                    f_Get_SSV(gui.color.red)
+                    gfx.circle(x+4,y+4,2,1,1)              
+                  end
+                end
+                            
+                if mode == 1 and submode == 2 then
+                  if tnum and tnum ~= tracks[track_select].tracknum then
+                  
+                    gfx.a = 0.8
+                    f_Get_SSV(gui.color.red)
+                    gfx.circle(x,y,2,1,1)              
+                  
+                  end
+                end
+                
+                if not update_gfx and not update_bg and update_ctls then
+                
+                  --just blit control area to main backbuffer - create area table
+                  local al = math.min(px, xywh1.x, xywh2.x, tx1, tx2)
+                  local ar = math.max(px+w*scale, tx1+tl1, tx2+tl2, xywh1.x+xywh1.w, xywh2.x+xywh2.w)
+                  local at = math.min(py, xywh1.y-math.floor(th1/2), xywh2.y-math.floor(th2/2))
+                  local ab = math.max(py+(h)*scale,xywh1.y+math.floor(th1/2), xywh2.y+math.floor(th2/2))
+                  xywharea[#xywharea+1] = {x=al,y=at,w=ar-al,h=ab-at,r=ar,b=ab}
+                end
               end
             end
+          
           end
         end
         
@@ -14377,7 +14381,7 @@ end
     GUI_DrawButton(gui, lockh, obj.sections[78], -3, gui.color.black, locky, '', true, gui.fontsz.settings,true)
     
     GUI_DrawTick(gui, 'Show grid / grid size', obj.sections[80], gui.color.white, settings_showgrid, gui.fontsz.settings,true)
-    GUI_DrawButton(gui, settings_gridsize, obj.sections[79], -3, gui.color.black, true, '', false, gui.fontsz.settings,true)
+    GUI_DrawButton(gui, ogrid, obj.sections[79], -3, gui.color.black, true, '', false, gui.fontsz.settings,true)
     GUI_DrawTick(gui, 'Can mousewheel on knob', obj.sections[81], gui.color.white, settings_mousewheelknob, gui.fontsz.settings,true)
     GUI_DrawTick(gui, 'Swap ctrl click and dbl click actions', obj.sections[82], gui.color.white, settings_swapctrlclick, gui.fontsz.settings,true)
     GUI_DrawTick(gui, 'Insert default strip on every track', obj.sections[83], gui.color.white, settings_insertdefaultoneverytrack, gui.fontsz.settings,true)
@@ -37141,7 +37145,7 @@ end
         update_gfx = true
       elseif mouse.context == nil and MOUSE_click(obj.sections[79]) then
         mouse.context = contexts.gridslider
-        ctlpos = settings_gridsize
+        ctlpos = ogrid or settings_gridsize
       elseif mouse.context == nil and MOUSE_click(obj.sections[721]) then
         mouse.context = contexts.sbpanszslider
         ctlpos = tb_butt_h
@@ -43923,7 +43927,7 @@ end
     
     reaper.SetProjExtState(0,SCRIPT,'version',VERSION)
     reaper.SetProjExtState(0,SCRIPT,'projectid',PROJECTID)
-    reaper.SetProjExtState(0,SCRIPT,'gridsize',settings_gridsize)
+    reaper.SetProjExtState(0,SCRIPT,'gridsize',ogrid)
     reaper.SetProjExtState(0,SCRIPT,'showgrid',tostring(settings_showgrid))
     reaper.SetProjExtState(0,SCRIPT,'showeditbar',tostring(show_editbar))
     reaper.SetProjExtState(0,SCRIPT,'locksurface',tostring(settings_locksurface))
