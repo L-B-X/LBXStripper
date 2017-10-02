@@ -21379,7 +21379,7 @@ end
     local ctl = strips[strip][page].controls[c]
 
     local mod = '||Clear Modulator'
-    if not strips[tracks[track_select].strip][page].controls[i].mod then
+    if not strips[strip][page].controls[c].mod then
       mod = '||#Clear Modulator'
     end  
     local sno = ''
