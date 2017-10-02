@@ -40833,7 +40833,7 @@ end
         gfx.loadimg(image_count, graphics_path..fol..graphics_files[gfx_sel].fn)
         iidx = image_count
         
-        graphics_files[gfx_sel].imageidx = iidx                    
+        graphics_files[gfx_sel].imageidx = iidx
 
       else
         iidx = graphics_files[gfx_sel].imageidx
@@ -45786,8 +45786,8 @@ end
     local header = match(content,'(.-)%[TRACK%]')
     --DBG(header)
     
-    local version, trcnt = match(header,'%[STRIPSET_VERSION%](%d+)\n%[TRACKS%](%d+)\n')
-    local pbpm = match(header,'%[BPM%](%d+.%d+)\n')
+    local version, trcnt = match(header or '','%[STRIPSET_VERSION%](%d+)\n%[TRACKS%](%d+)\n')
+    local pbpm = match(header or '','%[BPM%](%d+.%d+)\n')
     
     version = tonumber(version)
     
