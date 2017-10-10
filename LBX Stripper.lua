@@ -29980,7 +29980,12 @@ end
           end
           local mult = 1
           if mouse.shift == true then
-            mult = 0.002
+            local type = randomopts_select.linkgrps[lg].type
+            if type <= 3 then
+              mult = 0.1
+            else
+              mult = 0.002
+            end
           end
           if randomopts_select.linkgrps[lg] then
             randomopts_select.linkgrps[lg].X = F_limit(draglg.pos + (val-0.5)*mult,0,1)
@@ -37488,6 +37493,8 @@ end
       update_gfx = true
       reaper.MarkProjectDirty(0)
       insertstrip = nil
+      PopulateUsedTracksTable()
+      
     elseif MOUSE_click_RB(obj.sections[10]) then
       --cancel
       insertstrip = nil
