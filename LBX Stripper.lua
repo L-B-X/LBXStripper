@@ -49,6 +49,8 @@
   gaugetype_table = {'ARC','LINEAR VERT', 'LINEAR HORIZ'}
   gfxstretch_table = {'normal','fix edge'}
   
+  linkgrp_table = {'Randomize X', 'Randomize X on', 'Randomize X off', 'Linked'}
+  
   lbxutil_chunk = 'BYPASS 0 0 0\n<JS LBX_TrackUtility ""\n0.000000 0.000000 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -\n>\nFLOATPOS 0 0 0 0\nFXID {800E025A-6418-48A4-B72E-71E93B970664}\nWAK 0'
   
   trctltypeidx_table = {tr_ctls = 1,
@@ -192,6 +194,14 @@
               panfontszslider = 133, 
               sbfontszslider = 134,
               lstfontszslider = 135,
+              move_randomwin = 136,
+              lg_probability = 137,
+              lg_min = 138,
+              lg_max = 139,
+              lg_bias = 140,
+              lg_X = 141,
+              lg_range = 142,
+              lg_wild = 143,
               dummy = 999
               }
   
@@ -1175,6 +1185,10 @@
       if obj and obj.sections then
         mm1120 = obj.sections[1120]
       end
+      local mm1130
+      if obj and obj.sections then
+        mm1130 = obj.sections[1130]
+      end
       
       local obj = {}
       
@@ -1376,14 +1390,14 @@
       local cow = math.floor(gui.winsz.ctlopts*pnl_scale)
       local coh = math.floor(470*pnl_scale) --(470-150)*pnl_scale+150
       local coff = math.floor(150*pnl_scale+(gui.winsz.pnltit*pnl_scale-gui.winsz.pnltit))
-      obj.sections[45] = {x = math.max(gfx1.main_w - cow - 10, obj.sections[10].x + cow + 20),
-                          y = math.max(gfx1.main_h - coh - 10, obj.sections[10].y),
+      obj.sections[45] = {x = math.max(gfx1.main_w - cow, obj.sections[10].x + cow + 20),
+                          y = math.max(gfx1.main_h - coh, obj.sections[10].y),
                           w = cow,
                           h = coh}                           
 
       --GFX / LABEL OPTS Panel
-      obj.sections[49] = {x = gfx1.main_w - cow - 20,
-                          y = math.floor(gfx1.main_h - 300*pnl_scale -20),
+      obj.sections[49] = {x = gfx1.main_w - cow,
+                          y = math.floor(gfx1.main_h - 300*pnl_scale),
                           w = cow,
                           h = math.floor(300*pnl_scale)}
       obj = PosGfxOptCtls(obj)
@@ -1515,7 +1529,7 @@
                           h = math.floor((butt_h/2+8)*pnl_scale)}                           
 
       --Scroll control graphic >
-      obj.sections[91] = {x = math.floor(obj.sections[45].w-16*pnl_scale),
+      obj.sections[91] = {x = obj.sections[45].w-math.floor(12*pnl_scale)-math.floor(4*pnl_scale),
                           y = math.floor(coff/2),
                           w = math.floor(12*pnl_scale),
                           h = math.floor((butt_h/2+8)*pnl_scale)}                           
@@ -1602,8 +1616,8 @@
       
       
       --Param Learn panel
-      obj.sections[115] = {x = obj.sections[10].x+10,
-                           y = obj.sections[10].y+10,
+      obj.sections[115] = {x = obj.sections[10].x,
+                           y = obj.sections[10].y,
                            w = math.floor(160*pnl_scale),
                            h = math.floor(200*pnl_scale)}
       obj = PosParamLrnCtls(obj)
@@ -1827,10 +1841,10 @@
                             h = math.floor(butt_h*pnl_scale)}
       
       --Dock button
-      obj.sections[1160] = {x = obj.sections[160].w - 34,
-                            y = gui.winsz.pnltit-butt_h+1,
-                            w = 30,
-                            h = butt_h/2+8}
+      obj.sections[1160] = {x = obj.sections[160].w - 38,
+                            y = 2,
+                            w = 34,
+                            h = math.floor(gui.winsz.pnltit*pnl_scale-2)}
       
       --Rename subset button                             
       obj.sections[164] = {x = math.floor(10*pnl_scale),
@@ -1939,28 +1953,28 @@
                            w = cb_bw,
                            h = obj.sections[200].h -(butt_h+2) * 13 - 6}
       
-      obj.sections[201] = {x = obj.sections[200].x,
-                           y = obj.sections[200].y+(butt_h+2) * 1,
+      obj.sections[201] = {x = obj.sections[200].x+4,
+                           y = obj.sections[200].y+(butt_h+1) * 1+2,
                            w = cb_bw,
                            h = butt_h}
-      obj.sections[202] = {x = obj.sections[200].x,
-                           y = obj.sections[200].y+(butt_h+2) * 2,
+      obj.sections[202] = {x = obj.sections[200].x+4,
+                           y = obj.sections[200].y+(butt_h+1) * 2+2,
                            w = cb_bw,
                            h = butt_h}
-      obj.sections[203] = {x = obj.sections[200].x,
-                           y = obj.sections[200].y+(butt_h+2) * 3,
+      obj.sections[203] = {x = obj.sections[200].x+4,
+                           y = obj.sections[200].y+(butt_h+1) * 3+2,
                            w = cb_bw,
                            h = butt_h}
-      obj.sections[204] = {x = obj.sections[200].x,
-                           y = obj.sections[200].y+(butt_h+2) * 4,
+      obj.sections[204] = {x = obj.sections[200].x+4,
+                           y = obj.sections[200].y+(butt_h+1) * 4+2,
                            w = cb_bw,
                            h = butt_h}
-      obj.sections[205] = {x = obj.sections[200].x,
-                           y = obj.sections[200].y+(butt_h+2) * 5,
+      obj.sections[205] = {x = obj.sections[200].x+4,
+                           y = obj.sections[200].y+(butt_h+1) * 5+2,
                            w = cb_bw,
                            h = butt_h}
-      obj.sections[206] = {x = obj.sections[200].x,
-                           y = obj.sections[200].y+(butt_h+2) * 6,
+      obj.sections[206] = {x = obj.sections[200].x+4,
+                           y = obj.sections[200].y+(butt_h+1) * 6+2,
                            w = cb_bw,
                            h = butt_h}
       obj.sections[211] = {x = obj.sections[200].x + obj.sections[200].w - 220-1,
@@ -2475,10 +2489,10 @@
       modpos = 8 
       
       --Dock button
-      obj.sections[1123] = {x = obj.sections[1100].w - 35,
-                            y = gui.winsz.pnltit-butt_h+1,
-                            w = 30,
-                            h = butt_h/2+8}
+      obj.sections[1123] = {x = obj.sections[1100].w - 38,
+                            y = 2,
+                            w = 34,
+                            h = math.floor(gui.winsz.pnltit*pnl_scale-2)}
       
       --Main bar display
       obj.sections[1101] = {x = 10,
@@ -2593,8 +2607,8 @@
                               w = mw,
                               h = mh}
       else
-        obj.sections[1120] = {x = obj.sections[10].x+obj.sections[10].w - mw - math.floor(10*pnl_scale),
-                             y = obj.sections[10].y + math.floor(10*pnl_scale),
+        obj.sections[1120] = {x = obj.sections[10].x+obj.sections[10].w - mw, -- math.floor(10*pnl_scale),
+                             y = obj.sections[10].y, --+ math.floor(10*pnl_scale),
                              w = mw,
                              h = mh}
       end
@@ -2606,6 +2620,106 @@
                            y = obj.sections[1121].y+obj.sections[1121].h+math.floor(4*pnl_scale),
                            w = math.floor(60*pnl_scale),
                            h = math.floor(butt_h*pnl_scale)}
+      
+      --Advanced RANDOMIZE panel
+      local mw,mh = math.floor(340*pnl_scale),math.floor(300*pnl_scale)
+      if mm1130 then
+        obj.sections[1130] = {x = math.max(F_limit(mm1130.x,obj.sections[10].x,obj.sections[10].x+obj.sections[10].w-mw),obj.sections[10].x),
+                              y = math.max(F_limit(mm1130.y,obj.sections[10].y,obj.sections[10].y+obj.sections[10].h-mh),obj.sections[10].y),
+                              w = mw,
+                              h = mh}
+      else
+        obj.sections[1130] = {x = obj.sections[10].x+obj.sections[10].w - mw, -- math.floor(10*pnl_scale),
+                             y = obj.sections[10].y, --+ math.floor(10*pnl_scale),
+                             w = mw,
+                             h = mh}
+      end
+      
+      obj.sections[1131] = {x = math.floor(100*pnl_scale),
+                            y = math.floor(40*pnl_scale),
+                            w = math.floor((butt_h/2+8) * pnl_scale),
+                            h = math.floor((butt_h/2+8) * pnl_scale)}
+
+      obj.sections[1132] = {x = math.floor(300*pnl_scale),
+                            y = math.floor(40*pnl_scale),
+                            w = math.floor((butt_h/2+8) * pnl_scale),
+                            h = math.floor((butt_h/2+8) * pnl_scale)}
+
+      obj.sections[1133] = {x = math.floor(80*pnl_scale),
+                            y = math.floor((80)*pnl_scale),
+                            w = math.floor((300-80) * pnl_scale),
+                            h = math.floor((butt_h) * pnl_scale)}
+
+      local row1 = 100
+      local row2 = 240
+      obj.sections[1134] = {x = math.floor(row2*pnl_scale),
+                            y = math.floor((80 + butt_h * 1.2)*pnl_scale),
+                            w = math.floor((60) * pnl_scale),
+                            h = math.floor((butt_h) * pnl_scale)}
+      obj.sections[1146] = {x = math.floor(row1*pnl_scale),
+                            y = math.floor((80 + (butt_h * 1.2)*2)*pnl_scale),
+                            w = math.floor((60) * pnl_scale),
+                            h = math.floor((butt_h) * pnl_scale)}
+      obj.sections[1135] = {x = math.floor(row2*pnl_scale),
+                            y = math.floor((80 + (butt_h * 1.2)*2)*pnl_scale),
+                            w = math.floor((60) * pnl_scale),
+                            h = math.floor((butt_h) * pnl_scale)}
+      obj.sections[1136] = {x = math.floor(row1*pnl_scale),
+                            y = math.floor((80 + (butt_h * 1.2))*pnl_scale),
+                            w = math.floor((60) * pnl_scale),
+                            h = math.floor((butt_h) * pnl_scale)}
+      obj.sections[1137] = {x = math.floor(row1*pnl_scale),
+                            y = math.floor((80 + (butt_h * 1.2)*3)*pnl_scale),
+                            w = math.floor((60) * pnl_scale),
+                            h = math.floor((butt_h) * pnl_scale)}
+      obj.sections[1138] = {x = math.floor(row2*pnl_scale),
+                            y = math.floor((80 + (butt_h * 1.2)*3)*pnl_scale),
+                            w = math.floor((60) * pnl_scale),
+                            h = math.floor((butt_h) * pnl_scale)}
+      obj.sections[1139] = {x = math.floor(row1*pnl_scale),
+                            y = math.floor((80 + (butt_h * 1.2)*4)*pnl_scale),
+                            w = math.floor((60) * pnl_scale),
+                            h = math.floor((butt_h) * pnl_scale)}
+      obj.sections[1140] = {x = math.floor(row2*pnl_scale),
+                            y = math.floor((80 + (butt_h * 1.2)*4)*pnl_scale),
+                            w = math.floor((60) * pnl_scale),
+                            h = math.floor((butt_h) * pnl_scale)}
+      obj.sections[1147] = {x = math.floor(row2*pnl_scale)+obj.sections[1140].w+2,
+                            y = math.floor((80 + (butt_h * 1.2)*4)*pnl_scale),
+                            w = math.floor((34) * pnl_scale),
+                            h = math.floor((butt_h) * pnl_scale)}
+                            
+      local grph = (obj.sections[1140].y+obj.sections[1140].h+10*pnl_scale)
+      local ind = 6
+      obj.sections[1141] = {x = math.floor(ind*pnl_scale),
+                            y = math.floor(grph),
+                            w = math.floor((obj.sections[1130].w - (ind*2 * pnl_scale))),
+                            h = math.floor((obj.sections[1130].h-grph -(ind * pnl_scale)))}
+
+      obj.sections[1142] = {x = math.floor(row1*pnl_scale),
+                            y = math.floor((70 + (butt_h * 1.2)*6)*pnl_scale),
+                            w = math.floor((60) * pnl_scale),
+                            h = math.floor((butt_h) * pnl_scale)}
+
+      obj.sections[1143] = {x = math.floor(row1*pnl_scale),
+                            y = math.floor((70 + (butt_h * 1.2)*7)*pnl_scale),
+                            w = math.floor((300-row1) * pnl_scale),
+                            h = math.floor((butt_h) * pnl_scale)}
+
+      obj.sections[1144] = {x = math.floor(row1*pnl_scale),
+                            y = math.floor((70 + (butt_h * 1.2)*8)*pnl_scale),
+                            w = math.floor((60) * pnl_scale),
+                            h = math.floor((butt_h) * pnl_scale)}
+      obj.sections[1148] = {x = math.floor(row1*pnl_scale)+2+obj.sections[1144].w,
+                            y = math.floor((70 + (butt_h * 1.2)*8)*pnl_scale),
+                            w = math.floor((34) * pnl_scale),
+                            h = math.floor((butt_h) * pnl_scale)}
+
+      --Param <>
+      obj.sections[1145] = {x = math.floor((302)*pnl_scale),
+                            y = math.floor((80)*pnl_scale),
+                            w = math.floor((30) * pnl_scale),
+                            h = math.floor((butt_h) * pnl_scale)}
       
     pnlscaleflag = nil
     return obj
@@ -5299,7 +5413,8 @@
     local tracks_tmp = {}
     local guid_tr = {}
     local sendsdirty = false
-    tracks_idx = {}
+    --tracks_idx = {}
+    tracksused_idx = {} 
     for i = -1, reaper.CountTracks(0) do
       local track = GetTrack(i)
       if track ~= nil then
@@ -5346,13 +5461,26 @@
         end 
       end
     end
-    
+
+    PopulateUsedTracksTable()    
+        
     if LBX_GTRACK then
       CheckGlobalTrackSel()
     end
     --if sendsdirty == true then
       --CheckStripSends()
     --end
+  end
+
+  function PopulateUsedTracksTable()
+    local tt = 0
+    for i = -1, reaper.CountTracks(0) do
+      if tracks[i] and tracks[i].strip ~= -1 then
+        tracksused_idx[tt] = i
+        tt = tt + 1
+      end
+    end
+  
   end
   
   function UpdateCtlTrackGUIDs()
@@ -5440,10 +5568,18 @@
   
   function CalcTListPos(t)
     local oldp = tlist_offset
-    if t > oldp-2 and t < oldp+T_butt_cnt-2 then
-      return oldp
+    if hideunusedtracks ~= true then
+      if t > oldp-2 and t < oldp+T_butt_cnt-2 then
+        return oldp
+      else
+        return math.max(math.min(t-(math.floor(T_butt_cnt/2)-1), (#tracks+1)-(T_butt_cnt-2)),0)  
+      end
     else
-      return math.max(math.min(t-(math.floor(T_butt_cnt/2)-1), (#tracks+1)-(T_butt_cnt-2)),0)  
+      if t > oldp-2 and t < oldp+T_butt_cnt-1 then
+        return oldp
+      else
+        return math.max(math.min(t-(math.floor(T_butt_cnt/2)-1), (#tracksused_idx+1)-(T_butt_cnt-1)),0)  
+      end    
     end
   end
   
@@ -5456,36 +5592,36 @@
     if T_butt_cnt == nil then
       T_butt_cnt = math.floor(obj.sections[500].h / butt_h) - 1
       tlist_offset = CalcTListPos(track_select)
-      
     else
       T_butt_cnt = math.floor(obj.sections[500].h / butt_h) - 1
     end
     
     for i = 0, T_butt_cnt-1 do
     
-      if tracks[i-1 + tlist_offset] then
-        --[[local xywh = {x = obj.sections[500].x,
-                      y = obj.sections[500].y + butt_h + 2 + butt_h*(i),
-                      w = obj.sections[500].w,
-                      h = butt_h}]]
+      local ii
+      if hideunusedtracks == true then
+        ii = tracksused_idx[i + tlist_offset]
+      else
+        ii = i-1 + tlist_offset
+      end
+
+      if ii and tracks[ii] then
         local xywh = {x = obj.sections[500].x + 2,
                       y = obj.sections[500].y + butt_h + 2 + butt_h*(i)+1,
                       w = obj.sections[500].w-6,
                       h = butt_h-1}
         local c = gui.skol.track_nostrip 
-        if track_select == i-1 + tlist_offset then
+        if track_select == ii then
           f_Get_SSV(gui.color.white)
           gfx.rect(xywh.x,
                    xywh.y, 
                    xywh.w,
                    xywh.h, 1, 1)
-          --GUI_DrawBar(gui,'',xywh,skin.highlight,true,gui.color.black,nil,-2)
-
           c = gui.color.black        
         else
-          local s = tracks[i-1+tlist_offset].strip
-          if tracks[i-1 + tlist_offset].name == LBX_GTRACK_NAME or 
-             tracks[i-1 + tlist_offset].name == LBX_CTL_TRNAME then
+          local s = tracks[ii].strip
+          if tracks[ii].name == LBX_GTRACK_NAME or 
+             tracks[ii].name == LBX_CTL_TRNAME then
             c = gui.skol.track_special 
           
           elseif strips and strips[s] then
@@ -5502,7 +5638,7 @@
           end 
         
         end
-        local nm = tracks[i-1 + tlist_offset].name
+        local nm = tracks[ii].name
         if nm == '' then
           nm = '[unnamed track]'
         elseif nm == LBX_GTRACK_NAME then
@@ -5510,12 +5646,9 @@
         elseif nm == LBX_CTL_TRNAME then
           nm = '[LBX CTL]'
         end
-        --xywh.y=xywh.y-1
-        --GUI_textsm_LJ(gui, xywh, tracks[i-1 + tlist_offset].tracknum+1 ..' - '..nm, c, -4 + gui.fontsz.lst, plist_w)
-        --GUI_textC_LIM(gui, xywh, tracks[i-1 + tlist_offset].tracknum+1 ..' - '..nm, c, -4 + gui.fontsz.lst, '', nil, gui.fontnm.lst,4)            
         xywh.x=xywh.x+2
         xywh.w=xywh.w-4
-        GUI_Str(gui, xywh, tracks[i-1 + tlist_offset].tracknum+1 ..' - '..nm, 4, c, -4 + gui.fontsz.lst + lst_fontscale, 1, nil, gui.fontnm.lst, gui.fontflag.lst)
+        GUI_Str(gui, xywh, tracks[ii].tracknum+1 ..' - '..nm, 4, c, -4 + gui.fontsz.lst + lst_fontscale, 1, nil, gui.fontnm.lst, gui.fontflag.lst)
       end                      
     end           
 
@@ -5528,7 +5661,19 @@
     local w, h = gfx.getimgdim(skin.arrowup)
     gfx.blit(skin.arrowup,1,0,0,0,w,h,xywh.x+xywh.w/4-w/2,xywh.y+xywh.h/2-h/2)
     gfx.blit(skin.arrowdn,1,0,0,0,w,h,xywh.x+xywh.w*0.75-w/2,xywh.y+xywh.h/2-h/2)
-     
+
+    local xywh = {x = obj.sections[500].x,
+                  y = obj.sections[500].y+obj.sections[500].h-butt_h,
+                  w = obj.sections[500].w-2,
+                  h = butt_h}
+    local txt
+    if hideunusedtracks == true then
+      txt = 'SHOW ALL TRACKS'
+    else
+      txt = 'HIDE UNUSED TRACKS'
+    end
+    GUI_DrawBar(gui,txt,xywh,skin.bar,true,gui.skol.sb_txt_on,nil,-2 + gui.fontsz.sb,nil,gui.skol.sb_shad,gui.fontnm.sb,gui.fontflag.sb)
+         
   end
 
   function GUI_DrawFaders(obj, gui)
@@ -7892,7 +8037,7 @@
     
   end
 
-  function GUI_DrawButton(gui, t, b, colb, colt, v, opttxt, limit, t_sz,noscale)
+  function GUI_DrawButton(gui, t, b, colb, colt, v, opttxt, limit, t_sz,noscale, butt_justify)
 
     local tscale = 0
     if noscale ~= true then
@@ -7970,7 +8115,7 @@
       end
     end
     local xywh = {x=b.x,y=b.y,w=b.w,h=b.h}
-    GUI_Str(gui,xywh,t,5,colt,-4 + (t_sz or 0) + gui.fontsz.butt +tscale,1,gui.skol.butt_shad,gui.fontnm.butt,gui.fontflag.butt)
+    GUI_Str(gui,xywh,t,butt_justify or 5,colt,-4 + (t_sz or 0) + gui.fontsz.butt +tscale,1,gui.skol.butt_shad,gui.fontnm.butt,gui.fontflag.butt)
     
   end
   
@@ -8329,6 +8474,7 @@ end
     if tracks[track_select] and strips[tracks[track_select].strip] then
     
       local strip = tracks[track_select].strip
+      local snaprand_hl = false
       
       if #strips[strip][page].controls > 0 then
 
@@ -8615,6 +8761,9 @@ end
                     else
                       Disp_Name = ctlnmov
                     end
+                    if show_randomopts == true and randopts_selectctl == i then
+                      snaprand_hl = true
+                    end
                   elseif ctlcat == ctlcats.fxoffline then
                     spv = false
                     if nz(ctlnmov,'') == '' then
@@ -8790,44 +8939,50 @@ end
                 ctl.th1 = text_len1y
                 ctl.th2 = text_len2y                
                 
-                  local alpha = 1
-                  if settings_hideofflinelabel and offl then
-                    spn = false
-                  elseif offl or ctl.hidden then
-                    alpha = 0.4
+                local alpha = 1
+                if settings_hideofflinelabel and offl then
+                  spn = false
+                elseif offl or ctl.hidden then
+                  alpha = 0.4
+                end
+
+                if settings_showfaderassignments == true and ctl.macrofader then
+                  if mode0_submode == 1 and fader_select == ctl.macrofader then
+                    f_Get_SSV(faderselcol)
+                  else 
+                    f_Get_SSV(faderhighcol)                    
                   end
-  
-                  if settings_showfaderassignments == true and ctl.macrofader then
-                    if mode0_submode == 1 and fader_select == ctl.macrofader then
-                      f_Get_SSV(faderselcol)
-                    else 
-                      f_Get_SSV(faderhighcol)                    
-                    end
-                    gfx.roundrect(px+1,py+1,math.floor((w*scale-2)),math.floor(h*scale-2),5,1)
+                  gfx.roundrect(px+1,py+1,math.floor((w*scale-2)),math.floor(h*scale-2),5,1)
+                end
+
+                if snaprand_hl == true and mode == 0 then
+                  f_Get_SSV(gui.color.yellow)
+                  gfx.roundrect(px+1,py+1,math.floor(w*scale-2),math.floor(h*scale-2),5,1)                
+                  snaprand_hl = false
+                end
+
+                if settings_showfaderassignments == true and ctl.mod then
+                  if (mode0_submode == 2 or (show_lfoedit == true and modwinsz.minimized ~= true)) and mod_select == ctl.mod then
+                    f_Get_SSV(modselcol)
+                  else 
+                    f_Get_SSV(modhighcol)                    
                   end
-  
-                  if settings_showfaderassignments == true and ctl.mod then
-                    if (mode0_submode == 2 or (show_lfoedit == true and modwinsz.minimized ~= true)) and mod_select == ctl.mod then
-                      f_Get_SSV(modselcol)
-                    else 
-                      f_Get_SSV(modhighcol)                    
-                    end
-  
-                    if modulators[ctl.mod].active == false then
-                      gfx.a = 0.3                        
-                    end
-                    gfx.roundrect(px+1,py+1,math.floor(w*scale-2),math.floor(h*scale-2),5,1)
-                    gfx.a = 1
+
+                  if modulators[ctl.mod].active == false then
+                    gfx.a = 0.3                        
                   end
-  
-                  if spn then
-                    gfx.setfont(1, font, gui.fontsz_knob +tsz-4)                    
-                    GUI_textCtl(gui,xywh1, Disp_Name,tc,-4 + tsz, alpha)
-                  end
-                  if spv then
-                    gfx.setfont(1, font, gui.fontsz_knob +tsz2-4)                    
-                    GUI_textCtl(gui,xywh2, Disp_ParamV,tc2,-4 + tsz2, alpha)          
-                  end
+                  gfx.roundrect(px+1,py+1,math.floor(w*scale-2),math.floor(h*scale-2),5,1)
+                  gfx.a = 1
+                end
+
+                if spn then
+                  gfx.setfont(1, font, gui.fontsz_knob +tsz-4)                    
+                  GUI_textCtl(gui,xywh1, Disp_Name,tc,-4 + tsz, alpha)
+                end
+                if spv then
+                  gfx.setfont(1, font, gui.fontsz_knob +tsz2-4)                    
+                  GUI_textCtl(gui,xywh2, Disp_ParamV,tc2,-4 + tsz2, alpha)          
+                end
   
                 if setting_reddotindicator == true and ctltype == 4 and DVOV and DVOV ~= '' and cycle_editmode == false then
                   if ctl.cycledata.posdirty == true then 
@@ -9873,8 +10028,8 @@ end
   function GUI_DrawCtlBrowser(obj, gui)
 
     gfx.a=1
-    f_Get_SSV(gui.color.black)
-    f_Get_SSV('32 32 32')
+    GUI_DrawPanel(obj.sections[200],true,'CONTROL BROWSER',true)
+    --[[f_Get_SSV('32 32 32')
     gfx.rect(obj.sections[200].x,
              obj.sections[200].y, 
              obj.sections[200].w,
@@ -9883,7 +10038,7 @@ end
     gfx.rect(obj.sections[200].x,
              obj.sections[200].y, 
              obj.sections[200].w,
-             obj.sections[200].h, 0, 1)
+             obj.sections[200].h, 0, 1)]]
 
     f_Get_SSV('64 64 64')
     gfx.rect(obj.sections[210].x-2,
@@ -9896,7 +10051,7 @@ end
              obj.sections[210].w+4,
              obj.sections[210].h+4, 0, 1)
     
-    xywh = {x = obj.sections[200].x,
+    --[[xywh = {x = obj.sections[200].x,
             y = obj.sections[200].y, 
             w = obj.sections[200].w,
             h = butt_h}
@@ -9908,7 +10063,7 @@ end
              xywh.w,
              butt_h, 1)
     
-    GUI_textC(gui,xywh,'CONTROL BROWSER',gui.color.black,-2)
+    GUI_textC(gui,xywh,'CONTROL BROWSER',gui.color.black,-2)]]
     
     GUI_DrawButton(gui, 'ALL', obj.sections[201], gui.color.white, gui.skol.butt1_txt, true, '', false)
     GUI_DrawButton(gui, 'KNOBS', obj.sections[202], gui.color.white, gui.skol.butt1_txt, true, '', false)
@@ -12607,14 +12762,224 @@ end
     
     GUI_DrawPanel(obj.sections[1120],false,'MUTATE SETTINGS')
     
-    GUI_DrawButton(gui, mutate_settings.mutate_max..' %', obj.sections[1121], gui.color.white, gui.skol.butt1_txt, true, 'Amount',false,gui.fontsz.butt)
+    GUI_DrawButton(gui, mutate_settings.mutate_max..' %', obj.sections[1121], gui.color.white, gui.skol.butt1_txt, true, 'AMOUNT',false,gui.fontsz.butt)
     local dir = '+ / -'
     if mutate_settings.dir == 1 then
       dir = '+'
     elseif mutate_settings.dir == 2 then
       dir = '-'    
     end
-    GUI_DrawButton(gui, dir, obj.sections[1122], gui.color.white, gui.skol.butt1_txt, true, 'Direction',false,gui.fontsz.butt)
+    GUI_DrawButton(gui, dir, obj.sections[1122], gui.color.white, gui.skol.butt1_txt, true, 'DIRECTION',false,gui.fontsz.butt)
+    
+    gfx.dest = 1
+  
+  end
+
+  function GUI_DrawRandomOpts(obj, gui)
+
+    gfx.dest = 988
+    
+    local strip = tracks[track_select].strip
+    local ctls = strips[strip][page].controls
+    
+    local subname
+    subname = ctls[randomopts_select.parent].ctlname_override
+    if (subname or '') == '' then
+      subname = 'SUBSET '..randomopts_select.sst-1    
+    end
+    --subname = ctls[randomopts_select.parent].param_info.paramname
+    --subname = snapshots[strip][page][randomopts_select.sst].subsetname
+  
+    local useadv = false
+    local sso = false
+    if randomopts_select and randomopts_select.useadv == true then
+      useadv = true    
+    end
+    if randomopts_select and randomopts_select.snapshotsonly == true then
+      sso = true    
+    end
+
+    if useadv ~= true or sso == true then
+      obj.sections[1130].h = math.floor(78 * pnl_scale)
+    else
+      obj.sections[1130].h = math.floor(300*pnl_scale)    
+    end
+    if obj.sections[1130].y + obj.sections[1130].h > obj.sections[10].y+obj.sections[10].h then
+      obj.sections[1130].y = math.max(obj.sections[10].y+obj.sections[10].h - obj.sections[1130].h,obj.sections[10].y)
+    end
+    gfx.setimgdim(988,obj.sections[1130].w,obj.sections[1130].h)
+    
+    local txt = 'RANDOMIZE OPTS - '..subname
+
+    local xywh = {x = obj.sections[1130].x,
+                  y = obj.sections[1130].y,
+                  w = obj.sections[1130].w,
+                  h = obj.sections[1130].h}    
+    GUI_DrawPanel(xywh,false,txt)
+
+    f_Get_SSV(gui.skol.lst_bg)
+    local ind = 6
+    local x = ind
+    local y = 30*pnl_scale
+    local w = obj.sections[1130].w-ind*2
+    local h = 40*pnl_scale
+    gfx.rect(x,y,w,h)
+    if skin.panela_cnrbl ~= -1 then
+      local pnlcnr_w, pnlcnr_h = gfx.getimgdim(skin.panela_cnrbl)
+      gfx.blit(skin.panela_cnrbl,1,0,0,0,pnlcnr_w,pnlcnr_h,x,y+h-pnlcnr_h)
+      gfx.blit(skin.panela_cnrbr,1,0,0,0,pnlcnr_w,pnlcnr_h,x+w-pnlcnr_w,y+h-pnlcnr_h)
+      gfx.blit(skin.panela_cnrtl,1,0,0,0,pnlcnr_w,pnlcnr_h,x,y)
+      gfx.blit(skin.panela_cnrtr,1,0,0,0,pnlcnr_w,pnlcnr_h,x+w-pnlcnr_w,y)
+    end
+
+    GUI_DrawTick(gui, 'Use advanced', obj.sections[1131], gui.skol.pnl_txt, useadv, gui.fontsz.butt)             
+    
+    if useadv == true then
+
+      GUI_DrawTick(gui, 'Randomize snapshot only', obj.sections[1132], gui.skol.pnl_txt, randomopts_select.snapshotsonly, gui.fontsz.butt)             
+
+      if randomopts_select.snapshotsonly == false then
+
+        if not randomopts_select.param then
+          randomopts_select.param = 1
+        end
+        local ctlsel = randomopts_select.ctls[randomopts_select.param]
+        
+        local lg = ctlsel.linkgrp
+        local lgtype
+        if lg and randomopts_select.linkgrps[lg] then
+          lgtype = randomopts_select.linkgrps[lg].type
+        end
+
+        if not ctlsel or (snapshots[strip][page][randomopts_select.sst].ctls[randomopts_select.param] and ctlsel.c_id ~= snapshots[strip][page][randomopts_select.sst].ctls[randomopts_select.param].c_id) then
+          ctlsel = nil
+          RandomOpts_RefreshCtlNos(strip, page, randomopts_select)
+          ctlsel = randomopts_select.ctls[randomopts_select.param]
+        elseif not snapshots[strip][page][randomopts_select.sst].ctls[randomopts_select.param] then
+          ctlsel = nil
+        end
+        local txt, ctl
+        if ctlsel then
+          --local c = ctlsel.ctl
+          ctl = ctls[ctlsel.ctl]
+          local fxnum = ''
+          if ctl.ctlcat == ctlcats.fxparam then 
+            fxnum = string.format('%i',ctl.fxnum)
+            txt = 'FX '..fxnum..' : '..ctl.param_info.paramname
+          else
+            txt = ctl.param_info.paramname
+          end
+        else
+          txt = 'No parameter'
+        end
+        GUI_DrawButton(gui, txt, obj.sections[1133], gui.color.white, gui.skol.butt1_txt, true, 'PARAM',false,gui.fontsz.butt)
+        GUI_DrawButton(gui, '<  >', obj.sections[1145], gui.color.white, gui.skol.butt1_txt, true, '',false,gui.fontsz.butt)
+        
+        if lgtype ~= 2 and lgtype ~= 3 then
+          if ctlsel.wild == 0 then
+            txt = 'Off'
+          else
+            txt = round(ctlsel.wild*100,1)..'%'
+          end
+          GUI_DrawButton(gui, txt, obj.sections[1146], gui.color.white, gui.skol.butt1_txt, true, 'WILD',false,gui.fontsz.butt)
+
+          local min, max
+          if ctl and ctl.ctlcat == ctlcats.takeswitcher then
+            min = math.floor(ctlsel.min * takeswitch_max)
+            max = math.floor(ctlsel.max * takeswitch_max)
+          else
+            min = round(ctlsel.min,3)
+            max = round(ctlsel.max,3)
+          end
+          GUI_DrawButton(gui, min, obj.sections[1134], gui.color.white, gui.skol.butt1_txt, true, 'MIN',false,gui.fontsz.butt)
+          GUI_DrawButton(gui, max, obj.sections[1135], gui.color.white, gui.skol.butt1_txt, true, 'MAX',false,gui.fontsz.butt)
+        end
+        
+        local txt = ctlsel.linkgrp
+        if not txt then
+          txt = 'None'
+        end
+        GUI_DrawButton(gui, txt, obj.sections[1136], gui.color.white, gui.skol.butt1_txt, true, 'LINK GRP',false,gui.fontsz.butt)
+        
+        if not lgtype then
+          GUI_DrawButton(gui, math.floor(ctlsel.rprob*100)..'%', obj.sections[1137], gui.color.white, gui.skol.butt1_txt, true, 'PROBABILITY',false,gui.fontsz.butt)
+        end
+        if not lgtype or lgtype == 1 then
+          GUI_DrawButton(gui, math.floor(ctlsel.bias*100)..'%', obj.sections[1138], gui.color.white, gui.skol.butt1_txt, true, '+ve BIAS',false,gui.fontsz.butt)
+        end
+                
+        if ctlsel.linkgrp and randomopts_select.linkgrps[lg].type == 4 then
+          if ctlsel.inverted == true then
+            txt = 'Invert'
+          else
+            txt = 'Match'
+          end
+          GUI_DrawButton(gui, txt, obj.sections[1139], gui.color.white, gui.skol.butt1_txt, true, 'MATCH/INVERT',false,gui.fontsz.butt)
+        end
+  
+        if not lgtype or lgtype == 1 then
+          if not ctlsel.amount then
+            txt = 'Off'
+          else
+            txt = round(ctlsel.amount*100,3)..'%'  
+          end
+          GUI_DrawButton(gui, txt, obj.sections[1140], gui.color.white, gui.skol.butt1_txt, true, 'RANGE',false,gui.fontsz.butt)
+          if ctlsel.amount and ctlsel.amount > 0 then
+            local b = gui.color.white
+            if ctlsel.snap == true then
+              b = -4
+            end
+            GUI_DrawButton(gui, 'Snap', obj.sections[1147], b, gui.skol.butt1_txt, true, '',false,gui.fontsz.butt)
+          end
+        end
+        
+        local grph = (obj.sections[1140].y+obj.sections[1140].h+10)
+        f_Get_SSV(gui.skol.lst_bg)
+        local ind = 6
+        local x = obj.sections[1141].x
+        local y = obj.sections[1141].y
+        local w = obj.sections[1141].w
+        local h = obj.sections[1141].h
+        gfx.rect(x,y,w,h)
+        if skin.panela_cnrbl ~= -1 then
+          local pnlcnr_w, pnlcnr_h = gfx.getimgdim(skin.panela_cnrbl)
+          gfx.blit(skin.panela_cnrbl,1,0,0,0,pnlcnr_w,pnlcnr_h,x,y+h-pnlcnr_h)
+          gfx.blit(skin.panela_cnrbr,1,0,0,0,pnlcnr_w,pnlcnr_h,x+w-pnlcnr_w,y+h-pnlcnr_h)
+          gfx.blit(skin.panela_cnrtl,1,0,0,0,pnlcnr_w,pnlcnr_h,x,y)
+          gfx.blit(skin.panela_cnrtr,1,0,0,0,pnlcnr_w,pnlcnr_h,x+w-pnlcnr_w,y)
+        end
+
+        local txt = ctlsel.linkgrp
+        if not txt then
+          txt = 'None'
+        end
+        GUI_DrawButton(gui, txt, obj.sections[1142], gui.color.white, gui.skol.butt1_txt, true, 'LINK GRP',false,gui.fontsz.butt)
+        
+        local lgsel = randomopts_select.linkgrps[lg]        
+        if lgtype then
+          GUI_DrawButton(gui, linkgrp_table[lgsel.type], obj.sections[1143], gui.color.white, gui.skol.butt1_txt, true, 'TYPE',false,gui.fontsz.butt)
+          if lgtype <= 3 then
+            GUI_DrawButton(gui, string.format('%i',round(lgsel.X*128)), obj.sections[1144], gui.color.white, gui.skol.butt1_txt, true, 'X',false,gui.fontsz.butt)
+          else
+            --if lgsel.X > 0 then
+              txt = round(lgsel.X*100,3)..'%'
+            --else
+            --  txt = 'Off'
+            --end
+            GUI_DrawButton(gui, txt, obj.sections[1144], gui.color.white, gui.skol.butt1_txt, true, 'RANGE',false,gui.fontsz.butt)          
+
+            if lgsel.X > 0 then
+              local b = gui.color.white
+              if lgsel.snap == true then
+                b = -4
+              end
+              GUI_DrawButton(gui, 'Snap', obj.sections[1148], b, gui.skol.butt1_txt, true, '',false,gui.fontsz.butt)
+            end
+          end
+        end
+      end
+
+    end
     
     gfx.dest = 1
   
@@ -12627,7 +12992,7 @@ end
     
     if show_xxy == false and (update_gfx or update_surface or update_sidebar or update_topbar or update_ctlopts or update_ctls or update_bg or 
        update_settings or update_snaps or update_msnaps or update_actcho or update_fsnaps or update_mfsnaps or update_eqcontrol or update_macroedit or
-       update_macrobutt or update_snapmorph or update_lfoedit or update_lfoeditbar or update_lfopos or update_mutate) then    
+       update_macrobutt or update_snapmorph or update_lfoedit or update_lfoeditbar or update_lfopos or update_mutate or update_randomopts) then    
       local p = 0
       gfx.dest = 1
 
@@ -12918,6 +13283,13 @@ end
           end
           gfx.blit(989,1,0,0,0,obj.sections[1120].w,obj.sections[1120].h,obj.sections[1120].x,obj.sections[1120].y)
         end
+
+        if show_randomopts then
+          if update_gfx or update_randomopts then
+            GUI_DrawRandomOpts(obj, gui)
+          end
+          gfx.blit(988,1,0,0,0,obj.sections[1130].w,obj.sections[1130].h,obj.sections[1130].x,obj.sections[1130].y)
+        end
         
         if show_snapshots and macro_lrn_mode ~= true then
         --DBG('p')
@@ -13046,7 +13418,7 @@ end
             GUI_DrawSidebar(obj, gui)
           end
           
-          if show_ctloptions and ctl_select ~= nil and (update_gfx or update_ctlopts) then
+          if show_ctloptions and ctl_select ~= nil and (update_gfx or update_ctlopts or resize_display) then
             GUI_DrawCtlOptions(obj, gui)            
           end
 
@@ -13766,6 +14138,7 @@ end
     update_lfoeditbar = false
     update_lfopos = false
     update_mutate = false
+    update_randomopts = false
     
   end
   
@@ -15580,15 +15953,19 @@ end
         
       elseif cc == ctlcats.snapshotrand then
         
-        local sst = ctl.param
-        if sst then
-          if mouse.LB then
-            Snapshot_RANDOMIZE(strip, page, sst, true)
-          else
-            Snapshot_MUTATE(strip, page, sst, true)          
+        if mouse.LB and ctl.random and ctl.random.useadv == true then
+          Snapshot_RANDOMADV(strip, page, c, ctl.random)
+        else
+          local sst = ctl.param
+          if sst then
+            if mouse.LB then
+              Snapshot_RANDOMIZE(strip, page, sst, true)
+            else
+              Snapshot_MUTATE(strip, page, sst, true)          
+            end
           end
         end
-      
+              
       elseif cc == ctlcats.fxgui then
       
         OpenFXGUI(ctl)
@@ -15712,9 +16089,10 @@ end
     --DBG(ctl.iteminfo.guid)
       local item = GetMediaItemByGUID(ctl.iteminfo.guid)
       local takeval = math.min(math.floor(ctl.val * takeswitch_max),ctl.iteminfo.numtakes-1)
+      
       ctl.val = takeval/takeswitch_max
       if item then
-
+        
         if ctl.iteminfo.noteoff then
           local trn = ctl.tracknum or tracks[track_select].tracknum
           if trn then
@@ -15885,9 +16263,9 @@ end
         SetFXOffline2(strip, page, c, track, v)
       
       elseif cc == ctlcats.takeswitcher then
-        local vv = math.floor(v*takeswitch_max)/takeswitch_max 
+        local vv = math.floor(v*takeswitch_max)/takeswitch_max
         if vv ~= ctl.val then
-          ctl.val = vv 
+          ctl.val = vv
           SetItemTake2(strip, page, c)
           if strip == tracks[track_select].strip and page == page then      
             SetCtlDirty(c)
@@ -16165,6 +16543,7 @@ end
           Macros_Check(s,p)
           Faders_Check(s,p)
           StoreSnapshotControlIdxs(s,p)
+          CheckRandom(s, p)
         end
       end
       
@@ -16173,6 +16552,7 @@ end
       Macros_Check(tracks[track_select].strip,page)
       Faders_Check(tracks[track_select].strip,page)
       StoreSnapshotControlIdxs(tracks[track_select].strip,page)
+      CheckRandom(tracks[track_select].strip,page)
     end
     CheckFaders()
     modulators = CheckMods(modulators, true)
@@ -17696,6 +18076,27 @@ end
         end      
       end 
 
+      if strips[strip][page].controls[j].ctlcat == ctlcats.snapshotrand then
+        if strips[strip][page].controls[j].random then
+          local random = strips[strip][page].controls[j].random
+          if #random.ctls > 0 then
+            if cidtrack[random.parent_cid] then
+              random.parent = cidtrack[random.parent_cid].ctl
+              random.parent_cid = cidtrack[random.parent_cid].c_id
+            end
+            for rc = 1, #random.ctls do
+
+              if cidtrack[random.ctls[rc].c_id] then
+                
+                random.ctls[rc].ctl = cidtrack[random.ctls[rc].c_id].ctl
+                random.ctls[rc].c_id = cidtrack[random.ctls[rc].c_id].c_id
+              
+              end
+          
+            end
+          end
+        end
+      end
     end
     
     local lctl = GetLeftControlInStrip(strips[strip][page].controls, stripid)
@@ -17909,17 +18310,20 @@ end
       for j = cstart, #strips[strip][page].controls do
         if strips[strip][page].controls[j].ctlcat == ctlcats.snapshot then
           --if strips[strip][page].controls[j].param == i then
-            strips[strip][page].controls[j].param = paramchange[strips[strip][page].controls[j].param]
             strips[strip][page].controls[j].param_info.paramidx = paramchange[strips[strip][page].controls[j].param]
+            strips[strip][page].controls[j].param = paramchange[strips[strip][page].controls[j].param]
           --end
         elseif strips[strip][page].controls[j].ctlcat == ctlcats.xy then
-            strips[strip][page].controls[j].param = paramchange[strips[strip][page].controls[j].param]
             strips[strip][page].controls[j].param_info.paramidx = paramchange[strips[strip][page].controls[j].param]
+            strips[strip][page].controls[j].param = paramchange[strips[strip][page].controls[j].param]
         
         elseif strips[strip][page].controls[j].ctlcat == ctlcats.snapshotrand then
           if paramchange[strips[strip][page].controls[j].param] then
-            strips[strip][page].controls[j].param = paramchange[strips[strip][page].controls[j].param]
+            if strips[strip][page].controls[j].random then
+              strips[strip][page].controls[j].random.sst = paramchange[strips[strip][page].controls[j].param]
+            end
             strips[strip][page].controls[j].param_info.paramidx = paramchange[strips[strip][page].controls[j].param]
+            strips[strip][page].controls[j].param = paramchange[strips[strip][page].controls[j].param]
           end
         end
       end
@@ -18719,6 +19123,23 @@ end
   
   end
     
+  ------------------------------------------------------------    
+
+  function CheckRandom(strip, page)
+
+    if strips and strips[strip] and #strips[strip][page].controls > 0 then
+
+      for c = 1, #strips[strip][page].controls do
+        local random = strips[strip][page].controls[c].random
+        if random then
+          RandomOpts_RefreshCtlNos(strip, page, random)
+        end
+      end
+
+    end
+    
+  end
+  
   ------------------------------------------------------------    
 
   function CheckStripControls(strip)
@@ -21953,14 +22374,14 @@ end
       elseif res == 29 then
       elseif res == 30 then
         local fn = datafile
-        if fn == nil then fn = '' end
-        local ret, rfn = reaper.GetUserFileNameForRead(fn, 'Load lbxstripper data file:', nz(string.match(fn, '.+%.(lbxstripper.*)'),''))
+        --if fn == nil then fn = '' end
+        local ret, rfn = reaper.GetUserFileNameForRead(fn or '', 'Load lbxstripper data file:', nz(string.match(fn, '.+%.(lbxstripper.*)') or '',''))
         if ret == true then
           LoadDataFile(rfn)
         end
       elseif res == 31 then
         local fn = datafile
-        local ret, rfn = reaper.GetUserFileNameForRead(string.match(fn,'(.+).lbxstripper.*'), 'Load lbxstripper data file:', 'lbxbak')
+        local ret, rfn = reaper.GetUserFileNameForRead(string.match(fn or '','(.+).lbxstripper.*') or '', 'Load lbxstripper data file:', 'lbxbak')
         if ret == true then
           LoadDataFile(rfn)
         end
@@ -22214,7 +22635,11 @@ end
   end
   
   function SetPage(lpage)
-  
+    
+    if mouse.context ~= nil then return end
+    
+    show_randomopts = false
+    
     --if track_select == LBX_GTRACK then page = 1 return end
     if lpage == 0 then
       if gpage == false and track_select ~= LBX_GTRACK then
@@ -23164,6 +23589,10 @@ end
   
   function ChangeTrack(t)
   
+    if mouse.context ~= nil then return end
+    
+    show_randomopts = false
+    
     if tracks[t] == nil then
       t = -1
     end
@@ -23204,6 +23633,9 @@ end
   end
   
   function ChangeTrack2(t)
+  
+    if mouse.context ~= nil then return end
+  
     local fnd
     if show_eqcontrol then
 
@@ -23799,7 +24231,8 @@ end
           --SaveEditedData()
         end
         mode = 0
-        reaper.MarkProjectDirty(0)        
+        reaper.MarkProjectDirty(0)
+        PopulateUsedTracksTable()        
       else
         g_edstrips = {}
         trackedit_select = track_select
@@ -27083,7 +27516,11 @@ end
       local v = gfx.mouse_wheel/120
       if MOUSE_over(obj.sections[500]) then
         if mode0_submode == 0 then
-          tlist_offset = F_limit(tlist_offset - v, 0, #tracks+1)
+          if hideunusedtracks == true then
+            tlist_offset = F_limit(tlist_offset - v, 0, #tracksused_idx)
+          else
+            tlist_offset = F_limit(tlist_offset - v, 0, #tracks+1)
+          end
         elseif mode0_submode == 1 then
           if LBX_CTL_TRACK_INF then
             fdlist_offset = F_limit(fdlist_offset - v, 0, LBX_FB_CNT*LBX_CTL_TRACK_INF.count -1)        
@@ -27133,6 +27570,208 @@ end
         update_gfx = true
       end]]
     
+    elseif mouse.context == nil and show_randomopts == true and (MOUSE_click(obj.sections[1130]) or MOUSE_click_RB(obj.sections[1130])) then
+
+      noscroll = true
+      mx,my = mouse.mx, mouse.my
+      mouse.mx = mouse.mx - obj.sections[1130].x 
+      mouse.my = mouse.my - obj.sections[1130].y
+
+      xywh = {x = 0, y = 0, w = obj.sections[1130].w, h = gui.winsz.pnltit * pnl_scale}
+      if MOUSE_click(xywh) then 
+        mouse.context = contexts.move_randomwin
+        moverandomwin = {dx = mouse.mx, dy = mouse.my}
+
+      elseif MOUSE_click_RB(xywh) then 
+        show_randomopts = false
+        if randopts_selectctl then
+          SetCtlDirty(randopts_selectctl)
+          randopts_selectctl = nil
+          update_ctls = true
+        end
+        update_surface = true
+
+      elseif MOUSE_click(obj.sections[1131]) then
+      
+        randomopts_select.useadv = not randomopts_select.useadv
+        update_randomopts = true
+        update_surface = true
+
+      elseif MOUSE_click(obj.sections[1132]) then
+      
+        randomopts_select.snapshotsonly = not randomopts_select.snapshotsonly
+        update_randomopts = true
+        update_surface = true
+
+      elseif MOUSE_click(obj.sections[1133]) then
+      
+        RandomOpts_ParamMenu(mx, my)
+
+      elseif MOUSE_click(obj.sections[1134]) then
+      
+        local p = randomopts_select.param
+        local lg = randomopts_select.ctls[p].linkgrp
+        local lgtype
+        if lg and randomopts_select.linkgrps[lg] then
+          lgtype = randomopts_select.linkgrps[lg].type
+        end
+        
+        if lgtype ~= 2 and lgtype ~= 3 then
+          mouse.context = contexts.lg_min
+          draglg = {pos = randomopts_select.ctls[p].min, yoff = my-(obj.sections[1134].y+obj.sections[1134].h/2), shift = mouse.shift}
+        end
+        
+      elseif MOUSE_click(obj.sections[1135]) then
+      
+        local p = randomopts_select.param
+        local lg = randomopts_select.ctls[p].linkgrp
+        local lgtype
+        if lg and randomopts_select.linkgrps[lg] then
+          lgtype = randomopts_select.linkgrps[lg].type
+        end
+        
+        if lgtype ~= 2 and lgtype ~= 3 then
+          mouse.context = contexts.lg_max
+          draglg = {pos = randomopts_select.ctls[p].max, yoff = my-(obj.sections[1135].y+obj.sections[1135].h/2), shift = mouse.shift}
+        end
+        
+      elseif MOUSE_click(obj.sections[1137]) then
+      
+        local p = randomopts_select.param
+        local lg = randomopts_select.ctls[p].linkgrp
+        
+        if not lg then
+          mouse.context = contexts.lg_probability
+          draglg = {pos = randomopts_select.ctls[p].rprob, yoff = my-(obj.sections[1137].y+obj.sections[1137].h/2)}
+        end
+        
+      elseif MOUSE_click(obj.sections[1138]) then
+      
+        local p = randomopts_select.param
+        local lg = randomopts_select.ctls[p].linkgrp
+        local lgtype
+        if lg and randomopts_select.linkgrps[lg] then
+          lgtype = randomopts_select.linkgrps[lg].type
+        end
+        
+        if not lgtype or lgtype == 1 then
+          mouse.context = contexts.lg_bias
+          draglg = {pos = randomopts_select.ctls[p].bias, yoff = my-(obj.sections[1138].y+obj.sections[1138].h/2)}
+        end
+        
+      elseif MOUSE_click(obj.sections[1139]) then
+        local p = randomopts_select.param
+        local rctl = randomopts_select.ctls[p]
+        local lg = rctl.linkgrp
+        if lg and randomopts_select.linkgrps[lg].type == 4 then
+          rctl.inverted = not (rctl.inverted or false)
+          update_randomopts = true
+        end
+              
+      elseif MOUSE_click(obj.sections[1140]) then
+      
+        local p = randomopts_select.param
+        local lg = randomopts_select.ctls[p].linkgrp
+        local lgtype
+        if lg and randomopts_select.linkgrps[lg] then
+          lgtype = randomopts_select.linkgrps[lg].type
+        end
+        
+        if not lgtype or lgtype == 1 then
+          mouse.context = contexts.lg_range
+          draglg = {pos = randomopts_select.ctls[p].amount, yoff = my-(obj.sections[1140].y+obj.sections[1140].h/2), shift = mouse.shift}
+        end
+
+      elseif MOUSE_click(obj.sections[1146]) then
+      
+        local p = randomopts_select.param
+        local lg = randomopts_select.ctls[p].linkgrp
+        local lgtype
+        if lg and randomopts_select.linkgrps[lg] then
+          lgtype = randomopts_select.linkgrps[lg].type
+        end
+        
+        if not lgtype or lgtype == 1 or lgtype == 4 then
+          mouse.context = contexts.lg_wild
+          draglg = {pos = randomopts_select.ctls[p].wild *10, yoff = my-(obj.sections[1146].y+obj.sections[1146].h/2)}
+        end
+        
+      elseif MOUSE_click(obj.sections[1144]) then
+      
+        local p = randomopts_select.param
+        local lg = randomopts_select.ctls[p].linkgrp
+        --if randomopts_select.linkgrps[lg] and randomopts_select.linkgrps[lg].type <= 3 then
+          mouse.context = contexts.lg_X
+          draglg = {pos = randomopts_select.linkgrps[lg].X, yoff = my-(obj.sections[1144].y+obj.sections[1144].h/2), shift = mouse.shift}
+        --end
+              
+      elseif MOUSE_click(obj.sections[1136]) then
+      
+        local p = randomopts_select.param
+        
+        randomopts_select.ctls[p].linkgrp = (randomopts_select.ctls[p].linkgrp or 0) + 1
+        RandomOpts_LG_INIT()
+        update_randomopts = true
+
+      elseif MOUSE_click_RB(obj.sections[1136]) then
+      
+        local p = randomopts_select.param
+        
+        randomopts_select.ctls[p].linkgrp = math.max((randomopts_select.ctls[p].linkgrp or 0) - 1,0)
+        if randomopts_select.ctls[p].linkgrp == 0 then 
+          randomopts_select.ctls[p].linkgrp = nil 
+        else
+          RandomOpts_LG_INIT()      
+        end
+        update_randomopts = true
+      
+      elseif MOUSE_click(obj.sections[1147]) then
+      
+        local p = randomopts_select.param
+        local lg = randomopts_select.ctls[p].linkgrp
+        if not lg or randomopts_select.linkgrps[lg] and randomopts_select.linkgrps[lg].type == 1 then
+          randomopts_select.ctls[p].snap = not (randomopts_select.ctls[p].snap or false)
+          update_randomopts = true
+        end
+        
+      elseif MOUSE_click(obj.sections[1148]) then
+
+        local p = randomopts_select.param
+        local lg = randomopts_select.ctls[p].linkgrp
+        if randomopts_select.linkgrps[lg] and randomopts_select.linkgrps[lg].type == 4 then
+          randomopts_select.linkgrps[lg].snap = not (randomopts_select.linkgrps[lg].snap or false)
+          update_randomopts = true
+        end
+        
+      elseif MOUSE_click(obj.sections[1143]) then
+      
+        local p = randomopts_select.param
+        local lg = randomopts_select.ctls[p].linkgrp
+        randomopts_select.linkgrps[lg].type = math.min(randomopts_select.linkgrps[lg].type + 1,#linkgrp_table)
+        update_randomopts = true
+
+      elseif MOUSE_click_RB(obj.sections[1143]) then
+      
+        local p = randomopts_select.param
+        local lg = randomopts_select.ctls[p].linkgrp
+        randomopts_select.linkgrps[lg].type = math.max(randomopts_select.linkgrps[lg].type - 1,1)
+        update_randomopts = true
+      
+      elseif MOUSE_click(obj.sections[1145]) then
+      
+        if mouse.mx < obj.sections[1145].x+obj.sections[1145].w/2 then
+          randomopts_select.param = randomopts_select.param - 1
+        else
+          randomopts_select.param = randomopts_select.param + 1
+        end
+        randomopts_select.param = F_limit(randomopts_select.param,1,#randomopts_select.ctls)
+        update_randomopts = true
+
+      end
+
+      mouse.mx = mx
+      mouse.my = my
+      
     elseif mouse.context == nil and show_mutate == true and (MOUSE_click(obj.sections[1120]) or MOUSE_click_RB(obj.sections[1120])) then
 
       noscroll = true
@@ -27140,7 +27779,7 @@ end
       mouse.mx = mouse.mx - obj.sections[1120].x 
       mouse.my = mouse.my - obj.sections[1120].y
       
-      xywh = {x = 0, y = 0, w = obj.sections[1120].w, h = 25}
+      xywh = {x = 0, y = 0, w = obj.sections[1120].w, h = gui.winsz.pnltit * pnl_scale}
       if MOUSE_click(xywh) then 
         mouse.context = contexts.move_mutatewin
         movemutatewin = {dx = mouse.mx, dy = mouse.my}
@@ -27770,9 +28409,18 @@ end
                   end
                   if ctls[i].mod == nil or (ctls[i].mod and modulators[ctls[i].mod].active ~= true) then
                     A_SetParam(tracks[track_select].strip,page,i,ctls[i])
-                    ctls[i].dirty = true
+                    --ctls[i].dirty = true
+                    SetCtlDirty(i)
                     if ctls[i].param_info.paramname == 'Bypass' then
                       SetCtlEnabled(ctls[i].fxnum) 
+                    end
+                    if ctls[i].random then
+                      if show_randomopts == true and randopts_selectctl then
+                        SetCtlDirty(randopts_selectctl)
+                        RandomOpts_INIT(i)
+                        randopts_selectctl = i
+                        update_randomopts = true
+                      end
                     end
                   end 
                   if ctls[i].mod and mod_select ~= ctls[i].mod then
@@ -28207,23 +28855,34 @@ end
                 if ctls[i].ctlcat == ctlcats.fxparam or 
                    ctls[i].ctlcat == ctlcats.fxoffline then
                   OpenFXGUI(ctls[i])
-                  --[[local track
-                  if ctls[i].tracknum == nil then
-                    track = GetTrack(tracks[track_select].tracknum)
-                  else
-                    track = GetTrack(ctls[i].tracknum)                      
-                  end
-                  local fxnum = ctls[i].fxnum
-                  if not reaper.TrackFX_GetOpen(track, fxnum) then
-                    reaper.TrackFX_Show(track, fxnum, 3)
-                  end]]
                 end
                                 
               elseif MOUSE_LB() and mouse.ctrl then --make double_click?
-                if settings_swapctrlclick == true then
-                  SetParam_ToDef(i)
+                local ccat = ctls[i].ctlcat 
+                if ccat == ctlcats.snapshotrand then
+                  show_randomopts = true
+                  if randopts_selectctl then
+                    SetCtlDirty(randopts_selectctl)
+                  end
+                  randopts_selectctl = i
+                  SetCtlDirty(i)
+                  update_ctls = true
+                  
+                  if ctls[i].param == 1 then
+                    show_randomopts = false
+                  end
+                  if show_randomopts == true then
+                  
+                    RandomOpts_INIT(i)
+                  
+                  end
+                  update_gfx = true
                 else
-                  SetParam_EnterVal(i)
+                  if settings_swapctrlclick == true then
+                    SetParam_ToDef(i)
+                  else
+                    SetParam_EnterVal(i)
+                  end
                 end
                 noscroll = true
                            
@@ -28335,6 +28994,13 @@ end
                 end
               end
 
+              if show_randomopts == true and randomopts_ctls then
+                if randomopts_ctls[i] and randomopts_ctls[i] ~= randomopts_select.param then
+                  randomopts_select.param = randomopts_ctls[i]
+                  update_randomopts = true
+                end
+              end
+
             end
           end
 
@@ -28370,32 +29036,35 @@ end
         local strip = tracks[track_select].strip
         local ctl = strips[strip][page].controls[trackfxparam_select]
         
-        if oms ~= mouse.shift then
-          oms = mouse.shift
-          ctlpos = ctl.val
-          mouse.slideoff = ctlxywh.y+ctlxywh.h/2 - mouse.my
-        else
-          if mouse.shift then
-            local mult = ctl.knobsens.fine
-            if mult == 0 then mult = settings_defknobsens.fine end
-            val = ctlpos + ((0.5-val)*2)*mult
+        if ctl then
+          if oms ~= mouse.shift then
+            oms = mouse.shift
+            ctlpos = ctl.val
+            mouse.slideoff = ctlxywh.y+ctlxywh.h/2 - mouse.my
           else
-            local mult = ctl.knobsens.norm
-            if mult == 0 then mult = settings_defknobsens.norm end
-            val = ctlpos + (0.5-val)*mult
-          end
-          if val < 0 then val = 0 end
-          if val > 1 then val = 1 end
-          val = ctlScale(ctl.scalemode, val)
-          if val ~= octlval then
-            ctl.val = val
-            A_SetParam(strip,page,trackfxparam_select,ctl)
-            ctl.dirty = true
-            octlval = val
-            update_ctls = true
+            if mouse.shift then
+              local mult = ctl.knobsens.fine
+              if mult == 0 then mult = settings_defknobsens.fine end
+              val = ctlpos + ((0.5-val)*2)*mult
+            else
+              local mult = ctl.knobsens.norm
+              if mult == 0 then mult = settings_defknobsens.norm end
+              val = ctlpos + (0.5-val)*mult
+            end
+            if val < 0 then val = 0 end
+            if val > 1 then val = 1 end
+            val = ctlScale(ctl.scalemode, val)
+            if val ~= octlval then
+              ctl.val = val
+              A_SetParam(strip,page,trackfxparam_select,ctl)
+              ctl.dirty = true
+              octlval = val
+              update_ctls = true
+            end
           end
         end
       end
+      
     elseif mouse.context and mouse.context == contexts.sliderctl_h then
       local val = MOUSE_slider_horiz(ctlxywh,mouse.slideoff)
       if val ~= nil then
@@ -28667,25 +29336,41 @@ end
           update_surface = true
         end
         
-        local i = math.floor((mouse.my - obj.sections[500].y) / tb_butt_h)-1
-        if i == -1 then
-          if mouse.mx < obj.sections[500].w/2 then
-            tlist_offset = tlist_offset - T_butt_cnt
-            if tlist_offset < 0 then
-              tlist_offset = 0
+        if mouse.my > obj.sections[500].y + obj.sections[500].h - tb_butt_h then
+          hideunusedtracks = not hideunusedtracks
+          update_sidebar = true
+        
+        else
+          local i = math.floor((mouse.my - obj.sections[500].y) / tb_butt_h)-1
+          if i == -1 then
+            if mouse.mx < obj.sections[500].w/2 then
+              tlist_offset = tlist_offset - T_butt_cnt
+              if tlist_offset < 0 then
+                tlist_offset = 0
+              end
+            else
+              if tlist_offset + T_butt_cnt < #tracks then
+                tlist_offset = tlist_offset + T_butt_cnt
+              end
             end
-          else
-            if tlist_offset + T_butt_cnt < #tracks then
-              tlist_offset = tlist_offset + T_butt_cnt
+            update_gfx = true
+            
+          elseif (hideunusedtracks ~= true and tracks[i-1 + tlist_offset]) or (hideunusedtracks == true and tracksused_idx[i + tlist_offset]) then
+            if hideunusedtracks == true then
+              local tr = tracksused_idx[i + tlist_offset]
+              if tr == LBX_GTRACK then
+                SetGlobalPage()
+              else
+                ChangeTrack2(tr)
+              end          
+            else
+              local tr = i-1 + tlist_offset
+              if tr == LBX_GTRACK then
+                SetGlobalPage()
+              else
+                ChangeTrack2(i-1 + tlist_offset)
+              end
             end
-          end
-          update_gfx = true
-        elseif tracks[i-1 + tlist_offset] then
-          local tr = i-1 + tlist_offset
-          if tr == LBX_GTRACK then
-            SetGlobalPage()
-          else
-            ChangeTrack2(i-1 + tlist_offset)
           end
         end
       end
@@ -28824,428 +29509,562 @@ end
       end    
     end
   
-    if mouse.context and mouse.context == contexts.modwin_resize then
-  
-      modwinsz.w = math.min(math.max(modwinrsz.w + (mouse.mx - modwinrsz.mx),modwin.minw),2048)
-      modwinsz.h = math.min(math.max(modwinrsz.h + (mouse.my - modwinrsz.my),modwin.minh),2048)
-      if modwinsz.w ~= modwinsz.ow or modwinsz.h ~= modwinsz.oh then
-        modwinsz.resize = true
-              
-        obj = GetObjects() 
-        update_lfoedit = true
-        update_surface = true
-        
-        modwinsz.ow = modwinsz.w
-        modwinsz.oh = modwinsz.h
-      end
-
-    elseif mouse.context and mouse.context == contexts.modwin_resize2 then
-  
-      --modwinsz.w = math.max(modwinrsz.w + (mouse.mx - modwinrsz.mx),modwin.minw)
-      local s = modwinrsz.h - (mouse.my - modwinrsz.my)
-      if modwinsz.minimized == true then
-        s = gfx1.main_h - mouse.my
-      end
-      if s > 50*pnl_scale or (modwinsz.minimized == true and s >= modwin.minh*pnl_scale) then
-        s = modwinrsz.h - (mouse.my - modwinrsz.my) 
-        modwinsz.h = math.min(math.min(math.max(s,modwin.minh*pnl_scale),gfx1.main_h-obj.sections[10].y),2048)
-        modwinsz.minimized = false
-        --modwinsz.oh = modwinsz.h
-      else
-        modwinsz.h = gui.winsz.pnltit*pnl_scale
-        modwinsz.minimized = true
-      end 
-      if modwinsz.h ~= modwinsz.oh or modwinsz.minimized == true then
-        modwinsz.resize = true      
-        obj = GetObjects() 
-        update_lfoedit = true
-        update_surface = true
-        
-        modwinsz.ow = modwinsz.w
-        modwinsz.oh = modwinsz.h
-      end
-
-    elseif mouse.context and mouse.context == contexts.modwin_move then
-
-      modwinsz.x = math.min(math.max(modwinmv.x + (mouse.mx - modwinmv.mx),0),obj.sections[10].x+obj.sections[10].w-10)
-      modwinsz.y = math.min(math.max(modwinmv.y + (mouse.my - modwinmv.my),obj.sections[10].y),obj.sections[10].y+obj.sections[10].h-10)
-      if modwinsz.x ~= modwinsz.ox or modwinsz.y ~= modwinsz.oy then
-        --obj.sections[1100].x = modwinsz.x
-        --obj.sections[1100].y = modwinsz.y
-        obj = GetObjects() 
-        --update_lfoedit = true
-        update_surface = true
+    if mouse.context then
       
-        modwinsz.ox = modwinsz.x
-        modwinsz.oy = modwinsz.y
-      end
-                 
-    elseif mouse.context and mouse.context == contexts.modoffset_slider then
+      if mouse.context == contexts.modwin_resize then
     
-      local val = MOUSE_slider(modoffs, modoffs.yoff)
-      if val ~= nil then
-        local m = modulators[mod_select]
-
-        if oms ~= mouse.shift then
-          oms = mouse.shift
-          modoffs.val = val
-          modoffs.yoff = -(mouse.my - (modoffs.y+modoffs.h/2)) --modoffs.y+modoffs.h/2 - mouse.my
-        else
-          if mouse.shift then
-            local mult = settings_defknobsens.fine
-            val = modoffs.val + ((0.5-val)*2)*mult
-          else
-            local mult = settings_defknobsens.norm
-            val = modoffs.val + (0.5-val)*mult
-          end
-          if val < 0 then val = 0 end
-          if val > 1 then val = 1 end
-          if val ~= octlval then
-            m.offset = val
-            octlval = val
-            update_lfoedit = true
-          end
+        modwinsz.w = math.min(math.max(modwinrsz.w + (mouse.mx - modwinrsz.mx),modwin.minw),2048)
+        modwinsz.h = math.min(math.max(modwinrsz.h + (mouse.my - modwinrsz.my),modwin.minh),2048)
+        if modwinsz.w ~= modwinsz.ow or modwinsz.h ~= modwinsz.oh then
+          modwinsz.resize = true
+                
+          obj = GetObjects() 
+          update_lfoedit = true
+          update_surface = true
+          
+          modwinsz.ow = modwinsz.w
+          modwinsz.oh = modwinsz.h
         end
-      end
-
-    elseif mouse.context and mouse.context == contexts.modmin_slider then
+  
+      elseif mouse.context == contexts.modwin_resize2 then
     
-      local val = MOUSE_slider(modoffs, modoffs.yoff)
-      if val ~= nil then
-        local m = modulators[mod_select]
-
-        if oms ~= mouse.shift then
-          oms = mouse.shift
-          modoffs.val = val
-          modoffs.yoff = -(mouse.my - (modoffs.y+modoffs.h/2))
-        else
-          if mouse.shift then
-            local mult = settings_defknobsens.fine
-            val = modoffs.val + ((0.5-val)*2)*mult
-          else
-            local mult = settings_defknobsens.norm
-            val = modoffs.val + (0.5-val)*mult
-          end
-          if val < 0 then val = 0 end
-          if val > 1 then val = 1 end
-          if val ~= octlval and val < m.max then
-            m.min = val
-            octlval = val
-            update_lfoedit = true
-          end
+        --modwinsz.w = math.max(modwinrsz.w + (mouse.mx - modwinrsz.mx),modwin.minw)
+        local s = modwinrsz.h - (mouse.my - modwinrsz.my)
+        if modwinsz.minimized == true then
+          s = gfx1.main_h - mouse.my
         end
-      end
-
-    elseif mouse.context and mouse.context == contexts.modmax_slider then
-    
-      local val = MOUSE_slider(modoffs, modoffs.yoff)
-      if val ~= nil then
-        local m = modulators[mod_select]
-
-        if oms ~= mouse.shift then
-          oms = mouse.shift
-          modoffs.val = val
-          modoffs.yoff = -(mouse.my - (modoffs.y+modoffs.h/2))
+        if s > 50*pnl_scale or (modwinsz.minimized == true and s >= modwin.minh*pnl_scale) then
+          s = modwinrsz.h - (mouse.my - modwinrsz.my) 
+          modwinsz.h = math.min(math.min(math.max(s,modwin.minh*pnl_scale),gfx1.main_h-obj.sections[10].y),2048)
+          modwinsz.minimized = false
+          --modwinsz.oh = modwinsz.h
         else
-          if mouse.shift then
-            local mult = settings_defknobsens.fine
-            val = modoffs.val + ((0.5-val)*2)*mult
-          else
-            local mult = settings_defknobsens.norm
-            val = modoffs.val + (0.5-val)*mult
-          end
-          if val < 0 then val = 0 end
-          if val > 1 then val = 1 end
-          if val ~= octlval and val > m.min then
-            m.max = val
-            octlval = val
-            update_lfoedit = true
-          end
+          modwinsz.h = gui.winsz.pnltit*pnl_scale
+          modwinsz.minimized = true
+        end 
+        if modwinsz.h ~= modwinsz.oh or modwinsz.minimized == true then
+          modwinsz.resize = true      
+          obj = GetObjects() 
+          update_lfoedit = true
+          update_surface = true
+          
+          modwinsz.ow = modwinsz.w
+          modwinsz.oh = modwinsz.h
         end
-      end
+  
+      elseif mouse.context == contexts.modwin_move then
+  
+        modwinsz.x = math.min(math.max(modwinmv.x + (mouse.mx - modwinmv.mx),0),obj.sections[10].x+obj.sections[10].w-10)
+        modwinsz.y = math.min(math.max(modwinmv.y + (mouse.my - modwinmv.my),obj.sections[10].y),obj.sections[10].y+obj.sections[10].h-10)
+        if modwinsz.x ~= modwinsz.ox or modwinsz.y ~= modwinsz.oy then
+          --obj.sections[1100].x = modwinsz.x
+          --obj.sections[1100].y = modwinsz.y
+          obj = GetObjects() 
+          --update_lfoedit = true
+          update_surface = true
+        
+          modwinsz.ox = modwinsz.x
+          modwinsz.oy = modwinsz.y
+        end
+                   
+      elseif mouse.context == contexts.modoffset_slider then
       
-    elseif mouse.context and mouse.context == contexts.mod_draw then
-    
-      local m = modulators[mod_select]
-      xywh = {x = obj.sections[1100].x + obj.sections[1101].x, -- + moddraw.offs,
-              y = obj.sections[1100].y + obj.sections[1101].y,
-              w = math.floor(moddraw.barw * m.steps),
-              h = obj.sections[1101].h}
-      --if MOUSE_over(xywh) then
-        local xbar = math.floor((mouse.mx-xywh.x)/moddraw.barw) + 1
-        local yp
-        if m.mode == 2 then
-          yp = (F_limit(1- ((mouse.my - xywh.y) / xywh.h),0,1) * (m.max-m.min))
-          yp = math.floor(yp*takeswitch_max)/takeswitch_max
-        else
-          yp = F_limit(1- ((mouse.my - xywh.y) / xywh.h),0,1)
-        end
-        if mouse.shift then
-          if not moddraw.yp then
-            moddraw.yp = yp
-          end
-          yp = moddraw.yp
-        end
-        if mouse.ctrl then
-          if moddraw.lastx then
-            xbar = moddraw.lastx
-          end
-        end
-        if xbar >= 1 and xbar <= m.steps then
-          m.data[xbar] = yp        
-          if not modbaridx[xbar] then
-            modbaridx[xbar] = true
-            modbaredit[#modbaredit+1] = xbar
-          end
-        end
-        if moddraw.lastx then
-          local xd = xbar - moddraw.lastx
-          if math.abs(xd) > 1 then
-            local step = 1
-            if xd < 0 then
-              step = -1
-            end
-            local dy = (moddraw.lasty - yp) / -(xd)
-            local min, max
-            if yp > moddraw.lasty then
-              min, max = moddraw.lasty, yp
+        local val = MOUSE_slider(modoffs, modoffs.yoff)
+        if val ~= nil then
+          local m = modulators[mod_select]
+  
+          if oms ~= mouse.shift then
+            oms = mouse.shift
+            modoffs.val = val
+            modoffs.yoff = -(mouse.my - (modoffs.y+modoffs.h/2)) --modoffs.y+modoffs.h/2 - mouse.my
+          else
+            if mouse.shift then
+              local mult = settings_defknobsens.fine
+              val = modoffs.val + ((0.5-val)*2)*mult
             else
-              min, max = yp, moddraw.lasty
-            end 
-            for ii = step, xd-1, step do
-              i = moddraw.lastx + ii
-              if i >= 1 and i <= m.steps then
-                if mouse.shift then
-                  m.data[i] = yp                
-                else
-                  m.data[i] = F_limit(moddraw.lasty + (ii * dy),min,max)
-                end
-                if not modbaridx[i] then
-                  modbaridx[i] = true
-                  modbaredit[#modbaredit+1] = i
+              local mult = settings_defknobsens.norm
+              val = modoffs.val + (0.5-val)*mult
+            end
+            if val < 0 then val = 0 end
+            if val > 1 then val = 1 end
+            if val ~= octlval then
+              m.offset = val
+              octlval = val
+              update_lfoedit = true
+            end
+          end
+        end
+  
+      elseif mouse.context == contexts.modmin_slider then
+      
+        local val = MOUSE_slider(modoffs, modoffs.yoff)
+        if val ~= nil then
+          local m = modulators[mod_select]
+  
+          if oms ~= mouse.shift then
+            oms = mouse.shift
+            modoffs.val = val
+            modoffs.yoff = -(mouse.my - (modoffs.y+modoffs.h/2))
+          else
+            if mouse.shift then
+              local mult = settings_defknobsens.fine
+              val = modoffs.val + ((0.5-val)*2)*mult
+            else
+              local mult = settings_defknobsens.norm
+              val = modoffs.val + (0.5-val)*mult
+            end
+            if val < 0 then val = 0 end
+            if val > 1 then val = 1 end
+            if val ~= octlval and val < m.max then
+              m.min = val
+              octlval = val
+              update_lfoedit = true
+            end
+          end
+        end
+  
+      elseif mouse.context == contexts.modmax_slider then
+      
+        local val = MOUSE_slider(modoffs, modoffs.yoff)
+        if val ~= nil then
+          local m = modulators[mod_select]
+  
+          if oms ~= mouse.shift then
+            oms = mouse.shift
+            modoffs.val = val
+            modoffs.yoff = -(mouse.my - (modoffs.y+modoffs.h/2))
+          else
+            if mouse.shift then
+              local mult = settings_defknobsens.fine
+              val = modoffs.val + ((0.5-val)*2)*mult
+            else
+              local mult = settings_defknobsens.norm
+              val = modoffs.val + (0.5-val)*mult
+            end
+            if val < 0 then val = 0 end
+            if val > 1 then val = 1 end
+            if val ~= octlval and val > m.min then
+              m.max = val
+              octlval = val
+              update_lfoedit = true
+            end
+          end
+        end
+        
+      elseif mouse.context == contexts.mod_draw then
+      
+        local m = modulators[mod_select]
+        xywh = {x = obj.sections[1100].x + obj.sections[1101].x, -- + moddraw.offs,
+                y = obj.sections[1100].y + obj.sections[1101].y,
+                w = math.floor(moddraw.barw * m.steps),
+                h = obj.sections[1101].h}
+        --if MOUSE_over(xywh) then
+          local xbar = math.floor((mouse.mx-xywh.x)/moddraw.barw) + 1
+          local yp
+          if m.mode == 2 then
+            yp = (F_limit(1- ((mouse.my - xywh.y) / xywh.h),0,1) * (m.max-m.min))
+            yp = math.floor(yp*takeswitch_max)/takeswitch_max
+          else
+            yp = F_limit(1- ((mouse.my - xywh.y) / xywh.h),0,1)
+          end
+          if mouse.shift then
+            if not moddraw.yp then
+              moddraw.yp = yp
+            end
+            yp = moddraw.yp
+          end
+          if mouse.ctrl then
+            if moddraw.lastx then
+              xbar = moddraw.lastx
+            end
+          end
+          if xbar >= 1 and xbar <= m.steps then
+            m.data[xbar] = yp        
+            if not modbaridx[xbar] then
+              modbaridx[xbar] = true
+              modbaredit[#modbaredit+1] = xbar
+            end
+          end
+          if moddraw.lastx then
+            local xd = xbar - moddraw.lastx
+            if math.abs(xd) > 1 then
+              local step = 1
+              if xd < 0 then
+                step = -1
+              end
+              local dy = (moddraw.lasty - yp) / -(xd)
+              local min, max
+              if yp > moddraw.lasty then
+                min, max = moddraw.lasty, yp
+              else
+                min, max = yp, moddraw.lasty
+              end 
+              for ii = step, xd-1, step do
+                i = moddraw.lastx + ii
+                if i >= 1 and i <= m.steps then
+                  if mouse.shift then
+                    m.data[i] = yp                
+                  else
+                    m.data[i] = F_limit(moddraw.lasty + (ii * dy),min,max)
+                  end
+                  if not modbaridx[i] then
+                    modbaridx[i] = true
+                    modbaredit[#modbaredit+1] = i
+                  end
                 end
               end
             end
           end
-        end
-        moddraw.lastx = xbar
-        moddraw.lasty = yp
-        update_lfoeditbar = true
-        
-        local txt = ''
-        if m.mode == 2 then
-          txt = 'TAKE '..math.floor(yp*takeswitch_max+1)
-        else
-          txt = round(yp*(m.max*takeswitch_max),2)
-        end
-        local mx, my = gfx.mouse_x, gfx.mouse_y
-        local dock_state, wx,wy,ww,wh = gfx.dock(-1,0,0,0,0)
-        reaper.TrackCtl_SetToolTip(txt, wx+mx-15, wy+my+5, true)  
-      --end
-    
-    elseif mouse.context and mouse.context == contexts.movesnapwindow then
-      
-      obj.sections[160].x = F_limit(mouse.mx - movesnapwin.offx, obj.sections[10].x, gfx1.main_w-obj.sections[160].w)
-      obj.sections[160].y = F_limit(mouse.my - movesnapwin.offy, obj.sections[10].y, gfx1.main_h-obj.sections[160].h)
-      obj.sections[160].x = math.max(obj.sections[160].x,obj.sections[10].x)      
-      obj.sections[160].y = math.max(obj.sections[160].y,obj.sections[10].y)
-      
-      snapshot_win_pos = {x = obj.sections[160].x, y = obj.sections[160].y}
-      update_msnaps = true
-    
-    elseif mouse.context and mouse.context == contexts.addsnapctl then
-      dragparam = {x = mouse.mx-ksel_size.w, y = mouse.my-ksel_size.h, type = 'snapctl'}
-      update_gfx = true
-
-    elseif mouse.context and mouse.context == contexts.addxyctl then
-      dragparam = {x = mouse.mx-ksel_size.w, y = mouse.my-ksel_size.h, type = 'xyctl'}
-      update_gfx = true
-
-    elseif mouse.context and mouse.context == contexts.snapshot_rand then
-      dragparam = {x = mouse.mx-ksel_size.w, y = mouse.my-ksel_size.h, type = 'snaprand'}
-      update_surface = true
-
-    elseif mouse.context and mouse.context == contexts.dragfader then
-      if mouse.mx ~= dragfader.x or mouse.my ~= dragfader.y then
-        local c = GetControlAtXY(tracks[track_select].strip,page,mouse.mx,mouse.my)
-        if c then
-          local ctl = strips[tracks[track_select].strip][page].controls[c]
-          if ctl and (ctl.ctlcat == ctlcats.fxparam or 
-                      ctl.ctlcat == ctlcats.trackparam or 
-                      ctl.ctlcat == ctlcats.tracksend or
-                      ctl.ctlcat == ctlcats.macro or  
-                      ctl.ctlcat == ctlcats.snapshot or
-                      ctl.ctlcat == ctlcats.switcher) then 
-            dragfader = {x = mouse.mx, y = mouse.my, ctl = c}
-          else
-            dragfader = {x = mouse.mx, y = mouse.my, ctl = -1}          
-          end
-        else
-          dragfader = {x = mouse.mx, y = mouse.my, ctl = nil}        
-        end
-        update_surface = true
-      end
+          moddraw.lastx = xbar
+          moddraw.lasty = yp
+          update_lfoeditbar = true
           
-    elseif moddraw ~= nil then
-      moddraw = nil
-      reaper.TrackCtl_SetToolTip('',0,0, true) 
-    
-    elseif dragfader ~= nil then
-    
-      if dragfader.ctl and dragfader.ctl ~= -1 then
-      
-        DragFader_Assign(fader_select, dragfader.ctl)
-      
-      end
-    
-      dragfader = nil
-      update_sidebar = true
-      update_surface = true
-
-    elseif mouse.context and mouse.context == contexts.dragmod then
-      if mouse.mx ~= dragmod.x or mouse.my ~= dragmod.y then
-        local c = GetControlAtXY(tracks[track_select].strip,page,mouse.mx,mouse.my)
-        if c and not MOUSE_over(obj.sections[1100]) and not MOUSE_over(obj.sections[160]) and not MOUSE_over(obj.sections[1120]) then
-          local ctl = strips[tracks[track_select].strip][page].controls[c]
-          if ctl and (ctl.ctlcat == ctlcats.fxparam or 
-                      ctl.ctlcat == ctlcats.trackparam or 
-                      ctl.ctlcat == ctlcats.tracksend or
-                      ctl.ctlcat == ctlcats.macro or
-                      ctl.ctlcat == ctlcats.takeswitcher) then 
-            dragmod = {x = mouse.mx, y = mouse.my, ctl = c}
+          local txt = ''
+          if m.mode == 2 then
+            txt = 'TAKE '..math.floor(yp*takeswitch_max+1)
           else
-            dragmod = {x = mouse.mx, y = mouse.my, ctl = -1}          
+            txt = round(yp*(m.max*takeswitch_max),2)
           end
-        else
-          dragmod = {x = mouse.mx, y = mouse.my, ctl = nil}        
-        end
+          local mx, my = gfx.mouse_x, gfx.mouse_y
+          local dock_state, wx,wy,ww,wh = gfx.dock(-1,0,0,0,0)
+          reaper.TrackCtl_SetToolTip(txt, wx+mx-15, wy+my+5, true)  
+        --end
+      
+      elseif mouse.context == contexts.movesnapwindow then
+        
+        obj.sections[160].x = F_limit(mouse.mx - movesnapwin.offx, obj.sections[10].x, gfx1.main_w-obj.sections[160].w)
+        obj.sections[160].y = F_limit(mouse.my - movesnapwin.offy, obj.sections[10].y, gfx1.main_h-obj.sections[160].h)
+        obj.sections[160].x = math.max(obj.sections[160].x,obj.sections[10].x)      
+        obj.sections[160].y = math.max(obj.sections[160].y,obj.sections[10].y)
+        
+        snapshot_win_pos = {x = obj.sections[160].x, y = obj.sections[160].y}
+        update_msnaps = true
+      
+      elseif mouse.context == contexts.addsnapctl then
+        dragparam = {x = mouse.mx-ksel_size.w, y = mouse.my-ksel_size.h, type = 'snapctl'}
+        update_gfx = true
+  
+      elseif mouse.context == contexts.addxyctl then
+        dragparam = {x = mouse.mx-ksel_size.w, y = mouse.my-ksel_size.h, type = 'xyctl'}
+        update_gfx = true
+  
+      elseif mouse.context == contexts.snapshot_rand then
+        dragparam = {x = mouse.mx-ksel_size.w, y = mouse.my-ksel_size.h, type = 'snaprand'}
         update_surface = true
-      end
-
-    elseif dragmod ~= nil then
-    
-      if dragmod.ctl and dragmod.ctl ~= -1 then
-      
-        DragMod_Assign(mod_select, dragmod.ctl)
-      
-      end
-    
-      dragmod = nil
-      update_lfoedit = true
-      update_sidebar = true
-      update_surface = true
-    
-    elseif mouse.context and mouse.context == contexts.resizesnapwindow then
-
-      local ly = obj.sections[10].h - obj.sections[160].y + butt_h*pnl_scale
-      obj.sections[160].h = F_limit(resizesnapwin.origh + (mouse.my - resizesnapwin.offy) - obj.sections[160].y, 252*pnl_scale, ly)
-      obj.sections[163].h = obj.sections[160].h - 208*pnl_scale
-      obj.sections[1010].y = obj.sections[163].y + obj.sections[163].h + 3*pnl_scale
-      obj.sections[1011].y = obj.sections[1010].y 
-      obj.sections[1012].y = obj.sections[1010].y
-      obj.sections[1013].y = obj.sections[1010].y+(butt_h+2)*pnl_scale
-      obj.sections[1014].y = obj.sections[1013].y
-      obj.sections[1015].y = obj.sections[1013].y
-      
-      obj.sections[165].y = obj.sections[160].h - obj.sections[165].h
-      snaph = obj.sections[160].h
-      update_msnaps = true
-      resize_snaps = true
-      --update_gfx = true
-
-    elseif mouse.context and mouse.context == contexts.resizefsnapwindow then
-
-      local ly = obj.sections[10].h - obj.sections[180].y + butt_h
-      obj.sections[180].h = F_limit(resizesnapwin.origh + (mouse.my - resizesnapwin.offy) - obj.sections[180].y, 180, ly)
-      obj.sections[181].h = obj.sections[180].h - 12
-      obj.sections[182].y = obj.sections[180].h - 6
-      fsnaph = obj.sections[180].h
-      update_mfsnaps = true
-      resize_fsnaps = true
-      --update_gfx = true
-    
-    elseif mouse.context and mouse.context == contexts.snap_move then
-      local my = mouse.my-obj.sections[160].y
-      local i = math.floor((my-obj.sections[163].y)/(butt_h*pnl_scale))
-      local snapcnt
-      if sstype_select == 1 then
-        snapcnt = #snapshots[tracks[track_select].strip][page][sstype_select]
-      else
-        snapcnt = #snapshots[tracks[track_select].strip][page][sstype_select].snapshot      
-      end
-      if reaper.time_precise() > ssshiftto then
-        if i<1 then
-          ssoffset = math.max(ssoffset-1,0)
-        elseif i>SS_butt_cnt then
-          ssoffset = math.min(ssoffset+1,snapcnt-1)      
-        end
-        ssshiftto = reaper.time_precise() + 0.15
-      end
-      snap_move.epos = F_limit(ssoffset+i,1,snapcnt+1)
-      update_snaps = true
-      
-    elseif mouse.context == nil and snap_move then
-
-      if snap_move.epos ~= snap_move.spos and snap_move.epos ~= snap_move.spos+1 then
-        --move ss
-        Snapshot_Move(snap_move.spos, snap_move.epos)
-      end
-
-      snap_move = nil
-      update_snaps = true
-
-    elseif mouse.context and mouse.context == contexts.morph_time then
-      local xywh = {x = obj.sections[1010].x,
-                    y = obj.sections[160].y + obj.sections[1010].y,
-                    w = obj.sections[1010].w,
-                    h = obj.sections[1010].h}
-      local val = MOUSE_slider(xywh,mouse.slideoff)
-      if val ~= nil then
-        if oms ~= mouse.shift then
-          oms = mouse.shift
-          dragmorphtime = snapshots[tracks[track_select].strip][page][sstype_select].morph_time
-          mouse.slideoff = obj.sections[1010].y+obj.sections[1010].h/2 - (mouse.my-obj.sections[160].y)
-        else
-          if mouse.shift then
-            val = dragmorphtime + ((0.5-val))*0.01
+  
+      elseif mouse.context == contexts.dragfader then
+        if mouse.mx ~= dragfader.x or mouse.my ~= dragfader.y then
+          local c = GetControlAtXY(tracks[track_select].strip,page,mouse.mx,mouse.my)
+          if c then
+            local ctl = strips[tracks[track_select].strip][page].controls[c]
+            if ctl and (ctl.ctlcat == ctlcats.fxparam or 
+                        ctl.ctlcat == ctlcats.trackparam or 
+                        ctl.ctlcat == ctlcats.tracksend or
+                        ctl.ctlcat == ctlcats.macro or  
+                        ctl.ctlcat == ctlcats.snapshot or
+                        ctl.ctlcat == ctlcats.switcher) then 
+              dragfader = {x = mouse.mx, y = mouse.my, ctl = c}
+            else
+              dragfader = {x = mouse.mx, y = mouse.my, ctl = -1}          
+            end
           else
-            val = dragmorphtime + (0.5-val)*0.1
+            dragfader = {x = mouse.mx, y = mouse.my, ctl = nil}        
           end
-          if val < 0 then val = 0 end
-          if val > 1 then val = 1 end
-          if val ~= octlval then
-            snapshots[tracks[track_select].strip][page][sstype_select].morph_time = val
-            octlval = val
-            update_snaps = true
+          update_surface = true
+        end
+            
+      elseif mouse.context == contexts.dragmod then
+        if mouse.mx ~= dragmod.x or mouse.my ~= dragmod.y then
+          local c = GetControlAtXY(tracks[track_select].strip,page,mouse.mx,mouse.my)
+          if c and not MOUSE_over(obj.sections[1100]) and not MOUSE_over(obj.sections[160]) and not MOUSE_over(obj.sections[1120]) then
+            local ctl = strips[tracks[track_select].strip][page].controls[c]
+            if ctl and (ctl.ctlcat == ctlcats.fxparam or 
+                        ctl.ctlcat == ctlcats.trackparam or 
+                        ctl.ctlcat == ctlcats.tracksend or
+                        ctl.ctlcat == ctlcats.macro or
+                        ctl.ctlcat == ctlcats.takeswitcher) then 
+              dragmod = {x = mouse.mx, y = mouse.my, ctl = c}
+            else
+              dragmod = {x = mouse.mx, y = mouse.my, ctl = -1}          
+            end
+          else
+            dragmod = {x = mouse.mx, y = mouse.my, ctl = nil}        
+          end
+          update_surface = true
+        end
+  
+      elseif mouse.context == contexts.resizesnapwindow then
+  
+        local ly = obj.sections[10].h - obj.sections[160].y + butt_h*pnl_scale
+        obj.sections[160].h = F_limit(resizesnapwin.origh + (mouse.my - resizesnapwin.offy) - obj.sections[160].y, 252*pnl_scale, ly)
+        obj.sections[163].h = obj.sections[160].h - 208*pnl_scale
+        obj.sections[1010].y = obj.sections[163].y + obj.sections[163].h + 3*pnl_scale
+        obj.sections[1011].y = obj.sections[1010].y 
+        obj.sections[1012].y = obj.sections[1010].y
+        obj.sections[1013].y = obj.sections[1010].y+(butt_h+2)*pnl_scale
+        obj.sections[1014].y = obj.sections[1013].y
+        obj.sections[1015].y = obj.sections[1013].y
+        
+        obj.sections[165].y = obj.sections[160].h - obj.sections[165].h
+        snaph = obj.sections[160].h
+        update_msnaps = true
+        resize_snaps = true
+        --update_gfx = true
+  
+      elseif mouse.context == contexts.resizefsnapwindow then
+  
+        local ly = obj.sections[10].h - obj.sections[180].y + butt_h
+        obj.sections[180].h = F_limit(resizesnapwin.origh + (mouse.my - resizesnapwin.offy) - obj.sections[180].y, 180, ly)
+        obj.sections[181].h = obj.sections[180].h - 12
+        obj.sections[182].y = obj.sections[180].h - 6
+        fsnaph = obj.sections[180].h
+        update_mfsnaps = true
+        resize_fsnaps = true
+        --update_gfx = true
+      
+      elseif mouse.context == contexts.snap_move then
+        local my = mouse.my-obj.sections[160].y
+        local i = math.floor((my-obj.sections[163].y)/(butt_h*pnl_scale))
+        local snapcnt
+        if sstype_select == 1 then
+          snapcnt = #snapshots[tracks[track_select].strip][page][sstype_select]
+        else
+          snapcnt = #snapshots[tracks[track_select].strip][page][sstype_select].snapshot      
+        end
+        if reaper.time_precise() > ssshiftto then
+          if i<1 then
+            ssoffset = math.max(ssoffset-1,0)
+          elseif i>SS_butt_cnt then
+            ssoffset = math.min(ssoffset+1,snapcnt-1)      
+          end
+          ssshiftto = reaper.time_precise() + 0.15
+        end
+        snap_move.epos = F_limit(ssoffset+i,1,snapcnt+1)
+        update_snaps = true
+        
+      elseif mouse.context == contexts.morph_time then
+        local xywh = {x = obj.sections[1010].x,
+                      y = obj.sections[160].y + obj.sections[1010].y,
+                      w = obj.sections[1010].w,
+                      h = obj.sections[1010].h}
+        local val = MOUSE_slider(xywh,mouse.slideoff)
+        if val ~= nil then
+          if oms ~= mouse.shift then
+            oms = mouse.shift
+            dragmorphtime = snapshots[tracks[track_select].strip][page][sstype_select].morph_time
+            mouse.slideoff = obj.sections[1010].y+obj.sections[1010].h/2 - (mouse.my-obj.sections[160].y)
+          else
+            if mouse.shift then
+              val = dragmorphtime + ((0.5-val))*0.01
+            else
+              val = dragmorphtime + (0.5-val)*0.1
+            end
+            if val < 0 then val = 0 end
+            if val > 1 then val = 1 end
+            if val ~= octlval then
+              snapshots[tracks[track_select].strip][page][sstype_select].morph_time = val
+              octlval = val
+              update_snaps = true
+            end
           end
         end
-      end
-    
-    elseif dragparam ~= nil then
-    
-      if mouse.mx > obj.sections[10].x and not MOUSE_over(obj.sections[160]) then
-        Strip_AddParam()
-        g_savedirty = true
-      end
       
-      dragparam = nil
-      update_gfx = true
+      elseif mouse.context == contexts.lg_min then
+        local val = MOUSE_slider(obj.sections[1134],-draglg.yoff)
+        if val ~= nil then
+          val = 1-val
+          local p = randomopts_select.param
+          local strip = tracks[track_select].strip
+          local ctl = strips[strip][page].controls[randomopts_select.ctls[p].ctl]
+          if draglg.shift ~= mouse.shift then
+            draglg.shift = mouse.shift
+            draglg.pos = randomopts_select.ctls[p].min
+            draglg.yoff = mouse.my-(obj.sections[1134].y+obj.sections[1134].h/2)
+          end
+          local mult = 1
+          if mouse.shift == true then
+            mult = 0.02
+          end
+          if ctl and ctl.ctlcat == ctlcats.takeswitcher then
+            local numtakes = ctl.iteminfo.numtakes
+            randomopts_select.ctls[p].min = F_limit(draglg.pos + (val-0.5)*mult,0,(1/takeswitch_max)*(numtakes-1))
+          else
+            randomopts_select.ctls[p].min = F_limit(draglg.pos + (val-0.5)*mult,0,1)          
+          end
+          update_randomopts = true
+        end
+
+      elseif mouse.context == contexts.lg_max then
+        local val = MOUSE_slider(obj.sections[1135],-draglg.yoff)
+        if val ~= nil then
+          val = 1-val
+          local p = randomopts_select.param
+          local strip = tracks[track_select].strip
+          local ctl = strips[strip][page].controls[randomopts_select.ctls[p].ctl]
+          if draglg.shift ~= mouse.shift then
+            draglg.shift = mouse.shift
+            draglg.pos = randomopts_select.ctls[p].max
+            draglg.yoff = mouse.my-(obj.sections[1135].y+obj.sections[1135].h/2)
+          end
+          local mult = 1
+          if mouse.shift == true then
+            mult = 0.02
+          end
+          if ctl and ctl.ctlcat == ctlcats.takeswitcher then
+            local numtakes = ctl.iteminfo.numtakes
+            randomopts_select.ctls[p].max = F_limit(draglg.pos + (val-0.5)*mult,0,(1/takeswitch_max)*(numtakes-1))
+          else
+            randomopts_select.ctls[p].max = F_limit(draglg.pos + (val-0.5)*mult,0,1)          
+          end
+          update_randomopts = true
+        end
+
+      elseif mouse.context == contexts.lg_probability then
+        local val = MOUSE_slider(obj.sections[1137],-draglg.yoff)
+        if val ~= nil then
+          val = 1-val
+          local p = randomopts_select.param
+          randomopts_select.ctls[p].rprob = F_limit(draglg.pos + (val-0.5),0,1)
+          update_randomopts = true
+        end
+
+      elseif mouse.context == contexts.lg_bias then
+        local val = MOUSE_slider(obj.sections[1138],-draglg.yoff)
+        if val ~= nil then
+          val = 1-val
+          local p = randomopts_select.param
+          randomopts_select.ctls[p].bias = F_limit(draglg.pos + (val-0.5),0,1)
+          update_randomopts = true
+        end
+
+      elseif mouse.context == contexts.lg_range then
+        local val = MOUSE_slider(obj.sections[1140],-draglg.yoff)
+        if val ~= nil then
+          val = 1-val
+          local p = randomopts_select.param
+          if draglg.shift ~= mouse.shift then
+            draglg.shift = mouse.shift
+            draglg.pos = randomopts_select.ctls[p].amount
+            draglg.yoff = mouse.my-(obj.sections[1140].y+obj.sections[1140].h/2)
+          end
+          local mult = 1
+          if mouse.shift == true then
+            mult = 0.002
+          end
+          randomopts_select.ctls[p].amount = F_limit((draglg.pos or 0) + (val-0.5)*mult,0,1)
+          if randomopts_select.ctls[p].amount == 0 then
+            randomopts_select.ctls[p].amount = nil
+          end
+          update_randomopts = true
+        end
+
+      elseif mouse.context == contexts.lg_wild then
+        local val = MOUSE_slider(obj.sections[1146],-draglg.yoff)
+        if val ~= nil then
+          val = 1-val
+          local p = randomopts_select.param
+          randomopts_select.ctls[p].wild = F_limit((draglg.pos or 0) + (val-0.5),0,1) *0.1
+          update_randomopts = true
+        end
+
+      elseif mouse.context == contexts.lg_X then
+        local val = MOUSE_slider(obj.sections[1144],-draglg.yoff)
+        if val ~= nil then
+          val = 1-val
+          local p = randomopts_select.param
+          local lg = randomopts_select.ctls[p].linkgrp
+          if draglg.shift ~= mouse.shift then
+            draglg.shift = mouse.shift
+            draglg.pos = randomopts_select.linkgrps[lg].X
+            draglg.yoff = mouse.my-(obj.sections[1144].y+obj.sections[1144].h/2)
+          end
+          local mult = 1
+          if mouse.shift == true then
+            mult = 0.002
+          end
+          if randomopts_select.linkgrps[lg] then
+            randomopts_select.linkgrps[lg].X = F_limit(draglg.pos + (val-0.5)*mult,0,1)
+            update_randomopts = true
+          end
+        end
+  
+      elseif mouse.context == contexts.move_mutatewin then
+      
+        obj.sections[1120].x = F_limit(mouse.mx - movemutatewin.dx,obj.sections[10].x,obj.sections[10].x+obj.sections[10].w-obj.sections[1120].w)
+        obj.sections[1120].y = F_limit(mouse.my - movemutatewin.dy,obj.sections[10].y,obj.sections[10].y+obj.sections[10].h-obj.sections[1120].h)
+        update_surface = true
+      
+      elseif mouse.context == contexts.mutate_amt then
+        local val = MOUSE_slider(obj.sections[1121],-mutateamt.yoff)
+        if val ~= nil then
+          val = 1-val
+          mutate_settings.mutate_max = F_limit(mutateamt.pos + math.floor((val-0.5)*100),1,100)
+          update_mutate = true
+        end
+  
+      elseif mouse.context == contexts.move_randomwin then
+      
+        obj.sections[1130].x = F_limit(mouse.mx - moverandomwin.dx,obj.sections[10].x,obj.sections[10].x+obj.sections[10].w-obj.sections[1130].w)
+        obj.sections[1130].y = F_limit(mouse.my - moverandomwin.dy,obj.sections[10].y,obj.sections[10].y+obj.sections[10].h-obj.sections[1130].h)
+        obj.sections[1130].y = math.max(obj.sections[1130].y,obj.sections[10].y)
+        update_surface = true
+  
+      end
+
+    else
     
-    elseif mouse.context and mouse.context == contexts.move_mutatewin then
-    
-      obj.sections[1120].x = F_limit(mouse.mx - movemutatewin.dx,obj.sections[10].x,obj.sections[10].x+obj.sections[10].w-obj.sections[1120].w)
-      obj.sections[1120].y = F_limit(mouse.my - movemutatewin.dy,obj.sections[10].y,obj.sections[10].y+obj.sections[10].h-obj.sections[1120].h)
-      update_surface = true
-    
-    elseif mouse.context and mouse.context == contexts.mutate_amt then
-      local val = MOUSE_slider(obj.sections[1121],-mutateamt.yoff)
-      if val ~= nil then
-        val = 1-val
-        mutate_settings.mutate_max = F_limit(mutateamt.pos + math.floor((val-0.5)*100),1,100)
-        update_mutate = true
+      if moddraw ~= nil then
+        moddraw = nil
+        reaper.TrackCtl_SetToolTip('',0,0, true) 
+      
+      elseif snap_move then
+      
+        if snap_move.epos ~= snap_move.spos and snap_move.epos ~= snap_move.spos+1 then
+          --move ss
+          Snapshot_Move(snap_move.spos, snap_move.epos)
+        end
+      
+        snap_move = nil
+        update_snaps = true
+      
+      elseif dragfader ~= nil then
+      
+        if dragfader.ctl and dragfader.ctl ~= -1 then
+        
+          DragFader_Assign(fader_select, dragfader.ctl)
+        
+        end
+      
+        dragfader = nil
+        update_sidebar = true
+        update_surface = true
+  
+      elseif dragmod ~= nil then
+      
+        if dragmod.ctl and dragmod.ctl ~= -1 then
+        
+          DragMod_Assign(mod_select, dragmod.ctl)
+        
+        end
+      
+        dragmod = nil
+        update_lfoedit = true
+        update_sidebar = true
+        update_surface = true
+      
+      elseif dragparam ~= nil then
+      
+        if mouse.mx > obj.sections[10].x and not MOUSE_over(obj.sections[160]) then
+          Strip_AddParam()
+          g_savedirty = true
+        end
+        
+        dragparam = nil
+        update_gfx = true
+      
       end
     end
-  
+      
     return noscroll
   
   end
@@ -34180,7 +34999,8 @@ end
                        ctl.ctlcat == ctlcats.tracksend or 
                        ctl.ctlcat == ctlcats.fxoffline or
                        ctl.ctlcat == ctlcats.midictl or 
-                       ctl.ctlcat == ctlcats.takeswitcher then 
+                       ctl.ctlcat == ctlcats.takeswitcher or 
+                       ctl.ctlcat == ctlcats.macro then 
                       local strip = tracks[track_select].strip
                       --Add / Remove
                       local ctlidx = GetSnapshotCtlIdx(strip, page, sstype_select, i)
@@ -34228,7 +35048,8 @@ end
                strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.tracksend or 
                strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.fxoffline or 
                strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.midictl or 
-               strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.takeswitcher then 
+               strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.takeswitcher or 
+               strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.macro then 
               --Add / Remove
               local ctlidx = GetSnapshotCtlIdx(strip, page, sstype_select, i)
               if ctlidx then
@@ -37019,6 +37840,7 @@ end
   end
   
   function FollowTrack(ct)
+    if mouse.context ~= nil then return end
     if track_select ~= nil or ct > 0 then
       if ct > 0 then
         if track_select == nil then track_select = -1 end
@@ -40007,7 +40829,10 @@ end
     if ctl.ctlcat == ctlcats.takeswitcher and ctl.iteminfo then
       tbl.iteminfo = table.copy(ctl.iteminfo)
     end 
-    
+    if ctl.ctlcat == ctlcats.snapshotrand and ctl.random then
+      tbl.random = table.deepcopy(ctl.random)
+    end
+        
     return tbl
   end
   
@@ -40591,6 +41416,59 @@ end
                                                       inv = tobool(zn(data[key..'inv'],false)),
                                                       relative = tobool(zn(data[key..'rel'],false))} 
           end
+        end
+
+        local randomsst = tonumber(zn(data[key..'rnd_sst']))
+        if randomsst then
+                
+          local key = pfx..'c_'..c..'_rnd_'
+        
+          strip.controls[c].random = {}
+          strip.controls[c].random.sst = randomsst
+          strip.controls[c].random.parent_cid = tonumber(zn(data[key..'par_c_id']))
+          strip.controls[c].random.parent = tonumber(zn(data[key..'par_ctl']))
+          strip.controls[c].random.snapshotsonly = tobool(zn(data[key..'sso'],false))
+          strip.controls[c].random.useadv = tobool(zn(data[key..'ua'],false))
+
+          strip.controls[c].random.ctls = {}
+          strip.controls[c].random.linkgrps = {}
+
+          local ccnt = tonumber(zn(data[key..'ccnt'],0))
+          if ccnt > 0 then
+
+            local lgs = {}
+            
+            for cc = 1, ccnt do
+              local key = pfx..'c_'..c..'_rnd_ctls_'..cc..'_'
+              strip.controls[c].random.ctls[cc] = {}
+              strip.controls[c].random.ctls[cc].c_id = tonumber(zn(data[key..'c_id']))
+              strip.controls[c].random.ctls[cc].ctl = tonumber(zn(data[key..'ctl']))
+              strip.controls[c].random.ctls[cc].min = tonumber(zn(data[key..'min']))
+              strip.controls[c].random.ctls[cc].max = tonumber(zn(data[key..'max']))
+              strip.controls[c].random.ctls[cc].linkgrp = tonumber(zn(data[key..'linkgrp']))
+              strip.controls[c].random.ctls[cc].rprob = tonumber(zn(data[key..'rprob'],1))
+              strip.controls[c].random.ctls[cc].bias = tonumber(zn(data[key..'bias'],0.5))
+              strip.controls[c].random.ctls[cc].amount = tonumber(zn(data[key..'amount']))
+              strip.controls[c].random.ctls[cc].inverted = tobool(zn(data[key..'inverted'],false))
+              strip.controls[c].random.ctls[cc].wild = tonumber(zn(data[key..'wild'],0))
+              strip.controls[c].random.ctls[cc].snap = tobool(zn(data[key..'snap'],false))
+            
+              if strip.controls[c].random.ctls[cc].linkgrp then
+                lgs[#lgs+1] = strip.controls[c].random.ctls[cc].linkgrp  
+              end
+            end
+
+            if #lgs > 0 then
+              for l = 1, #lgs do
+                local lg = lgs[l]
+                local key = pfx..'c_'..c..'_rnd_lgs_'..lg..'_'
+                strip.controls[c].random.linkgrps[lg] = {}
+                strip.controls[c].random.linkgrps[lg].type = tonumber(zn(data[key..'type'],1))
+                strip.controls[c].random.linkgrps[lg].X = tonumber(zn(data[key..'X'],1))
+                strip.controls[c].random.linkgrps[lg].snap = tobool(zn(data[key..'snap'],false))
+              end
+            end
+          end  
         end
 
         local bcnt = tonumber(zn(data[key..'eqband_cnt'],0))
@@ -41944,6 +42822,7 @@ end
         snapshot_win_pos = {x = tonumber(nz(GPES('snapwinpos_x',true))),
                             y = tonumber(nz(GPES('snapwinpos_y',true)))}
         show_snapshots = tobool(nz(GPES('showsnap',true),false))
+        hideunusedtracks = tobool(nz(GPES('hidetracks',true),false))
         
         DBGOut('LoadData: PROJECT ID: '..tostring(PROJECTID))
         
@@ -43649,6 +44528,50 @@ end
                 file:write('['..key..'macroctl_cnt]'..0 ..'\n')                                 
               end
 
+              if stripdata.controls[c].random then
+
+                local key = pfx..'c_'..c..'_rnd_'
+                file:write('['..key..'par_c_id]'..stripdata.controls[c].random.parent_cid..'\n')                                 
+                file:write('['..key..'par_ctl]'..stripdata.controls[c].random.parent..'\n')                                 
+                file:write('['..key..'sst]'..stripdata.controls[c].random.sst..'\n')                                 
+                file:write('['..key..'sso]'..tostring(nz(stripdata.controls[c].random.snapshotsonly,false))..'\n') 
+                file:write('['..key..'ua]'..tostring(nz(stripdata.controls[c].random.useadv,false))..'\n')                                 
+                file:write('['..key..'ccnt]'..#stripdata.controls[c].random.ctls..'\n')                                 
+
+                local lgs = {}
+
+                if #stripdata.controls[c].random.ctls > 0 then
+                  for cc = 1, #stripdata.controls[c].random.ctls do
+                    local key = pfx..'c_'..c..'_rnd_ctls_'..cc..'_'
+                    file:write('['..key..'c_id]'..stripdata.controls[c].random.ctls[cc].c_id..'\n')                                 
+                    file:write('['..key..'ctl]'..stripdata.controls[c].random.ctls[cc].ctl..'\n')                                 
+                    file:write('['..key..'min]'..stripdata.controls[c].random.ctls[cc].min..'\n')                                 
+                    file:write('['..key..'max]'..stripdata.controls[c].random.ctls[cc].max..'\n')                                 
+                    file:write('['..key..'linkgrp]'..nz(stripdata.controls[c].random.ctls[cc].linkgrp,'')..'\n')
+                    file:write('['..key..'rprob]'..stripdata.controls[c].random.ctls[cc].rprob..'\n')                                 
+                    file:write('['..key..'bias]'..stripdata.controls[c].random.ctls[cc].bias..'\n')                                 
+                    file:write('['..key..'amount]'..nz(stripdata.controls[c].random.ctls[cc].amount,'')..'\n')
+                    file:write('['..key..'inverted]'..tostring(nz(stripdata.controls[c].random.ctls[cc].inverted,false))..'\n')
+                    file:write('['..key..'wild]'..nz(stripdata.controls[c].random.ctls[cc].wild,0)..'\n')
+                    file:write('['..key..'snap]'..tostring(nz(stripdata.controls[c].random.ctls[cc].snap,false))..'\n')
+                    
+                    if stripdata.controls[c].random.ctls[cc].linkgrp then
+                      lgs[#lgs+1] = stripdata.controls[c].random.ctls[cc].linkgrp
+                    end
+                  end
+                end
+              
+                if #lgs > 0 then
+                  for l = 1, #lgs do
+                    local lg = lgs[l]
+                    local key = pfx..'c_'..c..'_rnd_lgs_'..lg..'_'
+                    file:write('['..key..'type]'..stripdata.controls[c].random.linkgrps[lg].type..'\n')                                 
+                    file:write('['..key..'X]'..stripdata.controls[c].random.linkgrps[lg].X..'\n')                                                   
+                    file:write('['..key..'snap]'..tostring(nz(stripdata.controls[c].random.linkgrps[lg].snap,false))..'\n')                                                   
+                  end
+                end              
+              end
+
               if stripdata.controls[c].eqbands then
                 local bcnt = #stripdata.controls[c].eqbands
                 file:write('['..key..'eqband_cnt]'..bcnt..'\n')
@@ -43940,6 +44863,7 @@ end
     reaper.SetProjExtState(0,SCRIPT,'snapwinpos_x',nz(snapshot_win_pos.x,''))
     reaper.SetProjExtState(0,SCRIPT,'snapwinpos_y',nz(snapshot_win_pos.y,''))
     reaper.SetProjExtState(0,SCRIPT,'showsnap',tostring(show_snapshots))
+    reaper.SetProjExtState(0,SCRIPT,'hidetracks',tostring(hideunusedtracks))
     
     if gfx1 then
       reaper.SetProjExtState(0,SCRIPT,'win_w',nz(gfx1.main_w,800))
@@ -44368,6 +45292,333 @@ end
     end    
   end
 
+  function table.shuffle(tbl)
+    size = #tbl
+    for i = size, 1, -1 do
+      local rand = math.random(size)
+      tbl[i], tbl[rand] = tbl[rand], tbl[i]
+    end
+    return tbl
+  end
+  
+  function Snapshot_RANDOMADV(strip, p, c, random)
+  
+    local sst = random.sst
+    local rctls = random.ctls
+    if random.snapshotsonly == true then
+    
+      local r = math.random()
+      local snaps = snapshots[strip][p][sst]
+      local ss = round(r*#snaps.snapshot)
+      Snapshot_Set(strip,p,sst,ss)
+      
+      snaps.selected = ss
+      if strip == tracks[track_select].strip and p == page and sst == sstype_select then 
+        ss_select = ss
+        update_snaps = true
+      end
+    else
+    
+      local r = math.random()
+      local lg = {}      
+      local lgs = random.linkgrps
+      local ctls = strips[strip][page].controls
+      
+      for cc = 1, #rctls do
+        local rctl = rctls[cc]
+        local ctl = ctls[rctls[cc].ctl]
+        if rctl.linkgrp then
+          if not lg[rctl.linkgrp] then
+            lg[rctl.linkgrp] = {}          
+          end
+          local lgptr = #lg[rctl.linkgrp]+1
+          lg[rctl.linkgrp][lgptr] = cc
+        elseif ctl.ctltype ~= 4 then
+          local prob = math.random()
+          if prob <= rctl.rprob then
+            
+            local v
+            local wild = math.random()
+            if rctl.wild == 0 or wild >= rctl.wild then
+              v = math.random()*(rctl.amount or 1)
+              local bias = math.random()
+              if (rctl.amount or 0) == 0 then
+                if bias > rctl.bias then
+                  v = ctl.val - (ctl.val-math.min(rctl.min,ctl.val))*v
+                else
+                  v = ctl.val + (rctl.max-math.min(ctl.val,rctl.max))*v              
+                end                        
+                v = F_limit(v,rctl.min,rctl.max)
+              else
+                if rctl.snap == true then
+                  local a = round(rctl.amount,5)
+                  local cnt = 0
+                  repeat
+                    cnt = cnt + 1
+                    if bias > rctl.bias then
+                      local r = math.random()*(ctl.val-math.min(rctl.min,ctl.val))
+                      v = -round((r / a)) * a
+                    else
+                      local r = math.random()*(rctl.max-math.min(ctl.val,rctl.max))
+                      v = round((r / a)) * a
+                    end
+                  until (ctl.val+v > 0 and ctl.val+v < 1) or cnt == 5
+                  if ctl.val+v < 0 or ctl.val+v > 1 then
+                    v = 0
+                  end
+                elseif bias > rctl.bias then
+                  v = -v
+                end
+                v = F_limit(ctl.val+v,rctl.min,rctl.max)
+              end
+            else
+              --WILD
+              v = math.random()
+            end
+            if ctl.ctltype == 2 or 
+               ctl.ctltype == 3 or 
+               ctl.ctltype == 7 or
+               ctl.ctltype == 8 or
+               ctl.ctltype == 9 or
+               ctl.ctltype == 10 then
+               v = round(v)
+            end
+            SetParam3(strip,page,rctls[cc].ctl,ctl,v)
+          end
+        else
+          --CYCLE CTL
+          local cycle = ctl.cycledata
+          local pos = cycle.pos or 1
+          local cnt = cycle.statecnt
+          --snap ignored
+          --amount ignored
+          local bias = math.random()
+          if bias > rctl.bias then
+            local np = math.min(round(math.random() * math.max((pos-2),1) +1),pos)
+            if cycle[np] and cycle[np].val then
+              cycle.pos = np
+              v = cycle[np].val
+              SetParam3(strip,page,rctls[cc].ctl,ctl,v)          
+            end
+          else          
+            local np = round(math.random() * (cnt-pos) +pos)
+            if cycle[np] and cycle[np].val then
+              cycle.pos = np
+              v = cycle[np].val
+              SetParam3(strip,page,rctls[cc].ctl,ctl,v)          
+            end
+          end          
+        end
+      
+      end
+      if #lg > 0 then
+        for l = 1, #lg do
+          local lgcnt = #lg[l]
+          if lgs[l].type == 1 then
+            --random x
+
+            lg[l] = table.shuffle(lg[l])
+            for x = 1, math.min(round(lgs[l].X*128),lgcnt) do
+              local ccc = lg[l][x]
+            
+              local rctl = rctls[ccc]
+              local ctl = ctls[rctls[ccc].ctl]
+              if ctl and ctl.ctltype ~= 4 then
+                local v = math.random()*(rctl.amount or 1)
+                local bias = math.random()
+                if (rctl.amount or 0) == 0 then
+                  if bias > rctl.bias then
+                    v = ctl.val - (ctl.val-math.min(rctl.min,ctl.val))*v
+                  else
+                    v = ctl.val + (rctl.max-math.min(ctl.val,rctl.max))*v              
+                  end                        
+                  v = F_limit(v,rctl.min,rctl.max)
+                else
+                  if rctl.snap == true then
+                    local cnt = 0
+                    repeat
+                      cnt = cnt + 1
+                      local a = round(rctl.amount,5)
+                      if bias > rctl.bias then
+                        local r = math.random()*(ctl.val-math.min(rctl.min,ctl.val))
+                        v = -round((r / a)) * a
+                      else
+                        local r = math.random()*(rctl.max-math.min(ctl.val,rctl.max))
+                        v = round((r / a)) * a
+                      end
+                    until (ctl.val+v > 0 and ctl.val+v < 1) or cnt == 5
+                    if ctl.val+v < 0 or ctl.val+v > 1 then
+                      v = 0
+                    end
+                  elseif bias > rctl.bias then
+                    v = -v
+                  end
+                  v = F_limit(ctl.val+v,rctl.min,rctl.max)
+                end
+                if ctl.ctltype == 2 or 
+                   ctl.ctltype == 3 or 
+                   ctl.ctltype == 7 or
+                   ctl.ctltype == 8 or
+                   ctl.ctltype == 9 or
+                   ctl.ctltype == 10 then
+                   v = round(v)
+                end
+                SetParam3(strip,page,rctls[ccc].ctl,ctl,v)
+              elseif ctl and ctl.ctltype == 4 then
+                --CYCLE CTL
+                local cycle = ctl.cycledata
+                local pos = cycle.pos or 1
+                local cnt = cycle.statecnt
+                --snap ignored
+                --amount ignored
+                local bias = math.random()
+                if bias > rctl.bias then
+                  local np = math.min(round(math.random() * math.max((pos-2),1) +1),pos)
+                  if cycle[np] and cycle[np].val then
+                    cycle.pos = np
+                    v = cycle[np].val
+                    SetParam3(strip,page,rctls[ccc].ctl,ctl,v)          
+                  end
+                else          
+                  local np = round(math.random() * (cnt-pos) +pos)
+                  if cycle[np] and cycle[np].val then
+                    cycle.pos = np
+                    v = cycle[np].val
+                    SetParam3(strip,page,rctls[ccc].ctl,ctl,v)          
+                  end
+                end          
+              end
+            end
+          
+          elseif lgs[l].type == 2 or lgs[l].type == 3 then
+            --random x on
+
+            local a, b = 1, 0
+            if lgs[l].type == 3 then
+              a, b = 0, 1
+            end
+            lg[l] = table.shuffle(lg[l])
+
+            for x = 1, math.min(round(lgs[l].X*128),lgcnt) do
+              local ccc = lg[l][x]
+            
+              local ctl = ctls[rctls[ccc].ctl]
+              if ctl then
+                --[[if ctl.ctlcat == ctlcats.fxparam or 
+                   ctl.ctlcat == ctlcats.trackparam or
+                   ctl.ctlcat == ctlcats.tracksend then]]
+                  trackfxparam_select = rctls[ccc].ctl
+                  local v = a
+                  SetParam3(strip,page,rctls[ccc].ctl,ctl,v)
+                --end
+              end
+            end
+
+            if math.min(round(lgs[l].X*128),lgcnt) < lgcnt then
+              for x = math.min(round(lgs[l].X*128),lgcnt)+1, lgcnt do
+                local ccc = lg[l][x]
+              
+                local ctl = ctls[rctls[ccc].ctl]
+                if ctl then
+                  --[[if ctl.ctlcat == ctlcats.fxparam or 
+                     ctl.ctlcat == ctlcats.trackparam or
+                     ctl.ctlcat == ctlcats.tracksend then]]
+                    trackfxparam_select = rctls[ccc].ctl
+                    local v = b
+                    SetParam3(strip,page,rctls[ccc].ctl,ctl,v)
+                  --end
+                end
+              end
+            end
+                                  
+          elseif lgs[l].type == 4 then
+            --linked
+            local vv
+            --if lgs[l].X > 0 then
+            if lgs[l].snap == true then
+              local r = math.floor((math.random()*3)-1)
+              vv = r * round(lgs[l].X,4)
+            else
+              vv = ((math.random()*2)-1) * lgs[l].X
+            end
+            --else
+            --  vv = (math.random()*2)-1
+            --end
+            for x = 1, lgcnt do
+              local ccc = lg[l][x]
+              local ctl = ctls[rctls[ccc].ctl]
+              if ctl then
+                --[[if ctl.ctlcat == ctlcats.fxparam or 
+                   ctl.ctlcat == ctlcats.trackparam or
+                   ctl.ctlcat == ctlcats.tracksend then]]
+                  trackfxparam_select = rctls[ccc].ctl
+                  local v
+                  if rctls[ccc].inverted ~= true then
+                    v = ctl.val + vv
+                  else
+                    v = ctl.val - vv
+                  end
+                  if lgs[l].snap == true then
+                    if v < 0 or v > 1 then
+                      v = ctl.val
+                    end
+                  end
+                  v = F_limit(v,rctls[ccc].min,rctls[ccc].max)
+                  if ctl.ctltype == 2 or 
+                     ctl.ctltype == 3 or 
+                     ctl.ctltype == 7 or
+                     ctl.ctltype == 8 or
+                     ctl.ctltype == 9 or
+                     ctl.ctltype == 10 then
+                     v = round(v)
+                  end
+                  SetParam3(strip,page,rctls[ccc].ctl,ctl,v)
+                --end
+              end
+
+            end 
+            
+          --[[elseif lgs[l].type == 5 then
+            --linked inverted
+            local vv = ((math.random()*2)-1) * lgs[l].X
+            for x = 1, lgcnt do
+              local ccc = lg[l][x]
+              local ctl = ctls[rctls[ccc].ctl]
+              if ctl then
+                if ctl.ctlcat == ctlcats.fxparam or 
+                   ctl.ctlcat == ctlcats.trackparam or
+                   ctl.ctlcat == ctlcats.tracksend then
+                  trackfxparam_select = rctls[ccc].ctl
+                  local v
+                  if x == 1 then
+                    v = ctl.val + vv
+                  else
+                    v = ctl.val - vv                  
+                  end
+                  if ctl.ctltype == 2 or 
+                     ctl.ctltype == 3 or 
+                     ctl.ctltype == 7 or
+                     ctl.ctltype == 8 or
+                     ctl.ctltype == 9 or
+                     ctl.ctltype == 10 then
+                     v = round(v)
+                  end
+                  SetParam3(strip,page,c,ctl,v)
+                end
+              end
+
+            end ]]
+
+            
+          end
+        end
+      
+      end
+    
+    end
+  
+  end
+
   function Snapshot_RANDOMIZE(strip, page, sstype_select, respectminmax)
 
     if not strips[strip] then return end
@@ -44381,7 +45632,7 @@ end
             if ctl.ctlcat == ctlcats.fxparam or 
                ctl.ctlcat == ctlcats.trackparam or
                ctl.ctlcat == ctlcats.tracksend then
-              trackfxparam_select = ctl
+              trackfxparam_select = c
               local v = math.random()
               if ctl.ctltype == 2 or 
                  ctl.ctltype == 3 or 
@@ -44400,7 +45651,7 @@ end
               end
             elseif ctl.ctlcat == ctlcats.takeswitcher then
               if ctl.iteminfo then
-                local v = round(math.random()*(ctl.iteminfo.numtakes-1))/takeswitch_max
+                local v = math.max(round(math.random()*(ctl.iteminfo.numtakes-1))/takeswitch_max,0)
                 ctl.val = v
                 SetItemTake(strip, page, c)
                 SetCtlDirty(c)
@@ -44417,9 +45668,10 @@ end
           for ctl = 1, #snapshots[strip][page][sstype_select].ctls do
             local c = snapshots[strip][page][sstype_select].ctls[ctl].ctl
             local cctl = strips[strip][page].controls[c]
-            if cctl and (cctl.ctlcat == ctlcats.fxparam or 
+            if cctl and cctl.ctlcat ~= ctlcats.takeswitcher then
+            --[[if cctl and (cctl.ctlcat == ctlcats.fxparam or 
                cctl.ctlcat == ctlcats.trackparam or
-               cctl.ctlcat == ctlcats.tracksend) then
+               cctl.ctlcat == ctlcats.tracksend) then]]
               trackfxparam_select = c
               local v = math.random()
               if cctl.ctltype == 2 or 
@@ -44437,7 +45689,7 @@ end
               end
             elseif cctl and cctl.ctlcat == ctlcats.takeswitcher then
               if cctl.iteminfo then
-                local v = round(math.random()*cctl.iteminfo.numtakes-1)/takeswitch_max
+                local v = math.max(round(math.random()*cctl.iteminfo.numtakes-1)/takeswitch_max,0)
                 cctl.val = v
                 SetItemTake(strip, page, c)
                 SetCtlDirty(c)
@@ -44671,7 +45923,10 @@ end
             if tonumber(strips[strip][page].controls[c].param_info.paramidx) then
               strips[strip][page].controls[c].param_info.paramidx = strips[strip][page].controls[c].param_info.paramidx -1
             end
-          end        
+            if strips[strip][page].controls[c].random then
+              strips[strip][page].controls[c].random.sst = strips[strip][page].controls[c].param
+            end
+          end
         end
       
       end
@@ -45519,6 +46774,162 @@ end
     end
   end
   
+  function RandomOpts_FindParent(cid)
+    local strip = tracks[track_select].strip
+    if strips[strip] then
+      for c = 1, #strips[strip][page].controls do
+        local ctl = strips[strip][page].controls[c]
+        if ctl.c_id == cid then
+          return c
+        end
+      end
+    end
+  end
+
+  function RandomOpts_RefreshCtlNos(strip, page, random)
+    if random then
+      local strip = strip or tracks[track_select].strip
+      local ctls = {}
+      local sst = random.sst
+      local snapctls = snapshots[strip][page][sst].ctls
+      
+      if snapctls and #snapctls > 0 then
+        for sc = 1, #snapctls do
+          ctls[sc] = {c_id = snapctls[sc].c_id,
+                      ctl = snapctls[sc].ctl,
+                      min = 0,
+                      max = 1,
+                      linkgrp = nil,
+                      rprob = 1,
+                      bias = 0.5,
+                      amount = nil,
+                      snap = nil,
+                      inverted = false,
+                      wild = 0}
+          for rs = 1, #random.ctls do
+            if tostring(random.ctls[rs].c_id) == tostring(ctls[sc].c_id) then
+              ctls[sc] = random.ctls[rs]
+              ctls[sc].ctl = snapctls[sc].ctl
+              break
+            end
+          end
+        end
+      end
+      random.ctls = ctls
+      
+    end
+
+  end
+    
+  function RandomOpts_ParamMenu(x,y)
+  
+    local mstr = ''
+    
+    RandomOpts_RefreshCtlNos(tracks[track_select].strip, page, randomopts_select)
+    
+    local strip = tracks[track_select].strip
+    local rosctls = randomopts_select.ctls
+    if #rosctls > 0 then
+    
+      for i = 1, #rosctls do
+        local ctl = strips[strip][page].controls[rosctls[i].ctl]
+        local name
+        if ctl.ctlcat == ctlcats.fxparam then
+          local fxnum = string.format('%i',ctl.fxnum)
+          local fxname = CropFXName(strips[strip][page].controls[rosctls[i].ctl].fxname)
+          name = 'FX '..fxnum..' : '..fxname..' - '.. strips[strip][page].controls[rosctls[i].ctl].param_info.paramname  
+        else
+          name = ctl.param_info.paramname
+        end
+        if mstr ~= '' then
+          mstr = mstr .. '|'
+        end
+        mstr = mstr .. name
+      
+      end
+    
+    end
+    
+    gfx.x = x
+    gfx.y = y
+    local res = gfx.showmenu(mstr)
+    if res > 0 then
+      randomopts_select.param = res
+      update_randomopts = true
+    end
+    
+  end
+  
+  function RandomOpts_LG_INIT()
+  
+    local p = randomopts_select.param
+    local lg = randomopts_select.ctls[p].linkgrp
+    if randomopts_select.linkgrps[lg] == nil then
+    
+      randomopts_select.linkgrps[lg] = {type = 1,
+                                        X = 1/128}
+    
+    end
+  
+  end
+  
+  function RandomOpts_INIT(c)
+  
+    local strip = tracks[track_select].strip
+    local ctl = strips[strip][page].controls[c]
+    if ctl and ctl.ctlcat == ctlcats.snapshotrand then
+    
+      local ros = ctl.random
+      if not ros then
+        local sst = ctl.param
+        local snapctls = snapshots[strip][page][sst].ctls
+      
+        ros = {parent = c,
+               parent_cid = ctl.c_id,
+               sst = ctl.param,
+               ctls = {},
+               linkgrps = {},
+               snapshotsonly = false,
+               useadv = false}
+        local ctls = {}
+        randomopts_ctls = {}
+        if snapctls and #snapctls > 0 then
+          for sc = 1, #snapctls do
+            ctls[sc] = {c_id = snapctls[sc].c_id,
+                        ctl = snapctls[sc].ctl,
+                        min = 0,
+                        max = 1,
+                        linkgrp = nil,
+                        rprob = 1,
+                        bias = 0.5,
+                        amount = nil,
+                        snap = nil,
+                        inverted = false,
+                        wild = 0}
+            randomopts_ctls[snapctls[sc].ctl] = sc 
+          end
+          ros.ctls = ctls
+        end
+        
+      else
+        if #ros.ctls > 0 then
+          randomopts_ctls = {}
+          for sc = 1, #ros.ctls do
+            randomopts_ctls[ros.ctls[sc].ctl] = sc
+          end
+        else
+          randomopts_ctls = nil
+        end
+        if ros.parent ~= c then
+          ros.parent = c
+        end
+      end
+      randomopts_select = ros
+      ctl.random = randomopts_select
+    end
+  
+  end
+  
   ------------------------------------------------------------
   
   function EnableLatch(c)
@@ -46017,7 +47428,24 @@ end
                 ctl.mod = nil
                 
               end
-              
+
+              if merge then
+                for c = 1, #loaddata.stripdata[s][p].controls do
+                  local ctl = loaddata.stripdata[s][p].controls[c]
+                  if ctl.random then
+                  
+                    ctl.random.parent_cid = cids[ctl.random.parent_cid]
+                    if #ctl.random.ctls > 0 then
+                      for rc = 1, #ctl.random.ctls do
+                      
+                        ctl.random.ctls[rc].c_id = cids[ctl.random.ctls[rc].c_id]
+                      
+                      end
+                    end
+                  
+                  end
+                end
+              end                            
             end
             if #loaddata.stripdata[s][p].graphics > 0 then
               for c = 1, #loaddata.stripdata[s][p].graphics do
@@ -46137,7 +47565,8 @@ end
                     ctl.iteminfo.utilguid = guids[ctl.iteminfo.utilguid]
                   end
                 
-                end      
+                end
+                      
               end
             end
           end
@@ -48044,6 +49473,7 @@ end
   settings_ssdock = false
   settings_moddock = false
   settings_dragmode = false
+  hideunusedtracks = false
   
   tb_butt_h = 20
   fontscale = 8
