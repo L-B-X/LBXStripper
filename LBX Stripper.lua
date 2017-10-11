@@ -12865,9 +12865,9 @@ end
           local fxnum = ''
           if ctl.ctlcat == ctlcats.fxparam then 
             fxnum = string.format('%i',ctl.fxnum)
-            txt = 'FX '..fxnum..' : '..ctl.param_info.paramname
+            txt = 'FX '..fxnum..' : '..nz(ctl.ctlname_override,'') .. ' (' ..ctl.param_info.paramname ..')'
           else
-            txt = ctl.param_info.paramname
+            txt = nz(ctl.ctlname_override,'') .. ' (' .. ctl.param_info.paramname ..')'
           end
         else
           txt = 'No parameter'
@@ -46843,10 +46843,10 @@ end
         local name
         if ctl.ctlcat == ctlcats.fxparam then
           local fxnum = string.format('%i',ctl.fxnum)
-          local fxname = CropFXName(strips[strip][page].controls[rosctls[i].ctl].fxname)
-          name = 'FX '..fxnum..' : '..fxname..' - '.. strips[strip][page].controls[rosctls[i].ctl].param_info.paramname  
+          local fxname = CropFXName(ctl.fxname)
+          name = 'FX '..fxnum..' : '..fxname..' - '.. nz(ctl.ctlname_override,'')..' ('.. ctl.param_info.paramname ..')'
         else
-          name = ctl.param_info.paramname
+          name = nz(ctl.ctlname_override,'') ..' ('.. ctl.param_info.paramname ..')'
         end
         if mstr ~= '' then
           mstr = mstr .. '|'
