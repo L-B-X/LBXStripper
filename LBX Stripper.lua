@@ -5414,7 +5414,7 @@
     local guid_tr = {}
     local sendsdirty = false
     --tracks_idx = {}
-    tracksused_idx = {} 
+    --tracksused_idx = {} 
     for i = -1, reaper.CountTracks(0) do
       local track = GetTrack(i)
       if track ~= nil then
@@ -5474,10 +5474,17 @@
 
   function PopulateUsedTracksTable()
     local tt = 0
+    tracksused_idx = {}
     for i = -1, reaper.CountTracks(0) do
       if tracks[i] and tracks[i].strip ~= -1 then
-        tracksused_idx[tt] = i
-        tt = tt + 1
+        local strip = tracks[i].strip
+        if strips[strip] and (#strips[strip][1].controls > 0 or
+                              #strips[strip][2].controls > 0 or
+                              #strips[strip][3].controls > 0 or
+                              #strips[strip][4].controls > 0) then
+          tracksused_idx[tt] = i
+          tt = tt + 1
+        end
       end
     end
   
@@ -29344,6 +29351,7 @@ end
         end
         
         if mouse.my > obj.sections[500].y + obj.sections[500].h - tb_butt_h then
+          PopulateUsedTracksTable()
           hideunusedtracks = not hideunusedtracks
           update_sidebar = true
         
