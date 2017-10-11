@@ -12852,12 +12852,14 @@ end
         end
         local ctlsel = randomopts_select.ctls[randomopts_select.param]
         
-        local lg = ctlsel.linkgrp
-        local lgtype
-        if lg and randomopts_select.linkgrps[lg] then
-          lgtype = randomopts_select.linkgrps[lg].type
+        local lgtype, lg
+        if ctlsel then
+          lg = ctlsel.linkgrp
+          if lg and randomopts_select.linkgrps[lg] then
+            lgtype = randomopts_select.linkgrps[lg].type
+          end
         end
-
+        
         if not ctlsel or (snapshots[strip][page][randomopts_select.sst].ctls[randomopts_select.param] and ctlsel.c_id ~= snapshots[strip][page][randomopts_select.sst].ctls[randomopts_select.param].c_id) then
           ctlsel = nil
           RandomOpts_RefreshCtlNos(strip, page, randomopts_select)
@@ -12889,7 +12891,7 @@ end
         GUI_DrawButton(gui, txt, obj.sections[1133], gui.color.white, gui.skol.butt1_txt, true, 'PARAM',false,gui.fontsz.butt)
         GUI_DrawButton(gui, '<  >', obj.sections[1145], gui.color.white, gui.skol.butt1_txt, true, '',false,gui.fontsz.butt)
         
-        if lgtype ~= 2 and lgtype ~= 3 then
+        if ctlsel and lgtype ~= 2 and lgtype ~= 3 then
           if ctlsel.wild == 0 then
             txt = 'Off'
           else
@@ -12909,44 +12911,46 @@ end
           GUI_DrawButton(gui, max, obj.sections[1135], gui.color.white, gui.skol.butt1_txt, true, 'MAX',false,gui.fontsz.butt)
         end
         
-        local txt = ctlsel.linkgrp
-        if not txt then
-          txt = 'None'
-        end
-        GUI_DrawButton(gui, txt, obj.sections[1136], gui.color.white, gui.skol.butt1_txt, true, 'LINK GRP',false,gui.fontsz.butt)
-        
-        if not lgtype then
-          GUI_DrawButton(gui, math.floor(ctlsel.rprob*100)..'%', obj.sections[1137], gui.color.white, gui.skol.butt1_txt, true, 'PROBABILITY',false,gui.fontsz.butt)
-        end
-        if not lgtype or lgtype == 1 then
-          GUI_DrawButton(gui, math.floor(ctlsel.bias*100)..'%', obj.sections[1138], gui.color.white, gui.skol.butt1_txt, true, '+ve BIAS',false,gui.fontsz.butt)
+        if ctlsel then
+          local txt = ctlsel.linkgrp
+          if not txt then
+            txt = 'None'
+          end
+          GUI_DrawButton(gui, txt, obj.sections[1136], gui.color.white, gui.skol.butt1_txt, true, 'LINK GRP',false,gui.fontsz.butt)
+          
+          if not lgtype then
+            GUI_DrawButton(gui, math.floor(ctlsel.rprob*100)..'%', obj.sections[1137], gui.color.white, gui.skol.butt1_txt, true, 'PROBABILITY',false,gui.fontsz.butt)
+          end
+          if not lgtype or lgtype == 1 then
+            GUI_DrawButton(gui, math.floor(ctlsel.bias*100)..'%', obj.sections[1138], gui.color.white, gui.skol.butt1_txt, true, '+ve BIAS',false,gui.fontsz.butt)
+          end
+                  
+          if ctlsel.linkgrp and randomopts_select.linkgrps[lg].type == 4 then
+            if ctlsel.inverted == true then
+              txt = 'Invert'
+            else
+              txt = 'Match'
+            end
+            GUI_DrawButton(gui, txt, obj.sections[1139], gui.color.white, gui.skol.butt1_txt, true, 'MATCH/INVERT',false,gui.fontsz.butt)
+          end
+    
+          if not lgtype or lgtype == 1 then
+            if not ctlsel.amount then
+              txt = 'Off'
+            else
+              txt = round(ctlsel.amount*100,3)..'%'  
+            end
+            GUI_DrawButton(gui, txt, obj.sections[1140], gui.color.white, gui.skol.butt1_txt, true, 'RANGE',false,gui.fontsz.butt)
+            if ctlsel.amount and ctlsel.amount > 0 then
+              local b = gui.color.white
+              if ctlsel.snap == true then
+                b = -4
+              end
+              GUI_DrawButton(gui, 'Snap', obj.sections[1147], b, gui.skol.butt1_txt, true, '',false,gui.fontsz.butt)
+            end
+          end
         end
                 
-        if ctlsel.linkgrp and randomopts_select.linkgrps[lg].type == 4 then
-          if ctlsel.inverted == true then
-            txt = 'Invert'
-          else
-            txt = 'Match'
-          end
-          GUI_DrawButton(gui, txt, obj.sections[1139], gui.color.white, gui.skol.butt1_txt, true, 'MATCH/INVERT',false,gui.fontsz.butt)
-        end
-  
-        if not lgtype or lgtype == 1 then
-          if not ctlsel.amount then
-            txt = 'Off'
-          else
-            txt = round(ctlsel.amount*100,3)..'%'  
-          end
-          GUI_DrawButton(gui, txt, obj.sections[1140], gui.color.white, gui.skol.butt1_txt, true, 'RANGE',false,gui.fontsz.butt)
-          if ctlsel.amount and ctlsel.amount > 0 then
-            local b = gui.color.white
-            if ctlsel.snap == true then
-              b = -4
-            end
-            GUI_DrawButton(gui, 'Snap', obj.sections[1147], b, gui.skol.butt1_txt, true, '',false,gui.fontsz.butt)
-          end
-        end
-        
         local grph = (obj.sections[1140].y+obj.sections[1140].h+10)
         f_Get_SSV(gui.skol.lst_bg)
         local ind = 6
@@ -12963,31 +12967,33 @@ end
           gfx.blit(skin.panela_cnrtr,1,0,0,0,pnlcnr_w,pnlcnr_h,x+w-pnlcnr_w,y)
         end
 
-        local txt = ctlsel.linkgrp
-        if not txt then
-          txt = 'None'
-        end
-        GUI_DrawButton(gui, txt, obj.sections[1142], gui.color.white, gui.skol.butt1_txt, true, 'LINK GRP',false,gui.fontsz.butt)
-        
-        local lgsel = randomopts_select.linkgrps[lg]        
-        if lgtype then
-          GUI_DrawButton(gui, linkgrp_table[lgsel.type], obj.sections[1143], gui.color.white, gui.skol.butt1_txt, true, 'TYPE',false,gui.fontsz.butt)
-          if lgtype <= 3 then
-            GUI_DrawButton(gui, string.format('%i',round(lgsel.X*128)), obj.sections[1144], gui.color.white, gui.skol.butt1_txt, true, 'X',false,gui.fontsz.butt)
-          else
-            --if lgsel.X > 0 then
-              txt = round(lgsel.X*100,3)..'%'
-            --else
-            --  txt = 'Off'
-            --end
-            GUI_DrawButton(gui, txt, obj.sections[1144], gui.color.white, gui.skol.butt1_txt, true, 'RANGE',false,gui.fontsz.butt)          
-
-            if lgsel.X > 0 then
-              local b = gui.color.white
-              if lgsel.snap == true then
-                b = -4
+        if ctlsel then
+          local txt = ctlsel.linkgrp
+          if not txt then
+            txt = 'None'
+          end
+          GUI_DrawButton(gui, txt, obj.sections[1142], gui.color.white, gui.skol.butt1_txt, true, 'LINK GRP',false,gui.fontsz.butt)
+          
+          local lgsel = randomopts_select.linkgrps[lg]        
+          if lgtype then
+            GUI_DrawButton(gui, linkgrp_table[lgsel.type], obj.sections[1143], gui.color.white, gui.skol.butt1_txt, true, 'TYPE',false,gui.fontsz.butt)
+            if lgtype <= 3 then
+              GUI_DrawButton(gui, string.format('%i',round(lgsel.X*128)), obj.sections[1144], gui.color.white, gui.skol.butt1_txt, true, 'X',false,gui.fontsz.butt)
+            else
+              --if lgsel.X > 0 then
+                txt = round(lgsel.X*100,3)..'%'
+              --else
+              --  txt = 'Off'
+              --end
+              GUI_DrawButton(gui, txt, obj.sections[1144], gui.color.white, gui.skol.butt1_txt, true, 'RANGE',false,gui.fontsz.butt)          
+  
+              if lgsel.X > 0 then
+                local b = gui.color.white
+                if lgsel.snap == true then
+                  b = -4
+                end
+                GUI_DrawButton(gui, 'Snap', obj.sections[1148], b, gui.skol.butt1_txt, true, '',false,gui.fontsz.butt)
               end
-              GUI_DrawButton(gui, 'Snap', obj.sections[1148], b, gui.skol.butt1_txt, true, '',false,gui.fontsz.butt)
             end
           end
         end
