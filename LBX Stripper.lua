@@ -45314,9 +45314,9 @@ end
     end    
   end
 
-  function table.shuffle(tbl)
+  function table.shuffle(tbl, n)
     size = #tbl
-    for i = size, 1, -1 do
+    for i = 1, math.min(n,size) do
       local rand = math.random(size)
       tbl[i], tbl[rand] = tbl[rand], tbl[i]
     end
@@ -45439,8 +45439,9 @@ end
           if lgs[l].type == 1 then
             --random x
 
-            lg[l] = table.shuffle(lg[l])
-            for x = 1, math.min(round(lgs[l].X*128),lgcnt) do
+            local XX = round(lgs[l].X*128)
+            lg[l] = table.shuffle(lg[l],XX)
+            for x = 1, math.min(XX,lgcnt) do
               local ccc = lg[l][x]
             
               local rctl = rctls[ccc]
@@ -45519,33 +45520,28 @@ end
             if lgs[l].type == 3 then
               a, b = 0, 1
             end
-            lg[l] = table.shuffle(lg[l])
+            local XX = round(lgs[l].X*128)
+            lg[l] = table.shuffle(lg[l],XX)
 
-            for x = 1, math.min(round(lgs[l].X*128),lgcnt) do
+            for x = 1, math.min(XX,lgcnt) do
               local ccc = lg[l][x]
             
               local ctl = ctls[rctls[ccc].ctl]
               if ctl then
-                --[[if ctl.ctlcat == ctlcats.fxparam or 
-                   ctl.ctlcat == ctlcats.trackparam or
-                   ctl.ctlcat == ctlcats.tracksend then]]
-                  trackfxparam_select = rctls[ccc].ctl
+                  --trackfxparam_select = rctls[ccc].ctl
                   local v = a
                   SetParam3(strip,page,rctls[ccc].ctl,ctl,v)
                 --end
               end
             end
 
-            if math.min(round(lgs[l].X*128),lgcnt) < lgcnt then
-              for x = math.min(round(lgs[l].X*128),lgcnt)+1, lgcnt do
+            if math.min(XX,lgcnt) < lgcnt then
+              for x = math.min(XX,lgcnt)+1, lgcnt do
                 local ccc = lg[l][x]
               
                 local ctl = ctls[rctls[ccc].ctl]
                 if ctl then
-                  --[[if ctl.ctlcat == ctlcats.fxparam or 
-                     ctl.ctlcat == ctlcats.trackparam or
-                     ctl.ctlcat == ctlcats.tracksend then]]
-                    trackfxparam_select = rctls[ccc].ctl
+                    --trackfxparam_select = rctls[ccc].ctl
                     local v = b
                     SetParam3(strip,page,rctls[ccc].ctl,ctl,v)
                   --end
@@ -45570,10 +45566,7 @@ end
               local ccc = lg[l][x]
               local ctl = ctls[rctls[ccc].ctl]
               if ctl then
-                --[[if ctl.ctlcat == ctlcats.fxparam or 
-                   ctl.ctlcat == ctlcats.trackparam or
-                   ctl.ctlcat == ctlcats.tracksend then]]
-                  trackfxparam_select = rctls[ccc].ctl
+                  --trackfxparam_select = rctls[ccc].ctl
                   local v
                   if rctls[ccc].inverted ~= true then
                     v = ctl.val + vv
@@ -45600,37 +45593,6 @@ end
 
             end 
             
-          --[[elseif lgs[l].type == 5 then
-            --linked inverted
-            local vv = ((math.random()*2)-1) * lgs[l].X
-            for x = 1, lgcnt do
-              local ccc = lg[l][x]
-              local ctl = ctls[rctls[ccc].ctl]
-              if ctl then
-                if ctl.ctlcat == ctlcats.fxparam or 
-                   ctl.ctlcat == ctlcats.trackparam or
-                   ctl.ctlcat == ctlcats.tracksend then
-                  trackfxparam_select = rctls[ccc].ctl
-                  local v
-                  if x == 1 then
-                    v = ctl.val + vv
-                  else
-                    v = ctl.val - vv                  
-                  end
-                  if ctl.ctltype == 2 or 
-                     ctl.ctltype == 3 or 
-                     ctl.ctltype == 7 or
-                     ctl.ctltype == 8 or
-                     ctl.ctltype == 9 or
-                     ctl.ctltype == 10 then
-                     v = round(v)
-                  end
-                  SetParam3(strip,page,c,ctl,v)
-                end
-              end
-
-            end ]]
-
             
           end
         end
