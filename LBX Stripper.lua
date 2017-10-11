@@ -12866,6 +12866,13 @@ end
           if ctl.ctlcat == ctlcats.fxparam then 
             fxnum = string.format('%i',ctl.fxnum)
             txt = 'FX '..fxnum..' : '..nz(ctl.ctlname_override,'') .. ' (' ..ctl.param_info.paramname ..')'
+          elseif ctl.ctlcat == ctlcats.trackparam or ctl.ctlcat == ctlcats.tracksend then 
+            local trn = ctl.tracknum or tracks[track_select].tracknum
+            local trtxt = 'TR '..trn+1 ..' : '
+            if trn == -1 then
+              trtxt = 'TR MASTER : '
+            end
+            txt = trtxt..nz(ctl.ctlname_override,'') .. ' (' .. ctl.param_info.paramname ..')'
           else
             txt = nz(ctl.ctlname_override,'') .. ' (' .. ctl.param_info.paramname ..')'
           end
@@ -41471,7 +41478,7 @@ end
                 local key = pfx..'c_'..c..'_rnd_lgs_'..lg..'_'
                 strip.controls[c].random.linkgrps[lg] = {}
                 strip.controls[c].random.linkgrps[lg].type = tonumber(zn(data[key..'type'],1))
-                strip.controls[c].random.linkgrps[lg].X = tonumber(zn(data[key..'X'],1))
+                strip.controls[c].random.linkgrps[lg].X = tonumber(zn(data[key..'X'],1/128))
                 strip.controls[c].random.linkgrps[lg].snap = tobool(zn(data[key..'snap'],false))
               end
             end
@@ -46845,6 +46852,13 @@ end
           local fxnum = string.format('%i',ctl.fxnum)
           local fxname = CropFXName(ctl.fxname)
           name = 'FX '..fxnum..' : '..fxname..' - '.. nz(ctl.ctlname_override,'')..' ('.. ctl.param_info.paramname ..')'
+        elseif ctl.ctlcat == ctlcats.trackparam or ctl.ctlcat == ctlcats.tracksend then
+          local trn = ctl.tracknum or tracks[track_select].tracknum
+          local trtxt = 'TR '..trn+1 ..' : '
+          if trn == -1 then
+            trtxt = 'TR MASTER : '
+          end
+          name = trtxt..nz(ctl.ctlname_override,'') ..' ('.. ctl.param_info.paramname ..')'
         else
           name = nz(ctl.ctlname_override,'') ..' ('.. ctl.param_info.paramname ..')'
         end
