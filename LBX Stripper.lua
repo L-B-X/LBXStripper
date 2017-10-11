@@ -45405,7 +45405,9 @@ end
                ctl.ctltype == 10 then
                v = round(v)
             end
-            SetParam3(strip,page,rctls[cc].ctl,ctl,v)
+            if v ~= ctl.val then
+              SetParam3(strip,page,rctls[cc].ctl,ctl,v)
+            end
           end
         else
           --CYCLE CTL
@@ -45420,14 +45422,18 @@ end
             if cycle[np] and cycle[np].val then
               cycle.pos = np
               v = cycle[np].val
-              SetParam3(strip,page,rctls[cc].ctl,ctl,v)          
+              if v ~= ctl.val then
+                SetParam3(strip,page,rctls[cc].ctl,ctl,v)
+              end          
             end
           else          
             local np = round(math.random() * (cnt-pos) +pos)
             if cycle[np] and cycle[np].val then
               cycle.pos = np
               v = cycle[np].val
-              SetParam3(strip,page,rctls[cc].ctl,ctl,v)          
+              if v ~= ctl.val then
+                SetParam3(strip,page,rctls[cc].ctl,ctl,v)
+              end          
             end
           end          
         end
@@ -45486,7 +45492,9 @@ end
                    ctl.ctltype == 10 then
                    v = round(v)
                 end
-                SetParam3(strip,page,rctls[ccc].ctl,ctl,v)
+                if v ~= ctl.val then
+                  SetParam3(strip,page,rctls[ccc].ctl,ctl,v)
+                end
               elseif ctl and ctl.ctltype == 4 then
                 --CYCLE CTL
                 local cycle = ctl.cycledata
@@ -45500,14 +45508,18 @@ end
                   if cycle[np] and cycle[np].val then
                     cycle.pos = np
                     v = cycle[np].val
-                    SetParam3(strip,page,rctls[ccc].ctl,ctl,v)          
+                    if v ~= ctl.val then
+                      SetParam3(strip,page,rctls[ccc].ctl,ctl,v)          
+                    end
                   end
                 else          
                   local np = round(math.random() * (cnt-pos) +pos)
                   if cycle[np] and cycle[np].val then
                     cycle.pos = np
                     v = cycle[np].val
-                    SetParam3(strip,page,rctls[ccc].ctl,ctl,v)          
+                    if v ~= ctl.val then
+                      SetParam3(strip,page,rctls[ccc].ctl,ctl,v)          
+                    end
                   end
                 end          
               end
@@ -45529,9 +45541,10 @@ end
               local ctl = ctls[rctls[ccc].ctl]
               if ctl then
                   --trackfxparam_select = rctls[ccc].ctl
-                  local v = a
+                local v = a
+                if v ~= ctl.val then
                   SetParam3(strip,page,rctls[ccc].ctl,ctl,v)
-                --end
+                end
               end
             end
 
@@ -45541,10 +45554,10 @@ end
               
                 local ctl = ctls[rctls[ccc].ctl]
                 if ctl then
-                    --trackfxparam_select = rctls[ccc].ctl
-                    local v = b
+                  local v = b
+                  if v ~= ctl.val then
                     SetParam3(strip,page,rctls[ccc].ctl,ctl,v)
-                  --end
+                  end
                 end
               end
             end
@@ -45587,12 +45600,12 @@ end
                      ctl.ctltype == 10 then
                      v = round(v)
                   end
-                  SetParam3(strip,page,rctls[ccc].ctl,ctl,v)
-                --end
+                  if v ~= ctl.val then
+                    SetParam3(strip,page,rctls[ccc].ctl,ctl,v)
+                  end
               end
 
             end 
-            
             
           end
         end
