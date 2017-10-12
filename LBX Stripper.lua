@@ -19145,14 +19145,16 @@ end
     
   ------------------------------------------------------------    
 
-  function CheckRandom(strip, page)
+  function CheckRandom(strip, page, sst)
 
     if strips and strips[strip] and #strips[strip][page].controls > 0 then
 
       for c = 1, #strips[strip][page].controls do
         local random = strips[strip][page].controls[c].random
         if random then
-          RandomOpts_RefreshCtlNos(strip, page, random)
+          if not sst or random.sst == sst then
+            RandomOpts_RefreshCtlNos(strip, page, random)
+          end
         end
       end
 
@@ -35613,6 +35615,7 @@ end
       Snap_RemoveDeletedSS(tracks[track_select].strip,page,sstype_select)
       CleanSS(tracks[track_select].strip, page, sstype_select)
       
+      CheckRandom(tracks[track_select].strip, page, sstype_select)
       navigate = true
       
       update_gfx = true
@@ -45570,33 +45573,89 @@ end
                                   
           elseif lgs[l].type == 4 then
             --linked
-            local vv
-            --if lgs[l].X > 0 then
+            --[[local vv
             if lgs[l].snap == true then
               local r = math.floor((math.random()*3)-1)
               vv = r * round(lgs[l].X,4)
             else
               vv = ((math.random()*2)-1) * lgs[l].X
             end
-            --else
-            --  vv = (math.random()*2)-1
-            --end
             for x = 1, lgcnt do
               local ccc = lg[l][x]
               local ctl = ctls[rctls[ccc].ctl]
               if ctl then
-                  --trackfxparam_select = rctls[ccc].ctl
-                  local v
-                  if rctls[ccc].inverted ~= true then
-                    v = ctl.val + vv
-                  else
-                    v = ctl.val - vv
+                local v
+                if rctls[ccc].inverted ~= true then
+                  v = ctl.val + vv
+                else
+                  v = ctl.val - vv
+                end
+                if lgs[l].snap == true then
+                  if v < 0 or v > 1 then
+                    v = ctl.val
                   end
-                  if lgs[l].snap == true then
-                    if v < 0 or v > 1 then
-                      v = ctl.val
+                end
+                v = F_limit(v,rctls[ccc].min,rctls[ccc].max)
+                if ctl.ctltype == 2 or 
+                   ctl.ctltype == 3 or 
+                   ctl.ctltype == 7 or
+                   ctl.ctltype == 8 or
+                   ctl.ctltype == 9 or
+                   ctl.ctltype == 10 then
+                   v = round(v)
+                end
+                if v ~= ctl.val then
+                  SetParam3(strip,page,rctls[ccc].ctl,ctl,v)
+                end
+              end
+
+            end]] 
+            
+            --local vv
+            if lgs[l].snap == true then
+
+              --local r = math.floor((math.random()*3)-1)
+              --vv = r * round(lgs[l].X,4)
+
+                  --[[local dv = ctls[rctls[1].ctl].defval
+                  local a = round(rctl.amount,5)
+                  local cnt = 0
+                  repeat
+                    cnt = cnt + 1
+                    if bias > rctl.bias then
+                      local r = math.random()*(ctl.val-math.min(rctl.min,ctl.val))
+                      v = -round((r / a)) * a
+                    else
+                      local r = math.random()*(rctl.max-math.min(ctl.val,rctl.max))
+                      v = round((r / a)) * a
                     end
+                  until (ctl.val+v > 0 and ctl.val+v < 1) or cnt == 5
+                  if ctl.val+v < 0 or ctl.val+v > 1 then
+                    v = 0
+                  end]]
+
+              local dv = ctls[rctls[1].ctl].defval
+              local r = math.random()
+              local a = round(lgs[l].X,5)
+              local vv = round((r / a)) * a
+              if vv > dv then vv = vv-dv end
+              if math.random(2) == 2 then
+                vv = -vv
+              end
+
+              for x = 1, lgcnt do
+                local ccc = lg[l][x]
+                local ctl = ctls[rctls[ccc].ctl]
+                if ctl then
+                  if rctls[ccc].inverted ~= true then
+                    v = ctl.defval + vv
+                  else
+                    v = ctl.defval - vv
                   end
+                  --DBG(v)
+                  --[[if v < 0 or v > 1 then
+                    v = ctl.val
+                  end]]
                   v = F_limit(v,rctls[ccc].min,rctls[ccc].max)
                   if ctl.ctltype == 2 or 
                      ctl.ctltype == 3 or 
@@ -45609,10 +45668,55 @@ end
                   if v ~= ctl.val then
                     SetParam3(strip,page,rctls[ccc].ctl,ctl,v)
                   end
+                end
               end
-
-            end 
+              
+              
+            else
+              --NO SNAP
+              local dv = ctls[rctls[1].ctl].defval
+              local d
+              local range = math.max(dv, 1-dv)
+              if dv == 0 then
+                d = 1
+              elseif dv == 1 then
+                d = -1
+              else
+                d = math.random(2)
+                if d == 2 then
+                  d = -1
+                end
+              end
+              local vv = math.random() * (range * lgs[l].X) * d
+              for x = 1, lgcnt do
+                local ccc = lg[l][x]
+                local ctl = ctls[rctls[ccc].ctl]
+                if ctl then
+                  local v
+                  if rctls[ccc].inverted ~= true then
+                    v = dv + vv
+                  else
+                    v = dv - vv
+                  end
+                  --[[if v < 0 or v > 1 then
+                    v = ctl.val
+                  end]]
+                  v = F_limit(v,rctls[ccc].min,rctls[ccc].max)
+                  if ctl.ctltype == 2 or 
+                     ctl.ctltype == 3 or 
+                     ctl.ctltype == 7 or
+                     ctl.ctltype == 8 or
+                     ctl.ctltype == 9 or
+                     ctl.ctltype == 10 then
+                     v = round(v)
+                  end
+                  if v ~= ctl.val then
+                    SetParam3(strip,page,rctls[ccc].ctl,ctl,v)
+                  end
+                end
+              end
             
+            end 
           end
         end
       
