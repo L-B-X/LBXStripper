@@ -46899,7 +46899,7 @@ end
       local ctls = {}
       local sst = random.sst
       local snapctls = snapshots[strip][page][sst].ctls
-      
+      randomopts_ctls = {}
       if snapctls and #snapctls > 0 then
         for sc = 1, #snapctls do
           ctls[sc] = {c_id = snapctls[sc].c_id,
@@ -46920,10 +46920,12 @@ end
               break
             end
           end
+          randomopts_ctls[ctls[sc].ctl] = sc
         end
       end
       random.ctls = ctls
-      
+      randomopts_select = random
+      randopts_selectctl = random.parent
     end
 
   end
