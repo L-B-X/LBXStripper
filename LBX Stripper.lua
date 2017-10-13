@@ -2654,7 +2654,7 @@
       local row2 = 240
       obj.sections[1134] = {x = math.floor(row2*pnl_scale),
                             y = math.floor((80 + butt_h * 1.2)*pnl_scale),
-                            w = math.floor((60) * pnl_scale),
+                            w = math.floor((90) * pnl_scale),
                             h = math.floor((butt_h) * pnl_scale)}
       obj.sections[1146] = {x = math.floor(row1*pnl_scale),
                             y = math.floor((80 + (butt_h * 1.2)*2)*pnl_scale),
@@ -2662,7 +2662,7 @@
                             h = math.floor((butt_h) * pnl_scale)}
       obj.sections[1135] = {x = math.floor(row2*pnl_scale),
                             y = math.floor((80 + (butt_h * 1.2)*2)*pnl_scale),
-                            w = math.floor((60) * pnl_scale),
+                            w = math.floor((90) * pnl_scale),
                             h = math.floor((butt_h) * pnl_scale)}
       obj.sections[1136] = {x = math.floor(row1*pnl_scale),
                             y = math.floor((80 + (butt_h * 1.2))*pnl_scale),
@@ -2674,17 +2674,17 @@
                             h = math.floor((butt_h) * pnl_scale)}
       obj.sections[1138] = {x = math.floor(row2*pnl_scale),
                             y = math.floor((80 + (butt_h * 1.2)*3)*pnl_scale),
-                            w = math.floor((60) * pnl_scale),
+                            w = math.floor((90) * pnl_scale),
                             h = math.floor((butt_h) * pnl_scale)}
       obj.sections[1139] = {x = math.floor(row1*pnl_scale),
                             y = math.floor((80 + (butt_h * 1.2)*4)*pnl_scale),
                             w = math.floor((60) * pnl_scale),
                             h = math.floor((butt_h) * pnl_scale)}
-      obj.sections[1140] = {x = math.floor(row2*pnl_scale),
+      obj.sections[1140] = {x = math.floor((row2-30)*pnl_scale),
                             y = math.floor((80 + (butt_h * 1.2)*4)*pnl_scale),
-                            w = math.floor((60) * pnl_scale),
+                            w = math.floor((90) * pnl_scale),
                             h = math.floor((butt_h) * pnl_scale)}
-      obj.sections[1147] = {x = math.floor(row2*pnl_scale)+obj.sections[1140].w+2,
+      obj.sections[1147] = {x = math.floor(obj.sections[1140].x+obj.sections[1140].w+2),
                             y = math.floor((80 + (butt_h * 1.2)*4)*pnl_scale),
                             w = math.floor((34) * pnl_scale),
                             h = math.floor((butt_h) * pnl_scale)}
@@ -2708,7 +2708,7 @@
 
       obj.sections[1144] = {x = math.floor(row1*pnl_scale),
                             y = math.floor((70 + (butt_h * 1.2)*8)*pnl_scale),
-                            w = math.floor((60) * pnl_scale),
+                            w = math.floor((100) * pnl_scale),
                             h = math.floor((butt_h) * pnl_scale)}
       obj.sections[1148] = {x = math.floor(row1*pnl_scale)+2+obj.sections[1144].w,
                             y = math.floor((70 + (butt_h * 1.2)*8)*pnl_scale),
@@ -12904,8 +12904,8 @@ end
             min = math.floor(ctlsel.min * takeswitch_max)
             max = math.floor(ctlsel.max * takeswitch_max)
           else
-            min = round(ctlsel.min,3)
-            max = round(ctlsel.max,3)
+            min = round(ctlsel.min,8)
+            max = round(ctlsel.max,8)
           end
           GUI_DrawButton(gui, min, obj.sections[1134], gui.color.white, gui.skol.butt1_txt, true, 'MIN',false,gui.fontsz.butt)
           GUI_DrawButton(gui, max, obj.sections[1135], gui.color.white, gui.skol.butt1_txt, true, 'MAX',false,gui.fontsz.butt)
@@ -12938,7 +12938,7 @@ end
             if not ctlsel.amount then
               txt = 'Off'
             else
-              txt = round(ctlsel.amount*100,3)..'%'  
+              txt = round(ctlsel.amount*100,8)..'%'  
             end
             GUI_DrawButton(gui, txt, obj.sections[1140], gui.color.white, gui.skol.butt1_txt, true, 'RANGE',false,gui.fontsz.butt)
             if ctlsel.amount and ctlsel.amount > 0 then
@@ -12981,7 +12981,7 @@ end
               GUI_DrawButton(gui, string.format('%i',round(lgsel.X*128)), obj.sections[1144], gui.color.white, gui.skol.butt1_txt, true, 'X',false,gui.fontsz.butt)
             else
               --if lgsel.X > 0 then
-                txt = round(lgsel.X*100,3)..'%'
+                txt = round(lgsel.X*100,8)..'%'
               --else
               --  txt = 'Off'
               --end
@@ -27639,8 +27639,12 @@ end
         end
         
         if lgtype ~= 2 and lgtype ~= 3 then
-          mouse.context = contexts.lg_min
-          draglg = {pos = randomopts_select.ctls[p].min, yoff = my-(obj.sections[1134].y+obj.sections[1134].h/2), shift = mouse.shift}
+          if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.2 then
+            OpenEB(201,'Please enter value for min:',randomopts_select.ctls[p].min)
+          else
+            mouse.context = contexts.lg_min
+            draglg = {pos = randomopts_select.ctls[p].min, yoff = my-(obj.sections[1134].y+obj.sections[1134].h/2), shift = mouse.shift}
+          end
         end
         
       elseif MOUSE_click(obj.sections[1135]) then
@@ -27653,8 +27657,12 @@ end
         end
         
         if lgtype ~= 2 and lgtype ~= 3 then
-          mouse.context = contexts.lg_max
-          draglg = {pos = randomopts_select.ctls[p].max, yoff = my-(obj.sections[1135].y+obj.sections[1135].h/2), shift = mouse.shift}
+          if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.2 then
+            OpenEB(202,'Please enter value for max:',randomopts_select.ctls[p].max)
+          else
+            mouse.context = contexts.lg_max
+            draglg = {pos = randomopts_select.ctls[p].max, yoff = my-(obj.sections[1135].y+obj.sections[1135].h/2), shift = mouse.shift}
+          end
         end
         
       elseif MOUSE_click(obj.sections[1137]) then
@@ -27700,8 +27708,14 @@ end
         end
         
         if not lgtype or lgtype == 1 then
-          mouse.context = contexts.lg_range
-          draglg = {pos = randomopts_select.ctls[p].amount, yoff = my-(obj.sections[1140].y+obj.sections[1140].h/2), shift = mouse.shift}
+          if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.2 then
+            --if randomopts_select.ctls[p] then
+              OpenEB(203,'Please enter value for range:',randomopts_select.ctls[p].amount*100)
+            --end
+          else
+            mouse.context = contexts.lg_range
+            draglg = {pos = randomopts_select.ctls[p].amount, yoff = my-(obj.sections[1140].y+obj.sections[1140].h/2), shift = mouse.shift}
+          end
         end
 
       elseif MOUSE_click(obj.sections[1146]) then
@@ -27722,11 +27736,19 @@ end
       
         local p = randomopts_select.param
         local lg = randomopts_select.ctls[p].linkgrp
-        --if randomopts_select.linkgrps[lg] and randomopts_select.linkgrps[lg].type <= 3 then
-          mouse.context = contexts.lg_X
-          draglg = {pos = randomopts_select.linkgrps[lg].X, yoff = my-(obj.sections[1144].y+obj.sections[1144].h/2), shift = mouse.shift}
-        --end
-              
+        if lg and randomopts_select.linkgrps[lg] then
+          if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.2 then
+            if randomopts_select.linkgrps[lg].type == 4 then
+              OpenEB(200,'Please enter value for range:',randomopts_select.linkgrps[lg].X*100)
+            end
+          else
+            --if randomopts_select.linkgrps[lg] and randomopts_select.linkgrps[lg].type <= 3 then
+              mouse.context = contexts.lg_X
+              draglg = {pos = randomopts_select.linkgrps[lg].X, yoff = my-(obj.sections[1144].y+obj.sections[1144].h/2), shift = mouse.shift}
+            --end
+          end
+        end
+                              
       elseif MOUSE_click(obj.sections[1136]) then
       
         local p = randomopts_select.param
@@ -27760,7 +27782,7 @@ end
 
         local p = randomopts_select.param
         local lg = randomopts_select.ctls[p].linkgrp
-        if randomopts_select.linkgrps[lg] and randomopts_select.linkgrps[lg].type == 4 then
+        if lg and randomopts_select.linkgrps[lg] and randomopts_select.linkgrps[lg].type == 4 then
           randomopts_select.linkgrps[lg].snap = not (randomopts_select.linkgrps[lg].snap or false)
           update_randomopts = true
         end
@@ -27769,16 +27791,20 @@ end
       
         local p = randomopts_select.param
         local lg = randomopts_select.ctls[p].linkgrp
-        randomopts_select.linkgrps[lg].type = math.min(randomopts_select.linkgrps[lg].type + 1,#linkgrp_table)
-        update_randomopts = true
-
+        if lg and randomopts_select.linkgrps[lg] then
+          randomopts_select.linkgrps[lg].type = math.min(randomopts_select.linkgrps[lg].type + 1,#linkgrp_table)
+          update_randomopts = true
+        end
+        
       elseif MOUSE_click_RB(obj.sections[1143]) then
       
         local p = randomopts_select.param
         local lg = randomopts_select.ctls[p].linkgrp
-        randomopts_select.linkgrps[lg].type = math.max(randomopts_select.linkgrps[lg].type - 1,1)
-        update_randomopts = true
-      
+        if lg and randomopts_select.linkgrps[lg] then
+          randomopts_select.linkgrps[lg].type = math.max(randomopts_select.linkgrps[lg].type - 1,1)
+          update_randomopts = true
+        end
+          
       elseif MOUSE_click(obj.sections[1145]) then
       
         if mouse.mx < obj.sections[1145].x+obj.sections[1145].w/2 then
@@ -29908,13 +29934,16 @@ end
           if mouse.shift == true then
             mult = 0.02
           end
-          if ctl and ctl.ctlcat == ctlcats.takeswitcher then
-            local numtakes = ctl.iteminfo.numtakes
-            randomopts_select.ctls[p].min = F_limit(draglg.pos + (val-0.5)*mult,0,(1/takeswitch_max)*(numtakes-1))
-          else
-            randomopts_select.ctls[p].min = F_limit(draglg.pos + (val-0.5)*mult,0,1)          
-          end
-          update_randomopts = true
+          local v = draglg.pos + (val-0.5)*mult
+          if round(v,4) ~= round(randomopts_select.ctls[p].min,4) then
+            if ctl and ctl.ctlcat == ctlcats.takeswitcher then
+              local numtakes = ctl.iteminfo.numtakes
+              randomopts_select.ctls[p].min = F_limit(v,0,(1/takeswitch_max)*(numtakes-1))
+            else
+              randomopts_select.ctls[p].min = F_limit(round(v,4),0,1)          
+            end
+            update_randomopts = true
+          end          
         end
 
       elseif mouse.context == contexts.lg_max then
@@ -29933,13 +29962,16 @@ end
           if mouse.shift == true then
             mult = 0.02
           end
-          if ctl and ctl.ctlcat == ctlcats.takeswitcher then
-            local numtakes = ctl.iteminfo.numtakes
-            randomopts_select.ctls[p].max = F_limit(draglg.pos + (val-0.5)*mult,0,(1/takeswitch_max)*(numtakes-1))
-          else
-            randomopts_select.ctls[p].max = F_limit(draglg.pos + (val-0.5)*mult,0,1)          
+          local v = draglg.pos + (val-0.5)*mult
+          if round(v,4) ~= round(randomopts_select.ctls[p].max,4) then
+            if ctl and ctl.ctlcat == ctlcats.takeswitcher then
+              local numtakes = ctl.iteminfo.numtakes
+              randomopts_select.ctls[p].max = F_limit(v,0,(1/takeswitch_max)*(numtakes-1))
+            else
+              randomopts_select.ctls[p].max = F_limit(round(v,4),0,1)          
+            end
+            update_randomopts = true
           end
-          update_randomopts = true
         end
 
       elseif mouse.context == contexts.lg_probability then
@@ -29974,11 +30006,14 @@ end
           if mouse.shift == true then
             mult = 0.002
           end
-          randomopts_select.ctls[p].amount = F_limit((draglg.pos or 0) + (val-0.5)*mult,0,1)
-          if randomopts_select.ctls[p].amount == 0 then
-            randomopts_select.ctls[p].amount = nil
+          local v = (draglg.pos or 0) + (val-0.5)*mult
+          if round(randomopts_select.ctls[p].amount,5) ~= round(v,5) then
+            randomopts_select.ctls[p].amount = F_limit(round(v,5),0,1)
+            if randomopts_select.ctls[p].amount == 0 then
+              randomopts_select.ctls[p].amount = nil
+            end
+            update_randomopts = true
           end
-          update_randomopts = true
         end
 
       elseif mouse.context == contexts.lg_wild then
@@ -30011,8 +30046,10 @@ end
             end
           end
           if randomopts_select.linkgrps[lg] then
-            randomopts_select.linkgrps[lg].X = F_limit(draglg.pos + (val-0.5)*mult,0,1)
-            update_randomopts = true
+            if round(randomopts_select.linkgrps[lg].X,5) ~= round(draglg.pos + (val-0.5)*mult,5) then
+              randomopts_select.linkgrps[lg].X = F_limit(round(draglg.pos + (val-0.5)*mult,5),0,1)
+              update_randomopts = true
+            end
           end
         end
   
@@ -37757,6 +37794,48 @@ end
             reaper.RecursiveCreateDirectory(graphics_path..fn,1)
             PopulateGFX()
             update_sidebar = true
+          end
+        
+        elseif EB_Open == 200 then
+          --X range
+          local x = tonumber(editbox.text)
+          if x and x >= 0 and x <= 100 then
+            x = x / 100
+            local p = randomopts_select.param
+            local lg = randomopts_select.ctls[p].linkgrp
+            if randomopts_select.linkgrps[lg] then
+              randomopts_select.linkgrps[lg].X = x
+              update_randomopts = true
+            end
+            
+          end
+
+        elseif EB_Open == 201 then
+          --X min
+          local x = tonumber(editbox.text)
+          if x and x >= 0 and x <= 1 then
+            local p = randomopts_select.param
+            randomopts_select.ctls[p].min = x
+            update_randomopts = true
+          end
+
+        elseif EB_Open == 202 then
+          --X max
+          local x = tonumber(editbox.text)
+          if x and x >= 0 and x <= 1 then
+            local p = randomopts_select.param
+            randomopts_select.ctls[p].max = x
+            update_randomopts = true
+          end
+
+        elseif EB_Open == 203 then
+          --X range (ctl)
+          local x = tonumber(editbox.text)
+          if x and x >= 0 and x <= 100 then
+            x = x / 100
+            local p = randomopts_select.param
+            randomopts_select.ctls[p].amount = x
+            update_randomopts = true
           end
         end
         
@@ -45636,7 +45715,7 @@ end
 
               local dv = ctls[rctls[1].ctl].defval
               local r = math.random()
-              local a = round(lgs[l].X,5)
+              local a = lgs[l].X
               local vv = round((r / a)) * a
               if vv > dv then vv = vv-dv end
               if math.random(2) == 2 then
