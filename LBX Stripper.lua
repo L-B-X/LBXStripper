@@ -29105,7 +29105,8 @@ end
             if val ~= octlval then
               ctl.val = val
               A_SetParam(strip,page,trackfxparam_select,ctl)
-              ctl.dirty = true
+              SetCtlDirty(trackfxparam_select)
+              --ctl.dirty = true
               octlval = val
               update_ctls = true
             end
@@ -29140,7 +29141,8 @@ end
           if val ~= octlval then
             ctl.val = val
             A_SetParam(strip,page,trackfxparam_select,ctl)
-            ctl.dirty = true
+            SetCtlDirty(trackfxparam_select)
+            --ctl.dirty = true
             octlval = val
             update_ctls = true
           end
