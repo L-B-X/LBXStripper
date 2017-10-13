@@ -45713,7 +45713,8 @@ end
                     v = 0
                   end]]
 
-              local dv = ctls[rctls[1].ctl].defval
+              local cccc = lg[l][1]
+              local dv = ctls[rctls[cccc].ctl].defval
               local r = math.random()
               local a = lgs[l].X
               local vv = round((r / a)) * a
@@ -45753,7 +45754,8 @@ end
               
             else
               --NO SNAP
-              local dv = ctls[rctls[1].ctl].defval
+              local cccc = lg[l][1]
+              local dv = ctls[rctls[cccc].ctl].defval
               local d
               local range = math.max(dv, 1-dv)
               if dv == 0 then
