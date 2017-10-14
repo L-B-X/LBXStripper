@@ -2368,72 +2368,72 @@
 
 
       --MIDI OUt
-      local mow, moh = 350, 430
+      local mow, moh = math.floor(350*pnl_scale), math.floor(430*pnl_scale)
       obj.sections[950] = {x = math.floor(obj.sections[10].x+obj.sections[10].w/2 - mow/2),
                            y = math.floor(obj.sections[10].y+obj.sections[10].h/2 - moh/2),
                            w = mow,
                            h = moh} 
-      obj.sections[951] = {x = obj.sections[950].x+100,
-                           y = obj.sections[950].y+butt_h*3,
-                           w = obj.sections[950].w-120,
-                           h = butt_h} 
-      obj.sections[952] = {x = obj.sections[950].x+100,
-                           y = obj.sections[950].y+butt_h*3 + (butt_h+10) * 2,
-                           w = 60,
-                           h = butt_h} 
-      obj.sections[953] = {x = obj.sections[952].x+obj.sections[952].w+80,
-                           y = obj.sections[950].y+butt_h*3 + (butt_h+10) * 2,
-                           w = 60,
-                           h = butt_h}
-      obj.sections[954] = {x = obj.sections[950].x+100,
-                           y = obj.sections[950].y+butt_h*3 + (butt_h+10) * 1,
-                           w = obj.sections[950].w-120,
-                           h = butt_h} 
+      obj.sections[951] = {x = math.floor(obj.sections[950].x+(100)*pnl_scale),
+                           y = math.floor(obj.sections[950].y+(butt_h*3)*pnl_scale),
+                           w = math.floor(obj.sections[950].w-(120)*pnl_scale),
+                           h = math.floor(butt_h*pnl_scale)} 
+      obj.sections[952] = {x = obj.sections[950].x+math.floor((100)*pnl_scale),
+                           y = obj.sections[950].y+math.floor((butt_h*3 + (butt_h+10) * 2)*pnl_scale),
+                           w = math.floor((60)*pnl_scale),
+                           h = math.floor((butt_h)*pnl_scale)} 
+      obj.sections[953] = {x = obj.sections[952].x+obj.sections[952].w+math.floor((80)*pnl_scale),
+                           y = obj.sections[950].y+math.floor((butt_h*3 + (butt_h+10) * 2)*pnl_scale),
+                           w = math.floor((60)*pnl_scale),
+                           h = math.floor((butt_h)*pnl_scale)}
+      obj.sections[954] = {x = obj.sections[950].x+math.floor((100)*pnl_scale),
+                           y = obj.sections[950].y+math.floor((butt_h*3 + (butt_h+10) * 1)*pnl_scale),
+                           w = obj.sections[950].w-math.floor((120)*pnl_scale),
+                           h = math.floor((butt_h)*pnl_scale)} 
 
-      obj.sections[955] = {x = obj.sections[950].x+100,
-                           y = obj.sections[950].y+butt_h*3 + (butt_h+10) * 5,
-                           w = obj.sections[950].w-120,
-                           h = butt_h} 
+      obj.sections[955] = {x = obj.sections[950].x+math.floor((100)*pnl_scale),
+                           y = obj.sections[950].y+math.floor((butt_h*3 + (butt_h+10) * 5)*pnl_scale),
+                           w = obj.sections[950].w-math.floor((120)*pnl_scale),
+                           h = math.floor((butt_h)*pnl_scale)} 
 
-      obj.sections[956] = {x = obj.sections[950].x+100,
-                           y = obj.sections[950].y+butt_h*3 + (butt_h+10) * 8,
-                           w = 60,
-                           h = butt_h} 
-      obj.sections[957] = {x = obj.sections[952].x+obj.sections[952].w+80,
-                           y = obj.sections[950].y+butt_h*3 + (butt_h+10) * 8,
-                           w = 60,
-                           h = butt_h}
-      obj.sections[958] = {x = obj.sections[952].x+obj.sections[952].w+80,
-                           y = obj.sections[950].y+butt_h*3 + (butt_h+10) * 9,
-                           w = 60,
-                           h = butt_h}
-      obj.sections[959] = {x = obj.sections[952].x+obj.sections[952].w+80,
-                           y = obj.sections[950].y+butt_h*3 + (butt_h+10) * 10,
-                           w = butt_h/2+4,
-                           h = butt_h/2+4}
-      obj.sections[961] = {x = obj.sections[952].x+obj.sections[952].w+80,
-                           y = obj.sections[950].y+butt_h*3 + (butt_h+10) * 11,
-                           w = butt_h/2+4,
-                           h = butt_h/2+4}
+      obj.sections[956] = {x = obj.sections[950].x+math.floor((100)*pnl_scale),
+                           y = obj.sections[950].y+math.floor((butt_h*3 + (butt_h+10) * 8)*pnl_scale),
+                           w = math.floor((60)*pnl_scale),
+                           h = math.floor((butt_h)*pnl_scale)} 
+      obj.sections[957] = {x = obj.sections[952].x+obj.sections[952].w+math.floor((80)*pnl_scale),
+                           y = obj.sections[950].y+math.floor((butt_h*3 + (butt_h+10) * 8)*pnl_scale),
+                           w = math.floor((60)*pnl_scale),
+                           h = math.floor((butt_h)*pnl_scale)}
+      obj.sections[958] = {x = obj.sections[952].x+obj.sections[952].w+math.floor((80)*pnl_scale),
+                           y = obj.sections[950].y+math.floor((butt_h*3 + (butt_h+10) * 9)*pnl_scale),
+                           w = math.floor((60)*pnl_scale),
+                           h = math.floor((butt_h)*pnl_scale)}
+      obj.sections[959] = {x = obj.sections[952].x+obj.sections[952].w+math.floor((120)*pnl_scale),
+                           y = obj.sections[950].y+math.floor((butt_h*3 + (butt_h+10) * 10)*pnl_scale),
+                           w = math.floor((butt_h/2+4)*pnl_scale),
+                           h = math.floor((butt_h/2+4)*pnl_scale)}
+      obj.sections[961] = {x = obj.sections[952].x+obj.sections[952].w+math.floor((120)*pnl_scale),
+                           y = obj.sections[950].y+math.floor((butt_h*3 + (butt_h+10) * 11)*pnl_scale),
+                           w = math.floor((butt_h/2+4)*pnl_scale),
+                           h = math.floor((butt_h/2+4)*pnl_scale)}
       
-      local mow, moh = 300, 150
+      local mow, moh = math.floor(300*pnl_scale), math.floor(150*pnl_scale)
       obj.sections[980] = {x = math.floor(obj.sections[10].x+obj.sections[10].w/2 - mow/2),
                            y = math.floor(obj.sections[10].y+obj.sections[10].h/2 - moh/2),
                            w = mow,
                            h = moh}
-      obj.sections[981] = {x = obj.sections[980].x+100,
-                           y = obj.sections[980].y+butt_h*2,
-                           w = obj.sections[980].w-120,
-                           h = butt_h} 
-      obj.sections[983] = {x = obj.sections[980].x+140,
-                           y = obj.sections[980].y+butt_h*3.5,
-                           w = obj.sections[980].w-160,
-                           h = butt_h} 
+      obj.sections[981] = {x = obj.sections[980].x+math.floor(100*pnl_scale),
+                           y = obj.sections[980].y+math.floor(butt_h*2*pnl_scale),
+                           w = obj.sections[980].w-math.floor(120*pnl_scale),
+                           h = math.floor(butt_h*pnl_scale)} 
+      obj.sections[983] = {x = obj.sections[980].x+math.floor(140*pnl_scale),
+                           y = obj.sections[980].y+math.floor(butt_h*3.5*pnl_scale),
+                           w = obj.sections[980].w-math.floor(160*pnl_scale),
+                           h = math.floor(butt_h*pnl_scale)} 
 
-      obj.sections[982] = {x = obj.sections[980].x+200,
-                           y = obj.sections[980].y+butt_h*5.5,
-                           w = 60,
-                           h = butt_h} 
+      obj.sections[982] = {x = obj.sections[980].x+math.floor(200*pnl_scale),
+                           y = obj.sections[980].y+math.floor(butt_h*5.5*pnl_scale),
+                           w = math.floor(60*pnl_scale),
+                           h = math.floor(butt_h*pnl_scale)} 
       
       --MOD EDIT (LFO)
       
@@ -6753,7 +6753,7 @@
     GUI_DrawPanel(obj.sections[980],true,'FADERBOX LEARN - '..ctl.param_info.paramname)
 
     if lbx_midilrnval then
-      local c = gui.color.black
+      local c = gui.skol.butt1_txt
       if lbx_midilrnval and faders[lbx_midilrnval] and faders[lbx_midilrnval].targettype then
         if (faders[lbx_midilrnval].targettype == 4 or faders[lbx_midilrnval].targettype == 7) and faders[lbx_midilrnval].strip == strip and 
            faders[lbx_midilrnval].page == page and faders[lbx_midilrnval].ctl == lbx_midilrnctl then
@@ -6762,32 +6762,35 @@
           c = gui.color.red
         end
       end
-      GUI_DrawButton(gui, 'FADER '..string.format('%i',lbx_midilrnval), obj.sections[981], gui.color.white, c, true, 'FADER', false)      
+      GUI_DrawButton(gui, 'FADER '..string.format('%i',lbx_midilrnval), obj.sections[981], gui.color.white, c, true, 'FADER', false, gui.fontsz.butt)      
     else
-      GUI_DrawButton(gui, 'NONE', obj.sections[981], -3, gui.color.black, false, 'FADER', false)
+      GUI_DrawButton(gui, 'NONE', obj.sections[981], -3, gui.skol.butt1_txt, false, 'FADER', false, gui.fontsz.butt)
     end
     
     if ctl.ctlcat == ctlcats.snapshot then
       local vv = nz(lbx_midilrnoff,0)
       local v = string.format('%i',vv)..'  -  '..num2note(vv)
-      GUI_DrawButton(gui, v, obj.sections[983], gui.color.white, c, true, 'Fader Value Offset', false)      
+      GUI_DrawButton(gui, v, obj.sections[983], gui.color.white, c, true, 'Fader Value Offset', false, gui.fontsz.butt)      
     end
     
-    GUI_DrawButton(gui, "OK", obj.sections[982], gui.color.white, gui.color.black, true)
+    GUI_DrawButton(gui, "OK", obj.sections[982], gui.color.white, gui.skol.butt1_txt, true,'',false, gui.fontsz.butt)
     
   end
   
   function GUI_DrawMIDIOut(gui, obj)
 
+    local tscale = (pnl_scale-1)*fontscale
+    
     local strip = tracks[track_select].strip
     local ctl = strips[strip][page].controls[midioutedit_select]
     GUI_DrawPanel(obj.sections[950],true,'MIDI OUT - '..ctl.param_info.paramname)
 
-    local xywh = {x = obj.sections[950].x, y = obj.sections[951].y-butt_h*1.5, w = obj.sections[950].w, h = obj.sections[951].h}
-    GUI_textC_LIM(gui, xywh, 'TRANSMIT MIDI MESSAGE', gui.color.white, -2) 
+    local xywh = {x = obj.sections[950].x, y = obj.sections[951].y-math.floor((butt_h*1.5)*pnl_scale), w = obj.sections[950].w, h = obj.sections[951].h}
+    --GUI_textC_LIM(gui, xywh, 'TRANSMIT MIDI MESSAGE', gui.color.white, -2,4)
+    GUI_Str(gui,xywh,'TRANSMIT MIDI MESSAGE',5,c,2 + (t_sz or 0) +tscale,1,nil,gui.fontnm.sb,98) 
 
-    GUI_DrawButton(gui, nz(midiout_select.output,'--- [None] ---'), obj.sections[951], gui.color.white, gui.color.black, true, 'MIDI OUTPUT')
-    GUI_DrawButton(gui, midiout_select.mchan, obj.sections[952], gui.color.white, gui.color.black, true, 'MIDI CHANNEL')
+    GUI_DrawButton(gui, nz(midiout_select.output,'--- [None] ---'), obj.sections[951], gui.color.white, gui.skol.butt1_txt, true, 'MIDI OUTPUT',false,gui.fontsz.butt)
+    GUI_DrawButton(gui, midiout_select.mchan, obj.sections[952], gui.color.white, gui.skol.butt1_txt, true, 'MIDI CHANNEL',false,gui.fontsz.butt)
     local msglab = ''
     if midiout_select.msgtype then      
       if midiout_select.msgtype >= 1 and midiout_select.msgtype <= 3 then
@@ -6798,21 +6801,23 @@
         msglab = 'N/A'
       end
     end
-    GUI_DrawButton(gui, midiout_select.msg3, obj.sections[953], gui.color.white, gui.color.black, true, msglab)
-    GUI_DrawButton(gui, nz(midimsgtype_table[nz(midiout_select.msgtype,-1)],'NONE'), obj.sections[954], gui.color.white, gui.color.black, true, 'MESSAGE TYPE')
+    GUI_DrawButton(gui, midiout_select.msg3, obj.sections[953], gui.color.white, gui.skol.butt1_txt, true, msglab,false,gui.fontsz.butt)
+    GUI_DrawButton(gui, nz(midimsgtype_table[nz(midiout_select.msgtype,-1)],'NONE'), obj.sections[954], gui.color.white, gui.skol.butt1_txt, true, 'MESSAGE TYPE',false,gui.fontsz.butt)
 
-    local xywh = {x = obj.sections[950].x, y = obj.sections[955].y-butt_h*1.5, w = obj.sections[950].w, h = obj.sections[955].h}
-    GUI_textC_LIM(gui, xywh, 'TRANSMIT OSC MESSAGE', gui.color.white, -2) 
-    GUI_DrawButton(gui, nz(midiout_select.osc,'none'), obj.sections[955], gui.color.white, gui.color.black, true, 'OSC MESSAGE')
+    local xywh = {x = obj.sections[950].x, y = obj.sections[955].y-math.floor((butt_h*1.5)*pnl_scale), w = obj.sections[950].w, h = obj.sections[955].h}
+    --GUI_textC_LIM(gui, xywh, 'TRANSMIT OSC MESSAGE', gui.color.white, -2) 
+    GUI_Str(gui,xywh,'TRANSMIT OSC MESSAGE',5,c,2 + (t_sz or 0) +tscale,1,nil,gui.fontnm.sb,98) 
+    GUI_DrawButton(gui, nz(midiout_select.osc,'none'), obj.sections[955], gui.color.white, gui.skol.butt1_txt, true, 'OSC MESSAGE',false,gui.fontsz.butt)
 
-    local xywh = {x = obj.sections[950].x, y = obj.sections[956].y-butt_h*1.5, w = obj.sections[950].w, h = obj.sections[956].h}
-    GUI_textC_LIM(gui, xywh, 'CONTROL PARAMETERS', gui.color.white, -2)     
-    GUI_DrawButton(gui, midiout_select.vmin, obj.sections[956], gui.color.white, gui.color.black, true, 'VALUE RANGE')
-    GUI_DrawButton(gui, midiout_select.vmax, obj.sections[957], gui.color.white, gui.color.black, true, 'TO')
+    local xywh = {x = obj.sections[950].x, y = obj.sections[956].y-math.floor((butt_h*1.5)*pnl_scale), w = obj.sections[950].w, h = obj.sections[956].h}
+    --GUI_textC_LIM(gui, xywh, 'CONTROL PARAMETERS', gui.color.white, -2)     
+    GUI_Str(gui,xywh,'CONTROL PARAMETERS',5,c,2 + (t_sz or 0) +tscale,1,nil,gui.fontnm.sb,98) 
+    GUI_DrawButton(gui, midiout_select.vmin, obj.sections[956], gui.color.white, gui.skol.butt1_txt, true, 'VALUE RANGE',false,gui.fontsz.butt)
+    GUI_DrawButton(gui, midiout_select.vmax, obj.sections[957], gui.color.white, gui.skol.butt1_txt, true, 'TO',false,gui.fontsz.butt)
 
-    GUI_DrawButton(gui, focus_table[nz(midiout_select.focus, 1)], obj.sections[958], gui.color.white, gui.color.black, true, 'Focus window')
-    GUI_DrawTick(gui, 'Update display before sending msg', obj.sections[959], gui.color.white, nz(midiout_select.updategfx, false))
-    GUI_DrawTick(gui, 'Send midi on mouse up', obj.sections[961], gui.color.white, nz(midiout_select.onmu, false))
+    GUI_DrawButton(gui, focus_table[nz(midiout_select.focus, 1)], obj.sections[958], gui.color.white, gui.skol.butt1_txt, true, 'FOCUS WINDOW',false,gui.fontsz.butt)
+    GUI_DrawTick(gui, 'UPDATE DISPLAY BEFORE SENDING MSG', obj.sections[959], gui.skol.pnl_txt, nz(midiout_select.updategfx, false),gui.fontsz.butt)
+    GUI_DrawTick(gui, 'SEND MIDI ON MOUSE UP', obj.sections[961], gui.skol.pnl_txt, nz(midiout_select.onmu, false),gui.fontsz.butt)
     
   end
   
@@ -8130,7 +8135,7 @@
   
     --local xywh = {x=b.x-10,y=b.y-2,w=1,h=b.h}
     --GUI_textsm_RJ(gui,xywh,t,col,-4+(t_sz or 0))
-    local xywh = {x=b.x-300,y=b.y-2,w=290,h=b.h+5}
+    local xywh = {x=b.x-600,y=b.y-2,w=590,h=b.h+5}
     local tscale = 0
     if noscale ~= true then
       tscale = (pnl_scale-1)*fontscale
