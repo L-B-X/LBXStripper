@@ -1,1 +1,17 @@
-
+[dl]
+[src]https://raw.githubusercontent.com/L-B-X/LBXStripper/master/LBX%20Stripper.lua
+[dest]LBX Stripper.lua
+[ft]Lua
+[/dl]
+[dl]
+[src]https://raw.githubusercontent.com/L-B-X/LBXStripper/master/LBXCS_resources.zip
+[dest]LBXCS_resources.zip
+[destpath]
+[ft]Zip
+[/dl]
+[dl]
+[src]https://raw.githubusercontent.com/L-B-X/LBXStripper/master/Alt_Skins.zip
+[dest]LBXCS_resources/altskins.zip
+[destpath]LBXCS_resources/
+[ft]Zip
+[/dl]
