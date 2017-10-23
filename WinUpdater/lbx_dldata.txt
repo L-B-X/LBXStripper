@@ -11,7 +11,7 @@
 [/dl]
 [dl]
 [src]https://raw.githubusercontent.com/L-B-X/LBXStripper/master/Alt_Skins.zip
-[dest]LBXCS_resources/altskins.zip
-[destpath]LBXCS_resources/
+[dest]AltSkins.zip
+[destpath]LBXCS_resources/skins/
 [ft]Zip
 [/dl]
