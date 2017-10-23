@@ -251,6 +251,24 @@
 
   pi = 3.14159265359
 
+  function CheckUpdater()
+  
+    if reaper.file_exists(update_path..'lbx_updater.lua') == true then
+      return true
+    end
+    
+  end
+
+  function RunUpdater()
+  
+    if updateravailable == true then
+    
+      os.execute(update_path..'lua.exe '..update_path..'lbx_updater.lua')
+    
+    end
+  
+  end
+
   function InsertTrackUtil(trn, trguid)
 
     local track = GetTrack(trn)
@@ -49601,6 +49619,7 @@ end
   skin_select = defskin_select
   share_path = resource_path.."share/"
   mod_path = resource_path.."modpresets/"
+  update_path = resource_path.."updater/"
   nebscanboot_file = nil
   
   --font_folder = "C:/Windows/Fonts/"
@@ -49739,6 +49758,9 @@ end
   fx_h = 160
   gx_h = 160
   sf_h = 140
+  
+  updateravailable = CheckUpdater()
+  
   
   local surfn = icon_path..'canvas.png'
   if reaper.file_exists(surfn) then
