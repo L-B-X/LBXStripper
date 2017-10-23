@@ -265,6 +265,7 @@
     
       os.execute(update_path..'lua.exe '..update_path..'lbx_updater.lua')
     
+      OpenMsgBox(1,'Assuming that all went well - please reopen the script :)',1)
     end
   
   end
@@ -2957,6 +2958,11 @@
                               y = settingswin_off + yoff + yoffm*22,
                               w = bw,
                               h = bh}
+
+    obj.sections[727] = {x = obj.sections[70].w*3/4-75, 
+                               y = settingswin_off + yoff+10 + yoffm*23,
+                               w = 150,
+                               h = bh+10}
     
     return obj
     
@@ -14864,6 +14870,10 @@ end
     GUI_DrawTick(gui, 'Simple select grouped controls', obj.sections[718], gui.color.white, settings_groupsel, gui.fontsz.settings,true)
     GUI_DrawTick(gui, 'Alternative edit mode drag', obj.sections[726], gui.color.white, settings_dragmode, gui.fontsz.settings,true)
 
+    if updateravailable then
+      GUI_DrawButton(gui, 'UPDATE LBX', obj.sections[727], -1, gui.color.black, true, '', true, gui.fontsz.settings,true)
+    end
+    
     gfx.dest = 1
     gfx.a = 1
     gfx.blit(990,1,0,0,34,obj.sections[70].w,obj.sections[70].h-44,obj.sections[70].x,obj.sections[70].y+34)
@@ -38183,6 +38193,14 @@ end
       elseif mouse.context == nil and MOUSE_click(obj.sections[726]) then
         settings_dragmode = not settings_dragmode
         update_gfx = true
+
+      elseif mouse.context == nil and MOUSE_click(obj.sections[727]) then
+        
+        if updateravailable == true then
+        
+          RunUpdater()
+        
+        end
         
       elseif mouse.context == nil and MOUSE_click(obj.sections[716]) then
         
@@ -49760,7 +49778,6 @@ end
   sf_h = 140
   
   updateravailable = CheckUpdater()
-  
   
   local surfn = icon_path..'canvas.png'
   if reaper.file_exists(surfn) then
