@@ -49371,6 +49371,7 @@ end
   
   function SendMIDIMsg(miditab, val, mu)
   
+  DBG('a')
     --Send MIDI CC
     if miditab.focus > 1 then
       if miditab.focus == 2 then
@@ -49379,7 +49380,8 @@ end
         FocusMIDIEditor()
       end
     end
-    if miditab.onmu == false or mu == true then
+    if miditab.onmu ~= true or mu == true then
+  DBG('b')
       if (val and midioutsidx[miditab.output]) then
 
         if miditab.updategfx == true then
@@ -49399,7 +49401,7 @@ end
         end
               
         local vald = math.floor((miditab.vmax - miditab.vmin)*val) + miditab.vmin
-      
+      DBG(miditab.msgtype)
         if miditab.msgtype <= 4 then      
           reaper.StuffMIDIMessage(midioutsidx[miditab.output], 
                                   midimsgval_table[miditab.msgtype]..string.format('%x',miditab.mchan-1),
