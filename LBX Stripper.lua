@@ -202,6 +202,8 @@
               lg_X = 141,
               lg_range = 142,
               lg_wild = 143,
+              scrollmatrix = 144,
+              move_fxorder = 145,
               dummy = 999
               }
   
@@ -259,13 +261,77 @@
     
   end
 
+  function GetFileName(url)
+    return url:match("^.+/(.+)$")
+  end
+  
+  function GetFileExtension(url)
+    return url:match("^.+(%..+)$")
+  end
+  
+  function RollbackUpdate()
+
+    if reaper.MB('Rollback LBX Stripper to your previous version?','Rollback',1) == 1 then
+    
+      local err = 0
+      local f = 0
+      local dir = resource_path..'updater/oldversions/' 
+      local path = reaper.GetResourcePath().."/Scripts/LBX/"
+      fn = reaper.EnumerateFiles(dir, f)
+      while fn do
+        
+        if reaper.file_exists(dir..fn) then
+        
+          local file = io.open(dir..fn, 'rb')
+          if file then
+          
+            local body = file:read('*a')
+            file:close()
+            
+            if body then
+              file = io.open(path..fn, 'rb')
+              local old
+              if file then
+                old = file:read('*a')
+                file:close()
+              end
+              
+              if not old or old ~= body then
+                file = io.open(path..fn, 'wb')
+                if file then
+                  file:write(body)
+                  file:close()
+                end
+              else
+                err = 1
+              end
+            end
+          end
+        end
+
+        f = f + 1
+        fn = reaper.EnumerateFiles(dir, f)
+      end
+
+      if err == 0 then    
+        OpenMsgBox(1, 'If rollback was successful - please restart the script.', 1)      
+      elseif err == 1 then
+        OpenMsgBox(1, 'Backup version is the same as installed version.', 1)
+      end
+      
+    end
+  
+  end
+
   function RunUpdater()
   
     if updateravailable == true then
     
-      os.execute(update_path..'lua.exe '..update_path..'lbx_updater.lua')
-    
-      OpenMsgBox(1,'Assuming that all went well - please reopen the script :)',1)
+      if reaper.MB('Update LBX Stripper to latest version?','Update',1) == 1 then
+        os.execute(update_path..'lua.exe '..update_path..'lbx_updater.lua')
+      
+        OpenMsgBox(1,'Assuming that all went well - please reopen the script :)',1)
+      end
     end
   
   end
@@ -324,7 +390,7 @@
         --Move to top
 
         if fxcnt > 1 then
-          nchunk = MoveFXChunk2(nchunk, trn, fxcnt, 1)
+          nchunk = MoveFXChunk2(nchunk, trn, fxcnt, 1, fxcnt)
         end
         
         if nchunk then
@@ -2740,6 +2806,14 @@
                             w = math.floor((30) * pnl_scale),
                             h = math.floor((butt_h) * pnl_scale)}
       
+      --Pin Map
+      obj.sections[1200] = {x = 0,
+                            y = 0,
+                            w = gfx1.main_w - obj.sections[10].x,
+                            h = gfx1.main_h - obj.sections[10].y}
+      --Chan cnt placeholder
+      obj.sections[1203] = {x=0,y=0,w=0,h=0} 
+      
     pnlscaleflag = nil
     return obj
   end
@@ -3520,7 +3594,12 @@
       if fxn then
         return fxn
       else
-        return n
+        fxn = string.match(n, '.+/(.*)')
+        if fxn then
+          return fxn
+        else
+          return n
+        end
       end
     end
     
@@ -6852,6 +6931,13 @@
 
   function GUI_DrawTrackFXOrder(gui, obj)
 
+
+    local tr = GetTrack(tracks[track_select].tracknum)
+    local fxcnt = reaper.TrackFX_GetCount(tr)
+    local gah = math.max(200, gfx1.main_h-obj.sections[10].y-40)
+    local tfxo_butth = 30+math.floor((pnl_scale-1)*10)
+    obj.sections[900].h = math.min(gah, 34 + tfxo_butth * fxcnt)
+    --obj.sections[900].y = math.max(gfx1.main_h/2 - obj.sections[900].h/2,obj.sections[10].y) 
     GUI_DrawPanel(obj.sections[900],true,'TRACK FX ORDER',true)
     if tfxreorder then
     
@@ -13034,6 +13120,241 @@ end
   
   end
   
+  function PinMatrix_CalcDim()
+
+    local xx, yy = 0, 0
+
+    local pinw, pinh = math.floor(22*pinmatrix_zoom), math.floor(22*pinmatrix_zoom)
+    local pinadj = math.floor(2*pinmatrix_zoom)
+    local fxoffs_x, fxoffs_y, fxspacer = math.floor(50*pinmatrix_zoom), 0, math.floor(30*pinmatrix_zoom)
+    
+    local tr = GetTrack(tracks[track_select].tracknum)
+    local chans = math.min(reaper.GetMediaTrackInfo_Value(tr, "I_NCHAN"))
+    local fxn = reaper.TrackFX_GetCount(tr)
+    fxoff = fxoffs_x
+    
+    for i = 0, fxn-1 do
+    
+      local retval, inpins, outpins = reaper.TrackFX_GetIOSize(tr,i)
+      local pn = reaper.TrackFX_GetNumParams(tr,i)
+      local fxw = math.max((inpins + outpins +1) * (pinw),60)
+      if pn == 2 then
+        fxw = 60
+      end
+
+      fxoff = fxoff + fxw + fxspacer
+      
+    end
+    xx = fxoff + pinw
+    yy = fxoffs_y + pinh*2 + pinh*chans
+  
+    return xx, yy
+    
+  end
+  
+  function GUI_DrawPinMatrix(obj, gui)
+--DBG('sp '..pinmatrix_scrollpos.y)
+    local w, h = obj.sections[1200].w, obj.sections[1200].h
+    local lcol = '96 96 96'
+    gfx.setimgdim(987,w,h)
+    gfx.dest = 987
+    f_Get_SSV(gui.color.black)
+    gfx.rect(0,0,w,h)
+    
+    pinmatrix_data = {}
+    pinmatrix_data.updatetime = reaper.time_precise()
+    local pinw, pinh = math.floor(22*pinmatrix_zoom), math.floor(22*pinmatrix_zoom)
+    local pinadj = math.floor(2*pinmatrix_zoom)
+    local fxoffs_x, fxoffs_y, fxspacer = math.floor(50*pinmatrix_zoom), 0, math.floor(30*pinmatrix_zoom)
+    if pinmatrix_scrollpos == nil then
+      pinmatrix_scrollpos = {x = 0, y = 0}
+    end
+    
+    local tr = GetTrack(tracks[track_select].tracknum)
+    local chans = math.min(reaper.GetMediaTrackInfo_Value(tr, "I_NCHAN"))
+    pinmatrix_data.chans = chans
+
+    --fx header section
+    obj.sections[1201] = {x = fxoffs_x, y = fxoffs_y, w = obj.sections[1200].w, h = pinh-2}
+    
+    --Track chans
+    local cw = pinw*1.5
+    local cy = obj.sections[1201].y + math.floor((pinh-2)*0.7)
+    obj.sections[1203] = {x = math.floor(-((cw-pinw)/2))+pinmatrix_scrollpos.x, y = cy+pinmatrix_scrollpos.y, w = math.floor(cw), h = pinh}
+    
+    --pin section
+    obj.sections[1202] = {x = fxoffs_x, y = fxoffs_y+pinh +pinh, w = obj.sections[1200].w, h = (pinh)*chans}
+    local fxy = obj.sections[1201].y + obj.sections[1201].h + pinmatrix_scrollpos.y
+    local arrowsz = pinadj --math.floor(3*pinmatrix_zoom) 
+    
+    last_in = {}
+    last_cy = {}
+
+    local xywh = {x = obj.sections[1203].x-50,
+                  y = obj.sections[1203].y - pinh*0.8,
+                  w = obj.sections[1203].w+100,
+                  h = pinh}
+    GUI_Str(gui, xywh, 'CHANNELS', 5, gui.skol.butt1_txt, -12+pinmatrix_zoom*10, 1, nil, gui.fontnm.sb, 1)
+    GUI_DrawButton(gui, string.format('%i',chans), obj.sections[1203], -2, gui.skol.butt1_txt, true, nil, false, -12+pinmatrix_zoom*10, true, 5)
+
+    local x = 0 + pinmatrix_scrollpos.x 
+    local y = obj.sections[1201].y + pinmatrix_scrollpos.y + pinh*2
+
+    for c = 0, chans-1 do
+    
+      local pin_rect = {x = x, y = y + c*(pinh), w = pinw-pinadj, h = pinh-pinadj} 
+      GUI_DrawButton(gui, c+1, pin_rect, -1, gui.skol.butt1_txt, true, nil, false, -7+pinmatrix_zoom*10, true, 5)
+      
+      last_in[c] = x
+    end    
+    
+    local fxn = reaper.TrackFX_GetCount(tr)
+    pinmatrix = {}
+    pinmatrix.fx_rect = {}
+    fxoff = 0
+    
+    for i = 0, fxn-1 do
+    
+      local retval, inpins, outpins = reaper.TrackFX_GetIOSize(tr,i)
+      pinmatrix_data[i] = {incnt = inpins, outcnt = outpins, inpins = {}, outpins = {}}
+      local pn = reaper.TrackFX_GetNumParams(tr,i)
+      local fxw = math.max((inpins + outpins +1) * (pinw),60)
+      
+      if pn ~= 2 then
+        if outpins==-1 and inpins~=-1 then 
+          outpins=inpins--in some JS outs ret "-1" 
+        end
+      else
+        fxw = 60        
+      end
+      local _, fxname = reaper.TrackFX_GetFXName(tr,i,'')
+      fxname = CropFXName(fxname)
+
+      --draw header
+      local x = obj.sections[1201].x + fxoff + pinmatrix_scrollpos.x 
+      local y = obj.sections[1201].y + pinmatrix_scrollpos.y
+      local fx_rect = {x = x, y = y, w = fxw, h = pinh}
+      pinmatrix.fx_rect[i] = fx_rect
+      pinmatrix.fx_rect[i].inpins = inpins
+      pinmatrix.fx_rect[i].outpins = outpins
+      
+      --gfx.rect(x, y, fxw, pinh, 1)
+      GUI_DrawButton(gui, '  '..fxname, fx_rect, -1, gui.skol.butt1_txt, true, nil, false, -6+pinmatrix_zoom*10, true, 4)
+
+      if pn ~= 2 then
+        y = y + pinh*2
+        --draw in pins
+        for ip = 0, inpins-1 do
+          local Low32,Hi32 = reaper.TrackFX_GetPinMappings(tr, i, 0, ip)
+          pinmatrix_data[i].inpins[ip] = {lo = Low32, hi = Hi32}
+          
+          local bit,val
+          local last_cy = {}
+          local sel32 = Low32
+          for c = 0, chans-1 do
+          
+            bit = 2^(c%32)
+            if c >= 32 then
+              sel32 = Hi32
+            end 
+            val = (sel32&bit)>0
+            local butt_act = -1
+            local txt = ''
+            if val == true then
+              butt_act = -4
+              txt = ip+1
+            end
+            
+            local pin_rect = {x = x + ip*(pinw), y = y + c*(pinh), w = pinw-pinadj, h = pinh-pinadj} 
+            GUI_DrawButton(gui, txt, pin_rect, butt_act, gui.skol.butt1_txt, true, nil, false, -7+pinmatrix_zoom*10, true, 5)
+            if val then
+              f_Get_SSV(lcol)
+              local x1 = last_in[c]+pin_rect.w
+              local y1 = pin_rect.y+pin_rect.h/2
+              local x2 = pin_rect.x
+              gfx.line(x1,y1,x2-1,y1)
+              gfx.triangle(x2-arrowsz,y1-arrowsz,x2-arrowsz,y1+arrowsz,x2-1,y1)
+              
+              local x1 = pin_rect.x+pin_rect.w/2
+              local y1 = last_cy[ip] or fxy
+              local y2 = pin_rect.y
+              gfx.line(x1,y1,x1,y2)
+              if not last_cy[ip] then
+                gfx.triangle(x1-arrowsz,y1+arrowsz,x1+arrowsz,y1+arrowsz,x1,y1)
+              end
+              last_in[c] = pin_rect.x
+              last_cy[ip] = y2+pin_rect.h
+            end
+          
+          end
+        end
+        
+        --draw out pins
+        local xo = x + (inpins+1)*(pinw)
+        for op = 0, outpins-1 do
+          local Low32,Hi32 = reaper.TrackFX_GetPinMappings(tr, i, 1, op)
+          pinmatrix_data[i].outpins[op] = {lo = Low32, hi = Hi32}
+          
+          local bit,val        
+          local last_cy = {}
+          local sel32 = Low32
+          for c = 0, chans-1 do
+  
+            bit = 2^(c%32)
+            if c >= 32 then
+              sel32 = Hi32
+            end 
+            val = (sel32&bit)>0
+            local butt_act = -1
+            local txt = ''
+            if val == true then
+              butt_act = -4
+              txt = op+1
+            end
+        
+            local pin_rect = {x = xo + op*(pinw), y = y + c*(pinh), w = pinw-pinadj, h = pinh-pinadj} 
+            GUI_DrawButton(gui, txt, pin_rect, butt_act, gui.skol.butt1_txt, true, nil, false, -7+pinmatrix_zoom*10, true, 5)
+          
+            if val then
+              f_Get_SSV(lcol)
+              
+              local x1 = pin_rect.x+pin_rect.w/2
+              local y1 = last_cy[op] or fxy
+              local y2 = pin_rect.y
+              gfx.line(x1,y1,x1,y2)          
+              gfx.triangle(x1-arrowsz,y2-arrowsz,x1+arrowsz,y2-arrowsz,x1,y2)
+              last_in[c] = pin_rect.x
+              last_cy[op] = y2+pin_rect.h
+            end
+          end
+        end
+      end
+      
+    
+      fxoff = fxoff + fxw + fxspacer
+    end
+    
+    local x = obj.sections[1201].x + fxoff + pinmatrix_scrollpos.x 
+    local y = obj.sections[1201].y + pinmatrix_scrollpos.y + pinh*2
+
+    for c = 0, chans-1 do
+        
+      local pin_rect = {x = x, y = y + c*(pinh), w = pinw-pinadj, h = pinh-pinadj} 
+      GUI_DrawButton(gui, c+1, pin_rect, -1, gui.skol.butt1_txt, true, nil, false, -7+pinmatrix_zoom*10, false, 5)
+      f_Get_SSV(lcol)
+      local x1 = last_in[c]+pin_rect.w
+      local y1 = pin_rect.y+pin_rect.h/2
+      local x2 = pin_rect.x
+      gfx.line(x1,y1,x2,y1)
+      gfx.triangle(x2-arrowsz,y1-arrowsz,x2-arrowsz,y1+arrowsz,x2,y1)
+      
+    end    
+    
+    gfx.dest = 1
+  
+  
+  end
+  
   ------------------------------------------------------------
 
   function GUI_draw(obj, gui)
@@ -13382,19 +13703,26 @@ end
           
           gfx.blit(1009,1,0,0,0,obj.sections[300].w,obj.sections[300].h,obj.sections[300].x,obj.sections[300].y)  
           GUI_DrawEQBands(obj, gui)              
-        end
+        
+        elseif show_pinmatrix then
+        
+          if update_gfx or update_surface then
+            GUI_DrawPinMatrix(obj, gui)
+          end
+          gfx.a=1
+          
+          gfx.blit(987,1,0,0,0,obj.sections[1200].w,obj.sections[1200].h,obj.sections[10].x,obj.sections[10].y)  
+          --GUI_DrawEQBands(obj, gui)              
 
-        if macro_edit_mode == true and macro_lrn_mode == false then
+        elseif macro_edit_mode == true and macro_lrn_mode == false then
           if update_surface or update_gfx or update_macrobutt or update_macroedit then
             GUI_DrawMacroEdit(obj, gui)
           end
           gfx.a=1
 
           gfx.blit(1008,1,0,0,0,obj.sections[300].w,obj.sections[300].h,obj.sections[300].x,obj.sections[300].y) 
-        
-        end
-        
-        if show_lfoedit and show_eqcontrol ~= true and macro_edit_mode ~= true then
+                
+        elseif show_lfoedit and show_eqcontrol ~= true and macro_edit_mode ~= true then
           if update_gfx or update_lfoedit or resize_display then
             GUI_DrawLFOEdit(obj, gui)
           elseif update_lfoeditbar then
@@ -13685,6 +14013,34 @@ end
             end
           end        
         
+          if dragstrip ~= nil then
+            local x, y = dragstrip.x, dragstrip.y
+            local w, h = gfx.getimgdim(1022)
+            gfx.a = 0.5
+            
+            if show_striplayout == true then
+              if settings_stripautosnap == true and stripgallery_view == 0 then
+                local scale = striplayout_data.w / surface_size.w
+                local px = striplayout_data.x+obj.sections[10].x
+                local py = striplayout_data.y+obj.sections[10].y
+                gfx.blit(1022,scale,0,0,0,w,h,px+dragstrip.xx*scale,py+dragstrip.yy*scale)
+                
+              elseif stripgallery_view == 1 then
+                local scale = striplayout_data.w / surface_size.w
+                local ww, hh = gfx.getimgdim(993)
+                local px = obj.sections[10].x + (obj.sections[10].w/2 - (w*scale)/2)
+                local py = obj.sections[10].y + (obj.sections[10].h/2 + hh/2) + 20
+          
+                gfx.blit(1022,scale,0,0,0,w,h,px,py)                          
+              else
+                local scale = striplayout_data.w / surface_size.w
+                gfx.blit(1022,scale,0,0,0,w,h,dragstrip.xx,dragstrip.yy)                        
+              end
+            else
+              gfx.blit(1022,1,0,0,0,w,h,x,y)          
+            end
+          end
+          
           if show_actionchooser then
             GUI_DrawActionChooser(obj, gui)
           end
@@ -16097,7 +16453,6 @@ end
     --DBG(ctl.iteminfo.guid)
       local item = GetMediaItemByGUID(ctl.iteminfo.guid)
       local takeval = math.min(math.floor(ctl.val * takeswitch_max),ctl.iteminfo.numtakes-1)
-      
       --DBG(takeval)
       ctl.val = takeval/takeswitch_max
       if item then
@@ -17511,6 +17866,45 @@ end
     
   end
   
+  function GetPlugIdentifierFromChunk(fxchunk)
+  
+    local fxn
+    if fxchunk then
+      local fxc = string.match(fxchunk,'<(.-)\n')
+      if fxc then 
+        fxchunk = fxc 
+      else
+        fxc = string.match(fxchunk,'(.-)\n')
+        if fxc then
+          fxchunk = fxc         
+        end
+      end
+      if string.sub(fxchunk,1,3) == 'VST' then
+        fxn = string.match(fxchunk, '.*%s"(.-%.dll)"')
+        if fxn == nil then
+          fxn = string.match(fxchunk, '.*%s(.-%.dll)')
+          if fxn == nil then
+            fxn = string.match(fxchunk, '.*%s"(.-%.vst3)"')      
+            if fxn == nil then          
+              fxn = string.match(fxchunk, '.*%s(.-%.vst3)')      
+            end
+          end
+        end
+      elseif string.sub(fxchunk,1,2) == 'JS' then
+        fxn = string.match(fxchunk, 'JS%s"(.-)"%s')
+        if not fxn then
+          fxn = string.match(fxchunk, 'JS%s(.-)%s')      
+        end
+        --remove final " if exists
+        if string.sub(fxn,string.len(fxn)) == '"' then
+          fxn = string.sub(fxn,1,string.len(fxn)-1)
+        end
+      end
+    
+      return fxn
+    end    
+  end
+  
   function GenID()
   
     local l = false
@@ -17622,15 +18016,22 @@ end
   
   end
   
-  function LoadStrip(strip_select)
+  function LoadStrip(strip_select, sfol, sfil)
   
     local find = string.find
     local match = string.match
     
+    if sfol == nil and stripfol_select and strip_folders[stripfol_select] then
+      sfol = strip_folders[stripfol_select].fn
+    end
+    if sfil == nil and strip_select and strip_files[strip_select] then
+      sfil = strip_files[strip_select].fn
+    end
+    
     local stripdata = nil
     local load_path=strips_path
-    if strip_folders[stripfol_select] and strip_files[strip_select] then
-      local fn=load_path..strip_folders[stripfol_select].fn..'/'..strip_files[strip_select].fn
+    if sfol and sfil then
+      local fn=load_path..sfol..'/'..sfil
       if reaper.file_exists(fn) then
       
         GUI_DrawMsgX(obj, gui, 'Generating Preview...')
@@ -17802,7 +18203,7 @@ end
     
     local i, j
     local strip = Strip_INIT()
-    
+     
     local tr = GetTrack(strips[strip].track.tracknum)
     
     local fxcnt = reaper.TrackFX_GetCount(tr)
@@ -17816,32 +18217,50 @@ end
     end
     
     if stripdata.version == nil then
+    
       local retfx
       --create new fx
       local missing = 0
       for i = 1, #stripdata.fx do
     
-        local fxn
-        if stripdata.fx[i].fxname then
-          fxn = stripdata.fx[i].fxname
+        local fxpos
+        if stripdata.plugpos == nil then
+
+          fxpos = fxcnt+i-1-missing
+          local fxn
+          if stripdata.fx[i].fxname then
+            fxn = stripdata.fx[i].fxname
+          else
+            fxn = GetPlugNameFromChunk(stripdata.fx[i].fxchunk)
+          end
+          if fxn then
+            retfx = reaper.TrackFX_AddByName(tr, fxn, 0, -1)
+          else
+            retfx = -1
+          end
+          
+          if retfx ~= -1 then      
+            --set guid in stripdata.strip
+            nguid = reaper.TrackFX_GetFXGUID(tr, fxpos)
+            stripdata.fx[i].nfxguid = nguid
+          else
+            stripdata.fx[i].nfxguid = ''
+            missing = missing + 1
+          end
+
         else
-          fxn = GetPlugNameFromChunk(stripdata.fx[i].fxchunk)
-        end
-        if fxn then
-          retfx = reaper.TrackFX_AddByName(tr, fxn, 0, -1)
-        else
-          retfx = -1
-        end
         
-        if retfx ~= -1 then      
-          --set guid in stripdata.strip
-          nguid = reaper.TrackFX_GetFXGUID(tr, fxcnt+i-1+missing)
-          stripdata.fx[i].nfxguid = nguid
-        else
-          stripdata.fx[i].nfxguid = ''
-          missing = missing + 1
-        end
+          fxpos = stripdata.plugpos
+          local track
+          if stripdata.plugtrack and tracks[stripdata.plugtrack] then
+            track = GetTrack(tracks[stripdata.plugtrack].tracknum)
+            tr = track
+          end
+          stripdata.fx[i].nfxguid = reaper.TrackFX_GetFXGUID(tr, fxpos)
+          fxguids[stripdata.fx[i].fxguid] = {guid = nfxguid, found = true, fxnum = fxpos}
         
+        end
+                
         for j = 1, #stripdata.strip.controls do
           if stripdata.strip.controls[j].fxguid == stripdata.fx[i].fxguid then
             stripdata.strip.controls[j].fxguid = stripdata.fx[i].nfxguid
@@ -17850,29 +18269,34 @@ end
               stripdata.strip.controls[j].fxnum = -1
             else
               stripdata.strip.controls[j].fxfound = true
-              stripdata.strip.controls[j].fxnum = fxcnt+(i-1)-missing
+              stripdata.strip.controls[j].fxnum = fxpos
             end
           end
         end
-        if retfx ~= -1 then
-          local fxen = nz(stripdata.fx[i].fxenabled, true)
-          reaper.TrackFX_SetEnabled(tr, fxcnt+i-1-missing, fxen)
+        
+        if stripdata.plugpos == nil then
+          if retfx ~= -1 then
+            local fxen = nz(stripdata.fx[i].fxenabled, true)
+            reaper.TrackFX_SetEnabled(tr, fxpos, fxen)
+          end
         end
       end
       
-      local chunk = GetTrackChunk(tr, settings_usetrackchunkfix)
-      missing = 0
-      for i = 1, #stripdata.fx do
-        if stripdata.fx[i].nfxguid ~= '' then
-          chunk = ReplaceChunkPresetData(chunk, i-1+fxcnt-missing, stripdata.fx[i].fxchunk)
-        else
-          missing = missing + 1
+      if stripdata.plugpos == nil then
+        local chunk = GetTrackChunk(tr, settings_usetrackchunkfix)
+        missing = 0
+        for i = 1, #stripdata.fx do
+          if stripdata.fx[i].nfxguid ~= '' then
+            chunk = ReplaceChunkPresetData(chunk, i-1+fxcnt-missing, stripdata.fx[i].fxchunk)
+          else
+            missing = missing + 1
+          end
+        end
+        if chunk ~= nil then
+          SetTrackChunk(tr, chunk, false)
         end
       end
-      if chunk ~= nil then
-        SetTrackChunk(tr, chunk, false)
-      end
-
+      
     elseif stripdata.version >= 3 then
     
       local rcmflag = false
@@ -17899,19 +18323,40 @@ end
       local missing = 0
       for i = 1, #stripdata.fx do
     
-        local chunk = GetTrackChunk(tr, settings_usetrackchunkfix)
-        local nchunk, nfxguid, ofxguid = Chunk_InsertFXChunkAtEndOfFXChain(strips[strip].track.tracknum, chunk, stripdata.fx[i].fxchunk)
-                
-        if nchunk ~= nil then
-          local retval = SetTrackChunk(tr, nchunk, false)
-          if retval == true then
-            fxguids[ofxguid] = {guid = nfxguid, found = true, fxnum = fxcnt+i-1-missing}
+        local fxpos
+        local nchunk, nfxguid, ofxguid
+        if stripdata.plugpos == nil then
+        
+          fxpos = fxcnt+i-1-missing
+
+          local chunk = GetTrackChunk(tr, settings_usetrackchunkfix)
+          nchunk, nfxguid, ofxguid = Chunk_InsertFXChunkAtEndOfFXChain(strips[strip].track.tracknum, chunk, stripdata.fx[i].fxchunk)
+                  
+          if nchunk ~= nil then
+            local retval = SetTrackChunk(tr, nchunk, false)
+            if retval == true then
+              fxguids[ofxguid] = {guid = nfxguid, found = true, fxnum = fxpos}
+            end
           end
+        
+        else
+          
+          fxpos = stripdata.plugpos
+          ofxguid = '{'..stripdata.fx[i].fxguid..'}'
+          local track
+          if stripdata.plugtrack and tracks[stripdata.plugtrack] then
+            track = GetTrack(tracks[stripdata.plugtrack].tracknum)
+            tr = track
+          end
+          
+          nfxguid = reaper.TrackFX_GetFXGUID(tr, fxpos)
+          fxguids[ofxguid] = {guid = nfxguid, found = true, fxnum = fxpos}
+        
         end
         
         --check guid
         if settings_usetrackchunkfix == false then
-          nguid = reaper.TrackFX_GetFXGUID(tr, fxcnt+i-1+missing)
+          nguid = reaper.TrackFX_GetFXGUID(tr, fxpos)
           if nguid == nil then
             missing = missing + 1
             if fxguids[ofxguid] then
@@ -17920,7 +18365,7 @@ end
             end 
           end
         else
-          nguid = reaper.TrackFX_GetFXGUID(tr, fxcnt+i-1+missing)
+          nguid = reaper.TrackFX_GetFXGUID(tr, fxpos)
           if nguid == nil then
             missing = missing + 1
             if fxguids[ofxguid] then
@@ -18104,7 +18549,15 @@ end
                                                      wheel = settings_defknobsens.wheel,
                                                      wheelfine = settings_defknobsens.wheelfine}
       end
-
+      
+      if stripdata.plugtrack ~= nil and tracks[stripdata.plugtrack] then
+        if stripdata.plugtrack ~= track_select then
+          
+          strips[strip][page].controls[cc].tracknum = tracks[stripdata.plugtrack].tracknum
+          strips[strip][page].controls[cc].trackguid = tracks[stripdata.plugtrack].guid
+        end
+      end
+      
       strips[strip][page].controls[cc].macrofader = nil
       strips[strip][page].controls[cc].switchfader = nil
       strips[strip][page].controls[cc].mod = nil
@@ -24594,6 +25047,15 @@ end
       elseif char == 51 then
         settings_showmorphpop = not settings_showmorphpop
         update_gfx = true
+      elseif char == 52 then
+        show_pinmatrix = not show_pinmatrix
+        local w, h = PinMatrix_CalcDim()
+        local x = math.max(obj.sections[1200].w/2 - w/2,40)
+        local y = math.max(obj.sections[1200].h/2 - h/2,20)
+        
+        pinmatrix_scrollpos = {x = x, y = y}
+        --DBG('h '..h..'  '..obj.sections[1200].h)
+        update_surface = true
       elseif char == 30064 then
         if mode == 0 then
           --tlist_offset = F_limit(tlist_offset - 1, 0, #tracks+1)
@@ -25527,7 +25989,10 @@ end
     if show_trackfxorder then
 
       UpdateControlValues2(rt)    
-      A_Run_TFXOrder(char)
+      char = A_Run_TFXOrder(char)
+      if mode == 0 then
+        noscroll = A_Run_PinMatrix(noscroll, rt, char)
+      end
     
     elseif show_midiout then
     
@@ -26675,6 +27140,12 @@ end
       if char == 49 then
         show_trackfxorder = false
         update_surface = true
+      elseif char == 52 then
+        if mode == 0 then
+          show_pinmatrix = not show_pinmatrix
+          update_surface = true
+          char = 0
+        end
       end
     end
     
@@ -26683,7 +27154,10 @@ end
                   y = obj.sections[900].y+30,
                   w = obj.sections[900].w-50,
                   h = obj.sections[900].h-30}
-                  
+    local xywh2 = {x = obj.sections[900].x,
+                      y = obj.sections[900].y,
+                      w = obj.sections[900].w,
+                      h = butt_h}              
     if gfx.mouse_wheel ~= 0 and MOUSE_over(xywh) then
       local v = gfx.mouse_wheel/120
     
@@ -26692,6 +27166,10 @@ end
         update_surface = true
         gfx.mouse_wheel = 0
       end      
+    elseif mouse.context == nil and MOUSE_click(xywh2) then
+      mouse.context = contexts.move_fxorder
+      movewin = {dx = mouse.mx, dy = mouse.my, ox = obj.sections[900].x, oy = obj.sections[900].y}
+      
     elseif mouse.context == nil and MOUSE_click(xywh) then
       tfxo_sel =  F_limit(math.floor((mouse.my - xywh.y) / bh)+1 +tfxo_listpos, 1, #tfxorder)
       if tfxo_sel <= #tfxorder then
@@ -26702,7 +27180,10 @@ end
         tfxo_sel = nil
       end
       update_surface = true
-    elseif mouse.context == nil and mouse.LB and not MOUSE_over(obj.sections[900]) then
+    elseif mouse.context == nil and MOUSE_click(obj.sections[900]) then
+      mouse.context = contexts.dummy
+    
+    elseif mouse.context == nil and mouse.LB and not MOUSE_over(obj.sections[900]) and show_pinmatrix == false then
       show_trackfxorder = false
       update_surface = true
     end
@@ -26730,8 +27211,14 @@ end
       tfxo_sel = nil
       tfxorder = tfxreorder
       update_surface = true
+    elseif mouse.context == contexts.move_fxorder then
+      obj.sections[900].x = F_limit(movewin.ox + mouse.mx - movewin.dx,obj.sections[10].x,gfx1.main_w -obj.sections[900].w)
+      obj.sections[900].y = F_limit(movewin.oy + mouse.my - movewin.dy,obj.sections[10].y,gfx1.main_h -obj.sections[900].h)
+      obj.sections[900].y = math.max(obj.sections[900].y,obj.sections[10].y)
+      update_surface = true
     end
     
+    return char
   end
 
   function ReOrderTable(tab, s, p1, p2)
@@ -27891,7 +28378,7 @@ end
       mouse.mx = mx
       mouse.my = my
       
-    elseif mouse.context == nil and show_lfoedit == true and show_eqcontrol ~= true and (MOUSE_click(obj.sections[1100]) or MOUSE_click_RB(obj.sections[1100])) then
+    elseif mouse.context == nil and show_lfoedit == true and show_eqcontrol ~= true and show_pinmatrix ~= true and (MOUSE_click(obj.sections[1100]) or MOUSE_click_RB(obj.sections[1100])) then
 
       noscroll = true
 
@@ -28366,9 +28853,9 @@ end
       mouse.my = snapmy
       noscroll = true
 
-    elseif mouse.context == nil and (show_snapshots == true and macro_edit_mode ~= true and show_eqcontrol ~= true) and (MOUSE_click(obj.sections[160]) or MOUSE_click_RB(obj.sections[160])) then
+    elseif mouse.context == nil and (show_snapshots == true and macro_edit_mode ~= true and show_eqcontrol ~= true and show_pinmatrix ~= true) and (MOUSE_click(obj.sections[160]) or MOUSE_click_RB(obj.sections[160])) then
     
-      mouse.ocntext = A_Run_SnapshotsWin(rt,mouse.ocntext)
+      mouse.context = A_Run_SnapshotsWin(rt,mouse.ocntext)
       noscroll = true
     
     elseif mouse.context == nil and snaplrn_mode == true then      
@@ -28391,6 +28878,10 @@ end
     elseif show_eqcontrol == true then
     
       noscroll = A_Run_EQControl(noscroll, rt)
+
+    elseif show_pinmatrix == true then
+
+      noscroll = A_Run_PinMatrix(noscroll, rt)
 
     elseif macro_edit_mode == true and macro_lrn_mode == false then
 
@@ -32548,15 +33039,38 @@ end
             end
           end
         elseif MOUSE_click_RB(obj.sections[520]) then
-          --[[local i = math.floor((mouse.my - obj.sections[520].y) / butt_h)-1
-          if i == -1 then
-          elseif i >= F_butt_cnt then
-          elseif trackfx[i + flist_offset] then
-            local track = GetTrack(tracks[track_select].tracknum)
-            if not reaper.TrackFX_GetOpen(track, i + flist_offset) then
-              reaper.TrackFX_Show(track, i + flist_offset, 3)
+          local i = math.floor((mouse.my - obj.sections[520].y) / tb_butt_h)-1
+          if i > -1 and trackfx[i + flist_offset] then
+            trackfx_select = i + flist_offset
+        
+            local track = GetTrack(tracks[trackedit_select].tracknum)
+            local chunk = GetTrackChunk(track, settings_usetrackchunkfix)
+            local fnd, fxc, s, e = GetFXChunkFromTrackChunk(chunk,i+1 + flist_offset)
+            local fxident = GetPlugIdentifierFromChunk(fxc)
+            local idx = plugdefstrips_idx[fxident]
+            if idx and plugdefstrips[idx] then
+              --DBG(plugdefstrips[idx].stripfile)
+              local sfol = plugdefstrips[idx].stripfol
+              local sfil = plugdefstrips[idx].stripfile
+              loadstrip = LoadStrip(nil, sfol, sfil)
+              if loadstrip then
+
+                loadstrip.strip_w, loadstrip.strip_h = GenStripPreview(gui, loadstrip.strip, loadstrip.switchers, loadstrip.switchconvtab)
+                loadstrip.plugpos = trackfx_select
+                loadstrip.plugtrack = trackedit_select
+                --if settings_stripautosnap == true then          
+                  stlay_data = AutoSnap_GetStripLocs(true)
+                --end
+                mouse.context = contexts.dragstrip
+              end
+              update_gfx = true
             end
-          end ]]       
+            
+            update_sidebar = true
+            --DBG(fxident)
+          end
+          
+         
         end
     
         if MOUSE_click(obj.sections[522]) then
@@ -33183,6 +33697,134 @@ end
         dragparam = nil
         update_gfx = true
       
+      elseif mouse.context and mouse.context == contexts.dragstrip then
+        dragstripx = true --to force dropped action even if not 
+        if mouse.mx ~= mouse.last_x or mouse.my ~= mouse.last_y then
+          
+          if settings_stripautosnap == true or stripgallery_view == 1 then
+            local x,y = AutoSnap_GetEndInsertPos(loadstrip.strip_w,loadstrip.strip_h)
+            dragstrip = {x = x+obj.sections[10].x-surface_offset.x, y = y+obj.sections[10].y-surface_offset.y, xx = x, yy = y}
+            update_surface = true        
+          else
+            newgrp = nil
+            local c = GetControlAtXY(tracks[track_select].strip, page, mouse.mx, mouse.my)
+            if c then
+              local i = c
+              local ctl = strips[tracks[track_select].strip][page].controls[i]
+              if ctl.ctlcat == ctlcats.switcher and show_striplayout == false then 
+                local x = mouse.mx -obj.sections[10].x +surface_offset.x
+                local y = mouse.my -obj.sections[10].y +surface_offset.y                                
+                vert = true
+                if x > ctl.x+ctl.w/2 then
+                  vert = false
+                end
+                newgrp = {grpid = switchers[ctl.switcherid].current,
+                          switchid = i,
+                          vert = vert}
+                
+                local rl, rt, rr, rb = GetLTRBControlInGrp(newgrp.grpid, newgrp.switchid)
+                local zx, zy = rl, rb                  
+                if newgrp.vert == false then
+                  zx, zy = rr, rt
+                end
+                dragstrip = {x = zx+obj.sections[10].x-surface_offset.x, y = zy+obj.sections[10].y-surface_offset.y,xx = zx,yy = zy}
+              else
+                dragstrip = {x = mouse.mx, y = mouse.my, xx=mouse.mx,yy=mouse.my}        
+              end
+            else
+              dragstrip = {x = mouse.mx, y = mouse.my, xx=mouse.mx,yy=mouse.my}
+            end 
+            update_surface = true
+      
+          end
+        end
+        
+      elseif dragstripx ~= nil then
+        --Dropped
+        --image_count = image_count_add
+        if dragstrip and newgrp == nil then
+          local ignore = nil
+          if settings_stripautosnap == true then
+            ignore = true
+          end
+          if show_striplayout == true then
+            if settings_stripautosnap == true or stripgallery_view == 1 then
+              if mouse.mx >= obj.sections[10].x and mouse.mx < obj.sections[10].w and mouse.my >= obj.sections[10].y and mouse.my < obj.sections[10].h then
+                Strip_AddStrip(loadstrip, dragstrip.x-obj.sections[10].x, dragstrip.y-obj.sections[10].y,ignore)
+                SetASLocs()
+              end
+            else
+              if mouse.mx >= obj.sections[10].x+striplayout_data.x and mouse.mx <= obj.sections[10].x+striplayout_data.x+striplayout_data.w and
+                 mouse.my >= obj.sections[10].y+striplayout_data.y and mouse.my <= obj.sections[10].y+striplayout_data.y+striplayout_data.h then
+                 
+                local x = mouse.mx- (obj.sections[10].x+striplayout_data.x)
+                local y = mouse.my- (obj.sections[10].y+striplayout_data.y)
+                x = (x/striplayout_data.w)*surface_size.w
+                y = (y/striplayout_data.h)*surface_size.h
+                Strip_AddStrip(loadstrip, x-surface_offset.x, y-surface_offset.y, false)
+                SetASLocs()
+                 
+              end 
+            end
+          else
+            if dragstrip.x >= obj.sections[10].x and dragstrip.x < obj.sections[10].w and dragstrip.y >= obj.sections[10].y and dragstrip.y < obj.sections[10].h then
+              if mouse.mx >= obj.sections[10].x and mouse.mx < obj.sections[10].w and mouse.my >= obj.sections[10].y and mouse.my < obj.sections[10].h then
+                Strip_AddStrip(loadstrip, dragstrip.x-obj.sections[10].x, dragstrip.y-obj.sections[10].y,ignore)
+              end
+            end
+          end        
+        elseif dragstrip and newgrp then
+          if dragstrip.x > obj.sections[10].x and dragstrip.x < obj.sections[10].w and dragstrip.y > obj.sections[10].y and dragstrip.y < obj.sections[10].h then
+            local stripid, _, grpid = Strip_AddStrip(loadstrip, dragstrip.x-obj.sections[10].x, dragstrip.y-obj.sections[10].y, true)
+            
+            local ctls = strips[tracks[track_select].strip][page].controls
+            local gfxx = strips[tracks[track_select].strip][page].graphics
+            local switchid = ctls[newgrp.switchid].switcherid
+            local ctl_sw = ctls[newgrp.switchid]
+            
+            local x,y = ctl_sw.x - surface_offset.x, ctl_sw.y - surface_offset.y
+            y = y + ctl_sw.ctl_info.cellh
+            
+            local sw_cur = #switchers[switchid].grpids+1
+            switchers[switchid].grpids[sw_cur] = {}
+            switchers[switchid].grpids[sw_cur].id = grpid
+            switchers[switchid].grpids[sw_cur].name = string.match(strip_files[strip_select].fn,'(.-).strip')
+            
+            if ctl_sw then
+              ctl_sw.param_info.paramname = string.format('%i',sw_cur)..': '..switchers[switchid].grpids[sw_cur].name
+            end
+            switchers[switchid].current = grpid
+            
+            for c = 1, #ctls do
+              if ctls[c].grpid == grpid then
+                ctls[c].switcher = switchid
+      
+                if ctls[c].ctlcat == ctlcats.switcher then
+                  --add parent info
+                  local sid = ctls[c].switcherid
+                  switchers[sid].parent = {switcherid = switchid,
+                                           grpid = grpid}
+                end        
+              end      
+            end
+            for c = 1, #gfxx do
+              if gfxx[c].grpid == grpid then
+                gfxx[c].switcher = switchid
+              end        
+            end
+            
+            update_bg = true
+          end
+        end
+        loadstrip = nil
+        dragstrip = nil
+        dragstripx = nil
+        ctl_select = nil
+        update_gfx = true
+        
+        SetCtlBitmapRedraw()
+        reaper.MarkProjectDirty(0)
+      
       elseif mouse.context and mouse.context == contexts.dragsep_fx then
   
         local dy = mouse.my - dragsep_fx.y
@@ -33190,6 +33832,7 @@ end
         
         obj = GetObjects()
         update_sidebar = true
+      
       end
     
       
@@ -34444,7 +35087,7 @@ end
             sd = '!'
           end
           
-          mstr = sd..'Set Default (Track)|'..sd_m..'Set Default (Master)|'..sd_g..'Set Default (Global)||Clear Default (Track)|Clear Default (Master)|Clear Default (Global)||Save (Overwrite)||Add to favorites||Export Shareable Strip File|Import Shared Strip File'
+          mstr = sd..'Set Default (Track)|'..sd_m..'Set Default (Master)|'..sd_g..'Set Default (Global)||Clear Default (Track)|Clear Default (Master)|Clear Default (Global)||Save (Overwrite)||Add to favorites||Export Shareable Strip File|Import Shared Strip File||Set Plugin Default (single plugin strips only)'
         else
           mstr = '#Set Default (Track)|#Set Default (Master)|#Set Default (Global)||Clear Default (Track)|Clear Default (Master)|Clear Default (Global)||#Save (Overwrite)||#Add to favorites||#Export Shareable Strip File|Import Shared Strip File'            
         end
@@ -34478,6 +35121,8 @@ end
             StripShare_Export(strip_folders[stripfol_select].fn..'/', strip_files[strip_select].fn)
           elseif res == 10 then
             StripShare_Import('')
+          elseif res == 11 then
+            Strip_SetPlugDef(strip_select, stripfol_select)
           end
         end
       end        
@@ -36273,6 +36918,197 @@ end
         end
       end
     end      
+  end
+
+  function A_PinMapDirty()
+    local tr = GetTrack(tracks[track_select].tracknum)
+    local fxn = reaper.TrackFX_GetCount(tr)
+    local chans = math.min(reaper.GetMediaTrackInfo_Value(tr, "I_NCHAN"))
+    
+    if chans ~= pinmatrix_data.chans then return true end
+    
+    if fxn-1 ~= #pinmatrix_data then
+      --DBG('x')
+      return true
+    else
+      for i = 0, fxn-1 do
+        
+        local retval, inpins, outpins = reaper.TrackFX_GetIOSize(tr,i)
+        if inpins ~= pinmatrix_data[i].incnt or outpins ~= pinmatrix_data[i].outcnt then 
+        --DBG('x1')
+          return true
+        else
+          local pn = reaper.TrackFX_GetNumParams(tr,i)
+
+          if pn ~= 2 then
+            for p = 0, inpins-1 do
+              if pinmatrix_data[i].inpins[p] then
+                local Low32,Hi32 = reaper.TrackFX_GetPinMappings(tr, i, 0, p)
+                if Low32 ~= pinmatrix_data[i].inpins[p].lo or Hi32 ~= pinmatrix_data[i].inpins[p].hi then
+          --DBG('x2')
+                  return true
+                end
+              else
+          --DBG('y2 '..p..'  '..inpins)
+                return true
+              end
+            end
+            for p = 0, outpins-1 do
+              if pinmatrix_data[i].outpins[p] then
+                local Low32,Hi32 = reaper.TrackFX_GetPinMappings(tr, i, 1, p)
+                if Low32 ~= pinmatrix_data[i].outpins[p].lo or Hi32 ~= pinmatrix_data[i].outpins[p].hi then
+          --DBG('x3')
+                  return true
+                end
+              else
+          --DBG('y3')
+                return true
+              end
+            end
+          end
+        end
+      end
+    end
+  
+    return false
+  end
+
+  function A_Run_PinMatrix(noscroll, rt, char)
+
+    noscroll = true
+
+    local mx, my = mouse.mx, mouse.my
+    mouse.mx, mouse.my = mouse.mx - obj.sections[10].x, mouse.my - obj.sections[10].y
+  
+    if mouse.context == nil then
+    
+      if pinmatrix_data and reaper.time_precise() > pinmatrix_data.updatetime + 0.3 then
+        if A_PinMapDirty() == true then
+          update_surface = true
+        end
+      elseif not pinmatrix_data then
+        update_surface = true
+      end
+    
+      if gfx.mouse_wheel ~= 0 then
+        local v = gfx.mouse_wheel/120
+
+        pinmatrix_zoom = F_limit(pinmatrix_zoom + (v*0.1),0.8,4)
+        update_surface = true
+
+        gfx.mouse_wheel = 0
+      
+      elseif char == 52 then
+        show_pinmatrix = false
+        update_surface = true
+        
+      elseif MOUSE_click(obj.sections[1203]) then
+        local tr = GetTrack(tracks[track_select].tracknum)
+        local chans = math.min(reaper.GetMediaTrackInfo_Value(tr, "I_NCHAN"))
+        if chans < 64 then
+          chans = chans + 2
+          reaper.SetMediaTrackInfo_Value(tr, "I_NCHAN", chans)
+          update_surface = true
+        end
+
+      elseif MOUSE_click_RB(obj.sections[1203]) then
+        local tr = GetTrack(tracks[track_select].tracknum)
+        local chans = math.min(reaper.GetMediaTrackInfo_Value(tr, "I_NCHAN"))
+        if chans > 2 then
+          chans = chans - 2
+          reaper.SetMediaTrackInfo_Value(tr, "I_NCHAN", chans)
+          update_surface = true
+        end
+        
+      elseif MOUSE_click(obj.sections[1200]) then
+
+        local chan, inpin, outpin, fxn
+        if pinmatrix and #pinmatrix.fx_rect > 0 then
+          local fx = mouse.mx
+          local fy = mouse.my - pinmatrix_scrollpos.y
+          for i = 0, #pinmatrix.fx_rect do
+          
+            if fy >= obj.sections[1202].y and fy <= obj.sections[1202].y + obj.sections[1202].h then
+              if fx >= pinmatrix.fx_rect[i].x and fx <= pinmatrix.fx_rect[i].x + pinmatrix.fx_rect[i].w then
+  
+                fxn = i            
+                break
+              end
+            end
+          end
+      
+          if fxn then
+          
+            local pinw, pinh = math.floor(22*pinmatrix_zoom), math.floor(22*pinmatrix_zoom)
+            local pinadj = math.floor(2*pinmatrix_zoom)
+  
+            local x = fx - pinmatrix.fx_rect[fxn].x
+            chan = math.floor((fy - obj.sections[1202].y) / pinh)
+            
+            if x < pinmatrix.fx_rect[fxn].inpins * pinw then
+              inpin = math.floor(x / pinw)
+            elseif x > (pinmatrix.fx_rect[fxn].inpins+1) * pinw then
+              outpin = math.floor((x - (pinmatrix.fx_rect[fxn].inpins+1) * pinw) / pinw)
+            end
+          end
+        end          
+        
+        if (inpin or outpin) and chan then
+          --DBG('fx '..fxn..' pin: '..tostring(inpin or outpin)..' chan: '..tostring(chan))
+        
+          local tr = GetTrack(tracks[track_select].tracknum)
+          local isOut = 0
+          if outpin then
+            isOut = 1
+          end
+          local Low32,Hi32 = reaper.TrackFX_GetPinMappings(tr, fxn, isOut, inpin or outpin)
+          local bit = 2^(chan%32)
+          local val
+          if chan < 32 then
+            val = (Low32&bit)>0          
+            if val then
+              Low32 = Low32 - bit;
+            else 
+              Low32 = Low32 + bit;
+            end
+          else
+            val = (Hi32&bit)>0          
+            if val then
+              Hi32 = Hi32 - bit;
+            else 
+              Hi32 = Hi32 + bit;
+            end
+          
+          end
+          reaper.TrackFX_SetPinMappings(tr, fxn, isOut, inpin or outpin, Low32, Hi32)
+          update_surface = true
+          
+        else
+          mouse.context = contexts.scrollmatrix
+          matrixoff = {dx = mouse.mx - pinmatrix_scrollpos.x, dy = mouse.my - pinmatrix_scrollpos.y}
+        end    
+      end
+    
+    else
+    
+      if mouse.context == contexts.scrollmatrix then
+      
+        if mouse.mx ~= omx or mouse.my ~= omy then
+          pinmatrix_scrollpos.x = mouse.mx - matrixoff.dx        
+          pinmatrix_scrollpos.y = mouse.my - matrixoff.dy
+        
+          update_surface = true
+          omx, omy = mouse.mx, mouse.my
+        end
+      end
+    
+    end
+  
+  
+  
+    mouse.mx, mouse.my = mx, my
+    return noscroll
+  
   end
   
   function A_Run_EQControl(noscroll, rt)
@@ -38201,6 +39037,18 @@ end
           RunUpdater()
         
         end
+
+      elseif mouse.context == nil and MOUSE_click_RB(obj.sections[727]) then
+      
+        local mstr = 'Rollback Stripper to your previous version'
+        gfx.x, gfx.y = mx, my
+        local res = gfx.showmenu(mstr)
+        if res ~= 0 then
+          if res == 1 then
+            RollbackUpdate()
+            
+          end
+        end
         
       elseif mouse.context == nil and MOUSE_click(obj.sections[716]) then
         
@@ -38490,8 +39338,21 @@ end
                               end
                             end
                           else
-                            if ctl.dval ~= v then
-                            
+                            if not v == '' then
+                              if ctl.dval ~= v then
+                                ctl.val = v2
+                                ctl.dval = v
+                                ctl.dirty = true
+                                if ctl.param_info.paramname == 'Bypass' then
+                                  SetCtlEnabled(ctl.fxnum) 
+                                end
+                                update_ctls = true
+    
+                                if ctl.midiout then
+                                  SendMIDIMsg(ctl.midiout, ctl.val)
+                                end
+                              end
+                            elseif ctl.val ~= v2 then
                               ctl.val = v2
                               ctl.dval = v
                               ctl.dirty = true
@@ -38503,6 +39364,7 @@ end
                               if ctl.midiout then
                                 SendMIDIMsg(ctl.midiout, ctl.val)
                               end
+                            
                             end                      
                           end
                         else
@@ -47996,6 +48858,97 @@ end
     
   end
   
+  function Strip_SetPlugDef(stripfile, stripfol)
+  
+    local stripdata = LoadStrip(stripfile)
+    if #stripdata.fx == 1 then
+      local fxc = stripdata.fx[1].fxchunk
+      local fxident = GetPlugIdentifierFromChunk(fxc)
+      if fxident then
+      
+        if plugdefstrips_idx and plugdefstrips_idx[fxident] then
+          local idx = plugdefstrips_idx[fxident]
+          plugdefstrips[idx] = {plug = fxident, stripfile = strip_files[stripfile].fn, stripfol = strip_folders[stripfol].fn}          
+          OpenMsgBox(1,'Default strip for plugin '..fxident..' updated.',1)
+        else
+          if not plugdefstrips then
+            plugdefstrips = {}
+            plugdefstrips_idx = {}
+          end
+          local idx = #plugdefstrips+1
+          plugdefstrips[idx] = {plug = fxident, stripfile = strip_files[stripfile].fn, stripfol = strip_folders[stripfol].fn}
+          plugdefstrips_idx[fxident] = idx
+          OpenMsgBox(1,'Default strip for plugin '..fxident..' set.',1)
+        end
+        
+        Save_PlugDefs()
+      end
+      --DBG(fxident)
+    else
+      OpenMsgBox(1,'A default plugin strip must contain ONE fx plugin',1)
+    end
+    update_surface = true
+  
+  end
+  
+  function Save_PlugDefs()
+  
+    if plugdefstrips and #plugdefstrips > 0 then
+    
+      local file = io.open(strips_path..'PluginDefaults.lbx','w')
+      if file then
+      
+        file:write('[count]'..#plugdefstrips..'\n')
+        for i = 1, #plugdefstrips do
+          file:write('['..i..'_plug]'..plugdefstrips[i].plug..'\n')
+          file:write('['..i..'_file]'..plugdefstrips[i].stripfile..'\n')
+          file:write('['..i..'_fol]'..plugdefstrips[i].stripfol..'\n')
+        end
+        file:close()
+      end
+    
+    end
+  
+  end
+
+  function Load_PlugDefs()
+  
+    
+    local file = io.open(strips_path..'PluginDefaults.lbx','r')
+    if file then
+    
+      local content = file:read('*a')
+      local data = {}
+      local cnt = 0          
+      local lines = split(content, "\n")
+      if lines and #lines > 0 then
+        for ln = 1, #lines do
+          local idx, val = string.match(lines[ln],'%[(.-)%](.*)') 
+          if idx then
+            data[idx] = val
+          end
+        end
+      end
+      file:close()
+    
+      local cnt = data['count']
+      plugdefstrips = {}
+      plugdefstrips_idx = {}
+              
+      for i = 1, cnt do
+        plugdefstrips[i] = {}
+        plugdefstrips[i].plug = data[i..'_plug']
+        plugdefstrips[i].stripfile = data[i..'_file']
+        plugdefstrips[i].stripfol = data[i..'_fol']
+
+        if plugdefstrips[i].plug then
+          plugdefstrips_idx[plugdefstrips[i].plug] = i
+        end
+      end
+    end
+  
+  end
+  
   function InsertDefaultStrip()
     if settings_insertdefaultoneverytrack then
       if tracks[track_select] and (strips[tracks[track_select].strip] == nil or (strips[tracks[track_select].strip][page].controls and #strips[tracks[track_select].strip][page].controls == 0)) then
@@ -48322,6 +49275,8 @@ end
     show_bitmap = false
     show_dd = false
     show_lfoedit = false
+    show_eqcontrol = false
+    show_pinmatrix = false
     
     show_paramname = true
     show_paramval = true
@@ -48339,6 +49294,8 @@ end
     
     ctl_page = 0
     cycle_editmode = false
+    
+    pinmatrix_zoom = 1
     
     last_gfx_w = 0
     last_gfx_h = 0
@@ -48868,14 +49825,14 @@ end
       end
     end]]
     
-    local nchunk = MoveFXChunk2(chunk, trn, srcfxnum, dstfxnum)
+    local nchunk = MoveFXChunk2(chunk, trn, srcfxnum, dstfxnum, fxcnt)
     if nchunk then
       SetTrackChunk(tr, nchunk, false)      
     end
     
   end
   
-  function MoveFXChunk2(chunk, trn, srcfxnum, dstfxnum)
+  function MoveFXChunk2(chunk, trn, srcfxnum, dstfxnum, fxcnt)
 
     local _, nchunk, movechunk = RemoveFXChunkFromTrackChunk(chunk, srcfxnum)
     
@@ -48887,6 +49844,7 @@ end
           writechunk = true
         end
       else
+    
         local fnd, _, s, e = GetFXChunkFromTrackChunk(nchunk, dstfxnum)
         if fnd then
           nchunk = string.sub(nchunk,0,s-1)..movechunk..string.sub(nchunk,s)
@@ -49642,7 +50600,7 @@ end
   --font_folder = "C:/Windows/Fonts/"
   
   LoadFontList()
-    
+  Load_PlugDefs()
   --copyfile('C:/Users/HMSStudio/AppData/Roaming/REAPER/Scripts/LBX/LBXCS_resources/controls/__default.png', 'C:/Users/HMSStudio/AppData/Roaming/REAPER/Scripts/LBX/LBXCS_resources/controls/cpcpcpcpcpc.png')  
   
   reaper.RecursiveCreateDirectory(sets_path,1)
@@ -49733,7 +50691,7 @@ end
   
   show_striplayout = false
   striplayout_mtime = 0.1
-  
+    
   modulator_cnt = 32
   
   textoptlink_select = true
@@ -49807,6 +50765,8 @@ end
   def_switch = LoadControl(997, 'Switcher.knb')
   ctl_bitmap = 1010
   ctl_bitmap2 = 994
+  
+  --DBG(GetPlugIdentifierFromChunk('BYPASS 0 0 0\n<VST "VST: dpMeter2 (TBProAudio) (6ch)" "dpMeter2 x64.dll" 0 "" 1413632067\n'))
   
   --os.execute('E:\\AutoHotkey\\SRD_Home_TouchScreen.ahk')
 
