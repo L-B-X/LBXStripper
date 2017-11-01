@@ -28855,7 +28855,7 @@ end
 
     elseif mouse.context == nil and (show_snapshots == true and macro_edit_mode ~= true and show_eqcontrol ~= true and show_pinmatrix ~= true) and (MOUSE_click(obj.sections[160]) or MOUSE_click_RB(obj.sections[160])) then
     
-      mouse.context = A_Run_SnapshotsWin(rt,mouse.ocntext)
+      mouse.context = A_Run_SnapshotsWin(rt,mouse.context)
       noscroll = true
     
     elseif mouse.context == nil and snaplrn_mode == true then      
@@ -30085,7 +30085,7 @@ end
     end
   
     if mouse.context then
-      
+
       if mouse.context == contexts.modwin_resize then
     
         modwinsz.w = math.min(math.max(modwinrsz.w + (mouse.mx - modwinrsz.mx),modwin.minw),2048)
@@ -36341,6 +36341,8 @@ end
             
     mouse.mx = snapmx
     mouse.my = snapmy
+    
+    return mouse.context
     
   end
   
