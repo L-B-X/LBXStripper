@@ -12,54 +12,55 @@
     
   --------------------------------------------
 
-  noteletters_tab = {'C','C#','D','D#','E','F','F#','G','G#','A','A#','B'}
+  local lvar = {}
+
+  lvar.noteletters_tab = {'C','C#','D','D#','E','F','F#','G','G#','A','A#','B'}
         
-  submode_table = {'FX PARAMS','GRAPHICS','STRIPS'}
-  submode_table2 = {'STRIP','FX','TRACK','GFX'}
-  mode0_submode_table = {'LIVE MODE','FADERS','MODULATORS'}
-  xxymode_table = {'SNAPSHOTS','PATHS'}
-  ctltype_table = {'KNOB/SLIDER','BUTTON','BUTTON INV','CYCLE BUTTON','METER','MEM BUTTON','MOMENT BTN','MOMENT INV','FLASH BUTTON','FLASH INV'}
-  trctltype_table = {'Track Controls','Track Sends','Track Meters','Other Controls'}
-  --special_table = {'Action Trigger','Peak Meter L','Peak Meter R','Clip Indicator L','Clip Indicator R'}
-  special_table = {}
-  otherctl_table = {'Action Trigger','Macro Control','EQ Engine','Strip Switcher','ReaControlMidi Switch','Midi/OSC Control','Take Switcher'}
-  scalemode_preset_table = {'','NORMAL','REAPER VOL'}
-  lfomode_table = {'NORMAL MODE','TAKESWITCH MODE'}
-  scalemode_table = {1/8,1/7,1/6,1/5,1/4,1/3,1/2,1,2,3,4,5,6,7,8}
-  scalemode_dtable = {'1/8','1/7','1/6','1/5','1/4','1/3','1/2','1','2','3','4','5','6','7','8'}
-  macroscale_table = {'Linear','Slow','Fast','Smooth','Slow 2 (Cubic)','Fast 2 (Cubic)', 'Smooth 2 (Cubic)', 'Slow 3', 'Fast 3', 'Smooth 3', 'Instant'}
-  macroscale_sm_table = {'Linear','Slow','Fast','Smooth','Slow2','Fast2', 'Smooth2', 'Slow3', 'Fast3', 'Smooth3','Instant'}
-  eqcontrol_colours = {'160 0 0','0 160 0','0 0 160','160 160 0','0 160 160','160 0 160','255 165 0','160 160 160','196 80 80','80 196 80','80 80 196','196 196 80','196 80 196'
+  lvar.submode_table = {'FX PARAMS','GRAPHICS','STRIPS'}
+  lvar.submode_table2 = {'STRIP','FX','TRACK','GFX'}
+  lvar.mode0_submode_table = {'LIVE MODE','FADERS','MODULATORS'}
+  lvar.xxymode_table = {'SNAPSHOTS','PATHS'}
+  lvar.ctltype_table = {'KNOB/SLIDER','BUTTON','BUTTON INV','CYCLE BUTTON','METER','MEM BUTTON','MOMENT BTN','MOMENT INV','FLASH BUTTON','FLASH INV'}
+  lvar.trctltype_table = {'Track Controls','Track Sends','Track Meters','Other Controls'}
+  lvar.special_table = {}
+  lvar.otherctl_table = {'Action Trigger','Macro Control','EQ Engine','Strip Switcher','ReaControlMidi Switch','Midi/OSC Control','Take Switcher'}
+  lvar.scalemode_preset_table = {'','NORMAL','REAPER VOL'}
+  lvar.lfomode_table = {'NORMAL MODE','TAKESWITCH MODE'}
+  lvar.scalemode_table = {1/8,1/7,1/6,1/5,1/4,1/3,1/2,1,2,3,4,5,6,7,8}
+  lvar.scalemode_dtable = {'1/8','1/7','1/6','1/5','1/4','1/3','1/2','1','2','3','4','5','6','7','8'}
+  lvar.macroscale_table = {'Linear','Slow','Fast','Smooth','Slow 2 (Cubic)','Fast 2 (Cubic)', 'Smooth 2 (Cubic)', 'Slow 3', 'Fast 3', 'Smooth 3', 'Instant'}
+  lvar.macroscale_sm_table = {'Linear','Slow','Fast','Smooth','Slow2','Fast2', 'Smooth2', 'Slow3', 'Fast3', 'Smooth3','Instant'}
+  lvar.eqcontrol_colours = {'160 0 0','0 160 0','0 0 160','160 160 0','0 160 160','160 0 160','255 165 0','160 160 160','196 80 80','80 196 80','80 80 196','196 196 80','196 80 196'
                        ,'255 64 64','64 0 255','80 160 0','102 0 51','255 255 255','255 255 255','255 255 255'}
   
-  midimsgtype_table = {'80 - Note Off','90 - Note On','A0 - Key Pressure','B0 - Control Change','C0 - Program Change','D0 - Channel Pressure','E0 - Pitch Bend'}
-  midimsgval_table = {'0x8','0x9','0xA','0xB','0xC','0xD','0xE'}
+  lvar.midimsgtype_table = {'80 - Note Off','90 - Note On','A0 - Key Pressure','B0 - Control Change','C0 - Program Change','D0 - Channel Pressure','E0 - Pitch Bend'}
+  lvar.midimsgval_table = {'0x8','0x9','0xA','0xB','0xC','0xD','0xE'}
   
-  sync_table = {"Off","1/64t","1/64","1/64d","1/32t","1/32","1/32d","1/16t","1/16","1/16d","1/8t","1/8","1/8d","1/4t","1/4","1/4d","1/2t","1/2","1/2d",
+  lvar.sync_table = {"Off","1/64t","1/64","1/64d","1/32t","1/32","1/32d","1/16t","1/16","1/16d","1/8t","1/8","1/8d","1/4t","1/4","1/4d","1/2t","1/2","1/2d",
                 "1","2","3","4","5","6","7","8","12","16","20","24","28","32","48","64","96","128"}
-  sync_mult_table = {0,1/64*2/3,1/64,1/64*1.5,1/32*2/3,1/32,1/32*1.5,1/16*2/3,1/16,1/16*1.5,1/8*2/3,1/8,1/8*1.5,1/4*2/3,1/4,1/4*1.5,1/2*2/3,1/2,1/2*1.5,1,2,3,4,5,6,7,8,12,16,20,24,28,32,48,64,96,128}
+  lvar.sync_mult_table = {0,1/64*2/3,1/64,1/64*1.5,1/32*2/3,1/32,1/32*1.5,1/16*2/3,1/16,1/16*1.5,1/8*2/3,1/8,1/8*1.5,1/4*2/3,1/4,1/4*1.5,1/2*2/3,1/2,1/2*1.5,1,2,3,4,5,6,7,8,12,16,20,24,28,32,48,64,96,128}
   
-  divmult_table = {1,2,3,4,5,6,7,8,16,32,64,128}
+  lvar.divmult_table = {1,2,3,4,5,6,7,8,16,32,64,128}
   
-  focus_table = {'Off','Arrange','MIDI Editor'}
-  ctlfile_type_table = {'Knob','Slider','Button','Meter','Misc'}
+  lvar.focus_table = {'Off','Arrange','MIDI Editor'}
+  lvar.ctlfile_type_table = {'Knob','Slider','Button','Meter','Misc'}
   
-  framemode_table = {'NORMAL','CIRC'}
-  snapsubsets_table = {'PAGE'} 
-  gaugetype_table = {'ARC','LINEAR VERT', 'LINEAR HORIZ'}
-  gfxstretch_table = {'normal','fix edge'}
+  lvar.framemode_table = {'NORMAL','CIRC'}
+  lvar.snapsubsets_table = {'PAGE'} 
+  lvar.gaugetype_table = {'ARC','LINEAR VERT', 'LINEAR HORIZ'}
+  lvar.gfxstretch_table = {'normal','fix edge'}
   
-  linkgrp_table = {'Randomize X', 'Randomize X on', 'Randomize X off', 'Linked'}
+  lvar.linkgrp_table = {'Randomize X', 'Randomize X on', 'Randomize X off', 'Linked'}
   
-  lbxutil_chunk = 'BYPASS 0 0 0\n<JS LBX_TrackUtility ""\n0.000000 0.000000 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -\n>\nFLOATPOS 0 0 0 0\nFXID {800E025A-6418-48A4-B72E-71E93B970664}\nWAK 0'
+  lvar.lbxutil_chunk = 'BYPASS 0 0 0\n<JS LBX_TrackUtility ""\n0.000000 0.000000 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -\n>\nFLOATPOS 0 0 0 0\nFXID {800E025A-6418-48A4-B72E-71E93B970664}\nWAK 0'
   
-  trctltypeidx_table = {tr_ctls = 1,
+  lvar.trctltypeidx_table = {tr_ctls = 1,
                         tr_sends = 2,
                         tr_rcvs = 3,
                         tr_hwouts = 4
                        }  
   
-  mutate_settings = {dir = 0,
+  local mutate_settings = {dir = 0,
                      range_min = 0,
                      range_max = 100,
                      mutate = true,
@@ -67,7 +68,7 @@
                      mutate_max = 5,
                     }
       
-  contexts = {updatefreq = 0,
+  local contexts = {updatefreq = 0,
               lockw = 1,
               lockh = 2,
               gridslider = 3,
@@ -207,7 +208,7 @@
               dummy = 999
               }
   
-  ctlcats = {fxparam = 0,
+  local ctlcats = {fxparam = 0,
              trackparam = 1,
              tracksend = 2,
              trackrecv = 3,
@@ -227,7 +228,7 @@
              oscctl = 17,
              takeswitcher = 18}
 
-  ctlcats_nm = {'fxparam',
+  lvar.ctlcats_nm = {'fxparam',
                 'trackparam',
                 'tracksend',
                 'trackrecv',
@@ -247,15 +248,145 @@
                  'oscctl',
                  'takeswitcher'}
              
-  gfxtype = {img = 0,
+  local gfxtype = {img = 0,
              txt = 1
              }
 
-  pi = 3.14159265359
+  local pi = 3.14159265359
+
+  local midiouts, midioutsidx 
+    
+  local SCRIPT = 'LBX_STRIPPER'
+  local VERSION = 0.95
+  local STRIPSET = 'STRIP SET 1'
+
+  local LBX_FB_CNT = 32
+
+  local OS = reaper.GetOS()
+  local gmode = 0
+  
+  local fact = {}
+  
+  local image_max = 849
+  local ctl_browser_image = 910
+  local maximg_browse = 79
+  local b_sz = 100
+  local lockx = false
+  local locky = false
+  local lockw, olockw = 400, 400
+  local lockh, olockh = 400, 400
+  local auto_delay = 0
+  local xxypath_indexcnt = 50
+  
+  local paths = {}
+  paths.resource_path = reaper.GetResourcePath().."/Scripts/LBX/LBXCS_resources/"
+  paths.controls_path = paths.resource_path.."controls/"
+  paths.graphics_path = paths.resource_path.."graphics/"
+  paths.actiondump_path = paths.resource_path.."actiondumps/"    
+  paths.icon_path = paths.resource_path.."icons/"
+  paths.strips_path = paths.resource_path.."strips/"
+  paths.sets_path = paths.resource_path.."sets/"
+  paths.projsave_path = paths.resource_path.."projsave/"
+  paths.paths_path = paths.resource_path.."paths/"
+  paths.eqbands_path = paths.resource_path.."eqbands/"
+  paths.eq_path = paths.resource_path.."eq/"
+  paths.skins_path = paths.resource_path.."skins/"
+  paths.share_path = paths.resource_path.."share/"
+  paths.mod_path = paths.resource_path.."modpresets/"
+  paths.update_path = paths.resource_path.."updater/"
+  
+  local nebscanboot_file = nil
+  local defskin_select = "LBXDEF/"
+  local skin_select = defskin_select
+
+  local mouse = {}
+  local butt_h 
+  local mode 
+  local mode0_submode 
+  local submode 
+  local fxmode 
+
+  local strips 
+  local switchers 
+  local snapshots 
+  local xxy 
+  local xxy_gravity 
+  local modulators
+  local modbaridx 
+  local modbaredit 
+  local page 
+  local gpage 
+  local navigate 
+
+  local track_select
+  local trackedit_select 
+  local macro_lrn_mode
+  local macro_edit_mode
+
+
+  --INIT Initialized
+  local lastprojdirty
+  local last_proj_change_count 
+  local projnamechange 
+  local lastprojname 
+    
+  local surface_offset 
+  local mod_select   
+  local plist_w 
+  
+  local time_nextupdate
+  local time_nextupdate_pkmeter 
+  local time_checksend
+  local time_sendupdate
+    
+  local show_ctlbrowser
+  local show_ctloptions
+  local show_lbloptions
+  
+  local show_gfxoptions
+  local show_editbar
+  local show_settings
+  local show_cycleoptions
+  local show_paramlearn
+  local show_snapshots
+  local show_fsnapshots
+  local show_actionchooser
+  local show_xxy
+  local show_gaugeedit
+  local show_trackfxorder
+  local show_midiout
+  local show_bitmap
+  local show_dd
+  local show_lfoedit
+  local show_eqcontrol
+  local show_pinmatrix
+  
+  local show_paramname
+  local show_paramval
+  
+  local eq_edit
+  
+  local ctl_page
+
+  local EB_Open
+  local EB_Enter
+  
+  local MS_Open
+  local MB_Enter
+  
+  local update_gfx
+  local update_surface
+  local update_ctls
+  local update_sidebar
+  local update_topbar
+  local update_ctlopts
+  local update_actcho
+  local update_xxy
+  local force_gfx_update
 
   function CheckUpdater()
   
-    if reaper.file_exists(update_path..'lbx_updater.lua') == true then
+    if reaper.file_exists(paths.update_path..'lbx_updater.lua') == true then
       return true
     end
     
@@ -275,7 +406,7 @@
     
       local err = 0
       local f = 0
-      local dir = resource_path..'updater/oldversions/' 
+      local dir = paths.resource_path..'updater/oldversions/' 
       local path = reaper.GetResourcePath().."/Scripts/LBX/"
       fn = reaper.EnumerateFiles(dir, f)
       while fn do
@@ -325,10 +456,10 @@
 
   function RunUpdater()
   
-    if updateravailable == true then
+    if lvar.updateravailable == true then
     
       if reaper.MB('Update LBX Stripper to latest version?','Update',1) == 1 then
-        os.execute(update_path..'lua.exe '..update_path..'lbx_updater.lua')
+        os.execute(paths.update_path..'lua.exe '..paths.update_path..'lbx_updater.lua')
       
         OpenMsgBox(1,'Assuming that all went well - please reopen the script :)',1)
       end
@@ -383,7 +514,7 @@
 
       if fnd == -1 then
         local chunk = GetTrackChunk(track,true)
-        local insfxchunk = lbxutil_chunk
+        local insfxchunk = lvar.lbxutil_chunk
         local nchunk, nguid = Chunk_InsertFXChunkAtEndOfFXChain(trn,chunk,insfxchunk)
         fxcnt = fxcnt + 1
 
@@ -624,7 +755,7 @@
       end
       local chkdfol = graphics_folders[folder]
       
-      local srcfn = graphics_path..srcfol..graphics_files[graphics_folder_files[file]].fn
+      local srcfn = paths.graphics_path..srcfol..graphics_files[graphics_folder_files[file]].fn
       --do nothing if file not exists or src and dest folders match
       if chkdfol ~= graphics_files[graphics_folder_files[file]].fol and reaper.file_exists(srcfn) then
         local dstfol = ''
@@ -634,7 +765,7 @@
           dfol = graphics_folders[folder]
         end
       
-        local dstfn = graphics_path..dstfol..graphics_files[graphics_folder_files[file]].fn
+        local dstfn = paths.graphics_path..dstfol..graphics_files[graphics_folder_files[file]].fn
         copyfile(srcfn, dstfn)
         os.remove(srcfn)
         
@@ -709,10 +840,10 @@
           else
             gfn = graphics_files[idx].fol..'/'..graphics_files[idx].fn
           end
-          if gx.gfxtype == gfxtype.img and reaper.file_exists(graphics_path..gfn) then
+          if gx.gfxtype == gfxtype.img and reaper.file_exists(paths.graphics_path..gfn) then
             if gfxchk[gx.fn] == nil then
               gfxchk[gx.fn] = true 
-              local imgbin = readbinaryfile(graphics_path..gfn)
+              local imgbin = readbinaryfile(paths.graphics_path..gfn)
               gfxf[#gfxf+1] = {fn = gx.fn, bindata = imgbin}
             end
           end
@@ -722,14 +853,14 @@
     if stripdata.strip.controls then
       for c = 1, #stripdata.strip.controls do      
         local cx = stripdata.strip.controls[c]
-        if nz(cx.ctl_info.fn,'') ~= '' and reaper.file_exists(controls_path..cx.ctl_info.fn) then
+        if nz(cx.ctl_info.fn,'') ~= '' and reaper.file_exists(paths.controls_path..cx.ctl_info.fn) then
           local knbfn = string.match(cx.ctl_info.fn, '(.+)%.') ..'.knb'
           
-          if reaper.file_exists(controls_path..knbfn) then
+          if reaper.file_exists(paths.controls_path..knbfn) then
             if ctlchk[cx.ctl_info.fn] == nil then
               ctlchk[cx.ctl_info.fn] = true 
-              local imgbin = readbinaryfile(controls_path..cx.ctl_info.fn)
-              local knbbin = readbinaryfile(controls_path..knbfn)
+              local imgbin = readbinaryfile(paths.controls_path..cx.ctl_info.fn)
+              local knbbin = readbinaryfile(paths.controls_path..knbfn)
               ctlf[#ctlf+1] = {fn = cx.ctl_info.fn, bindata = imgbin, knbdata = knbbin}
             end
           end
@@ -738,7 +869,7 @@
     end
     stripdata.sharedata = {stripfn = fn, ctls = ctlf, gfx = gfxf}
     
-    local save_path=share_path..'/'
+    local save_path=paths.share_path..'/'
     local fn=save_path..string.match(savefn,'(.+)%.')..".sharestrip"
 
     local DELETE=true
@@ -800,7 +931,7 @@
   function StripShare_Import()
   
     local loadfn
-    local retval, fn = reaper.GetUserFileNameForRead(share_path..'*', 'Load Strip Share File', '.sharestrip')
+    local retval, fn = reaper.GetUserFileNameForRead(paths.share_path..'*', 'Load Strip Share File', '.sharestrip')
     if retval then
     
       if reaper.file_exists(fn) then
@@ -862,7 +993,7 @@
             if graphics_folders[gf] ~= 'GENERAL' then
               gfol = graphics_folders[gf]..'/'
             end
-            gfn = graphics_path..gfol..gfxfn
+            gfn = paths.graphics_path..gfol..gfxfn
             if reaper.file_exists(gfn) then
               fndg = true
               break
@@ -885,7 +1016,7 @@
                   if graphics_folders[gf] ~= 'GENERAL' then
                     gfol = graphics_folders[gf]..'/'
                   end
-                  gfn = graphics_path..gfol..gfxfn
+                  gfn = paths.graphics_path..gfol..gfxfn
                   if reaper.file_exists(gfn) then
                     fndg = true
                     break
@@ -917,7 +1048,7 @@
           if copy == 1 then
             GUI_DrawStateWin(obj,gui,'Importing graphic: '..stripdata.sharedata.gfx[g].fn..'   ('..gfxfn..')')
             
-            gfn = graphics_path..gfxfn
+            gfn = paths.graphics_path..gfxfn
             writebinaryfile(gfn, stripdata.sharedata.gfx[g].bindata)
           else
             GUI_DrawStateWin(obj,gui,'Already in graphics library: '..stripdata.sharedata.gfx[g].fn..'   ('..gfxfn..')')          
@@ -947,7 +1078,7 @@
     
         for c = 1, #stripdata.sharedata.ctls do
           
-          --local cfn = controls_path..stripdata.sharedata.ctls[c].fn
+          --local cfn = paths.controls_path..stripdata.sharedata.ctls[c].fn
 
           local cfxv = 0
           local base = string.match(stripdata.sharedata.ctls[c].fn,'(.+)_v%d%d%d%d')
@@ -956,7 +1087,7 @@
             base = string.match(stripdata.sharedata.ctls[c].fn,'(.+)%..*')
           end
           cfxfn = base .. suffx
-          local cfn = controls_path..cfxfn
+          local cfn = paths.controls_path..cfxfn
           local copy = 0
           if reaper.file_exists(cfn) then
             if CompareStringToFile(stripdata.sharedata.ctls[c].bindata, cfn) == false then
@@ -964,7 +1095,7 @@
               while copy == 0 do
                 cfxv = cfxv + 1
                 cfxfn = base .. '_v' .. string.format('%04d',cfxv) .. suffx
-                cfn = controls_path..cfxfn
+                cfn = paths.controls_path..cfxfn
                 if reaper.file_exists(cfn) then
                   if CompareStringToFile(stripdata.sharedata.ctls[c].bindata, cfn) == true then
                     copy = 3
@@ -1018,7 +1149,7 @@
         
         
         local savefn = stripdata.sharedata.stripfn
-        local save_path=strips_path..strip_folders[stripfol_select].fn..'/'
+        local save_path=paths.strips_path..strip_folders[stripfol_select].fn..'/'
         local fn=save_path..savefn--..".strip"
         local copy = 0
         if reaper.file_exists(fn) then
@@ -3627,7 +3758,7 @@
             graphics_files[graphics_folder_files[gfx_select]].imageidx = iidx
           end  
           --[[image_count = F_limit(image_count + 1,0,image_max)
-          gfx.loadimg(image_count, graphics_path..graphics_files[gfx_select].fn)
+          gfx.loadimg(image_count, paths.graphics_path..graphics_files[gfx_select].fn)
           graphics_files[gfx_select].imageidx = image_count]]
         end
   
@@ -3747,7 +3878,7 @@
 
       if ctl_files[knob_select].imageidx == nil then  
         image_count = F_limit(image_count + 1,0,image_max)
-        gfx.loadimg(image_count, controls_path..ctl_files[knob_select].fn)
+        gfx.loadimg(image_count, paths.controls_path..ctl_files[knob_select].fn)
         ctl_files[knob_select].imageidx = image_count
       end
       
@@ -4240,9 +4371,9 @@
         local tcs = trctl_select - special_offs
         --local pname = 'Tr' .. tracks[trackedit_select].tracknum .. ' '
         local pname = ''
-        if tcs >= special_table_chans then
-          pname = pname .. 'Ch' .. string.format('%i',tcs+1-special_table_chans)
-          tcs = tcs - special_table_chans + 64
+        if tcs >= lvar.special_table_chans then
+          pname = pname .. 'Ch' .. string.format('%i',tcs+1-lvar.special_table_chans)
+          tcs = tcs - lvar.special_table_chans + 64
         else
           pname = pname .. 'Ch' .. string.format('%i',tcs+1)
         end 
@@ -4803,11 +4934,11 @@
     sflist_offset = 0
     
     local i = 0
-    local sf = reaper.EnumerateSubdirectories(strips_path,i)
+    local sf = reaper.EnumerateSubdirectories(paths.strips_path,i)
     while sf ~= nil do
       strip_folders[i] = {fn = sf}
       i=i+1
-      sf = reaper.EnumerateSubdirectories(strips_path,i)
+      sf = reaper.EnumerateSubdirectories(paths.strips_path,i)
     end
     
   end
@@ -4821,11 +4952,11 @@
     
     local i = 0
     if strip_folders[stripfol_select] then
-      local sf = reaper.EnumerateFiles(strips_path..'/'..strip_folders[stripfol_select].fn,i)
+      local sf = reaper.EnumerateFiles(paths.strips_path..'/'..strip_folders[stripfol_select].fn,i)
       while sf ~= nil do
         strip_files[i] = {fn = sf}
         i=i+1
-        sf = reaper.EnumerateFiles(strips_path..'/'..strip_folders[stripfol_select].fn,i)
+        sf = reaper.EnumerateFiles(paths.strips_path..'/'..strip_folders[stripfol_select].fn,i)
       end
     end    
   end
@@ -4870,29 +5001,29 @@
     gflist_offset = 0
     
     local i = 0
-    local gf = reaper.EnumerateFiles(graphics_path,i)
+    local gf = reaper.EnumerateFiles(paths.graphics_path,i)
     while gf ~= nil do
       graphics_files[i] = {fn = gf, fol = 'GENERAL', imageidx = nil}
       i=i+1
-      gf = reaper.EnumerateFiles(graphics_path,i)
+      gf = reaper.EnumerateFiles(paths.graphics_path,i)
     end
     
     local f = 0
     graphics_folders[f] = 'GENERAL'
-    local gfo = reaper.EnumerateSubdirectories(graphics_path,f)
+    local gfo = reaper.EnumerateSubdirectories(paths.graphics_path,f)
     while gfo ~= nil do
       gi = 0
       graphics_folders[f+1] = gfo  
-      local gf = reaper.EnumerateFiles(graphics_path..gfo,gi)
+      local gf = reaper.EnumerateFiles(paths.graphics_path..gfo,gi)
       while gf ~= nil do
         graphics_files[i] = {fn = gf, fol = gfo, imageidx = nil}
         
         i=i+1
         gi=gi+1
-        gf = reaper.EnumerateFiles(graphics_path..gfo,gi)
+        gf = reaper.EnumerateFiles(paths.graphics_path..gfo,gi)
       end
       f=f+1    
-      gfo = reaper.EnumerateSubdirectories(graphics_path,f)
+      gfo = reaper.EnumerateSubdirectories(paths.graphics_path,f)
     end
     
     PopGfxFolder(gfxfol_select)
@@ -4908,30 +5039,30 @@
     end
 
     local i = 0
-    local gf = reaper.EnumerateFiles(graphics_path,i)
+    local gf = reaper.EnumerateFiles(paths.graphics_path,i)
     while gf ~= nil do
       if gfxtab[gf] ~= true then
         graphics_files[#graphics_files+1] = {fn = gf, fol = 'GENERAL', imageidx = nil}
       end
       i=i+1
-      gf = reaper.EnumerateFiles(graphics_path,i)
+      gf = reaper.EnumerateFiles(paths.graphics_path,i)
     end
 
     local f = 0
-    local gfo = reaper.EnumerateSubdirectories(graphics_path,f)
+    local gfo = reaper.EnumerateSubdirectories(paths.graphics_path,f)
     while gfo ~= nil do
       gi = 0
-      local gf = reaper.EnumerateFiles(graphics_path..gfo,gi)
+      local gf = reaper.EnumerateFiles(paths.graphics_path..gfo,gi)
       while gf ~= nil do
         if gfxtab[gf] ~= true then
           graphics_files[#graphics_files+1] = {fn = gf, fol = gfo, imageidx = nil}
         end
         i=i+1
         gi=gi+1
-        gf = reaper.EnumerateFiles(graphics_path..gfo,gi)
+        gf = reaper.EnumerateFiles(paths.graphics_path..gfo,gi)
       end
       f=f+1    
-      gfo = reaper.EnumerateSubdirectories(graphics_path,f)
+      gfo = reaper.EnumerateSubdirectories(paths.graphics_path,f)
     end
     
     PopGfxFolder(gfxfol_select)
@@ -4946,11 +5077,11 @@
     
     local i = 0
     local c = 0
-    local kf = reaper.EnumerateFiles(controls_path,i)
+    local kf = reaper.EnumerateFiles(paths.controls_path,i)
     while kf ~= nil do
       if string.sub(kf,string.len(kf)-3) == '.knb' then
         local file
-        file=io.open(controls_path..kf,"r")
+        file=io.open(paths.controls_path..kf,"r")
         local content=file:read("*a")
         file:close()
         
@@ -4994,7 +5125,7 @@
         c = c + 1
       end
       i=i+1
-      kf = reaper.EnumerateFiles(controls_path,i)
+      kf = reaper.EnumerateFiles(paths.controls_path,i)
     end
     
   end
@@ -5007,11 +5138,11 @@
     end
   
     local i = 0 
-    local kf = reaper.EnumerateFiles(controls_path,i)
+    local kf = reaper.EnumerateFiles(paths.controls_path,i)
     while kf ~= nil do
       if string.sub(kf,string.len(kf)-3) == '.knb' then
         local file
-        file=io.open(controls_path..kf,"r")
+        file=io.open(paths.controls_path..kf,"r")
         local content=file:read("*a")
         file:close()
 
@@ -5020,7 +5151,7 @@
         end
       end
       i=i+1
-      kf = reaper.EnumerateFiles(controls_path,i)      
+      kf = reaper.EnumerateFiles(paths.controls_path,i)      
     end
     update_gfx = true
   
@@ -5029,15 +5160,15 @@
   function LoadControl(iidx, fn)
 
     if string.sub(fn,string.len(fn)-3) == '.knb' then
-      if reaper.file_exists(controls_path..fn) then
+      if reaper.file_exists(paths.controls_path..fn) then
         local file
-        file=io.open(controls_path..fn,"r")
+        file=io.open(paths.controls_path..fn,"r")
         local content=file:read("*a")
         file:close()
         
         defctls[iidx] = unpickle(content)
         if defctls[iidx] then
-          gfx.loadimg(iidx,controls_path..defctls[iidx].fn)
+          gfx.loadimg(iidx,paths.controls_path..defctls[iidx].fn)
           return iidx
         else
           return -1
@@ -5051,9 +5182,9 @@
 
   function LoadSkinIMG(iidx, fn, ignoremissing)
 
-    if reaper.file_exists(skins_path..skin_select..fn) then
+    if reaper.file_exists(paths.skins_path..skin_select..fn) then
     
-      gfx.loadimg(iidx,skins_path..skin_select..fn)
+      gfx.loadimg(iidx,paths.skins_path..skin_select..fn)
       return iidx
     else
       if ignoremissing ~= true then
@@ -5066,7 +5197,7 @@
 
   function LoadSkin()
   
-    local fn = skins_path..skin_select..'skincols.lbx'
+    local fn = paths.skins_path..skin_select..'skincols.lbx'
     if not reaper.file_exists(fn) then
       skin_select = defskin_select 
     end
@@ -5401,7 +5532,7 @@
 
   function PopulateSpecial()
   
-    special_table = {}
+    lvar.special_table = {}
     local trn = trackedit_select
     local tr
     if trn == -1 then
@@ -5411,12 +5542,12 @@
     end
     if tr then
       local nchan = reaper.GetMediaTrackInfo_Value(tr, 'I_NCHAN')
-      special_offs = 1 --#special_table+1
+      special_offs = 1 --#lvar.special_table+1
       for i = 0, nchan-1 do
-        special_table[i+special_offs] = 'Peak Meter Ch'..i+1
-        special_table[i+special_offs+nchan] = 'Clip Indicator Ch'..i+1
+        lvar.special_table[i+special_offs] = 'Peak Meter Ch'..i+1
+        lvar.special_table[i+special_offs+nchan] = 'Clip Indicator Ch'..i+1
       end
-      special_table_chans = nchan
+      lvar.special_table_chans = nchan
     end
       
   end
@@ -6140,15 +6271,15 @@
                         w = obj.sections[13].x+obj.sections[13].w-30,
                         h = obj.sections[13].h}
           if fxmode == 0 then
-            --GUI_textsm_CJ(gui,xywh,submode_table[submode+1],gui.skol.sb_txt_on,-2 + gui.fontsz.sb,xywh.w)
-            GUI_Str(gui,xywh,submode_table[submode+1],5,gui.skol.sb_txt_on,math.min(-2 + gui.fontsz.sb+tscale,1),1,nil,gui.fontnm.sb,gui.fontflag.sb)
+            --GUI_textsm_CJ(gui,xywh,lvar.submode_table[submode+1],gui.skol.sb_txt_on,-2 + gui.fontsz.sb,xywh.w)
+            GUI_Str(gui,xywh,lvar.submode_table[submode+1],5,gui.skol.sb_txt_on,math.min(-2 + gui.fontsz.sb+tscale,1),1,nil,gui.fontnm.sb,gui.fontflag.sb)
           elseif fxmode == 1 then
             --GUI_textsm_CJ(gui,xywh,'TR PARAMS',gui.skol.sb_txt_on,-2 + gui.fontsz.sb,xywh.w) --hardcoded - sort out eventually
             GUI_Str(gui,xywh,'TR PARAMS',5,gui.skol.sb_txt_on,math.min(-2 + gui.fontsz.sb+tscale,1),1,nil,gui.fontnm.sb,gui.fontflag.sb)
           end
         else
-          --GUI_textC(gui,obj.sections[13],submode_table[submode+1],gui.skol.sb_txt_on,-2 + gui.fontsz.sb)
-          GUI_Str(gui,obj.sections[13],submode_table[submode+1],5,gui.skol.sb_txt_on,math.min(-2 + gui.fontsz.sb+tscale,1),1,nil,gui.fontnm.sb,gui.fontflag.sb)
+          --GUI_textC(gui,obj.sections[13],lvar.submode_table[submode+1],gui.skol.sb_txt_on,-2 + gui.fontsz.sb)
+          GUI_Str(gui,obj.sections[13],lvar.submode_table[submode+1],5,gui.skol.sb_txt_on,math.min(-2 + gui.fontsz.sb+tscale,1),1,nil,gui.fontnm.sb,gui.fontflag.sb)
         end
         if submode == 0 then
           f_Get_SSV(gui.color.black)
@@ -6193,7 +6324,7 @@
           if i-1 ~= sm then
             c = gui.skol.sb_txt_off
           end
-          GUI_Str(gui,xywh,submode_table2[i],5,c,math.min(-3 + gui.fontsz.sb+tscale,1),1,gui.skol.sb_shad,gui.fontnm.sb,gui.fontflag.sb)
+          GUI_Str(gui,xywh,lvar.submode_table2[i],5,c,math.min(-3 + gui.fontsz.sb+tscale,1),1,gui.skol.sb_shad,gui.fontnm.sb,gui.fontflag.sb)
         end
       end
     end
@@ -6279,7 +6410,7 @@
     
       for i = 0, F_butt_cnt-1 do
         
-        if trctltype_table[i + trctltypelist_offset + 1] then
+        if lvar.trctltype_table[i + trctltypelist_offset + 1] then
           local xywh = {x = obj.sections[520].x +2,
                         y = obj.sections[520].y +2+ (i+1) * butt_h +1,
                         w = obj.sections[520].w -6,
@@ -6299,11 +6430,11 @@
             c = gui.skol.lst_txthl
           end
           --xywh.y = xywh.y-1
-          --GUI_textsm_LJ(gui, xywh, trctltype_table[i + trctltypelist_offset + 1], c, -4 + gui.fontsz.lst, plist_w)
-          --GUI_textC_LIM(gui, xywh, trctltype_table[i + trctltypelist_offset + 1], c, -4 + gui.fontsz.lst, '', nil, gui.fontnm.lst,4)
+          --GUI_textsm_LJ(gui, xywh, lvar.trctltype_table[i + trctltypelist_offset + 1], c, -4 + gui.fontsz.lst, plist_w)
+          --GUI_textC_LIM(gui, xywh, lvar.trctltype_table[i + trctltypelist_offset + 1], c, -4 + gui.fontsz.lst, '', nil, gui.fontnm.lst,4)
           xywh.x = xywh.x + 2            
           xywh.w = xywh.w - 4           
-          GUI_Str(gui, xywh, trctltype_table[i + trctltypelist_offset + 1], 4, c, -4 + gui.fontsz.lst + lst_fontscale, 1, nil, gui.fontnm.lst, gui.fontflag.lst)
+          GUI_Str(gui, xywh, lvar.trctltype_table[i + trctltypelist_offset + 1], 4, c, -4 + gui.fontsz.lst + lst_fontscale, 1, nil, gui.fontnm.lst, gui.fontflag.lst)
         else
           break
         end
@@ -6372,10 +6503,10 @@
         tbl = trsends_table
       elseif trctltype_select == 2 then
         --track meters
-        tbl = special_table
+        tbl = lvar.special_table
       elseif trctltype_select == 3 then
         --other controls
-        tbl = otherctl_table
+        tbl = lvar.otherctl_table
       end
       
       if trctltype_select == 0 then
@@ -6660,7 +6791,7 @@
   
     local cnt = #strip_favs
     for i = 1, cnt do
-      local fn = strips_path..strip_favs[i]
+      local fn = paths.strips_path..strip_favs[i]
       if reaper.file_exists(fn) == false then
         strip_favs[i] = nil
         ret = true
@@ -6779,8 +6910,8 @@
     
     if variwidth == true then
       local text_len = 0
-      gfx.setfont(1, gui.fontname, gui.fontsz_knob + ddlist.textsize)
-      
+      --gfx.setfont(1, gui.fontname, gui.fontsz_knob + ddlist.textsize)
+      gfx.setfont(1, gui.fontnm.lst, -4 + gui.fontsz.lst + lst_fontscale)
       for i = 1, #ddlist.items do
         text_len = math.max(gfx.measurestr(ddlist.items[i]),text_len)
       end
@@ -6800,6 +6931,9 @@
   
     gfx.dest = 996
     if ddlist and ddlist.items then
+    
+      local butt_h = tb_butt_h
+    
       local size = #ddlist.items
       if size > 0 then
         local h = math.min(size*butt_h,obj.sections[10].h)+2
@@ -6826,8 +6960,9 @@
         gfx.rect(4,4,w+2,h+2,1)]]
                 
         gfx.a = 1
+        f_Get_SSV(gui.skol.lst_bg)
         gfx.rect(0,0,w+2,h+2,1)
-        f_Get_SSV(gui.color.white)
+        f_Get_SSV(gui.skol.lst_barhl)
         gfx.rect(1,1,w,h,0)
         
         local xywh = {x = 1, y = 0, w = w, h = butt_h}
@@ -6835,11 +6970,13 @@
         
           xywh.y = (i-1)*butt_h +2
           if ddlist.over == i then
-            f_Get_SSV(gui.color.white)
+            f_Get_SSV(gui.skol.lst_barhl)
             gfx.rect(xywh.x+2,xywh.y+1,xywh.w-4,xywh.h-2,1)
-            GUI_textC_LIM(gui, xywh, ddlist.items[i+ddlist.offset], gui.color.black, -5)            
+            --GUI_textC_LIM(gui, xywh, ddlist.items[i+ddlist.offset], gui.skol.lst_txthl, -5,nil,nil,nil,5)
+            GUI_Str(gui, xywh, ddlist.items[i+ddlist.offset], 5, gui.skol.lst_txthl, -4 + gui.fontsz.lst + lst_fontscale, 1, nil, gui.fontnm.lst, gui.fontflag.lst)            
           else
-            GUI_textC_LIM(gui, xywh, ddlist.items[i+ddlist.offset], gui.color.white, -5)
+            --GUI_textC_LIM(gui, xywh, ddlist.items[i+ddlist.offset], gui.skol.lst_txt, -5,nil,nil,nil,5)
+            GUI_Str(gui, xywh, ddlist.items[i+ddlist.offset], 5, gui.skol.lst_txt, -4 + gui.fontsz.lst + lst_fontscale, 1, nil, gui.fontnm.lst, gui.fontflag.lst)            
           end   
         end
   
@@ -6905,7 +7042,7 @@
       end
     end
     GUI_DrawButton(gui, midiout_select.msg3, obj.sections[953], gui.color.white, gui.skol.butt1_txt, true, msglab,false,gui.fontsz.butt)
-    GUI_DrawButton(gui, nz(midimsgtype_table[nz(midiout_select.msgtype,-1)],'NONE'), obj.sections[954], gui.color.white, gui.skol.butt1_txt, true, 'MESSAGE TYPE',false,gui.fontsz.butt)
+    GUI_DrawButton(gui, nz(lvar.midimsgtype_table[nz(midiout_select.msgtype,-1)],'NONE'), obj.sections[954], gui.color.white, gui.skol.butt1_txt, true, 'MESSAGE TYPE',false,gui.fontsz.butt)
 
     local xywh = {x = obj.sections[950].x, y = obj.sections[955].y-math.floor((butt_h*1.5)*pnl_scale), w = obj.sections[950].w, h = obj.sections[955].h}
     --GUI_textC_LIM(gui, xywh, 'TRANSMIT OSC MESSAGE', gui.color.white, -2) 
@@ -6918,7 +7055,7 @@
     GUI_DrawButton(gui, midiout_select.vmin, obj.sections[956], gui.color.white, gui.skol.butt1_txt, true, 'VALUE RANGE',false,gui.fontsz.butt)
     GUI_DrawButton(gui, midiout_select.vmax, obj.sections[957], gui.color.white, gui.skol.butt1_txt, true, 'TO',false,gui.fontsz.butt)
 
-    GUI_DrawButton(gui, focus_table[nz(midiout_select.focus, 1)], obj.sections[958], gui.color.white, gui.skol.butt1_txt, true, 'FOCUS WINDOW',false,gui.fontsz.butt)
+    GUI_DrawButton(gui, lvar.focus_table[nz(midiout_select.focus, 1)], obj.sections[958], gui.color.white, gui.skol.butt1_txt, true, 'FOCUS WINDOW',false,gui.fontsz.butt)
     GUI_DrawTick(gui, 'UPDATE DISPLAY BEFORE SENDING MSG', obj.sections[959], gui.skol.pnl_txt, nz(midiout_select.updategfx, false),gui.fontsz.butt)
     GUI_DrawTick(gui, 'SEND MIDI ON MOUSE UP', obj.sections[961], gui.skol.pnl_txt, nz(midiout_select.onmu, false),gui.fontsz.butt)
     
@@ -6997,7 +7134,7 @@
         
         GUI_textC(gui,obj.sections[815],gauge_select.dval,gui.color.white,0)
         
-        GUI_DrawButton(gui, gaugetype_table[gauge_select.type], obj.sections[801], gui.color.white, gui.skol.butt1_txt, true, 'TYPE',false,gui.fontsz.butt)
+        GUI_DrawButton(gui, lvar.gaugetype_table[gauge_select.type], obj.sections[801], gui.color.white, gui.skol.butt1_txt, true, 'TYPE',false,gui.fontsz.butt)
         if gauge_select.type == 1 then
           GUI_DrawSliderH(gui, 'RADIUS', obj.sections[802], gui.color.black, gui.color.white, F_limit(((gauge_select.radius-10)/110),0,1),gui.fontsz.butt)
           GUI_DrawSliderH(gui, 'ROTATE', obj.sections[804], gui.color.black, gui.color.white, F_limit(((gauge_select.rotation)),0,1),gui.fontsz.butt)
@@ -7905,7 +8042,7 @@
     GUI_DrawSliderH(gui, 'A', obj.sections[916], gui.color.black, gui.color.white, F_limit(gfxa_select,0,1))
     GUI_DrawButton(gui, 'RESET', obj.sections[912], gui.color.white, gui.skol.butt1_txt, true)
 
-    GUI_DrawButton(gui, gfxstretch_table[gfxstretchmode_select], obj.sections[917], gui.color.white, gui.skol.butt1_txt, true, 'STRETCH')
+    GUI_DrawButton(gui, lvar.gfxstretch_table[gfxstretchmode_select], obj.sections[917], gui.color.white, gui.skol.butt1_txt, true, 'STRETCH')
     GUI_DrawButton(gui, gfxedgesz_select, obj.sections[918], gui.color.white, gui.skol.butt1_txt, true, 'EDGE SIZE')
   
   end
@@ -7949,7 +8086,7 @@
         if ctl_files[knob_select].imageidx ~= nil then
           iidx = ctl_files[knob_select].imageidx
         else
-          gfx.loadimg(1023, controls_path..ctl_files[knob_select].fn)
+          gfx.loadimg(1023, paths.controls_path..ctl_files[knob_select].fn)
         end
         local w, _ = gfx.getimgdim(iidx)
         local h = ctl_files[knob_select].cellh
@@ -7996,7 +8133,7 @@
       GUI_textC(gui,xywh,'COL',gui.skol.pnl_txt,-5+tscale)
       GUI_DrawColorBox(gui, '', obj.sections[54], gui.skol.pnl_txt, textcol_select)
       GUI_DrawColorBox(gui, '', obj.sections[850], gui.skol.pnl_txt, textcolv_select)
-      GUI_DrawButton(gui, ctltype_table[ctltype_select], obj.sections[55], gui.color.white, gui.skol.butt1_txt, true)
+      GUI_DrawButton(gui, lvar.ctltype_table[ctltype_select], obj.sections[55], gui.color.white, gui.skol.butt1_txt, true)
       GUI_DrawButton(gui, 'LINK', obj.sections[852], -4, gui.skol.butt4_txt, textoptlink_select)
 
       local off, valoff
@@ -8069,9 +8206,9 @@
       GUI_DrawButton(gui, minov_select, obj.sections[126], gui.color.white, gui.skol.butt1_txt, true, 'MIN OV', true)
       GUI_DrawButton(gui, maxov_select, obj.sections[127], gui.color.white, gui.skol.butt1_txt, true, 'MAX OV', true)
       GUI_DrawButton(gui, nz(ov_disp,''), obj.sections[130], -3, gui.skol.butt1_txt, true, '')
-      GUI_DrawButton(gui, scalemode_preset_table[knob_scalemode_select], obj.sections[131], gui.color.white, gui.skol.butt1_txt, true, 'SCALE PSET')
-      GUI_DrawButton(gui, scalemode_dtable[scalemode_select], obj.sections[132], gui.color.white, gui.skol.butt1_txt, true, 'SCALE MOD')
-      GUI_DrawButton(gui, framemode_table[framemode_select], obj.sections[133], gui.color.white, gui.skol.butt1_txt, true, 'FRAME MOD')
+      GUI_DrawButton(gui, lvar.scalemode_preset_table[knob_scalemode_select], obj.sections[131], gui.color.white, gui.skol.butt1_txt, true, 'SCALE PSET')
+      GUI_DrawButton(gui, lvar.scalemode_dtable[scalemode_select], obj.sections[132], gui.color.white, gui.skol.butt1_txt, true, 'SCALE MOD')
+      GUI_DrawButton(gui, lvar.framemode_table[framemode_select], obj.sections[133], gui.color.white, gui.skol.butt1_txt, true, 'FRAME MOD')
       GUI_DrawTick(gui, 'HORIZ SLIDER', obj.sections[134], gui.skol.pnl_txt, horiz_select)
       GUI_DrawTick(gui, 'PAGE SNAP EXCLUDE', obj.sections[139], gui.skol.pnl_txt, noss_select)
 
@@ -8634,10 +8771,10 @@ end
                 ctl.dirty = false
   
                 local scale = ctl.scale
-                local x = ctl.x 
+                local x = ctl.x
                 local y = ctl.y
-                local px = ctl.xsc
-                local py = ctl.ysc
+                local px = math.floor(ctl.xsc)
+                local py = math.floor(ctl.ysc)
                 local w = ctl.w
                 local h = ctl.ctl_info.cellh
       
@@ -9013,8 +9150,8 @@ end
                   if ctl.bypassbg_c ~= true then
                     gfx.blit(1004,1,0, px,
                                        py,
-                                       w*scale,
-                                       h*scale,
+                                       math.floor(w*scale),
+                                       math.floor(h*scale),
                                        px,
                                        py)
                   end
@@ -9128,9 +9265,9 @@ end
                 
                   --just blit control area to main backbuffer - create area table
                   local al = math.min(px, xywh1.x, xywh2.x, tx1, tx2)
-                  local ar = math.max(px+w*scale, tx1+tl1, tx2+tl2, xywh1.x+xywh1.w, xywh2.x+xywh2.w)
+                  local ar = math.max(px+math.floor(w*scale), tx1+tl1, tx2+tl2, xywh1.x+xywh1.w, xywh2.x+xywh2.w)
                   local at = math.min(py, xywh1.y-math.floor(th1/2), xywh2.y-math.floor(th2/2))
-                  local ab = math.max(py+(h)*scale,xywh1.y+math.floor(th1/2), xywh2.y+math.floor(th2/2))
+                  local ab = math.max(py+math.floor(h*scale),xywh1.y+math.floor(th1/2), xywh2.y+math.floor(th2/2))
                   xywharea[#xywharea+1] = {x=al,y=at,w=ar-al,h=ab-at,r=ar,b=ab}
                 end
               end
@@ -9339,7 +9476,7 @@ end
         if ctl_files[knob_select].imageidx ~= nil then
           iidx = ctl_files[knob_select].imageidx
         else
-          gfx.loadimg(1023, controls_path..ctl_files[knob_select].fn)
+          gfx.loadimg(1023, paths.controls_path..ctl_files[knob_select].fn)
         end
         local w, _ = gfx.getimgdim(iidx)
         gfx.a = 1
@@ -9646,7 +9783,7 @@ end
       scale = snaps.morph_scale
       sync = snaps.morph_sync
       if sync == true then
-        mv = sync_table[snaps.morph_syncv]        
+        mv = lvar.sync_table[snaps.morph_syncv]        
       else
         mv = round(nz(snaps.morph_time,0) * 100,3)
       end
@@ -9667,7 +9804,7 @@ end
       bc = -1
     end
     GUI_DrawButton(gui, 'SYNC', obj.sections[1011], bc, gui.skol.butt1_txt, true, '', false)
-    GUI_DrawButton(gui, macroscale_sm_table[scale], obj.sections[1012], gui.color.white, gui.skol.butt1_txt, true, '', false)
+    GUI_DrawButton(gui, lvar.macroscale_sm_table[scale], obj.sections[1012], gui.color.white, gui.skol.butt1_txt, true, '', false)
     
     xywh = {x = obj.sections[163].x,
             y = obj.sections[163].y,
@@ -10108,7 +10245,7 @@ end
             if cbi[i].imageidx ~= nil then
               --iidx = cbi[i].imageidx
             else
-              gfx.loadimg(icnt, controls_path..cbi[i].fn)
+              gfx.loadimg(icnt, paths.controls_path..cbi[i].fn)
               cbi[i].imageidx = icnt
               icnt = icnt + 1
             end
@@ -10141,7 +10278,7 @@ end
                         ctltype = ctl_files[ii].ctltype}    
       if cbi_select_inf.imageidx ~= nil then
       else
-        gfx.loadimg(991, controls_path..ctl_files[ii].fn)
+        gfx.loadimg(991, paths.controls_path..ctl_files[ii].fn)
         cbi_select_inf.imageidx = 991
       end
     end  
@@ -10284,7 +10421,7 @@ end
       xywh.y = xywh.y + butt_h
       GUI_textsm_LJ(gui,xywh,'Frames = '..cbi_select_inf.frames,gui.color.white,-5,xywh.w)
       xywh.y = xywh.y + butt_h
-      GUI_textsm_LJ(gui,xywh,'Type = '..ctlfile_type_table[cbi_select_inf.ctltype+1],gui.color.white,-5,xywh.w)      
+      GUI_textsm_LJ(gui,xywh,'Type = '..lvar.ctlfile_type_table[cbi_select_inf.ctltype+1],gui.color.white,-5,xywh.w)      
       xywh.y = xywh.y + butt_h
             
     end
@@ -11846,8 +11983,8 @@ end
                        xywh.y, 
                        xywh.w,
                        xywh.h, 1)
-              --GUI_textC(gui, xywh, macroscale_table[macro[m+macroedit_poffs].shape], gui.color.white, -2)          
-              GUI_Str(gui, xywh, macroscale_table[macro[m+macroedit_poffs].shape], 5, gui.color.white, -2, 1)
+              --GUI_textC(gui, xywh, lvar.macroscale_table[macro[m+macroedit_poffs].shape], gui.color.white, -2)          
+              GUI_Str(gui, xywh, lvar.macroscale_table[macro[m+macroedit_poffs].shape], 5, gui.color.white, -2, 1)
               
               xywh = {x = obj.sections[402].x+30,
                       y = obj.sections[402].y + mm*macroedit.sech,
@@ -12502,7 +12639,7 @@ end
         modbaredit = {}
         modbaridx = {}  
 
-        local bars = sync_mult_table[m.syncv]
+        local bars = lvar.sync_mult_table[m.syncv]
         local barsteps = m.steps / bars
         f_Get_SSV(gui.skol.mod_barlines)
         if bars >= 2 then
@@ -12605,7 +12742,7 @@ end
       end
       m.opos = m.pos
       
-      local bars = sync_mult_table[m.syncv]
+      local bars = lvar.sync_mult_table[m.syncv]
       local barsteps = m.steps / bars
       f_Get_SSV(gui.skol.mod_barlines)
       if bars >= 2 then
@@ -12629,7 +12766,7 @@ end
 
     local m = modulators[mod_select]
     if m then
-      GUI_DrawButton(gui,'STEP MULT: x'..divmult_table[m.stepsmult],obj.sections[1102],-1,gui.color.white,true)
+      GUI_DrawButton(gui,'STEP MULT: x'..lvar.divmult_table[m.stepsmult],obj.sections[1102],-1,gui.color.white,true)
       --GUI_DrawButton(gui,'-',obj.sections[1103],-1,gui.color.white,true)
 
       local c = -1
@@ -12638,7 +12775,7 @@ end
       end
       GUI_DrawButton(gui,'ON',obj.sections[1106],c,gui.skol.butt2_txt,true)
   
-      GUI_DrawButton(gui,'LENGTH: '..sync_table[m.syncv],obj.sections[1104],-1,gui.color.white,true)
+      GUI_DrawButton(gui,'LENGTH: '..lvar.sync_table[m.syncv],obj.sections[1104],-1,gui.color.white,true)
       local c = -1
       if m.interpolate == true then
         c = -4
@@ -12661,7 +12798,7 @@ end
       if m.mode == 2 then
         c = -4
       end
-      GUI_DrawButton(gui,lfomode_table[m.mode],obj.sections[1114],c,gui.color.white,true)
+      GUI_DrawButton(gui,lvar.lfomode_table[m.mode],obj.sections[1114],c,gui.color.white,true)
 
       local c = -1
       if m.min > 0 then
@@ -12766,7 +12903,7 @@ end
       
       end
       
-      local bars = sync_mult_table[m.syncv]
+      local bars = lvar.sync_mult_table[m.syncv]
       local barsteps = m.steps / bars
       f_Get_SSV(gui.skol.mod_barlines)
       if bars >= 2 then
@@ -12867,7 +13004,7 @@ end
         xywh.x = x+xoff
         GUI_textC(gui, xywh, txt, gui.color.black, -5, 1, -14)
         xywhsc.x = x+xoff
-        GUI_textC(gui, xywhsc, string.upper(macroscale_sm_table[morph_data[d].morph_scale]), gui.color.black, -8, 1, 11)
+        GUI_textC(gui, xywhsc, string.upper(lvar.macroscale_sm_table[morph_data[d].morph_scale]), gui.color.black, -8, 1, 11)
       
         y = y + h
         xywh.y = y
@@ -13091,7 +13228,7 @@ end
           
           local lgsel = randomopts_select.linkgrps[lg]        
           if lgtype then
-            GUI_DrawButton(gui, linkgrp_table[lgsel.type], obj.sections[1143], gui.color.white, gui.skol.butt1_txt, true, 'TYPE',false,gui.fontsz.butt)
+            GUI_DrawButton(gui, lvar.linkgrp_table[lgsel.type], obj.sections[1143], gui.color.white, gui.skol.butt1_txt, true, 'TYPE',false,gui.fontsz.butt)
             if lgtype <= 3 then
               GUI_DrawButton(gui, string.format('%i',round(lgsel.X*128)), obj.sections[1144], gui.color.white, gui.skol.butt1_txt, true, 'X',false,gui.fontsz.butt)
             else
@@ -13677,7 +13814,7 @@ end
             local iidx = ctl_files[knob_select].imageidx
             if iidx == nil or ksel_loaded == false then
               ksel_loaded = true
-              gfx.loadimg(1023, controls_path..ctl_files[knob_select].fn)
+              gfx.loadimg(1023, paths.controls_path..ctl_files[knob_select].fn)
               iidx = 1023
             elseif iidx == nil then
               iidx = 1023
@@ -13964,7 +14101,7 @@ end
                 iidx = ctl_files[knob_select].imageidx
                 if iidx == nil or ksel_loaded == false then
                   ksel_loaded = true
-                  gfx.loadimg(1023, controls_path..ctl_files[knob_select].fn)
+                  gfx.loadimg(1023, paths.controls_path..ctl_files[knob_select].fn)
                   iidx = 1023
                 elseif iidx == nil then
                   iidx = 1023
@@ -13998,7 +14135,7 @@ end
                 local iidx = ctl_files[knob_select].imageidx
                 if iidx == nil or ksel_loaded == false then
                   ksel_loaded = true
-                  gfx.loadimg(1023, controls_path..ctl_files[knob_select].fn)
+                  gfx.loadimg(1023, paths.controls_path..ctl_files[knob_select].fn)
                   iidx = 1023
                 elseif iidx == nil then
                   iidx = 1023
@@ -14576,9 +14713,9 @@ end
             w = obj.sections[221].w,
             h = butt_h}
     
-    GUI_DrawBar(gui,xxymode_table[xxymode+1],xywh,skin.bar,true,gui.skol.sb_txt_on,nil,-2,nil,gui.skol.sb_shad,gui.fontnm.sb,gui.fontflag.sb)
+    GUI_DrawBar(gui,lvar.xxymode_table[xxymode+1],xywh,skin.bar,true,gui.skol.sb_txt_on,nil,-2,nil,gui.skol.sb_shad,gui.fontnm.sb,gui.fontflag.sb)
     
-    --GUI_textC(gui,xywh,xxymode_table[xxymode+1],gui.color.black,-2)
+    --GUI_textC(gui,xywh,lvar.xxymode_table[xxymode+1],gui.color.black,-2)
 
     if xxymode == 0 then
       local sstypestr = 'PAGE'
@@ -15226,7 +15363,7 @@ end
     GUI_DrawTick(gui, 'Simple select grouped controls', obj.sections[718], gui.color.white, settings_groupsel, gui.fontsz.settings,true)
     GUI_DrawTick(gui, 'Alternative edit mode drag', obj.sections[726], gui.color.white, settings_dragmode, gui.fontsz.settings,true)
 
-    if updateravailable then
+    if lvar.updateravailable then
       GUI_DrawButton(gui, 'UPDATE LBX', obj.sections[727], -1, gui.color.black, true, '', true, gui.fontsz.settings,true)
     end
     
@@ -17313,7 +17450,7 @@ end
     if sstype_select > 1 then
       if snapshots and snapshots[tracks[track_select].strip] and snapshots[tracks[track_select].strip][page][sstype_select] then
         snapshots[tracks[track_select].strip][page][sstype_select].subsetname = txt
-        snapsubsets_table[sstype_select] = txt
+        lvar.snapsubsets_table[sstype_select] = txt
       end    
     end
   
@@ -17719,7 +17856,7 @@ end
     --test
     
     if fn and string.len(fn)>0 then
-      local save_path=strips_path..strip_folders[stripfol_select].fn..'/'
+      local save_path=paths.strips_path..strip_folders[stripfol_select].fn..'/'
       local fn=save_path..fn..".strip"  
       local file
       file=io.open(fn,"w")
@@ -17927,7 +18064,7 @@ end
     local stripdata = nil
     local load_path, fn
     if ffn == nil then
-      load_path=strips_path
+      load_path=paths.strips_path
       fn=load_path..sfn
     else
       fn = ffn
@@ -18029,7 +18166,7 @@ end
     end
     
     local stripdata = nil
-    local load_path=strips_path
+    local load_path=paths.strips_path
     if sfol and sfil then
       local fn=load_path..sfol..'/'..sfil
       if reaper.file_exists(fn) then
@@ -18118,7 +18255,7 @@ end
     local stripdata = nil
     local load_path, fn
     if ffn == nil then
-      load_path=strips_path
+      load_path=paths.strips_path
       fn=load_path..sfn
     else
       fn = ffn
@@ -18940,7 +19077,7 @@ end
               else
                 fnd = true
                 image_count_add = F_limit(image_count_add + 1,0,image_max)
-                gfx.loadimg(image_count_add, controls_path..strip.controls[i].ctl_info.fn)
+                gfx.loadimg(image_count_add, paths.controls_path..strip.controls[i].ctl_info.fn)
                 ctl_files[j].imageidx = image_count_add
                 strip.controls[i].ctl_info.imageidx = image_count_add
                 strip.controls[i].knob_select = j
@@ -21558,7 +21695,7 @@ end
   
     local i = (num % 12)+1
     local n = math.floor((num)/12)-1
-    return noteletters_tab[i]..n
+    return lvar.noteletters_tab[i]..n
   
   end
   
@@ -21742,12 +21879,12 @@ end
   function MenuMidiMsgType()
 
     local mstr = ''
-    for i = 1, #midimsgtype_table do
+    for i = 1, #lvar.midimsgtype_table do
       
       if mstr ~= '' then
         mstr = mstr .. '|'
       end
-      mstr = mstr ..midimsgtype_table[i]
+      mstr = mstr ..lvar.midimsgtype_table[i]
   
     end
     if mstr ~= '' then
@@ -22186,8 +22323,8 @@ end
     DBG('----------------------------------------------')
     DBG('')
     DBG('Ctl ID: '..c)
-    DBG('Type: '..ctltype_table[ctl.ctltype])
-    DBG('Cat: '..ctl.ctlcat..' - '..string.upper(ctlcats_nm[ctl.ctlcat+1]))
+    DBG('Type: '..lvar.ctltype_table[ctl.ctltype])
+    DBG('Cat: '..ctl.ctlcat..' - '..string.upper(lvar.ctlcats_nm[ctl.ctlcat+1]))
     DBG('Image FN: '..ctl_files[ctl.knob_select].fn)
     DBG('Param Name: '..ctl.param_info.paramname)
     DBG('Display Name: '..tostring(ctl.ctlname_override))
@@ -22223,12 +22360,12 @@ end
     local cnt = 0
     local filcnt = 0
     local i = 0
-    local sfol = reaper.EnumerateSubdirectories(strips_path, i)
+    local sfol = reaper.EnumerateSubdirectories(paths.strips_path, i)
     while sfol ~= nil do
     
       local mfol = sfol
       i=i+1
-      sfol = reaper.EnumerateSubdirectories(strips_path, i)
+      sfol = reaper.EnumerateSubdirectories(paths.strips_path, i)
       if sfol == nil then
         mstr = mstr ..'|<>'.. mfol
       else
@@ -22236,7 +22373,7 @@ end
       end     
       
       local j = 0
-      local sfil = reaper.EnumerateFiles(strips_path..mfol, j)
+      local sfil = reaper.EnumerateFiles(paths.strips_path..mfol, j)
       if sfil == nil then
         mstr = mstr ..'|<#Empty'
         mstripfolders[#mstripfolders+1] = ''
@@ -22252,7 +22389,7 @@ end
             mstripfolders[#mstripfolders+1] = mfol..'/'..mfil
             
             j=j+1
-            sfil = reaper.EnumerateFiles(strips_path..mfol, j)
+            sfil = reaper.EnumerateFiles(paths.strips_path..mfol, j)
     
             if sfil == nil then
               mstr = mstr ..'|<'..string.sub(mfil, 1, string.len(mfil)-6)
@@ -22261,7 +22398,7 @@ end
             end
           else
             j=j+1
-            sfil = reaper.EnumerateFiles(strips_path..mfol, j)          
+            sfil = reaper.EnumerateFiles(paths.strips_path..mfol, j)          
           end
               
         end
@@ -23519,15 +23656,15 @@ end
     local j = 0
     local i = 0
     
-    local sd = reaper.EnumerateSubdirectories(resource_path, j)
+    local sd = reaper.EnumerateSubdirectories(paths.resource_path, j)
     while sd ~= nil do
 
       if sd == 'actiondumps' then
-        local df = reaper.EnumerateFiles(actiondump_path,i)
+        local df = reaper.EnumerateFiles(paths.actiondump_path,i)
         while df ~= nil do
           
           kb_table = {}
-          filename = actiondump_path..'/'..df
+          filename = paths.actiondump_path..'/'..df
           file = io.open(filename, "r")
           content = file:read("*all")
           for line in io.lines(filename) do table.insert(kb_table, line) end
@@ -23541,12 +23678,12 @@ end
             end
           end
           i=i+1
-          df = reaper.EnumerateFiles(actiondump_path,i)
+          df = reaper.EnumerateFiles(paths.actiondump_path,i)
         end
         break
       end
       j=j+1
-      sd = reaper.EnumerateSubdirectories(resource_path, j)
+      sd = reaper.EnumerateSubdirectories(paths.resource_path, j)
     end
 
     kb_table = {}
@@ -24566,7 +24703,7 @@ end
                       if snapshots[faders[p+1].strip][faders[p+1].page][faders[p+1].sstype].morph_sync == false then
                         snapshots[faders[p+1].strip][faders[p+1].page][faders[p+1].sstype].morph_time = faders[p+1].val
                       else
-                        snapshots[faders[p+1].strip][faders[p+1].page][faders[p+1].sstype].morph_syncv = math.min(1+round(faders[p+1].val*127),#sync_table)
+                        snapshots[faders[p+1].strip][faders[p+1].page][faders[p+1].sstype].morph_syncv = math.min(1+round(faders[p+1].val*127),#lvar.sync_table)
                       end
                       update_snaps = true
                     end
@@ -25725,10 +25862,10 @@ end
       load_path=reaper.GetProjectPath('')..'/'
       
       if reaper.file_exists(load_path..fn..'.lbxstripper') ~= true and reaper.file_exists(load_path..fn..'.lbxstripper__') ~= true then
-        load_path=projsave_path
+        load_path=paths.projsave_path
       end
     else
-      load_path=projsave_path
+      load_path=paths.projsave_path
      
       if reaper.file_exists(load_path..fn..'.lbxstripper') ~= true and reaper.file_exists(load_path..fn..'.lbxstripper__') ~= true then
         load_path=reaper.GetProjectPath('')..'/'
@@ -25762,6 +25899,10 @@ end
   
   function run()  
 
+    local contexts = contexts
+    local ctlcats = ctlcats
+    local lvar = lvar
+    
     local preservecontext
     local rt = reaper.time_precise()
     
@@ -26118,7 +26259,7 @@ end
     
             if mode == 0 then
               mode0_submode = mode0_submode+1
-              if mode0_submode > #mode0_submode_table-1 then
+              if mode0_submode > #lvar.mode0_submode_table-1 then
                 mode0_submode = 0
               end
               update_gfx = true
@@ -26130,7 +26271,7 @@ end
             if mode == 0 then
               mode0_submode = mode0_submode-1
               if mode0_submode < 0 then
-                mode0_submode = #mode0_submode_table-1
+                mode0_submode = #lvar.mode0_submode_table-1
               end
               update_gfx = true
             end
@@ -26712,6 +26853,7 @@ end
 
   function A_RunMorph()
     
+    local morph_data = morph_data
     local runcnt = 0
     local t = reaper.time_precise()
     for i = 1, #morph_data do
@@ -27032,7 +27174,7 @@ end
       
     elseif mouse.context == nil and MOUSE_click(obj.sections[958]) then
       midiout_select.focus = midiout_select.focus + 1
-      if midiout_select.focus > #focus_table then
+      if midiout_select.focus > #lvar.focus_table then
         midiout_select.focus = 1
       end
       update_surface = true
@@ -27271,7 +27413,7 @@ end
     local res = gfx.showmenu(mstr)
     if res > 0 then
       local m = modulators[mod_select]
-      local bars = sync_mult_table[m.syncv]
+      local bars = lvar.sync_mult_table[m.syncv]
       local barsteps 
       if mouse.shift then
         barsteps = m.steps
@@ -27327,7 +27469,7 @@ end
         OpenEB(120,'Please give the modulator preset a name:','Mod Preset')
 
       elseif res == 6 then
-        local ret, fn = reaper.GetUserFileNameForRead(mod_path..'*','Load Mod Preset','.lbxmod')
+        local ret, fn = reaper.GetUserFileNameForRead(paths.mod_path..'*','Load Mod Preset','.lbxmod')
         if ret == true and fn then
           LoadModPreset(fn)
           update_lfoedit = true
@@ -27498,6 +27640,9 @@ end
   function A_Run_StripLayout(noscroll, rt)
   
     if stripgallery_view == 0 then
+  
+      local contexts = contexts
+      local mouse = mouse
     
       local xywh = {x = striplayout_data.x+obj.sections[10].x,
                     y = striplayout_data.y+obj.sections[10].y,
@@ -27928,14 +28073,14 @@ end
           --shape
           if mouse.LB then
             morph_data[i].morph_scale = nz(morph_data[i].morph_scale,1) + 1
-            if morph_data[i].morph_scale > #macroscale_table then
+            if morph_data[i].morph_scale > #lvar.macroscale_table then
               morph_data[i].morph_scale = 1
             end
             update_snaps = true
           else
             morph_data[i].morph_scale = nz(morph_data[i].morph_scale,1) - 1
             if morph_data[i].morph_scale < 1 then
-              morph_data[i].morph_scale = #macroscale_table
+              morph_data[i].morph_scale = #lvar.macroscale_table
             end
             update_snaps = true
           end
@@ -28009,6 +28154,9 @@ end
   
   function A_Run_Mode0(noscroll, rt)
   
+    local contexts = contexts
+    local mouse = mouse
+    
     if striplayout_mt then
       striplayout_mp = 1-(((striplayout_mt-reaper.time_precise()))/striplayout_mtime)
       if striplayout_mp >= 1 then
@@ -28312,7 +28460,7 @@ end
         local p = randomopts_select.param
         local lg = randomopts_select.ctls[p].linkgrp
         if lg and randomopts_select.linkgrps[lg] then
-          randomopts_select.linkgrps[lg].type = math.min(randomopts_select.linkgrps[lg].type + 1,#linkgrp_table)
+          randomopts_select.linkgrps[lg].type = math.min(randomopts_select.linkgrps[lg].type + 1,#lvar.linkgrp_table)
           update_randomopts = true
         end
         
@@ -28504,7 +28652,7 @@ end
         elseif MOUSE_click(obj.sections[1102]) then
         
           local os = m.steps
-          m.stepsmult = math.min(m.stepsmult + 1,#divmult_table)
+          m.stepsmult = math.min(m.stepsmult + 1,#lvar.divmult_table)
           if mouse.shift == false then
             if m.stepsmult == 5 or m.stepsmult == 6 or m.stepsmult == 7 then
               m.stepsmult = 8
@@ -28512,7 +28660,7 @@ end
               m.stepsmult = 4
             end
           end
-          m.steps = (m.div * divmult_table[m.stepsmult])
+          m.steps = (m.div * lvar.divmult_table[m.stepsmult])
           if os ~= m.steps then
             local d = {}
             local cnt = #m.data
@@ -28555,7 +28703,7 @@ end
               m.stepsmult = 2
             end
           end
-          m.steps = (m.div * divmult_table[m.stepsmult])
+          m.steps = (m.div * lvar.divmult_table[m.stepsmult])
           if os ~= m.steps then
             local d = {}
             if not mouse.ctrl then
@@ -28573,7 +28721,7 @@ end
           
         elseif MOUSE_click(obj.sections[1104]) then
         
-          m.syncv = math.min(m.syncv + 1,#sync_table)
+          m.syncv = math.min(m.syncv + 1,#lvar.sync_table)
           update_lfoedit = true
 
         elseif MOUSE_click_RB(obj.sections[1104]) then
@@ -28622,7 +28770,7 @@ end
         elseif MOUSE_click(obj.sections[1107]) then
 
           m.div = math.min(m.div + 1,12)
-          m.steps = (m.div * divmult_table[m.stepsmult])
+          m.steps = (m.div * lvar.divmult_table[m.stepsmult])
           local dcnt = #m.data
           if m.steps > dcnt then
             local d = {}
@@ -28688,7 +28836,7 @@ end
         elseif MOUSE_click_RB(obj.sections[1107]) then
         
           m.div = math.max(m.div - 1,3)
-          m.steps = (m.div * divmult_table[m.stepsmult])
+          m.steps = (m.div * lvar.divmult_table[m.stepsmult])
           local dcnt = #m.data
           if m.steps > dcnt then
             local d = {}
@@ -28855,7 +29003,8 @@ end
 
     elseif mouse.context == nil and (show_snapshots == true and macro_edit_mode ~= true and show_eqcontrol ~= true and show_pinmatrix ~= true) and (MOUSE_click(obj.sections[160]) or MOUSE_click_RB(obj.sections[160])) then
     
-      mouse.context = A_Run_SnapshotsWin(rt,mouse.context)
+      --mouse.context = 
+      A_Run_SnapshotsWin(rt)
       noscroll = true
     
     elseif mouse.context == nil and snaplrn_mode == true then      
@@ -28920,7 +29069,7 @@ end
               if MOUSE_LB() and not mouse.ctrl and not mouse.alt then
                 local ctltype = ctls[i].ctltype
               
-                if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.15 and ctltype ~= 5 and ctltype ~= 2 and ctltype ~= 3 then
+                if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.2 and ctltype ~= 5 and ctltype ~= 2 and ctltype ~= 3 then
                   if settings_swapctrlclick == false then
                     SetParam_ToDef(i)             
                   else
@@ -29429,7 +29578,7 @@ end
                   OpenFXGUI(ctls[i])
                 end
                                 
-              elseif MOUSE_LB() and mouse.ctrl then --make double_click?
+              elseif MOUSE_LB() and mouse.ctrl then --make double-click?
                 local ccat = ctls[i].ctlcat 
                 if ccat == ctlcats.snapshotrand then
                   show_randomopts = true
@@ -29458,7 +29607,7 @@ end
                 end
                 noscroll = true
                            
-              elseif settings_mousewheelknob and gfx.mouse_wheel ~= 0 and i then
+              elseif settings_mousewheelknob and gfx.mouse_wheel ~= 0 --[[and i]] then
                 local ctltype = ctls[i].ctltype
                 if ctltype == 1 then
                   trackfxparam_select = i
@@ -30085,7 +30234,7 @@ end
     end
   
     if mouse.context then
-
+      
       if mouse.context == contexts.modwin_resize then
     
         modwinsz.w = math.min(math.max(modwinrsz.w + (mouse.mx - modwinrsz.mx),modwin.minw),2048)
@@ -30662,6 +30811,9 @@ end
 
   function A_Run_Submode0(noscroll, rt, char)
   
+    local contexts = contexts
+    local mouse = mouse
+    
     if show_actionchooser then
       
       if gfx.mouse_wheel ~= 0 then
@@ -30963,7 +31115,7 @@ end
       elseif mouse.context == nil and MOUSE_click(obj.sections[801]) then
         local gtab = gauge_select
         gtab.type = gtab.type+1
-        if gtab.type > #gaugetype_table then
+        if gtab.type > #lvar.gaugetype_table then
           gtab.type = 1
         end
         update_surface = true
@@ -30972,7 +31124,7 @@ end
         local gtab = gauge_select
         gtab.type = gtab.type-1
         if gtab.type < 1 then
-          gtab.type = #gaugetype_table
+          gtab.type = #lvar.gaugetype_table
         end
         update_surface = true
 
@@ -31204,7 +31356,7 @@ end
             update_sidebar = true
             gfx.mouse_wheel = 0
           elseif fxmode == 1 then
-            trctltypelist_offset = F_limit(trctltypelist_offset - v, 0, #trctltype_table-1)
+            trctltypelist_offset = F_limit(trctltypelist_offset - v, 0, #lvar.trctltype_table-1)
             update_sidebar = true
             gfx.mouse_wheel = 0            
           end
@@ -31224,11 +31376,11 @@ end
               update_sidebar = true
               gfx.mouse_wheel = 0              
             elseif trctltype_select == 2 then
-              trctlslist_offset = F_limit(trctlslist_offset - v, 0, #special_table-1)
+              trctlslist_offset = F_limit(trctlslist_offset - v, 0, #lvar.special_table-1)
               update_sidebar = true
               gfx.mouse_wheel = 0              
             elseif trctltype_select == 3 then
-              trctlslist_offset = F_limit(trctlslist_offset - v, 0, #otherctl_table-1)
+              trctlslist_offset = F_limit(trctlslist_offset - v, 0, #lvar.otherctl_table-1)
               update_sidebar = true
               gfx.mouse_wheel = 0              
             end
@@ -31360,7 +31512,7 @@ end
               update_gfx = true
               gfx.mouse_wheel = 0
             elseif MOUSE_over(obj.sections[55]) then
-              ctltype_select = F_limit(ctltype_select + v,1,#ctltype_table)
+              ctltype_select = F_limit(ctltype_select + v,1,#lvar.ctltype_table)
               for i = 1, #ctl_select do
                 strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctltype = ctltype_select
                 strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].dirty = true
@@ -31576,7 +31728,7 @@ end
               end
               if res > 0 then
                 
-                local save_path=controls_path
+                local save_path=paths.controls_path
                 local knbfn = ctl_files[cbi_select].fn
                 
                 local fn=save_path..string.sub(knbfn,0,string.len(knbfn)-3).. 'knb'
@@ -31778,7 +31930,7 @@ end
             end
           elseif mouse.context == nil and MOUSE_click(obj.sections[55]) then
             ctltype_select = ctltype_select + 1
-            if ctltype_select > #ctltype_table then ctltype_select = 1 end
+            if ctltype_select > #lvar.ctltype_table then ctltype_select = 1 end
             for i = 1, #ctl_select do
               strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctltype = ctltype_select
               strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].dirty = true
@@ -31788,7 +31940,7 @@ end
             
           elseif MOUSE_click_RB(obj.sections[55]) then
             ctltype_select = ctltype_select - 1
-            if ctltype_select < 1 then ctltype_select = #ctltype_table end
+            if ctltype_select < 1 then ctltype_select = #lvar.ctltype_table end
             for i = 1, #ctl_select do
               strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctltype = ctltype_select
               strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].dirty = true
@@ -31861,7 +32013,7 @@ end
             --apply
             if ctl_files[knob_select].imageidx == nil then  
               image_count = F_limit(image_count + 1,0,image_max)
-              gfx.loadimg(image_count, controls_path..ctl_files[knob_select].fn)
+              gfx.loadimg(image_count, paths.controls_path..ctl_files[knob_select].fn)
               ctl_files[knob_select].imageidx = image_count
             end
             local w, _ = gfx.getimgdim(ctl_files[knob_select].imageidx)
@@ -31945,7 +32097,7 @@ end
 
           if MOUSE_click(obj.sections[131]) then
             knob_scalemode_select = knob_scalemode_select + 1
-            if knob_scalemode_select > #scalemode_preset_table then knob_scalemode_select = 2 end
+            if knob_scalemode_select > #lvar.scalemode_preset_table then knob_scalemode_select = 2 end
             if knob_scalemode_select == 2 then
               scalemode_select = 8
               framemode_select = 1
@@ -31963,7 +32115,7 @@ end
 
           if MOUSE_click(obj.sections[132]) then
             scalemode_select = scalemode_select + 1
-            if scalemode_select > #scalemode_table then scalemode_select = 1 end
+            if scalemode_select > #lvar.scalemode_table then scalemode_select = 1 end
             for i = 1, #ctl_select do
               strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].scalemode = scalemode_select
             end
@@ -31971,7 +32123,7 @@ end
             update_gfx = true                                      
           elseif MOUSE_click_RB(obj.sections[132]) then
             scalemode_select = scalemode_select - 1
-            if scalemode_select < 1 then scalemode_select = #scalemode_table end
+            if scalemode_select < 1 then scalemode_select = #lvar.scalemode_table end
             for i = 1, #ctl_select do
               strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].scalemode = scalemode_select
             end
@@ -31981,7 +32133,7 @@ end
         
           if MOUSE_click(obj.sections[133]) then
             framemode_select = framemode_select + 1
-            if framemode_select > #framemode_table then framemode_select = 1 end
+            if framemode_select > #lvar.framemode_table then framemode_select = 1 end
             for i = 1, #ctl_select do
               strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].framemode = framemode_select
             end
@@ -31989,7 +32141,7 @@ end
             update_gfx = true                                      
           elseif MOUSE_click_RB(obj.sections[133]) then
             framemode_select = framemode_select - 1
-            if framemode_select < 1 then framemode_select = #framemode_table end
+            if framemode_select < 1 then framemode_select = #lvar.framemode_table end
             for i = 1, #ctl_select do
               strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].framemode = framemode_select
             end
@@ -33176,12 +33328,12 @@ end
                 trctltypelist_offset = 0
               end
             else
-              if trctltypelist_offset + F_butt_cnt < #trctltype_table then
+              if trctltypelist_offset + F_butt_cnt < #lvar.trctltype_table then
                 trctltypelist_offset = trctltypelist_offset + F_butt_cnt-1
               end          
             end
             update_gfx = true
-          elseif trctltype_table[i + trctltypelist_offset+1] then
+          elseif lvar.trctltype_table[i + trctltypelist_offset+1] then
             trctltype_select = i + trctltypelist_offset
             trctlslist_offset = 0
             if i + trctltypelist_offset == 2 then
@@ -33198,9 +33350,9 @@ end
           elseif trctltype_select == 1 then            
             pcnt = (#trsends_table+1)*3
           elseif trctltype_select == 2 then
-            pcnt = #special_table              
+            pcnt = #lvar.special_table              
           elseif trctltype_select == 3 then
-            pcnt = #otherctl_table
+            pcnt = #lvar.otherctl_table
           end
           local i = math.floor((mouse.my - obj.sections[522].y) / tb_butt_h)-1
           if i == -1 then
@@ -33879,6 +34031,9 @@ end
   
   function A_Run_Submode1(noscroll, rt, char)
   
+    local contexts = contexts
+    local mouse = mouse
+        
     if gfx.mouse_wheel ~= 0 then
       local v = gfx.mouse_wheel/120
       if MOUSE_over(obj.sections[531]) then
@@ -34055,7 +34210,7 @@ end
       
       elseif mouse.context == nil and MOUSE_click(obj.sections[917]) then 
             
-        gfxstretchmode_select = math.max(((gfxstretchmode_select + 1) % (#gfxstretch_table+1)),1)
+        gfxstretchmode_select = math.max(((gfxstretchmode_select + 1) % (#lvar.gfxstretch_table+1)),1)
         strips[tracks[track_select].strip][page].graphics[gfx2_select].stretchmode = gfxstretchmode_select
         update_gfx = true
 
@@ -34238,7 +34393,7 @@ end
         if fol and fol ~= 'GENERAL' then
           gfol = fol..'/'
         end
-        gfx.loadimg(1023,graphics_path..gfol..graphics_files[graphics_folder_files[gfx_select]].fn)
+        gfx.loadimg(1023,paths.graphics_path..gfol..graphics_files[graphics_folder_files[gfx_select]].fn)
         draggfx_w, draggfx_h = gfx.getimgdim(1023)
         
         update_gfx = true
@@ -34755,6 +34910,9 @@ end
   end
 
   function A_Run_Submode2(noscroll, rt, char)
+  
+    local contexts = contexts
+    local mouse = mouse
   
     if striplayout_mt then
       striplayout_mp = 1-(((striplayout_mt-reaper.time_precise()))/striplayout_mtime)
@@ -35277,12 +35435,15 @@ end
   
   function A_Run_XXYMode(rt)
   
+    local contexts = contexts
+    local mouse = mouse
+        
     if mouse.context == nil and (MOUSE_click(obj.sections[221])) then
       local i = math.floor((mouse.my - obj.sections[221].y)/butt_h)
       if i == 0 then
       
         xxymode = xxymode + 1
-        if xxymode > #xxymode_table-1 then
+        if xxymode > #lvar.xxymode_table-1 then
           xxymode = 0
         end
         xxypath_edit = false
@@ -35827,6 +35988,9 @@ end
   
   function A_Run_SnapshotsWin(rt)
   
+    local contexts = contexts
+    local mouse = mouse
+        
     if show_fsnapshots or show_xysnapshots then
       show_fsnapshots = false
       show_xysnapshots = false
@@ -35897,7 +36061,7 @@ end
             oms = mouse.shift
             mouse.slideoff = obj.sections[1010].y+obj.sections[1010].h/2 - mouse.my
           else
-            snapshots[tracks[track_select].strip][page][sstype_select].morph_syncv = math.min(snapshots[tracks[track_select].strip][page][sstype_select].morph_syncv + 1,#sync_table)
+            snapshots[tracks[track_select].strip][page][sstype_select].morph_syncv = math.min(snapshots[tracks[track_select].strip][page][sstype_select].morph_syncv + 1,#lvar.sync_table)
             update_snaps = true
           end
         end
@@ -35943,7 +36107,7 @@ end
 
         if snapshots[tracks[track_select].strip] and snapshots[tracks[track_select].strip][page][sstype_select] then        
           snapshots[tracks[track_select].strip][page][sstype_select].morph_scale = nz(snapshots[tracks[track_select].strip][page][sstype_select].morph_scale,1) + 1
-          if snapshots[tracks[track_select].strip][page][sstype_select].morph_scale > #macroscale_table then
+          if snapshots[tracks[track_select].strip][page][sstype_select].morph_scale > #lvar.macroscale_table then
             snapshots[tracks[track_select].strip][page][sstype_select].morph_scale = 1
           end
           if #morph_data > 0 then
@@ -36064,7 +36228,7 @@ end
 
         snapshots[tracks[track_select].strip][page][sstype_select].morph_scale = nz(snapshots[tracks[track_select].strip][page][sstype_select].morph_scale,1) - 1
         if snapshots[tracks[track_select].strip][page][sstype_select].morph_scale < 1 then
-          snapshots[tracks[track_select].strip][page][sstype_select].morph_scale = #macroscale_table
+          snapshots[tracks[track_select].strip][page][sstype_select].morph_scale = #lvar.macroscale_table
         end
         if #morph_data > 0 then
           for i = 1, #morph_data do
@@ -36342,8 +36506,6 @@ end
     mouse.mx = snapmx
     mouse.my = snapmy
     
-    return mouse.context
-    
   end
   
   function A_Run_MacroLearn()
@@ -36583,7 +36745,7 @@ end
           if macroctl[(yy+1)+macroedit_poffs] then
 
             macroctl[(yy+1)+macroedit_poffs].shape = macroctl[(yy+1)+macroedit_poffs].shape + 1
-            if macroctl[(yy+1)+macroedit_poffs].shape > #macroscale_table then
+            if macroctl[(yy+1)+macroedit_poffs].shape > #lvar.macroscale_table then
               macroctl[(yy+1)+macroedit_poffs].shape = 1
             end
             update_gfx = true
@@ -36596,7 +36758,7 @@ end
 
             macroctl[(yy+1)+macroedit_poffs].shape = macroctl[(yy+1)+macroedit_poffs].shape - 1
             if macroctl[(yy+1)+macroedit_poffs].shape < 1 then
-              macroctl[(yy+1)+macroedit_poffs].shape = #macroscale_table
+              macroctl[(yy+1)+macroedit_poffs].shape = #lvar.macroscale_table
             end
             update_gfx = true
 
@@ -36832,7 +36994,7 @@ end
   function A_Run_DropDown()
   
     if MOUSE_over(ddlist) then
-    
+      local butt_h = tb_butt_h
       local over = math.floor((mouse.my - ddlist.y)/butt_h)+1
       if over ~= ddlist.over then
       
@@ -36853,7 +37015,12 @@ end
       end    
       
     else
-      ddlist.over = nil
+      
+      if ddlist.over ~= nil then 
+        ddlist.over = nil
+        update_dd = true
+        update_surface = true
+      end
       if mouse.LB then
         show_dd = false          
         update_surface = true
@@ -38528,7 +38695,7 @@ end
           update_gfx = true
         elseif EB_Open == 31 then
           strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands[eqcontrolband_select].bandtype = editbox.text
-          local path = eqbands_path
+          local path = paths.eqbands_path
           reaper.RecursiveCreateDirectory(path..string.upper(editbox.text),1)
           
           update_gfx = true
@@ -38643,7 +38810,7 @@ end
           if fn and fn ~= '' then
           
             local file
-            local ffn = mod_path..fn..'.lbxmod'
+            local ffn = paths.mod_path..fn..'.lbxmod'
             file=io.open(ffn,"w")
             if file then
               SaveMod(file,'',modulators[mod_select],true)
@@ -38656,7 +38823,7 @@ end
         elseif EB_Open == 121 then
           local fn = editbox.text
           if fn and fn ~= '' then
-            reaper.RecursiveCreateDirectory(strips_path..fn,1)
+            reaper.RecursiveCreateDirectory(paths.strips_path..fn,1)
             PopulateStripFolders()
             PopulateStrips()
           end
@@ -38664,7 +38831,7 @@ end
         elseif EB_Open == 122 then
           local fn = editbox.text
           if fn and fn ~= '' then
-            reaper.RecursiveCreateDirectory(graphics_path..fn,1)
+            reaper.RecursiveCreateDirectory(paths.graphics_path..fn,1)
             PopulateGFX()
             update_sidebar = true
           end
@@ -39034,7 +39201,7 @@ end
 
       elseif mouse.context == nil and MOUSE_click(obj.sections[727]) then
         
-        if updateravailable == true then
+        if lvar.updateravailable == true then
         
           RunUpdater()
         
@@ -39709,7 +39876,7 @@ end
 
   function EQC_LoadGraph(band)
 
-    local fn = eqbands_path..'default.eqgraph'
+    local fn = paths.eqbands_path..'default.eqgraph'
     if reaper.file_exists(fn) then
     
       local file
@@ -39745,7 +39912,7 @@ end
     m.posmin = strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands[band].posmin
     m.posmax = strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands[band].posmax
     
-    local save_path=eqbands_path
+    local save_path=paths.eqbands_path
     local fn=save_path.."default.eqgraph"
     
     local DELETE=true
@@ -39976,12 +40143,12 @@ end
       local bands = {}
       local eqs = {}
   
-      local eq = reaper.EnumerateFiles(eq_path,i)
+      local eq = reaper.EnumerateFiles(paths.eq_path,i)
       if eq ~= nil then
         while eq ~= nil do
           local str = string.match(eq,'(.*)%.lbxeq')
           i=i+1
-          eq = reaper.EnumerateFiles(eq_path,i)
+          eq = reaper.EnumerateFiles(paths.eq_path,i)
           if eq ~= nil then
             mstr = mstr..'|'..str
             eqs[#eqs+1] = str    
@@ -39996,13 +40163,13 @@ end
       end
           
       i=0
-      local bt = reaper.EnumerateSubdirectories(eqbands_path,i)
+      local bt = reaper.EnumerateSubdirectories(paths.eqbands_path,i)
       while bt ~= nil do
         if mstr ~= '' then
           mstr = mstr .. '|'
         end
         mstr = mstr..'>'..bt
-        local btp = eqbands_path..bt
+        local btp = paths.eqbands_path..bt
         local b = 0
         local bn = reaper.EnumerateFiles(btp,b)
         if bn ~= nil then
@@ -40023,7 +40190,7 @@ end
           bands[#bands+1] = ''
         end
         i=i+1
-        bt = reaper.EnumerateSubdirectories(eqbands_path,i)
+        bt = reaper.EnumerateSubdirectories(paths.eqbands_path,i)
       end
       gfx.x, gfx.y = mouse.mx+obj.sections[300].x, mouse.my+obj.sections[300].y
       res = OpenMenu(mstr)
@@ -40049,13 +40216,13 @@ end
           update_gfx = true      
         elseif res-1 <= #eqs then
           res = res - 1
-          local fn = eq_path..eqs[res]..'.lbxeq'
+          local fn = paths.eq_path..eqs[res]..'.lbxeq'
           
           EQC_LoadEQ(fn)
           
         else
           res = res - (1+#eqs)
-          local fn = eqbands_path..bands[res]..'.eqband'
+          local fn = paths.eqbands_path..bands[res]..'.eqband'
           if reaper.file_exists(fn) then
           
             local file
@@ -40079,7 +40246,7 @@ end
                   strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands = {}
                 end
                 local newband = #strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands+1
-                --loaddata.eqband.col = eqcontrol_colours[newband]
+                --loaddata.eqband.col = lvar.eqcontrol_colours[newband]
                 strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands[newband] = loaddata.eqband
                 eqcontrolband_select = newband
                 --compatibility
@@ -40106,7 +40273,7 @@ end
   function EQC_SelectBandType()
   
     local i = 0
-    local bt = reaper.EnumerateSubdirectories(eqbands_path,i)
+    local bt = reaper.EnumerateSubdirectories(paths.eqbands_path,i)
     local mstr = '[ NEW FOLDER ]'
     local bandtypes = {'NEW FOLDER'}
     while bt ~= nil do
@@ -40116,7 +40283,7 @@ end
       end
       mstr = mstr..bt
       i=i+1
-      bt = reaper.EnumerateSubdirectories(eqbands_path,i)
+      bt = reaper.EnumerateSubdirectories(paths.eqbands_path,i)
     end
     gfx.x, gfx.y = mouse.mx+obj.sections[300].x, mouse.my+obj.sections[300].y
     res = OpenMenu(mstr)
@@ -40278,7 +40445,7 @@ end
         
         if fn and string.len(fn)>0 then
         
-          local save_path=eqbands_path
+          local save_path=paths.eqbands_path
           local fn=save_path..fn..".eqband"
           
           local DELETE=true
@@ -40425,7 +40592,7 @@ end
         
         if fn and string.len(fn)>0 then
         
-          local save_path=eq_path
+          local save_path=paths.eq_path
           local fn=save_path..fn..".lbxeq"
           
           local DELETE=true
@@ -40679,7 +40846,7 @@ end
   
     if xxy and xxy[tracks[track_select].strip] and xxy[tracks[track_select].strip][page][sstype_select] then
 
-      local retval, fn = reaper.GetUserFileNameForRead(paths_path..'*', 'Load Meta Path', '.path')
+      local retval, fn = reaper.GetUserFileNameForRead(paths.paths_path..'*', 'Load Meta Path', '.path')
       if retval then
       
         if reaper.file_exists(fn) then
@@ -40716,7 +40883,7 @@ end
 
     if fn and string.len(fn)>0 then
     
-      local save_path=paths_path
+      local save_path=paths.paths_path
       local fn=save_path..fn..".path"
       
       local DELETE=true
@@ -41237,6 +41404,7 @@ end
       end
       if #byp > 0 then
         SetCtlsEnabled(byp)
+        update_ctls = true
       end
     end
     trackfxparam_select = ofxparam
@@ -41663,7 +41831,8 @@ end
       local ctl = strips[strip][page].controls[i]
       for f = 1, #fxnum do
         if ctl.fxnum == fxnum[f] then
-          ctl.dirty = true
+          --ctl.dirty = true
+          SetCtlDirty(i)
           break
         end
       end
@@ -42125,10 +42294,10 @@ end
       if settings_savedatainprojectfolder == true then
         load_path=reaper.GetProjectPath('')..'/'
         if reaper.file_exists(load_path..fn) ~= true then
-          load_path=projsave_path
+          load_path=paths.projsave_path
         end
       else
-        load_path=projsave_path
+        load_path=paths.projsave_path
         if reaper.file_exists(load_path..fn) ~= true then
           load_path=reaper.GetProjectPath('')..'/'
         end      
@@ -42619,7 +42788,7 @@ end
   
             if ctl_files[knob_sel].imageidx == nil then
               image_count = F_limit(image_count + 1,0,image_max)
-              gfx.loadimg(image_count, controls_path..ctl_files[knob_sel].fn)
+              gfx.loadimg(image_count, paths.controls_path..ctl_files[knob_sel].fn)
               iidx = image_count
               
               strip.controls[c].ctl_info.imageidx = iidx
@@ -42725,7 +42894,7 @@ end
         if graphics_files[gfx_sel].fol and graphics_files[gfx_sel].fol ~= 'GENERAL' then
           fol = graphics_files[gfx_sel].fol..'/'
         end
-        gfx.loadimg(image_count, graphics_path..fol..graphics_files[gfx_sel].fn)
+        gfx.loadimg(image_count, paths.graphics_path..fol..graphics_files[gfx_sel].fn)
         iidx = image_count
         
         graphics_files[gfx_sel].imageidx = iidx
@@ -42752,10 +42921,10 @@ end
       if settings_savedatainprojectfolder == true then
         load_path=reaper.GetProjectPath('')..'/'
         if reaper.file_exists(load_path..fn) ~= true then
-          load_path=projsave_path
+          load_path=paths.projsave_path
         end
       else
-        load_path=projsave_path
+        load_path=paths.projsave_path
         if reaper.file_exists(load_path..fn) ~= true then
           load_path=reaper.GetProjectPath('')..'/'
         end      
@@ -42917,7 +43086,7 @@ end
                         capturemods = tobool(zn(data[key..'capturemods'],false)),
                         snapshot = {}, ctls = {}}
           
-          snapsubsets_table[sst] = snaps[sst].subsetname
+          lvar.snapsubsets_table[sst] = snaps[sst].subsetname
           
           local sscnt = tonumber(zn(data[key..'ss_count'],0))
           local ctlcnt = tonumber(zn(data[key..'ctl_count'],0))
@@ -43038,10 +43207,10 @@ end
       if settings_savedatainprojectfolder == true then
         load_path=reaper.GetProjectPath('')..'/'
         if reaper.file_exists(load_path..fn) ~= true then
-          load_path=projsave_path
+          load_path=paths.projsave_path
         end
       else
-        load_path=projsave_path
+        load_path=paths.projsave_path
         if reaper.file_exists(load_path..fn) ~= true then
           load_path=reaper.GetProjectPath('')..'/'
         end      
@@ -43113,10 +43282,10 @@ end
       if settings_savedatainprojectfolder == true then
         load_path=reaper.GetProjectPath('')..'/'
         if reaper.file_exists(load_path..fn) ~= true then
-          load_path=projsave_path
+          load_path=paths.projsave_path
         end
       else
-        load_path=projsave_path
+        load_path=paths.projsave_path
         if reaper.file_exists(load_path..fn) ~= true then
           load_path=reaper.GetProjectPath('')..'/'
         end      
@@ -43213,10 +43382,10 @@ end
       if settings_savedatainprojectfolder == true then
         load_path=reaper.GetProjectPath('')..'/'
         if reaper.file_exists(load_path..fn) ~= true then
-          load_path=projsave_path
+          load_path=paths.projsave_path
         end
       else
-        load_path=projsave_path
+        load_path=paths.projsave_path
         if reaper.file_exists(load_path..fn) ~= true then
           load_path=reaper.GetProjectPath('')..'/'
         end      
@@ -43855,10 +44024,10 @@ end
           if settings_savedatainprojectfolder == true then
             load_path=reaper.GetProjectPath('')..'/'
             if reaper.file_exists(load_path..fn) ~= true then
-              load_path=projsave_path
+              load_path=paths.projsave_path
             end
           else
-            load_path=projsave_path
+            load_path=paths.projsave_path
             if reaper.file_exists(load_path..fn) ~= true then
               load_path=reaper.GetProjectPath('')..'/'
             end      
@@ -44067,7 +44236,7 @@ end
       
                         if ctl_files[knob_sel].imageidx == nil then
                           image_count = F_limit(image_count + 1,0,image_max)
-                          gfx.loadimg(image_count, controls_path..ctl_files[knob_sel].fn)
+                          gfx.loadimg(image_count, paths.controls_path..ctl_files[knob_sel].fn)
                           iidx = image_count
                           
                           strips[ss][p].controls[c].ctl_info.imageidx = iidx
@@ -44138,7 +44307,7 @@ end
                         
                         if graphics_files[gfx_sel].imageidx == nil then
                           image_count = F_limit(image_count + 1,0,image_max)
-                          gfx.loadimg(image_count, graphics_path..graphics_files[gfx_sel].fn)
+                          gfx.loadimg(image_count, paths.graphics_path..graphics_files[gfx_sel].fn)
                           iidx = image_count
                           
                           strips[ss][p].graphics[g].imageidx = iidx
@@ -44228,7 +44397,7 @@ end
                       local key = 'snap_strip_'..s..'_'..p..'_type_'..sst..'_'
                       snapshots[s][p][sst] = {subsetname = GPES(key..'subsetname'), snapshot = {}, ctls = {}}
                       
-                      snapsubsets_table[sst] = snapshots[s][p][sst].subsetname
+                      lvar.snapsubsets_table[sst] = snapshots[s][p][sst].subsetname
                       
                       local sscnt = nz(tonumber(GPES(key..'ss_count')),0)
                       local ctlcnt = nz(tonumber(GPES(key..'ctl_count')),0)
@@ -44721,7 +44890,7 @@ end
   
   function SaveFavStrips()
   
-    local save_path=strips_path
+    local save_path=paths.strips_path
     local fn=save_path.."favs.txt"
     
     local DELETE=true
@@ -44743,7 +44912,7 @@ end
 
   function LoadFavStrips()
 
-    local load_path=strips_path
+    local load_path=paths.strips_path
     local fn=load_path.."favs.txt"
     
     strip_favs = {}
@@ -44903,7 +45072,7 @@ end
     local nofile = false
     if file == nil then
       nofile = true
-      local save_path=projsave_path..'/'
+      local save_path=paths.projsave_path..'/'
       if settings_savedatainprojectfolder == true then
         save_path=reaper.GetProjectPath('')..'/'
       end
@@ -44982,7 +45151,7 @@ end
     local nofile = false
     local pfx = ''
     if file == nil then
-      local save_path=projsave_path..'/'
+      local save_path=paths.projsave_path..'/'
       if settings_savedatainprojectfolder == true then
         save_path=reaper.GetProjectPath('')..'/'
       end
@@ -45048,7 +45217,7 @@ end
     local pfx = ''
     if file == nil then
     
-      local save_path=projsave_path..'/'
+      local save_path=paths.projsave_path..'/'
       if settings_savedatainprojectfolder == true then
         save_path=reaper.GetProjectPath('')..'/'
       end
@@ -45801,7 +45970,7 @@ end
   
   function GetSaveFN(tmp)
   
-    local save_path=projsave_path..'/'
+    local save_path=paths.projsave_path..'/'
     if settings_savedatainprojectfolder == true then
       save_path=reaper.GetProjectPath('')..'/'
     end
@@ -46936,7 +47105,7 @@ end
                                           morph_syncv = 15,
                                           morph_scale = 1,
                                           snapshot = {}, ctls = {}}
-        snapsubsets_table[newsst] = 'SUBSET '..newsst-1
+        lvar.snapsubsets_table[newsst] = 'SUBSET '..newsst-1
         
         for i = 1, #ctls do
         
@@ -46964,7 +47133,7 @@ end
                                           morph_syncv = 15,
                                           morph_scale = 1,
                                           snapshot = {}, ctls = {}}
-        snapsubsets_table[newsst] = 'SUBSET '..newsst-1
+        lvar.snapsubsets_table[newsst] = 'SUBSET '..newsst-1
         for i = 1, #ctls do
         
           --add
@@ -47381,9 +47550,9 @@ end
     local ts_b,ts_d,bpm = reaper.TimeMap_GetTimeSigAtTime(0,reaper.GetPlayPosition())
     local tm
     if syncidx < 20 then  --less than a bar
-      tm = ((60 * ts_d)/bpm) * sync_mult_table[syncidx]
+      tm = ((60 * ts_d)/bpm) * lvar.sync_mult_table[syncidx]
     else
-      tm = ((60 * ts_d)/bpm) * sync_mult_table[syncidx] * (ts_b/ts_d)
+      tm = ((60 * ts_d)/bpm) * lvar.sync_mult_table[syncidx] * (ts_b/ts_d)
     end
     return tm
   
@@ -47750,7 +47919,7 @@ end
                                             morph_syncv = 15,
                                             morph_scale = 1,
                                             snapshot = {}, ctls = {}}
-          snapsubsets_table[sstype] = 'SUBSET '..sstype-1
+          lvar.snapsubsets_table[sstype] = 'SUBSET '..sstype-1
         end
 
         local sctls = #snaps.ctls
@@ -48098,7 +48267,7 @@ end
         savedata.strip.controls[i].fxguid = convertguid(savedata.strip.controls[i].fxguid)
       end]]
       
-      local save_path=sets_path
+      local save_path=paths.sets_path
       local fn=save_path..fn..".stripset"
       
       local DELETE=true
@@ -48136,7 +48305,7 @@ end
       
       UpdateCtlTrackGUIDs()
       
-      local save_path=sets_path
+      local save_path=paths.sets_path
       local fn=save_path..fn..".stripset"  
       local file
       file=io.open(fn,"w")
@@ -48235,7 +48404,7 @@ end
 
   function LoadSet(merge)
   
-    local retval, fn = reaper.GetUserFileNameForRead(sets_path..'*', 'Load Strip Set', '.stripset')
+    local retval, fn = reaper.GetUserFileNameForRead(paths.sets_path..'*', 'Load Strip Set', '.stripset')
     if retval then
     
       local loaddata = nil
@@ -48804,7 +48973,7 @@ end
                   else
                     fnd = true
                     image_count_add = F_limit(image_count_add + 1,0,image_max)
-                    gfx.loadimg(image_count_add, controls_path..loaddata.stripdata[s][p].controls[i].ctl_info.fn)
+                    gfx.loadimg(image_count_add, paths.controls_path..loaddata.stripdata[s][p].controls[i].ctl_info.fn)
                     ctl_files[j].imageidx = image_count_add
                     loaddata.stripdata[s][p].controls[i].ctl_info.imageidx = image_count_add
                     loaddata.stripdata[s][p].controls[i].knob_select = j
@@ -48897,7 +49066,7 @@ end
   
     if plugdefstrips and #plugdefstrips > 0 then
     
-      local file = io.open(strips_path..'PluginDefaults.lbx','w')
+      local file = io.open(paths.strips_path..'PluginDefaults.lbx','w')
       if file then
       
         file:write('[count]'..#plugdefstrips..'\n')
@@ -48916,7 +49085,7 @@ end
   function Load_PlugDefs()
   
     
-    local file = io.open(strips_path..'PluginDefaults.lbx','r')
+    local file = io.open(paths.strips_path..'PluginDefaults.lbx','r')
     if file then
     
       local content = file:read('*a')
@@ -49354,13 +49523,13 @@ end
     skin_folders = {}
     
     local i = 0
-    local sf = reaper.EnumerateSubdirectories(skins_path,i)
+    local sf = reaper.EnumerateSubdirectories(paths.skins_path,i)
     while sf ~= nil do
-      if reaper.file_exists(skins_path..sf..'/skincols.lbx') then
+      if reaper.file_exists(paths.skins_path..sf..'/skincols.lbx') then
         skin_folders[#skin_folders+1] = {fn = sf}
       end
       i=i+1
-      sf = reaper.EnumerateSubdirectories(skins_path,i)
+      sf = reaper.EnumerateSubdirectories(paths.skins_path,i)
     end
     local mstr = ''
     for s = 1, #skin_folders do
@@ -49399,7 +49568,7 @@ end
   
   function LoadSkinCols(gui)
   
-    local fn=skins_path..skin_select..'skincols.lbx'
+    local fn=paths.skins_path..skin_select..'skincols.lbx'
     file=io.open(fn,"r")
     if file then
       content=file:read("*a")
@@ -49491,7 +49660,7 @@ end
 
   function SaveSkinCols(gui)
   
-    local ffn=skins_path..skin_select..'skincols.lbx'
+    local ffn=paths.skins_path..skin_select..'skincols.lbx'
     file=io.open(ffn,"w")    
     file:write('[sb_txt_on]'..gui.skol.sb_txt_on..'\n')
     file:write('[sb_txt_off]'..gui.skol.sb_txt_off..'\n')
@@ -49610,14 +49779,14 @@ end
   
   function ctlScale(m, v)
   
-    local mm = scalemode_table[m]
+    local mm = lvar.scalemode_table[m]
     return v^mm
   
   end
 
   function ctlScaleInv(m, v)
   
-    local mm = 1/scalemode_table[m]
+    local mm = 1/lvar.scalemode_table[m]
     return v^mm
   
   end
@@ -50216,7 +50385,7 @@ end
     ffn = ffn..'.lbxbak_'      
     copyfile(srcffn, ffn)]]
 
-    --[[local ffn=resource_path..'aa.testdata'    
+    --[[local ffn=paths.resource_path..'aa.testdata'    
     local file=io.open(ffn,"w")    
     file:write('[strips]'..#strips..'\n')
     file:write('[snapshots]'..#snapshots..'\n')
@@ -50247,7 +50416,7 @@ end
   
   function LoadFontList()
   
-    local ffn=resource_path..'lbx_font_list.txt'
+    local ffn=paths.resource_path..'lbx_font_list.txt'
     if reaper.file_exists(ffn) ~= true then
       --DBG('Missing file: '..ffn)
       return 0
@@ -50361,24 +50530,24 @@ end
         local vald = math.floor((miditab.vmax - miditab.vmin)*val) + miditab.vmin
         if miditab.msgtype <= 4 then      
           reaper.StuffMIDIMessage(midioutsidx[miditab.output], 
-                                  midimsgval_table[miditab.msgtype]..string.format('%x',miditab.mchan-1),
+                                  lvar.midimsgval_table[miditab.msgtype]..string.format('%x',miditab.mchan-1),
                                   miditab.msg3, --CC num
                                   F_limit(vald,0,127)) -- CC val
         elseif miditab.msgtype == 5 or miditab.msgtype == 6 then      
           reaper.StuffMIDIMessage(midioutsidx[miditab.output], 
-                                  midimsgval_table[miditab.msgtype]..string.format('%x',miditab.mchan-1),
+                                  lvar.midimsgval_table[miditab.msgtype]..string.format('%x',miditab.mchan-1),
                                   F_limit(vald,0,127), 
                                   0) -- CC val      
         elseif miditab.msgtype == 6 then      
           reaper.StuffMIDIMessage(midioutsidx[miditab.output], 
-                                  midimsgval_table[miditab.msgtype]..string.format('%x',miditab.mchan-1),
+                                  lvar.midimsgval_table[miditab.msgtype]..string.format('%x',miditab.mchan-1),
                                   miditab.msg3, --CC num
                                   F_limit(vald,0,127)) -- CC val      
         elseif miditab.msgtype == 7 then
           local v1 = math.floor(vald / 128)
           local v2 = vald % 128
           reaper.StuffMIDIMessage(midioutsidx[miditab.output], 
-                                  midimsgval_table[miditab.msgtype]..string.format('%x',miditab.mchan-1),
+                                  lvar.midimsgval_table[miditab.msgtype]..string.format('%x',miditab.mchan-1),
                                   v2, 
                                   v1)
         end
@@ -50546,58 +50715,16 @@ end
   end
   
   ------------------------------------------------------------
-
-  SCRIPT = 'LBX_STRIPPER'
-  VERSION = 0.95
-  STRIPSET = 'STRIP SET 1'
-
-  LBX_FB_CNT = 32
-
-  OS = reaper.GetOS()
+  
   math.randomseed(os.clock())
 
   ZeroProjectFlags()
   StripperRunning(true)
   Sleep()
   
-  midiouts, midioutsidx = PopMIDIOutputs()
-  
-  gmode = 0
-  
-  fact = {}
   for f = 0,4 do
     fact[f] = cfact(f)  
   end
-  
-  image_max = 849
-  ctl_browser_image = 910
-  maximg_browse = 79
-  b_sz = 100
-  lockx = false
-  locky = false
-  lockw, olockw = 400, 400
-  lockh, olockh = 400, 400
-  auto_delay = 0
-  xxypath_indexcnt = 50
-  
-  resource_path = reaper.GetResourcePath().."/Scripts/LBX/LBXCS_resources/"
-  controls_path = resource_path.."controls/"
-  graphics_path = resource_path.."graphics/"
-  actiondump_path = resource_path.."actiondumps/"    
-  icon_path = resource_path.."icons/"
-  strips_path = resource_path.."strips/"
-  sets_path = resource_path.."sets/"
-  projsave_path = resource_path.."projsave/"
-  paths_path = resource_path.."paths/"
-  eqbands_path = resource_path.."eqbands/"
-  eq_path = resource_path.."eq/"
-  skins_path = resource_path.."skins/"
-  defskin_select = "LBXDEF/"
-  skin_select = defskin_select
-  share_path = resource_path.."share/"
-  mod_path = resource_path.."modpresets/"
-  update_path = resource_path.."updater/"
-  nebscanboot_file = nil
   
   --font_folder = "C:/Windows/Fonts/"
   
@@ -50605,15 +50732,18 @@ end
   Load_PlugDefs()
   --copyfile('C:/Users/HMSStudio/AppData/Roaming/REAPER/Scripts/LBX/LBXCS_resources/controls/__default.png', 'C:/Users/HMSStudio/AppData/Roaming/REAPER/Scripts/LBX/LBXCS_resources/controls/cpcpcpcpcpc.png')  
   
-  reaper.RecursiveCreateDirectory(sets_path,1)
-  reaper.RecursiveCreateDirectory(icon_path,1)
-  reaper.RecursiveCreateDirectory(actiondump_path,1)
-  reaper.RecursiveCreateDirectory(projsave_path,1)  
-  reaper.RecursiveCreateDirectory(paths_path,1)
-  reaper.RecursiveCreateDirectory(eqbands_path,1)
-  reaper.RecursiveCreateDirectory(eq_path,1)
-  reaper.RecursiveCreateDirectory(share_path,1)
-  reaper.RecursiveCreateDirectory(mod_path,1)
+  reaper.RecursiveCreateDirectory(paths.sets_path,1)
+  reaper.RecursiveCreateDirectory(paths.icon_path,1)
+  reaper.RecursiveCreateDirectory(paths.actiondump_path,1)
+  reaper.RecursiveCreateDirectory(paths.projsave_path,1)  
+  reaper.RecursiveCreateDirectory(paths.paths_path,1)
+  reaper.RecursiveCreateDirectory(paths.eqbands_path,1)
+  reaper.RecursiveCreateDirectory(paths.eq_path,1)
+  reaper.RecursiveCreateDirectory(paths.share_path,1)
+  reaper.RecursiveCreateDirectory(paths.mod_path,1)
+
+  midiouts, midioutsidx = PopMIDIOutputs()
+  
 
   LBX_CTL_TRNAME='__LBX_CTL'
   LBX_GTRACK_NAME = '__GLOBAL'
@@ -50736,9 +50866,9 @@ end
   gx_h = 160
   sf_h = 140
   
-  updateravailable = CheckUpdater()
+  lvar.updateravailable = CheckUpdater()
   
-  local surfn = icon_path..'canvas.png'
+  local surfn = paths.icon_path..'canvas.png'
   if reaper.file_exists(surfn) then
     gfx.loadimg(1000,surfn)
     local w,h = gfx.getimgdim(1000)
@@ -50747,15 +50877,15 @@ end
     surface_size = {w = 2048, h = 2048, limit = true}
   end
   
-  gfx.loadimg(0,controls_path.."__default.png") -- default control
-  --gfx.loadimg(1010,controls_path.."__default.png")
+  gfx.loadimg(0,paths.controls_path.."__default.png") -- default control
+  --gfx.loadimg(1010,paths.controls_path.."__default.png")
   
   --def_knob = 0  
-  gfx.loadimg(1021,icon_path.."bin.png")
+  gfx.loadimg(1021,paths.icon_path.."bin.png")
   
   defctls = {}
   
-  --gfx.loadimg(1020,controls_path.."missing.png") --update to missing png
+  --gfx.loadimg(1020,paths.controls_path.."missing.png") --update to missing png
   def_knob = LoadControl(1019, '__default.knb')
   def_knobsm = LoadControl(1018, 'SimpleFlat_48.knb')
   def_snapshot = LoadControl(1017, '__Snapshot.knb')
@@ -50804,7 +50934,7 @@ end
     gfx.dock(dockstate)
   --test jsfx plug name in quotes
 
-    local startbat = resource_path..'\\lbxstart.bat'
+    local startbat = paths.resource_path..'\\lbxstart.bat'
     if reaper.file_exists(startbat) then
       os.execute(startbat)
     end  
