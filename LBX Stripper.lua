@@ -60,7 +60,7 @@
                         tr_hwouts = 4
                        }  
   
-  local mutate_settings = {dir = 0,
+  lvar.mutate_settings = {dir = 0,
                      range_min = 0,
                      range_max = 100,
                      mutate = true,
@@ -248,36 +248,10 @@
                  'oscctl',
                  'takeswitcher'}
              
-  local gfxtype = {img = 0,
-             txt = 1
-             }
+  lvar.gfxtype = {img = 0,
+                  txt = 1
+                 }
 
-  local pi = 3.14159265359
-
-  local midiouts, midioutsidx 
-    
-  local SCRIPT = 'LBX_STRIPPER'
-  local VERSION = 0.95
-  local STRIPSET = 'STRIP SET 1'
-
-  local LBX_FB_CNT = 32
-
-  local OS = reaper.GetOS()
-  local gmode = 0
-  
-  local fact = {}
-  
-  local image_max = 849
-  local ctl_browser_image = 910
-  local maximg_browse = 79
-  local b_sz = 100
-  local lockx = false
-  local locky = false
-  local lockw, olockw = 400, 400
-  local lockh, olockh = 400, 400
-  local auto_delay = 0
-  local xxypath_indexcnt = 50
-  
   local paths = {}
   paths.resource_path = reaper.GetResourcePath().."/Scripts/LBX/LBXCS_resources/"
   paths.controls_path = paths.resource_path.."controls/"
@@ -294,6 +268,32 @@
   paths.share_path = paths.resource_path.."share/"
   paths.mod_path = paths.resource_path.."modpresets/"
   paths.update_path = paths.resource_path.."updater/"
+  
+  local pi = 3.14159265359
+
+  local midiouts, midioutsidx 
+    
+  lvar.SCRIPT = 'LBX_STRIPPER'
+  lvar.VERSION = 0.95
+  lvar.STRIPSET = 'STRIP SET 1'
+
+  lvar.LBX_FB_CNT = 32
+
+  local OS = reaper.GetOS()
+  local gmode = 0
+  
+  local fact = {}
+  
+  local image_max = 849
+  local ctl_browser_image = 910
+  local maximg_browse = 79
+  local b_sz = 100
+  local lockx = false
+  local locky = false
+  local lockw, olockw = 400, 400
+  local lockh, olockh = 400, 400
+  local auto_delay = 0
+  local xxypath_indexcnt = 50
   
   local nebscanboot_file = nil
   local defskin_select = "LBXDEF/"
@@ -840,7 +840,7 @@
           else
             gfn = graphics_files[idx].fol..'/'..graphics_files[idx].fn
           end
-          if gx.gfxtype == gfxtype.img and reaper.file_exists(paths.graphics_path..gfn) then
+          if gx.gfxtype == lvar.gfxtype.img and reaper.file_exists(paths.graphics_path..gfn) then
             if gfxchk[gx.fn] == nil then
               gfxchk[gx.fn] = true 
               local imgbin = readbinaryfile(paths.graphics_path..gfn)
@@ -3745,7 +3745,7 @@
     
       local strip = Strip_INIT()
       
-      if type == gfxtype.img then
+      if type == lvar.gfxtype.img then
         if graphics_files[graphics_folder_files[gfx_select]].imageidx == nil then
           local iidx = LoadGraphics(graphics_files[graphics_folder_files[gfx_select]].fn)
           if iidx then
@@ -3797,7 +3797,7 @@
                       stretchmode = 1,
                                           edgesz = 8,
                                          }
-      elseif type == gfxtype.txt then
+      elseif type == lvar.gfxtype.txt then
         local x,y
         x = math.floor((label_add.x)/settings_gridsize)*settings_gridsize + math.floor(surface_offset.x/settings_gridsize)*settings_gridsize - math.floor((obj.sections[10].x)/settings_gridsize)*settings_gridsize
         y = math.floor((label_add.y)/settings_gridsize)*settings_gridsize + math.floor(surface_offset.y/settings_gridsize)*settings_gridsize - math.floor((obj.sections[10].y)/settings_gridsize)*settings_gridsize
@@ -5936,7 +5936,7 @@
       for i = 1, FD_butt_cnt-1 do
         local f = faders[i+fdlist_offset]
       
-        if f and i+fdlist_offset <= LBX_FB_CNT*LBX_CTL_TRACK_INF.count then
+        if f and i+fdlist_offset <= lvar.LBX_FB_CNT*LBX_CTL_TRACK_INF.count then
           local xywh = {x = obj.sections[500].x+2,
                         y = obj.sections[500].y + butt_h + 2 + butt_h*(i)+3,
                         w = obj.sections[500].w-6,
@@ -7719,7 +7719,7 @@
                 y = y + surface_offset.y 
               end]]
               
-              if gtype == gfxtype.img and lp == 1 then
+              if gtype == lvar.gfxtype.img and lp == 1 then
 
                 local w = gfxx.w
                 local h = gfxx.h
@@ -7810,7 +7810,7 @@
                   end
                 end
                             
-              elseif gtype == gfxtype.txt and (loop == 1 or lp == 2) then
+              elseif gtype == lvar.gfxtype.txt and (loop == 1 or lp == 2) then
 
                 --local w = gfxx.w
                 --local h = gfxx.h
@@ -13016,6 +13016,8 @@ end
 
   function GUI_DrawMutate(obj, gui)
   
+    local mutate_settings = lvar.mutate_settings
+    
     gfx.dest = 989
     gfx.setimgdim(989,obj.sections[1120].w,obj.sections[1120].h)
     
@@ -15110,7 +15112,7 @@ end
           trn = '[unnamed track]'
         end
         --GUI_textC_LIM(gui,obj.sections[12],GetProjectName()..' - '..STRIPSET..' - TRACK: ' .. tracks[track_select].tracknum+1 .. ' - '.. trn,gui.skol.sb_txt_on,-2 + gui.fontsz.sb,gui.skol.sb_shad,98,gui.fontnm.sb,5)
-        GUI_Str(gui,obj.sections[12],GetProjectName()..' - '..STRIPSET..' - TRACK: ' .. tracks[track_select].tracknum+1 .. ' - '.. trn,5,gui.skol.sb_txt_on,-2 + gui.fontsz.sb + tscale,1,gui.skol.sb_shad,gui.fontnm.sb,98)
+        GUI_Str(gui,obj.sections[12],GetProjectName()..' - '..lvar.STRIPSET..' - TRACK: ' .. tracks[track_select].tracknum+1 .. ' - '.. trn,5,gui.skol.sb_txt_on,-2 + gui.fontsz.sb + tscale,1,gui.skol.sb_shad,gui.fontnm.sb,98)
       end
     end  
 
@@ -15377,7 +15379,7 @@ end
     local abs, rel
     if LBX_CTL_TRACK then    
 
-      for i = 1, LBX_FB_CNT*LBX_CTL_TRACK_INF.count do
+      for i = 1, lvar.LBX_FB_CNT*LBX_CTL_TRACK_INF.count do
         if faders[i].targettype == 3 then
           if faders[i].mode == 0 then
             abs = i
@@ -18805,7 +18807,7 @@ end
         if stripdata.strip.graphics[j].bmult == nil then stripdata.strip.graphics[j].bmult = 0.5 end      
         if stripdata.strip.graphics[j].alpha == nil then stripdata.strip.graphics[j].alpha = 1 end      
   
-        if stripdata.strip.graphics[j].gfxtype == nil then stripdata.strip.graphics[j].gfxtype = gfxtype.img end
+        if stripdata.strip.graphics[j].gfxtype == nil then stripdata.strip.graphics[j].gfxtype = lvar.gfxtype.img end
         if stripdata.strip.graphics[j].font == nil then
           stripdata.strip.graphics[j].font = {idx = nil,
                                               name = nil,
@@ -19032,7 +19034,7 @@ end
             end
           end
           local fnd = false
-          if nz(strip.graphics[i].gfxtype,gfxtype.img) == gfxtype.img then
+          if nz(strip.graphics[i].gfxtype,lvar.gfxtype.img) == lvar.gfxtype.img then
             for j = 0, #graphics_files do
               if graphics_files[j].fn == strip.graphics[i].fn then
               
@@ -19119,7 +19121,7 @@ end
         
           local hidden = GenStripPreview_CtlsHidden(switchers, switchconvtab, gfxx.switcher, gfxx.grpid)
           if hidden == false then
-            if nz(gfxx.gfxtype, gfxtype.img) == gfxtype.img then
+            if nz(gfxx.gfxtype, lvar.gfxtype.img) == lvar.gfxtype.img then
   
               local x = gfxx.x+offsetx 
               local y = gfxx.y+offsety
@@ -19213,7 +19215,7 @@ end
                 end
               end
             
-            elseif gfxx.gfxtype == gfxtype.txt then
+            elseif gfxx.gfxtype == lvar.gfxtype.txt then
             
               local x = gfxx.x+offsetx 
               local y = gfxx.y+offsety
@@ -19362,7 +19364,7 @@ end
     
       local i = gfx2_select
       local gfxx = strips[strip][page].graphics[i]
-      if nz(strips[strip][page].graphics[i].gfxtype, gfxtype.img) == gfxtype.img then
+      if nz(strips[strip][page].graphics[i].gfxtype, lvar.gfxtype.img) == lvar.gfxtype.img then
       
         local x = gfxx.x+offsetx 
         local y = gfxx.y+offsety
@@ -19457,7 +19459,7 @@ end
           end
         end
       
-      elseif gfxx.gfxtype == gfxtype.txt then
+      elseif gfxx.gfxtype == lvar.gfxtype.txt then
       
         local x = gfxx.x+offsetx 
         local y = gfxx.y+offsety
@@ -19550,7 +19552,7 @@ end
           local gfxx = strips[strip][page].graphics[i]
           local hidden = Switcher_CtlsHidden(gfxx.switcher, gfxx.grpid)          
           if hidden == false then
-            if nz(gfxx.gfxtype, gfxtype.img) == gfxtype.img then
+            if nz(gfxx.gfxtype, lvar.gfxtype.img) == lvar.gfxtype.img then
               
               local x = gfxx.x+offsetx 
               local y = gfxx.y+offsety
@@ -19648,7 +19650,7 @@ end
                 end
               end
               
-            elseif gfxx.gfxtype == gfxtype.txt then
+            elseif gfxx.gfxtype == lvar.gfxtype.txt then
             
               local x = gfxx.x+offsetx 
               local y = gfxx.y+offsety
@@ -20717,7 +20719,7 @@ end
     end
     if gfx2_select then
       local mm = '#Copy formatting|#Paste formatting'
-      if strips[tracks[track_select].strip][page].graphics[gfx2_select].gfxtype == gfxtype.txt then
+      if strips[tracks[track_select].strip][page].graphics[gfx2_select].gfxtype == lvar.gfxtype.txt then
         mm = 'Copy formatting|Paste formatting'
       end
       local mm2 = 'Lock position'
@@ -20860,7 +20862,7 @@ end
     if txt and txt ~= '' then
     
       gfx_text_select = txt
-      Strip_AddGFX(gfxtype.txt)
+      Strip_AddGFX(lvar.gfxtype.txt)
       update_gfx = true
       
     end
@@ -22887,7 +22889,7 @@ end
       dt = '#'      
     end
     local sub = '||>Strip Set'
-    local cs = tonumber(string.match(STRIPSET,'%d'))
+    local cs = tonumber(string.match(lvar.STRIPSET,'%d'))
     for i = 1, 8 do
       if i < 8 then
         if cs and cs == i then
@@ -22993,15 +22995,15 @@ end
         end
       elseif res >= 18 and res <= 25 then
         --SaveProj()
-        local oscript = SCRIPT
+        local oscript = lvar.SCRIPT
         if res == 18 then
-          SCRIPT = 'LBX_STRIPPER'
-          STRIPSET = 'STRIP SET 1'
+          lvar.SCRIPT = 'LBX_STRIPPER'
+          lvar.STRIPSET = 'STRIP SET 1'
         else
-          SCRIPT = 'LBX_STRIPPER_'..res-17        
-          STRIPSET = 'STRIP SET '..string.match(tostring(res-17),'(.-)%.')
+          lvar.SCRIPT = 'LBX_STRIPPER_'..res-17        
+          lvar.STRIPSET = 'STRIP SET '..string.match(tostring(res-17),'(.-)%.')
         end
-        if oscript ~= SCRIPT then
+        if oscript ~= lvar.SCRIPT then
           DBGOut('')
           DBGOut('*** LOADING NEW PROJECT ***')    
           
@@ -24024,7 +24026,8 @@ end
 
       update_ctls = true
       
-    end  
+    end
+    SetCtlDirty(i)  
   end
   
   function SetParam_EnterVal(i)
@@ -24355,7 +24358,7 @@ end
       faders = {}
     end
     if LBX_CTL_TRACK_INF then
-      for f = 1, LBX_FB_CNT*LBX_CTL_TRACK_INF.count do
+      for f = 1, lvar.LBX_FB_CNT*LBX_CTL_TRACK_INF.count do
       
         if faders[f] == nil or force then 
           faders[f] = {}
@@ -24387,14 +24390,14 @@ end
         act = '#'
       end
       for fxnum = 0, LBX_CTL_TRACK_INF.count-1 do
-        local fs = fxnum*LBX_FB_CNT+1
-        local fe = fs+LBX_FB_CNT-1
+        local fs = fxnum*lvar.LBX_FB_CNT+1
+        local fe = fs+lvar.LBX_FB_CNT-1
         if mstr ~= '' then
           mstr = mstr .. '|'
         end
         mstr = mstr .. '>'..act..'Fader '..string.format('%i',fs)..'-'..string.format('%i',fe)
         
-        for pf = 0, LBX_FB_CNT-1 do
+        for pf = 0, lvar.LBX_FB_CNT-1 do
           local p = fs + pf
           local assigned = ''
           local ticked = ''
@@ -24406,20 +24409,20 @@ end
           end
   
           if nz(returnonly,false) == false then
-            if pf ~= LBX_FB_CNT-1 then
+            if pf ~= lvar.LBX_FB_CNT-1 then
               mstr = mstr .. '|'..ticked..assigned..'Fader '..fs + pf
             else
               mstr = mstr .. '|<'..ticked..assigned..'Fader '..fs + pf        
             end
           else
             if assigned == '' then
-              if pf ~= LBX_FB_CNT-1 then
+              if pf ~= lvar.LBX_FB_CNT-1 then
                 mstr = mstr .. '|'..ticked..'Fader '..fs + pf
               else
                 mstr = mstr .. '|<'..ticked..'Fader '..fs + pf        
               end          
             else
-              if pf ~= LBX_FB_CNT-1 then
+              if pf ~= lvar.LBX_FB_CNT-1 then
                 mstr = mstr .. '|'..ticked..'[ Fader '..fs + pf..' ]'
               else
                 mstr = mstr .. '|<'..ticked..'[ Fader '..fs + pf..' ]'        
@@ -24428,7 +24431,7 @@ end
           end
         end
       end
-      local lastp = LBX_CTL_TRACK_INF.count * LBX_FB_CNT+1
+      local lastp = LBX_CTL_TRACK_INF.count * lvar.LBX_FB_CNT+1
       mstr = mstr .. '|'..act..'Clear Fader'
       return mstr, lastp
     else
@@ -24479,8 +24482,8 @@ end
       end
       if LBX_CTL_TRACK then
         for fxnum = 0, LBX_CTL_TRACK_INF.count-1 do
-          for pf = 0, LBX_FB_CNT-1 do
-            p = fxnum * LBX_FB_CNT + pf
+          for pf = 0, lvar.LBX_FB_CNT-1 do
+            p = fxnum * lvar.LBX_FB_CNT + pf
             faders[p+1].val = round(reaper.TrackFX_GetParam(track, fxnum, pf),5)
             faders[p+1].oval = faders[p+1].val
           end
@@ -24503,8 +24506,8 @@ end
         end
         if xxyrecord == false then
           for fxnum = 0, LBX_CTL_TRACK_INF.count-1 do
-            for pf = 0, LBX_FB_CNT-1 do
-              p = fxnum * LBX_FB_CNT + pf
+            for pf = 0, lvar.LBX_FB_CNT-1 do
+              p = fxnum * lvar.LBX_FB_CNT + pf
               faders[p+1].val = round(reaper.TrackFX_GetParam(track, fxnum, pf),5)
               if faders[p+1].val and faders[p+1].val >= 0 and (tostring(faders[p+1].val) ~= tostring(faders[p+1].oval) --[[or faders[p+1].targettype == 5 or faders[p+1].targettype == 6]]) then
                 
@@ -24747,8 +24750,8 @@ end
         local track = GetTrack(tracks[LBX_CTL_TRACK].tracknum)
         
         for fxnum = 0, LBX_CTL_TRACK_INF.count-1 do
-          for pf = 0, LBX_FB_CNT-1 do
-            p = fxnum * LBX_FB_CNT + pf
+          for pf = 0, lvar.LBX_FB_CNT-1 do
+            p = fxnum * lvar.LBX_FB_CNT + pf
             faders[p+1].val = reaper.TrackFX_GetParam(track, fxnum, pf)
          
             if faders[p+1].val and tostring(round(faders[p+1].val,5)) ~= tostring(round(faders[p+1].oval,5)) then
@@ -28213,7 +28216,7 @@ end
           end
         elseif mode0_submode == 1 then
           if LBX_CTL_TRACK_INF then
-            fdlist_offset = F_limit(fdlist_offset - v, 0, LBX_FB_CNT*LBX_CTL_TRACK_INF.count -1)        
+            fdlist_offset = F_limit(fdlist_offset - v, 0, lvar.LBX_FB_CNT*LBX_CTL_TRACK_INF.count -1)        
           end
         elseif mode0_submode == 2 then
           mdlist_offset = F_limit(mdlist_offset - v, 0, #modulators-1)        
@@ -28490,6 +28493,8 @@ end
       
     elseif mouse.context == nil and show_mutate == true and (MOUSE_click(obj.sections[1120]) or MOUSE_click_RB(obj.sections[1120])) then
 
+      local mutate_settings = lvar.mutate_settings
+      
       noscroll = true
       mx,my = mouse.mx, mouse.my
       mouse.mx = mouse.mx - obj.sections[1120].x 
@@ -30738,7 +30743,7 @@ end
         local val = MOUSE_slider(obj.sections[1121],-mutateamt.yoff)
         if val ~= nil then
           val = 1-val
-          mutate_settings.mutate_max = F_limit(mutateamt.pos + math.floor((val-0.5)*100),1,100)
+          lvar.mutate_settings.mutate_max = F_limit(mutateamt.pos + math.floor((val-0.5)*100),1,100)
           update_mutate = true
         end
   
@@ -34430,7 +34435,7 @@ end
     elseif draggfx ~= nil then
       --Dropped
       if mouse.mx > obj.sections[10].x and mouse.mx < obj.sections[10].x+obj.sections[10].w and mouse.my > obj.sections[10].y and mouse.my < obj.sections[10].y+obj.sections[10].h then
-        Strip_AddGFX(gfxtype.img)
+        Strip_AddGFX(lvar.gfxtype.img)
       elseif MOUSE_over(obj.sections[531]) then
       
         local i = math.floor((mouse.my - obj.sections[531].y) / tb_butt_h)-1
@@ -34527,7 +34532,7 @@ end
                 local xywh
                 local gfxx = strips[tracks[track_select].strip][page].graphics[i]
                 
-                if loop == 1 or (lp == 1 and gfxx.gfxtype == gfxtype.txt) or (lp == 2 and gfxx.gfxtype == gfxtype.img) then 
+                if loop == 1 or (lp == 1 and gfxx.gfxtype == lvar.gfxtype.txt) or (lp == 2 and gfxx.gfxtype == lvar.gfxtype.img) then 
                   xywh = {x = gfxx.x - surface_offset.x + obj.sections[10].x, 
                           y = gfxx.y - surface_offset.y + obj.sections[10].y, 
                           w = gfxx.stretchw, 
@@ -34553,7 +34558,7 @@ end
                     dragoff = {x = mouse.mx - strips[tracks[track_select].strip][page].graphics[gfx2_select].x - surface_offset.x,
                                y = mouse.my - strips[tracks[track_select].strip][page].graphics[gfx2_select].y - surface_offset.y}
                     
-                    if strips[tracks[track_select].strip][page].graphics[gfx2_select].gfxtype == gfxtype.txt then
+                    if strips[tracks[track_select].strip][page].graphics[gfx2_select].gfxtype == lvar.gfxtype.txt then
                       show_lbloptions = true
                       show_gfxoptions = false
                       SetGfxSelectVals()
@@ -40785,8 +40790,8 @@ end
           local track = GetTrack(tracks[LBX_CTL_TRACK].tracknum)
           local pf = xxy[strip][page][sst].pathfader
           if pf and faders[pf] then
-            local fxnum = math.floor((pf-1)/LBX_FB_CNT)
-            local param = ((pf-1) % LBX_FB_CNT)
+            local fxnum = math.floor((pf-1)/lvar.LBX_FB_CNT)
+            local param = ((pf-1) % lvar.LBX_FB_CNT)
             reaper.TrackFX_SetParam(track, fxnum, param, pos)
             faders[pf].val = pos
           end
@@ -41192,8 +41197,8 @@ end
         PopulateTracks()
       end
       for fxnum = 0, LBX_CTL_TRACK_INF.count-1 do
-        for pf = 0, LBX_FB_CNT-1 do
-          p = fxnum * LBX_FB_CNT + pf
+        for pf = 0, lvar.LBX_FB_CNT-1 do
+          p = fxnum * lvar.LBX_FB_CNT + pf
           if faders[p+1].targettype then
             if faders[p+1].targettype == 2 or faders[p+1].targettype == 4 then
               --macro/fx param check
@@ -41431,14 +41436,14 @@ end
         local xf = xxytbl.xfader
         local yf = xxytbl.yfader
         if xf and faders[xf] then
-          local fxnum = ffloor((xf-1)/LBX_FB_CNT)
-          local param = ((xf-1) % LBX_FB_CNT)
+          local fxnum = ffloor((xf-1)/lvar.LBX_FB_CNT)
+          local param = ((xf-1) % lvar.LBX_FB_CNT)
           reaper.TrackFX_SetParam(track, fxnum, param, px)
           faders[xf].val = px
         end
         if yf and faders[yf] then
-          local fxnum = ffloor((yf-1)/LBX_FB_CNT)
-          local param = (yf-1) % LBX_FB_CNT
+          local fxnum = ffloor((yf-1)/lvar.LBX_FB_CNT)
+          local param = (yf-1) % lvar.LBX_FB_CNT
           reaper.TrackFX_SetParam(track, fxnum, param, py)
           faders[yf].val = py
         end        
@@ -42247,7 +42252,7 @@ end
   function GPES(key, nilallowed)
     if nilallowed == nil then nilallowed = false end
     
-    local _, val = reaper.GetProjExtState(0,SCRIPT,key)
+    local _, val = reaper.GetProjExtState(0,lvar.SCRIPT,key)
     if nilallowed then
       if val == '' then
         val = nil
@@ -42259,7 +42264,7 @@ end
   function GES(key, nilallowed)
     if nilallowed == nil then nilallowed = false end
     
-    local val = reaper.GetExtState(SCRIPT,key)
+    local val = reaper.GetExtState(lvar.SCRIPT,key)
     if nilallowed then
       if val == '' then
         val = nil
@@ -42831,7 +42836,7 @@ end
                                     scale = tonumber(data[key..'scale']),
                                     id = deconvnum(data[key..'id']),
                                     grpid = deconvnum(data[key..'grpid']),
-                                    gfxtype = tonumber(zn(data[key..'gfxtype'],gfxtype.img)),
+                                    gfxtype = tonumber(zn(data[key..'gfxtype'],lvar.gfxtype.img)),
                                     font = {idx = tonumber(zn(data[key..'font_idx'])),
                                             name = zn(data[key..'font_name']),
                                             size = tonumber(zn(data[key..'font_size'])),
@@ -42861,7 +42866,7 @@ end
 
         --load graphics images
         if pfx ~= '' then
-          if strip.graphics[g].gfxtype == gfxtype.img then
+          if strip.graphics[g].gfxtype == lvar.gfxtype.img then
           
             local iidx = LoadGraphics(strip.graphics[g].fn)
             if iidx then
@@ -43992,7 +43997,7 @@ end
       gfx.setimgdim(1, gfx1.main_w,gfx1.main_h)
       GUI_DrawMsgX(obj, gui, 'Reading data file...  Please wait...')
       
-      local rv, v = reaper.GetProjExtState(0,SCRIPT,'version')
+      local rv, v = reaper.GetProjExtState(0,lvar.SCRIPT,'version')
       DBGOut('LoadData: version: '..tostring(v))
       if v ~= '' then
   
@@ -44268,7 +44273,7 @@ end
                                                   h = tonumber(GPES(key..'h')),
                                                   scale = tonumber(GPES(key..'scale')),
                                                   id = deconvnum(GPES(key..'id',true)),
-                                                  gfxtype = tonumber(nz(GPES(key..'gfxtype',true),gfxtype.img)),
+                                                  gfxtype = tonumber(nz(GPES(key..'gfxtype',true),lvar.gfxtype.img)),
                                                   font = {idx = tonumber(GPES(key..'font_idx',true)),
                                                           name = GPES(key..'font_name',true),
                                                           size = tonumber(GPES(key..'font_size',true)),
@@ -44698,7 +44703,7 @@ end
     show_lfoedit = tobool(nz(GES('modwin_show',true),false))
 
     modulator_cnt = tonumber(nz(GES('modulator_cnt',true),modulator_cnt))
-    mutate_settings.mutate_max = tonumber(nz(GES('mutate_max',true),mutate_settings.mutate_max))
+    lvar.mutate_settings.mutate_max = tonumber(nz(GES('mutate_max',true),lvar.mutate_settings.mutate_max))
     settings_pagescrolldir = tonumber(nz(GES('settings_pagescrolldir',true),settings_pagescrolldir))
 
     settings_dragmode = tobool(nz(GES('settings_dragmode',true),settings_dragmode))
@@ -44739,6 +44744,7 @@ end
   
   function ClearSettings()
     --reaper.DeleteExtState(SCRIPT)
+    local SCRIPT = lvar.SCRIPT
     reaper.DeleteExtState(SCRIPT,'saveallfxinststrip', true)
     reaper.DeleteExtState(SCRIPT,'followselectedtrack', true)
     reaper.DeleteExtState(SCRIPT,'disablesendchecks', true)
@@ -44777,6 +44783,8 @@ end
   end
   
   function SaveSettings()
+    local SCRIPT = lvar.SCRIPT
+    
     reaper.SetExtState(SCRIPT,'skin',tostring(skin_select), true)
     reaper.SetExtState(SCRIPT,'saveallfxinststrip',tostring(settings_saveallfxinststrip), true)
     reaper.SetExtState(SCRIPT,'followselectedtrack',tostring(settings_followselectedtrack), true)
@@ -44858,8 +44866,8 @@ end
 
     reaper.SetExtState(SCRIPT,'modulator_cnt',tostring(modulator_cnt), true)    
 
-    reaper.SetExtState(SCRIPT,'mutate_max',tostring(mutate_settings.mutate_max), true)    
-    reaper.SetExtState(SCRIPT,'mutate_dir',tostring(mutate_settings.dir), true)    
+    reaper.SetExtState(SCRIPT,'mutate_max',tostring(lvar.mutate_settings.mutate_max), true)    
+    reaper.SetExtState(SCRIPT,'mutate_dir',tostring(lvar.mutate_settings.dir), true)    
 
     reaper.SetExtState(SCRIPT,'settings_dragmode',tostring(settings_dragmode), true)    
     
@@ -44930,7 +44938,8 @@ end
   end
     
   function SaveSingleStrip(s)
-  
+    local SCRIPT = lvar.SCRIPT
+    
     if strips then
       reaper.SetProjExtState(0,SCRIPT,'strips_count',#strips)
     else
@@ -45141,7 +45150,7 @@ end
 
     if nofile == true then
       file:close()
-      reaper.SetProjExtState(0,SCRIPT,'path_datafile',fn)   
+      reaper.SetProjExtState(0,lvar.SCRIPT,'path_datafile',fn)   
     end
   
   end
@@ -45204,7 +45213,7 @@ end
 
     if nofile == true then
       file:close()
-      reaper.SetProjExtState(0,SCRIPT,'metalite_datafile_'..string.format("%03d",s),fn) 
+      reaper.SetProjExtState(0,lvar.SCRIPT,'metalite_datafile_'..string.format("%03d",s),fn) 
     end
         
   end
@@ -45238,7 +45247,7 @@ end
   
     if nofile == true then
       file:close()    
-      reaper.SetProjExtState(0,SCRIPT,'snaps_datafile_'..string.format("%03d",s),fn) 
+      reaper.SetProjExtState(0,lvar.SCRIPT,'snaps_datafile_'..string.format("%03d",s),fn) 
     end
         
     --DBG('Save snapshot time: '..reaper.time_precise() - t)
@@ -45476,8 +45485,8 @@ end
     --file:write(pickled_table)
     if nofile == true then
       file:close()
-      reaper.SetProjExtState(0,SCRIPT,'strips_count',#strips) 
-      reaper.SetProjExtState(0,SCRIPT,'strips_datafile_'..string.format("%03d",s),fn) 
+      reaper.SetProjExtState(0,lvar.SCRIPT,'strips_count',#strips) 
+      reaper.SetProjExtState(0,lvar.SCRIPT,'strips_datafile_'..string.format("%03d",s),fn) 
     end
         
     --DBG('Save strip time: '..reaper.time_precise() - t)
@@ -45923,7 +45932,7 @@ end
               file:write('['..key..'id]'..convnum(stripdata.graphics[g].id)..'\n')
               file:write('['..key..'grpid]'..convnum(stripdata.graphics[g].grpid)..'\n')
             
-              file:write('['..key..'gfxtype]'..nz(stripdata.graphics[g].gfxtype, gfxtype.img)..'\n')
+              file:write('['..key..'gfxtype]'..nz(stripdata.graphics[g].gfxtype, lvar.gfxtype.img)..'\n')
               file:write('['..key..'font_idx]'..nz(stripdata.graphics[g].font.idx, '')..'\n')
               file:write('['..key..'font_name]'..nz(stripdata.graphics[g].font.name, '')..'\n')
               file:write('['..key..'font_size]'..nz(stripdata.graphics[g].font.size, '')..'\n')
@@ -45992,7 +46001,7 @@ end
       reaper.RecursiveCreateDirectory(save_path..sf,1)
     end
     
-    local setno = string.sub(STRIPSET,11)
+    local setno = string.sub(lvar.STRIPSET,11)
     local setstr = ''
     if setno ~= '1' then
       setstr = '_SS'..setno
@@ -46011,6 +46020,8 @@ end
   
   function SaveData(tmp, bak, noclean)
   
+    local SCRIPT = lvar.SCRIPT
+    
     ZeroProjectFlags()
     
     DBGOut('')
@@ -46037,7 +46048,7 @@ end
     local s, p, c, g
     reaper.SetProjExtState(0,SCRIPT,"","") -- clear first
     
-    reaper.SetProjExtState(0,SCRIPT,'version',VERSION)
+    reaper.SetProjExtState(0,SCRIPT,'version',lvar.VERSION)
     reaper.SetProjExtState(0,SCRIPT,'projectid',PROJECTID)
     reaper.SetProjExtState(0,SCRIPT,'gridsize',ogrid)
     reaper.SetProjExtState(0,SCRIPT,'showgrid',tostring(settings_showgrid))
@@ -46090,8 +46101,9 @@ end
   end
   
   function SaveDataFile(file, save_path)
+    local SCRIPT = lvar.SCRIPT
     
-    file:write('[version]'..tostring(VERSION)..'\n')
+    file:write('[version]'..tostring(lvar.VERSION)..'\n')
     if strips and #strips > 0 then
     
       reaper.SetProjExtState(0,SCRIPT,'strips_count',#strips)
@@ -46971,6 +46983,7 @@ end
   function Snapshot_MUTATE(strip, page, sstype_select, respectminmax)
 
     if not strips[strip] then return end
+    local mutate_settings = lvar.mutate_settings
     
     local mutate_range = (mutate_settings.mutate_max-mutate_settings.mutate_min)/100
     local mutate_range2 = ((mutate_settings.mutate_max-mutate_settings.mutate_min)/100)*2
@@ -48231,7 +48244,7 @@ end
   
     if fn and string.len(fn)>0 then
     
-      local savedata = {version = VERSION,
+      local savedata = {version = lvar.VERSION,
                         trackdata = {},
                         stripdata = {},
                         snapdata = {},
@@ -48936,7 +48949,7 @@ end
       
               local fnd = false
               for j = 0, #graphics_files do
-                if nz(loaddata.stripdata[s][p].graphics[i].gfxtype,gfxtype.img) == gfxtype.img then
+                if nz(loaddata.stripdata[s][p].graphics[i].gfxtype,lvar.gfxtype.img) == lvar.gfxtype.img then
                   local iidx = LoadGraphics(loaddata.stripdata[s][p].graphics[i].fn)
                   if iidx then
                     if iidx > image_count_add then
