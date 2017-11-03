@@ -3723,12 +3723,15 @@
     else
       local fxn = string.match(n, ': (.+)%(')
       if fxn then
+      --DBG('a'..fxn)
         return fxn
       else
         fxn = string.match(n, '.+/(.*)')
-        if fxn then
+        if fxn and fxn ~= '' then
+      --DBG('b'..string.len(fxn))
           return fxn
         else
+      --DBG('c')
           return n
         end
       end
@@ -13377,9 +13380,15 @@ end
       pinmatrix.fx_rect[i].inpins = inpins
       pinmatrix.fx_rect[i].outpins = outpins
       
-      --gfx.rect(x, y, fxw, pinh, 1)
-      GUI_DrawButton(gui, '  '..fxname, fx_rect, -1, gui.skol.butt1_txt, true, nil, false, -6+pinmatrix_zoom*10, true, 4)
-
+      local vis = true
+      if fx_rect.x+fx_rect.w < 0 or fx_rect.x > obj.sections[1200].w then
+        vis = false
+      end
+      
+      if vis then
+        GUI_DrawButton(gui, '  '..fxname, fx_rect, -1, gui.skol.butt1_txt, true, nil, false, -6+pinmatrix_zoom*10, true, 4)
+      end
+      
       if pn ~= 2 then
         y = y + pinh*2
         --draw in pins
@@ -13405,21 +13414,25 @@ end
             end
             
             local pin_rect = {x = x + ip*(pinw), y = y + c*(pinh), w = pinw-pinadj, h = pinh-pinadj} 
-            GUI_DrawButton(gui, txt, pin_rect, butt_act, gui.skol.butt1_txt, true, nil, false, -7+pinmatrix_zoom*10, true, 5)
+            if vis then
+              GUI_DrawButton(gui, txt, pin_rect, butt_act, gui.skol.butt1_txt, true, nil, false, -7+pinmatrix_zoom*10, true, 5)
+            end
             if val then
-              f_Get_SSV(lcol)
-              local x1 = last_in[c]+pin_rect.w
-              local y1 = pin_rect.y+pin_rect.h/2
-              local x2 = pin_rect.x
-              gfx.line(x1,y1,x2-1,y1)
-              gfx.triangle(x2-arrowsz,y1-arrowsz,x2-arrowsz,y1+arrowsz,x2-1,y1)
-              
-              local x1 = pin_rect.x+pin_rect.w/2
-              local y1 = last_cy[ip] or fxy
               local y2 = pin_rect.y
-              gfx.line(x1,y1,x1,y2)
-              if not last_cy[ip] then
-                gfx.triangle(x1-arrowsz,y1+arrowsz,x1+arrowsz,y1+arrowsz,x1,y1)
+              if vis or last_in[c] < obj.sections[1200].w then
+                f_Get_SSV(lcol)
+                local x1 = last_in[c]+pin_rect.w
+                local y1 = pin_rect.y+pin_rect.h/2
+                local x2 = pin_rect.x
+                gfx.line(x1,y1,x2-1,y1)
+                gfx.triangle(x2-arrowsz,y1-arrowsz,x2-arrowsz,y1+arrowsz,x2-1,y1)
+                
+                local x1 = pin_rect.x+pin_rect.w/2
+                local y1 = last_cy[ip] or fxy
+                gfx.line(x1,y1,x1,y2)
+                if not last_cy[ip] then
+                  gfx.triangle(x1-arrowsz,y1+arrowsz,x1+arrowsz,y1+arrowsz,x1,y1)
+                end
               end
               last_in[c] = pin_rect.x
               last_cy[ip] = y2+pin_rect.h
@@ -13452,24 +13465,28 @@ end
             end
         
             local pin_rect = {x = xo + op*(pinw), y = y + c*(pinh), w = pinw-pinadj, h = pinh-pinadj} 
+            if vis then
             GUI_DrawButton(gui, txt, pin_rect, butt_act, gui.skol.butt1_txt, true, nil, false, -7+pinmatrix_zoom*10, true, 5)
-          
+            end
             if val then
-              f_Get_SSV(lcol)
-              
-              local x1 = pin_rect.x+pin_rect.w/2
-              local y1 = last_cy[op] or fxy
               local y2 = pin_rect.y
-              gfx.line(x1,y1,x1,y2)          
-              gfx.triangle(x1-arrowsz,y2-arrowsz,x1+arrowsz,y2-arrowsz,x1,y2)
+              if vis then
+                f_Get_SSV(lcol)
+                
+                local x1 = pin_rect.x+pin_rect.w/2
+                local y1 = last_cy[op] or fxy
+                gfx.line(x1,y1,x1,y2)          
+                gfx.triangle(x1-arrowsz,y2-arrowsz,x1+arrowsz,y2-arrowsz,x1,y2)
+              end
+              
               last_in[c] = pin_rect.x
               last_cy[op] = y2+pin_rect.h
             end
           end
         end
       end
-      
     
+          
       fxoff = fxoff + fxw + fxspacer
     end
     
