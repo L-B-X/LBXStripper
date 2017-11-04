@@ -13389,6 +13389,7 @@ end
         GUI_DrawButton(gui, '  '..fxname, fx_rect, -1, gui.skol.butt1_txt, true, nil, false, -6+pinmatrix_zoom*10, true, 4)
       end
       
+      if vis or (not vis and matrixoff == nil) then
       if pn ~= 2 then
         y = y + pinh*2
         --draw in pins
@@ -13417,7 +13418,7 @@ end
             if vis then
               GUI_DrawButton(gui, txt, pin_rect, butt_act, gui.skol.butt1_txt, true, nil, false, -7+pinmatrix_zoom*10, true, 5)
             end
-            if val then
+            if val and matrixoff == nil then
               local y2 = pin_rect.y
               if vis or last_in[c] < obj.sections[1200].w then
                 f_Get_SSV(lcol)
@@ -13466,9 +13467,9 @@ end
         
             local pin_rect = {x = xo + op*(pinw), y = y + c*(pinh), w = pinw-pinadj, h = pinh-pinadj} 
             if vis then
-            GUI_DrawButton(gui, txt, pin_rect, butt_act, gui.skol.butt1_txt, true, nil, false, -7+pinmatrix_zoom*10, true, 5)
+              GUI_DrawButton(gui, txt, pin_rect, butt_act, gui.skol.butt1_txt, true, nil, false, -7+pinmatrix_zoom*10, true, 5)
             end
-            if val then
+            if val and matrixoff == nil then
               local y2 = pin_rect.y
               if vis then
                 f_Get_SSV(lcol)
@@ -13486,6 +13487,7 @@ end
         end
       end
     
+      end
           
       fxoff = fxoff + fxw + fxspacer
     end
@@ -13497,12 +13499,14 @@ end
         
       local pin_rect = {x = x, y = y + c*(pinh), w = pinw-pinadj, h = pinh-pinadj} 
       GUI_DrawButton(gui, c+1, pin_rect, -1, gui.skol.butt1_txt, true, nil, false, -7+pinmatrix_zoom*10, false, 5)
-      f_Get_SSV(lcol)
-      local x1 = last_in[c]+pin_rect.w
-      local y1 = pin_rect.y+pin_rect.h/2
-      local x2 = pin_rect.x
-      gfx.line(x1,y1,x2,y1)
-      gfx.triangle(x2-arrowsz,y1-arrowsz,x2-arrowsz,y1+arrowsz,x2,y1)
+      if matrixoff == nil then
+        f_Get_SSV(lcol)
+        local x1 = last_in[c]+pin_rect.w
+        local y1 = pin_rect.y+pin_rect.h/2
+        local x2 = pin_rect.x
+        gfx.line(x1,y1,x2,y1)
+        gfx.triangle(x2-arrowsz,y1-arrowsz,x2-arrowsz,y1+arrowsz,x2,y1)
+      end
       
     end    
     
@@ -13791,7 +13795,7 @@ end
           end
         end
 
-        if plist_w > 0 then                  
+        if plist_w > 0 and not matrixoff then                  
           gfx.blit(1001,1,0,0,0,obj.sections[43].w,obj.sections[43].h,0,0)
         end
         
@@ -13862,14 +13866,31 @@ end
         
         elseif show_pinmatrix then
         
-          if update_gfx or update_surface then
+          if (matrixoff and matrixoff.update == true) or (not matrixoff and (update_gfx or update_surface)) then
             GUI_DrawPinMatrix(obj, gui)
           end
           gfx.a=1
+          if matrixoff then
+            f_Get_SSV(gui.color.black)
+            if matrixoff.x > 0 then
+              gfx.rect(obj.sections[10].x, obj.sections[10].y, matrixoff.x, obj.sections[1200].h)
+            else
+              gfx.rect(gfx1.main_w+matrixoff.x, obj.sections[10].y, -matrixoff.x, obj.sections[1200].h)            
+            end
+            if matrixoff.y > 0 then
+              gfx.rect(obj.sections[10].x, obj.sections[10].y, obj.sections[1200].w, matrixoff.y)            
+            else
+              gfx.rect(obj.sections[10].x, gfx1.main_h+matrixoff.y, obj.sections[1200].w, -matrixoff.y)                        
+            end
+            gfx.blit(987,1,0,0,0,obj.sections[1200].w,obj.sections[1200].h,obj.sections[10].x+(matrixoff.x),obj.sections[10].y+(matrixoff.y))
+            
+            if plist_w > 0 then                  
+              gfx.blit(1001,1,0,0,0,obj.sections[43].w,obj.sections[43].h,0,0)
+            end  
+          else
+            gfx.blit(987,1,0,0,0,obj.sections[1200].w,obj.sections[1200].h,obj.sections[10].x,obj.sections[10].y)            
+          end
           
-          gfx.blit(987,1,0,0,0,obj.sections[1200].w,obj.sections[1200].h,obj.sections[10].x,obj.sections[10].y)  
-          --GUI_DrawEQBands(obj, gui)              
-
         elseif macro_edit_mode == true and macro_lrn_mode == false then
           if update_surface or update_gfx or update_macrobutt or update_macroedit then
             GUI_DrawMacroEdit(obj, gui)
@@ -37276,20 +37297,45 @@ end
           
         else
           mouse.context = contexts.scrollmatrix
-          matrixoff = {dx = mouse.mx - pinmatrix_scrollpos.x, dy = mouse.my - pinmatrix_scrollpos.y}
+          matrixoff = {dx = mouse.mx --[[- pinmatrix_scrollpos.x]], dy = mouse.my --[[- pinmatrix_scrollpos.y]],
+                       x = 0, y = 0, timer = reaper.time_precise() + 0.2}
         end    
+      
+      elseif matrixoff then
+        pinmatrix_scrollpos.x = pinmatrix_scrollpos.x + matrixoff.x
+        pinmatrix_scrollpos.y = pinmatrix_scrollpos.y + matrixoff.y
+        
+        matrixoff = nil
+        update_surface = true
       end
     
     else
     
       if mouse.context == contexts.scrollmatrix then
       
-        if mouse.mx ~= omx or mouse.my ~= omy then
-          pinmatrix_scrollpos.x = mouse.mx - matrixoff.dx        
-          pinmatrix_scrollpos.y = mouse.my - matrixoff.dy
-        
-          update_surface = true
-          omx, omy = mouse.mx, mouse.my
+        if mouse.mx ~= omx or mouse.my ~= omy or matrixoff.timer < reaper.time_precise() then
+          --pinmatrix_scrollpos.x = mouse.mx - matrixoff.dx        
+          --pinmatrix_scrollpos.y = mouse.my - matrixoff.dy
+          if matrixoff.timer < reaper.time_precise() then
+            if matrixoff.x ~= 0 or matrixoff.y ~= 0 then
+              matrixoff.update = true
+              pinmatrix_scrollpos.x = pinmatrix_scrollpos.x + matrixoff.x
+              pinmatrix_scrollpos.y = pinmatrix_scrollpos.y + matrixoff.y
+              matrixoff.x = 0
+              matrixoff.y = 0
+              matrixoff.dx = mouse.mx
+              matrixoff.dy = mouse.my
+              
+              update_surface = true
+            end
+            matrixoff.timer = reaper.time_precise() + 0.2
+          else
+            matrixoff.update = false
+            matrixoff.x = (mouse.mx - matrixoff.dx)
+            matrixoff.y = (mouse.my - matrixoff.dy)
+            update_surface = true
+            omx, omy = mouse.mx, mouse.my
+          end
         end
       end
     
@@ -39529,7 +39575,7 @@ end
                               end
                             end
                           else
-                            if not v == '' then
+                            if v ~= '' then
                               if ctl.dval ~= v then
                                 ctl.val = v2
                                 ctl.dval = v
@@ -39556,7 +39602,7 @@ end
                                 SendMIDIMsg(ctl.midiout, ctl.val)
                               end
                             
-                            end                      
+                            end  
                           end
                         else
                           if ctl.fxfound then
