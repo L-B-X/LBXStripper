@@ -13295,7 +13295,7 @@ end
   end
   
   function GUI_DrawPinMatrix(obj, gui)
---DBG('sp '..pinmatrix_scrollpos.y)
+
     local w, h = obj.sections[1200].w, obj.sections[1200].h
     local lcol = '96 96 96'
     gfx.setimgdim(987,w,h)
@@ -25231,9 +25231,13 @@ end
         local x = math.max(obj.sections[1200].w/2 - w/2,40)
         local y = math.max(obj.sections[1200].h/2 - h/2,20)
         
-        pinmatrix_scrollpos = {x = x, y = y}
-        --DBG('h '..h..'  '..obj.sections[1200].h)
+        if settings_lockpinmatrix == false then
+          pinmatrix_scrollpos = {x = x, y = y}
+        else
+          pinmatrix_scrollpos = {x = 30, y = 10}        
+        end
         update_surface = true
+        
       elseif char == 30064 then
         if mode == 0 then
           --tlist_offset = F_limit(tlist_offset - 1, 0, #tracks+1)
@@ -37205,9 +37209,13 @@ end
       if gfx.mouse_wheel ~= 0 then
         local v = gfx.mouse_wheel/120
 
-        pinmatrix_zoom = F_limit(pinmatrix_zoom + (v*0.1),0.8,4)
+        if mouse.shift == true then
+          pinmatrix_scrollpos.x = math.min(pinmatrix_scrollpos.x + (v*40),50)        
+        else
+          pinmatrix_zoom = F_limit(pinmatrix_zoom + (v*0.1),0.8,4)
+        end
         update_surface = true
-
+        
         gfx.mouse_wheel = 0
       
       elseif char == 52 then
@@ -37234,46 +37242,58 @@ end
         
       elseif MOUSE_click(obj.sections[1200]) then
 
-        local chan, inpin, outpin, fxn
-        if pinmatrix and #pinmatrix.fx_rect > 0 then
+        local chan, inpin, outpin, fxn, fxheader
+        if pinmatrix and #pinmatrix.fx_rect >= 0 then
           local fx = mouse.mx
           local fy = mouse.my - pinmatrix_scrollpos.y
           for i = 0, #pinmatrix.fx_rect do
-          
-            if fy >= obj.sections[1202].y and fy <= obj.sections[1202].y + obj.sections[1202].h then
-              if fx >= pinmatrix.fx_rect[i].x and fx <= pinmatrix.fx_rect[i].x + pinmatrix.fx_rect[i].w then
-  
-                fxn = i            
-                break
-              end
+            if fx >= pinmatrix.fx_rect[i].x and fx <= pinmatrix.fx_rect[i].x + pinmatrix.fx_rect[i].w then
+              fxn = i            
+              break
             end
           end
       
           if fxn then
+            if (fy >= obj.sections[1202].y and fy <= obj.sections[1202].y + obj.sections[1202].h) then
           
-            local pinw, pinh = math.floor(22*pinmatrix_zoom), math.floor(22*pinmatrix_zoom)
-            local pinadj = math.floor(2*pinmatrix_zoom)
-  
-            local x = fx - pinmatrix.fx_rect[fxn].x
-            chan = math.floor((fy - obj.sections[1202].y) / pinh)
-            
-            if x < pinmatrix.fx_rect[fxn].inpins * pinw then
-              inpin = math.floor(x / pinw)
-            elseif x > (pinmatrix.fx_rect[fxn].inpins+1) * pinw then
-              outpin = math.floor((x - (pinmatrix.fx_rect[fxn].inpins+1) * pinw) / pinw)
+              local pinw, pinh = math.floor(22*pinmatrix_zoom), math.floor(22*pinmatrix_zoom)
+              local pinadj = math.floor(2*pinmatrix_zoom)
+    
+              local x = fx - pinmatrix.fx_rect[fxn].x
+              chan = math.floor((fy - obj.sections[1202].y) / pinh)
+              
+              if x < pinmatrix.fx_rect[fxn].inpins * pinw then
+                inpin = math.floor(x / pinw)
+              elseif x > (pinmatrix.fx_rect[fxn].inpins+1) * pinw then
+                outpin = math.floor((x - (pinmatrix.fx_rect[fxn].inpins+1) * pinw) / pinw)
+              end
+            elseif (fy >= obj.sections[1201].y and fy <= obj.sections[1201].y + obj.sections[1201].h) and mouse.ctrl then
+              fxheader = fxn
             end
           end
         end          
         
-        if (inpin or outpin) and chan then
-          --DBG('fx '..fxn..' pin: '..tostring(inpin or outpin)..' chan: '..tostring(chan))
+        if fxheader then
         
           local tr = GetTrack(tracks[track_select].tracknum)
+          local retval, inpins, outpins = reaper.TrackFX_GetIOSize(tr,fxheader)
+          for p = 0, inpins do
+            reaper.TrackFX_SetPinMappings(tr, fxheader, 0, p, 0, 0)
+          end
+          for p = 0, outpins do
+            reaper.TrackFX_SetPinMappings(tr, fxheader, 1, p, 0, 0)
+          end          
+          update_surface = true
+          
+        elseif (inpin or outpin) and chan then
+        
+          local tr = GetTrack(tracks[track_select].tracknum)
+          local pin = inpin or outpin
           local isOut = 0
           if outpin then
             isOut = 1
           end
-          local Low32,Hi32 = reaper.TrackFX_GetPinMappings(tr, fxn, isOut, inpin or outpin)
+          local Low32,Hi32 = reaper.TrackFX_GetPinMappings(tr, fxn, isOut, pin)
           local bit = 2^(chan%32)
           local val
           if chan < 32 then
@@ -37289,12 +37309,44 @@ end
               Hi32 = Hi32 - bit;
             else 
               Hi32 = Hi32 + bit;
-            end
-          
+            end          
           end
-          reaper.TrackFX_SetPinMappings(tr, fxn, isOut, inpin or outpin, Low32, Hi32)
-          update_surface = true
+          reaper.TrackFX_SetPinMappings(tr, fxn, isOut, pin, Low32, Hi32)
+          if mouse.ctrl then
+            local val2 = val
+            local retval, inpins, outpins = reaper.TrackFX_GetIOSize(tr,fxn)
+            isOut = 1-isOut
+            if (isOut == 0 and pin <= inpins) or (isOut == 1 and pin <= outpins) then
+              local Low32,Hi32 = reaper.TrackFX_GetPinMappings(tr, fxn, isOut, pin)
+              local bit = 2^(chan%32)
+              local val
+              if chan < 32 then
+                val = (Low32&bit)>0
+                if val == val2 then          
+                  if val then
+                    Low32 = Low32 - bit;
+                  else 
+                    Low32 = Low32 + bit;
+                  end
+                end
+              else
+                val = (Hi32&bit)>0          
+                if val == val2 then          
+                  if val then
+                    Hi32 = Hi32 - bit;
+                  else 
+                    Hi32 = Hi32 + bit;
+                  end
+                end
+              end
+              reaper.TrackFX_SetPinMappings(tr, fxn, isOut, pin, Low32, Hi32)
+              
+            end          
+          end
           
+          update_surface = true
+      
+
         else
           mouse.context = contexts.scrollmatrix
           matrixoff = {dx = mouse.mx --[[- pinmatrix_scrollpos.x]], dy = mouse.my --[[- pinmatrix_scrollpos.y]],
@@ -37314,13 +37366,13 @@ end
       if mouse.context == contexts.scrollmatrix then
       
         if mouse.mx ~= omx or mouse.my ~= omy or matrixoff.timer < reaper.time_precise() then
-          --pinmatrix_scrollpos.x = mouse.mx - matrixoff.dx        
-          --pinmatrix_scrollpos.y = mouse.my - matrixoff.dy
           if matrixoff.timer < reaper.time_precise() then
             if matrixoff.x ~= 0 or matrixoff.y ~= 0 then
               matrixoff.update = true
               pinmatrix_scrollpos.x = pinmatrix_scrollpos.x + matrixoff.x
-              pinmatrix_scrollpos.y = pinmatrix_scrollpos.y + matrixoff.y
+              if settings_lockpinmatrix == false then
+                pinmatrix_scrollpos.y = pinmatrix_scrollpos.y + matrixoff.y
+              end
               matrixoff.x = 0
               matrixoff.y = 0
               matrixoff.dx = mouse.mx
@@ -37332,7 +37384,9 @@ end
           else
             matrixoff.update = false
             matrixoff.x = (mouse.mx - matrixoff.dx)
-            matrixoff.y = (mouse.my - matrixoff.dy)
+            if settings_lockpinmatrix == false then
+              matrixoff.y = (mouse.my - matrixoff.dy)
+            end
             update_surface = true
             omx, omy = mouse.mx, mouse.my
           end
@@ -39551,7 +39605,7 @@ end
                           end
                         
                           local _, v = reaper.TrackFX_GetFormattedParamValue(tr, ctl.fxnum, ctl.param, "")                          
-                          local v2, min, max = reaper.TrackFX_GetParam(track, ctl.fxnum, ctl.param)
+                          local v2, min, max = reaper.TrackFX_GetParam(tr, ctl.fxnum, ctl.param)
                           min = ctl.minov or min
                           max = ctl.maxov or max
                           v2 = normalize(min, max, v2)
@@ -50879,6 +50933,8 @@ end
   settings_ssdock = false
   settings_moddock = false
   settings_dragmode = false
+  settings_lockpinmatrix = false
+  
   hideunusedtracks = false
   
   tb_butt_h = 20
