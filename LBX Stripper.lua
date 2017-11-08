@@ -274,7 +274,7 @@
   local midiouts, midioutsidx 
     
   lvar.SCRIPT = 'LBX_STRIPPER'
-  lvar.VERSION = 0.95
+  lvar.VERSION = 0.96
   lvar.STRIPSET = 'STRIP SET 1'
 
   lvar.LBX_FB_CNT = 32
@@ -726,11 +726,13 @@
   
   function copyfile(src, dest)
     local file = io.open(src, 'rb')
-    local content = file:read('*a')
-    file:close()
-    local file = io.open(dest, 'wb')
-    file:write(content)
-    file:close()
+    if file then
+      local content = file:read('*a')
+      file:close()
+      local file = io.open(dest, 'wb')
+      file:write(content)
+      file:close()
+    end
   end
 
   function readbinaryfile(src)
@@ -8910,11 +8912,11 @@ end
                       val2 = 0                
                     end
                   elseif ctltype == 7 or ctltype == 9 then
-                    val2 = ctl.val
+                    val2 = ctl.val or 0
                   elseif ctltype == 8 or ctltype == 10 then
-                    if ctl.val then
-                      val2 = 1-ctl.val
-                    end
+                    --if ctl.val then
+                      val2 = 1-(ctl.val or 0)
+                    --end
                   end
                   
                   if not found then
@@ -43993,61 +43995,78 @@ end
     
     --local scnt = tonumber(nz(GPES('strips_count'),0))
     local v = tonumber(zn(data['version']))
-    local scnt = tonumber(zn(data['stripcount']))
-    if scnt == nil then data = nil reaper.MB('Not a loadable lbxstripper file','Load Failed',0) return 0 end
+    local cont = true
+    if v >= 0.96 then
+      if data['EOF'] ~= '#EOF' then
+        id = tostring(math.floor(math.random() * 0xFFFFFFFF))
+        local rfn = string.match(ffn,'(.+).lbxstripper')..'_'..id..'.lbxincomplete'
+        local r = reaper.MB('It appears the data file is incomplete:  Continue loading?\n\nA backup of this file will be made to: '..rfn,'Load Data',4)
+        if r == 7 then
+          cont = false
+        end
+        copyfile(ffn, rfn)
+      end
+    end
     
-    DBGOut('LoadData: strip count: '..tostring(scnt))
-    
-    strips = {}
-    local ss = 1
-    if scnt > 0 then
+    if cont == false then
+      reaper.MB('You may wish to locate an alternative or backup data file for this project - use Main Menu->Script Data to search for an alternative data file','Load Aborted',0)
+    else
+      local scnt = tonumber(zn(data['stripcount']))
+      if scnt == nil then data = nil reaper.MB('Not a loadable lbxstripper file','Load Failed',0) return 0 end
       
-      for s = 1, scnt do
-    
-        GUI_DrawMsgX(obj, gui, 'Loading Strip Data...', s, scnt)      
-        LoadStripData(s, ss, data)
-        ss=ss+1
-                   
-      end
-    end
-    
-    PopulateTracks()
-    Snapshots_INIT()
-    --local scnt = tonumber(nz(GPES('snapshots_count'),0))
-    local scnt = tonumber(zn(data['snapshotcount']))
-    DBGOut('LoadData: snapshot count: '..tostring(scnt))
-    
-    if scnt and scnt > 0 then
+      DBGOut('LoadData: strip count: '..tostring(scnt))
+      
+      strips = {}
+      local ss = 1
+      if scnt > 0 then
         
-      for s = 1, scnt do
-
-        GUI_DrawMsgX(obj, gui, 'Loading Snapshot Data...', s, scnt)
-        LoadSnapData(s, data)
-                  
+        for s = 1, scnt do
+      
+          GUI_DrawMsgX(obj, gui, 'Loading Strip Data...', s, scnt)      
+          LoadStripData(s, ss, data)
+          ss=ss+1
+                     
+        end
       end
-    end
-    
-    --XXY
-    
-    for s = 1, #strips do
+      
+      PopulateTracks()
+      Snapshots_INIT()
+      --local scnt = tonumber(nz(GPES('snapshots_count'),0))
+      local scnt = tonumber(zn(data['snapshotcount']))
+      DBGOut('LoadData: snapshot count: '..tostring(scnt))
+      
+      if scnt and scnt > 0 then
+          
+        for s = 1, scnt do
   
-      GUI_DrawMsgX(obj, gui, 'Loading Metalite Data...', s, #strips)
-      LoadXXYData(s, data)
+          GUI_DrawMsgX(obj, gui, 'Loading Snapshot Data...', s, scnt)
+          LoadSnapData(s, data)
+                    
+        end
+      end
+      
+      --XXY
+      
+      for s = 1, #strips do
     
+        GUI_DrawMsgX(obj, gui, 'Loading Metalite Data...', s, #strips)
+        LoadXXYData(s, data)
+      
+      end
+      
+      LoadXXYPathData(data)
+      LoadFaders(data)
+      LoadMods(data)
+      LoadSwitchers(data)
+                
+      LoadCompatibility(v, strips)
+      
+      --DBG('Total Load Time: '..reaper.time_precise() - t)
+      infomsg = 'Total Load Time: '..round(reaper.time_precise() - t,2)..'s'
+      DBGOut(infomsg)
     end
-    
-    LoadXXYPathData(data)
-    LoadFaders(data)
-    LoadMods(data)
-    LoadSwitchers(data)
     
     data = nil
-    
-    LoadCompatibility(v, strips)
-    
-    --DBG('Total Load Time: '..reaper.time_precise() - t)
-    infomsg = 'Total Load Time: '..round(reaper.time_precise() - t,2)..'s'
-    DBGOut(infomsg)
     
     PopulateTracks() --must be called to link tracks to strips
     
@@ -44086,6 +44105,7 @@ end
   
     local t = reaper.time_precise()
     local data
+    local cont = true
     
     DBGOut('')
     DBGOut('*** LOADING DATA ***')    
@@ -44133,6 +44153,8 @@ end
         hideunusedtracks = tobool(nz(GPES('hidetracks',true),false))
         
         DBGOut('LoadData: PROJECT ID: '..tostring(PROJECTID))
+        
+        
         
         if tonumber(v) >= 0.94 then
         
@@ -44190,441 +44212,432 @@ end
 
           DBGOut('LoadData: Read lines: '..tostring(ctr))
         
+          if tonumber(v) >= 0.96 then
+            if data['EOF'] ~= '#EOF' then
+              id = tostring(math.floor(math.random() * 0xFFFFFFFF))
+              local rfn = string.match(ffn,'(.+).lbxstripper')..'_'..id..'.lbxincomplete'
+              local r = reaper.MB('It appears the data file is incomplete:  Continue loading?\n\nA backup of this file will be made to: '..rfn,'Load Data',4)
+              if r == 7 then
+                cont = false
+              end
+              copyfile(ffn, rfn)
+            end
+          end
+          
+          if cont == false then
+            reaper.MB('You may wish to locate an alternative or backup data file for this project - use Main Menu->Script Data to search for an alternative data file','Load Aborted',0)
+          end
         end
         
-        local scnt = tonumber(nz(GPES('strips_count'),0))
-        DBGOut('LoadData: strip count: '..tostring(scnt))
-        
-        strips = {}
-        local ss = 1
-        if scnt > 0 then
-         
-          for s = 1, scnt do
-
-            GUI_DrawMsgX(obj, gui, 'Loading Strip Data...', s, scnt)
+        if cont == true then
+          local scnt = tonumber(nz(GPES('strips_count'),0))
+          DBGOut('LoadData: strip count: '..tostring(scnt))
           
-            if tonumber(v) == 0.93 then
-              LoadStripData(s, ss)
-              ss=ss+1
-              
-              --if not CheckTrackExists(ss) then
-              --  ss = ss - 1
-              --end
-            elseif tonumber(v) >= 0.94 then
-              LoadStripData(s, ss, data)
-              ss=ss+1           
-            else
+          strips = {}
+          local ss = 1
+          if scnt > 0 then
+           
+            for s = 1, scnt do
+  
+              GUI_DrawMsgX(obj, gui, 'Loading Strip Data...', s, scnt)
             
-              key = 'strips_'..s..'_'
+              if tonumber(v) == 0.93 then
+                LoadStripData(s, ss)
+                ss=ss+1
+                
+                --if not CheckTrackExists(ss) then
+                --  ss = ss - 1
+                --end
+              elseif tonumber(v) >= 0.94 then
+                LoadStripData(s, ss, data)
+                ss=ss+1           
+              else
               
-              strips[ss] = {}
+                key = 'strips_'..s..'_'
+                
+                strips[ss] = {}
+                
+                strips[ss].page = tonumber(nz(GPES(key..'page',true),1))
+    
+                key = 'strips_'..s..'_track_'
+    
+                strips[ss].track = {
+                                   name = GPES(key..'name'),
+                                   guid = GPES(key..'guid'),
+                                   tracknum = tonumber(GPES(key..'tracknum')),
+                                   strip = tonumber(GPES(key..'strip'))
+                                  }
+                if CheckTrackExists(ss) then
+                  for p = 1, 4 do
+                  
+                    local key = 'strips_'..s..'_'..p..'_'
+                  
+                    strips[ss][p] = {
+                                    surface_x = tonumber(GPES(key..'surface_x')),
+                                    surface_y = tonumber(GPES(key..'surface_y')),
+                                    controls = {},
+                                    graphics = {}
+                                   }          
+                  
+                    local ccnt = tonumber(GPES(key..'controls_count'))
+                    local gcnt = tonumber(GPES(key..'graphics_count'))
+                                
+                    if ccnt > 0 then
+                      for c = 1, ccnt do
+        
+                        local key = 'strips_'..s..'_'..p..'_controls_'..c..'_'
+                        strips[ss][p].controls[c] = {
+                                                    c_id = tonumber(nz(GPES(key..'cid',true),GenID() )),
+                                                    ctlcat = tonumber(nz(GPES(key..'ctlcat',true),0)),
+                                                    fxname = GPES(key..'fxname'),
+                                                    fxguid = GPES(key..'fxguid'),
+                                                    fxnum = tonumber(GPES(key..'fxnum',true)),
+                                                    fxfound = tobool(GPES(key..'fxfound')),
+                                                    param = tonumber(GPES(key..'param')),
+                                                    param_info = {
+                                                                  paramname = GPES(key..'param_info_name'),
+                                                                  paramnum = tonumber(GPES(key..'param_info_paramnum',true)),
+                                                                  paramidx = GPES(key..'param_info_idx',true),
+                                                                  paramstr = GPES(key..'param_info_str',true),
+                                                                  paramdestguid = GPES(key..'param_info_guid',true),
+                                                                  paramdestchan = tonumber(GPES(key..'param_info_chan',true)),
+                                                                  paramsrcchan = tonumber(GPES(key..'param_info_srcchan',true))
+                                                                 },
+                                                    ctltype = tonumber(GPES(key..'ctltype')),
+                                                    knob_select = tonumber(GPES(key..'knob_select')),
+                                                    ctl_info = {
+                                                                fn = GPES(key..'ctl_info_fn'),
+                                                                frames = tonumber(GPES(key..'ctl_info_frames')),
+                                                                imageidx = tonumber(GPES(key..'ctl_info_imageidx')),
+                                                                cellh = tonumber(GPES(key..'ctl_info_cellh'))
+                                                               },
+                                                    x = tonumber(GPES(key..'x')),
+                                                    y = tonumber(GPES(key..'y')),
+                                                    w = tonumber(GPES(key..'w')),
+                                                    scale = tonumber(GPES(key..'scale')),
+                                                    show_paramname = tobool(GPES(key..'show_paramname')),
+                                                    show_paramval = tobool(GPES(key..'show_paramval')),
+                                                    ctlname_override = nz(GPES(key..'ctlname_override'),''),
+                                                    textcol = GPES(key..'textcol'),
+                                                    textoff = tonumber(GPES(key..'textoff')),
+                                                    textoffval = tonumber(nz(GPES(key..'textoffval',true),0)),
+                                                    textoffx = tonumber(nz(GPES(key..'textoffx',true),0)),
+                                                    textoffvalx = tonumber(nz(GPES(key..'textoffvalx',true),0)),
+                                                    textsize = tonumber(nz(GPES(key..'textsize'),0)),
+                                                    val = tonumber(GPES(key..'val')),
+                                                    defval = tonumber(GPES(key..'defval')),
+                                                    maxdp = tonumber(nz(GPES(key..'maxdp',true),-1)),
+                                                    cycledata = {statecnt = 0,{}},
+                                                    xydata = {x = tonumber(nz(GPES(key..'xydata_x',true),0.5)), 
+                                                              y = tonumber(nz(GPES(key..'xydata_y',true),0.5)), 
+                                                              snapa = tonumber(nz(GPES(key..'xydata_snapa',true),1)),
+                                                              snapb = tonumber(nz(GPES(key..'xydata_snapb',true),1)),
+                                                              snapc = tonumber(nz(GPES(key..'xydata_snapc',true),1)),
+                                                              snapd = tonumber(nz(GPES(key..'xydata_snapd',true),1))},
+                                                    id = deconvnum(GPES(key..'id',true)),
+                                                    scalemode = tonumber(nz(GPES(key..'scalemodex',true),8)),
+                                                    framemode = tonumber(nz(GPES(key..'framemodex',true),1)),
+                                                    poslock = tobool(nz(GPES(key..'poslock',true),false)),
+                                                    horiz = tobool(nz(GPES(key..'horiz',true),false)),
+                                                    knobsens = {norm = settings_defknobsens.norm,
+                                                                fine = settings_defknobsens.fine,
+                                                                wheel = settings_defknobsens.wheel,
+                                                                wheelfine = settings_defknobsens.wheelfine}
+                                                   }
+                        g_cids[strips[ss][p].controls[c].c_id] = true
+                        if strips[ss][p].controls[c].maxdp == nil or (strips[ss][p].controls[c].maxdp and strips[ss][p].controls[c].maxdp == '') then
+                          strips[ss][p].controls[c].maxdp = -1
+                        end
+                        strips[ss][p].controls[c].xsc = math.floor(strips[ss][p].controls[c].x + strips[ss][p].controls[c].w/2 - (strips[ss][p].controls[c].w*strips[ss][p].controls[c].scale)/2)
+                        strips[ss][p].controls[c].ysc = math.floor(strips[ss][p].controls[c].y + strips[ss][p].controls[c].ctl_info.cellh/2 - (strips[ss][p].controls[c].ctl_info.cellh*strips[ss][p].controls[c].scale)/2)
+                        strips[ss][p].controls[c].wsc = math.floor(strips[ss][p].controls[c].w*strips[ss][p].controls[c].scale)
+                        strips[ss][p].controls[c].hsc = math.floor(strips[ss][p].controls[c].ctl_info.cellh*strips[ss][p].controls[c].scale)
+                        
+                        strips[ss][p].controls[c].tracknum = tonumber(GPES(key..'tracknum',true))
+                        strips[ss][p].controls[c].trackguid = GPES(key..'trackguid')                    
+                        strips[ss][p].controls[c].dvaloffset = GPES(key..'dvaloffset',true)
+                        strips[ss][p].controls[c].minov = GPES(key..'minov',true)
+                        strips[ss][p].controls[c].maxov = GPES(key..'maxov',true)
+                        strips[ss][p].controls[c].membtn = {state = tobool(nz(GPES(key..'memstate',true),false)),
+                                                            mem = tonumber(nz(GPES(key..'memmem',true),0))
+                                                            }
+                        
+                        strips[ss][p].controls[c].cycledata.statecnt = tonumber(nz(GPES(key..'cycledata_statecnt',true),0))
+                        strips[ss][p].controls[c].cycledata.mapptof = tobool(nz(GPES(key..'cycledata_mapptof',true),false))
+                        strips[ss][p].controls[c].cycledata.draggable = tobool(nz(GPES(key..'cycledata_draggable',true),false))
+                        strips[ss][p].controls[c].cycledata.spread = tobool(nz(GPES(key..'cycledata_spread',true),false))
+                        strips[ss][p].controls[c].cycledata.pos = tonumber(nz(GPES(key..'cycledata_pos',true),1))
+                        strips[ss][p].controls[c].cycledata.posdirty = tobool(nz(GPES(key..'cycledata_posdirty',true),false))
+                        strips[ss][p].controls[c].cycledata.val = 0
+                        if nz(strips[ss][p].controls[c].cycledata.statecnt,0) > 0 then
+                          for i = 1, strips[ss][p].controls[c].cycledata.statecnt do
+                            local key = 'strips_'..s..'_'..p..'_controls_'..c..'_cycledata_'..i..'_'
+                          
+                            strips[ss][p].controls[c].cycledata[i] = {val = tonumber(nz(GPES(key..'val',true),0)),
+                                                                      dispval = nz(GPES(key..'dispval',true),'no disp val'),
+                                                                      dv = GPES(key..'dispval',true)}
+                            if strips[ss][p].controls[c].cycledata[i].dv == nil then
+                              strips[ss][p].controls[c].cycledata[i].dv = strips[ss][p].controls[c].cycledata[i].dispval
+                            end 
+                          end
+                        end
+                                            
+                        --load control images - reshuffled to ensure no wasted slots between sessions
+                        local iidx
+                        local knob_sel = -1
+                        for k = 0, #ctl_files do
+                          if ctl_files[k].fn == strips[ss][p].controls[c].ctl_info.fn then
+                            knob_sel = k
+                            break
+                          end
+                        end
+                        if knob_sel ~= -1 then
+                          strips[ss][p].controls[c].knob_select = knob_sel
+        
+                          if ctl_files[knob_sel].imageidx == nil then
+                            image_count = F_limit(image_count + 1,0,image_max)
+                            gfx.loadimg(image_count, paths.controls_path..ctl_files[knob_sel].fn)
+                            iidx = image_count
+                            
+                            strips[ss][p].controls[c].ctl_info.imageidx = iidx
+                            ctl_files[knob_sel].imageidx = iidx                    
+                          else
+                            iidx = ctl_files[knob_sel].imageidx
+                            strips[ss][p].controls[c].ctl_info.imageidx = iidx
+                          end
+                        else
+                          --missing
+                          strips[ss][p].controls[c].knob_select = -1
+                          strips[ss][p].controls[c].ctl_info.imageidx = 1020
+                        end
+                      end
+                    end
+                    
+                    if gcnt > 0 then
+                    
+                      for g = 1, gcnt do
+        
+                        local key = 'strips_'..s..'_'..p..'_graphics_'..g..'_'
+                        
+                        strips[ss][p].graphics[g] = {
+                                                    fn = GPES(key..'fn'),
+                                                    imageidx = tonumber(GPES(key..'imageidx')),
+                                                    x = tonumber(GPES(key..'x')),
+                                                    y = tonumber(GPES(key..'y')),
+                                                    w = tonumber(GPES(key..'w')),
+                                                    h = tonumber(GPES(key..'h')),
+                                                    scale = tonumber(GPES(key..'scale')),
+                                                    id = deconvnum(GPES(key..'id',true)),
+                                                    gfxtype = tonumber(nz(GPES(key..'gfxtype',true),lvar.gfxtype.img)),
+                                                    font = {idx = tonumber(GPES(key..'font_idx',true)),
+                                                            name = GPES(key..'font_name',true),
+                                                            size = tonumber(GPES(key..'font_size',true)),
+                                                            bold = tobool(GPES(key..'font_bold',true)),
+                                                            italics = tobool(GPES(key..'font_italics',true)),
+                                                            underline = tobool(GPES(key..'font_underline',true)),
+                                                            shadow = tobool(nz(GPES(key..'font_shadow',true),true)),
+                                                            shadow_x = tonumber(nz(GPES(key..'font_shadowx',true),1)),
+                                                            shadow_y = tonumber(nz(GPES(key..'font_shadowy',true),1)),
+                                                            shadow_a = tonumber(nz(GPES(key..'font_shadowa',true),0.6))
+                                                            },
+                                                    text = GPES(key..'text',true),
+                                                    text_col = GPES(key..'text_col',true),
+                                                    poslock = tobool(nz(GPES(key..'poslock',true),false))
+                                                   }
+                        strips[ss][p].graphics[g].stretchw = tonumber(nz(GPES(key..'stretchw',true),strips[ss][p].graphics[g].w))
+                        strips[ss][p].graphics[g].stretchh = tonumber(nz(GPES(key..'stretchh',true),strips[ss][p].graphics[g].h))
+                        strips[ss][p].graphics[g].stretchmode = 1
+                        strips[ss][p].graphics[g].edgesz = 8
+                        
+                        --load graphics images
+                        local iidx = LoadGraphics(strips[ss][p].graphics[g].fn)
+                        if iidx then
+                          strips[ss][p].graphics[g].imageidx = iidx
+                        end
+                        
+                      end                
+                    end
+                  end
+                  ss = ss + 1
+                else
+                  --not found
+                  --strips[s] = nil
+                end
+              end
+            end
+            
+          end
+          
+          PopulateTracks()
+          Snapshots_INIT()
+          local scnt = tonumber(nz(GPES('snapshots_count'),0))
+          DBGOut('LoadData: snapshot count: '..tostring(scnt))
+          
+          if scnt and scnt > 0 then
               
-              strips[ss].page = tonumber(nz(GPES(key..'page',true),1))
+            for s = 1, scnt do
   
-              key = 'strips_'..s..'_track_'
+              GUI_DrawMsgX(obj, gui, 'Loading Snapshot Data...', s, scnt)
   
-              strips[ss].track = {
-                                 name = GPES(key..'name'),
-                                 guid = GPES(key..'guid'),
-                                 tracknum = tonumber(GPES(key..'tracknum')),
-                                 strip = tonumber(GPES(key..'strip'))
-                                }
-              if CheckTrackExists(ss) then
+              if tonumber(v) == 0.93 then
+              
+                LoadSnapData(s)
+  
+              elseif tonumber(v) >= 0.94 then
+  
+                LoadSnapData(s, data)
+  
+              else
+              
+                snapshots[s] = {}
+              
                 for p = 1, 4 do
                 
-                  local key = 'strips_'..s..'_'..p..'_'
-                
-                  strips[ss][p] = {
-                                  surface_x = tonumber(GPES(key..'surface_x')),
-                                  surface_y = tonumber(GPES(key..'surface_y')),
-                                  controls = {},
-                                  graphics = {}
-                                 }          
-                
-                  local ccnt = tonumber(GPES(key..'controls_count'))
-                  local gcnt = tonumber(GPES(key..'graphics_count'))
-                              
-                  if ccnt > 0 then
-                    for c = 1, ccnt do
-      
-                      local key = 'strips_'..s..'_'..p..'_controls_'..c..'_'
-                      strips[ss][p].controls[c] = {
-                                                  c_id = tonumber(nz(GPES(key..'cid',true),GenID() )),
-                                                  ctlcat = tonumber(nz(GPES(key..'ctlcat',true),0)),
-                                                  fxname = GPES(key..'fxname'),
-                                                  fxguid = GPES(key..'fxguid'),
-                                                  fxnum = tonumber(GPES(key..'fxnum',true)),
-                                                  fxfound = tobool(GPES(key..'fxfound')),
-                                                  param = tonumber(GPES(key..'param')),
-                                                  param_info = {
-                                                                paramname = GPES(key..'param_info_name'),
-                                                                paramnum = tonumber(GPES(key..'param_info_paramnum',true)),
-                                                                paramidx = GPES(key..'param_info_idx',true),
-                                                                paramstr = GPES(key..'param_info_str',true),
-                                                                paramdestguid = GPES(key..'param_info_guid',true),
-                                                                paramdestchan = tonumber(GPES(key..'param_info_chan',true)),
-                                                                paramsrcchan = tonumber(GPES(key..'param_info_srcchan',true))
-                                                               },
-                                                  ctltype = tonumber(GPES(key..'ctltype')),
-                                                  knob_select = tonumber(GPES(key..'knob_select')),
-                                                  ctl_info = {
-                                                              fn = GPES(key..'ctl_info_fn'),
-                                                              frames = tonumber(GPES(key..'ctl_info_frames')),
-                                                              imageidx = tonumber(GPES(key..'ctl_info_imageidx')),
-                                                              cellh = tonumber(GPES(key..'ctl_info_cellh'))
-                                                             },
-                                                  x = tonumber(GPES(key..'x')),
-                                                  y = tonumber(GPES(key..'y')),
-                                                  w = tonumber(GPES(key..'w')),
-                                                  scale = tonumber(GPES(key..'scale')),
-                                                  show_paramname = tobool(GPES(key..'show_paramname')),
-                                                  show_paramval = tobool(GPES(key..'show_paramval')),
-                                                  ctlname_override = nz(GPES(key..'ctlname_override'),''),
-                                                  textcol = GPES(key..'textcol'),
-                                                  textoff = tonumber(GPES(key..'textoff')),
-                                                  textoffval = tonumber(nz(GPES(key..'textoffval',true),0)),
-                                                  textoffx = tonumber(nz(GPES(key..'textoffx',true),0)),
-                                                  textoffvalx = tonumber(nz(GPES(key..'textoffvalx',true),0)),
-                                                  textsize = tonumber(nz(GPES(key..'textsize'),0)),
-                                                  val = tonumber(GPES(key..'val')),
-                                                  defval = tonumber(GPES(key..'defval')),
-                                                  maxdp = tonumber(nz(GPES(key..'maxdp',true),-1)),
-                                                  cycledata = {statecnt = 0,{}},
-                                                  xydata = {x = tonumber(nz(GPES(key..'xydata_x',true),0.5)), 
-                                                            y = tonumber(nz(GPES(key..'xydata_y',true),0.5)), 
-                                                            snapa = tonumber(nz(GPES(key..'xydata_snapa',true),1)),
-                                                            snapb = tonumber(nz(GPES(key..'xydata_snapb',true),1)),
-                                                            snapc = tonumber(nz(GPES(key..'xydata_snapc',true),1)),
-                                                            snapd = tonumber(nz(GPES(key..'xydata_snapd',true),1))},
-                                                  id = deconvnum(GPES(key..'id',true)),
-                                                  scalemode = tonumber(nz(GPES(key..'scalemodex',true),8)),
-                                                  framemode = tonumber(nz(GPES(key..'framemodex',true),1)),
-                                                  poslock = tobool(nz(GPES(key..'poslock',true),false)),
-                                                  horiz = tobool(nz(GPES(key..'horiz',true),false)),
-                                                  knobsens = {norm = settings_defknobsens.norm,
-                                                              fine = settings_defknobsens.fine,
-                                                              wheel = settings_defknobsens.wheel,
-                                                              wheelfine = settings_defknobsens.wheelfine}
-                                                 }
-                      g_cids[strips[ss][p].controls[c].c_id] = true
-                      if strips[ss][p].controls[c].maxdp == nil or (strips[ss][p].controls[c].maxdp and strips[ss][p].controls[c].maxdp == '') then
-                        strips[ss][p].controls[c].maxdp = -1
-                      end
-                      strips[ss][p].controls[c].xsc = math.floor(strips[ss][p].controls[c].x + strips[ss][p].controls[c].w/2 - (strips[ss][p].controls[c].w*strips[ss][p].controls[c].scale)/2)
-                      strips[ss][p].controls[c].ysc = math.floor(strips[ss][p].controls[c].y + strips[ss][p].controls[c].ctl_info.cellh/2 - (strips[ss][p].controls[c].ctl_info.cellh*strips[ss][p].controls[c].scale)/2)
-                      strips[ss][p].controls[c].wsc = math.floor(strips[ss][p].controls[c].w*strips[ss][p].controls[c].scale)
-                      strips[ss][p].controls[c].hsc = math.floor(strips[ss][p].controls[c].ctl_info.cellh*strips[ss][p].controls[c].scale)
-                      
-                      strips[ss][p].controls[c].tracknum = tonumber(GPES(key..'tracknum',true))
-                      strips[ss][p].controls[c].trackguid = GPES(key..'trackguid')                    
-                      strips[ss][p].controls[c].dvaloffset = GPES(key..'dvaloffset',true)
-                      strips[ss][p].controls[c].minov = GPES(key..'minov',true)
-                      strips[ss][p].controls[c].maxov = GPES(key..'maxov',true)
-                      strips[ss][p].controls[c].membtn = {state = tobool(nz(GPES(key..'memstate',true),false)),
-                                                          mem = tonumber(nz(GPES(key..'memmem',true),0))
-                                                          }
-                      
-                      strips[ss][p].controls[c].cycledata.statecnt = tonumber(nz(GPES(key..'cycledata_statecnt',true),0))
-                      strips[ss][p].controls[c].cycledata.mapptof = tobool(nz(GPES(key..'cycledata_mapptof',true),false))
-                      strips[ss][p].controls[c].cycledata.draggable = tobool(nz(GPES(key..'cycledata_draggable',true),false))
-                      strips[ss][p].controls[c].cycledata.spread = tobool(nz(GPES(key..'cycledata_spread',true),false))
-                      strips[ss][p].controls[c].cycledata.pos = tonumber(nz(GPES(key..'cycledata_pos',true),1))
-                      strips[ss][p].controls[c].cycledata.posdirty = tobool(nz(GPES(key..'cycledata_posdirty',true),false))
-                      strips[ss][p].controls[c].cycledata.val = 0
-                      if nz(strips[ss][p].controls[c].cycledata.statecnt,0) > 0 then
-                        for i = 1, strips[ss][p].controls[c].cycledata.statecnt do
-                          local key = 'strips_'..s..'_'..p..'_controls_'..c..'_cycledata_'..i..'_'
-                        
-                          strips[ss][p].controls[c].cycledata[i] = {val = tonumber(nz(GPES(key..'val',true),0)),
-                                                                    dispval = nz(GPES(key..'dispval',true),'no disp val'),
-                                                                    dv = GPES(key..'dispval',true)}
-                          if strips[ss][p].controls[c].cycledata[i].dv == nil then
-                            strips[ss][p].controls[c].cycledata[i].dv = strips[ss][p].controls[c].cycledata[i].dispval
-                          end 
-                        end
-                      end
-                                          
-                      --load control images - reshuffled to ensure no wasted slots between sessions
-                      local iidx
-                      local knob_sel = -1
-                      for k = 0, #ctl_files do
-                        if ctl_files[k].fn == strips[ss][p].controls[c].ctl_info.fn then
-                          knob_sel = k
-                          break
-                        end
-                      end
-                      if knob_sel ~= -1 then
-                        strips[ss][p].controls[c].knob_select = knob_sel
-      
-                        if ctl_files[knob_sel].imageidx == nil then
-                          image_count = F_limit(image_count + 1,0,image_max)
-                          gfx.loadimg(image_count, paths.controls_path..ctl_files[knob_sel].fn)
-                          iidx = image_count
-                          
-                          strips[ss][p].controls[c].ctl_info.imageidx = iidx
-                          ctl_files[knob_sel].imageidx = iidx                    
-                        else
-                          iidx = ctl_files[knob_sel].imageidx
-                          strips[ss][p].controls[c].ctl_info.imageidx = iidx
-                        end
-                      else
-                        --missing
-                        strips[ss][p].controls[c].knob_select = -1
-                        strips[ss][p].controls[c].ctl_info.imageidx = 1020
-                      end
-                    end
-                  end
+                  snapshots[s][p] = {}
+    
+                  local key = 'snap_strip_'..s..'_'..p..'_'
+                  local sstcnt = tonumber(nz(GPES(key..'sstype_count',true),0))
                   
-                  if gcnt > 0 then
-                  
-                    for g = 1, gcnt do
-      
-                      local key = 'strips_'..s..'_'..p..'_graphics_'..g..'_'
-                      
-                      strips[ss][p].graphics[g] = {
-                                                  fn = GPES(key..'fn'),
-                                                  imageidx = tonumber(GPES(key..'imageidx')),
-                                                  x = tonumber(GPES(key..'x')),
-                                                  y = tonumber(GPES(key..'y')),
-                                                  w = tonumber(GPES(key..'w')),
-                                                  h = tonumber(GPES(key..'h')),
-                                                  scale = tonumber(GPES(key..'scale')),
-                                                  id = deconvnum(GPES(key..'id',true)),
-                                                  gfxtype = tonumber(nz(GPES(key..'gfxtype',true),lvar.gfxtype.img)),
-                                                  font = {idx = tonumber(GPES(key..'font_idx',true)),
-                                                          name = GPES(key..'font_name',true),
-                                                          size = tonumber(GPES(key..'font_size',true)),
-                                                          bold = tobool(GPES(key..'font_bold',true)),
-                                                          italics = tobool(GPES(key..'font_italics',true)),
-                                                          underline = tobool(GPES(key..'font_underline',true)),
-                                                          shadow = tobool(nz(GPES(key..'font_shadow',true),true)),
-                                                          shadow_x = tonumber(nz(GPES(key..'font_shadowx',true),1)),
-                                                          shadow_y = tonumber(nz(GPES(key..'font_shadowy',true),1)),
-                                                          shadow_a = tonumber(nz(GPES(key..'font_shadowa',true),0.6))
-                                                          },
-                                                  text = GPES(key..'text',true),
-                                                  text_col = GPES(key..'text_col',true),
-                                                  poslock = tobool(nz(GPES(key..'poslock',true),false))
-                                                 }
-                      strips[ss][p].graphics[g].stretchw = tonumber(nz(GPES(key..'stretchw',true),strips[ss][p].graphics[g].w))
-                      strips[ss][p].graphics[g].stretchh = tonumber(nz(GPES(key..'stretchh',true),strips[ss][p].graphics[g].h))
-                      strips[ss][p].graphics[g].stretchmode = 1
-                      strips[ss][p].graphics[g].edgesz = 8
-                      
-                      --load graphics images
-                      local iidx = LoadGraphics(strips[ss][p].graphics[g].fn)
-                      if iidx then
-                        strips[ss][p].graphics[g].imageidx = iidx
-                      end
-                      
-                      --[[local iidx
-                      local gfx_sel = -1
-                      for k = 0, #graphics_files do
-                        if graphics_files[k].fn == strips[ss][p].graphics[g].fn then
-                          gfx_sel = k
-                          break
-                        end
-                      end
-                      if gfx_sel ~= -1 then
-                        
-                        if graphics_files[gfx_sel].imageidx == nil then
-                          image_count = F_limit(image_count + 1,0,image_max)
-                          gfx.loadimg(image_count, paths.graphics_path..graphics_files[gfx_sel].fn)
-                          iidx = image_count
-                          
-                          strips[ss][p].graphics[g].imageidx = iidx
-                          graphics_files[gfx_sel].imageidx = iidx                    
-        
-                        else
-                          iidx = graphics_files[gfx_sel].imageidx
-                          strips[ss][p].graphics[g].imageidx = iidx                                  
-                        end
-                      else
-                        --missing
-                        strips[ss][p].graphics[g].imageidx = 1020
-                      end]]
-                    end                
-                  end
-                end
-                ss = ss + 1
-              else
-                --not found
-                --strips[s] = nil
-              end
-            end
-          end
-        end
-        
-        PopulateTracks()
-        Snapshots_INIT()
-        local scnt = tonumber(nz(GPES('snapshots_count'),0))
-        DBGOut('LoadData: snapshot count: '..tostring(scnt))
-        
-        if scnt and scnt > 0 then
-            
-          for s = 1, scnt do
-
-            GUI_DrawMsgX(obj, gui, 'Loading Snapshot Data...', s, scnt)
-
-            if tonumber(v) == 0.93 then
-            
-              LoadSnapData(s)
-
-            elseif tonumber(v) >= 0.94 then
-
-              LoadSnapData(s, data)
-
-            else
-            
-              snapshots[s] = {}
-            
-              for p = 1, 4 do
-              
-                snapshots[s][p] = {}
-  
-                local key = 'snap_strip_'..s..'_'..p..'_'
-                local sstcnt = tonumber(nz(GPES(key..'sstype_count',true),0))
-                
-                if sstcnt > 0 then
-                  
-                  for sst = 1, sstcnt do
-  
-                    if sst == 1 then                
-                      snapshots[s][p][sst] = {}
+                  if sstcnt > 0 then
                     
-                      local key = 'snap_strip_'..s..'_'..p..'_type_'..sst..'_'
-                      local sscnt = tonumber(nz(GPES(key..'ss_count',true),0))
-                      if sscnt > 0 then
-                  
-                        for ss = 1, sscnt do
-                          local key = 'snap_strip_'..s..'_'..p..'_type_'..sst..'_snapshot_'..ss..'_'
-                          local dcnt = tonumber(GPES(key..'data_count'))
-                          snapshots[s][p][sst][ss] = {name = GPES(key..'name'),
-                                                      data = {}}
-                          for d = 1, dcnt do
-        
-                            local key = 'snap_strip_'..s..'_'..p..'_type_'..sst..'_snapshot_'..ss..'_data_'..d..'_'
+                    for sst = 1, sstcnt do
+    
+                      if sst == 1 then                
+                        snapshots[s][p][sst] = {}
+                      
+                        local key = 'snap_strip_'..s..'_'..p..'_type_'..sst..'_'
+                        local sscnt = tonumber(nz(GPES(key..'ss_count',true),0))
+                        if sscnt > 0 then
+                    
+                          for ss = 1, sscnt do
+                            local key = 'snap_strip_'..s..'_'..p..'_type_'..sst..'_snapshot_'..ss..'_'
+                            local dcnt = tonumber(GPES(key..'data_count'))
+                            snapshots[s][p][sst][ss] = {name = GPES(key..'name'),
+                                                        data = {}}
+                            for d = 1, dcnt do
+          
+                              local key = 'snap_strip_'..s..'_'..p..'_type_'..sst..'_snapshot_'..ss..'_data_'..d..'_'
+                            
+                              snapshots[s][p][sst][ss].data[d] = {c_id = tonumber(GPES(key..'cid')),
+                                                                 ctl = tonumber(GPES(key..'ctl')),
+                                                                 val = tonumber(GPES(key..'val')),
+                                                                 dval = tonumber(GPES(key..'dval',true))}
+                            end
+                          end
                           
-                            snapshots[s][p][sst][ss].data[d] = {c_id = tonumber(GPES(key..'cid')),
-                                                               ctl = tonumber(GPES(key..'ctl')),
-                                                               val = tonumber(GPES(key..'val')),
-                                                               dval = tonumber(GPES(key..'dval',true))}
+                          --Snapshots_Check(s,p)
+                        end
+                      elseif sst > 1 then
+                      
+                        local key = 'snap_strip_'..s..'_'..p..'_type_'..sst..'_'
+                        snapshots[s][p][sst] = {subsetname = GPES(key..'subsetname'), snapshot = {}, ctls = {}}
+                        
+                        lvar.snapsubsets_table[sst] = snapshots[s][p][sst].subsetname
+                        
+                        local sscnt = nz(tonumber(GPES(key..'ss_count')),0)
+                        local ctlcnt = nz(tonumber(GPES(key..'ctl_count')),0)
+                        
+                        if ctlcnt > 0 then
+                          for ctl = 1, ctlcnt do
+                          
+                            local key = 'snap_strip_'..s..'_'..p..'_type_'..sst..'_ctl_'..ctl..'_'
+                            snapshots[s][p][sst].ctls[ctl] = {c_id = tonumber(GPES(key..'cid')),
+                                                              ctl = tonumber(GPES(key..'ctl'))}
                           end
                         end
-                        
+                        if sscnt > 0 then
+                          for ss = 1, sscnt do
+                            local key = 'snap_strip_'..s..'_'..p..'_type_'..sst..'_snapshot_'..ss..'_'
+                            local dcnt = tonumber(GPES(key..'data_count'))
+                            snapshots[s][p][sst].snapshot[ss] = {name = GPES(key..'name'),
+                                                                 data = {}}
+                            for d = 1, dcnt do
+          
+                              local key = 'snap_strip_'..s..'_'..p..'_type_'..sst..'_snapshot_'..ss..'_data_'..d..'_'
+                            
+                              snapshots[s][p][sst].snapshot[ss].data[d] = {c_id = tonumber(GPES(key..'cid')),
+                                                                           ctl = tonumber(GPES(key..'ctl')),
+                                                                           val = tonumber(GPES(key..'val')),
+                                                                           dval = tonumber(GPES(key..'dval',true))}
+                            end
+                          end
+                        end                 
+                         
                         --Snapshots_Check(s,p)
                       end
-                    elseif sst > 1 then
-                    
+                      
                       local key = 'snap_strip_'..s..'_'..p..'_type_'..sst..'_'
-                      snapshots[s][p][sst] = {subsetname = GPES(key..'subsetname'), snapshot = {}, ctls = {}}
-                      
-                      lvar.snapsubsets_table[sst] = snapshots[s][p][sst].subsetname
-                      
-                      local sscnt = nz(tonumber(GPES(key..'ss_count')),0)
-                      local ctlcnt = nz(tonumber(GPES(key..'ctl_count')),0)
-                      
-                      if ctlcnt > 0 then
-                        for ctl = 1, ctlcnt do
-                        
-                          local key = 'snap_strip_'..s..'_'..p..'_type_'..sst..'_ctl_'..ctl..'_'
-                          snapshots[s][p][sst].ctls[ctl] = {c_id = tonumber(GPES(key..'cid')),
-                                                            ctl = tonumber(GPES(key..'ctl'))}
-                        end
+                      if snapshots[s][p][sst] then
+                        snapshots[s][p][sst].selected = tonumber(GPES(key..'ss_selected',true))
                       end
-                      if sscnt > 0 then
-                        for ss = 1, sscnt do
-                          local key = 'snap_strip_'..s..'_'..p..'_type_'..sst..'_snapshot_'..ss..'_'
-                          local dcnt = tonumber(GPES(key..'data_count'))
-                          snapshots[s][p][sst].snapshot[ss] = {name = GPES(key..'name'),
-                                                               data = {}}
-                          for d = 1, dcnt do
-        
-                            local key = 'snap_strip_'..s..'_'..p..'_type_'..sst..'_snapshot_'..ss..'_data_'..d..'_'
-                          
-                            snapshots[s][p][sst].snapshot[ss].data[d] = {c_id = tonumber(GPES(key..'cid')),
-                                                                         ctl = tonumber(GPES(key..'ctl')),
-                                                                         val = tonumber(GPES(key..'val')),
-                                                                         dval = tonumber(GPES(key..'dval',true))}
-                          end
-                        end
-                      end                 
-                       
-                      --Snapshots_Check(s,p)
+                      
                     end
                     
-                    local key = 'snap_strip_'..s..'_'..p..'_type_'..sst..'_'
-                    if snapshots[s][p][sst] then
-                      snapshots[s][p][sst].selected = tonumber(GPES(key..'ss_selected',true))
-                    end
-                    
+                    --Snapshots_Check(s,p)
                   end
-                  
-                  --Snapshots_Check(s,p)
                 end
               end
+              
             end
+          end
+          
+          --XXY
+          
+          for s = 1, #strips do
+  
+            GUI_DrawMsgX(obj, gui, 'Loading Metalite Data...', s, #strips)
+          
+            if tonumber(v) == 0.93 then
             
-          end
-        end
-        
-        --XXY
-        
-        for s = 1, #strips do
-
-          GUI_DrawMsgX(obj, gui, 'Loading Metalite Data...', s, #strips)
-        
-          if tonumber(v) == 0.93 then
+              LoadXXYData(s)
+            
+            elseif tonumber(v) >= 0.94 then
+  
+              LoadXXYData(s, data)
+  
+            else
           
-            LoadXXYData(s)
-          
-          elseif tonumber(v) >= 0.94 then
-
-            LoadXXYData(s, data)
-
-          else
-        
-            for p = 1, 4 do
-          
-              for sst = 1, #snapshots[s][p] do
-              
-                local key = 'xxy_strip_'..s..'_'..p..'_type_'..sst..'_'
-                local ptcnt = tonumber(GPES(key..'pt_count',true))
-                if ptcnt then
-              
-                  XXY_INIT(s, p, sst)
-                  for pt = 1, ptcnt do
-                  
-                    local key = 'xxy_strip_'..s..'_'..p..'_type_'..sst..'_pt_'..pt..'_'
-                    xxy[s][p][sst].points[pt] = {}
-                    xxy[s][p][sst].points[pt].x = tonumber(GPES(key..'x'))
-                    xxy[s][p][sst].points[pt].y = tonumber(GPES(key..'y'))
-                    xxy[s][p][sst].points[pt].ss = tonumber(GPES(key..'ss'))
-                  
-                  end
-              
-                end
+              for p = 1, 4 do
+            
+                for sst = 1, #snapshots[s][p] do
                 
-              end
-          
-            end
-          end
+                  local key = 'xxy_strip_'..s..'_'..p..'_type_'..sst..'_'
+                  local ptcnt = tonumber(GPES(key..'pt_count',true))
+                  if ptcnt then
+                
+                    XXY_INIT(s, p, sst)
+                    for pt = 1, ptcnt do
+                    
+                      local key = 'xxy_strip_'..s..'_'..p..'_type_'..sst..'_pt_'..pt..'_'
+                      xxy[s][p][sst].points[pt] = {}
+                      xxy[s][p][sst].points[pt].x = tonumber(GPES(key..'x'))
+                      xxy[s][p][sst].points[pt].y = tonumber(GPES(key..'y'))
+                      xxy[s][p][sst].points[pt].ss = tonumber(GPES(key..'ss'))
+                    
+                    end
+                
+                  end
                   
-        end
-        
-        if tonumber(v) == 0.93 then
-          LoadXXYPathData()
-          LoadFaders()
-
-        elseif tonumber(v) >= 0.94 then
-
-          LoadXXYPathData(data)
-          LoadFaders(data)
-          LoadMods(data)
-          LoadSwitchers(data)
-
-        end
-              
+                end
+            
+              end
+            end
+                    
+          end
+          
+          if tonumber(v) == 0.93 then
+            LoadXXYPathData()
+            LoadFaders()
+  
+          elseif tonumber(v) >= 0.94 then
+  
+            LoadXXYPathData(data)
+            LoadFaders(data)
+            LoadMods(data)
+            LoadSwitchers(data)
+  
+          end
+        end    
       else
         SaveData()
       end
@@ -46154,6 +46167,14 @@ end
     local t = reaper.time_precise()
         
     local ffn, save_path, fn = GetSaveFN(tmp)
+
+    local rfn     
+    if settings_backupduringsave == true then
+      local id = tostring(math.floor(math.random() * 0xFFFFFFFF))
+      rfn = string.match(ffn,'(.+).lbxstripper')..'_'..id..'.lbxbak_tmp'
+      copyfile(ffn, rfn)
+    end
+    
     DBGOut('SaveData: ffn: '..tostring(ffn))
     
     file=io.open(ffn,"w")
@@ -46211,6 +46232,9 @@ end
       DBGOut('SaveData: Backup created: '..tostring(true))      
     end
     
+    if settings_backupduringsave == true and rfn then
+      os.remove(rfn)
+    end
     infomsg = 'Total Save Time: '..round(reaper.time_precise() - t,2)..'s'
     DBGOut(infomsg)
     g_savedirty = false
@@ -46265,6 +46289,7 @@ end
     if switchers then
       SaveSwitchers(file)
     end
+    file:write('[EOF]#EOF\n')
     
   end
   
@@ -46856,67 +46881,8 @@ end
             end
                                   
           elseif lgs[l].type == 4 then
-            --linked
-            --[[local vv
-            if lgs[l].snap == true then
-              local r = math.floor((math.random()*3)-1)
-              vv = r * round(lgs[l].X,4)
-            else
-              vv = ((math.random()*2)-1) * lgs[l].X
-            end
-            for x = 1, lgcnt do
-              local ccc = lg[l][x]
-              local ctl = ctls[rctls[ccc].ctl]
-              if ctl then
-                local v
-                if rctls[ccc].inverted ~= true then
-                  v = ctl.val + vv
-                else
-                  v = ctl.val - vv
-                end
-                if lgs[l].snap == true then
-                  if v < 0 or v > 1 then
-                    v = ctl.val
-                  end
-                end
-                v = F_limit(v,rctls[ccc].min,rctls[ccc].max)
-                if ctl.ctltype == 2 or 
-                   ctl.ctltype == 3 or 
-                   ctl.ctltype == 7 or
-                   ctl.ctltype == 8 or
-                   ctl.ctltype == 9 or
-                   ctl.ctltype == 10 then
-                   v = round(v)
-                end
-                if v ~= ctl.val then
-                  SetParam3(strip,page,rctls[ccc].ctl,ctl,v)
-                end
-              end
-
-            end]] 
             
-            --local vv
             if lgs[l].snap == true then
-
-              --local r = math.floor((math.random()*3)-1)
-              --vv = r * round(lgs[l].X,4)
-
-                  --[[local dv = ctls[rctls[1].ctl].defval
-                  local a = round(rctl.amount,5)
-                  local cnt = 0
-                  repeat
-                    cnt = cnt + 1
-                    if bias > rctl.bias then
-                      local r = math.random()*(ctl.val-math.min(rctl.min,ctl.val))
-                      v = -round((r / a)) * a
-                    else
-                      local r = math.random()*(rctl.max-math.min(ctl.val,rctl.max))
-                      v = round((r / a)) * a
-                    end
-                  until (ctl.val+v > 0 and ctl.val+v < 1) or cnt == 5
-                  if ctl.val+v < 0 or ctl.val+v > 1 then
-                    v = 0
-                  end]]
 
               local cccc = lg[l][1]
               local dv = ctls[rctls[cccc].ctl].defval
@@ -46937,10 +46903,7 @@ end
                   else
                     v = ctl.defval - vv
                   end
-                  --DBG(v)
-                  --[[if v < 0 or v > 1 then
-                    v = ctl.val
-                  end]]
+                  
                   v = F_limit(v,rctls[ccc].min,rctls[ccc].max)
                   if ctl.ctltype == 2 or 
                      ctl.ctltype == 3 or 
@@ -50934,6 +50897,7 @@ end
   settings_moddock = false
   settings_dragmode = false
   settings_lockpinmatrix = false
+  settings_backupduringsave = true
   
   hideunusedtracks = false
   
