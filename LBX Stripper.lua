@@ -23,7 +23,7 @@
   lvar.ctltype_table = {'KNOB/SLIDER','BUTTON','BUTTON INV','CYCLE BUTTON','METER','MEM BUTTON','MOMENT BTN','MOMENT INV','FLASH BUTTON','FLASH INV'}
   lvar.trctltype_table = {'Track Controls','Track Sends','Track Meters','Other Controls'}
   lvar.special_table = {}
-  lvar.otherctl_table = {'Action Trigger','Macro Control','EQ Engine','Strip Switcher','ReaControlMidi Switch','Midi/OSC Control','Take Switcher'}
+  lvar.otherctl_table = {'Action Trigger','Macro Control','EQ Engine','Strip Switcher','ReaControlMidi Switch','Midi/OSC Control','Take Switcher','RS5K Control'}
   lvar.scalemode_preset_table = {'','NORMAL','REAPER VOL'}
   lvar.lfomode_table = {'NORMAL MODE','TAKESWITCH MODE'}
   lvar.scalemode_table = {1/8,1/7,1/6,1/5,1/4,1/3,1/2,1,2,3,4,5,6,7,8}
@@ -226,7 +226,8 @@
              rcm_switch = 15,
              midictl = 16,
              oscctl = 17,
-             takeswitcher = 18}
+             takeswitcher = 18,
+             rs5k = 19}
 
   lvar.ctlcats_nm = {'fxparam',
                 'trackparam',
@@ -564,12 +565,25 @@
     local ret
     
     if usefix == true then
+      track_chunk2 = string.gsub(track_chunk,"<PROGRAMENV.->\n","")
+      if track_chunk2 ~= track_chunk then
+        local fast_str = reaper.SNM_CreateFastString("")
+        if reaper.SNM_SetFastString(fast_str, track_chunk2) then
+          ret = reaper.SNM_GetSetObjectState(track, fast_str, true, false)
+        end
+        reaper.SNM_DeleteFastString(fast_str)
+      end
+    
       local fast_str = reaper.SNM_CreateFastString("")
       if reaper.SNM_SetFastString(fast_str, track_chunk) then
         ret = reaper.SNM_GetSetObjectState(track, fast_str, true, false)
       end
       reaper.SNM_DeleteFastString(fast_str)
     else
+      track_chunk2 = string.gsub(track_chunk,"<PROGRAMENV.->\n","")
+      if track_chunk2 ~= track_chunk then
+        ret = reaper.SetTrackStateChunk(track,track_chunk2,false)    
+      end
       ret = reaper.SetTrackStateChunk(track,track_chunk,false)    
     end
     return ret
@@ -3046,6 +3060,11 @@
                                y = settingswin_off + yoff+10 + yoffm*19,
                                w = bw,
                                h = bh}
+    
+    obj.sections[728] = {x = xofft,
+                              y = settingswin_off + yoff+10 + yoffm*20,
+                              w = bw,
+                              h = bh}
                                
     obj.sections[700] = {x = obj.sections[70].w/2+xofft,
                         y = settingswin_off + yoff + yoffm*0,
@@ -3128,36 +3147,36 @@
                               h = bh}
   
     obj.sections[719] = {x = xofft, 
-                               y = settingswin_off + yoff+10 + yoffm*20,
+                               y = settingswin_off + yoff+10 + yoffm*21,
                                w = bw,
                                h = bh}
 
     obj.sections[720] = {x = xofft-75, 
-                               y = settingswin_off + yoff+10 + yoffm*21,
+                               y = settingswin_off + yoff+10 + yoffm*22,
                                w = 150,
                                h = bh+10}
 
     obj.sections[721] = {x = xofft-75, 
-                               y = settingswin_off + yoff+10 + yoffm*22 + 6,
+                               y = settingswin_off + yoff+10 + yoffm*23 + 6,
                                w = 70,
                                h = bh+10}
 
     obj.sections[724] = {x = xofft, 
-                               y = settingswin_off + yoff+10 + yoffm*22 + 6,
+                               y = settingswin_off + yoff+10 + yoffm*23 + 6,
                                w = 70,
                                h = bh+10}
 
     obj.sections[725] = {x = xofft + 75, 
-                               y = settingswin_off + yoff+10 + yoffm*22 + 6,
+                               y = settingswin_off + yoff+10 + yoffm*23 + 6,
                                w = 70,
                                h = bh+10}
 
     obj.sections[722] = {x = xofft-75, 
-                               y = settingswin_off + yoff+10 + yoffm*23 + 12,
+                               y = settingswin_off + yoff+10 + yoffm*24 + 12,
                                w = 70,
                                h = bh+10}
     obj.sections[723] = {x = xofft, 
-                               y = settingswin_off + yoff+10 + yoffm*23 + 12,
+                               y = settingswin_off + yoff+10 + yoffm*24 + 12,
                                w = 70,
                                h = bh+10}
 
@@ -3170,6 +3189,7 @@
                                y = settingswin_off + yoff+10 + yoffm*23,
                                w = 150,
                                h = bh+10}
+
     
     return obj
     
@@ -4695,6 +4715,71 @@
                                                 eqgraph = def_graph
                                                }
 
+elseif dragparam.type == 'rs5k' then
+        local mcnt = 0
+        for c = 1, #strips[strip][page].controls do
+          if strips[strip][page].controls[c].ctlcat == ctlcats.rs5k then
+            mcnt = mcnt + 1
+          end
+        end
+        strips[strip][page].controls[ctlnum] = {c_id = GenID(),
+                                                ctlcat = ctlcats.rs5k,
+                                                fxname='RS5K Control',
+                                                fxguid=nil, 
+                                                fxnum=nil, 
+                                                fxfound = true,
+                                                param = trctl_select,
+                                                param_info = {paramname = 'RS5K '..string.format('%i',mcnt+1),
+                                                              paramidx = nil},
+                                                ctltype = 5,
+                                                knob_select = knob_select,
+                                                ctl_info = {fn = ctl_files[knob_select].fn,
+                                                            frames = ctl_files[knob_select].frames,
+                                                            imageidx = ctl_files[knob_select].imageidx, 
+                                                            cellh = ctl_files[knob_select].cellh},
+                                                x = x,
+                                                y = y,
+                                                w = w,
+                                                poslock = false,
+                                                scale = scale_select,
+                                                xsc = x + math.floor(w/2 - (w*scale_select)/2),
+                                                ysc = y + math.floor(ctl_files[knob_select].cellh/2 - (ctl_files[knob_select].cellh*scale_select)/2),
+                                                wsc = w*scale_select,
+                                                hsc = ctl_files[knob_select].cellh*scale_select,
+                                                show_paramname = show_paramname,
+                                                show_paramval = false,
+                                                ctlname_override = '',
+                                                textcol = textcol_select,
+                                                textoff = 1,
+                                                textoffval = textoffval_select,
+                                                textoffx = textoff_selectx,
+                                                textoffvalx = textoffval_selectx,
+                                                textsize = textsize_select,
+                                                textsizev = textsizev_select,
+                                                textcolv = textcolv_select,
+                                                val = 0,
+                                                defval = 0,
+                                                maxdp = maxdp_select,
+                                                cycledata = {statecnt = 0,val = 0,mapptof = false,draggable = false,spread = false, {}},
+                                                xydata = {snapa = 1, snapb = 1, snapc = 1, snapd = 1, x = 0.5, y = 0.5},
+                                                membtn = {state = false,
+                                                          mem = nil},
+                                                id = nil,
+                                                tracknum = nil,
+                                                trackguid = nil,
+                                                scalemode = 8,
+                                                framemode = 1,
+                                                horiz = horiz_select,
+                                                poslock = false,
+                                                bypassbg_c = bypass_bgdraw_c_select,
+                                                bypassbg_n = bypass_bgdraw_n_select,
+                                                bypassbg_v = bypass_bgdraw_v_select,
+                                                knobsens = settings_defknobsens,
+                                                clickthrough = clickthrough_select,
+                                                eqgraph = nil
+                                               }
+
+        
       elseif dragparam.type == 'switcher' then
         local swcnt = #switchers+1
         switchers[swcnt] = {grpids ={},
@@ -9081,7 +9166,20 @@ end
                     else
                       Disp_Name = ctlnmov
                     end
-                   elseif ctlcat == ctlcats.switcher then
+                  elseif ctlcat == ctlcats.rs5k then
+                    
+                    if nz(ctlnmov,'') == '' then
+                      Disp_Name = pname
+                    else
+                      Disp_Name = ctlnmov
+                    end
+                    if ctl.rsdata and ctl.rsdata[ctl.val] then
+                      Disp_ParamV = ctl.rsdata[ctl.val].sample
+                    else
+                      Disp_ParamV = 'No sample'
+                    end
+                    
+                  elseif ctlcat == ctlcats.switcher then
                     spv = false
                     --if nz(ctlnmov,'') == '' then
                       Disp_Name = pname
@@ -9089,19 +9187,19 @@ end
                     --  Disp_Name = ctlnmov
                     --end
                     
-                   elseif ctlcat == ctlcats.takeswitcher then
-                      if nz(ctlnmov,'') == '' then
-                        Disp_Name = pname
-                      else
-                        Disp_Name = ctlnmov
-                      end
-                      if ctl.iteminfo then
-                        Disp_ParamV = ctl.iteminfo.curtake
-                      else
-                        Disp_ParamV = ''
-                      end
+                  elseif ctlcat == ctlcats.takeswitcher then
+                    if nz(ctlnmov,'') == '' then
+                      Disp_Name = pname
+                    else
+                      Disp_Name = ctlnmov
+                    end
+                    if ctl.iteminfo then
+                      Disp_ParamV = ctl.iteminfo.curtake
+                    else
+                      Disp_ParamV = ''
+                    end
                       
-                   end
+                  end
     
                   if ctltype == 4 and cycle_editmode == false then
                     if DVOV and DVOV ~= '' then
@@ -15351,6 +15449,7 @@ end
     GUI_DrawTick(gui, 'Hide edit bar on new projects', obj.sections[96], gui.color.white, settings_hideeditbaronnewproject, gui.fontsz.settings,true)
     GUI_DrawTick(gui, 'Lock surface on new projects', obj.sections[97], gui.color.white, settings_locksurfaceonnewproject, gui.fontsz.settings,true)
     GUI_DrawTick(gui, 'Create backup when manually saving', obj.sections[98], gui.color.white, settings_createbackuponmanualsave, gui.fontsz.settings,true)
+    GUI_DrawTick(gui, 'Enable temp bkp of data when saving', obj.sections[728], gui.color.white, settings_backupduringsave, gui.fontsz.settings,true)
     local t = false
     if settings_pagescrolldir == 1 then
       t = true
@@ -18503,16 +18602,21 @@ end
       for i = 1, #stripdata.fx do
     
         local fxpos
-        local nchunk, nfxguid, ofxguid
+        local nchunk, nchunk2, nfxguid, ofxguid
         if stripdata.plugpos == nil then
         
           fxpos = fxcnt+i-1-missing
 
           local chunk = GetTrackChunk(tr, settings_usetrackchunkfix)
-          nchunk, nfxguid, ofxguid = Chunk_InsertFXChunkAtEndOfFXChain(strips[strip].track.tracknum, chunk, stripdata.fx[i].fxchunk)
+          nchunk, nfxguid, ofxguid, nchunk2 = Chunk_InsertFXChunkAtEndOfFXChain(strips[strip].track.tracknum, chunk, stripdata.fx[i].fxchunk)
                   
           if nchunk ~= nil then
-            local retval = SetTrackChunk(tr, nchunk, false)
+            local retval 
+            --[[if nchunk2 and nchunk2 ~= nchunk then
+              --use conditioned chunk first
+              retval = SetTrackChunk(tr, nchunk2, false)
+            end]]
+            retval = SetTrackChunk(tr, nchunk, false)
             if retval == true then
               fxguids[ofxguid] = {guid = nfxguid, found = true, fxnum = fxpos}
             end
@@ -22368,7 +22472,9 @@ end
     DBG('Type: '..lvar.ctltype_table[ctl.ctltype])
     DBG('Cat: '..ctl.ctlcat..' - '..string.upper(lvar.ctlcats_nm[ctl.ctlcat+1]))
     DBG('Image FN: '..ctl_files[ctl.knob_select].fn)
+    DBG('FX Name: '..ctl.fxname)
     DBG('Param Name: '..ctl.param_info.paramname)
+    DBG('Param Num: '..ctl.param_info.paramnum)
     DBG('Display Name: '..tostring(ctl.ctlname_override))
     DBG('')
     DBG('Pos x: '..ctl.x)
@@ -22387,7 +22493,11 @@ end
       local track = GetTrack(nz(ctl.tracknum,tracks[track_select].tracknum))
       if track then
         local fxguid = reaper.TrackFX_GetFXGUID(track, ctl.fxnum)
+        local _, fxname = reaper.TrackFX_GetFXName(track, ctl.fxnum,'')
+        local _, pname = reaper.TrackFX_GetParamName(track, ctl.fxnum,ctl.param_info.paramnum,'')
         DBG('LINKED FX GUID: '..tostring(fxguid))
+        DBG('LINKED FX NAME: '..tostring(fxname))
+        DBG('LINKED PARAM NAME: '..tostring(pname))
       end
       DBG('OFFLINE: '..tostring(ctl.offline))
     end
@@ -25249,6 +25359,15 @@ end
         if mode == 0 then
           --tlist_offset = F_limit(tlist_offset + 1, 0, #tracks+1)  
           --update_sidebar = true      
+        end
+      
+      elseif char == 6579564 then
+        if mode == 1 and submode == 0 then
+          --delete selected controls
+          if reaper.MB('Delete selected controls?','LBX Stripper',4) == 6 then
+            DeleteSelectedCtls()
+            update_gfx = true
+          end
         end
       end
       
@@ -33248,26 +33367,28 @@ end
             local chunk = GetTrackChunk(track, settings_usetrackchunkfix)
             local fnd, fxc, s, e = GetFXChunkFromTrackChunk(chunk,i+1 + flist_offset)
             local fxident = GetPlugIdentifierFromChunk(fxc)
-            local idx = plugdefstrips_idx[fxident]
-            if idx and plugdefstrips[idx] then
-              --DBG(plugdefstrips[idx].stripfile)
-              local sfol = plugdefstrips[idx].stripfol
-              local sfil = plugdefstrips[idx].stripfile
-              loadstrip = LoadStrip(nil, sfol, sfil)
-              if loadstrip then
-
-                loadstrip.strip_w, loadstrip.strip_h = GenStripPreview(gui, loadstrip.strip, loadstrip.switchers, loadstrip.switchconvtab)
-                loadstrip.plugpos = trackfx_select
-                loadstrip.plugtrack = trackedit_select
-                --if settings_stripautosnap == true then          
-                  stlay_data = AutoSnap_GetStripLocs(true)
-                --end
-                mouse.context = contexts.dragstrip
+            if plugdefstrips_idx then
+              local idx = plugdefstrips_idx[fxident]
+              if idx and plugdefstrips[idx] then
+                --DBG(plugdefstrips[idx].stripfile)
+                local sfol = plugdefstrips[idx].stripfol
+                local sfil = plugdefstrips[idx].stripfile
+                loadstrip = LoadStrip(nil, sfol, sfil)
+                if loadstrip then
+  
+                  loadstrip.strip_w, loadstrip.strip_h = GenStripPreview(gui, loadstrip.strip, loadstrip.switchers, loadstrip.switchconvtab)
+                  loadstrip.plugpos = trackfx_select
+                  loadstrip.plugtrack = trackedit_select
+                  --if settings_stripautosnap == true then          
+                    stlay_data = AutoSnap_GetStripLocs(true)
+                  --end
+                  mouse.context = contexts.dragstrip
+                end
+                update_gfx = true
               end
-              update_gfx = true
-            end
             
-            update_sidebar = true
+              update_sidebar = true
+            end
             --DBG(fxident)
           end
           
@@ -33591,6 +33712,8 @@ end
         elseif trctl_select == 7 then
           --knob_select = def_boxctl
           dragparam = {x = mouse.mx-ksel_size.w, y = mouse.my-ksel_size.h, type = 'takeswitcher'}
+        elseif trctl_select == 8 then
+          dragparam = {x = mouse.mx-ksel_size.w, y = mouse.my-ksel_size.h, type = 'rs5k'}
         end
         
         reass_param = nil
@@ -33841,6 +33964,15 @@ end
           
           end
         elseif dragparam.type == 'eqcontrol' then
+          if reass_param == nil then
+            if dragparam.x+ksel_size.w > obj.sections[10].x and dragparam.x+ksel_size.w < obj.sections[10].x+obj.sections[10].w and dragparam.y+ksel_size.h > obj.sections[10].y and dragparam.y+ksel_size.h < obj.sections[10].y+obj.sections[10].h then
+              trackfxparam_select = i
+              Strip_AddParam()              
+            end
+          else
+          
+          end
+        elseif dragparam.type == 'rs5k' then
           if reass_param == nil then
             if dragparam.x+ksel_size.w > obj.sections[10].x and dragparam.x+ksel_size.w < obj.sections[10].x+obj.sections[10].w and dragparam.y+ksel_size.h > obj.sections[10].y and dragparam.y+ksel_size.h < obj.sections[10].y+obj.sections[10].h then
               trackfxparam_select = i
@@ -37355,7 +37487,7 @@ end
                        x = 0, y = 0, timer = reaper.time_precise() + 0.2}
         end    
       
-      elseif matrixoff then
+      elseif matrixoff and pinmatrix_scrollpos then
         pinmatrix_scrollpos.x = pinmatrix_scrollpos.x + matrixoff.x
         pinmatrix_scrollpos.y = pinmatrix_scrollpos.y + matrixoff.y
         
@@ -39279,6 +39411,9 @@ end
       elseif mouse.context == nil and MOUSE_click(obj.sections[98]) then
         settings_createbackuponmanualsave = not settings_createbackuponmanualsave
         update_gfx = true
+      elseif mouse.context == nil and MOUSE_click(obj.sections[728]) then
+        settings_backupduringsave = not settings_backupduringsave
+        update_gfx = true        
       elseif mouse.context == nil and MOUSE_click(obj.sections[719]) then
         settings_pagescrolldir = 1-settings_pagescrolldir
         update_gfx = true
@@ -44789,6 +44924,7 @@ end
     settings_savedatainprojectfolder = tobool(nz(GES('savedatainprojectfolder',true),settings_savedatainprojectfolder))
     save_subfolder = nz(GES('save_subfolder',true),save_subfolder)
     settings_createbackuponmanualsave = tobool(nz(GES('createbackup',true),settings_createbackuponmanualsave))
+    settings_backupduringsave = tobool(nz(GES('createtmpbackup',true),settings_backupduringsave))
 
     settings_usectlbitmap = tobool(nz(GES('usectlbitmap',true),settings_usectlbitmap))
     settings_macroeditmonitor = tobool(nz(GES('macroeditmonitor',true),settings_macroeditmonitor))
@@ -44952,6 +45088,7 @@ end
     reaper.SetExtState(SCRIPT,'savedatainprojectfolder',tostring(settings_savedatainprojectfolder), true)
     reaper.SetExtState(SCRIPT,'save_subfolder',nz(save_subfolder,''), true)
     reaper.SetExtState(SCRIPT,'createbackup',tostring(settings_createbackuponmanualsave), true)
+    reaper.SetExtState(SCRIPT,'createtmpbackup',tostring(settings_backupduringsave), true)
    
     reaper.SetExtState(SCRIPT,'usectlbitmap',tostring(settings_usectlbitmap), true)
     reaper.SetExtState(SCRIPT,'macroeditmonitor',tostring(settings_macroeditmonitor), true)
@@ -48709,6 +48846,10 @@ end
     for i = tstart, #loaddata.trackdata do
 
       local tr = GetTrack(t_offset+i)
+      --[[local condition_chunk = string.gsub(loaddata.trackdata[i].chunkdata, "<PROGRAMENV.->\n", "")
+      if condition_chunk ~= loaddata.trackdata[i].chunkdata then
+        SetTrackChunk(tr, condition_chunk, false)     
+      end]]
       SetTrackChunk(tr, loaddata.trackdata[i].chunkdata, false) 
       if i == -1 then
         reaper.GetSetMediaTrackInfo_String(tr, "P_NAME", 'SET MASTER', true)
@@ -50091,6 +50232,10 @@ end
     
     local nchunk = MoveFXChunk2(chunk, trn, srcfxnum, dstfxnum, fxcnt)
     if nchunk then
+      --[[nchunk2 = string.gsub(nchunk,"<PROGRAMENV.->\n","")
+      if nchunk2 ~= nchunk then
+        SetTrackChunk(tr, nchunk2, false)
+      end]]
       SetTrackChunk(tr, nchunk, false)      
     end
     
@@ -50378,6 +50523,7 @@ end
     guids = {}
     local ofxid, nfxid = nil, nil
     local rchunk = nil
+    local rchunk2 = nil
 
     if keepid == nil then
       --prepare insert chunk    
@@ -50393,11 +50539,18 @@ end
         nfxid = v 
       end
     end
-      
+    
+    --condition insfxchunk - Thanks Eugen
+    --PROGRAMENV
+    local insfxchunk2 = string.gsub(insfxchunk,"<PROGRAMENV.->\n","")
+          
     local chunk, chs, che = Chunk_GetFXChainSection(trchunk)
     if chunk then
       --insert before final character
       rchunk = string.sub(trchunk,0,che-1) .. insfxchunk .. string.sub(trchunk,che-1)
+      if insfxchunk2 ~= insfxchunk then
+        rchunk2 = string.sub(trchunk,0,che-1) .. insfxchunk2 .. string.sub(trchunk,che-1)      
+      end
     else
       if trn == -1 then
         --master track
@@ -50405,13 +50558,19 @@ end
         if me then  
           --insert at very end
           rchunk = string.sub(trchunk,0,me-1).. '<FXCHAIN\nSHOW 0\nLASTSEL 0\nDOCKED 0\n'.. insfxchunk ..'\n>\n'..string.sub(trchunk,me)  
+          if insfxchunk2 ~= insfxchunk then
+            rchunk2 = string.sub(trchunk,0,me-1).. '<FXCHAIN\nSHOW 0\nLASTSEL 0\nDOCKED 0\n'.. insfxchunk2 ..'\n>\n'..string.sub(trchunk,me)  
+          end
         end
       else
         --normal track -- insert after MAINSEND
         rchunk = string.sub(trchunk,0,che)..'<FXCHAIN\nSHOW 0\nLASTSEL 0\nDOCKED 0\n'.. insfxchunk ..'\n>\n'..string.sub(trchunk,che+1)
+        if insfxchunk2 ~= insfxchunk then
+          rchunk2 = string.sub(trchunk,0,che)..'<FXCHAIN\nSHOW 0\nLASTSEL 0\nDOCKED 0\n'.. insfxchunk2 ..'\n>\n'..string.sub(trchunk,che+1)
+        end
       end    
     end
-    return rchunk, nfxid, ofxid
+    return rchunk, nfxid, ofxid, rchunk2
     
   end
 
@@ -50907,7 +51066,7 @@ end
   lst_fontscale = 0
   
   settingswin_off = 0
-  settingswin_maxh = 660
+  settingswin_maxh = 690
   
   takeswitch_max = 512
   
@@ -51005,6 +51164,8 @@ end
   if def_knob == -1 or def_knobsm == -1 or def_snapshot == -1 or def_xy == -1 or def_xytarget == -1 or def_eqcknobf == -1 or def_eqcknobg == -1 or def_box == -1 or def_switch == -1 then
     DBG("Please ensure you have the: \n\n__default\nSimpleFlat_48\nSimpleFlat_96\nSimpleFlat2_96\n__Snapshot\n__XY\n__XYTarget\nSimpleBox_9632\nSwitcher\n\nfiles in your LBXCS_resources/controls/ folder.")
     DBG("You can get these files from the LBX Stripper project on github - in the LBXCS_resources zip file")
+    DBG("")
+    DBG("Expected location of LBXCS_resources folder is: "..string.gsub(paths.resource_path,"\\","/"))
     reaper.atexit()
   elseif ret == false then
     reaper.atexit()  
