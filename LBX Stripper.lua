@@ -67,6 +67,9 @@
                      mutate_min = 0,
                      mutate_max = 5,
                     }
+  
+  lvar.maxsamples = 2048
+  lvar.followsample = true
       
   local contexts = {updatefreq = 0,
               lockw = 1,
@@ -205,6 +208,11 @@
               lg_wild = 143,
               scrollmatrix = 144,
               move_fxorder = 145,
+              scrollsamples = 146,
+              move_smwin = 147,
+              scrollkeyb = 148,
+              resize_smwin = 149,
+              resize_smwinv = 150,
               dummy = 999
               }
   
@@ -1420,6 +1428,10 @@
       local mm1130
       if obj and obj.sections then
         mm1130 = obj.sections[1130]
+      end
+      local mm1300
+      if obj and obj.sections then
+        mm1300 = obj.sections[1300]
       end
       
       local obj = {}
@@ -2960,9 +2972,90 @@
                             h = gfx1.main_h - obj.sections[10].y}
       --Chan cnt placeholder
       obj.sections[1203] = {x=0,y=0,w=0,h=0} 
+
+      --SAMPLE MANAGER panel
+
+      if not lvar.kb then
+        GUI_DrawKeyboard(obj, gui)
+      end
+
+      local smw,smh = math.min(math.floor(smwin.w*pnl_scale),obj.sections[10].w-20,lvar.kb.wkey_w*lvar.kb.wkeys+20), math.max(math.min(math.floor((smwin.h)),obj.sections[10].h),340*pnl_scale)
+      if mm1300 then
+        obj.sections[1300] = {x = math.max(F_limit(mm1300.x,obj.sections[10].x,obj.sections[10].x+obj.sections[10].w-smw),obj.sections[10].x),
+                              y = math.max(F_limit(mm1300.y,obj.sections[10].y,obj.sections[10].y+obj.sections[10].h-smh),obj.sections[10].y),
+                              w = smw,
+                              h = smh}
+      else
+        obj.sections[1300] = {x = math.max(obj.sections[10].x+math.floor(obj.sections[10].w/2-smw/2),obj.sections[10].x),
+                              y = math.max(obj.sections[10].y+math.floor(obj.sections[10].h/2-smh/2),obj.sections[10].y),
+                              w = smw,
+                              h = smh}
+      end
+
+      obj = PosSampleManager(obj)            
       
     pnlscaleflag = nil
     return obj
+  end
+  
+  function PosSampleManager(obj)
+  
+    --folder
+    obj.sections[1301] = {x = math.floor(80*pnl_scale),
+                         y = math.floor(30*pnl_scale),
+                         w = math.floor((obj.sections[1300].w-(90*pnl_scale))),--*pnl_scale),
+                         h = math.floor(butt_h*pnl_scale)}
+    --sample list
+    obj.sections[1302] = {x = math.floor(20*pnl_scale),
+                         y = math.floor(30*pnl_scale) + math.floor((butt_h+10)*pnl_scale),
+                         w = math.floor((obj.sections[1300].w-(120*pnl_scale))),
+                         h = 0}
+    obj.sections[1302].h = obj.sections[1300].h - obj.sections[1302].y - lvar.kb.wkey_h - 20              
+    --scroll bar
+    obj.sections[1303] = {x = obj.sections[1302].x+obj.sections[1302].w-14,
+                         y = obj.sections[1302].y+1,
+                         w = 12,
+                         h = obj.sections[1302].h-2}
+    --keyb                           
+    obj.sections[1304] = {x = 10,
+                         y = obj.sections[1302].y+obj.sections[1302].h+10,
+                         w = math.min(obj.sections[1300].w-20,lvar.kb.wkey_w*lvar.kb.wkeys),
+                         h = lvar.kb.wkey_h}
+    --out
+    local bw = obj.sections[1300].w - (obj.sections[1302].x+obj.sections[1302].w + 10) - 10
+    obj.sections[1305] = {x = obj.sections[1302].x+obj.sections[1302].w + 10,
+                         y = obj.sections[1302].y+obj.sections[1302].h - (math.floor(butt_h*pnl_scale*2)),
+                         w = bw,
+                         h = math.floor(butt_h*pnl_scale*2)}
+    
+    --add
+    obj.sections[1306] = {x = obj.sections[1305].x,
+                         y = obj.sections[1302].y + 8,
+                         w = bw,
+                         h = math.floor(butt_h*pnl_scale*2)}
+    --replace
+    obj.sections[1307] = {x = obj.sections[1305].x,
+                         y = obj.sections[1306].y + obj.sections[1306].h + 4,
+                         w = bw,
+                         h = math.floor(butt_h*pnl_scale*2)}
+    --clear
+    obj.sections[1308] = {x = obj.sections[1305].x,
+                         y = obj.sections[1307].y + obj.sections[1307].h + 4,
+                         w = bw,
+                         h = math.floor(butt_h*pnl_scale*2)}
+    
+    --resize
+    obj.sections[1310] = {x = obj.sections[1300].w-15,
+                         y = obj.sections[1300].h-15,
+                         w = 15,
+                         h = 15}
+    obj.sections[1311] = {x = 0,
+                         y = obj.sections[1300].h-10,
+                         w = obj.sections[1300].w-15,
+                         h = 10}
+  
+    return obj
+    
   end
   
   function PosSetWinCtls(obj)
@@ -4731,7 +4824,7 @@ elseif dragparam.type == 'rs5k' then
                                                 param = trctl_select,
                                                 param_info = {paramname = 'RS5K '..string.format('%i',mcnt+1),
                                                               paramidx = nil},
-                                                ctltype = 5,
+                                                ctltype = 1,
                                                 knob_select = knob_select,
                                                 ctl_info = {fn = ctl_files[knob_select].fn,
                                                             frames = ctl_files[knob_select].frames,
@@ -4747,10 +4840,10 @@ elseif dragparam.type == 'rs5k' then
                                                 wsc = w*scale_select,
                                                 hsc = ctl_files[knob_select].cellh*scale_select,
                                                 show_paramname = show_paramname,
-                                                show_paramval = false,
+                                                show_paramval = show_paramval,
                                                 ctlname_override = '',
                                                 textcol = textcol_select,
-                                                textoff = 1,
+                                                textoff = textoff_select,
                                                 textoffval = textoffval_select,
                                                 textoffx = textoff_selectx,
                                                 textoffvalx = textoffval_selectx,
@@ -4774,7 +4867,10 @@ elseif dragparam.type == 'rs5k' then
                                                 bypassbg_c = bypass_bgdraw_c_select,
                                                 bypassbg_n = bypass_bgdraw_n_select,
                                                 bypassbg_v = bypass_bgdraw_v_select,
-                                                knobsens = settings_defknobsens,
+                                                knobsens = {norm = 0.05,
+                                                            fine = 0.01,
+                                                            wheel = 0.005,
+                                                            wheelfine = 0.003},
                                                 clickthrough = clickthrough_select,
                                                 eqgraph = nil
                                                }
@@ -4984,6 +5080,8 @@ elseif dragparam.type == 'rs5k' then
     end  
   
     GUI_DrawCtlBitmap()
+    
+    return ctlnum
   end
 
   function GetMediaItemDetails(item, preservemaxtakes)
@@ -8914,6 +9012,13 @@ end
                   elseif ctlcat == ctlcats.fxoffline or ctlcat == ctlcats.macro or ctlcat == ctlcats.midictl then
                     v2 = ctl.val                  
                     val2 = F_limit(round(frames*v2),0,frames-1)
+                  elseif ctlcat == ctlcats.rs5k then
+                    if ctl.rsdata.samples and #ctl.rsdata.samples > 0 then
+                      v2 = math.floor(ctl.val * lvar.maxsamples) / (#ctl.rsdata.samples -1)
+                      --v2 = math.floor(ctl.val * ctl.maxov)-- / (#ctl.rsdata.samples -1)
+                      --DBG(v2..'  '..v2*lvar.maxsamples)
+                      val2 = F_limit(round(frames*v2),0,frames-1)
+                    end                  
                   elseif ctlcat == ctlcats.takeswitcher then
                     if ctl.iteminfo then
                       v2 = (math.floor(ctl.val*takeswitch_max)/(ctl.iteminfo.numtakes-1))
@@ -9173,10 +9278,15 @@ end
                     else
                       Disp_Name = ctlnmov
                     end
-                    if ctl.rsdata and ctl.rsdata[ctl.val] then
-                      Disp_ParamV = ctl.rsdata[ctl.val].sample
-                    else
+                    --if ctl.rsdata and ctl.rsdata[ctl.val] then
+                    --  Disp_ParamV = ctl.rsdata[ctl.val].sample
+                    --else
                       Disp_ParamV = 'No sample'
+                    --end
+                    
+                    local retval, fn = reaper.TrackFX_GetNamedConfigParm(track, fxnum,'FILE')
+                    if retval == true then
+                      Disp_ParamV = string.match(fn,'.*[\\/](.*)') or '[No sample]'
                     end
                     
                   elseif ctlcat == ctlcats.switcher then
@@ -13117,6 +13227,332 @@ end
   
   end
 
+  function GUI_DrawKeyboardOverlay(obj, gui)
+
+    local keys = lvar.kb.keys
+    local wkeys = lvar.kb.wkeys
+    local wkey_w = lvar.kb.wkey_w
+    local bkey_w = lvar.kb.bkey_w
+    local wkey_h = lvar.kb.wkey_h
+    local bkey_h = lvar.kb.bkey_h
+    
+    local kstart = lvar.kb.kstart or -1
+    local kend = lvar.kb.kend or -1    
+
+    gfx.dest = 984
+    gfx.setimgdim(984,-1,-1)
+    gfx.setimgdim(984,wkey_w*wkeys,wkey_h)
+
+    local key = -1
+    f_Get_SSV(gui.color.green)
+    
+    local ph = 20
+    local ph_b = 20
+    local pcol = '153 153 255'
+    local pcol_b = '153 153 255'
+    local py = wkey_h-ph
+    local py_b = bkey_h-ph_b-1
+    local pkey = 72 + lvar.rs.pitch
+    
+    for k = 0, wkeys do
+      gfx.a = 1
+      
+      local b = k % 7
+      if b == 1 or b == 2 or b == 4 or b == 5 or b == 6 then
+
+        key = key + 2
+        if key >= kstart and key <= kend then        
+          gfx.rect(k*wkey_w+1,
+                   0,
+                   wkey_w-1,
+                   wkey_h, 1)
+        end
+        
+        --black key
+        if key == kstart or key-2 == kend then
+          f_Get_SSV(gui.color.black)
+          gfx.a = 1
+          gfx.rect(k*wkey_w - math.floor(bkey_w/2),
+                   0,
+                   bkey_w,
+                   bkey_h, 1)        
+          f_Get_SSV(gui.color.green)
+        else 
+          if key-1 >= kstart and key-1 <= kend then        
+            f_Get_SSV(gui.color.black)
+            gfx.a = 1
+            gfx.rect(k*wkey_w - math.floor(bkey_w/2),
+                     0,
+                     bkey_w,
+                     bkey_h, 1)        
+            f_Get_SSV(gui.color.green)
+            gfx.a = 0.5
+            gfx.rect(k*wkey_w - math.floor(bkey_w/2)+1,
+                     0,
+                     bkey_w-2,
+                     bkey_h-1, 1)
+            gfx.a = 1
+            
+          end
+          
+        end
+        
+        if key == pkey then
+          
+          local tl = k*wkey_w
+          f_Get_SSV(pcol)
+          gfx.rect(tl+1,
+                   py,
+                   wkey_w-1,
+                   ph, 1)
+          --[[f_Get_SSV(gui.color.black)
+          gfx.line(tl,
+                   py,
+                   tl + wkey_w,
+                   py)]]
+          f_Get_SSV(gui.color.green)
+        
+        elseif key-1 == pkey then
+        
+          local tl = k*wkey_w - math.floor(bkey_w/2)
+          f_Get_SSV(pcol_b)
+          gfx.rect(tl+1,
+                   py_b,
+                   bkey_w-2,
+                   ph_b, 1)
+          --[[f_Get_SSV(gui.color.black)
+          gfx.line(tl,
+                   py_b,
+                   tl + bkey_w-1,
+                   py_b)]]
+          f_Get_SSV(gui.color.green)
+          
+        end
+        
+      else
+      
+        key = key + 1
+        
+        if key >= kstart and key <= kend then        
+          gfx.rect(k*wkey_w+1,
+                   0,
+                   wkey_w-1,
+                   wkey_h, 1)
+          if b == 0 then
+            local xywh = {x = 0, y = wkey_h - 20, w = wkey_w, h = 20}
+            xywh.x = (k) * wkey_w
+            local o = math.floor(k / 7)-1
+            GUI_textC(gui, xywh, 'C'..o, gui.color.black, -5, 1)
+            f_Get_SSV(gui.color.green)
+            
+          end
+        end
+
+        if key == pkey then
+        
+          local tl = k*wkey_w
+          f_Get_SSV(pcol)
+          gfx.rect(tl+1,
+                   py,
+                   wkey_w-1,
+                   ph, 1)
+          --[[f_Get_SSV(gui.color.black)
+          gfx.line(tl,
+                   py,
+                   tl + wkey_w,
+                   py)]]
+          
+          if b == 0 then
+            local xywh = {x = 0, y = wkey_h - 20, w = wkey_w, h = 20}
+            xywh.x = (k) * wkey_w
+            local o = math.floor(k / 7)-1
+            GUI_textC(gui, xywh, 'C'..o, gui.color.black, -5, 1)                      
+          end
+          f_Get_SSV(gui.color.green)
+        end
+        
+
+      end
+    
+    end
+  
+    gfx.a = 1
+    gfx.dest = 1
+    
+  end
+
+  function GUI_DrawKeyboard(obj, gui)
+
+    local keys = 128
+    local wkeys = 75
+    local wkey_w = 18
+    local bkey_w = 10
+    local wkey_h = 80
+    local bkey_h = 55
+    
+    gfx.dest = 985
+    gfx.a = 1
+    
+    gfx.setimgdim(985,wkey_w*wkeys,wkey_h*2)
+  
+    f_Get_SSV(gui.color.white)
+    gfx.rect(0,
+             0,
+             wkey_w*wkeys,
+             wkey_h, 1)
+    
+    local kcol = -1
+    for k = 0, wkeys do
+      
+      f_Get_SSV(gui.color.black)
+      gfx.line(k*wkey_w,0,k*wkey_w,wkey_h)
+      local b = k % 7
+      local o = math.floor(k / 7)-1
+      if b == 1 or b == 2 or b == 4 or b == 5 or b == 6 then
+        gfx.rect(k*wkey_w - math.floor(bkey_w/2),
+                 0,
+                 bkey_w,
+                 bkey_h, 1)
+      end
+      if b == 1 then
+        local xywh = {x = 0, y = wkey_h - 20, w = wkey_w, h = 20}
+        xywh.x = (k-1) * wkey_w
+        GUI_textC(gui, xywh, 'C'..o, gui.color.black, -5, 1)
+      end
+      
+      --colmask
+      gfx.g = 0
+      gfx.b = 0
+     
+      if b == 1 or b == 2 or b == 4 or b == 5 or b == 6 then
+
+        kcol = kcol + 2
+        gfx.r = kcol/255
+        
+        gfx.rect(k*wkey_w,
+                 wkey_h,
+                 wkey_w,
+                 wkey_h, 1)
+        
+        --black key 
+        gfx.r = (kcol - 1)/255     
+        gfx.rect(k*wkey_w - math.floor(bkey_w/2),
+                 wkey_h,
+                 bkey_w,
+                 bkey_h, 1)
+      
+      else
+      
+        kcol = kcol + 1
+        gfx.r = kcol/255
+        gfx.rect(k*wkey_w,
+                 wkey_h,
+                 wkey_w,
+                 wkey_h, 1)
+      
+      end      
+      
+    end
+    
+    lvar.kb = {keys = keys, wkeys = wkeys, wkey_w = wkey_w, bkey_w = bkey_w, wkey_h = wkey_h, bkey_h = bkey_h, offset = 21*wkey_w}
+    
+    gfx.dest = 1
+  
+  end
+
+  function GUI_DrawSampleManager(obj, gui)
+
+    gfx.dest = 986
+    gfx.setimgdim(986,-1,-1)
+    gfx.setimgdim(986,obj.sections[1300].w,obj.sections[1300].h)
+
+    gfx.a = 1
+
+    if rs5k_select then
+      local strip = tracks[track_select].strip
+      local ctl = strips[strip][page].controls[rs5k_select]
+
+      local butt_h = tb_butt_h
+      
+      GUI_DrawPanel(obj.sections[1300],false,'RS5K SAMPLE MANAGER ('..ctl.param_info.paramname..')')
+      
+      GUI_DrawButton(gui, ctl.rsdata.samplefolder or '[No folder selected]', obj.sections[1301], gui.color.white, gui.skol.butt1_txt, true, 'FOLDER',false,gui.fontsz.butt)
+      GUI_DrawButton(gui, lvar.rs.out, obj.sections[1305], gui.color.white, gui.skol.butt1_txt, true, '',false,gui.fontsz.butt)
+
+      GUI_DrawButton(gui, 'ADD', obj.sections[1306], gui.color.white, gui.skol.butt1_txt, true, '',false,gui.fontsz.butt)
+      GUI_DrawButton(gui, 'REPLACE', obj.sections[1307], gui.color.white, gui.skol.butt1_txt, true, '',false,gui.fontsz.butt)
+      GUI_DrawButton(gui, 'CLEAR', obj.sections[1308], gui.color.white, gui.skol.butt1_txt, true, '',false,gui.fontsz.butt)
+      
+      f_Get_SSV(gui.skol.lst_bg)
+      gfx.rect(obj.sections[1302].x,
+               obj.sections[1302].y,
+               obj.sections[1302].w,
+               obj.sections[1302].h, 1)
+      f_Get_SSV(gui.skol.mod_baroutline)
+      gfx.rect(obj.sections[1302].x,
+               obj.sections[1302].y,
+               obj.sections[1302].w,
+               obj.sections[1302].h, 0)
+      
+      local rsdata = ctl.rsdata
+      SM_butt_cnt = math.floor(obj.sections[1302].h / butt_h)
+      if rsdata then
+        for i = 1, SM_butt_cnt do
+          
+          if rsdata.samples[i+smlist_offset] then
+        
+            local xywh = {x = obj.sections[1302].x +2,
+                          y = obj.sections[1302].y +2 + (i-1) * butt_h,
+                          w = 50,
+                          h = butt_h-2}  
+            local c = gui.skol.lst_txt
+            local c2 = gui.skol.modhighcol
+            local col2 = math.floor(40*((lst_fontscale/20)+1))
+            if sample_select == i + smlist_offset then  
+              f_Get_SSV(gui.skol.lst_barhl)
+              gfx.rect(xywh.x + col2,
+                       xywh.y, 
+                       obj.sections[1302].w -(xywh.x+col2) - 2,
+                       xywh.h, 1, 1)
+        
+              c = gui.skol.lst_txthl
+            end
+            xywh.x = xywh.x + 2
+            GUI_Str(gui, xywh, string.format("%03d",i+smlist_offset), 4, c2, -4 + gui.fontsz.lst+ lst_fontscale, 1, nil, gui.fontnm.lst, gui.fontflag.lst)    
+                  
+            xywh.x = xywh.x + col2
+            xywh.w = obj.sections[1302].w -xywh.x - 2
+            GUI_Str(gui, xywh, rsdata.samples[i+smlist_offset].fn or '[No sample]', 4, c, -4 + gui.fontsz.lst+ lst_fontscale, 1, nil, gui.fontnm.lst, gui.fontflag.lst)          
+        
+          end
+          
+        end
+        
+        if SM_butt_cnt < #rsdata.samples then
+          local msbh = obj.sections[1303].h
+          local p1 = 1 / #rsdata.samples
+          local sbh = math.ceil(F_limit(p1*SM_butt_cnt * msbh,20,msbh))
+          local p2 = p1*msbh
+          local sby = math.floor(smlist_offset * p2)
+          f_Get_SSV(gui.skol.mod_baroutline)
+          gfx.rect(obj.sections[1303].x,
+                   math.min(obj.sections[1303].y+1+sby,obj.sections[1303].y+msbh-sbh-1),
+                   obj.sections[1303].w,
+                   sbh, 1)
+        
+        end        
+        
+      end
+    end
+    
+    --keyboard
+    gfx.blit(985,1,0,lvar.kb.offset,0,obj.sections[1304].w,obj.sections[1304].h,obj.sections[1304].x, obj.sections[1304].y)
+    gfx.blit(984,1,0,lvar.kb.offset,0,obj.sections[1304].w,obj.sections[1304].h,obj.sections[1304].x, obj.sections[1304].y)
+
+    gfx.dest = 1
+  
+  end
+
   function GUI_DrawMutate(obj, gui)
   
     local mutate_settings = lvar.mutate_settings
@@ -13622,7 +14058,7 @@ end
     
     if show_xxy == false and (update_gfx or update_surface or update_sidebar or update_topbar or update_ctlopts or update_ctls or update_bg or 
        update_settings or update_snaps or update_msnaps or update_actcho or update_fsnaps or update_mfsnaps or update_eqcontrol or update_macroedit or
-       update_macrobutt or update_snapmorph or update_lfoedit or update_lfoeditbar or update_lfopos or update_mutate or update_randomopts) then    
+       update_macrobutt or update_snapmorph or update_lfoedit or update_lfoeditbar or update_lfopos or update_mutate or update_randomopts or update_samplemanager) then    
       local p = 0
       gfx.dest = 1
 
@@ -13778,7 +14214,8 @@ end
               if strips[tracks[track_select].strip][page].controls[cx].ctlcat == ctlcats.fxparam or 
                  strips[tracks[track_select].strip][page].controls[cx].ctlcat == ctlcats.trackparam or 
                  strips[tracks[track_select].strip][page].controls[cx].ctlcat == ctlcats.tracksend or 
-                 strips[tracks[track_select].strip][page].controls[cx].ctlcat == ctlcats.fxoffline then 
+                 strips[tracks[track_select].strip][page].controls[cx].ctlcat == ctlcats.fxoffline or 
+                 strips[tracks[track_select].strip][page].controls[cx].ctlcat == ctlcats.rs5k then 
 
                 local x = strips[tracks[track_select].strip][page].controls[cx].xsc+4
                 local y = strips[tracks[track_select].strip][page].controls[cx].ysc+4
@@ -14015,6 +14452,14 @@ end
                             obj.sections[1100].x,
                             obj.sections[1100].y)]]        
           gfx.blit(992,1,0,0,0,obj.sections[1100].w,obj.sections[1100].h,obj.sections[1100].x-2,obj.sections[1100].y)         
+        
+        end
+        
+        if show_samplemanager and show_eqcontrol ~= true and macro_edit_mode ~= true and show_pinmatrix ~= true then
+          if update_gfx or update_samplemanager or resize_display then
+            GUI_DrawSampleManager(obj, gui)
+          end
+          gfx.blit(986,1,0,0,0,obj.sections[1300].w,obj.sections[1300].h,obj.sections[1300].x,obj.sections[1300].y)         
         end
         
         if dragfader then
@@ -14821,6 +15266,7 @@ end
     update_lfopos = false
     update_mutate = false
     update_randomopts = false
+    update_samplemanager = false
     
   end
   
@@ -16503,6 +16949,19 @@ end
         end      
       end
       return tonumber(min), tonumber(max)  
+
+    elseif cc == ctlcats.rs5k then
+      min, max = 0, 1
+      if checkov then
+        if strips[tracks[track_select].strip][page].controls[c].minov then
+          min = strips[tracks[track_select].strip][page].controls[c].minov
+        end
+        if strips[tracks[track_select].strip][page].controls[c].maxov then
+          max = strips[tracks[track_select].strip][page].controls[c].maxov
+        end      
+      end
+      return tonumber(min), tonumber(max)  
+       
     else 
       return 0, 1
     end
@@ -16572,6 +17031,16 @@ end
       return val*(max - min) + min
     else
       return 0
+    end
+  end
+  
+  function FollowSample(v, scnt)
+    v=v-1
+    if not scnt then scnt = lvar.maxsamples end
+    if v < smlist_offset then
+      smlist_offset = math.min(math.max(v - math.floor(SM_butt_cnt-1),0),scnt-SM_butt_cnt)
+    elseif v >= smlist_offset + SM_butt_cnt then
+      smlist_offset = math.min(math.max(v,0),scnt-SM_butt_cnt)
     end
   end
   
@@ -16656,6 +17125,28 @@ end
       elseif cc == ctlcats.fxgui then
       
         OpenFXGUI(ctl)
+        
+      elseif cc == ctlcats.rs5k then
+      
+        ctl.val = math.min(ctl.val, (#ctl.rsdata.samples-1)/lvar.maxsamples)      
+        local v = math.min(math.floor(ctl.val * lvar.maxsamples)+1,#ctl.rsdata.samples)
+        if rs5k_select == c and sample_select ~= v then
+          if show_samplemanager == true then
+            update_samplemanager = true
+            if lvar.followsample then
+              FollowSample(v,#ctl.rsdata.samples)
+            end
+          end
+          sample_select = v
+        end
+        if ctl.rsdata.samples[v] and ctl.rsdata.samples[v].fn then
+          reaper.TrackFX_SetNamedConfigParm(track, ctl.fxnum, 'FILE0', ctl.rsdata.samples[v].fol..ctl.rsdata.samples[v].fn)
+          reaper.TrackFX_SetNamedConfigParm(track, ctl.fxnum, 'DONE', '')
+        else
+          reaper.TrackFX_SetNamedConfigParm(track, ctl.fxnum, 'FILE0', '')
+          reaper.TrackFX_SetNamedConfigParm(track, ctl.fxnum, 'DONE', '')        
+        end
+        SetCtlDirty(c)
         
       end
       if ctl.midiout then SendMIDIMsg(ctl.midiout,val) end
@@ -16962,6 +17453,30 @@ end
         ctl.val = v
         ctl.dirty = true
       
+      elseif cc == ctlcats.rs5k then
+
+        ctl.val = v
+        local v = math.min(math.floor(ctl.val * lvar.maxsamples)+1,#ctl.rsdata.samples)
+        if rs5k_select == c and sample_select ~= v then
+          if show_samplemanager == true then
+            update_samplemanager = true
+            if lvar.followsample then
+              FollowSample(v,#ctl.rsdata.samples)
+            end
+          end
+          sample_select = v
+        end
+        
+        if ctl.rsdata.samples[v] and ctl.rsdata.samples[v].fn then
+          reaper.TrackFX_SetNamedConfigParm(track, ctl.fxnum, 'FILE0', ctl.rsdata.samples[v].fol..ctl.rsdata.samples[v].fn)
+          reaper.TrackFX_SetNamedConfigParm(track, ctl.fxnum, 'DONE', '')
+        else
+          reaper.TrackFX_SetNamedConfigParm(track, ctl.fxnum, 'FILE0', '')
+          reaper.TrackFX_SetNamedConfigParm(track, ctl.fxnum, 'DONE', '')        
+        end
+
+        SetCtlDirty(c)
+        
       elseif cc == ctlcats.macro then
         
         ctl.val = v
@@ -17032,6 +17547,31 @@ end
 
       elseif cc == ctlcats.fxoffline then
         SetFXOffline2(strip, page, c, track, v)
+        
+      elseif cc == ctlcats.rs5k then
+
+        ctl.val = v
+        local v = math.min(math.floor(ctl.val * lvar.maxsamples)+1,#ctl.rsdata.samples)
+        if rs5k_select == c and sample_select ~= v then
+          if show_samplemanager == true then
+            update_samplemanager = true
+            if lvar.followsample then
+              FollowSample(v,#ctl.rsdata.samples)
+            end
+          end
+          sample_select = v
+        end
+        
+        if ctl.rsdata.samples[v] and ctl.rsdata.samples[v].fn then
+          reaper.TrackFX_SetNamedConfigParm(track, ctl.fxnum, 'FILE0', ctl.rsdata.samples[v].fol..ctl.rsdata.samples[v].fn)
+          reaper.TrackFX_SetNamedConfigParm(track, ctl.fxnum, 'DONE', '')
+        else
+          reaper.TrackFX_SetNamedConfigParm(track, ctl.fxnum, 'FILE0', '')
+          reaper.TrackFX_SetNamedConfigParm(track, ctl.fxnum, 'DONE', '')        
+        end
+
+        SetCtlDirty(c)
+        
       elseif cc == ctlcats.midictl then
         ctl.val = v
         ctl.dirty = true
@@ -17478,6 +18018,8 @@ end
     if delfx_flag and settings_deletefxwithstrip and #delfx > 0 and #delfxtracks.idx > 0 then
       DeleteFXPlugins(delfx, delfxtracks)
     end
+    
+    show_samplemanager = false
     
   end
 
@@ -19934,7 +20476,7 @@ end
   ------------------------------------------------------------    
 
   function CheckStripControls(strip)
-  
+
     if strip == nil then
       if tracks[track_select] then
         strip = tracks[track_select].strip
@@ -19979,13 +20521,16 @@ end
                                       strip, p, c)                      
                 if tr_found then
                   tr2 = GetTrack(ctl.tracknum)
+                  
                   if ctl.ctlcat == ctlcats.fxparam or ctl.ctlcat == ctlcats.fxoffline 
-                     or ctl.ctlcat == ctlcats.fxgui or (ctl.ctlcat == ctlcats.rcm_switch and ctl.fxnum ~= nil) then
+                     or ctl.ctlcat == ctlcats.fxgui or ctl.ctlcat == ctlcats.rs5k or (ctl.ctlcat == ctlcats.rcm_switch and ctl.fxnum ~= nil) then
+                     
                     if ctl.fxguid == reaper.TrackFX_GetFXGUID(tr2, nz(ctl.fxnum,-1)) then
                       --fx found
                       ctl.fxfound = true
                       
                     else
+                    
                       --find fx by guid
                       local fx_found = false
                       for f = 0, reaper.TrackFX_GetCount(tr2) do
@@ -20047,7 +20592,7 @@ end
                 end              
               else
                 if ctl.ctlcat == ctlcats.fxparam or ctl.ctlcat == ctlcats.fxoffline 
-                   or ctl.ctlcat == ctlcats.fxgui or (ctl.ctlcat == ctlcats.rcm_switch and ctl.fxnum ~= nil) then
+                   or ctl.ctlcat == ctlcats.fxgui or ctl.ctlcat == ctlcats.rs5k or (ctl.ctlcat == ctlcats.rcm_switch and ctl.fxnum ~= nil) then
                   if ctl.fxguid == reaper.TrackFX_GetFXGUID(tr2, nz(ctl.fxnum,-1)) then
                     --fx found
                     ctl.fxfound = true
@@ -22129,6 +22674,69 @@ end
   
   end
   
+  function RSMenuOut(x,y)
+  
+    local ctl = strips[tracks[track_select].strip][page].controls[rs5k_select]
+    local track = GetTrack(ctl.tracknum or tracks[track_select].tracknum)
+    
+    local chans = math.min(reaper.GetMediaTrackInfo_Value(track, "I_NCHAN"))
+    
+    local mstr = ''
+    for i = 1, chans/2 do
+      if mstr ~= '' then
+        mstr = mstr .. '|'
+      end
+      mstr = mstr .. (i-1)*2 +1 ..'+'..(i-1)*2 +2
+    end
+    if chans < 64 then
+      mstr = mstr .. '|['..string.format('%i',chans+1)..'+'..string.format('%i',chans+2)..']'
+    end
+    
+    gfx.x = x
+    gfx.y = y
+    local res = gfx.showmenu(mstr)
+    if res > 0 then
+      
+      if res > chans/2 then
+        --new chan
+        
+        if chans < 64 then
+          chans = chans + 2
+          reaper.SetMediaTrackInfo_Value(track, "I_NCHAN", chans)
+        end
+        
+      end
+        
+      --bit
+      local outchan0 = (res-1)*2 
+      local outchan1 = (res-1)*2 + 1
+      
+      local oLo = {}
+      local oHi = {}
+      
+      if outchan0 < 32 then
+        oLo[0] = 2^outchan0
+        oHi[0] = 0
+      else
+        oLo[0] = 0
+        oHi[0] = 2^(outchan0%32)        
+      end
+      if outchan1 < 32 then
+        oLo[1] = 2^outchan1
+        oHi[1] = 0
+      else
+        oLo[1] = 0
+        oHi[1] = 2^(outchan1%32)        
+      end
+      
+      SetPinMap(track,ctl.fxnum,nil,nil,oLo,oHi)
+      lvar.rs.out = 'OUT '..string.format('%i',outchan0+1) ..'+'..string.format('%i',outchan1+1)
+      update_samplemanager = true
+      
+    end
+    
+  end
+  
   function RBMenu_Snapshot(snapmx, snapmy)
   
     if sstype_select == 1 then
@@ -22677,6 +23285,83 @@ end
       
   end
   
+  function RS5kMenu_RB(i)
+  
+    local strip = tracks[track_select].strip
+    local ctl = strips[strip][page].controls[i]
+    
+    local rsc = '#'
+    if ctl.rsdata and ctl.rsdata.samplefolder then
+      rsc = ''
+    end
+
+    local mstr = 'Open Plugin Window||'..rsc..'Open Sample Folder||'..rsc..'Rescan Current Folder||Load Folder|Load Folder (include subfolders)||Manage Samples'
+    if #ctl.rsdata.samples > 0 then
+      local smps = '|'
+      for i = 1, #ctl.rsdata.samples do
+        smps = smps .. '|'.. (ctl.rsdata.samples[i].fn or '[No sample]')
+      end
+      mstr = mstr .. smps
+    end
+    
+    gfx.x, gfx.y = mouse.mx, mouse.my
+    res = OpenMenu(mstr)
+    if res > 0 then
+    
+      if res == 2 then
+      
+        OpenURL(ctl.rsdata.samplefolder)
+      
+      elseif res == 3 then
+      
+        RS5k_RescanFolder(strip, page, i)
+      
+      elseif res == 4 then
+      
+        RS5k_LoadFolder(strip, page, i, false)
+
+      elseif res == 5 then
+      
+        RS5k_LoadFolder(strip, page, i, true)
+
+      elseif res == 1 then
+      
+        OpenFXGUI(ctl)
+      
+      elseif res == 6 then
+      
+        SetShowSampleManager(true, i)
+      
+      elseif res >= 7 then
+      
+        local v = res - 6
+        if ctl.rsdata.samples[v].fn then
+          reaper.TrackFX_SetNamedConfigParm(track, ctl.fxnum, 'FILE0', ctl.rsdata.samples[v].fol..ctl.rsdata.samples[v].fn)
+          reaper.TrackFX_SetNamedConfigParm(track, ctl.fxnum, 'DONE', '')
+        else
+          reaper.TrackFX_SetNamedConfigParm(track, ctl.fxnum, 'FILE0', '')
+          reaper.TrackFX_SetNamedConfigParm(track, ctl.fxnum, 'DONE', '')
+        end
+        ctl.val = math.floor((v-1) / lvar.maxsamples)
+        SetCtlDirty(i)
+        update_ctls = true
+        
+      end
+    
+    end  
+  
+  end
+  
+  --Thanks X-Raym
+  function OpenURL(url)
+    local OS = reaper.GetOS()
+    if OS == "OSX32" or OS == "OSX64" then
+      os.execute('open "" "' .. url .. '"')
+    else
+      os.execute('start "" "' .. url .. '"')
+    end
+  end
+  
   function RBMenu(mtype,ccat,i)
     if mtype == 0 then
     
@@ -22685,6 +23370,8 @@ end
         SwitcherMenu_RB()
       elseif ccat == ctlcats.takeswitcher then
         TakeSwitcherMenu_RB(i)
+      elseif ccat == ctlcats.rs5k then
+        RS5kMenu_RB(i)
       else
         local strip = tracks[track_select].strip
         local ctl = strips[strip][page].controls[i]
@@ -23375,6 +24062,7 @@ end
       sstype_select = 1
       CloseActChooser()
       show_ctlbrowser = false
+      show_samplemanager = false
       SetASLocs()
       SetGalleryView()
   
@@ -23436,6 +24124,7 @@ end
     if mouse.context ~= nil then return end
     
     show_randomopts = false
+    show_samplemanager = false
     
     --if track_select == LBX_GTRACK then page = 1 return end
     if lpage == 0 then
@@ -24390,6 +25079,7 @@ end
     if mouse.context ~= nil then return end
     
     show_randomopts = false
+    show_samplemanager = false
     
     if tracks[t] == nil then
       t = -1
@@ -25397,6 +26087,66 @@ end
     show_snapshots = show
     if settings_ssdock == true then
       obj = GetObjects()
+    end
+    update_gfx = true
+  end
+
+  function SetShowSampleManager(show, c)
+    show_samplemanager = show
+    rs5k_select = c
+    smlist_offset = 0
+    local ctl = strips[tracks[track_select].strip][page].controls[c]
+    if ctl then
+      sample_select = math.floor(ctl.val * lvar.maxsamples)+1
+      if lvar.followsample then
+        FollowSample(sample_select,#ctl.rsdata.samples)
+      end
+    end
+    if show == true then
+    
+      local trn = ctl.tracknum or strips[tracks[track_select].strip].track.tracknum
+      local track = GetTrack(trn)
+      local fxnum = ctl.fxnum
+      local pstart = 3
+      local pend = 4
+      local s = reaper.TrackFX_GetParam(track,fxnum,pstart)
+      local e = reaper.TrackFX_GetParam(track,fxnum,pend)    
+    
+      lvar.kb.kstart = s*128
+      lvar.kb.kend = e*128
+      
+      --out pin map
+      lvar.rs = {}
+      local _,_,outLo,outHi = GetPinMap(track, fxnum)
+      local oLo0, oHi0 = ConvertPinMap(outLo[0],outHi[0])
+      local oLo1, oHi1 = ConvertPinMap(outLo[1],outHi[1])
+      local o0, o1
+      for i = 0, 63 do
+        if o0 == nil and oLo0[i] then
+          o0 = i+1
+        end
+        if o1 == nil and oLo1[i] then
+          o1 = i+1
+        end
+        if o0 and o1 then
+          break
+        end
+      end
+      if o0 or o1 then
+        lvar.rs.out = 'OUT '..(o0 or '')..'+'..(o1 or '')
+      else
+        lvar.rs.out = 'No output'
+      end
+      
+      --READ PITCH PARAM
+      local pit = reaper.TrackFX_GetParam(track,fxnum,15)
+      local single = 1/160
+      local diff = 0.5-pit
+
+      lvar.rs.pitch = round(diff/single)
+      
+      GUI_DrawKeyboardOverlay(obj, gui)
+    
     end
     update_gfx = true
   end
@@ -28388,6 +29138,31 @@ end
         gfx.mouse_wheel = 0
       end
 
+      local xywh = {x = obj.sections[1300].x+obj.sections[1302].x,
+                    y = obj.sections[1300].y+obj.sections[1302].y,
+                    w = obj.sections[1302].w,
+                    h = obj.sections[1302].h}
+      if show_samplemanager == true and MOUSE_over(xywh) then
+        local ctl = strips[tracks[track_select].strip][page].controls[rs5k_select]
+        if ctl and SM_butt_cnt < #ctl.rsdata.samples then
+          smlist_offset = F_limit(smlist_offset - v*3, 0, #ctl.rsdata.samples-SM_butt_cnt)
+        else
+          smlist_offset = 0
+        end
+        update_samplemanager = true
+        gfx.mouse_wheel = 0
+      end
+
+      local xywh = {x = obj.sections[1300].x+obj.sections[1304].x,
+                    y = obj.sections[1300].y+obj.sections[1304].y,
+                    w = obj.sections[1304].w,
+                    h = obj.sections[1304].h}
+      if show_samplemanager == true and MOUSE_over(xywh) then
+        lvar.kb.offset = F_limit(lvar.kb.offset - v*20,0,lvar.kb.wkey_w*lvar.kb.wkeys - obj.sections[1304].w)
+        update_samplemanager = true
+        gfx.mouse_wheel = 0      
+      end
+      
       if show_snapshots == true and MOUSE_over(obj.sections[160]) then
         if snapshots and snapshots[tracks[track_select].strip] and
            snapshots[tracks[track_select].strip][page][sstype_select] then
@@ -28426,7 +29201,268 @@ end
         update_gfx = true
       end]]
     
-    elseif mouse.context == nil and show_randomopts == true and (MOUSE_click(obj.sections[1130]) or MOUSE_click_RB(obj.sections[1130])) then
+    elseif mouse.context == nil and show_samplemanager == true and show_eqcontrol ~= true and show_pinmatrix ~= true and (MOUSE_click(obj.sections[1300]) or MOUSE_click_RB(obj.sections[1300])) then
+
+      noscroll = true
+      mx,my = mouse.mx, mouse.my
+      mouse.mx = mouse.mx - obj.sections[1300].x 
+      mouse.my = mouse.my - obj.sections[1300].y
+
+      local strip = tracks[track_select].strip
+      local ctl = strips[strip][page].controls[rs5k_select]
+    
+      if mouse.my < butt_h*pnl_scale then
+        if mouse.RB then
+          SetShowSampleManager(false)
+        elseif mouse.LB then
+          mouse.context = contexts.move_smwin
+          movesmwin = {dx = mouse.mx, dy = mouse.my}
+        end
+
+      elseif MOUSE_click(obj.sections[1310])  then
+        
+        mouse.context = contexts.resize_smwin
+        smwinrsz = {mx = mx, my = my, w = smwin.w, h = smwin.h, x = obj.sections[1300].x, y = obj.sections[1300].y, sc_w = obj.sections[1300].w, sc_h = obj.sections[1300].h}          
+
+      elseif MOUSE_click(obj.sections[1311])  then
+        
+        mouse.context = contexts.resize_smwinv
+        smwinrsz = {my = my, h = smwin.h, y = obj.sections[1300].y, sc_h = obj.sections[1300].h}          
+        
+      elseif MOUSE_click(obj.sections[1303]) then
+        
+        local msbh = obj.sections[1303].h
+        local p1 = 1 / #ctl.rsdata.samples
+        local sbh = math.ceil(F_limit(p1*SM_butt_cnt * msbh,20,msbh))
+        local p2 = p1*msbh
+        local sby = math.floor(smlist_offset * p2)
+
+        sby = math.min(sby,--[[obj.sections[1303].y+]]msbh-sbh-1)
+
+        if mouse.my >= obj.sections[1303].y + sby and mouse.my <= obj.sections[1303].y + sby+sbh then
+          if SM_butt_cnt < #ctl.rsdata.samples then
+            mouse.context = contexts.scrollsamples
+            scrollsamps = {y = mouse.my-obj.sections[1303].y, lo = smlist_offset}
+          else
+            smlist_offset = 0
+          end
+                    
+        elseif mouse.my < obj.sections[1303].y + sby then
+        
+        elseif mouse.my > obj.sections[1303].y + sby+sbh then
+          
+        end
+
+      elseif MOUSE_click(obj.sections[1302]) then
+        local v = math.floor((mouse.my - obj.sections[1302].y) / tb_butt_h)+1 + smlist_offset
+        if v <= #ctl.rsdata.samples then
+          sample_select = v
+          update_samplemanager = true
+          --if ctl.rsdata.samples[v].fn then
+            ctl.val = (v-1) / lvar.maxsamples
+            A_SetParam(strip,page,rs5k_select,ctl)
+            SetCtlDirty(rs5k_select)
+            update_ctls = true
+          --end
+        end
+
+      elseif MOUSE_click(obj.sections[1304]) then
+      
+        if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.15 then
+          gfx.dest = 985
+          gfx.x = mouse.mx - obj.sections[1304].x + lvar.kb.offset
+          gfx.y = mouse.my - obj.sections[1304].y + lvar.kb.wkey_h
+          local r,_,_ = gfx.getpixel()
+        
+          lvar.kb.kstart = r*255
+          lvar.kb.kend = r*255        
+         
+          GUI_DrawKeyboardOverlay(obj, gui)
+          update_samplemanager = true
+        
+          gfx.dest = 1
+  
+          --Set plugin params
+          --local ctl = strips[tracks[track_select].strip][page].controls[rs5k_select]
+          local trn = ctl.tracknum or strips[strip].track.tracknum
+          local track = GetTrack(trn)
+          local fxnum = ctl.fxnum
+          local pstart = 3
+          local pend = 4
+          reaper.TrackFX_SetParam(track,fxnum,pstart,lvar.kb.kstart/128) 
+          reaper.TrackFX_SetParam(track,fxnum,pend,lvar.kb.kend/128) 
+        
+        elseif mouse.shift then
+          gfx.dest = 985
+          gfx.x = mouse.mx - obj.sections[1304].x + lvar.kb.offset
+          gfx.y = mouse.my - obj.sections[1304].y + lvar.kb.wkey_h
+          local r,_,_ = gfx.getpixel()
+        
+          lvar.kb.kend = r*255               
+          if not lvar.kb.kstart then
+            lvar.kb.kstart = r*255
+          end
+          if lvar.kb.kstart > lvar.kb.kend then
+            local ke = lvar.kb.kend
+            lvar.kb.kend = lvar.kb.kstart
+            lvar.kb.kstart = ke
+          end
+          GUI_DrawKeyboardOverlay(obj, gui)
+          update_samplemanager = true
+        
+          gfx.dest = 1
+  
+          --Set plugin params
+          --local ctl = strips[tracks[track_select].strip][page].controls[rs5k_select]
+          local trn = ctl.tracknum or strips[strip].track.tracknum
+          local track = GetTrack(trn)
+          local fxnum = ctl.fxnum
+          local pstart = 3
+          local pend = 4
+          reaper.TrackFX_SetParam(track,fxnum,pstart,lvar.kb.kstart/128) 
+          reaper.TrackFX_SetParam(track,fxnum,pend,lvar.kb.kend/128) 
+        
+        else
+          mouse.context = contexts.scrollkeyb
+          scrollkeyb = {x = mouse.mx-obj.sections[1304].x, lo = lvar.kb.offset}
+        end
+        
+      elseif MOUSE_click_RB(obj.sections[1304]) then
+      
+        gfx.dest = 985
+        gfx.x = mouse.mx - obj.sections[1304].x + lvar.kb.offset
+        gfx.y = mouse.my - obj.sections[1304].y + lvar.kb.wkey_h
+        local r,_,_ = gfx.getpixel()
+        
+        lvar.rs.pitch = (r*255)-72
+        local v = 0.5 - (lvar.rs.pitch*(1/160))
+      
+        local trn = ctl.tracknum or strips[strip].track.tracknum
+        local track = GetTrack(trn)
+        local fxnum = ctl.fxnum
+        reaper.TrackFX_SetParam(track,fxnum,15,v)
+      
+        GUI_DrawKeyboardOverlay(obj, gui)
+        update_samplemanager = true
+        
+      elseif MOUSE_click(obj.sections[1305]) then
+      
+        RSMenuOut(mx,my)
+      
+      elseif MOUSE_click(obj.sections[1306]) then
+      
+        local fol, fil = RS5k_GetSample()
+        if fol and fil then
+        
+          local sidx = #ctl.rsdata.samples+1
+          ctl.rsdata.samples[sidx] = {fol = fol,
+                                      fn = fil}
+          ctl.rsdata.samplesidx[fol..fil] = sidx
+          update_samplemanager = true
+          smlist_offset = sidx - SM_butt_cnt
+        
+        end
+      
+      elseif MOUSE_click(obj.sections[1307]) then
+
+        if sample_select then
+          local fol, fil = RS5k_GetSample()
+          if fol and fil then
+          
+            local sidx = sample_select
+            if ctl.rsdata.samples[sidx] and ctl.rsdata.samples[sidx].fn then
+              ctl.rsdata.samplesidx[ctl.rsdata.samples[sidx].fol..ctl.rsdata.samples[sidx].fn] = nil
+            end
+            ctl.rsdata.samples[sidx] = {fol = fol,
+                                        fn = fil}
+            ctl.rsdata.samplesidx[fol..fil] = sidx
+            update_samplemanager = true
+            ctl.val = (sample_select-1) / lvar.maxsamples
+            A_SetParam(strip,page,rs5k_select,ctl)
+            SetCtlDirty(rs5k_select)
+            update_ctls = true
+          
+          end
+        end
+        
+      elseif MOUSE_click(obj.sections[1308]) then
+
+        if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.15 then
+          if sample_select then
+            
+            if ctl.rsdata.samples[sample_select] and ctl.rsdata.samples[sample_select].fn then
+              ctl.rsdata.samplesidx[ctl.rsdata.samples[sample_select].fol..ctl.rsdata.samples[sample_select].fn] = nil
+              ctl.rsdata.samples[sample_select].fn = nil
+            end
+            
+            update_samplemanager = true
+            ctl.val = (sample_select-1) / lvar.maxsamples
+            A_SetParam(strip,page,rs5k_select,ctl)
+            SetCtlDirty(rs5k_select)
+            update_ctls = true
+          end
+        end
+        
+      elseif MOUSE_click(obj.sections[1301]) then
+      
+        if not ctl.rsdata.samplefolder then
+          RS5k_LoadFolder(strip, page, rs5k_select, false)
+          smlist_offset = 0
+          update_samplemanager = true
+          
+        else
+          mstr = 'Rescan Folder||Load Folder|Load Folder (+subfolders)'
+          gfx.x = mx
+          gfx.y = my
+          local res = gfx.showmenu(mstr)
+          if res > 0 then
+          
+            if res == 1 then
+              RS5k_RescanFolder(strip, page, rs5k_select)
+            elseif res == 2 then
+              RS5k_LoadFolder(strip, page, rs5k_select, false)        
+              smlist_offset = 0
+            elseif res == 3 then
+              RS5k_LoadFolder(strip, page, rs5k_select, true)        
+              smlist_offset = 0
+            end
+            update_samplemanager = true
+          
+          end
+        end
+      
+      elseif MOUSE_click_RB(obj.sections[1301]) then
+
+        local t = ''
+        if not ctl.rsdata.samplefolder then
+          t = '#'
+        end
+        mstr = t..'Rescan Folder||Load Folder|Load Folder (+subfolders)'
+        gfx.x = mx
+        gfx.y = my
+        local res = gfx.showmenu(mstr)
+        if res > 0 then
+        
+          if res == 1 then
+            RS5k_RescanFolder(strip, page, rs5k_select)
+          elseif res == 2 then
+            RS5k_LoadFolder(strip, page, rs5k_select, false)        
+            smlist_offset = 0
+          elseif res == 3 then
+            RS5k_LoadFolder(strip, page, rs5k_select, true)        
+            smlist_offset = 0
+          end
+          update_samplemanager = true
+        
+        end
+      
+      end
+    
+    
+      mouse.mx = mx
+      mouse.my = my
+    
+    elseif mouse.context == nil and show_randomopts == true and show_eqcontrol ~= true and show_pinmatrix ~= true and (MOUSE_click(obj.sections[1130]) or MOUSE_click_RB(obj.sections[1130])) then
 
       noscroll = true
       mx,my = mouse.mx, mouse.my
@@ -28654,7 +29690,7 @@ end
       mouse.mx = mx
       mouse.my = my
       
-    elseif mouse.context == nil and show_mutate == true and (MOUSE_click(obj.sections[1120]) or MOUSE_click_RB(obj.sections[1120])) then
+    elseif mouse.context == nil and show_mutate == true and show_eqcontrol ~= true and show_pinmatrix ~= true and (MOUSE_click(obj.sections[1120]) or MOUSE_click_RB(obj.sections[1120])) then
 
       local mutate_settings = lvar.mutate_settings
       
@@ -29214,6 +30250,8 @@ end
     
     elseif mouse.context == nil and (MOUSE_click(obj.sections[10]) or MOUSE_click_RB(obj.sections[10]) or gfx.mouse_wheel ~= 0) then
       
+      --STRIP SURFACE 
+      
       local togfsnap = false
       
       if mouse.mx > obj.sections[10].x then
@@ -29238,12 +30276,15 @@ end
                 local ctltype = ctls[i].ctltype
               
                 if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.2 and ctltype ~= 5 and ctltype ~= 2 and ctltype ~= 3 then
-                  if settings_swapctrlclick == false then
-                    SetParam_ToDef(i)             
+                  if ctls[i].ctlcat ~= ctlcats.rs5k then
+                    if settings_swapctrlclick == false then
+                      SetParam_ToDef(i)             
+                    else
+                      SetParam_EnterVal(i)
+                    end
                   else
-                    SetParam_EnterVal(i)
-                  end
-                      
+                    SetShowSampleManager(true, i)
+                  end                      
                   noscroll = true
                   
                 end
@@ -29780,13 +30821,18 @@ end
                 if ctltype == 1 then
                   trackfxparam_select = i
                   local v
-                  if mouse.shift then
-                    local mult = ctls[i].knobsens.wheelfine
-                    if mult == 0 then mult = settings_defknobsens.wheelfine end
-                    v = gfx.mouse_wheel/120 * mult
+                  if ctls[i].ctlcat ~= ctlcats.rs5k then
+                    if mouse.shift then
+                      local mult = ctls[i].knobsens.wheelfine
+                      if mult == 0 then mult = settings_defknobsens.wheelfine end
+                      v = gfx.mouse_wheel/120 * mult
+                    else
+                      local mult = ctls[i].knobsens.wheel
+                      if mult == 0 then mult = settings_defknobsens.wheel end
+                      v = gfx.mouse_wheel/120 * mult
+                    end
                   else
-                    local mult = ctls[i].knobsens.wheel
-                    if mult == 0 then mult = settings_defknobsens.wheel end
+                    local mult = 1/lvar.maxsamples
                     v = gfx.mouse_wheel/120 * mult
                   end
                   ctls[i].val = F_limit(ctls[i].val+v,0,1)
@@ -30403,7 +31449,26 @@ end
   
     if mouse.context then
       
-      if mouse.context == contexts.modwin_resize then
+      if mouse.context == contexts.scrollsamples then
+      
+        local my = mouse.my - (obj.sections[1300].y+obj.sections[1303].y)
+        local rsdata = strips[tracks[track_select].strip][page].controls[rs5k_select].rsdata
+        local oos = smlist_offset
+        smlist_offset = F_limit(math.floor(scrollsamps.lo + ((my-scrollsamps.y)/obj.sections[1303].h) * #rsdata.samples),0,#rsdata.samples-SM_butt_cnt)
+        if smlist_offset ~= oos then
+          update_samplemanager = true
+        end
+        
+      elseif mouse.context == contexts.scrollkeyb then
+      
+        local mx = mouse.mx - (obj.sections[1300].x+obj.sections[1304].x)
+        local oos = lvar.kb.offset
+        lvar.kb.offset = F_limit(scrollkeyb.lo - (mx-scrollkeyb.x),0,(lvar.kb.wkey_w*lvar.kb.wkeys)-obj.sections[1304].w)
+        if lvar.kb.offset ~= oos then
+          update_samplemanager = true      
+        end
+        
+      elseif mouse.context == contexts.modwin_resize then
     
         modwinsz.w = math.min(math.max(modwinrsz.w + (mouse.mx - modwinrsz.mx),modwin.minw),2048)
         modwinsz.h = math.min(math.max(modwinrsz.h + (mouse.my - modwinrsz.my),modwin.minh),2048)
@@ -30439,6 +31504,7 @@ end
           obj = GetObjects() 
           update_lfoedit = true
           update_surface = true
+          update_samplemanager = true
           
           modwinsz.ow = modwinsz.w
           modwinsz.oh = modwinsz.h
@@ -30917,6 +31983,63 @@ end
         obj.sections[1130].y = math.max(obj.sections[1130].y,obj.sections[10].y)
         update_surface = true
   
+      elseif mouse.context == contexts.move_smwin then
+      
+        obj.sections[1300].x = F_limit(mouse.mx - movesmwin.dx,obj.sections[10].x,obj.sections[10].x+obj.sections[10].w-obj.sections[1300].w)
+        obj.sections[1300].y = F_limit(mouse.my - movesmwin.dy,obj.sections[10].y,obj.sections[10].y+obj.sections[10].h-obj.sections[1300].h)
+        obj.sections[1300].y = math.max(obj.sections[1300].y,obj.sections[10].y)
+        update_surface = true
+
+      elseif mouse.context == contexts.resize_smwin then
+
+        local dx = smwinrsz.x + smwinrsz.sc_w - smwinrsz.mx
+        local dy = smwinrsz.y + smwinrsz.sc_h - smwinrsz.my
+
+        local nw = mouse.mx - smwinrsz.x + dx
+        smwin.w = nw/pnl_scale
+
+        local nh = mouse.my - smwinrsz.y + dy
+        smwin.h = nh/pnl_scale
+
+        if smwin.w ~= smwin.ow or smwin.h ~= smwin.oh then
+          local smw,smh = math.max(math.min(math.floor(smwin.w*pnl_scale),obj.sections[10].w-20,lvar.kb.wkey_w*lvar.kb.wkeys+20),300*pnl_scale), 
+                          math.max(math.min(math.floor((smwin.h*pnl_scale)),obj.sections[10].h),355*pnl_scale)
+                          
+          obj.sections[1300] = {x = math.max(F_limit(obj.sections[1300].x,obj.sections[10].x,obj.sections[10].x+obj.sections[10].w-smw),obj.sections[10].x),
+                                y = math.max(F_limit(obj.sections[1300].y,obj.sections[10].y,obj.sections[10].y+obj.sections[10].h-smh),obj.sections[10].y),
+                                w = smw,
+                                h = smh}
+          
+          obj = PosSampleManager(obj)
+          update_surface = true
+          update_samplemanager = true
+          
+          smwin.ow = smwin.w
+          smwin.oh = smwin.h
+        end
+
+      elseif mouse.context == contexts.resize_smwinv then
+
+        local dy = smwinrsz.y + smwinrsz.sc_h - smwinrsz.my
+
+        local nh = mouse.my - smwinrsz.y + dy
+        smwin.h = nh/pnl_scale
+
+        if smwin.h ~= smwin.oh then
+          local smw,smh = math.max(math.min(math.floor(smwin.w*pnl_scale),obj.sections[10].w-20,lvar.kb.wkey_w*lvar.kb.wkeys+20),300*pnl_scale), 
+                          math.max(math.min(math.floor((smwin.h*pnl_scale)),obj.sections[10].h),355*pnl_scale)
+                          
+          obj.sections[1300] = {x = math.max(F_limit(obj.sections[1300].x,obj.sections[10].x,obj.sections[10].x+obj.sections[10].w-smw),obj.sections[10].x),
+                                y = math.max(F_limit(obj.sections[1300].y,obj.sections[10].y,obj.sections[10].y+obj.sections[10].h-smh),obj.sections[10].y),
+                                w = smw,
+                                h = smh}
+          
+          obj = PosSampleManager(obj)
+          update_surface = true
+          update_samplemanager = true
+          
+          smwin.oh = smwin.h
+        end
       end
 
     else
@@ -33976,7 +35099,9 @@ end
           if reass_param == nil then
             if dragparam.x+ksel_size.w > obj.sections[10].x and dragparam.x+ksel_size.w < obj.sections[10].x+obj.sections[10].w and dragparam.y+ksel_size.h > obj.sections[10].y and dragparam.y+ksel_size.h < obj.sections[10].y+obj.sections[10].h then
               trackfxparam_select = i
-              Strip_AddParam()              
+              local c = Strip_AddParam()
+              
+              RS5k_INIT(c)              
             end
           else
           
@@ -34168,8 +35293,7 @@ end
       
       end
     
-      
-    
+
       if ctl_select ~= nil then
         show_ctloptions = true
       else
@@ -34181,6 +35305,229 @@ end
     
     return noscroll
     
+  end
+  
+  function RS5k_RescanFolder(strip, page, c, recurse, subfol)
+
+    local ctl = strips[strip][page].controls[c]
+    local fol
+    if not subfol then
+      fol = ctl.rsdata.samplefolder
+      recurse = ctl.rsdata.recurse
+    else
+      fol = subfol
+    end
+    
+    if fol then
+
+      local add = 0
+      local rem = 0
+
+      local f = 0
+      local sfn = reaper.EnumerateFiles(fol, f)
+      while sfn do
+        if not ctl.rsdata.samplesidx[fol..sfn] then
+          local ext = string.match(sfn,'.+%.(.*)')
+          if ext and RS5k_ValidSample(ext) then
+            local sidx = #ctl.rsdata.samples + 1
+            ctl.rsdata.samples[sidx] = {fol = fol,
+                                        fn = sfn}
+            ctl.rsdata.samplesidx[fol..sfn] = sidx
+            ctl.rsdata.samples[sidx].flag = true
+            add = add + 1
+          end
+        else
+          local sidx = ctl.rsdata.samplesidx[fol..sfn]
+          ctl.rsdata.samples[sidx].flag = true
+        end
+        f=f+1
+        sfn = reaper.EnumerateFiles(fol, f)
+      end
+
+      if recurse then
+        local f = 0
+        local sd = reaper.EnumerateSubdirectories(fol, f)
+        while sd do
+      
+          RS5k_RescanFolder(strip, page, c, true, fol..sd..'/')
+          f=f+1
+          sd = reaper.EnumerateSubdirectories(fol, f)
+        end
+      end
+
+      if not subfol then
+        for i = 1, #ctl.rsdata.samples do
+          if not ctl.rsdata.samples[i].flag then
+            --remove
+            if ctl.rsdata.samples[i].fn then
+              ctl.rsdata.samplesidx[ctl.rsdata.samples[i].fol..ctl.rsdata.samples[i].fn] = nil
+              ctl.rsdata.samples[i].fn = nil
+              rem = rem + 1
+            end
+          end
+          ctl.rsdata.samples[i].flag = nil
+        end
+        DBG('Added: '..add)
+        DBG('Removed: '..rem)
+      end
+    end
+        
+  end
+  
+  function RS5k_LoadFolder(strip, page, c, recurse, subfol)
+
+    local ctl, retval, fn
+    ctl = strips[strip][page].controls[c]
+    
+    if not subfol then
+      retval, fn = reaper.GetUserFileNameForRead('','Please locate any file in the folder you wish to import','')
+    else
+      retval = true
+    end
+    
+    if retval == true then
+      local fol
+      if not subfol then
+        fol = string.match(fn, '(.*[\\/])')
+      else
+        fol = subfol
+      end
+      if fol then
+        if not subfol then
+          ctl.rsdata = {}
+          ctl.rsdata.samplefolder = fol
+          ctl.rsdata.samples = {}
+          ctl.rsdata.samplesidx = {}
+          ctl.rsdata.recurse = recurse
+        end
+        
+        local f = 0
+        local sfn = reaper.EnumerateFiles(fol, f)
+        while sfn do
+          local ext = string.match(sfn,'.+%.(.*)')
+          if ext and RS5k_ValidSample(ext) then
+            local sidx = #ctl.rsdata.samples + 1
+            ctl.rsdata.samples[sidx] = {fol = fol,
+                                        fn = sfn}
+            ctl.rsdata.samplesidx[fol..sfn] = sidx
+          end
+          f=f+1
+          sfn = reaper.EnumerateFiles(fol, f)
+        end
+      
+        if recurse then
+          local f = 0
+          local sd = reaper.EnumerateSubdirectories(fol, f)
+          while sd do
+        
+            RS5k_LoadFolder(strip, page, c, true, fol..sd..'/')
+            f=f+1
+            sd = reaper.EnumerateSubdirectories(fol, f)
+          end
+        end
+      end
+    end
+
+    --ctl.maxov = (#ctl.rsdata.samples-1) / lvar.maxsamples
+  end
+
+  function RS5k_ValidSample(ext)
+  
+    if ext and (ext == 'wav' or 
+                ext == 'aiff' or 
+                ext == 'mp3' or 
+                ext == 'flac') then
+      return true
+    end
+    
+  end
+
+  function RS5k_GetSample()
+  
+    local retval, fn = reaper.GetUserFileNameForRead('','Please locate sample','')
+    if retval == true then
+      local fol, fil = string.match(fn, '(.*[\\/])(.*)')
+    
+      if fol and fil then
+        local ext = string.match(fil,'.+%.(.*)')
+        if ext and RS5k_ValidSample(ext) then
+          return fol, fil
+        end
+      end
+    end
+  
+  end
+  
+  function RS5k_INIT(c)
+    
+    local track = GetTrack(track_select)
+    local chunk = GetTrackChunk(track, true)
+    
+    local rs5kfx = {}
+    local rs5kfxidx = {}
+    
+    for f = 1, reaper.TrackFX_GetCount(track) do
+      local ret, fxc = GetFXChunkFromTrackChunk(chunk,f)
+      if ret == true then
+        local s, e = string.find(fxc,'reasamplomatic.dll')
+        if s and e then
+          rs5kfx[#rs5kfx+1] = {fxnum = f-1,
+                               fxguid = reaper.TrackFX_GetFXGUID(track, f-1),
+                              }
+          rs5kfxidx[f-1] = #rs5kfx
+        end
+      
+      end
+    end
+    
+    local selfxnum = -1
+    local selstrip = tracks[track_select].strip
+    local selpage = page
+    for f = 1, #rs5kfx do
+
+      local ass = false
+      for s = 1, #strips do
+        if strips[s] then
+          for p = 1, 4 do
+            for cc = 1, #strips[s][p].controls do
+              local ctl = strips[s][p].controls[cc]
+              if ctl.ctlcat == ctlcats.rs5k then
+                if ctl.fxnum == rs5kfx[f].fxnum then
+                  ass = true
+                  break
+                end
+              end
+            end
+            if ass == true then break end
+          end
+          if ass == true then break end
+        end
+        if ass == true then break end  
+      end
+      if ass == false then
+        selfxnum = f
+        break
+      end
+    end
+    
+    local ctl = strips[selstrip][selpage].controls[c]
+    if ctl then
+      if selfxnum == -1 then
+        --Add RS5K control to track
+        local cn = reaper.TrackFX_AddByName(track, 'ReaSamplOmatic5000', false, -1)
+        ctl.fxnum = cn   
+        ctl.fxguid = reaper.TrackFX_GetFXGUID(track,cn)   
+      else
+        --Assign selfxnum 
+        ctl.fxnum = rs5kfx[selfxnum].fxnum   
+        ctl.fxguid = rs5kfx[selfxnum].fxguid   
+      end
+      
+      --init control data
+      ctl.rsdata = {samplefolder = nil,
+                    samples = {}}
+      
+    end
   end
   
   function ReassParam(strip, page, reass_param, trackedit_select, trackfx_select, trackfxparam_select)
@@ -36087,7 +37434,8 @@ end
                        ctl.ctlcat == ctlcats.fxoffline or
                        ctl.ctlcat == ctlcats.midictl or 
                        ctl.ctlcat == ctlcats.takeswitcher or 
-                       ctl.ctlcat == ctlcats.macro then 
+                       ctl.ctlcat == ctlcats.macro or 
+                       ctl.ctlcat == ctlcats.rs5k then 
                       local strip = tracks[track_select].strip
                       --Add / Remove
                       local ctlidx = GetSnapshotCtlIdx(strip, page, sstype_select, i)
@@ -36136,7 +37484,8 @@ end
                strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.fxoffline or 
                strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.midictl or 
                strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.takeswitcher or 
-               strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.macro then 
+               strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.macro or 
+               strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.rs5k then 
               --Add / Remove
               local ctlidx = GetSnapshotCtlIdx(strip, page, sstype_select, i)
               if ctlidx then
@@ -37321,6 +38670,64 @@ end
     end
   
     return false
+  end
+
+  function SetPinMap(tr, fxn, inLo, inHi, outLo, outHi)
+  
+    local retval, inpins, outpins = reaper.TrackFX_GetIOSize(tr,fxn)
+    if inLo and inHi then
+      for p = 0, inpins-1 do
+        if inLo[p] and inHi[p] then
+          reaper.TrackFX_SetPinMappings(tr, fxn, 0, p, inLo[p], inHi[p])
+        end
+      end
+    end
+    
+    if outLo and outHi then
+      for p = 0, outpins-1 do
+        if outLo[p] and outHi[p] then
+          reaper.TrackFX_SetPinMappings(tr, fxn, 1, p, outLo[p], outHi[p])
+        end
+      end          
+    end
+      
+  end
+
+  function GetPinMap(tr, fxn)
+
+    local inLo, inHi, outLo, outHi = {}, {}, {}, {}
+    local retval, inpins, outpins = reaper.TrackFX_GetIOSize(tr,fxn)
+    for p = 0, inpins-1 do
+      inLo[p], inHi[p] = reaper.TrackFX_GetPinMappings(tr, fxn, 0, p)
+    end
+    for p = 0, outpins-1 do
+      outLo[p], outHi[p] = reaper.TrackFX_GetPinMappings(tr, fxn, 1, p)
+    end    
+    
+    return inLo, inHi, outLo, outHi
+    
+  end
+
+  function ConvertPinMap(pmLo, pmHi)
+  
+    local bitmap = {}
+    for chan = 0, 31 do
+      local bit = 2^(chan%32)
+      bitmap[chan] = (pmLo&bit)>0
+      bitmap[chan+32] = (pmHi&bit)>0
+    end
+  
+    local bittxt = ''
+    for i = 0, #bitmap do
+      if bitmap[i] == true then
+        bittxt = bittxt .. '1'
+      else
+        bittxt = bittxt .. '0'
+      end
+    end
+    
+    return bitmap, bittxt
+    
   end
 
   function A_Run_PinMatrix(noscroll, rt, char)
@@ -39903,6 +41310,24 @@ end
                             --update_mtrs = true
                           end
                         end
+                      
+                      elseif ctl.ctlcat == ctlcats.rs5k then
+                        local fxguid = reaper.TrackFX_GetFXGUID(tr, ctl.fxnum)
+                        if ctl.fxguid == fxguid and ctl.rsdata.samplesidx then
+                          local retval, fn = reaper.TrackFX_GetNamedConfigParm(track, ctl.fxnum, 'FILE')
+                          local ffn = string.match(fn, '.*[\\/](.*)')
+                          local si = ctl.rsdata.samplesidx[fn]
+                          if si and si ~= math.min(math.floor(ctl.val * lvar.maxsamples)+1,#ctl.rsdata.samples) then
+                            ctl.val = ((si-1) / lvar.maxsamples)
+                            ctl.dirty = true
+                            update_ctls = true
+                          end
+                        else
+                          if ctl.fxfound then
+                            CheckStripControls()
+                          end
+                        end
+                      
                       elseif ctl.ctlcat == ctlcats.takeswitcher then
                         
                         if ctl.iteminfo then
@@ -42277,6 +43702,9 @@ end
     if ctl.ctlcat == ctlcats.snapshotrand and ctl.random then
       tbl.random = table.deepcopy(ctl.random)
     end
+    if ctl.ctlcat == ctlcats.rs5k and ctl.rsdata then
+      tbl.rsdata = table.deepcopy(ctl.rsdata)
+    end
         
     return tbl
   end
@@ -43013,7 +44441,7 @@ end
             for lc = 1, lcnt do
               local key = pfx..'c_'..c..'_ecg_lm_'..lc..'_'
               strip.controls[c].eqgraph.lookmap[lc] = {pix = tonumber(zn(data[key..'pix'])),
-                                                               hz = tonumber(zn(data[key..'hz']))}
+                                                       hz = tonumber(zn(data[key..'hz']))}
             end
             
           end
@@ -43032,6 +44460,30 @@ end
 
         end
 
+        
+        local key = pfx..'c_'..c..'_rs5k_'
+        if data[key..'samplefolder'] then
+          strip.controls[c].rsdata = {}
+          strip.controls[c].rsdata.samplefolder = zn(data[key..'samplefolder'])
+          strip.controls[c].rsdata.recurse = tobool(zn(data[key..'recurse']))
+          strip.controls[c].rsdata.samples = {}
+          strip.controls[c].rsdata.samplesidx = {}
+          local scnt = zn(data[key..'samplecnt'],0)
+          
+          for sm = 1, scnt do
+            local key = pfx..'c_'..c..'_rs5k_sample_'..sm..'_'
+            local fol = zn(data[key..'fol'])
+            local fn = zn(data[key..'fn'])
+            if fn then
+              strip.controls[c].rsdata.samples[sm] = {fol = fol, fn = fn}
+              strip.controls[c].rsdata.samplesidx[fol..fn] = sm
+            else
+              strip.controls[c].rsdata.samples[sm] = {fol = fol, fn = nil}
+            end
+          end
+        end
+
+ 
         --load control images - reshuffled to ensure no wasted slots between sessions
         if pfx ~= '' then
           local iidx
@@ -46179,6 +47631,20 @@ end
                 
               end
 
+              if stripdata.controls[c].rsdata then
+                local key = pfx..'c_'..c..'_rs5k_'
+                file:write('['..key..'samplefolder]'..nz(stripdata.controls[c].rsdata.samplefolder,'')..'\n')
+                file:write('['..key..'recurse]'..nz(tostring(stripdata.controls[c].rsdata.recurse),'')..'\n')
+                
+                file:write('['..key..'samplecnt]'..#stripdata.controls[c].rsdata.samples..'\n')
+                for sm = 1, #stripdata.controls[c].rsdata.samples do
+                  local key = pfx..'c_'..c..'_rs5k_sample_'..sm..'_'
+                  file:write('['..key..'fol]'..nz(stripdata.controls[c].rsdata.samples[sm].fol,'')..'\n')
+                  file:write('['..key..'fn]'..nz(stripdata.controls[c].rsdata.samples[sm].fn,'')..'\n')
+                end              
+              
+              end
+
             end
           end        
 
@@ -46860,6 +48326,9 @@ end
                ctl.ctltype == 10 then
                v = round(v)
             end
+            if ctl.ctlcat == ctlcats.rs5k then            
+              v = v * ((#ctl.rsdata.samples-1)/lvar.maxsamples)
+            end
             if v ~= ctl.val then
               SetParam3(strip,page,rctls[cc].ctl,ctl,v)
             end
@@ -47150,6 +48619,14 @@ end
                 SetCtlDirty(c)
                 update_ctls = true
               end
+            elseif ctl.ctlcat == ctlcats.rs5k then
+              local v = math.max(round(math.random()*(#ctl.rsdata.samples-1))/lvar.maxsamples,0)
+              ctl.val = v
+
+              A_SetParam(strip, page, c, ctl)
+
+              SetCtlDirty(c)
+              update_ctls = true             
             end
           end
         end
@@ -47161,7 +48638,7 @@ end
           for ctl = 1, #snapshots[strip][page][sstype_select].ctls do
             local c = snapshots[strip][page][sstype_select].ctls[ctl].ctl
             local cctl = strips[strip][page].controls[c]
-            if cctl and cctl.ctlcat ~= ctlcats.takeswitcher then
+            if cctl and cctl.ctlcat ~= ctlcats.takeswitcher and cctl.ctlcat ~= ctlcats.rs5k then
             --[[if cctl and (cctl.ctlcat == ctlcats.fxparam or 
                cctl.ctlcat == ctlcats.trackparam or
                cctl.ctlcat == ctlcats.tracksend) then]]
@@ -47188,6 +48665,14 @@ end
                 SetCtlDirty(c)
                 update_ctls = true
               end
+            elseif cctl and cctl.ctlcat == ctlcats.rs5k then
+              local v = math.max(round(math.random()*(#cctl.rsdata.samples-1))/lvar.maxsamples,0)
+              cctl.val = v
+
+              A_SetParam(strip, page, c, cctl)
+
+              SetCtlDirty(c)
+              update_ctls = true             
             end
           end
         end
@@ -48076,7 +49561,8 @@ end
                ctl.ctlcat == ctlcats.tracksend or 
                ctl.ctlcat == ctlcats.fxoffline or 
                ctl.ctlcat == ctlcats.midictl or 
-               ctl.ctlcat == ctlcats.takeswitcher then
+               ctl.ctlcat == ctlcats.takeswitcher or 
+               ctl.ctlcat == ctlcats.rs5k then
               if ctl.ctltype ~= 5 then
                 local track = GetTrack(nz(ctl.tracknum,strips[strip].track.tracknum))
                 local cc = ctl.ctlcat
@@ -48181,7 +49667,8 @@ end
                  ctl.ctlcat == ctlcats.tracksend or 
                  ctl.ctlcat == ctlcats.fxoffline or 
                  ctl.ctlcat == ctlcats.midictl or 
-                 ctl.ctlcat == ctlcats.takeswitcher then
+                 ctl.ctlcat == ctlcats.takeswitcher or 
+                 ctl.ctlcat == ctlcats.rs5k then
                 if ctl.ctltype ~= 5 then
                   local track = GetTrack(nz(ctl.tracknum,strips[strip].track.tracknum))
                   local cc = ctl.ctlcat
@@ -49552,6 +51039,7 @@ end
     SF_butt_cnt = 0
     SS_butt_cnt = 0
     FSS_butt_cnt = 0
+    SM_butt_cnt = 17
     tlist_offset = 0
     sflist_offset = 0
     mdlist_offset = 0
@@ -49562,6 +51050,7 @@ end
     plist_offset = 0
     flist_offset = 0
     slist_offset = 0
+    smlist_offset = 0
     xxylist_offset = 0
     ssoffset = 0
     fssoffset = 0
@@ -51100,6 +52589,7 @@ end
   modselcol = '160 255 255'
   
   modwin = {minw = 536, minh = 180}
+  smwin = {w = 500, h = 500}
   
   barcol = '64 0 0'
   
