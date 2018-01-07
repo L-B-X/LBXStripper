@@ -9010,19 +9010,16 @@ end
                     v2 = nz(frameScale(ctl.framemode, GetParamValue2(ctlcat,track,fxnum,param,i)),0)
                     val2 = F_limit(round(frames*v2),0,frames-1)
                   elseif ctlcat == ctlcats.fxoffline or ctlcat == ctlcats.macro or ctlcat == ctlcats.midictl then
-                    v2 = ctl.val                  
+                    v2 = ctl.val
                     val2 = F_limit(round(frames*v2),0,frames-1)
                   elseif ctlcat == ctlcats.rs5k then
                     if ctl.rsdata.samples and #ctl.rsdata.samples > 0 then
                       v2 = math.floor(ctl.val * lvar.maxsamples) / (#ctl.rsdata.samples -1)
-                      --v2 = math.floor(ctl.val * ctl.maxov)-- / (#ctl.rsdata.samples -1)
-                      --DBG(v2..'  '..v2*lvar.maxsamples)
                       val2 = F_limit(round(frames*v2),0,frames-1)
                     end                  
                   elseif ctlcat == ctlcats.takeswitcher then
                     if ctl.iteminfo then
                       v2 = (math.floor(ctl.val*takeswitch_max)/(ctl.iteminfo.numtakes-1))
-                      --v2 = ctl.val                  
                       val2 = F_limit(round(frames*v2),0,frames-1)
                     end
                   end
@@ -9032,6 +9029,7 @@ end
                     --invert button
                     val2 = 1-val2
                   elseif ctltype == 4 then
+
                     --cycle button
                     if ctl.cycledata.mapptof then
                       --override val2
@@ -9068,25 +9066,26 @@ end
                         end
                         
                         if ctl.cycledata.spread then
-                          val2 = F_limit(math.floor(((nz(ctl.cycledata.pos,0)-1) / 
+                          val2 = F_limit(math.floor((((ctl.cycledata.pos or 0)-1) / 
                                     (ctl.cycledata.statecnt-1)) * (frames-1)),0,frames-1)
                         else
-                          val2 = F_limit(nz(ctl.cycledata.pos,0)-1,0,frames-1)
+                          val2 = F_limit((ctl.cycledata.pos or 0)-1,0,frames-1)
                         end
                         if ctl.cycledata and 
-                           ctl.cycledata[nz(ctl.cycledata.pos,0)] then
-                          DVOV = nz(ctl.cycledata[nz(ctl.cycledata.pos,0)].dispval,'')
+                           ctl.cycledata[(ctl.cycledata.pos or 0)] then
+                          DVOV = nz(ctl.cycledata[(ctl.cycledata.pos or 0)].dispval,'')
                         end
                       end
                     else
-                    --DBG(ctl.cycledata.pos)
+
                       local p = tonumber(ctl.cycledata.pos)
                       if ctl.cycledata and 
                          ctl.cycledata[nz(p,0)] then
-                        DVOV = nz(ctl.cycledata[nz(p,0)].dispval,'')
+                        DVOV = nz(ctl.cycledata[(p or 0)].dispval,'')
                         
                       end                  
                     end
+                  
                   elseif ctltype == 6 then
                     --mem button
                     if ctl.membtn == nil then
@@ -16424,6 +16423,11 @@ end
       else
         return '-inf'       
       end
+      
+    elseif ctlcat == ctlcats.midictl then
+    
+      local ctl = strips[tracks[track_select].strip][page].controls[c]
+      return math.floor(ctl.val * 127)
     end
   end
 
@@ -16642,6 +16646,19 @@ end
       else
         return 0
       end
+    elseif ctlcat == ctlcats.midictl then
+      local ctl = strips[tracks[track_select].strip][page].controls[c]
+      local v = ctl.val
+      local min, max = 0, 1
+      if c then
+        if ctl.minov then
+          min = ctl.minov
+        end
+        if ctl.maxov then
+          max = ctl.maxov
+        end
+      end
+      return normalize(min, max, v)
     end
   end
 
@@ -30396,11 +30413,14 @@ end
                       ctls[i].cycledata.posdirty = false
                       update_ctls = true
                     end
+                    SetCtlDirty(i)
+                    update_ctls = true
                   end
                   if ctls[i].mod and mod_select ~= ctls[i].mod then
                     mod_select = ctls[i].mod
                     update_gfx = true
                   end
+                  
                   noscroll = true
                 elseif ctltype == 6 then
                   --mem button
@@ -31153,10 +31173,13 @@ end
           if val ~= octlval then
             local pos = F_limit(math.floor(val*ctl.cycledata.statecnt),1,
                                 ctl.cycledata.statecnt)
-            ctl.cycledata.pos = pos
-            ctl.val = ctl.cycledata[pos].val
-            A_SetParam(strip,page,trackfxparam_select,ctl)
-            ctl.dirty = true
+            if pos ~= ctl.cycledata.pos then
+              ctl.cycledata.pos = pos
+              ctl.val = ctl.cycledata[pos].val
+              A_SetParam(strip,page,trackfxparam_select,ctl)
+              ctl.dirty = true
+              SetCtlDirty(trackfxparam_select)
+            end
             octlval = val
             update_ctls = true
           end
@@ -31188,10 +31211,13 @@ end
           if val ~= octlval then
             local pos = F_limit(math.floor(val*ctl.cycledata.statecnt),1,
                                 ctl.cycledata.statecnt)
-            ctl.cycledata.pos = pos
-            ctl.val = ctl.cycledata[pos].val
-            A_SetParam(strip,page,trackfxparam_select,ctl)
-            ctl.dirty = true
+            if pos ~= ctl.cycledata.pos then
+              ctl.cycledata.pos = pos
+              ctl.val = ctl.cycledata[pos].val
+              A_SetParam(strip,page,trackfxparam_select,ctl)
+              ctl.dirty = true
+              SetCtlDirty(trackfxparam_select)
+            end
             octlval = val
             update_ctls = true
           end
@@ -43257,6 +43283,7 @@ end
             SetParam3(strip,page,trackfxparam_select,ctl,cycle_select.val)
           end
           local dv = GetParamDisp(cc, tracknum, fxnum, param, dvoff,trackfxparam_select)
+          --DBG(i..'  '..cycle_select.val)
           cycle_select[i] = {val = cycle_select.val, dispval = dv, dv = dv}
         end
       end
@@ -43317,7 +43344,9 @@ end
                   {}}
       for i = 1, max_cycle do
         if cd[i] then
+          cd[i].val = cd[i].val or 0
           co[i] = {val = tonumber(cd[i].val), dispval = cd[i].dispval, dv = cd[i].dv}
+          --DBG(tostring(co[i].val)..'  '..tostring(cd[i].val))
         end
       end
       co = cycledata_slowsort(cd)
