@@ -3287,6 +3287,10 @@
                                y = settingswin_off + yoff+10 + yoffm*23,
                                w = 150,
                                h = bh+10}
+    obj.sections[729] = {x = obj.sections[70].w/2+xofft,
+                              y = settingswin_off + yoff + yoffm*25 + 4,
+                              w = bw,
+                              h = bh}
 
     
     return obj
@@ -16021,6 +16025,8 @@ end
     if lvar.updateravailable then
       GUI_DrawButton(gui, 'UPDATE LBX', obj.sections[727], -1, gui.color.black, true, '', true, gui.fontsz.settings,true)
     end
+
+    GUI_DrawTick(gui, 'Run lbxstart batch file when script starts', obj.sections[729], gui.color.white, settings_runstartbat, gui.fontsz.settings,true)
     
     gfx.dest = 1
     gfx.a = 1
@@ -41039,6 +41045,10 @@ end
         settings_dragmode = not settings_dragmode
         update_gfx = true
 
+      elseif mouse.context == nil and MOUSE_click(obj.sections[729]) then
+        settings_runstartbat = not settings_runstartbat
+        update_gfx = true
+
       elseif mouse.context == nil and MOUSE_click(obj.sections[727]) then
         
         if lvar.updateravailable == true then
@@ -46603,6 +46613,7 @@ end
     settings_pagescrolldir = tonumber(nz(GES('settings_pagescrolldir',true),settings_pagescrolldir))
 
     settings_dragmode = tobool(nz(GES('settings_dragmode',true),settings_dragmode))
+    settings_runstartbat = tobool(nz(GES('settings_runstartbat',true),settings_runstartbat))
     
     if settings_hideeditbaronnewproject then
       plist_w = 0
@@ -46767,6 +46778,7 @@ end
     reaper.SetExtState(SCRIPT,'mutate_dir',tostring(lvar.mutate_settings.dir), true)    
 
     reaper.SetExtState(SCRIPT,'settings_dragmode',tostring(settings_dragmode), true)    
+    reaper.SetExtState(SCRIPT,'settings_runstartbat',tostring(settings_runstartbat or false), true)    
     
     if strip_default then
       reaper.SetExtState(SCRIPT,'strip_default',tostring(strip_default.strip_select), true)
@@ -52723,6 +52735,7 @@ end
   settings_ssdock = false
   settings_moddock = false
   settings_dragmode = false
+  settings_runstartbat = false
   settings_lockpinmatrix = false
   settings_backupduringsave = true
   
@@ -52860,11 +52873,13 @@ end
     gfx.dock(dockstate)
   --test jsfx plug name in quotes
 
-    local startbat = paths.resource_path..'\\lbxstart.bat'
-    if reaper.file_exists(startbat) then
-      os.execute(startbat)
-    end  
-
+    if settings_runstartbat == true then
+      local startbat = paths.resource_path..'\\lbxstart.bat'
+      if reaper.file_exists(startbat) then
+        os.execute(startbat)
+      end  
+    end
+    
   --reaper.SetCurrentBPM(0, 130, false)
   --local bpm, _ = reaper.GetProjectTimeSignature2(0)
   --DBG(bpm)
