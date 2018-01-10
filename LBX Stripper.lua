@@ -25,7 +25,7 @@
   lvar.special_table = {}
   lvar.otherctl_table = {'Action Trigger','Macro Control','EQ Engine','Strip Switcher','ReaControlMidi Switch','Midi/OSC Control','Take Switcher','RS5K Control'}
   lvar.scalemode_preset_table = {'','NORMAL','REAPER VOL'}
-  lvar.lfomode_table = {'NORMAL MODE','TAKESWITCH MODE'}
+  lvar.lfomode_table = {'NORMAL MODE','TAKESWITCH MODE','RS5K MODE'}
   lvar.scalemode_table = {1/8,1/7,1/6,1/5,1/4,1/3,1/2,1,2,3,4,5,6,7,8}
   lvar.scalemode_dtable = {'1/8','1/7','1/6','1/5','1/4','1/3','1/2','1','2','3','4','5','6','7','8'}
   lvar.macroscale_table = {'Linear','Slow','Fast','Smooth','Slow 2 (Cubic)','Fast 2 (Cubic)', 'Smooth 2 (Cubic)', 'Slow 3', 'Fast 3', 'Smooth 3', 'Instant'}
@@ -2979,7 +2979,7 @@
         GUI_DrawKeyboard(obj, gui)
       end
 
-      local smw,smh = math.min(math.floor(smwin.w*pnl_scale),obj.sections[10].w-20,lvar.kb.wkey_w*lvar.kb.wkeys+20), math.max(math.min(math.floor((smwin.h)),obj.sections[10].h),340*pnl_scale)
+      local smw,smh = math.min(math.floor(smwin.w*pnl_scale),obj.sections[10].w-20,lvar.kb.wkey_w*lvar.kb.wkeys+20), math.max(math.min(math.floor((smwin.h)),obj.sections[10].h),405*pnl_scale)
       if mm1300 then
         obj.sections[1300] = {x = math.max(F_limit(mm1300.x,obj.sections[10].x,obj.sections[10].x+obj.sections[10].w-smw),obj.sections[10].x),
                               y = math.max(F_limit(mm1300.y,obj.sections[10].y,obj.sections[10].y+obj.sections[10].h-smh),obj.sections[10].y),
@@ -3041,6 +3041,11 @@
     --clear
     obj.sections[1308] = {x = obj.sections[1305].x,
                          y = obj.sections[1307].y + obj.sections[1307].h + 4,
+                         w = bw,
+                         h = math.floor(butt_h*pnl_scale*2)}
+
+    obj.sections[1309] = {x = obj.sections[1305].x,
+                         y = obj.sections[1308].y + obj.sections[1308].h + 4,
                          w = bw,
                          h = math.floor(butt_h*pnl_scale*2)}
     
@@ -12825,7 +12830,7 @@ end
           local x = obj.sections[1101].x + math.floor((modbaredit[i]-1) * barw)
           local w = math.floor(modbaredit[i]*barw) - math.floor((modbaredit[i]-1) * barw) - bw        
           local h
-          if m.mode == 2 then
+          if m.mode >= 2 then
             h = math.floor(obj.sections[1101].h * ((m.data[modbaredit[i]])/(m.max-m.min))) 
           else
             h = math.floor(obj.sections[1101].h * m.data[modbaredit[i]]) 
@@ -12835,7 +12840,7 @@ end
           gfx.rect(x+bw,obj.sections[1101].y,math.max(w,1),obj.sections[1101].h,1)
            
           local c
-          if m.mode == 2 then
+          if m.mode >= 2 then
             c = 0.1 + ((m.data[modbaredit[i]])/(m.max-m.min)) * 0.9
           else
             c = 0.1 + m.data[modbaredit[i]] * 0.9
@@ -12888,7 +12893,7 @@ end
         local x = obj.sections[1101].x + math.floor((opos-1) * barw)
         local w = math.floor(opos*barw) - math.floor((opos-1) * barw) - bw
         local h
-        if m.mode == 2 then
+        if m.mode >= 2 then
           h = math.floor(obj.sections[1101].h * ((m.data[opos])/(m.max-m.min))) 
         else
           h = math.floor(obj.sections[1101].h * m.data[opos]) 
@@ -12901,7 +12906,7 @@ end
         gfx.rect(x+bw,obj.sections[1101].y+obj.sections[1101].h+1,math.max(w,1),modpos,1)        
         
         local c
-        if m.mode == 2 then
+        if m.mode >= 2 then
           c = 0.1 + ((m.data[opos])/(m.max-m.min)) * 0.9
         else
           c = 0.1 + m.data[opos] * 0.9
@@ -12918,7 +12923,7 @@ end
         local w = math.floor(m.pos*barw) - math.floor((m.pos-1) * barw) - bw
 --        local h = math.floor(obj.sections[1101].h * m.data[m.pos]) 
         local h
-        if m.mode == 2 then
+        if m.mode >= 2 then
           h = math.floor(obj.sections[1101].h * ((m.data[m.pos])/(m.max-m.min))) 
         else
           h = math.floor(obj.sections[1101].h * m.data[m.pos]) 
@@ -12930,7 +12935,7 @@ end
           gfx.rect(x+bw,obj.sections[1101].y,math.max(w,1),obj.sections[1101].h,1)
            
           local c
-          if m.mode == 2 then
+          if m.mode >= 2 then
             c = 0.1 + ((m.data[m.pos])/(m.max-m.min)) * 0.9
           else
             c = 0.1 + m.data[m.pos] * 0.9
@@ -13007,7 +13012,7 @@ end
       end
       GUI_DrawButton(gui,txt,obj.sections[1108],c,gui.color.white,true)
       GUI_DrawButton(gui,'RANDOMIZE',obj.sections[1113],c,gui.color.white,true)
-      if m.mode == 2 then
+      if m.mode >= 2 then
         c = -4
       end
       GUI_DrawButton(gui,lvar.lfomode_table[m.mode],obj.sections[1114],c,gui.color.white,true)
@@ -13022,7 +13027,11 @@ end
       if m.max < 1 then
         c = -4
       end
-      GUI_DrawButton(gui,'MAX: '..math.floor(m.max*takeswitch_max),obj.sections[1110],c,gui.color.white,true)
+      local maxx = takeswitch_max
+      if m.mode == 3 then
+        maxx = lvar.maxsamples
+      end
+      GUI_DrawButton(gui,'MAX: '..math.floor(m.max*maxx),obj.sections[1110],c,gui.color.white,true)
 
     end
         
@@ -13091,7 +13100,7 @@ end
       
       for i = 1, m.steps do
         local c
-        if m.mode == 2 then
+        if m.mode >= 2 then
           c = 0.1 + ((m.data[i])/(m.max-m.min)) * 0.9
         else
           c = 0.1 + m.data[i] * 0.9
@@ -13104,7 +13113,7 @@ end
         local x = obj.sections[1101].x + math.floor((i-1) * barw)
         local w = math.floor(i*barw) - math.floor((i-1) * barw) - bw
         local h
-        if m.mode == 2 then
+        if m.mode >= 2 then
           h = math.floor(obj.sections[1101].h * ((m.data[i])/(m.max-m.min))) 
         else
           h = math.floor(obj.sections[1101].h * m.data[i])         
@@ -13481,6 +13490,12 @@ end
       GUI_DrawButton(gui, 'ADD', obj.sections[1306], gui.color.white, gui.skol.butt1_txt, true, '',false,gui.fontsz.butt)
       GUI_DrawButton(gui, 'REPLACE', obj.sections[1307], gui.color.white, gui.skol.butt1_txt, true, '',false,gui.fontsz.butt)
       GUI_DrawButton(gui, 'CLEAR', obj.sections[1308], gui.color.white, gui.skol.butt1_txt, true, '',false,gui.fontsz.butt)
+      local bc = gui.color.white
+      if smshowfavs then
+        bc = -4
+      end
+      
+      GUI_DrawButton(gui, 'SORT FAVS', obj.sections[1309], bc, gui.skol.butt1_txt, true, '',false,gui.fontsz.butt)
       
       f_Get_SSV(gui.skol.lst_bg)
       gfx.rect(obj.sections[1302].x,
@@ -13493,8 +13508,14 @@ end
                obj.sections[1302].w,
                obj.sections[1302].h, 0)
       
-      local rsdata = ctl.rsdata
+      local rsdata
+      if smshowfavs then
+        rsdata = samplefavs
+      else
+        rsdata = ctl.rsdata
+      end
       SM_butt_cnt = math.floor(obj.sections[1302].h / butt_h)
+      local starw, starh = gfx.getimgdim(skin.star)
       if rsdata then
         for i = 1, SM_butt_cnt do
           
@@ -13507,7 +13528,8 @@ end
             local c = gui.skol.lst_txt
             local c2 = gui.skol.modhighcol
             local col2 = math.floor(40*((lst_fontscale/20)+1))
-            if sample_select == i + smlist_offset then  
+            
+            if (not smshowfavs and sample_select == i + smlist_offset) or (smshowfavs and sample_select == rsdata.samples[i+smlist_offset].idx) then  
               f_Get_SSV(gui.skol.lst_barhl)
               gfx.rect(xywh.x + col2,
                        xywh.y, 
@@ -13517,11 +13539,29 @@ end
               c = gui.skol.lst_txthl
             end
             xywh.x = xywh.x + 2
-            GUI_Str(gui, xywh, string.format("%03d",i+smlist_offset), 4, c2, -4 + gui.fontsz.lst+ lst_fontscale, 1, nil, gui.fontnm.lst, gui.fontflag.lst)    
+            
+            local n = i+smlist_offset
+            if smshowfavs then
+              n = rsdata.samples[i+smlist_offset].idx
+            end
+            GUI_Str(gui, xywh, string.format("%03d",n), 4, c2, -4 + gui.fontsz.lst+ lst_fontscale, 1, nil, gui.fontnm.lst, gui.fontflag.lst)    
                   
             xywh.x = xywh.x + col2
-            xywh.w = obj.sections[1302].w -xywh.x - 2
+            xywh.w = obj.sections[1302].w -xywh.x - 2 - starw
+            
+            if not rsdata.samples[i+smlist_offset].fn then
+              c = '128 128 128'
+            end
             GUI_Str(gui, xywh, rsdata.samples[i+smlist_offset].fn or '[No sample]', 4, c, -4 + gui.fontsz.lst+ lst_fontscale, 1, nil, gui.fontnm.lst, gui.fontflag.lst)          
+        
+            --FAVS
+            xywh.w = xywh.w + starw
+            if rsdata.samples[i+smlist_offset].fn and rsdata.samples[i+smlist_offset].fav == true then
+              gfx.blit(skin.star,1,0,0,0,starw,starh,xywh.x+xywh.w-starw,xywh.y+xywh.h/2-starh/2)
+            else
+              gfx.blit(skin.starout,1,0,0,0,starw,starh,xywh.x+xywh.w-starw,xywh.y+xywh.h/2-starh/2)        
+            end
+            
         
           end
           
@@ -13550,6 +13590,35 @@ end
 
     gfx.dest = 1
   
+  end
+
+  function PopSampleFavIdx()
+  
+    local strip = tracks[track_select].strip
+    local ctl = strips[strip][page].controls[rs5k_select]
+    local samples = ctl.rsdata.samples
+    
+    samplefavs = {samples = {}, idx = {}}
+    
+    for s = 1, #samples do
+      if samples[s].fav == true then
+      
+        local sidx = #samplefavs.samples + 1
+        samplefavs.samples[sidx] = samples[s]
+        samplefavs.samples[sidx].idx = s
+        samplefavs.idx[s] = sidx
+      end
+    end
+    for s = 1, #samples do
+      if samples[s].fav ~= true then
+      
+        local sidx = #samplefavs.samples + 1
+        samplefavs.samples[sidx] = samples[s]
+        samplefavs.samples[sidx].idx = s
+        samplefavs.idx[s] = sidx
+      end
+    end
+    
   end
 
   function GUI_DrawMutate(obj, gui)
@@ -17053,11 +17122,19 @@ end
   
   function FollowSample(v, scnt)
     v=v-1
+    
     if not scnt then scnt = lvar.maxsamples end
-    if v < smlist_offset then
+    if smshowfavs then
+      v = samplefavs.idx[v+1]
+      if v then v=v-1 end
+      scnt = #samplefavs.samples
+    end
+    
+    if v and v < smlist_offset then
       smlist_offset = math.min(math.max(v - math.floor(SM_butt_cnt-1),0),scnt-SM_butt_cnt)
-    elseif v >= smlist_offset + SM_butt_cnt then
+    elseif v and v >= smlist_offset + SM_butt_cnt then
       smlist_offset = math.min(math.max(v,0),scnt-SM_butt_cnt)
+    else
     end
   end
   
@@ -24080,6 +24157,7 @@ end
       CloseActChooser()
       show_ctlbrowser = false
       show_samplemanager = false
+      
       SetASLocs()
       SetGalleryView()
   
@@ -26163,6 +26241,7 @@ end
       lvar.rs.pitch = round(diff/single)
       
       GUI_DrawKeyboardOverlay(obj, gui)
+      PopSampleFavIdx()
     
     end
     update_gfx = true
@@ -29161,8 +29240,14 @@ end
                     h = obj.sections[1302].h}
       if show_samplemanager == true and MOUSE_over(xywh) then
         local ctl = strips[tracks[track_select].strip][page].controls[rs5k_select]
-        if ctl and SM_butt_cnt < #ctl.rsdata.samples then
-          smlist_offset = F_limit(smlist_offset - v*3, 0, #ctl.rsdata.samples-SM_butt_cnt)
+        local rsdata
+        if smshowfavs then
+          rsdata = samplefavs
+        else
+          rsdata = ctl.rsdata
+        end
+        if ctl and SM_butt_cnt < #rsdata.samples then
+          smlist_offset = F_limit(smlist_offset - v*3, 0, #rsdata.samples-SM_butt_cnt)
         else
           smlist_offset = 0
         end
@@ -29248,8 +29333,15 @@ end
         
       elseif MOUSE_click(obj.sections[1303]) then
         
+        local rsdata
+        if smshowfavs then
+          rsdata = samplefavs
+        else
+          rsdata = ctl.rsdata
+        end
+
         local msbh = obj.sections[1303].h
-        local p1 = 1 / #ctl.rsdata.samples
+        local p1 = 1 / #rsdata.samples
         local sbh = math.ceil(F_limit(p1*SM_butt_cnt * msbh,20,msbh))
         local p2 = p1*msbh
         local sby = math.floor(smlist_offset * p2)
@@ -29257,7 +29349,8 @@ end
         sby = math.min(sby,--[[obj.sections[1303].y+]]msbh-sbh-1)
 
         if mouse.my >= obj.sections[1303].y + sby and mouse.my <= obj.sections[1303].y + sby+sbh then
-          if SM_butt_cnt < #ctl.rsdata.samples then
+
+          if SM_butt_cnt < #rsdata.samples then
             mouse.context = contexts.scrollsamples
             scrollsamps = {y = mouse.my-obj.sections[1303].y, lo = smlist_offset}
           else
@@ -29272,15 +29365,34 @@ end
 
       elseif MOUSE_click(obj.sections[1302]) then
         local v = math.floor((mouse.my - obj.sections[1302].y) / tb_butt_h)+1 + smlist_offset
-        if v <= #ctl.rsdata.samples then
-          sample_select = v
-          update_samplemanager = true
-          --if ctl.rsdata.samples[v].fn then
-            ctl.val = (v-1) / lvar.maxsamples
-            A_SetParam(strip,page,rs5k_select,ctl)
-            SetCtlDirty(rs5k_select)
-            update_ctls = true
-          --end
+        local rsdata
+        if smshowfavs then
+          rsdata = samplefavs
+        else
+          rsdata = ctl.rsdata
+        end 
+        if v <= #rsdata.samples then
+          local starw, starh = gfx.getimgdim(skin.star)
+          
+          if mouse.mx < obj.sections[1302].w-starw then
+            if smshowfavs then
+              v = rsdata.samples[v].idx
+            end
+            sample_select = v
+            update_samplemanager = true
+            --if ctl.rsdata.samples[v].fn then
+              ctl.val = (v-1) / lvar.maxsamples
+              A_SetParam(strip,page,rs5k_select,ctl)
+              SetCtlDirty(rs5k_select)
+              update_ctls = true
+            --end
+          else
+            if rsdata.samples[v].fn then
+              rsdata.samples[v].fav = not (rsdata.samples[v].fav or false)
+              --PopSampleFavIdx()
+              update_samplemanager = true
+            end
+          end
         end
 
       elseif MOUSE_click(obj.sections[1304]) then
@@ -29420,6 +29532,15 @@ end
           end
         end
         
+      elseif MOUSE_click(obj.sections[1309]) then
+
+        smshowfavs = not (smshowfavs or false)
+        smlist_offset = 0
+        if smshowfavs == true then
+          PopSampleFavIdx()
+        end
+        update_samplemanager = true
+
       elseif MOUSE_click(obj.sections[1301]) then
       
         if not ctl.rsdata.samplefolder then
@@ -30008,13 +30129,16 @@ end
           update_lfoedit = true
 
         elseif MOUSE_click(obj.sections[1113]) then
-        
           local min = m.min
           local max = m.max
           --DBG(max..'  '..min)
           for i = 1, #m.data do
-            if m.mode == 2 then
-              m.data[i] = math.floor((math.random() * ((max-min)+1/takeswitch_max))*takeswitch_max)/takeswitch_max + min
+            if m.mode >= 2 then
+              maxx = takeswitch_max
+              if m.mode == 3 then
+                maxx = lvar.maxsamples
+              end
+              m.data[i] = math.floor((math.random() * ((max-min)+1/maxx))*maxx)/maxx + min
             else
               m.data[i] = ((math.random() * (max-min)) + min)
             end
@@ -30026,7 +30150,8 @@ end
           if tonumber(m.mode) == nil then 
             m.mode = 1 
           else
-            m.mode = 1-(m.mode-1)+1
+            m.mode = ((m.mode+1) % (#lvar.lfomode_table)) + 1
+            --DBG(m.mode)
           end
           update_lfoedit = true
 
@@ -30034,6 +30159,7 @@ end
 
           if m.targets then
             local max = 0
+            local mmx
             for t = 1,#m.targets do
               if m.targets[t].targettype == 1 then
                 if strips[m.targets[t].strip] and strips[m.targets[t].strip][m.targets[t].page].controls[m.targets[t].ctl] then
@@ -30041,14 +30167,19 @@ end
                   if ctl.ctlcat == ctlcats.takeswitcher then
                     if ctl.iteminfo then
                       max = math.max(ctl.iteminfo.numtakes)
-                    
+                      mmx = takeswitch_max
+                    end
+                  elseif ctl.ctlcat == ctlcats.rs5k then
+                    if ctl.rsdata then
+                      max = #ctl.rsdata.samples
+                      mmx = lvar.maxsamples
                     end
                   end
                 end
               end
             end
             if max > 1 then
-              m.max = (max-1)/takeswitch_max
+              m.max = (max-1)/mmx
               m.min = 0
             end
           end
@@ -31478,7 +31609,12 @@ end
       if mouse.context == contexts.scrollsamples then
       
         local my = mouse.my - (obj.sections[1300].y+obj.sections[1303].y)
-        local rsdata = strips[tracks[track_select].strip][page].controls[rs5k_select].rsdata
+        local rsdata
+        if smshowfavs then
+          rsdata = samplefavs
+        else
+          rsdata = strips[tracks[track_select].strip][page].controls[rs5k_select].rsdata
+        end
         local oos = smlist_offset
         smlist_offset = F_limit(math.floor(scrollsamps.lo + ((my-scrollsamps.y)/obj.sections[1303].h) * #rsdata.samples),0,#rsdata.samples-SM_butt_cnt)
         if smlist_offset ~= oos then
@@ -31645,9 +31781,13 @@ end
         --if MOUSE_over(xywh) then
           local xbar = math.floor((mouse.mx-xywh.x)/moddraw.barw) + 1
           local yp
-          if m.mode == 2 then
+          if m.mode >= 2 then
+            local maxx = takeswitch_max
+            if m.mode == 3 then
+              maxx = lvar.maxsamples
+            end
             yp = (F_limit(1- ((mouse.my - xywh.y) / xywh.h),0,1) * (m.max-m.min))
-            yp = math.floor(yp*takeswitch_max)/takeswitch_max
+            yp = math.floor(yp*maxx)/maxx
           else
             yp = F_limit(1- ((mouse.my - xywh.y) / xywh.h),0,1)
           end
@@ -31706,6 +31846,9 @@ end
           local txt = ''
           if m.mode == 2 then
             txt = 'TAKE '..math.floor(yp*takeswitch_max+1)
+          elseif m.mode == 3 then
+            --txt = 'SAMPLE '..math.floor(yp*(m.max*(lvar.maxsamples-1))+1)
+            txt = 'SAMPLE '..math.floor(yp*(lvar.maxsamples-1))+1          
           else
             txt = round(yp*(m.max*takeswitch_max),2)
           end
@@ -31766,7 +31909,8 @@ end
                         ctl.ctlcat == ctlcats.trackparam or 
                         ctl.ctlcat == ctlcats.tracksend or
                         ctl.ctlcat == ctlcats.macro or
-                        ctl.ctlcat == ctlcats.takeswitcher) then 
+                        ctl.ctlcat == ctlcats.takeswitcher or
+                        ctl.ctlcat == ctlcats.rs5k) then 
               dragmod = {x = mouse.mx, y = mouse.my, ctl = c}
             else
               dragmod = {x = mouse.mx, y = mouse.my, ctl = -1}          
@@ -32029,7 +32173,7 @@ end
 
         if smwin.w ~= smwin.ow or smwin.h ~= smwin.oh then
           local smw,smh = math.max(math.min(math.floor(smwin.w*pnl_scale),obj.sections[10].w-20,lvar.kb.wkey_w*lvar.kb.wkeys+20),300*pnl_scale), 
-                          math.max(math.min(math.floor((smwin.h*pnl_scale)),obj.sections[10].h),355*pnl_scale)
+                          math.max(math.min(math.floor((smwin.h*pnl_scale)),obj.sections[10].h),405*pnl_scale)
                           
           obj.sections[1300] = {x = math.max(F_limit(obj.sections[1300].x,obj.sections[10].x,obj.sections[10].x+obj.sections[10].w-smw),obj.sections[10].x),
                                 y = math.max(F_limit(obj.sections[1300].y,obj.sections[10].y,obj.sections[10].y+obj.sections[10].h-smh),obj.sections[10].y),
@@ -32053,7 +32197,7 @@ end
 
         if smwin.h ~= smwin.oh then
           local smw,smh = math.max(math.min(math.floor(smwin.w*pnl_scale),obj.sections[10].w-20,lvar.kb.wkey_w*lvar.kb.wkeys+20),300*pnl_scale), 
-                          math.max(math.min(math.floor((smwin.h*pnl_scale)),obj.sections[10].h),355*pnl_scale)
+                          math.max(math.min(math.floor((smwin.h*pnl_scale)),obj.sections[10].h),405*pnl_scale)
                           
           obj.sections[1300] = {x = math.max(F_limit(obj.sections[1300].x,obj.sections[10].x,obj.sections[10].x+obj.sections[10].w-smw),obj.sections[10].x),
                                 y = math.max(F_limit(obj.sections[1300].y,obj.sections[10].y,obj.sections[10].y+obj.sections[10].h-smh),obj.sections[10].y),
@@ -35356,11 +35500,13 @@ end
           local ext = string.match(sfn,'.+%.(.*)')
           if ext and RS5k_ValidSample(ext) then
             local sidx = #ctl.rsdata.samples + 1
-            ctl.rsdata.samples[sidx] = {fol = fol,
-                                        fn = sfn}
-            ctl.rsdata.samplesidx[fol..sfn] = sidx
-            ctl.rsdata.samples[sidx].flag = true
-            add = add + 1
+            if sidx <= lvar.maxsamples then
+              ctl.rsdata.samples[sidx] = {fol = fol,
+                                          fn = sfn}
+              ctl.rsdata.samplesidx[fol..sfn] = sidx
+              ctl.rsdata.samples[sidx].flag = true
+              add = add + 1
+            end
           end
         else
           local sidx = ctl.rsdata.samplesidx[fol..sfn]
@@ -35433,9 +35579,11 @@ end
           local ext = string.match(sfn,'.+%.(.*)')
           if ext and RS5k_ValidSample(ext) then
             local sidx = #ctl.rsdata.samples + 1
-            ctl.rsdata.samples[sidx] = {fol = fol,
-                                        fn = sfn}
-            ctl.rsdata.samplesidx[fol..sfn] = sidx
+            if sidx <= lvar.maxsamples then
+              ctl.rsdata.samples[sidx] = {fol = fol,
+                                          fn = sfn}
+              ctl.rsdata.samplesidx[fol..sfn] = sidx
+            end
           end
           f=f+1
           sfn = reaper.EnumerateFiles(fol, f)
@@ -44503,11 +44651,12 @@ end
             local key = pfx..'c_'..c..'_rs5k_sample_'..sm..'_'
             local fol = zn(data[key..'fol'])
             local fn = zn(data[key..'fn'])
+            local fav = tobool(zn(data[key..'fav']))
             if fn then
-              strip.controls[c].rsdata.samples[sm] = {fol = fol, fn = fn}
+              strip.controls[c].rsdata.samples[sm] = {fol = fol, fn = fn, fav = fav}
               strip.controls[c].rsdata.samplesidx[fol..fn] = sm
             else
-              strip.controls[c].rsdata.samples[sm] = {fol = fol, fn = nil}
+              strip.controls[c].rsdata.samples[sm] = {fol = fol, fn = nil, fav = nil}
             end
           end
         end
@@ -47670,6 +47819,7 @@ end
                   local key = pfx..'c_'..c..'_rs5k_sample_'..sm..'_'
                   file:write('['..key..'fol]'..nz(stripdata.controls[c].rsdata.samples[sm].fol,'')..'\n')
                   file:write('['..key..'fn]'..nz(stripdata.controls[c].rsdata.samples[sm].fn,'')..'\n')
+                  file:write('['..key..'fav]'..nz(tostring(stripdata.controls[c].rsdata.samples[sm].fav),false)..'\n')
                 end              
               
               end
