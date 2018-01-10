@@ -13033,7 +13033,7 @@ end
       end
       local maxx = takeswitch_max
       if m.mode == 3 then
-        maxx = lvar.maxsamples
+        maxx = lvar.maxsamples-1
       end
       GUI_DrawButton(gui,'MAX: '..math.floor(m.max*maxx),obj.sections[1110],c,gui.color.white,true)
 
@@ -17229,7 +17229,7 @@ end
       elseif cc == ctlcats.rs5k then
       
         ctl.val = math.min(ctl.val, (#ctl.rsdata.samples-1)/lvar.maxsamples)      
-        local v = math.min(math.floor(ctl.val * lvar.maxsamples)+1,#ctl.rsdata.samples)
+        local v = math.min(math.floor(ctl.val * (lvar.maxsamples))+1,#ctl.rsdata.samples)
         if rs5k_select == c and sample_select ~= v then
           if show_samplemanager == true then
             update_samplemanager = true
@@ -17556,7 +17556,7 @@ end
       elseif cc == ctlcats.rs5k then
 
         ctl.val = v
-        local v = math.min(math.floor(ctl.val * lvar.maxsamples)+1,#ctl.rsdata.samples)
+        local v = math.min(math.floor(ctl.val * (lvar.maxsamples-1))+1,#ctl.rsdata.samples)
         if rs5k_select == c and sample_select ~= v then
           if show_samplemanager == true then
             update_samplemanager = true
@@ -17651,7 +17651,7 @@ end
       elseif cc == ctlcats.rs5k then
 
         ctl.val = v
-        local v = math.min(math.floor(ctl.val * lvar.maxsamples)+1,#ctl.rsdata.samples)
+        local v = math.min(math.floor(ctl.val * (lvar.maxsamples))+1,#ctl.rsdata.samples)
         if rs5k_select == c and sample_select ~= v then
           if show_samplemanager == true then
             update_samplemanager = true
@@ -30178,7 +30178,7 @@ end
                   elseif ctl.ctlcat == ctlcats.rs5k then
                     if ctl.rsdata then
                       max = #ctl.rsdata.samples
-                      mmx = lvar.maxsamples
+                      mmx = lvar.maxsamples-1
                     end
                   end
                 end
