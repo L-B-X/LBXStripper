@@ -255,7 +255,8 @@
                  'rcm_switch',
                  'midictl',
                  'oscctl',
-                 'takeswitcher'}
+                 'takeswitcher',
+                 'rs5k'}
              
   lvar.gfxtype = {img = 0,
                   txt = 1
@@ -19379,7 +19380,8 @@ end
         if (stripdata.strip.controls[j].ctlcat == ctlcats.fxparam 
             or stripdata.strip.controls[j].ctlcat == ctlcats.fxoffline
             or stripdata.strip.controls[j].ctlcat == ctlcats.fxgui
-            or stripdata.strip.controls[j].ctlcat == ctlcats.rcm_switch) 
+            or stripdata.strip.controls[j].ctlcat == ctlcats.rcm_switch
+            or stripdata.strip.controls[j].ctlcat == ctlcats.rs5k) 
             and stripdata.strip.controls[j].fxguid then
           if stripdata.version == 3 then
             stripdata.strip.controls[j].fxguid = '{'..stripdata.strip.controls[j].fxguid..'}'
@@ -23251,7 +23253,7 @@ end
     DBG('Image FN: '..ctl_files[ctl.knob_select].fn)
     DBG('FX Name: '..ctl.fxname)
     DBG('Param Name: '..ctl.param_info.paramname)
-    DBG('Param Num: '..ctl.param_info.paramnum)
+    DBG('Param Num: '..(ctl.param_info.paramnum or 'nil'))
     DBG('Display Name: '..tostring(ctl.ctlname_override))
     DBG('')
     DBG('Pos x: '..ctl.x)
@@ -23265,13 +23267,16 @@ end
     DBG('Width (scaled): '..ctl.wsc)
     DBG('Height (scaled): '..ctl.hsc)
     DBG('')
-    if ctl.ctlcat == ctlcats.fxparam then
+    if ctl.ctlcat == ctlcats.fxparam or ctl.ctlcat == ctlcats.rs5k then
       DBG('FX GUID: '..ctl.fxguid)
       local track = GetTrack(nz(ctl.tracknum,tracks[track_select].tracknum))
       if track then
         local fxguid = reaper.TrackFX_GetFXGUID(track, ctl.fxnum)
         local _, fxname = reaper.TrackFX_GetFXName(track, ctl.fxnum,'')
-        local _, pname = reaper.TrackFX_GetParamName(track, ctl.fxnum,ctl.param_info.paramnum,'')
+        local pname
+        if ctl.param_info.paramnum then
+          _, pname = reaper.TrackFX_GetParamName(track, ctl.fxnum,ctl.param_info.paramnum,'')
+        end
         DBG('LINKED FX GUID: '..tostring(fxguid))
         DBG('LINKED FX NAME: '..tostring(fxname))
         DBG('LINKED PARAM NAME: '..tostring(pname))
