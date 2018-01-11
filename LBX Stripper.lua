@@ -3292,6 +3292,11 @@
                               w = bw,
                               h = bh}
 
+    obj.sections[730] = {x = obj.sections[70].w/2+xofft,
+                              y = settingswin_off + yoff + yoffm*26 + 4,
+                              w = bw,
+                              h = bh}
+
     
     return obj
     
@@ -16027,6 +16032,7 @@ end
     end
 
     GUI_DrawTick(gui, 'Run lbxstart batch file when script starts', obj.sections[729], gui.color.white, settings_runstartbat, gui.fontsz.settings,true)
+    GUI_DrawTick(gui, 'Create log file when adding strips (not saved)', obj.sections[730], gui.color.white, logflag, gui.fontsz.settings,true)
     
     gfx.dest = 1
     gfx.a = 1
@@ -19117,6 +19123,43 @@ end
   
   end
   
+  function LogData(fn, infostr, data)
+  
+    local file = io.open(fn,"a+")
+    if file then
+      file:write('\n\n********************************************\n')
+      file:write(infostr)
+      file:write('\n********************************************\n\n')
+      file:write(tostring(data))
+      file:close()
+    end
+    
+  end
+  
+  function GetNewLogFN()
+  
+    local path = paths.resource_path..'LogFiles/'
+    reaper.RecursiveCreateDirectory(path,1)
+    local fn = ''
+    
+    local fnum = 0
+    
+    local f = 0
+    local cfn = reaper.EnumerateFiles(path,f)
+    while cfn do
+      
+      local num = string.match(cfn,'.*_(.-)%..*')
+      if (tonumber(num) or 0) > fnum then
+        fnum = tonumber(num) or 0
+      end
+      
+      f = f + 1
+      cfn = reaper.EnumerateFiles(path,f)
+    end
+  
+    return path..'Log_'..string.format('%04d',fnum+1)..'.txt'
+  end
+  
   function Strip_AddStrip(stripdata, x, y, ignoregrid)
     if track_select == nil then return end
     if ignoregrid == nil then ignoregrid = false end
@@ -19219,6 +19262,11 @@ end
       
     elseif stripdata.version >= 3 then
     
+      local logfn
+      if logflag == true then
+        logfn = GetNewLogFN()
+      end
+    
       local rcmflag = false
     
       --V4? - Load snapshot data
@@ -19250,15 +19298,32 @@ end
           fxpos = fxcnt+i-1-missing
 
           local chunk = GetTrackChunk(tr, settings_usetrackchunkfix)
-          nchunk, nfxguid, ofxguid, nchunk2 = Chunk_InsertFXChunkAtEndOfFXChain(strips[strip].track.tracknum, chunk, stripdata.fx[i].fxchunk)
-                  
+          nchunk, nfxguid, ofxguid, nchunk2 = Chunk_InsertFXChunkAtEndOfFXChain(strips[strip].track.tracknum, chunk, stripdata.fx[i].fxchunk, nil, logfn)
+          
+          if logfn then
+            LogData(logfn, 'INSERTING FX '..i, '')
+            LogData(logfn, 'Pre-insertion chunk', chunk)
+            LogData(logfn, 'Chunk to be inserted', stripdata.fx[i].fxchunk)
+            if nchunk2 and nchunk2 ~= nchunk then
+              LogData(logfn, 'New CONDITIONED chunk', nchunk2)
+            end
+            LogData(logfn, 'New chunk', nchunk)
+          end
+          
           if nchunk ~= nil then
             local retval 
             --[[if nchunk2 and nchunk2 ~= nchunk then
               --use conditioned chunk first
               retval = SetTrackChunk(tr, nchunk2, false)
             end]]
+            
+            if logfn then
+              LogData(logfn, 'UPDATING CHUNK...', '')
+            end
             retval = SetTrackChunk(tr, nchunk, false)
+            if logfn then
+              LogData(logfn, 'UPDATING CHUNK SUCCEED', '')
+            end
             if retval == true then
               fxguids[ofxguid] = {guid = nfxguid, found = true, fxnum = fxpos}
             end
@@ -19277,6 +19342,10 @@ end
           nfxguid = reaper.TrackFX_GetFXGUID(tr, fxpos)
           fxguids[ofxguid] = {guid = nfxguid, found = true, fxnum = fxpos}
         
+        end
+
+        if logfn then
+          LogData(logfn, 'ALL FX ADDED TO CHUNK', '')
         end
         
         --check guid
@@ -41049,6 +41118,10 @@ end
         settings_runstartbat = not settings_runstartbat
         update_gfx = true
 
+      elseif mouse.context == nil and MOUSE_click(obj.sections[730]) then
+        logflag = not logflag
+        update_gfx = true
+
       elseif mouse.context == nil and MOUSE_click(obj.sections[727]) then
         
         if lvar.updateravailable == true then
@@ -52740,6 +52813,7 @@ end
   settings_backupduringsave = true
   
   hideunusedtracks = false
+  logflag = false
   
   tb_butt_h = 20
   fontscale = 8
@@ -52747,7 +52821,7 @@ end
   lst_fontscale = 0
   
   settingswin_off = 0
-  settingswin_maxh = 690
+  settingswin_maxh = 720
   
   takeswitch_max = 512
   
@@ -52835,6 +52909,7 @@ end
   ctl_bitmap = 1010
   ctl_bitmap2 = 994
   
+  --DBG(GetNewLogFN())
   --DBG(GetPlugIdentifierFromChunk('BYPASS 0 0 0\n<VST "VST: dpMeter2 (TBProAudio) (6ch)" "dpMeter2 x64.dll" 0 "" 1413632067\n'))
   
   --os.execute('E:\\AutoHotkey\\SRD_Home_TouchScreen.ahk')
