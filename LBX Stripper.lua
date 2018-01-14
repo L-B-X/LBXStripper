@@ -13257,9 +13257,9 @@ end
     local kstart = lvar.kb.kstart or -1
     local kend = lvar.kb.kend or -1    
 
-    gfx.dest = 984
-    gfx.setimgdim(984,-1,-1)
-    gfx.setimgdim(984,wkey_w*wkeys,wkey_h)
+    gfx.dest = 908
+    gfx.setimgdim(908,-1,-1)
+    gfx.setimgdim(908,wkey_w*wkeys,wkey_h)
 
     local key = -1
     f_Get_SSV(gui.color.green)
@@ -13408,10 +13408,10 @@ end
     local wkey_h = 80
     local bkey_h = 55
     
-    gfx.dest = 985
+    gfx.dest = 909
     gfx.a = 1
     
-    gfx.setimgdim(985,wkey_w*wkeys,wkey_h*2)
+    gfx.setimgdim(909,wkey_w*wkeys,wkey_h*2)
   
     f_Get_SSV(gui.color.white)
     gfx.rect(0,
@@ -13595,8 +13595,8 @@ end
     end
     
     --keyboard
-    gfx.blit(985,1,0,lvar.kb.offset,0,obj.sections[1304].w,obj.sections[1304].h,obj.sections[1304].x, obj.sections[1304].y)
-    gfx.blit(984,1,0,lvar.kb.offset,0,obj.sections[1304].w,obj.sections[1304].h,obj.sections[1304].x, obj.sections[1304].y)
+    gfx.blit(909,1,0,lvar.kb.offset,0,obj.sections[1304].w,obj.sections[1304].h,obj.sections[1304].x, obj.sections[1304].y)
+    gfx.blit(908,1,0,lvar.kb.offset,0,obj.sections[1304].w,obj.sections[1304].h,obj.sections[1304].x, obj.sections[1304].y)
 
     gfx.dest = 1
   
@@ -29478,7 +29478,7 @@ end
       elseif MOUSE_click(obj.sections[1304]) then
       
         if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.15 then
-          gfx.dest = 985
+          gfx.dest = 909
           gfx.x = mouse.mx - obj.sections[1304].x + lvar.kb.offset
           gfx.y = mouse.my - obj.sections[1304].y + lvar.kb.wkey_h
           local r,_,_ = gfx.getpixel()
@@ -29502,7 +29502,7 @@ end
           reaper.TrackFX_SetParam(track,fxnum,pend,lvar.kb.kend/128) 
         
         elseif mouse.shift then
-          gfx.dest = 985
+          gfx.dest = 909
           gfx.x = mouse.mx - obj.sections[1304].x + lvar.kb.offset
           gfx.y = mouse.my - obj.sections[1304].y + lvar.kb.wkey_h
           local r,_,_ = gfx.getpixel()
@@ -29538,7 +29538,7 @@ end
         
       elseif MOUSE_click_RB(obj.sections[1304]) then
       
-        gfx.dest = 985
+        gfx.dest = 909
         gfx.x = mouse.mx - obj.sections[1304].x + lvar.kb.offset
         gfx.y = mouse.my - obj.sections[1304].y + lvar.kb.wkey_h
         local r,_,_ = gfx.getpixel()
