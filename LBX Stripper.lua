@@ -294,6 +294,9 @@
   
   local fact = {}
   
+  --911 - 990 = control browser images - can be reused if redrawn
+  --849 - 910 = Skin images + others
+  
   local image_max = 849
   local ctl_browser_image = 910
   local maximg_browse = 79
@@ -2980,7 +2983,8 @@
         GUI_DrawKeyboard(obj, gui)
       end
 
-      local smw,smh = math.min(math.floor(smwin.w*pnl_scale),obj.sections[10].w-20,lvar.kb.wkey_w*lvar.kb.wkeys+20), math.max(math.min(math.floor((smwin.h)),obj.sections[10].h),405*pnl_scale)
+      local smw,smh = math.min(math.floor(smwin.w*pnl_scale),obj.sections[10].w-20,lvar.kb.wkey_w*lvar.kb.wkeys+20),
+                      math.max(math.min(math.floor((smwin.h*pnl_scale)),obj.sections[10].h),405*pnl_scale)
       if mm1300 then
         obj.sections[1300] = {x = math.max(F_limit(mm1300.x,obj.sections[10].x,obj.sections[10].x+obj.sections[10].w-smw),obj.sections[10].x),
                               y = math.max(F_limit(mm1300.y,obj.sections[10].y,obj.sections[10].y+obj.sections[10].h-smh),obj.sections[10].y),
@@ -13254,8 +13258,8 @@ end
     local wkey_h = lvar.kb.wkey_h
     local bkey_h = lvar.kb.bkey_h
     
-    local kstart = lvar.kb.kstart or -1
-    local kend = lvar.kb.kend or -1    
+    local kstart = math.floor(lvar.kb.kstart) or -1
+    local kend = math.floor(lvar.kb.kend) or -1    
 
     gfx.dest = 908
     gfx.setimgdim(908,-1,-1)
@@ -41574,9 +41578,11 @@ end
                         end
                       
                       elseif ctl.ctlcat == ctlcats.rs5k then
+                        
                         local fxguid = reaper.TrackFX_GetFXGUID(tr, ctl.fxnum)
                         if ctl.fxguid == fxguid and ctl.rsdata.samplesidx then
-                          local retval, fn = reaper.TrackFX_GetNamedConfigParm(track, ctl.fxnum, 'FILE')
+                          local lvar = lvar
+                          local retval, fn = reaper.TrackFX_GetNamedConfigParm(tr, ctl.fxnum, 'FILE')
                           local ffn = string.match(fn, '.*[\\/](.*)')
                           local si = ctl.rsdata.samplesidx[fn]
                           if si and si ~= math.min(math.floor(ctl.val * lvar.maxsamples)+1,#ctl.rsdata.samples) then
@@ -41584,6 +41590,32 @@ end
                             ctl.dirty = true
                             update_ctls = true
                           end
+                          
+                          --Check keyboard controls - params 
+                          if show_samplemanager == true and rs5k_select == i then
+                            local pkey = 72 + lvar.rs.pitch
+                            local kstart = lvar.kb.kstart or -1
+                            local kend = lvar.kb.kend or -1    
+                            local pstart = 3
+                            local pend = 4
+                            
+                            local s = reaper.TrackFX_GetParam(tr,ctl.fxnum,pstart)
+                            local e = reaper.TrackFX_GetParam(tr,ctl.fxnum,pend)    
+                            local pit = reaper.TrackFX_GetParam(tr,ctl.fxnum,15)
+                            
+                            local single = 1/160
+                            local diff = 0.5-pit
+                      
+                            if s*128 ~= lvar.kb.kstart or
+                               e*128 ~= lvar.kb.kend or
+                               round(diff/single) ~= lvar.rs.pitch then
+                              lvar.rs.pitch = round(diff/single)
+                              lvar.kb.kstart = s*128
+                              lvar.kb.kend = e*128
+                              GUI_DrawKeyboardOverlay(obj, gui)
+                              update_samplemanager = true
+                            end                          
+                          end                          
                         else
                           if ctl.fxfound then
                             CheckStripControls()
