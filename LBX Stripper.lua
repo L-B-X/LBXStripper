@@ -19171,8 +19171,20 @@ end
     
     local i, j
     local strip = Strip_INIT()
-     
-    local tr = GetTrack(strips[strip].track.tracknum)
+    
+    local tr, trnum, trguid
+    if mouse.alt then
+      trnum = strips[strip].track.tracknum
+      local _, tt = reaper.GetUserInputs('Select target track number for fx plugins',1,'Track number (0 = Master):',trnum+1) 
+      if tonumber(tt) then
+        trnum = tonumber(tt)-1
+      end
+      tr = GetTrack(trnum)
+      trguid = reaper.GetTrackGUID(tr)
+    else
+      trnum = strips[strip].track.tracknum 
+      tr = GetTrack(trnum)
+    end
     
     local fxcnt = reaper.TrackFX_GetCount(tr)
     local fxguids = {}
@@ -19266,7 +19278,7 @@ end
       end
       
     elseif stripdata.version >= 3 then
-    
+
       local logfn
       if logflag == true then
         logfn = GetNewLogFN()
@@ -19303,7 +19315,7 @@ end
           fxpos = fxcnt+i-1-missing
 
           local chunk = GetTrackChunk(tr, settings_usetrackchunkfix)
-          nchunk, nfxguid, ofxguid, nchunk2 = Chunk_InsertFXChunkAtEndOfFXChain(strips[strip].track.tracknum, chunk, stripdata.fx[i].fxchunk, nil, logfn)
+          nchunk, nfxguid, ofxguid, nchunk2 = Chunk_InsertFXChunkAtEndOfFXChain(trnum, chunk, stripdata.fx[i].fxchunk, nil, logfn)
           
           if logfn then
             LogData(logfn, 'INSERTING FX '..i, '')
@@ -19349,10 +19361,6 @@ end
         
         end
 
-        if logfn then
-          LogData(logfn, 'ALL FX ADDED TO CHUNK', '')
-        end
-        
         --check guid
         if settings_usetrackchunkfix == false then
           nguid = reaper.TrackFX_GetFXGUID(tr, fxpos)
@@ -19379,6 +19387,10 @@ end
           
         end        
       end
+      if logfn then
+        LogData(logfn, 'ALL FX ADDED TO CHUNK', '')
+      end
+      
       
       for j = 1, #stripdata.strip.controls do
         if (stripdata.strip.controls[j].ctlcat == ctlcats.fxparam 
@@ -19404,9 +19416,18 @@ end
             stripdata.strip.controls[j].fxfound = false
             stripdata.strip.controls[j].fxnum = -1                  
           end
+          
+          if trnum ~= strips[strip].track.tracknum then
+            stripdata.strip.controls[j].tracknum = trnum
+            stripdata.strip.controls[j].trackguid = trguid
+          end
         else
           stripdata.strip.controls[j].fxfound = true
           stripdata.strip.controls[j].fxguid = nil
+          if trnum ~= strips[strip].track.tracknum then
+            stripdata.strip.controls[j].tracknum = trnum
+            stripdata.strip.controls[j].trackguid = trguid
+          end
         end
         
         if (stripdata.strip.controls[j].ctlcat == ctlcats.rcm_switch) 
