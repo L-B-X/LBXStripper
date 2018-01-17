@@ -19180,7 +19180,11 @@ end
         trnum = tonumber(tt)-1
       end
       tr = GetTrack(trnum)
-      trguid = reaper.GetTrackGUID(tr)
+      if tr then
+        trguid = reaper.GetTrackGUID(tr)
+      else
+        return
+      end
     else
       trnum = strips[strip].track.tracknum 
       tr = GetTrack(trnum)
