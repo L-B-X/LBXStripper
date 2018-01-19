@@ -1,6 +1,10 @@
 # LBXStripper
 Lua Reascript for Reaper to create custom channel strips
 
+
+IMPORTANT:  Currently - when used in a project - you must first save the project BEFORE trying to close Reaper.  Using the save dialog that pops up when you close Reaper may/will NOT save the Stripper data properly - and you may find you have to rebuild your strips when re-opening the project.  Just ensure the project is saved just before you try to close Reaper and all should be good.
+
+
 Installation instructions:
 Download both LBXCS_resources.zip and LBX Stripper.Lua files.  It seems best to download the RAW text format for the .lua file.  Some people report errors when downloading the file as it is.
 
