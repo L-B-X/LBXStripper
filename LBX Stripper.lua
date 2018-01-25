@@ -490,7 +490,9 @@
     if lvar.updateravailable == true then
     
       if reaper.MB('Update LBX Stripper to latest version?','Update',1) == 1 then
-        os.execute(paths.update_path..'lua.exe '..paths.update_path..'lbx_updater.lua')
+      
+        os.execute('"'..paths.update_path..'Run_Updater.bat"')
+        --os.execute('lua.exe "'..paths.update_path..'lbx_updater.lua"')
       
         OpenMsgBox(1,'Assuming that all went well - please reopen the script :)',1)
       end
@@ -14771,7 +14773,7 @@ end
           end
         end
 
-        if insertstrip ~= nil then
+        if insertstrip ~= nil and CheckOver10() then
           local x, y = insertstrip.x, insertstrip.y+math.floor(insertstrip.dy/settings_gridsize)*settings_gridsize
           local w, h = gfx.getimgdim(1022)
           gfx.a = 0.5
@@ -14946,7 +14948,17 @@ end
           if update_gfx or update_stripbrowser or resize_display then
             GUI_DrawStripBrowser(obj, gui)
           end
-          gfx.blit(907,1,0,0,0,obj.sections[1350].w,obj.sections[1350].h,obj.sections[1350].x,obj.sections[1350].y)         
+          gfx.blit(907,1,0,0,0,obj.sections[1350].w,obj.sections[1350].h,obj.sections[1350].x,obj.sections[1350].y)
+          
+          if sb_drag and mouse.context ~= contexts.sb_dragstrip2 then
+            gfx.a = 0.5
+            --DBG('c')
+            local w,h = gfx.getimgdim(sb_drag.img)
+            --DBG('w'..w..'h'..h)
+            gfx.blit(sb_drag.img,sb_drag.scale,0,0,0,sb_drag.w,sb_drag.h,sb_drag.x-sb_drag.xoff,sb_drag.y-sb_drag.yoff)
+            --DBG(sb_drag.x-sb_drag.xoff..'  '..sb_drag.y-sb_drag.yoff)
+            gfx.a = 1
+          end         
         end
         
         if dragfader then
@@ -30161,11 +30173,33 @@ end
           
           local n = x + (y*lvar.stripbrowser.xnum) + offset
           lvar.stripbrowser.select = n
-          update_stripbrowser = true
           
-          if show_striplayout == false then
-            mouse.context = contexts.sb_dragstrip
+          update_stripbrowser = true
+          if (lvar.stripbrowser.favs == true and strip_favs[n+1]) or 
+             (lvar.stripbrowser.favs ~= true and strip_files[n]) then
+            
+            if show_striplayout == false and stripgallery_view == 0 then
+              mouse.context = contexts.sb_dragstrip
+              local fn
+              if lvar.stripbrowser.favs == true then
+                fn = paths.strips_path..string.match(strip_favs[n+1],'(.+)%.strip')..'.png'
+              else
+                fn = paths.strips_path..strip_folders[stripfol_select].fn..'/'..string.match(strip_files[n].fn,'(.+)%.strip')..'.png'
+              end
+              local img = 980
+              if reaper.file_exists(fn) then
+                gfx.loadimg(img, fn)
+              else
+                img = skin.sbicon
+              end
+              local pw = lvar.stripbrowser.minw
+              local ph = lvar.stripbrowser.minh
+              local w,h = gfx.getimgdim(img)
+              local scale = math.min(pw/w,ph/h)
+              sb_drag = {x = mouse.mx, y = mouse.my, img = img, scale = scale, w = w, h = h, xoff = math.floor((w*scale)/2), yoff = math.floor((h*scale)/2)}
+            end
           end
+          
         end
               
       end
@@ -33204,7 +33238,7 @@ end
       elseif mouse.context == contexts.sb_dragstrip then
       
         if stripgallery_view == 0 then
-          if not MOUSE_over(obj.sections[1350]) and MOUSE_over(obj.sections[10]) then
+          if CheckOver10() then
             local fn
             if lvar.stripbrowser.favs == true then
               fn = strip_favs[lvar.stripbrowser.select+1]
@@ -33215,7 +33249,14 @@ end
               InsStrip(fn, true)
             end
             mouse.context = contexts.sb_dragstrip2
-          end      
+            --sb_drag = nil
+            update_surface = true
+          end
+          if sb_drag then
+            sb_drag.x = mouse.mx
+            sb_drag.y = mouse.my
+            update_surface = true
+          end
         end
       end
 
@@ -33270,6 +33311,10 @@ end
         dragparam = nil
         update_gfx = true
       
+      elseif sb_drag then
+        sb_drag = nil
+        update_surface = true 
+        
       end
     end
       
@@ -41460,14 +41505,12 @@ end
     
     elseif mouse.context and mouse.context == contexts.sb_dragstrip2 then
     
-    elseif mouse.context == nil and insertstrip then
+      if not CheckOver10() then
+        mouse.context = contexts.sb_dragstrip
+      end
     
-      if MOUSE_over(obj.sections[10]) and (show_stripbrowser ~= true or not MOUSE_over(obj.sections[1350])) 
-         and (show_snapshots ~= true or not MOUSE_over(obj.sections[160]))
-         and (show_lfoedit ~= true or not MOUSE_over(obj.sections[1100]))
-         and (show_mutate ~= true or not MOUSE_over(obj.sections[1120]))
-         and (show_randomopts ~= true or not MOUSE_over(obj.sections[1130]))
-         and (show_samplemanager ~= true or not MOUSE_over(obj.sections[1300])) then
+    elseif mouse.context == nil and insertstrip then
+      if CheckOver10() then
          
         local dx, dy = insertstrip.x-obj.sections[10].x, insertstrip.y-obj.sections[10].y+math.floor(insertstrip.dy/settings_gridsize)*settings_gridsize
         Strip_AddStrip(loadstrip,dx,dy,true)
@@ -41487,6 +41530,18 @@ end
         
     update_surface = true
     
+  end
+  
+  function CheckOver10()
+  
+    if MOUSE_over(obj.sections[10]) and (show_stripbrowser ~= true or not MOUSE_over(obj.sections[1350])) 
+         and (show_snapshots ~= true or not MOUSE_over(obj.sections[160]))
+         and (show_lfoedit ~= true or not MOUSE_over(obj.sections[1100]))
+         and (show_mutate ~= true or not MOUSE_over(obj.sections[1120]))
+         and (show_randomopts ~= true or not MOUSE_over(obj.sections[1130]))
+         and (show_samplemanager ~= true or not MOUSE_over(obj.sections[1300])) then
+      return true
+    end
   end
 
   function Process_EB(context)
