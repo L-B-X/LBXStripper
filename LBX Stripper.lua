@@ -30127,7 +30127,7 @@ end
                        math.max(math.floor((lvar.stripbrowser.imgh-minh)/2),math.floor(5*pnl_scale))
         local x = math.floor(mouse.mx - (obj.sections[1352].x +dx+15)) % (lvar.stripbrowser.imgw+10)
         local y = math.floor(mouse.my - (obj.sections[1352].y +dy+5) + h/2) % (lvar.stripbrowser.imgh+10)
-DBG(y)
+
         if x >= minw/2-w/2 and x <= minw/2+w/2
            and y > 2 and y <= 15 then 
       
