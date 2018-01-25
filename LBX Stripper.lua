@@ -493,7 +493,7 @@
       
         --os.execute('"'..paths.update_path..'Run_Updater.bat"')
         --os.execute('start "'..paths.update_path..'lua.exe" "'..paths.update_path..'lbx_updater.lua"')
-        os.execute('cd "'..paths.update_path..'"&lua.exe "'..paths.update_path..'lbx_updater.lua"')
+        os.execute(string.sub(paths.update_path,1,2)..'&cd "'..paths.update_path..'"&lua.exe "'..paths.update_path..'lbx_updater.lua"')
         
         OpenMsgBox(1,'Assuming that all went well - please reopen the script :)',1)
       end
