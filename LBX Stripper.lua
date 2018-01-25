@@ -491,9 +491,10 @@
     
       if reaper.MB('Update LBX Stripper to latest version?','Update',1) == 1 then
       
-        os.execute('"'..paths.update_path..'Run_Updater.bat"')
-        --os.execute('lua.exe "'..paths.update_path..'lbx_updater.lua"')
-      
+        --os.execute('"'..paths.update_path..'Run_Updater.bat"')
+        --os.execute('start "'..paths.update_path..'lua.exe" "'..paths.update_path..'lbx_updater.lua"')
+        os.execute('cd "'..paths.update_path..'"&lua.exe "'..paths.update_path..'lbx_updater.lua"')
+        
         OpenMsgBox(1,'Assuming that all went well - please reopen the script :)',1)
       end
     end
@@ -3175,8 +3176,8 @@
     lvar.stripbrowser.xnum = math.max(math.floor((obj.sections[1352].w-20) / (lvar.stripbrowser.minw+10)),1)
     lvar.stripbrowser.ynum = math.max(math.floor((obj.sections[1352].h-20) / (lvar.stripbrowser.minh+30)),1)
     
-    lvar.stripbrowser.imgw = math.floor((obj.sections[1352].w-20) / lvar.stripbrowser.xnum)-10
-    lvar.stripbrowser.imgh = math.floor((obj.sections[1352].h-20) / lvar.stripbrowser.ynum)-30
+    lvar.stripbrowser.imgw = math.max(math.floor((obj.sections[1352].w-20) / lvar.stripbrowser.xnum)-10,lvar.stripbrowser.minw)
+    lvar.stripbrowser.imgh = math.max(math.floor((obj.sections[1352].h-20) / lvar.stripbrowser.ynum)-10,lvar.stripbrowser.minh)
     
     return obj
     
@@ -13853,8 +13854,8 @@ end
              obj.sections[1352].w,
              obj.sections[1352].h,1)
   
-    local dx, dy = math.floor((lvar.stripbrowser.imgw-lvar.stripbrowser.minw)/2),
-                   math.floor((lvar.stripbrowser.imgh-lvar.stripbrowser.minh)/2)
+    local dx, dy = math.floor((lvar.stripbrowser.imgw-lvar.stripbrowser.minw*pnl_scale)/2),
+                   math.floor((lvar.stripbrowser.imgh-lvar.stripbrowser.minh*pnl_scale)/2)
                    
     local offset = (lvar.stripbrowser.ynum*lvar.stripbrowser.xnum) * lvar.stripbrowser.page
     if lvar.stripbrowser.favs == true then
@@ -13897,7 +13898,7 @@ end
         --if strip_files[n] then
 
           local px = x*(lvar.stripbrowser.imgw+10)+15+dx
-          local py = y*(lvar.stripbrowser.imgh+30)+15+dy
+          local py = y*(lvar.stripbrowser.imgh+30)+5+dy
 
           local iidx = -1
           if reaper.file_exists(paths.strips_path..fn) then
@@ -14776,7 +14777,7 @@ end
         if insertstrip ~= nil and CheckOver10() then
           local x, y = insertstrip.x, insertstrip.y+math.floor(insertstrip.dy/settings_gridsize)*settings_gridsize
           local w, h = gfx.getimgdim(1022)
-          gfx.a = 0.5
+          gfx.a = insertstrip.alpha or 0.8
           
           gfx.blit(1022,1,0,0,0,w,h,x,y)
           gfx.a = 1        
@@ -14951,12 +14952,9 @@ end
           gfx.blit(907,1,0,0,0,obj.sections[1350].w,obj.sections[1350].h,obj.sections[1350].x,obj.sections[1350].y)
           
           if sb_drag and mouse.context ~= contexts.sb_dragstrip2 then
-            gfx.a = 0.5
-            --DBG('c')
+            gfx.a = sb_drag.alpha
             local w,h = gfx.getimgdim(sb_drag.img)
-            --DBG('w'..w..'h'..h)
             gfx.blit(sb_drag.img,sb_drag.scale,0,0,0,sb_drag.w,sb_drag.h,sb_drag.x-sb_drag.xoff,sb_drag.y-sb_drag.yoff)
-            --DBG(sb_drag.x-sb_drag.xoff..'  '..sb_drag.y-sb_drag.yoff)
             gfx.a = 1
           end         
         end
@@ -30119,13 +30117,15 @@ end
           lvar.stripbrowser.showlist = false
           update_stripbrowser = true
         end
+        local minw, minh = math.floor(lvar.stripbrowser.minw*pnl_scale), math.floor(lvar.stripbrowser.minh*pnl_scale)
+        
         local w,h = gfx.getimgdim(skin.star)
-        local dx, dy = math.floor((lvar.stripbrowser.imgw-lvar.stripbrowser.minw)/2),
-                       math.floor((lvar.stripbrowser.imgh-lvar.stripbrowser.minh)/2)
+        local dx, dy = math.floor((lvar.stripbrowser.imgw-minw)/2),
+                       math.floor((lvar.stripbrowser.imgh-minh)/2)
         local x = math.floor(mouse.mx - (obj.sections[1352].x +dx+15)) % (lvar.stripbrowser.imgw+10)
-        local y = math.floor(mouse.my - (obj.sections[1352].y +dy+15) + h/2) % (lvar.stripbrowser.imgh+30)
-        --DBG(x..'  '..lvar.stripbrowser.minw..'    '..y..'  '..lvar.stripbrowser.minh..'  '..h)
-        if x >= lvar.stripbrowser.minw/2-w/2 and x <= lvar.stripbrowser.minw/2+w/2
+        local y = math.floor(mouse.my - (obj.sections[1352].y +dy+5) + h/2) % (lvar.stripbrowser.imgh+30)
+
+        if x >= minw/2-w/2 and x <= minw/2+w/2
            and y > 2 and y <= 15 then 
       
           local x = math.floor((mouse.mx - obj.sections[1352].x)/(obj.sections[1352].w/lvar.stripbrowser.xnum))
@@ -30135,17 +30135,19 @@ end
           local n = x + (y*lvar.stripbrowser.xnum) + offset
           lvar.stripbrowser.select = n
 
-          local fn
-          if lvar.stripbrowser.favs == true then
-            fn = strip_favs[n+1]
-          else
-            fn = strip_folders[stripfol_select].fn..'/'..strip_files[n].fn
-          end
-
-          if InFavs(fn) then
-            RemoveFav(fn)
-          else
-            strip_favs[#strip_favs+1] = fn
+          if (lvar.stripbrowser.favs == true and strip_favs[n+1]) or (lvar.stripbrowser.favs ~= true and strip_files[n]) then
+            local fn
+            if lvar.stripbrowser.favs == true then
+              fn = strip_favs[n+1]
+            else
+              fn = strip_folders[stripfol_select].fn..'/'..strip_files[n].fn
+            end
+  
+            if InFavs(fn) then
+              RemoveFav(fn)
+            else
+              strip_favs[#strip_favs+1] = fn
+            end
           end
           update_stripbrowser = true
       
@@ -30156,7 +30158,9 @@ end
             if lvar.stripbrowser.favs == true then
               fn = strip_favs[lvar.stripbrowser.select+1]
             else
-              fn = strip_folders[stripfol_select].fn..'/'..strip_files[lvar.stripbrowser.select].fn
+              if strip_files[lvar.stripbrowser.select] then
+                fn = strip_folders[stripfol_select].fn..'/'..strip_files[lvar.stripbrowser.select].fn
+              end
             end
             if fn then
               if settings_stripautosnap == true or show_striplayout == false or stripgallery_view > 0 then
@@ -30196,7 +30200,7 @@ end
               local ph = lvar.stripbrowser.minh
               local w,h = gfx.getimgdim(img)
               local scale = math.min(pw/w,ph/h)
-              sb_drag = {x = mouse.mx, y = mouse.my, img = img, scale = scale, w = w, h = h, xoff = math.floor((w*scale)/2), yoff = math.floor((h*scale)/2)}
+              sb_drag = {x = mouse.mx, y = mouse.my, img = img, scale = scale, w = w, h = h, xoff = math.floor((w*scale)/2), yoff = math.floor((h*scale)/2), alpha = 0}
             end
           end
           
@@ -33249,10 +33253,12 @@ end
               InsStrip(fn, true)
             end
             mouse.context = contexts.sb_dragstrip2
+            insertstrip.alpha = 0
             --sb_drag = nil
             update_surface = true
           end
           if sb_drag then
+            sb_drag.alpha = math.min(sb_drag.alpha+0.15,0.8)
             sb_drag.x = mouse.mx
             sb_drag.y = mouse.my
             update_surface = true
@@ -41505,8 +41511,14 @@ end
     
     elseif mouse.context and mouse.context == contexts.sb_dragstrip2 then
     
+      if insertstrip then
+        insertstrip.alpha = math.min((insertstrip.alpha or 0)+0.15,0.8)
+      end
       if not CheckOver10() then
         mouse.context = contexts.sb_dragstrip
+        if sb_drag then
+          sb_drag.alpha = 0
+        end
       end
     
     elseif mouse.context == nil and insertstrip then
