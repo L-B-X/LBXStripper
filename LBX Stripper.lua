@@ -3054,7 +3054,7 @@
           sbwin.h = math.floor(math.min(math.max(sbwin.h,lvar.sbmin),maxh2))
           --maxh2 = obj.sections[10].h + sbwin.h*pnl_scale
           sbw,sbh = math.max(math.floor(sbwin.w*pnl_scale),lvar.sbmin*pnl_scale),
-                    math.max(math.min(math.floor((sbwin.h*pnl_scale)),maxh2),lvar.sbmin*pnl_scale)
+                    math.max(math.min(math.floor((sbwin.h*pnl_scale)),maxh2*pnl_scale),lvar.sbmin*pnl_scale)
         
         else
           local maxw2 = obj.sections[10].w + sbwin.w
@@ -13854,9 +13854,8 @@ end
              obj.sections[1352].w,
              obj.sections[1352].h,1)
   
-    local dx, dy = math.floor((lvar.stripbrowser.imgw-lvar.stripbrowser.minw*pnl_scale)/2),
-                   math.floor((lvar.stripbrowser.imgh-lvar.stripbrowser.minh*pnl_scale)/2)
-                   
+    local dx, dy = math.max(math.floor((lvar.stripbrowser.imgw-lvar.stripbrowser.minw)/2),math.floor(5*pnl_scale)),
+                   math.max(math.floor((lvar.stripbrowser.imgh-lvar.stripbrowser.minh)/2),math.floor(5*pnl_scale))
     local offset = (lvar.stripbrowser.ynum*lvar.stripbrowser.xnum) * lvar.stripbrowser.page
     if lvar.stripbrowser.favs == true then
       if not strip_favs[offset+1] then
@@ -13874,6 +13873,10 @@ end
     local ph = lvar.stripbrowser.minh
     local sw,sh = gfx.getimgdim(skin.star)
     local htxt
+    --local pad = 15
+    --if lvar.stripbrowser.ynum == 1 then
+     -- pad = 5
+    --end
     for y = 0, lvar.stripbrowser.ynum-1 do
       for x = 0, lvar.stripbrowser.xnum-1 do
     
@@ -13898,7 +13901,7 @@ end
         --if strip_files[n] then
 
           local px = x*(lvar.stripbrowser.imgw+10)+15+dx
-          local py = y*(lvar.stripbrowser.imgh+30)+5+dy
+          local py = y*(lvar.stripbrowser.imgh+10)+5+dy
 
           local iidx = -1
           if reaper.file_exists(paths.strips_path..fn) then
@@ -30117,14 +30120,14 @@ end
           lvar.stripbrowser.showlist = false
           update_stripbrowser = true
         end
-        local minw, minh = math.floor(lvar.stripbrowser.minw*pnl_scale), math.floor(lvar.stripbrowser.minh*pnl_scale)
+        local minw, minh = math.floor(lvar.stripbrowser.minw), math.floor(lvar.stripbrowser.minh)
         
         local w,h = gfx.getimgdim(skin.star)
-        local dx, dy = math.floor((lvar.stripbrowser.imgw-minw)/2),
-                       math.floor((lvar.stripbrowser.imgh-minh)/2)
+        local dx, dy = math.max(math.floor((lvar.stripbrowser.imgw-minw)/2),math.floor(5*pnl_scale)),
+                       math.max(math.floor((lvar.stripbrowser.imgh-minh)/2),math.floor(5*pnl_scale))
         local x = math.floor(mouse.mx - (obj.sections[1352].x +dx+15)) % (lvar.stripbrowser.imgw+10)
-        local y = math.floor(mouse.my - (obj.sections[1352].y +dy+5) + h/2) % (lvar.stripbrowser.imgh+30)
-
+        local y = math.floor(mouse.my - (obj.sections[1352].y +dy+5) + h/2) % (lvar.stripbrowser.imgh+10)
+DBG(y)
         if x >= minw/2-w/2 and x <= minw/2+w/2
            and y > 2 and y <= 15 then 
       
