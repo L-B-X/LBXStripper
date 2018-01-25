@@ -68,6 +68,17 @@
                      mutate_max = 5,
                     }
   
+  --Floating Window Objects
+  --160  = Snapshots
+  --1100 = Mods
+  --1120 = Mutate
+  --1130 = Random Adv
+  --1300 = Sample Manager
+  --1350 = Strip Browser
+  
+  lvar.stripbrowser = {page = 0, favs = true, dockpos = 1}
+  lvar.sbmin = 120
+  
   lvar.maxsamples = 2048
   lvar.followsample = true
       
@@ -213,6 +224,12 @@
               scrollkeyb = 148,
               resize_smwin = 149,
               resize_smwinv = 150,
+              move_sbwin = 151,
+              resize_sbwin = 152,
+              resize_sbwinv = 153,
+              resize_sbwinh = 154,
+              sb_dragstrip = 155,
+              sb_dragstrip2 = 156,
               dummy = 999
               }
   
@@ -351,6 +368,7 @@
   local time_nextupdate_pkmeter 
   local time_checksend
   local time_sendupdate
+  
     
   local show_ctlbrowser
   local show_ctloptions
@@ -895,7 +913,15 @@
         end
       end
     end
-    stripdata.sharedata = {stripfn = fn, ctls = ctlf, gfx = gfxf}
+    
+    --browser image
+    local sbfn = fol..string.match(fn,'(.+)%..*')..'.png'
+    local sbdata
+    if reaper.file_exists(paths.strips_path..sbfn) then
+      local imgbin = readbinaryfile(paths.strips_path..sbfn)
+      sbdata = {bindata = imgbin}
+    end
+    stripdata.sharedata = {stripfn = fn, ctls = ctlf, gfx = gfxf, sbdata = sbdata}
     
     local save_path=paths.share_path..'/'
     local fn=save_path..string.match(savefn,'(.+)%.')..".sharestrip"
@@ -1229,6 +1255,16 @@
           
             file:close()
           
+            if stripdata.sharedata.sbdata then
+            
+              GUI_DrawStateWin(obj,gui,'')
+              GUI_DrawStateWin(obj,gui,'Importing strip browser image... ')
+              GUI_DrawStateWin(obj,gui,'')
+              
+              local sbfn = string.match(fn,'(.+)%..*')..'.png'
+              writebinaryfile(sbfn, stripdata.sharedata.sbdata.bindata)
+            
+            end
           end
       
           OpenMsgBox(1,'Strip share file imported.',1)
@@ -1437,6 +1473,10 @@
       if obj and obj.sections then
         mm1300 = obj.sections[1300]
       end
+      local mm1350
+      if obj and obj.sections then
+        mm1350 = obj.sections[1350]
+      end
       
       local obj = {}
       
@@ -1530,6 +1570,9 @@
                             h = tb_butt_h}
         if settings_ssdock == true then
           obj.sections[21].x = obj.sections[21].x - gui.winsz.snaps
+        end
+        if settings_sbdock == true then
+          obj.sections[21].x = obj.sections[21].x - sbwin.w*pnl_scale        
         end
       else
         obj.sections[21] = {x = gfx1.main_w - plist_w - 175,
@@ -1989,17 +2032,17 @@
       local ssh 
       if settings_ssdock == true then
         snaph = math.min(math.max((gfx1.main_h-obj.sections[10].y),252*pnl_scale),2048)
-        ssh = snaph-(208*pnl_scale)
+        ssh = math.floor(snaph-(208*pnl_scale))
         obj.sections[160] = {x = gfx1.main_w - math.floor(gui.winsz.snaps*pnl_scale),
-                            y = obj.sections[10].y,
+                            y = math.floor(obj.sections[10].y),
                             w = math.floor(gui.winsz.snaps*pnl_scale),
                             h = snaph}
         update_snaps = true
       else
-        snaph = math.max(math.min(snaph,obj.sections[10].h),252*pnl_scale)
-        ssh = snaph-(208*pnl_scale)
+        snaph = math.floor(math.max(math.min(snaph,obj.sections[10].h),252*pnl_scale))
+        ssh = math.floor(snaph-(208*pnl_scale))
         obj.sections[160] = {}
-        obj.sections[160].w = gui.winsz.snaps*pnl_scale
+        obj.sections[160].w = math.floor(gui.winsz.snaps*pnl_scale)
         obj.sections[160].h = snaph
         if ss160 == nil then
           obj.sections[160] = {x = gfx1.main_w - gui.winsz.snaps*pnl_scale - (sb_size+2),
@@ -2729,8 +2772,8 @@
       
       obj.sections[1100] = {x = x,
                            y = y,
-                           w = mow,
-                           h = moh}
+                           w = math.floor(mow),
+                           h = math.floor(moh)}
       if obj.sections[1100].x < plist_w + 2 then
         obj.sections[1100].x = plist_w + 2
       end
@@ -2999,10 +3042,144 @@
 
       obj = PosSampleManager(obj)            
       
+      --STRIP BROWSER
+      local sbw,sbh
+      if settings_sbdock == true then
+        if lvar.stripbrowser.dockpos == 1 then
+          local maxh2 = obj.sections[10].h + sbwin.h
+
+          sbwin.h = math.floor(math.min(math.max(sbwin.h,lvar.sbmin),maxh2))
+          --maxh2 = obj.sections[10].h + sbwin.h*pnl_scale
+          sbw,sbh = math.max(math.floor(sbwin.w*pnl_scale),lvar.sbmin*pnl_scale),
+                    math.max(math.min(math.floor((sbwin.h*pnl_scale)),maxh2),lvar.sbmin*pnl_scale)
+        
+        else
+          local maxw2 = obj.sections[10].w + sbwin.w
+          
+          sbwin.w = math.floor(math.min(math.max(sbwin.w,lvar.sbmin),maxw2))
+          sbw,sbh = math.max(math.floor(sbwin.w*pnl_scale),lvar.sbmin*pnl_scale),
+                    math.max(math.min(math.floor((sbwin.h*pnl_scale)),obj.sections[10].h),lvar.sbmin*pnl_scale)
+        end
+      else
+        sbw,sbh = math.max(math.min(math.floor(sbwin.w*pnl_scale),obj.sections[10].w),lvar.sbmin*pnl_scale),
+                      math.max(math.min(math.floor((sbwin.h*pnl_scale)),obj.sections[10].h),lvar.sbmin*pnl_scale)
+      end
+      if mm1350 then
+        obj.sections[1350] = {x = math.max(F_limit(mm1350.x,obj.sections[10].x,obj.sections[10].x+obj.sections[10].w-sbw),obj.sections[10].x),
+                              y = math.max(F_limit(mm1350.y,obj.sections[10].y,obj.sections[10].y+obj.sections[10].h-sbh),obj.sections[10].y),
+                              w = sbw,
+                              h = sbh}
+      elseif sbwin.x and sbwin.y then
+        obj.sections[1350] = {x = F_limit(sbwin.x,obj.sections[10].x,obj.sections[10].x+obj.sections[10].w-sbw),
+                              y = F_limit(sbwin.y,obj.sections[10].y,obj.sections[10].y+obj.sections[10].h-sbh),
+                              w = sbw,
+                              h = sbh}      
+      else
+        obj.sections[1350] = {x = math.max(obj.sections[10].x+math.floor(obj.sections[10].w/2-sbw/2),obj.sections[10].x),
+                              y = math.max(obj.sections[10].y+math.floor(obj.sections[10].h/2-sbh/2),obj.sections[10].y),
+                              w = sbw,
+                              h = sbh}
+      end
+      if settings_sbdock == true then
+        if lvar.stripbrowser.dockpos == 1 then
+          local sb = 0
+          if settings_showbars then
+            sb = sb_size
+          end
+          local sbyy = topbarheight + sb + 2
+          obj.sections[1350].x = obj.sections[10].x
+          obj.sections[1350].w = gfx1.main_w - plist_w
+          obj.sections[1350].y = sbyy
+        else
+          if settings_ssdock == true and show_snapshots == true then
+            obj.sections[1350].x = obj.sections[160].x-obj.sections[1350].w
+          else
+            obj.sections[1350].x = obj.sections[10].x+obj.sections[10].w
+          end
+          if obj.sections[1350].x < plist_w + 2 then
+            obj.sections[1350].x = plist_w + 2
+            if settings_ssdock == true and show_snapshots == true then
+              obj.sections[1350].w = obj.sections[160].x - obj.sections[1350].x
+            else
+              obj.sections[1350].w = gfx1.main_w - obj.sections[1350].x
+            end
+            --sbwin.x = math.floor(obj.sections[1350].x / pnl_scale)
+            --sbwin.w = math.floor(obj.sections[1350].w / pnl_scale)
+          end
+          
+          obj.sections[1350].y = obj.sections[10].y
+          local hh = math.min(math.max((gfx1.main_h-obj.sections[10].y),lvar.sbmin*pnl_scale),2048)
+          obj.sections[1350].h = hh
+        end
+      end
+      
+      obj = PosStripBrowser(obj)
+      
     pnlscaleflag = nil
     return obj
   end
-  
+
+  function PosStripBrowser(obj)
+
+    if obj.sections[1350].w <= 360*pnl_scale then
+      obj.sections[1353] = {x = math.floor(10*pnl_scale),
+                             y = math.floor(30*pnl_scale),
+                             w = (140*pnl_scale),
+                             h = butt_h*pnl_scale}
+    else
+      obj.sections[1353] = {x = math.floor(10*pnl_scale),
+                             y = 2,
+                             w = (140*pnl_scale),
+                             h = math.floor(gui.winsz.pnltit*pnl_scale-2)}
+    
+    end
+    
+    local h = (#strip_folders + 2) * butt_h*pnl_scale
+    obj.sections[1351] = {x = math.floor(10*pnl_scale),
+                           y = obj.sections[1353].y + obj.sections[1353].h + math.floor(10*pnl_scale),
+                           w = (140*pnl_scale),
+                           h = math.min(h, obj.sections[1350].h - (obj.sections[1353].y+obj.sections[1353].h) - 20*pnl_scale)}
+
+    obj.sections[1352] = {x = obj.sections[1351].x,
+                           y = obj.sections[1353].y+obj.sections[1353].h + 10*pnl_scale,
+                           w = obj.sections[1350].w - 20*pnl_scale,
+                           h = obj.sections[1350].h - (obj.sections[1353].y+obj.sections[1353].h) - 20*pnl_scale}
+
+    --resize
+    obj.sections[1354] = {x = obj.sections[1350].w-15,
+                         y = obj.sections[1350].h-15,
+                         w = 15,
+                         h = 15}
+    obj.sections[1355] = {x = 0,
+                         y = obj.sections[1350].h-10,
+                         w = obj.sections[1350].w-15,
+                         h = 10}
+    obj.sections[1356] = {x = 0,
+                         y = 0,
+                         w = 15,
+                         h = obj.sections[1350].h}
+    
+    --Dock button
+    obj.sections[1357] = {x = obj.sections[1350].w - 38,
+                          y = 2,
+                          w = 34,
+                          h = math.floor(gui.winsz.pnltit*pnl_scale-2)}
+    
+    if not lvar.stripbrowser.minw then
+      lvar.stripbrowser.minw = 120 * pnl_scale
+      lvar.stripbrowser.minh = 90 * pnl_scale
+    end
+    
+    lvar.stripbrowser.xnum = math.max(math.floor((obj.sections[1352].w-20) / (lvar.stripbrowser.minw+10)),1)
+    lvar.stripbrowser.ynum = math.max(math.floor((obj.sections[1352].h-20) / (lvar.stripbrowser.minh+30)),1)
+    
+    lvar.stripbrowser.imgw = math.floor((obj.sections[1352].w-20) / lvar.stripbrowser.xnum)-10
+    lvar.stripbrowser.imgh = math.floor((obj.sections[1352].h-20) / lvar.stripbrowser.ynum)-30
+    
+    return obj
+    
+  end
+    
   function PosSampleManager(obj)
   
     --folder
@@ -3629,6 +3806,11 @@
                          h = bh}
     obj.sections[108] = {x = obj.sections[107].x,
                          y = math.floor(obj.sections[109].y+obj.sections[107].h+4*pnl_scale),
+                         w = bh,
+                         h = bh}
+
+    obj.sections[111] = {x = obj.sections[107].x + obj.sections[107].w + 10,
+                         y = math.floor(obj.sections[102].y+obj.sections[102].h+4*pnl_scale),
                          w = bh,
                          h = bh}
     return obj
@@ -5158,10 +5340,14 @@ elseif dragparam.type == 'rs5k' then
     slist_offset = 0
     
     local i = 0
+    local ii = 0
     if strip_folders[stripfol_select] then
       local sf = reaper.EnumerateFiles(paths.strips_path..'/'..strip_folders[stripfol_select].fn,i)
       while sf ~= nil do
-        strip_files[i] = {fn = sf}
+        if string.match(sf,'.+%.(.*)') == 'strip' then
+          strip_files[ii] = {fn = sf}
+          ii = ii + 1
+        end
         i=i+1
         sf = reaper.EnumerateFiles(paths.strips_path..'/'..strip_folders[stripfol_select].fn,i)
       end
@@ -5441,7 +5627,7 @@ elseif dragparam.type == 'rs5k' then
     skin.panela_cnrbr = LoadSkinIMG(876, 'PanelA_CornerBR.png', true)
     skin.panela_cnrtl = LoadSkinIMG(877, 'PanelA_CornerTL.png', true)
     skin.panela_cnrtr = LoadSkinIMG(878, 'PanelA_CornerTR.png', true)
-    skin.texture = LoadSkinIMG(879, 'texture.jpg', true)
+    skin.sbicon = LoadSkinIMG(879, 'sbdeficon.png', true)
     --skin.led = LoadSkinIMG(869, 'LBX_Button32_Yellow.png')
   
     if skin.panela_top == -1 or 
@@ -5469,7 +5655,8 @@ elseif dragparam.type == 'rs5k' then
        skin.morph_popbarr == -1 or
        skin.morph_lp == -1 or
        skin.updn == -1 or
-       skin.lr == -1 
+       skin.lr == -1 or
+       skin.sbicon == -1
        then
       ret = false   
     end
@@ -8120,6 +8307,8 @@ elseif dragparam.type == 'rs5k' then
     GUI_textC(gui,obj.sections[110],auto_delay,gui.color.red,-2)
     
     GUI_DrawTick(gui, 'POS TO FRAME', obj.sections[107], gui.color.white, nz(cycle_select.mapptof, false),gui.fontsz.butt)
+    GUI_DrawTick(gui, 'I', obj.sections[111], gui.color.white, nz(cycle_select.invert, false),gui.fontsz.butt)
+
     GUI_DrawTick(gui, 'DRAGGABLE', obj.sections[108], gui.color.white, nz(cycle_select.draggable, false),gui.fontsz.butt)
     GUI_DrawTick(gui, 'EVEN SPREAD', obj.sections[109], gui.color.white, nz(cycle_select.spread, false),gui.fontsz.butt)
     GUI_DrawButton(gui, 'SAVE', obj.sections[106], gui.color.white, gui.skol.butt1_txt, true,'',false,gui.fontsz.butt)
@@ -8526,29 +8715,31 @@ elseif dragparam.type == 'rs5k' then
     end
     
     local sl, sr, sm, wl ,hl, wr, hr, wm, hm, w, h, fcol
-    if colb == -1 then
-      w, h = gfx.getimgdim(skin.butt18G)
-      sl = skin.butt18G
-      fcol = gui.skol.buttG_txt
-    elseif colb == -2 then
-      w, h = gfx.getimgdim(skin.butt18R)
-      sl = skin.butt18R
-      fcol = gui.skol.butt2_txt
-    elseif colb == -3 then
-      w, h = gfx.getimgdim(skin.butt18T)
-      sl = skin.butt18T
-      fcol = gui.skol.butt3_txt
-    elseif colb == -4 then
-      w, h = gfx.getimgdim(skin.butt18Y)
-      sl = skin.butt18Y
-      fcol = gui.skol.butt4_txt
-    else
-      w, h = gfx.getimgdim(skin.butt18)
-      sl = skin.butt18
-      fcol = gui.skol.butt1_txt
-    end
 
     if colb ~= -5 then
+    
+      if colb == -1 then
+        w, h = gfx.getimgdim(skin.butt18G)
+        sl = skin.butt18G
+        fcol = gui.skol.buttG_txt
+      elseif colb == -2 then
+        w, h = gfx.getimgdim(skin.butt18R)
+        sl = skin.butt18R
+        fcol = gui.skol.butt2_txt
+      elseif colb == -3 then
+        w, h = gfx.getimgdim(skin.butt18T)
+        sl = skin.butt18T
+        fcol = gui.skol.butt3_txt
+      elseif colb == -4 then
+        w, h = gfx.getimgdim(skin.butt18Y)
+        sl = skin.butt18Y
+        fcol = gui.skol.butt4_txt
+      else
+        w, h = gfx.getimgdim(skin.butt18)
+        sl = skin.butt18
+        fcol = gui.skol.butt1_txt      
+      end
+      
       local corner = 6
       local corner2 = 12
       --TL
@@ -8569,6 +8760,11 @@ elseif dragparam.type == 'rs5k' then
       gfx.blit(sl, 1, 0, w-corner, corner, corner, h-corner2, b.x+b.w-corner, b.y+corner, corner, b.h-corner2) 
       --M
       gfx.blit(sl, 1, 0, corner, corner, w-corner2, h-corner2, b.x+corner, b.y+corner, b.w-corner2, b.h-corner2) 
+
+    else
+      --w, h = gfx.getimgdim(skin.butt18)
+      --sl = skin.butt18
+      fcol = gui.skol.butt1_txt
     end
         
     if f == 0 or tonumber(colb) ~= nil then
@@ -9095,6 +9291,7 @@ end
                           DVOV = nz(ctl.cycledata[(ctl.cycledata.pos or 0)].dispval,'')
                         end
                       end
+
                     else
 
                       local p = tonumber(ctl.cycledata.pos)
@@ -9102,9 +9299,15 @@ end
                          ctl.cycledata[nz(p,0)] then
                         DVOV = nz(ctl.cycledata[(p or 0)].dispval,'')
                         
-                      end                  
+                      end
+
                     end
-                  
+
+                    if ctl.cycledata.invert then
+                      val2 = 1-val2
+                    end
+
+
                   elseif ctltype == 6 then
                     --mem button
                     if ctl.membtn == nil then
@@ -13635,6 +13838,198 @@ end
     
   end
 
+  function GUI_DrawSB_Strips(obj, gui)
+  
+    gfx.dest = 906
+    gfx.setimgdim(906,-1,-1)
+    gfx.setimgdim(906,obj.sections[1352].w,obj.sections[1352].h)
+    gfx.a = 1
+  
+    f_Get_SSV(gui.skol.lst_bg)
+    gfx.rect(0,
+             0,
+             obj.sections[1352].w,
+             obj.sections[1352].h,1)
+  
+    local dx, dy = math.floor((lvar.stripbrowser.imgw-lvar.stripbrowser.minw)/2),
+                   math.floor((lvar.stripbrowser.imgh-lvar.stripbrowser.minh)/2)
+                   
+    local offset = (lvar.stripbrowser.ynum*lvar.stripbrowser.xnum) * lvar.stripbrowser.page
+    if lvar.stripbrowser.favs == true then
+      if not strip_favs[offset+1] then
+        lvar.stripbrowser.page = 0
+        offset = 0
+      end
+    else
+      if not strip_files[offset] then
+        lvar.stripbrowser.page = 0
+        offset = 0
+      end    
+    end
+    
+    local pw = lvar.stripbrowser.minw
+    local ph = lvar.stripbrowser.minh
+    local sw,sh = gfx.getimgdim(skin.star)
+    local htxt
+    for y = 0, lvar.stripbrowser.ynum-1 do
+      for x = 0, lvar.stripbrowser.xnum-1 do
+    
+        local n = y*lvar.stripbrowser.xnum + x + offset
+        
+        local fn, tfn, ffn
+        if lvar.stripbrowser.favs == true then
+          if strip_favs[n+1] then
+            ffn = strip_favs[n+1]
+            fn = string.match(strip_favs[n+1],'(.+)%..*')..'.png'
+            tfn = string.match(strip_favs[n+1],'.+[\\/](.+)%..*')
+          end
+        else
+          if strip_files[n] then
+            ffn = strip_folders[stripfol_select].fn..'/'..strip_files[n].fn
+            fn = strip_folders[stripfol_select].fn..'/'..string.match(strip_files[n].fn,'(.+)%..*')..'.png'
+            tfn = string.match(strip_files[n].fn,'(.+)%..*')
+          end      
+        end
+        
+        if fn then
+        --if strip_files[n] then
+
+          local px = x*(lvar.stripbrowser.imgw+10)+15+dx
+          local py = y*(lvar.stripbrowser.imgh+30)+15+dy
+
+          local iidx = -1
+          if reaper.file_exists(paths.strips_path..fn) then
+            iidx = gfx.loadimg(985,paths.strips_path..fn)
+            if iidx == -1 then
+              iidx = skin.sbicon            
+            end
+          else
+            iidx = skin.sbicon
+          end
+
+          local w,h = gfx.getimgdim(iidx)
+          local scale = math.min(pw/w,ph/h)
+          local xoff = math.floor((pw-(w*scale))/2)
+          local yoff = math.floor((ph-(h*scale))/2)
+          
+          gfx.blit(iidx,scale,0,0,0,w,h,px+xoff,py+yoff)
+
+          local xywh = {x = px, y = py+ph,
+                        w = pw, h = 20}
+          local tw, th = gfx.measurestr(tfn)
+          local just = 5
+          if tw > xywh.w then
+            just = 4
+          end
+          GUI_DrawButton(gui, tfn, xywh, -5, gui.skol.butt1_txt, true, '', false, 0, false, just)
+
+          if lvar.stripbrowser.select and lvar.stripbrowser.select == n then
+            f_Get_SSV(gui.color.yellow)
+            gfx.rect(px+xoff,py+yoff,math.floor(w*scale),math.floor(h*scale),0)
+
+            local tw, th = gfx.measurestr(tfn)
+            htxt = {x = px+(pw/2)-(tw/2)-6, y = py+ph,
+                    w = tw+12, h = 20, txt = tfn}            
+          end
+          
+          if InFavs(ffn) then
+            gfx.blit(skin.star,1,0,0,0,sw,sh,px+math.floor(pw/2)-math.floor(sw/2),py-math.floor(sh/2))
+          else
+            gfx.blit(skin.starout,1,0,0,0,w,h,px+math.floor(pw/2)-math.floor(sw/2),py-math.floor(sh/2))        
+          end          
+          
+        end
+      end
+    end
+  
+    if htxt then
+      GUI_DrawButton(gui, htxt.txt, htxt, -4, gui.skol.butt1_txt, true, '', false, 0, false, 5)    
+    end
+    
+    gfx.dest = 1
+  
+  end
+  
+  function GUI_DrawStripBrowser(obj, gui)
+  
+    gfx.dest = 907
+    gfx.setimgdim(907,-1,-1)
+    gfx.setimgdim(907,obj.sections[1350].w,obj.sections[1350].h)
+  
+    gfx.a = 1
+  
+    local butt_h = math.floor(butt_h*pnl_scale)
+    
+    GUI_DrawPanel(obj.sections[1350],false,'STRIPS')
+
+    local b
+    if settings_sbdock == true then
+      b = gui.color.white
+    else
+      b = -5
+    end
+    GUI_DrawButton(gui, 'DOCK', obj.sections[1357], b, gui.skol.butt1_txt, true, '', false, -2, true)
+    
+    GUI_DrawSB_Strips(obj, gui)
+    
+    gfx.dest = 907
+    local w,h = gfx.getimgdim(906)
+    gfx.blit(906,1,0,0,0,w,h,obj.sections[1352].x,obj.sections[1352].y)
+    
+    local c = gui.color.white
+    local t = ''
+    if lvar.stripbrowser.favs == true then
+      t = 'FAVS'
+    else
+      t = strip_folders[stripfol_select].fn
+    end
+    GUI_DrawButton(gui, t, obj.sections[1353], c, gui.skol.butt1_txt, true, '', false)
+             
+    if lvar.stripbrowser.showlist == true then
+      
+      local cnt = #strip_folders + 2
+      
+      f_Get_SSV(gui.skol.lst_bg)
+      gfx.rect(obj.sections[1351].x-2,
+               obj.sections[1351].y-2,
+               obj.sections[1351].w+4,
+               math.min(cnt*butt_h+4,obj.sections[1351].h+4),1)
+
+      local xywh = {x = obj.sections[1351].x,
+                    y = obj.sections[1351].y,
+                    w = obj.sections[1351].w,
+                    h = butt_h}
+      SBSF_butt_cnt = math.floor(obj.sections[1351].h/butt_h)
+      
+      for i = -1, SBSF_butt_cnt do
+      
+        if i ~= -1 then
+          local c = gui.color.white
+          local ii = i+sbsflist_offset
+          if strip_folders[ii] then
+            if lvar.stripbrowser.favs ~= true and ii == stripfol_select then
+              c = -4
+            end
+            GUI_DrawButton(gui, strip_folders[ii].fn, xywh, c, gui.skol.butt1_txt, true, '', false)
+            xywh.y = xywh.y + butt_h
+          end
+        else
+          if lvar.stripbrowser.favs == true then
+            c = -4
+          end
+          GUI_DrawButton(gui, 'FAVS', xywh, c, gui.skol.butt1_txt, true, '', false)
+          xywh.y = xywh.y + butt_h        
+        end
+        if xywh.y + xywh.h > obj.sections[1351].y + obj.sections[1351].h then
+          break
+        end
+      end
+    end      
+  
+    gfx.dest = 1
+    
+  end
+  
   function GUI_DrawMutate(obj, gui)
   
     local mutate_settings = lvar.mutate_settings
@@ -14140,7 +14535,8 @@ end
     
     if show_xxy == false and (update_gfx or update_surface or update_sidebar or update_topbar or update_ctlopts or update_ctls or update_bg or 
        update_settings or update_snaps or update_msnaps or update_actcho or update_fsnaps or update_mfsnaps or update_eqcontrol or update_macroedit or
-       update_macrobutt or update_snapmorph or update_lfoedit or update_lfoeditbar or update_lfopos or update_mutate or update_randomopts or update_samplemanager) then    
+       update_macrobutt or update_snapmorph or update_lfoedit or update_lfoeditbar or update_lfopos or update_mutate or update_randomopts or update_samplemanager or 
+       update_stripbrowser) then    
       local p = 0
       gfx.dest = 1
 
@@ -14181,7 +14577,7 @@ end
             if show_fsnapshots or show_xysnapshots then
               GUI_DrawFSnapshots(obj, gui)
             end
-          elseif update_snaps or (update_msnaps and resize_snaps) then  
+          elseif update_snaps or resize_display or (update_msnaps and resize_snaps) then  
             GUI_DrawSnapshots(obj, gui)
             if update_fsnaps then
               GUI_DrawFSnapshots(obj, gui)        
@@ -14380,7 +14776,8 @@ end
           local w, h = gfx.getimgdim(1022)
           gfx.a = 0.5
           
-          gfx.blit(1022,1,0,0,0,w,h,x,y)          
+          gfx.blit(1022,1,0,0,0,w,h,x,y)
+          gfx.a = 1        
         end
 
         if macro_lrn_mode == true and (update_gfx or update_surface or update_ctls) then
@@ -14447,7 +14844,8 @@ end
                             obj.sections[160].w,
                             obj.sections[160].h,
                             obj.sections[160].x,
-                            obj.sections[160].y)  ]]      
+                            obj.sections[160].y)  ]]  
+
           gfx.blit(1003,1,0,0,0,obj.sections[160].w,obj.sections[160].h,obj.sections[160].x,obj.sections[160].y)        
         
           if dragparam ~= nil then
@@ -14542,6 +14940,13 @@ end
             GUI_DrawSampleManager(obj, gui)
           end
           gfx.blit(986,1,0,0,0,obj.sections[1300].w,obj.sections[1300].h,obj.sections[1300].x,obj.sections[1300].y)         
+        end
+
+        if show_stripbrowser and show_eqcontrol ~= true and macro_edit_mode ~= true and show_pinmatrix ~= true then
+          if update_gfx or update_stripbrowser or resize_display then
+            GUI_DrawStripBrowser(obj, gui)
+          end
+          gfx.blit(907,1,0,0,0,obj.sections[1350].w,obj.sections[1350].h,obj.sections[1350].x,obj.sections[1350].y)         
         end
         
         if dragfader then
@@ -15349,6 +15754,7 @@ end
     update_mutate = false
     update_randomopts = false
     update_samplemanager = false
+    update_stripbrowser = false
     
   end
   
@@ -23803,31 +24209,16 @@ end
           settings_locksurface = not settings_locksurface
           
         elseif res <= sfcnt then
+          
           if res <= #strip_favs then
             local fn = strip_favs[res]
-            --PopulateStrips()
-            loadstrip = LoadStripFN(fn)
-            if loadstrip then                  
-              GenStripPreview(gui, loadstrip.strip, loadstrip.switchers, loadstrip.switchconvtab)
-              --image_count = image_count_add
-              
-              local dx, dy = GetLeftControlInStrip2(loadstrip.strip)
-              insertstrip = {x = mouse.mx, y = mouse.my, dx = dx, dy = dy}
-            end
-            --loadstrip = nil
+            InsStrip(fn)
           else
-            local fn = msf[res-math.max(#strip_favs,1)]
-            loadstrip = LoadStripFN(fn)
-            if loadstrip then                  
-              GenStripPreview(gui, loadstrip.strip, loadstrip.switchers, loadstrip.switchconvtab)
-              --image_count = image_count_add
-              
-              local dx, dy = GetLeftControlInStrip2(loadstrip.strip)
-              insertstrip = {x = mouse.mx, y = mouse.my, dx = dx, dy = dy}
-            end
-          
-          end
 
+            local fn = msf[res-math.max(#strip_favs,1)]
+            InsStrip(fn)
+          end
+          
         elseif res == sfcnt + 9 then
           Envelopes_SetProps(false,nil,false,false)
         elseif res == sfcnt + 10 then
@@ -23907,6 +24298,55 @@ end
       end
     end    
 
+  end
+  
+  function InsStrip(fn, dragmode)
+
+    loadstrip = LoadStripFN(fn)
+    if loadstrip then                  
+
+      loadstrip.strip_w, loadstrip.strip_h = GenStripPreview(gui, loadstrip.strip, loadstrip.switchers, loadstrip.switchconvtab)      
+      local dx, dy = GetLeftControlInStrip2(loadstrip.strip)
+      insertstrip = {x = mouse.mx, y = mouse.my, dx = dx, dy = dy, dragmode = dragmode}
+  
+    end
+    
+    if loadstrip and stripgallery_view == 1 or settings_stripautosnap == true then
+      stlay_data = AutoSnap_GetStripLocs(true)
+      local x,y = AutoSnap_GetEndInsertPos(loadstrip.strip_w,loadstrip.strip_h)
+      dragstrip = {x = x+obj.sections[10].x-surface_offset.x, y = y+obj.sections[10].y-surface_offset.y, xx = x, yy = y}
+      update_surface = true
+    
+      if settings_stripautosnap == true then
+        ignore = true
+      end
+      if show_striplayout == true then
+        --if mouse.mx >= obj.sections[10].x and mouse.mx < obj.sections[10].w and mouse.my >= obj.sections[10].y and mouse.my < obj.sections[10].h then
+          Strip_AddStrip(loadstrip, dragstrip.x-obj.sections[10].x, dragstrip.y-obj.sections[10].y,ignore)
+          SetASLocs()
+        --end
+      else
+        --if dragstrip.x >= obj.sections[10].x and dragstrip.x < obj.sections[10].w and dragstrip.y >= obj.sections[10].y 
+          --and dragstrip.y < obj.sections[10].h then
+          --if mouse.mx >= obj.sections[10].x and mouse.mx < obj.sections[10].w and mouse.my >= obj.sections[10].y and mouse.my < obj.sections[10].h then
+            Strip_AddStrip(loadstrip, dragstrip.x-obj.sections[10].x, dragstrip.y-obj.sections[10].y,ignore)
+          --end
+        --end
+      end
+      stlay_data = AutoSnap_GetStripLocs(true)
+      
+      insertstrip = nil
+      loadstrip = nil
+      dragstrip = nil
+      dragstripx = nil
+      ctl_select = nil
+      update_gfx = true
+      
+      SetCtlBitmapRedraw()
+      reaper.MarkProjectDirty(0)
+      
+    end
+    
   end
   
   function TopMenu()
@@ -24987,6 +25427,7 @@ end
     local otbl = {statecnt = tbl.statecnt,
                   selected = tbl.selected,
                   mapptof = tbl.mapptof,
+                  invert = tbl.invert,
                   draggable = tbl.draggable,
                   spread = tbl.spread,
                   pos = 1,
@@ -25969,6 +26410,14 @@ end
       if settings_ssdock == true and show_snapshots and mode == 0 then
         obj.sections[10].w = obj.sections[10].w - gui.winsz.snaps*pnl_scale
       end
+      if settings_sbdock == true and show_stripbrowser == true and mode == 0 then
+        if lvar.stripbrowser.dockpos == 1 then
+          obj.sections[10].y = obj.sections[10].y + sbwin.h*pnl_scale
+          obj.sections[10].h = obj.sections[10].h - sbwin.h*pnl_scale
+        else
+          obj.sections[10].w = obj.sections[10].w - sbwin.w*pnl_scale
+        end
+      end      
       if settings_moddock == true and show_lfoedit == true and mode == 0 then
         obj.sections[10].h = obj.sections[10].h - (modwinsz.h or 300)*pnl_scale      
       end
@@ -25990,6 +26439,14 @@ end
       if settings_ssdock == true and show_snapshots and mode == 0 then
         obj.sections[10].w = obj.sections[10].w - gui.winsz.snaps*pnl_scale
       end
+      if settings_sbdock == true and show_stripbrowser == true and mode == 0 then
+        if lvar.stripbrowser.dockpos == 1 then
+          obj.sections[10].y = obj.sections[10].y + sbwin.h*pnl_scale
+          obj.sections[10].h = obj.sections[10].h - sbwin.h*pnl_scale
+        else
+          obj.sections[10].w = obj.sections[10].w - sbwin.w*pnl_scale
+        end
+      end      
       if settings_moddock == true and show_lfoedit == true and mode == 0 then
         local msz
         if modwinsz and modwinsz.h then
@@ -26263,6 +26720,11 @@ end
             update_gfx = true
           end
         end
+
+      elseif char == 48 then
+        SetShowSB(not show_stripbrowser)
+        update_stripbrowser = true
+        update_surface = true
       end
       
     --[[else -- shift
@@ -26290,7 +26752,17 @@ end
   function SetShowSS(show)
     show_snapshots = show
     if settings_ssdock == true then
-      obj = GetObjects()
+      force_resize = true
+      --obj = GetObjects()
+    end
+    update_gfx = true
+  end
+
+  function SetShowSB(show)
+    show_stripbrowser = show
+    if settings_sbdock == true then
+      force_resize = true
+      --obj = GetObjects()
     end
     update_gfx = true
   end
@@ -27143,7 +27615,18 @@ end
           if show_editbar == true then
             plist_w = oplist_w
           end
-          plist_w = math.min(plist_w, gfx1.main_w-obj.sections[19].w-obj.sections[14].w-obj.sections[18].w-obj.sections[1000].w)
+          local ww = gfx1.main_w-obj.sections[19].w-obj.sections[14].w-obj.sections[18].w-obj.sections[1000].w
+          if show_snapshots == true and settings_ssdock == true then
+            ww = ww - obj.sections[160].w
+          end
+          --[[if show_stripbrowser == true and settings_sbdock == true then
+            if lvar.stripbrowser.dockpos == 1 then
+            
+            else
+              --ww = ww - obj.sections[1350].w
+            end
+          end]]
+          plist_w = math.min(plist_w, ww)
           plist_w = math.min(math.max(plist_w,0),2048)
           --if plist_w < 4 then show_editbar = false else show_editbar = true end
         end
@@ -27771,7 +28254,7 @@ end
               end
             else
               local offx = MOUSE_surfaceX2(obj.sections[10])
-              if offx and stlay_data then
+              if offx and stlay_data and #stlay_data.loc > 0 then
                 local min = math.floor(0-(obj.sections[10].w/2 - stlay_data.loc[1].w/2))
                 local max = math.floor(stlay_data.loc[#stlay_data.loc].runx_e-obj.sections[10].w + (obj.sections[10].w/2 - stlay_data.loc[#stlay_data.loc].w/2))
                 stlay_data.xpos = F_limit(gsurx + offx,min,max)
@@ -29273,6 +29756,91 @@ end
     
   end
   
+  function SBWin_CheckSize()
+    if settings_sbdock == true then
+      if lvar.stripbrowser.dockpos == 1 then
+      
+        local maxh
+        if settings_moddock == true and show_lfoedit == true then
+          maxh = gfx1.main_h - obj.sections[1350].y - obj.sections[1100].h
+        else
+          maxh = gfx1.main_h - obj.sections[1350].y        
+        end
+        if sbwin.h*pnl_scale > maxh then
+          sbwin.h = math.min(sbwin.h,math.floor(maxh/pnl_scale))
+        end
+        
+      else
+      
+        local maxw
+        if settings_ssdock == true and show_snapshots == true then
+          maxw = gfx1.main_w - plist_w - obj.sections[160].w
+        else
+          maxw = gfx1.main_w - plist_w        
+        end
+        if sbwin.w*pnl_scale > maxw then
+          sbwin.w = math.min(sbwin.w,math.floor(maxw/pnl_scale))
+        end
+      
+        if settings_ssdock == true and show_snapshots == true then
+          sbwin.x = obj.sections[160].x-math.floor(sbwin.w*pnl_scale)
+        else
+          sbwin.x = gfx1.main_w-math.floor(sbwin.w*pnl_scale)
+        end
+        
+      end
+    
+    else
+    
+    
+    end
+  end
+  
+  function SBDock(d)
+  
+    if d == true then
+      if d ~= settings_sbdock then
+        lvar.osbh = {x = obj.sections[1350].x,
+                      y = obj.sections[1350].y,
+                      w = obj.sections[1350].w,
+                      h = obj.sections[1350].h}
+      end
+      --if lvar.osbh2 then
+        sbwin.w = math.floor(lvar.sbmin*pnl_scale) --math.floor(lvar.osbh2.w/pnl_scale)
+        sbwin.h = math.floor(lvar.sbmin*pnl_scale) --math.floor(lvar.osbh2.h/pnl_scale)
+        resize_display = true
+      --end
+    elseif lvar.osbh then
+      if d ~= settings_sbdock then
+        lvar.osbh2 = {x = obj.sections[1350].x,
+                      y = obj.sections[1350].y,
+                      w = obj.sections[1350].w,
+                      h = obj.sections[1350].h}
+      end
+      sbwin.w = math.floor(lvar.osbh.w/pnl_scale)
+      sbwin.h = math.floor(lvar.osbh.h/pnl_scale)
+      obj.sections[1350] = lvar.osbh
+      resize_display = true
+    else
+      if d ~= settings_sbdock then
+        lvar.osbh2 = {x = sbwin.x or obj.sections[1350].x,
+                      y = sbwin.y or obj.sections[1350].y,
+                      w = sbwin.w or obj.sections[1350].w,
+                      h = sbwin.h or obj.sections[1350].h}
+      end
+      sbwin.w = sbwin.w or (180*pnl_scale)
+      sbwin.h = sbwin.h or (216*pnl_scale)
+      
+      resize_display = true
+    end
+    settings_sbdock = d
+    SBWin_CheckSize()
+    
+    obj = GetObjects()
+    update_gfx = true
+    
+  end
+  
   function A_Run_Mode0(noscroll, rt)
   
     local contexts = contexts
@@ -29340,6 +29908,46 @@ end
           mdlist_offset = F_limit(mdlist_offset - v, 0, #modulators-1)        
         end
         update_gfx = true
+        gfx.mouse_wheel = 0
+      end
+
+      local xywh = {x = obj.sections[1350].x,
+                    y = obj.sections[1350].y,
+                    w = obj.sections[1350].w,
+                    h = obj.sections[1350].h}
+      if show_stripbrowser == true and MOUSE_over(xywh) then
+
+        local mx, my = mouse.mx, mouse.my
+        mouse.mx, mouse.my = mouse.mx - obj.sections[1350].x, mouse.my - obj.sections[1350].y
+        
+        if lvar.stripbrowser.showlist == true and MOUSE_over(obj.sections[1351]) then
+          local bcnt = math.floor(obj.sections[1351].h/(butt_h*pnl_scale))-1
+        
+          sbsflist_offset = F_limit(sbsflist_offset - v,0,math.max(#strip_folders - bcnt +1,0))
+          update_stripbrowser = true
+          
+        elseif MOUSE_over(obj.sections[1352]) then
+          if mouse.shift ~= true then
+            local perpage = lvar.stripbrowser.xnum * lvar.stripbrowser.ynum
+            local max
+            if lvar.stripbrowser.favs == true then
+              max = math.floor((#strip_favs-1) / perpage)
+            else
+              max = math.floor(#strip_files / perpage)
+            end
+            lvar.stripbrowser.page = F_limit(lvar.stripbrowser.page - v,0,max)
+            GUI_DrawSB_Strips(obj, gui)
+            update_stripbrowser = true
+          else
+            lvar.stripbrowser.minw = math.max(lvar.stripbrowser.minw + v*5, 60)
+            lvar.stripbrowser.minh = math.floor(lvar.stripbrowser.minw * 3/4)
+            lvar.stripbrowser.minw = math.floor(lvar.stripbrowser.minw)
+            lvar.stripbrowser.page = 0   
+            update_stripbrowser = true
+            obj = PosStripBrowser(obj)         
+          end        
+        end
+        mouse.mx, mouse.my = mx, my
         gfx.mouse_wheel = 0
       end
 
@@ -29412,6 +30020,160 @@ end
         update_gfx = true
       end]]
     
+    elseif mouse.context == nil and show_stripbrowser == true and show_eqcontrol ~= true and show_pinmatrix ~= true and (MOUSE_click(obj.sections[1350]) or MOUSE_click_RB(obj.sections[1350])) then
+
+      noscroll = true
+      mx,my = mouse.mx, mouse.my
+      mouse.mx = mouse.mx - obj.sections[1350].x 
+      mouse.my = mouse.my - obj.sections[1350].y
+
+      if MOUSE_click(obj.sections[1353]) then
+            
+        --lvar.stripbrowser.favs = true
+        lvar.stripbrowser.showlist = not (lvar.stripbrowser.showlist or false)
+        update_stripbrowser = true
+
+      elseif mouse.my < butt_h*pnl_scale then
+        if mouse.RB and MOUSE_over(obj.sections[1357]) then
+        
+          if lvar.stripbrowser.dockpos == 1 then
+            mstr = '!Dock to top edge|Dock to right edge'
+          else
+            mstr = 'Dock to top edge|!Dock to right edge'
+          end
+          gfx.x, gfx.y = mx, my
+          local res = gfx.showmenu(mstr)
+          if res > 0 then
+            lvar.stripbrowser.dockpos = res
+            sbwin.w = lvar.sbmin*pnl_scale
+            sbwin.h = lvar.sbmin*pnl_scale
+            SBDock(true)
+            obj = GetObjects()
+            update_gfx = true
+          end
+          
+        elseif mouse.RB then
+          SetShowSB(false)
+          update_surface = true
+          
+        elseif mouse.LB then
+          if MOUSE_click(obj.sections[1357]) then
+          
+            SBDock(not settings_sbdock)
+            
+          elseif settings_sbdock ~= true then
+            mouse.context = contexts.move_sbwin
+            movesbwin = {dx = mouse.mx, dy = mouse.my}
+          end
+        end
+      
+      elseif MOUSE_click(obj.sections[1354])  then
+        
+        if settings_sbdock ~= true then
+          mouse.context = contexts.resize_sbwin
+          sbwinrsz = {mx = mx, my = my, w = sbwin.w, h = sbwin.h, x = obj.sections[1350].x, y = obj.sections[1350].y, sc_w = obj.sections[1350].w, sc_h = obj.sections[1350].h}          
+        end
+              
+      elseif MOUSE_click(obj.sections[1355])  then
+        
+        if settings_sbdock ~= true or lvar.stripbrowser.dockpos == 1 then
+          mouse.context = contexts.resize_sbwinv
+          sbwinrsz = {my = my, h = sbwin.h, y = obj.sections[1350].y, sc_h = obj.sections[1350].h}          
+        end
+        
+      elseif MOUSE_click(obj.sections[1356])  then
+        
+        mouse.context = contexts.resize_sbwinh
+        sbwinrsz = {mx = mx, w = sbwin.w, x = obj.sections[1350].x, sc_w = obj.sections[1350].w, mmx = mouse.mx}          
+      
+      elseif lvar.stripbrowser.showlist == true and MOUSE_click(obj.sections[1351]) then
+      
+        local n = math.floor((mouse.my - obj.sections[1351].y) / math.floor(butt_h*pnl_scale))-1
+        if n == -1 then
+          lvar.stripbrowser.favs = true
+        else
+          if strip_folders[n+sbsflist_offset] then
+            lvar.stripbrowser.favs = false
+            stripfol_select = n+sbsflist_offset
+            PopulateStrips() 
+          end
+        end
+        lvar.stripbrowser.showlist = false
+        update_stripbrowser = true
+      
+      elseif MOUSE_click(obj.sections[1352]) then
+
+        if lvar.stripbrowser.showlist == true then
+          lvar.stripbrowser.showlist = false
+          update_stripbrowser = true
+        end
+        local w,h = gfx.getimgdim(skin.star)
+        local dx, dy = math.floor((lvar.stripbrowser.imgw-lvar.stripbrowser.minw)/2),
+                       math.floor((lvar.stripbrowser.imgh-lvar.stripbrowser.minh)/2)
+        local x = math.floor(mouse.mx - (obj.sections[1352].x +dx+15)) % (lvar.stripbrowser.imgw+10)
+        local y = math.floor(mouse.my - (obj.sections[1352].y +dy+15) + h/2) % (lvar.stripbrowser.imgh+30)
+        --DBG(x..'  '..lvar.stripbrowser.minw..'    '..y..'  '..lvar.stripbrowser.minh..'  '..h)
+        if x >= lvar.stripbrowser.minw/2-w/2 and x <= lvar.stripbrowser.minw/2+w/2
+           and y > 2 and y <= 15 then 
+      
+          local x = math.floor((mouse.mx - obj.sections[1352].x)/(obj.sections[1352].w/lvar.stripbrowser.xnum))
+          local y = math.floor((mouse.my - obj.sections[1352].y)/(obj.sections[1352].h/lvar.stripbrowser.ynum))
+          local offset = (lvar.stripbrowser.ynum*lvar.stripbrowser.xnum) * lvar.stripbrowser.page
+          
+          local n = x + (y*lvar.stripbrowser.xnum) + offset
+          lvar.stripbrowser.select = n
+
+          local fn
+          if lvar.stripbrowser.favs == true then
+            fn = strip_favs[n+1]
+          else
+            fn = strip_folders[stripfol_select].fn..'/'..strip_files[n].fn
+          end
+
+          if InFavs(fn) then
+            RemoveFav(fn)
+          else
+            strip_favs[#strip_favs+1] = fn
+          end
+          update_stripbrowser = true
+      
+        elseif mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.2 then
+        
+          if lvar.stripbrowser.select then
+            local fn
+            if lvar.stripbrowser.favs == true then
+              fn = strip_favs[lvar.stripbrowser.select+1]
+            else
+              fn = strip_folders[stripfol_select].fn..'/'..strip_files[lvar.stripbrowser.select].fn
+            end
+            if fn then
+              if settings_stripautosnap == true or show_striplayout == false or stripgallery_view > 0 then
+                InsStrip(fn)
+              end
+            end
+          end
+        
+        else
+      
+          local x = math.floor((mouse.mx - obj.sections[1352].x)/(obj.sections[1352].w/lvar.stripbrowser.xnum))
+          local y = math.floor((mouse.my - obj.sections[1352].y)/(obj.sections[1352].h/lvar.stripbrowser.ynum))
+          local offset = (lvar.stripbrowser.ynum*lvar.stripbrowser.xnum) * lvar.stripbrowser.page
+          
+          local n = x + (y*lvar.stripbrowser.xnum) + offset
+          lvar.stripbrowser.select = n
+          update_stripbrowser = true
+          
+          if show_striplayout == false then
+            mouse.context = contexts.sb_dragstrip
+          end
+        end
+              
+      end
+
+      mouse.mx = mx
+      mouse.my = my
+      
+
     elseif mouse.context == nil and show_samplemanager == true and show_eqcontrol ~= true and show_pinmatrix ~= true and (MOUSE_click(obj.sections[1300]) or MOUSE_click_RB(obj.sections[1300])) then
 
       noscroll = true
@@ -32319,6 +33081,142 @@ end
           
           smwin.oh = smwin.h
         end
+        
+      elseif mouse.context == contexts.move_sbwin then
+      
+        obj.sections[1350].x = F_limit(mouse.mx - movesbwin.dx,obj.sections[10].x,obj.sections[10].x+obj.sections[10].w-obj.sections[1350].w)
+        obj.sections[1350].y = F_limit(mouse.my - movesbwin.dy,obj.sections[10].y,obj.sections[10].y+obj.sections[10].h-obj.sections[1350].h)
+        obj.sections[1350].y = math.max(obj.sections[1350].y,obj.sections[10].y)
+        
+        sbwin.x = obj.sections[1350].x
+        sbwin.y = obj.sections[1350].y
+        update_surface = true
+      
+      elseif mouse.context == contexts.resize_sbwin then
+
+        local dx = sbwinrsz.x + sbwinrsz.sc_w - sbwinrsz.mx
+        local dy = sbwinrsz.y + sbwinrsz.sc_h - sbwinrsz.my
+
+        local nw = mouse.mx - sbwinrsz.x + dx
+        sbwin.w = math.max(nw/pnl_scale,160)
+
+        local nh = mouse.my - sbwinrsz.y + dy
+        sbwin.h = math.max(nh/pnl_scale,160)
+
+        if sbwin.w ~= sbwin.ow or sbwin.h ~= sbwin.oh then
+          local sbw,sbh = math.max(math.min(math.floor(sbwin.w*pnl_scale),obj.sections[10].w),lvar.sbmin*pnl_scale),
+                          math.max(math.min(math.floor((sbwin.h*pnl_scale)),obj.sections[10].h),lvar.sbmin*pnl_scale)
+                          
+          obj.sections[1350] = {x = math.max(F_limit(obj.sections[1350].x,obj.sections[10].x,obj.sections[10].x+obj.sections[10].w-sbw),obj.sections[10].x),
+                                y = math.max(F_limit(obj.sections[1350].y,obj.sections[10].y,obj.sections[10].y+obj.sections[10].h-sbh),obj.sections[10].y),
+                                w = sbw,
+                                h = sbh}
+          --DBG(obj.sections[1350].w..'  '..obj.sections[1350].h)
+          if settings_sbdock == true then
+            SetSurfaceSize2(obj)
+            obj.sections[1350].x = obj.sections[10].x+obj.sections[10].w
+            obj.sections[1350].y = obj.sections[10].y
+            obj.sections[1350].h = obj.sections[10].h
+          end
+          obj = PosStripBrowser(obj)
+          update_surface = true
+          update_stripbrowser = true
+          
+          sbwin.ow = sbwin.w
+          sbwin.oh = sbwin.h
+        end
+
+      elseif mouse.context == contexts.resize_sbwinh then
+
+        local dx = sbwinrsz.x + sbwinrsz.sc_w - sbwinrsz.mx
+        local nw = sbwinrsz.x + dx - mouse.mx
+        
+        local maxw = obj.sections[10].w + math.floor(sbwin.w*pnl_scale)
+        local maxw2 = obj.sections[10].w + sbwin.w
+        if settings_sbdock == true then
+          sbwin.w = math.floor(math.min(math.max(nw/pnl_scale,lvar.sbmin*pnl_scale),maxw2))
+        else
+          sbwin.w = math.max(nw/pnl_scale,lvar.sbmin*pnl_scale)
+        end
+
+        if sbwin.w ~= sbwin.ow then
+          local sbw,sbh 
+          if settings_sbdock == true then
+            sbw,sbh = math.max(math.min(math.floor(sbwin.w*pnl_scale),maxw),lvar.sbmin*pnl_scale),
+                      math.max(math.min(math.floor((sbwin.h*pnl_scale)),obj.sections[10].h),lvar.sbmin*pnl_scale)
+          else
+            sbw,sbh = math.max(math.min(math.floor(sbwin.w*pnl_scale),obj.sections[10].w),lvar.sbmin*pnl_scale),
+                      math.max(math.min(math.floor((sbwin.h*pnl_scale)),obj.sections[10].h),lvar.sbmin*pnl_scale)
+          end              
+          obj.sections[1350] = {x = math.max(F_limit(obj.sections[1350].x,obj.sections[10].x,obj.sections[10].x+obj.sections[10].w-sbw),obj.sections[10].x),
+                                y = math.max(F_limit(obj.sections[1350].y,obj.sections[10].y,obj.sections[10].y+obj.sections[10].h-sbh),obj.sections[10].y),
+                                w = sbw,
+                                h = sbh}
+          if settings_sbdock == true then
+            SetSurfaceSize2(obj)
+            if settings_ssdock == true and show_snapshots == true then
+              obj.sections[1350].x = obj.sections[160].x-obj.sections[1350].w
+            else
+              obj.sections[1350].x = obj.sections[10].x+obj.sections[10].w
+            end
+            obj.sections[1350].y = obj.sections[10].y
+            local hh = math.min(math.max((gfx1.main_h-obj.sections[10].y),lvar.sbmin*pnl_scale),2048)
+            obj.sections[1350].h = hh
+          else
+            obj.sections[1350].x = mouse.mx - sbwinrsz.mmx
+          end
+          resize_display = true
+          --obj = PosStripBrowser(obj)
+          obj = GetObjects()
+          update_surface = true
+          update_stripbrowser = true
+          
+          sbwin.ow = sbwin.w
+        end
+
+      elseif mouse.context == contexts.resize_sbwinv then
+
+        local dy = sbwinrsz.y + sbwinrsz.sc_h - sbwinrsz.my
+
+        local nh = mouse.my - sbwinrsz.y + dy
+        sbwin.h = math.max(nh/pnl_scale,lvar.sbmin)
+
+        if sbwin.h ~= sbwin.oh then
+          local sbh
+          if settings_sbdock == true then
+            local maxh = gfx1.main_h - obj.sections[1350].y - obj.sections[1100].h
+            sbh = math.floor(math.max(math.min(math.floor(sbwin.h*pnl_scale),maxh),lvar.sbmin*pnl_scale))
+            sbwin.h = math.ceil(sbh/pnl_scale)
+          end        
+          obj.sections[1350] = {x = obj.sections[1350].x,
+                                y = obj.sections[1350].y, --math.max(F_limit(obj.sections[1350].y,obj.sections[10].y,obj.sections[10].y+obj.sections[10].h-sbh),obj.sections[10].y)
+                                w = obj.sections[1350].w,
+                                h = sbh}
+          resize_display = true
+          obj = GetObjects()
+
+          update_surface = true
+          update_stripbrowser = true
+          
+          sbwin.oh = sbwin.h
+        end
+        
+      elseif mouse.context == contexts.sb_dragstrip then
+      
+        if stripgallery_view == 0 then
+          if not MOUSE_over(obj.sections[1350]) and MOUSE_over(obj.sections[10]) then
+            local fn
+            if lvar.stripbrowser.favs == true then
+              fn = strip_favs[lvar.stripbrowser.select+1]
+            else
+              fn = strip_folders[stripfol_select].fn..'/'..strip_files[lvar.stripbrowser.select].fn
+            end
+            if fn then
+              InsStrip(fn, true)
+            end
+            mouse.context = contexts.sb_dragstrip2
+          end      
+        end
       end
 
     else
@@ -33882,6 +34780,10 @@ end
         if MOUSE_click(obj.sections[107]) then
           cycle_select.mapptof = not cycle_select.mapptof
           mapptof_select = cycle_select.mapptof
+          update_gfx = true
+        elseif MOUSE_click(obj.sections[111]) then
+          cycle_select.invert = not cycle_select.invert
+          invert_select = cycle_select.invert
           update_gfx = true
         elseif MOUSE_click(obj.sections[108]) then
           cycle_select.draggable = not cycle_select.draggable
@@ -40532,21 +41434,57 @@ end
       insertstrip.y = math.floor((insertstrip.y-obj.sections[10].y+surface_offset.y+ny)/settings_gridsize)*settings_gridsize -surface_offset.y+obj.sections[10].y-insertstrip.dy
     end
     
-    if MOUSE_click(obj.sections[10]) then
-      --drop
-      local dx, dy = insertstrip.x-obj.sections[10].x, insertstrip.y-obj.sections[10].y+math.floor(insertstrip.dy/settings_gridsize)*settings_gridsize
-      Strip_AddStrip(loadstrip,dx,dy,true)
-      
-      update_gfx = true
-      reaper.MarkProjectDirty(0)
-      insertstrip = nil
-      PopulateUsedTracksTable()
-      
-    elseif MOUSE_click_RB(obj.sections[10]) then
-      --cancel
-      insertstrip = nil
-    end
+    if insertstrip.dragmode ~= true then
+      if show_stripbrowser and MOUSE_click(obj.sections[1350]) then
+        --cancel
+        insertstrip = nil
+  
+      elseif MOUSE_click(obj.sections[10]) then
+        --drop
+        local dx, dy = insertstrip.x-obj.sections[10].x, insertstrip.y-obj.sections[10].y+math.floor(insertstrip.dy/settings_gridsize)*settings_gridsize
+        Strip_AddStrip(loadstrip,dx,dy,true)
+        
+        update_gfx = true
+        reaper.MarkProjectDirty(0)
+        insertstrip = nil
+        PopulateUsedTracksTable()
+        
+        if stripgallery_view == 1 then
+          stlay_data = AutoSnap_GetStripLocs(true)
+        end
+        
+      elseif mouse.RB then --MOUSE_click_RB(obj.sections[10]) then
+        --cancel
+        insertstrip = nil
+      end
     
+    elseif mouse.context and mouse.context == contexts.sb_dragstrip2 then
+    
+    elseif mouse.context == nil and insertstrip then
+    
+      if MOUSE_over(obj.sections[10]) and (show_stripbrowser ~= true or not MOUSE_over(obj.sections[1350])) 
+         and (show_snapshots ~= true or not MOUSE_over(obj.sections[160]))
+         and (show_lfoedit ~= true or not MOUSE_over(obj.sections[1100]))
+         and (show_mutate ~= true or not MOUSE_over(obj.sections[1120]))
+         and (show_randomopts ~= true or not MOUSE_over(obj.sections[1130]))
+         and (show_samplemanager ~= true or not MOUSE_over(obj.sections[1300])) then
+         
+        local dx, dy = insertstrip.x-obj.sections[10].x, insertstrip.y-obj.sections[10].y+math.floor(insertstrip.dy/settings_gridsize)*settings_gridsize
+        Strip_AddStrip(loadstrip,dx,dy,true)
+        
+        update_gfx = true
+        reaper.MarkProjectDirty(0)
+        insertstrip = nil
+        PopulateUsedTracksTable()
+        
+        if stripgallery_view == 1 then
+          stlay_data = AutoSnap_GetStripLocs(true)
+        end      
+      else
+        insertstrip = nil
+      end    
+    end
+        
     update_surface = true
     
   end
@@ -43600,6 +44538,7 @@ end
         co = {statecnt = cd.statecnt,
                     selected = cd.selected,
                     mapptof = cd.mapptof,
+                    invert = cd.invert,
                     draggable = cd.draggable,
                     spread = cd.spread,
                     val = 0,
@@ -43608,6 +44547,7 @@ end
         co = {statecnt = cd.statecnt,
                     selected = cd.selected,
                     mapptof = mapptof_select,
+                    invert = invert_select,
                     draggable = draggable_select,
                     spread = spread_select,
                     val = 0,
@@ -43620,7 +44560,7 @@ end
       end
       return co
     else
-      return {statecnt = 0,mapptof = mapptof_select,draggable = draggable_select,spread = spread_select,val = 0,nil}
+      return {statecnt = 0,mapptof = mapptof_select, inert = invert_select, draggable = draggable_select,spread = spread_select,val = 0,nil}
     end    
   end
   
@@ -43632,6 +44572,7 @@ end
       local co = {statecnt = cd.statecnt,
                   selected = cd.selected,
                   mapptof = cd.mapptof,
+                  invert = cd.invert,
                   draggable = cd.draggable,
                   spread = cd.spread,
                   {}}
@@ -43645,7 +44586,7 @@ end
       co = cycledata_slowsort(cd)
       return co
     else
-      return {statecnt = 0,mapptof = false,draggable = false,spread = false,pos = 1,{}}
+      return {statecnt = 0, mapptof = false, invert = false, draggable = false,spread = false,pos = 1,{}}
     end    
   end
   
@@ -43674,6 +44615,7 @@ end
       local co = {statecnt = cd.statecnt,
                   selected = nil,
                   mapptof = cd.mapptof,
+                  invert = cd.invert,
                   draggable = cd.draggable,
                   spread = cd.spread,
                   val = 0,
@@ -44495,6 +45437,7 @@ end
 
         strip.controls[c].cycledata.statecnt = tonumber(zn(data[key..'cycledata_statecnt'],0))
         strip.controls[c].cycledata.mapptof = tobool(zn(data[key..'cycledata_mapptof'],false))
+        strip.controls[c].cycledata.invert = tobool(zn(data[key..'cycledata_invert'],false))
         strip.controls[c].cycledata.draggable = tobool(zn(data[key..'cycledata_draggable'],false))
         strip.controls[c].cycledata.spread = tobool(zn(data[key..'cycledata_spread'],false))
         strip.controls[c].cycledata.pos = tonumber(zn(data[key..'cycledata_pos'],1))
@@ -46685,7 +47628,8 @@ end
 
     auto_delay = tonumber(nz(GES('auto_sensitivity',true),auto_delay))    
     tb_butt_h = tonumber(nz(GES('tb_butt_h',true),tb_butt_h))    
-    pnl_scale = tonumber(nz(GES('pnl_scale',true),pnl_scale))    
+    pnl_scale = tonumber(nz(GES('pnl_scale',true),pnl_scale))
+        
     fontscale = tonumber(nz(GES('fontscale',true),fontscale))    
     tb_fontscale = tonumber(nz(GES('tb_fontscale',true),tb_fontscale))    
     lst_fontscale = tonumber(nz(GES('lst_fontscale',true),lst_fontscale))    
@@ -46733,6 +47677,16 @@ end
     settings_drawbglabelsontop = tobool(nz(GES('settings_drawbglabelsontop',true),settings_drawbglabelsontop))
     autosnap_itemgapmax = tonumber(nz(GES('autosnap_itemgapmax',true),autosnap_itemgapmax))        
     settings_ssdock = tobool(nz(GES('settings_ssdock',true),settings_ssdock))
+    settings_sbdock = tobool(nz(GES('settings_sbdock',true),settings_sbdock))
+    
+    show_stripbrowser = tobool(nz(GES('show_stripbrowser',true),show_stripbrowser))
+    sbwin.x = tonumber(nz(GES('sbwin_x',true),sbwin.x))
+    sbwin.y = tonumber(nz(GES('sbwin_y',true),sbwin.y))
+    sbwin.w = tonumber(nz(GES('sbwin_w',true),sbwin.w))
+    sbwin.h = tonumber(nz(GES('sbwin_h',true),sbwin.h))
+    lvar.stripbrowser.minw = tonumber(nz(GES('stripbrowser_minw',true),lvar.stripbrowser.minw))
+    lvar.stripbrowser.minh = tonumber(nz(GES('stripbrowser_minh',true),lvar.stripbrowser.minh))
+    lvar.stripbrowser.dockpos = tonumber(nz(GES('stripbrowser_dockpos',true),lvar.stripbrowser.dockpos))
     
     settings_moddock = tobool(nz(GES('settings_moddock',true),settings_moddock))
     modwinsz = {}
@@ -46898,6 +47852,16 @@ end
     reaper.SetExtState(SCRIPT,'settings_drawbglabelsontop',tostring(settings_drawbglabelsontop), true)    
     reaper.SetExtState(SCRIPT,'settings_pagescrolldir',tostring(settings_pagescrolldir), true)    
     reaper.SetExtState(SCRIPT,'settings_ssdock',tostring(settings_ssdock), true)    
+    reaper.SetExtState(SCRIPT,'settings_sbdock',tostring(settings_sbdock), true)    
+
+    reaper.SetExtState(SCRIPT,'show_stripbrowser',tostring(show_stripbrowser), true)    
+    reaper.SetExtState(SCRIPT,'sbwin_x',tostring(sbwin.x), true)    
+    reaper.SetExtState(SCRIPT,'sbwin_y',tostring(sbwin.y), true)    
+    reaper.SetExtState(SCRIPT,'sbwin_w',tostring(sbwin.w), true)    
+    reaper.SetExtState(SCRIPT,'sbwin_h',tostring(sbwin.h), true)    
+    reaper.SetExtState(SCRIPT,'stripbrowser_minw',tostring(lvar.stripbrowser.minw), true)    
+    reaper.SetExtState(SCRIPT,'stripbrowser_minh',tostring(lvar.stripbrowser.minh), true)    
+    reaper.SetExtState(SCRIPT,'stripbrowser_dockpos',tostring(lvar.stripbrowser.dockpos or 1), true)    
     
     reaper.SetExtState(SCRIPT,'settings_moddock',tostring(settings_moddock), true)    
     reaper.SetExtState(SCRIPT,'modwin_min',tostring(modwinsz.minimized), true)    
@@ -46975,7 +47939,7 @@ end
       file:close()
       
       strip_favs = unpickle(content)
-      
+      if strip_favs == nil then strip_favs = {} end
       CheckFavs()
     end
   
@@ -47660,6 +48624,7 @@ end
               if stripdata.controls[c].cycledata and stripdata.controls[c].cycledata.statecnt then
                 file:write('['..key..'cycledata_statecnt]'..nz(stripdata.controls[c].cycledata.statecnt,0)..'\n')
                 file:write('['..key..'cycledata_mapptof]'..tostring(nz(stripdata.controls[c].cycledata.mapptof,false))..'\n')
+                file:write('['..key..'cycledata_invert]'..tostring(nz(stripdata.controls[c].cycledata.invert,false))..'\n')
                 file:write('['..key..'cycledata_draggable]'..tostring(nz(stripdata.controls[c].cycledata.draggable,false))..'\n')
                 file:write('['..key..'cycledata_spread]'..tostring(nz(stripdata.controls[c].cycledata.spread,false))..'\n')
                 file:write('['..key..'cycledata_pos]'..tostring(nz(stripdata.controls[c].cycledata.pos,1))..'\n')
@@ -51381,6 +52346,7 @@ end
     ssoffset = 0
     fssoffset = 0
     al_offset = 0
+    sbsflist_offset = 0
     
     strips = {}
     switchers = {}
@@ -51424,7 +52390,7 @@ end
     strip_select = 0
     stripfol_select = 0
     maxdp_select = -1
-    cycle_select = {statecnt = 0,val = 0,mapptof = false,draggable = false,spread = false,nil}
+    cycle_select = {statecnt = 0,val = 0,mapptof = false, invert = false, draggable = false,spread = false,nil}
     minov_select = nil
     maxov_select = nil
     dvaloff_select = 0
@@ -52869,6 +53835,7 @@ end
   settings_pagescrolldir = 1
   settings_ssdock = false
   settings_moddock = false
+  settings_sbdock = true
   settings_dragmode = false
   settings_runstartbat = false
   settings_lockpinmatrix = false
@@ -52918,6 +53885,7 @@ end
   
   modwin = {minw = 536, minh = 180}
   smwin = {w = 500, h = 500}
+  sbwin = {w = 180, h = 1000}
   
   barcol = '64 0 0'
   
