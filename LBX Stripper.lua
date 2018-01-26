@@ -15309,7 +15309,6 @@ end
           end
           gfx.a=1
           if matrixoff then
-          DBG('a')
             f_Get_SSV(gui.color.black)
             if matrixoff.x > 0 then
               gfx.rect(obj.sections[10].x, topbarheight, matrixoff.x, obj.sections[1200].h)
@@ -15327,7 +15326,6 @@ end
               gfx.blit(1001,1,0,0,0,obj.sections[43].w,obj.sections[43].h,0,0)
             end  
           else
-          DBG('b')
             gfx.blit(987,1,0,0,0,obj.sections[1200].w,obj.sections[1200].h,obj.sections[10].x,topbarheight)            
           end
           
