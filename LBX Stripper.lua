@@ -1512,6 +1512,8 @@
       end
       SetSurfaceSize2(obj)
 
+      obj = DockableWindows(obj, ss160, mm1350)
+
       --mode
       obj.sections[11] = {x = 1,
                           y = 1,
@@ -2030,7 +2032,7 @@
                           w = (butt_h/2+4)*pnl_scale,
                           h = (butt_h/2+4)*pnl_scale}
                              
-      --SNAPSHOTS
+      --[[SNAPSHOTS
       
       local ssh 
       if settings_ssdock == true then
@@ -2079,6 +2081,7 @@
         obj.sections[160].x = math.max(obj.sections[160].x,obj.sections[10].x)      
         obj.sections[160].y = math.max(obj.sections[160].y,obj.sections[10].y)
       end
+      
       
       --Subset button
       obj.sections[161] = {x = math.floor(30*pnl_scale),
@@ -2181,6 +2184,8 @@
                           y = math.floor((butt_h+10 + (butt_h/2+2 + 10) * 1)*pnl_scale),
                           w = math.floor((obj.sections[160].w-(20*pnl_scale))/2) - 1,
                           h = math.floor(butt_h*pnl_scale)}                       
+      
+      ]]
       
       --ACTION CHOOSER
       
@@ -2356,9 +2361,9 @@
 
       --eq control
       obj.sections[300] = {x = obj.sections[10].x,
-                           y = obj.sections[10].y,
+                           y = topbarheight,
                            w = (gfx1.main_w-obj.sections[10].x),
-                           h = (gfx1.main_h-obj.sections[10].y)}                       
+                           h = (gfx1.main_h-topbarheight)}                       
       obj.sections[301] = {x = 0,
                            y = 0,
                            w = obj.sections[300].w,
@@ -2730,7 +2735,7 @@
                            h = math.floor(butt_h*pnl_scale)} 
       
       --MOD EDIT (LFO)
-      
+      --[[
       local mow, moh, x, y
       if settings_moddock == true and modwinsz and modwinsz.minimized == true then
         mow = math.max(obj.sections[10].w+1,modwin.minw*pnl_scale)
@@ -2780,6 +2785,7 @@
       if obj.sections[1100].x < plist_w + 2 then
         obj.sections[1100].x = plist_w + 2
       end
+      
       modpos = 8 
       
       --Dock button
@@ -2890,7 +2896,7 @@
                             y = 2,
                             w = 80,
                             h = math.floor(gui.winsz.pnltit*pnl_scale-2)}
-      
+      ]]
 
       --MUTATE panel
 
@@ -3018,8 +3024,8 @@
       --Pin Map
       obj.sections[1200] = {x = 0,
                             y = 0,
-                            w = gfx1.main_w - obj.sections[10].x,
-                            h = gfx1.main_h - obj.sections[10].y}
+                            w = gfx1.main_w - plist_w + 1,
+                            h = gfx1.main_h - topbarheight}
       --Chan cnt placeholder
       obj.sections[1203] = {x=0,y=0,w=0,h=0} 
 
@@ -3045,7 +3051,7 @@
 
       obj = PosSampleManager(obj)            
       
-      --STRIP BROWSER
+      --[[STRIP BROWSER
       local sbw,sbh
       if settings_sbdock == true then
         if lvar.stripbrowser.dockpos == 1 then
@@ -3116,9 +3122,418 @@
         end
       end
       
-      obj = PosStripBrowser(obj)
+      obj = PosStripBrowser(obj)]]
       
     pnlscaleflag = nil
+    return obj
+  end
+
+  function DockableWindows(obj, ss160, mm1350)
+  
+  
+    --SNAPSHOTS
+          
+    local ssh 
+    if settings_ssdock == true then
+      snaph = math.min(math.max((gfx1.main_h-obj.sections[10].y),252*pnl_scale),2048)
+      ssh = math.floor(snaph-(208*pnl_scale))
+      obj.sections[160] = {x = gfx1.main_w - math.floor(gui.winsz.snaps*pnl_scale),
+                          y = math.floor(obj.sections[10].y),
+                          w = math.floor(gui.winsz.snaps*pnl_scale),
+                          h = snaph}
+      update_snaps = true
+    else
+      snaph = math.floor(math.max(math.min(snaph,obj.sections[10].h),252*pnl_scale))
+      ssh = math.floor(snaph-(208*pnl_scale))
+      obj.sections[160] = {}
+      obj.sections[160].w = math.floor(gui.winsz.snaps*pnl_scale)
+      obj.sections[160].h = snaph
+      if ss160 == nil then
+        obj.sections[160] = {x = gfx1.main_w - gui.winsz.snaps*pnl_scale - (sb_size+2),
+                            y = gfx1.main_h - snaph - (sb_size+2),
+                            w = math.floor(gui.winsz.snaps*pnl_scale),
+                            h = snaph}                            
+        if snapshot_win_pos and snapshot_win_pos.x and snapshot_win_pos.y then
+          obj.sections[160].x = snapshot_win_pos.x
+          obj.sections[160].y = snapshot_win_pos.y
+        end        
+        if obj.sections[160].x + obj.sections[160].w > gfx1.main_w then
+          obj.sections[160].x = math.max(gfx1.main_w - obj.sections[160].w,obj.sections[10].x)
+        end
+        if obj.sections[160].y + obj.sections[160].h > gfx1.main_h then
+          obj.sections[160].y = math.max(gfx1.main_h - obj.sections[160].h,obj.sections[10].y)
+        end
+      else
+        obj.sections[160] = ss160
+        obj.sections[160].w = gui.winsz.snaps*pnl_scale
+        if snapshot_win_pos and snapshot_win_pos.x and snapshot_win_pos.y then
+          obj.sections[160].x = snapshot_win_pos.x
+          obj.sections[160].y = snapshot_win_pos.y
+        end        
+        if obj.sections[160].x + obj.sections[160].w > gfx1.main_w then
+          obj.sections[160].x = math.max(gfx1.main_w - obj.sections[160].w,obj.sections[10].x)
+        end
+        if obj.sections[160].y + obj.sections[160].h > gfx1.main_h then
+          obj.sections[160].y = math.max(gfx1.main_h - obj.sections[160].h,obj.sections[10].y)
+        end
+      end
+      obj.sections[160].x = math.max(obj.sections[160].x,obj.sections[10].x)      
+      obj.sections[160].y = math.max(obj.sections[160].y,obj.sections[10].y)
+    end
+  
+    obj = PosSnapshots(obj, ssh)
+  
+    --MOD EDIT (LFO)
+          
+    local mow, moh, x, y
+    if settings_moddock == true and modwinsz and modwinsz.minimized == true then
+      mow = math.max(obj.sections[10].w+1,modwin.minw*pnl_scale)
+      moh = gui.winsz.pnltit*pnl_scale
+      x = obj.sections[10].x
+      y = gfx1.main_h - moh
+
+    elseif settings_moddock == true then
+      mow = math.max(obj.sections[10].w+1,modwin.minw*pnl_scale)
+      if modwinsz then
+        moh = modwinsz.h
+      else
+        moh = 300*pnl_scale
+      end
+      moh = math.max(math.min(moh,gfx1.main_h-obj.sections[10].y),modwin.minh*pnl_scale)
+      x = obj.sections[10].x
+      y = gfx1.main_h - moh
+      if not modwinsz then
+        modwinsz = {x = x, y = y, w = mow, h = moh}        
+      end
+    
+    else
+      if modwinsz and modwinsz.resize ~= true then
+        mow = modwinsz.w*pnl_scale
+        moh = (modwinsz.h or 300)*pnl_scale
+        x = modwinsz.x
+        y = modwinsz.y
+      elseif modwinsz then
+        mow = modwinsz.w*pnl_scale
+        moh = (modwinsz.h or 300)*pnl_scale
+        x = modwinsz.x
+        y = modwinsz.y        
+      else
+        mow, moh = modwin.minw*pnl_scale, 300*pnl_scale
+        x = math.floor(obj.sections[10].x+obj.sections[10].w/2 - mow/2)
+        y = math.floor(obj.sections[10].y+obj.sections[10].h/2 - moh/2)
+        modwinsz = {x = x, y = y, w = mow, h = moh}
+      end
+      if x < obj.sections[10].x then x = obj.sections[10].x end
+      if y < obj.sections[10].y then y = obj.sections[10].y end
+    end
+    
+    obj.sections[1100] = {x = x,
+                         y = y,
+                         w = math.floor(mow),
+                         h = math.floor(moh)}
+    if obj.sections[1100].x < plist_w + 2 then
+      obj.sections[1100].x = plist_w + 2
+    end
+  
+    obj = PosMod(obj)
+  
+    
+  
+    --STRIP BROWSER
+    local sbw,sbh
+    if settings_sbdock == true then
+      if lvar.stripbrowser.dockpos == 1 then
+        local maxh2 = obj.sections[10].h + sbwin.h
+
+        sbwin.h = math.floor(math.min(math.max(sbwin.h,lvar.sbmin),maxh2))
+        --maxh2 = obj.sections[10].h + sbwin.h*pnl_scale
+        sbw,sbh = math.max(math.floor(sbwin.w*pnl_scale),lvar.sbmin*pnl_scale),
+                  math.max(math.min(math.floor((sbwin.h*pnl_scale)),maxh2*pnl_scale),lvar.sbmin*pnl_scale)
+      
+      else
+        local maxw2 = obj.sections[10].w + sbwin.w
+        
+        sbwin.w = math.floor(math.min(math.max(sbwin.w,lvar.sbmin),maxw2))
+        sbw,sbh = math.max(math.floor(sbwin.w*pnl_scale),lvar.sbmin*pnl_scale),
+                  math.max(math.min(math.floor((sbwin.h*pnl_scale)),obj.sections[10].h),lvar.sbmin*pnl_scale)
+      end
+    else
+      sbw,sbh = math.max(math.min(math.floor(sbwin.w*pnl_scale),obj.sections[10].w),lvar.sbmin*pnl_scale),
+                    math.max(math.min(math.floor((sbwin.h*pnl_scale)),obj.sections[10].h),lvar.sbmin*pnl_scale)
+    end
+    if mm1350 then
+      obj.sections[1350] = {x = math.max(F_limit(mm1350.x,obj.sections[10].x,obj.sections[10].x+obj.sections[10].w-sbw),obj.sections[10].x),
+                            y = math.max(F_limit(mm1350.y,obj.sections[10].y,obj.sections[10].y+obj.sections[10].h-sbh),obj.sections[10].y),
+                            w = sbw,
+                            h = sbh}
+    elseif sbwin.x and sbwin.y then
+      obj.sections[1350] = {x = F_limit(sbwin.x,obj.sections[10].x,obj.sections[10].x+obj.sections[10].w-sbw),
+                            y = F_limit(sbwin.y,obj.sections[10].y,obj.sections[10].y+obj.sections[10].h-sbh),
+                            w = sbw,
+                            h = sbh}      
+    else
+      obj.sections[1350] = {x = math.max(obj.sections[10].x+math.floor(obj.sections[10].w/2-sbw/2),obj.sections[10].x),
+                            y = math.max(obj.sections[10].y+math.floor(obj.sections[10].h/2-sbh/2),obj.sections[10].y),
+                            w = sbw,
+                            h = sbh}
+    end
+    if settings_sbdock == true then
+      if lvar.stripbrowser.dockpos == 1 then
+        local sb = 0
+        if settings_showbars then
+          sb = sb_size
+        end
+        local sbyy = topbarheight + sb + 2
+        obj.sections[1350].x = obj.sections[10].x
+        obj.sections[1350].w = gfx1.main_w - plist_w
+        obj.sections[1350].y = sbyy
+      else
+        if settings_ssdock == true and show_snapshots == true then
+          obj.sections[1350].x = obj.sections[160].x-obj.sections[1350].w
+        else
+          obj.sections[1350].x = obj.sections[10].x+obj.sections[10].w
+        end
+        if obj.sections[1350].x < plist_w + 2 then
+          obj.sections[1350].x = plist_w + 2
+          if settings_ssdock == true and show_snapshots == true then
+            obj.sections[1350].w = obj.sections[160].x - obj.sections[1350].x
+          else
+            obj.sections[1350].w = gfx1.main_w - obj.sections[1350].x
+          end
+          --sbwin.x = math.floor(obj.sections[1350].x / pnl_scale)
+          --sbwin.w = math.floor(obj.sections[1350].w / pnl_scale)
+        end
+        
+        obj.sections[1350].y = obj.sections[10].y
+        local hh = math.min(math.max((gfx1.main_h-obj.sections[10].y),lvar.sbmin*pnl_scale),2048)
+        obj.sections[1350].h = hh
+      end
+    end
+    
+    obj = PosStripBrowser(obj)
+  
+    return obj
+  end
+
+  function PosSnapshots(obj, ssh)
+  
+    --Subset button
+    obj.sections[161] = {x = math.floor(30*pnl_scale),
+                        y = math.floor((butt_h+10 + (butt_h/2+2 + 10) * 0)*pnl_scale),
+                        w = math.floor(obj.sections[160].w-(40*pnl_scale)),
+                        h = math.floor(butt_h*pnl_scale)}                       
+    
+    --Capture button
+    obj.sections[162] = {x = math.floor(10*pnl_scale),
+                        y = math.floor((butt_h+10 + (butt_h/2+2 + 10) * 4)*pnl_scale),
+                        w = math.floor(obj.sections[160].w-(20*pnl_scale)),
+                        h = math.floor((butt_h+8)*pnl_scale)}                       
+    
+    --SS List
+    obj.sections[163] = {x = math.floor(10*pnl_scale),
+                        y = math.floor((butt_h+10 + (butt_h/2+4 + 10) * 5 + 4)*pnl_scale),
+                        w = math.floor(obj.sections[160].w-(20*pnl_scale)),
+                        h = math.floor(ssh)}
+    
+    --Rate button
+    obj.sections[1010] = {x = math.floor(10*pnl_scale),
+                          y = math.floor(obj.sections[163].y + obj.sections[163].h+3),
+                          w = math.floor((obj.sections[163].w/3)+2)-1,
+                          h = math.floor(butt_h*pnl_scale)}
+    
+    --Sync button
+    obj.sections[1011] = {x = math.floor(12*pnl_scale+obj.sections[1010].w),
+                          y = math.floor(obj.sections[1010].y),
+                          w = math.floor(obj.sections[1010].w*.7)-1,
+                          h = math.floor(butt_h*pnl_scale)}
+    
+    --Transfer shape button
+    obj.sections[1012] = {x = math.floor((obj.sections[1011].x+obj.sections[1011].w)+2*pnl_scale),
+                          y = obj.sections[1010].y,
+                          w = math.floor(obj.sections[1010].w*1.3-3),
+                          h = math.floor(butt_h*pnl_scale)}
+    
+    --Dir button
+    obj.sections[1014] = {x = math.floor(10*pnl_scale),
+                          y = math.floor(obj.sections[1010].y + (butt_h+2)*pnl_scale),
+                          w = math.floor((obj.sections[163].w/3)+2)-1,
+                          h = math.floor(butt_h*pnl_scale)}
+    
+    --Paused button
+    obj.sections[1013] = {x = math.floor(obj.sections[1014].w+12*pnl_scale),
+                          y = obj.sections[1014].y,
+                          w = math.floor((obj.sections[163].w/3)+2)-2,
+                          h = math.floor(butt_h*pnl_scale)}
+    
+    --Loop button
+    obj.sections[1015] = {x = math.floor((obj.sections[1014].w*2)+13*pnl_scale),
+                          y = obj.sections[1014].y,
+                          w = math.floor((obj.sections[163].w/3)-3),
+                          h = math.floor(butt_h*pnl_scale)}
+    
+    --Dock button
+    obj.sections[1160] = {x = obj.sections[160].w - 38,
+                          y = 2,
+                          w = 34,
+                          h = math.floor(gui.winsz.pnltit*pnl_scale-2)}
+    
+    --Rename subset button                             
+    obj.sections[164] = {x = math.floor(10*pnl_scale),
+                        y = math.floor((butt_h+10 + (butt_h/2+2 + 10) * 3)*pnl_scale),
+                        w = math.floor((obj.sections[160].w-(20*pnl_scale))/2) - 1,
+                        h = math.floor(butt_h*pnl_scale)}                      
+
+    --Resize window area
+    obj.sections[165] = {x = 0,
+                        y = obj.sections[160].h-12,
+                        w = obj.sections[160].w,
+                        h = 12}                       
+    
+    --New subset button
+    obj.sections[166] = {x = math.floor(10*pnl_scale),
+                        y = math.floor((butt_h+10 + (butt_h/2+2 + 10) * 2)*pnl_scale),
+                        w = math.floor((obj.sections[160].w-(20*pnl_scale))/2 - 1),
+                        h = math.floor(butt_h*pnl_scale)}                       
+    
+    --Learn Ctls button
+    obj.sections[167] = {x = math.floor(12*pnl_scale + (obj.sections[160].w-(20*pnl_scale))/2) +1,
+                        y = math.floor((butt_h+10 + (butt_h/2+2 + 10) * 2)*pnl_scale),
+                        w = math.floor((obj.sections[160].w-(20*pnl_scale))/2 - 3),
+                        h = math.floor((butt_h*2+2)*pnl_scale)}                       
+    
+    --* button
+    obj.sections[168] = {x = math.floor(10*pnl_scale),
+                        y = math.floor((butt_h+10 + (butt_h/2+2 + 10) * 0)*pnl_scale),
+                        w = math.floor(18*pnl_scale),
+                        h = math.floor(butt_h*pnl_scale)}                       
+    
+    --Randomize button
+    obj.sections[169] = {x = math.floor(12*pnl_scale + (obj.sections[160].w-(20*pnl_scale))/2) +1,
+                        y = math.floor((butt_h+10 + (butt_h/2+2 + 10) * 1)*pnl_scale),
+                        w = math.floor((obj.sections[160].w-(20*pnl_scale))/2 - 3),
+                        h = math.floor(butt_h*pnl_scale)}                       
+    
+    --Metalite button
+    obj.sections[224] = {x = math.floor(10*pnl_scale),
+                        y = math.floor((butt_h+10 + (butt_h/2+2 + 10) * 1)*pnl_scale),
+                        w = math.floor((obj.sections[160].w-(20*pnl_scale))/2) - 1,
+                        h = math.floor(butt_h*pnl_scale)}
+                              
+    return obj
+  end
+  
+  function PosMod(obj)
+  
+    modpos = 8 
+          
+    --Dock button
+    obj.sections[1123] = {x = obj.sections[1100].w - 38,
+                          y = 2,
+                          w = 34,
+                          h = math.floor(gui.winsz.pnltit*pnl_scale-2)}
+    
+    --Main bar display
+    obj.sections[1101] = {x = 10,
+                         y = 30*pnl_scale,
+                         w = obj.sections[1100].w-(20),
+                         h = obj.sections[1100].h-(90*pnl_scale)-(modpos*pnl_scale)} 
+
+    --Step mult button
+    obj.sections[1102] = {x = math.floor(obj.sections[1101].x + obj.sections[1101].w - (102*pnl_scale)),
+                         y = math.floor(obj.sections[1101].y + obj.sections[1101].h + (10 + modpos)*pnl_scale),
+                         w = math.floor(100*pnl_scale),
+                         h = math.floor(20*pnl_scale)} 
+                         
+          
+    --ON button
+    obj.sections[1106] = {x = obj.sections[1101].x,
+                         y = math.floor(obj.sections[1101].y + obj.sections[1101].h + (10 + modpos)*pnl_scale),
+                         w = math.floor(40*pnl_scale),
+                         h = math.floor(42*pnl_scale)} 
+    
+    --Length button
+    obj.sections[1104] = {x = math.floor(obj.sections[1106].x + obj.sections[1106].w + (6*pnl_scale)),
+                         y = math.floor(obj.sections[1101].y + obj.sections[1101].h + (10 + modpos)*pnl_scale),
+                         w = math.floor(80*pnl_scale),
+                         h = math.floor(20*pnl_scale)} 
+    
+    --Smooth button
+    obj.sections[1105] = {x = math.floor(obj.sections[1104].x + obj.sections[1104].w + 2*pnl_scale),
+                         y = math.floor(obj.sections[1101].y + obj.sections[1101].h + (10 + modpos)*pnl_scale),
+                         w = math.floor(80*pnl_scale),
+                         h = math.floor(20*pnl_scale)} 
+    
+    --Steps button
+    obj.sections[1107] = {x = math.floor(obj.sections[1102].x -(82*pnl_scale)),
+                         y = math.floor(obj.sections[1101].y + obj.sections[1101].h + (10 + modpos)*pnl_scale),
+                         w = math.floor(80*pnl_scale),
+                         h = math.floor(20*pnl_scale)} 
+
+    --Shift button
+    obj.sections[1108] = {x = math.floor(obj.sections[1105].x + obj.sections[1105].w + 2*pnl_scale),
+                         y = math.floor(obj.sections[1101].y + obj.sections[1101].h + (10 + modpos)*pnl_scale),
+                         w = math.floor(120*pnl_scale),
+                         h = math.floor(20*pnl_scale)} 
+
+    --Min button
+    obj.sections[1109] = {x = obj.sections[1104].x,
+                         y = math.floor(obj.sections[1102].y + obj.sections[1102].h + 2*pnl_scale),
+                         w = math.floor(80*pnl_scale),
+                         h = math.floor(20*pnl_scale)} 
+    
+    --Max button
+    obj.sections[1110] = {x = math.floor(obj.sections[1109].x + obj.sections[1109].w + 2*pnl_scale),
+                         y = obj.sections[1109].y,
+                         w = math.floor(80*pnl_scale),
+                         h = math.floor(20*pnl_scale)} 
+    
+    --Corner resize 
+    obj.sections[1111] = {x = obj.sections[1100].w -20,
+                         y = obj.sections[1100].h -20,
+                         w = 20,
+                         h = 20} 
+    
+    --Title bar
+    obj.sections[1112] = {x = 0,
+                         y = 0,
+                         w = obj.sections[1100].w,
+                         h = gui.winsz.pnltit*pnl_scale} 
+    
+    --Randomize button
+    obj.sections[1113] = {x = obj.sections[1102].x,
+                         y = math.floor(obj.sections[1102].y + obj.sections[1102].h + 2*pnl_scale),
+                         w = math.floor(100*pnl_scale),
+                         h = math.floor(20*pnl_scale)} 
+
+    --Mode button
+    obj.sections[1114] = {x = math.floor(obj.sections[1110].x+obj.sections[1110].w + 2*pnl_scale),
+                         y = math.floor(obj.sections[1102].y + obj.sections[1102].h + 2*pnl_scale),
+                         w = math.floor(120*pnl_scale),
+                         h = math.floor(20*pnl_scale)} 
+
+    --Mod title <
+    obj.sections[1115] = {x = 10,
+                          y = 2,
+                          w = 30,
+                          h = math.floor(gui.winsz.pnltit*pnl_scale-2)}
+    
+    --Mod title >
+    obj.sections[1116] = {x = obj.sections[1115].x+obj.sections[1115].w+2,
+                          y = 2,
+                          w = 30,
+                          h = math.floor(gui.winsz.pnltit*pnl_scale-2)}
+    
+    --Mod title Assign
+    obj.sections[1117] = {x = obj.sections[1116].x+obj.sections[1116].w+8,
+                          y = 2,
+                          w = 60,
+                          h = math.floor(gui.winsz.pnltit*pnl_scale-2)}
+    
+    --Mod title Clear all
+    obj.sections[1118] = {x = obj.sections[1117].x+obj.sections[1117].w+8,
+                          y = 2,
+                          w = 80,
+                          h = math.floor(gui.winsz.pnltit*pnl_scale-2)}
     return obj
   end
 
@@ -14894,24 +15309,26 @@ end
           end
           gfx.a=1
           if matrixoff then
+          DBG('a')
             f_Get_SSV(gui.color.black)
             if matrixoff.x > 0 then
-              gfx.rect(obj.sections[10].x, obj.sections[10].y, matrixoff.x, obj.sections[1200].h)
+              gfx.rect(obj.sections[10].x, topbarheight, matrixoff.x, obj.sections[1200].h)
             else
-              gfx.rect(gfx1.main_w+matrixoff.x, obj.sections[10].y, -matrixoff.x, obj.sections[1200].h)            
+              gfx.rect(gfx1.main_w+matrixoff.x, topbarheight, -matrixoff.x, obj.sections[1200].h)            
             end
             if matrixoff.y > 0 then
-              gfx.rect(obj.sections[10].x, obj.sections[10].y, obj.sections[1200].w, matrixoff.y)            
+              gfx.rect(obj.sections[10].x, topbarheight, obj.sections[1200].w, matrixoff.y)            
             else
               gfx.rect(obj.sections[10].x, gfx1.main_h+matrixoff.y, obj.sections[1200].w, -matrixoff.y)                        
             end
-            gfx.blit(987,1,0,0,0,obj.sections[1200].w,obj.sections[1200].h,obj.sections[10].x+(matrixoff.x),obj.sections[10].y+(matrixoff.y))
+            gfx.blit(987,1,0,0,0,obj.sections[1200].w,obj.sections[1200].h,obj.sections[10].x+(matrixoff.x),topbarheight+(matrixoff.y))
             
             if plist_w > 0 then                  
               gfx.blit(1001,1,0,0,0,obj.sections[43].w,obj.sections[43].h,0,0)
             end  
           else
-            gfx.blit(987,1,0,0,0,obj.sections[1200].w,obj.sections[1200].h,obj.sections[10].x,obj.sections[10].y)            
+          DBG('b')
+            gfx.blit(987,1,0,0,0,obj.sections[1200].w,obj.sections[1200].h,obj.sections[10].x,topbarheight)            
           end
           
         elseif macro_edit_mode == true and macro_lrn_mode == false then
@@ -24315,7 +24732,9 @@ end
   
   function InsStrip(fn, dragmode)
 
-    loadstrip = LoadStripFN(fn)
+    if loadstrip == nil then
+      loadstrip = LoadStripFN(fn)
+    end
     if loadstrip then                  
 
       loadstrip.strip_w, loadstrip.strip_h = GenStripPreview(gui, loadstrip.strip, loadstrip.switchers, loadstrip.switchconvtab)      
@@ -30026,6 +30445,18 @@ end
     
       A_Run_InsertStrip()
     
+    elseif show_eqcontrol == true then
+    
+      noscroll = A_Run_EQControl(noscroll, rt)
+    
+    elseif show_pinmatrix == true then
+    
+      noscroll = A_Run_PinMatrix(noscroll, rt)
+    
+    elseif macro_edit_mode == true and macro_lrn_mode == false then
+    
+      noscroll = A_Run_MacroEdit(noscroll, rt)
+    
     --[[elseif mouse.context == nil and show_lfoedit == true and mouse.LB and not MOUSE_over(obj.sections[1100]) then
     
       if mouse.lastLBclicktime == nil or (mouse.lastLBclicktime and reaper.time_precise() - mouse.lastLBclicktime > 0.5)  then
@@ -30097,7 +30528,7 @@ end
       elseif MOUSE_click(obj.sections[1356])  then
         
         mouse.context = contexts.resize_sbwinh
-        sbwinrsz = {mx = mx, w = sbwin.w, x = obj.sections[1350].x, sc_w = obj.sections[1350].w, mmx = mouse.mx}          
+        sbwinrsz = {mx = mx, w = sbwin.w, x = obj.sections[1350].x, sc_w = obj.sections[1350].w, mmx = mouse.mx, ddx = mx - obj.sections[1350].x, ep = obj.sections[1350].x + obj.sections[1350].w}          
       
       elseif lvar.stripbrowser.showlist == true and MOUSE_click(obj.sections[1351]) then
       
@@ -30886,10 +31317,10 @@ end
             modwinsz.h = modwinsz.oh
             modwinsz.minimized = false
             
-            --modwinsz.resize = true      
+            --modwinsz.resize = true    
             --obj = GetObjects() 
             update_lfoedit = true
-            update_surface = true
+            update_gfx = true
             
           else
             modwinsz.oh = modwinsz.h
@@ -30898,10 +31329,18 @@ end
             
           end
           modwinsz.resize = true      
+          
+          if settings_sbdock == true and lvar.stripbrowser.dockpos == 1 then
+            --HACKY - FIX
+            SBWin_CheckSize()
+            obj = GetObjects()
+            obj = GetObjects()
+            update_gfx = true
+          end
           obj = GetObjects() 
           update_lfoedit = true
           update_surface = true
-          
+
                       
         elseif MOUSE_click(obj.sections[1102]) then
         
@@ -31288,7 +31727,7 @@ end
     
       A_Run_MacroLearn()          
     
-    elseif show_eqcontrol == true then
+--[[    elseif show_eqcontrol == true then
     
       noscroll = A_Run_EQControl(noscroll, rt)
 
@@ -31299,7 +31738,7 @@ end
     elseif macro_edit_mode == true and macro_lrn_mode == false then
 
       noscroll = A_Run_MacroEdit(noscroll, rt)
-
+]]
     elseif morph_puw and settings_showmorphpop and (MOUSE_click(morph_puw) or MOUSE_click_RB(morph_puw)) then
     
       noscroll, mouse.context = A_Run_MorphPU(noscroll, rt) 
@@ -32582,6 +33021,10 @@ end
           
           modwinsz.ow = modwinsz.w
           modwinsz.oh = modwinsz.h
+          
+          if show_striplayout == true then
+            SetASLocs()
+          end
         end
   
       elseif mouse.context == contexts.modwin_move then
@@ -33169,15 +33612,15 @@ end
 
       elseif mouse.context == contexts.resize_sbwinh then
 
-        local dx = sbwinrsz.x + sbwinrsz.sc_w - sbwinrsz.mx
-        local nw = sbwinrsz.x + dx - mouse.mx
+        local dx = sbwinrsz.x + sbwinrsz.sc_w - sbwinrsz.mx + sbwinrsz.ddx
+        local nw = sbwinrsz.x + dx - mouse.mx + sbwinrsz.ddx
         
         local maxw = obj.sections[10].w + math.floor(sbwin.w*pnl_scale)
         local maxw2 = obj.sections[10].w + sbwin.w
         if settings_sbdock == true then
-          sbwin.w = math.floor(math.min(math.max(nw/pnl_scale,lvar.sbmin*pnl_scale),maxw2))
+          sbwin.w = math.floor(math.min(math.max(nw/pnl_scale,lvar.sbmin),maxw2))
         else
-          sbwin.w = math.max(nw/pnl_scale,lvar.sbmin*pnl_scale)
+          sbwin.w = math.max(math.floor(nw/pnl_scale),lvar.sbmin)
         end
 
         if sbwin.w ~= sbwin.ow then
@@ -33204,7 +33647,8 @@ end
             local hh = math.min(math.max((gfx1.main_h-obj.sections[10].y),lvar.sbmin*pnl_scale),2048)
             obj.sections[1350].h = hh
           else
-            obj.sections[1350].x = mouse.mx - sbwinrsz.mmx
+            obj.sections[1350].x = sbwinrsz.ep - math.floor(sbwin.w*pnl_scale) -- sbwinrsz.mmx
+            sbwin.x = obj.sections[1350].x
           end
           resize_display = true
           --obj = PosStripBrowser(obj)
@@ -33225,9 +33669,13 @@ end
         if sbwin.h ~= sbwin.oh then
           local sbh
           if settings_sbdock == true then
-            local maxh = gfx1.main_h - obj.sections[1350].y - obj.sections[1100].h
+            local add = 0
+            if settings_moddock == true and show_lfoedit == true then
+              add = add + obj.sections[1100].h
+            end
+            local maxh = gfx1.main_h - obj.sections[1350].y - add
             sbh = math.floor(math.max(math.min(math.floor(sbwin.h*pnl_scale),maxh),lvar.sbmin*pnl_scale))
-            sbwin.h = math.ceil(sbh/pnl_scale)
+            sbwin.h = math.floor(sbh/pnl_scale)
           end        
           obj.sections[1350] = {x = obj.sections[1350].x,
                                 y = obj.sections[1350].y, --math.max(F_limit(obj.sections[1350].y,obj.sections[10].y,obj.sections[10].y+obj.sections[10].h-sbh),obj.sections[10].y)
@@ -33240,6 +33688,10 @@ end
           update_stripbrowser = true
           
           sbwin.oh = sbwin.h
+          
+          if show_striplayout == true and stripgallery_view == 0 then
+            SetASLocs()
+          end
         end
         
       elseif mouse.context == contexts.sb_dragstrip then
@@ -34983,14 +35435,15 @@ end
                       dragctl = 'dragctl'
                       mouse.context = contexts.dragctl
                       GenCtlDragPreview(gui)
-                      for i = 1, #ctl_select do
+                      A_HideSelectedCtls(true, ctl_select, gfx3_select)
+                      --[[for i = 1, #ctl_select do
                         strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].hide = true
                       end
                       if gfx3_select and #gfx3_select > 0 then
                         for i = 1, #gfx3_select do
                           strips[tracks[track_select].strip][page].graphics[gfx3_select[i].ctl].hide = true  
                         end                    
-                      end
+                      end]]
                       --SetCtlBitmapRedraw()
                     end
                     if settings_dragmode == false then
@@ -37758,7 +38211,9 @@ end
                   dragctl = 'dragctl'
                   mouse.context = contexts.dragctl
                   GenCtlDragPreview(gui)
-                  for i = 1, #ctl_select do
+                  A_HideSelectedCtls(true, ctl_select, gfx3_select)
+                  
+                  --[[for i = 1, #ctl_select do
                     ctls[ctl_select[i].ctl].hide = true
                   end
                   if gfx3_select and #gfx3_select > 0 then
@@ -37766,7 +38221,7 @@ end
                     for i = 1, #gfx3_select do
                       gfxx[gfx3_select[i].ctl].hide = true  
                     end                    
-                  end
+                  end]]
                   SetCtlBitmapRedraw()
                 end
                 update_gfx = true
@@ -38198,6 +38653,22 @@ end
     
     return noscroll
     
+  end
+  
+  function A_HideSelectedCtls(hide, ctl_select, gfx_select)
+  
+    local ctls = strips[tracks[track_select].strip][page].controls
+    if ctl_select and #ctl_select > 0 then
+      for i = 1, #ctl_select do
+        ctls[ctl_select[i].ctl].hide = hide
+      end
+    end
+    if gfx_select and #gfx_select > 0 then
+      local gfxx = strips[tracks[track_select].strip][page].graphics
+      for i = 1, #gfx_select do
+        gfxx[gfx_select[i].ctl].hide = hide
+      end                    
+    end
   end
   
   function A_Run_XXYMode(rt)
@@ -39721,8 +40192,10 @@ end
           local strip = tracks[track_select].strip
           local mac = strips[strip][page].controls[macctlactive].macroctl
           strips[strip][page].controls[macctlactive].diff = nil
-          for m = 1, #mac do
-            --strips[strip][page].controls[mac[m].ctl].mval = nil
+          if mac and #mac > 0 then
+            for m = 1, #mac do
+              --strips[strip][page].controls[mac[m].ctl].mval = nil
+            end
           end
           macctlactive = nil
           
@@ -39974,7 +40447,7 @@ end
     noscroll = true
 
     local mx, my = mouse.mx, mouse.my
-    mouse.mx, mouse.my = mouse.mx - obj.sections[10].x, mouse.my - obj.sections[10].y
+    mouse.mx, mouse.my = mouse.mx - obj.sections[10].x, mouse.my - topbarheight
   
     if mouse.context == nil then
     
@@ -41492,6 +41965,7 @@ end
       if show_stripbrowser and MOUSE_click(obj.sections[1350]) then
         --cancel
         insertstrip = nil
+        loadstrip = nil
   
       elseif MOUSE_click(obj.sections[10]) then
         --drop
@@ -41533,12 +42007,14 @@ end
         update_gfx = true
         reaper.MarkProjectDirty(0)
         insertstrip = nil
+        loadstrip = nil
         PopulateUsedTracksTable()
         
         if stripgallery_view == 1 then
           stlay_data = AutoSnap_GetStripLocs(true)
         end      
       else
+        loadstrip = nil
         insertstrip = nil
       end    
     end
