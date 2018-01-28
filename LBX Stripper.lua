@@ -14,6 +14,9 @@
 
   local lvar = {}
 
+  lvar.ctlupdate_rr = nil
+  lvar.ctlupdate_pos = 1
+
   lvar.noteletters_tab = {'C','C#','D','D#','E','F','F#','G','G#','A','A#','B'}
         
   lvar.submode_table = {'FX PARAMS','GRAPHICS','STRIPS'}
@@ -3682,6 +3685,11 @@
                               y = settingswin_off + yoff + yoffm*3,
                               w = sw,
                               h = bh}
+    obj.sections[731] = {x = xofft + sw + 4,
+                              y = settingswin_off + yoff + yoffm*3,
+                              w = 40,
+                              h = bh}
+                              
     obj.sections[75] = {x = xofft,
                               y = settingswin_off + yoff + yoffm*4,
                               w = bw,
@@ -9436,6 +9444,68 @@ end
     return gfx.r + (gfx.g << 8) + (gfx.b << 16)
   end
 
+function GUI_DrawCtlBitmap_Strips()
+
+    local strip = tracks[track_select].strip
+
+    lvar.stripdim = {}
+    local stripdim = lvar.stripdim
+    stripdim.idx = {}
+    stripdim.data = {}
+    if #strips[strip][page].graphics > 0 then
+      for i = 1, #strips[strip][page].graphics do
+        local gfxx = strips[strip][page].graphics[i]
+        if gfxx.id ~= nil then
+          local idx 
+          if stripdim.idx[gfxx.id] then
+            idx = stripdim.idx[gfxx.id]
+          else
+            idx = #stripdim.data + 1
+            stripdim.idx[gfxx.id] = idx
+            stripdim.data[idx] = {id = gfxx.id, l = surface_size.w, t = surface_size.h, r = 0, b = 0}
+          end
+          stripdim.data[idx].l = math.min(stripdim.data[idx].l, gfxx.x)
+          stripdim.data[idx].t = math.min(stripdim.data[idx].t, gfxx.y)
+          stripdim.data[idx].r = math.max(stripdim.data[idx].r, gfxx.x+gfxx.stretchw)
+          stripdim.data[idx].b = math.max(stripdim.data[idx].b, gfxx.y+gfxx.stretchh)
+        end
+      end
+    end
+    if #strips[strip][page].controls > 0 then
+      for i = 1, #strips[strip][page].controls do
+        local ctl = strips[strip][page].controls[i]
+        if ctl.id ~= nil then
+          local idx 
+          if stripdim.idx[ctl.id] then
+            idx = stripdim.idx[ctl.id]
+          else
+            idx = #stripdim.data + 1
+            stripdim.idx[ctl.id] = idx
+            stripdim.data[idx] = {id = ctl.id, l = surface_size.w, t = surface_size.h, r = 0, b = 0}
+          end
+        
+          stripdim.data[idx].l = math.min(stripdim.data[idx].l, ctl.xsc)
+          stripdim.data[idx].t = math.min(stripdim.data[idx].t, ctl.ysc)
+          stripdim.data[idx].r = math.max(stripdim.data[idx].r, ctl.xsc+ctl.wsc)
+          stripdim.data[idx].b = math.max(stripdim.data[idx].b, ctl.ysc+ctl.hsc)
+        end
+        
+      end
+    end
+    
+    gfx.a = 1
+    gfx.dest = ctl_bitmap
+    if #stripdim.data > 0 then
+      local coffset = 8388608
+      for i = 1, #stripdim.data do
+        local data = stripdim.data[i]
+        SetColor2(i+coffset)
+        gfx.rect(data.l,data.t,data.r-data.l,data.b-data.t,1)    
+      end
+    end
+      
+  end
+
   function GUI_DrawCtlBitmap()
 
     if settings_usectlbitmap then
@@ -9444,6 +9514,8 @@ end
       gfx.dest = ctl_bitmap
     
       if tracks[track_select] and strips[tracks[track_select].strip] then
+      
+        GUI_DrawCtlBitmap_Strips()
       
         local strip = tracks[track_select].strip
         
@@ -9458,8 +9530,8 @@ end
             --local scale = ctl.scale
             local px = ctl.xsc
             local py = ctl.ysc
-            local w = ctl.wsc --ctl.w
-            local h = ctl.hsc --ctl_info.cellh
+            local w = ctl.wsc 
+            local h = ctl.hsc 
     
             local hidden = Switcher_CtlsHidden(ctl.switcher, ctl.grpid)
             
@@ -9484,6 +9556,7 @@ end
     end
       
   end
+
 
   function GUI_DrawCtlBitmap2()
     gfx.setimgdim(ctl_bitmap2,-1,-1)
@@ -16792,6 +16865,7 @@ end
     GUI_DrawTick(gui, 'Disable send checks', obj.sections[72], gui.color.white, settings_disablesendchecks, gui.fontsz.settings,true)             
     GUI_DrawTick(gui, 'Save all track fx with strip', obj.sections[73], gui.color.white, settings_saveallfxinststrip, gui.fontsz.settings,true)
     GUI_DrawSliderH(gui, 'Control refresh rate', obj.sections[74], gui.color.black, gui.color.white, (1-(settings_updatefreq*10)), gui.fontsz.settings,true)
+    GUI_DrawButton(gui, lvar.ctlupdate_rr or 'off', obj.sections[731], -3, gui.color.black, true, '', true, gui.fontsz.settings,true)
     GUI_DrawTick(gui, 'Lock control window width', obj.sections[75], gui.color.white, lockx, gui.fontsz.settings,true)
     GUI_DrawTick(gui, 'Lock control window height', obj.sections[76], gui.color.white, locky, gui.fontsz.settings,true)
     GUI_DrawButton(gui, lockw, obj.sections[77], -3, gui.color.black, lockx, '', true, gui.fontsz.settings,true)
@@ -27779,13 +27853,15 @@ end
     end
   end
   
-  function GetControlAtXY(strip,page,x,y,absolute)
+function GetControlAtXY(strip,page,x,y,absolute)
     
     if strips and strips[strip] then              
       local ctls = strips[strip][page].controls
-      local ret
+      local ret, retstripidx, retstripid
       if settings_usectlbitmap then
       
+        local coffset = 8388608
+        
         if stripgallery_view == 0 or show_striplayout == true or (mode == 1 and submode == 0) then
           gfx.dest = ctl_bitmap
           if absolute then
@@ -27808,7 +27884,12 @@ end
           local ctl = strips[strip][page].controls[cc]
           if Switcher_CtlsHidden(ctl.switcher, ctl.grpid) == false then 
             ret = cc
+            retstripid = ctl.id
+            retstripidx = lvar.stripdim.idx[retstripid]
           end
+        elseif cc > coffset then
+          retstripidx = cc % coffset
+          retstripid = lvar.stripdim.data[retstripidx].id
         end
       else
         for ii = 1, #strips[strip][page].controls do
@@ -27835,9 +27916,10 @@ end
   
         end
       end
-      return ret
+      return ret, retstripidx, retstripid
     end
   end
+  
   
   function ZeroProjectFlags()
     reaper.SetProjExtState(0,'LBXFLAGS','LBX_SAVE_PROJECT','')
@@ -42305,6 +42387,15 @@ end
             randomopts_select.ctls[p].amount = x
             update_randomopts = true
           end
+
+        elseif EB_Open == 731 then
+          if tonumber(editbox.text) and tonumber(editbox.text) > 0 then
+            lvar.ctlupdate_rr = tonumber(editbox.text)
+            lvar.ctlupdate_pos = 1
+          else
+            lvar.ctlupdate_rr = nil
+            lvar.ctlupdate_pos = 1
+          end
         end
         
         editbox = nil
@@ -42525,6 +42616,9 @@ end
       elseif mouse.context == nil and MOUSE_click(obj.sections[74]) then
         mouse.context = contexts.updatefreq
         oval = settings_updatefreq
+      elseif mouse.context == nil and MOUSE_click(obj.sections[731]) then
+        OpenEB(731, 'Round robin size:', lvar.ctlupdate_rr)
+        update_gfx = true
       elseif mouse.context == nil and MOUSE_click(obj.sections[75]) then
         lockx = not lockx
         obj = GetObjects()
@@ -42888,7 +42982,17 @@ end
                 local chktbl = {}
                 local pkmts = false
 
-                for i = 1, #strips[strip][page].controls do
+                --rr
+                
+                local rrend
+                if lvar.ctlupdate_rr then
+                  if not strips[strip][page].controls[lvar.ctlupdate_pos] then
+                    lvar.ctlupdate_pos = 1
+                  end
+                  rrend = math.min(lvar.ctlupdate_pos+(lvar.ctlupdate_rr or 0),#strips[strip][page].controls)
+                end
+                
+                for i = lvar.ctlupdate_pos, (rrend or #strips[strip][page].controls) do
                   --check fx
                   local ctl = strips[strip][page].controls[i]
                   
@@ -43213,6 +43317,9 @@ end
                 chktbl = nil
                 if pkmts then
                   time_nextupdate_pkmeter = rt + settings_updatefreq_pkmeter
+                end
+                if lvar.ctlupdate_rr then
+                  lvar.ctlupdate_pos = lvar.ctlupdate_pos+lvar.ctlupdate_rr+1
                 end
               end
             end
@@ -48190,6 +48297,7 @@ end
     settings_backupduringsave = tobool(nz(GES('createtmpbackup',true),settings_backupduringsave))
 
     settings_usectlbitmap = tobool(nz(GES('usectlbitmap',true),settings_usectlbitmap))
+    lvar.ctlupdate_rr = tonumber(nz(GES('ctlupdate_rr',true),lvar.ctlupdate_rr))
     settings_macroeditmonitor = tobool(nz(GES('macroeditmonitor',true),settings_macroeditmonitor))
     hide_topbar = tobool(nz(GES('hide_topbar',true),hide_topbar))
     settings_hideeditbaronnewproject = tobool(nz(GES('hide_editbar',true),settings_hideeditbaronnewproject))
@@ -48365,6 +48473,8 @@ end
     reaper.SetExtState(SCRIPT,'createtmpbackup',tostring(settings_backupduringsave), true)
    
     reaper.SetExtState(SCRIPT,'usectlbitmap',tostring(settings_usectlbitmap), true)
+    reaper.SetExtState(SCRIPT,'ctlupdate_rr',tostring(lvar.ctlupdate_rr), true)    
+
     reaper.SetExtState(SCRIPT,'macroeditmonitor',tostring(settings_macroeditmonitor), true)
     reaper.SetExtState(SCRIPT,'hide_topbar',tostring(hide_topbar), true)
     reaper.SetExtState(SCRIPT,'settings_showminimaltopbar',tostring(settings_showminimaltopbar), true)
