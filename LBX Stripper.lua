@@ -26912,14 +26912,14 @@ function GUI_DrawCtlBitmap_Strips()
                           w = gfx1.main_w-(plist_w+2+(sb_size+2)*2),
                           h = gfx1.main_h-(topbarheight+(sb_size+2)*2)}
       if settings_ssdock == true and show_snapshots and mode == 0 then
-        obj.sections[10].w = obj.sections[10].w - gui.winsz.snaps*pnl_scale
+        obj.sections[10].w = obj.sections[10].w - math.floor(gui.winsz.snaps*pnl_scale)
       end
       if settings_sbdock == true and show_stripbrowser == true and mode == 0 then
         if lvar.stripbrowser.dockpos == 1 then
-          obj.sections[10].y = obj.sections[10].y + sbwin.h*pnl_scale
-          obj.sections[10].h = obj.sections[10].h - sbwin.h*pnl_scale
+          obj.sections[10].y = obj.sections[10].y + math.floor(sbwin.h*pnl_scale)
+          obj.sections[10].h = obj.sections[10].h - math.floor(sbwin.h*pnl_scale)
         else
-          obj.sections[10].w = obj.sections[10].w - sbwin.w*pnl_scale
+          obj.sections[10].w = obj.sections[10].w - math.floor(sbwin.w*pnl_scale)
         end
       end      
       if settings_moddock == true and show_lfoedit == true and mode == 0 then
@@ -26941,14 +26941,14 @@ function GUI_DrawCtlBitmap_Strips()
                           w = gfx1.main_w-(plist_w+2)+2,
                           h = gfx1.main_h-(topbarheight+1)}
       if settings_ssdock == true and show_snapshots and mode == 0 then
-        obj.sections[10].w = obj.sections[10].w - gui.winsz.snaps*pnl_scale
+        obj.sections[10].w = obj.sections[10].w - math.floor(gui.winsz.snaps*pnl_scale)
       end
       if settings_sbdock == true and show_stripbrowser == true and mode == 0 then
         if lvar.stripbrowser.dockpos == 1 then
-          obj.sections[10].y = obj.sections[10].y + sbwin.h*pnl_scale
-          obj.sections[10].h = obj.sections[10].h - sbwin.h*pnl_scale
+          obj.sections[10].y = obj.sections[10].y + math.floor(sbwin.h*pnl_scale)
+          obj.sections[10].h = obj.sections[10].h - math.floor(sbwin.h*pnl_scale)
         else
-          obj.sections[10].w = obj.sections[10].w - sbwin.w*pnl_scale
+          obj.sections[10].w = obj.sections[10].w - math.floor(sbwin.w*pnl_scale)
         end
       end      
       if settings_moddock == true and show_lfoedit == true and mode == 0 then
@@ -42390,7 +42390,7 @@ function GetControlAtXY(strip,page,x,y,absolute)
 
         elseif EB_Open == 731 then
           if tonumber(editbox.text) and tonumber(editbox.text) > 0 then
-            lvar.ctlupdate_rr = tonumber(editbox.text)
+            lvar.ctlupdate_rr = math.floor(tonumber(editbox.text))
             lvar.ctlupdate_pos = 1
           else
             lvar.ctlupdate_rr = nil
