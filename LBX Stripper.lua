@@ -17,6 +17,8 @@
   lvar.ctlupdate_rr = nil
   lvar.ctlupdate_pos = 1
 
+  lvar.stripctlbox = {}
+  
   lvar.noteletters_tab = {'C','C#','D','D#','E','F','F#','G','G#','A','A#','B'}
         
   lvar.submode_table = {'FX PARAMS','GRAPHICS','STRIPS'}
@@ -15309,7 +15311,15 @@ function GUI_DrawCtlBitmap_Strips()
           gfx.blit(1001,1,0,0,0,obj.sections[43].w,obj.sections[43].h,0,0)
         end
         
-        
+        if --[[update_surface == true and]] lvar.stripctlbox.idx then
+          f_Get_SSV(gui.color.black)
+          local x = obj.sections[10].x+lvar.stripctlbox.x-surface_offset.x
+          local y = obj.sections[10].y+lvar.stripctlbox.y-surface_offset.y
+          --gfx.blit(1000,1,0,x,y,20,100,x,y) 
+          gfx.a = 1
+          gfx.rect(x, y, math.floor(120*pnl_scale), math.floor(14*pnl_scale), 1)        
+          gfx.a = 1
+        end
         
         if settings_showmorphpop then
           if #morph_data > 0 then
@@ -24711,6 +24721,7 @@ function GUI_DrawCtlBitmap_Strips()
           settings_locksurface = not settings_locksurface
           
         elseif res <= sfcnt then
+          loadstrip = nil
           
           if res <= #strip_favs then
             local fn = strip_favs[res]
@@ -30668,6 +30679,7 @@ function GetControlAtXY(strip,page,x,y,absolute)
         elseif mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.2 then
         
           if lvar.stripbrowser.select then
+            loadstrip = nil
             local fn
             if lvar.stripbrowser.favs == true then
               fn = strip_favs[lvar.stripbrowser.select+1]
@@ -30685,6 +30697,7 @@ function GetControlAtXY(strip,page,x,y,absolute)
         
         else
       
+          loadstrip = nil
           local x = math.floor((mouse.mx - obj.sections[1352].x)/(obj.sections[1352].w/lvar.stripbrowser.xnum))
           local y = math.floor((mouse.my - obj.sections[1352].y)/(obj.sections[1352].h/lvar.stripbrowser.ynum))
           local offset = (lvar.stripbrowser.ynum*lvar.stripbrowser.xnum) * lvar.stripbrowser.page
@@ -31827,6 +31840,26 @@ function GetControlAtXY(strip,page,x,y,absolute)
     
       noscroll = A_Run_StripLayout(noscroll, rt)
     
+    
+    elseif mouse.context == nil and mouse.alt and not mouse.LB and not mouse.RB and MOUSE_over(obj.sections[10]) then
+    
+      if strips and tracks[track_select] and strips[tracks[track_select].strip] then
+        local strip = tracks[track_select].strip
+        local c, stripidx, stripid = GetControlAtXY(strip, page, mouse.mx, mouse.my)
+        if stripidx then
+          local lvar = lvar
+          if lvar.stripctlbox.idx ~= stripidx then
+            lvar.stripctlbox = {idx = stripidx, id = stripid}
+            lvar.stripctlbox.x = lvar.stripdim.data[stripidx].l
+            lvar.stripctlbox.y = lvar.stripdim.data[stripidx].t
+            update_surface = true
+          end
+        elseif lvar.stripctlbox.idx then
+          lvar.stripctlbox = {}
+          update_surface = true
+        end
+      end
+          
     elseif mouse.context == nil and (MOUSE_click(obj.sections[10]) or MOUSE_click_RB(obj.sections[10]) or gfx.mouse_wheel ~= 0) then
       
       --STRIP SURFACE 
@@ -31839,8 +31872,9 @@ function GetControlAtXY(strip,page,x,y,absolute)
           local i
           --local ttt = reaper.time_precise()
           local strip = tracks[track_select].strip
-          local ctls = strips[tracks[track_select].strip][page].controls
-          local c = GetControlAtXY(tracks[track_select].strip, page, mouse.mx, mouse.my)
+          local ctls = strips[strip][page].controls
+          local c, stripidx, stripid = GetControlAtXY(strip, page, mouse.mx, mouse.my)
+          
           if c then
             i = c
             local ctl = ctls[i]
@@ -32543,6 +32577,11 @@ function GetControlAtXY(strip,page,x,y,absolute)
         update_surface = true
       end
     
+    end
+
+    if not mouse.alt and lvar.stripctlbox.idx then
+      lvar.stripctlbox = {}
+      update_surface = true
     end
 
     if mouse.context and mouse.context == contexts.sliderctl then
@@ -33788,7 +33827,9 @@ function GetControlAtXY(strip,page,x,y,absolute)
               InsStrip(fn, true)
             end
             mouse.context = contexts.sb_dragstrip2
-            insertstrip.alpha = 0
+            if insertstrip then
+              insertstrip.alpha = 0
+            end
             --sb_drag = nil
             update_surface = true
           end
@@ -42060,10 +42101,12 @@ function GetControlAtXY(strip,page,x,y,absolute)
         if stripgallery_view == 1 then
           stlay_data = AutoSnap_GetStripLocs(true)
         end
+        loadstrip = nil
         
       elseif mouse.RB then --MOUSE_click_RB(obj.sections[10]) then
         --cancel
         insertstrip = nil
+        loadstrip = nil
       end
     
     elseif mouse.context and mouse.context == contexts.sb_dragstrip2 then
