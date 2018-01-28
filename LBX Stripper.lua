@@ -15311,13 +15311,13 @@ function GUI_DrawCtlBitmap_Strips()
           gfx.blit(1001,1,0,0,0,obj.sections[43].w,obj.sections[43].h,0,0)
         end
         
-        if --[[update_surface == true and]] lvar.stripctlbox.idx then
+        if lvar.stripctlbox.idx then
           f_Get_SSV(gui.color.black)
           local x = obj.sections[10].x+lvar.stripctlbox.x-surface_offset.x
           local y = obj.sections[10].y+lvar.stripctlbox.y-surface_offset.y
           --gfx.blit(1000,1,0,x,y,20,100,x,y) 
           gfx.a = 1
-          gfx.rect(x, y, math.floor(120*pnl_scale), math.floor(14*pnl_scale), 1)        
+          --gfx.rect(x, y, math.floor(120*pnl_scale), math.floor(14*pnl_scale), 1)        
           gfx.a = 1
         end
         
@@ -20091,9 +20091,12 @@ function GUI_DrawCtlBitmap_Strips()
     local strip = Strip_INIT()
     
     local tr, trnum, trguid
-    if mouse.alt then
+    if mouse.alt or mouse.ctrl then
       trnum = strips[strip].track.tracknum
-      local _, tt = reaper.GetUserInputs('Select target track number for fx plugins',1,'Track number (0 = Master):',trnum+1) 
+      local retval, tt = reaper.GetUserInputs('Select target track number for fx plugins',1,'Track number (0 = Master):',trnum+1) 
+      if retval ~= true then
+        return
+      end
       if tonumber(tt) then
         trnum = tonumber(tt)-1
       end
