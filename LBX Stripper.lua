@@ -17287,9 +17287,6 @@ function GUI_DrawCtlBitmap_Strips()
   function MOUSE_click2_RB(b, mx, my)
     if mx == nil then mx = mouse.mx end
     if my == nil then my = mouse.my end
-    if mouse.RB then
-    DBG(mx..'  '..my..'  x'..b.x..'  w'..b.x+b.w..'  y'..b.y..'  h'..b.y+b.h)
-    end
     if mx > b.x and mx < b.x+b.w
       and my > b.y and my < b.y+b.h 
       and mouse.RB 
