@@ -21604,65 +21604,67 @@ function GUI_DrawCtlBitmap_Strips()
             track = GetTrack(ctl.tracknum)
           end
 
-          if ctlcat == ctlcats.fxparam or ctlcat == ctlcats.trackparam or ctlcat == ctlcats.tracksend or ctlcat == ctlcats.pkmeter then
-            v2 = nz(frameScale(ctl.framemode, GetParamValue2(ctlcat,track,fxnum,param,i)),0)
-            val2 = F_limit(round(frames*v2),0,frames-1)
-          elseif ctlcat == ctlcats.fxoffline or ctlcat == ctlcats.macro or ctlcat == ctlcats.midictl then
-            v2 = ctl.val
-            val2 = F_limit(round(frames*v2),0,frames-1)
-          elseif ctlcat == ctlcats.rs5k then
-            if ctl.rsdata.samples and #ctl.rsdata.samples > 0 then
-              v2 = math.floor(ctl.val * lvar.maxsamples) / (#ctl.rsdata.samples -1)
+          if track then
+            if ctlcat == ctlcats.fxparam or ctlcat == ctlcats.trackparam or ctlcat == ctlcats.tracksend or ctlcat == ctlcats.pkmeter then
+              v2 = nz(frameScale(ctl.framemode, GetParamValue2(ctlcat,track,fxnum,param,i)),0)
               val2 = F_limit(round(frames*v2),0,frames-1)
-            end                  
-          elseif ctlcat == ctlcats.takeswitcher then
-            if ctl.iteminfo then
-              v2 = (math.floor(ctl.val*takeswitch_max)/(ctl.iteminfo.numtakes-1))
+            elseif ctlcat == ctlcats.fxoffline or ctlcat == ctlcats.macro or ctlcat == ctlcats.midictl then
+              v2 = ctl.val
               val2 = F_limit(round(frames*v2),0,frames-1)
+            elseif ctlcat == ctlcats.rs5k then
+              if ctl.rsdata.samples and #ctl.rsdata.samples > 0 then
+                v2 = math.floor(ctl.val * lvar.maxsamples) / (#ctl.rsdata.samples -1)
+                val2 = F_limit(round(frames*v2),0,frames-1)
+              end                  
+            elseif ctlcat == ctlcats.takeswitcher then
+              if ctl.iteminfo then
+                v2 = (math.floor(ctl.val*takeswitch_max)/(ctl.iteminfo.numtakes-1))
+                val2 = F_limit(round(frames*v2),0,frames-1)
+              end
             end
-          end
-          
-          gfx.a = 1
-          
-          if ctltype == 3 then
-            --invert button
-            val2 = 1-val2
-          end
-          
-          gfx.setfont(1, font, gui.fontsz_knob +tsze-4)
-          local _, th_a = gfx.measurestr('|')
-          local to = th_a
-          
-          --[[if ctl.gauge then
-            local gx = math.floor(ctl.xsc + offsetx + ctl.wsc/2)
-            local gy = math.floor(ctl.ysc + offsety + ctl.hsc/2)
-            GUI_DrawGauge2(ctl.gauge,gx,gy,ctl)
-          end]]
-          
-          --load image
-          gfx.blit(iidx,scale,0, 0, (val2)*gh, w, h, x + w/2-w*scale/2 +b_sz, y + h/2-h*scale/2 +b_sz)
-          
-          --xywh = {x = x+b_sz, y = math.floor(y+(h/2)-toff-1)+b_sz, w = w, h = th_a}
-          if w > ctl.w/2 then
-            local Disp_ParamV
-            local Disp_Name
-            if ctlnmov == '' then
-              Disp_Name = ctl.param_info.paramname
-            else
-              Disp_Name = ctlnmov
+            
+            gfx.a = 1
+            
+            if ctltype == 3 then
+              --invert button
+              val2 = 1-val2
             end
-            Disp_ParamV = ''
             
-            --local mid = x+(w/2)
-            local text_len1x, text_len1y = gfx.measurestr(Disp_Name)
-            --local text_len2x, text_len2y = gfx.measurestr(Disp_ParamV)
-            --local xywh1 = {x = math.floor(mid-(text_len1x/2))+b_sz, y = math.floor(y+(h/2)-toff-1)+b_sz, w = text_len1x, h = 1}
-            local mid = x+(w/2)
-            local xywh1 = {x = math.floor(mid-(text_len1x/2))-toffx+b_sz, y = math.floor(y+(h/2)-toff-1)+b_sz, w = text_len1x, h = 1}
-            --local xywh2 = {x = math.floor(mid-(text_len2x/2))+toffx+toffvx, y = math.floor(y+(h/2)+toff+toffv-1), w = text_len2x, h = 1}
+            gfx.setfont(1, font, gui.fontsz_knob +tsze-4)
+            local _, th_a = gfx.measurestr('|')
+            local to = th_a
             
-            if spn then
-              GUI_textCtl(gui,xywh1, tostring(Disp_Name),tc,-4+tsze)
+            --[[if ctl.gauge then
+              local gx = math.floor(ctl.xsc + offsetx + ctl.wsc/2)
+              local gy = math.floor(ctl.ysc + offsety + ctl.hsc/2)
+              GUI_DrawGauge2(ctl.gauge,gx,gy,ctl)
+            end]]
+            
+            --load image
+            gfx.blit(iidx,scale,0, 0, (val2)*gh, w, h, x + w/2-w*scale/2 +b_sz, y + h/2-h*scale/2 +b_sz)
+            
+            --xywh = {x = x+b_sz, y = math.floor(y+(h/2)-toff-1)+b_sz, w = w, h = th_a}
+            if w > ctl.w/2 then
+              local Disp_ParamV
+              local Disp_Name
+              if ctlnmov == '' then
+                Disp_Name = ctl.param_info.paramname
+              else
+                Disp_Name = ctlnmov
+              end
+              Disp_ParamV = ''
+              
+              --local mid = x+(w/2)
+              local text_len1x, text_len1y = gfx.measurestr(Disp_Name)
+              --local text_len2x, text_len2y = gfx.measurestr(Disp_ParamV)
+              --local xywh1 = {x = math.floor(mid-(text_len1x/2))+b_sz, y = math.floor(y+(h/2)-toff-1)+b_sz, w = text_len1x, h = 1}
+              local mid = x+(w/2)
+              local xywh1 = {x = math.floor(mid-(text_len1x/2))-toffx+b_sz, y = math.floor(y+(h/2)-toff-1)+b_sz, w = text_len1x, h = 1}
+              --local xywh2 = {x = math.floor(mid-(text_len2x/2))+toffx+toffvx, y = math.floor(y+(h/2)+toff+toffv-1), w = text_len2x, h = 1}
+              
+              if spn then
+                GUI_textCtl(gui,xywh1, tostring(Disp_Name),tc,-4+tsze)
+              end
             end
           end
         end
