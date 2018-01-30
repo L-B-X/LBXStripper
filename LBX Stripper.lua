@@ -9582,17 +9582,22 @@ function GUI_DrawCtlBitmap_Strips()
       end
       en=en-1
       local x = 0
+      
       for i = st,en do
         local t = math.floor((obj.sections[10].h/2) - (stlay_data.loc[i].h/2))
         if i == st then
           local sx = (px-stlay_data.loc[i].runx_s)
           local sw = stlay_data.loc[i].w - sx
+          if px < 0 then --eliminate width error
+            sw = sw - 1
+          end
+          local dx = sw-stlay_data.reordered[i].w
           gfx.blit(ctl_bitmap,1,0,
-                    stlay_data.loc[i].l+sx,
+                    stlay_data.loc[i].l,
                     stlay_data.loc[i].t,
-                    sw,
+                    stlay_data.loc[i].w,
                     stlay_data.loc[i].h,
-                    math.floor(x),
+                    math.floor(x) + dx,
                     math.floor(t))
           x=x+sw + gallery_itemgap
         elseif i == en then
@@ -9601,7 +9606,7 @@ function GUI_DrawCtlBitmap_Strips()
           gfx.blit(ctl_bitmap,1,0,
                     stlay_data.loc[i].l,
                     stlay_data.loc[i].t,
-                    sw,
+                    stlay_data.loc[i].w,
                     stlay_data.loc[i].h,
                     math.floor(x),
                     math.floor(t))
@@ -13476,6 +13481,7 @@ function GUI_DrawCtlBitmap_Strips()
       end
       en=en-1
       local x = 0
+      
       for i = st,en do
         local t = math.floor((obj.sections[10].h/2) - (stlay_data.reordered[i].h/2))
         if i == st then
@@ -13484,26 +13490,28 @@ function GUI_DrawCtlBitmap_Strips()
           if px < 0 then --eliminate width error
             sw = sw - 1
           end
+          local dx = sw-stlay_data.reordered[i].w
           gfx.blit(1000,1,0,
-                    math.floor(stlay_data.reordered[i].l+sx),
+                    math.floor(stlay_data.reordered[i].l--[[+sx]]),
                     stlay_data.reordered[i].t,
-                    math.floor(sw),
+                    stlay_data.reordered[i].w,
                     stlay_data.reordered[i].h,
-                    math.floor(obj.sections[10].x + x),
+                    math.floor(obj.sections[10].x + x + dx),
                     math.floor(obj.sections[10].y + t))
           x=x+sw + gallery_itemgap
         elseif i == en then
           local sx = 0
           local sw = ((px+obj.sections[10].w)-stlay_data.reordered[i].runx_s)
-          --DBG(sx..'  '..sw..'  '..stlay_data.reordered[i].l)
+          local dw = stlay_data.reordered[i].w - sw
           gfx.blit(1000,1,0,
                     stlay_data.reordered[i].l,
                     stlay_data.reordered[i].t,
-                    sw,
+                    stlay_data.reordered[i].w,
                     stlay_data.reordered[i].h,
                     math.floor(obj.sections[10].x + x),
                     math.floor(obj.sections[10].y + t))
         else
+        
           gfx.blit(1000,1,0,
                     stlay_data.reordered[i].l,
                     stlay_data.reordered[i].t,
@@ -15259,6 +15267,7 @@ function GUI_DrawCtlBitmap_Strips()
           gfx.a = 1        
           
         elseif cbdragstrip ~= nil --[[and CheckOver10()]] then
+          
           local istrip = cbdragstrip
           local x, y = istrip.nx --[[+ istrip.dx - surface_offset.x]] + obj.sections[10].x, 
                        istrip.ny --[[+ istrip.dy - surface_offset.y]] + obj.sections[10].y
@@ -15311,10 +15320,12 @@ function GUI_DrawCtlBitmap_Strips()
           else
             dx = stlay_data.xpos
           end
-          local x = obj.sections[10].x+lvar.stripctlbox.x-dx
-          local y = obj.sections[10].y+lvar.stripctlbox.y-dy
-          local iw, ih = gfx.getimgdim(skin.stripctlbtns)
-          gfx.blit(skin.stripctlbtns,1,0,0,0,iw,ih,x,y) 
+          if stripgallery_view == 0 then
+            local x = obj.sections[10].x+lvar.stripctlbox.x-dx
+            local y = obj.sections[10].y+lvar.stripctlbox.y-dy
+            local iw, ih = gfx.getimgdim(skin.stripctlbtns)
+            gfx.blit(skin.stripctlbtns,1,0,0,0,iw,ih,x,y) 
+          end
           local x = obj.sections[10].x+lvar.stripctlboxX.x-dx
           local y = obj.sections[10].y+lvar.stripctlboxX.y-dy
           local iw, ih = gfx.getimgdim(skin.stripctlbtnsX)
@@ -17276,7 +17287,9 @@ function GUI_DrawCtlBitmap_Strips()
   function MOUSE_click2_RB(b, mx, my)
     if mx == nil then mx = mouse.mx end
     if my == nil then my = mouse.my end
-    
+    if mouse.RB then
+    DBG(mx..'  '..my..'  x'..b.x..'  w'..b.x+b.w..'  y'..b.y..'  h'..b.y+b.h)
+    end
     if mx > b.x and mx < b.x+b.w
       and my > b.y and my < b.y+b.h 
       and mouse.RB 
@@ -25429,6 +25442,9 @@ function GUI_DrawCtlBitmap_Strips()
     sstype_select = 1
     CloseActChooser()
     show_ctlbrowser = false
+
+    GUI_DrawCtlBitmap()
+    
     SetASLocs()
     striplayout_selstripid = nil
     SetGalleryView()
@@ -25443,8 +25459,6 @@ function GUI_DrawCtlBitmap_Strips()
     end
 
     InsertDefaultStrip()
-    
-    GUI_DrawCtlBitmap()
     
     if settings_trackchangemidi == true then
       TrackChangeMidi()
@@ -26368,6 +26382,8 @@ function GUI_DrawCtlBitmap_Strips()
         
     gfx3_select = nil
     ctl_select = nil
+    GUI_DrawCtlBitmap()
+    
     SetASLocs()
     striplayout_selstripid = nil
     SetGalleryView()
@@ -26375,9 +26391,7 @@ function GUI_DrawCtlBitmap_Strips()
     if T_butt_cnt then
       tlist_offset = CalcTListPos(track_select)
     end
-    InsertDefaultStrip()
-  
-    GUI_DrawCtlBitmap()
+    InsertDefaultStrip()  
     
     if settings_trackchangemidi == true then
       TrackChangeMidi()
@@ -27230,11 +27244,7 @@ function GUI_DrawCtlBitmap_Strips()
             stlay_data = AutoSnap_GetStripLocs(true) 
             striplayout_data = StripLayout_GetData()
             if stripgallery_view == 1 then
-              --if stlay_data and #stlay_data.reordered > 0 then
-                StripLayout_DrawImageGallery(stlay_data)
-              --else
-              --  show_striplayout = false
-              --end
+              StripLayout_DrawImageGallery(stlay_data)
             else
               StripLayout_DrawImage(striplayout_data)
             end
@@ -27264,7 +27274,7 @@ function GUI_DrawCtlBitmap_Strips()
                 stlay_data.xpos = xpos
                 strip = tracks[track_select].strip
                 strips[strip][page].xpos = xpos
-                --GUI_DrawCtlBitmap2()
+                GUI_DrawCtlBitmap2()
               end
             end
             
@@ -27969,7 +27979,7 @@ function GUI_DrawCtlBitmap_Strips()
     end
   end
   
-function GetControlAtXY(strip,page,x,y,absolute)
+  function GetControlAtXY(strip,page,x,y,absolute)
     
     if strips and strips[strip] then              
       local ctls = strips[strip][page].controls
@@ -29871,9 +29881,112 @@ function GetControlAtXY(strip,page,x,y,absolute)
       end
     end
   end
+
+  function A_Run_AltStripFuncs(noscroll, rt)
+
+    if stripgallery_view == 0 then
     
+      if mouse.context == nil then
+       
+        if MOUSE_click2(lvar.stripctlbox, mouse.mx-obj.sections[10].x+surface_offset.x, mouse.my-obj.sections[10].y+surface_offset.y) or 
+            (lvar.stripctlbox.overstrip and MOUSE_click2_RB(lvar.stripctlbox.overstrip, mouse.mx-obj.sections[10].x+surface_offset.x, mouse.my-obj.sections[10].y+surface_offset.y)) then
+          noscroll = true  
+          
+          cbdragstrip = {x = lvar.stripctlbox.x, y = lvar.stripctlbox.y, 
+                         nx = lvar.stripctlbox.x - surface_offset.x, ny = lvar.stripctlbox.y - surface_offset.y,
+                         dx = 0, dy = 0, mx = mouse.mx, my = mouse.my}
+          mouse.context = contexts.lv_dragstrip
+          SelectStripElements(lvar.stripctlbox.id)
+          GenCtlDragPreview(gui, 1)
+          A_HideSelectedCtls(true, ctl_select, gfx3_select)
+          update_gfx = true
+              
+        elseif MOUSE_click2(lvar.stripctlboxX, mouse.mx-obj.sections[10].x+surface_offset.x, 
+                              mouse.my-obj.sections[10].y+surface_offset.y) then
+          noscroll = true
+          if mouse.LB and mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.2 then
+            DeleteStrip(lvar.stripctlbox.id, true)
+            SetCtlBitmapRedraw(true)
+            CreateStripCB(true)
+            update_surface = true
+          end
+
+        elseif cbdragstrip then
+        
+          MoveSelectedCtls(cbdragstrip.nx + surface_offset.x - cbdragstrip.x, cbdragstrip.ny + surface_offset.y - cbdragstrip.y)
+          A_HideSelectedCtls(nil, ctl_select, gfx3_select)
+          SetCtlBitmapRedraw(true)
+          reaper.MarkProjectDirty(0)
+          update_gfx = true
+          CreateStripCB(true)
+          
+          cbdragstrip = nil
+        
+        elseif mouse.alt and not mouse.altlatch and not mouse.LB and not mouse.RB and MOUSE_over(obj.sections[10]) then
+            
+          CreateStripCB()
+          
+        end
+    
+      else
+      
+        if mouse.context == contexts.lv_dragstrip then
+        
+          local gs = settings_gridsize
+          if mouse.shift then
+            gs = 1
+          end
+          local dx, dy = mouse.mx - cbdragstrip.mx, mouse.my - cbdragstrip.my 
+          cbdragstrip.nx = F_limit(math.floor((cbdragstrip.x + dx)/gs)*gs - surface_offset.x,0 - surface_offset.x,surface_size.w - surface_offset.x -lvar.stripctlbox.overstrip.w)
+          cbdragstrip.ny = F_limit(math.floor((cbdragstrip.y + dy)/gs)*gs - surface_offset.y,0 - surface_offset.y,surface_size.h - surface_offset.y -lvar.stripctlbox.overstrip.h)
+          if cbdragstrip.nx ~= cbdragstrip.ox or cbdragstrip.ny ~= cbdragstrip.oy then
+            cbdragstrip.dx = cbdragstrip.nx +surface_offset.x - cbdragstrip.x 
+            cbdragstrip.dy = cbdragstrip.ny +surface_offset.y - cbdragstrip.y
+            update_surface = true
+          
+            cbdragstrip.ox = cbdragstrip.nx
+            cbdragstrip.oy = cbdragstrip.ny
+          end
+        end                
+      end
+      
+    elseif stripgallery_view > 0 then
+    
+      if mouse.context == nil then
+      
+        --[[if MOUSE_click2(lvar.stripctlbox, mouse.mx-obj.sections[10].x+stlay_data.xpos, mouse.my-obj.sections[10].y) or 
+            mouse.RB then
+          noscroll = true]]  
+          
+        if (MOUSE_click2(lvar.stripctlboxX, mouse.mx-obj.sections[10].x+stlay_data.xpos, mouse.my-obj.sections[10].y)) then
+          
+          noscroll = true
+          if mouse.LB and mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.2 then
+            DeleteStrip(lvar.stripctlbox.id, true)
+            SetCtlBitmapRedraw(true)
+            stlay_data = AutoSnap_GetStripLocs(true)
+            CreateStripCB(true)
+            update_surface = true
+          end
+
+        elseif mouse.alt and not mouse.altlatch and not mouse.LB and not mouse.RB and MOUSE_over(obj.sections[10]) then
+            
+          CreateStripCB()
+          
+        end
+      
+      else
+      
+        
+      end
+    
+    end
+    
+    return noscroll
+  end
+      
   function A_Run_StripLayout(noscroll, rt)
-  
+
     if stripgallery_view == 0 then
   
       local contexts = contexts
@@ -29987,7 +30100,8 @@ function GetControlAtXY(strip,page,x,y,absolute)
                     pos = math.min(pos + 1,#stlay_data.loc)
                   end
                   stlay_data = AutoSnap_ReorderStripLocs(striplayout_selstripid,pos,stlay_data)
-                
+                  stlay_data = table.copy(stlay_data)
+                  
                 end
               end
             end
@@ -30020,8 +30134,10 @@ function GetControlAtXY(strip,page,x,y,absolute)
         end
       
       elseif sa_dragstrip ~= nil then
-    
+
         AutoSnap_MoveStrips()
+        SetCtlBitmapRedraw(true)
+        
         local op = stlay_data.xpos
         stlay_data = AutoSnap_GetStripLocs(true)
         if stripgallery_view ~= 0 then
@@ -30031,7 +30147,7 @@ function GetControlAtXY(strip,page,x,y,absolute)
         MoveFX(stlay_data)
         CheckStripControls()
          
-        SetCtlBitmapRedraw()
+        --SetCtlBitmapRedraw()
         
         sa_dragstrip = nil
         striplayout_tgtstrip = nil
@@ -30159,7 +30275,10 @@ function GetControlAtXY(strip,page,x,y,absolute)
       elseif sa_dragstrip ~= nil then
 
         AutoSnap_MoveStrips()
+        
+        SetCtlBitmapRedraw(true)
         local op = stlay_data.xpos
+        
         stlay_data = AutoSnap_GetStripLocs(true)
         if stripgallery_view ~= 0 then
           stlay_data.xpos = nz(op,0)
@@ -30167,9 +30286,10 @@ function GetControlAtXY(strip,page,x,y,absolute)
         
         MoveFX(stlay_data)
         CheckStripControls()
-         
-        SetCtlBitmapRedraw()
         
+        --force vertical correction
+        --SetCtlBitmapRedraw()
+         
         sa_dragstrip = nil
         striplayout_tgtstrip = nil
         striplayout_tgtstripid = nil
@@ -30240,7 +30360,7 @@ function GetControlAtXY(strip,page,x,y,absolute)
     if dd then
     
       local dx = dd.runx_s
-      local dy = ((obj.sections[10].h/2)-(dd.h/2)) 
+      local dy = math.floor(((obj.sections[10].h/2)-(dd.h/2))) 
       mx, my = dx, dy
     
     end
@@ -31973,39 +32093,13 @@ function GetControlAtXY(strip,page,x,y,absolute)
     
       noscroll = A_Run_StripLayout(noscroll, rt)
     
-    elseif mouse.context == nil and lvar.stripctlbox.idx and 
-           (stripgallery_view == 0 and 
-            (MOUSE_click2(lvar.stripctlbox, mouse.mx-obj.sections[10].x+surface_offset.x, mouse.my-obj.sections[10].y+surface_offset.y) or 
-             MOUSE_click2_RB(lvar.stripctlbox.overstrip, mouse.mx-obj.sections[10].x+surface_offset.x, mouse.my-obj.sections[10].y+surface_offset.y))) then
-      noscroll = true  
-      
-      cbdragstrip = {x = lvar.stripctlbox.x, y = lvar.stripctlbox.y, dx = 0, dy = 0, mx = mouse.mx, my = mouse.my}
-      mouse.context = contexts.lv_dragstrip
-      SelectStripElements(lvar.stripctlbox.id)
-      GenCtlDragPreview(gui, 1)
-      A_HideSelectedCtls(true, ctl_select, gfx3_select)
-      update_gfx = true
-          
-    elseif mouse.context == nil and lvar.stripctlbox.idx and 
-           ((stripgallery_view == 0 and MOUSE_click2(lvar.stripctlboxX, mouse.mx-obj.sections[10].x+surface_offset.x, 
-                                                    mouse.my-obj.sections[10].y+surface_offset.y)) or
-           (stripgallery_view > 0 and MOUSE_click2(lvar.stripctlboxX, mouse.mx-obj.sections[10].x+stlay_data.xpos, 
-                                                    mouse.my-obj.sections[10].y))) then
-      noscroll = true
-      if mouse.LB and mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.2 then
-        DeleteStrip(lvar.stripctlbox.id, true)
-        stlay_data = AutoSnap_GetStripLocs(true)
-        --lvar.stripctlbox = {}
-        --mouse.altlatch = true
-        SetCtlBitmapRedraw(true)
-        CreateStripCB(true)
-        update_surface = true
-      end
+    elseif lvar.stripctlbox.idx and not mouse.ctrl then
+    
+      noscroll = A_Run_AltStripFuncs(noscroll, rt)
       
     elseif mouse.context == nil and mouse.alt and not mouse.altlatch and not mouse.LB and not mouse.RB and MOUSE_over(obj.sections[10]) then
-    
-      CreateStripCB()
-      
+
+      CreateStripCB()      
           
     elseif mouse.context == nil and (MOUSE_click(obj.sections[10]) or MOUSE_click_RB(obj.sections[10]) or gfx.mouse_wheel ~= 0) then
       
@@ -32731,37 +32825,7 @@ function GetControlAtXY(strip,page,x,y,absolute)
       update_surface = true
     end
 
-    if mouse.context and mouse.context == contexts.lv_dragstrip then
-    
-      local gs = settings_gridsize
-      if mouse.shift then
-        gs = 1
-      end
-      local dx, dy = mouse.mx - cbdragstrip.mx, mouse.my - cbdragstrip.my 
-      cbdragstrip.nx = F_limit(math.floor((cbdragstrip.x + dx)/gs)*gs - surface_offset.x,0 - surface_offset.x,surface_size.w - surface_offset.x -lvar.stripctlbox.overstrip.w)
-      cbdragstrip.ny = F_limit(math.floor((cbdragstrip.y + dy)/gs)*gs - surface_offset.y,0 - surface_offset.y,surface_size.h - surface_offset.y -lvar.stripctlbox.overstrip.h)
-      if cbdragstrip.nx ~= cbdragstrip.ox or cbdragstrip.ny ~= cbdragstrip.oy then
-        cbdragstrip.dx = cbdragstrip.nx +surface_offset.x - cbdragstrip.x 
-        cbdragstrip.dy = cbdragstrip.ny +surface_offset.y - cbdragstrip.y
-        update_surface = true
-      
-        cbdragstrip.ox = cbdragstrip.nx
-        cbdragstrip.oy = cbdragstrip.ny
-      end
-            
-    elseif mouse.context == nil and cbdragstrip then
-
-      MoveSelectedCtls(cbdragstrip.nx + surface_offset.x - cbdragstrip.x, cbdragstrip.ny + surface_offset.y - cbdragstrip.y)
-      A_HideSelectedCtls(nil, ctl_select, gfx3_select)
-      SetCtlBitmapRedraw(true)
-      reaper.MarkProjectDirty(0)
-      SetASLocs()
-      update_gfx = true
-      CreateStripCB(true)
-      
-      cbdragstrip = nil
-    
-    elseif mouse.context and mouse.context == contexts.sliderctl then
+    if mouse.context and mouse.context == contexts.sliderctl then
       
       local val = MOUSE_slider(ctlxywh,mouse.slideoff)
       if val ~= nil then
@@ -34098,12 +34162,12 @@ function GetControlAtXY(strip,page,x,y,absolute)
             lvar.stripctlboxX.x = lvar.stripdim.data[stripidx].r - iw
             lvar.stripctlboxX.y = lvar.stripdim.data[stripidx].t
           elseif stripgallery_view > 0 then
-            local mmx, mmy, idx = TranslateGalleryPos2(0, 0, stripid)
 
-            lvar.stripctlbox.x = mmx
-            lvar.stripctlbox.y = mmy
-            lvar.stripctlboxX.x = mmx+lvar.stripdim.data[stripidx].r-lvar.stripdim.data[stripidx].l - iw
-            lvar.stripctlboxX.y = mmy
+            local mmx, mmy, idx = TranslateGalleryPos2(0, 0, stripid)
+            lvar.stripctlbox.x = math.floor(mmx)
+            lvar.stripctlbox.y = math.floor(mmy)
+            lvar.stripctlboxX.x = math.floor(mmx)+lvar.stripdim.data[stripidx].r-lvar.stripdim.data[stripidx].l - iw
+            lvar.stripctlboxX.y = math.floor(mmy)
             
           end
           lvar.stripctlbox.w, lvar.stripctlbox.h = gfx.getimgdim(skin.stripctlbtns)
@@ -38207,7 +38271,7 @@ function GetControlAtXY(strip,page,x,y,absolute)
   end
   
   function AutoSnap_ReorderStripLocs(i,j,stlay_data)
-  
+
     local ro = table.copy(stlay_data.sorted)
     local r = ro[i]
     local cnt = #ro
@@ -38260,6 +38324,7 @@ function GetControlAtXY(strip,page,x,y,absolute)
 
     local ot
     local itgap,sidx,eidx
+    
     for i = 1, #ro do
       if i == 1 then
         ot = math.floor(rotab[i].t / autosnap_rowheight)
@@ -38352,8 +38417,8 @@ function GetControlAtXY(strip,page,x,y,absolute)
   
     local strip = tracks[track_select].strip
     if strips[strip] then
-      local ctls = strips[strip][page].controls
-      local gfxs = strips[strip][page].graphics
+      --local ctls = strips[strip][page].controls
+      --local gfxs = strips[strip][page].graphics
       local xflag = false
       local xpos
       if stlay_data and stlay_data.xpos then
@@ -38368,39 +38433,58 @@ function GetControlAtXY(strip,page,x,y,absolute)
                       xpos = strips[strip][page].xpos or 0}
       end
       
-      for i = 1, #ctls do
-        local ctl = ctls[i]
-        if ctl.id then
-          if stlay_data.stripidx[ctl.id] == nil then
-      
-            local l,t,r,b = ctl.xsc,ctl.ysc,ctl.xsc+ctl.wsc,ctl.ysc+ctl.hsc
-            for c = 1, #ctls do
-              local sctl = ctls[c]
-              if sctl.id == ctl.id then
-            
-                l = math.min(l,sctl.xsc)
-                r = math.max(r,sctl.xsc+sctl.wsc)
-                t = math.min(t,sctl.ysc)
-                b = math.max(b,sctl.ysc+sctl.hsc)
-            
+      if lvar.stripdim and lvar.stripdim.data then
+        for i = 1, #lvar.stripdim.data do
+        
+          local id = lvar.stripdim.data[i].id
+          local l = lvar.stripdim.data[i].l
+          local t = lvar.stripdim.data[i].t
+          local r = lvar.stripdim.data[i].r
+          local b = lvar.stripdim.data[i].b
+          local w = r-l
+          local h = b-t
+          
+          local cnt = #stlay_data.loc+1
+          stlay_data.stripidx[id] = true
+          stlay_data.loc[cnt] = {stripid = id,
+                                l=l,t=t,r=r,b=b,w=w,h=h}
+        
+        end
+      else
+        for i = 1, #ctls do
+          local ctl = ctls[i]
+          if ctl.id then
+            if stlay_data.stripidx[ctl.id] == nil then
+        
+              local l,t,r,b = ctl.xsc,ctl.ysc,ctl.xsc+ctl.wsc,ctl.ysc+ctl.hsc
+              for c = 1, #ctls do
+                local sctl = ctls[c]
+                if sctl.id == ctl.id then
+              
+                  l = math.min(l,sctl.xsc)
+                  r = math.max(r,sctl.xsc+sctl.wsc)
+                  t = math.min(t,sctl.ysc)
+                  b = math.max(b,sctl.ysc+sctl.hsc)
+              
+                end
               end
-            end
-  
-            for c = 1, #gfxs do
-              local sctl = gfxs[c]
-              if sctl.id == ctl.id then
-            
-                l = math.min(l,sctl.x)
-                r = math.max(r,sctl.x+sctl.stretchw)
-                t = math.min(t,sctl.y)
-                b = math.max(b,sctl.y+sctl.stretchh)
-            
+    
+              for c = 1, #gfxs do
+                local sctl = gfxs[c]
+                if sctl.id == ctl.id then
+              
+                  l = math.min(l,sctl.x)
+                  r = math.max(r,sctl.x+sctl.stretchw)
+                  t = math.min(t,sctl.y)
+                  b = math.max(b,sctl.y+sctl.stretchh)
+              
+                end
               end
+              local cnt = #stlay_data.loc+1
+              stlay_data.stripidx[ctl.id] = true
+              stlay_data.loc[cnt] = {stripid = ctl.id,
+                                    l=l,t=t,r=r,b=b,w=r-l,h=b-t}
             end
-            local cnt = #stlay_data.loc+1
-            stlay_data.stripidx[ctl.id] = true
-            stlay_data.loc[cnt] = {stripid = ctl.id,
-                                  l=l,t=t,r=r,b=b,w=r-l,h=b-t}
           end
         end
       end
@@ -38423,6 +38507,7 @@ function GetControlAtXY(strip,page,x,y,absolute)
                                  b = stlay_data.loc[i].b,
                                  w = stlay_data.loc[i].w,
                                  h = stlay_data.loc[i].h}
+
         stlay_data.loc[i].runx_s = runx
         stlay_data.reordered[i].runx_s = runx 
         runx = runx + stlay_data.loc[i].w + gallery_itemgap
@@ -38445,6 +38530,17 @@ function GetControlAtXY(strip,page,x,y,absolute)
     end
     
     return stlay_data   
+  end
+
+  function AutoSnap_GetStLayIdx(stripid)
+  
+    if stlay_data then
+      for i = 1, #stlay_data.reordered do
+        if stlay_data.reordered[i].stripid == stripid then
+          return i
+        end
+      end
+    end
   end
 
   function AutoSnap_GetEndInsertPos(strip_w,strip_h)
