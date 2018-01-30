@@ -9680,8 +9680,8 @@ function GUI_DrawCtlBitmap_Strips()
                 local h = ctl.ctl_info.cellh
       
                 local gh = h
-                local val = math.floor(100*nz(ctl.val,0))
-                local fxnum = nz(ctl.fxnum,-1)
+                local val = math.floor(100*(ctl.val or 0))
+                local fxnum = ctl.fxnum or -1
                 local param = ctl.param
                 local pname = ctl.param_info.paramname
                 local iidx = ctl.ctl_info.imageidx
@@ -9693,13 +9693,13 @@ function GUI_DrawCtlBitmap_Strips()
                 local toffv = math.floor(ctl.textoffval)
                 local toffx = math.floor(ctl.textoffx)
                 local toffvx = math.floor(ctl.textoffvalx)
-                local tsz = nz(ctl.textsize,0)
-                local tsz2 = nz(ctl.textsizev,0)
+                local tsz = ctl.textsize or 0
+                local tsz2 = ctl.textsizev or 0
                 local frames = math.floor(ctl.ctl_info.frames)
                 local ctltype = ctl.ctltype
                 local ctlnmov = ctl.ctlname_override
                 local found = ctl.fxfound
-                local maxdp = nz(ctl.maxdp,-1)
+                local maxdp = ctl.maxdp or -1
                 local dvoff = ctl.dvaloffset
                 local tnum = ctl.tracknum
                 local font = ctl.font
@@ -9720,7 +9720,7 @@ function GUI_DrawCtlBitmap_Strips()
                 
                 if track ~= nil then
                   if ctlcat == ctlcats.fxparam or ctlcat == ctlcats.trackparam or ctlcat == ctlcats.tracksend or ctlcat == ctlcats.pkmeter then
-                    v2 = nz(frameScale(ctl.framemode, GetParamValue2(ctlcat,track,fxnum,param,i)),0)
+                    v2 = frameScale(ctl.framemode, GetParamValue2(ctlcat,track,fxnum,param,i)) or 0
                     val2 = F_limit(round(frames*v2),0,frames-1)
                   elseif ctlcat == ctlcats.fxoffline or ctlcat == ctlcats.macro or ctlcat == ctlcats.midictl then
                     v2 = ctl.val
@@ -21562,6 +21562,8 @@ function GUI_DrawCtlBitmap_Strips()
     --draw controls    
     if #strips[strip][page].controls > 0 then
     
+      local tr = GetTrack(tracks[track_select].tracknum)
+      
       for ii = 1, #ctl_select do
         local i = ctl_select[ii].ctl
         local ctl = strips[strip][page].controls[i]
@@ -21573,20 +21575,20 @@ function GUI_DrawCtlBitmap_Strips()
           local w = ctl.w
           local h = ctl.ctl_info.cellh
           local gh = h
-          local val = math.floor(100*nz(ctl.val,0))
-          local fxnum = ctl.fxnum
+          local val = math.floor(100*(ctl.val or 0))
+          local fxnum = ctl.fxnum or -1
           local param = ctl.param
           local iidx = ctl.ctl_info.imageidx
           local spn = ctl.show_paramname
           local spv = ctl.show_paramval
-          local ctlnmov = nz(ctl.ctlname_override,'')
+          local ctlnmov = ctl.ctlname_override or ''
           local tc = ctl.textcol
           local toff = math.floor(ctl.textoff)
           --local toffv = math.floor(ctl.textoffval)
           local toffx = math.floor(ctl.textoffx)
           --local toffvx = math.floor(ctl.textoffvalx)
           
-          local tsze = nz(ctl.textsize,0)
+          local tsze = ctl.textsize or 0
           local frames = ctl.ctl_info.frames
           local ctltype = ctl.ctltype
           local found = ctl.fxfound
@@ -21597,13 +21599,11 @@ function GUI_DrawCtlBitmap_Strips()
           --local Disp_Name
           local v2, val2 = 0, 0
 
-          --[[if ctlcat == ctlcats.fxparam or ctlcat == ctlcats.trackparam or ctlcat == ctlcats.tracksend or ctlcat == ctlcats.pkmeter then
-            v2 = nz(frameScale(ctl.framemode, GetParamValue2(ctlcat,track,fxnum,param,i)),0)
-          else  
-            v2 = nz(ctl.val,0)
+          local track = tr
+          if ctl.tracknum and ctl.tracknum ~= tracks[track_select].tracknum then
+            track = GetTrack(ctl.tracknum)
           end
-          local val2 = F_limit(round(frames*v2,0),0,frames-1)
-          ]]
+
           if ctlcat == ctlcats.fxparam or ctlcat == ctlcats.trackparam or ctlcat == ctlcats.tracksend or ctlcat == ctlcats.pkmeter then
             v2 = nz(frameScale(ctl.framemode, GetParamValue2(ctlcat,track,fxnum,param,i)),0)
             val2 = F_limit(round(frames*v2),0,frames-1)
