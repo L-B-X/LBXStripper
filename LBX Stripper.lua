@@ -38228,7 +38228,9 @@ function GUI_DrawCtlBitmap_Strips()
         DeleteSelectedCtls()
         update_gfx = true
       else
-        strips[tracks[track_select].strip][page].graphics[gfx2_select].hide = nil
+        if strips and strips[tracks[track_select].strip] and strips[tracks[track_select].strip][page].graphics[gfx2_select] then
+          strips[tracks[track_select].strip][page].graphics[gfx2_select].hide = nil
+        end
         update_gfx = true
       end
     
