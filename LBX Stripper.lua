@@ -86,6 +86,8 @@
   
   lvar.maxsamples = 2048
   lvar.followsample = true
+  
+  lvar.addstrip_keepseparateids = false
       
   local contexts = {updatefreq = 0,
               lockw = 1,
@@ -236,6 +238,7 @@
               sb_dragstrip = 155,
               sb_dragstrip2 = 156,
               lv_dragstrip = 157,
+              sb_movefav = 158,
               dummy = 999
               }
   
@@ -20462,6 +20465,15 @@ function GUI_DrawCtlBitmap_Strips()
     --;
     local stripid = GenID()
     local grpid = GenID()
+    local stripids
+    if lvar.addstrip_keepseparateids == true then
+      stripids = {}
+      for j = 1, #stripdata.strip.controls do
+        if not stripids[stripdata.strip.controls[j].id] then
+          stripids[stripdata.strip.controls[j].id] = GenID()
+        end
+      end    
+    end
     
     local cidtrack = {}
     local gidtrack = {}
@@ -20482,7 +20494,16 @@ function GUI_DrawCtlBitmap_Strips()
     for j = 1, #stripdata.strip.controls do
       stripdata.strip.controls[j].x = stripdata.strip.controls[j].x + offsetx + x + surface_offset.x     
       stripdata.strip.controls[j].y = stripdata.strip.controls[j].y + offsety + y + surface_offset.y
-      stripdata.strip.controls[j].id = stripid
+      
+      if lvar.addstrip_keepseparateids == true then
+        if stripids[stripdata.strip.controls[j].id] then
+          stripdata.strip.controls[j].id = stripids[stripdata.strip.controls[j].id]
+        else
+          stripdata.strip.controls[j].id = stripid
+        end
+      else
+        stripdata.strip.controls[j].id = stripid
+      end
       
       local cc = #strips[strip][page].controls + 1
       strips[strip][page].controls[cc] = stripdata.strip.controls[j]
@@ -20652,8 +20673,16 @@ function GUI_DrawCtlBitmap_Strips()
           --stripdata.strip.graphics[j].x = stripdata.strip.graphics[j].x + offsetx + x - surface_offset.x     
           --stripdata.strip.graphics[j].y = stripdata.strip.graphics[j].y + offsety + y - surface_offset.y
         --end
-        stripdata.strip.graphics[j].id = stripid
-  
+        if lvar.addstrip_keepseparateids == true then
+          if stripids[stripdata.strip.graphics[j].id] then
+            stripdata.strip.graphics[j].id = stripids[stripdata.strip.graphics[j].id]
+          else
+            stripdata.strip.graphics[j].id = stripid
+          end
+        else
+          stripdata.strip.graphics[j].id = stripid
+        end
+        
         local ogid = stripdata.strip.graphics[j].grpid
         if ogid then
         
@@ -30982,6 +31011,22 @@ function GUI_DrawCtlBitmap_Strips()
           
         end
               
+      elseif MOUSE_click_RB(obj.sections[1352]) then
+        
+        local x = math.floor((mouse.mx - obj.sections[1352].x)/(obj.sections[1352].w/lvar.stripbrowser.xnum))
+        local y = math.floor((mouse.my - obj.sections[1352].y)/(obj.sections[1352].h/lvar.stripbrowser.ynum))
+        local offset = (lvar.stripbrowser.ynum*lvar.stripbrowser.xnum) * lvar.stripbrowser.page
+        
+        local n = x + (y*lvar.stripbrowser.xnum) + offset
+        lvar.stripbrowser.select = n
+        
+        update_stripbrowser = true
+        if (lvar.stripbrowser.favs == true and strip_favs[n+1]) then
+          movefav = table.copy(strip_favs)
+          lvar.stripbrowser.moveselect = n
+          mouse.context = contexts.sb_movefav
+        end
+          
       end
 
       mouse.mx = mx
@@ -34051,6 +34096,30 @@ function GUI_DrawCtlBitmap_Strips()
           end
         end
         
+      elseif mouse.context == contexts.sb_movefav then
+      
+        local mx = mouse.mx - obj.sections[1350].x 
+        local my = mouse.my - obj.sections[1350].y
+        local x = math.floor((mx - obj.sections[1352].x)/(obj.sections[1352].w/lvar.stripbrowser.xnum))
+        local y = math.floor((my - obj.sections[1352].y)/(obj.sections[1352].h/lvar.stripbrowser.ynum))
+        local offset = (lvar.stripbrowser.ynum*lvar.stripbrowser.xnum) * lvar.stripbrowser.page
+        
+        local n = x + (y*lvar.stripbrowser.xnum) + offset
+        if n ~= oldn then
+          strip_favs = table.copy(movefav)
+          if strip_favs[n+1] then
+            local element = strip_favs[lvar.stripbrowser.moveselect+1]
+            strip_favs = Table_RemoveEntry(strip_favs,#movefav,lvar.stripbrowser.moveselect+1)
+            table.insert(strip_favs,n+1,element)
+            lvar.stripbrowser.select = n
+            oldn = n
+          else
+            oldn = nil
+            lvar.stripbrowser.select = lvar.stripbrowser.moveselect
+          end      
+          update_stripbrowser = true
+        end
+                
       elseif mouse.context == contexts.sb_dragstrip then
       
         if stripgallery_view == 0 then
@@ -38899,10 +38968,19 @@ function GUI_DrawCtlBitmap_Strips()
           if strip_default then
             sd = '!'
           end
-          
-          mstr = sd..'Set Default (Track)|'..sd_m..'Set Default (Master)|'..sd_g..'Set Default (Global)||Clear Default (Track)|Clear Default (Master)|Clear Default (Global)||Save (Overwrite)||Add to favorites||Export Shareable Strip File|Import Shared Strip File||Set Plugin Default (single plugin strips only)'
+          local sepids = ''          
+          if lvar.addstrip_keepseparateids == true then
+            sepids = '!'
+          end
+          mstr = sd..'Set Default (Track)|'..sd_m..'Set Default (Master)|'..sd_g..'Set Default (Global)||Clear Default (Track)|Clear Default (Master)|Clear Default (Global)||Save (Overwrite)'
+                      ..'||Add to favorites||Export Shareable Strip File|Import Shared Strip File||Set Plugin Default (single plugin strips only)||'..sepids..'Load Strip: Keep Separate Strip IDs'
         else
-          mstr = '#Set Default (Track)|#Set Default (Master)|#Set Default (Global)||Clear Default (Track)|Clear Default (Master)|Clear Default (Global)||#Save (Overwrite)||#Add to favorites||#Export Shareable Strip File|Import Shared Strip File'            
+          local sepids = ''          
+          if lvar.addstrip_keepseparateids == true then
+            sepids = '!'
+          end
+          mstr = '#Set Default (Track)|#Set Default (Master)|#Set Default (Global)||Clear Default (Track)|Clear Default (Master)|Clear Default (Global)||'
+                 ..'#Save (Overwrite)||#Add to favorites||#Export Shareable Strip File|Import Shared Strip File||#Set Plugin Default||'..sepids..'Load Strip: Keep Separate Strip IDs'            
         end
         gfx.x, gfx.y = mouse.mx, mouse.my
         res = OpenMenu(mstr)
@@ -38936,6 +39014,8 @@ function GUI_DrawCtlBitmap_Strips()
             StripShare_Import('')
           elseif res == 11 then
             Strip_SetPlugDef(strip_select, stripfol_select)
+          elseif res == 12 then
+            lvar.addstrip_keepseparateids = not lvar.addstrip_keepseparateids 
           end
         end
       end        
@@ -48642,6 +48722,8 @@ function GUI_DrawCtlBitmap_Strips()
     tb_fontscale = tonumber(nz(GES('tb_fontscale',true),tb_fontscale))    
     lst_fontscale = tonumber(nz(GES('lst_fontscale',true),lst_fontscale))    
 
+    lvar.addstrip_keepseparateids = tobool(nz(GES('addstrip_sepids',true),lvar.addstrip_keepseparateids))
+
     settings_swapctrlclick = tobool(nz(GES('swapctrlclick',true),settings_swapctrlclick))
     settings_showbars = tobool(nz(GES('showbars',true),settings_showbars))
     settings_insertdefaultoneverytrack = tobool(nz(GES('insertdefstripontrack',true),settings_insertdefaultoneverytrack))
@@ -48816,6 +48898,8 @@ function GUI_DrawCtlBitmap_Strips()
     reaper.SetExtState(SCRIPT,'fontscale',nz(fontscale,8), true)
     reaper.SetExtState(SCRIPT,'tb_fontscale',nz(tb_fontscale,0), true)
     reaper.SetExtState(SCRIPT,'lst_fontscale',nz(lst_fontscale,0), true)
+
+    reaper.SetExtState(SCRIPT,'addstrip_sepids',tostring(lvar.addstrip_keepseparateids), true)    
 
     reaper.SetExtState(SCRIPT,'auto_sensitivity',auto_delay, true)
     reaper.SetExtState(SCRIPT,'swapctrlclick',tostring(settings_swapctrlclick), true)
