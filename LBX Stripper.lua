@@ -30306,6 +30306,7 @@ function GUI_DrawCtlBitmap_Strips()
 
   function A_Run_AltStripFuncs(noscroll, rt)
 
+    local xclicked
     if stripgallery_view == 0 then
     
       if mouse.context == nil then
@@ -30313,6 +30314,7 @@ function GUI_DrawCtlBitmap_Strips()
         if MOUSE_click2(lvar.stripctlbox, mouse.mx-obj.sections[10].x+surface_offset.x, mouse.my-obj.sections[10].y+surface_offset.y) or 
             (lvar.stripctlbox.overstrip and MOUSE_click2_RB(lvar.stripctlbox.overstrip, mouse.mx-obj.sections[10].x+surface_offset.x, mouse.my-obj.sections[10].y+surface_offset.y)) then
           noscroll = true  
+          xclicked = true
           
           cbdragstrip = {x = lvar.stripctlbox.x, y = lvar.stripctlbox.y, 
                          nx = lvar.stripctlbox.x - surface_offset.x, ny = lvar.stripctlbox.y - surface_offset.y,
@@ -30326,6 +30328,7 @@ function GUI_DrawCtlBitmap_Strips()
         elseif MOUSE_click2(lvar.stripctlboxX, mouse.mx-obj.sections[10].x+surface_offset.x, 
                               mouse.my-obj.sections[10].y+surface_offset.y) then
           noscroll = true
+          xclicked = true
           if mouse.LB and mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.2 then
             DeleteStrip(lvar.stripctlbox.id, true)
             SetCtlBitmapRedraw(true)
@@ -30382,6 +30385,7 @@ function GUI_DrawCtlBitmap_Strips()
           
         if (MOUSE_click2(lvar.stripctlboxX, mouse.mx-obj.sections[10].x+stlay_data.xpos, mouse.my-obj.sections[10].y)) then
           
+          xclicked = true
           noscroll = true
           if mouse.LB and mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.2 then
             DeleteStrip(lvar.stripctlbox.id, true)
@@ -30404,7 +30408,7 @@ function GUI_DrawCtlBitmap_Strips()
     
     end
     
-    return noscroll
+    return noscroll, xclicked
   end
       
   function A_Run_StripLayout(noscroll, rt)
@@ -32533,8 +32537,20 @@ function GUI_DrawCtlBitmap_Strips()
     
     elseif lvar.stripctlbox.idx and not mouse.ctrl then
     
-      noscroll = A_Run_AltStripFuncs(noscroll, rt)
+      noscroll, xclicked = A_Run_AltStripFuncs(noscroll, rt)
       
+      if not xclicked and mouse.LB and not mouse.last_LB then
+        local strip = tracks[track_select].strip
+        local c = GetControlAtXY(strip, page, mouse.mx, mouse.my)
+        if c then
+          local ctl = strips[strip][page].controls[c]
+          if ctl.ctlcat == ctlcats.fxparam or 
+             ctl.ctlcat == ctlcats.fxoffline then
+            OpenFXGUI(ctl)
+          end
+        end
+      end
+          
     elseif mouse.context == nil and mouse.alt and not mouse.altlatch and not mouse.LB and not mouse.RB and MOUSE_over(obj.sections[10]) then
 
       CreateStripCB()      
@@ -34645,6 +34661,7 @@ function GUI_DrawCtlBitmap_Strips()
         update_surface = true
       end
     end
+    
   end
 
   function A_Run_Submode0(noscroll, rt, char)
