@@ -10360,14 +10360,40 @@ function GUI_DrawCtlBitmap_Strips()
 
     if strips and tracks[track_select] and strips[tracks[track_select].strip] and strips[tracks[track_select].strip][page] then
       if #strips[tracks[track_select].strip][page].graphics > 0 then
-
         local i = gfx2_select
-        local x = strips[tracks[track_select].strip][page].graphics[i].x 
-        local y = strips[tracks[track_select].strip][page].graphics[i].y
-        local w = strips[tracks[track_select].strip][page].graphics[i].stretchw
-        local h = strips[tracks[track_select].strip][page].graphics[i].stretchh
+        local gfxx = strips[tracks[track_select].strip][page].graphics[i]
+        local x = gfxx.x 
+        local y = gfxx.y
+        local w = gfxx.stretchw
+        local h = gfxx.stretchh
         local rx, ry = x+w, y+h
         local selrect = {x = x-4, y = y-4, w = w+8, h = h+8}
+        return selrect
+      end
+    end
+
+    return nil
+      
+  end
+
+  function CalcGFX4SelRect()
+
+    if strips and tracks[track_select] and strips[tracks[track_select].strip] and strips[tracks[track_select].strip][page] then
+      if #strips[tracks[track_select].strip][page].graphics > 0 and gfx4_select then
+
+        local x,y,r,b,w,h,rx,ry = 2048, 2048, 0, 0, 0, 0
+        local strip = tracks[track_select].strip
+        for g = 1, #gfx4_select do
+          local i = gfx4_select[g]
+          local gfxx = strips[strip][page].graphics[i]
+          x = math.min(x, gfxx.x)
+          y = math.min(y, gfxx.y)
+          r = math.max(r, gfxx.x + gfxx.stretchw)
+          b = math.max(b, gfxx.y + gfxx.stretchh)
+          --local rx, ry = x+w, y+h
+        end
+
+        local selrect = {x = x-4, y = y-4, w = r-x+8, h = b-y+8}
         return selrect
       end
     end
@@ -15830,7 +15856,7 @@ function GUI_DrawCtlBitmap_Strips()
             gfx.blit(1023,1,0,0,0,w,h,x,y)          
           end
 
-          if gfx2_select ~= nil then
+          --[[if gfx2_select ~= nil then
           
             selrect = CalcGFXSelRect()
             if selrect then
@@ -15858,7 +15884,64 @@ function GUI_DrawCtlBitmap_Strips()
               end
             end            
           
+          end]]
+
+          if gfx4_select ~= nil then
+            selrect = table.copy(glob_gfxselrect) --CalcGFX4SelRect()
+            if selrect then
+              if draggfx2 ~= nil then 
+                local x, y = selrect.x - surface_offset.x + obj.sections[10].x+4, selrect.y - surface_offset.y + obj.sections[10].y+4
+                local w, h = gfx.getimgdim(1022)
+                gfx.a = 1
+                gfx.blit(1022,1,0,0,0,w,h,x,y) 
+              end
+
+              if poslock_select == true then
+                f_Get_SSV(gui.color.red)
+              else
+                f_Get_SSV(gui.color.yellow)
+              end
+              gfx.a = 1
+              selrect.x = selrect.x - surface_offset.x + obj.sections[10].x
+              selrect.y = selrect.y - surface_offset.y + obj.sections[10].y
+              gfx.roundrect(selrect.x, selrect.y, selrect.w, selrect.h, 8, 1, 0)
+              if show_lbloptions == false and show_gfxoptions == true then
+                gfx.circle(selrect.x+selrect.w,selrect.y+selrect.h/2,4,1,1)
+                gfx.circle(selrect.x+selrect.w,selrect.y+selrect.h,4,1,1)
+                gfx.circle(selrect.x+selrect.w/2,selrect.y+selrect.h,4,1,1)              
+              end
+            end
+            
+            local strip = tracks[track_select].strip
+            f_Get_SSV(gui.color.blue)
+            
+            gfx.a = 0.8
+            local ls = 4
+            for c = 1, #gfx4_select do
+              local cx = gfx4_select[c]
+              local gfxx = strips[strip][page].graphics[cx]
+              local x = gfxx.x+4
+              local y = gfxx.y+4
+              local w = gfxx.stretchw-8
+              local h = gfxx.stretchh-8
+              x=x-surface_offset.x+obj.sections[10].x
+              y=y-surface_offset.y+obj.sections[10].y
+              gfx.line(x,y,x+ls,y,1)
+              gfx.line(x,y,x,y+ls,1)
+
+              gfx.line(x+w,y,x+w-ls,y,1)
+              gfx.line(x+w,y,x+w,y+ls,1)
+
+              gfx.line(x+w,y+h-ls,x+w,y+h,1)
+              gfx.line(x+w,y+h,x+w-ls,y+h,1)
+              
+              gfx.line(x,y+h-ls,x,y+h,1)
+              gfx.line(x,y+h,x+ls,y+h,1)
+              
+            end
+            gfx.a = 1
           end
+          
           gfx.blit(1001,1,0,0,0,obj.sections[43].w,obj.sections[43].h,0,0)
 
           if show_lbloptions and gfx2_select ~= nil then            
@@ -17270,6 +17353,14 @@ function GUI_DrawCtlBitmap_Strips()
       and mouse.my > b.y and mouse.my < b.y+b.h 
       and mouse.LB 
       and not mouse.last_LB then
+     return true 
+    end
+    --return nil
+  end
+
+  function MC()
+    if (mouse.LB and not mouse.last_LB) or
+       (mouse.RB and not mouse.last_RB) then
      return true 
     end
     --return nil
@@ -19020,6 +19111,22 @@ function GUI_DrawCtlBitmap_Strips()
       gfx3_select = nil
     end  
 
+    if gfx4_select then
+      local cnt = #strips[tracks[track_select].strip][page].graphics
+      for i = 1, #gfx4_select do
+        strips[tracks[track_select].strip][page].graphics[gfx4_select[i]] = nil
+      end
+      local tbl = {}
+      for i = 1, cnt do
+        if strips[tracks[track_select].strip][page].graphics[i] ~= nil then
+          table.insert(tbl, strips[tracks[track_select].strip][page].graphics[i])
+        end
+      end
+      strips[tracks[track_select].strip][page].graphics = tbl
+      gfx4_select = nil
+      gfx4_selectidx = nil
+    end  
+
     if gfx2_select then
       local cnt = #strips[tracks[track_select].strip][page].graphics
       strips[tracks[track_select].strip][page].graphics[gfx2_select] = nil
@@ -20469,7 +20576,7 @@ function GUI_DrawCtlBitmap_Strips()
     if lvar.addstrip_keepseparateids == true then
       stripids = {}
       for j = 1, #stripdata.strip.controls do
-        if not stripids[stripdata.strip.controls[j].id] then
+        if stripdata.strip.controls[j].id and not stripids[stripdata.strip.controls[j].id] then
           stripids[stripdata.strip.controls[j].id] = GenID()
         end
       end    
@@ -20496,7 +20603,7 @@ function GUI_DrawCtlBitmap_Strips()
       stripdata.strip.controls[j].y = stripdata.strip.controls[j].y + offsety + y + surface_offset.y
       
       if lvar.addstrip_keepseparateids == true then
-        if stripids[stripdata.strip.controls[j].id] then
+        if stripdata.strip.controls[j].id and stripids[stripdata.strip.controls[j].id] then
           stripdata.strip.controls[j].id = stripids[stripdata.strip.controls[j].id]
         else
           stripdata.strip.controls[j].id = stripid
@@ -21408,6 +21515,177 @@ function GUI_DrawCtlBitmap_Strips()
 
   end
   
+  function GenGFX4DragPreview(gui)
+  
+      local strip = tracks[track_select].strip
+      local i,j
+      local minx, miny, maxx, maxy = nil,nil,nil,nil 
+      if gfx4_select and #gfx4_select > 0 then
+        for ii = 1, #gfx4_select do
+          local i = gfx4_select[ii]
+          if minx == nil then
+            minx = strips[strip][page].graphics[i].x
+            miny = strips[strip][page].graphics[i].y
+            maxx = strips[strip][page].graphics[i].x + strips[strip][page].graphics[i].stretchw
+            maxy = strips[strip][page].graphics[i].y + strips[strip][page].graphics[i].stretchh
+          else
+            minx = math.min(minx, strips[strip][page].graphics[i].x)
+            miny = math.min(miny, strips[strip][page].graphics[i].y)
+            maxx = math.max(maxx, strips[strip][page].graphics[i].x + strips[strip][page].graphics[i].stretchw)
+            maxy = math.max(maxy, strips[strip][page].graphics[i].y + strips[strip][page].graphics[i].stretchh)
+          end
+        end
+      end
+  
+      if minx and miny then
+        offsetx = -minx
+        offsety = -miny
+      
+        gfx.dest = 1022
+        gfx.setimgdim(1022,-1,-1)
+        gfx.setimgdim(1022,maxx+offsetx,maxy+offsety)
+    
+        --draw gfx
+        if gfx4_select and #gfx4_select > 0 then
+        
+          for ii = 1, #gfx4_select do
+        
+            local i = gfx4_select[ii]
+            local gfxx = strips[strip][page].graphics[i]
+            if nz(strips[strip][page].graphics[i].gfxtype, lvar.gfxtype.img) == lvar.gfxtype.img then
+            
+              local x = gfxx.x+offsetx 
+              local y = gfxx.y+offsety
+              local w = gfxx.w
+              local h = gfxx.h
+              local sw = gfxx.stretchw
+              local sh = gfxx.stretchh
+              local imageidx = gfxx.imageidx
+              
+              --gfx.a = 0.8
+              --gfx.blit(imageidx,1,0, 0, 0, w, h, x, y, sw, sh)
+            
+              if (gfxx.bright and gfxx.bright ~= 0.5) or (gfxx.contr and gfxx.contr ~= 0.5) 
+                       or (gfxx.rmult and gfxx.rmult ~= 0.5) or (gfxx.gmult and gfxx.gmult ~= 0.5) or (gfxx.bmult and gfxx.bmult ~= 0.5) 
+                       or (gfxx.alpha and gfxx.alpha ~= 1) then
+                iidx = 899
+                local ba = -F_limit((0.5-gfxx.bright)*2,-1,1)
+                local bc = gfxx.contr
+                if bc > 0.5 then
+                  bc = 1+(bc-0.5)*10
+                else
+                  bc = bc*2
+                end
+      
+                local mr = gfxx.rmult
+                local mg = gfxx.gmult
+                local mb = gfxx.bmult
+                if mr > 0.5 then
+                  mr = 1+(mr-0.5)*10
+                else
+                  mr = mr*2
+                end
+                if mg > 0.5 then
+                  mg = 1+(mg-0.5)*10
+                else
+                  mg = mg*2
+                end
+                if mb > 0.5 then
+                  mb = 1+(mb-0.5)*10
+                else
+                  mb = mb*2
+                end
+                
+                local ma = gfxx.alpha
+                          
+                gfx.setimgdim(iidx, -1, -1)
+                gfx.setimgdim(iidx, sw, sh)
+                gfx.dest = iidx
+                gfx.a = 1
+                --gfx.blit(imageidx,1,0, 0, 0, w, h, 0, 0, sw, sh)
+                if gfxx.stretchmode == 1 then
+                  gfx.blit(imageidx,1,0, 0, 0, w, h, 0, 0, sw, sh)
+                else
+                  local edge = gfxx.edgesz
+                  --corners
+                  gfx.blit(imageidx,1,0, 0, 0, edge, edge, 0, 0)
+                  gfx.blit(imageidx,1,0, w-edge, 0, edge, edge, sw-edge, 0)
+                  gfx.blit(imageidx,1,0, w-edge, h-edge, edge, edge, sw-edge, sh-edge)
+                  gfx.blit(imageidx,1,0, 0, h-edge, edge, edge, 0, sh-edge)
+                  --sides
+                  gfx.blit(imageidx,1,0, edge, 0, w-edge-edge, edge, edge, 0, sw-edge-edge, edge)
+                  gfx.blit(imageidx,1,0, w-edge, edge, edge, h-edge-edge, sw-edge, edge, edge, sh-edge-edge)
+                  gfx.blit(imageidx,1,0, edge, h-edge, w-edge-edge, edge, edge, sh-edge, sw-edge-edge, edge)
+                  gfx.blit(imageidx,1,0, 0, edge, edge, h-edge-edge, 0, edge, edge, sh-edge-edge)
+                  --middle
+                  gfx.blit(imageidx,1,0, edge, edge, w-edge-edge, h-edge-edge, edge, edge, sw-edge-edge, sh-edge-edge)                  
+                end
+                
+                gfx.muladdrect(0,0,sw,sh,bc*mr,bc*mg,bc*mb,1,ba,ba,ba)
+                gfx.dest = 1022
+                gfx.a = 0.8*ma
+                gfx.blit(iidx,1,0, 0, 0, sw, sh, x, y)            
+              else
+                gfx.a = 0.8
+                --gfx.blit(imageidx,1,0, 0, 0, w, h, x, y, sw, sh)
+                if gfxx.stretchmode == 1 then
+                  gfx.blit(imageidx,1,0, 0, 0, w, h, x, y, sw, sh)
+                else
+                  local edge = gfxx.edgesz
+                  --cornersh
+                  gfx.blit(imageidx,1,0, 0, 0, edge, edge, x+0, y+0)
+                  gfx.blit(imageidx,1,0, w-edge, 0, edge, edge, x+sw-edge, y+0)
+                  gfx.blit(imageidx,1,0, w-edge, h-edge, edge, edge, x+sw-edge, y+sh-edge)
+                  gfx.blit(imageidx,1,0, 0, h-edge, edge, edge, x+0, y+sh-edge)
+                  --sides
+                  gfx.blit(imageidx,1,0, edge, 0, w-edge-edge, edge, x+edge, y+0, sw-edge-edge, edge)
+                  gfx.blit(imageidx,1,0, w-edge, edge, edge, h-edge-edge, x+sw-edge, y+edge, edge, sh-edge-edge)
+                  gfx.blit(imageidx,1,0, edge, h-edge, w-edge-edge, edge, x+edge, y+sh-edge, sw-edge-edge, edge)
+                  gfx.blit(imageidx,1,0, 0, edge, edge, h-edge-edge, x+0, y+edge, edge, sh-edge-edge)
+                  --middle
+                  gfx.blit(imageidx,1,0, edge, edge, w-edge-edge, h-edge-edge, x+edge, y+edge, sw-edge-edge, sh-edge-edge)                  
+                end
+              end
+            
+            elseif gfxx.gfxtype == lvar.gfxtype.txt then
+            
+              local x = gfxx.x+offsetx 
+              local y = gfxx.y+offsety
+            
+              local text = gfxx.text
+              local textcol = gfxx.text_col
+              
+              local flagb,flagi,flagu = 0,0,0
+              if gfxx.font.bold then flagb = 98 end
+              if gfxx.font.italics then flagi = 105 end
+              if gfxx.font.underline then flagu = 117 end
+              local flags = flagb + (flagi*256) + (flagu*(256^2))
+              gfx.setfont(1,gfxx.font.name,
+                            gfxx.font.size,flags)
+              if gfxx.font.shadow then
+              
+                local shadx = nz(gfxx.font.shadow_x,1)
+                local shady = nz(gfxx.font.shadow_y,1)
+              
+                f_Get_SSV(gui.color.black)
+                gfx.a = 0.4
+                gfx.x, gfx.y = x+shadx,y+shady
+                gfx.drawstr(text)
+              end
+              
+              gfx.a = 0.8
+              gfx.x, gfx.y = x,y
+              f_Get_SSV(textcol)
+              
+              gfx.drawstr(text)
+            
+            end
+          end
+        end      
+  
+      end  
+    end
+    
   ------------------------------------------------------------    
 
   function GenCtlDragPreview(gui, fixalpha)
@@ -22667,23 +22945,31 @@ function GUI_DrawCtlBitmap_Strips()
     if settings_drawbglabelsontop then
       lb = '!'
     end
-    if gfx2_select then
+    if gfx4_select and #gfx4_select > 0 then
       local mm = '#Copy formatting|#Paste formatting'
-      if strips[tracks[track_select].strip][page].graphics[gfx2_select].gfxtype == lvar.gfxtype.txt then
-        mm = 'Copy formatting|Paste formatting'
+      local more1 = ''
+      if #gfx4_select > 1 then
+        more1 = '#'
+      end
+      if strips[tracks[track_select].strip][page].graphics[gfx4_select[1]].gfxtype == lvar.gfxtype.txt then
+        mm = more1..'Copy formatting|Paste formatting'
       end
       local mm2 = 'Lock position'
-      if nz(strips[tracks[track_select].strip][page].graphics[gfx2_select].poslock,false) == true then
+      if nz(strips[tracks[track_select].strip][page].graphics[gfx4_select[1]].poslock,false) == true then
         mm2 = '!'..mm2
       end
-      mstr = 'Move up|Move down|Bring to front|Send to back||Insert label||'..lb..'Labels on top||'..mm..'||'..mm2..'||Delete||Copy|'..gp
+      mstr = more1..'Move up|'..more1..'Move down|Bring to front|Send to back||Insert label||'..lb..'Labels on top||'..mm..'||'..mm2..'||Delete||Copy|'..gp
     else
-      mstr = '#Move up|#Move down|#Bring to front|#Send to back||Insert label||'..lb..'Labels on top||#Copy formatting|#Paste formatting||#Lock position||#Delete|#Copy'..gp    
+      mstr = '#Move up|#Move down|#Bring to front|#Send to back||Insert label||'..lb..'Labels on top||#Copy formatting|#Paste formatting||#Lock position||#Delete|#Copy|'..gp    
     end
     gfx.x, gfx.y = mouse.mx, mouse.my
     local mx, my = mouse.mx, mouse.my
     res = OpenMenu(mstr)
     if res ~= 0 then
+      local gfx2_select
+      if gfx4_select then
+        gfx2_select = gfx4_select[1]
+      end
       if res == 1 then
         if gfx2_select < #strips[tracks[track_select].strip][page].graphics then
           local tbl = {}
@@ -22692,6 +22978,7 @@ function GUI_DrawCtlBitmap_Strips()
           strips[tracks[track_select].strip][page].graphics[gfx2_select] = tbl[2]
           strips[tracks[track_select].strip][page].graphics[gfx2_select+1] = tbl[1]
           gfx2_select = gfx2_select +1
+          gfx4_select[1] = gfx2_select
         end
               
       elseif res == 2 then
@@ -22702,42 +22989,66 @@ function GUI_DrawCtlBitmap_Strips()
           strips[tracks[track_select].strip][page].graphics[gfx2_select] = tbl[2]
           strips[tracks[track_select].strip][page].graphics[gfx2_select-1] = tbl[1]
           gfx2_select = gfx2_select -1
+          gfx4_select[1] = gfx2_select
         end      
       
       elseif res == 3 then
         --to front
-        if gfx2_select then
+        if gfx4_select then
           local cnt = #strips[tracks[track_select].strip][page].graphics          
           local tbl = {}
           local tbl2 = {}
-          table.insert(tbl2, strips[tracks[track_select].strip][page].graphics[gfx2_select])
-          strips[tracks[track_select].strip][page].graphics[gfx2_select] = nil
           
+          table.sort(gfx4_select)
+          for i = 1, #gfx4_select do
+            table.insert(tbl2, strips[tracks[track_select].strip][page].graphics[gfx4_select[i]])
+            strips[tracks[track_select].strip][page].graphics[gfx4_select[i]] = nil
+          end
+                    
           for i = 1, cnt do
             if strips[tracks[track_select].strip][page].graphics[i] ~= nil then
               table.insert(tbl, strips[tracks[track_select].strip][page].graphics[i])
             end
           end
-          table.insert(tbl,tbl2[1])
+
+          for i = 1, #tbl2 do
+            table.insert(tbl,tbl2[i])
+          end
           strips[tracks[track_select].strip][page].graphics = tbl
-          gfx2_select = #strips[tracks[track_select].strip][page].graphics
+          local gfxtbl = {}
+          local cnt = #gfx4_select
+          gfx4_selectidx = {}
+          for i = 1, cnt do
+            local gidx = #strips[tracks[track_select].strip][page].graphics-(i-1)
+            gfx4_select[i] = gidx
+            gfx4_selectidx[gidx] = i
+          end
         end  
           
       elseif res == 4 then
         --to back
-        if gfx2_select then
+        if gfx4_select then
           local cnt = #strips[tracks[track_select].strip][page].graphics          
           local tbl = {}
-          table.insert(tbl, strips[tracks[track_select].strip][page].graphics[gfx2_select])
-          strips[tracks[track_select].strip][page].graphics[gfx2_select] = nil
           
+          table.sort(gfx4_select)
+          for i = 1, #gfx4_select do
+            table.insert(tbl, strips[tracks[track_select].strip][page].graphics[gfx4_select[i]])
+            strips[tracks[track_select].strip][page].graphics[gfx4_select[i]] = nil
+          end
+                    
           for i = 1, cnt do
             if strips[tracks[track_select].strip][page].graphics[i] ~= nil then
               table.insert(tbl, strips[tracks[track_select].strip][page].graphics[i])
             end
           end
           strips[tracks[track_select].strip][page].graphics = tbl
-          gfx2_select = 1
+          gfx4_selectidx = {}
+          local cnt = #gfx4_select
+          for i = 1, cnt do
+            gfx4_select[i] = i
+            gfx4_selectidx[i] = i
+          end
         end  
 
       elseif res == 5 then
@@ -22759,37 +23070,63 @@ function GUI_DrawCtlBitmap_Strips()
       
         if gfx_lblformat_copy then
         
-          strips[tracks[track_select].strip][page].graphics[gfx2_select].font.name = gfx_lblformat_copy.font.name
-          strips[tracks[track_select].strip][page].graphics[gfx2_select].font.size = gfx_lblformat_copy.font.size
-          strips[tracks[track_select].strip][page].graphics[gfx2_select].font.bold = gfx_lblformat_copy.font.bold
-          strips[tracks[track_select].strip][page].graphics[gfx2_select].font.italics = gfx_lblformat_copy.font.italics
-          strips[tracks[track_select].strip][page].graphics[gfx2_select].font.underline = gfx_lblformat_copy.font.underline
-          strips[tracks[track_select].strip][page].graphics[gfx2_select].font.shadow = gfx_lblformat_copy.font.shadow
-          strips[tracks[track_select].strip][page].graphics[gfx2_select].font.shadow_x = gfx_lblformat_copy.font.shadow_x
-          strips[tracks[track_select].strip][page].graphics[gfx2_select].font.shadow_y = gfx_lblformat_copy.font.shadow_y
-          strips[tracks[track_select].strip][page].graphics[gfx2_select].font.shadow_a = gfx_lblformat_copy.font.shadow_a
-          strips[tracks[track_select].strip][page].graphics[gfx2_select].text_col = gfx_lblformat_copy.text_col
-          
+          for i = 1, #gfx4_select do
+            if strips[tracks[track_select].strip][page].graphics[gfx4_select[i]].gfxtype == lvar.gfxtype.txt then
+              strips[tracks[track_select].strip][page].graphics[gfx4_select[i]].font.name = gfx_lblformat_copy.font.name
+              strips[tracks[track_select].strip][page].graphics[gfx4_select[i]].font.size = gfx_lblformat_copy.font.size
+              strips[tracks[track_select].strip][page].graphics[gfx4_select[i]].font.bold = gfx_lblformat_copy.font.bold
+              strips[tracks[track_select].strip][page].graphics[gfx4_select[i]].font.italics = gfx_lblformat_copy.font.italics
+              strips[tracks[track_select].strip][page].graphics[gfx4_select[i]].font.underline = gfx_lblformat_copy.font.underline
+              strips[tracks[track_select].strip][page].graphics[gfx4_select[i]].font.shadow = gfx_lblformat_copy.font.shadow
+              strips[tracks[track_select].strip][page].graphics[gfx4_select[i]].font.shadow_x = gfx_lblformat_copy.font.shadow_x
+              strips[tracks[track_select].strip][page].graphics[gfx4_select[i]].font.shadow_y = gfx_lblformat_copy.font.shadow_y
+              strips[tracks[track_select].strip][page].graphics[gfx4_select[i]].font.shadow_a = gfx_lblformat_copy.font.shadow_a
+              strips[tracks[track_select].strip][page].graphics[gfx4_select[i]].text_col = gfx_lblformat_copy.text_col
+            end
+          end
+                    
         end
 
       elseif res == 9 then
 
-        strips[tracks[track_select].strip][page].graphics[gfx2_select].poslock = not strips[tracks[track_select].strip][page].graphics[gfx2_select].poslock
+        for i = 1, gfx4_select do        
+          strips[tracks[track_select].strip][page].graphics[gfx4_select[i]].poslock = not strips[tracks[track_select].strip][page].graphics[gfx4_select[i]].poslock
+        end
         poslock_select = strips[tracks[track_select].strip][page].graphics[gfx2_select].poslock
         update_gfx = true
         
       elseif res == 10 then
+        ctl_select = nil
         DeleteSelectedCtls()
         update_gfx = true
+        
       elseif res == 11 then
-        gfx_clip = GetGraphicsTable(tracks[track_select].strip, page, gfx2_select)
+        
+        gfx_clip = {}
+        for i = 1, #gfx4_select do
+          gfx_clip[i] = GetGraphicsTable(tracks[track_select].strip, page, gfx4_select[i])
+        end
+        
       elseif res == 12 then
         if gfx_clip then
-          local gfxx = strips[tracks[track_select].strip][page].graphics
-          local gcnt = #gfxx+1
-          gfxx[gcnt] = GetGraphicsTable(_,_,_, gfx_clip)
-          gfxx[gcnt].x = (mouse.mx+surface_offset.x-obj.sections[10].x)
-          gfxx[gcnt].y = (mouse.my+surface_offset.y-obj.sections[10].y)          
+          local rel = {}
+          for i = 1, #gfx_clip do
+            rel[i] = {}
+            if i == 1 then
+              rel[i].x = 0
+              rel[i].y = 0
+            else
+              rel[i].x = gfx_clip[1].x - gfx_clip[i].x            
+              rel[i].y = gfx_clip[1].y - gfx_clip[i].y
+            end
+          end
+          for i = 1, #gfx_clip do
+            local gfxx = strips[tracks[track_select].strip][page].graphics
+            local gcnt = #gfxx+1
+            gfxx[gcnt] = GetGraphicsTable(_,_,_, gfx_clip[i])
+            gfxx[gcnt].x = (mouse.mx+surface_offset.x-obj.sections[10].x)-rel[i].x
+            gfxx[gcnt].y = (mouse.my+surface_offset.y-obj.sections[10].y)-rel[i].y          
+          end
           update_gfx = true
         end  
       end
@@ -22821,12 +23158,17 @@ function GUI_DrawCtlBitmap_Strips()
     
   function EditLabel2(txt)
   
-    --for i = 1, #ctl_select do
     if string.len(txt) > 0 then
       gfx_text_select = txt
-      strips[tracks[track_select].strip][page].graphics[gfx2_select].text = txt
+      if gfx4_select then
+        for i = 1, #gfx4_select do
+          local gfxx = strips[tracks[track_select].strip][page].graphics[gfx4_select[i]]
+          if gfxx.gfxtype == lvar.gfxtype.txt then
+            gfxx.text = txt
+          end
+        end
+      end
     end
-    --end
     
   end
 
@@ -22835,8 +23177,14 @@ function GUI_DrawCtlBitmap_Strips()
     gfx.setfont(1,font)
     local f2,f3 = gfx.getfont()
     gfx_font_select.name = f3
-    strips[tracks[track_select].strip][page].graphics[gfx2_select].font.name = f3
-
+    if gfx4_select then
+      for i = 1, #gfx4_select do
+        local gfxx = strips[tracks[track_select].strip][page].graphics[gfx4_select[i]]
+        if gfxx.gfxtype == lvar.gfxtype.txt then
+          gfxx.font.name = f3
+        end
+      end
+    end
   end
 
   function CheckFont(font)
@@ -25360,6 +25708,9 @@ function GUI_DrawCtlBitmap_Strips()
       ctl_select = nil
       gfx2_select = nil
       gfx3_select = nil
+      gfx4_select = nil
+      gfx4_selectidx = nil
+      
       ss_select = nil
       sstype_select = 1
       CloseActChooser()
@@ -25464,6 +25815,9 @@ function GUI_DrawCtlBitmap_Strips()
     ctl_select = nil
     gfx2_select = nil
     gfx3_select = nil
+    gfx4_select = nil
+    gfx4_selectidx = nil
+
     ss_select = nil
     sstype_select = 1
     CloseActChooser()
@@ -25590,6 +25944,24 @@ function GUI_DrawCtlBitmap_Strips()
     poslock_select = strips[tracks[track_select].strip][page].graphics[gfx2_select].poslock
   end
 
+  function SetGfx4SelectVals()
+    if gfx4_select and #gfx4_select > 0 then
+      local i = gfx4_select[1]
+      local gfxx = strips[tracks[track_select].strip][page].graphics[i]
+      gfx_font_select.name = gfxx.font.name
+      gfx_font_select.size = gfxx.font.size
+      gfx_font_select.bold = gfxx.font.bold
+      gfx_font_select.italic = gfxx.font.italic
+      gfx_font_select.underline = gfxx.font.underline
+      gfx_font_select.shadow = gfxx.font.shadow
+      gfx_font_select.shadow_x = gfxx.font.shadow_x
+      gfx_font_select.shadow_y = gfxx.font.shadow_y
+      gfx_font_select.shadow_a = gfxx.font.shadow_a
+      gfx_textcol_select = gfxx.text_col
+      gfx_text_select = gfxx.text
+    end
+  end
+
   function SetGfxSelectVals2()
     gfxbright_select = nz(strips[tracks[track_select].strip][page].graphics[gfx2_select].bright,0.5)
     gfxcontr_select = nz(strips[tracks[track_select].strip][page].graphics[gfx2_select].contr,0.5)
@@ -25599,6 +25971,21 @@ function GUI_DrawCtlBitmap_Strips()
     gfxa_select = nz(strips[tracks[track_select].strip][page].graphics[gfx2_select].alpha,1)    
     gfxstretchmode_select = nz(strips[tracks[track_select].strip][page].graphics[gfx2_select].stretchmode,1)
     gfxedgesz_select = nz(strips[tracks[track_select].strip][page].graphics[gfx2_select].edgesz,8)
+  end
+
+  function SetGfx4SelectVals2()
+    if gfx4_select and #gfx4_select > 0 then
+      local i = gfx4_select[1]
+      local gfxx = strips[tracks[track_select].strip][page].graphics[i]
+      gfxbright_select = nz(gfxx.bright,0.5)
+      gfxcontr_select = nz(gfxx.contr,0.5)
+      gfxr_select = nz(gfxx.rmult,0.5)
+      gfxg_select = nz(gfxx.gmult,0.5)
+      gfxb_select = nz(gfxx.bmult,0.5)
+      gfxa_select = nz(gfxx.alpha,1)    
+      gfxstretchmode_select = nz(gfxx.stretchmode,1)
+      gfxedgesz_select = nz(gfxx.edgesz,8)
+    end
   end
     
   function GetValFromDVal(c, dv, checkov)
@@ -26406,7 +26793,10 @@ function GUI_DrawCtlBitmap_Strips()
       show_striplayout = false
     end]]
         
+    gfx2_select = nil
     gfx3_select = nil
+    gfx4_select = nil
+    gfx4_selectidx = nil
     ctl_select = nil
     GUI_DrawCtlBitmap()
     
@@ -27014,6 +27404,9 @@ function GUI_DrawCtlBitmap_Strips()
       ctl_select = nil
       gfx2_select = nil
       gfx3_select = nil
+      gfx4_select = nil
+      gfx4_selectidx = nil
+
       show_paramlearn = false
       CloseActChooser()
       show_ctlbrowser = false
@@ -28777,6 +29170,7 @@ function GUI_DrawCtlBitmap_Strips()
                     
           elseif submode == 1 then
     
+            settings_gridsize = ogrid or settings_gridsize
             noscroll = A_Run_Submode1(noscroll, rt, char)
             
           elseif submode == 2 then
@@ -28861,6 +29255,8 @@ function GUI_DrawCtlBitmap_Strips()
                 show_ctlbrowser = false
                 gfx2_select = nil
                 gfx3_select = nil
+                gfx4_select = nil
+                gfx4_selectidx = nil
               else
                 show_gaugeedit = false
               end
@@ -37721,6 +38117,11 @@ function GUI_DrawCtlBitmap_Strips()
   
     local contexts = contexts
     local mouse = mouse
+    
+    local grids = settings_gridsize
+    if mouse.shift then
+      grids = 1
+    end
         
     if gfx.mouse_wheel ~= 0 then
       local v = gfx.mouse_wheel/120
@@ -37734,70 +38135,92 @@ function GUI_DrawCtlBitmap_Strips()
         gfx.mouse_wheel = 0
       end
       
-      if show_lbloptions and gfx2_select and MOUSE_over(obj.sections[49]) then
+      if show_lbloptions and gfx4_select and MOUSE_over(obj.sections[49]) then
         if MOUSE_over(obj.sections[141]) then
           gfx_font_select.size = F_limit(gfx_font_select.size+v,8,250)
-          strips[tracks[track_select].strip][page].graphics[gfx2_select].font.size = gfx_font_select.size
+          for i = 1, #gfx4_select do
+            strips[tracks[track_select].strip][page].graphics[gfx4_select[i]].font.size = gfx_font_select.size
+          end
           update_gfx = true
           gfx.mouse_wheel = 0                
         elseif MOUSE_over(obj.sections[148]) then
           gfx_font_select.shadow_x = gfx_font_select.shadow_x+v
-          strips[tracks[track_select].strip][page].graphics[gfx2_select].font.shadow_x = gfx_font_select.shadow_x
+          for i = 1, #gfx4_select do
+            strips[tracks[track_select].strip][page].graphics[gfx4_select[i]].font.shadow_x = gfx_font_select.shadow_x
+          end
           update_gfx = true
           gfx.mouse_wheel = 0                
         elseif MOUSE_over(obj.sections[149]) then
           gfx_font_select.shadow_y = gfx_font_select.shadow_y+v
-          strips[tracks[track_select].strip][page].graphics[gfx2_select].font.shadow_y = gfx_font_select.shadow_y
+          for i = 1, #gfx4_select do
+            strips[tracks[track_select].strip][page].graphics[gfx4_select[i]].font.shadow_y = gfx_font_select.shadow_y
+          end
           update_gfx = true
           gfx.mouse_wheel = 0                
         elseif MOUSE_over(obj.sections[150]) then
           gfx_font_select.shadow_a = gfx_font_select.shadow_a+v*0.1
-          strips[tracks[track_select].strip][page].graphics[gfx2_select].font.shadow_a = gfx_font_select.shadow_a
+          for i = 1, #gfx4_select do
+            strips[tracks[track_select].strip][page].graphics[gfx4_select[i]].font.shadow_a = gfx_font_select.shadow_a
+          end
           update_gfx = true
           gfx.mouse_wheel = 0                
         end
-      elseif show_gfxoptions and gfx2_select and MOUSE_over(obj.sections[49]) then
+      elseif show_gfxoptions and gfx4_select and MOUSE_over(obj.sections[49]) then
         if MOUSE_over(obj.sections[910]) then
           gfxbright_select = F_limit(gfxbright_select+(v*0.02),0,1)
-          strips[tracks[track_select].strip][page].graphics[gfx2_select].bright = gfxbright_select
+          for i = 1, #gfx4_select do
+            strips[tracks[track_select].strip][page].graphics[gfx4_select[i]].bright = gfxbright_select
+          end
           update_gfx = true
           gfx.mouse_wheel = 0                
         elseif MOUSE_over(obj.sections[911]) then
           gfxcontr_select = F_limit(gfxcontr_select+(v*0.02),0,1)
-          strips[tracks[track_select].strip][page].graphics[gfx2_select].contr = gfxcontr_select
+          for i = 1, #gfx4_select do
+            strips[tracks[track_select].strip][page].graphics[gfx4_select[i]].contr = gfxcontr_select
+          end
           update_gfx = true
           gfx.mouse_wheel = 0                
         elseif MOUSE_over(obj.sections[913]) then
           gfxr_select = F_limit(gfxr_select+(v*0.02),0,1)
-          strips[tracks[track_select].strip][page].graphics[gfx2_select].rmult = gfxr_select
+          for i = 1, #gfx4_select do
+            strips[tracks[track_select].strip][page].graphics[gfx4_select[i]].rmult = gfxr_select
+          end
           update_gfx = true
           gfx.mouse_wheel = 0                
         elseif MOUSE_over(obj.sections[914]) then
           gfxg_select = F_limit(gfxg_select+(v*0.02),0,1)
-          strips[tracks[track_select].strip][page].graphics[gfx2_select].gmult = gfxg_select
+          for i = 1, #gfx4_select do
+            strips[tracks[track_select].strip][page].graphics[gfx4_select[i]].gmult = gfxg_select
+          end
           update_gfx = true
           gfx.mouse_wheel = 0                
         elseif MOUSE_over(obj.sections[915]) then
           gfxb_select = F_limit(gfxb_select+(v*0.02),0,1)
-          strips[tracks[track_select].strip][page].graphics[gfx2_select].bmult = gfxb_select
+          for i = 1, #gfx4_select do
+            strips[tracks[track_select].strip][page].graphics[gfx4_select[i]].bmult = gfxb_select
+          end
           update_gfx = true
           gfx.mouse_wheel = 0                
         elseif MOUSE_over(obj.sections[916]) then
           gfxa_select = F_limit(gfxa_select+(v*0.02),0,1)
-          strips[tracks[track_select].strip][page].graphics[gfx2_select].alpha = gfxa_select
+          for i = 1, #gfx4_select do
+            strips[tracks[track_select].strip][page].graphics[gfx4_select[i]].alpha = gfxa_select
+          end
           update_gfx = true
           gfx.mouse_wheel = 0                
         end      
       end
     end
-  
-    local clicklblopts = false
+
+    if gfx4_select == nil or ((show_lbloptions or show_gfxoptions) and MC() and not MOUSE_click(obj.sections[49])) then 
+      clicklblopts = false
+    end
     
-    if gfx2_select ~= nil and char ~= 0 then
+    if gfx4_select ~= nil and char ~= 0 then
     
       ArrowKey_Shift(char,nil,nil,gfx2_select)
     
-    elseif gfx2_select ~= nil and show_lbloptions and (MOUSE_click(obj.sections[49]) or MOUSE_click_RB(obj.sections[49])) then
+    elseif gfx4_select ~= nil and show_lbloptions and (MOUSE_click(obj.sections[49]) or MOUSE_click_RB(obj.sections[49])) then
       
       -- LBL OPTIONS
       clicklblopts = true
@@ -37836,28 +38259,38 @@ function GUI_DrawCtlBitmap_Strips()
         local retval, c = reaper.GR_SelectColor(_,ConvertColorString(gfx_textcol_select))
         if retval ~= 0 then
           gfx_textcol_select = ConvertColor(c)
-          strips[tracks[track_select].strip][page].graphics[gfx2_select].text_col = gfx_textcol_select
+          for i = 1, #gfx4_select do
+            strips[tracks[track_select].strip][page].graphics[gfx4_select[i]].text_col = gfx_textcol_select
+          end
           update_gfx = true
         end
       
       elseif mouse.context == nil and MOUSE_click(obj.sections[143]) then
         gfx_font_select.bold = not gfx_font_select.bold
-        strips[tracks[track_select].strip][page].graphics[gfx2_select].font.bold = gfx_font_select.bold
+        for i = 1, #gfx4_select do
+          strips[tracks[track_select].strip][page].graphics[gfx4_select[i]].font.bold = gfx_font_select.bold
+        end
         update_gfx = true
       
       elseif mouse.context == nil and MOUSE_click(obj.sections[144]) then
         gfx_font_select.italics = not gfx_font_select.italics
-        strips[tracks[track_select].strip][page].graphics[gfx2_select].font.italics = gfx_font_select.italics
+        for i = 1, #gfx4_select do
+          strips[tracks[track_select].strip][page].graphics[gfx4_select[i]].font.italics = gfx_font_select.italics
+        end
         update_gfx = true
       
       elseif mouse.context == nil and MOUSE_click(obj.sections[145]) then
         gfx_font_select.underline = not gfx_font_select.underline
-        strips[tracks[track_select].strip][page].graphics[gfx2_select].font.underline = gfx_font_select.underline
+        for i = 1, #gfx4_select do
+          strips[tracks[track_select].strip][page].graphics[gfx4_select[i]].font.underline = gfx_font_select.underline
+        end
         update_gfx = true
       
       elseif mouse.context == nil and MOUSE_click(obj.sections[146]) then
         gfx_font_select.shadow = not gfx_font_select.shadow
-        strips[tracks[track_select].strip][page].graphics[gfx2_select].font.shadow = gfx_font_select.shadow
+        for i = 1, #gfx4_select do
+          strips[tracks[track_select].strip][page].graphics[gfx4_select[i]].font.shadow = gfx_font_select.shadow
+        end
         update_gfx = true
       end
       
@@ -37866,7 +38299,7 @@ function GUI_DrawCtlBitmap_Strips()
       elseif mouse.context == nil and MOUSE_click(obj.sections[149]) then mouse.context = contexts.shadyslider
       elseif mouse.context == nil and MOUSE_click(obj.sections[150]) then mouse.context = contexts.shadaslider end
       
-    elseif gfx2_select ~= nil and show_gfxoptions and (MOUSE_click(obj.sections[49]) or MOUSE_click_RB(obj.sections[49])) then
+    elseif gfx4_select ~= nil and show_gfxoptions and (MOUSE_click(obj.sections[49]) or MOUSE_click_RB(obj.sections[49])) then
 
       clicklblopts = true
     
@@ -37888,18 +38321,22 @@ function GUI_DrawCtlBitmap_Strips()
         gfxg_select = 0.5
         gfxb_select = 0.5
         gfxa_select = 1
-        strips[tracks[track_select].strip][page].graphics[gfx2_select].bright = gfxbright_select
-        strips[tracks[track_select].strip][page].graphics[gfx2_select].contr = gfxcontr_select
-        strips[tracks[track_select].strip][page].graphics[gfx2_select].rmult = gfxr_select
-        strips[tracks[track_select].strip][page].graphics[gfx2_select].gmult = gfxg_select
-        strips[tracks[track_select].strip][page].graphics[gfx2_select].bmult = gfxb_select
-        strips[tracks[track_select].strip][page].graphics[gfx2_select].amult = gfxa_select
+        for i = 1, #gfx4_select do
+          strips[tracks[track_select].strip][page].graphics[gfx4_select[i]].bright = gfxbright_select
+          strips[tracks[track_select].strip][page].graphics[gfx4_select[i]].contr = gfxcontr_select
+          strips[tracks[track_select].strip][page].graphics[gfx4_select[i]].rmult = gfxr_select
+          strips[tracks[track_select].strip][page].graphics[gfx4_select[i]].gmult = gfxg_select
+          strips[tracks[track_select].strip][page].graphics[gfx4_select[i]].bmult = gfxb_select
+          strips[tracks[track_select].strip][page].graphics[gfx4_select[i]].amult = gfxa_select
+        end
         update_gfx = true
       
       elseif mouse.context == nil and MOUSE_click(obj.sections[917]) then 
             
         gfxstretchmode_select = math.max(((gfxstretchmode_select + 1) % (#lvar.gfxstretch_table+1)),1)
-        strips[tracks[track_select].strip][page].graphics[gfx2_select].stretchmode = gfxstretchmode_select
+        for i = 1, #gfx4_select do
+          strips[tracks[track_select].strip][page].graphics[gfx4_select[i]].stretchmode = gfxstretchmode_select
+        end
         update_gfx = true
 
       end
@@ -37914,7 +38351,9 @@ function GUI_DrawCtlBitmap_Strips()
 
         mouse.context = contexts.gfxopt_edge
         gfxedgesz_select = F_limit(gfxedgesz_select + 1,0,127)
-        strips[tracks[track_select].strip][page].graphics[gfx2_select].edgesz = gfxedgesz_select
+        for i = 1, #gfx4_select do
+          strips[tracks[track_select].strip][page].graphics[gfx4_select[i]].edgesz = gfxedgesz_select
+        end
         
         draggfxedge = {pos = gfxedgesz_select, yoff = mouse.my-obj.sections[918].y}
         update_bg = true
@@ -37934,36 +38373,37 @@ function GUI_DrawCtlBitmap_Strips()
       local val = F_limit(MOUSE_sliderHBar(obj.sections[141]),0,1)
       if val ~= nil then
         gfx_font_select.size = F_limit((val*250),8,250)
-        --for i = 1, #ctl_select do
-        strips[tracks[track_select].strip][page].graphics[gfx2_select].font.size = gfx_font_select.size
-        --end            
+        for i = 1, #gfx4_select do
+          strips[tracks[track_select].strip][page].graphics[gfx4_select[i]].font.size = gfx_font_select.size
+        end            
         update_gfx = true
+        glob_gfxselrect = CalcGFX4SelRect()
       end
     elseif mouse.context and mouse.context == contexts.shadxslider then
       local val = F_limit(MOUSE_sliderHBar(obj.sections[148]),0,1)
       if val ~= nil then
         gfx_font_select.shadow_x = math.floor((val*30)-15)
-        --for i = 1, #ctl_select do
-        strips[tracks[track_select].strip][page].graphics[gfx2_select].font.shadow_x = gfx_font_select.shadow_x
-        --end            
+        for i = 1, #gfx4_select do
+          strips[tracks[track_select].strip][page].graphics[gfx4_select[i]].font.shadow_x = gfx_font_select.shadow_x
+        end            
         update_gfx = true
       end
     elseif mouse.context and mouse.context == contexts.shadyslider then
       local val = F_limit(MOUSE_sliderHBar(obj.sections[149]),0,1)
       if val ~= nil then
         gfx_font_select.shadow_y = math.floor((val*30)-15)
-        --for i = 1, #ctl_select do
-        strips[tracks[track_select].strip][page].graphics[gfx2_select].font.shadow_y = gfx_font_select.shadow_y
-        --end            
+        for i = 1, #gfx4_select do
+          strips[tracks[track_select].strip][page].graphics[gfx4_select[i]].font.shadow_y = gfx_font_select.shadow_y
+        end            
         update_gfx = true
       end
     elseif mouse.context and mouse.context == contexts.shadaslider then
       local val = F_limit(MOUSE_sliderHBar(obj.sections[150]),0,1)
       if val ~= nil then
         gfx_font_select.shadow_a = val
-        --for i = 1, #ctl_select do
-        strips[tracks[track_select].strip][page].graphics[gfx2_select].font.shadow_a = gfx_font_select.shadow_a
-        --end            
+        for i = 1, #gfx4_select do
+          strips[tracks[track_select].strip][page].graphics[gfx4_select[i]].font.shadow_a = gfx_font_select.shadow_a
+        end            
         update_gfx = true
       end
 
@@ -37971,44 +38411,55 @@ function GUI_DrawCtlBitmap_Strips()
       local val = F_limit(MOUSE_sliderHBar(obj.sections[910]),0,1)
       if val ~= nil then
         gfxbright_select = val
-        strips[tracks[track_select].strip][page].graphics[gfx2_select].bright = gfxbright_select
+        for i = 1, #gfx4_select do
+          strips[tracks[track_select].strip][page].graphics[gfx4_select[i]].bright = gfxbright_select
+        end
         update_gfx = true
       end
     elseif mouse.context and mouse.context == contexts.gfxopt_contr then
       local val = F_limit(MOUSE_sliderHBar(obj.sections[911]),0,1)
       if val ~= nil then
         gfxcontr_select = val
-        strips[tracks[track_select].strip][page].graphics[gfx2_select].contr = gfxcontr_select
+        for i = 1, #gfx4_select do
+          strips[tracks[track_select].strip][page].graphics[gfx4_select[i]].contr = gfxcontr_select
+        end
         update_gfx = true
       end
-
 
     elseif mouse.context and mouse.context == contexts.gfxopt_r then
       local val = F_limit(MOUSE_sliderHBar(obj.sections[913]),0,1)
       if val ~= nil then
         gfxr_select = val
-        strips[tracks[track_select].strip][page].graphics[gfx2_select].rmult = gfxr_select
+        for i = 1, #gfx4_select do
+          strips[tracks[track_select].strip][page].graphics[gfx4_select[i]].rmult = gfxr_select
+        end
         update_gfx = true
       end
     elseif mouse.context and mouse.context == contexts.gfxopt_g then
       local val = F_limit(MOUSE_sliderHBar(obj.sections[914]),0,1)
       if val ~= nil then
         gfxg_select = val
-        strips[tracks[track_select].strip][page].graphics[gfx2_select].gmult = gfxg_select
+        for i = 1, #gfx4_select do
+          strips[tracks[track_select].strip][page].graphics[gfx4_select[i]].gmult = gfxg_select
+        end
         update_gfx = true
       end
     elseif mouse.context and mouse.context == contexts.gfxopt_b then
       local val = F_limit(MOUSE_sliderHBar(obj.sections[915]),0,1)
       if val ~= nil then
         gfxb_select = val
-        strips[tracks[track_select].strip][page].graphics[gfx2_select].bmult = gfxb_select
+        for i = 1, #gfx4_select do
+          strips[tracks[track_select].strip][page].graphics[gfx4_select[i]].bmult = gfxb_select
+        end
         update_gfx = true
       end
     elseif mouse.context and mouse.context == contexts.gfxopt_a then
       local val = F_limit(MOUSE_sliderHBar(obj.sections[916]),0,1)
       if val ~= nil then
         gfxa_select = val
-        strips[tracks[track_select].strip][page].graphics[gfx2_select].alpha = gfxa_select
+        for i = 1, #gfx4_select do
+          strips[tracks[track_select].strip][page].graphics[gfx4_select[i]].alpha = gfxa_select
+        end
         update_gfx = true
       end
       
@@ -38017,7 +38468,9 @@ function GUI_DrawCtlBitmap_Strips()
       if v then
         v=v-0.5
         gfxedgesz_select = F_limit(math.floor(draggfxedge.pos - v*96),0,127)
-        strips[tracks[track_select].strip][page].graphics[gfx2_select].edgesz = gfxedgesz_select
+        for i = 1, #gfx4_select do
+          strips[tracks[track_select].strip][page].graphics[gfx4_select[i]].edgesz = gfxedgesz_select
+        end
         update_bg = true
         update_gfx = true
       end
@@ -38115,6 +38568,7 @@ function GUI_DrawCtlBitmap_Strips()
         update_sidebar = true
       end
       update_surface = true
+    
     elseif draggfx ~= nil then
       --Dropped
       if mouse.mx > obj.sections[10].x and mouse.mx < obj.sections[10].x+obj.sections[10].w and mouse.my > obj.sections[10].y and mouse.my < obj.sections[10].y+obj.sections[10].h then
@@ -38134,13 +38588,16 @@ function GUI_DrawCtlBitmap_Strips()
       draggfx = nil
       update_gfx = true
     end
-  
-    if mouse.mx > obj.sections[10].x and clicklblopts == false then
+
+    --DBG('b'..tostring(clicklblopts))
+    if mouse.mx > obj.sections[10].x and clicklblopts ~= true then
+
       if strips and tracks[track_select] and strips[tracks[track_select].strip] then
       
-        if gfx2_select ~= nil then
-        
-          local selrect = CalcGFXSelRect()
+        if gfx4_select ~= nil then
+      
+          local clickrsz = false
+          local selrect = table.copy(glob_gfxselrect) --CalcGFX4SelRect()
           selrect.x = selrect.x - surface_offset.x + obj.sections[10].x
           selrect.y = selrect.y - surface_offset.y + obj.sections[10].y
           local xywh = {x = selrect.x+selrect.w-5,
@@ -38150,7 +38607,10 @@ function GUI_DrawCtlBitmap_Strips()
           if mouse.context == nil and MOUSE_click(xywh) then
             if poslock_select == false then
               mouse.context = contexts.stretch_x
-              gfx2_stretch = {mx = mouse.mx, sw = strips[tracks[track_select].strip][page].graphics[gfx2_select].stretchw}
+              gfx2_stretch = {mx = mouse.mx, sw = {}}
+              for g = 1, #gfx4_select do
+                gfx2_stretch.sw[g] = strips[tracks[track_select].strip][page].graphics[gfx4_select[g]].stretchw
+              end
             end
           end
 
@@ -38161,7 +38621,10 @@ function GUI_DrawCtlBitmap_Strips()
           if mouse.context == nil and MOUSE_click(xywh) then
             if poslock_select == false then
               mouse.context = contexts.stretch_y
-              gfx2_stretch = {my = mouse.my, sh = strips[tracks[track_select].strip][page].graphics[gfx2_select].stretchh}
+              gfx2_stretch = {my = mouse.my, sh = {}}
+              for g = 1, #gfx4_select do
+                gfx2_stretch.sh[g] = strips[tracks[track_select].strip][page].graphics[gfx4_select[g]].stretchh
+              end
             end
           end
 
@@ -38172,27 +38635,39 @@ function GUI_DrawCtlBitmap_Strips()
           if mouse.context == nil and MOUSE_click(xywh) then
             if poslock_select == false then
               mouse.context = contexts.stretch_xy
-              gfx2_stretch = {mx = mouse.mx, my = mouse.my, sw = strips[tracks[track_select].strip][page].graphics[gfx2_select].stretchw,
-                                                            sh = strips[tracks[track_select].strip][page].graphics[gfx2_select].stretchh}
+              gfx2_stretch = {mx = mouse.mx, my = mouse.my, sw = {}, sh = {}}
+              for g = 1, #gfx4_select do
+                gfx2_stretch.sw[g] = strips[tracks[track_select].strip][page].graphics[gfx4_select[g]].stretchw
+                gfx2_stretch.sh[g] = strips[tracks[track_select].strip][page].graphics[gfx4_select[g]].stretchh
+              end
             end
           end
         
           if mouse.context and mouse.context == contexts.stretch_x then
-          
-            strips[tracks[track_select].strip][page].graphics[gfx2_select].stretchw = math.max(math.floor((gfx2_stretch.sw + (mouse.mx-gfx2_stretch.mx))/settings_gridsize)*settings_gridsize,2)
+
+            for g = 1, #gfx4_select do
+              strips[tracks[track_select].strip][page].graphics[gfx4_select[g]].stretchw = math.max(math.floor((gfx2_stretch.sw[g] + (mouse.mx-gfx2_stretch.mx))/grids)*grids,2)
+            end
             update_gfx = true
+            glob_gfxselrect = CalcGFX4SelRect()
           
           elseif mouse.context and mouse.context == contexts.stretch_y then
           
-            strips[tracks[track_select].strip][page].graphics[gfx2_select].stretchh =  math.max(math.floor((gfx2_stretch.sh + (mouse.my-gfx2_stretch.my))/settings_gridsize)*settings_gridsize,2)
+            for g = 1, #gfx4_select do
+              strips[tracks[track_select].strip][page].graphics[gfx4_select[g]].stretchh =  math.max(math.floor((gfx2_stretch.sh[g] + (mouse.my-gfx2_stretch.my))/grids)*grids,2)
+            end
             update_gfx = true
-            
+            glob_gfxselrect = CalcGFX4SelRect()
+              
           elseif mouse.context and mouse.context == contexts.stretch_xy then
           
-            strips[tracks[track_select].strip][page].graphics[gfx2_select].stretchw = math.max(math.floor((gfx2_stretch.sw + (mouse.mx-gfx2_stretch.mx))/settings_gridsize)*settings_gridsize,2)
-            strips[tracks[track_select].strip][page].graphics[gfx2_select].stretchh = math.max(math.floor((gfx2_stretch.sh + (mouse.my-gfx2_stretch.my))/settings_gridsize)*settings_gridsize,2)
+            for g = 1, #gfx4_select do
+              strips[tracks[track_select].strip][page].graphics[gfx4_select[g]].stretchw = math.max(math.floor((gfx2_stretch.sw[g] + (mouse.mx-gfx2_stretch.mx))/grids)*grids,2)
+              strips[tracks[track_select].strip][page].graphics[gfx4_select[g]].stretchh = math.max(math.floor((gfx2_stretch.sh[g] + (mouse.my-gfx2_stretch.my))/grids)*grids,2)
+            end
             update_gfx = true
-
+            glob_gfxselrect = CalcGFX4SelRect()
+            
           end            
         
         end
@@ -38200,20 +38675,22 @@ function GUI_DrawCtlBitmap_Strips()
         local clickxywh = false
         if mouse.context == nil then
         
-          if mouse.LB or mouse.RB then
+          if MC() then --mouse.LB or mouse.RB --[[and clickedlblopts ~= true]] then
             local clickedon = false
             local loop = 1
             if settings_drawbglabelsontop then
               loop = 2
             end
+            
+            gfx2_select = nil
+            local xywh, gfxx
             for lp = 1, loop do
               if clickedon == true then
                 break
               end
              
               for i = #strips[tracks[track_select].strip][page].graphics,1,-1 do
-                local xywh
-                local gfxx = strips[tracks[track_select].strip][page].graphics[i]
+                gfxx = strips[tracks[track_select].strip][page].graphics[i]
                 
                 if loop == 1 or (lp == 1 and gfxx.gfxtype == lvar.gfxtype.txt) or (lp == 2 and gfxx.gfxtype == lvar.gfxtype.img) then 
                   xywh = {x = gfxx.x - surface_offset.x + obj.sections[10].x, 
@@ -38232,44 +38709,111 @@ function GUI_DrawCtlBitmap_Strips()
                   
                   if MOUSE_click(xywh) and Switcher_CtlsHidden(gfxx.switcher, gfxx.grpid) == false then
                     clickedon = true
-                    gfx2_select = i              
-      
-                    poslock_select = nz(strips[tracks[track_select].strip][page].graphics[gfx2_select].poslock,false)
-                    
-                    mouse.context = contexts.draggfx2
-                    draggfx2 = 'draggfx'
-                    dragoff = {x = mouse.mx - strips[tracks[track_select].strip][page].graphics[gfx2_select].x - surface_offset.x,
-                               y = mouse.my - strips[tracks[track_select].strip][page].graphics[gfx2_select].y - surface_offset.y}
-                    
-                    if strips[tracks[track_select].strip][page].graphics[gfx2_select].gfxtype == lvar.gfxtype.txt then
-                      show_lbloptions = true
-                      show_gfxoptions = false
-                      SetGfxSelectVals()
-                    else
-                      show_lbloptions = false
-                      show_gfxoptions = true
-                      SetGfxSelectVals2()
-                    end
-                    
-                    GenGFXDragPreview(gui)
-                    gfxx.hide = true
-                    
-                    update_gfx = true
-                    clickxywh = true
-                    break
+                    gfx2_select = i
+                    break      
+                                    
                   elseif lp == 1 and MOUSE_click_RB(xywh) then
                     GFXMenu()
                     clickxywh = true
                     break
+
                   end
                   
                 end
                 
               end
+
               if lp == 1 and clickxywh == false and MOUSE_click_RB(obj.sections[10]) then
                 GFXMenu()
               end
             end
+                    
+            if gfx2_select then
+              local i = gfx2_select
+                                              
+              if not gfx4_select then
+                gfx4_select = {}
+                gfx4_selectidx = {}
+              end
+              if mouse.ctrl then
+                if gfx4_selectidx[i] then
+                  gfx4_select = Table_RemoveEntry(gfx4_select, #gfx4_select, gfx4_selectidx[i])
+                  gfx4_selectidx = {}
+                  if #gfx4_select > 0 then
+                    for g = 1, #gfx4_select do
+                      gfx4_selectidx[gfx4_select[g]] = g  
+                    end
+                  else
+                    gfx4_select = nil
+                    gfx4_selectidx = nil
+                  end
+                else
+                  local gidx = #gfx4_select+1
+                  gfx4_select[gidx] = i
+                  gfx4_selectidx[i] = gidx
+                end                      
+              else
+                if not gfx4_selectidx[i] then
+                  gfx4_select = {}
+                  gfx4_selectidx = {}
+                  gfx4_select[1] = i
+                  gfx4_selectidx[i] = 1
+                end
+              end
+
+              glob_gfxselrect = CalcGFX4SelRect()
+
+              if gfx4_select then
+              
+                --poslock_select = strips[tracks[track_select].strip][page].graphics[gfx2_select].poslock or false
+                
+                mouse.context = contexts.draggfx2
+                draggfx2 = 'draggfx'                
+                
+                poslock_select = false
+                show_lbloptions = false
+                show_gfxoptions = false
+                
+                GenGFX4DragPreview(gui)
+                dragoff = {mx = mouse.mx, my = mouse.my, x = {}, y = {}}
+                for g = 1, #gfx4_select do
+                  local gfxx = strips[tracks[track_select].strip][page].graphics[gfx4_select[g]]
+                  dragoff.x[g] = gfxx.x
+                  dragoff.y[g] = gfxx.y
+                  gfxx.hide = true
+                  
+                  if gfxx.poslock then
+                    poslock_select = true
+                  end
+                  if gfxx.gfxtype == lvar.gfxtype.txt then
+                    show_lbloptions = true
+                  else
+                    show_gfxoptions = true
+                  end
+                  
+                end
+                if show_lbloptions == true and show_gfxoptions == true then
+                  show_lbloptions = false
+                  show_gfxoptions = false
+                elseif show_lbloptions == true then
+                  SetGfx4SelectVals()
+                elseif show_gfxoptions == true then
+                  SetGfx4SelectVals2()                
+                end
+                clickxywh = true
+                
+              elseif mouse.LB and clicklblopts ~= true then
+  
+                clicklblopts = false
+                gfx4_select = nil
+                gfx4_selectidx = nil
+                update_surface = true
+                
+              end              
+              update_gfx = true
+            
+            end
+              
           end
           
         end
@@ -38278,18 +38822,24 @@ function GUI_DrawCtlBitmap_Strips()
     end
               
     if mouse.context and mouse.context == contexts.draggfx2 then
-      if math.floor(mouse.mx/settings_gridsize) ~= math.floor(mouse.last_x/settings_gridsize) or math.floor(mouse.my/settings_gridsize) ~= math.floor(mouse.last_y/settings_gridsize) then
+      if math.floor(mouse.mx/grids) ~= math.floor(mouse.last_x/grids) or math.floor(mouse.my/grids) ~= math.floor(mouse.last_y/grids) then
         local i
-        if poslock_select == false then
-        
-          strips[tracks[track_select].strip][page].graphics[gfx2_select].x = math.floor((mouse.mx - surface_offset.x)/settings_gridsize)*settings_gridsize 
-                                                                             - math.floor((dragoff.x)/settings_gridsize)*settings_gridsize
-          strips[tracks[track_select].strip][page].graphics[gfx2_select].y = math.floor((mouse.my - surface_offset.y)/settings_gridsize)*settings_gridsize 
-                                                                             - math.floor((dragoff.y)/settings_gridsize)*settings_gridsize
+        local dx = dragoff.mx - mouse.mx
+        local dy = dragoff.my - mouse.my
+        for g = 1, #gfx4_select do
+          local gfxx = strips[tracks[track_select].strip][page].graphics[gfx4_select[g]]
+          if gfxx.poslock == false and poslock_select == false then
+          
+            gfxx.x = math.floor((dragoff.x[g]-dx)/grids)*grids 
+            gfxx.y = math.floor((dragoff.y[g]-dy)/grids)*grids 
+
+          end
         end
         update_surface = true
       end
+    
     elseif draggfx2 ~= nil then
+
       draggfx2 = nil
       if MOUSE_over(obj.sections[60]) then
         --delete
@@ -38297,9 +38847,16 @@ function GUI_DrawCtlBitmap_Strips()
         DeleteSelectedCtls()
         update_gfx = true
       else
-        if strips and strips[tracks[track_select].strip] and strips[tracks[track_select].strip][page].graphics[gfx2_select] then
-          strips[tracks[track_select].strip][page].graphics[gfx2_select].hide = nil
+        local strip = tracks[track_select].strip      
+        if strips and strips[strip] then
+          for g = 1, #gfx4_select do
+            local gfxx = strips[strip][page].graphics[gfx4_select[g]]
+            if gfxx then 
+              gfxx.hide = nil
+            end
+          end
         end
+              
         update_gfx = true
       end
     
@@ -42991,6 +43548,8 @@ function GUI_DrawCtlBitmap_Strips()
             ctl_select = nil
             gfx2_select = nil
             gfx3_select = nil
+            gfx4_select = nil
+            gfx4_selectidx = nil
             CloseActChooser()
             show_ctlbrowser = false
             
@@ -51275,6 +51834,8 @@ function GUI_DrawCtlBitmap_Strips()
       ctl_select = {}
       gfx2_select = nil
       gfx3_select = nil
+      gfx4_select = nil
+      gfx4_selectidx = nil
     
       for c = 1, #strips[strip][page].controls do
       
