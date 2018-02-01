@@ -240,6 +240,7 @@
               lv_dragstrip = 157,
               sb_movefav = 158,
               draggfx2_timer = 159,
+              dragctl_timer = 160,
               dummy = 999
               }
   
@@ -4278,6 +4279,7 @@
                  ['yellow'] = '200 200 0',
                  ['yellow1'] = '160 160 0',
                  ['bryellow'] = '220 220 0',
+                 ['bryellow1'] = '255 255 0',
                  ['cbobg'] = '4 4 4',
                  ['cbobg2'] = '64 64 64',
                  ['grey'] = '0 13 25', --'64 64 64',
@@ -15549,6 +15551,8 @@ function GUI_DrawCtlBitmap_Strips()
         
         if submode == 0 then
 
+          --DRAW SUBMODE 0
+
           if update_gfx or update_bg then
             GUI_DrawControlBackG(obj, gui)
             GUI_DrawControls(obj, gui)
@@ -15575,6 +15579,7 @@ function GUI_DrawCtlBitmap_Strips()
           --gfx.blit(1001,1,0,0,0,obj.sections[43].w,obj.sections[43].h,0,butt_h+2)
           if ctl_select ~= nil then
             selrect, selrect_sc = CalcSelRect()
+            local rc
             if movefrom_sc == nil then
               movefrom_sc = table.copy(selrect_sc)
             end
@@ -15584,7 +15589,7 @@ function GUI_DrawCtlBitmap_Strips()
               gfx.a = 0.5
               
               gfx.blit(1022,1,0,0,0,w,h,x,y) 
-
+              rc = gui.color.bryellow1
             end
           
             if newgrp ~= nil then
@@ -15655,7 +15660,7 @@ function GUI_DrawCtlBitmap_Strips()
               f_Get_SSV(gui.color.red)
               gfx.roundrect(movefrom_sc.x - surface_offset.x + obj.sections[10].x, movefrom_sc.y - surface_offset.y + obj.sections[10].y, movefrom_sc.w, movefrom_sc.h, 8, 1, 0)
               
-              f_Get_SSV(gui.color.yellow)
+              f_Get_SSV(rc or gui.color.yellow)
               gfx.roundrect(selrect_sc.x - surface_offset.x + obj.sections[10].x, selrect_sc.y - surface_offset.y + obj.sections[10].y, selrect_sc.w, selrect_sc.h, 8, 1, 0)
             end
           end
@@ -15855,54 +15860,25 @@ function GUI_DrawCtlBitmap_Strips()
             local x, y = draggfx.x, draggfx.y
             local w, h = gfx.getimgdim(1023)
             gfx.a = 0.5
-            
             gfx.blit(1023,1,0,0,0,w,h,x,y)          
           end
-
-          --[[if gfx2_select ~= nil then
-          
-            selrect = CalcGFXSelRect()
-            if selrect then
-              if draggfx2 ~= nil then 
-                local x, y = selrect.x - surface_offset.x + obj.sections[10].x+4, selrect.y - surface_offset.y + obj.sections[10].y+4
-                local w, h = gfx.getimgdim(1022)
-                gfx.a = 1
-                gfx.blit(1022,1,0,0,0,w,h,x,y) 
-              end
-
-              if poslock_select == true then
-                f_Get_SSV(gui.color.red)
-              else
-                f_Get_SSV(gui.color.yellow)
-              end
-              gfx.a = 1
-              selrect.x = selrect.x - surface_offset.x + obj.sections[10].x
-              selrect.y = selrect.y - surface_offset.y + obj.sections[10].y
-              
-              gfx.roundrect(selrect.x, selrect.y, selrect.w, selrect.h, 8, 1, 0)
-              if show_lbloptions == false then
-                gfx.circle(selrect.x+selrect.w,selrect.y+selrect.h/2,4,1,1)
-                gfx.circle(selrect.x+selrect.w,selrect.y+selrect.h,4,1,1)
-                gfx.circle(selrect.x+selrect.w/2,selrect.y+selrect.h,4,1,1)              
-              end
-            end            
-          
-          end]]
 
           if gfx4_select ~= nil then
             selrect = table.copy(glob_gfxselrect) --CalcGFX4SelRect()
             if selrect then
+              local rc
               if draggfx2 ~= nil then 
                 local x, y = selrect.x - surface_offset.x + obj.sections[10].x+4, selrect.y - surface_offset.y + obj.sections[10].y+4
                 local w, h = gfx.getimgdim(1022)
                 gfx.a = 1
                 gfx.blit(1022,1,0,0,0,w,h,x,y) 
+                rc = gui.color.bryellow1
               end
 
               if poslock_select == true then
                 f_Get_SSV(gui.color.red)
               else
-                f_Get_SSV(gui.color.yellow)
+                f_Get_SSV(rc or gui.color.yellow)
               end
               gfx.a = 1
               selrect.x = selrect.x - surface_offset.x + obj.sections[10].x
@@ -36398,19 +36374,12 @@ function GUI_DrawCtlBitmap_Strips()
                                y = mouse.my - strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].y - 0.5*strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].ctl_info.cellh - surface_offset.y}
                     mouse.context = contexts.dummy
                     if ctl_select ~= nil and not mouse.ctrl then --and not mouse.alt then
-                      dragctl = 'dragctl'
-                      mouse.context = contexts.dragctl
-                      GenCtlDragPreview(gui)
-                      A_HideSelectedCtls(true, ctl_select, gfx3_select)
-                      --[[for i = 1, #ctl_select do
-                        strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].hide = true
-                      end
-                      if gfx3_select and #gfx3_select > 0 then
-                        for i = 1, #gfx3_select do
-                          strips[tracks[track_select].strip][page].graphics[gfx3_select[i].ctl].hide = true  
-                        end                    
-                      end]]
-                      --SetCtlBitmapRedraw()
+                      --dragctl = 'dragctl'
+                      mouse.context = contexts.dragctl_timer
+                      dragctl_timer = reaper.time_precise() + 0.2
+                      --GenCtlDragPreview(gui)
+                      --A_HideSelectedCtls(true, ctl_select, gfx3_select)
+                      
                     end
                     if settings_dragmode == false then
                       update_bg = true
@@ -36860,8 +36829,17 @@ function GUI_DrawCtlBitmap_Strips()
           update_ctlopts = true
         end
       end
-          
-      if mouse.context and mouse.context == contexts.dragctl then
+      
+      if mouse.context and mouse.context == contexts.dragctl_timer then
+        if reaper.time_precise() > dragctl_timer then
+          dragctl = 'dragctl'
+          mouse.context = contexts.dragctl
+          GenCtlDragPreview(gui)
+          A_HideSelectedCtls(true, ctl_select, gfx3_select)
+          update_surface = true
+        end
+                    
+      elseif mouse.context and mouse.context == contexts.dragctl then
 
         local ctls = strips[tracks[track_select].strip][page].controls
         newgrp = nil
@@ -38903,20 +38881,20 @@ function GUI_DrawCtlBitmap_Strips()
               
                 --poslock_select = strips[tracks[track_select].strip][page].graphics[gfx2_select].poslock or false
                 mouse.context = contexts.draggfx2_timer
-                dg2_timer = reaper.time_precise()+0.3
+                dg2_timer = reaper.time_precise()+0.2
                 
                 poslock_select = false
                 show_lbloptions = false
                 show_gfxoptions = false
                 
-                draggfx2 = 'draggfx'                
-                GenGFX4DragPreview(gui)
-                dragoff = {mx = mouse.mx, my = mouse.my, x = {}, y = {}}
+                --draggfx2 = 'draggfx'                
+                --GenGFX4DragPreview(gui)
+                --dragoff = {mx = mouse.mx, my = mouse.my, x = {}, y = {}}
                 for g = 1, #gfx4_select do
                   local gfxx = strips[tracks[track_select].strip][page].graphics[gfx4_select[g]]
-                  dragoff.x[g] = gfxx.x
+                  --[[dragoff.x[g] = gfxx.x
                   dragoff.y[g] = gfxx.y
-                  gfxx.hide = true
+                  gfxx.hide = true]]
                   
                   if gfxx.poslock then
                     poslock_select = true
@@ -38948,7 +38926,7 @@ function GUI_DrawCtlBitmap_Strips()
                 update_surface = true
                 
               end              
-              update_gfx = true
+              update_surface = true
             
             end
               
@@ -38963,6 +38941,16 @@ function GUI_DrawCtlBitmap_Strips()
       
       if reaper.time_precise() > dg2_timer then
         mouse.context = contexts.draggfx2
+        draggfx2 = 'draggfx'
+        GenGFX4DragPreview(gui)
+        dragoff = {mx = mouse.mx, my = mouse.my, x = {}, y = {}}
+        for g = 1, #gfx4_select do
+          local gfxx = strips[tracks[track_select].strip][page].graphics[gfx4_select[g]]
+          dragoff.x[g] = gfxx.x
+          dragoff.y[g] = gfxx.y
+          gfxx.hide = true
+        end
+        update_gfx = true
       end
     
     elseif mouse.context and mouse.context == contexts.draggfx2 then
