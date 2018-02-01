@@ -38852,6 +38852,7 @@ function GUI_DrawCtlBitmap_Strips()
 
           end
         end
+        glob_gfxselrect = CalcGFX4SelRect()
         update_surface = true
       end
     
