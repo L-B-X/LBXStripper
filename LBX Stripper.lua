@@ -15940,11 +15940,11 @@ function GUI_DrawCtlBitmap_Strips()
           
           gfx.blit(1001,1,0,0,0,obj.sections[43].w,obj.sections[43].h,0,0)
 
-          if show_lbloptions and gfx2_select ~= nil then            
+          if show_lbloptions and gfx4_select ~= nil then            
             GUI_DrawLblOptions(obj, gui)
           end
 
-          if show_gfxoptions and gfx2_select ~= nil then            
+          if show_gfxoptions and gfx4_select ~= nil then            
             GUI_DrawGFXOptions(obj, gui)
           end
 
@@ -38945,27 +38945,36 @@ function GUI_DrawCtlBitmap_Strips()
         draggfx2 = 'draggfx'
         GenGFX4DragPreview(gui)
         dragoff = {mx = mouse.mx, my = mouse.my, x = {}, y = {}}
+        local l, t = 2048, 2048
         for g = 1, #gfx4_select do
           local gfxx = strips[tracks[track_select].strip][page].graphics[gfx4_select[g]]
           dragoff.x[g] = gfxx.x
           dragoff.y[g] = gfxx.y
+          l = math.min(l, gfxx.x)
+          t = math.min(t, gfxx.y)
           gfxx.hide = true
         end
+        dragoff.left = l
+        dragoff.top = t
         update_gfx = true
       end
     
     elseif mouse.context and mouse.context == contexts.draggfx2 then
       if math.floor(mouse.mx/grids) ~= math.floor(mouse.last_x/grids) or math.floor(mouse.my/grids) ~= math.floor(mouse.last_y/grids) then
         local i
-        local dx = dragoff.mx - mouse.mx
-        local dy = dragoff.my - mouse.my
+        local ddx = dragoff.mx - mouse.mx
+        local ddy = dragoff.my - mouse.my
+        local dx = (math.floor((dragoff.left-ddx)/grids)*grids)-dragoff.left
+        local dy = (math.floor((dragoff.top-ddy)/grids)*grids)-dragoff.top
         for g = 1, #gfx4_select do
           local gfxx = strips[tracks[track_select].strip][page].graphics[gfx4_select[g]]
           if gfxx.poslock == false and poslock_select == false then
           
-            gfxx.x = math.floor((dragoff.x[g]-dx)/grids)*grids 
-            gfxx.y = math.floor((dragoff.y[g]-dy)/grids)*grids 
-
+            --gfxx.x = math.floor((dragoff.x[g]-dx)/grids)*grids 
+            --gfxx.y = math.floor((dragoff.y[g]-dy)/grids)*grids 
+            gfxx.x = dragoff.x[g]+dx
+            gfxx.y = dragoff.y[g]+dy
+            
           end
         end
         glob_gfxselrect = CalcGFX4SelRect()
