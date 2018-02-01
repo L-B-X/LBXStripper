@@ -15690,9 +15690,8 @@ function GUI_DrawCtlBitmap_Strips()
               UpdateLEdges()
             end
           end
-                    
+
           if show_ctloptions and ctl_select ~= nil then
-            
             local w,h = gfx.getimgdim(1021)
             gfx.a = 0.5
             gfx.blit(1021,1,0,0,0,w,h,obj.sections[60].x,obj.sections[60].y)
@@ -36379,7 +36378,7 @@ function GUI_DrawCtlBitmap_Strips()
                       dragctl_timer = reaper.time_precise() + 0.2
                       --GenCtlDragPreview(gui)
                       --A_HideSelectedCtls(true, ctl_select, gfx3_select)
-                      
+                      update_ctlopts = true
                     end
                     if settings_dragmode == false then
                       update_bg = true
@@ -37038,6 +37037,7 @@ function GUI_DrawCtlBitmap_Strips()
         
         lasso = nil
         update_ctls = true
+        update_ctlopts = true
       end
     
       if MOUSE_click(obj.sections[521]) then
@@ -37926,7 +37926,6 @@ function GUI_DrawCtlBitmap_Strips()
       
       end
     
-
       if ctl_select ~= nil then
         show_ctloptions = true
       else
