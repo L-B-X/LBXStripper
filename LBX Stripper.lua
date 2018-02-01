@@ -38857,15 +38857,17 @@ function GUI_DrawCtlBitmap_Strips()
                 poslock_select = false
                 show_lbloptions = false
                 show_gfxoptions = false
-                for g = 1, #gfx4_select do
-                  local gfxx = strips[tracks[track_select].strip][page].graphics[gfx4_select[g]]
-                  if gfxx.poslock then
-                    poslock_select = true
-                  end
-                  if gfxx.gfxtype == lvar.gfxtype.txt then
-                    show_lbloptions = true
-                  else
-                    show_gfxoptions = true
+                if gfx4_select then
+                  for g = 1, #gfx4_select do
+                    local gfxx = strips[tracks[track_select].strip][page].graphics[gfx4_select[g]]
+                    if gfxx.poslock then
+                      poslock_select = true
+                    end
+                    if gfxx.gfxtype == lvar.gfxtype.txt then
+                      show_lbloptions = true
+                    else
+                      show_gfxoptions = true
+                    end
                   end
                 end
                 if show_lbloptions == true and show_gfxoptions == true then
@@ -38939,7 +38941,7 @@ function GUI_DrawCtlBitmap_Strips()
               
     if mouse.context and mouse.context == contexts.draggfx2_timer then
       
-      if reaper.time_precise() > dg2_timer then
+      if reaper.time_precise() > dg2_timer and gfx4_select then
         mouse.context = contexts.draggfx2
         draggfx2 = 'draggfx'
         GenGFX4DragPreview(gui)
@@ -38982,10 +38984,12 @@ function GUI_DrawCtlBitmap_Strips()
       else
         local strip = tracks[track_select].strip      
         if strips and strips[strip] then
-          for g = 1, #gfx4_select do
-            local gfxx = strips[strip][page].graphics[gfx4_select[g]]
-            if gfxx then 
-              gfxx.hide = nil
+          if gfx4_select then
+            for g = 1, #gfx4_select do
+              local gfxx = strips[strip][page].graphics[gfx4_select[g]]
+              if gfxx then 
+                gfxx.hide = nil
+              end
             end
           end
         end
