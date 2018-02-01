@@ -15945,6 +15945,24 @@ function GUI_DrawCtlBitmap_Strips()
             gfx.a = 1
           end
           
+          if lasso ~= nil then
+            gfx.a = 0.2
+            f_Get_SSV(gui.color.blue)
+            local l = {l = lasso.l, r = lasso.r, t = lasso.t, b = lasso.b}
+            if lasso.r < lasso.l then
+              l.l = lasso.r
+              l.r = lasso.l
+            end
+            if lasso.b < lasso.t then
+              l.b = lasso.t
+              l.t = lasso.b          
+            end
+            gfx.rect(l.l,
+                     l.t, 
+                     l.r-l.l,
+                     l.b-l.t, 1, 1)
+          end
+          
           gfx.blit(1001,1,0,0,0,obj.sections[43].w,obj.sections[43].h,0,0)
 
           if show_lbloptions and gfx2_select ~= nil then            
@@ -18815,7 +18833,53 @@ function GUI_DrawCtlBitmap_Strips()
   end
     
   ------------------------------------------------------------    
+  function Lasso_Select_Gfx(shift)
+    
+    gfx4_select = nil
+    local l = {l = lasso.l, r = lasso.r, t = lasso.t, b = lasso.b}
+    if lasso.r < lasso.l then
+      l.l = lasso.r
+      l.r = lasso.l
+    end
+    if lasso.b < lasso.t then
+      l.b = lasso.t
+      l.t = lasso.b
+    end
 
+    local strip = tracks[track_select].strip  
+    if strips and strips[strip] then
+    
+      if #strips[tracks[track_select].strip][page].graphics > 0 then
+      
+        for i = 1, #strips[tracks[track_select].strip][page].graphics do
+          local g
+          local gfxx = strips[tracks[track_select].strip][page].graphics[i]
+          g = {x = gfxx.x - surface_offset.x + obj.sections[10].x,
+                     y = gfxx.y - surface_offset.y + obj.sections[10].y,
+                     w = gfxx.stretchw,
+                     h = gfxx.stretchh}
+          if ((l.l <= g.x and l.r >= g.x+g.w) or (l.l <= g.x+g.w and l.r >= g.x)) and ((l.t <= g.y and l.b >= g.y+g.h) or (l.t <= g.y+g.h and l.b >= g.y)) then 
+
+            if Switcher_CtlsHidden(gfxx.switcher, gfxx.grpid) == false then
+              if gfx4_select == nil then
+                gfx4_select = {}
+                gfx4_selectidx = {}
+              end 
+              local cs = #gfx4_select+1
+              gfx4_select[cs] = {}
+              gfx4_select[cs] = i
+              gfx4_selectidx[i] = cs
+              --gfx4_select[cs].relx = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].x - strips[tracks[track_select].strip][page].graphics[i].x
+              --gfx4_select[cs].rely = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].y - strips[tracks[track_select].strip][page].graphics[i].y
+            end
+          end
+        end
+      end
+  
+    end
+    
+  end
+    
   function Lasso_Select(shift)
   
     ctl_select = nil
@@ -36942,6 +37006,7 @@ function GUI_DrawCtlBitmap_Strips()
         if math.abs(lasso.l - mouse.mx) > 10 or math.abs(lasso.t - mouse.my) > 10 then
           lasso.r = mouse.mx
           lasso.b = mouse.my
+          lasso.trig = true
           Lasso_Select(mouse.shift)
           if ctl_select ~= nil then
             SetCtlSelectVals()
@@ -36955,7 +37020,7 @@ function GUI_DrawCtlBitmap_Strips()
        
         if math.abs(lasso.l-lasso.r) < 10 and math.abs(lasso.t-lasso.b) < 10 then
         -- == mouse.mx and lasso.t == mouse.my then
-          if ctl_select ~= nil then
+          if lasso.trig ~= true and ctl_select then
             --[[if #ctl_select == 1 and strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].ctlcat == ctlcats.switcher then
               switcher_select = ctl_select[1].ctl
               SwitcherMenu_RB()
@@ -38586,6 +38651,10 @@ function GUI_DrawCtlBitmap_Strips()
       mouse.context = contexts.dragsep_gfx
       dragsep_gfx = {y = mouse.my, oh = gx_h}
     
+    elseif mouse.context == nil and (MOUSE_click_RB(obj.sections[10])) then 
+    
+      mouse.context = contexts.draglasso
+      lasso = {l = mouse.mx, t = mouse.my, r = mouse.mx+5, b = mouse.my+5}
     end
     
     if mouse.context and mouse.context == contexts.draggfx then
@@ -38752,10 +38821,10 @@ function GUI_DrawCtlBitmap_Strips()
                     gfx2_select = i
                     break      
                                     
-                  elseif lp == 1 and MOUSE_click_RB(xywh) then
-                    GFXMenu()
-                    clickxywh = true
-                    break
+                  --elseif lp == 1 and MOUSE_click_RB(xywh) then
+                    --GFXMenu()
+                    --clickxywh = true
+                    --break
 
                   end
                   
@@ -38763,9 +38832,9 @@ function GUI_DrawCtlBitmap_Strips()
                 
               end
 
-              if lp == 1 and clickxywh == false and MOUSE_click_RB(obj.sections[10]) then
-                GFXMenu()
-              end
+              --if lp == 1 and clickxywh == false and MOUSE_click_RB(obj.sections[10]) then
+              --  GFXMenu()
+              --end
             end
                     
             if gfx2_select then
@@ -38944,6 +39013,47 @@ function GUI_DrawCtlBitmap_Strips()
       obj = GetObjects()
       update_sidebar = true
     
+    elseif mouse.context and mouse.context == contexts.draglasso then
+      if math.abs(lasso.l - mouse.mx) > 10 or math.abs(lasso.t - mouse.my) > 10 then
+        lasso.r = mouse.mx
+        lasso.b = mouse.my
+        lasso.trig = true
+        Lasso_Select_Gfx(false)
+        glob_gfxselrect = CalcGFX4SelRect()
+        
+        update_surface = true
+      end
+    elseif lasso ~= nil then
+      
+      if gfx4_select then
+        poslock_select = false
+        show_lbloptions = false
+        show_gfxoptions = false
+        for g = 1, #gfx4_select do
+          local gfxx = strips[tracks[track_select].strip][page].graphics[gfx4_select[g]]
+          if gfxx.poslock then
+            poslock_select = true
+          end
+          if gfxx.gfxtype == lvar.gfxtype.txt then
+            show_lbloptions = true
+          else
+            show_gfxoptions = true
+          end
+        end
+        if show_lbloptions == true and show_gfxoptions == true then
+          show_lbloptions = false
+          show_gfxoptions = false
+        elseif show_lbloptions == true then
+          SetGfx4SelectVals()
+        elseif show_gfxoptions == true then
+          SetGfx4SelectVals2()                
+        end                
+      end      
+      if lasso.trig ~= true then
+        GFXMenu()        
+      end
+      lasso = nil
+      update_surface = true
     end             
     
     
