@@ -239,6 +239,7 @@
               sb_dragstrip2 = 156,
               lv_dragstrip = 157,
               sb_movefav = 158,
+              draggfx2_timer = 159,
               dummy = 999
               }
   
@@ -15819,6 +15820,8 @@ function GUI_DrawCtlBitmap_Strips()
           
         elseif submode == 1 then
         
+          --DRAW SUBMODE 1
+        
           if update_gfx or update_bg then
             GUI_DrawControlBackG(obj, gui)
             GUI_DrawControls(obj, gui)
@@ -27952,14 +27955,16 @@ function GUI_DrawCtlBitmap_Strips()
   
   end
 
-  function ArrowKey_Shift(char, ctl_select, gfx3_select, gfx2_select)
+  function ArrowKey_Shift(char, ctl_select, gfx3_select, gfx4_select)
   
+    local shifted
     local shiftsize = settings_gridsize
     if mouse.shift then
       shiftsize = 1
     end
     
     if char == 0x6C656674 then -- left arrow
+      shifted = true
       if ctl_select and #ctl_select > 0 then
         for i = 1,#ctl_select do
           if strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].poslock == false then
@@ -27979,21 +27984,25 @@ function GUI_DrawCtlBitmap_Strips()
                         strips[tracks[track_select].strip][page].graphics[gfx3_select[i].ctl].x - shiftsize
         end
       end
-      if gfx2_select then
-        if strips[tracks[track_select].strip][page].graphics[gfx2_select].poslock == false then
-        
-          if submode == 1 and mouse.ctrl then
-            strips[tracks[track_select].strip][page].graphics[gfx2_select].stretchw = 
-                          strips[tracks[track_select].strip][page].graphics[gfx2_select].stretchw - shiftsize          
-          else
-            strips[tracks[track_select].strip][page].graphics[gfx2_select].x = 
-                          strips[tracks[track_select].strip][page].graphics[gfx2_select].x - shiftsize
-          end        
+      if gfx4_select and #gfx4_select > 0 then
+        for i = 1, #gfx4_select do
+          local gfx2_select = gfx4_select[i]
+          if strips[tracks[track_select].strip][page].graphics[gfx2_select].poslock == false then
+          
+            if submode == 1 and mouse.ctrl then
+              strips[tracks[track_select].strip][page].graphics[gfx2_select].stretchw = 
+                            strips[tracks[track_select].strip][page].graphics[gfx2_select].stretchw - shiftsize          
+            else
+              strips[tracks[track_select].strip][page].graphics[gfx2_select].x = 
+                            strips[tracks[track_select].strip][page].graphics[gfx2_select].x - shiftsize
+            end        
+          end
         end
       end
       update_gfx = true
       SetCtlBitmapRedraw()
     elseif char == 0x72676874 then -- right arrow
+      shifted = true
       if ctl_select and #ctl_select > 0 then
         for i = 1,#ctl_select do
           if strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].poslock == false then
@@ -28013,21 +28022,25 @@ function GUI_DrawCtlBitmap_Strips()
                         strips[tracks[track_select].strip][page].graphics[gfx3_select[i].ctl].x + shiftsize
         end
       end
-      if gfx2_select then
-        if strips[tracks[track_select].strip][page].graphics[gfx2_select].poslock == false then
-
-          if submode == 1 and mouse.ctrl then
-            strips[tracks[track_select].strip][page].graphics[gfx2_select].stretchw = 
-                          strips[tracks[track_select].strip][page].graphics[gfx2_select].stretchw + shiftsize          
-          else
-            strips[tracks[track_select].strip][page].graphics[gfx2_select].x = 
-                          strips[tracks[track_select].strip][page].graphics[gfx2_select].x + shiftsize
+      if gfx4_select and #gfx4_select > 0 then
+        for i = 1, #gfx4_select do
+          local gfx2_select = gfx4_select[i]
+          if strips[tracks[track_select].strip][page].graphics[gfx2_select].poslock == false then
+  
+            if submode == 1 and mouse.ctrl then
+              strips[tracks[track_select].strip][page].graphics[gfx2_select].stretchw = 
+                            strips[tracks[track_select].strip][page].graphics[gfx2_select].stretchw + shiftsize          
+            else
+              strips[tracks[track_select].strip][page].graphics[gfx2_select].x = 
+                            strips[tracks[track_select].strip][page].graphics[gfx2_select].x + shiftsize
+            end
           end
         end
       end
       update_gfx = true
       SetCtlBitmapRedraw()
     elseif char == 0x7570 then -- up arrow
+      shifted = true
       if ctl_select and #ctl_select > 0 then
         for i = 1,#ctl_select do
           if strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].poslock == false then
@@ -28047,22 +28060,26 @@ function GUI_DrawCtlBitmap_Strips()
                         strips[tracks[track_select].strip][page].graphics[gfx3_select[i].ctl].y - shiftsize
         end
       end
-      if gfx2_select then
-        if strips[tracks[track_select].strip][page].graphics[gfx2_select].poslock == false then
-
-          if submode == 1 and mouse.ctrl then
-            strips[tracks[track_select].strip][page].graphics[gfx2_select].stretchh = 
-                          strips[tracks[track_select].strip][page].graphics[gfx2_select].stretchh - shiftsize          
-          else
-            strips[tracks[track_select].strip][page].graphics[gfx2_select].y = 
-                          strips[tracks[track_select].strip][page].graphics[gfx2_select].y - shiftsize
+      if gfx4_select and #gfx4_select > 0 then
+        for i = 1, #gfx4_select do
+          local gfx2_select = gfx4_select[i]
+          if strips[tracks[track_select].strip][page].graphics[gfx2_select].poslock == false then
+  
+            if submode == 1 and mouse.ctrl then
+              strips[tracks[track_select].strip][page].graphics[gfx2_select].stretchh = 
+                            strips[tracks[track_select].strip][page].graphics[gfx2_select].stretchh - shiftsize          
+            else
+              strips[tracks[track_select].strip][page].graphics[gfx2_select].y = 
+                            strips[tracks[track_select].strip][page].graphics[gfx2_select].y - shiftsize
+            end
+            
           end
-          
         end
       end
       update_gfx = true
       SetCtlBitmapRedraw()
     elseif char == 0x646F776E then -- down arrow
+      shifted = true
       if ctl_select and #ctl_select > 0 then
         for i = 1,#ctl_select do
           if strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].poslock == false then
@@ -28082,24 +28099,28 @@ function GUI_DrawCtlBitmap_Strips()
                         strips[tracks[track_select].strip][page].graphics[gfx3_select[i].ctl].y + shiftsize
         end
       end
-      if gfx2_select then
-        if strips[tracks[track_select].strip][page].graphics[gfx2_select].poslock == false then
-
-          if submode == 1 and mouse.ctrl then
-            strips[tracks[track_select].strip][page].graphics[gfx2_select].stretchh = 
-                          strips[tracks[track_select].strip][page].graphics[gfx2_select].stretchh + shiftsize          
-          else
-            strips[tracks[track_select].strip][page].graphics[gfx2_select].y = 
-                          strips[tracks[track_select].strip][page].graphics[gfx2_select].y + shiftsize
+      if gfx4_select and #gfx4_select > 0 then
+        for i = 1, #gfx4_select do
+          local gfx2_select = gfx4_select[i]
+          if strips[tracks[track_select].strip][page].graphics[gfx2_select].poslock == false then
+  
+            if submode == 1 and mouse.ctrl then
+              strips[tracks[track_select].strip][page].graphics[gfx2_select].stretchh = 
+                            strips[tracks[track_select].strip][page].graphics[gfx2_select].stretchh + shiftsize          
+            else
+              strips[tracks[track_select].strip][page].graphics[gfx2_select].y = 
+                            strips[tracks[track_select].strip][page].graphics[gfx2_select].y + shiftsize
+            end
+            
           end
-          
         end
       end
       update_gfx = true
       SetCtlBitmapRedraw()
     end
     movefrom_sc = nil                
-  
+
+    return shifted  
   end
 
   function Copy_Selected()
@@ -29233,7 +29254,7 @@ function GUI_DrawCtlBitmap_Strips()
         if mouse.context == nil then
           if ((submode == 0 and ctl_select ~= nil) and (MOUSE_click(obj.sections[45]) or (MOUSE_click(obj.sections[100]) and show_cycleoptions) 
               or (MOUSE_click(obj.sections[200]) and show_ctlbrowser)) or (MOUSE_click(obj.sections[800]) and show_gaugeedit)) or 
-             ((submode == 1 and gfx2_select ~= nil) and (MOUSE_over(obj.sections[49]) and (show_lbloptions == true or show_gfxoptions == true))) then
+             ((submode == 1 and gfx4_select ~= nil) and (MOUSE_over(obj.sections[49]) and (show_lbloptions == true or show_gfxoptions == true))) then
   
           elseif mouse.mx > obj.sections[10].x and show_actionchooser == false then
             if MOUSE_click(obj.sections[10]) then
@@ -38235,7 +38256,9 @@ function GUI_DrawCtlBitmap_Strips()
     
     if gfx4_select ~= nil and char ~= 0 then
     
-      ArrowKey_Shift(char,nil,nil,gfx2_select)
+      if ArrowKey_Shift(char,nil,nil,gfx4_select) then
+        glob_gfxselrect = CalcGFX4SelRect()
+      end
     
     elseif gfx4_select ~= nil and show_lbloptions and (MOUSE_click(obj.sections[49]) or MOUSE_click_RB(obj.sections[49])) then
       
@@ -38747,6 +38770,7 @@ function GUI_DrawCtlBitmap_Strips()
                     
             if gfx2_select then
               local i = gfx2_select
+              local dflag
                                               
               if not gfx4_select then
                 gfx4_select = {}
@@ -38764,6 +38788,7 @@ function GUI_DrawCtlBitmap_Strips()
                     gfx4_select = nil
                     gfx4_selectidx = nil
                   end
+                  dflag = true
                 else
                   local gidx = #gfx4_select+1
                   gfx4_select[gidx] = i
@@ -38780,17 +38805,42 @@ function GUI_DrawCtlBitmap_Strips()
 
               glob_gfxselrect = CalcGFX4SelRect()
 
-              if gfx4_select then
+              if dflag then
+                mouse.context = contexts.dummy
+                poslock_select = false
+                show_lbloptions = false
+                show_gfxoptions = false
+                for g = 1, #gfx4_select do
+                  local gfxx = strips[tracks[track_select].strip][page].graphics[gfx4_select[g]]
+                  if gfxx.poslock then
+                    poslock_select = true
+                  end
+                  if gfxx.gfxtype == lvar.gfxtype.txt then
+                    show_lbloptions = true
+                  else
+                    show_gfxoptions = true
+                  end
+                end
+                if show_lbloptions == true and show_gfxoptions == true then
+                  show_lbloptions = false
+                  show_gfxoptions = false
+                elseif show_lbloptions == true then
+                  SetGfx4SelectVals()
+                elseif show_gfxoptions == true then
+                  SetGfx4SelectVals2()                
+                end                
+
+              elseif gfx4_select then
               
                 --poslock_select = strips[tracks[track_select].strip][page].graphics[gfx2_select].poslock or false
-                
-                mouse.context = contexts.draggfx2
-                draggfx2 = 'draggfx'                
+                mouse.context = contexts.draggfx2_timer
+                dg2_timer = reaper.time_precise()+0.3
                 
                 poslock_select = false
                 show_lbloptions = false
                 show_gfxoptions = false
                 
+                draggfx2 = 'draggfx'                
                 GenGFX4DragPreview(gui)
                 dragoff = {mx = mouse.mx, my = mouse.my, x = {}, y = {}}
                 for g = 1, #gfx4_select do
@@ -38809,6 +38859,9 @@ function GUI_DrawCtlBitmap_Strips()
                   end
                   
                 end
+                clickxywh = true
+                
+                
                 if show_lbloptions == true and show_gfxoptions == true then
                   show_lbloptions = false
                   show_gfxoptions = false
@@ -38817,10 +38870,9 @@ function GUI_DrawCtlBitmap_Strips()
                 elseif show_gfxoptions == true then
                   SetGfx4SelectVals2()                
                 end
-                clickxywh = true
                 
               elseif mouse.LB and clicklblopts ~= true then
-  
+
                 clicklblopts = false
                 gfx4_select = nil
                 gfx4_selectidx = nil
@@ -38838,7 +38890,13 @@ function GUI_DrawCtlBitmap_Strips()
       end
     end
               
-    if mouse.context and mouse.context == contexts.draggfx2 then
+    if mouse.context and mouse.context == contexts.draggfx2_timer then
+      
+      if reaper.time_precise() > dg2_timer then
+        mouse.context = contexts.draggfx2
+      end
+    
+    elseif mouse.context and mouse.context == contexts.draggfx2 then
       if math.floor(mouse.mx/grids) ~= math.floor(mouse.last_x/grids) or math.floor(mouse.my/grids) ~= math.floor(mouse.last_y/grids) then
         local i
         local dx = dragoff.mx - mouse.mx
