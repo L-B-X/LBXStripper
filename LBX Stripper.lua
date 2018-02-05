@@ -6014,11 +6014,16 @@ elseif dragparam.type == 'rs5k' then
     
       gfx.loadimg(iidx,paths.skins_path..skin_select..fn)
       return iidx
+    elseif reaper.file_exists(paths.skins_path..defskin_select..fn) then
+
+      gfx.loadimg(iidx,paths.skins_path..defskin_select..fn)
+      return iidx
+          
     else
       if ignoremissing ~= true then
         DBG('Skin file: '..fn..' missing.  Please ensure you have the latest skin folder from LBXCS_resources.zip on github installed inside your LBXCS_resources folder.')
       end
-      return -1
+      return -2
     end
     
   end
@@ -6062,41 +6067,44 @@ elseif dragparam.type == 'rs5k' then
     skin.panela_cnrbr = LoadSkinIMG(876, 'PanelA_CornerBR.png', true)
     skin.panela_cnrtl = LoadSkinIMG(877, 'PanelA_CornerTL.png', true)
     skin.panela_cnrtr = LoadSkinIMG(878, 'PanelA_CornerTR.png', true)
-    skin.sbicon = LoadSkinIMG(879, 'sbdeficon.png', true)
-    skin.stripctlbtns = LoadSkinIMG(880, 'stripctlbtns.png', true)
-    skin.stripctlbtnsX = LoadSkinIMG(881, 'stripctlbtnsX.png', true)
-    --skin.led = LoadSkinIMG(869, 'LBX_Button32_Yellow.png')
+    skin.sbicon = LoadSkinIMG(879, 'sbdeficon.png')
+    skin.stripctlbtns = LoadSkinIMG(880, 'stripctlbtns.png')
+    skin.stripctlbtnsX = LoadSkinIMG(881, 'stripctlbtnsX.png')
+    skin.stripctlbtnslock = LoadSkinIMG(882, 'stripctlbtnslock.png')
+    skin.padlock = LoadSkinIMG(883, 'padlock_red.png')
   
-    if skin.panela_top == -1 or 
-       skin.panela_mid == -1 or 
-       skin.panela_bot == -1 or 
-       skin.slider_fg == -1 or 
-       skin.butt18 == -1 or 
-       skin.butt18G == -1 or 
-       skin.butt18R == -1 or 
-       skin.butt18T == -1 or 
-       skin.bar == -1 or 
-       skin.barR == -1 or 
-       skin.barUD == -1 or
-       skin.arrowup == -1 or
-       skin.arrowdn == -1 or
-       skin.highlight == -1 or
-       skin.barG == -1 or
-       skin.butt18Y == -1 or 
-       skin.slidbutt == -1 or
-       skin.star == -1 or
-       --skin.led == -1 or
-       skin.starout == -1 or
-       skin.morph_pop == -1 or
-       skin.morph_popbar == -1 or
-       skin.morph_popbarr == -1 or
-       skin.morph_lp == -1 or
-       skin.updn == -1 or
-       skin.lr == -1 or
-       skin.sbicon == -1 or
-       skin.stripctlbtns == -1 or
-       skin.stripctlbtnsX == -1
+    if skin.panela_top == -2 or 
+       skin.panela_mid == -2 or 
+       skin.panela_bot == -2 or 
+       skin.slider_fg == -2 or 
+       skin.butt18 == -2 or 
+       skin.butt18G == -2 or 
+       skin.butt18R == -2 or 
+       skin.butt18T == -2 or 
+       skin.bar == -2 or 
+       skin.barR == -2 or 
+       skin.barUD == -2 or
+       skin.arrowup == -2 or
+       skin.arrowdn == -2 or
+       skin.highlight == -2 or
+       skin.barG == -2 or
+       skin.butt18Y == -2 or 
+       skin.slidbutt == -2 or
+       skin.star == -2 or
+       skin.starout == -2 or
+       skin.morph_pop == -2 or
+       skin.morph_popbar == -2 or
+       skin.morph_popbarr == -2 or
+       skin.morph_lp == -2 or
+       skin.updn == -2 or
+       skin.lr == -2 or
+       skin.sbicon == -2 or
+       skin.stripctlbtns == -2 or
+       skin.stripctlbtnsX == -2 or
+       skin.stripctlbtnslock == -2 or
+       skin.padlock == -2
        then
+      OpenMsgBox(1,'A skin file is missing.  Please update your resources folder.',1)
       ret = false   
     end
   
@@ -10135,7 +10143,10 @@ function GUI_DrawCtlBitmap_Strips()
                   gfx.blit(def_xytarget,1,0, 0, 0, ppw, pph, ppx, ppy)
                 
                 end
-                
+                if ctl.ctllock then
+                  local iw, ih = gfx.getimgdim(skin.padlock)                  
+                  gfx.blit(skin.padlock,1,0, 0, 0, iw, ih, px --[[+ math.floor((w/2)*scale - (iw/2))]], py --[[+ math.floor((h/2)*scale - (ih/2))]])
+                end
                 ctl.tl1 = text_len1x
                 ctl.tl2 = text_len2x
                 ctl.th1 = text_len1y
@@ -15361,7 +15372,14 @@ function GUI_DrawCtlBitmap_Strips()
           local x = obj.sections[10].x+lvar.stripctlboxX.x-dx
           local y = obj.sections[10].y+lvar.stripctlboxX.y-dy
           local iw, ih = gfx.getimgdim(skin.stripctlbtnsX)
-          gfx.blit(skin.stripctlbtnsX,1,0,0,0,iw,ih,x,y) 
+          gfx.blit(skin.stripctlbtnsX,1,0,0,0,iw,ih,x,y)
+          
+          if lvar.stripctlbox.ctl then
+            local iw, ih = gfx.getimgdim(skin.stripctlbtnslock)
+            local x = obj.sections[10].x+(lvar.stripctlbox.ctl.x)-dx --+math.floor(lvar.stripctlbox.ctl.w/2-iw/2) 
+            local y = obj.sections[10].y+(lvar.stripctlbox.ctl.y)-dy --+lvar.stripctlbox.ctl.h-2
+            gfx.blit(skin.stripctlbtnslock,1,0,0,0,iw,ih,x,y)             
+          end
         end
 
         if plist_w > 0 and not matrixoff then                  
@@ -15580,7 +15598,7 @@ function GUI_DrawCtlBitmap_Strips()
           if ctl_select ~= nil then
             selrect, selrect_sc = CalcSelRect()
             local rc
-            if movefrom_sc == nil then
+            if movefrom_sc == nil or ctlscaling then
               movefrom_sc = table.copy(selrect_sc)
             end
             if dragctl ~= nil then 
@@ -15658,10 +15676,10 @@ function GUI_DrawCtlBitmap_Strips()
                             
               gfx.a = 1
               f_Get_SSV(gui.color.red)
-              gfx.roundrect(movefrom_sc.x - surface_offset.x + obj.sections[10].x, movefrom_sc.y - surface_offset.y + obj.sections[10].y, movefrom_sc.w, movefrom_sc.h, 8, 1, 0)
+              gfx.roundrect(math.floor(movefrom_sc.x - surface_offset.x + obj.sections[10].x), math.floor(movefrom_sc.y - surface_offset.y + obj.sections[10].y), math.floor(movefrom_sc.w), math.floor(movefrom_sc.h), 8, 1, 0)
               
               f_Get_SSV(rc or gui.color.yellow)
-              gfx.roundrect(selrect_sc.x - surface_offset.x + obj.sections[10].x, selrect_sc.y - surface_offset.y + obj.sections[10].y, selrect_sc.w, selrect_sc.h, 8, 1, 0)
+              gfx.roundrect(math.floor(selrect_sc.x - surface_offset.x + obj.sections[10].x), math.floor(selrect_sc.y - surface_offset.y + obj.sections[10].y), math.floor(selrect_sc.w), math.floor(selrect_sc.h), 8, 1, 0)
             end
           end
                     
@@ -20544,6 +20562,7 @@ function GUI_DrawCtlBitmap_Strips()
       
       
       for j = 1, #stripdata.strip.controls do
+        stripdata.strip.controls[j].ctllock = nil
         if (stripdata.strip.controls[j].ctlcat == ctlcats.fxparam 
             or stripdata.strip.controls[j].ctlcat == ctlcats.fxoffline
             or stripdata.strip.controls[j].ctlcat == ctlcats.fxgui
@@ -24414,13 +24433,12 @@ function GUI_DrawCtlBitmap_Strips()
       end        
     elseif sstype_select > 1 then
       local fm, lp = FaderMenu(-1, true)
-      mstr = 'Delete subset|Delete all subsets||Clone to subset (ctls only)||'..fm
+      mstr = 'Delete subset|Delete all subsets||Delete Empty/Orphaned Subsets||Clone to subset (ctls only)||'..fm
       gfx.x, gfx.y = snapmx, snapmy
       local res = OpenMenu(mstr)
       if res > 0 then
         if res == 1 then
         
-         
           Snapshot_DeleteSubset(tracks[track_select].strip, page, sstype_select)
           SetCtlBitmapRedraw()
           update_gfx = true
@@ -24432,6 +24450,13 @@ function GUI_DrawCtlBitmap_Strips()
           end                  
 
         elseif res == 3 then
+          local strip = tracks[track_select].strip
+          Snapshot_DeleteOrphanedSubsets(strip, page)
+          if sstype_select > #snapshots[strip][page] then
+            sstype_select = #snapshots[strip][page]
+          end
+          update_snaps = true
+        elseif res == 4 then
           local newsst = Snapshot_CloneToSubset(tracks[track_select].strip, page, sstype_select, false)
           if newsst then
             sstype_select = newsst
@@ -24440,7 +24465,7 @@ function GUI_DrawCtlBitmap_Strips()
 
         else
           local f = {targettype = 5}
-          res = res -3
+          res = res -4
           if res ~= lastp then
             AssignFader(res, f)            
           elseif res == lastp then
@@ -25078,17 +25103,20 @@ function GUI_DrawCtlBitmap_Strips()
           mod = '||#Clear Modulator'
         end    
       
+        
+        local unl = '||Unlock All Controls'
         if ccat == ctlcats.fxparam then
-          mstr = fft..'Faderbox learn (global)'..ff..'||'..fd..mod..'||Param Modulation||Enter value||'..mido..'||Open FX window||Add Envelope|Add All Envelopes For Plugin||'..mm..'Snapshots||>Tools|<Regenerate ID   (emergency only)||Toggle Topbar|Toggle Sidebar||'..lspfx..'Lock Surface'
+          mstr = fft..'Faderbox learn (global)'..ff..'||'..fd..mod..'||Param Modulation||Enter value||'..mido..'||Open FX window||Add Envelope|Add All Envelopes For Plugin||'..mm..'Snapshots||>Tools|<Regenerate ID   (emergency only)||Toggle Topbar|Toggle Sidebar||'..lspfx..'Lock Surface'..unl
         elseif ccat == ctlcats.trackparam or ccat == ctlcats.tracksend or ccat == ctlcats.macro or ccat == ctlcats.snapshot then
-          mstr = fft..'Faderbox learn (global)'..ff..'||'..fd..mod..'|#Param Modulation||Enter value||'..mido..'||#Open FX window||#Add Envelope|#Add All Envelopes For Plugin||'..mm..'Snapshots||>Tools|<Regenerate ID   (emergency only)||Toggle Topbar|Toggle Sidebar||'..lspfx..'Lock Surface'..snap                  
+          mstr = fft..'Faderbox learn (global)'..ff..'||'..fd..mod..'|#Param Modulation||Enter value||'..mido..'||#Open FX window||#Add Envelope|#Add All Envelopes For Plugin||'..mm..'Snapshots||>Tools|<Regenerate ID   (emergency only)||Toggle Topbar|Toggle Sidebar||'..lspfx..'Lock Surface'..unl..snap                  
         else
-          mstr = fft..'#Faderbox learn (global)'..ff..'||'..fd..mod..'|#Param Modulation||Enter value||'..mido..'||#Open FX window||#Add Envelope|#Add All Envelopes For Plugin||'..mm..'Snapshots||>Tools|<Regenerate ID   (emergency only)||Toggle Topbar|Toggle Sidebar||'..lspfx..'Lock Surface'                  
+          mstr = fft..'#Faderbox learn (global)'..ff..'||'..fd..mod..'|#Param Modulation||Enter value||'..mido..'||#Open FX window||#Add Envelope|#Add All Envelopes For Plugin||'..mm..'Snapshots||>Tools|<Regenerate ID   (emergency only)||Toggle Topbar|Toggle Sidebar||'..lspfx..'Lock Surface'..unl                  
         end
+
         --if ccat ~= ctlcats.macro then
-          if #strip_favs > 0 then
-            mstr = mstr .. '||#>Insert strip (favorites)'                  
-          end
+          --if #strip_favs > 0 then
+          --  mstr = mstr .. '||#>Insert strip (favorites)'                  
+          --end
           trackfxparam_select = i
           gfx.x, gfx.y = mouse.mx, mouse.my
           res = OpenMenu(mstr)
@@ -25190,10 +25218,13 @@ function GUI_DrawCtlBitmap_Strips()
             elseif res == 14 +lastp then
               settings_locksurface = not settings_locksurface
             elseif res == 15 +lastp then
-              ctl.param_info.paramnum = nil
+              UnlockControls(tracks[track_select].strip,page)
+              
             elseif res == 16 +lastp then
-              ctl.param_info.paramnum = 1
+              ctl.param_info.paramnum = nil
             elseif res == 17 +lastp then
+              ctl.param_info.paramnum = 1
+            elseif res == 18 +lastp then
               local xsstype_select = ctl.param
               if snapshots and snapshots[strip] and snapshots[strip][page][xsstype_select] 
                                           and snapshots[strip][page][xsstype_select].selected then
@@ -25238,7 +25269,7 @@ function GUI_DrawCtlBitmap_Strips()
         lspfx = '!'
       end
       mstr = mstr .. '||#Faderbox learn (global)|#Modulation||#Enter value||#Open FX window||'..mm..'Snapshots||Toggle Topbar|Toggle Sidebar||'..lspfx..'Lock Surface'..
-                     '||>Envelopes|Bypass Envelopes|Enable Envelopes|Clear Envelopes||Bypass Strip Envelopes|Enable Strip Envelopes|Clear Strip Envelopes'
+                     '||>Envelopes|Bypass Envelopes|Enable Envelopes|Clear Envelopes||Bypass Strip Envelopes|Enable Strip Envelopes|<Clear Strip Envelopes||Unlock All Controls'
       
       gfx.x, gfx.y = mouse.mx, mouse.my
       res = OpenMenu(mstr) 
@@ -25279,6 +25310,9 @@ function GUI_DrawCtlBitmap_Strips()
         elseif res == sfcnt + 14 then
           --delete strip envs
           Envelopes_SetProps(nil,nil,nil,true,tracks[track_select].strip,page)
+        elseif res == sfcnt + 15 then
+          --unlock controls
+          UnlockControls(tracks[track_select].strip,page)
         end
       end
       
@@ -25344,6 +25378,24 @@ function GUI_DrawCtlBitmap_Strips()
       end
     end    
 
+  end
+  
+  function UnlockControls(strip, page, stripid)
+  
+    if strips[strip] then
+      for c = 1, #strips[strip][page].controls do
+      
+        local ctl = strips[strip][page].controls[c]
+        if not stripid or ctl.id == stripid then
+          if ctl.ctllock == true then
+            ctl.ctllock = nil
+            SetCtlDirty(c)
+          end
+          update_ctls = true
+        end
+      end
+    end
+  
   end
   
   function InsStrip(fn, dragmode)
@@ -27134,8 +27186,10 @@ function GUI_DrawCtlBitmap_Strips()
                       strips[strip][page].controls[c].val = faders[p+1].val
                       strips[strip][page].controls[c].dirty = true
                       local ctl = strips[strip][page].controls[c]
-                      A_SetParam(strip,page,c,ctl)
-                      update_ctls = true
+                      if ctl.ctllock ~= true then
+                        A_SetParam(strip,page,c,ctl)
+                        update_ctls = true
+                      end
                     else
                       DeleteFader(p+1)
                     end 
@@ -27177,7 +27231,7 @@ function GUI_DrawCtlBitmap_Strips()
                             if faders[p+1].to == true then
                               ctl.oval = ctl.val
                               ctl.val = faders[p+1].val
-                              if ctl.oval ~= ctl.val then
+                              if ctl.oval ~= ctl.val and ctl.ctllock ~= true then
                                 A_SetParam(strip,page,c,ctl)
                                 ctl.dirty = true
                                 update_ctls = true
@@ -27190,9 +27244,11 @@ function GUI_DrawCtlBitmap_Strips()
                             
                             ctl.val = F_limit(ctl.val + (v),0,1)
                             --if ctl.oval ~= ctl.val then
-                              A_SetParam(strip,page,c,ctl)
-                              ctl.dirty = true
-                              update_ctls = true
+                              if ctl.ctllock ~= true then
+                                A_SetParam(strip,page,c,ctl)
+                                ctl.dirty = true
+                                update_ctls = true
+                              end
                             --end
                             ctl.oval = ctl.val
                             --[[if ctl.oval == 1 then
@@ -27302,7 +27358,7 @@ function GUI_DrawCtlBitmap_Strips()
                 local page = faders[p+1].page
                 local c = faders[p+1].ctl
                 local ctl = strips[strip][page].controls[c]
-                if ctl then
+                if ctl and ctl.ctllock ~= true then
                   local t = strips[strip].track.tracknum
                   if ctl.tracknum ~= nil then
                     t = ctl.tracknum
@@ -27576,7 +27632,7 @@ function GUI_DrawCtlBitmap_Strips()
   end
 
   function keypress(char)
-    --DBG(char)
+    --DBG(tostring(mouse.ctrl)..'  '..char)
     
     if settings_disablekeysonlockedsurface and settings_locksurface then return end
     
@@ -27600,7 +27656,16 @@ function GUI_DrawCtlBitmap_Strips()
         obj = GetObjects()
         update_surface = true
         update_topbar = true
-        
+      elseif char == 3 then
+        if mode == 1 and submode == 0 then
+          Copy_Selected()
+        end
+      elseif char == 22 then
+        if mode == 1 and submode == 0 then
+          Paste_Selected()
+          SetCtlBitmapRedraw()
+          update_gfx = true          
+        end
       elseif char == 46 then
         local t = track_select + 1
         if gpage == true then
@@ -28206,12 +28271,15 @@ function GUI_DrawCtlBitmap_Strips()
 
           cstart = #ctls + 1
       
+          local copyflag
           for c = 1, #copy_ctls.ctls do
             local nc = #ctls+1
             local ctbl = GetControlTable(copy_ctls.strip, copy_ctls.page, copy_ctls.ctls[c])
             ctbl.poslock = false
-            if ctbl.ctlcat ~= ctlcats.snapshot and ctbl.ctlcat ~= ctlcats.xy and ctbl.ctlcat ~= ctlcats.eqcontrol then
+            if (ctbl.ctlcat ~= ctlcats.snapshot and ctbl.ctlcat ~= ctlcats.xy and ctbl.ctlcat ~= ctlcats.eqcontrol and ctbl.ctlcat ~= ctlcats.snapshotrand) or
+               (copy_ctls.strip == strip and copy_ctls.page == page) then
             
+              copyflag = true
               ctls[nc] = ctbl
               cids[strips[copy_ctls.strip][copy_ctls.page].controls[copy_ctls.ctls[c]].c_id] = {cid = ctls[nc].c_id,
                                                                                                 ctl = nc}
@@ -28233,53 +28301,55 @@ function GUI_DrawCtlBitmap_Strips()
             end
           end
   
-          dx = strips[tracks[track_select].strip][page].controls[cstart].x - (mouse.mx+surface_offset.x-obj.sections[10].x) 
-          dy = strips[tracks[track_select].strip][page].controls[cstart].y - (mouse.my+surface_offset.y-obj.sections[10].y)
-  
-          ctl_select = nil
-          
-          for c = cstart, #ctls do
-  
-            strips[tracks[track_select].strip][page].controls[c].x = strips[tracks[track_select].strip][page].controls[c].x - dx
-            strips[tracks[track_select].strip][page].controls[c].y = strips[tracks[track_select].strip][page].controls[c].y - dy
-            strips[tracks[track_select].strip][page].controls[c].xsc = strips[tracks[track_select].strip][page].controls[c].xsc - dx
-            strips[tracks[track_select].strip][page].controls[c].ysc = strips[tracks[track_select].strip][page].controls[c].ysc - dy
-            strips[tracks[track_select].strip][page].controls[c].id = nil
-          
-            if ctl_select == nil then
-              ctl_select = {} 
-              ctl_select[1] = {ctl = c}
-            else
-              local cs = #ctl_select+1
-              ctl_select[cs] = {}
-              ctl_select[cs].ctl = c
-              ctl_select[cs].relx = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].x - strips[tracks[track_select].strip][page].controls[c].x
-              ctl_select[cs].rely = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].y - strips[tracks[track_select].strip][page].controls[c].y
-            end
+          if copyflag then
+            dx = strips[tracks[track_select].strip][page].controls[cstart].x - (mouse.mx+surface_offset.x-obj.sections[10].x) 
+            dy = strips[tracks[track_select].strip][page].controls[cstart].y - (mouse.my+surface_offset.y-obj.sections[10].y)
+    
+            ctl_select = nil
             
-            if ctls[c].ctlcat == ctlcats.macro then
+            for c = cstart, #ctls do
+    
+              strips[tracks[track_select].strip][page].controls[c].x = strips[tracks[track_select].strip][page].controls[c].x - dx
+              strips[tracks[track_select].strip][page].controls[c].y = strips[tracks[track_select].strip][page].controls[c].y - dy
+              strips[tracks[track_select].strip][page].controls[c].xsc = strips[tracks[track_select].strip][page].controls[c].xsc - dx
+              strips[tracks[track_select].strip][page].controls[c].ysc = strips[tracks[track_select].strip][page].controls[c].ysc - dy
+              strips[tracks[track_select].strip][page].controls[c].id = nil
             
-              local macro = ctls[c].macroctl
-              if macro and #macro > 0 then
+              if ctl_select == nil then
+                ctl_select = {} 
+                ctl_select[1] = {ctl = c}
+              else
+                local cs = #ctl_select+1
+                ctl_select[cs] = {}
+                ctl_select[cs].ctl = c
+                ctl_select[cs].relx = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].x - strips[tracks[track_select].strip][page].controls[c].x
+                ctl_select[cs].rely = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].y - strips[tracks[track_select].strip][page].controls[c].y
+              end
               
-                local mcnt = #macro
-                local nils = false
-                for m = 1, mcnt do
-                  
-                  local mcid = macro[m].c_id 
-                  if cids[mcid] then
-                    macro[m].ctl = cids[mcid].ctl
-                    macro[m].c_id = cids[mcid].cid
-                  else
-                    macro[m] = nil
-                    nils = true
-                  end
+              if ctls[c].ctlcat == ctlcats.macro then
               
-                end
+                local macro = ctls[c].macroctl
+                if macro and #macro > 0 then
                 
-                if nils then
-                  local mtbl = Table_RemoveNils(macro, mcnt)
-                  strips[strip][page].controls[c].macroctl = mtbl                
+                  local mcnt = #macro
+                  local nils = false
+                  for m = 1, mcnt do
+                    
+                    local mcid = macro[m].c_id 
+                    if cids[mcid] then
+                      macro[m].ctl = cids[mcid].ctl
+                      macro[m].c_id = cids[mcid].cid
+                    else
+                      macro[m] = nil
+                      nils = true
+                    end
+                
+                  end
+                  
+                  if nils then
+                    local mtbl = Table_RemoveNils(macro, mcnt)
+                    strips[strip][page].controls[c].macroctl = mtbl                
+                  end
                 end
               end
             end
@@ -28336,65 +28406,68 @@ function GUI_DrawCtlBitmap_Strips()
           end
         end        
         
-        --switchers
-        local swstart = #switchers+1
-        local nsflag = false
-        for c = cstart, #ctls do
-          if ctls[c].ctlcat == ctlcats.switcher then
-            local stab = GetSwitcherTable(ctls[c].switcherid)
-            --table.insert(stab, switchers[ctls[c].switcherid]) 
-            ns = #switchers+1
-            nsflag = true
-            switchers[ns] = stab
-            swids[ctls[c].switcherid] = ns
-            
-          end      
-        end
-        if nsflag then
-          for s = swstart, #switchers do
-            if switchers[s].parent and swids[switchers[s].parent.switcherid] then
-              switchers[s].parent.switcherid = swids[switchers[s].parent.switcherid]
-              switchers[s].parent.grpid = grids[switchers[s].parent.grpid]
-            else
-              switchers[s].parent = nil
-            end
-            if switchers[s].grpids and #switchers[s].grpids > 0 then
-              for g = 1, #switchers[s].grpids do
-                if grids[switchers[s].grpids[g].id] then
-                  switchers[s].grpids[g].id = grids[switchers[s].grpids[g].id]
+        if copyflag then
+          --switchers
+          local swstart = #switchers+1
+          local nsflag = false
+          for c = cstart, #ctls do
+            if ctls[c].ctlcat == ctlcats.switcher then
+              local stab = GetSwitcherTable(ctls[c].switcherid)
+              --table.insert(stab, switchers[ctls[c].switcherid]) 
+              ns = #switchers+1
+              nsflag = true
+              switchers[ns] = stab
+              swids[ctls[c].switcherid] = ns
+              
+            end      
+          end
+          if nsflag then
+            for s = swstart, #switchers do
+              if switchers[s].parent and swids[switchers[s].parent.switcherid] then
+                switchers[s].parent.switcherid = swids[switchers[s].parent.switcherid]
+                switchers[s].parent.grpid = grids[switchers[s].parent.grpid]
+              else
+                switchers[s].parent = nil
+              end
+              if switchers[s].grpids and #switchers[s].grpids > 0 then
+                for g = 1, #switchers[s].grpids do
+                  if grids[switchers[s].grpids[g].id] then
+                    switchers[s].grpids[g].id = grids[switchers[s].grpids[g].id]
+                  else
+                    switchers[s].grpids[g].id = GenID()
+                  end
+                end
+              end
+              if switchers[s].current and grids[switchers[s].current] then
+                switchers[s].current = grids[switchers[s].current]
+              else
+                if switchers[s].grpids and switchers[s].grpids[1] then
+                  switchers[s].current = switchers[s].grpids[1].id
                 else
-                  switchers[s].grpids[g].id = GenID()
+                  switchers[s].current = -1
                 end
               end
             end
-            if switchers[s].current and grids[switchers[s].current] then
-              switchers[s].current = grids[switchers[s].current]
-            else
-              if switchers[s].grpids and switchers[s].grpids[1] then
-                switchers[s].current = switchers[s].grpids[1].id
+          end
+          
+          for c = cstart, #ctls do
+            if ctls[c].switcherid then
+              if swids[ctls[c].switcherid] then
+                ctls[c].switcherid = swids[ctls[c].switcherid]
               else
-                switchers[s].current = -1
+              
               end
             end
-          end
+            if ctls[c].switcher then
+              if swids[ctls[c].switcher] then
+                ctls[c].switcher = swids[ctls[c].switcher]
+              else
+                ctls[c].switcher = nil
+              end
+            end
+          end 
         end
         
-        for c = cstart, #ctls do
-          if ctls[c].switcherid then
-            if swids[ctls[c].switcherid] then
-              ctls[c].switcherid = swids[ctls[c].switcherid]
-            else
-            
-            end
-          end
-          if ctls[c].switcher then
-            if swids[ctls[c].switcher] then
-              ctls[c].switcher = swids[ctls[c].switcher]
-            else
-              ctls[c].switcher = nil
-            end
-          end
-        end 
         if gstart then
           for c = gstart, #gfxx do
             if gfxx[c].switcher then
@@ -29552,7 +29625,7 @@ function GUI_DrawCtlBitmap_Strips()
                 end
                 if m.targets[t].targettype == 1 then
                   local ctl = strips[m.targets[t].strip][m.targets[t].page].controls[m.targets[t].ctl]
-                  if val ~= ctl.val then
+                  if ctl.ctllock ~= true and val ~= ctl.val then
                     --DBG(val..'  '..ctl.val)
                     SetParam3(m.targets[t]. strip,m.targets[t].page,m.targets[t].ctl,ctl,val)
                     update_ctls = true
@@ -30407,6 +30480,17 @@ function GUI_DrawCtlBitmap_Strips()
           
           cbdragstrip = nil
         
+        elseif lvar.stripctlbox.ctl and MOUSE_over(lvar.stripctlbox.ctl,mouse.mx-obj.sections[10].x+surface_offset.x, mouse.my-obj.sections[10].y+surface_offset.y) then
+        
+          if MC() then
+            xclicked = true
+            local strip = tracks[track_select].strip
+            local ctl = strips[strip][page].controls[lvar.stripctlbox.ctl.ctl]
+            ctl.ctllock = not (ctl.ctllock or false)
+            SetCtlDirty(lvar.stripctlbox.ctl.ctl)
+            update_ctls = true
+          end
+          
         elseif mouse.alt and not mouse.altlatch and not mouse.LB and not mouse.RB and MOUSE_over(obj.sections[10]) then
             
           CreateStripCB()
@@ -32604,9 +32688,15 @@ function GUI_DrawCtlBitmap_Strips()
         local c = GetControlAtXY(strip, page, mouse.mx, mouse.my)
         if c then
           local ctl = strips[strip][page].controls[c]
-          if ctl.ctlcat == ctlcats.fxparam or 
-             ctl.ctlcat == ctlcats.fxoffline then
-            OpenFXGUI(ctl)
+          if mouse.shift then
+            ctl.ctllock = not (ctl.ctllock or false)
+            SetCtlDirty(lvar.stripctlbox.ctl.ctl)
+            update_ctls = true
+          else
+            if ctl.ctlcat == ctlcats.fxparam or 
+               ctl.ctlcat == ctlcats.fxoffline then
+              OpenFXGUI(ctl)
+            end
           end
         end
       end
@@ -32637,8 +32727,9 @@ function GUI_DrawCtlBitmap_Strips()
                        y = ctl.ysc - surface_offset.y +obj.sections[10].y, 
                        w = ctl.wsc, 
                        h = ctl.hsc} 
+            noscroll = (ctls[i].ctllock or noscroll)
           end
-          if i and not ctls[i].hidden then
+          if i and not ctls[i].hidden and not ctls[i].ctllock then
             if ctls[i].fxfound then
               if MOUSE_LB() and not mouse.ctrl and not mouse.alt then
                 local ctltype = ctls[i].ctltype
@@ -34716,6 +34807,16 @@ function GUI_DrawCtlBitmap_Strips()
                                         h = lvar.stripdim.data[stripidx].b-lvar.stripdim.data[stripidx].t}
           update_surface = true
         end
+        if c and lvar.stripctlbox.idx == stripidx and (lvar.stripctlbox.ctl == nil or c ~= lvar.stripctlbox.ctl.ctl) then
+          lvar.stripctlbox.ctl = {ctl = c}
+          local ctl = strips[strip][page].controls[c]
+          local iw, ih = gfx.getimgdim(skin.stripctlbtnslock)
+          lvar.stripctlbox.ctl.x = ctl.xsc + math.floor(ctl.wsc/2 - iw/2)
+          lvar.stripctlbox.ctl.y = ctl.ysc + ctl.hsc-2
+          lvar.stripctlbox.ctl.w = iw
+          lvar.stripctlbox.ctl.h = ih
+          update_surface = true        
+        end
       elseif lvar.stripctlbox.idx then
         lvar.stripctlbox = {}
         update_surface = true
@@ -35951,6 +36052,7 @@ function GUI_DrawCtlBitmap_Strips()
               strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].hsc = ctl_files[knob_select].cellh*scale
             end
             SetCtlBitmapRedraw()
+            movefrom_sc = nil
             update_gfx = true
           elseif mouse.context == nil and MOUSE_click(obj.sections[48]) then
             if fontlist then
@@ -36686,6 +36788,13 @@ function GUI_DrawCtlBitmap_Strips()
       
       elseif ctlscaling then
         ctlscaling = nil
+        --if movefrom_sc ~= nil then
+          if selrect_sc then
+            movefrom_sc = table.copy(selrect_sc)
+          else
+            movefrom_sc = nil
+          end
+        --end
         update_gfx = true
       end
 
@@ -47206,6 +47315,7 @@ function GUI_DrawCtlBitmap_Strips()
                                     scalemode = tonumber(zn(data[key..'scalemodex'],8)),
                                     framemode = tonumber(zn(data[key..'framemodex'],1)),
                                     poslock = tobool(zn(data[key..'poslock'],false)),
+                                    ctllock = tobool(zn(data[key..'ctllock'])),
                                     horiz = tobool(zn(data[key..'horiz'],false)),
                                     macrofader = tonumber(zn(data[key..'macrofader'])),
                                     mod = tonumber(zn(data[key..'mod'])),
@@ -50413,6 +50523,7 @@ function GUI_DrawCtlBitmap_Strips()
               file:write('['..key..'scalemodex]'..nz(stripdata.controls[c].scalemode,8)..'\n')   
               file:write('['..key..'framemodex]'..nz(stripdata.controls[c].framemode,1)..'\n')   
               file:write('['..key..'poslock]'..nz(tostring(stripdata.controls[c].poslock),false)..'\n')   
+              file:write('['..key..'ctllock]'..nz(tostring(stripdata.controls[c].ctllock),false)..'\n')   
               file:write('['..key..'horiz]'..tostring(nz(stripdata.controls[c].horiz,false))..'\n')
               file:write('['..key..'knobsens_norm]'..tostring(nz(stripdata.controls[c].knobsens.norm,settings_defknobsens.norm))..'\n')
               file:write('['..key..'knobsens_fine]'..tostring(nz(stripdata.controls[c].knobsens.fine,settings_defknobsens.fine))..'\n')                 
@@ -51401,98 +51512,99 @@ function GUI_DrawCtlBitmap_Strips()
       for cc = 1, #rctls do
         local rctl = rctls[cc]
         local ctl = ctls[rctls[cc].ctl]
-        if rctl.linkgrp then
-          if not lg[rctl.linkgrp] then
-            lg[rctl.linkgrp] = {}          
-          end
-          local lgptr = #lg[rctl.linkgrp]+1
-          lg[rctl.linkgrp][lgptr] = cc
-        elseif ctl.ctltype ~= 4 then
-          local prob = math.random()
-          if prob <= rctl.rprob then
-            
-            local v
-            local wild = math.random()
-            if rctl.wild == 0 or wild >= rctl.wild then
-              v = math.random()*(rctl.amount or 1)
-              local bias = math.random()
-              if (rctl.amount or 0) == 0 then
-                if bias > rctl.bias then
-                  v = ctl.val - (ctl.val-math.min(rctl.min,ctl.val))*v
+        if ctl.ctllock ~= true then
+          if rctl.linkgrp then
+            if not lg[rctl.linkgrp] then
+              lg[rctl.linkgrp] = {}          
+            end
+            local lgptr = #lg[rctl.linkgrp]+1
+            lg[rctl.linkgrp][lgptr] = cc
+          elseif ctl.ctltype ~= 4 then
+            local prob = math.random()
+            if prob <= rctl.rprob then
+              
+              local v
+              local wild = math.random()
+              if rctl.wild == 0 or wild >= rctl.wild then
+                v = math.random()*(rctl.amount or 1)
+                local bias = math.random()
+                if (rctl.amount or 0) == 0 then
+                  if bias > rctl.bias then
+                    v = ctl.val - (ctl.val-math.min(rctl.min,ctl.val))*v
+                  else
+                    v = ctl.val + (rctl.max-math.min(ctl.val,rctl.max))*v              
+                  end                        
+                  v = F_limit(v,rctl.min,rctl.max)
                 else
-                  v = ctl.val + (rctl.max-math.min(ctl.val,rctl.max))*v              
-                end                        
-                v = F_limit(v,rctl.min,rctl.max)
-              else
-                if rctl.snap == true then
-                  local a = round(rctl.amount,5)
-                  local cnt = 0
-                  repeat
-                    cnt = cnt + 1
-                    if bias > rctl.bias then
-                      local r = math.random()*(ctl.val-math.min(rctl.min,ctl.val))
-                      v = -round((r / a)) * a
-                    else
-                      local r = math.random()*(rctl.max-math.min(ctl.val,rctl.max))
-                      v = round((r / a)) * a
+                  if rctl.snap == true then
+                    local a = round(rctl.amount,5)
+                    local cnt = 0
+                    repeat
+                      cnt = cnt + 1
+                      if bias > rctl.bias then
+                        local r = math.random()*(ctl.val-math.min(rctl.min,ctl.val))
+                        v = -round((r / a)) * a
+                      else
+                        local r = math.random()*(rctl.max-math.min(ctl.val,rctl.max))
+                        v = round((r / a)) * a
+                      end
+                    until (ctl.val+v > 0 and ctl.val+v < 1) or cnt == 5
+                    if ctl.val+v < 0 or ctl.val+v > 1 then
+                      v = 0
                     end
-                  until (ctl.val+v > 0 and ctl.val+v < 1) or cnt == 5
-                  if ctl.val+v < 0 or ctl.val+v > 1 then
-                    v = 0
+                  elseif bias > rctl.bias then
+                    v = -v
                   end
-                elseif bias > rctl.bias then
-                  v = -v
+                  v = F_limit(ctl.val+v,rctl.min,rctl.max)
                 end
-                v = F_limit(ctl.val+v,rctl.min,rctl.max)
+              else
+                --WILD
+                v = math.random()
               end
-            else
-              --WILD
-              v = math.random()
+              if ctl.ctltype == 2 or 
+                 ctl.ctltype == 3 or 
+                 ctl.ctltype == 7 or
+                 ctl.ctltype == 8 or
+                 ctl.ctltype == 9 or
+                 ctl.ctltype == 10 then
+                 v = round(v)
+              end
+              if ctl.ctlcat == ctlcats.rs5k then            
+                v = v * ((#ctl.rsdata.samples-1)/lvar.maxsamples)
+              end
+              if v ~= ctl.val then
+                SetParam3(strip,page,rctls[cc].ctl,ctl,v)
+              end
             end
-            if ctl.ctltype == 2 or 
-               ctl.ctltype == 3 or 
-               ctl.ctltype == 7 or
-               ctl.ctltype == 8 or
-               ctl.ctltype == 9 or
-               ctl.ctltype == 10 then
-               v = round(v)
-            end
-            if ctl.ctlcat == ctlcats.rs5k then            
-              v = v * ((#ctl.rsdata.samples-1)/lvar.maxsamples)
-            end
-            if v ~= ctl.val then
-              SetParam3(strip,page,rctls[cc].ctl,ctl,v)
-            end
+          else
+            --CYCLE CTL
+            local cycle = ctl.cycledata
+            local pos = cycle.pos or 1
+            local cnt = cycle.statecnt
+            --snap ignored
+            --amount ignored
+            local bias = math.random()
+            if bias > rctl.bias then
+              local np = math.min(round(math.random() * math.max((pos-2),1) +1),pos)
+              if cycle[np] and cycle[np].val then
+                cycle.pos = np
+                v = cycle[np].val
+                if v ~= ctl.val then
+                  SetParam3(strip,page,rctls[cc].ctl,ctl,v)
+                end          
+              end
+            else          
+              local np = round(math.random() * (cnt-pos) +pos)
+              if cycle[np] and cycle[np].val then
+                cycle.pos = np
+                v = cycle[np].val
+                if v ~= ctl.val then
+                  SetParam3(strip,page,rctls[cc].ctl,ctl,v)
+                end          
+              end
+            end          
           end
-        else
-          --CYCLE CTL
-          local cycle = ctl.cycledata
-          local pos = cycle.pos or 1
-          local cnt = cycle.statecnt
-          --snap ignored
-          --amount ignored
-          local bias = math.random()
-          if bias > rctl.bias then
-            local np = math.min(round(math.random() * math.max((pos-2),1) +1),pos)
-            if cycle[np] and cycle[np].val then
-              cycle.pos = np
-              v = cycle[np].val
-              if v ~= ctl.val then
-                SetParam3(strip,page,rctls[cc].ctl,ctl,v)
-              end          
-            end
-          else          
-            local np = round(math.random() * (cnt-pos) +pos)
-            if cycle[np] and cycle[np].val then
-              cycle.pos = np
-              v = cycle[np].val
-              if v ~= ctl.val then
-                SetParam3(strip,page,rctls[cc].ctl,ctl,v)
-              end          
-            end
-          end          
         end
-      
       end
       if #lg > 0 then
         for l = 1, #lg do
@@ -51721,7 +51833,7 @@ function GUI_DrawCtlBitmap_Strips()
       if #strips[strip][page].controls > 0 then
         for c = 1, #strips[strip][page].controls do
           local ctl = strips[strip][page].controls[c]
-          if ctl and ctl.noss ~= true then
+          if ctl and ctl.noss ~= true and ctl.ctllock ~= true then
             if ctl.ctlcat == ctlcats.fxparam or 
                ctl.ctlcat == ctlcats.trackparam or
                ctl.ctlcat == ctlcats.tracksend then
@@ -51769,41 +51881,43 @@ function GUI_DrawCtlBitmap_Strips()
           for ctl = 1, #snapshots[strip][page][sstype_select].ctls do
             local c = snapshots[strip][page][sstype_select].ctls[ctl].ctl
             local cctl = strips[strip][page].controls[c]
-            if cctl and cctl.ctlcat ~= ctlcats.takeswitcher and cctl.ctlcat ~= ctlcats.rs5k then
-            --[[if cctl and (cctl.ctlcat == ctlcats.fxparam or 
-               cctl.ctlcat == ctlcats.trackparam or
-               cctl.ctlcat == ctlcats.tracksend) then]]
-              trackfxparam_select = c
-              local v = math.random()
-              if cctl.ctltype == 2 or 
-                 cctl.ctltype == 3 or 
-                 cctl.ctltype == 7 or
-                 cctl.ctltype == 8 or
-                 cctl.ctltype == 9 or
-                 cctl.ctltype == 10 then
-                 v = round(v)
-              end
-              if respectminmax == true then
-                SetParam3(strip,page,c,cctl,v)        
-              else
-                SetParam5(v)                          
-              end
-            elseif cctl and cctl.ctlcat == ctlcats.takeswitcher then
-              if cctl.iteminfo then
-                local v = math.max(round(math.random()*cctl.iteminfo.numtakes-1)/takeswitch_max,0)
+            if cctl.ctllock ~= true then
+              if cctl and cctl.ctlcat ~= ctlcats.takeswitcher and cctl.ctlcat ~= ctlcats.rs5k then
+              --[[if cctl and (cctl.ctlcat == ctlcats.fxparam or 
+                 cctl.ctlcat == ctlcats.trackparam or
+                 cctl.ctlcat == ctlcats.tracksend) then]]
+                trackfxparam_select = c
+                local v = math.random()
+                if cctl.ctltype == 2 or 
+                   cctl.ctltype == 3 or 
+                   cctl.ctltype == 7 or
+                   cctl.ctltype == 8 or
+                   cctl.ctltype == 9 or
+                   cctl.ctltype == 10 then
+                   v = round(v)
+                end
+                if respectminmax == true then
+                  SetParam3(strip,page,c,cctl,v)        
+                else
+                  SetParam5(v)                          
+                end
+              elseif cctl and cctl.ctlcat == ctlcats.takeswitcher then
+                if cctl.iteminfo then
+                  local v = math.max(round(math.random()*cctl.iteminfo.numtakes-1)/takeswitch_max,0)
+                  cctl.val = v
+                  SetItemTake(strip, page, c)
+                  SetCtlDirty(c)
+                  update_ctls = true
+                end
+              elseif cctl and cctl.ctlcat == ctlcats.rs5k then
+                local v = math.max(round(math.random()*(#cctl.rsdata.samples-1))/lvar.maxsamples,0)
                 cctl.val = v
-                SetItemTake(strip, page, c)
+  
+                A_SetParam(strip, page, c, cctl)
+  
                 SetCtlDirty(c)
-                update_ctls = true
+                update_ctls = true             
               end
-            elseif cctl and cctl.ctlcat == ctlcats.rs5k then
-              local v = math.max(round(math.random()*(#cctl.rsdata.samples-1))/lvar.maxsamples,0)
-              cctl.val = v
-
-              A_SetParam(strip, page, c, cctl)
-
-              SetCtlDirty(c)
-              update_ctls = true             
             end
           end
         end
@@ -51829,7 +51943,7 @@ function GUI_DrawCtlBitmap_Strips()
       if #strips[strip][page].controls > 0 then
         for c = 1, #strips[strip][page].controls do
           local ctl = strips[strip][page].controls[c]
-          if ctl.noss ~= true then
+          if ctl.noss ~= true and ctl.ctllock ~= true then
             if ctl.ctlcat == ctlcats.fxparam or 
                ctl.ctlcat == ctlcats.trackparam or
                ctl.ctlcat == ctlcats.tracksend then
@@ -51870,31 +51984,33 @@ function GUI_DrawCtlBitmap_Strips()
           for ctl = 1, #snapshots[strip][page][sstype_select].ctls do
             local c = snapshots[strip][page][sstype_select].ctls[ctl].ctl
             local cctl = strips[strip][page].controls[c]
-            trackfxparam_select = c
-            local v               
-            if mutate_settings.mutate == true then               
-              if mutate_settings.dir == 0 then
-                v = math.min(math.max(cctl.val + (math.random()*mutate_range2)-mutate_range,min),max)
-              elseif mutate_settings.dir == 1 then
-                v = math.min(math.max(cctl.val + math.random()*mutate_range,min),max)              
+            if cctl.ctllock ~= true then
+              trackfxparam_select = c
+              local v               
+              if mutate_settings.mutate == true then               
+                if mutate_settings.dir == 0 then
+                  v = math.min(math.max(cctl.val + (math.random()*mutate_range2)-mutate_range,min),max)
+                elseif mutate_settings.dir == 1 then
+                  v = math.min(math.max(cctl.val + math.random()*mutate_range,min),max)              
+                else
+                  v = math.min(math.max(cctl.val - math.random()*mutate_range,min),max)                            
+                end
               else
-                v = math.min(math.max(cctl.val - math.random()*mutate_range,min),max)                            
+                v = math.random()*range+min 
+              end              
+              if cctl.ctltype == 2 or 
+                 cctl.ctltype == 3 or 
+                 cctl.ctltype == 7 or
+                 cctl.ctltype == 8 or
+                 cctl.ctltype == 9 or
+                 cctl.ctltype == 10 then
+                 v = round(v)
               end
-            else
-              v = math.random()*range+min 
-            end              
-            if cctl.ctltype == 2 or 
-               cctl.ctltype == 3 or 
-               cctl.ctltype == 7 or
-               cctl.ctltype == 8 or
-               cctl.ctltype == 9 or
-               cctl.ctltype == 10 then
-               v = round(v)
-            end
-            if respectminmax == true then
-              SetParam3(strip,page,c,cctl,v)        
-            else
-              SetParam5(v)                          
+              if respectminmax == true then
+                SetParam3(strip,page,c,cctl,v)        
+              else
+                SetParam5(v)                          
+              end
             end
           end
         end
@@ -51991,6 +52107,49 @@ function GUI_DrawCtlBitmap_Strips()
 
     end
     return newsst
+  end
+  
+  function Snapshot_DeleteOrphanedSubsets(strip, page)
+  
+    local dsst = {}
+    local dsstidx = {}
+    if #snapshots[strip][page] > 1 then
+      for sst = #snapshots[strip][page], 2, -1  do
+      
+        if #snapshots[strip][page][sst].ctls == 0 then
+          if not dsstidx[sst] then
+            local cnt = #dsst+1
+            dsst[cnt] = sst
+            dsstidx[sst] = cnt
+          end
+        else
+          local fnd = false
+          for c = 1, #snapshots[strip][page][sst].ctls do
+            local cc = snapshots[strip][page][sst].ctls[c]
+            if strips[strip][page].controls[cc.ctl] then
+              fnd = true
+              break
+            end 
+          end
+          if fnd == false then
+            --No linked ctls exist
+            local cnt = #dsst+1
+            dsst[cnt] = sst
+            dsstidx[sst] = cnt1            
+          end
+        end
+      
+      end
+      
+      if #dsst > 0 then
+        for i = 1, #dsst do
+        
+          Snapshot_DeleteSubset(strip, page, dsst[i])
+        
+        end
+      end
+    end
+  
   end
   
   function Snapshot_DeleteSubset(strip, page, sst)
@@ -52173,7 +52332,7 @@ function GUI_DrawCtlBitmap_Strips()
               end
             end
 
-            if ctl.noss ~= true and c and v and tostring(nv) ~= tostring(ctl.val) and (settings_morphfaderassignedctls == true or ctl.macrofader == nil) then
+            if ctl.noss ~= true and ctl.ctllock ~= true and c and v and tostring(nv) ~= tostring(ctl.val) and (settings_morphfaderassignedctls == true or ctl.macrofader == nil) then
               trackfxparam_select = c
               if ctl.tracknum then
                 track = GetTrack(ctl.tracknum)
@@ -52264,7 +52423,7 @@ function GUI_DrawCtlBitmap_Strips()
                 end
               end
   
-              if c and v and tostring(nv) ~= tostring(ctl.val) and (settings_morphfaderassignedctls == true or ctl.macrofader == nil) then
+              if c and v and ctl.ctllock ~= true and tostring(nv) ~= tostring(ctl.val) and (settings_morphfaderassignedctls == true or ctl.macrofader == nil) then
                 trackfxparam_select = c
                 if ctl.tracknum then
                   track = GetTrack(ctl.tracknum)
@@ -52507,7 +52666,7 @@ function GUI_DrawCtlBitmap_Strips()
             end
           end
           
-          if ctl.noss ~= true and c and nv and tostring(nv) ~= tostring(ctl.val) 
+          if ctl.noss ~= true and ctl.ctllock ~= true and c and nv and tostring(nv) ~= tostring(ctl.val) 
              and (settings_morphfaderassignedctls == true or (ctl.macrofader == nil and ctl.mod == nil)) then
             SetParam3(strip,page,c,ctl,nv)
           
@@ -52591,7 +52750,7 @@ function GUI_DrawCtlBitmap_Strips()
               end
             end
   
-            if c and nv and tostring(nv) ~= tostring(ctl.val) and (settings_morphfaderassignedctls == true or (ctl.macrofader == nil and ctl.mod == nil)) then
+            if c and ctl.ctllock ~= true and nv and tostring(nv) ~= tostring(ctl.val) and (settings_morphfaderassignedctls == true or (ctl.macrofader == nil and ctl.mod == nil)) then
               --trackfxparam_select = c
               SetParam3(strip,page,c,ctl,nv)        
             
