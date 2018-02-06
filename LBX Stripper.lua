@@ -2301,11 +2301,11 @@
       obj.sections[220] = {x = margin,
                            y = butt_h+margin,
                            w = gfx1.main_w-160-margin*2,
-                           h = (gfx1.main_h-obj.sections[10].y)-shrink-margin*2}                     
+                           h = (gfx1.main_h--[[obj.sections[10].y]])-shrink-margin*2}                     
       obj.sections[221] = {x = obj.sections[220].x+obj.sections[220].w+2,
                            y = butt_h+margin,
                            w = 160,
-                           h = (gfx1.main_h-obj.sections[10].y)-shrink-margin*2}                     
+                           h = (gfx1.main_h--[[obj.sections[10].y]])-shrink-margin*2}                     
       obj.sections[222] = {x = obj.sections[220].x+obj.sections[220].w+2,
                            y = 0,
                            w = 160,
@@ -15374,7 +15374,7 @@ function GUI_DrawCtlBitmap_Strips()
           local iw, ih = gfx.getimgdim(skin.stripctlbtnsX)
           gfx.blit(skin.stripctlbtnsX,1,0,0,0,iw,ih,x,y)
           
-          if lvar.stripctlbox.ctl then
+          if stripgallery_view == 0 and lvar.stripctlbox.ctl then
             local iw, ih = gfx.getimgdim(skin.stripctlbtnslock)
             local x = obj.sections[10].x+(lvar.stripctlbox.ctl.x)-dx --+math.floor(lvar.stripctlbox.ctl.w/2-iw/2) 
             local y = obj.sections[10].y+(lvar.stripctlbox.ctl.y)-dy --+lvar.stripctlbox.ctl.h-2
@@ -32699,6 +32699,7 @@ function GUI_DrawCtlBitmap_Strips()
             end
           end
         end
+        noscroll = true
       end
           
     elseif mouse.context == nil and mouse.alt and not mouse.altlatch and not mouse.LB and not mouse.RB and MOUSE_over(obj.sections[10]) then
@@ -34809,13 +34810,15 @@ function GUI_DrawCtlBitmap_Strips()
         end
         if c and lvar.stripctlbox.idx == stripidx and (lvar.stripctlbox.ctl == nil or c ~= lvar.stripctlbox.ctl.ctl) then
           lvar.stripctlbox.ctl = {ctl = c}
-          local ctl = strips[strip][page].controls[c]
-          local iw, ih = gfx.getimgdim(skin.stripctlbtnslock)
-          lvar.stripctlbox.ctl.x = ctl.xsc + math.floor(ctl.wsc/2 - iw/2)
-          lvar.stripctlbox.ctl.y = ctl.ysc + ctl.hsc-2
-          lvar.stripctlbox.ctl.w = iw
-          lvar.stripctlbox.ctl.h = ih
-          update_surface = true        
+          if stripgallery_view == 0 then
+            local ctl = strips[strip][page].controls[c]
+            local iw, ih = gfx.getimgdim(skin.stripctlbtnslock)
+            lvar.stripctlbox.ctl.x = ctl.xsc + math.floor(ctl.wsc/2 - iw/2)
+            lvar.stripctlbox.ctl.y = ctl.ysc + ctl.hsc-2
+            lvar.stripctlbox.ctl.w = iw
+            lvar.stripctlbox.ctl.h = ih
+            update_surface = true        
+          end
         end
       elseif lvar.stripctlbox.idx then
         lvar.stripctlbox = {}
@@ -46355,16 +46358,19 @@ function GUI_DrawCtlBitmap_Strips()
           if snapshots[strip][page][sst].snapshot[ss].data[ctl] then
             local c = snapshots[strip][page][sst].snapshot[ss].data[ctl].ctl
             if c and nv and nv < 1/0 and nv > -1/0 then
-              trackfxparam_select = c
-              if strips[strip][page].controls[c].tracknum then
-                track = GetTrack(strips[strip][page].controls[c].tracknum)
-              else
-                track = gtrack
+              local ctl = strips[strip][page].controls[c]
+              if ctl.ctllock ~= true then
+                trackfxparam_select = c
+                if ctl.tracknum then
+                  track = GetTrack(ctl.tracknum)
+                else
+                  track = gtrack
+                end
+                if tostring(nv) ~= tostring(ctl.xxydval) then
+                  SetParam3_Denorm2_Safe(track, nv, strip, page)
+                  ctl.xxydval = nv
+                end        
               end
-              if tostring(nv) ~= tostring(strips[strip][page].controls[c].xxydval) then
-                SetParam3_Denorm2_Safe(track, nv, strip, page)
-                strips[strip][page].controls[c].xxydval = nv
-              end        
             end
           end
         end
@@ -52183,19 +52189,19 @@ function GUI_DrawCtlBitmap_Strips()
       gfx4_selectidx = nil
     
       for c = 1, #strips[strip][page].controls do
-      
-        if strips[strip][page].controls[c].ctlcat == ctlcats.snapshot or 
-           strips[strip][page].controls[c].ctlcat == ctlcats.xy or 
-           strips[strip][page].controls[c].ctlcat == ctlcats.snapshotrand then
-          if strips[strip][page].controls[c].param == sst then
+        local ctl = strips[strip][page].controls[c]
+        if ctl.ctlcat == ctlcats.snapshot or 
+           ctl.ctlcat == ctlcats.xy or 
+           ctl.ctlcat == ctlcats.snapshotrand then
+          if ctl.param == sst then
             ctl_select[#ctl_select+1] = {ctl = c} 
-          elseif strips[strip][page].controls[c].param > sst then
-            strips[strip][page].controls[c].param = strips[strip][page].controls[c].param -1
-            if tonumber(strips[strip][page].controls[c].param_info.paramidx) then
-              strips[strip][page].controls[c].param_info.paramidx = strips[strip][page].controls[c].param_info.paramidx -1
+          elseif ctl.param > sst then
+            ctl.param = ctl.param -1
+            if tonumber(ctl.param_info.paramidx) then
+              ctl.param_info.paramidx = ctl.param_info.paramidx -1
             end
-            if strips[strip][page].controls[c].random then
-              strips[strip][page].controls[c].random.sst = strips[strip][page].controls[c].param
+            if ctl.random then
+              ctl.random.sst = ctl.param
             end
           end
         end
