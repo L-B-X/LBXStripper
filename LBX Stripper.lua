@@ -12,8 +12,10 @@
     
   --------------------------------------------
 
-  local lvar = {}
 
+  local lvar = {}
+  lvar.scriptver = '0.94.000' --Script Version
+  
   lvar.ctlupdate_rr = nil
   lvar.ctlupdate_pos = 1
 
