@@ -14,7 +14,7 @@
 
 
   local lvar = {}
-  lvar.scriptver = '0.94.000' --Script Version
+  lvar.scriptver = '0.94.0002' --Script Version
   
   lvar.ctlupdate_rr = nil
   lvar.ctlupdate_pos = 1
@@ -16961,6 +16961,12 @@ function GUI_DrawCtlBitmap_Strips()
     
     GUI_DrawPanel(obj.sections[70],true,'SETTINGS',true)
     
+    local xywh = {x = obj.sections[70].x + 10,
+                  y = obj.sections[70].y + 2,
+                  w = 120,
+                  h = butt_h-4}
+    GUI_Str(gui,xywh,'v: '..lvar.scriptver,4,gui.skol.pnl_tittxt,gui.fontsz.pnltit,1,gui.skol.pnltit_shad,gui.fontnm.pnltit,gui.fontflag.pnltit)    
+    
     f_Get_SSV(gui.skol.lst_bg)
     local ind = 6
     local x = obj.sections[70].x+ind
@@ -16975,7 +16981,6 @@ function GUI_DrawCtlBitmap_Strips()
       gfx.blit(skin.panela_cnrtl,1,0,0,0,pnlcnr_w,pnlcnr_h,x,y)
       gfx.blit(skin.panela_cnrtr,1,0,0,0,pnlcnr_w,pnlcnr_h,x+w-pnlcnr_w,y)
     end
-    
     
     gfx.dest = 990
     gfx.setimgdim(990,-1,-1)
