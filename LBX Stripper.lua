@@ -14,7 +14,7 @@
 
 
   local lvar = {}
-  lvar.scriptver = '0.94.0003' --Script Version
+  lvar.scriptver = '0.94.0006' --Script Version
   
   lvar.ctlupdate_rr = nil
   lvar.ctlupdate_pos = 1
@@ -430,14 +430,17 @@
 
   function CheckUpdater()
   
-    local up, git
+    local up, git, clone
     if reaper.file_exists(paths.update_path..'lbx_updater.lua') == true then
       up = true
     end
     if reaper.file_exists(paths.update_path..'git_upload.lua') == true then
       git = true
     end
-    return up, git
+    if reaper.file_exists(paths.update_path..'git_clone.lua') == true then
+      clone = true
+    end
+    return up, git, clone
     
   end
 
@@ -457,6 +460,16 @@
       end
     end
     
+  end
+
+  function GitClone()
+
+    if lvar.gitclone == true then
+      if reaper.MB('Clone LBX Stripper to E:\\GIT_LBX?','GitClone',1) == 1 then
+        os.execute(string.sub(paths.update_path,1,2)..'&cd "'..paths.update_path..'"&lua.exe "'..paths.update_path..'git_clone.lua"')    
+      end
+    end
+  
   end
   
   function RollbackUpdate()
@@ -44060,6 +44073,9 @@ function GUI_DrawCtlBitmap_Strips()
         if lvar.git then
           mstr = mstr .. '||Upload to GitHub'
         end
+        if lvar.gitclone then
+          mstr = mstr .. '||Clone from GitHub'
+        end
         gfx.x, gfx.y = mx, my
         local res = gfx.showmenu(mstr)
         if res ~= 0 then
@@ -44067,6 +44083,8 @@ function GUI_DrawCtlBitmap_Strips()
             RollbackUpdate()
           elseif res == 2 then
             UploadToGit()
+          elseif res == 3 then
+            GitClone()
           end
         end
         
@@ -55940,7 +55958,7 @@ function GUI_DrawCtlBitmap_Strips()
   gx_h = 160
   sf_h = 140
   
-  lvar.updateravailable, lvar.git = CheckUpdater()
+  lvar.updateravailable, lvar.git, lvar.gitclone = CheckUpdater()
   
   local surfn = paths.icon_path..'canvas.png'
   if reaper.file_exists(surfn) then
