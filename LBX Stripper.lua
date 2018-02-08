@@ -14,7 +14,7 @@
 
 
   local lvar = {}
-  lvar.scriptver = '0.94.0007' --Script Version
+  lvar.scriptver = '0.94.0008' --Script Version
   
   lvar.ctlupdate_rr = nil
   lvar.ctlupdate_pos = 1
@@ -472,15 +472,80 @@
   
   end
   
-  function RollbackUpdate()
+  function RollbackMenu(mx, my) 
+  
+    local mstr = '>Rollback <LBX Stripper.lua> to a previous version'
+    local dir = paths.resource_path..'updater/oldversions/' 
+    local f = 0
+    local fn = reaper.EnumerateFiles(dir, f)
+    local rbfiles = {}
+    local skip = 0
+    if fn then
+      local ffcnt = 0
+      while fn do
+        if string.match(fn,'LBX Stripper_%x_%x%x_%x%x%x%x.lua') then 
+          ffcnt = ffcnt + 1
+        end        
+        f = f + 1
+        fn = reaper.EnumerateFiles(dir, f)
+      end
+      if ffcnt > 0 then
+        f = f - 1
+        local fcnt = f
+        fn = reaper.EnumerateFiles(dir, f)
+        
+        while fn do
+        
+          if string.match(fn,'LBX Stripper_%x_%x%x_%x%x%x%x.lua') then 
+            rbfiles[#rbfiles+1] = fn
+            mstr = mstr .. '|' .. fn
+            skip = skip + 1
+          end
+          f = f - 1
+          fn = reaper.EnumerateFiles(dir, f)
+          
+        end
+        mstr = string.gsub(mstr,'(.+)(%|)(.*)','%1|<%3')          
+        
+      else
+        mstr = mstr .. '|<#Empty'
+        skip = 1        
+      end
+    else
+      mstr = mstr .. '|<#Empty'
+      skip = 1
+    end
+    if lvar.git then
+      mstr = mstr .. '||Upload to GitHub'
+    end
+    if lvar.gitclone then
+      mstr = mstr .. '||Clone from GitHub'
+    end
+    gfx.x, gfx.y = mx, my
+    local res = gfx.showmenu(mstr)
+    if res ~= 0 then
+      if res <= skip then
+        --DBG(rbfiles[res])
+        RollbackUpdate(rbfiles[res])
+      elseif res == 1+skip then
+        UploadToGit()
+      elseif res == 2+skip then
+        GitClone()
+      end
+    end
+  end
 
-    if reaper.MB('Rollback LBX Stripper to your previous version?','Rollback',1) == 1 then
+
+  function RollbackUpdate(ffn)
+
+    if reaper.MB('Rollback LBX Stripper to version: '..ffn..'?','Rollback',1) == 1 then
     
       local err = 0
       local f = 0
       local dir = paths.resource_path..'updater/oldversions/' 
       local path = reaper.GetResourcePath().."/Scripts/LBX/"
-      fn = reaper.EnumerateFiles(dir, f)
+      
+      --[[fn = reaper.EnumerateFiles(dir, f)
       while fn do
         
         if reaper.file_exists(dir..fn) then
@@ -514,12 +579,72 @@
 
         f = f + 1
         fn = reaper.EnumerateFiles(dir, f)
-      end
+      end]]
 
+      if reaper.file_exists(dir..ffn) then
+
+        -- rollback version      
+        local file = io.open(dir..ffn, 'rb')
+        local body
+        if file then
+          body = file:read('*a')
+          file:close()
+        else
+          err = 4
+        end
+
+        local fn = 'LBX Stripper.lua'
+        -- current version      
+        local file = io.open(path..fn, 'rb')
+        local curr
+        if file then
+          curr = file:read('*a')
+          file:close()
+        else
+          err = 3
+        end
+
+        if curr and curr ~= body then
+          --backup current
+          local bfn = fn
+          if lvar.scriptver then
+                      
+            local ver = string.gsub(lvar.scriptver,'%.','_')
+            if ver then
+              local bfn = 'LBX Stripper_'..ver..'.lua'
+              if not reaper.file_exists(dir..bfn) then
+                file = io.open(dir..bfn, 'wb')
+                if file then
+                  file:write(body)
+                  file:close()
+                end
+              end
+            end
+          end        
+        end
+
+        file = io.open(path..fn, 'wb')
+        if file then
+          file:write(body)
+          file:close()
+        else
+          err = 3
+        end
+
+      else
+        err = 2
+      end
+       
       if err == 0 then    
-        OpenMsgBox(1, 'If rollback was successful - please restart the script.', 1)      
+        OpenMsgBox(1, 'Please restart the script.', 1)      
       elseif err == 1 then
         OpenMsgBox(1, 'Backup version is the same as installed version.', 1)
+      elseif err == 2 then
+        OpenMsgBox(1, 'File not found.', 1)
+      elseif err == 3 then
+        OpenMsgBox(1, 'Unable to open destination file.', 1)
+      elseif err == 4 then
+        OpenMsgBox(1, 'Unable to open source file.', 1)
       end
       
     end
@@ -44069,24 +44194,7 @@ function GUI_DrawCtlBitmap_Strips()
 
       elseif mouse.context == nil and MOUSE_click_RB(obj.sections[727]) then
       
-        local mstr = 'Rollback Stripper to your previous version'
-        if lvar.git then
-          mstr = mstr .. '||Upload to GitHub'
-        end
-        if lvar.gitclone then
-          mstr = mstr .. '||Clone from GitHub'
-        end
-        gfx.x, gfx.y = mx, my
-        local res = gfx.showmenu(mstr)
-        if res ~= 0 then
-          if res == 1 then
-            RollbackUpdate()
-          elseif res == 2 then
-            UploadToGit()
-          elseif res == 3 then
-            GitClone()
-          end
-        end
+        RollbackMenu(mx, my)
         
       elseif mouse.context == nil and MOUSE_click(obj.sections[716]) then
         
