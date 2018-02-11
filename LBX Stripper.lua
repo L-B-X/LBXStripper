@@ -14,7 +14,7 @@
 
 
   local lvar = {}
-  lvar.scriptver = '0.94.0008' --Script Version
+  lvar.scriptver = '0.94.0009' --Script Version
   
   lvar.ctlupdate_rr = nil
   lvar.ctlupdate_pos = 1
@@ -615,7 +615,7 @@
               if not reaper.file_exists(dir..bfn) then
                 file = io.open(dir..bfn, 'wb')
                 if file then
-                  file:write(body)
+                  file:write(curr)
                   file:close()
                 end
               end
@@ -1885,6 +1885,11 @@
       
       --local sf_h = 140
 
+      obj.sections[853] = {x = obj.sections[45].w - 60,
+                           y = gui.winsz.pnltit*pnl_scale/2 - 5,
+                           w = 54,
+                           h = 14}
+
       --scale
       obj.sections[50] = {x = math.floor(60*pnl_scale),
                           y = math.floor(coff+(butt_h+8)*pnl_scale),
@@ -1902,24 +1907,24 @@
                           w = math.floor(54*pnl_scale),
                           h = math.floor(butt_h*pnl_scale)}
       --SHOW NAME Tick 
-      obj.sections[52] = {x = math.floor(obj.sections[45].w-(104+butt_h/2)*pnl_scale+4*pnl_scale),
+      obj.sections[52] = {x = math.floor(60*pnl_scale), --math.floor(obj.sections[45].w-(104+butt_h/2)*pnl_scale+4*pnl_scale),
                           y = math.floor(coff + (butt_h+10 + (butt_h/2+4 + 10)+24)*pnl_scale),
                           w = math.floor((butt_h/2+4)*pnl_scale),
                           h = math.floor((butt_h/2+4)*pnl_scale)}                           
       --SHOW VALUE Tick
-      obj.sections[53] = {x = math.floor(obj.sections[45].w-(104+butt_h/2)*pnl_scale+4*pnl_scale),
+      obj.sections[53] = {x = math.floor(60*pnl_scale), --math.floor(obj.sections[45].w-(104+butt_h/2)*pnl_scale+4*pnl_scale),
                           y = math.floor(coff+(butt_h+10 + (butt_h/2+4 + 10) * 2+20)*pnl_scale),
                           w = math.floor((butt_h/2+4)*pnl_scale),
                           h = math.floor((butt_h/2+4)*pnl_scale)}                           
 
       --COLOR BOX NAME
-      obj.sections[54] = {x = math.floor(obj.sections[45].w-(84+butt_h/2)*pnl_scale+4*pnl_scale),
+      obj.sections[54] = {x = math.floor((60+(butt_h/2+4)+6)*pnl_scale), --math.floor(obj.sections[45].w-(84+butt_h/2)*pnl_scale+4*pnl_scale),
                           y = math.floor(coff+(butt_h+10 + (butt_h/2+4 + 10)+24)*pnl_scale),
                           w = math.floor((butt_h/2+4)*pnl_scale),
                           h = math.floor((butt_h/2+4)*pnl_scale)}                           
 
       --COLOR BOX VALUE
-      obj.sections[850] = {x = math.floor(obj.sections[45].w-(84+butt_h/2)*pnl_scale+4*pnl_scale),
+      obj.sections[850] = {x = math.floor((60+(butt_h/2+4)+6)*pnl_scale), --math.floor(obj.sections[45].w-(84+butt_h/2)*pnl_scale+4*pnl_scale),
                           y = math.floor(coff+(butt_h+10 + (butt_h/2+4 + 10) * 2+20)*pnl_scale),
                           w = math.floor((butt_h/2+4)*pnl_scale),
                           h = math.floor((butt_h/2+4)*pnl_scale)}                           
@@ -1944,9 +1949,9 @@
 
       --Ctl Type button
       obj.sections[55] = {x = math.floor(60*pnl_scale),
-                          y = math.floor(coff+(butt_h+7 + (butt_h/2+4 + 10) * 9)*pnl_scale),
+                          y = math.floor(coff+(butt_h+7 + (butt_h/2+4 + 10) * 8 + 10)*pnl_scale),
                           w = math.floor(obj.sections[45].w-70*pnl_scale),
-                          h = math.floor(butt_h*pnl_scale)}
+                          h = math.floor((butt_h+6)*pnl_scale)}
 
       --Offset slider
       obj.sections[56] = {x = math.floor(60*pnl_scale),
@@ -1962,28 +1967,22 @@
 
       --Default value slider
       obj.sections[57] = {x = math.floor(60*pnl_scale),
-                          y = math.floor(coff+(butt_h+10 + (butt_h/2+4 + 10) * 10)*pnl_scale),
+                          y = math.floor(coff+(butt_h+10 + (butt_h/2+4 + 10) * 10 - 8)*pnl_scale),
                           w = math.floor(obj.sections[45].w-70*pnl_scale),
                           h = math.floor((butt_h/2+8)*pnl_scale)}                           
 
       --Font button
       obj.sections[48] = {x = math.floor(60*pnl_scale),
-                          y = math.floor(coff+(butt_h+10 + (butt_h/2+4 + 10) * 6)*pnl_scale -1*pnl_scale),
+                          y = math.floor(coff+(butt_h+10 + (butt_h/2+4 + 10) * 6 +8)*pnl_scale -1*pnl_scale),
                           w = math.floor(obj.sections[45].w-70*pnl_scale),
                           h = math.floor(butt_h*pnl_scale)}
 
       --Edit name button
       obj.sections[59] = {x = math.floor(60*pnl_scale),
-                          y = math.floor(coff+(butt_h+11 + (butt_h/2+4 + 10) * 8)*pnl_scale - 2*pnl_scale),
+                          y = math.floor(coff+(butt_h+11 + (butt_h/2+4 + 10) * 7 + 6)*pnl_scale - 2*pnl_scale),
                           w = math.floor(obj.sections[45].w-70*pnl_scale),
                           h = math.floor(butt_h*pnl_scale)}
       
-      --Set MIDI button
-      obj.sections[960] = {x = math.floor(60*pnl_scale),
-                          y = math.floor(coff+(butt_h+11 + (butt_h/2+4 + 10) * 7)*pnl_scale),
-                          w = math.floor(obj.sections[45].w-70*pnl_scale),
-                          h = math.floor(butt_h*pnl_scale)}
-
       --Scroll control graphic <
       obj.sections[90] = {x = math.floor(4*pnl_scale),
                           y = math.floor(coff/2),
@@ -2004,15 +2003,23 @@
 
       --Max DP button
       obj.sections[66] = {x = math.floor(60*pnl_scale),
-                          y = math.floor(coff+(butt_h+10 + (butt_h/2+4 + 10) * 11)*pnl_scale),
+                          y = math.floor(coff+(butt_h+10 + (butt_h/2+4 + 10) * 11 -8)*pnl_scale),
                           w = math.floor(40*pnl_scale),
-                          h = math.floor((butt_h/2+4)*pnl_scale)}
+                          h = math.floor((butt_h)*pnl_scale)}
+
+      --Set MIDI button
+      local xx = obj.sections[66].x+obj.sections[66].w + math.floor(6*pnl_scale)
+      obj.sections[960] = {x = xx,
+                          y = math.floor(coff+(butt_h+10 + (butt_h/2+4 + 10) * 11 -8)*pnl_scale),
+                          w = math.floor(obj.sections[45].w-xx-10*pnl_scale),
+                          h = math.floor((butt_h)*pnl_scale)}
+
       
       --Open CYCLE OPTIONS button
       obj.sections[67] = {x = math.floor(10*pnl_scale),
-                          y = math.floor(coff+(butt_h+7 + (butt_h/2+4 + 10) * 9)*pnl_scale),
+                          y = math.floor(coff+(butt_h+7 + (butt_h/2+4 + 10) * 8 +10)*pnl_scale),
                           w = math.floor(35*pnl_scale),
-                          h = math.floor(butt_h*pnl_scale)}
+                          h = math.floor((butt_h+6)*pnl_scale)}
 
       local binh = 45
       
@@ -2094,13 +2101,13 @@
 
       --MINOV value
       obj.sections[126] = {x = math.floor(60*pnl_scale),
-                          y = math.floor((butt_h+10 + (butt_h/2+4 + 10) * 5)*pnl_scale),
+                          y = math.floor((butt_h+10 + (butt_h/2+4 + 10) * 5.25)*pnl_scale),
                           w = math.floor(obj.sections[45].w-70*pnl_scale),
                           h = math.floor(butt_h*pnl_scale)}
       
       --MAXOV value
       obj.sections[127] = {x = math.floor(60*pnl_scale),
-                          y = math.floor((butt_h+6 + (butt_h/2+4 + 10) * 6+2)*pnl_scale),
+                          y = math.floor((butt_h+6 + (butt_h/2+4 + 10) * 6.25 +2)*pnl_scale),
                           w = math.floor(obj.sections[45].w-70*pnl_scale),
                           h = math.floor(butt_h*pnl_scale)}
       
@@ -2126,52 +2133,52 @@
 
       --Scale mode Preset
       obj.sections[131] = {x = math.floor(70*pnl_scale),
-                          y = math.floor((butt_h + (butt_h/2+4 + 10) * 8 -12)*pnl_scale),
+                          y = math.floor((butt_h + (butt_h/2+4 + 10) * 8.5 -12)*pnl_scale),
                           w = math.floor(obj.sections[45].w-80*pnl_scale),
                           h = math.floor(butt_h*pnl_scale)}
       
       --Scale mode
       obj.sections[132] = {x = math.floor(70*pnl_scale),
-                          y = math.floor((butt_h + (butt_h/2+4 + 10) * 9 -14)*pnl_scale),
+                          y = math.floor((butt_h + (butt_h/2+4 + 10) * 9.5 -14)*pnl_scale),
                           w = math.floor(obj.sections[45].w-80*pnl_scale),
                           h = math.floor(butt_h*pnl_scale)}
       
       --Frame mode
       obj.sections[133] = {x = math.floor(70*pnl_scale),
-                          y = math.floor((butt_h + (butt_h/2+4 + 10) * 10 -16)*pnl_scale),
+                          y = math.floor((butt_h + (butt_h/2+4 + 10) * 10.5 -16)*pnl_scale),
                           w = math.floor(obj.sections[45].w-80*pnl_scale),
                           h = math.floor(butt_h*pnl_scale)}
       
       --Horiz tickbox
       obj.sections[134] = {x = math.floor(obj.sections[45].w-(40-butt_h/2+4)*pnl_scale),
-                          y = math.floor((butt_h+6 + (butt_h/2+4 + 10) * 11 -16)*pnl_scale),
+                          y = math.floor((butt_h+6 + (butt_h/2+4 + 10) * 12 -16)*pnl_scale),
                           w = math.floor((butt_h/2+4)*pnl_scale),
                           h = math.floor((butt_h/2+4)*pnl_scale)}                           
       
       --Page snapshot exclude tickbox
       obj.sections[139] = {x = math.floor(obj.sections[45].w-(40-butt_h/2+4)*pnl_scale),
-                          y = math.floor((butt_h+6 + (butt_h/2+4 + 10) * 11 + 4)*pnl_scale),
+                          y = math.floor((butt_h+6 + (butt_h/2+4 + 10) * 12 + 4)*pnl_scale),
                           w = math.floor((butt_h/2+4)*pnl_scale),
                           h = math.floor((butt_h/2+4)*pnl_scale)}                           
 
       --NORMAL sensitivity
       obj.sections[135] = {x = math.floor(70*pnl_scale),
-                          y = math.floor((butt_h+10 + (butt_h/2+4 + 10) * 13)*pnl_scale),
+                          y = math.floor((butt_h+10 + (butt_h/2+4 + 10) * 14)*pnl_scale),
                           w = math.floor(obj.sections[45].w-80*pnl_scale),
                           h = math.floor((butt_h/2+8)*pnl_scale)}
       --FINE sensitivity
       obj.sections[136] = {x = math.floor(70*pnl_scale),
-                          y = math.floor((butt_h+10 + (butt_h/2+4 + 10) * 14)*pnl_scale),
+                          y = math.floor((butt_h+10 + (butt_h/2+4 + 10) * 15)*pnl_scale),
                           w = math.floor(obj.sections[45].w-80*pnl_scale),
                           h = math.floor((butt_h/2+8)*pnl_scale)}
       --WHEEL sensitivity
       obj.sections[137] = {x = math.floor(70*pnl_scale),
-                          y = math.floor((butt_h+10 + (butt_h/2+4 + 10) * 15)*pnl_scale),
+                          y = math.floor((butt_h+10 + (butt_h/2+4 + 10) * 16)*pnl_scale),
                           w = math.floor(obj.sections[45].w-80*pnl_scale),
                           h = math.floor((butt_h/2+8)*pnl_scale)}
       --WHEEL FINE sensitivity
       obj.sections[138] = {x = math.floor(70*pnl_scale),
-                          y = math.floor((butt_h+10 + (butt_h/2+4 + 10) * 16)*pnl_scale),
+                          y = math.floor((butt_h+10 + (butt_h/2+4 + 10) * 17)*pnl_scale),
                           w = math.floor(obj.sections[45].w-80*pnl_scale),
                           h = math.floor((butt_h/2+8)*pnl_scale)}
 
@@ -2179,22 +2186,22 @@
       
       --Bypass BG Ctl
       obj.sections[860] = {x = obj.sections[45].w-(40-butt_h/2+4)*pnl_scale,
-                          y = (butt_h+10 + (butt_h/2+4 + 10) * 0)*pnl_scale,
+                          y = (butt_h+10 + (butt_h/2+4 + 10) * 1)*pnl_scale,
                           w = (butt_h/2+4)*pnl_scale,
                           h = (butt_h/2+4)*pnl_scale}
       --Bypass BG Name
       obj.sections[861] = {x = obj.sections[45].w-(40-butt_h/2+4)*pnl_scale,
-                          y = (butt_h+10 + (butt_h/2+4 + 10) * 1)*pnl_scale,
+                          y = (butt_h+10 + (butt_h/2+4 + 10) * 2)*pnl_scale,
                           w = (butt_h/2+4)*pnl_scale,
                           h = (butt_h/2+4)*pnl_scale}
       --Bypass BG Value
       obj.sections[862] = {x = obj.sections[45].w-(40-butt_h/2+4)*pnl_scale,
-                          y = (butt_h+10 + (butt_h/2+4 + 10) * 2)*pnl_scale,
+                          y = (butt_h+10 + (butt_h/2+4 + 10) * 3)*pnl_scale,
                           w = (butt_h/2+4)*pnl_scale,
                           h = (butt_h/2+4)*pnl_scale}
       --Clickthrough
       obj.sections[863] = {x = obj.sections[45].w-(40-butt_h/2+4)*pnl_scale,
-                          y = (butt_h+10 + (butt_h/2+4 + 10) * 4)*pnl_scale,
+                          y = (butt_h+10 + (butt_h/2+4 + 10) * 5)*pnl_scale,
                           w = (butt_h/2+4)*pnl_scale,
                           h = (butt_h/2+4)*pnl_scale}
                              
@@ -2397,7 +2404,7 @@
       
       --CTL BROWSER
       
-      ctl_browser_size = {w = obj.sections[10].w - 100 - obj.sections[45].w, h = obj.sections[10].h -100}
+      ctl_browser_size = {w = obj.sections[10].w - 50 --[[ obj.sections[45].w]], h = obj.sections[10].h -50}
       local slsz = 100
       local cb_bw = 160
       ctl_browser_size.slotsz = slsz
@@ -2407,6 +2414,10 @@
                           y = (obj.sections[10].h-ctl_browser_size.h)/2 +obj.sections[10].y,
                           w = ctl_browser_size.w,
                           h = ctl_browser_size.h}                            
+      local cbw = (ctl_browser_size.slots_x * slsz) + cb_bw+10
+      local cbh = (ctl_browser_size.slots_y * slsz) + (butt_h*2)+10
+      obj.sections[200].x = math.max((obj.sections[10].w-cbw)/2 +obj.sections[10].x, plist_w + 10)
+      obj.sections[200].y = math.max((obj.sections[10].h-cbh)/2 +obj.sections[10].y, topbarheight + 10)
       obj.sections[210] = {x = obj.sections[200].x + cb_bw+10,
                            y = obj.sections[200].y + (butt_h*2)+10,
                            w = ctl_browser_size.slots_x * slsz,
@@ -3346,7 +3357,9 @@
       obj.sections[160].x = math.max(obj.sections[160].x,obj.sections[10].x)      
       obj.sections[160].y = math.max(obj.sections[160].y,obj.sections[10].y)
     end
-  
+    obj.sections[160].w = math.floor(obj.sections[160].w)
+    obj.sections[160].h = math.floor(obj.sections[160].h)
+    
     obj = PosSnapshots(obj, ssh)
   
     --MOD EDIT (LFO)
@@ -3400,7 +3413,9 @@
     if obj.sections[1100].x < plist_w + 2 then
       obj.sections[1100].x = plist_w + 2
     end
-  
+    obj.sections[1100].w = math.floor(obj.sections[1100].w)
+    obj.sections[1100].h = math.floor(obj.sections[1100].h)
+    
     obj = PosMod(obj)
   
     
@@ -3420,12 +3435,12 @@
         local maxw2 = obj.sections[10].w + sbwin.w
         
         sbwin.w = math.floor(math.min(math.max(sbwin.w,lvar.sbmin),maxw2))
-        sbw,sbh = math.max(math.floor(sbwin.w*pnl_scale),lvar.sbmin*pnl_scale),
-                  math.max(math.min(math.floor((sbwin.h*pnl_scale)),obj.sections[10].h),lvar.sbmin*pnl_scale)
+        sbw,sbh = math.floor(math.max(math.floor(sbwin.w*pnl_scale),lvar.sbmin*pnl_scale)),
+                  math.floor(math.max(math.min(math.floor((sbwin.h*pnl_scale)),obj.sections[10].h),lvar.sbmin*pnl_scale))
       end
     else
-      sbw,sbh = math.max(math.min(math.floor(sbwin.w*pnl_scale),obj.sections[10].w),lvar.sbmin*pnl_scale),
-                    math.max(math.min(math.floor((sbwin.h*pnl_scale)),obj.sections[10].h),lvar.sbmin*pnl_scale)
+      sbw,sbh = math.floor(math.max(math.min(math.floor(sbwin.w*pnl_scale),obj.sections[10].w),lvar.sbmin*pnl_scale)),
+                    math.floor(math.max(math.min(math.floor((sbwin.h*pnl_scale)),obj.sections[10].h),lvar.sbmin*pnl_scale))
     end
     if mm1350 then
       obj.sections[1350] = {x = math.max(F_limit(mm1350.x,obj.sections[10].x,obj.sections[10].x+obj.sections[10].w-sbw),obj.sections[10].x),
@@ -3449,9 +3464,17 @@
         if settings_showbars then
           sb = sb_size
         end
-        local sbyy = topbarheight + sb + 2
-        obj.sections[1350].x = obj.sections[10].x
-        obj.sections[1350].w = gfx1.main_w - plist_w
+        local ypad = 2
+        if topbarheight == 0 then
+          ypad = 0
+        end
+        local sbyy = topbarheight + sb + ypad
+        local xpad = 0
+        if plist_w > 0 then
+          xpad = 1
+        end
+        obj.sections[1350].x = obj.sections[10].x-xpad
+        obj.sections[1350].w = gfx1.main_w - plist_w+xpad
         obj.sections[1350].y = sbyy
       else
         if settings_ssdock == true and show_snapshots == true then
@@ -3471,10 +3494,12 @@
         end
         
         obj.sections[1350].y = obj.sections[10].y
-        local hh = math.min(math.max((gfx1.main_h-obj.sections[10].y),lvar.sbmin*pnl_scale),2048)
+        local hh = math.floor(math.min(math.max((gfx1.main_h-obj.sections[10].y),lvar.sbmin*pnl_scale),2048))
         obj.sections[1350].h = hh
       end
     end
+    obj.sections[1350].h = math.floor(obj.sections[1350].h)
+    obj.sections[1350].w = math.floor(obj.sections[1350].w)
     
     obj = PosStripBrowser(obj)
   
@@ -6227,6 +6252,8 @@ elseif dragparam.type == 'rs5k' then
     skin.stripctlbtnsX = LoadSkinIMG(881, 'stripctlbtnsX.png')
     skin.stripctlbtnslock = LoadSkinIMG(882, 'stripctlbtnslock.png')
     skin.padlock = LoadSkinIMG(883, 'padlock_red.png')
+    skin.pnl_ledoff = LoadSkinIMG(884, 'pnl_ledoff.png')
+    skin.pnl_ledon = LoadSkinIMG(885, 'pnl_ledon.png')
   
     if skin.panela_top == -2 or 
        skin.panela_mid == -2 or 
@@ -6899,10 +6926,10 @@ elseif dragparam.type == 'rs5k' then
     gfx.blit(skin.arrowup,1,0,0,0,w,h,xywh.x+xywh.w/4-w/2,xywh.y+xywh.h/2-h/2)
     gfx.blit(skin.arrowdn,1,0,0,0,w,h,xywh.x+xywh.w*0.75-w/2,xywh.y+xywh.h/2-h/2)
 
-    local xywh = {x = obj.sections[500].x,
+    local xywh = {x = obj.sections[500].x+1,
                   y = obj.sections[500].y+obj.sections[500].h-butt_h,
-                  w = obj.sections[500].w-2,
-                  h = butt_h}
+                  w = obj.sections[500].w-3,
+                  h = butt_h-1}
     local txt
     if hideunusedtracks == true then
       txt = 'SHOW ALL TRACKS'
@@ -7161,13 +7188,21 @@ elseif dragparam.type == 'rs5k' then
     end
     
     if mode == 0 and plist_w >= 160 then
-    
       local w = math.floor(obj.sections[13].w / 3)
       local xywh = {x = obj.sections[11].x,
                     y = obj.sections[11].y,
                     w = obj.sections[11].w,
                     h = obj.sections[11].h}
       GUI_DrawBar(gui,'LIVE MODE',xywh,skin.bar,true,gui.skol.sb_txt_on,nil,-2 + gui.fontsz.sb,nil,gui.skol.sb_shad,gui.fontnm.sb,gui.fontflag.sb)      
+      
+      if skin.panela_cnrbl ~= -1 then
+        local xywh = obj.sections[11]
+        local pnlcnr_w, pnlcnr_h = gfx.getimgdim(skin.panela_cnrbl)
+        gfx.blit(skin.panela_cnrtl,1,0,0,0,pnlcnr_w,pnlcnr_h,xywh.x,xywh.y)
+        if topbarheight == 0 then
+          gfx.blit(skin.panela_cnrtr,1,0,0,0,pnlcnr_w,pnlcnr_h,xywh.x+xywh.w-pnlcnr_w-1,xywh.y)
+        end      
+      end
       
       xywh = {x = obj.sections[13].x,
               y = obj.sections[13].y,
@@ -7176,25 +7211,18 @@ elseif dragparam.type == 'rs5k' then
       if mode0_submode == 0 then
         GUI_DrawBar(gui,'TRACKS',xywh,skin.bar,true,gui.skol.sb_txt_on,nil,math.min(-3 + gui.fontsz.sb+tscale,1),nil,gui.skol.sb_shad,gui.fontnm.sb,gui.fontflag.sb,true)
       else
-        --local xywh2 = {x = xywh.x, y = xywh.y-1, w = xywh.w, h = xywh.h}
-        --GUI_textC(gui,xywh2,'TRACKS',gui.skol.sb_txt_off,-3 + gui.fontsz.sb)
         GUI_Str(gui,xywh,'TRACKS',5,gui.skol.sb_txt_off,math.min(-3 + gui.fontsz.sb+tscale,1),1,nil,gui.fontnm.sb,gui.fontflag.sb)      
       end
       xywh.x = xywh.x + w
       if mode0_submode == 1 then
         GUI_DrawBar(gui,'FADERS',xywh,skin.bar,true,gui.skol.sb_txt_on,nil,math.min(-3 + gui.fontsz.sb+tscale,1),nil,gui.skol.sb_shad,gui.fontnm.sb,gui.fontflag.sb,true)
       else
-        --local xywh2 = {x = xywh.x, y = xywh.y-1, w = xywh.w, h = xywh.h}
-        --GUI_textC(gui,xywh2,'FADERS',gui.skol.sb_txt_off,-3 + gui.fontsz.sb)      
         GUI_Str(gui,xywh,'FADERS',5,gui.skol.sb_txt_off,math.min(-3 + gui.fontsz.sb+tscale,1),1,nil,gui.fontnm.sb,gui.fontflag.sb)      
       end
       xywh.x = xywh.x + w
-      --xywh.w = obj.sections[11].w - xywh.x + 1
       if mode0_submode == 2 then
         GUI_DrawBar(gui,'MODS',xywh,skin.bar,true,gui.skol.sb_txt_on,nil,math.min(-3 + gui.fontsz.sb+tscale,1),nil,gui.skol.sb_shad,gui.fontnm.sb,gui.fontflag.sb,true)
       else
-        --local xywh2 = {x = xywh.x, y = xywh.y-1, w = xywh.w, h = xywh.h}
-        --GUI_textC(gui,xywh2,'MODS',gui.skol.sb_txt_off,-3 + gui.fontsz.sb)      
         GUI_Str(gui,xywh,'MODS',5,gui.skol.sb_txt_off,math.min(-3 + gui.fontsz.sb+tscale,1),1,nil,gui.fontnm.sb,gui.fontflag.sb)
       end
     
@@ -7210,6 +7238,15 @@ elseif dragparam.type == 'rs5k' then
 
       GUI_DrawBar(gui,'LIVE MODE',obj.sections[11],skin.bar,true,gui.skol.sb_txt_on,nil,-2 + gui.fontsz.sb,nil,gui.skol.sb_shad,gui.fontnm.sb,gui.fontflag.sb)
 
+      if skin.panela_cnrbl ~= -1 then
+        local xywh = obj.sections[11]
+        local pnlcnr_w, pnlcnr_h = gfx.getimgdim(skin.panela_cnrbl)
+        gfx.blit(skin.panela_cnrtl,1,0,0,0,pnlcnr_w,pnlcnr_h,xywh.x,xywh.y)
+        if topbarheight == 0 then
+          gfx.blit(skin.panela_cnrtr,1,0,0,0,pnlcnr_w,pnlcnr_h,xywh.x+xywh.w-pnlcnr_w-1,xywh.y)
+        end
+      end
+
       if mode0_submode == 0 then
         GUI_DrawBar(gui,'TRACKS',obj.sections[13],skin.bar,true,gui.skol.sb_txt_on,nil,-3 + gui.fontsz.sb,nil,gui.skol.sb_shad,gui.fontnm.sb,gui.fontflag.sb)
         GUI_DrawTracks(obj, gui)    
@@ -7220,44 +7257,18 @@ elseif dragparam.type == 'rs5k' then
         GUI_DrawBar(gui,'MODS',obj.sections[13],skin.bar,true,gui.skol.sb_txt_on,nil,-3 + gui.fontsz.sb,nil,gui.skol.sb_shad,gui.fontnm.sb,gui.fontflag.sb)
         GUI_DrawMods(obj, gui)    
       end      
-      --[[f_Get_SSV(gui.color.black)
-      gfx.rect(obj.sections[11].x+obj.sections[11].w-6,
-               obj.sections[11].y,
-               1,
-               obj.sections[11].h,1)        
-      f_Get_SSV(gui.color.white)]]
-               
-    
-    --[[elseif mode == 0 and mode0_submode == 1 then
-
-      GUI_DrawBar(gui,'FADERS',obj.sections[11],skin.bar,true,gui.skol.sb_txt_on,nil,-2 + gui.fontsz.sb,nil,gui.skol.sb_shad,gui.fontnm.sb,gui.fontflag.sb)
-
-      f_Get_SSV(gui.color.black)
-      gfx.rect(obj.sections[11].x+obj.sections[11].w-6,
-               obj.sections[11].y,
-               1,
-               obj.sections[11].h,1)        
-      f_Get_SSV(gui.color.white)
-               
-      GUI_DrawFaders(obj, gui)    
-
-    elseif mode == 0 and mode0_submode == 2 then
-
-      GUI_DrawBar(gui,'MODULATORS',obj.sections[11],skin.bar,true,gui.skol.sb_txt_on,nil,-2 + gui.fontsz.sb,nil,gui.skol.sb_shad,gui.fontnm.sb,gui.fontflag.sb)
-
-      f_Get_SSV(gui.color.black)
-      gfx.rect(obj.sections[11].x+obj.sections[11].w-6,
-               obj.sections[11].y,
-               1,
-               obj.sections[11].h,1)        
-      f_Get_SSV(gui.color.white)
-               
-      GUI_DrawMods(obj, gui)    
-    ]]
     else
     
       GUI_DrawBar(gui,'EDIT MODE',obj.sections[11],skin.barR,true,gui.skol.sb_txt_on,nil,-2 + gui.fontsz.sb,nil,gui.skol.sb_shad,gui.fontnm.sb,gui.fontflag.sb)
       gfx.a=1
+      if skin.panela_cnrbl ~= -1 then
+        local xywh = obj.sections[11]
+        local pnlcnr_w, pnlcnr_h = gfx.getimgdim(skin.panela_cnrbl)
+        gfx.blit(skin.panela_cnrtl,1,0,0,0,pnlcnr_w,pnlcnr_h,xywh.x,xywh.y)
+        if topbarheight == 0 then
+          gfx.blit(skin.panela_cnrtr,1,0,0,0,pnlcnr_w,pnlcnr_h,xywh.x+xywh.w-pnlcnr_w-1,xywh.y)
+        end
+      end
      
       if plist_w < 160 then
         GUI_DrawBar(gui,'',obj.sections[13],skin.bar,true,gui.skol.sb_txt_on,nil,-2)
@@ -7267,14 +7278,11 @@ elseif dragparam.type == 'rs5k' then
                         w = obj.sections[13].x+obj.sections[13].w-30,
                         h = obj.sections[13].h}
           if fxmode == 0 then
-            --GUI_textsm_CJ(gui,xywh,lvar.submode_table[submode+1],gui.skol.sb_txt_on,-2 + gui.fontsz.sb,xywh.w)
             GUI_Str(gui,xywh,lvar.submode_table[submode+1],5,gui.skol.sb_txt_on,math.min(-2 + gui.fontsz.sb+tscale,1),1,nil,gui.fontnm.sb,gui.fontflag.sb)
           elseif fxmode == 1 then
-            --GUI_textsm_CJ(gui,xywh,'TR PARAMS',gui.skol.sb_txt_on,-2 + gui.fontsz.sb,xywh.w) --hardcoded - sort out eventually
             GUI_Str(gui,xywh,'TR PARAMS',5,gui.skol.sb_txt_on,math.min(-2 + gui.fontsz.sb+tscale,1),1,nil,gui.fontnm.sb,gui.fontflag.sb)
           end
         else
-          --GUI_textC(gui,obj.sections[13],lvar.submode_table[submode+1],gui.skol.sb_txt_on,-2 + gui.fontsz.sb)
           GUI_Str(gui,obj.sections[13],lvar.submode_table[submode+1],5,gui.skol.sb_txt_on,math.min(-2 + gui.fontsz.sb+tscale,1),1,nil,gui.fontnm.sb,gui.fontflag.sb)
         end
         if submode == 0 then
@@ -7287,7 +7295,6 @@ elseif dragparam.type == 'rs5k' then
                    xywh.y, 
                    1,
                    xywh.h, 1, 1)
-          --GUI_textC(gui,xywh,'*',gui.skol.sb_txt_on,-2 + gui.fontsz.sb)
           GUI_Str(gui,xywh,'*',5,gui.skol.sb_txt_on,-2 + gui.fontsz.sb+tscale,1,nil,gui.fontnm.sb,gui.fontflag.sb)
   
         end
@@ -7307,11 +7314,7 @@ elseif dragparam.type == 'rs5k' then
         local w = math.floor(plist_w/4)
         local x = math.floor(obj.sections[13].x+sm*w)
         local xywh
-        --if sm ~= 3 then
-          xywh = {x = x, y = obj.sections[13].y, w = w, h = obj.sections[13].h}
-        --else
-        --  xywh = {x = x, y = obj.sections[13].y, w = obj.sections[13].w - x+1, h = obj.sections[13].h}        
-        --end
+        xywh = {x = x, y = obj.sections[13].y, w = w, h = obj.sections[13].h}
         GUI_DrawBar(gui,'',xywh,skin.bar,true,gui.skol.sb_txt_on,nil,-2)
         for i = 1, 4 do
           local x = obj.sections[13].x+(i-1)*w
@@ -7340,6 +7343,13 @@ elseif dragparam.type == 'rs5k' then
   
       end
     end
+    
+    --[[if skin.panela_cnrbl ~= -1 then
+      local xywh = obj.sections[43]
+      local pnlcnr_w, pnlcnr_h = gfx.getimgdim(skin.panela_cnrbl)
+      gfx.blit(skin.panela_cnrbl,1,0,0,0,pnlcnr_w,pnlcnr_h,xywh.x,xywh.y+xywh.h-pnlcnr_h-1)
+      gfx.blit(skin.panela_cnrbr,1,0,0,0,pnlcnr_w,pnlcnr_h,xywh.x+xywh.w-pnlcnr_w-1,xywh.y+xywh.h-pnlcnr_h-1)
+    end]]
     
     gfx.dest = 1  
   
@@ -8909,7 +8919,7 @@ elseif dragparam.type == 'rs5k' then
     GUI_textC(gui,obj.sections[110],auto_delay,gui.color.red,-2)
     
     GUI_DrawTick(gui, 'POS TO FRAME', obj.sections[107], gui.color.white, nz(cycle_select.mapptof, false),gui.fontsz.butt)
-    GUI_DrawTick(gui, 'I', obj.sections[111], gui.color.white, nz(cycle_select.invert, false),gui.fontsz.butt)
+    GUI_DrawTick(gui, '', obj.sections[111], gui.color.white, nz(cycle_select.invert, false),gui.fontsz.butt)
 
     GUI_DrawTick(gui, 'DRAGGABLE', obj.sections[108], gui.color.white, nz(cycle_select.draggable, false),gui.fontsz.butt)
     GUI_DrawTick(gui, 'EVEN SPREAD', obj.sections[109], gui.color.white, nz(cycle_select.spread, false),gui.fontsz.butt)
@@ -9053,7 +9063,7 @@ elseif dragparam.type == 'rs5k' then
 
     local tscale = (pnl_scale-1)*fontscale
 
-    GUI_DrawPanel(obj.sections[45],nil,'CTL OPTIONS          ')
+    GUI_DrawPanel(obj.sections[45],nil,'CTL OPTIONS                ')
 
     local xywh = {x = 0,
                   y = 2,
@@ -9064,12 +9074,26 @@ elseif dragparam.type == 'rs5k' then
     --f_Get_SSV(gui.color.white)
     gfx.a = 1 
 
-    xywh.x = xywh.x+xywh.w-40
+    local w,h = gfx.getimgdim(skin.pnl_ledoff)
+    local pw = math.floor(obj.sections[853].w/3)
+    local l1,l2,l3 = skin.pnl_ledoff,skin.pnl_ledoff,skin.pnl_ledoff
+    if ctl_page == 0 then
+      l1 = skin.pnl_ledon
+    elseif ctl_page == 1 then
+      l2 = skin.pnl_ledon
+    else
+      l3 = skin.pnl_ledon
+    end
+    gfx.blit(l1,1,0,0,0,w,h,obj.sections[853].x,obj.sections[853].y)
+    gfx.blit(l2,1,0,0,0,w,h,obj.sections[853].x+pw,obj.sections[853].y)
+    gfx.blit(l3,1,0,0,0,w,h,obj.sections[853].x+pw*2,obj.sections[853].y)
+    
+    --[[xywh.x = xywh.x+xywh.w-40
     xywh.w = 30
     
     f_Get_SSV(gui.color.black)
     gfx.rect(xywh.x,xywh.y,xywh.w,xywh.h,0)
-    GUI_textC(gui,xywh,ctl_page+1,gui.skol.pnl_tittxt,-2)
+    GUI_textC(gui,xywh,ctl_page+1,gui.skol.pnl_tittxt,-2)]]
     
     if ctl_page == 0 then
       local coff = 150*pnl_scale+(gui.winsz.pnltit*pnl_scale-gui.winsz.pnltit)
@@ -9101,7 +9125,8 @@ elseif dragparam.type == 'rs5k' then
           end        
         end
         
-        gfx.blit(iidx,scale_select,0, 0, h*math.ceil((ctl_files[knob_select].frames-1)*0.55), w, h, xywh.x + (xywh.w/2-(w*scale_select)/2), xywh.y + ((62.5*pnl_scale) - (h*scale_select)/2))
+        local yp = math.floor(obj.sections[90].y+obj.sections[90].h/2)
+        gfx.blit(iidx,scale_select,0, 0, h*math.ceil((ctl_files[knob_select].frames-1)*0.55), w, h, xywh.x + (xywh.w/2-(w*scale_select)/2), --[[xywh.y + ((62.5*pnl_scale)]] (yp - (h*scale_select)/2))
         xywh = {x = 0,
                 y = (butt_h+4)*pnl_scale,
                 w = obj.sections[45].w,
@@ -9122,7 +9147,7 @@ elseif dragparam.type == 'rs5k' then
       GUI_DrawButton(gui, '<', obj.sections[90], gui.color.white, gui.skol.butt1_txt, true)
       GUI_DrawButton(gui, '>', obj.sections[91], gui.color.white, gui.skol.butt1_txt, true)
           
-      GUI_DrawSliderH(gui, 'SCALE', obj.sections[50], gui.color.black, gui.skol.pnl_txt, (scale_select-0.5)*2)
+      GUI_DrawSliderH(gui, 'SCALE', obj.sections[50], gui.color.black, gui.skol.pnl_txt, (scale_select-0.5)*1)
       local xywh = {x = obj.sections[52].x-10*pnl_scale, y = obj.sections[52].y-butt_h*pnl_scale, w = obj.sections[52].w, h = obj.sections[52].h}
       GUI_textC(gui,xywh,'SHOW',gui.skol.pnl_txt,-5 +tscale)
       GUI_DrawTick(gui, 'NAME', obj.sections[52], gui.skol.pnl_txt, show_paramname)
@@ -9298,8 +9323,14 @@ elseif dragparam.type == 'rs5k' then
 
     local tscale = 0
     if noscale ~= true then
-      tscale = (pnl_scale-1)*fontscale
+      tscale = round((pnl_scale-1)*fontscale)
     end
+    --if t == 'FreqEcho' then
+    --  DBG(b.x..  '  '..b.y)
+    --end
+    b.x = math.floor(b.x)
+    b.y = math.floor(b.y)
+    
     
     if (opttxt or '') ~= '' then
       local xywh = {x=b.x-300,y=b.y-2,w=290,h=b.h+5}
@@ -11340,7 +11371,7 @@ function GUI_DrawCtlBitmap_Strips()
   end
     
   ------------------------------------------------------------
-  function PopulateCtlBrowser_Imgs()
+  --[[function PopulateCtlBrowser_Imgs()
   
     cbi = {}
     local icnt = ctl_browser_image+1
@@ -11398,7 +11429,7 @@ function GUI_DrawCtlBitmap_Strips()
     end
     
     
-  end
+  end]]
   
   function SetCbiSelect()
   
@@ -11418,47 +11449,93 @@ function GUI_DrawCtlBitmap_Strips()
       end
     end  
   end
+
+  function PopulateCtlBrowser_Cbi()
+  
+    cbi = {}
+    local cbicnt = 0
+    for i = 0, #ctl_files do
+      if ctl_files[i].ctltype == cbi_filter or cbi_filter == -1 then
+        cbi[cbicnt] = {idx = i,
+                      fn = ctl_files[i].fn,
+                      imageidx = ctl_files[i].imageidx,
+                      cellh = ctl_files[i].cellh,
+                      frames = ctl_files[i].frames,
+                      ctltype = ctl_files[i].ctltype}
+        cbicnt = cbicnt + 1
+      end
+    end    
+    
+  end
+  
+  function GUI_DrawCtlBrowserCtls(obj, gui)
+  
+    gfx.dest = 905
+    
+    gfx.setimgdim(905, -1, -1)
+    gfx.setimgdim(905, obj.sections[210].w, obj.sections[210].h)
+
+    --local p = math.floor(cbi_offset / (ctl_browser_size.slots_x*ctl_browser_size.slots_y))+1
+
+    for cg = 0, ctl_browser_size.slots_x*ctl_browser_size.slots_y-1 do
+      local i = cbi_offset + cg
+      if cbi[i] then
+      
+        iidx = cbi[i].imageidx
+        if iidx == nil then
+          iidx = 989
+          gfx.loadimg(iidx, paths.controls_path..cbi[i].fn)
+        end
+          
+        local w, _ = gfx.getimgdim(iidx)
+        local h = cbi[i].cellh
+        gfx.a = 1
+        local scale_select = 1
+        xywh = {x = (cg % ctl_browser_size.slots_x)*ctl_browser_size.slotsz,
+                y = math.floor(cg / ctl_browser_size.slots_x)*ctl_browser_size.slotsz,
+                w = ctl_browser_size.slotsz,
+                h = ctl_browser_size.slotsz}
+        if w > h then
+          if w > ctl_browser_size.slotsz then
+            scale_select = ctl_browser_size.slotsz / w
+          end
+        else
+          if h > ctl_browser_size.slotsz then
+            scale_select = ctl_browser_size.slotsz / h
+          end        
+        end
+        gfx.blit(iidx,scale_select,0, 0, h*math.ceil((cbi[i].frames-1)*0.55), w, h,
+                 math.floor(xywh.x + (xywh.w/2-(w*scale_select)/2)), math.floor(xywh.y + ((xywh.h - (h*scale_select))/2)))
+      
+      end
+    end
+    
+    gfx.dest = 1
+  
+  end
   
   function GUI_DrawCtlBrowser(obj, gui)
 
     gfx.a=1
     GUI_DrawPanel(obj.sections[200],true,'CONTROL BROWSER',true)
-    --[[f_Get_SSV('32 32 32')
-    gfx.rect(obj.sections[200].x,
-             obj.sections[200].y, 
-             obj.sections[200].w,
-             obj.sections[200].h, 1, 1)
-    f_Get_SSV('64 64 64')
-    gfx.rect(obj.sections[200].x,
-             obj.sections[200].y, 
-             obj.sections[200].w,
-             obj.sections[200].h, 0, 1)]]
 
     f_Get_SSV('64 64 64')
-    gfx.rect(obj.sections[210].x-2,
-             obj.sections[210].y-2, 
-             obj.sections[210].w+4,
-             obj.sections[210].h+4, 1, 1)
-    f_Get_SSV('0 0 0')
-    gfx.rect(obj.sections[210].x-2,
-             obj.sections[210].y-2, 
-             obj.sections[210].w+4,
-             obj.sections[210].h+4, 0, 1)
-    
-    --[[xywh = {x = obj.sections[200].x,
-            y = obj.sections[200].y, 
-            w = obj.sections[200].w,
-            h = butt_h}
-    
-    f_Get_SSV(gui.color.white)
-    gfx.a = 1 
+    local xywh = {x = obj.sections[210].x-2,
+                  y = obj.sections[210].y-2,
+                  w = obj.sections[210].w+4,
+                  h = obj.sections[210].h+4}
     gfx.rect(xywh.x,
              xywh.y, 
              xywh.w,
-             butt_h, 1)
-    
-    GUI_textC(gui,xywh,'CONTROL BROWSER',gui.color.black,-2)]]
-    
+             xywh.h, 1, 1)
+    if skin.panela_cnrbl ~= -1 then
+      local pnlcnr_w, pnlcnr_h = gfx.getimgdim(skin.panela_cnrbl)
+      gfx.blit(skin.panela_cnrtl,1,0,0,0,pnlcnr_w,pnlcnr_h,xywh.x,xywh.y)
+      gfx.blit(skin.panela_cnrtr,1,0,0,0,pnlcnr_w,pnlcnr_h,xywh.x+xywh.w-pnlcnr_w,xywh.y)
+      gfx.blit(skin.panela_cnrbl,1,0,0,0,pnlcnr_w,pnlcnr_h,xywh.x,xywh.y+xywh.h-pnlcnr_h)
+      gfx.blit(skin.panela_cnrbr,1,0,0,0,pnlcnr_w,pnlcnr_h,xywh.x+xywh.w-pnlcnr_w,xywh.y+xywh.h-pnlcnr_h)
+    end
+        
     GUI_DrawButton(gui, 'ALL', obj.sections[201], gui.color.white, gui.skol.butt1_txt, true, '', false)
     GUI_DrawButton(gui, 'KNOBS', obj.sections[202], gui.color.white, gui.skol.butt1_txt, true, '', false)
     GUI_DrawButton(gui, 'SLIDERS', obj.sections[203], gui.color.white, gui.skol.butt1_txt, true, '', false)
@@ -11475,42 +11552,28 @@ function GUI_DrawCtlBitmap_Strips()
             w = 20,
             h = butt_h}
     local p = math.floor(cbi_offset / math.min(ctl_browser_size.slots_x*ctl_browser_size.slots_y,maximg_browse))+1
-    local p2 = math.floor(cbi_cnt / math.min(ctl_browser_size.slots_x*ctl_browser_size.slots_y,maximg_browse))+1 
+    local p2 = math.floor(#cbi / math.min(ctl_browser_size.slots_x*ctl_browser_size.slots_y,maximg_browse))+1 
     GUI_textsm_LJ(gui,xywh,'PAGE '..p..'/'..p2,gui.color.white,-2)
     
+    gfx.blit(905,1,0, 0, 0, obj.sections[210].w, obj.sections[210].h, obj.sections[210].x, obj.sections[210].y)
 
-    for cg = 0, math.min(ctl_browser_size.slots_x*ctl_browser_size.slots_y-1,maximg_browse) do
-      if cbi[cg] then
-      
-        iidx = cbi[cg].imageidx
-          
-        local w, _ = gfx.getimgdim(iidx)
-        local h = cbi[cg].cellh
-        gfx.a = 1
-        local scale_select = 1
-        xywh = {x = obj.sections[210].x + (cg % ctl_browser_size.slots_x)*ctl_browser_size.slotsz,
-                y = obj.sections[210].y + math.floor(cg / ctl_browser_size.slots_x)*ctl_browser_size.slotsz,
-                w = ctl_browser_size.slotsz,
-                h = ctl_browser_size.slotsz}
-        if w > h then
-          if w > ctl_browser_size.slotsz then
-            scale_select = ctl_browser_size.slotsz / w
-          end
-        else
-          if h > ctl_browser_size.slotsz then
-            scale_select = ctl_browser_size.slotsz / h
-          end        
-        end
-        gfx.blit(iidx,scale_select,0, 0, h*math.ceil((cbi[cg].frames-1)*0.55), w, h,
-                 xywh.x + (xywh.w/2-(w*scale_select)/2), xywh.y + ((xywh.h - (h*scale_select))/2))
-        gfx.a = 0.75
+    for cg = 0, ctl_browser_size.slots_x*ctl_browser_size.slots_y-1 do
+      local ii = cbi_offset+cg
+      if cbi[ii] then
+        --DBG(ii..'  '..cbi_select)
+        if cbi[ii].idx == cbi_select then
+
+          xywh = {x = obj.sections[210].x + (cg % ctl_browser_size.slots_x)*ctl_browser_size.slotsz,
+                  y = obj.sections[210].y + math.floor(cg / ctl_browser_size.slots_x)*ctl_browser_size.slotsz,
+                  w = ctl_browser_size.slotsz,
+                  h = ctl_browser_size.slotsz}
+          gfx.a = 0.75
         
-        if cbi[cg].idx == cbi_select then
           f_Get_SSV(gui.color.yellow)
-          gfx.roundrect(xywh.x+1,
-                   xywh.y,
-                   xywh.w-2,
-                   xywh.h,8,0,1)        
+          gfx.roundrect(math.floor(xywh.x+1),
+                   math.floor(xywh.y),
+                   math.floor(xywh.w-2),
+                   math.floor(xywh.h),8,0,1)        
         --GUI_textC(gui,xywh,ctl_files[cg].fn,gui.color.white,-5)]]
         end
         
@@ -11562,6 +11625,132 @@ function GUI_DrawCtlBitmap_Strips()
     end
 
   end
+
+  --[[function GUI_DrawCtlBrowser(obj, gui)
+
+    gfx.a=1
+    GUI_DrawPanel(obj.sections[200],true,'CONTROL BROWSER',true)
+
+    f_Get_SSV('64 64 64')
+    local xywh = {x = obj.sections[210].x-2,
+                  y = obj.sections[210].y-2,
+                  w = obj.sections[210].w+4,
+                  h = obj.sections[210].h+4}
+    gfx.rect(xywh.x,
+             xywh.y, 
+             xywh.w,
+             xywh.h, 1, 1)
+    if skin.panela_cnrbl ~= -1 then
+      local pnlcnr_w, pnlcnr_h = gfx.getimgdim(skin.panela_cnrbl)
+      gfx.blit(skin.panela_cnrtl,1,0,0,0,pnlcnr_w,pnlcnr_h,xywh.x,xywh.y)
+      gfx.blit(skin.panela_cnrtr,1,0,0,0,pnlcnr_w,pnlcnr_h,xywh.x+xywh.w-pnlcnr_w,xywh.y)
+      gfx.blit(skin.panela_cnrbl,1,0,0,0,pnlcnr_w,pnlcnr_h,xywh.x,xywh.y+xywh.h-pnlcnr_h)
+      gfx.blit(skin.panela_cnrbr,1,0,0,0,pnlcnr_w,pnlcnr_h,xywh.x+xywh.w-pnlcnr_w,xywh.y+xywh.h-pnlcnr_h)
+    end
+        
+    GUI_DrawButton(gui, 'ALL', obj.sections[201], gui.color.white, gui.skol.butt1_txt, true, '', false)
+    GUI_DrawButton(gui, 'KNOBS', obj.sections[202], gui.color.white, gui.skol.butt1_txt, true, '', false)
+    GUI_DrawButton(gui, 'SLIDERS', obj.sections[203], gui.color.white, gui.skol.butt1_txt, true, '', false)
+    GUI_DrawButton(gui, 'BUTTONS', obj.sections[204], gui.color.white, gui.skol.butt1_txt, true, '', false)
+    GUI_DrawButton(gui, 'METERS', obj.sections[205], gui.color.white, gui.skol.butt1_txt, true, '', false)
+    GUI_DrawButton(gui, 'MISC', obj.sections[206], gui.color.white, gui.skol.butt1_txt, true, '', false)
+
+    GUI_DrawButton(gui, '<<', obj.sections[211], gui.color.white, gui.skol.butt1_txt, true, '', false)
+    GUI_DrawButton(gui, '>>', obj.sections[212], gui.color.white, gui.skol.butt1_txt, true, '', false)
+    
+    
+    xywh = {x = obj.sections[212].x+obj.sections[212].w+20,
+            y = obj.sections[212].y, 
+            w = 20,
+            h = butt_h}
+    local p = math.floor(cbi_offset / math.min(ctl_browser_size.slots_x*ctl_browser_size.slots_y,maximg_browse))+1
+    local p2 = math.floor(cbi_cnt / math.min(ctl_browser_size.slots_x*ctl_browser_size.slots_y,maximg_browse))+1 
+    GUI_textsm_LJ(gui,xywh,'PAGE '..p..'/'..p2,gui.color.white,-2)
+    
+
+    for cg = 0, math.min(ctl_browser_size.slots_x*ctl_browser_size.slots_y-1,maximg_browse) do
+      if cbi[cg] then
+      
+        iidx = cbi[cg].imageidx
+          
+        local w, _ = gfx.getimgdim(iidx)
+        local h = cbi[cg].cellh
+        gfx.a = 1
+        local scale_select = 1
+        xywh = {x = obj.sections[210].x + (cg % ctl_browser_size.slots_x)*ctl_browser_size.slotsz,
+                y = obj.sections[210].y + math.floor(cg / ctl_browser_size.slots_x)*ctl_browser_size.slotsz,
+                w = ctl_browser_size.slotsz,
+                h = ctl_browser_size.slotsz}
+        if w > h then
+          if w > ctl_browser_size.slotsz then
+            scale_select = ctl_browser_size.slotsz / w
+          end
+        else
+          if h > ctl_browser_size.slotsz then
+            scale_select = ctl_browser_size.slotsz / h
+          end        
+        end
+        gfx.blit(iidx,scale_select,0, 0, h*math.ceil((cbi[cg].frames-1)*0.55), w, h,
+                 math.floor(xywh.x + (xywh.w/2-(w*scale_select)/2)), math.floor(xywh.y + ((xywh.h - (h*scale_select))/2)))
+        gfx.a = 0.75
+        
+        if cbi[cg].idx == cbi_select then
+          f_Get_SSV(gui.color.yellow)
+          gfx.roundrect(math.floor(xywh.x+1),
+                   math.floor(xywh.y),
+                   math.floor(xywh.w-2),
+                   math.floor(xywh.h),8,0,1)        
+        --GUI_textC(gui,xywh,ctl_files[cg].fn,gui.color.white,-5)
+        end
+        
+      else
+        break
+      end
+    end
+
+    gfx.a = 1
+    if cbi_select_inf and cbi_select_inf.imageidx then
+      local scale_selecta, scale_selectb = 1,1
+      local w, _ = gfx.getimgdim(cbi_select_inf.imageidx)
+      local h = cbi_select_inf.cellh
+      if w > obj.sections[213].w then
+        scale_selecta = obj.sections[213].w / w
+      end
+      if h > obj.sections[213].h then
+        scale_selectb = obj.sections[213].h / h
+      end
+      local scale_select = F_limit(math.min(scale_selecta,scale_selectb),0,1)    
+      
+      local xywh = {x = obj.sections[213].x,
+                    y = obj.sections[213].y,
+                    w = obj.sections[213].w,
+                    h = butt_h}
+      if xywh.y + h*scale_select > obj.sections[200].y + obj.sections[200].h then
+        xywh.y = obj.sections[200].y + obj.sections[200].h - h*scale_select-2
+      end       
+      if xywh.y < obj.sections[200].y + obj.sections[200].h then
+        gfx.blit(cbi_select_inf.imageidx,scale_select,0, 0, h*math.ceil((cbi_select_inf.frames-1)*0.55), w, h,
+                 xywh.x + (xywh.w/2-(w*scale_select)/2), xywh.y)-- + ((obj.sections[213].h/2) - (h*scale_select))/2)
+      end
+                     
+      local xywh = {x = obj.sections[213].x,
+                    y = obj.sections[213].y-butt_h*6,
+                    w = obj.sections[213].w,
+                    h = butt_h}
+      GUI_textsm_LJ(gui,xywh,cbi_select_inf.fn,gui.color.white,-5,xywh.w)
+      xywh.y = xywh.y + butt_h
+      GUI_textsm_LJ(gui,xywh,'W = '..w,gui.color.white,-5,xywh.w)
+      xywh.y = xywh.y + butt_h
+      GUI_textsm_LJ(gui,xywh,'H = '..h,gui.color.white,-5,xywh.w)
+      xywh.y = xywh.y + butt_h
+      GUI_textsm_LJ(gui,xywh,'Frames = '..cbi_select_inf.frames,gui.color.white,-5,xywh.w)
+      xywh.y = xywh.y + butt_h
+      GUI_textsm_LJ(gui,xywh,'Type = '..lvar.ctlfile_type_table[cbi_select_inf.ctltype+1],gui.color.white,-5,xywh.w)      
+      xywh.y = xywh.y + butt_h
+            
+    end
+
+  end]]
 
   ------------------------------------------------------------
   
@@ -14574,6 +14763,11 @@ function GUI_DrawCtlBitmap_Strips()
     local ph = lvar.stripbrowser.minh
     local sw,sh = gfx.getimgdim(skin.star)
     local htxt
+
+    --Dummy to set font
+    local xywh = {x = 0, y = 0, w = 0, h = 0}
+    GUI_DrawButton(gui, '', xywh, -5, gui.skol.butt1_txt, true, '', false, 0, false, 4)
+    
     --local pad = 15
     --if lvar.stripbrowser.ynum == 1 then
      -- pad = 5
@@ -14601,8 +14795,8 @@ function GUI_DrawCtlBitmap_Strips()
         if fn then
         --if strip_files[n] then
 
-          local px = x*(lvar.stripbrowser.imgw+10)+15+dx
-          local py = y*(lvar.stripbrowser.imgh+10)+5+dy
+          local px = math.floor(x*(lvar.stripbrowser.imgw+10)+15+dx)
+          local py = math.floor(y*(lvar.stripbrowser.imgh+10)+5+dy)
 
           local iidx = -1
           if reaper.file_exists(paths.strips_path..fn) then
@@ -14628,7 +14822,7 @@ function GUI_DrawCtlBitmap_Strips()
           if tw > xywh.w then
             just = 4
           end
-          GUI_DrawButton(gui, tfn, xywh, -5, gui.skol.butt1_txt, true, '', false, 0, false, just)
+          GUI_DrawButton(gui, tfn, xywh, -1, gui.skol.butt1_txt, true, '', false, 0, false, just)
 
           if lvar.stripbrowser.select and lvar.stripbrowser.select == n then
             f_Get_SSV(gui.color.yellow)
@@ -15562,13 +15756,6 @@ function GUI_DrawCtlBitmap_Strips()
         end
         
         if show_snapshots and macro_lrn_mode ~= true then
-        --DBG('p')
-          --[[gfx.blit(1000,1,0,obj.sections[160].x + surface_offset.x - obj.sections[10].x,
-                            obj.sections[160].y + surface_offset.y - obj.sections[10].y,
-                            obj.sections[160].w,
-                            obj.sections[160].h,
-                            obj.sections[160].x,
-                            obj.sections[160].y)  ]]  
 
           gfx.blit(1003,1,0,0,0,obj.sections[160].w,obj.sections[160].h,obj.sections[160].x,obj.sections[160].y)        
         
@@ -15649,12 +15836,6 @@ function GUI_DrawCtlBitmap_Strips()
           if update_lfopos then
             GUI_DrawLFOPos(obj, gui)          
           end
-          --[[gfx.blit(1000,1,0,obj.sections[1100].x + surface_offset.x - obj.sections[10].x,
-                            obj.sections[1100].y + surface_offset.y - obj.sections[10].y,
-                            obj.sections[1100].w,
-                            obj.sections[1100].h,
-                            obj.sections[1100].x,
-                            obj.sections[1100].y)]]        
           gfx.blit(992,1,0,0,0,obj.sections[1100].w,obj.sections[1100].h,obj.sections[1100].x-2,obj.sections[1100].y)         
         
         end
@@ -15749,7 +15930,6 @@ function GUI_DrawCtlBitmap_Strips()
                             obj.sections[10].h,
                             obj.sections[10].x,
                             obj.sections[10].y)
-          --gfx.blit(1001,1,0,0,0,obj.sections[43].w,obj.sections[43].h,0,butt_h+2)
           if ctl_select ~= nil then
             selrect, selrect_sc = CalcSelRect()
             local rc
@@ -15915,7 +16095,7 @@ function GUI_DrawCtlBitmap_Strips()
                 h = ctl_files[knob_select].cellh
                 bc = gui.color.yellow
               end
-              gfx.blit(iidx,scale_select,0,0,p*h,w,ctl_files[knob_select].cellh,x+ w/2-w*scale_select/2,y+ h/2-h*scale_select/2 )
+              gfx.blit(iidx,scale_select,0,0,p*h,w,--[[ctl_files[knob_select].cellh]] h,x+ w/2-w*scale_select/2,y+ h/2-h*scale_select/2 )
               f_Get_SSV(bc)
               gfx.a = 1
               gfx.roundrect(x, y ,w, h, 8, 1, 0)
@@ -16161,8 +16341,6 @@ function GUI_DrawCtlBitmap_Strips()
             GUI_DrawStripLayout()
           
           end
-          
-          --gfx.blit(1001,1,0,0,0,obj.sections[43].w,obj.sections[43].h,0,butt_h)          
 
           if update_gfx or update_surface and show_striplayout == false then
             if lockh > 0 or lockw > 0 or surface_size.exceed == true then
@@ -16231,12 +16409,6 @@ function GUI_DrawCtlBitmap_Strips()
           gfx.blit(1001,1,0,0,0,obj.sections[43].w,obj.sections[43].h,0,0)          
 
           gfx.a=1
-          --[[f_Get_SSV(gui.color.white)
-          gfx.rect(obj.sections[511].x,
-                   obj.sections[511].y, 
-                   obj.sections[511].w,
-                   obj.sections[511].h, 1, 1)
-          GUI_textC(gui,obj.sections[511],'SAVE STRIP',gui.color.black,-2)  ]]      
 
           if ctl_select ~= nil and show_striplayout == false then
             --gfx.dest = 1
@@ -16256,10 +16428,11 @@ function GUI_DrawCtlBitmap_Strips()
 
       end
       
+      local ypad = math.floor(tb_butt_h)
       local xywh = {x = obj.sections[43].w-2,
-                    y = obj.sections[43].y,
+                    y = obj.sections[43].y+ypad,
                     w = 1,
-                    h = obj.sections[43].h}
+                    h = obj.sections[43].h-ypad}
       f_Get_SSV(gui.color.cbobg2)
       gfx.a = 1 
       gfx.rect(xywh.x,
@@ -16269,11 +16442,6 @@ function GUI_DrawCtlBitmap_Strips()
       f_Get_SSV(gui.color.black)
       gfx.line(obj.sections[43].w-1,0,obj.sections[43].w-1,gfx1.main_h)
     
-      
---[[      if resize_display or update_gfx then
-        gfx.setimgdim(999,-1,-1)
-        gfx.setimgdim(999,gfx1.main_w-plist_w, butt_h)         
-      end]]
       if resize_display or update_gfx or update_topbar then
         gfx.setimgdim(999,-1,-1)
         gfx.setimgdim(999,gfx1.main_w-plist_w, tb_butt_h+1)         
@@ -16894,7 +17062,11 @@ function GUI_DrawCtlBitmap_Strips()
       end
     else
       GUI_DrawBar(gui,'<>',obj.sections[18],skin.bar,true,gui.skol.sb_txt_on,nil,-2 + gui.fontsz.sb,nil,gui.skol.sb_shad)
-    end    
+    end
+    --[[if skin.panela_cnrbl ~= -1 then
+      local pnlcnr_w, pnlcnr_h = gfx.getimgdim(skin.panela_cnrbl)
+      gfx.blit(skin.panela_cnrtl,1,0,0,0,pnlcnr_w,pnlcnr_h,obj.sections[18].x,obj.sections[18].y)
+    end ]]   
     
     local t
     if c == gui.color.black then
@@ -25846,6 +26018,7 @@ function GUI_DrawCtlBitmap_Strips()
     obj = GetObjects()
     update_surface = true
     update_topbar = true
+    update_sidebar = true
     
   end
   
@@ -27743,8 +27916,12 @@ function GUI_DrawCtlBitmap_Strips()
         end
       end
     else
+      local ypad = 2
+      if topbarheight == 0 then
+        ypad = 0
+      end
       obj.sections[10] = {x = plist_w,
-                          y = topbarheight+2,
+                          y = topbarheight+ypad,
                           w = gfx1.main_w-(plist_w+2)+2,
                           h = gfx1.main_h-(topbarheight+1)}
       if settings_ssdock == true and show_snapshots and mode == 0 then
@@ -27791,42 +27968,106 @@ function GUI_DrawCtlBitmap_Strips()
 
   end
 
+  function SetDefKP()
+    
+    lvar.keypress = {}
+    lvar.keypress['setmode_1'] = 108
+    lvar.keypress['setmode_2'] = 102
+    lvar.keypress['setmode_3'] = 116
+    lvar.keypress['setmode_4'] = 103
+    lvar.keypress['setmode_5'] = 115
+    lvar.keypress['topmenu'] = 47
+    lvar.keypress['togglesidebar'] = 91
+    lvar.keypress['toggletopbar'] = 93
+    lvar.keypress['editfx_copy'] = 3
+    lvar.keypress['editfx_paste'] = 22
+    lvar.keypress['nexttrack'] = 46
+    lvar.keypress['prevtrack'] = 44
+    lvar.keypress['dock'] = 4
+    lvar.keypress['locksurface'] = 12
+    lvar.keypress['nextpage'] = 61
+    lvar.keypress['prevpage'] = 45
+    lvar.keypress['saveproject'] = 19
+    lvar.keypress['show_snapshots'] = 83
+    lvar.keypress['show_settings'] = 63
+    lvar.keypress['bg_trans_dec'] = 53
+    lvar.keypress['bg_trans_inc'] = 54
+    lvar.keypress['bg_trans_reset'] = 55
+    lvar.keypress['show_trackfxorder'] = 49
+    lvar.keypress['rb_menu'] = 105
+    lvar.keypress['show_ctlbitmap'] = 13
+    lvar.keypress['show_striplayout'] = 9
+    lvar.keypress['show_gallery'] = 92
+    lvar.keypress['gallery_swipeprev'] = 1818584692
+    lvar.keypress['gallery_swipenext'] = 1919379572
+    lvar.keypress['show_modedit'] = 50
+    lvar.keypress['show_morphpopup'] = 51
+    lvar.keypress['show_pinmatrix'] = 52
+    lvar.keypress['editfx_deleteselectedctls'] = 6579564
+    lvar.keypress['show_stripbrowser'] = 48
+    
+    local fn = paths.resource_path..'keycommands.ini'
+    if reaper.file_exists(fn) then
+      for line in io.lines(fn) do
+        local k, v = string.match(line,'%[(.-)%](.*)')
+        lvar.keypress[k] = tonumber(v)
+      end
+    end
+    
+  end
+
+  --[[function SaveDefKP()
+  
+    local kptxt = ''
+    for k in pairs(lvar.keypress) do
+      kptxt = kptxt .. '['..k..']'..lvar.keypress[k]..'\n'
+    end
+    local file = io.open(paths.resource_path..'keycommands.ini','wb')
+    if file then
+      file:write(kptxt)
+    end
+    file:close()
+    
+  end]]
+
   function keypress(char)
     --DBG(tostring(mouse.ctrl)..'  '..char)
     
     if settings_disablekeysonlockedsurface and settings_locksurface then return end
     
     --if not mouse.shift then
-      if char == 102 then
+      if char == lvar.keypress['setmode_2'] then
         setmode(2)
-      elseif char == 116 then
+      elseif char == lvar.keypress['setmode_3'] then
         setmode(3)      
-      elseif char == 103 then
+      elseif char == lvar.keypress['setmode_4'] then
         setmode(4)      
-      elseif char == 115 then
+      elseif char == lvar.keypress['setmode_5'] then
         setmode(5)
-      elseif char == 108 then
+      elseif char == lvar.keypress['setmode_1'] then
         setmode(1)
-      elseif char == 47 then
+      elseif char == lvar.keypress['topmenu'] then
         TopMenu()
-      elseif char == 91 then
+      elseif char == lvar.keypress['togglesidebar'] then
         ToggleSidebar()
-      elseif char == 93 then
-        hide_topbar = not hide_topbar
+      elseif char == lvar.keypress['toggletopbar'] then
+      
+        ToggleTopbar()
+        --[[hide_topbar = not hide_topbar
         obj = GetObjects()
         update_surface = true
-        update_topbar = true
-      elseif char == 3 then
+        update_topbar = true]]
+      elseif char == lvar.keypress['editfx_copy'] then
         if mode == 1 and submode == 0 then
           Copy_Selected()
         end
-      elseif char == 22 then
+      elseif char == lvar.keypress['editfx_paste'] then
         if mode == 1 and submode == 0 then
           Paste_Selected()
           SetCtlBitmapRedraw()
           update_gfx = true          
         end
-      elseif char == 46 then
+      elseif char == lvar.keypress['nexttrack'] then
         local t = track_select + 1
         if gpage == true then
           if gpage_otrackselect then
@@ -27844,7 +28085,7 @@ function GUI_DrawCtlBitmap_Strips()
           ChangeTrack2(t)
         end
         
-      elseif char == 44 then        
+      elseif char == lvar.keypress['prevtrack'] then        
         local t = track_select - 1
         if gpage == true then
           if gpage_otrackselect then
@@ -27862,7 +28103,7 @@ function GUI_DrawCtlBitmap_Strips()
           ChangeTrack2(t)
         end
         
-      elseif char == 4 then
+      elseif char == lvar.keypress['dock'] then
         local d = gfx.dock(-1)
         if d%256 == 0 then
           if dockstate and dockstate%256 ~= 0 then
@@ -27874,37 +28115,37 @@ function GUI_DrawCtlBitmap_Strips()
           dockstate = d
           gfx.dock(256)
         end
-      elseif char == 12 then
+      elseif char == lvar.keypress['locksurface'] then
         settings_locksurface = not settings_locksurface
-      elseif char == 61 then
+      elseif char == lvar.keypress['nextpage'] then
         if navigate and gpage == true then SetPage(1)
         elseif navigate then SetPage(math.min(page+1,4)) end
         
-      elseif char == 45 then  
+      elseif char == lvar.keypress['prevpage'] then  
         if navigate then SetPage(math.max(page-1,0)) end
-      elseif char == 19 then
+      elseif char == lvar.keypress['saveproject'] then
         SaveProj(nil, true)
         lastprojdirty = 0
       --elseif char == 19 then
         --ToggleSidebar()
-      elseif char == 83 then
+      elseif char == lvar.keypress['show_snapshots'] then
         SetShowSS(not show_snapshots)
-      elseif char == 63 then
+      elseif char == lvar.keypress['show_settings'] then
         show_settings = not show_settings
         update_surface = true
-      elseif char == 53 then
+      elseif char == lvar.keypress['bg_trans_dec'] then
         backalpha = math.max(backalpha - 0.05,0)
         update_bg = true
         update_gfx = true
-      elseif char == 54 then
+      elseif char == lvar.keypress['bg_trans_inc'] then
         backalpha = math.min(backalpha +0.05,2)
         update_bg = true
         update_gfx = true
-      elseif char == 55 then
+      elseif char == lvar.keypress['bg_trans_reset'] then
         backalpha = 1
         update_bg = true
         update_gfx = true
-      elseif char == 49 then
+      elseif char == lvar.keypress['show_trackfxorder'] then
         tfxo_listpos = 0
         tfxorder = TrackFXOrder_Read()
         tfxreorder = TrackFXOrder_Read()
@@ -27913,12 +28154,12 @@ function GUI_DrawCtlBitmap_Strips()
           update_gfx = true
         end
         char = 0
-      elseif char == 105 then
+      elseif char == lvar.keypress['rb_menu'] then
         RBMenu(2,nil,nil)
-      elseif char == 13 then
+      elseif char == lvar.keypress['show_ctlbitmap'] then
         show_bitmap = not show_bitmap
         update_gfx = true
-      elseif char == 9 then
+      elseif char == lvar.keypress['show_striplayout'] then
         if mode == 0 or (mode == 1 and submode == 2) then
           show_striplayout = not show_striplayout
           SetSurfaceSize2(obj)
@@ -27970,7 +28211,7 @@ function GUI_DrawCtlBitmap_Strips()
           update_surface = true
         end
       
-      elseif char == 92 then
+      elseif char == lvar.keypress['show_gallery'] then
         show_striplayout = false
         if mode == 0 then
           stripgallery_view = stripgallery_view +1
@@ -27990,21 +28231,21 @@ function GUI_DrawCtlBitmap_Strips()
                     
           update_surface = true          
         end
-      elseif char == 1818584692 then
+      elseif char == lvar.keypress['gallery_swipeprev'] then
       
         if mode == 0 and show_striplayout == false and stripgallery_view == 1 then
           GallerySwipe(0)
         end
-      elseif char == 1919379572 then
+      elseif char == lvar.keypress['gallery_swipenext'] then
         if mode == 0 and show_striplayout == false and stripgallery_view == 1 then
           GallerySwipe(1)
         end
-      elseif char == 50 then
+      elseif char == lvar.keypress['show_modedit'] then
         SetShowLFO(not show_lfoedit)
-      elseif char == 51 then
+      elseif char == lvar.keypress['show_morphpopup'] then
         settings_showmorphpop = not settings_showmorphpop
         update_gfx = true
-      elseif char == 52 then
+      elseif char == lvar.keypress['show_pinmatrix'] then
         show_pinmatrix = not show_pinmatrix
         local w, h = PinMatrix_CalcDim()
         local x = math.max(obj.sections[1200].w/2 - w/2,40)
@@ -28017,7 +28258,7 @@ function GUI_DrawCtlBitmap_Strips()
         end
         update_surface = true
         
-      elseif char == 30064 then
+      --[[elseif char == 30064 then
         if mode == 0 then
           --tlist_offset = F_limit(tlist_offset - 1, 0, #tracks+1)
           --update_sidebar = true      
@@ -28027,8 +28268,8 @@ function GUI_DrawCtlBitmap_Strips()
           --tlist_offset = F_limit(tlist_offset + 1, 0, #tracks+1)  
           --update_sidebar = true      
         end
-      
-      elseif char == 6579564 then
+      ]]
+      elseif char == lvar.keypress['editfx_deleteselectedctls'] then
         if mode == 1 and submode == 0 then
           --delete selected controls
           if reaper.MB('Delete selected controls?','LBX Stripper',4) == 6 then
@@ -28037,7 +28278,7 @@ function GUI_DrawCtlBitmap_Strips()
           end
         end
 
-      elseif char == 48 then
+      elseif char == lvar.keypress['show_stripbrowser'] then
         SetShowSB(not show_stripbrowser)
         update_stripbrowser = true
         update_surface = true
@@ -29542,7 +29783,7 @@ function GUI_DrawCtlBitmap_Strips()
                 update_surface = true
               end
   
-              if show_gaugeedit ~= true then
+              if show_gaugeedit ~= true and cb_clicked ~= true then
                 ctl_select = nil
                 show_cycleoptions = false
                 show_ctlbrowser = false
@@ -29552,7 +29793,8 @@ function GUI_DrawCtlBitmap_Strips()
                 gfx4_selectidx = nil
               else
                 show_gaugeedit = false
-              end
+                cb_clicked = nil
+              end            
               
               if mode ~= 0 then
                 update_surface = true
@@ -35570,18 +35812,20 @@ function GUI_DrawCtlBitmap_Strips()
         
           local v = gfx.mouse_wheel/120
           if v > 0 then
-            cbi_offset = cbi_offset - math.min(ctl_browser_size.slots_x*ctl_browser_size.slots_y,maximg_browse+1)
+            cbi_offset = cbi_offset - ctl_browser_size.slots_x*ctl_browser_size.slots_y
             if cbi_offset < 0 then cbi_offset = 0 end
-            PopulateCtlBrowser_Imgs()
+            --PopulateCtlBrowser_Cbi()            
+            GUI_DrawCtlBrowserCtls(obj, gui)
             update_surface = true
             noscroll = true
           
           else
-            if cbi_offset + math.min(ctl_browser_size.slots_x*ctl_browser_size.slots_y,maximg_browse+1) < 
-                  (math.floor(cbi_cnt/(ctl_browser_size.slots_x*ctl_browser_size.slots_y))+1)*(ctl_browser_size.slots_x*ctl_browser_size.slots_y) then
-              cbi_offset = cbi_offset + math.min(ctl_browser_size.slots_x*ctl_browser_size.slots_y,maximg_browse+1)
+            if cbi_offset + ctl_browser_size.slots_x*ctl_browser_size.slots_y < 
+                  (math.floor(#cbi/(ctl_browser_size.slots_x*ctl_browser_size.slots_y))+1)*(ctl_browser_size.slots_x*ctl_browser_size.slots_y) then
+              cbi_offset = cbi_offset + ctl_browser_size.slots_x*ctl_browser_size.slots_y
             end
-            PopulateCtlBrowser_Imgs()
+            --PopulateCtlBrowser_Cbi()            
+            GUI_DrawCtlBrowserCtls(obj, gui)
             update_surface = true
             noscroll = true
           end
@@ -35601,7 +35845,7 @@ function GUI_DrawCtlBitmap_Strips()
               update_ctlopts = true
               gfx.mouse_wheel = 0
             elseif MOUSE_over(obj.sections[50]) then
-              scale_select = F_limit(scale_select + (v*0.05),0.5,1)
+              scale_select = F_limit(scale_select + (v*0.05),0.5,1.5)
               for i = 1, #ctl_select do
                 if strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctlcat ~= ctlcats.xy then
                   strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].scale = scale_select
@@ -35619,6 +35863,7 @@ function GUI_DrawCtlBitmap_Strips()
               --update_ctls = true
               --update_ctlopts = true
               --update_surface = true
+              movefrom_sc = nil
               update_gfx = true
               gfx.mouse_wheel = 0
             elseif MOUSE_over(obj.sections[56]) then
@@ -35837,20 +36082,25 @@ function GUI_DrawCtlBitmap_Strips()
       
         ArrowKey_Shift(char,ctl_select,gfx3_select)
                                    
-      elseif ctl_select ~= nil and show_ctlbrowser and (MOUSE_click(obj.sections[200]) or MOUSE_click_RB(obj.sections[200])) then
+      elseif --[[ctl_select ~= nil and]] show_ctlbrowser and (MOUSE_click(obj.sections[200]) or MOUSE_click_RB(obj.sections[200])) then
       
+        cb_clicked = true
+        noscroll = true
+        
         if mouse.context == nil and MOUSE_click(obj.sections[211]) then
           cbi_offset = cbi_offset - math.min(ctl_browser_size.slots_x*ctl_browser_size.slots_y,maximg_browse+1)
           if cbi_offset < 0 then cbi_offset = 0 end
-          PopulateCtlBrowser_Imgs()
+          --PopulateCtlBrowser_Imgs()
+          GUI_DrawCtlBrowserCtls(obj, gui)
           update_surface = true
       
         elseif mouse.context == nil and MOUSE_click(obj.sections[212]) then
           if cbi_offset + math.min(ctl_browser_size.slots_x*ctl_browser_size.slots_y,maximg_browse+1) < 
-                (math.floor(cbi_cnt/(ctl_browser_size.slots_x*ctl_browser_size.slots_y))+1)*(ctl_browser_size.slots_x*ctl_browser_size.slots_y) then
+                (math.floor(#cbi/(ctl_browser_size.slots_x*ctl_browser_size.slots_y))+1)*(ctl_browser_size.slots_x*ctl_browser_size.slots_y) then
             cbi_offset = cbi_offset + math.min(ctl_browser_size.slots_x*ctl_browser_size.slots_y,maximg_browse+1)
           end
-          PopulateCtlBrowser_Imgs()
+          --PopulateCtlBrowser_Imgs()
+          GUI_DrawCtlBrowserCtls(obj, gui)
           update_surface = true
         
         elseif mouse.context == nil and MOUSE_click(obj.sections[210]) then
@@ -35858,10 +36108,13 @@ function GUI_DrawCtlBitmap_Strips()
           if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.2 then
             local ix = math.floor((mouse.mx - obj.sections[210].x) / ctl_browser_size.slotsz)
             local iy = math.floor((mouse.my - obj.sections[210].y) / ctl_browser_size.slotsz)
-            local i = ix + iy*ctl_browser_size.slots_x
+            local i = ix + iy*ctl_browser_size.slots_x +cbi_offset
             
             if cbi[i] then
               knob_select = cbi[i].idx
+              --[[local w,_ = gfx.getimgdim(ctl_files[knob_select].imageidx or 1023)
+              local h = ctl_files[knob_select].cellh
+              ksel_size = {w = w/2, h = h/2}]]
               closectlbrowser = true
               --show_ctlbrowser = false
               update_surface = true
@@ -35870,7 +36123,7 @@ function GUI_DrawCtlBitmap_Strips()
           else
             local ix = math.floor((mouse.mx - obj.sections[210].x) / ctl_browser_size.slotsz)
             local iy = math.floor((mouse.my - obj.sections[210].y) / ctl_browser_size.slotsz)
-            local i = ix + iy*ctl_browser_size.slots_x
+            local i = ix + iy*ctl_browser_size.slots_x +cbi_offset
 
             if cbi[i] then
               cbi_select = cbi[i].idx
@@ -35878,10 +36131,11 @@ function GUI_DrawCtlBitmap_Strips()
               update_surface = true
             end
           end
+        
         elseif mouse.context == nil and MOUSE_click_RB(obj.sections[210]) then
           local ix = math.floor((mouse.mx - obj.sections[210].x) / ctl_browser_size.slotsz)
           local iy = math.floor((mouse.my - obj.sections[210].y) / ctl_browser_size.slotsz)
-          local i = ix + iy*ctl_browser_size.slots_x
+          local i = ix + iy*ctl_browser_size.slots_x +cbi_offset
 
           if cbi[i] then
             cbi_select = cbi[i].idx
@@ -35941,32 +36195,38 @@ function GUI_DrawCtlBitmap_Strips()
         elseif MOUSE_click(obj.sections[201]) then
           cbi_offset = 0
           cbi_filter = -1
-          PopulateCtlBrowser_Imgs()
+          PopulateCtlBrowser_Cbi()
+          GUI_DrawCtlBrowserCtls(obj, gui)
           update_surface = true
         elseif MOUSE_click(obj.sections[202]) then
           cbi_offset = 0
           cbi_filter = 0
-          PopulateCtlBrowser_Imgs()
+          PopulateCtlBrowser_Cbi()
+          GUI_DrawCtlBrowserCtls(obj, gui)
           update_surface = true
         elseif MOUSE_click(obj.sections[203]) then
           cbi_offset = 0
           cbi_filter = 1
-          PopulateCtlBrowser_Imgs()
+          PopulateCtlBrowser_Cbi()
+          GUI_DrawCtlBrowserCtls(obj, gui)
           update_surface = true
         elseif MOUSE_click(obj.sections[204]) then
           cbi_offset = 0
           cbi_filter = 2
-          PopulateCtlBrowser_Imgs()
+          PopulateCtlBrowser_Cbi()
+          GUI_DrawCtlBrowserCtls(obj, gui)
           update_surface = true
         elseif MOUSE_click(obj.sections[205]) then
           cbi_offset = 0
           cbi_filter = 3
-          PopulateCtlBrowser_Imgs()
+          PopulateCtlBrowser_Cbi()
+          GUI_DrawCtlBrowserCtls(obj, gui)
           update_surface = true
         elseif MOUSE_click(obj.sections[206]) then
           cbi_offset = 0
           cbi_filter = 4
-          PopulateCtlBrowser_Imgs()
+          PopulateCtlBrowser_Cbi()
+          GUI_DrawCtlBrowserCtls(obj, gui)
           update_surface = true
                       
         end
@@ -35976,8 +36236,18 @@ function GUI_DrawCtlBitmap_Strips()
       elseif ctl_select ~= nil and (MOUSE_click(obj.sections[45]) or MOUSE_click_RB(obj.sections[45])) then
         
         --CONTROL OPTIONS
+        local mx, my = mouse.mx, mouse.my
+        mouse.mx = mouse.mx - obj.sections[45].x
+        mouse.my = mouse.my - obj.sections[45].y
         
-        if mouse.LB and mouse.my > obj.sections[45].y and mouse.my < obj.sections[45].y+butt_h*pnl_scale and mouse.mx > obj.sections[45].x+obj.sections[45].w-40 then
+        if MOUSE_click(obj.sections[853]) then
+        
+          local mx = mouse.mx - obj.sections[853].x
+          local b = math.floor(mx / (obj.sections[853].w/3))
+          ctl_page = F_limit(b,0,2)
+          update_gfx = true
+        
+        --[[elseif mouse.LB and mouse.my > obj.sections[45].y and mouse.my < obj.sections[45].y+butt_h*pnl_scale and mouse.mx > obj.sections[45].x+obj.sections[45].w-40 then
           
           show_cycleoptions = false
           ctl_page = ctl_page + 1
@@ -35994,17 +36264,13 @@ function GUI_DrawCtlBitmap_Strips()
             ctl_page = 2
           end
           update_gfx = true
+        ]]
+        elseif mouse.LB and my > obj.sections[45].y and my < obj.sections[45].y+butt_h*pnl_scale then
         
-        elseif mouse.LB and mouse.my > obj.sections[45].y and mouse.my < obj.sections[45].y+butt_h*pnl_scale then
-        
-          movectlopts = {dx = mouse.mx-obj.sections[45].x,dy = mouse.my-obj.sections[45].y}
+          movectlopts = {dx = mouse.mx,dy = mouse.my}
           mouse.context = contexts.move_ctlopts
           
-        end
-        
-        local mx, my = mouse.mx, mouse.my
-        mouse.mx = mouse.mx - obj.sections[45].x
-        mouse.my = mouse.my - obj.sections[45].y
+        end        
         
         if ctl_page == 0 then
           
@@ -36026,7 +36292,10 @@ function GUI_DrawCtlBitmap_Strips()
 
           elseif mouse.LB and mouse.my > butt_h*pnl_scale and mouse.my < 150*pnl_scale then
           
-            PopulateCtlBrowser_Imgs()
+            --PopulateCtlBrowser_Imgs()
+            PopulateCtlBrowser_Cbi()
+            GUI_DrawCtlBrowserCtls(obj, gui)
+            
             cbi_select = knob_select
             
             SetCbiSelect()
@@ -36236,7 +36505,30 @@ function GUI_DrawCtlBitmap_Strips()
             
           end
           
-          if mouse.context == nil and MOUSE_click(obj.sections[50]) then mouse.context = contexts.scaleslider 
+          if mouse.context == nil and MOUSE_click(obj.sections[50]) then 
+            if mouse.ctrl or (mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.2) then
+              scale_select = 1
+              --ctlscaling = true
+              update_ctlopts = true
+              for i = 1, #ctl_select do
+                if strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctlcat ~= ctlcats.xy then
+                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].scale = scale_select
+                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].xsc = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].x
+                                                                                             + math.floor(strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].w/2
+                                                                                             - (strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].w*scale_select)/2)
+                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ysc = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].y
+                                                                                             + math.floor(strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctl_info.cellh/2
+                                                                                             - (strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctl_info.cellh*scale_select)/2)
+                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].wsc = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].w*scale_select
+                  strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].hsc = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctl_info.cellh*scale_select
+                end
+              end
+              movefrom_sc = nil
+              update_gfx = true
+              
+            else
+              mouse.context = contexts.scaleslider
+            end
           elseif mouse.context == nil and MOUSE_click(obj.sections[56]) then mouse.context = contexts.offsetslider
           elseif mouse.context == nil and MOUSE_click(obj.sections[65]) then mouse.context = contexts.valoffsetslider 
           elseif mouse.context == nil and MOUSE_click(obj.sections[57]) then omx = -1 ctlpos = defval_select mouse.context = contexts.defvalslider
@@ -36908,7 +37200,7 @@ function GUI_DrawCtlBitmap_Strips()
         obj.sections[45].x = F_limit(mouse.mx-movectlopts.dx,obj.sections[10].x,gfx1.main_w-obj.sections[45].w)
         obj.sections[45].y = F_limit(mouse.my-movectlopts.dy,obj.sections[10].y,gfx1.main_h-obj.sections[45].h)
         
-        local cw, ch = 160, 380
+        local cw, ch = 160*pnl_scale, 380*pnl_scale
         obj.sections[100].x = obj.sections[45].x - cw - 10
         if obj.sections[100].x < obj.sections[10].x then
           obj.sections[100].x = obj.sections[45].x + obj.sections[45].w + 10 
@@ -36927,7 +37219,7 @@ function GUI_DrawCtlBitmap_Strips()
                       h = objsec.h}
         local val = F_limit(MOUSE_sliderHBar(xywh),0,1)
         if val ~= nil then
-          scale_select = val*0.5 + 0.5
+          scale_select = val*1 + 0.5
           for i = 1, #ctl_select do
             if strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctlcat ~= ctlcats.xy then
               strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].scale = scale_select
@@ -36939,13 +37231,8 @@ function GUI_DrawCtlBitmap_Strips()
                                                                                          - (strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctl_info.cellh*scale_select)/2)
               strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].wsc = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].w*scale_select
               strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].hsc = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].ctl_info.cellh*scale_select
-              --strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].dirty = true
-              --SetCtlDirty(i)            
             end
           end
-          --[[update_ctls = true
-          update_ctlopts = true
-          update_surface = true]]
           update_gfx = true
         end
       
@@ -37492,13 +37779,14 @@ function GUI_DrawCtlBitmap_Strips()
             if ctl_files[knob_select].imageidx ~= nil then
               local w,_ = gfx.getimgdim(ctl_files[knob_select].imageidx)
               local h = ctl_files[knob_select].cellh
+
               if w == 0 or h == 0 then
                 ksel_size = {w = 50, h = 50}
               else
                ksel_size = {w = w/2, h = h/2}
              end
-            else 
-              ksel_size = {w = 50, h = 50}
+            else
+              ksel_size = LoadTmpControl(knob_select)
             end
             if dp then
               mouse.context = contexts.dragparam
@@ -37511,9 +37799,20 @@ function GUI_DrawCtlBitmap_Strips()
             if mouse.mx < obj.sections[520].w/2 then
               plist_offset = 0
             else
-              plist_offset = #trackfxparams - (P_butt_cnt)+2
+              plist_offset = math.max(#trackfxparams - (P_butt_cnt)+2,0)
             end
             update_gfx = true
+          else
+            --PopulateCtlBrowser_Imgs()
+            PopulateCtlBrowser_Cbi()
+            GUI_DrawCtlBrowserCtls(obj, gui)
+            
+            cbi_select = knob_select
+            
+            SetCbiSelect()
+            
+            show_ctlbrowser = true
+            update_surface = true
           end        
         end
       elseif fxmode == 1 then
@@ -37575,7 +37874,6 @@ function GUI_DrawCtlBitmap_Strips()
               show_ctlbrowser = false
               
               update_gfx = true
-  
               if ctl_files[knob_select].imageidx ~= nil then
                 local w,_ = gfx.getimgdim(ctl_files[knob_select].imageidx)
                 local h = ctl_files[knob_select].cellh
@@ -37585,7 +37883,7 @@ function GUI_DrawCtlBitmap_Strips()
                   ksel_size = {w = w/2, h = h/2}
                 end
               else 
-                ksel_size = {w = 50, h = 50}
+                ksel_size = LoadTmpControl(knob_select)
               end
               mouse.context = contexts.dragparam_tr
             elseif trctltype_select == 1 then
@@ -37604,7 +37902,7 @@ function GUI_DrawCtlBitmap_Strips()
                   ksel_size = {w = w/2, h = h/2}
                 end
               else 
-                ksel_size = {w = 50, h = 50}
+                ksel_size = LoadTmpControl(knob_select)
               end
               mouse.context = contexts.dragparam_snd              
             elseif trctltype_select == 2 then
@@ -37623,7 +37921,7 @@ function GUI_DrawCtlBitmap_Strips()
                   ksel_size = {w = w/2, h = h/2}
                 end
               else 
-                ksel_size = {w = 50, h = 50}
+                ksel_size = LoadTmpControl(knob_select)
               end
               mouse.context = contexts.dragparam_spec
 
@@ -37643,11 +37941,42 @@ function GUI_DrawCtlBitmap_Strips()
                   ksel_size = {w = w/2, h = h/2}
                 end
               else 
-                ksel_size = {w = 50, h = 50}
+                ksel_size = LoadTmpControl(knob_select)
               end
               mouse.context = contexts.dragparam_other
             end
           end
+        
+        elseif MOUSE_click_RB(obj.sections[522]) then
+          local pcnt = 0
+          if trctltype_select == 0 then
+            pcnt = #trctls_table
+          elseif trctltype_select == 1 then            
+            pcnt = (#trsends_table+1)*3
+          elseif trctltype_select == 2 then
+            pcnt = #lvar.special_table              
+          elseif trctltype_select == 3 then
+            pcnt = #lvar.otherctl_table
+          end
+          local i = math.floor((mouse.my - obj.sections[522].y) / tb_butt_h)-1 
+          if i == -1 then
+            if mouse.mx < obj.sections[520].w/2 then
+              trctlslist_offset = 0
+            else
+              trctlslist_offset = math.max(pcnt - (P_butt_cnt),0)
+            end
+            update_gfx = true
+          else
+            --PopulateCtlBrowser_Imgs()
+            PopulateCtlBrowser_Cbi()
+            GUI_DrawCtlBrowserCtls(obj, gui)
+            cbi_select = knob_select
+            
+            SetCbiSelect()
+            
+            show_ctlbrowser = true
+            update_surface = true
+          end        
         end
         
       end
@@ -37672,6 +38001,12 @@ function GUI_DrawCtlBitmap_Strips()
         end
                       
       elseif mouse.context and mouse.context == contexts.dragparam then
+        --[[local dp = nil
+        if ksel_size.unload then
+          ksel_size.w = 0
+          ksel_size.h = 0
+          dp = true
+        end]]
         dragparam = {x = mouse.mx-ksel_size.w, y = mouse.my-ksel_size.h, type = 'track'}
         reass_param = nil
         if tracks[track_select] and tracks[track_select].strip ~= -1 then
@@ -38209,6 +38544,20 @@ function GUI_DrawCtlBitmap_Strips()
     
     return noscroll
     
+  end
+  
+  function LoadTmpControl(knob_select)
+    local iidx = ctl_files[knob_select].imageidx
+    if iidx == nil or ksel_loaded == false then
+      ksel_loaded = true
+      gfx.loadimg(1023, paths.controls_path..ctl_files[knob_select].fn)
+      iidx = 1023
+    elseif iidx == nil then
+      iidx = 1023
+    end
+    w, _ = gfx.getimgdim(iidx)
+    h = ctl_files[knob_select].cellh
+    return {w = w/2, h = h/2}
   end
   
   function RS5k_RescanFolder(strip, page, c, recurse, subfol)
@@ -44334,10 +44683,18 @@ function GUI_DrawCtlBitmap_Strips()
         if val ~= nil then
           val = 1-val
           tb_butt_h = F_limit(ctlpos + math.floor((val-0.5)*200),16,60)
-          obj = GetObjects()
           update_sidebar = true
           update_topbar = true
           update_surface = true
+          if mouse.shift then
+            local sc = (tb_butt_h+1)/(butt_h+1)
+            pnl_scale = math.floor(sc*100)/100
+            update_stripbrowser = true
+            update_mutate = true
+            update_randomopts = true
+            update_gfx = true
+          end
+          obj = GetObjects()
           --update_gfx = true
         end
       
@@ -44349,6 +44706,9 @@ function GUI_DrawCtlBitmap_Strips()
           if pnl_scale ~= ops then
             resize_display = true
             pnlscaleflag = true
+            if mouse.shift then
+              tb_butt_h = math.ceil((butt_h+1)*pnl_scale)-1
+            end
             obj = GetObjects()
             update_gfx = true
             ops = pnl_scale
@@ -56067,6 +56427,8 @@ function GUI_DrawCtlBitmap_Strips()
   sf_h = 140
   
   lvar.updateravailable, lvar.git, lvar.gitclone = CheckUpdater()
+  SetDefKP()
+  --SaveDefKP()
   
   local surfn = paths.icon_path..'canvas.png'
   if reaper.file_exists(surfn) then
