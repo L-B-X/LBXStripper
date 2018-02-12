@@ -14,7 +14,7 @@
 
 
   local lvar = {}
-  lvar.scriptver = '0.94.0012' --Script Version
+  lvar.scriptver = '0.94.0013' --Script Version
   
   lvar.ctlupdate_rr = nil
   lvar.ctlupdate_pos = 1
@@ -7361,6 +7361,7 @@ elseif dragparam.type == 'rs5k' then
 
   function GUI_DrawFXParams(obj, gui)
     if track_select == nil then return end
+    if tracks[trackedit_select] == nil then ChangeTrack(-1) end
     
     local butt_h = tb_butt_h
     
@@ -7380,6 +7381,8 @@ elseif dragparam.type == 'rs5k' then
                         w = obj.sections[520].w -6,
                         h = butt_h-2}
           local c
+          --DBG(tostring(trackedit_select)..'  '..tostring(tracks[trackedit_select]))
+          
           local bypassed = not GetFXEnabled(tracks[trackedit_select].tracknum, i+ flist_offset)
           if bypassed == false then        
             c = gui.skol.lst_txt
