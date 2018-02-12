@@ -14,7 +14,7 @@
 
 
   local lvar = {}
-  lvar.scriptver = '0.94.0011' --Script Version
+  lvar.scriptver = '0.94.0012' --Script Version
   
   lvar.ctlupdate_rr = nil
   lvar.ctlupdate_pos = 1
@@ -1768,10 +1768,10 @@
                           w = plist_w,
                           h = gfx1.main_h-(tb_butt_h*2+6)}
       --NEW STRIPS
+      sf_h = def_sf_h
       if (tb_butt_h+2)*3+sf_h+4+8 > gfx1.main_h then
-        sf_h = math.max(gfx1.main_h - ((tb_butt_h+2)*3+4+8),40)
+        sf_h = math.max(gfx1.main_h - ((tb_butt_h+2)*3+4+8),tb_butt_h*2)
       end
-
       --Strip folder list
       obj.sections[510] = {x = 0,
                            y = (tb_butt_h+2)*3 + 2,
@@ -1797,8 +1797,9 @@
                            h = gfx1.main_h - (obj.sections[510].y+obj.sections[510].h+2) - 8}
 
       --NEW FX - plugins/track controls
-      if (butt_h+2)*2+fx_h+2+8 > gfx1.main_h then
-        fx_h = math.max(gfx1.main_h - ((butt_h+2)*2+2+8),40)
+      fx_h = def_fx_h
+      if (tb_butt_h+2)*2+fx_h+2+8 > gfx1.main_h then
+        fx_h = math.max(gfx1.main_h - ((tb_butt_h+2)*2+2+8),40)
       end
 
       --FX list
@@ -1824,15 +1825,16 @@
                            h = gfx1.main_h - (obj.sections[521].y+obj.sections[521].h+2)}
       
       --GRAPHICS
-      if (tb_butt_h+2)*2+gx_h+2+28 > gfx1.main_h then
-        gx_h = math.max(gfx1.main_h - ((tb_butt_h+2)*2+2+28),20)
+      gx_h = def_gx_h
+      if (tb_butt_h+2)*2+gx_h+2+8 > gfx1.main_h then
+        gx_h = math.max(gfx1.main_h - ((tb_butt_h+2)*2+2+8),40)
       end
 
       --Graphics folder list
       obj.sections[531] = {x = 0,
                            y = (tb_butt_h+2)*2 + 2,
                            w = plist_w,
-                           h = gx_h+tb_butt_h}
+                           h = gx_h}
 
       --Graphics list resize
       --local rsz = math.max((6 + (tb_butt_h - 20)),6)
@@ -37634,8 +37636,8 @@ function GUI_DrawCtlBitmap_Strips()
       if fxmode == 0 then
         if MOUSE_click(obj.sections[520]) then
           
-          if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.15 then
-            local i = math.floor((mouse.my - obj.sections[520].y) / tb_butt_h)-1
+          local i = math.floor((mouse.my - obj.sections[520].y) / tb_butt_h)-1
+          if i ~= -1 and mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.15 then
             if i == -1 then
             elseif i >= F_butt_cnt then
             elseif trackfx[i + flist_offset] then
@@ -37646,16 +37648,16 @@ function GUI_DrawCtlBitmap_Strips()
             end        
             
           else
-            local i = math.floor((mouse.my - obj.sections[520].y) / tb_butt_h)-1
+            --local i = math.floor((mouse.my - obj.sections[520].y) / tb_butt_h)-1
             if i == -1 then
               if mouse.mx < obj.sections[520].w/2 then
-                flist_offset = flist_offset - F_butt_cnt
+                flist_offset = flist_offset - math.max(F_butt_cnt-2,1)
                 if flist_offset < 0 then
                   flist_offset = 0
                 end
               else
-                if flist_offset + F_butt_cnt < #trackfx then
-                  flist_offset = flist_offset + F_butt_cnt-1
+                if flist_offset + F_butt_cnt <= #trackfx+1 then
+                  flist_offset = flist_offset + math.max(F_butt_cnt-2,1)
                 end          
               end
               update_gfx = true
@@ -37820,13 +37822,13 @@ function GUI_DrawCtlBitmap_Strips()
           local i = math.floor((mouse.my - obj.sections[520].y) / tb_butt_h)-1
           if i == -1 then
             if mouse.mx < obj.sections[520].w/2 then
-              trctltypelist_offset = trctltypelist_offset - F_butt_cnt
+              trctltypelist_offset = trctltypelist_offset - math.max(F_butt_cnt-2,1)
               if trctltypelist_offset < 0 then
                 trctltypelist_offset = 0
               end
             else
-              if trctltypelist_offset + F_butt_cnt < #lvar.trctltype_table then
-                trctltypelist_offset = trctltypelist_offset + F_butt_cnt-1
+              if trctltypelist_offset + F_butt_cnt < #lvar.trctltype_table+1 then
+                trctltypelist_offset = trctltypelist_offset + math.max(F_butt_cnt-2,1)
               end          
             end
             update_gfx = true
@@ -38526,8 +38528,8 @@ function GUI_DrawCtlBitmap_Strips()
       elseif mouse.context and mouse.context == contexts.dragsep_fx then
   
         local dy = mouse.my - dragsep_fx.y
-        fx_h = math.min(math.max(dragsep_fx.oh + dy, 40),gfx1.main_h-obj.sections[520].y-2-8)
-        
+        fx_h = math.min(math.max(dragsep_fx.oh + dy, tb_butt_h*2),gfx1.main_h-obj.sections[520].y-2-8)
+        def_fx_h = fx_h
         obj = GetObjects()
         update_sidebar = true
       
@@ -39218,13 +39220,13 @@ function GUI_DrawCtlBitmap_Strips()
       
       if i == -1 then
         if mouse.mx < obj.sections[530].w/2 then
-          glist_offset = glist_offset - G_butt_cnt
+          glist_offset = glist_offset - math.max(G_butt_cnt-1,1)
           if glist_offset < 0 then
             glist_offset = 0
           end
         else
           if glist_offset + G_butt_cnt < #graphics_folder_files then
-            glist_offset = glist_offset + G_butt_cnt
+            glist_offset = glist_offset + math.max(G_butt_cnt-1,1)
           end
         end
         update_gfx = true
@@ -39629,7 +39631,8 @@ function GUI_DrawCtlBitmap_Strips()
     elseif mouse.context and mouse.context == contexts.dragsep_gfx then
     
       local dy = mouse.my - dragsep_gfx.y
-      gx_h = math.min(math.max(dragsep_gfx.oh + dy, 20),gfx1.main_h-obj.sections[531].y-2-28)
+      gx_h = math.min(math.max(dragsep_gfx.oh + dy, tb_butt_h*2),gfx1.main_h-obj.sections[531].y-2-8)
+      def_gx_h = gx_h
       
       obj = GetObjects()
       update_sidebar = true
@@ -40250,13 +40253,13 @@ function GUI_DrawCtlBitmap_Strips()
       local i = math.floor(((mouse.my - obj.sections[510].y)) / tb_butt_h)-1
       if i == -1 then
         if mouse.mx < obj.sections[510].w/2 then
-          sflist_offset = sflist_offset - SF_butt_cnt
+          sflist_offset = sflist_offset - math.max(SF_butt_cnt-1,1)
           if sflist_offset < 0 then
             sflist_offset = 0
           end
         else
           if sflist_offset + SF_butt_cnt-1 < #strip_folders then
-            sflist_offset = sflist_offset + SF_butt_cnt
+            sflist_offset = sflist_offset + math.max(SF_butt_cnt-1,1)
           end
         end
         update_gfx = true
@@ -40282,13 +40285,13 @@ function GUI_DrawCtlBitmap_Strips()
       local i = math.floor(((mouse.my - obj.sections[512].y)) / tb_butt_h)
       if i == 0 then
         if mouse.mx < obj.sections[512].w/2 then
-          slist_offset = slist_offset - S_butt_cnt
+          slist_offset = slist_offset - math.max((S_butt_cnt-1),1)
           if slist_offset < 0 then
             slist_offset = 0
           end
         else
           if slist_offset + S_butt_cnt-1 < #strip_files then
-            slist_offset = slist_offset + S_butt_cnt-1
+            slist_offset = slist_offset + math.max((S_butt_cnt-1),1)
           end
         end
         update_gfx = true
@@ -40521,7 +40524,8 @@ function GUI_DrawCtlBitmap_Strips()
     elseif mouse.context and mouse.context == contexts.dragsep_strip then
 
       local dy = mouse.my - dragsep_strip.y
-      sf_h = math.min(math.max(dragsep_strip.oh + dy, 40),gfx1.main_h-obj.sections[510].y-4-8)
+      sf_h = math.min(math.max(dragsep_strip.oh + dy, tb_butt_h*2),gfx1.main_h-obj.sections[510].y-4-8)
+      def_sf_h = sf_h
       obj = GetObjects()
       update_sidebar = true
 
@@ -56426,9 +56430,12 @@ function GUI_DrawCtlBitmap_Strips()
   fontname_def = 'Calibri'
   fontsize_def  = 18
   
-  fx_h = 160
-  gx_h = 160
-  sf_h = 140
+  def_fx_h = 160
+  def_gx_h = 160
+  def_sf_h = 140
+  fx_h = def_fx_h
+  gx_h = def_gx_h
+  sf_h = def_sf_h
   
   lvar.updateravailable, lvar.git, lvar.gitclone = CheckUpdater()
   SetDefKP()
