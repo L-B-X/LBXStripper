@@ -14,7 +14,7 @@
 
 
   local lvar = {}
-  lvar.scriptver = '0.94.0010' --Script Version
+  lvar.scriptver = '0.94.0011' --Script Version
   
   lvar.ctlupdate_rr = nil
   lvar.ctlupdate_pos = 1
@@ -42222,35 +42222,37 @@ function GUI_DrawCtlBitmap_Strips()
       for i = 0, fxn-1 do
         
         local retval, inpins, outpins = reaper.TrackFX_GetIOSize(tr,i)
-        if inpins ~= pinmatrix_data[i].incnt or outpins ~= pinmatrix_data[i].outcnt then 
-        --DBG('x1')
-          return true
-        else
-          local pn = reaper.TrackFX_GetNumParams(tr,i)
-
-          if pn ~= 2 then
-            for p = 0, inpins-1 do
-              if pinmatrix_data[i].inpins[p] then
-                local Low32,Hi32 = reaper.TrackFX_GetPinMappings(tr, i, 0, p)
-                if Low32 ~= pinmatrix_data[i].inpins[p].lo or Hi32 ~= pinmatrix_data[i].inpins[p].hi then
-          --DBG('x2')
+        if pinmatrix_data[i] then
+          if inpins ~= pinmatrix_data[i].incnt or outpins ~= pinmatrix_data[i].outcnt then 
+          --DBG('x1')
+            return true
+          else
+            local pn = reaper.TrackFX_GetNumParams(tr,i)
+  
+            if pn ~= 2 then
+              for p = 0, inpins-1 do
+                if pinmatrix_data[i].inpins[p] then
+                  local Low32,Hi32 = reaper.TrackFX_GetPinMappings(tr, i, 0, p)
+                  if Low32 ~= pinmatrix_data[i].inpins[p].lo or Hi32 ~= pinmatrix_data[i].inpins[p].hi then
+            --DBG('x2')
+                    return true
+                  end
+                else
+            --DBG('y2 '..p..'  '..inpins)
                   return true
                 end
-              else
-          --DBG('y2 '..p..'  '..inpins)
-                return true
               end
-            end
-            for p = 0, outpins-1 do
-              if pinmatrix_data[i].outpins[p] then
-                local Low32,Hi32 = reaper.TrackFX_GetPinMappings(tr, i, 1, p)
-                if Low32 ~= pinmatrix_data[i].outpins[p].lo or Hi32 ~= pinmatrix_data[i].outpins[p].hi then
-          --DBG('x3')
+              for p = 0, outpins-1 do
+                if pinmatrix_data[i].outpins[p] then
+                  local Low32,Hi32 = reaper.TrackFX_GetPinMappings(tr, i, 1, p)
+                  if Low32 ~= pinmatrix_data[i].outpins[p].lo or Hi32 ~= pinmatrix_data[i].outpins[p].hi then
+            --DBG('x3')
+                    return true
+                  end
+                else
+            --DBG('y3')
                   return true
                 end
-              else
-          --DBG('y3')
-                return true
               end
             end
           end
@@ -42377,9 +42379,11 @@ function GUI_DrawCtlBitmap_Strips()
           local fx = mouse.mx
           local fy = mouse.my - pinmatrix_scrollpos.y
           for i = 0, #pinmatrix.fx_rect do
-            if fx >= pinmatrix.fx_rect[i].x and fx <= pinmatrix.fx_rect[i].x + pinmatrix.fx_rect[i].w then
-              fxn = i            
-              break
+            if pinmatrix.fx_rect[i] then
+              if fx >= pinmatrix.fx_rect[i].x and fx <= pinmatrix.fx_rect[i].x + pinmatrix.fx_rect[i].w then
+                fxn = i            
+                break
+              end
             end
           end
       
