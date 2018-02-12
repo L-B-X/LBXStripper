@@ -14,7 +14,7 @@
 
 
   local lvar = {}
-  lvar.scriptver = '0.94.0009' --Script Version
+  lvar.scriptver = '0.94.0010' --Script Version
   
   lvar.ctlupdate_rr = nil
   lvar.ctlupdate_pos = 1
@@ -2404,9 +2404,9 @@
       
       --CTL BROWSER
       
-      ctl_browser_size = {w = obj.sections[10].w - 50 --[[ obj.sections[45].w]], h = obj.sections[10].h -50}
       local slsz = 100
       local cb_bw = 160
+      ctl_browser_size = {w = math.min(obj.sections[10].w - 50,2048+cb_bw) --[[ obj.sections[45].w]], h = math.min(obj.sections[10].h -50,2048)}
       ctl_browser_size.slotsz = slsz
       ctl_browser_size.slots_x = math.max(math.floor((ctl_browser_size.w - 20 - cb_bw) / slsz),3)
       ctl_browser_size.slots_y = math.max(math.floor((ctl_browser_size.h - (butt_h+2)*2 -20) / slsz),3)
