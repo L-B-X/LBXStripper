@@ -14,7 +14,7 @@
 
 
   local lvar = {}
-  lvar.scriptver = '0.94.0013' --Script Version
+  lvar.scriptver = '0.94.0014' --Script Version
   
   lvar.ctlupdate_rr = nil
   lvar.ctlupdate_pos = 1
@@ -58,8 +58,13 @@
   lvar.gfxstretch_table = {'normal','fix edge'}
   
   lvar.linkgrp_table = {'Randomize X', 'Randomize X on', 'Randomize X off', 'Linked'}
-  
+  lvar.settingspages = {'General / Misc','Performance','Saving','Appearance','Advanced'}
+  lvar.settingspage = 1
+  lvar.settingsy = 60
   lvar.lbxutil_chunk = 'BYPASS 0 0 0\n<JS LBX_TrackUtility ""\n0.000000 0.000000 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -\n>\nFLOATPOS 0 0 0 0\nFXID {800E025A-6418-48A4-B72E-71E93B970664}\nWAK 0'
+  
+  lvar.gridalpha = 0.8
+  lvar.gridcolor = '0 0 0'
   
   lvar.trctltypeidx_table = {tr_ctls = 1,
                         tr_sends = 2,
@@ -2070,7 +2075,12 @@
                           w = setw,
                           h = seth}
       
-      local xofft, yoff, yoffm, bh, bw, sw = 200, 32, butt_h/2+14, butt_h/2+4, butt_h/2+4, 80
+      obj.sections[732] = {x = obj.sections[70].x + 10,
+                           y = obj.sections[70].y + 34,
+                           w = obj.sections[70].w - 20,
+                           h = 20}
+      
+      --local xofft, yoff, yoffm, bh, bw, sw = 200, 32, butt_h/2+14, butt_h/2+4, butt_h/2+4, 80
       obj = PosSetWinCtls(obj)
       
                                 
@@ -3858,243 +3868,264 @@
   
   function PosSetWinCtls(obj)
   
-    local xofft, yoff, yoffm, bh, bw, sw = 250, 44, butt_h/2+14, butt_h/2+8, butt_h/2+8, 80
-    obj.sections[71] = {x = xofft,
-                        y = settingswin_off +yoff + yoffm*0,
-                        w = bw,
-                        h = bh}
-    obj.sections[72] = {x = xofft,
+    local xofft, yoff, yoffm, bh, bw, sw = 250, lvar.settingsy+10, butt_h/2+14, butt_h/2+8, butt_h/2+8, 80
+    local xofftm = math.floor(obj.sections[70].w/2)+60
+    local swm = 160
+    
+    --PAGE 2
+    obj.sections[74] = {x = xofftm,
+                              y = settingswin_off + yoff + yoffm*4,
+                              w = swm,
+                              h = bh}
+    obj.sections[731] = {x = xofftm,
+                              y = settingswin_off + yoff + yoffm*5,
+                              w = 80,
+                              h = bh}
+    obj.sections[88] = {x = xofftm,
                               y = settingswin_off + yoff + yoffm*1,
                               w = bw,
                               h = bh}
-    obj.sections[73] = {x = xofft,
-                              y = settingswin_off + yoff + yoffm*2,
-                              w = bw,
-                              h = bh}
-    obj.sections[74] = {x = xofft,
-                              y = settingswin_off + yoff + yoffm*3,
-                              w = sw,
-                              h = bh}
-    obj.sections[731] = {x = xofft + sw + 4,
-                              y = settingswin_off + yoff + yoffm*3,
-                              w = 40,
-                              h = bh}
-                              
-    obj.sections[75] = {x = xofft,
-                              y = settingswin_off + yoff + yoffm*4,
-                              w = bw,
-                              h = bh}
-    obj.sections[76] = {x = xofft,
-                              y = settingswin_off + yoff + yoffm*5,
-                              w = bw,
-                              h = bh}
-    obj.sections[77] = {x = xofft+bw+10,
-                              y = settingswin_off + yoff + yoffm*4,
-                              w = 40,
-                              h = bh}
-    obj.sections[78] = {x = xofft+bw+10,
-                              y = settingswin_off + yoff + yoffm*5,
-                              w = 40,
-                              h = bh}
-    obj.sections[79] = {x = xofft+bw+10,
-                              y = settingswin_off + yoff + yoffm*6,
-                              w = 40,
-                              h = bh}
-    obj.sections[80] = {x = xofft,
-                              y = settingswin_off + yoff + yoffm*6,
-                              w = bw,
-                              h = bh}
-    obj.sections[81] = {x = xofft,
-                              y = settingswin_off + yoff + yoffm*7,
-                              w = bw,
-                              h = bh}
-    obj.sections[82] = {x = xofft,
+    obj.sections[715] = {x = xofftm,
                               y = settingswin_off + yoff + yoffm*8,
                               w = bw,
                               h = bh}
-    obj.sections[83] = {x = xofft,
+    obj.sections[726] = {x = xofftm,
                               y = settingswin_off + yoff + yoffm*9,
                               w = bw,
                               h = bh}
-    obj.sections[84] = {x = xofft,
+    obj.sections[72] = {x = xofftm,
                               y = settingswin_off + yoff + yoffm*10,
                               w = bw,
                               h = bh}
-    obj.sections[85] = {x = xofft,
-                              y = settingswin_off + yoff + yoffm*11,
+    
+    --PAGE 3
+    
+    obj.sections[73] = {x = xofftm,
+                              y = settingswin_off + yoff + yoffm*1,
                               w = bw,
                               h = bh}
-    obj.sections[86] = {x = xofft+bw+10,
-                              y = settingswin_off + yoff + yoffm*12,
+    obj.sections[87] = {x = xofftm,
+                              y = settingswin_off + yoff + yoffm*4,
+                              w = bw,
+                              h = bh}
+    obj.sections[95] = {x = xofftm,
+                                    y = settingswin_off + yoff + yoffm*5,
+                                    w = 150,
+                                    h = bh+10}
+    obj.sections[98] = {x = xofftm, 
+                               y = settingswin_off + yoff+10 + yoffm*8,
+                               w = bw,
+                               h = bh}
+    obj.sections[728] = {x = xofftm,
+                              y = settingswin_off + yoff+10 + yoffm*9,
+                              w = bw,
+                              h = bh}
+    
+    --PAGE 4
+    
+    obj.sections[720] = {x = xofft-80, 
+                               y = settingswin_off + yoff + yoffm*1,
+                               w = 150,
+                               h = bh+10}
+    
+    obj.sections[721] = {x = xofft, 
+                               y = settingswin_off + yoff + yoffm*3,
+                               w = 70,
+                               h = bh}
+    
+    obj.sections[724] = {x = xofft, 
+                               y = settingswin_off + yoff + yoffm*4,
+                               w = 70,
+                               h = bh}
+    
+    obj.sections[725] = {x = xofft, 
+                               y = settingswin_off + yoff + yoffm*5,
+                               w = 70,
+                               h = bh}
+    
+    obj.sections[722] = {x = xofft, 
+                               y = settingswin_off + yoff + yoffm*6,
+                               w = 70,
+                               h = bh}
+    obj.sections[723] = {x = xofft, 
+                               y = settingswin_off + yoff + yoffm*7,
+                               w = 70,
+                               h = bh}
+    
+    obj.sections[702] = {x = obj.sections[70].w/2+xofft,
+                        y = settingswin_off + yoff + yoffm*1,
+                        w = 40,
+                        h = bh}
+    obj.sections[86] = {x = obj.sections[70].w/2+xofft,
+                              y = settingswin_off + yoff + yoffm*2,
                               w = 40,
                               h = bh}
-    obj.sections[87] = {x = xofft,
-                              y = settingswin_off + yoff + yoffm*17,
-                              w = bw,
-                              h = bh}
-    obj.sections[88] = {x = xofft,
-                              y = settingswin_off + yoff + yoffm*13,
+                              
+    obj.sections[85] = {x = xofft,
+                              y = settingswin_off + yoff + yoffm*10,
                               w = bw,
                               h = bh}
     obj.sections[89] = {x = xofft,
-                              y = settingswin_off + yoff + yoffm*14,
-                              w = bw,
-                              h = bh}
-    obj.sections[95] = {x = xofft-75,
-                                    y = settingswin_off + yoff + yoffm*18,
-                                    w = 150,
-                                    h = bh+10}
-    obj.sections[96] = {x = xofft,
-                               y = settingswin_off + yoff + yoffm*15,
-                               w = bw,
-                               h = bh}
-    obj.sections[97] = {x = xofft,
-                               y = settingswin_off + yoff + yoffm*16,
-                               w = bw,
-                               h = bh}
-    obj.sections[98] = {x = xofft, 
-                               y = settingswin_off + yoff+10 + yoffm*19,
-                               w = bw,
-                               h = bh}
-    
-    obj.sections[728] = {x = xofft,
-                              y = settingswin_off + yoff+10 + yoffm*20,
-                              w = bw,
-                              h = bh}
-                               
-    obj.sections[700] = {x = obj.sections[70].w/2+xofft,
-                        y = settingswin_off + yoff + yoffm*0,
-                        w = sw,
-                        h = butt_h}
-    obj.sections[701] = {x = obj.sections[70].w/2+xofft,
-                        y = settingswin_off + yoff + yoffm*1,
-                        w = sw,
-                        h = butt_h}
-    obj.sections[702] = {x = obj.sections[70].w/2+xofft,
-                        y = settingswin_off + yoff + yoffm*2,
-                        w = 40,
-                        h = bh}
-    obj.sections[703] = {x = obj.sections[70].w/2+xofft,
-                        y = settingswin_off + yoff + yoffm*4,
-                        w = sw,
-                        h = butt_h}
-    obj.sections[704] = {x = obj.sections[70].w/2+xofft,
-                              y = settingswin_off + yoff + yoffm*6,
-                              w = bw,
-                              h = bh}
-                              
-    --send midi data on track change
-    obj.sections[705] = {x = obj.sections[70].w/2+xofft,
-                              y = settingswin_off + yoff + yoffm*7,
+                              y = settingswin_off + yoff + yoffm*11,
                               w = bw,
                               h = bh}
     obj.sections[706] = {x = obj.sections[70].w/2+xofft,
-                              y = settingswin_off + yoff + yoffm*8,
-                              w = bw,
-                              h = bh}
-
-    obj.sections[707] = {x = obj.sections[70].w/2+xofft,
                               y = settingswin_off + yoff + yoffm*10,
                               w = bw,
                               h = bh}
-    obj.sections[708] = {x = obj.sections[70].w/2+xofft,
-                        y = settingswin_off + yoff + yoffm*11,
-                        w = 40,
+    obj.sections[717] = {x = obj.sections[70].w/2+xofft,
+                              y = settingswin_off + yoff + yoffm*11,
+                              w = bw,
+                              h = bh}
+    obj.sections[96] = {x = xofft,
+                               y = settingswin_off + yoff + yoffm*12,
+                               w = bw,
+                               h = bh}
+    
+    -- PAGE 5
+    
+    obj.sections[703] = {x = xofftm,
+                        y = settingswin_off + yoff + yoffm*1,
+                        w = sw,
+                        h = butt_h}
+    obj.sections[704] = {x = xofftm,
+                              y = settingswin_off + yoff + yoffm*4,
+                              w = bw,
+                              h = bh}
+    obj.sections[712] = {x = xofftm,
+                              y = settingswin_off + yoff + yoffm*5,
+                              w = bw,
+                              h = bh}
+    obj.sections[714] = {x = xofftm,
+                              y = settingswin_off + yoff + yoffm*6,
+                              w = bw,
+                              h = bh}
+    obj.sections[729] = {x = xofftm,
+                              y = settingswin_off + yoff + yoffm*8,
+                              w = bw,
+                              h = bh}
+    
+    obj.sections[730] = {x = xofftm,
+                              y = settingswin_off + yoff + yoffm*10,
+                              w = bw,
+                              h = bh}
+    
+    
+    -----------------------------------------------
+    
+    obj.sections[727] = {x = obj.sections[70].w - 170, 
+                               y = settingswin_off + yoff + yoffm*0,
+                               w = 150,
+                               h = bh+10}
+    
+    obj.sections[71] = {x = xofft,
+                        y = settingswin_off +yoff + yoffm*1,
+                        w = bw,
                         h = bh}
-    obj.sections[709] = {x = obj.sections[70].w/2+xofft,
-                        y = settingswin_off + yoff + yoffm*12,
-                        w = 40,
-                        h = bh}
-    obj.sections[710] = {x = obj.sections[70].w/2+xofft,
-                        y = settingswin_off + yoff + yoffm*13,
-                        w = 40,
-                        h = bh}
-    obj.sections[711] = {x = obj.sections[70].w/2+xofft,
-                        y = settingswin_off + yoff + yoffm*14,
-                        w = 40,
-                        h = bh}
-    obj.sections[712] = {x = obj.sections[70].w/2+xofft,
+    obj.sections[79] = {x = xofft+bw+10,
+                              y = settingswin_off + yoff + yoffm*3,
+                              w = 40,
+                              h = bh}
+    obj.sections[80] = {x = xofft,
+                              y = settingswin_off + yoff + yoffm*3,
+                              w = bw,
+                              h = bh}
+    obj.sections[733] = {x = xofft,
+                              y = settingswin_off + yoff + yoffm*4,
+                              w = 40,
+                              h = bh}
+    
+    obj.sections[81] = {x = xofft,
+                              y = settingswin_off + yoff + yoffm*6,
+                              w = bw,
+                              h = bh}
+    obj.sections[82] = {x = xofft,
+                              y = settingswin_off + yoff + yoffm*7,
+                              w = bw,
+                              h = bh}
+                              
+    obj.sections[75] = {x = xofft,
+                              y = settingswin_off + yoff + yoffm*14,
+                              w = bw,
+                              h = bh}
+    obj.sections[76] = {x = xofft,
                               y = settingswin_off + yoff + yoffm*15,
                               w = bw,
                               h = bh}
+    obj.sections[77] = {x = xofft+bw+10,
+                              y = settingswin_off + yoff + yoffm*14,
+                              w = 40,
+                              h = bh}
+    obj.sections[78] = {x = xofft+bw+10,
+                              y = settingswin_off + yoff + yoffm*15,
+                              w = 40,
+                              h = bh}
+    obj.sections[83] = {x = xofft,
+                              y = settingswin_off + yoff + yoffm*8,
+                              w = bw,
+                              h = bh}
+    obj.sections[84] = {x = xofft,
+                              y = settingswin_off + yoff + yoffm*9,
+                              w = bw,
+                              h = bh}
+    obj.sections[97] = {x = xofft,
+                               y = settingswin_off + yoff + yoffm*10,
+                               w = bw,
+                               h = bh}
+    obj.sections[719] = {x = xofft, 
+                               y = settingswin_off + yoff + yoffm*11,
+                               w = bw,
+                               h = bh}
+    obj.sections[718] = {x = xofft,
+                              y = settingswin_off + yoff + yoffm*12,
+                              w = bw,
+                              h = bh}
+    
+    
+                               
+    obj.sections[700] = {x = obj.sections[70].w/2+xofft,
+                        y = settingswin_off + yoff + yoffm*2,
+                        w = sw,
+                        h = butt_h}
+    obj.sections[701] = {x = obj.sections[70].w/2+xofft,
+                        y = settingswin_off + yoff + yoffm*3,
+                        w = sw,
+                        h = butt_h}
+                              
+    --send midi data on track change
+    obj.sections[705] = {x = obj.sections[70].w/2+xofft,
+                              y = settingswin_off + yoff + yoffm*4,
+                              w = bw,
+                              h = bh}
+    obj.sections[707] = {x = obj.sections[70].w/2+xofft,
+                              y = settingswin_off + yoff + yoffm*6,
+                              w = bw,
+                              h = bh}
+    obj.sections[708] = {x = obj.sections[70].w/2+xofft,
+                        y = settingswin_off + yoff + yoffm*7,
+                        w = 40,
+                        h = bh}
+    obj.sections[709] = {x = obj.sections[70].w/2+xofft,
+                        y = settingswin_off + yoff + yoffm*8,
+                        w = 40,
+                        h = bh}
+    obj.sections[710] = {x = obj.sections[70].w/2+xofft,
+                        y = settingswin_off + yoff + yoffm*9,
+                        w = 40,
+                        h = bh}
+    obj.sections[711] = {x = obj.sections[70].w/2+xofft,
+                        y = settingswin_off + yoff + yoffm*10,
+                        w = 40,
+                        h = bh}
     obj.sections[713] = {x = obj.sections[70].w/2+xofft,
-                              y = settingswin_off + yoff + yoffm*16,
-                              w = bw,
-                              h = bh}
-    obj.sections[714] = {x = obj.sections[70].w/2+xofft,
-                              y = settingswin_off + yoff + yoffm*17,
-                              w = bw,
-                              h = bh}
-    obj.sections[715] = {x = obj.sections[70].w/2+xofft,
-                              y = settingswin_off + yoff + yoffm*18,
+                              y = settingswin_off + yoff + yoffm*14,
                               w = bw,
                               h = bh}
     obj.sections[716] = {x = obj.sections[70].w/2+xofft,
-                        y = settingswin_off + yoff + yoffm*19,
+                        y = settingswin_off + yoff + yoffm*12,
                         w = 40,
                         h = bh}
-    obj.sections[717] = {x = obj.sections[70].w/2+xofft,
-                              y = settingswin_off + yoff + yoffm*20,
-                              w = bw,
-                              h = bh}
-    obj.sections[718] = {x = obj.sections[70].w/2+xofft,
-                              y = settingswin_off + yoff + yoffm*21,
-                              w = bw,
-                              h = bh}
   
-    obj.sections[719] = {x = xofft, 
-                               y = settingswin_off + yoff+10 + yoffm*21,
-                               w = bw,
-                               h = bh}
-
-    obj.sections[720] = {x = xofft-75, 
-                               y = settingswin_off + yoff+10 + yoffm*22,
-                               w = 150,
-                               h = bh+10}
-
-    obj.sections[721] = {x = xofft-75, 
-                               y = settingswin_off + yoff+10 + yoffm*23 + 6,
-                               w = 70,
-                               h = bh+10}
-
-    obj.sections[724] = {x = xofft, 
-                               y = settingswin_off + yoff+10 + yoffm*23 + 6,
-                               w = 70,
-                               h = bh+10}
-
-    obj.sections[725] = {x = xofft + 75, 
-                               y = settingswin_off + yoff+10 + yoffm*23 + 6,
-                               w = 70,
-                               h = bh+10}
-
-    obj.sections[722] = {x = xofft-75, 
-                               y = settingswin_off + yoff+10 + yoffm*24 + 12,
-                               w = 70,
-                               h = bh+10}
-    obj.sections[723] = {x = xofft, 
-                               y = settingswin_off + yoff+10 + yoffm*24 + 12,
-                               w = 70,
-                               h = bh+10}
-
-    obj.sections[726] = {x = obj.sections[70].w/2+xofft,
-                              y = settingswin_off + yoff + yoffm*22,
-                              w = bw,
-                              h = bh}
-
-    obj.sections[727] = {x = obj.sections[70].w*3/4-75, 
-                               y = settingswin_off + yoff+10 + yoffm*23,
-                               w = 150,
-                               h = bh+10}
-    obj.sections[729] = {x = obj.sections[70].w/2+xofft,
-                              y = settingswin_off + yoff + yoffm*25 + 4,
-                              w = bw,
-                              h = bh}
-
-    obj.sections[730] = {x = obj.sections[70].w/2+xofft,
-                              y = settingswin_off + yoff + yoffm*26 + 4,
-                              w = bw,
-                              h = bh}
-
     
     return obj
     
@@ -8878,8 +8909,8 @@ elseif dragparam.type == 'rs5k' then
     if settings_showgrid and mode ~= 0 and settings_gridsize >= 16 then
       local gs = settings_gridsize
       if gs == 1 then gs = ogrid end
-      f_Get_SSV('0 0 0')
-      gfx.a = 0.9
+      f_Get_SSV(lvar.gridcolor)
+      gfx.a = lvar.gridalpha
       for i = 0, surface_size.w, gs do
         gfx.line(i,0,i,surface_size.h)
       end
@@ -17311,7 +17342,22 @@ function GUI_DrawCtlBitmap_Strips()
       gfx.blit(skin.panela_cnrtl,1,0,0,0,pnlcnr_w,pnlcnr_h,x,y)
       gfx.blit(skin.panela_cnrtr,1,0,0,0,pnlcnr_w,pnlcnr_h,x+w-pnlcnr_w,y)
     end
-    
+
+    local ww = math.floor(obj.sections[732].w / #lvar.settingspages)
+    local xywh = {x = obj.sections[732].x,
+                  y = obj.sections[732].y,
+                  w = ww-1,
+                  h = obj.sections[732].h}
+    for i = 1, #lvar.settingspages do
+      xywh.x = obj.sections[732].x + (i-1)*ww
+      local c = -1
+      if i == lvar.settingspage then
+        c = -4
+      end
+      GUI_DrawButton(gui, lvar.settingspages[i], xywh, c, gui.color.white, true, '', true, gui.fontsz.settings-1,true)
+      
+    end
+        
     gfx.dest = 990
     gfx.setimgdim(990,-1,-1)
     gfx.setimgdim(990,obj.sections[70].w,obj.sections[70].h)
@@ -17323,95 +17369,148 @@ function GUI_DrawCtlBitmap_Strips()
              obj.sections[70].w,
              obj.sections[70].h, 1)]]
 
-    GUI_DrawTick(gui, 'Follow selected track', obj.sections[71], gui.color.white, settings_followselectedtrack, gui.fontsz.settings,true)             
-    GUI_DrawTick(gui, 'Disable send checks', obj.sections[72], gui.color.white, settings_disablesendchecks, gui.fontsz.settings,true)             
-    GUI_DrawTick(gui, 'Save all track fx with strip', obj.sections[73], gui.color.white, settings_saveallfxinststrip, gui.fontsz.settings,true)
-    GUI_DrawSliderH(gui, 'Control refresh rate', obj.sections[74], gui.color.black, gui.color.white, (1-(settings_updatefreq*10)), gui.fontsz.settings,true)
-    GUI_DrawButton(gui, lvar.ctlupdate_rr or 'off', obj.sections[731], -3, gui.color.black, true, '', true, gui.fontsz.settings,true)
-    GUI_DrawTick(gui, 'Lock control window width', obj.sections[75], gui.color.white, lockx, gui.fontsz.settings,true)
-    GUI_DrawTick(gui, 'Lock control window height', obj.sections[76], gui.color.white, locky, gui.fontsz.settings,true)
-    GUI_DrawButton(gui, lockw, obj.sections[77], -3, gui.color.black, lockx, '', true, gui.fontsz.settings,true)
-    GUI_DrawButton(gui, lockh, obj.sections[78], -3, gui.color.black, locky, '', true, gui.fontsz.settings,true)
+    if lvar.settingspage == 1 then
     
-    GUI_DrawTick(gui, 'Show grid / grid size', obj.sections[80], gui.color.white, settings_showgrid, gui.fontsz.settings,true)
-    GUI_DrawButton(gui, ogrid, obj.sections[79], -3, gui.color.black, true, '', false, gui.fontsz.settings,true)
-    GUI_DrawTick(gui, 'Can mousewheel on knob', obj.sections[81], gui.color.white, settings_mousewheelknob, gui.fontsz.settings,true)
-    GUI_DrawTick(gui, 'Swap ctrl click and dbl click actions', obj.sections[82], gui.color.white, settings_swapctrlclick, gui.fontsz.settings,true)
-    GUI_DrawTick(gui, 'Insert default strip on every track', obj.sections[83], gui.color.white, settings_insertdefaultoneverytrack, gui.fontsz.settings,true)
-    GUI_DrawTick(gui, '...and on every page', obj.sections[84], gui.color.white, settings_insertdefaultoneverypage, gui.fontsz.settings,true)
-    GUI_DrawTick(gui, 'Display scroll bars', obj.sections[85], gui.color.white, settings_showbars, gui.fontsz.settings,true)
-    GUI_DrawColorBox(gui, 'Snapshot list background colour', obj.sections[86], gui.color.white, settings_snaplistbgcol, gui.fontsz.settings,true)
-    GUI_DrawTick(gui, 'Save script data in project folder', obj.sections[87], gui.color.white, settings_savedatainprojectfolder, gui.fontsz.settings,true)
-    GUI_DrawTick(gui, 'Use bitmap mask control detection', obj.sections[88], gui.color.white, settings_usectlbitmap, gui.fontsz.settings,true)
-    GUI_DrawTick(gui, 'Show minimal top bar when hidden', obj.sections[89], gui.color.white, settings_showminimaltopbar, gui.fontsz.settings,true)
-    GUI_DrawTick(gui, 'Hide edit bar on new projects', obj.sections[96], gui.color.white, settings_hideeditbaronnewproject, gui.fontsz.settings,true)
-    GUI_DrawTick(gui, 'Lock surface on new projects', obj.sections[97], gui.color.white, settings_locksurfaceonnewproject, gui.fontsz.settings,true)
-    GUI_DrawTick(gui, 'Create backup when manually saving', obj.sections[98], gui.color.white, settings_createbackuponmanualsave, gui.fontsz.settings,true)
-    GUI_DrawTick(gui, 'Enable temp bkp of data when saving', obj.sections[728], gui.color.white, settings_backupduringsave, gui.fontsz.settings,true)
-    local t = false
-    if settings_pagescrolldir == 1 then
-      t = true
-    end
-    GUI_DrawTick(gui, 'Mousewheel scrolls page horizontally', obj.sections[719], gui.color.white, t, gui.fontsz.settings,true)
-    GUI_DrawButton(gui, string.sub(skin_select,0,string.len(skin_select)-1), obj.sections[720], -3, gui.color.black, true, 'Skin', true, gui.fontsz.settings,true)
-    GUI_DrawButton(gui, tb_butt_h, obj.sections[721], -3, gui.color.black, true, 'Top/sidebar size', true, gui.fontsz.settings,true)
-    GUI_DrawButton(gui, tb_fontscale, obj.sections[724], -3, gui.color.black, true, '', true, gui.fontsz.settings,true)
-    GUI_DrawButton(gui, lst_fontscale, obj.sections[725], -3, gui.color.black, true, '', true, gui.fontsz.settings,true)
-    GUI_DrawButton(gui, pnl_scale, obj.sections[722], -3, gui.color.black, true, 'Panel size', true, gui.fontsz.settings,true)
-    GUI_DrawButton(gui, fontscale, obj.sections[723], -3, gui.color.black, true, '', true, gui.fontsz.settings,true)
+      GUI_DrawTick(gui, 'Follow selected track', obj.sections[71], gui.color.white, settings_followselectedtrack, gui.fontsz.settings,true)             
+      GUI_DrawTick(gui, 'Lock control window width', obj.sections[75], gui.color.white, lockx, gui.fontsz.settings,true)
+      GUI_DrawTick(gui, 'Lock control window height', obj.sections[76], gui.color.white, locky, gui.fontsz.settings,true)
+      GUI_DrawButton(gui, lockw, obj.sections[77], -3, gui.color.black, lockx, '', true, gui.fontsz.settings,true)
+      GUI_DrawButton(gui, lockh, obj.sections[78], -3, gui.color.black, locky, '', true, gui.fontsz.settings,true)
+      
+      GUI_DrawTick(gui, 'Show grid / grid size', obj.sections[80], gui.color.white, settings_showgrid, gui.fontsz.settings,true)
+      GUI_DrawColorBox(gui, 'Grid colour', obj.sections[733], gui.color.white, lvar.gridcolor, gui.fontsz.settings,true)
+      GUI_DrawButton(gui, ogrid, obj.sections[79], -3, gui.color.black, true, '', false, gui.fontsz.settings,true)
+      GUI_DrawTick(gui, 'Can mousewheel on knob', obj.sections[81], gui.color.white, settings_mousewheelknob, gui.fontsz.settings,true)
+      GUI_DrawTick(gui, 'Swap ctrl click and dbl click actions', obj.sections[82], gui.color.white, settings_swapctrlclick, gui.fontsz.settings,true)
+      GUI_DrawTick(gui, 'Insert default strip on every track', obj.sections[83], gui.color.white, settings_insertdefaultoneverytrack, gui.fontsz.settings,true)
+      GUI_DrawTick(gui, '...and on every page', obj.sections[84], gui.color.white, settings_insertdefaultoneverypage, gui.fontsz.settings,true)
+      GUI_DrawTick(gui, 'Lock surface on new projects', obj.sections[97], gui.color.white, settings_locksurfaceonnewproject, gui.fontsz.settings,true)
+      local t = false
+      if settings_pagescrolldir == 1 then
+        t = true
+      end
+      GUI_DrawTick(gui, 'Mousewheel scrolls page horizontally', obj.sections[719], gui.color.white, t, gui.fontsz.settings,true)
+  
+      --column2
+      
+      local abs, rel = GetMOFaders()
+      if abs then
+        GUI_DrawButton(gui, 'FADER '..abs, obj.sections[700], -1, gui.color.black, true, 'Global mouseover fader (absolute)',true, gui.fontsz.settings,true)
+      else
+        GUI_DrawButton(gui, 'NO FADER', obj.sections[700], gui.color.white, gui.color.black, false, 'Global mouseover fader (absolute)',true, gui.fontsz.settings,true)    
+      end
+      --[[if rel then
+        GUI_DrawButton(gui, 'FADER '..rel, obj.sections[701], gui.color.white, gui.color.black, true, 'Global mouseover fader (relative)')
+      else
+        GUI_DrawButton(gui, 'NO FADER', obj.sections[701], gui.color.white, gui.color.black, false, 'Global mouseover fader (relative)')    
+      end]]
+  
+      GUI_DrawTick(gui, 'Send MIDI feedback on track change', obj.sections[705], gui.color.white, settings_trackchangemidi, gui.fontsz.settings,true)
+  
+      GUI_DrawTick(gui, 'Autosnap strips when adding', obj.sections[707], gui.color.white, settings_stripautosnap, gui.fontsz.settings,true)
+      GUI_DrawButton(gui, autosnap_rowheight, obj.sections[708], gui.color.white, gui.color.black, false, 'Autosnap row height', true, gui.fontsz.settings,true)
+      GUI_DrawButton(gui, autosnap_itemgap, obj.sections[709], gui.color.white, gui.color.black, false, 'Autosnap strip item gap min', true, gui.fontsz.settings,true)
+      GUI_DrawButton(gui, autosnap_itemgapmax, obj.sections[710], gui.color.white, gui.color.black, false, 'Autosnap strip item gap max', true, gui.fontsz.settings,true)
+      GUI_DrawButton(gui, gallery_itemgap, obj.sections[711], gui.color.white, gui.color.black, false, 'Strip gallery item gap', true, gui.fontsz.settings,true)
+      GUI_DrawTick(gui, 'Delete FX with strip', obj.sections[713], gui.color.white, settings_deletefxwithstrip, gui.fontsz.settings,true)
+      GUI_DrawButton(gui, modulator_cnt, obj.sections[716], gui.color.white, gui.color.black, false, 'Modulators', true, gui.fontsz.settings,true)
+      GUI_DrawTick(gui, 'Simple select grouped controls', obj.sections[718], gui.color.white, settings_groupsel, gui.fontsz.settings,true)
+  
+      if lvar.updateravailable then
+        GUI_DrawButton(gui, 'UPDATE LBX', obj.sections[727], -1, gui.color.black, true, '', true, gui.fontsz.settings,true)
+      end
+  
     
-    GUI_DrawButton(gui, nz(save_subfolder,''), obj.sections[95], gui.color.white, gui.color.white, false, 'Save subfolder', true, gui.fontsz.settings,true)  
+    elseif lvar.settingspage == 2 then
+      
+      GUI_DrawSliderH(gui, 'Control refresh rate', obj.sections[74], gui.color.black, gui.color.white, (1-(settings_updatefreq*10)), gui.fontsz.settings,true)
+      GUI_DrawButton(gui, lvar.ctlupdate_rr or 'off', obj.sections[731], -3, gui.color.black, true, 'No. of controls in update round-robin', true, gui.fontsz.settings,true)
+      GUI_DrawTick(gui, 'Use bitmap mask control detection', obj.sections[88], gui.color.white, settings_usectlbitmap, gui.fontsz.settings,true)
+      GUI_DrawTick(gui, 'Run modulators when stopped', obj.sections[715], gui.color.white, settings_alwaysrunmods, gui.fontsz.settings,true)
+      GUI_DrawTick(gui, 'Alternative edit mode drag', obj.sections[726], gui.color.white, settings_dragmode, gui.fontsz.settings,true)
+      GUI_DrawTick(gui, 'Disable send checks', obj.sections[72], gui.color.white, settings_disablesendchecks, gui.fontsz.settings,true)             
+      
+    elseif lvar.settingspage == 3 then
 
-    --column2
+      GUI_DrawTick(gui, 'Save all track fx with strip', obj.sections[73], gui.color.white, settings_saveallfxinststrip, gui.fontsz.settings,true)
+      GUI_DrawTick(gui, 'Save script data in project folder', obj.sections[87], gui.color.white, settings_savedatainprojectfolder, gui.fontsz.settings,true)
+      GUI_DrawTick(gui, 'Create backup when manually saving', obj.sections[98], gui.color.white, settings_createbackuponmanualsave, gui.fontsz.settings,true)
+      GUI_DrawTick(gui, 'Enable temp bkp of data when saving', obj.sections[728], gui.color.white, settings_backupduringsave, gui.fontsz.settings,true)
+      GUI_DrawButton(gui, nz(save_subfolder,''), obj.sections[95], gui.color.white, gui.color.white, false, 'Save subfolder', true, gui.fontsz.settings,true)  
+
+    elseif lvar.settingspage == 4 then
+
+      GUI_DrawTick(gui, 'Display scroll bars', obj.sections[85], gui.color.white, settings_showbars, gui.fontsz.settings,true)
+      GUI_DrawColorBox(gui, 'Snapshot list background colour', obj.sections[86], gui.color.white, settings_snaplistbgcol, gui.fontsz.settings,true)
+      GUI_DrawTick(gui, 'Show minimal top bar when hidden', obj.sections[89], gui.color.white, settings_showminimaltopbar, gui.fontsz.settings,true)
+      GUI_DrawTick(gui, 'Hide edit bar on new projects', obj.sections[96], gui.color.white, settings_hideeditbaronnewproject, gui.fontsz.settings,true)
+      GUI_DrawButton(gui, string.sub(skin_select,0,string.len(skin_select)-1), obj.sections[720], -3, gui.color.black, true, 'Skin', true, gui.fontsz.settings,true)
+      GUI_DrawButton(gui, tb_butt_h, obj.sections[721], -3, gui.color.black, true, 'Top/sidebar size', true, gui.fontsz.settings,true)
+      GUI_DrawButton(gui, tb_fontscale, obj.sections[724], -3, gui.color.black, true, 'Top/sidebar font size', true, gui.fontsz.settings,true)
+      GUI_DrawButton(gui, lst_fontscale, obj.sections[725], -3, gui.color.black, true, 'Sidebar list font size', true, gui.fontsz.settings,true)
+      GUI_DrawButton(gui, pnl_scale, obj.sections[722], -3, gui.color.black, true, 'Panel size', true, gui.fontsz.settings,true)
+      GUI_DrawButton(gui, fontscale, obj.sections[723], -3, gui.color.black, true, 'Panel font size', true, gui.fontsz.settings,true)
+      GUI_DrawColorBox(gui, 'Main background colour', obj.sections[702], gui.color.white, backcol, gui.fontsz.settings,true)
+      GUI_DrawTick(gui, 'Show fader assignments on grid', obj.sections[706], gui.color.white, settings_showfaderassignments, gui.fontsz.settings,true)
+      GUI_DrawTick(gui, 'Activate snapshot morphing pop-ups', obj.sections[717], gui.color.white, settings_showmorphpop, gui.fontsz.settings, true)
+      
+
+    elseif lvar.settingspage == 5 then
     
-    local abs, rel = GetMOFaders()
-    if abs then
-      GUI_DrawButton(gui, 'FADER '..abs, obj.sections[700], gui.color.white, gui.color.black, true, 'Global mouseover fader (absolute)',true, gui.fontsz.settings,true)
-    else
-      GUI_DrawButton(gui, 'NO FADER', obj.sections[700], gui.color.white, gui.color.black, false, 'Global mouseover fader (absolute)',true, gui.fontsz.settings,true)    
+      local sb = false
+      local sbt = 'NOT SET'
+      if neb_scanboot_tab then
+        sb = true
+        sbt = 'SET'
+      end
+      GUI_DrawButton(gui, sbt, obj.sections[703], gui.color.white, gui.skol.butt1_txt, sb, 'Nebula scanboot location', true, gui.fontsz.settings,true)
+      GUI_DrawTick(gui, 'Touch feedback indicator', obj.sections[704], gui.color.white, settings_touchFB, gui.fontsz.settings,true)
+      GUI_DrawTick(gui, 'Morph fader/mod assigned controls', obj.sections[714], gui.color.white, settings_morphfaderassignedctls, gui.fontsz.settings,true)
+      GUI_DrawTick(gui, 'Disable key input when surface locked', obj.sections[712], gui.color.white, settings_disablekeysonlockedsurface, gui.fontsz.settings,true)
+      GUI_DrawTick(gui, 'Run lbxstart batch file when script starts', obj.sections[729], gui.color.white, settings_runstartbat, gui.fontsz.settings,true)
+      GUI_DrawTick(gui, 'Create log file when adding strips (not saved)', obj.sections[730], gui.color.white, logflag, gui.fontsz.settings,true)
+        
     end
-    --[[if rel then
-      GUI_DrawButton(gui, 'FADER '..rel, obj.sections[701], gui.color.white, gui.color.black, true, 'Global mouseover fader (relative)')
-    else
-      GUI_DrawButton(gui, 'NO FADER', obj.sections[701], gui.color.white, gui.color.black, false, 'Global mouseover fader (relative)')    
-    end]]
-
-    GUI_DrawColorBox(gui, 'Main background colour', obj.sections[702], gui.color.white, backcol, gui.fontsz.settings,true)
-    local sb = false
-    local sbt = 'NOT SET'
-    if neb_scanboot_tab then
-      sb = true
-      sbt = 'SET'
-    end
-    GUI_DrawButton(gui, sbt, obj.sections[703], gui.color.white, gui.skol.butt1_txt, sb, 'Nebula scanboot location', true, gui.fontsz.settings,true)
-    GUI_DrawTick(gui, 'Touch feedback indicator', obj.sections[704], gui.color.white, settings_touchFB, gui.fontsz.settings,true)
-    GUI_DrawTick(gui, 'Send MIDI feedback on track change', obj.sections[705], gui.color.white, settings_trackchangemidi, gui.fontsz.settings,true)
-    GUI_DrawTick(gui, 'Show fader assignments on grid', obj.sections[706], gui.color.white, settings_showfaderassignments, gui.fontsz.settings,true)
-
-    GUI_DrawTick(gui, 'Autosnap strips when adding', obj.sections[707], gui.color.white, settings_stripautosnap, gui.fontsz.settings,true)
-    GUI_DrawButton(gui, autosnap_rowheight, obj.sections[708], gui.color.white, gui.color.black, false, 'Autosnap row height', true, gui.fontsz.settings,true)
-    GUI_DrawButton(gui, autosnap_itemgap, obj.sections[709], gui.color.white, gui.color.black, false, 'Autosnap strip item gap min', true, gui.fontsz.settings,true)
-    GUI_DrawButton(gui, autosnap_itemgapmax, obj.sections[710], gui.color.white, gui.color.black, false, 'Autosnap strip item gap max', true, gui.fontsz.settings,true)
-    GUI_DrawButton(gui, gallery_itemgap, obj.sections[711], gui.color.white, gui.color.black, false, 'Strip gallery item gap', true, gui.fontsz.settings,true)
-    GUI_DrawTick(gui, 'Disable key input when surface locked', obj.sections[712], gui.color.white, settings_disablekeysonlockedsurface, gui.fontsz.settings,true)
-    GUI_DrawTick(gui, 'Delete FX with strip', obj.sections[713], gui.color.white, settings_deletefxwithstrip, gui.fontsz.settings,true)
-    GUI_DrawTick(gui, 'Morph fader/mod assigned controls', obj.sections[714], gui.color.white, settings_morphfaderassignedctls, gui.fontsz.settings,true)
-    GUI_DrawTick(gui, 'Run modulators when stopped', obj.sections[715], gui.color.white, settings_alwaysrunmods, gui.fontsz.settings,true)
-    GUI_DrawButton(gui, modulator_cnt, obj.sections[716], gui.color.white, gui.color.black, false, 'Modulators', true, gui.fontsz.settings,true)
-    GUI_DrawTick(gui, 'Activate snapshot morphing pop-ups', obj.sections[717], gui.color.white, settings_showmorphpop, gui.fontsz.settings, true)
-    GUI_DrawTick(gui, 'Simple select grouped controls', obj.sections[718], gui.color.white, settings_groupsel, gui.fontsz.settings,true)
-    GUI_DrawTick(gui, 'Alternative edit mode drag', obj.sections[726], gui.color.white, settings_dragmode, gui.fontsz.settings,true)
-
-    if lvar.updateravailable then
-      GUI_DrawButton(gui, 'UPDATE LBX', obj.sections[727], -1, gui.color.black, true, '', true, gui.fontsz.settings,true)
-    end
-
-    GUI_DrawTick(gui, 'Run lbxstart batch file when script starts', obj.sections[729], gui.color.white, settings_runstartbat, gui.fontsz.settings,true)
-    GUI_DrawTick(gui, 'Create log file when adding strips (not saved)', obj.sections[730], gui.color.white, logflag, gui.fontsz.settings,true)
-    
     gfx.dest = 1
     gfx.a = 1
-    gfx.blit(990,1,0,0,34,obj.sections[70].w,obj.sections[70].h-44,obj.sections[70].x,obj.sections[70].y+34)
+    
+    --set font
+    GUI_Str(gui, {x=0,y=0,w=0,h=0}, '', 5, gui.color.black, -4 + gui.fontsz.settings, 1, nil, gui.fontnm.butt, gui.fontflag.butt)
+    local _, h = gfx.measurestr('|')
+    --setting info
+    if lvar.settingsinf_txt[lvar.settings_last] then
+      local c = gui.color.blue
+
+      local lines = #lvar.settingsinf_txt[lvar.settings_last]
+      local ypm = 1 
+      if lines == 2 then
+        ypm = 0.5
+      elseif lines == 3 then
+        ypm = 0
+      end
+      local xywh = {x = obj.sections[70].x,
+                    y = obj.sections[70].y + obj.sections[70].h - math.floor((3*h+9) - ypm*h),
+                    w = obj.sections[70].w,
+                    h = h}
+      GUI_Str(gui, xywh, lvar.settingsinf_txt[lvar.settings_last][1], 5, c, -4 + gui.fontsz.settings, 1, nil, gui.fontnm.butt, gui.fontflag.butt)
+      xywh.y = xywh.y + h
+      GUI_Str(gui, xywh, lvar.settingsinf_txt[lvar.settings_last][2] or '', 5, c, -4 + gui.fontsz.settings, 1, nil, gui.fontnm.butt, gui.fontflag.butt)
+      xywh.y = xywh.y + h
+      GUI_Str(gui, xywh, lvar.settingsinf_txt[lvar.settings_last][3] or '', 5, c, -4 + gui.fontsz.settings, 1, nil, gui.fontnm.butt, gui.fontflag.butt)
+    end
+
+    local xywh = {x = obj.sections[70].x, y = obj.sections[70].y+lvar.settingsy, w = obj.sections[70].w, h = obj.sections[70].h-lvar.settingsy-(h*3+12)}
+    gfx.blit(990,1,0,0,lvar.settingsy,xywh.w,xywh.h,xywh.x,xywh.y)
+    f_Get_SSV('32 32 32')
+    gfx.a = 1 
+    gfx.line(xywh.x,
+             xywh.y, 
+             xywh.x+xywh.w,
+             xywh.y)
+    gfx.line(xywh.x,
+             xywh.y+xywh.h, 
+             xywh.x+xywh.w,
+             xywh.y+xywh.h)
     
   end
   
@@ -27408,14 +27507,17 @@ function GUI_DrawCtlBitmap_Strips()
   
   end
 
-  function SetAutomationFader(fad_tab, sel, returnonly)
+  function SetAutomationFader(fad_tab, sel, returnonly, mx, my)
   
     if LBX_CTL_TRACK_INF and LBX_CTL_TRACK_INF.count > 0 then
       
       local mstr, lastp = FaderMenu(sel, returnonly)
       
-      gfx.x = mouse.mx
-      gfx.y = mouse.my
+      local menx = mx or mouse.mx
+      local meny = my or mouse.my
+      
+      gfx.x = menx
+      gfx.y = meny
       local ret = gfx.showmenu(mstr)
      
       if nz(returnonly,false) == false then
@@ -27551,7 +27653,7 @@ function GUI_DrawCtlBitmap_Strips()
                           end
                         end 
   
-                        if ctl.ctlcat == ctlcats.fxparam or ctl.ctlcat == ctlcats.trackparam or ctl.ctlcat == ctlcats.macro then
+                        if ctl.ctlcat == ctlcats.fxparam or ctl.ctlcat == ctlcats.trackparam or ctl.ctlcat == ctlcats.tracksend or ctl.ctlcat == ctlcats.macro then
                           if faders[p+1].mode == 0 then
                             --absolute
                             if faders[p+1].to == false then
@@ -27790,6 +27892,8 @@ function GUI_DrawCtlBitmap_Strips()
         faders[f] = ftab
       end
     
+    elseif ftab.targettype == 3 then
+      faders[f] = ftab
     end
   
   end
@@ -44382,7 +44486,7 @@ function GUI_DrawCtlBitmap_Strips()
   end
 
   function Process_Settings()
-    
+
     if mouse.LB and not mouse.last_LB and not MOUSE_click(obj.sections[70]) then
       show_settings = false
       SaveSettings()
@@ -44390,392 +44494,574 @@ function GUI_DrawCtlBitmap_Strips()
     elseif gfx.mouse_wheel ~= 0 then
       local v = gfx.mouse_wheel/120
       settingswin_off = F_limit(settingswin_off + (v*25),(-settingswin_maxh)+settingswin_h,0)
-      --DBG(settingswin_off)
       obj = PosSetWinCtls(obj)
       update_surface = true
       gfx.mouse_wheel = 0
+      
     elseif mouse.LB or mouse.RB then
     
       local mx, my = mouse.mx, mouse.my
-      mouse.mx = mouse.mx - obj.sections[70].x
-      mouse.my = mouse.my - obj.sections[70].y
       
-      if MOUSE_click(obj.sections[71]) then
-        settings_followselectedtrack = not settings_followselectedtrack
-        update_settings = true
-      elseif MOUSE_click(obj.sections[72]) then
-        settings_disablesendchecks = not settings_disablesendchecks
-        update_settings = true
-      elseif MOUSE_click(obj.sections[73]) then
-        settings_saveallfxinststrip = not settings_saveallfxinststrip
-        update_settings = true
-      elseif MOUSE_click(obj.sections[81]) then
-        settings_mousewheelknob = not settings_mousewheelknob
-        update_settings = true
-      elseif MOUSE_click(obj.sections[82]) then
-        settings_swapctrlclick = not settings_swapctrlclick
-        update_settings = true
-      elseif MOUSE_click(obj.sections[83]) then
-        settings_insertdefaultoneverytrack = not settings_insertdefaultoneverytrack
-        update_settings = true
-      elseif MOUSE_click(obj.sections[84]) then
-        settings_insertdefaultoneverypage = not settings_insertdefaultoneverypage
-        update_settings = true
-      elseif MOUSE_click(obj.sections[85]) then
-        settings_showbars = not settings_showbars
-        obj = GetObjects()
-        update_gfx = true
-      elseif mouse.context == nil and MOUSE_click(obj.sections[74]) then
-        mouse.context = contexts.updatefreq
-        oval = settings_updatefreq
-      elseif mouse.context == nil and MOUSE_click(obj.sections[731]) then
-        OpenEB(731, 'Round robin size:', lvar.ctlupdate_rr)
-        update_gfx = true
-      elseif mouse.context == nil and MOUSE_click(obj.sections[75]) then
-        lockx = not lockx
-        obj = GetObjects()
-        update_gfx = true
-      elseif mouse.context == nil and MOUSE_click(obj.sections[76]) then
-        locky = not locky
-        obj = GetObjects()
-        update_gfx = true
-      elseif mouse.context == nil and MOUSE_click(obj.sections[77]) then
-        mouse.context = contexts.lockw
-        ctlpos = lockw
-      elseif mouse.context == nil and MOUSE_click(obj.sections[78]) then
-        mouse.context = contexts.lockh
-        ctlpos = lockh
-      elseif mouse.context == nil and MOUSE_click(obj.sections[80]) then
-        settings_showgrid = not settings_showgrid
-        osg = settings_showgrid
-        if settings_gridsize < 16 then
-          settings_showgrid = false
-        end
-        update_gfx = true
-      elseif mouse.context == nil and MOUSE_click(obj.sections[79]) then
-        mouse.context = contexts.gridslider
-        ctlpos = ogrid or settings_gridsize
-      elseif mouse.context == nil and MOUSE_click(obj.sections[721]) then
-        mouse.context = contexts.sbpanszslider
-        ctlpos = tb_butt_h
-      elseif mouse.context == nil and MOUSE_click(obj.sections[722]) then
-        mouse.context = contexts.panszslider
-        ctlpos = pnl_scale
-      elseif mouse.context == nil and MOUSE_click(obj.sections[723]) then
-        mouse.context = contexts.panfontszslider
-        ctlpos = fontscale
-      elseif mouse.context == nil and MOUSE_click(obj.sections[724]) then
-        mouse.context = contexts.sbfontszslider
-        ctlpos = tb_fontscale
-      elseif mouse.context == nil and MOUSE_click(obj.sections[725]) then
-        mouse.context = contexts.lstfontszslider
-        ctlpos = lst_fontscale
-
-      elseif mouse.context == nil and MOUSE_click(obj.sections[86]) then
-        local retval, c = reaper.GR_SelectColor(_,ConvertColorString(settings_snaplistbgcol))
-        if retval ~= 0 then
-          settings_snaplistbgcol = ConvertColor(c)
-          update_gfx = true
-        end
-      elseif mouse.context == nil and MOUSE_click(obj.sections[87]) then
-        settings_savedatainprojectfolder = not settings_savedatainprojectfolder
-        update_gfx = true
-      elseif mouse.context == nil and MOUSE_click(obj.sections[96]) then
-        settings_hideeditbaronnewproject = not settings_hideeditbaronnewproject
-        update_gfx = true
-      elseif mouse.context == nil and MOUSE_click(obj.sections[97]) then
-        settings_locksurfaceonnewproject = not settings_locksurfaceonnewproject
-        update_gfx = true
-      elseif mouse.context == nil and MOUSE_click(obj.sections[98]) then
-        settings_createbackuponmanualsave = not settings_createbackuponmanualsave
-        update_gfx = true
-      elseif mouse.context == nil and MOUSE_click(obj.sections[728]) then
-        settings_backupduringsave = not settings_backupduringsave
-        update_gfx = true        
-      elseif mouse.context == nil and MOUSE_click(obj.sections[719]) then
-        settings_pagescrolldir = 1-settings_pagescrolldir
-        update_gfx = true
-      elseif mouse.context == nil and MOUSE_click(obj.sections[720]) then
-        MenuSkins(mx, my)
-        update_gfx = true
-
-      elseif mouse.context == nil and MOUSE_click(obj.sections[704]) then
-        settings_touchFB = not settings_touchFB
-        update_gfx = true
-      elseif mouse.context == nil and MOUSE_click(obj.sections[705]) then
-        settings_trackchangemidi = not settings_trackchangemidi
-        update_gfx = true
-      elseif mouse.context == nil and MOUSE_click(obj.sections[706]) then
-        settings_showfaderassignments = not settings_showfaderassignments
-        update_gfx = true
-      elseif mouse.context == nil and MOUSE_click(obj.sections[707]) then
-        settings_stripautosnap = not settings_stripautosnap
-        update_gfx = true
-      elseif mouse.context == nil and MOUSE_click(obj.sections[712]) then
-        settings_disablekeysonlockedsurface = not settings_disablekeysonlockedsurface
-        update_gfx = true
-      elseif mouse.context == nil and MOUSE_click(obj.sections[713]) then
-        settings_deletefxwithstrip = not settings_deletefxwithstrip
-        update_gfx = true
-      elseif mouse.context == nil and MOUSE_click(obj.sections[714]) then
-        settings_morphfaderassignedctls = not settings_morphfaderassignedctls
-        update_gfx = true
-      elseif mouse.context == nil and MOUSE_click(obj.sections[715]) then
-        settings_alwaysrunmods = not settings_alwaysrunmods
-        update_gfx = true
-        
-      elseif mouse.context == nil and MOUSE_click(obj.sections[717]) then
-        settings_showmorphpop = not settings_showmorphpop
-        update_gfx = true
-
-      elseif mouse.context == nil and MOUSE_click(obj.sections[718]) then
-        settings_groupsel = not settings_groupsel
-        update_gfx = true
-
-      elseif mouse.context == nil and MOUSE_click(obj.sections[726]) then
-        settings_dragmode = not settings_dragmode
-        update_gfx = true
-
-      elseif mouse.context == nil and MOUSE_click(obj.sections[729]) then
-        settings_runstartbat = not settings_runstartbat
-        update_gfx = true
-
-      elseif mouse.context == nil and MOUSE_click(obj.sections[730]) then
-        logflag = not logflag
-        update_gfx = true
-
-      elseif mouse.context == nil and MOUSE_click(obj.sections[727]) then
-        
-        if lvar.updateravailable == true then
-        
-          RunUpdater()
-        
-        end
-
-      elseif mouse.context == nil and MOUSE_click_RB(obj.sections[727]) then
+      if MOUSE_click(obj.sections[732]) then
       
-        RollbackMenu(mx, my)
+        local i = math.floor((mouse.mx - obj.sections[732].x) / math.floor(obj.sections[732].w/#lvar.settingspages))+1
+        if lvar.settingspages[i] then
         
-      elseif mouse.context == nil and MOUSE_click(obj.sections[716]) then
-        
-        OpenEB(104, 'Number of modulators:', modulator_cnt)
-        update_gfx = true
-      
-      elseif mouse.context == nil and MOUSE_click(obj.sections[708]) then
-        
-        OpenEB(100, 'Please choose new row height:', autosnap_rowheight)
-        update_gfx = true
-  
-      elseif mouse.context == nil and MOUSE_click(obj.sections[709]) then
-        
-        OpenEB(101, 'Please choose min gap size between strip items:', autosnap_itemgap)
-        update_gfx = true
-  
-      elseif mouse.context == nil and MOUSE_click(obj.sections[710]) then
-        
-        OpenEB(102, 'Please choose max gap size between strip items:', autosnap_itemgapmax)
-        update_gfx = true
-  
-      elseif mouse.context == nil and MOUSE_click(obj.sections[711]) then
-        
-        OpenEB(103, 'Please choose gap size between strip items in gallery view:', gallery_itemgap)
-        update_gfx = true
-        
-      elseif mouse.context == nil and MOUSE_click(obj.sections[700]) then
-        local abs, _ = GetMOFaders()
-        local f = {targettype = 3, mode = 0}
-        local fadabs = SetAutomationFader(f ,abs, true)
-        if fadabs == -2 then
-          DeleteFader(abs)
-        elseif fadabs ~= -1 then
-          AssignFader(fadabs, f)
-        end
-        update_gfx = true
-  
-      elseif mouse.context == nil and MOUSE_click(obj.sections[702]) then
-        local retval, c = reaper.GR_SelectColor(_,ConvertColorString(backcol))
-        if retval ~= 0 then
-          backcol = ConvertColor(c)
-          update_bg = true
-          update_gfx = true
-        end
-      elseif mouse.context == nil and MOUSE_click_RB(obj.sections[702]) then
-        backcol = '16 16 16'
-        update_bg = true
-        update_gfx = true
-        
-      --[[elseif mouse.context == nil and MOUSE_click(obj.sections[701]) then
-        local _, rel = GetMOFaders()
-        local fadrel = SetAutomationFader({targettype = 3, mode = 1},rel)
-        update_gfx = true]]
-  
-      elseif mouse.context == nil and MOUSE_click(obj.sections[703]) then
-      
-        local retval, fn = reaper.GetUserFileNameForRead('~scanboot.xml', 'Locate Nebula Scanboot', '*.XML')
-        if retval == true then
-        
-          nebscanboot_file = fn
-          LoadScanBoot(nebscanboot_file)
-          update_gfx = true
-          
-        end
-      
-      elseif mouse.context == nil and MOUSE_click(obj.sections[88]) then
-        settings_usectlbitmap = not settings_usectlbitmap
-        if settings_usectlbitmap then
-          GUI_DrawCtlBitmap()
-        else
-          gfx.setimgdim(ctl_bitmap,-1,-1)
-        end
-        update_gfx = true
-      elseif mouse.context == nil and MOUSE_click(obj.sections[89]) then
-        settings_showminimaltopbar = not settings_showminimaltopbar
-        obj = GetObjects()
-        update_surface = true
-      elseif mouse.context == nil and MOUSE_click(obj.sections[95]) then
-      
-        OpenEB(50, 'Please choose a save subfolder name:', nz(save_subfolder,''))
-      
-      elseif mouse.context == nil and MOUSE_click(obj.sections[70]) then
-        --drag offset
-        mouse.context = contexts.settingswin_dragoff
-        dragsetoff = {dy = mouse.my-obj.sections[70].y, offs = settingswin_off}
-
-      end
-      
-      if mouse.context and mouse.context == contexts.settingswin_dragoff then
-      
-        settingswin_off = dragsetoff.offs + (mouse.my - dragsetoff.dy)
-        settingswin_off = F_limit(settingswin_off,(-settingswin_maxh)+settingswin_h,0)
-        obj = PosSetWinCtls(obj)
-        --DBG(settingswin_off)
-        update_surface = true
-      
-      elseif mouse.context and mouse.context == contexts.updatefreq then
-        local val = F_limit(MOUSE_sliderHBar(obj.sections[74]),0,1)
-        if val ~= nil then
-          settings_updatefreq = (1-val)/10
-          if oval ~= settings_updatefreq then
-            update_settings = true                  
-          end 
-          oval = settings_updatefreq          
-        end
-      elseif mouse.context and mouse.context == contexts.lockw then
-        local val = F_limit(MOUSE_slider(obj.sections[77]),0,1)
-        if val ~= nil then
-          val = 1-val
-          lockw = F_limit( math.floor((val*1000)/settings_gridsize)*settings_gridsize,64,1000)
-          obj = GetObjects()
-          update_gfx = true
-        end
-      elseif mouse.context and mouse.context == contexts.lockh then
-        local val = F_limit(MOUSE_slider(obj.sections[78]),0,1)
-        if val ~= nil then
-          val = 1-val
-          lockh = F_limit( math.floor((val*1000)/settings_gridsize)*settings_gridsize,64,1000)
-          obj = GetObjects()
-          update_gfx = true
-        end
-      elseif mouse.context and mouse.context == contexts.gridslider then
-        local val = F_limit(MOUSE_slider(obj.sections[79]),0,1)
-        if val ~= nil then
-          val = 1-val
-          settings_gridsize = F_limit(ctlpos + math.floor((val-0.5)*200),1,128)
-          ogrid = settings_gridsize
-          if settings_gridsize < 16 then
-            settings_showgrid = false
-          else
-            settings_showgrid = nz(osg,true)
-          end
-          update_gfx = true
-        end
-      elseif mouse.context and mouse.context == contexts.sbpanszslider then
-        local val = F_limit(MOUSE_slider(obj.sections[721]),0,1)
-        if val ~= nil then
-          val = 1-val
-          tb_butt_h = F_limit(ctlpos + math.floor((val-0.5)*200),16,60)
-          update_sidebar = true
-          update_topbar = true
+          lvar.settingspage = i
+          settingswin_off = 0
+          obj = PosSetWinCtls(obj)
           update_surface = true
-          if mouse.shift then
-            local sc = (tb_butt_h+1)/(butt_h+1)
-            pnl_scale = math.floor(sc*100)/100
-            update_stripbrowser = true
-            update_mutate = true
-            update_randomopts = true
-            update_gfx = true
-          end
-          obj = GetObjects()
-          --update_gfx = true
+          update_settings = true
+        
         end
       
-      elseif mouse.context and mouse.context == contexts.panszslider then
-        local val = F_limit(MOUSE_slider(obj.sections[722]),0,1)
-        if val ~= nil then
-          val = 1-val
-          pnl_scale = round(F_limit(ctlpos + (val-0.5)*2,0.9,2),2)
-          if pnl_scale ~= ops then
-            resize_display = true
-            pnlscaleflag = true
-            if mouse.shift then
-              tb_butt_h = math.ceil((butt_h+1)*pnl_scale)-1
-            end
+      elseif mouse.context == nil and mouse.my > obj.sections[70].y + lvar.settingsy then
+      
+        mouse.mx = mx - obj.sections[70].x
+        mouse.my = my - obj.sections[70].y
+        
+        if lvar.settingspage == 1 then
+          
+          if MOUSE_click(obj.sections[71]) then
+            settings_followselectedtrack = not settings_followselectedtrack
+            update_settings = true
+          elseif MOUSE_click(obj.sections[81]) then
+            settings_mousewheelknob = not settings_mousewheelknob
+            update_settings = true
+          elseif MOUSE_click(obj.sections[82]) then
+            settings_swapctrlclick = not settings_swapctrlclick
+            update_settings = true
+          elseif MOUSE_click(obj.sections[83]) then
+            settings_insertdefaultoneverytrack = not settings_insertdefaultoneverytrack
+            update_settings = true
+          elseif MOUSE_click(obj.sections[84]) then
+            settings_insertdefaultoneverypage = not settings_insertdefaultoneverypage
+            update_settings = true
+          elseif MOUSE_click(obj.sections[75]) then
+            lockx = not lockx
             obj = GetObjects()
             update_gfx = true
-            ops = pnl_scale
-          end
-        end
-
-      elseif mouse.context and mouse.context == contexts.panfontszslider then
-        local val = F_limit(MOUSE_slider(obj.sections[723]),0,1)
-        if val ~= nil then
-          val = 1-val
-          fontscale = round(F_limit(ctlpos + (val-0.5)*20,0,20),0)
-          if fontscale ~= ofs then
-            resize_display = true
-            --pnlscaleflag = true
-            --obj = GetObjects()
+          elseif MOUSE_click(obj.sections[76]) then
+            locky = not locky
+            obj = GetObjects()
             update_gfx = true
-            ofs = fontscale
-          end
-        end
-
-      elseif mouse.context and mouse.context == contexts.sbfontszslider then
-        local val = F_limit(MOUSE_slider(obj.sections[724]),0,1)
-        if val ~= nil then
-          val = 1-val
-          tb_fontscale = round(F_limit(ctlpos + (val-0.5)*20,-1,20),0)
-          if tb_fontscale ~= tbofs then
-            resize_display = true
-            --pnlscaleflag = true
-            --obj = GetObjects()
+          elseif MOUSE_click(obj.sections[77]) then
+            mouse.context = contexts.lockw
+            ctlpos = lockw
+          elseif MOUSE_click(obj.sections[78]) then
+            mouse.context = contexts.lockh
+            ctlpos = lockh
+          elseif MOUSE_click(obj.sections[80]) then
+            settings_showgrid = not settings_showgrid
+            osg = settings_showgrid
+            if settings_gridsize < 16 then
+              settings_showgrid = false
+            end
             update_gfx = true
-            tbofs = tb_fontscale
-          end
-        end
-
-      elseif mouse.context and mouse.context == contexts.lstfontszslider then
-        local val = F_limit(MOUSE_slider(obj.sections[725]),0,1)
-        if val ~= nil then
-          val = 1-val
-          lst_fontscale = round(F_limit(ctlpos + (val-0.5)*20,-1,20),0)
-          if lst_fontscale ~= lstofs then
-            resize_display = true
-            --pnlscaleflag = true
-            --obj = GetObjects()
+          elseif MOUSE_click(obj.sections[79]) then
+            mouse.context = contexts.gridslider
+            ctlpos = ogrid or settings_gridsize
+          elseif MOUSE_click(obj.sections[733]) then
+            local retval, c = reaper.GR_SelectColor(_,ConvertColorString(lvar.gridcolor))
+            if retval ~= 0 then
+              lvar.gridcolor = ConvertColor(c)
+              settings_gridsize = ogrid
+              update_bg = true
+              update_gfx = true
+            end
+          
+          elseif MOUSE_click(obj.sections[97]) then
+            settings_locksurfaceonnewproject = not settings_locksurfaceonnewproject
             update_gfx = true
-            lstofs = lst_fontscale
+          elseif MOUSE_click(obj.sections[719]) then
+            settings_pagescrolldir = 1-settings_pagescrolldir
+            update_gfx = true
+          
+          elseif MOUSE_click(obj.sections[705]) then
+            settings_trackchangemidi = not settings_trackchangemidi
+            update_gfx = true
+          elseif MOUSE_click(obj.sections[707]) then
+            settings_stripautosnap = not settings_stripautosnap
+            update_gfx = true
+          elseif MOUSE_click(obj.sections[713]) then
+            settings_deletefxwithstrip = not settings_deletefxwithstrip
+            update_gfx = true
+          elseif MOUSE_click(obj.sections[718]) then
+            settings_groupsel = not settings_groupsel
+            update_gfx = true
+          
+          elseif MOUSE_click(obj.sections[727]) then
+            
+            if lvar.updateravailable == true then
+            
+              RunUpdater()
+            
+            end
+          
+          elseif MOUSE_click_RB(obj.sections[727]) then
+          
+            RollbackMenu(mx, my)
+            
+          elseif MOUSE_click(obj.sections[716]) then
+            
+            OpenEB(104, 'Number of modulators:', modulator_cnt)
+            update_gfx = true
+          
+          elseif MOUSE_click(obj.sections[708]) then
+            
+            OpenEB(100, 'Please choose new row height:', autosnap_rowheight)
+            update_gfx = true
+          
+          elseif MOUSE_click(obj.sections[709]) then
+            
+            OpenEB(101, 'Please choose min gap size between strip items:', autosnap_itemgap)
+            update_gfx = true
+          
+          elseif MOUSE_click(obj.sections[710]) then
+            
+            OpenEB(102, 'Please choose max gap size between strip items:', autosnap_itemgapmax)
+            update_gfx = true
+          
+          elseif MOUSE_click(obj.sections[711]) then
+            
+            OpenEB(103, 'Please choose gap size between strip items in gallery view:', gallery_itemgap)
+            update_gfx = true
+            
+          elseif MOUSE_click(obj.sections[700]) then
+            local abs, _ = GetMOFaders()
+            local f = {targettype = 3, mode = 0}
+            local fadabs = SetAutomationFader(f ,abs, true, mx, my)
+            if fadabs == -2 then
+              DeleteFader(abs)
+            elseif fadabs ~= -1 then
+              AssignFader(fadabs, f)
+            end
+            update_gfx = true
+          
+          elseif MOUSE_click(obj.sections[70]) then
+            --drag offset
+            mouse.context = contexts.settingswin_dragoff
+            dragsetoff = {dy = mouse.my-obj.sections[70].y, offs = settingswin_off}
+          
           end
+          
+        elseif lvar.settingspage == 2 then
+        
+          if MOUSE_click(obj.sections[74]) then
+            mouse.context = contexts.updatefreq
+            oval = settings_updatefreq
+          elseif MOUSE_click(obj.sections[731]) then
+            OpenEB(731, 'Round robin size:', lvar.ctlupdate_rr)
+            update_gfx = true
+          elseif MOUSE_click(obj.sections[88]) then
+            settings_usectlbitmap = not settings_usectlbitmap
+            if settings_usectlbitmap then
+              GUI_DrawCtlBitmap()
+            else
+              gfx.setimgdim(ctl_bitmap,-1,-1)
+            end
+            update_gfx = true
+          elseif MOUSE_click(obj.sections[715]) then
+            settings_alwaysrunmods = not settings_alwaysrunmods
+            update_gfx = true
+          elseif MOUSE_click(obj.sections[726]) then
+            settings_dragmode = not settings_dragmode
+            update_gfx = true
+          elseif MOUSE_click(obj.sections[72]) then
+            settings_disablesendchecks = not settings_disablesendchecks
+            update_settings = true
+          end  
+          
+        elseif lvar.settingspage == 3 then
+        
+          if MOUSE_click(obj.sections[73]) then
+            settings_saveallfxinststrip = not settings_saveallfxinststrip
+            update_settings = true
+          elseif MOUSE_click(obj.sections[87]) then
+            settings_savedatainprojectfolder = not settings_savedatainprojectfolder
+            update_gfx = true
+          elseif MOUSE_click(obj.sections[95]) then
+          
+            OpenEB(50, 'Please choose a save subfolder name:', nz(save_subfolder,''))
+          elseif MOUSE_click(obj.sections[98]) then
+            settings_createbackuponmanualsave = not settings_createbackuponmanualsave
+            update_gfx = true
+          elseif MOUSE_click(obj.sections[728]) then
+            settings_backupduringsave = not settings_backupduringsave
+            update_gfx = true        
+          end
+        
+        elseif lvar.settingspage == 4 then
+        
+          if MOUSE_click(obj.sections[85]) then
+            settings_showbars = not settings_showbars
+            obj = GetObjects()
+            update_gfx = true
+          elseif MOUSE_click(obj.sections[86]) then
+            local retval, c = reaper.GR_SelectColor(_,ConvertColorString(settings_snaplistbgcol))
+            if retval ~= 0 then
+              settings_snaplistbgcol = ConvertColor(c)
+              update_gfx = true
+            end
+          elseif MOUSE_click(obj.sections[96]) then
+            settings_hideeditbaronnewproject = not settings_hideeditbaronnewproject
+            update_gfx = true
+          elseif MOUSE_click(obj.sections[89]) then
+            settings_showminimaltopbar = not settings_showminimaltopbar
+            obj = GetObjects()
+            update_surface = true
+          elseif MOUSE_click(obj.sections[720]) then
+            MenuSkins(mx, my)
+            update_gfx = true
+          elseif MOUSE_click(obj.sections[721]) then
+            mouse.context = contexts.sbpanszslider
+            ctlpos = tb_butt_h
+          elseif MOUSE_click(obj.sections[722]) then
+            mouse.context = contexts.panszslider
+            ctlpos = pnl_scale
+          elseif MOUSE_click(obj.sections[723]) then
+            mouse.context = contexts.panfontszslider
+            ctlpos = fontscale
+          elseif MOUSE_click(obj.sections[724]) then
+            mouse.context = contexts.sbfontszslider
+            ctlpos = tb_fontscale
+          elseif MOUSE_click(obj.sections[725]) then
+            mouse.context = contexts.lstfontszslider
+            ctlpos = lst_fontscale
+          elseif MOUSE_click(obj.sections[702]) then
+            local retval, c = reaper.GR_SelectColor(_,ConvertColorString(backcol))
+            if retval ~= 0 then
+              backcol = ConvertColor(c)
+              update_bg = true
+              update_gfx = true
+            end
+          elseif MOUSE_click_RB(obj.sections[702]) then
+            backcol = '16 16 16'
+            update_bg = true
+            update_gfx = true
+            
+          --[[elseif MOUSE_click(obj.sections[701]) then
+            local _, rel = GetMOFaders()
+            local fadrel = SetAutomationFader({targettype = 3, mode = 1},rel)
+            update_gfx = true]]
+          elseif MOUSE_click(obj.sections[706]) then
+            settings_showfaderassignments = not settings_showfaderassignments
+            update_gfx = true
+          
+          elseif MOUSE_click(obj.sections[717]) then
+            settings_showmorphpop = not settings_showmorphpop
+            update_gfx = true
+          end
+        
+        elseif lvar.settingspage == 5 then
+        
+          if MOUSE_click(obj.sections[703]) then
+          
+            local retval, fn = reaper.GetUserFileNameForRead('~scanboot.xml', 'Locate Nebula Scanboot', '*.XML')
+            if retval == true then
+            
+              nebscanboot_file = fn
+              LoadScanBoot(nebscanboot_file)
+              update_gfx = true
+              
+            end
+          
+          elseif MOUSE_click(obj.sections[704]) then
+            settings_touchFB = not settings_touchFB
+            update_gfx = true
+          elseif MOUSE_click(obj.sections[714]) then
+            settings_morphfaderassignedctls = not settings_morphfaderassignedctls
+            update_gfx = true
+          elseif MOUSE_click(obj.sections[730]) then
+            logflag = not logflag
+            update_gfx = true
+          elseif MOUSE_click(obj.sections[729]) then
+            settings_runstartbat = not settings_runstartbat
+            update_gfx = true
+          elseif MOUSE_click(obj.sections[712]) then
+            settings_disablekeysonlockedsurface = not settings_disablekeysonlockedsurface
+            update_gfx = true
+          end
+          
         end
+        
+      end
       
+      if mouse.context then
+      
+        mouse.mx = mx - obj.sections[70].x
+        mouse.my = my - obj.sections[70].y
+        
+        if mouse.context == contexts.settingswin_dragoff then
+        
+          settingswin_off = dragsetoff.offs + (mouse.my - dragsetoff.dy)
+          settingswin_off = F_limit(settingswin_off,(-settingswin_maxh)+settingswin_h,0)
+          obj = PosSetWinCtls(obj)
+          --DBG(settingswin_off)
+          update_surface = true
+        
+        elseif mouse.context == contexts.updatefreq then
+          local val = F_limit(MOUSE_sliderHBar(obj.sections[74]),0,1)
+          if val ~= nil then
+            settings_updatefreq = (1-val)/10
+            if oval ~= settings_updatefreq then
+              update_settings = true                  
+            end 
+            oval = settings_updatefreq          
+          end
+        elseif mouse.context == contexts.lockw then
+          local val = F_limit(MOUSE_slider(obj.sections[77]),0,1)
+          if val ~= nil then
+            val = 1-val
+            lockw = F_limit( math.floor((val*1000)/settings_gridsize)*settings_gridsize,64,1000)
+            obj = GetObjects()
+            update_gfx = true
+          end
+        elseif mouse.context == contexts.lockh then
+          local val = F_limit(MOUSE_slider(obj.sections[78]),0,1)
+          if val ~= nil then
+            val = 1-val
+            lockh = F_limit( math.floor((val*1000)/settings_gridsize)*settings_gridsize,64,1000)
+            obj = GetObjects()
+            update_gfx = true
+          end
+        elseif mouse.context == contexts.gridslider then
+          local val = F_limit(MOUSE_slider(obj.sections[79]),0,1)
+          if val ~= nil then
+            val = 1-val
+            settings_gridsize = F_limit(ctlpos + math.floor((val-0.5)*200),1,128)
+            ogrid = settings_gridsize
+            if settings_gridsize < 16 then
+              settings_showgrid = false
+            else
+              settings_showgrid = nz(osg,true)
+            end
+            update_gfx = true
+          end
+        elseif mouse.context == contexts.sbpanszslider then
+          local val = F_limit(MOUSE_slider(obj.sections[721]),0,1)
+          if val ~= nil then
+            val = 1-val
+            tb_butt_h = F_limit(ctlpos + math.floor((val-0.5)*200),16,60)
+            update_sidebar = true
+            update_topbar = true
+            update_surface = true
+            if mouse.shift then
+              local sc = (tb_butt_h+1)/(butt_h+1)
+              pnl_scale = math.floor(sc*100)/100
+              update_stripbrowser = true
+              update_mutate = true
+              update_randomopts = true
+              update_gfx = true
+            end
+            obj = GetObjects()
+            --update_gfx = true
+          end
+        
+        elseif mouse.context == contexts.panszslider then
+          local val = F_limit(MOUSE_slider(obj.sections[722]),0,1)
+          if val ~= nil then
+            val = 1-val
+            pnl_scale = round(F_limit(ctlpos + (val-0.5)*2,0.9,2),2)
+            if pnl_scale ~= ops then
+              resize_display = true
+              pnlscaleflag = true
+              if mouse.shift then
+                tb_butt_h = math.ceil((butt_h+1)*pnl_scale)-1
+              end
+              obj = GetObjects()
+              update_gfx = true
+              ops = pnl_scale
+            end
+          end
+  
+        elseif mouse.context == contexts.panfontszslider then
+          local val = F_limit(MOUSE_slider(obj.sections[723]),0,1)
+          if val ~= nil then
+            val = 1-val
+            fontscale = round(F_limit(ctlpos + (val-0.5)*20,0,20),0)
+            if fontscale ~= ofs then
+              resize_display = true
+              --pnlscaleflag = true
+              --obj = GetObjects()
+              update_gfx = true
+              ofs = fontscale
+            end
+          end
+  
+        elseif mouse.context == contexts.sbfontszslider then
+          local val = F_limit(MOUSE_slider(obj.sections[724]),0,1)
+          if val ~= nil then
+            val = 1-val
+            tb_fontscale = round(F_limit(ctlpos + (val-0.5)*20,-1,20),0)
+            if tb_fontscale ~= tbofs then
+              resize_display = true
+              --pnlscaleflag = true
+              --obj = GetObjects()
+              update_gfx = true
+              tbofs = tb_fontscale
+            end
+          end
+  
+        elseif mouse.context == contexts.lstfontszslider then
+          local val = F_limit(MOUSE_slider(obj.sections[725]),0,1)
+          if val ~= nil then
+            val = 1-val
+            lst_fontscale = round(F_limit(ctlpos + (val-0.5)*20,-1,20),0)
+            if lst_fontscale ~= lstofs then
+              resize_display = true
+              --pnlscaleflag = true
+              --obj = GetObjects()
+              update_gfx = true
+              lstofs = lst_fontscale
+            end
+          end
+        
+        end
       end
       
       mouse.mx, mouse.my = mx, my
+    
+    elseif mouse.context == nil then
+
+      local fnd 
+      local top = math.min(lvar.settings_rrpos+lvar.settings_rr, #lvar.settingsinf[lvar.settingspage])
+      local mx = mouse.mx - obj.sections[70].x
+      local my = mouse.my - obj.sections[70].y
+      for i = lvar.settings_rrpos, top do
+        local idx = lvar.settingsinf[lvar.settingspage][i]
+        if idx ~= lvar.settings_last and MOUSE_over(obj.sections[idx], mx, my) then
+          lvar.settings_last = idx
+          fnd = true
+          update_settings = true
+          break
+        end 
+      
+      end
+      lvar.settings_rrpos = lvar.settings_rrpos + lvar.settings_rr+1
+      if lvar.settings_rrpos > #lvar.settingsinf[lvar.settingspage] then
+        lvar.settings_rrpos = 1
+      end
+      if not fnd and lvar.settings_last ~= -1 and not MOUSE_over(obj.sections[lvar.settings_last], mx, my) then
+        lvar.settings_last = -1
+        update_settings = true
+      end
+    
     end
         
   end
 
+  function SettingsInfoSetup()
+  
+    lvar.settingsinf = {}
+    lvar.settingsinf[1] = {71,75,76,77,78,79,80,81,82,83,84,97,719,700,705,718,707,708,709,710,711,727,713,716}
+    lvar.settingsinf[2] = {74,731,88,715,726,72}
+    lvar.settingsinf[3] = {73,87,95,98,728}
+    lvar.settingsinf[4] = {85,86,89,96,720,721,722,723,724,725,702,706,717}
+    lvar.settingsinf[5] = {703,704,714,730,729,712}
+    
+    lvar.settingsinf_txt = {}
 
+    --PAGE 1
+
+    lvar.settingsinf_txt[71] = {'Automatically change current strip to the strip for the selected track'}
+    lvar.settingsinf_txt[80] = {'Show grid in edit mode - the grid will only be displayed if set to 16 pixels or more'}
+    lvar.settingsinf_txt[79] = {'Set the grid size (in pixels)'}
+    lvar.settingsinf_txt[81] = {'When set - the mousewheel alters the value of the control under the mouse','When unset - the mousewheel scrolls the strip surface'}
+    lvar.settingsinf_txt[82] = {"When clicking on a strip control - ","swap the action of ctrl+click and double-click ('enter value' and 'set to default' actions)"}
+    lvar.settingsinf_txt[83] = {'When first focussing on a new track within Stripper','automatically insert the default strip as defined in STRIP EDIT mode'}
+    lvar.settingsinf_txt[84] = {'Like insert default strip on every track option - but also insert the default strip on every page'}
+    lvar.settingsinf_txt[97] = {'When opening stripper for first time in a new project - set the surface to locked'}
+    lvar.settingsinf_txt[719] = {'When middle mouse button clicked - arrows and mousewheel will scroll the surface horizontally'}
+    lvar.settingsinf_txt[700] = {'EXPERIMENTAL: Set the input FADER to be used to alter a control when the mouse hovers above it',
+                                 'Useful if you only have a few midi control knobs or do not want to set up controllers for each parameter',
+                                 'Currently only works in absolute mode (with soft takeover)'}
+    lvar.settingsinf_txt[705] = {'Ensures midi feedback data is sent for all strip controls when the track is changed'}
+    lvar.settingsinf_txt[707] = {'Automatically positions an inserted strip to the right of the last inserted strip','Useful when using Strip Gallery mode',
+                                 'Strips are inserted in rows - each rows height is determined by the Autosnap Row Height setting'}
+    lvar.settingsinf_txt[708] = {'Row height (in pixels) of each row when using the autosnap feature for aligning new strips'}
+    lvar.settingsinf_txt[709] = {'Minimum gap (in pixels) to allow between inserted strips when using autosnap mode'}
+    lvar.settingsinf_txt[710] = {'Maximum gap (in pixels) to allow between inserted strips when using autosnap mode'}
+    lvar.settingsinf_txt[711] = {'Gap between strips when displayed in Strip Gallery mode'}
+    if lvar.updateravailable then
+      lvar.settingsinf_txt[727] = {'Click to automatically download the latest stripper files from Github',
+                                   'Right-click to open the rollback menu to revert to an older saved backup version of the script'}
+    end
+    lvar.settingsinf_txt[716] = {'Sets the number of available modulators.  Too many will tax your CPU more - default is 32'}
+    lvar.settingsinf_txt[713] = {'When deleting an inserted strip - setting this option will also cause all associated fx plugins to be removed'}
+
+    lvar.settingsinf_txt[75] = {'Restrict the visible size of the strip surface horizontally (in pixels) and prevent horizontal scrolling'}
+    lvar.settingsinf_txt[76] = {'Restrict the visible size of the strip surface vertically (in pixels) and prevent vertical scrolling',
+                                'You can still scroll the surface using the up/down arrows on the top bar'}
+    lvar.settingsinf_txt[77] = {'Set visible width of surface in pixels'}
+    lvar.settingsinf_txt[78] = {'Set visible height of surface in pixels'}
+    lvar.settingsinf_txt[718] = {'When set - in FX EDIT mode - clicking on a control that is grouped with other controls will select the group'}
+    
+    --PAGE 2
+
+    lvar.settingsinf_txt[88] = {'HIGHLY RECOMMENDED THAT THIS OPTION IS SET',
+                                'Uses a special bitmap of the strip surface to identify mouse interaction with controls and other objects',
+                                'Some Stripper features are not available if this option is switched off'}
+    lvar.settingsinf_txt[74] = {'Sets the frequency at which controls values are refreshed',
+                                'The bigger the bar - the more accurate and smoother the response will be'}
+    lvar.settingsinf_txt[731] = {'Sets the number of controls to be updated each round the update function is called.  Useful to set this value when',
+                                 'there are so many controls on a strip that the performance of the script suffers.  Best to start where you notice',
+                                 'the performance is sub-optimal - and then lower gradually until performance is acceptable'}
+    lvar.settingsinf_txt[726] = {'Set this option to use a quicker alternative way to select and drag controls in FX edit mode',
+                                 'Subtle changes to the way controls are displayed/redrawn will occur when using the alternative algorithm'}
+    lvar.settingsinf_txt[72] = {'Disable constant monitoring of track sends',
+                                'Although monitoring of track sends is useful to try to keep track of any changes - it can also',
+                                'cause small but noticeable delays under certain conditions - so can be disabled'}
+    lvar.settingsinf_txt[715] = {'Setting this option will cause modulators to continue running even when transport has been paused or stopped'}
+    
+    --PAGE 3
+    
+    lvar.settingsinf_txt[73] = {'When set - if you save a strip - all plugins loaded on the track will be saved and recalled with the strip',
+                                'When unset - only those plugins with controls added to the strip will be saved and recalled with the strip'}
+    lvar.settingsinf_txt[87] = {'If set - the script will save the strip data in the same folder as the project'}
+    lvar.settingsinf_txt[95] = {'Enter a subfolder to save the script data in.','Use the # symbol to use a folder named after the project'}
+    lvar.settingsinf_txt[98] = {'Create a backup data file (lbxbak) when saving manually using the SAVE button on the top bar or Ctrl+S'}
+    lvar.settingsinf_txt[728] = {'Create a temporary backup of the old data file when saving','This file will be deleted when the save completes successfully'}
+    
+    --PAGE 4
+    
+    lvar.settingsinf_txt[85] = {'Show scroll bars around the strip surface to identify the current position'}
+    lvar.settingsinf_txt[86] = {'Set the background colour for the snapshot controls dropdown list'}
+    lvar.settingsinf_txt[89] = {'When the top bar is hidden - show only the sidebar show/hide button and main menu button'}
+    lvar.settingsinf_txt[96] = {'Hide the edit bar when opening stripper in a new project'}
+    lvar.settingsinf_txt[720] = {'Select the Stripper skin'}
+    lvar.settingsinf_txt[724] = {'Change the font size for the top and side bar buttons','This is an offset amount from the default value'}
+    lvar.settingsinf_txt[725] = {'Change the font size for the side bar lists','This is an offset amount from the default value'}
+    lvar.settingsinf_txt[722] = {'Set the scale amount for the main script panels to make them larger or smaller','This does not affect this settings menu'}
+    lvar.settingsinf_txt[723] = {'Change the font size for the main script panels','This value is relative to the panel size scale value'}
+    lvar.settingsinf_txt[721] = {'Set the height in pixels for the top and side bar buttons'}
+    lvar.settingsinf_txt[702] = {'Set the main surface background colour'}
+    lvar.settingsinf_txt[706] = {'Draw coloured boxes around controls that have fader and modulator assignments'}
+    lvar.settingsinf_txt[717] = {'When morphing - draw a pop-up control on the top left of the strip surface','Use this pop-up to stop/pause/change direction of and crossfade the morph'}
+    
+    --PAGE 5
+    
+    lvar.settingsinf_txt[703] = {'When using Nebula plugin from Acustica Audio - use this to set the scanboot file',
+                                 'This is essential when sharing strips to ensure the different libraries on different computers load correctly'}
+    lvar.settingsinf_txt[704] = {'This option flashes a tiny square in the corner of the script window when a control is clicked or released',
+                                 'This square can be monitored by an external AutoHotKey script to perform actions when a control is clicked',
+                                 'Useful for example to return the mouse to a previous position when using a touch monitor'}
+    lvar.settingsinf_txt[714] = {'Unset this option to disallow morphing of fader and modulator assigned controls',
+                                 'If a snapshot set has controls being controlled by faders or modulators - you often do not want them',
+                                 'being morphed as they can become jumpy and glitchy while the morph is in progress'}
+    lvar.settingsinf_txt[730] = {'Create a log file when adding strips - useful for tracking errors if you have any problem strips that will not load',
+                                 'The value of this setting will default to off every time you open the script'}
+    lvar.settingsinf_txt[729] = {'Execute a batch file called lbxstart.bat located in the resources folder when the script loads',
+                                 'You decide what the batch file does - but possible uses are to run an AutoHotKey script to alter the','window properties of the script'}
+    lvar.settingsinf_txt[712] = {'Disables keyboard shortcuts when the surface is locked'}
+
+    --lvar.settingsinf_txt[0] = {''}
+        
+    lvar.settings_rrpos = 1
+    lvar.settings_rr = 5
+    lvar.settings_last = -1
+  end
+  
   function UpdateControlValues2(rt)
   
     if rt >= time_nextupdate then
@@ -48899,7 +49185,7 @@ function GUI_DrawCtlBitmap_Strips()
     if faders == nil then return end
     
     for f = 1, #faders do
-      if faders[f].targettype == 3 or faders[f].targettype == 4 or faders[f].targettype == 7 then
+      if --[[faders[f].targettype == 3 or]] faders[f].targettype == 4 or faders[f].targettype == 7 then
         fnd = false
         local s = faders[f].strip
         local p = faders[f].page
@@ -50113,6 +50399,7 @@ function GUI_DrawCtlBitmap_Strips()
     settings_insertdefaultoneverytrack = tobool(nz(GES('insertdefstripontrack',true),settings_insertdefaultoneverytrack))
     settings_insertdefaultoneverypage = tobool(nz(GES('insertdefstriponpage',true),settings_insertdefaultoneverypage))
     settings_snaplistbgcol = tostring(nz(GES('snaplistbgcol',true),settings_snaplistbgcol))
+    lvar.gridcolor = tostring(nz(GES('gridcolor',true),lvar.gridcolor))
 
     settings_savedatainprojectfolder = tobool(nz(GES('savedatainprojectfolder',true),settings_savedatainprojectfolder))
     save_subfolder = nz(GES('save_subfolder',true),save_subfolder)
@@ -50291,6 +50578,7 @@ function GUI_DrawCtlBitmap_Strips()
     reaper.SetExtState(SCRIPT,'insertdefstripontrack',tostring(settings_insertdefaultoneverytrack), true)
     reaper.SetExtState(SCRIPT,'insertdefstriponpage',tostring(settings_insertdefaultoneverypage), true)
     reaper.SetExtState(SCRIPT,'snaplistbgcol',settings_snaplistbgcol, true)
+    reaper.SetExtState(SCRIPT,'gridcolor',lvar.gridcolor, true)
    
     reaper.SetExtState(SCRIPT,'savedatainprojectfolder',tostring(settings_savedatainprojectfolder), true)
     reaper.SetExtState(SCRIPT,'save_subfolder',nz(save_subfolder,''), true)
@@ -56380,7 +56668,7 @@ function GUI_DrawCtlBitmap_Strips()
   lst_fontscale = 0
   
   settingswin_off = 0
-  settingswin_maxh = 720
+  settingswin_maxh = 560
   
   takeswitch_max = 512
   
@@ -56440,9 +56728,12 @@ function GUI_DrawCtlBitmap_Strips()
   gx_h = def_gx_h
   sf_h = def_sf_h
   
+  
   lvar.updateravailable, lvar.git, lvar.gitclone = CheckUpdater()
   SetDefKP()
   --SaveDefKP()
+
+  SettingsInfoSetup()
   
   local surfn = paths.icon_path..'canvas.png'
   if reaper.file_exists(surfn) then
