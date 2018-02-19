@@ -14,7 +14,7 @@
 
 
   local lvar = {}
-  lvar.scriptver = '0.94.0014' --Script Version
+  lvar.scriptver = '0.94.0015' --Script Version
   
   lvar.ctlupdate_rr = nil
   lvar.ctlupdate_pos = 1
@@ -65,6 +65,8 @@
   
   lvar.gridalpha = 0.8
   lvar.gridcolor = '0 0 0'
+  
+  lvar.showtakeover = true
   
   lvar.trctltypeidx_table = {tr_ctls = 1,
                         tr_sends = 2,
@@ -4089,40 +4091,40 @@
                         h = butt_h}
     obj.sections[701] = {x = obj.sections[70].w/2+xofft,
                         y = settingswin_off + yoff + yoffm*3,
-                        w = sw,
-                        h = butt_h}
+                        w = bw,
+                        h = bh}
                               
     --send midi data on track change
     obj.sections[705] = {x = obj.sections[70].w/2+xofft,
-                              y = settingswin_off + yoff + yoffm*4,
+                              y = settingswin_off + yoff + yoffm*5,
                               w = bw,
                               h = bh}
     obj.sections[707] = {x = obj.sections[70].w/2+xofft,
-                              y = settingswin_off + yoff + yoffm*6,
+                              y = settingswin_off + yoff + yoffm*7,
                               w = bw,
                               h = bh}
     obj.sections[708] = {x = obj.sections[70].w/2+xofft,
-                        y = settingswin_off + yoff + yoffm*7,
-                        w = 40,
-                        h = bh}
-    obj.sections[709] = {x = obj.sections[70].w/2+xofft,
                         y = settingswin_off + yoff + yoffm*8,
                         w = 40,
                         h = bh}
-    obj.sections[710] = {x = obj.sections[70].w/2+xofft,
+    obj.sections[709] = {x = obj.sections[70].w/2+xofft,
                         y = settingswin_off + yoff + yoffm*9,
                         w = 40,
                         h = bh}
-    obj.sections[711] = {x = obj.sections[70].w/2+xofft,
+    obj.sections[710] = {x = obj.sections[70].w/2+xofft,
                         y = settingswin_off + yoff + yoffm*10,
                         w = 40,
                         h = bh}
+    obj.sections[711] = {x = obj.sections[70].w/2+xofft,
+                        y = settingswin_off + yoff + yoffm*11,
+                        w = 40,
+                        h = bh}
     obj.sections[713] = {x = obj.sections[70].w/2+xofft,
-                              y = settingswin_off + yoff + yoffm*14,
+                              y = settingswin_off + yoff + yoffm*15,
                               w = bw,
                               h = bh}
     obj.sections[716] = {x = obj.sections[70].w/2+xofft,
-                        y = settingswin_off + yoff + yoffm*12,
+                        y = settingswin_off + yoff + yoffm*13,
                         w = 40,
                         h = bh}
   
@@ -15767,6 +15769,38 @@ function GUI_DrawCtlBitmap_Strips()
           end
         end
 
+        if lvar.showtakeover and lvar.mofader_takeover and update_surface then
+          gfx.a = 1
+          --local xywh = {x = lvar.mofader_takeover.mx - 30, y = lvar.mofader_takeover.my - 20, w = 60, h = 15}
+          if not lvar.mofader_takeover.to then
+            --local xywh = lvar.mofader_takeover.xywh
+            --f_Get_SSV('0 255 0')
+            --gfx.roundrect(math.floor(xywh.x),math.floor(xywh.y),math.floor(xywh.w),math.floor(xywh.h),4,1)          
+          --else
+            local p = lvar.mofader_takeover.pos*100
+            local t = lvar.mofader_takeover.target*100
+            local d = math.floor(math.abs(p-t)/2)
+            local xywh = lvar.mofader_takeover.xywh
+            local x = math.floor(xywh.x+xywh.w/2-math.floor(d/2))
+            local y = xywh.y - 20
+            local r = math.floor(d*5.12)
+            local g = math.floor((50-d)*5.12)
+            f_Get_SSV(tostring(r)..' '..tostring(g)..' 0')
+            gfx.rect(x-1,y,3,16,1)
+            gfx.rect(x+d-1,y,3,16,1)
+            f_Get_SSV('255 0 0')
+            gfx.roundrect(math.floor(xywh.x),math.floor(xywh.y),math.floor(xywh.w),math.floor(xywh.h),4,1)
+          end
+        elseif lvar.showtakeover and lvar.mofader_takeover and lvar.mofader_takeover.to then
+          gfx.a = 1
+          --local xywh = {x = lvar.mofader_takeover.mx - 30, y = lvar.mofader_takeover.my - 20, w = 60, h = 15}
+          if lvar.mofader_takeover.to then
+            local xywh = lvar.mofader_takeover.xywh
+            f_Get_SSV('0 255 0')
+            gfx.roundrect(math.floor(xywh.x),math.floor(xywh.y),math.floor(xywh.w),math.floor(xywh.h),4,1)   
+          end       
+        end
+
         if plist_w > 0 and not matrixoff then                  
           gfx.blit(1001,1,0,0,0,obj.sections[43].w,obj.sections[43].h,0,0)
         end        
@@ -17399,6 +17433,7 @@ function GUI_DrawCtlBitmap_Strips()
       else
         GUI_DrawButton(gui, 'NO FADER', obj.sections[700], gui.color.white, gui.color.black, false, 'Global mouseover fader (absolute)',true, gui.fontsz.settings,true)    
       end
+      GUI_DrawTick(gui, 'Show takeover bar', obj.sections[701], gui.color.white, lvar.showtakeover, gui.fontsz.settings,true)
       --[[if rel then
         GUI_DrawButton(gui, 'FADER '..rel, obj.sections[701], gui.color.white, gui.color.black, true, 'Global mouseover fader (relative)')
       else
@@ -27578,7 +27613,7 @@ function GUI_DrawCtlBitmap_Strips()
             for pf = 0, lvar.LBX_FB_CNT-1 do
               p = fxnum * lvar.LBX_FB_CNT + pf
               faders[p+1].val = round(reaper.TrackFX_GetParam(track, fxnum, pf),5)
-              if faders[p+1].val and faders[p+1].val >= 0 and (tostring(faders[p+1].val) ~= tostring(faders[p+1].oval) --[[or faders[p+1].targettype == 5 or faders[p+1].targettype == 6]]) then
+              if faders[p+1].val and faders[p+1].val >= 0 and (tostring(faders[p+1].val) ~= tostring(faders[p+1].oval) or faders[p+1].targettype == 3 --[[or faders[p+1].targettype == 5 or faders[p+1].targettype == 6]]) then
                 
                 
                 if faders[p+1].targettype then
@@ -27635,12 +27670,14 @@ function GUI_DrawCtlBitmap_Strips()
                     end 
 
                   elseif faders[p+1].targettype == 3 then
-                    if mode == 0 and macro_edit_mode ~= true and macro_lrn_mode ~= true and show_xxy ~= true and show_eqcontrol ~= true and show_settings ~= true then
+                  
+                    if mouse.context == nil and mode == 0 and macro_edit_mode ~= true and macro_lrn_mode ~= true and show_xxy ~= true and show_eqcontrol ~= true and show_settings ~= true then
                       local strip = tracks[track_select].strip
                       local c = GetControlAtXY(strip,page,mouse.mx,mouse.my)
                       if c then
                         local ctl = strips[strip][page].controls[c]
                         if c ~= faders[p+1].to_ctl then
+                          faders[p+1].oval = faders[p+1].val
                           faders[p+1].to = false
                           faders[p+1].to_ctl = c
                           if faders[p+1].val > ctl.val then
@@ -27649,26 +27686,47 @@ function GUI_DrawCtlBitmap_Strips()
                             faders[p+1].to_pos = 2
                           else
                             faders[p+1].to_pos = 3
-                            faders[p+1].to = true
+                            --faders[p+1].to = true
                           end
                         end 
   
-                        if ctl.ctlcat == ctlcats.fxparam or ctl.ctlcat == ctlcats.trackparam or ctl.ctlcat == ctlcats.tracksend or ctl.ctlcat == ctlcats.macro then
+                        if ctl.ctlcat == ctlcats.fxparam or ctl.ctlcat == ctlcats.trackparam or 
+                           ctl.ctlcat == ctlcats.tracksend or ctl.ctlcat == ctlcats.macro --[[or ctl.ctlcat == ctlcats.rs5k]] then
+                          
                           if faders[p+1].mode == 0 then
                             --absolute
-                            if faders[p+1].to == false then
+                            if faders[p+1].to == false and faders[p+1].val ~= faders[p+1].oval then
                               if faders[p+1].to_pos == 1 then
-                                if faders[p+1].val <= ctl.val then
-                                  faders[p+1].to = true 
+                                if faders[p+1].val <= ctl.val then 
+                                  faders[p+1].to = true
+                                  if faders[p+1].val ~= faders[p+1].oval then 
+                                    update_surface = true 
+                                  end
                                 end
                               else
                                 if faders[p+1].val >= ctl.val then
-                                  faders[p+1].to = true 
+                                  faders[p+1].to = true
+                                  if faders[p+1].val ~= faders[p+1].oval then 
+                                    update_surface = true 
+                                  end
                                 end                            
                               end
                             end
                              
                             if faders[p+1].to == true then
+                              if not lvar.mofader_takeover then
+                                local w,h = ctl.wsc, ctl.hsc
+                                
+                                if stripgallery_view == 0 then
+                                  x,y = ctl.xsc + obj.sections[10].x - surface_offset.x,
+                                        ctl.ysc + obj.sections[10].y - surface_offset.y
+                                else
+                                  x,y = TranslateGalleryCtlPos(c)
+                                end
+                                lvar.mofader_takeover = {}
+                                lvar.mofader_takeover.xywh = {x=x,y=y,w=w,h=h}                              
+                              end
+                              lvar.mofader_takeover.to = true
                               ctl.oval = ctl.val
                               ctl.val = faders[p+1].val
                               if ctl.oval ~= ctl.val and ctl.ctllock ~= true then
@@ -27676,6 +27734,29 @@ function GUI_DrawCtlBitmap_Strips()
                                 ctl.dirty = true
                                 update_ctls = true
                               end
+                            elseif --[[1==1 then]] faders[p+1].val ~= faders[p+1].oval then
+                            
+                              if not lvar.mofader_takeover or c ~= lvar.mofader_takeover.c then
+                                local x,y
+                                local w,h = ctl.wsc, ctl.hsc
+                                
+                                if stripgallery_view == 0 then
+                                  x,y = ctl.xsc + obj.sections[10].x - surface_offset.x,
+                                        ctl.ysc + obj.sections[10].y - surface_offset.y
+                                else
+                                  x,y = TranslateGalleryCtlPos(c)
+                                end
+                                lvar.mofader_takeover = {}
+                                lvar.mofader_takeover.xywh = {x=x,y=y,w=w,h=h}
+                                lvar.mofader_takeover.c = c
+                              end                            
+                              lvar.mofader_takeover.mx = mouse.mx
+                              lvar.mofader_takeover.my = mouse.my
+                              lvar.mofader_takeover.pos = faders[p+1].val
+                              lvar.mofader_takeover.target = ctl.val
+                              lvar.mofader_takeover.to_pos = faders[p+1].to_pos
+                              
+                              update_surface = true
                             end
                           else
                             --relative
@@ -27699,6 +27780,13 @@ function GUI_DrawCtlBitmap_Strips()
                             faders[p+1].val = 0.5
                           end
                         end
+                      else
+                        faders[p+1].to_ctl = nil
+                        if lvar.mofader_takeover then
+                          lvar.mofader_takeover = nil
+                          update_surface = true
+                        end
+                        --faders[p+1].to = false
                       end
                     end
                   elseif faders[p+1].targettype == 5 then
@@ -44637,6 +44725,10 @@ function GUI_DrawCtlBitmap_Strips()
               AssignFader(fadabs, f)
             end
             update_gfx = true
+
+          elseif MOUSE_click(obj.sections[701]) then
+            lvar.showtakeover = not lvar.showtakeover
+            update_gfx = true
           
           elseif MOUSE_click(obj.sections[70]) then
             --drag offset
@@ -44954,7 +45046,7 @@ function GUI_DrawCtlBitmap_Strips()
   function SettingsInfoSetup()
   
     lvar.settingsinf = {}
-    lvar.settingsinf[1] = {71,75,76,77,78,79,80,81,82,83,84,97,719,700,705,718,707,708,709,710,711,727,713,716}
+    lvar.settingsinf[1] = {71,75,76,77,78,79,80,81,82,83,84,97,719,700,705,718,707,708,709,710,711,727,713,716,733,701}
     lvar.settingsinf[2] = {74,731,88,715,726,72}
     lvar.settingsinf[3] = {73,87,95,98,728}
     lvar.settingsinf[4] = {85,86,89,96,720,721,722,723,724,725,702,706,717}
@@ -44967,6 +45059,7 @@ function GUI_DrawCtlBitmap_Strips()
     lvar.settingsinf_txt[71] = {'Automatically change current strip to the strip for the selected track'}
     lvar.settingsinf_txt[80] = {'Show grid in edit mode - the grid will only be displayed if set to 16 pixels or more'}
     lvar.settingsinf_txt[79] = {'Set the grid size (in pixels)'}
+    lvar.settingsinf_txt[733] = {'Set the grid colour'}
     lvar.settingsinf_txt[81] = {'When set - the mousewheel alters the value of the control under the mouse','When unset - the mousewheel scrolls the strip surface'}
     lvar.settingsinf_txt[82] = {"When clicking on a strip control - ","swap the action of ctrl+click and double-click ('enter value' and 'set to default' actions)"}
     lvar.settingsinf_txt[83] = {'When first focussing on a new track within Stripper','automatically insert the default strip as defined in STRIP EDIT mode'}
@@ -44976,6 +45069,7 @@ function GUI_DrawCtlBitmap_Strips()
     lvar.settingsinf_txt[700] = {'EXPERIMENTAL: Set the input FADER to be used to alter a control when the mouse hovers above it',
                                  'Useful if you only have a few midi control knobs or do not want to set up controllers for each parameter',
                                  'Currently only works in absolute mode (with soft takeover)'}
+    lvar.settingsinf_txt[701] = {'When using a mouseover FADER - display soft-takeover indicator'}
     lvar.settingsinf_txt[705] = {'Ensures midi feedback data is sent for all strip controls when the track is changed'}
     lvar.settingsinf_txt[707] = {'Automatically positions an inserted strip to the right of the last inserted strip','Useful when using Strip Gallery mode',
                                  'Strips are inserted in rows - each rows height is determined by the Autosnap Row Height setting'}
@@ -50400,6 +50494,7 @@ function GUI_DrawCtlBitmap_Strips()
     settings_insertdefaultoneverypage = tobool(nz(GES('insertdefstriponpage',true),settings_insertdefaultoneverypage))
     settings_snaplistbgcol = tostring(nz(GES('snaplistbgcol',true),settings_snaplistbgcol))
     lvar.gridcolor = tostring(nz(GES('gridcolor',true),lvar.gridcolor))
+    lvar.showtakeover = tobool(nz(GES('showtakeover',true),lvar.showtakeover))
 
     settings_savedatainprojectfolder = tobool(nz(GES('savedatainprojectfolder',true),settings_savedatainprojectfolder))
     save_subfolder = nz(GES('save_subfolder',true),save_subfolder)
@@ -50579,6 +50674,7 @@ function GUI_DrawCtlBitmap_Strips()
     reaper.SetExtState(SCRIPT,'insertdefstriponpage',tostring(settings_insertdefaultoneverypage), true)
     reaper.SetExtState(SCRIPT,'snaplistbgcol',settings_snaplistbgcol, true)
     reaper.SetExtState(SCRIPT,'gridcolor',lvar.gridcolor, true)
+    reaper.SetExtState(SCRIPT,'showtakeover',tostring(lvar.showtakeover), true)
    
     reaper.SetExtState(SCRIPT,'savedatainprojectfolder',tostring(settings_savedatainprojectfolder), true)
     reaper.SetExtState(SCRIPT,'save_subfolder',nz(save_subfolder,''), true)
