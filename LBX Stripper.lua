@@ -14,7 +14,7 @@
 
 
   local lvar = {}
-  lvar.scriptver = '0.94.0017' --Script Version
+  lvar.scriptver = '0.94.0018' --Script Version
   
   lvar.ctlupdate_rr = nil
   lvar.ctlupdate_pos = 1
@@ -14799,6 +14799,13 @@ function GUI_DrawCtlBitmap_Strips()
              0,
              obj.sections[1352].w,
              obj.sections[1352].h,1)
+    if skin.panela_cnrbl ~= -1 then
+      local pnlcnr_w, pnlcnr_h = gfx.getimgdim(skin.panela_cnrbl)
+      gfx.blit(skin.panela_cnrbl,1,0,0,0,pnlcnr_w,pnlcnr_h,0,obj.sections[1352].h-pnlcnr_h)
+      gfx.blit(skin.panela_cnrbr,1,0,0,0,pnlcnr_w,pnlcnr_h,obj.sections[1352].w-pnlcnr_w,obj.sections[1352].h-pnlcnr_h)
+      gfx.blit(skin.panela_cnrtl,1,0,0,0,pnlcnr_w,pnlcnr_h,0,0)
+      gfx.blit(skin.panela_cnrtr,1,0,0,0,pnlcnr_w,pnlcnr_h,obj.sections[1352].w-pnlcnr_w,0)
+    end
   
     local dx, dy = math.max(math.floor((lvar.stripbrowser.imgw-lvar.stripbrowser.minw)/2),math.floor(5*pnl_scale)),
                    math.max(math.floor((lvar.stripbrowser.imgh-lvar.stripbrowser.minh)/2),math.floor(5*pnl_scale))
