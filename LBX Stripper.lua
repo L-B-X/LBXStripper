@@ -14,7 +14,7 @@
 
 
   local lvar = {}
-  lvar.scriptver = '0.94.0016' --Script Version
+  lvar.scriptver = '0.94.0017' --Script Version
   
   lvar.ctlupdate_rr = nil
   lvar.ctlupdate_pos = 1
@@ -27703,12 +27703,18 @@ function GUI_DrawCtlBitmap_Strips()
                       local strip = tracks[track_select].strip
                       local c = GetControlAtXY(strip,page,mouse.mx,mouse.my)
                       
+                      if c ~= faders[p+1].to_ctl and lvar.mofader_takeover then
+                        lvar.mofader_takeover = nil
+                        update_surface = true
+                      end
+                      
                       if c and lvar.mousefadermode == 0 then
                       
                         --NON ENCODER MODE
                         
                         local ctl = strips[strip][page].controls[c]
                         if c ~= faders[p+1].to_ctl then
+                          
                           faders[p+1].oval = faders[p+1].val
                           faders[p+1].to = false
                           faders[p+1].to_ctl = c
@@ -27807,12 +27813,9 @@ function GUI_DrawCtlBitmap_Strips()
 
                           if c ~= faders[p+1].to_ctl then
 
-                            lvar.mofader_takeover = nil                            
-                            
                             faders[p+1].to = true
                             faders[p+1].to_ctl = c
                             faders[p+1].latch = true
-                            update_surface = true
                             break
                             
                           elseif faders[p+1].latch then
@@ -27821,11 +27824,9 @@ function GUI_DrawCtlBitmap_Strips()
 
                             if vv and faders[p+1].val == round(vv,5) then
                               faders[p+1].latch = nil
-                              update_surface = true
                               
                             elseif vv then
                               SetFaderBoxVal(p+1,vv)
-                              --faders[p+1].val = vv
                               break
                             else
                               faders[p+1].latch = nil
