@@ -14,7 +14,7 @@
 
 
   local lvar = {}
-  lvar.scriptver = '0.94.0019' --Script Version
+  lvar.scriptver = '0.94.0020' --Script Version
   
   lvar.ctlupdate_rr = nil
   lvar.ctlupdate_pos = 1
@@ -252,6 +252,7 @@
               sb_movefav = 158,
               draggfx2_timer = 159,
               dragctl_timer = 160,
+              scrollsswin = 161,
               dummy = 999
               }
   
@@ -3554,6 +3555,11 @@
                         w = math.floor(obj.sections[160].w-(20*pnl_scale)),
                         h = math.floor(ssh)}
     
+    obj.sections[1016] = {x = obj.sections[163].x+obj.sections[163].w-12,
+                             y = obj.sections[163].y+1 + math.floor(butt_h*pnl_scale),
+                             w = 12,
+                             h = obj.sections[163].h-2 - math.floor(butt_h*pnl_scale) - 2}
+                             
     --Rate button
     obj.sections[1010] = {x = math.floor(10*pnl_scale),
                           y = math.floor(obj.sections[163].y + obj.sections[163].h+3),
@@ -10826,6 +10832,8 @@ function GUI_DrawCtlBitmap_Strips()
 
     gfx.a = 1
     
+    local butt_h = butt_h*pnl_scale
+    
     SS_butt_cnt = math.floor(obj.sections[163].h / butt_h) - 1
     if snaplrn_mode == false then
       
@@ -10860,9 +10868,65 @@ function GUI_DrawCtlBitmap_Strips()
         xywh = {x = obj.sections[163].x+2,
                 y = obj.sections[163].y,
                 w = obj.sections[163].w-4,
-                h = butt_h*pnl_scale}
-
+                h = butt_h--[[*pnl_scale]]}
+        local ss
         if sstype_select == 1 then
+          ss = snapshots[strip][page][sstype_select]
+        else
+          ss = snapshots[strip][page][sstype_select].snapshot
+        end
+        if SS_butt_cnt < #ss then
+          xywh.w = xywh.w - obj.sections[1016].w
+        end
+
+        if #ss > 0 then
+          for i = 1,SS_butt_cnt do
+          
+            xywh.y = obj.sections[163].y + i*(butt_h--[[*pnl_scale]])
+            local c = gui.color.white
+            if ss_select == ssoffset+i then
+              if morphing == false then
+                f_Get_SSV(gui.color.white)
+                gfx.rect(xywh.x,
+                 xywh.y+1, 
+                 xywh.w,
+                 xywh.h-1, 1 )
+                c = gui.color.black
+              else 
+                f_Get_SSV(bbcol)
+                gfx.rect(xywh.x,
+                 xywh.y+1, 
+                 xywh.w,
+                 xywh.h-1, 1 )
+                f_Get_SSV(gui.color.white)
+                gfx.rect(xywh.x,
+                 xywh.y+1, 
+                 xywh.w*p,
+                 xywh.h-1, 1 )
+                c = gui.color.black
+              end
+              if ss[i+ssoffset] then
+                GUI_textsm_LJ(gui,xywh,roundX(i+ssoffset,0)..': '..ss[i+ssoffset].name,c,-2 +(pnl_scale-1)*fontscale ,xywh.w)
+              end        
+            end
+          end
+
+          if SS_butt_cnt < #ss then
+            local msbh = obj.sections[1016].h
+            local p1 = 1 / #ss
+            local sbh = math.ceil(F_limit(p1*SS_butt_cnt * msbh,20,msbh))
+            local p2 = p1*msbh
+            local sby = math.floor(ssoffset * p2)
+            f_Get_SSV(gui.skol.mod_baroutline)
+            gfx.rect(obj.sections[1016].x,
+                     math.min(obj.sections[1016].y+1+sby,obj.sections[1016].y+msbh-sbh-1),
+                     obj.sections[1016].w,
+                     sbh, 1)
+          
+          end        
+        end
+        
+        --[[if sstype_select == 1 then
           if #snapshots[strip][page][sstype_select] > 0 then
             for i = 1,SS_butt_cnt do
             
@@ -10930,7 +10994,8 @@ function GUI_DrawCtlBitmap_Strips()
             end
           end
         
-        end
+        end]]
+        
       end
     end
   end
@@ -11115,7 +11180,76 @@ function GUI_DrawCtlBitmap_Strips()
           loop = false
         end
 
+        local ss
         if sstype_select == 1 then
+          ss = snapshots[strip][page][sstype_select]
+        else
+          ss = snapshots[strip][page][sstype_select].snapshot
+        end
+        if SS_butt_cnt < #ss then
+          xywh.w = xywh.w - obj.sections[1016].w
+        end
+        
+        if #ss > 0 then
+          for i = 1,SS_butt_cnt do
+          
+            xywh.y = obj.sections[163].y + i*butt_h
+            local c = gui.skol.ss_txt
+            if ss_select == ssoffset+i then
+              if morphing == false then
+                f_Get_SSV(gui.skol.lst_barhl)
+                gfx.rect(xywh.x,
+                 xywh.y+1, 
+                 xywh.w,
+                 xywh.h-1, 1 )
+                c = gui.skol.lst_txthl
+              else 
+                f_Get_SSV(bbcol)
+                gfx.rect(xywh.x,
+                 xywh.y+1, 
+                 xywh.w,
+                 xywh.h-1, 1 )
+                f_Get_SSV(gui.skol.lst_barhl)
+                gfx.rect(xywh.x,
+                 xywh.y+1, 
+                 xywh.w*p,
+                 xywh.h-1, 1 )
+                c = gui.skol.lst_txthl
+              end
+            end
+            if ss[i+ssoffset] then
+              GUI_textsm_LJ(gui,xywh,roundX(i+ssoffset,0)..': '..ss[i+ssoffset].name,c,-2 +(pnl_scale-1)*fontscale,xywh.w)
+            end
+        
+            if snap_move and snap_move.epos == i+ssoffset and snap_move.epos ~= snap_move.spos and snap_move.epos ~= snap_move.spos+1 then
+              f_Get_SSV(gui.color.red)
+              gfx.rect(xywh.x,
+               xywh.y-1, 
+               xywh.w,
+               2, 1)              
+            end
+          end
+
+          if SS_butt_cnt < #ss then
+            local msbh = obj.sections[1016].h
+            local p1 = 1 / #ss
+            local sbh = math.ceil(F_limit(p1*SS_butt_cnt * msbh,20,msbh))
+            local p2 = p1*msbh
+            local sby = math.floor(ssoffset * p2)
+            f_Get_SSV(gui.skol.mod_baroutline)
+            gfx.rect(obj.sections[1016].x,
+                     math.min(obj.sections[1016].y+1+sby,obj.sections[1016].y+msbh-sbh-1),
+                     obj.sections[1016].w,
+                     sbh, 1)
+          
+          end        
+        end
+        
+        
+        
+        
+        
+        --[[if sstype_select == 1 then
           if #snapshots[strip][page][sstype_select] > 0 then
             for i = 1,SS_butt_cnt do
             
@@ -11203,7 +11337,7 @@ function GUI_DrawCtlBitmap_Strips()
         
         
         
-        end
+        end]]
 
       end
 
@@ -11227,7 +11361,7 @@ function GUI_DrawCtlBitmap_Strips()
       gfx.rect(obj.sections[163].x,
                obj.sections[163].y, 
                obj.sections[163].w,
-               obj.sections[163].h, 0 )]]
+               obj.sections[163].h, 0 )]]      
       
     else
       --learn mode
@@ -34682,6 +34816,17 @@ function GUI_DrawCtlBitmap_Strips()
           update_samplemanager = true      
         end
         
+      elseif mouse.context == contexts.scrollsswin then
+      
+        local my = mouse.my - (obj.sections[160].y+obj.sections[1016].y)
+        local ss = scrollss.ss
+        
+        local oos = ssoffset
+        ssoffset = F_limit(math.floor(scrollss.lo + ((my-scrollss.y)/obj.sections[1016].h) * #ss),0,#ss-SS_butt_cnt)
+        if ssoffset ~= oos then
+          update_snaps = true
+        end
+
       elseif mouse.context == contexts.modwin_resize then
     
         modwinsz.w = math.min(math.max(modwinrsz.w + (mouse.mx - modwinrsz.mx),modwin.minw),2048)
@@ -41747,6 +41892,38 @@ function GUI_DrawCtlBitmap_Strips()
         end
         ssoffset = 0
         update_snaps = true
+
+      elseif mouse.context == nil and MOUSE_click(obj.sections[1016]) then
+        
+        local ss
+        if sstype_select == 1 then
+          ss = snapshots[tracks[track_select].strip][page][sstype_select]
+        else
+          ss = snapshots[tracks[track_select].strip][page][sstype_select].snapshot
+        end
+
+        local msbh = obj.sections[1016].h
+        local p1 = 1 / #ss
+        local sbh = math.ceil(F_limit(p1*SS_butt_cnt * msbh,20,msbh))
+        local p2 = p1*msbh
+        local sby = math.floor(ssoffset * p2)
+
+        sby = math.min(sby,msbh-sbh-1)
+
+        if mouse.my >= obj.sections[1016].y + sby and mouse.my <= obj.sections[1016].y + sby+sbh then
+
+          if SS_butt_cnt < #ss then
+            mouse.context = contexts.scrollsswin
+            scrollss = {y = mouse.my-obj.sections[1016].y, lo = ssoffset, ss = ss}
+          else
+            ssoffset = 0
+          end
+                    
+        elseif mouse.my < obj.sections[1016].y + sby then
+        
+        elseif mouse.my > obj.sections[1016].y + sby+sbh then
+          
+        end
 
       elseif mouse.context == nil and MOUSE_click(obj.sections[162]) then
       
