@@ -14,7 +14,7 @@
 
 
   local lvar = {}
-  lvar.scriptver = '0.94.0018' --Script Version
+  lvar.scriptver = '0.94.0019' --Script Version
   
   lvar.ctlupdate_rr = nil
   lvar.ctlupdate_pos = 1
@@ -8130,6 +8130,7 @@ elseif dragparam.type == 'rs5k' then
 
   function GUI_DrawTrackFXOrder(gui, obj)
 
+    gfx.dest = 1
 
     local tr = GetTrack(tracks[track_select].tracknum)
     local fxcnt = reaper.TrackFX_GetCount(tr)
@@ -18314,7 +18315,7 @@ function GUI_DrawCtlBitmap_Strips()
       end
       return normalize(min, max, v)
   
-    elseif ctlcat == ctlcats.macro then
+    elseif ctlcat == ctlcats.macro or ctlcat == ctlcats.rs5k then
       return strips[tracks[track_select].strip][page].controls[c].val
     end
   end
@@ -27648,7 +27649,7 @@ function GUI_DrawCtlBitmap_Strips()
           for fxnum = 0, LBX_CTL_TRACK_INF.count-1 do
             for pf = 0, lvar.LBX_FB_CNT-1 do
               p = fxnum * lvar.LBX_FB_CNT + pf
-              faders[p+1].val = round(reaper.TrackFX_GetParam(track, fxnum, pf),5)
+              faders[p+1].val = round(reaper.TrackFX_GetParam(track, fxnum, pf),7)
               if faders[p+1].val and faders[p+1].val >= 0 and (tostring(faders[p+1].val) ~= tostring(faders[p+1].oval) or faders[p+1].targettype == 3 --[[or faders[p+1].targettype == 5 or faders[p+1].targettype == 6]]) then
                 
                 if faders[p+1].targettype then
@@ -27816,7 +27817,7 @@ function GUI_DrawCtlBitmap_Strips()
                         local ctl = strips[strip][page].controls[c]
 
                         if ctl.ctlcat == ctlcats.fxparam or ctl.ctlcat == ctlcats.trackparam or 
-                           ctl.ctlcat == ctlcats.tracksend or ctl.ctlcat == ctlcats.macro --[[or ctl.ctlcat == ctlcats.rs5k]] then
+                           ctl.ctlcat == ctlcats.tracksend or ctl.ctlcat == ctlcats.macro or ctl.ctlcat == ctlcats.rs5k then
 
                           if c ~= faders[p+1].to_ctl then
 
@@ -27827,9 +27828,9 @@ function GUI_DrawCtlBitmap_Strips()
                             
                           elseif faders[p+1].latch then
                             local vv = GetParamValue(ctl.ctlcat,ctl.tracknum or tracks[track_select].tracknum,ctl.fxnum,ctl.param,c)
-                            faders[p+1].val = round(reaper.TrackFX_GetParam(track, fxnum, pf),5)
+                            faders[p+1].val = round(reaper.TrackFX_GetParam(track, fxnum, pf),7)
 
-                            if vv and faders[p+1].val == round(vv,5) then
+                            if vv and faders[p+1].val == round(vv,7) then
                               faders[p+1].latch = nil
                               
                             elseif vv then
@@ -29658,7 +29659,7 @@ function GUI_DrawCtlBitmap_Strips()
 
       UpdateControlValues2(rt)    
       char = A_Run_TFXOrder(char)
-      if mode == 0 then
+      if mode == 0 and show_pinmatrix == true then
         noscroll = A_Run_PinMatrix(noscroll, rt, char)
       end
     
@@ -30812,7 +30813,7 @@ function GUI_DrawCtlBitmap_Strips()
     if char ~= 0 then
       if char == 49 then
         show_trackfxorder = false
-        update_surface = true
+        update_gfx = true
       elseif char == 52 then
         if mode == 0 then
           show_pinmatrix = not show_pinmatrix
@@ -30890,7 +30891,7 @@ function GUI_DrawCtlBitmap_Strips()
       obj.sections[900].y = math.max(obj.sections[900].y,obj.sections[10].y)
       update_surface = true
     end
-    
+
     return char
   end
 
@@ -50817,7 +50818,7 @@ function GUI_DrawCtlBitmap_Strips()
     reaper.SetExtState(SCRIPT,'snaplistbgcol',settings_snaplistbgcol, true)
     reaper.SetExtState(SCRIPT,'gridcolor',lvar.gridcolor, true)
     reaper.SetExtState(SCRIPT,'showtakeover',tostring(lvar.showtakeover), true)
-    reaper.SetExtState(SCRIPT,'mousefadermode',lvar.mousefadermode, true)
+    reaper.SetExtState(SCRIPT,'mousefadermode',lvar.mousefadermode or 0, true)
    
     reaper.SetExtState(SCRIPT,'savedatainprojectfolder',tostring(settings_savedatainprojectfolder), true)
     reaper.SetExtState(SCRIPT,'save_subfolder',nz(save_subfolder,''), true)
