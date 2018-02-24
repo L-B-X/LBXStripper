@@ -14,7 +14,7 @@
 
 
   local lvar = {}
-  lvar.scriptver = '0.94.0020' --Script Version
+  lvar.scriptver = '0.94.0021' --Script Version
   
   lvar.ctlupdate_rr = nil
   lvar.ctlupdate_pos = 1
@@ -35127,6 +35127,8 @@ function GUI_DrawCtlBitmap_Strips()
         local ly = obj.sections[10].h - obj.sections[160].y + butt_h*pnl_scale
         obj.sections[160].h = F_limit(resizesnapwin.origh + (mouse.my - resizesnapwin.offy) - obj.sections[160].y, 252*pnl_scale, ly)
         obj.sections[163].h = obj.sections[160].h - 208*pnl_scale
+        obj.sections[1016].h = obj.sections[163].h-2 - math.floor(butt_h*pnl_scale) - 2
+        
         obj.sections[1010].y = obj.sections[163].y + obj.sections[163].h + 3*pnl_scale
         obj.sections[1011].y = obj.sections[1010].y 
         obj.sections[1012].y = obj.sections[1010].y
