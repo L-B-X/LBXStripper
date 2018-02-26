@@ -14,7 +14,7 @@
 
 
   local lvar = {}
-  lvar.scriptver = '0.94.0022' --Script Version
+  lvar.scriptver = '0.94.0023' --Script Version
   
   lvar.ctlupdate_rr = nil
   lvar.ctlupdate_pos = 1
@@ -50201,6 +50201,7 @@ function GUI_DrawCtlBitmap_Strips()
         
         lvar.stripbrowser.page = tonumber(nz(GPES('sb_page',true),lvar.stripbrowser.page))
         lvar.stripbrowser.favs = tobool(nz(GPES('sb_favs',true),lvar.stripbrowser.favs))
+        stripfol_select = tonumber(nz(GPES('sb_fol',true),stripfol_select))
         
         DBGOut('LoadData: PROJECT ID: '..tostring(PROJECTID))
         
@@ -52307,6 +52308,7 @@ function GUI_DrawCtlBitmap_Strips()
 
     reaper.SetProjExtState(0,SCRIPT,'sb_favs',tostring(lvar.stripbrowser.favs))
     reaper.SetProjExtState(0,SCRIPT,'sb_page',tostring(lvar.stripbrowser.page))
+    reaper.SetProjExtState(0,SCRIPT,'sb_fol',tostring(stripfol_select))
     
     if gfx1 then
       reaper.SetProjExtState(0,SCRIPT,'win_w',nz(gfx1.main_w,800))
