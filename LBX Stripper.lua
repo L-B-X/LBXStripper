@@ -14,7 +14,7 @@
 
 
   local lvar = {}
-  lvar.scriptver = '0.94.0021' --Script Version
+  lvar.scriptver = '0.94.0022' --Script Version
   
   lvar.ctlupdate_rr = nil
   lvar.ctlupdate_pos = 1
@@ -4953,7 +4953,7 @@
                                                 bypassbg_n = bypass_bgdraw_n_select,
                                                 bypassbg_v = bypass_bgdraw_v_select,
                                                 clickthrough = clickthrough_select,
-                                                knobsens = settings_defknobsens
+                                                knobsens = table.copy(settings_defknobsens)
                                                 }
         if track_select == trackedit_select then
           strips[strip][page].controls[ctlnum].tracknum = nil
@@ -5017,7 +5017,7 @@
                                                 bypassbg_n = bypass_bgdraw_n_select,
                                                 bypassbg_v = bypass_bgdraw_v_select,
                                                 clickthrough = clickthrough_select,
-                                                knobsens = settings_defknobsens
+                                                knobsens = table.copy(settings_defknobsens)
                                                 }
         if track_select == trackedit_select then
           strips[strip][page].controls[ctlnum].tracknum = nil
@@ -5081,7 +5081,7 @@
                                                 bypassbg_n = bypass_bgdraw_n_select,
                                                 bypassbg_v = bypass_bgdraw_v_select,
                                                 clickthrough = clickthrough_select,
-                                                knobsens = settings_defknobsens
+                                                knobsens = table.copy(settings_defknobsens)
                                                 }
         if track_select == trackedit_select then
           strips[strip][page].controls[ctlnum].tracknum = nil
@@ -5148,7 +5148,7 @@
                                                 bypassbg_n = bypass_bgdraw_n_select,
                                                 bypassbg_v = bypass_bgdraw_v_select,
                                                 clickthrough = clickthrough_select,
-                                                knobsens = settings_defknobsens
+                                                knobsens = table.copy(settings_defknobsens)
                                                 }
         if last_touch_fx.tracknum == strips[strip].track.tracknum then
           strips[strip][page].controls[ctlnum].tracknum = nil
@@ -5215,7 +5215,7 @@
                                                 bypassbg_n = bypass_bgdraw_n_select,
                                                 bypassbg_v = bypass_bgdraw_v_select,
                                                 clickthrough = clickthrough_select,
-                                                knobsens = settings_defknobsens
+                                                knobsens = table.copy(settings_defknobsens)
                                                 }
         if track_select == trackedit_select then
           strips[strip][page].controls[ctlnum].tracknum = nil
@@ -5287,7 +5287,7 @@
                                                   bypassbg_n = bypass_bgdraw_n_select,
                                                   bypassbg_v = bypass_bgdraw_v_select,
                                                   clickthrough = clickthrough_select,
-                                                  knobsens = settings_defknobsens
+                                                  knobsens = table.copy(settings_defknobsens)
                                                   }
           
           if track_select == trackedit_select then
@@ -5358,7 +5358,7 @@
                                                 bypassbg_n = bypass_bgdraw_n_select,
                                                 bypassbg_v = bypass_bgdraw_v_select,
                                                 clickthrough = clickthrough_select,
-                                                knobsens = settings_defknobsens
+                                                knobsens = table.copy(settings_defknobsens)
                                                }
       elseif dragparam.type == 'pkmeter' then
         local tcs = trctl_select - special_offs
@@ -5427,7 +5427,7 @@
                                                 bypassbg_n = bypass_bgdraw_n_select,
                                                 bypassbg_v = bypass_bgdraw_v_select,
                                                 clickthrough = clickthrough_select,
-                                                knobsens = settings_defknobsens
+                                                knobsens = table.copy(settings_defknobsens)
                                                }
         if track_select == trackedit_select then
           strips[strip][page].controls[ctlnum].tracknum = nil
@@ -5493,7 +5493,7 @@
                                                 bypassbg_n = bypass_bgdraw_n_select,
                                                 bypassbg_v = bypass_bgdraw_v_select,
                                                 clickthrough = clickthrough_select,
-                                                knobsens = settings_defknobsens
+                                                knobsens = table.copy(settings_defknobsens)
                                                }
         StoreSnapshotControlIdxs(strip,page)
 
@@ -5555,7 +5555,7 @@
                                                 bypassbg_n = bypass_bgdraw_n_select,
                                                 bypassbg_v = bypass_bgdraw_v_select,
                                                 clickthrough = clickthrough_select,
-                                                knobsens = settings_defknobsens
+                                                knobsens = table.copy(settings_defknobsens)
                                                }
       elseif dragparam.type == 'macro' then
         local mcnt = 0
@@ -5617,7 +5617,7 @@
                                                 bypassbg_n = bypass_bgdraw_n_select,
                                                 bypassbg_v = bypass_bgdraw_v_select,
                                                 clickthrough = clickthrough_select,
-                                                knobsens = settings_defknobsens
+                                                knobsens = table.copy(settings_defknobsens)
                                                }
       elseif dragparam.type == 'eqcontrol' then
         local mcnt = 0
@@ -5678,7 +5678,7 @@
                                                 bypassbg_c = bypass_bgdraw_c_select,
                                                 bypassbg_n = bypass_bgdraw_n_select,
                                                 bypassbg_v = bypass_bgdraw_v_select,
-                                                knobsens = settings_defknobsens,
+                                                knobsens = table.copy(settings_defknobsens),
                                                 clickthrough = clickthrough_select,
                                                 eqgraph = def_graph
                                                }
@@ -5810,7 +5810,7 @@ elseif dragparam.type == 'rs5k' then
                                                 bypassbg_c = bypass_bgdraw_c_select,
                                                 bypassbg_n = bypass_bgdraw_n_select,
                                                 bypassbg_v = bypass_bgdraw_v_select,
-                                                knobsens = settings_defknobsens,
+                                                knobsens = table.copy(settings_defknobsens),
                                                 clickthrough = clickthrough_select,
                                                 eqgraph = def_graph
                                                }
@@ -5874,7 +5874,7 @@ elseif dragparam.type == 'rs5k' then
                                                 bypassbg_n = bypass_bgdraw_n_select,
                                                 bypassbg_v = bypass_bgdraw_v_select,
                                                 clickthrough = clickthrough_select,
-                                                knobsens = settings_defknobsens
+                                                knobsens = table.copy(settings_defknobsens)
                                                }
       elseif dragparam.type == 'takeswitcher' then
               local pname = 'Take Selector'
@@ -5942,7 +5942,7 @@ elseif dragparam.type == 'rs5k' then
                                                       bypassbg_n = bypass_bgdraw_n_select,
                                                       bypassbg_v = bypass_bgdraw_v_select,
                                                       clickthrough = clickthrough_select,
-                                                      knobsens = settings_defknobsens
+                                                      knobsens = table.copy(settings_defknobsens)
                                                      }
         strips[strip][page].controls[ctlnum].knobsens.norm = 0.1
         strips[strip][page].controls[ctlnum].knobsens.wheel = 0.01
@@ -15929,7 +15929,7 @@ function GUI_DrawCtlBitmap_Strips()
           end
         end
 
-        if lvar.showtakeover and lvar.mofader_takeover and update_surface then
+        if lvar.showtakeover and lvar.mousefadermode == 0 and lvar.mofader_takeover and update_surface then
           gfx.a = 1
           --local xywh = {x = lvar.mofader_takeover.mx - 30, y = lvar.mofader_takeover.my - 20, w = 60, h = 15}
           if not lvar.mofader_takeover.to then
@@ -27948,6 +27948,8 @@ function GUI_DrawCtlBitmap_Strips()
                         
                         --ENCODER MODE
                         
+                        faders[p+1].val = reaper.TrackFX_GetParam(track, fxnum, pf)
+                        
                         local ctl = strips[strip][page].controls[c]
 
                         if ctl.ctlcat == ctlcats.fxparam or ctl.ctlcat == ctlcats.trackparam or 
@@ -27961,10 +27963,9 @@ function GUI_DrawCtlBitmap_Strips()
                             break
                             
                           elseif faders[p+1].latch then
-                            local vv = GetParamValue(ctl.ctlcat,ctl.tracknum or tracks[track_select].tracknum,ctl.fxnum,ctl.param,c)
-                            faders[p+1].val = round(reaper.TrackFX_GetParam(track, fxnum, pf),7)
-
-                            if vv and faders[p+1].val == round(vv,7) then
+                            local vv = math.floor(GetParamValue(ctl.ctlcat,ctl.tracknum or tracks[track_select].tracknum,ctl.fxnum,ctl.param,c)*2048)/2048
+                            faders[p+1].val = reaper.TrackFX_GetParam(track, fxnum, pf)
+                            if vv and faders[p+1].val == vv then
                               faders[p+1].latch = nil
                               
                             elseif vv then
@@ -27973,12 +27974,32 @@ function GUI_DrawCtlBitmap_Strips()
                             else
                               faders[p+1].latch = nil
                             end
+                            
+                            if faders[p+1].latch == nil then
+                              faders[p+1].val = round(reaper.TrackFX_GetParam(track, fxnum, pf),7)
+                              faders[p+1].oval = faders[p+1].val
+
+                              --if not lvar.mofader_takeover then
+                              local w,h = ctl.wsc, ctl.hsc
+                              
+                              if stripgallery_view == 0 then
+                                x,y = ctl.xsc + obj.sections[10].x - surface_offset.x,
+                                      ctl.ysc + obj.sections[10].y - surface_offset.y
+                              else
+                                x,y = TranslateGalleryCtlPos(c)
+                              end
+                              lvar.mofader_takeover = {}
+                              lvar.mofader_takeover.xywh = {x=x,y=y,w=w,h=h}
+                              --end
+                              lvar.mofader_takeover.to = true
+                              update_surface = true                              
+                            end
                           end 
                           
-                          if faders[p+1].mode == 0 then
+                          if faders[p+1].mode == 0 and faders[p+1].val ~= faders[p+1].oval then
                             --absolute
                             
-                            if faders[p+1].to == false and faders[p+1].val ~= faders[p+1].oval then
+                            --[[if faders[p+1].to == false and faders[p+1].val ~= faders[p+1].oval then
                               if faders[p+1].to_pos == 1 then
                                 if faders[p+1].val <= ctl.val then 
                                   faders[p+1].to = true
@@ -27994,10 +28015,10 @@ function GUI_DrawCtlBitmap_Strips()
                                   end
                                 end                            
                               end
-                            end
+                            end]]
 
                             if faders[p+1].to == true then
-                              if not lvar.mofader_takeover then
+                              --[[if not lvar.mofader_takeover then
                                 local w,h = ctl.wsc, ctl.hsc
                                 
                                 if stripgallery_view == 0 then
@@ -28010,7 +28031,7 @@ function GUI_DrawCtlBitmap_Strips()
                                 lvar.mofader_takeover.xywh = {x=x,y=y,w=w,h=h}
                                 update_surface = true                              
                               end
-                              lvar.mofader_takeover.to = true
+                              lvar.mofader_takeover.to = true]]
                               ctl.oval = ctl.val
                               ctl.val = faders[p+1].val
                               if tostring(ctl.oval) ~= tostring(ctl.val) and ctl.ctllock ~= true then
@@ -50178,6 +50199,9 @@ function GUI_DrawCtlBitmap_Strips()
         show_snapshots = tobool(nz(GPES('showsnap',true),false))
         hideunusedtracks = tobool(nz(GPES('hidetracks',true),false))
         
+        lvar.stripbrowser.page = tonumber(nz(GPES('sb_page',true),lvar.stripbrowser.page))
+        lvar.stripbrowser.favs = tobool(nz(GPES('sb_favs',true),lvar.stripbrowser.favs))
+        
         DBGOut('LoadData: PROJECT ID: '..tostring(PROJECTID))
         
         
@@ -52280,6 +52304,9 @@ function GUI_DrawCtlBitmap_Strips()
     reaper.SetProjExtState(0,SCRIPT,'snapwinpos_y',nz(snapshot_win_pos.y,''))
     reaper.SetProjExtState(0,SCRIPT,'showsnap',tostring(show_snapshots))
     reaper.SetProjExtState(0,SCRIPT,'hidetracks',tostring(hideunusedtracks))
+
+    reaper.SetProjExtState(0,SCRIPT,'sb_favs',tostring(lvar.stripbrowser.favs))
+    reaper.SetProjExtState(0,SCRIPT,'sb_page',tostring(lvar.stripbrowser.page))
     
     if gfx1 then
       reaper.SetProjExtState(0,SCRIPT,'win_w',nz(gfx1.main_w,800))
