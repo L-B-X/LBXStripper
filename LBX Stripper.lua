@@ -14,7 +14,7 @@
 
 
   local lvar = {}
-  lvar.scriptver = '0.94.0027' --Script Version
+  lvar.scriptver = '0.94.0028' --Script Version
   
   lvar.ctlupdate_rr = nil
   lvar.ctlupdate_pos = 1
@@ -70,6 +70,8 @@
   lvar.disabletakeover_ctl = -1
   lvar.mousefadermode = 0
   lvar.gfxpreview = true
+  lvar.ctlpreview = true
+  
   lvar.scrollbar_hl = '192 192 0'
   
   lvar.trctltypeidx_table = {tr_ctls = 1,
@@ -7468,14 +7470,44 @@ elseif dragparam.type == 'rs5k' then
     
     F_butt_cnt = math.floor(obj.sections[520].h / butt_h)
     local sbobj = obj.sections[525]
+
+    if knob_select then
+    
+      local iidx = 1023
+        
+      if knob_select > -1 then
+        if ctl_files[knob_select].imageidx ~= nil then
+          iidx = ctl_files[knob_select].imageidx
+        else
+          gfx.loadimg(1023, paths.controls_path..ctl_files[knob_select].fn)
+        end
+        local w, _ = gfx.getimgdim(iidx)
+        local h = ctl_files[knob_select].cellh
+        local frames = ctl_files[knob_select].frames-1
+        local frame = math.floor(frames*0.56)
+        local xywh = {x = obj.sections[520].x,
+                      y = obj.sections[520].y + tb_butt_h + 1,
+                      w = obj.sections[520].w,
+                      h = obj.sections[520].h - tb_butt_h - 1}
+        
+        local scale = xywh.w / w
+        scale = math.min(scale, xywh.h / h, 1)
+        gfx.a = 0.2
+        gfx.blit(iidx,scale,0,0,frame*h,w,h,xywh.x + math.floor((xywh.w/2) - (w*scale)/2), xywh.y + math.floor((xywh.h/2) - (h*scale)/2))
+        gfx.a = 1
+      end
+      
+    end
     
     if fxmode == 0 then
+
       local xywh = {x = obj.sections[520].x +2,
                     w = obj.sections[520].w -6,
                     h = butt_h-2}
       if F_butt_cnt-1 < #trackfx+1 then
         xywh.w = xywh.w - sbobj.w+2
       end  
+      
       
       for i = 0, F_butt_cnt-1 do
       
@@ -7515,7 +7547,7 @@ elseif dragparam.type == 'rs5k' then
         local sby = math.floor(flist_offset * p2)
         GUI_DrawSB(sbobj, sby, msbh, sbh, gui.skol.mod_baroutline, 1)
         if mouse.context == contexts.scrollfx then
-          GUI_DrawSB(sbobj, sby, msbh, sbh, lvar.scrollbar_hl, 0)
+          GUI_DrawSB(sbobj, sby, msbh, sbh, lvar.scrollbar_hl, 0, true)
         end
       end   
 
@@ -7556,7 +7588,7 @@ elseif dragparam.type == 'rs5k' then
         local sby = math.floor(trctltypelist_offset * p2)
         GUI_DrawSB(sbobj, sby, msbh, sbh, gui.skol.mod_baroutline, 1)
         if mouse.context == contexts.scrollfx then
-          GUI_DrawSB(sbobj, sby, msbh, sbh, lvar.scrollbar_hl, 0)
+          GUI_DrawSB(sbobj, sby, msbh, sbh, lvar.scrollbar_hl, 0, true)
         end
       end   
     end
@@ -7616,7 +7648,7 @@ elseif dragparam.type == 'rs5k' then
         local sby = math.floor(plist_offset * p2)
         GUI_DrawSB(sbobj, sby, msbh, sbh, gui.skol.mod_baroutline, 1)
         if mouse.context == contexts.scrollfxparams then
-          GUI_DrawSB(sbobj, sby, msbh, sbh, lvar.scrollbar_hl, 0)
+          GUI_DrawSB(sbobj, sby, msbh, sbh, lvar.scrollbar_hl, 0, true)
         end
       end   
 
@@ -7731,7 +7763,7 @@ elseif dragparam.type == 'rs5k' then
         local sby = math.floor(trctlslist_offset * p2)
         GUI_DrawSB(sbobj, sby, msbh, sbh, gui.skol.mod_baroutline, 1)
         if mouse.context == contexts.scrollfxparams then
-          GUI_DrawSB(sbobj, sby, msbh, sbh, lvar.scrollbar_hl, 0)
+          GUI_DrawSB(sbobj, sby, msbh, sbh, lvar.scrollbar_hl, 0, true)
         end
       end   
       
@@ -7807,16 +7839,51 @@ elseif dragparam.type == 'rs5k' then
             y = obj.sections[531].y+math.floor(obj.sections[531].h/2 - sch/2)+1,
             w = scw,
             h = sch}
-    gfx.a = 1
     gfx.rect(obj.sections[531].x,
              obj.sections[531].y+1,
              obj.sections[531].w,
              obj.sections[531].h-1,1)
-    gfx.a = 1
     gfx.blit(lvar.gfxpreview_img,scale,0,0,0,w,h,xywh.x,xywh.y)
     
   end
-  
+
+  function GUI_DrawCtlPreview(obj, gui)
+    
+    gfx.dest = 1
+
+    if knob_select then
+    
+      local iidx = 1023
+      if knob_select > -1 then
+        if ctl_files[knob_select].imageidx ~= nil then
+          iidx = ctl_files[knob_select].imageidx
+        else
+          gfx.loadimg(1023, paths.controls_path..ctl_files[knob_select].fn)
+        end
+        local w, _ = gfx.getimgdim(iidx)
+        local h = ctl_files[knob_select].cellh
+        local frames = ctl_files[knob_select].frames-1
+        local frame = math.floor(frames*0.56)
+        local xywh = {x = obj.sections[520].x,
+                      y = obj.sections[520].y + 1,
+                      w = obj.sections[520].w,
+                      h = obj.sections[520].h - 1}
+        
+        local scale = xywh.w / w
+        scale = math.min(scale, xywh.h / h, 1)
+        gfx.a = 1
+        f_Get_SSV(gui.color.black)
+        gfx.rect(obj.sections[520].x,
+                 obj.sections[520].y+1,
+                 obj.sections[520].w,
+                 obj.sections[520].h-1,1)
+        gfx.blit(iidx,scale,0,0,frame*h,w,h,xywh.x + math.floor((xywh.w/2) - (w*scale)/2), xywh.y + math.floor((xywh.h/2) - (h*scale)/2))
+      end
+      
+    end
+
+  end
+    
   function GUI_DrawGraphicsChooser(obj, gui)
 
     gfx.dest = 1001
@@ -7875,7 +7942,7 @@ elseif dragparam.type == 'rs5k' then
       local sby = math.floor(gflist_offset * p2)
       GUI_DrawSB(sbobj, sby, msbh, sbh, gui.skol.mod_baroutline, 1)
       if mouse.context == contexts.scrollgfxfols then
-        GUI_DrawSB(sbobj, sby, msbh, sbh, lvar.scrollbar_hl, 0)
+        GUI_DrawSB(sbobj, sby, msbh, sbh, lvar.scrollbar_hl, 0, true)
       end
     end   
     
@@ -7932,7 +7999,7 @@ elseif dragparam.type == 'rs5k' then
       local sby = math.floor(glist_offset * p2)
       GUI_DrawSB(sbobj, sby, msbh, sbh, gui.skol.mod_baroutline, 1)
       if mouse.context == contexts.scrollgfxfiles then
-        GUI_DrawSB(sbobj, sby, msbh, sbh, lvar.scrollbar_hl, 0)
+        GUI_DrawSB(sbobj, sby, msbh, sbh, lvar.scrollbar_hl, 0, true)
       end
     end   
 
@@ -7948,9 +8015,9 @@ elseif dragparam.type == 'rs5k' then
   
   end
 
-  function GUI_DrawSB(sbobj, sby, msbh, sbh, col, fill)
+  function GUI_DrawSB(sbobj, sby, msbh, sbh, col, fill, clear)
   
-    lvar.scrollbar_clear = true
+    lvar.scrollbar_clear = clear
     f_Get_SSV(col)
     gfx.rect(sbobj.x,
              math.min(sbobj.y+1+sby,sbobj.y+msbh-sbh-1),
@@ -8050,7 +8117,7 @@ elseif dragparam.type == 'rs5k' then
       local sby = math.floor(sflist_offset * p2)
       GUI_DrawSB(sbobj, sby, msbh, sbh, gui.skol.mod_baroutline, 1)
       if mouse.context == contexts.scrollstripfols then
-        GUI_DrawSB(sbobj, sby, msbh, sbh, lvar.scrollbar_hl, 0)
+        GUI_DrawSB(sbobj, sby, msbh, sbh, lvar.scrollbar_hl, 0, true)
       end
     end   
 
@@ -8112,7 +8179,7 @@ elseif dragparam.type == 'rs5k' then
       local sby = math.floor(slist_offset * p2)
       GUI_DrawSB(sbobj, sby, msbh, sbh, gui.skol.mod_baroutline, 1)
       if mouse.context == contexts.scrollstripfiles then
-        GUI_DrawSB(sbobj, sby, msbh, sbh, lvar.scrollbar_hl, 0)
+        GUI_DrawSB(sbobj, sby, msbh, sbh, lvar.scrollbar_hl, 0, true)
       end
     end   
 
@@ -11081,7 +11148,7 @@ function GUI_DrawCtlBitmap_Strips()
             local sby = math.floor(ssoffset * p2)
             GUI_DrawSB(sbobj, sby, msbh, sbh, gui.skol.mod_baroutline, 1)
             if mouse.context == contexts.scrollsswin then
-              GUI_DrawSB(sbobj, sby, msbh, sbh, lvar.scrollbar_hl, 0)
+              GUI_DrawSB(sbobj, sby, msbh, sbh, lvar.scrollbar_hl, 0, true)
             end          
           end        
         end
@@ -11400,7 +11467,7 @@ function GUI_DrawCtlBitmap_Strips()
             local sby = math.floor(ssoffset * p2)
             GUI_DrawSB(sbobj, sby, msbh, sbh, gui.skol.mod_baroutline, 1)
             if mouse.context == contexts.scrollsswin then
-              GUI_DrawSB(sbobj, sby, msbh, sbh, lvar.scrollbar_hl, 0)
+              GUI_DrawSB(sbobj, sby, msbh, sbh, lvar.scrollbar_hl, 0, true)
             end          
           
           end        
@@ -15039,7 +15106,7 @@ function GUI_DrawCtlBitmap_Strips()
           local sby = math.floor(smlist_offset * p2)
           GUI_DrawSB(sbobj, sby, msbh, sbh, gui.skol.mod_baroutline, 1)
           if mouse.context == contexts.scrollsamples then
-            GUI_DrawSB(sbobj, sby, msbh, sbh, lvar.scrollbar_hl, 0)
+            GUI_DrawSB(sbobj, sby, msbh, sbh, lvar.scrollbar_hl, 0, true)
           end        
         end        
         
@@ -15797,6 +15864,7 @@ function GUI_DrawCtlBitmap_Strips()
        update_settings or update_snaps or update_msnaps or update_actcho or update_fsnaps or update_mfsnaps or update_eqcontrol or update_macroedit or
        update_macrobutt or update_snapmorph or update_lfoedit or update_lfoeditbar or update_lfopos or update_mutate or update_randomopts or update_samplemanager or 
        update_stripbrowser) then    
+
       local p = 0
       gfx.dest = 1
 
@@ -16288,8 +16356,7 @@ function GUI_DrawCtlBitmap_Strips()
           gfx.a = 1          
           gfx.rect(xywh.x,xywh.y,xywh.w,xywh.h,0,1)
           GUI_textC(gui,xywh,'MOD ' ..string.format('%i',mod_select),gui.color.black,-2,1,0)
-        end
-        
+        end        
         
       elseif mode == 1 then        
         --Edit
@@ -16566,6 +16633,12 @@ function GUI_DrawCtlBitmap_Strips()
             GUI_DrawGaugeEdit(obj, gu)
           end
           
+          if lvar.ctlpreview_img and lvar.ctlpreview == true and (update_surface or update_gfx or update_sidebar) then
+          --DBG('p')
+            GUI_DrawCtlPreview(obj, gui)          
+          end
+          
+          
         elseif submode == 1 then
         
           --DRAW SUBMODE 1
@@ -16698,7 +16771,7 @@ function GUI_DrawCtlBitmap_Strips()
             gfx.blit(1021,1,0,0,0,w,h,obj.sections[60].x,obj.sections[60].y)           
           end
           
-          if lvar.gfxpreview_img and lvar.gfxpreview == true then
+          if lvar.gfxpreview_img and lvar.gfxpreview == true and (update_surface or update_gfx or update_sidebar) then
           
             GUI_DrawGFXPreview(obj, gui)
           
@@ -32689,6 +32762,7 @@ function GUI_DrawCtlBitmap_Strips()
           if SM_butt_cnt < #rsdata.samples then
             mouse.context = contexts.scrollsamples
             scrollsamps = {y = mouse.my-obj.sections[1303].y, lo = smlist_offset}
+            update_samplemanager = true
           else
             smlist_offset = 0
           end
@@ -35910,6 +35984,21 @@ function GUI_DrawCtlBitmap_Strips()
   
     local contexts = contexts
     local mouse = mouse
+
+    if knob_select ~= lvar.oks then
+      update_sidebar = true
+      lvar.oks = knob_select
+    end
+
+    if mouse.context == nil and MOUSE_over(obj.sections[522]) then
+      if knob_select ~= lvar.ctlpreview_img then
+        lvar.ctlpreview_img = knob_select
+        update_surface = true      
+      end
+    elseif lvar.ctlpreview_img ~= nil then
+      lvar.ctlpreview_img = nil
+      update_surface = true
+    end
     
     if show_actionchooser then
       
@@ -39657,10 +39746,10 @@ function GUI_DrawCtlBitmap_Strips()
                                                                    tracks[trackedit_select].tracknum,
                                                                    trackfx[trackfx_select].fxnum,
                                                                    trackfxparam_select, reass_param)
-    strips[strip][page].controls[reass_param].defval = GetParamValue(ctlcats.fxparam,
+    --[[strips[strip][page].controls[reass_param].defval = GetParamValue(ctlcats.fxparam,
                                                                      tracks[trackedit_select].tracknum,
                                                                      trackfx[trackfx_select].fxnum,
-                                                                     trackfxparam_select, reass_param)
+                                                                     trackfxparam_select, reass_param)]]
   end
   
   function A_Run_Submode1(noscroll, rt, char)
@@ -40127,6 +40216,7 @@ function GUI_DrawCtlBitmap_Strips()
         if G_butt_cnt+1 < #graphics_folder_files+1 then
           mouse.context = contexts.scrollgfxfiles
           scrollsidebar = {y = mouse.my-obj.sections[534].y, lo = glist_offset}
+          update_sidebar = true
         else
           glist_offset = 0
         end
@@ -42467,6 +42557,7 @@ function GUI_DrawCtlBitmap_Strips()
           if SS_butt_cnt < #ss then
             mouse.context = contexts.scrollsswin
             scrollss = {y = mouse.my-obj.sections[1016].y, lo = ssoffset, ss = ss}
+            update_snaps = true
           else
             ssoffset = 0
           end
