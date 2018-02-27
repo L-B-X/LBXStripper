@@ -14,7 +14,7 @@
 
 
   local lvar = {}
-  lvar.scriptver = '0.94.0026' --Script Version
+  lvar.scriptver = '0.94.0027' --Script Version
   
   lvar.ctlupdate_rr = nil
   lvar.ctlupdate_pos = 1
@@ -10996,6 +10996,7 @@ function GUI_DrawCtlBitmap_Strips()
     local butt_h = butt_h*pnl_scale
     
     SS_butt_cnt = math.floor(obj.sections[163].h / butt_h) - 1
+    local sbobj = obj.sections[1016]
     if snaplrn_mode == false then
       
       local strip = tracks[track_select].strip
@@ -11037,7 +11038,7 @@ function GUI_DrawCtlBitmap_Strips()
           ss = snapshots[strip][page][sstype_select].snapshot
         end
         if SS_butt_cnt < #ss then
-          xywh.w = xywh.w - obj.sections[1016].w
+          xywh.w = xywh.w - sbobj.w
         end
 
         if #ss > 0 then
@@ -11073,17 +11074,15 @@ function GUI_DrawCtlBitmap_Strips()
           end
 
           if SS_butt_cnt < #ss then
-            local msbh = obj.sections[1016].h
+            local msbh = sbobj.h
             local p1 = 1 / #ss
             local sbh = math.ceil(F_limit(p1*SS_butt_cnt * msbh,20,msbh))
             local p2 = p1*msbh
             local sby = math.floor(ssoffset * p2)
-            f_Get_SSV(gui.skol.mod_baroutline)
-            gfx.rect(obj.sections[1016].x,
-                     math.min(obj.sections[1016].y+1+sby,obj.sections[1016].y+msbh-sbh-1),
-                     obj.sections[1016].w,
-                     sbh, 1)
-          
+            GUI_DrawSB(sbobj, sby, msbh, sbh, gui.skol.mod_baroutline, 1)
+            if mouse.context == contexts.scrollsswin then
+              GUI_DrawSB(sbobj, sby, msbh, sbh, lvar.scrollbar_hl, 0)
+            end          
           end        
         end
         
@@ -11294,6 +11293,8 @@ function GUI_DrawCtlBitmap_Strips()
     local loop = false        
     
     SS_butt_cnt = math.floor(obj.sections[163].h / butt_h) - 1
+    local sbobj = obj.sections[1016]
+    
     if snaplrn_mode == false then
       
       local strip = tracks[track_select].strip
@@ -11348,7 +11349,7 @@ function GUI_DrawCtlBitmap_Strips()
           ss = snapshots[strip][page][sstype_select].snapshot
         end
         if SS_butt_cnt < #ss then
-          xywh.w = xywh.w - obj.sections[1016].w
+          xywh.w = xywh.w - sbobj.w
         end
         
         if #ss > 0 then
@@ -11392,16 +11393,15 @@ function GUI_DrawCtlBitmap_Strips()
           end
 
           if SS_butt_cnt < #ss then
-            local msbh = obj.sections[1016].h
+            local msbh = sbobj.h
             local p1 = 1 / #ss
             local sbh = math.ceil(F_limit(p1*SS_butt_cnt * msbh,20,msbh))
             local p2 = p1*msbh
             local sby = math.floor(ssoffset * p2)
-            f_Get_SSV(gui.skol.mod_baroutline)
-            gfx.rect(obj.sections[1016].x,
-                     math.min(obj.sections[1016].y+1+sby,obj.sections[1016].y+msbh-sbh-1),
-                     obj.sections[1016].w,
-                     sbh, 1)
+            GUI_DrawSB(sbobj, sby, msbh, sbh, gui.skol.mod_baroutline, 1)
+            if mouse.context == contexts.scrollsswin then
+              GUI_DrawSB(sbobj, sby, msbh, sbh, lvar.scrollbar_hl, 0)
+            end          
           
           end        
         end
@@ -14977,6 +14977,8 @@ function GUI_DrawCtlBitmap_Strips()
         rsdata = ctl.rsdata
       end
       SM_butt_cnt = math.floor(obj.sections[1302].h / butt_h)
+      local sbobj = obj.sections[1303]
+      
       local starw, starh = gfx.getimgdim(skin.star)
       if rsdata then
         for i = 1, SM_butt_cnt do
@@ -15030,17 +15032,15 @@ function GUI_DrawCtlBitmap_Strips()
         end
         
         if SM_butt_cnt < #rsdata.samples then
-          local msbh = obj.sections[1303].h
+          local msbh = sbobj.h
           local p1 = 1 / #rsdata.samples
           local sbh = math.ceil(F_limit(p1*SM_butt_cnt * msbh,20,msbh))
           local p2 = p1*msbh
           local sby = math.floor(smlist_offset * p2)
-          f_Get_SSV(gui.skol.mod_baroutline)
-          gfx.rect(obj.sections[1303].x,
-                   math.min(obj.sections[1303].y+1+sby,obj.sections[1303].y+msbh-sbh-1),
-                   obj.sections[1303].w,
-                   sbh, 1)
-        
+          GUI_DrawSB(sbobj, sby, msbh, sbh, gui.skol.mod_baroutline, 1)
+          if mouse.context == contexts.scrollsamples then
+            GUI_DrawSB(sbobj, sby, msbh, sbh, lvar.scrollbar_hl, 0)
+          end        
         end        
         
       end
@@ -30572,6 +30572,8 @@ function GUI_DrawCtlBitmap_Strips()
       if lvar.scrollbar_clear then
         lvar.scrollbar_clear = nil
         update_sidebar = true
+        update_snaps = true
+        update_samplemanager = true
       end
     end
     --[[if mouse.context == nil and undotxt then
@@ -38827,6 +38829,8 @@ function GUI_DrawCtlBitmap_Strips()
           if tracks[track_select] and tracks[track_select].strip ~= -1 then
             local i = GetReassCtl()   
             if i and (strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.fxparam or 
+                      strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.fxoffline or 
+                      strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.fxgui or 
                       strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.rcm_switch) then
               reass_param = i
               if trackfx[trackfx_select].name == strips[tracks[track_select].strip][page].controls[i].fxname then
@@ -39636,7 +39640,13 @@ function GUI_DrawCtlBitmap_Strips()
       strips[strip][page].controls[reass_param].tracknum=nil
       strips[strip][page].controls[reass_param].trackguid=nil                  
     end
-    strips[strip][page].controls[reass_param].ctlcat = ctlcats.fxparam
+    local ccats = ctlcats.fxparam
+    if trackfxparam_select == #trackfxparams-1 then
+      ccats = ctlcats.fxoffline
+    elseif trackfxparam_select == #trackfxparams then
+      ccats = ctlcats.fxgui
+    end
+    strips[strip][page].controls[reass_param].ctlcat = ccats
     strips[strip][page].controls[reass_param].fxname=trackfx[trackfx_select].name
     strips[strip][page].controls[reass_param].fxguid=trackfx[trackfx_select].guid
     strips[strip][page].controls[reass_param].fxnum=trackfx[trackfx_select].fxnum
