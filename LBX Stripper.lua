@@ -14,7 +14,7 @@
 
 
   local lvar = {}
-  lvar.scriptver = '0.94.0024' --Script Version
+  lvar.scriptver = '0.94.0025' --Script Version
   
   lvar.ctlupdate_rr = nil
   lvar.ctlupdate_pos = 1
@@ -69,6 +69,7 @@
   lvar.showtakeover = true
   lvar.disabletakeover_ctl = -1
   lvar.mousefadermode = 0
+  lvar.gfxpreview = true
   
   lvar.trctltypeidx_table = {tr_ctls = 1,
                         tr_sends = 2,
@@ -253,6 +254,9 @@
               draggfx2_timer = 159,
               dragctl_timer = 160,
               scrollsswin = 161,
+              scrollfxparams = 162,
+              scrollgfxfiles = 163,
+              scrollstripfiles = 164,
               dummy = 999
               }
   
@@ -1817,6 +1821,11 @@
                            y = obj.sections[510].y+obj.sections[510].h+4 + 2 + rsz,
                            w = plist_w,
                            h = gfx1.main_h - (obj.sections[510].y+obj.sections[510].h+2) - 8}
+      --Scrollbar
+      obj.sections[514] = {x = obj.sections[512].w -12,
+                           y = obj.sections[512].y + tb_butt_h+1,
+                           w = 12,
+                           h = obj.sections[512].h - tb_butt_h-1}
 
       --NEW FX - plugins/track controls
       fx_h = def_fx_h
@@ -1845,7 +1854,12 @@
                            y = obj.sections[521].y+obj.sections[521].h+2,
                            w = plist_w,
                            h = gfx1.main_h - (obj.sections[521].y+obj.sections[521].h+2)}
-      
+      --Scrollbar
+      obj.sections[524] = {x = obj.sections[522].w -12,
+                           y = obj.sections[522].y + tb_butt_h+1,
+                           w = 12,
+                           h = obj.sections[522].h - tb_butt_h-1}
+
       --GRAPHICS
       gx_h = def_gx_h
       if (tb_butt_h+2)*2+gx_h+2+8 > gfx1.main_h then
@@ -1870,8 +1884,12 @@
                            y = obj.sections[531].y+obj.sections[531].h+2 + 2 + rsz,
                            w = plist_w,
                            h = gfx1.main_h - (obj.sections[531].y+obj.sections[531].h+2) - 8}
+      --Scrollbar
+      obj.sections[534] = {x = obj.sections[530].w -12,
+                           y = obj.sections[530].y + tb_butt_h+1,
+                           w = 12,
+                           h = obj.sections[530].h - tb_butt_h-1}
                            
-
       --CONTROL OPTIONS Panel
       local cow = math.floor(gui.winsz.ctlopts*pnl_scale)
       local coh = math.floor(470*pnl_scale) --(470-150)*pnl_scale+150
@@ -3330,12 +3348,17 @@
       
       obj = PosStripBrowser(obj)]]
       
+      local gfxpw,gfxph = 300,300
+      obj.sections[1400] = {x = obj.sections[10].x + 10,
+                            y = obj.sections[10].y + obj.sections[10].h - gfxph,
+                            w = gfxpw,
+                            h = gfxph}
+      
     pnlscaleflag = nil
     return obj
   end
 
   function DockableWindows(obj, ss160, mm1350)
-  
   
     --SNAPSHOTS
           
@@ -7423,9 +7446,6 @@ elseif dragparam.type == 'rs5k' then
     local butt_h = tb_butt_h
     
     gfx.dest = 1001
-    --[[if resize_display then
-      gfx.setimgdim(1001,obj.sections[43].w+2, obj.sections[43].h)
-    end]]
     
     F_butt_cnt = math.floor(obj.sections[520].h / butt_h)
     
@@ -7438,7 +7458,6 @@ elseif dragparam.type == 'rs5k' then
                         w = obj.sections[520].w -6,
                         h = butt_h-2}
           local c
-          --DBG(tostring(trackedit_select)..'  '..tostring(tracks[trackedit_select]))
           
           local bypassed = not GetFXEnabled(tracks[trackedit_select].tracknum, i+ flist_offset)
           if bypassed == false then        
@@ -7448,10 +7467,6 @@ elseif dragparam.type == 'rs5k' then
           end
           if trackfx_select == i + flist_offset then
             f_Get_SSV(gui.skol.lst_barhl)
-            --[[gfx.rect(xywh.x+2,
-                     xywh.y+1, 
-                     xywh.w-6,
-                     xywh.h-2, 1, 1)]]
             gfx.rect(xywh.x,
                      xywh.y, 
                      xywh.w,
@@ -7461,10 +7476,6 @@ elseif dragparam.type == 'rs5k' then
               c = gui.skol.lst_txthl
             end
           end
-          --xywh.y = xywh.y-1
-          --GUI_textsm_LJ(gui, xywh, CropFXName(trackfx[i + flist_offset].name), c, -4 + gui.fontsz.lst, plist_w)
-          --DBG(CropFXName(trackfx[i + flist_offset].name))
-          --GUI_textC_LIM(gui, xywh, CropFXName(trackfx[i + flist_offset].name), c, -4 + gui.fontsz.lst, '', nil, gui.fontnm.lst,4)
           xywh.x = xywh.x + 2
           xywh.w = xywh.w - 4          
                       
@@ -7486,10 +7497,6 @@ elseif dragparam.type == 'rs5k' then
           local c = gui.skol.lst_txt
           if trctltype_select == i + trctltypelist_offset then
             f_Get_SSV(gui.skol.lst_barhl)
-            --[[gfx.rect(xywh.x+2,
-                     xywh.y+1, 
-                     xywh.w-6,
-                     xywh.h-2, 1, 1)]]
             gfx.rect(xywh.x,
                      xywh.y, 
                      xywh.w,
@@ -7497,9 +7504,6 @@ elseif dragparam.type == 'rs5k' then
   
             c = gui.skol.lst_txthl
           end
-          --xywh.y = xywh.y-1
-          --GUI_textsm_LJ(gui, xywh, lvar.trctltype_table[i + trctltypelist_offset + 1], c, -4 + gui.fontsz.lst, plist_w)
-          --GUI_textC_LIM(gui, xywh, lvar.trctltype_table[i + trctltypelist_offset + 1], c, -4 + gui.fontsz.lst, '', nil, gui.fontnm.lst,4)
           xywh.x = xywh.x + 2            
           xywh.w = xywh.w - 4           
           GUI_Str(gui, xywh, lvar.trctltype_table[i + trctltypelist_offset + 1], 4, c, -4 + gui.fontsz.lst + lst_fontscale, 1, nil, gui.fontnm.lst, gui.fontflag.lst)
@@ -7528,19 +7532,17 @@ elseif dragparam.type == 'rs5k' then
     P_butt_cnt = math.floor(obj.sections[522].h / butt_h)
 
     if fxmode == 0 then
+      local xywh = {x = obj.sections[522].x +2,
+                    w = obj.sections[522].w -6,
+                    h = butt_h-2}
+      if P_butt_cnt-1 < #trackfxparams+1 then
+        xywh.w = xywh.w - obj.sections[524].w+2
+      end  
       for i = 0, P_butt_cnt do
       
         if trackfxparams[i + plist_offset] then
-          --[[local xywh = {x = obj.sections[522].x,
-                        y = obj.sections[522].y +2 + (i+1) * butt_h,
-                        w = obj.sections[522].w,
-                        h = butt_h}]]
-          local xywh = {x = obj.sections[522].x +2,
-                        y = obj.sections[522].y +2 + (i+1) * butt_h +1,
-                        w = obj.sections[522].w -6,
-                        h = butt_h-2}  
           local c = gui.skol.lst_txt
-          --if trackfxparam_select == i + plist_offset then
+          xywh.y = obj.sections[522].y +2 + (i+1) * butt_h +1
           if tfxp_sel and tfxp_sel[i + plist_offset] then  
             f_Get_SSV(gui.skol.lst_barhl)
             gfx.rect(xywh.x,
@@ -7550,17 +7552,27 @@ elseif dragparam.type == 'rs5k' then
   
             c = gui.skol.lst_txthl
           end
-          --xywh.y=xywh.y-1
-          --GUI_textsm_LJ(gui, xywh, trackfxparams[i + plist_offset].paramname, c, -4 + gui.fontsz.lst, plist_w)
-          --GUI_textC_LIM(gui, xywh, trackfxparams[i + plist_offset].paramname, c, -4 + gui.fontsz.lst, '', nil, gui.fontnm.lst,4)
-          xywh.x = xywh.x + 2            
-          xywh.w = xywh.w - 4            
-          GUI_Str(gui, xywh, trackfxparams[i + plist_offset].paramname, 4, c, -4 + gui.fontsz.lst+ lst_fontscale, 1, nil, gui.fontnm.lst, gui.fontflag.lst)
+          local xywh2 = {x = xywh.x + 2, y = xywh.y, w = xywh.w - 4, h = xywh.h}
+          GUI_Str(gui, xywh2, trackfxparams[i + plist_offset].paramname, 4, c, -4 + gui.fontsz.lst+ lst_fontscale, 1, nil, gui.fontnm.lst, gui.fontflag.lst)
         else
           break
         end
                 
       end
+
+      if P_butt_cnt-1 < #trackfxparams+1 then
+        local msbh = obj.sections[524].h
+        local p1 = 1 / (#trackfxparams+1)
+        local sbh = math.ceil(F_limit(p1*(P_butt_cnt-1) * msbh,20,msbh))
+        local p2 = p1*msbh
+        local sby = math.floor(plist_offset * p2)
+        f_Get_SSV(gui.skol.mod_baroutline)
+        gfx.rect(obj.sections[524].x,
+                 math.min(obj.sections[524].y+1+sby,obj.sections[524].y+msbh-sbh-1),
+                 obj.sections[524].w,
+                 sbh, 1)
+      end   
+
     elseif fxmode == 1 then
       local tbl = {}
       if trctltype_select == 0 then
@@ -7577,14 +7589,20 @@ elseif dragparam.type == 'rs5k' then
         tbl = lvar.otherctl_table
       end
       
+      local tblcnt = 0
+      local xywh = {x = obj.sections[522].x+2,
+                    w = obj.sections[522].w-6,
+                    h = butt_h-2}  
       if trctltype_select == 0 then
+        tblcnt = #tbl
+        if P_butt_cnt-1 < tblcnt then
+          xywh.w = xywh.w - obj.sections[524].w + 2
+        end
+        
         for i = 0, #tbl-1 do
           if tbl[i + trctlslist_offset+1] then
-            local xywh = {x = obj.sections[522].x+2,
-                          y = obj.sections[522].y +2 + (i+1) * butt_h+1,
-                          w = obj.sections[522].w-6,
-                          h = butt_h-2}  
             local c = gui.skol.lst_txt
+            xywh.y = obj.sections[522].y +2 + (i+1) * butt_h+1
             if trctl_select-1 == i + trctlslist_offset then  
               f_Get_SSV(gui.skol.lst_barhl)
               gfx.rect(xywh.x,
@@ -7593,26 +7611,25 @@ elseif dragparam.type == 'rs5k' then
                        xywh.h, 1, 1)
               c = gui.skol.lst_txthl
             end
-            --xywh.y=xywh.y-1
-            --GUI_textsm_LJ(gui, xywh, tbl[i + trctlslist_offset+1].name, c, -4 + gui.fontsz.lst, plist_w)
-            --GUI_textC_LIM(gui, xywh, tbl[i + trctlslist_offset+1].name, c, -4 + gui.fontsz.lst, '', nil, gui.fontnm.lst,4)
-            xywh.x = xywh.x + 2            
-            xywh.w = xywh.w - 4            
-            GUI_Str(gui, xywh, tbl[i + trctlslist_offset+1].name, 4, c, -4 + gui.fontsz.lst+ lst_fontscale, 1, nil, gui.fontnm.lst, gui.fontflag.lst)
+            local xywh2 = {x = xywh.x+2, y = xywh.y, w = xywh.w-4, h = xywh.h}
+            GUI_Str(gui, xywh2, tbl[i + trctlslist_offset+1].name, 4, c, -4 + gui.fontsz.lst+ lst_fontscale, 1, nil, gui.fontnm.lst, gui.fontflag.lst)
           else
             break
           end
-        end
+        end        
+        
       elseif trctltype_select == 1 then
+        tblcnt = (#tbl)*3+2+1
+        if P_butt_cnt-1 < tblcnt then
+          xywh.w = xywh.w - obj.sections[524].w + 2
+        end
+        
         for i = 0, (#tbl)*3+2 do
           local ii = i + trctlslist_offset
           local sidx = math.floor(ii / 3)
           local pidx = ii % 3 + 1
           if tbl[sidx] and tbl[sidx][pidx] then
-            local xywh = {x = obj.sections[522].x+2,
-                          y = obj.sections[522].y +2 + (i+1) * butt_h+1,
-                          w = obj.sections[522].w-6,
-                          h = butt_h-2}  
+            xywh.y = obj.sections[522].y +2 + (i+1) * butt_h+1
             local c = gui.skol.lst_txt
             if trctl_select-1 == i + trctlslist_offset then  
               f_Get_SSV(gui.skol.lst_barhl)
@@ -7622,24 +7639,26 @@ elseif dragparam.type == 'rs5k' then
                        xywh.h, 1, 1)
               c = gui.skol.lst_txthl
             end
-            --xywh.y=xywh.y-1
-            --GUI_textsm_LJ(gui, xywh, tbl[sidx][pidx].name, c, -4 + gui.fontsz.lst, plist_w)
-            --GUI_textC_LIM(gui, xywh, tbl[sidx][pidx].name, c, -4 + gui.fontsz.lst, '', nil, gui.fontnm.lst,4)
-            xywh.x = xywh.x + 2            
-            xywh.w = xywh.w - 4            
-            GUI_Str(gui, xywh, tbl[sidx][pidx].name, 4, c, -4 + gui.fontsz.lst+ lst_fontscale, 1, nil, gui.fontnm.lst, gui.fontflag.lst)
+            local xywh2 = {x = xywh.x+2, y = xywh.y, w = xywh.w-4, h = xywh.h}
+            GUI_Str(gui, xywh2, tbl[sidx][pidx].name, 4, c, -4 + gui.fontsz.lst+ lst_fontscale, 1, nil, gui.fontnm.lst, gui.fontflag.lst)
           else
             break
           end
         end      
       elseif trctltype_select == 2 or trctltype_select == 3 then
+        if trctltype_select == 2 then
+          tblcnt = #tbl
+        else
+          tblcnt = #tbl       
+        end
+        if P_butt_cnt-1 < tblcnt then
+          xywh.w = xywh.w - obj.sections[524].w + 2
+        end
+        
         for i = 1, #tbl do
           --local ii = i-1 + trctlslist_offset
           if tbl[i + trctlslist_offset] then
-            local xywh = {x = obj.sections[522].x+2,
-                          y = obj.sections[522].y +2 + (i) * butt_h+1,
-                          w = obj.sections[522].w-6,
-                          h = butt_h-2}  
+            xywh.y = obj.sections[522].y +2 + (i) * butt_h+1
             local c = gui.skol.lst_txt
             if trctl_select == i + trctlslist_offset then  
               f_Get_SSV(gui.skol.lst_barhl)
@@ -7649,18 +7668,26 @@ elseif dragparam.type == 'rs5k' then
                        xywh.h, 1, 1)
               c = gui.skol.lst_txthl
             end
-            --xywh.y=xywh.y-1
-            --GUI_textsm_LJ(gui, xywh, tbl[i + trctlslist_offset], c, -4 + gui.fontsz.lst, plist_w)
-            --GUI_textC_LIM(gui, xywh, tbl[i + trctlslist_offset], c, -4 + gui.fontsz.lst, '', nil, gui.fontnm.lst,4)
-            xywh.x = xywh.x + 2            
-            xywh.w = xywh.w - 4            
-            GUI_Str(gui, xywh, tbl[i + trctlslist_offset], 4, c, -4 + gui.fontsz.lst+ lst_fontscale, 1, nil, gui.fontnm.lst, gui.fontflag.lst)
+            local xywh2 = {x = xywh.x+2, y = xywh.y, w = xywh.w-4, h = xywh.h}
+            GUI_Str(gui, xywh2, tbl[i + trctlslist_offset], 4, c, -4 + gui.fontsz.lst+ lst_fontscale, 1, nil, gui.fontnm.lst, gui.fontflag.lst)
           else
             break
           end
         end      
       end
 
+      if P_butt_cnt-1 < tblcnt then
+        local msbh = obj.sections[524].h
+        local p1 = 1 / tblcnt
+        local sbh = math.ceil(F_limit(p1*(P_butt_cnt-1) * msbh,20,msbh))
+        local p2 = p1*msbh
+        local sby = math.floor(trctlslist_offset * p2)
+        f_Get_SSV(gui.skol.mod_baroutline)
+        gfx.rect(obj.sections[524].x,
+                 math.min(obj.sections[524].y+1+sby,obj.sections[524].y+msbh-sbh-1),
+                 obj.sections[524].w,
+                 sbh, 1)
+      end   
       
     end
     
@@ -7718,6 +7745,31 @@ elseif dragparam.type == 'rs5k' then
   end
 
   ------------------------------------------------------------
+  
+  function GUI_DrawGFXPreview(obj, gui)
+    
+    gfx.dest = 1
+    
+    gfx.a = 1
+    f_Get_SSV(gui.color.black)
+    local w,h = gfx.getimgdim(lvar.gfxpreview_img)
+    local scale = obj.sections[531].w / w
+    scale = math.min(scale, (obj.sections[531].h-1) / h,1)
+    local scw = math.floor(w*scale)
+    local sch = math.floor(h*scale)
+    xywh = {x = obj.sections[531].x+math.floor(obj.sections[531].w/2 - scw/2),
+            y = obj.sections[531].y+math.floor(obj.sections[531].h/2 - sch/2)+1,
+            w = scw,
+            h = sch}
+    gfx.a = 1
+    gfx.rect(obj.sections[531].x,
+             obj.sections[531].y+1,
+             obj.sections[531].w,
+             obj.sections[531].h-1,1)
+    gfx.a = 1
+    gfx.blit(lvar.gfxpreview_img,scale,0,0,0,w,h,xywh.x,xywh.y)
+    
+  end
   
   function GUI_DrawGraphicsChooser(obj, gui)
 
@@ -7784,15 +7836,19 @@ elseif dragparam.type == 'rs5k' then
     GUI_DrawBar(gui,'---',obj.sections[533],skin.barUD,true,gui.skol.sb_txt_on,nil,-2,gui.fontflag.sb)
         
     G_butt_cnt = math.floor(obj.sections[530].h / butt_h) - 2
-      
-    for i = 0, butt_cnt-1 do
+    local xywh = {x = obj.sections[530].x,
+                  w = obj.sections[530].w,
+                  h = butt_h}
+    if G_butt_cnt+1 < #graphics_folder_files+1 then
+      xywh.w = xywh.w - obj.sections[534].w+2
+    end
+    
+    for i = 0, G_butt_cnt+1 do
     
       if graphics_files[graphics_folder_files[i + glist_offset]] then
-        local xywh = {x = obj.sections[530].x,
-                      y = obj.sections[530].y+2 + (i+1) * butt_h,
-                      w = obj.sections[530].w,
-                      h = butt_h}
         local c = gui.skol.lst_txt
+        xywh.y = obj.sections[530].y+2 + (i+1) * butt_h
+
         if gfx_select == i + glist_offset then
           f_Get_SSV(gui.skol.lst_barhl)
           gfx.rect(xywh.x+2,
@@ -7802,14 +7858,25 @@ elseif dragparam.type == 'rs5k' then
 
           c = gui.skol.lst_txthl
         end
-        --xywh.y=xywh.y-1
-        --GUI_textsm_LJ(gui, xywh, graphics_files[graphics_folder_files[i + glist_offset]].fn, c, -4 + gui.fontsz.lst, plist_w)
-        xywh.x = xywh.x + 4            
-        xywh.w = xywh.w - 10            
-        GUI_Str(gui, xywh, graphics_files[graphics_folder_files[i + glist_offset]].fn, 4, c, -4 + gui.fontsz.lst+ lst_fontscale, 1, nil, gui.fontnm.lst, gui.fontflag.lst)
+
+        xywh2 = {x = xywh.x+4, y = xywh.y, w = xywh.w-10, h = xywh.h}
+        GUI_Str(gui, xywh2, graphics_files[graphics_folder_files[i + glist_offset]].fn, 4, c, -4 + gui.fontsz.lst+ lst_fontscale, 1, nil, gui.fontnm.lst, gui.fontflag.lst)
                     
       end                      
     end           
+
+    if G_butt_cnt+1 < #graphics_folder_files+1 then
+      local msbh = obj.sections[534].h
+      local p1 = 1 / (#graphics_folder_files+1)
+      local sbh = math.ceil(F_limit(p1*(G_butt_cnt+1) * msbh,20,msbh))
+      local p2 = p1*msbh
+      local sby = math.floor(glist_offset * p2)
+      f_Get_SSV(gui.skol.mod_baroutline)
+      gfx.rect(obj.sections[534].x,
+               math.min(obj.sections[534].y+1+sby,obj.sections[534].y+msbh-sbh-1),
+               obj.sections[534].w,
+               sbh, 1)
+    end   
 
     local xywh = {x = obj.sections[530].x,
                   y = obj.sections[530].y,
@@ -7923,14 +7990,17 @@ elseif dragparam.type == 'rs5k' then
 
     S_butt_cnt = math.floor(obj.sections[512].h / butt_h) 
     local w, h = gfx.getimgdim(skin.star)
+    local xywh = {x = obj.sections[512].x,
+                  w = obj.sections[512].w,
+                  h = butt_h}
+    if S_butt_cnt-1 < #strip_files+1 then
+      xywh.w = xywh.w - obj.sections[514].w + 2
+    end    
     for i = 0, S_butt_cnt-1 do
     
       if strip_files[i + slist_offset] then
-        local xywh = {x = obj.sections[512].x,
-                      y = obj.sections[512].y+2 + (i+1) * butt_h,
-                      w = obj.sections[512].w,
-                      h = butt_h}
         local c = gui.skol.lst_txt
+        xywh.y = obj.sections[512].y+2 + (i+1) * butt_h
         if strip_select == i + slist_offset then
           f_Get_SSV(gui.skol.lst_barhl)
           gfx.rect(xywh.x+2,
@@ -7946,14 +8016,24 @@ elseif dragparam.type == 'rs5k' then
         else
           gfx.blit(skin.starout,1,0,0,0,w,h,xywh.x+xywh.w-w,xywh.y+xywh.h/2-h/2)        
         end
-        --xywh.y = xywh.y-1
-        --GUI_textsm_LJ(gui, xywh, strip_files[i + slist_offset].fn, c, -4 + gui.fontsz.lst, plist_w-butt_h)
-        xywh.x = xywh.x + 4 
-        xywh.w = xywh.w - 24           
-        GUI_Str(gui, xywh, strip_files[i + slist_offset].fn, 4, c, -4 + gui.fontsz.lst+ lst_fontscale, 1, nil, gui.fontnm.lst, gui.fontflag.lst)
+        xywh2 = {x = xywh.x+4, y = xywh.y, w = xywh.w-24, h = xywh.h}
+        GUI_Str(gui, xywh2, strip_files[i + slist_offset].fn, 4, c, -4 + gui.fontsz.lst+ lst_fontscale, 1, nil, gui.fontnm.lst, gui.fontflag.lst)
                     
       end                      
     end           
+
+    if S_butt_cnt-1 < #strip_files+1 then
+      local msbh = obj.sections[514].h
+      local p1 = 1 / (#strip_files+1)
+      local sbh = math.ceil(F_limit(p1*(S_butt_cnt-1) * msbh,20,msbh))
+      local p2 = p1*msbh
+      local sby = math.floor(slist_offset * p2)
+      f_Get_SSV(gui.skol.mod_baroutline)
+      gfx.rect(obj.sections[514].x,
+               math.min(obj.sections[514].y+1+sby,obj.sections[514].y+msbh-sbh-1),
+               obj.sections[514].w,
+               sbh, 1)
+    end   
 
     local xywh = {x = obj.sections[512].x,
                   y = obj.sections[512].y,
@@ -16536,7 +16616,13 @@ function GUI_DrawCtlBitmap_Strips()
             gfx.a = 0.5
             gfx.blit(1021,1,0,0,0,w,h,obj.sections[60].x,obj.sections[60].y)           
           end
-                  
+          
+          if lvar.gfxpreview_img and lvar.gfxpreview == true then
+          
+            GUI_DrawGFXPreview(obj, gui)
+          
+          end
+          
         elseif submode == 2 then
 
           if update_gfx or update_bg then
@@ -38211,7 +38297,32 @@ function GUI_DrawCtlBitmap_Strips()
          
         end
     
-        if MOUSE_click(obj.sections[522]) then
+        if MOUSE_click(obj.sections[524]) then
+          
+          local msbh = obj.sections[524].h
+          local p1 = 1 / (#trackfxparams+1)
+          local sbh = math.ceil(F_limit(p1*(P_butt_cnt-1) * msbh,20,msbh))
+          local p2 = p1*msbh
+          local sby = math.floor(plist_offset * p2)
+        
+          sby = math.min(sby,msbh-sbh-1)
+        
+          if mouse.my >= obj.sections[524].y + sby and mouse.my <= obj.sections[524].y + sby+sbh then
+        
+            if P_butt_cnt+1 < #trackfxparams+1 then
+              mouse.context = contexts.scrollfxparams
+              scrollsidebar = {y = mouse.my-obj.sections[524].y, lo = plist_offset, ss = ss}
+            else
+              plist_offset = 0
+            end
+                      
+          elseif mouse.my < obj.sections[524].y + sby then
+          
+          elseif mouse.my > obj.sections[524].y + sby+sbh then
+            
+          end
+        
+        elseif MOUSE_click(obj.sections[522]) then
           local i = math.floor((mouse.my - obj.sections[522].y) / tb_butt_h)-1
           local dp = true
           if i == -1 then
@@ -38316,6 +38427,7 @@ function GUI_DrawCtlBitmap_Strips()
             update_surface = true
           end        
         end
+      
       elseif fxmode == 1 then
         if MOUSE_click(obj.sections[520]) then
           local i = math.floor((mouse.my - obj.sections[520].y) / tb_butt_h)-1
@@ -38341,7 +38453,45 @@ function GUI_DrawCtlBitmap_Strips()
           end
         end
 
-        if MOUSE_click(obj.sections[522]) then
+        if MOUSE_click(obj.sections[524]) then
+                  
+          local tblcnt = 0
+          local tbloff = 1
+          if trctltype_select == 0 then
+            tblcnt = #trctls_table
+          elseif trctltype_select == 1 then
+            tblcnt = #trsends_table*3+2+1
+          elseif trctltype_select == 2 then
+            tblcnt = #lvar.special_table
+            tbloff = 0
+          elseif trctltype_select == 3 then
+            tblcnt = #lvar.otherctl_table
+            tbloff = 0
+          end
+          
+          local msbh = obj.sections[524].h
+          local p1 = 1 / tblcnt
+          local sbh = math.ceil(F_limit(p1*(P_butt_cnt-1) * msbh,20,msbh))
+          local p2 = p1*msbh
+          local sby = math.floor(trctlslist_offset * p2)
+        
+          sby = math.min(sby,msbh-sbh-1)
+        
+          if mouse.my >= obj.sections[524].y + sby and mouse.my <= obj.sections[524].y + sby+sbh then
+            if P_butt_cnt-1 < tblcnt+tbloff then
+              mouse.context = contexts.scrollfxparams
+              scrollsidebar = {y = mouse.my-obj.sections[524].y, lo = trctlslist_offset, tblcnt = tblcnt}
+            else
+              trctlslist_offset = 0
+            end
+                      
+          elseif mouse.my < obj.sections[524].y + sby then
+          
+          elseif mouse.my > obj.sections[524].y + sby+sbh then
+            
+          end
+        
+        elseif MOUSE_click(obj.sections[522]) then
           local pcnt = 0
           if trctltype_select == 0 then
             pcnt = #trctls_table
@@ -38482,7 +38632,30 @@ function GUI_DrawCtlBitmap_Strips()
         
       end
               
-      if mouse.context and mouse.context == contexts.reassplugin then
+      if mouse.context == contexts.scrollfxparams then
+      
+        if fxmode == 0 then
+          local my = mouse.my - (obj.sections[524].y)
+          local lstcnt = #trackfxparams+1
+          
+          local oos = plist_offset
+          plist_offset = F_limit(math.floor(scrollsidebar.lo + ((my-scrollsidebar.y)/obj.sections[524].h) * lstcnt),0,lstcnt-(P_butt_cnt-1))
+          if plist_offset ~= oos then
+            update_sidebar = true
+          end
+        else
+          local my = mouse.my - (obj.sections[524].y)
+          local lstcnt = scrollsidebar.tblcnt
+          
+          local oos = trctlslist_offset
+          trctlslist_offset = F_limit(math.floor(scrollsidebar.lo + ((my-scrollsidebar.y)/obj.sections[524].h) * lstcnt),0,lstcnt-(P_butt_cnt-1))
+          if trctlslist_offset ~= oos then
+            update_sidebar = true
+          end
+        
+        end      
+        
+      elseif mouse.context and mouse.context == contexts.reassplugin then
         if rt > reass_plugin.time + 0.75 then
           dragparam = {x = mouse.mx-ksel_size.w, y = mouse.my-ksel_size.h, type = 'reassplugin'}
           reass_param = nil
@@ -39418,6 +39591,30 @@ function GUI_DrawCtlBitmap_Strips()
       clicklblopts = false
     end
     
+    if mouse.context == nil and MOUSE_over(obj.sections[530]) then
+      local i = math.floor((mouse.my - obj.sections[530].y) / tb_butt_h)-1
+      if i >= 0 and graphics_folders[gfxfol_select] and graphics_folder_files[i+glist_offset] and graphics_files[graphics_folder_files[i+glist_offset]] then
+        local gfxfn
+        if graphics_folders[gfxfol_select] == 'GENERAL' then
+          gfxfn = paths.graphics_path..graphics_files[graphics_folder_files[i+glist_offset]].fn        
+        else
+          gfxfn = paths.graphics_path..graphics_folders[gfxfol_select]..'/'..graphics_files[graphics_folder_files[i+glist_offset]].fn
+        end
+        if gfxfn ~= lvar.gfxpreview_fn or lvar.gfxpreview_img ~= 984 then
+          lvar.gfxpreview_img = 984
+          local img = gfx.loadimg(lvar.gfxpreview_img,gfxfn)
+          lvar.gfxpreview_fn = gfxfn
+          update_surface = true
+        end
+      elseif lvar.gfxpreview_img ~= nil then
+        lvar.gfxpreview_img = nil
+        update_surface = true
+      end
+    elseif lvar.gfxpreview_img ~= nil then
+      lvar.gfxpreview_img = nil
+      update_surface = true
+    end
+    
     if gfx4_select ~= nil and char ~= 0 then
     
       if ArrowKey_Shift(char,nil,nil,gfx4_select) then
@@ -39714,6 +39911,31 @@ function GUI_DrawCtlBitmap_Strips()
         end
       end
       
+    elseif MOUSE_click(obj.sections[534]) then
+      
+      local msbh = obj.sections[534].h
+      local p1 = 1 / (#graphics_folder_files+1)
+      local sbh = math.ceil(F_limit(p1*(G_butt_cnt+1) * msbh,20,msbh))
+      local p2 = p1*msbh
+      local sby = math.floor(glist_offset * p2)
+    
+      sby = math.min(sby,msbh-sbh-1)
+    
+      if mouse.my >= obj.sections[534].y + sby and mouse.my <= obj.sections[534].y + sby+sbh then
+    
+        if G_butt_cnt+1 < #graphics_folder_files+1 then
+          mouse.context = contexts.scrollgfxfiles
+          scrollsidebar = {y = mouse.my-obj.sections[534].y, lo = glist_offset}
+        else
+          glist_offset = 0
+        end
+                  
+      elseif mouse.my < obj.sections[534].y + sby then
+      
+      elseif mouse.my > obj.sections[534].y + sby+sbh then
+        
+      end
+    
     elseif MOUSE_click(obj.sections[530]) then
       local i = math.floor((mouse.my - obj.sections[530].y) / tb_butt_h)-1
       
@@ -39756,7 +39978,19 @@ function GUI_DrawCtlBitmap_Strips()
       lasso = {l = mouse.mx, t = mouse.my, r = mouse.mx+5, b = mouse.my+5}
     end
     
-    if mouse.context and mouse.context == contexts.draggfx then
+    if mouse.context == contexts.scrollgfxfiles then
+    
+      local my = mouse.my - (obj.sections[534].y)
+      local lstcnt = #graphics_folder_files+1
+      
+      local oos = glist_offset
+      glist_offset = F_limit(math.floor(scrollsidebar.lo + ((my-scrollsidebar.y)/obj.sections[534].h) * lstcnt),0,lstcnt-(G_butt_cnt+1))
+      if glist_offset ~= oos then
+        update_sidebar = true
+      end
+    
+    elseif mouse.context and mouse.context == contexts.draggfx then
+      
       draggfx = {x = mouse.mx - draggfx_w/2, y = mouse.my - draggfx_h/2}
       if MOUSE_over(obj.sections[531]) then
         local i = math.floor((mouse.my - obj.sections[531].y) / tb_butt_h)-1
@@ -40780,8 +41014,39 @@ function GUI_DrawCtlBitmap_Strips()
         end
       end
     
+    elseif MOUSE_click(obj.sections[514]) and (S_butt_cnt-1 < #strip_files+1) then
+      
+      local msbh = obj.sections[514].h
+      local p1 = 1 / (#strip_files+1)
+      local sbh = math.ceil(F_limit(p1*(S_butt_cnt-1) * msbh,20,msbh))
+      local p2 = p1*msbh
+      local sby = math.floor(slist_offset * p2)
+    
+      sby = math.min(sby,msbh-sbh-1)
+    
+      if mouse.my >= obj.sections[514].y + sby and mouse.my <= obj.sections[514].y + sby+sbh then
+    
+        if S_butt_cnt-1 < #strip_files+1 then
+          mouse.context = contexts.scrollstripfiles
+          scrollsidebar = {y = mouse.my-obj.sections[514].y, lo = slist_offset}
+        else
+          slist_offset = 0
+        end
+                  
+      elseif mouse.my < obj.sections[514].y + sby then
+      
+      elseif mouse.my > obj.sections[514].y + sby+sbh then
+        
+      end
+    
     elseif MOUSE_click(obj.sections[512]) then
       local i = math.floor(((mouse.my - obj.sections[512].y)) / tb_butt_h)
+      local xneg = 0
+      if S_butt_cnt-1 < #strip_files+1 then
+        --scrollbar visible
+        xneg = obj.sections[514].w
+      end
+
       if i == 0 then
         if mouse.mx < obj.sections[512].w/2 then
           slist_offset = slist_offset - math.max((S_butt_cnt-1),1)
@@ -40794,8 +41059,10 @@ function GUI_DrawCtlBitmap_Strips()
           end
         end
         update_gfx = true
+        
       elseif strip_files[i-1 + slist_offset] then
-        if mouse.mx <= obj.sections[512].w - butt_h then
+      
+        if mouse.mx <= obj.sections[512].w - butt_h - xneg then
           strip_select = i-1 + slist_offset
           --gen preview
           loadstrip = LoadStrip(strip_select)
@@ -40808,6 +41075,7 @@ function GUI_DrawCtlBitmap_Strips()
             mouse.context = contexts.dragstrip
           end
           update_gfx = true
+          
         else
           local fsp = i-1 + slist_offset
           if InFavs(strip_folders[stripfol_select].fn..'/'..strip_files[fsp].fn) then
@@ -40892,7 +41160,18 @@ function GUI_DrawCtlBitmap_Strips()
       
     end
     
-    if mouse.context and mouse.context == contexts.dragstrip then
+    if mouse.context == contexts.scrollstripfiles then
+    
+      local my = mouse.my - (obj.sections[514].y)
+      local lstcnt = #strip_files+1
+      
+      local oos = slist_offset
+      slist_offset = F_limit(math.floor(scrollsidebar.lo + ((my-scrollsidebar.y)/obj.sections[514].h) * lstcnt),0,lstcnt-(S_butt_cnt-1))
+      if slist_offset ~= oos then
+        update_sidebar = true
+      end
+    
+    elseif mouse.context and mouse.context == contexts.dragstrip then
       dragstripx = true --to force dropped action even if not 
       if mouse.mx ~= mouse.last_x or mouse.my ~= mouse.last_y then
         
