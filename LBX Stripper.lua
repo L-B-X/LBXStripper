@@ -14,7 +14,7 @@
 
 
   local lvar = {}
-  lvar.scriptver = '0.94.0028' --Script Version
+  lvar.scriptver = '0.94.0029' --Script Version
   
   lvar.ctlupdate_rr = nil
   lvar.ctlupdate_pos = 1
@@ -18696,41 +18696,43 @@ function GUI_DrawCtlBitmap_Strips()
 
   function GetParamValue_XX(ctlcat,tracknum,fxnum,paramnum,c,strip,page)
     track = GetTrack(tracknum)
-    if ctlcat == ctlcats.fxparam then
-      local v, min, max = reaper.TrackFX_GetParam(track, fxnum, paramnum)
-      if c then
-        local ctl = strips[strip][page].controls[c] 
-        if ctl.minov then
-          min = ctl.minov
+    if track then
+      if ctlcat == ctlcats.fxparam then
+        local v, min, max = reaper.TrackFX_GetParam(track, fxnum, paramnum)
+        if c then
+          local ctl = strips[strip][page].controls[c] 
+          if ctl.minov then
+            min = ctl.minov
+          end
+          if ctl.maxov then
+            max = ctl.maxov
+          end
         end
-        if ctl.maxov then
-          max = ctl.maxov
-        end
-      end
-      return normalize(min, max, v)
-
-    elseif ctlcat == ctlcats.trackparam then
-      local min, max = GetParamMinMax_XX(ctlcat,nil,nil,paramnum,true,c,strip,page)
-      return GMTI_norm(track, paramnum, min, max)
-
-    elseif ctlcat == ctlcats.tracksend then
-      local min, max = GetParamMinMax_XX(ctlcat,nil,nil,paramnum,true,c,strip,page)
-      return GTSI_norm_XX(track, paramnum, min, max,c, strip, page)
-
-    elseif ctlcat == ctlcats.macro then
-      return strips[strip][page].controls[c].val
-      
-    elseif ctlcat == ctlcats.action then
-      return 0
-    elseif ctlcat == ctlcats.pkmeter then
-      if peak_info[tracknum] and peak_info[tracknum][paramnum % 64] then
-        if paramnum < 64 then
-          return peak_info[tracknum][paramnum].ch
-        else
-          return peak_info[tracknum][paramnum-64].pk
-        end
-      else
+        return normalize(min, max, v)
+  
+      elseif ctlcat == ctlcats.trackparam then
+        local min, max = GetParamMinMax_XX(ctlcat,nil,nil,paramnum,true,c,strip,page)
+        return GMTI_norm(track, paramnum, min, max)
+  
+      elseif ctlcat == ctlcats.tracksend then
+        local min, max = GetParamMinMax_XX(ctlcat,nil,nil,paramnum,true,c,strip,page)
+        return GTSI_norm_XX(track, paramnum, min, max,c, strip, page)
+  
+      elseif ctlcat == ctlcats.macro then
+        return strips[strip][page].controls[c].val
+        
+      elseif ctlcat == ctlcats.action then
         return 0
+      elseif ctlcat == ctlcats.pkmeter then
+        if peak_info[tracknum] and peak_info[tracknum][paramnum % 64] then
+          if paramnum < 64 then
+            return peak_info[tracknum][paramnum].ch
+          else
+            return peak_info[tracknum][paramnum-64].pk
+          end
+        else
+          return 0
+        end
       end
     end
   end
@@ -24032,7 +24034,7 @@ function GUI_DrawCtlBitmap_Strips()
 
       elseif res == 9 then
 
-        for i = 1, gfx4_select do        
+        for i = 1, #gfx4_select do        
           strips[tracks[track_select].strip][page].graphics[gfx4_select[i]].poslock = not strips[tracks[track_select].strip][page].graphics[gfx4_select[i]].poslock
         end
         poslock_select = strips[tracks[track_select].strip][page].graphics[gfx2_select].poslock
@@ -28419,11 +28421,15 @@ function GUI_DrawCtlBitmap_Strips()
                   if ctl.tracknum ~= nil then
                     t = ctl.tracknum
                   end                
-                  local vv = round(GetParamValue_XX(ctl.ctlcat, t, ctl.fxnum, ctl.param, c, strip, page),4)
-                  if tostring(vv) ~= tostring(round(faders[p+1].val,4)) then
-                    
-                    faders[p+1].val = vv
-                    SetFader(p+1, vv) 
+                  local vv = GetParamValue_XX(ctl.ctlcat, t, ctl.fxnum, ctl.param, c, strip, page)
+                  if vv then
+                    if tostring(round(vv,4)) ~= tostring(round(faders[p+1].val,4)) then
+                      
+                      faders[p+1].val = vv
+                      SetFader(p+1, vv) 
+                    end
+                  else
+                  
                   end
                 end
               end
