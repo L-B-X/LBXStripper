@@ -14,7 +14,7 @@
 
 
   local lvar = {}
-  lvar.scriptver = '0.94.0029' --Script Version
+  lvar.scriptver = '0.94.0030' --Script Version
   
   lvar.ctlupdate_rr = nil
   lvar.ctlupdate_pos = 1
@@ -7847,41 +7847,115 @@ elseif dragparam.type == 'rs5k' then
     
   end
 
-  function GUI_DrawCtlPreview(obj, gui)
+  function GUI_DrawCtlPreview(obj, gui, c, fxn, prm)
     
     gfx.dest = 1
 
-    if knob_select then
-    
-      local iidx = 1023
-      if knob_select > -1 then
-        if ctl_files[knob_select].imageidx ~= nil then
-          iidx = ctl_files[knob_select].imageidx
-        else
-          gfx.loadimg(1023, paths.controls_path..ctl_files[knob_select].fn)
-        end
-        local w, _ = gfx.getimgdim(iidx)
-        local h = ctl_files[knob_select].cellh
-        local frames = ctl_files[knob_select].frames-1
-        local frame = math.floor(frames*0.56)
-        local xywh = {x = obj.sections[520].x,
-                      y = obj.sections[520].y + 1,
-                      w = obj.sections[520].w,
-                      h = obj.sections[520].h - 1}
-        
-        local scale = xywh.w / w
-        scale = math.min(scale, xywh.h / h, 1)
-        gfx.a = 1
-        f_Get_SSV(gui.color.black)
-        gfx.rect(obj.sections[520].x,
-                 obj.sections[520].y+1,
-                 obj.sections[520].w,
-                 obj.sections[520].h-1,1)
-        gfx.blit(iidx,scale,0,0,frame*h,w,h,xywh.x + math.floor((xywh.w/2) - (w*scale)/2), xywh.y + math.floor((xywh.h/2) - (h*scale)/2))
-      end
-      
-    end
+    local butt_h = math.floor(butt_h * pnl_scale)
 
+    local ctl
+    if c then
+      ctl = strips[tracks[track_select].strip][page].controls[c]
+    end
+    
+    local iidx
+    local ks = knob_select
+    if ctl == nil and ks then
+    
+      iidx = 1023
+      if ks > -1 then
+        if ctl_files[ks].imageidx ~= nil then
+          iidx = ctl_files[ks].imageidx
+        else
+          gfx.loadimg(1023, paths.controls_path..ctl_files[ks].fn)
+        end
+      end
+    elseif ctl then
+      ks = ctl.knob_select
+      iidx = ctl_files[ks].imageidx
+    end
+    
+    if iidx then
+      local w, _ = gfx.getimgdim(iidx)
+      local h = ctl_files[ks].cellh
+      local frames = ctl_files[ks].frames-1
+      local frame = math.floor(frames*0.56)
+      local xywh = {x = obj.sections[520].x,
+                    y = obj.sections[520].y + 1,
+                    w = obj.sections[520].w,
+                    h = obj.sections[520].h - 1}
+      f_Get_SSV(gui.skol.lst_bg)
+      gfx.rect(obj.sections[520].x,
+               obj.sections[520].y+1,
+               obj.sections[520].w,
+               obj.sections[520].h-1,1)
+      
+      xywh = {x = obj.sections[520].x,
+              y = obj.sections[520].y + butt_h + 1,
+              w = obj.sections[520].w,
+              h = obj.sections[520].h - butt_h - 1}
+      local scale = xywh.w / w
+      scale = math.min(scale, xywh.h / h, 1)
+      gfx.a = 1
+      gfx.blit(iidx,scale,0,0,frame*h,w,h,xywh.x + math.floor((xywh.w/2) - (w*scale)/2), xywh.y + math.floor((xywh.h/2) - (h*scale)/2))
+    end
+      
+    if c then
+      if ctl then
+      
+        local fxname = ctl.fxname
+        local pname = ctl.param_info.paramname
+        
+        local xywh = {x = obj.sections[520].x,
+                       y = obj.sections[520].y+1,
+                       w = obj.sections[520].w,
+                       h = butt_h*2+6}
+        gfx.a = 0.2
+        gfx.rect(xywh.x,xywh.y,xywh.w,xywh.h,1)                       
+        gfx.a = 1
+        xywh = {x = obj.sections[520].x,
+               y = obj.sections[520].y+1,
+               w = obj.sections[520].w,
+               h = butt_h}
+                       
+        local col = gui.skol.lst_txt
+        GUI_Str(gui, xywh, CropFXName(fxname), 5, col, -4 + gui.fontsz.lst + lst_fontscale, 1, nil, gui.fontnm.lst, gui.fontflag.lst)
+        xywh.y = xywh.y + butt_h
+        GUI_Str(gui, xywh, pname, 5, col, -4 + gui.fontsz.lst + lst_fontscale, 1, nil, gui.fontnm.lst, gui.fontflag.lst)
+      
+      end
+    elseif fxn then
+    
+      local fxname = fxn
+      local pname = prm
+      
+      local xywh = {x = obj.sections[520].x,
+                     y = obj.sections[520].y+1,
+                     w = obj.sections[520].w,
+                     h = butt_h}
+      gfx.a = 1
+      f_Get_SSV(gui.skol.lst_barhl)
+      gfx.rect(xywh.x,xywh.y,xywh.w,xywh.h,1)                       
+      xywh.y = xywh.y + butt_h
+      xywh.h = xywh.h + 6
+      gfx.a = 0.2
+      f_Get_SSV(gui.skol.lst_bg)
+      gfx.rect(xywh.x,xywh.y,xywh.w,xywh.h,1)                       
+      
+      gfx.a = 1
+      xywh = {x = obj.sections[520].x,
+             y = obj.sections[520].y+1,
+             w = obj.sections[520].w,
+             h = butt_h}
+                     
+      local col = gui.skol.lst_txthl
+      GUI_Str(gui, xywh, fxname, 5, col, -4 + gui.fontsz.lst + lst_fontscale, 1, nil, gui.fontnm.lst, gui.fontflag.lst)
+      xywh.y = xywh.y + butt_h
+      col = gui.skol.lst_txt
+      GUI_Str(gui, xywh, pname, 5, col, -4 + gui.fontsz.lst + lst_fontscale, 1, nil, gui.fontnm.lst, gui.fontflag.lst)
+
+    end
+  
   end
     
   function GUI_DrawGraphicsChooser(obj, gui)
@@ -16633,9 +16707,66 @@ function GUI_DrawCtlBitmap_Strips()
             GUI_DrawGaugeEdit(obj, gu)
           end
           
-          if lvar.ctlpreview_img and lvar.ctlpreview == true and (update_surface or update_gfx or update_sidebar) then
-          --DBG('p')
-            GUI_DrawCtlPreview(obj, gui)          
+          if (lvar.ctlpreview_img or dragparam) and lvar.ctlpreview == true then --and (update_surface or update_gfx or update_sidebar) then
+            
+            local fxn, prm
+            if fxmode == 0 then
+              if trackfx[trackfx_select] then
+                fxn = CropFXName(trackfx[trackfx_select].name)
+              end
+              if fxn then
+                --[[local count = 0
+                if tfxp_sel then
+                  for _ in pairs(tfxp_sel) do 
+                    count = count + 1
+                    if count > 1 then break end
+                  end
+                  
+                  if count == 1 and trackfxparams[tfxp_last] then
+                    prm = trackfxparams[tfxp_last].paramname                  
+                  elseif count > 1 then
+                    prm = '[Multiple Params]'
+                  end
+                end]]
+                
+                if trackfxparams[lvar.ctlpreview_i or -1] then
+                  prm = trackfxparams[lvar.ctlpreview_i].paramname
+                end
+              end
+            elseif fxmode == 1 then
+              local i = lvar.ctlpreview_i+1
+              fxn = lvar.trctltype_table[trctltype_select+1]
+              if trctltype_select == 0 then
+                if trctls_table[i] then
+                  prm = trctls_table[i].name
+                end
+              elseif trctltype_select == 1 then
+
+                local a = math.floor((i-1)/3)
+                local b = (i-1) % 3 +1
+
+                if trsends_table[a] then
+                  prm = trsends_table[a][b].name
+                end
+                
+              elseif trctltype_select == 2 then
+                if lvar.special_table[i] then
+                  prm = lvar.special_table[i]
+                end
+
+              elseif trctltype_select == 3 then
+                if lvar.otherctl_table[i] then
+                  prm = lvar.otherctl_table[i]
+                end
+              end
+            end
+            GUI_DrawCtlPreview(obj, gui, nil, fxn or '', prm or '')
+          elseif lvar.ctlpreview_sel and lvar.ctlpreview == true --[[and (update_surface or update_gfx or update_sidebar or update_ctlopts)]] then
+            if ctl_select then
+              GUI_DrawCtlPreview(obj, gui, lvar.ctlpreview_sel)
+            else
+              lvar.ctlpreview_sel = nil
+            end
           end
           
           
@@ -16756,7 +16887,7 @@ function GUI_DrawCtlBitmap_Strips()
           end
           
           gfx.blit(1001,1,0,0,0,obj.sections[43].w,obj.sections[43].h,0,0)
-
+          
           if show_lbloptions and gfx4_select ~= nil then            
             GUI_DrawLblOptions(obj, gui)
           end
@@ -16771,7 +16902,7 @@ function GUI_DrawCtlBitmap_Strips()
             gfx.blit(1021,1,0,0,0,w,h,obj.sections[60].x,obj.sections[60].y)           
           end
           
-          if lvar.gfxpreview_img and lvar.gfxpreview == true and (update_surface or update_gfx or update_sidebar) then
+          if lvar.gfxpreview_img and lvar.gfxpreview == true then --and (update_surface or update_gfx or update_sidebar) then
           
             GUI_DrawGFXPreview(obj, gui)
           
@@ -26796,6 +26927,7 @@ function GUI_DrawCtlBitmap_Strips()
     gfx3_select = nil
     gfx4_select = nil
     gfx4_selectidx = nil
+    lvar.ctlpreview_sel = nil
 
     ss_select = nil
     sstype_select = 1
@@ -27776,6 +27908,8 @@ function GUI_DrawCtlBitmap_Strips()
     gfx3_select = nil
     gfx4_select = nil
     gfx4_selectidx = nil
+    lvar.ctlpreview_sel = nil
+    
     ctl_select = nil
     GUI_DrawCtlBitmap()
     
@@ -35996,7 +36130,24 @@ function GUI_DrawCtlBitmap_Strips()
       lvar.oks = knob_select
     end
 
-    if mouse.context == nil and MOUSE_over(obj.sections[522]) then
+    if mouse.context == nil and MOUSE_over(obj.sections[520]) then
+      lvar.ctlpreview_img = nil
+      lvar.ctlpreview_sel = nil
+      update_surface = true
+    
+    elseif mouse.context == nil and MOUSE_over(obj.sections[522]) then
+      local i = math.floor((mouse.my - obj.sections[522].y) / tb_butt_h)-1
+      if fxmode == 0 then
+        if lvar.ctlpreview_i ~= plist_offset + i then
+          lvar.ctlpreview_i = plist_offset + i
+          update_surface = true
+        end
+      elseif fxmode == 1 then
+        if lvar.ctlpreview_i ~= trctlslist_offset + i then
+          lvar.ctlpreview_i = trctlslist_offset + i
+          update_surface = true
+        end
+      end
       if knob_select ~= lvar.ctlpreview_img then
         lvar.ctlpreview_img = knob_select
         update_surface = true      
@@ -37573,18 +37724,23 @@ function GUI_DrawCtlBitmap_Strips()
       elseif mouse.mx > obj.sections[10].x then
       
         --SURFACE
-      
+
         if mouse.context == nil and MOUSE_click(obj.sections[10]) then
           if strips and tracks[track_select] and strips[tracks[track_select].strip] then
               
             local c = GetControlAtXY(tracks[track_select].strip, page, mouse.mx, mouse.my)
-            if c then
+            if c then            
             
               octlsel = table.copy(ctl_select)
               ogfxsel = table.copy(gfx3_select)
             
               local i = c
               local ctl = strips[tracks[track_select].strip][page].controls[i]
+              if i ~= lvar.ctlpreview_sel then
+                lvar.ctlpreview_sel = i
+                update_surface = true
+              end
+              
               
                 if Switcher_CtlsHidden(ctl.switcher, ctl.grpid) == false then
                   show_cycleoptions = false
@@ -37732,6 +37888,9 @@ function GUI_DrawCtlBitmap_Strips()
                   --break                  
                 end
               --end
+            else
+              lvar.ctlpreview_sel = nil
+              update_surface = true
             end
           end
         elseif mouse.context == nil and MOUSE_click_RB(obj.sections[10]) then
