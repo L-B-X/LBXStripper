@@ -14,7 +14,7 @@
 
 
   local lvar = {}
-  lvar.scriptver = '0.94.0033' --Script Version
+  lvar.scriptver = '0.94.0034' --Script Version
   
   lvar.ctlupdate_rr = nil
   lvar.ctlupdate_pos = 1
@@ -20238,23 +20238,23 @@ function GUI_DrawCtlBitmap_Strips()
         end
       end
       strips[tracks[track_select].strip][page].graphics = tbl
-      gfx4_select = nil
-      gfx4_selectidx = nil
-    end  
-
-    if gfx2_select then
-      local cnt = #strips[tracks[track_select].strip][page].graphics
-      strips[tracks[track_select].strip][page].graphics[gfx2_select] = nil
-      local tbl = {}
-      for i = 1, cnt do
-        if strips[tracks[track_select].strip][page].graphics[i] ~= nil then
-          table.insert(tbl, strips[tracks[track_select].strip][page].graphics[i])
+    else
+      if gfx2_select then
+        local cnt = #strips[tracks[track_select].strip][page].graphics
+        strips[tracks[track_select].strip][page].graphics[gfx2_select] = nil
+        local tbl = {}
+        for i = 1, cnt do
+          if strips[tracks[track_select].strip][page].graphics[i] ~= nil then
+            table.insert(tbl, strips[tracks[track_select].strip][page].graphics[i])
+          end
         end
-      end
-      strips[tracks[track_select].strip][page].graphics = tbl
-      gfx2_select = nil
-    end  
-
+        strips[tracks[track_select].strip][page].graphics = tbl
+      end  
+    end
+    gfx4_select = nil
+    gfx4_selectidx = nil
+    gfx2_select = nil
+    
     if switchdel == true then
     
       local ret = reaper.MB('Delete all child controls of removed strip switcher?', 'Remove Child Controls', 4)
@@ -24238,6 +24238,7 @@ function GUI_DrawCtlBitmap_Strips()
               rel[i].y = gfx_clip[1].y - gfx_clip[i].y
             end
           end
+          local strip = Strip_INIT()
           for i = 1, #gfx_clip do
             local gfxx = strips[tracks[track_select].strip][page].graphics
             local gcnt = #gfxx+1
@@ -24256,6 +24257,8 @@ function GUI_DrawCtlBitmap_Strips()
   
     label_add = {x = x, y = y}
     --EditLabel(6)
+    local strip = Strip_INIT()
+    
     if strips and strips[tracks[track_select].strip] then
       OpenEB(6,'Please enter text for label:')
     end
@@ -28547,7 +28550,7 @@ function GUI_DrawCtlBitmap_Strips()
                     if strips[faders[p+1].strip] and strips[faders[p+1].strip][faders[p+1].page].controls[faders[p+1].ctl] then
                       local ctl = strips[faders[p+1].strip][faders[p+1].page].controls[faders[p+1].ctl]
                       
-                      local ss = round(faders[p+1].val*127)+1 -faders[p+1].voffset
+                      local ss = round(faders[p+1].val*127)+1 - faders[p+1].voffset
                       local fnd = false
                       local sstype = ctl.param 
                       if sstype == 1 then
@@ -50247,9 +50250,10 @@ function GUI_DrawCtlBitmap_Strips()
                   if tt then
                     snaps[sst][ss].faddata[m].targettype = tt
                     snaps[sst][ss].faddata[m].strip = tonumber(zn(data[key..'mfdata_strip']))
-                    snaps[sst][ss].faddata[m].page = tonumber(zn(data[key..'mfdata_page'],1))
+                    snaps[sst][ss].faddata[m].page = tonumber(zn(data[key..'mfdata_page']))
                     snaps[sst][ss].faddata[m].ctl = tonumber(zn(data[key..'mfdata_ctl']))
                     snaps[sst][ss].faddata[m].c_id = tonumber(zn(data[key..'mfdata_c_id']))
+                    snaps[sst][ss].faddata[m].voffset = tonumber(zn(data[key..'mfdata_voffset'],0))
                   end
                 end 
             
@@ -50382,9 +50386,10 @@ function GUI_DrawCtlBitmap_Strips()
                   if tt then
                     snaps[sst].snapshot[ss].faddata[m].targettype = tt
                     snaps[sst].snapshot[ss].faddata[m].strip = tonumber(zn(data[key..'mfdata_strip']))
-                    snaps[sst].snapshot[ss].faddata[m].page = tonumber(zn(data[key..'mfdata_page'],1))
+                    snaps[sst].snapshot[ss].faddata[m].page = tonumber(zn(data[key..'mfdata_page']))
                     snaps[sst].snapshot[ss].faddata[m].ctl = tonumber(zn(data[key..'mfdata_ctl']))
                     snaps[sst].snapshot[ss].faddata[m].c_id = tonumber(zn(data[key..'mfdata_c_id']))
+                    snaps[sst].snapshot[ss].faddata[m].voffset = tonumber(zn(data[key..'mfdata_voffset'],0))
                   end
                 end 
               
@@ -52625,9 +52630,9 @@ function GUI_DrawCtlBitmap_Strips()
               local mm = snaps[sst][ss].faddata
 
               local key = pfx..'sst_'..sst..'_ss_'..ss..'_'              
-              file:write('['..key..'fadcnt]'.. #mm ..'\n')
+              file:write('['..key..'fadcnt]'.. #faders ..'\n')
               
-              for m = 1, #mm do
+              for m = 1, #faders do
             
                 if mm[m] and mm[m].targettype and (mm[m].targettype == 4 or 
                                                    mm[m].targettype == 7) then
@@ -52638,6 +52643,7 @@ function GUI_DrawCtlBitmap_Strips()
                   file:write('['..key..'mfdata_page]'.. nz(mm[m].page,'') ..'\n')                
                   file:write('['..key..'mfdata_ctl]'.. nz(mm[m].ctl,'') ..'\n')                
                   file:write('['..key..'mfdata_c_id]'.. nz(mm[m].c_id,'') ..'\n')                
+                  file:write('['..key..'mfdata_voffset]'.. nz(mm[m].voffset,'') ..'\n')                
                   
                 end
               end  
@@ -52751,6 +52757,7 @@ function GUI_DrawCtlBitmap_Strips()
                   file:write('['..key..'mfdata_page]'.. nz(mm[m].page,'') ..'\n')                
                   file:write('['..key..'mfdata_ctl]'.. nz(mm[m].ctl,'') ..'\n')                
                   file:write('['..key..'mfdata_c_id]'.. nz(mm[m].c_id,'') ..'\n')                
+                  file:write('['..key..'mfdata_voffset]'.. nz(mm[m].voffset,'') ..'\n')                
                   
                 end
               end  
