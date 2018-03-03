@@ -14,7 +14,7 @@
 
 
   local lvar = {}
-  lvar.scriptver = '0.94.0032' --Script Version
+  lvar.scriptver = '0.94.0033' --Script Version
   
   lvar.ctlupdate_rr = nil
   lvar.ctlupdate_pos = 1
@@ -54475,25 +54475,35 @@ function GUI_DrawCtlBitmap_Strips()
       for sst = #snapshots[strip][page], 2, -1  do
       
         if #snapshots[strip][page][sst].ctls == 0 then
-          if not dsstidx[sst] then
-            local cnt = #dsst+1
-            dsst[cnt] = sst
-            dsstidx[sst] = cnt
+          if snapshots[strip][page][sst].ignorevals ~= true or #snapshots[strip][page][sst].snapshot == 0 then
+            if not dsstidx[sst] then
+              local cnt = #dsst+1
+              dsst[cnt] = sst
+              dsstidx[sst] = cnt
+            end
           end
         else
-          local fnd = false
-          for c = 1, #snapshots[strip][page][sst].ctls do
-            local cc = snapshots[strip][page][sst].ctls[c]
-            if strips[strip][page].controls[cc.ctl] then
-              fnd = true
-              break
-            end 
-          end
-          if fnd == false then
-            --No linked ctls exist
-            local cnt = #dsst+1
-            dsst[cnt] = sst
-            dsstidx[sst] = cnt1            
+          if snapshots[strip][page][sst].ignorevals ~= true then
+            local fnd = false
+            for c = 1, #snapshots[strip][page][sst].ctls do
+              local cc = snapshots[strip][page][sst].ctls[c]
+              if strips[strip][page].controls[cc.ctl] then
+                fnd = true
+                break
+              end 
+            end
+            if fnd == false then
+              --No linked ctls exist
+              local cnt = #dsst+1
+              dsst[cnt] = sst
+              dsstidx[sst] = cnt1            
+            end
+          else
+            if #snapshots[strip][page][sst].snapshot == 0 then
+              local cnt = #dsst+1
+              dsst[cnt] = sst
+              dsstidx[sst] = cnt1
+            end
           end
         end
       
