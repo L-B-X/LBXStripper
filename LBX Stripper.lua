@@ -14,7 +14,7 @@
 
 
   local lvar = {}
-  lvar.scriptver = '0.94.0031' --Script Version
+  lvar.scriptver = '0.94.0032' --Script Version
   
   lvar.ctlupdate_rr = nil
   lvar.ctlupdate_pos = 1
@@ -52633,11 +52633,11 @@ function GUI_DrawCtlBitmap_Strips()
                                                    mm[m].targettype == 7) then
           
                   local key = pfx..'sst_'..sst..'_ss_'..ss..'_fad_'..m..'_'
-                  file:write('['..key..'mfdata_targettype]'.. mm[m].targettype ..'\n')
-                  file:write('['..key..'mfdata_strip]'.. mm[m].strip ..'\n')                
-                  file:write('['..key..'mfdata_page]'.. mm[m].page ..'\n')                
-                  file:write('['..key..'mfdata_ctl]'.. mm[m].ctl ..'\n')                
-                  file:write('['..key..'mfdata_c_id]'.. mm[m].c_id ..'\n')                
+                  file:write('['..key..'mfdata_targettype]'.. nz(mm[m].targettype,'') ..'\n')
+                  file:write('['..key..'mfdata_strip]'.. nz(mm[m].strip,'') ..'\n')                
+                  file:write('['..key..'mfdata_page]'.. nz(mm[m].page,'') ..'\n')                
+                  file:write('['..key..'mfdata_ctl]'.. nz(mm[m].ctl,'') ..'\n')                
+                  file:write('['..key..'mfdata_c_id]'.. nz(mm[m].c_id,'') ..'\n')                
                   
                 end
               end  
@@ -52746,11 +52746,11 @@ function GUI_DrawCtlBitmap_Strips()
                 if mm[m] and mm[m].targettype then
           
                   local key = pfx..'sst_'..sst..'_ss_'..ss..'_fad_'..m..'_'
-                  file:write('['..key..'mfdata_targettype]'.. mm[m].targettype ..'\n')
-                  file:write('['..key..'mfdata_strip]'.. mm[m].strip ..'\n')                
-                  file:write('['..key..'mfdata_page]'.. mm[m].page ..'\n')                
-                  file:write('['..key..'mfdata_ctl]'.. mm[m].ctl ..'\n')                
-                  file:write('['..key..'mfdata_c_id]'.. mm[m].c_id ..'\n')                
+                  file:write('['..key..'mfdata_targettype]'.. nz(mm[m].targettype,'') ..'\n')
+                  file:write('['..key..'mfdata_strip]'.. nz(mm[m].strip,'') ..'\n')                
+                  file:write('['..key..'mfdata_page]'.. nz(mm[m].page,'') ..'\n')                
+                  file:write('['..key..'mfdata_ctl]'.. nz(mm[m].ctl,'') ..'\n')                
+                  file:write('['..key..'mfdata_c_id]'.. nz(mm[m].c_id,'') ..'\n')                
                   
                 end
               end  
