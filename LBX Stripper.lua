@@ -14,7 +14,7 @@
 
 
   local lvar = {}
-  lvar.scriptver = '0.94.0034' --Script Version
+  lvar.scriptver = '0.94.0035' --Script Version
   
   lvar.ctlupdate_rr = nil
   lvar.ctlupdate_pos = 1
@@ -4840,7 +4840,7 @@
                                           gmult = 0.5,
                                           bmult = 0.5,
                                           alpha = 1,
-                      stretchmode = 1,
+                                          stretchmode = 1,
                                           edgesz = 8,
                                          }
       elseif type == lvar.gfxtype.txt then
@@ -7879,7 +7879,7 @@ elseif dragparam.type == 'rs5k' then
           gfx.loadimg(1023, paths.controls_path..ctl_files[ks].fn)
         end
       end
-    elseif ctl then
+    elseif ctl and ctl_files[ctl.knob_select] then
       ks = ctl.knob_select
       iidx = ctl_files[ks].imageidx
     end
@@ -16259,38 +16259,40 @@ function GUI_DrawCtlBitmap_Strips()
           end
         end
 
-        if lvar.showtakeover and lvar.mousefadermode == 0 and lvar.mofader_takeover and update_surface then
-          gfx.a = 1
-          --local xywh = {x = lvar.mofader_takeover.mx - 30, y = lvar.mofader_takeover.my - 20, w = 60, h = 15}
-          if not lvar.mofader_takeover.to then
-            --local xywh = lvar.mofader_takeover.xywh
-            --f_Get_SSV('0 255 0')
-            --gfx.roundrect(math.floor(xywh.x),math.floor(xywh.y),math.floor(xywh.w),math.floor(xywh.h),4,1)          
-          --else
-            local p = lvar.mofader_takeover.pos*100
-            local t = lvar.mofader_takeover.target*100
-            local d = math.floor(math.abs(p-t)/2)
-            local xywh = lvar.mofader_takeover.xywh
-            local x = math.floor(xywh.x+xywh.w/2-math.floor(d/2))
-            local y = xywh.y - 20
-            local r = math.floor(d*5.12)
-            local g = math.floor((50-d)*5.12)
-            f_Get_SSV(tostring(r)..' '..tostring(g)..' 0')
-            gfx.rect(x-1,y,3,16,1)
-            gfx.rect(x+d-1,y,3,16,1)
-            f_Get_SSV('255 0 0')
-            gfx.roundrect(math.floor(xywh.x),math.floor(xywh.y),math.floor(xywh.w),math.floor(xywh.h),4,1)
+        if cbdragstrip == nil and show_striplayout ~= true then
+          if lvar.showtakeover and lvar.mousefadermode == 0 and lvar.mofader_takeover and update_surface then
+            gfx.a = 1
+            --local xywh = {x = lvar.mofader_takeover.mx - 30, y = lvar.mofader_takeover.my - 20, w = 60, h = 15}
+            if not lvar.mofader_takeover.to then
+              --local xywh = lvar.mofader_takeover.xywh
+              --f_Get_SSV('0 255 0')
+              --gfx.roundrect(math.floor(xywh.x),math.floor(xywh.y),math.floor(xywh.w),math.floor(xywh.h),4,1)          
+            --else
+              local p = lvar.mofader_takeover.pos*100
+              local t = lvar.mofader_takeover.target*100
+              local d = math.floor(math.abs(p-t)/2)
+              local xywh = lvar.mofader_takeover.xywh
+              local x = math.floor(xywh.x+xywh.w/2-math.floor(d/2))
+              local y = xywh.y - 20
+              local r = math.floor(d*5.12)
+              local g = math.floor((50-d)*5.12)
+              f_Get_SSV(tostring(r)..' '..tostring(g)..' 0')
+              gfx.rect(x-1,y,3,16,1)
+              gfx.rect(x+d-1,y,3,16,1)
+              f_Get_SSV('255 0 0')
+              gfx.roundrect(math.floor(xywh.x),math.floor(xywh.y),math.floor(xywh.w),math.floor(xywh.h),4,1)
+            end
+          elseif lvar.showtakeover and lvar.mofader_takeover and lvar.mofader_takeover.to then
+            gfx.a = 1
+            --local xywh = {x = lvar.mofader_takeover.mx - 30, y = lvar.mofader_takeover.my - 20, w = 60, h = 15}
+            if lvar.mofader_takeover.to then
+              local xywh = lvar.mofader_takeover.xywh
+              f_Get_SSV('0 255 0')
+              gfx.roundrect(math.floor(xywh.x),math.floor(xywh.y),math.floor(xywh.w),math.floor(xywh.h),4,1)   
+            end       
           end
-        elseif lvar.showtakeover and lvar.mofader_takeover and lvar.mofader_takeover.to then
-          gfx.a = 1
-          --local xywh = {x = lvar.mofader_takeover.mx - 30, y = lvar.mofader_takeover.my - 20, w = 60, h = 15}
-          if lvar.mofader_takeover.to then
-            local xywh = lvar.mofader_takeover.xywh
-            f_Get_SSV('0 255 0')
-            gfx.roundrect(math.floor(xywh.x),math.floor(xywh.y),math.floor(xywh.w),math.floor(xywh.h),4,1)   
-          end       
         end
-
+        
         if plist_w > 0 and not matrixoff then                  
           gfx.blit(1001,1,0,0,0,obj.sections[43].w,obj.sections[43].h,0,0)
         end        
@@ -20128,7 +20130,7 @@ function GUI_DrawCtlBitmap_Strips()
   
   
   function MoveSelectedCtls(dx, dy)
-  
+
     if ctl_select then
       for i = 1, #ctl_select do
         local ctl = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl]
@@ -22827,7 +22829,7 @@ function GUI_DrawCtlBitmap_Strips()
         end
       end
     end
-    if #ctl_select > 0 then      
+    if ctl_select and #ctl_select > 0 then      
       for ii = 1, #ctl_select do
         local i = ctl_select[ii].ctl
         if minx == nil then
@@ -22995,7 +22997,7 @@ function GUI_DrawCtlBitmap_Strips()
       end      
 
     --draw controls    
-    if #strips[strip][page].controls > 0 then
+    if ctl_select and #strips[strip][page].controls > 0 then
     
       local tr = GetTrack(tracks[track_select].tracknum)
       
@@ -23915,6 +23917,24 @@ function GUI_DrawCtlBitmap_Strips()
           gfx3_select[cs].rely = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].y - strips[tracks[track_select].strip][page].graphics[j].y
         end
       end
+    else
+      lctl = GetLeftControlInStrip(strips[tracks[track_select].strip][page].graphics, stripid)
+
+      if lctl ~= -1 then
+        gfx3_select = {}
+        gfx3_select[1] = {}
+        gfx3_select[1].ctl = lctl
+
+        for j = 1, #strips[tracks[track_select].strip][page].graphics do
+          if strips[tracks[track_select].strip][page].graphics[j].id == stripid and j ~= lctl then
+            local cs = #gfx3_select+1
+            gfx3_select[cs] = {}
+            gfx3_select[cs].ctl = j
+            gfx3_select[cs].relx = strips[tracks[track_select].strip][page].graphics[gfx3_select[1].ctl].x - strips[tracks[track_select].strip][page].graphics[j].x
+            gfx3_select[cs].rely = strips[tracks[track_select].strip][page].graphics[gfx3_select[1].ctl].y - strips[tracks[track_select].strip][page].graphics[j].y
+          end
+        end
+      end    
     end
   end
 
@@ -31791,6 +31811,7 @@ function GUI_DrawCtlBitmap_Strips()
             (lvar.stripctlbox.overstrip and MOUSE_click2_RB(lvar.stripctlbox.overstrip, mouse.mx-obj.sections[10].x+surface_offset.x, mouse.my-obj.sections[10].y+surface_offset.y)) then
           noscroll = true  
           xclicked = true
+          lvar.mofader_takeover = nil
           
           cbdragstrip = {x = lvar.stripctlbox.x, y = lvar.stripctlbox.y, 
                          nx = lvar.stripctlbox.x - surface_offset.x, ny = lvar.stripctlbox.y - surface_offset.y,
@@ -31820,6 +31841,9 @@ function GUI_DrawCtlBitmap_Strips()
           reaper.MarkProjectDirty(0)
           update_gfx = true
           CreateStripCB(true)
+          
+          ctl_select = nil
+          gfx3_select = nil
           
           cbdragstrip = nil
         
@@ -36286,6 +36310,11 @@ function GUI_DrawCtlBitmap_Strips()
             lvar.stripctlbox.y = lvar.stripdim.data[stripidx].t
             lvar.stripctlboxX.x = lvar.stripdim.data[stripidx].r - iw
             lvar.stripctlboxX.y = lvar.stripdim.data[stripidx].t
+            
+            if lvar.stripctlboxX.x < lvar.stripctlbox.x + iw then
+              lvar.stripctlboxX.x = lvar.stripctlbox.x
+              lvar.stripctlboxX.y = lvar.stripctlbox.y + ih
+            end
           elseif stripgallery_view > 0 then
 
             local mmx, mmy, idx = TranslateGalleryPos2(0, 0, stripid)
@@ -53694,7 +53723,7 @@ function GUI_DrawCtlBitmap_Strips()
     if snapshots[strip] and snapshots[strip][page][sstype] then
     
       if #snapshots[strip][page][sstype].ctls > 0 then
-      local ctlcnt = #snapshots[strip][page][sstype].ctls
+        local ctlcnt = #snapshots[strip][page][sstype].ctls
         for ctl = 1, ctlcnt do
           if snapshots[strip][page][sstype].ctls[ctl].delete then
           
