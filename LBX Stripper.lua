@@ -14,7 +14,7 @@
 
 
   local lvar = {}
-  lvar.scriptver = '0.94.0036' --Script Version
+  lvar.scriptver = '0.94.0037' --Script Version
   
   lvar.ctlupdate_rr = nil
   lvar.ctlupdate_pos = 1
@@ -28217,8 +28217,14 @@ function GUI_DrawCtlBitmap_Strips()
         for fxnum = 0, LBX_CTL_TRACK_INF.count-1 do
           for pf = 0, lvar.LBX_FB_CNT-1 do
             p = fxnum * lvar.LBX_FB_CNT + pf
-            faders[p+1].val = round(reaper.TrackFX_GetParam(track, fxnum, pf),5)
-            faders[p+1].oval = faders[p+1].val
+            if faders[p+1] then
+              faders[p+1].val = round(reaper.TrackFX_GetParam(track, fxnum, pf),5)
+              faders[p+1].oval = faders[p+1].val
+            else
+              Faders_INIT()
+              faders[p+1].val = round(reaper.TrackFX_GetParam(track, fxnum, pf),5)
+              faders[p+1].oval = faders[p+1].val
+            end
           end
         end
       end
@@ -50700,8 +50706,8 @@ function GUI_DrawCtlBitmap_Strips()
     
     --local faders = fads
     --if fads then return end
-    
-    for f = 1, lvar.LBX_FB_CNT*LBX_CTL_TRACK_INF.count do
+    --DBG(#fads)
+    for f = 1, #fads do
       if fads[f] then
         if fads[f].targettype == 4 or fads[f].targettype == 7 then
           fnd = false
@@ -55023,23 +55029,30 @@ function GUI_DrawCtlBitmap_Strips()
       if snaptbl.fadset then
         local fdata = snaptbl.faddata
         if fdata then
-          for f = 1, #fdata do
-            if fdata[f].targettype == 4 or
-               fdata[f].targettype == 7 then
-              if not faders[f].targettype or (faders[f].targettype == 4 or 
-                                              faders[f].targettype == 7) then
-                local ctl = strips[fdata[f].strip][fdata[f].page].controls[fdata[f].ctl]
-                if ctl then
-                  
-                  AssignFader(f,fdata[f])
-                  --SetFader(ctl.macrofader, ctl.val)
-                                
-                end                  
+          for f = 1, #faders do
+            if fdata[f] then
+              if fdata[f].targettype == 4 or
+                 fdata[f].targettype == 7 then
+                if not faders[f].targettype or (faders[f].targettype == 4 or 
+                                                faders[f].targettype == 7) then
+                  local ctl = strips[fdata[f].strip][fdata[f].page].controls[fdata[f].ctl]
+                  if ctl then
+                    
+                    AssignFader(f,fdata[f])
+                    --SetFader(ctl.macrofader, ctl.val)
+                                  
+                  end                  
+                end
+          
+              else
+                if faders[f].targettype == 4 or 
+                   faders[f].targettype == 7 then
+                  DeleteFader(f)
+                end
               end
-        
             else
-              if faders[f].targettype == 4 or 
-                 faders[f].targettype == 7 then
+              if faders[f] and (faders[f].targettype == 4 or 
+                                faders[f].targettype == 7) then
                 DeleteFader(f)
               end
             end
