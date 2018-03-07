@@ -14,7 +14,7 @@
 
 
   local lvar = {}
-  lvar.scriptver = '0.94.0035' --Script Version
+  lvar.scriptver = '0.94.0036' --Script Version
   
   lvar.ctlupdate_rr = nil
   lvar.ctlupdate_pos = 1
@@ -1772,16 +1772,16 @@
                           h = topbarheight}
       if hide_topbar then
         --...
-        obj.sections[21] = {x = gfx1.main_w - plist_w - 26,
+        obj.sections[21] = {x = obj.sections[10].x + obj.sections[10].w - 26 - plist_w, --gfx1.main_w - plist_w - 26,
                             y = obj.sections[11].y,
                             w = 26,
                             h = tb_butt_h}
-        if settings_ssdock == true then
+        --[[if settings_ssdock == true then
           obj.sections[21].x = obj.sections[21].x - gui.winsz.snaps
         end
         if settings_sbdock == true then
           obj.sections[21].x = obj.sections[21].x - sbwin.w*pnl_scale        
-        end
+        end]]
       else
         obj.sections[21] = {x = gfx1.main_w - plist_w - 175,
                             y = obj.sections[11].y,
@@ -6772,9 +6772,9 @@ elseif dragparam.type == 'rs5k' then
 
   function PopulateTracks()
   
-  
+    local LBX_CTL_TRACK_INF_CNT
     if LBX_CTL_TRACK_INF then
-      local LBX_CTL_TRACK_INF_CNT = LBX_CTL_TRACK_INF.count
+      LBX_CTL_TRACK_INF_CNT = LBX_CTL_TRACK_INF.count
     end
     LBX_GTRACK = nil
     LBX_CTL_TRACK = nil
@@ -50693,64 +50693,75 @@ function GUI_DrawCtlBitmap_Strips()
     
   end
   
-  function CheckFaders()
+  function CheckFaders(fads, donotupdatectl)
   
     if faders == nil then return end
+    if fads == nil then fads = faders end
     
-    for f = 1, #faders do
-      if --[[faders[f].targettype == 3 or]] faders[f].targettype == 4 or faders[f].targettype == 7 then
-        fnd = false
-        local s = faders[f].strip
-        local p = faders[f].page
-        local c = faders[f].ctl
-        local cid = faders[f].c_id
-        if strips[s] and strips[s][p].controls[c] and cid == strips[s][p].controls[c].c_id and 
-           strips[s][p].controls[c].macrofader == f then
-          --all good
-          fnd = true
-        else
-          if strips[s] then
-            for cc = 1, #strips[s][p].controls do
-              if strips[s][p].controls[cc].c_id == cid then
-              
-                strips[s][p].controls[cc].macrofader = f
-                faders[f].ctl = cc
-                fnd = true
-                break
+    --local faders = fads
+    --if fads then return end
+    
+    for f = 1, lvar.LBX_FB_CNT*LBX_CTL_TRACK_INF.count do
+      if fads[f] then
+        if fads[f].targettype == 4 or fads[f].targettype == 7 then
+          fnd = false
+          local s = fads[f].strip
+          local p = fads[f].page
+          local c = fads[f].ctl
+          local cid = fads[f].c_id
+          if strips[s] and strips[s][p].controls[c] and cid == strips[s][p].controls[c].c_id and 
+             strips[s][p].controls[c].macrofader == f then
+            --all good
+            fnd = true
+          else
+            if strips[s] then
+              for cc = 1, #strips[s][p].controls do
+                if strips[s][p].controls[cc].c_id == cid then
+                
+                  if donotupdatectl == nil then
+                    strips[s][p].controls[cc].macrofader = f
+                  end
+                  fads[f].ctl = cc
+                  fnd = true
+                  break
+                end
               end
-            end
-            if fnd == false then
-              for ss = 1, #strips do
-                for pp = 1, 4 do
-                  for cc = 1, #strips[ss][pp].controls do
-                    if strips[ss][pp].controls[cc].c_id == cid then
-                    
-                      strips[ss][pp].controls[cc].macrofader = f
-                      faders[f].strip = ss
-                      faders[f].page = pp
-                      faders[f].ctl = cc
-                      fnd = true
+              if fnd == false then
+                for ss = 1, #strips do
+                  for pp = 1, 4 do
+                    for cc = 1, #strips[ss][pp].controls do
+                      if strips[ss][pp].controls[cc].c_id == cid then
+                      
+                        if donotupdatectl == nil then
+                          strips[ss][pp].controls[cc].macrofader = f
+                        end
+                        fads[f].strip = ss
+                        fads[f].page = pp
+                        fads[f].ctl = cc
+                        fnd = true
+                        break
+                      end      
+                    end
+                    if fnd == true then
                       break
-                    end      
+                    end
                   end
                   if fnd == true then
                     break
                   end
                 end
-                if fnd == true then
-                  break
-                end
               end
             end
           end
-        end
-        if fnd == false then
-          --not found
-          faders[f] = {}
+          if fnd == false then
+            --not found
+            fads[f] = {}
+          end
         end
       end
     end
-  
+    return fads
+    
   end
 
   function CheckMods(mods, removefirst)
@@ -51167,6 +51178,12 @@ function GUI_DrawCtlBitmap_Strips()
           LoadSnapData(s, data)
                     
         end
+        
+        local strip = tracks[track_select].strip
+        if sstype_select and snapshots[strip] and snapshots[strip][page][sstype_select].selected then
+          ss_select = snapshots[strip][page][sstype_select].selected
+        end
+        
       end
       
       --XXY
@@ -51708,6 +51725,12 @@ function GUI_DrawCtlBitmap_Strips()
               end
               
             end
+            
+            local strip = tracks[track_select].strip
+            if sstype_select and snapshots[strip] and snapshots[strip][page][sstype_select].selected then
+              ss_select = snapshots[strip][page][sstype_select].selected
+            end
+            
           end
           
           --XXY
@@ -52654,30 +52677,30 @@ function GUI_DrawCtlBitmap_Strips()
               end  
             end
 
-            file:write('['..key..'fadset]'.. tostring(nz(snaps[sst][ss].fadset,'')) ..'\n')
-            if snaps[sst][ss].fadset then
-              local mm = snaps[sst][ss].faddata
-
-              local key = pfx..'sst_'..sst..'_ss_'..ss..'_'              
-              file:write('['..key..'fadcnt]'.. #faders ..'\n')
+            local mm = snaps[sst][ss].faddata
+            if mm then
+              file:write('['..key..'fadset]'.. tostring(nz(snaps[sst][ss].fadset,'')) ..'\n')
+              if snaps[sst][ss].fadset then
+                local key = pfx..'sst_'..sst..'_ss_'..ss..'_'              
+                file:write('['..key..'fadcnt]'.. #faders ..'\n')
+                
+                for m = 1, #faders do
               
-              for m = 1, #faders do
+                  if mm[m] and mm[m].targettype and (mm[m].targettype == 4 or 
+                                                     mm[m].targettype == 7) then
             
-                if mm[m] and mm[m].targettype and (mm[m].targettype == 4 or 
-                                                   mm[m].targettype == 7) then
-          
-                  local key = pfx..'sst_'..sst..'_ss_'..ss..'_fad_'..m..'_'
-                  file:write('['..key..'mfdata_targettype]'.. nz(mm[m].targettype,'') ..'\n')
-                  file:write('['..key..'mfdata_strip]'.. nz(mm[m].strip,'') ..'\n')                
-                  file:write('['..key..'mfdata_page]'.. nz(mm[m].page,'') ..'\n')                
-                  file:write('['..key..'mfdata_ctl]'.. nz(mm[m].ctl,'') ..'\n')                
-                  file:write('['..key..'mfdata_c_id]'.. nz(mm[m].c_id,'') ..'\n')                
-                  file:write('['..key..'mfdata_voffset]'.. nz(mm[m].voffset,'') ..'\n')                
-                  
-                end
-              end  
+                    local key = pfx..'sst_'..sst..'_ss_'..ss..'_fad_'..m..'_'
+                    file:write('['..key..'mfdata_targettype]'.. nz(mm[m].targettype,'') ..'\n')
+                    file:write('['..key..'mfdata_strip]'.. nz(mm[m].strip,'') ..'\n')                
+                    file:write('['..key..'mfdata_page]'.. nz(mm[m].page,'') ..'\n')                
+                    file:write('['..key..'mfdata_ctl]'.. nz(mm[m].ctl,'') ..'\n')                
+                    file:write('['..key..'mfdata_c_id]'.. nz(mm[m].c_id,'') ..'\n')                
+                    file:write('['..key..'mfdata_voffset]'.. nz(mm[m].voffset,'') ..'\n')                
+                    
+                  end
+                end  
+              end
             end
-
           end
         end      
     
@@ -52769,27 +52792,28 @@ function GUI_DrawCtlBitmap_Strips()
               end  
             end
 
-            file:write('['..key..'fadset]'.. tostring(nz(snaps[sst].snapshot[ss].fadset,'')) ..'\n')
-            if snaps[sst].snapshot[ss].fadset then
-              local mm = snaps[sst].snapshot[ss].faddata
-
-              local key = pfx..'sst_'..sst..'_ss_'..ss..'_'              
-              file:write('['..key..'fadcnt]'.. #mm ..'\n')
+            local mm = snaps[sst].snapshot[ss].faddata
+            if mm then
+              file:write('['..key..'fadset]'.. tostring(nz(snaps[sst].snapshot[ss].fadset,'')) ..'\n')
+              if snaps[sst].snapshot[ss].fadset then
+                local key = pfx..'sst_'..sst..'_ss_'..ss..'_'              
+                file:write('['..key..'fadcnt]'.. #mm ..'\n')
+                
+                for m = 1, #mm do
               
-              for m = 1, #mm do
+                  if mm[m] and mm[m].targettype then
             
-                if mm[m] and mm[m].targettype then
-          
-                  local key = pfx..'sst_'..sst..'_ss_'..ss..'_fad_'..m..'_'
-                  file:write('['..key..'mfdata_targettype]'.. nz(mm[m].targettype,'') ..'\n')
-                  file:write('['..key..'mfdata_strip]'.. nz(mm[m].strip,'') ..'\n')                
-                  file:write('['..key..'mfdata_page]'.. nz(mm[m].page,'') ..'\n')                
-                  file:write('['..key..'mfdata_ctl]'.. nz(mm[m].ctl,'') ..'\n')                
-                  file:write('['..key..'mfdata_c_id]'.. nz(mm[m].c_id,'') ..'\n')                
-                  file:write('['..key..'mfdata_voffset]'.. nz(mm[m].voffset,'') ..'\n')                
-                  
-                end
-              end  
+                    local key = pfx..'sst_'..sst..'_ss_'..ss..'_fad_'..m..'_'
+                    file:write('['..key..'mfdata_targettype]'.. nz(mm[m].targettype,'') ..'\n')
+                    file:write('['..key..'mfdata_strip]'.. nz(mm[m].strip,'') ..'\n')                
+                    file:write('['..key..'mfdata_page]'.. nz(mm[m].page,'') ..'\n')                
+                    file:write('['..key..'mfdata_ctl]'.. nz(mm[m].ctl,'') ..'\n')                
+                    file:write('['..key..'mfdata_c_id]'.. nz(mm[m].c_id,'') ..'\n')                
+                    file:write('['..key..'mfdata_voffset]'.. nz(mm[m].voffset,'') ..'\n')                
+                    
+                  end
+                end  
+              end
             end
             
           end
@@ -53583,7 +53607,6 @@ function GUI_DrawCtlBitmap_Strips()
               local sscnt = #snapshots[strip][page][sst]
               for ss = 1, sscnt do
               
-              
                 local ss_entry_deleted = false
                 local dcnt = #snapshots[strip][page][sst][ss].data    
                 if dcnt > 0 then
@@ -53611,6 +53634,10 @@ function GUI_DrawCtlBitmap_Strips()
                 
                 if snapshots[strip][page][sst][ss].modset then
                   snapshots[strip][page][sst][ss].moddata = CheckMods(snapshots[strip][page][sst][ss].moddata)
+                end
+
+                if snapshots[strip][page][sst][ss].fadset then
+                  snapshots[strip][page][sst][ss].faddata = CheckFaders(snapshots[strip][page][sst][ss].faddata, true)
                 end
               end
             end
@@ -53669,8 +53696,13 @@ function GUI_DrawCtlBitmap_Strips()
                     snapshots[strip][page][sst].snapshot[ss].data = Table_RemoveNils(snapshots[strip][page][sst].snapshot[ss].data, dcnt)
                   end
                 end
+                
                 if snapshots[strip][page][sst].snapshot[ss].modset then
                   snapshots[strip][page][sst].snapshot[ss].moddata = CheckMods(snapshots[strip][page][sst].snapshot[ss].moddata)
+                end
+
+                if snapshots[strip][page][sst].snapshot[ss].fadset then
+                  snapshots[strip][page][sst].snapshot[ss].faddata = CheckFaders(snapshots[strip][page][sst].snapshot[ss].faddata, true)
                 end
               end
             end
@@ -54990,28 +55022,33 @@ function GUI_DrawCtlBitmap_Strips()
       
       if snaptbl.fadset then
         local fdata = snaptbl.faddata
-        for f = 1, #fdata do
-          if fdata[f].targettype == 4 or
-             fdata[f].targettype == 7 then
-            if not faders[f].targettype or (faders[f].targettype == 4 or 
-                                            faders[f].targettype == 7) then
-              local ctl = strips[fdata[f].strip][fdata[f].page].controls[fdata[f].ctl]
-              if ctl then
-                
-                AssignFader(f,fdata[f])
-                --SetFader(ctl.macrofader, ctl.val)
-                              
-              end                  
-            end
-      
-          else
-            if faders[f].targettype == 4 or 
-               faders[f].targettype == 7 then
-              DeleteFader(f)
+        if fdata then
+          for f = 1, #fdata do
+            if fdata[f].targettype == 4 or
+               fdata[f].targettype == 7 then
+              if not faders[f].targettype or (faders[f].targettype == 4 or 
+                                              faders[f].targettype == 7) then
+                local ctl = strips[fdata[f].strip][fdata[f].page].controls[fdata[f].ctl]
+                if ctl then
+                  
+                  AssignFader(f,fdata[f])
+                  --SetFader(ctl.macrofader, ctl.val)
+                                
+                end                  
+              end
+        
+            else
+              if faders[f].targettype == 4 or 
+                 faders[f].targettype == 7 then
+                DeleteFader(f)
+              end
             end
           end
+        else
+        
         end
       end
+      snaps.selected = ss_sel
       
     end
     if settings_followsnapshot and sstype_sel == sstype_select then
