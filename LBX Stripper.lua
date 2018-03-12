@@ -14,7 +14,7 @@
 
 
   local lvar = {}
-  lvar.scriptver = '0.94.0037' --Script Version
+  lvar.scriptver = '0.94.0038' --Script Version
   
   lvar.ctlupdate_rr = nil
   lvar.ctlupdate_pos = 1
@@ -10691,7 +10691,7 @@ function GUI_DrawCtlBitmap_Strips()
                 elseif (mode == 1 and submode == 1) or ctl.hidden then
                   gfx.a = 0.5
                 end
-  
+  --DBG(px..'  '..py)
                 gfx.blit(iidx,_,0, 0, val2*gh, w, h, px, py, math.floor(w*scale), math.floor(h*scale))
                 if ctlcat == ctlcats.xy then
                 
@@ -10782,6 +10782,7 @@ function GUI_DrawCtlBitmap_Strips()
                   local ar = math.max(px+math.floor(w*scale), tx1+tl1, tx2+tl2, xywh1.x+xywh1.w, xywh2.x+xywh2.w)
                   local at = math.min(py, xywh1.y-math.floor(th1/2), xywh2.y-math.floor(th2/2))
                   local ab = math.max(py+math.floor(h*scale),xywh1.y+math.floor(th1/2), xywh2.y+math.floor(th2/2))
+                  --DBG(al..'  '..ar..'  '..at..'  '..ab..'  '..ab-at..'  '..ar-al)
                   xywharea[#xywharea+1] = {x=al,y=at,w=ar-al,h=ab-at,r=ar,b=ab}
                 end
               end
@@ -10797,8 +10798,9 @@ function GUI_DrawCtlBitmap_Strips()
           --loop through blit area table - blit to backbuffer
           gfx.a=1
           local ox, oy = 0,0
-          if surface_offset.x < 0 then ox=-1 end
-          if surface_offset.y < 0 then oy=-1 end
+          --if surface_offset.x > 0 then ox=-1 end
+          --if surface_offset.y > 0 then oy=-1 end
+          --DBG(obj.sections[10].y)
           if #xywharea > 0 then
             gfx.dest = 1
             for i = 1, #xywharea do
@@ -10817,7 +10819,7 @@ function GUI_DrawCtlBitmap_Strips()
                 end
                 if yy < obj.sections[10].y then
                   xywharea[i].y = xywharea[i].y + (obj.sections[10].y - yy)
-                  xywharea[i].h = xywharea[i].h  - (obj.sections[10].y - yy)
+                  xywharea[i].h = xywharea[i].h - (obj.sections[10].y - yy)
                   yy = obj.sections[10].y
                 end
                 if yy + xywharea[i].h > obj.sections[10].y+obj.sections[10].h then
@@ -16045,6 +16047,7 @@ function GUI_DrawCtlBitmap_Strips()
 
             else
               if stripgallery_view == 0 or macro_lrn_mode == true or snaplrn_mode == true then
+
                 gfx.blit(1000,1,0,surface_offset.x,
                                   surface_offset.y,
                                   obj.sections[10].w,
@@ -28856,13 +28859,13 @@ function GUI_DrawCtlBitmap_Strips()
       if settings_sbdock == true and show_stripbrowser == true and mode == 0 then
         if lvar.stripbrowser.dockpos == 1 then
           obj.sections[10].y = obj.sections[10].y + math.floor(sbwin.h*pnl_scale)
-          obj.sections[10].h = obj.sections[10].h - math.floor(sbwin.h*pnl_scale)
+          obj.sections[10].h = math.floor(obj.sections[10].h - math.floor(sbwin.h*pnl_scale))
         else
           obj.sections[10].w = obj.sections[10].w - math.floor(sbwin.w*pnl_scale)
         end
       end      
       if settings_moddock == true and show_lfoedit == true and mode == 0 then
-        obj.sections[10].h = obj.sections[10].h - (modwinsz.h or 300)*pnl_scale      
+        obj.sections[10].h = math.floor(obj.sections[10].h - (modwinsz.h or 300)*pnl_scale)      
       end
       if show_striplayout == false then
         if lockx then
@@ -28871,7 +28874,7 @@ function GUI_DrawCtlBitmap_Strips()
         end
         if locky then
           obj.sections[10].y = math.max(obj.sections[10].y, obj.sections[10].y+(obj.sections[10].h/2-lockh/2))
-          obj.sections[10].h = math.min(lockh,gfx1.main_h-(topbarheight+2+(sb_size+2)*2))
+          obj.sections[10].h = math.floor(math.min(lockh,gfx1.main_h-(topbarheight+2+(sb_size+2)*2)))
         end
       end
     else
@@ -28889,7 +28892,7 @@ function GUI_DrawCtlBitmap_Strips()
       if settings_sbdock == true and show_stripbrowser == true and mode == 0 then
         if lvar.stripbrowser.dockpos == 1 then
           obj.sections[10].y = obj.sections[10].y + math.floor(sbwin.h*pnl_scale)
-          obj.sections[10].h = obj.sections[10].h - math.floor(sbwin.h*pnl_scale)
+          obj.sections[10].h = math.floor(obj.sections[10].h - math.floor(sbwin.h*pnl_scale))
         else
           obj.sections[10].w = obj.sections[10].w - math.floor(sbwin.w*pnl_scale)
         end
@@ -28902,7 +28905,7 @@ function GUI_DrawCtlBitmap_Strips()
           msz = 300
           modwinsz = nil
         end
-        obj.sections[10].h = obj.sections[10].h - msz 
+        obj.sections[10].h = math.floor(obj.sections[10].h - msz) 
       end
       if show_striplayout == false then
         if lockx then
@@ -28911,7 +28914,7 @@ function GUI_DrawCtlBitmap_Strips()
         end
         if locky then
           obj.sections[10].y = math.max(obj.sections[10].y, obj.sections[10].y+(obj.sections[10].h/2-lockh/2))
-          obj.sections[10].h = math.min(lockh,gfx1.main_h-(topbarheight+2))
+          obj.sections[10].h = math.floor(math.min(lockh,gfx1.main_h-(topbarheight+2)))
         end
       end
     end
@@ -28964,6 +28967,7 @@ function GUI_DrawCtlBitmap_Strips()
     lvar.keypress['show_pinmatrix'] = 52
     lvar.keypress['editfx_deleteselectedctls'] = 6579564
     lvar.keypress['show_stripbrowser'] = 48
+    lvar.keypress['show_ctlmidiout'] = 77
     
     local fn = paths.resource_path..'keycommands.ini'
     if reaper.file_exists(fn) then
@@ -29241,6 +29245,41 @@ function GUI_DrawCtlBitmap_Strips()
         SetShowSB(not show_stripbrowser)
         update_stripbrowser = true
         update_surface = true
+      elseif char == lvar.keypress['show_ctlmidiout'] then
+        local strip = tracks[track_select].strip
+        if strips and strips[strip] then
+          local c = GetControlAtXY(strip,page,mouse.mx,mouse.my)
+          if c then
+            local ctl = strips[strip][page].controls[c]
+          
+            if ctl and (ctl.ctlcat == ctlcats.fxparam or
+                        ctl.ctlcat == ctlcats.trackparam or
+                        ctl.ctlcat == ctlcats.tracksend or
+                        ctl.ctlcat == ctlcats.fxoffline or
+                        ctl.ctlcat == ctlcats.macro or
+                        ctl.ctlcat == ctlcats.takeswitcher or
+                        ctl.ctlcat == ctlcats.rs5k) then
+                        
+              midioutedit_select = c
+              midioutedit_ctlselect = true
+              midiout_select = ctl.midiout
+              if midiout_select == nil then
+                midiout_select = {output = nil,
+                                  msgtype = 4,
+                                  mchan = 1,
+                                  msg3 = 1,
+                                  msg4 = 0,
+                                  osc = nil,
+                                  vmin = 0,
+                                  vmax = 127,
+                                  focus = 1,
+                                  updategfx = false}
+              end
+              show_midiout = true
+              update_gfx = true
+            end
+          end
+        end
       end
       
     --[[else -- shift
