@@ -14,7 +14,7 @@
 
 
   local lvar = {}
-  lvar.scriptver = '0.94.0038' --Script Version
+  lvar.scriptver = '0.94.0039' --Script Version
   
   lvar.ctlupdate_rr = nil
   lvar.ctlupdate_pos = 1
@@ -71,6 +71,8 @@
   lvar.mousefadermode = 0
   lvar.gfxpreview = true
   lvar.ctlpreview = true
+  
+  lvar.striploadoverride = nil
   
   lvar.sliderxy = false
   
@@ -290,7 +292,8 @@
              midictl = 16,
              oscctl = 17,
              takeswitcher = 18,
-             rs5k = 19}
+             rs5k = 19,
+             midieditor_pageswitch = 20}
 
   lvar.ctlcats_nm = {'fxparam',
                 'trackparam',
@@ -311,7 +314,8 @@
                  'midictl',
                  'oscctl',
                  'takeswitcher',
-                 'rs5k'}
+                 'rs5k',
+                 'midi editor - page switcher'}
              
   lvar.gfxtype = {img = 0,
                   txt = 1
@@ -4081,6 +4085,10 @@
                               w = bw,
                               h = bh}
     
+    obj.sections[736] = {x = xofft-100,
+                              y = settingswin_off + yoff + yoffm*12,
+                              w = 500,
+                              h = butt_h}
     
     -----------------------------------------------
     
@@ -4766,15 +4774,12 @@
     else
       local fxn = string.match(n, ': (.+)%(')
       if fxn then
-      --DBG('a'..fxn)
         return fxn
       else
         fxn = string.match(n, '.+/(.*)')
         if fxn and fxn ~= '' then
-      --DBG('b'..string.len(fxn))
           return fxn
         else
-      --DBG('c')
           return n
         end
       end
@@ -5736,7 +5741,7 @@
                                                 eqgraph = def_graph
                                                }
 
-elseif dragparam.type == 'rs5k' then
+      elseif dragparam.type == 'rs5k' then
         local mcnt = 0
         for c = 1, #strips[strip][page].controls do
           if strips[strip][page].controls[c].ctlcat == ctlcats.rs5k then
@@ -5930,73 +5935,73 @@ elseif dragparam.type == 'rs5k' then
                                                 knobsens = table.copy(settings_defknobsens)
                                                }
       elseif dragparam.type == 'takeswitcher' then
-              local pname = 'Take Selector'
-              local item = reaper.GetSelectedMediaItem(0, 0)
-              local iteminfo
-              local itemno, tracknum, trackguid
-              if item then
-                iteminfo = GetMediaItemDetails(item)
-                itemno = iteminfo.itemno
-                tracknum = iteminfo.tracknum
-                trackguid = iteminfo.trackguid
-              else
-                pname = 'Unassigned Take Selector'
-              end
-              strips[strip][page].controls[ctlnum] = {c_id = GenID(),
-                                                      ctlcat = ctlcats.takeswitcher,
-                                                      fxname=pname,
-                                                      fxguid=nil, 
-                                                      fxnum=nil, 
-                                                      fxfound = true,
-                                                      iteminfo = iteminfo,
-                                                      param = itemno,
-                                                      param_info = {paramname = pname},
-                                                      ctltype = 1,
-                                                      knob_select = knob_select,
-                                                      ctl_info = {fn = ctl_files[knob_select].fn,
-                                                                  frames = ctl_files[knob_select].frames,
-                                                                  imageidx = ctl_files[knob_select].imageidx, 
-                                                                  cellh = ctl_files[knob_select].cellh},
-                                                      x = x,
-                                                      y = y,
-                                                      w = w,
-                                                      poslock = false,
-                                                      scale = 1,
-                                                      xsc = x + math.floor(w/2 - (w*1)/2),
-                                                      ysc = y + math.floor(ctl_files[knob_select].cellh/2 - (ctl_files[knob_select].cellh*1)/2),
-                                                      wsc = w*1,
-                                                      hsc = ctl_files[knob_select].cellh*1,
-                                                      show_paramname = show_paramname,
-                                                      show_paramval = show_paramval,
-                                                      ctlname_override = '',
-                                                      textcol = textcol_select,
-                                                      textoff = 40,
-                                                      textoffval = 0,
-                                                      textoffx = textoff_selectx,
-                                                      textoffvalx = textoffval_selectx,
-                                                      textsize = textsize_select,
-                                                      textsizev = textsizev_select,
-                                                      textcolv = textcolv_select,
-                                                      val = 0,
-                                                      defval = 0,
-                                                      maxdp = maxdp_select,
-                                                      cycledata = {statecnt = 0,val = 0,mapptof = false,draggable = false,spread = false, {}},
-                                                      xydata = {snapa = 1, snapb = 1, snapc = 1, snapd = 1, x = 0.5, y = 0.5},
-                                                      membtn = {state = false,
-                                                                mem = nil},
-                                                      id = nil,
-                                                      tracknum = tracknum,
-                                                      trackguid = trackguid,
-                                                      scalemode = 8,
-                                                      framemode = 1,
-                                                      horiz = horiz_select,
-                                                      poslock = false,
-                                                      bypassbg_c = bypass_bgdraw_c_select,
-                                                      bypassbg_n = bypass_bgdraw_n_select,
-                                                      bypassbg_v = bypass_bgdraw_v_select,
-                                                      clickthrough = clickthrough_select,
-                                                      knobsens = table.copy(settings_defknobsens)
-                                                     }
+        local pname = 'Take Selector'
+        local item = reaper.GetSelectedMediaItem(0, 0)
+        local iteminfo
+        local itemno, tracknum, trackguid
+        if item then
+          iteminfo = GetMediaItemDetails(item)
+          itemno = iteminfo.itemno
+          tracknum = iteminfo.tracknum
+          trackguid = iteminfo.trackguid
+        else
+          pname = 'Unassigned Take Selector'
+        end
+        strips[strip][page].controls[ctlnum] = {c_id = GenID(),
+                                                ctlcat = ctlcats.takeswitcher,
+                                                fxname=pname,
+                                                fxguid=nil, 
+                                                fxnum=nil, 
+                                                fxfound = true,
+                                                iteminfo = iteminfo,
+                                                param = itemno,
+                                                param_info = {paramname = pname},
+                                                ctltype = 1,
+                                                knob_select = knob_select,
+                                                ctl_info = {fn = ctl_files[knob_select].fn,
+                                                            frames = ctl_files[knob_select].frames,
+                                                            imageidx = ctl_files[knob_select].imageidx, 
+                                                            cellh = ctl_files[knob_select].cellh},
+                                                x = x,
+                                                y = y,
+                                                w = w,
+                                                poslock = false,
+                                                scale = 1,
+                                                xsc = x + math.floor(w/2 - (w*1)/2),
+                                                ysc = y + math.floor(ctl_files[knob_select].cellh/2 - (ctl_files[knob_select].cellh*1)/2),
+                                                wsc = w*1,
+                                                hsc = ctl_files[knob_select].cellh*1,
+                                                show_paramname = show_paramname,
+                                                show_paramval = show_paramval,
+                                                ctlname_override = '',
+                                                textcol = textcol_select,
+                                                textoff = 40,
+                                                textoffval = 0,
+                                                textoffx = textoff_selectx,
+                                                textoffvalx = textoffval_selectx,
+                                                textsize = textsize_select,
+                                                textsizev = textsizev_select,
+                                                textcolv = textcolv_select,
+                                                val = 0,
+                                                defval = 0,
+                                                maxdp = maxdp_select,
+                                                cycledata = {statecnt = 0,val = 0,mapptof = false,draggable = false,spread = false, {}},
+                                                xydata = {snapa = 1, snapb = 1, snapc = 1, snapd = 1, x = 0.5, y = 0.5},
+                                                membtn = {state = false,
+                                                          mem = nil},
+                                                id = nil,
+                                                tracknum = tracknum,
+                                                trackguid = trackguid,
+                                                scalemode = 8,
+                                                framemode = 1,
+                                                horiz = horiz_select,
+                                                poslock = false,
+                                                bypassbg_c = bypass_bgdraw_c_select,
+                                                bypassbg_n = bypass_bgdraw_n_select,
+                                                bypassbg_v = bypass_bgdraw_v_select,
+                                                clickthrough = clickthrough_select,
+                                                knobsens = table.copy(settings_defknobsens)
+                                               }
         strips[strip][page].controls[ctlnum].knobsens.norm = 0.1
         strips[strip][page].controls[ctlnum].knobsens.wheel = 0.01
         
@@ -6004,6 +6009,66 @@ elseif dragparam.type == 'rs5k' then
           strips[strip][page].controls[ctlnum].tracknum = nil
           strips[strip][page].controls[ctlnum].trackguid = nil         
         end
+        
+      elseif dragparam.type == 'midieditor_pageswitch' then
+
+        --param = off page, paramidx = on page
+        strips[strip][page].controls[ctlnum] = {c_id = GenID(),
+                                                ctlcat = ctlcats.midieditor_pageswitch,
+                                                fxname='ME_PageSwitch',
+                                                fxguid=nil, 
+                                                fxnum=nil, 
+                                                fxfound = true,
+                                                param = 1,
+                                                param_info = {paramname = 'ME_PS',
+                                                              paramidx = 2},
+                                                ctltype = 5,
+                                                knob_select = knob_select,
+                                                ctl_info = {fn = ctl_files[knob_select].fn,
+                                                            frames = ctl_files[knob_select].frames,
+                                                            imageidx = ctl_files[knob_select].imageidx, 
+                                                            cellh = ctl_files[knob_select].cellh},
+                                                x = x,
+                                                y = y,
+                                                w = w,
+                                                poslock = false,
+                                                scale = scale_select,
+                                                xsc = x + math.floor(w/2 - (w*scale_select)/2),
+                                                ysc = y + math.floor(ctl_files[knob_select].cellh/2 - (ctl_files[knob_select].cellh*scale_select)/2),
+                                                wsc = w*scale_select,
+                                                hsc = ctl_files[knob_select].cellh*scale_select,
+                                                show_paramname = show_paramname,
+                                                show_paramval = false,
+                                                ctlname_override = '',
+                                                textcol = textcol_select,
+                                                textoff = 1,
+                                                textoffval = textoffval_select,
+                                                textoffx = textoff_selectx,
+                                                textoffvalx = textoffval_selectx,
+                                                textsize = textsize_select,
+                                                textsizev = textsizev_select,
+                                                textcolv = textcolv_select,
+                                                val = 0,
+                                                defval = 0,
+                                                maxdp = maxdp_select,
+                                                cycledata = {statecnt = 0,val = 0,mapptof = false,draggable = false,spread = false, {}},
+                                                xydata = {snapa = 1, snapb = 1, snapc = 1, snapd = 1, x = 0.5, y = 0.5},
+                                                membtn = {state = false,
+                                                          mem = nil},
+                                                id = nil,
+                                                tracknum = nil,
+                                                trackguid = nil,
+                                                scalemode = 8,
+                                                framemode = 1,
+                                                horiz = horiz_select,
+                                                poslock = false,
+                                                bypassbg_c = bypass_bgdraw_c_select,
+                                                bypassbg_n = bypass_bgdraw_n_select,
+                                                bypassbg_v = bypass_bgdraw_v_select,
+                                                knobsens = table.copy(settings_defknobsens),
+                                                clickthrough = true,
+                                                hidden = true,
+                                               }
       end
     end  
   
@@ -6822,12 +6887,23 @@ elseif dragparam.type == 'rs5k' then
 
     if #strips > 0 then
       for j = 1, #strips do
-        
-        if strips[j].track.tracknum == -1 then
-          tracks_tmp[-1].strip = j
-        elseif guid_tr[strips[j].track.guid] then --== tracks_tmp[i].guid then
-          tracks_tmp[guid_tr[strips[j].track.guid]].strip = j
-        end 
+        if not lvar.striploadoverride_active then
+          if strips[j].track.tracknum == -1 then
+            tracks_tmp[-1].strip = j
+          elseif guid_tr[strips[j].track.guid] then --== tracks_tmp[i].guid then
+            tracks_tmp[guid_tr[strips[j].track.guid]].strip = j
+          end
+        else
+          if tracks_tmp[strips[j].track.tracknum] then
+            strips[j].track.guid = tracks_tmp[strips[j].track.tracknum].guid
+            tracks_tmp[strips[j].track.tracknum].strip = j
+            track_select = strips[j].track.tracknum
+          else
+            strips[j].track.guid = tracks_tmp[-1].guid
+            strips[j].track.tracknum = -1
+            tracks_tmp[-1].strip = j          
+          end
+        end
       end
     end
 
@@ -10607,6 +10683,12 @@ function GUI_DrawCtlBitmap_Strips()
                       Disp_ParamV = ''
                     end
                       
+                  elseif ctlcat == ctlcats.midieditor_pageswitch then
+                    if nz(ctlnmov,'') == '' then
+                      Disp_Name = pname
+                    else
+                      Disp_Name = ctlnmov
+                    end
                   end
     
                   if ctltype == 4 and cycle_editmode == false then
@@ -10691,7 +10773,7 @@ function GUI_DrawCtlBitmap_Strips()
                 elseif (mode == 1 and submode == 1) or ctl.hidden then
                   gfx.a = 0.5
                 end
-  --DBG(px..'  '..py)
+  
                 gfx.blit(iidx,_,0, 0, val2*gh, w, h, px, py, math.floor(w*scale), math.floor(h*scale))
                 if ctlcat == ctlcats.xy then
                 
@@ -10782,7 +10864,6 @@ function GUI_DrawCtlBitmap_Strips()
                   local ar = math.max(px+math.floor(w*scale), tx1+tl1, tx2+tl2, xywh1.x+xywh1.w, xywh2.x+xywh2.w)
                   local at = math.min(py, xywh1.y-math.floor(th1/2), xywh2.y-math.floor(th2/2))
                   local ab = math.max(py+math.floor(h*scale),xywh1.y+math.floor(th1/2), xywh2.y+math.floor(th2/2))
-                  --DBG(al..'  '..ar..'  '..at..'  '..ab..'  '..ab-at..'  '..ar-al)
                   xywharea[#xywharea+1] = {x=al,y=at,w=ar-al,h=ab-at,r=ar,b=ab}
                 end
               end
@@ -10798,9 +10879,8 @@ function GUI_DrawCtlBitmap_Strips()
           --loop through blit area table - blit to backbuffer
           gfx.a=1
           local ox, oy = 0,0
-          --if surface_offset.x > 0 then ox=-1 end
-          --if surface_offset.y > 0 then oy=-1 end
-          --DBG(obj.sections[10].y)
+          --if surface_offset.x < 0 then ox=-1 end
+          --if surface_offset.y < 0 then oy=-1 end
           if #xywharea > 0 then
             gfx.dest = 1
             for i = 1, #xywharea do
@@ -10819,7 +10899,7 @@ function GUI_DrawCtlBitmap_Strips()
                 end
                 if yy < obj.sections[10].y then
                   xywharea[i].y = xywharea[i].y + (obj.sections[10].y - yy)
-                  xywharea[i].h = xywharea[i].h - (obj.sections[10].y - yy)
+                  xywharea[i].h = xywharea[i].h  - (obj.sections[10].y - yy)
                   yy = obj.sections[10].y
                 end
                 if yy + xywharea[i].h > obj.sections[10].y+obj.sections[10].h then
@@ -16047,7 +16127,6 @@ function GUI_DrawCtlBitmap_Strips()
 
             else
               if stripgallery_view == 0 or macro_lrn_mode == true or snaplrn_mode == true then
-
                 gfx.blit(1000,1,0,surface_offset.x,
                                   surface_offset.y,
                                   obj.sections[10].w,
@@ -18074,6 +18153,11 @@ function GUI_DrawCtlBitmap_Strips()
       GUI_DrawTick(gui, 'Disable key input when surface locked', obj.sections[712], gui.color.white, settings_disablekeysonlockedsurface, gui.fontsz.settings,true)
       GUI_DrawTick(gui, 'Run lbxstart batch file when script starts', obj.sections[729], gui.color.white, settings_runstartbat, gui.fontsz.settings,true)
       GUI_DrawTick(gui, 'Create log file when adding strips (not saved)', obj.sections[730], gui.color.white, logflag, gui.fontsz.settings,true)
+      sb = false
+      if lvar.striploadoverride then
+        sb = true
+      end
+      GUI_DrawButton(gui, lvar.striploadoverride or 'NOT SET', obj.sections[736], gui.color.white, gui.skol.butt1_txt, sb, 'Data file override', true, gui.fontsz.settings,true)
         
     end
     gfx.dest = 1
@@ -23327,8 +23411,8 @@ function GUI_DrawCtlBitmap_Strips()
   function CheckTrack(track, strip, p, c)
   
     --if track == nil then PopulateTracks() end
-    
     --master channel
+
     if track and track.tracknum == -1 then return true end
     if c == nil then
       local found = false
@@ -26741,13 +26825,16 @@ function GUI_DrawCtlBitmap_Strips()
         end
         if snapshots and snapshots[s] and snapshots[s][p] then
           subsetsc = subsetsc + #snapshots[s][p]
-          snapsc = snapsc + #snapshots[s][p][1]
-        
+          if snapshots[s][p][1] then
+            snapsc = snapsc + #snapshots[s][p][1]
+          end
           if #snapshots[s][p] > 1 then
             for i = 2, #snapshots[s][p] do
             
-              snapsc = snapsc + #snapshots[s][p][i].snapshot
-            
+              if snapshots[s][p][i] and snapshots[s][p][i].snapshot then
+                snapsc = snapsc + #snapshots[s][p][i].snapshot
+              end
+              
             end
           end          
         end
@@ -28968,6 +29055,18 @@ function GUI_DrawCtlBitmap_Strips()
     lvar.keypress['editfx_deleteselectedctls'] = 6579564
     lvar.keypress['show_stripbrowser'] = 48
     lvar.keypress['show_ctlmidiout'] = 77
+
+    lvar.keypress['insert_special'] = 329
+    lvar.keypress['insert_favstrip_1'] = 33
+    lvar.keypress['insert_favstrip_2'] = 34
+    lvar.keypress['insert_favstrip_3'] = 163
+    lvar.keypress['insert_favstrip_4'] = 36
+    lvar.keypress['insert_favstrip_5'] = 37
+    lvar.keypress['insert_favstrip_6'] = 94
+    lvar.keypress['insert_favstrip_7'] = 38
+    lvar.keypress['insert_favstrip_8'] = 42
+    lvar.keypress['insert_favstrip_9'] = 40
+    lvar.keypress['insert_favstrip_10'] = 41
     
     local fn = paths.resource_path..'keycommands.ini'
     if reaper.file_exists(fn) then
@@ -28994,7 +29093,7 @@ function GUI_DrawCtlBitmap_Strips()
   end]]
 
   function keypress(char)
-    --DBG(tostring(mouse.ctrl)..'  '..char)
+    --DBG(tostring(mouse.ctrl)..'  '..tostring(mouse.shift)..'  '..tostring(mouse.alt)..'  '..char)
     
     if settings_disablekeysonlockedsurface and settings_locksurface then return end
     
@@ -29280,6 +29379,30 @@ function GUI_DrawCtlBitmap_Strips()
             end
           end
         end
+      elseif char == lvar.keypress['insert_special'] then
+        if mode == 1 and submode == 0 then
+          Menu_InsertSpecial()
+        end
+      elseif char == lvar.keypress['insert_favstrip_1'] then
+        InsertFavStrip(1)               
+      elseif char == lvar.keypress['insert_favstrip_2'] then 
+        InsertFavStrip(2)               
+      elseif char == lvar.keypress['insert_favstrip_3'] then 
+        InsertFavStrip(3)               
+      elseif char == lvar.keypress['insert_favstrip_4'] then 
+        InsertFavStrip(4)               
+      elseif char == lvar.keypress['insert_favstrip_5'] then 
+        InsertFavStrip(5)               
+      elseif char == lvar.keypress['insert_favstrip_6'] then 
+        InsertFavStrip(6)               
+      elseif char == lvar.keypress['insert_favstrip_7'] then 
+        InsertFavStrip(7)               
+      elseif char == lvar.keypress['insert_favstrip_8'] then 
+        InsertFavStrip(8)               
+      elseif char == lvar.keypress['insert_favstrip_9'] then 
+        InsertFavStrip(9)               
+      elseif char == lvar.keypress['insert_favstrip_10'] then
+        InsertFavStrip(10)               
       end
       
     --[[else -- shift
@@ -29294,6 +29417,30 @@ function GUI_DrawCtlBitmap_Strips()
       end
     end   ]] 
     return char
+  end
+
+  function InsertFavStrip(n)
+    if mode == 0 and show_striplayout ~= true and show_pinmatrix ~= true and macro_lrn_mode ~= true and show_xxy ~= true and strip_favs and strip_favs[n] then
+      local fn = strip_favs[n]
+      InsStrip(fn)        
+    end
+  end
+  
+  function Menu_InsertSpecial()
+  
+    local mstr = '#Insert Special Control||Midi editor page switcher'
+    gfx.x = mouse.mx
+    gfx.y = mouse.my
+    local res = gfx.showmenu(mstr)
+    if res > 0 then
+      if res == 2 then
+        knob_select = def_boxctl
+        dragparam = {x = mouse.mx, y = mouse.my, type = 'midieditor_pageswitch'}
+        Strip_AddParam()
+        update_gfx = true
+      end
+    end
+    
   end
   
   function SetShowLFO(show)
@@ -30081,6 +30228,8 @@ function GUI_DrawCtlBitmap_Strips()
   
   function run()  
 
+    --DBG()
+    
     local contexts = contexts
     local ctlcats = ctlcats
     local lvar = lvar
@@ -30100,7 +30249,8 @@ function GUI_DrawCtlBitmap_Strips()
         newloc = nil
         DBGOut('*** INIT NEW PROJECT ***')    
         
-        INIT()
+        INIT(lvar.newloc_preserveid)
+        lvar.newloc_preserveid = nil
       else
         INIT()                
       end
@@ -30975,6 +31125,10 @@ function GUI_DrawCtlBitmap_Strips()
       touch_timer = nil
       update_surface = true
     end
+    --if setpage_wait then
+    --  SetPage(setpage_wait)
+    --  setpage_wait = nil
+    --end
 
   end
 
@@ -34396,7 +34550,7 @@ function GUI_DrawCtlBitmap_Strips()
                         if snapshots and snapshots[tracks[track_select].strip] and snapshots[tracks[track_select].strip][page][fsstype_select] 
                           and snapshots[tracks[track_select].strip][page][fsstype_select].selected then
                         
-                          local w = ctls[i].w
+                          local w = ctls[i].wsc
                           obj.sections[180].w = math.max(w,100)
                           obj.sections[181].w = obj.sections[180].w-6
                           obj.sections[182].w = obj.sections[180].w
@@ -34408,19 +34562,19 @@ function GUI_DrawCtlBitmap_Strips()
                             obj.sections[180].x = F_limit(ctls[i].x - surface_offset.x + obj.sections[10].x + 
                                                           math.floor((ctls[i].w - obj.sections[180].w)/2),
                                                           obj.sections[10].x,obj.sections[10].x+obj.sections[10].w-obj.sections[180].w)
-                            obj.sections[180].y = F_limit(ctls[i].y+ctls[i].ctl_info.cellh
+                            obj.sections[180].y = F_limit(ctls[i].y+ctls[i].hsc
                                                           - surface_offset.y  + obj.sections[10].y - 3,
                                                           obj.sections[10].y,obj.sections[10].y+obj.sections[10].h-obj.sections[180].h)
                           else
                             local x,y = TranslateGalleryCtlPos(i,ci)
                             if x and y then
-                              obj.sections[180].x = x + math.floor((ctls[i].w - obj.sections[180].w)/2)
-                              obj.sections[180].y = y + ctls[i].ctl_info.cellh
+                              obj.sections[180].x = x + math.floor((ctls[i].wsc - obj.sections[180].w)/2)
+                              obj.sections[180].y = y + ctls[i].hsc
                             else
                               x = mouse.mx
                               y = mouse.my
-                              obj.sections[180].x = x + math.floor((ctls[i].w - obj.sections[180].w)/2)
-                              obj.sections[180].y = y + ctls[i].ctl_info.cellh
+                              obj.sections[180].x = x + math.floor((ctls[i].wsc - obj.sections[180].w)/2)
+                              obj.sections[180].y = y + ctls[i].hsc
                               
                               --DBG('xy error')
                             end
@@ -34577,7 +34731,7 @@ function GUI_DrawCtlBitmap_Strips()
                           if snapshots and snapshots[tracks[track_select].strip] and snapshots[tracks[track_select].strip][page][fsstype_select] 
                             and snapshots[tracks[track_select].strip][page][fsstype_select].selected then
                           
-                            local w = ctls[i].w
+                            local w = ctls[i].wsc
                             obj.sections[180].w = math.max(w - (170-138),138)
                             obj.sections[181].w = obj.sections[180].w-6
                             obj.sections[182].w = obj.sections[180].w
@@ -34589,13 +34743,13 @@ function GUI_DrawCtlBitmap_Strips()
                               obj.sections[180].x = F_limit(ctls[i].x - surface_offset.x + obj.sections[10].x + 
                                                             math.floor((ctls[i].w - obj.sections[180].w)/2),
                                                             obj.sections[10].x,obj.sections[10].x+obj.sections[10].w-obj.sections[180].w)
-                              obj.sections[180].y = F_limit(ctls[i].y+ctls[i].ctl_info.cellh
+                              obj.sections[180].y = F_limit(ctls[i].y+ctls[i].hsc
                                                             - surface_offset.y  + obj.sections[10].y - 3,
                                                             obj.sections[10].y,obj.sections[10].y+obj.sections[10].h-obj.sections[180].h)
                             else
                               local x,y = TranslateGalleryCtlPos(i,ci)
-                              obj.sections[180].x = x + math.floor((ctls[i].w - obj.sections[180].w)/2)
-                              obj.sections[180].y = y + ctls[i].ctl_info.cellh
+                              obj.sections[180].x = x + math.floor((ctls[i].wsc - obj.sections[180].w)/2)
+                              obj.sections[180].y = y + ctls[i].hsc
                             end
                           else
                             show_fsnapshots = false
@@ -46278,6 +46432,53 @@ function GUI_DrawCtlBitmap_Strips()
           elseif MOUSE_click(obj.sections[712]) then
             settings_disablekeysonlockedsurface = not settings_disablekeysonlockedsurface
             update_gfx = true
+          elseif MOUSE_click(obj.sections[736]) then
+            if not mouse.ctrl then
+              local retval, fn = reaper.GetUserFileNameForRead('', 'Locate lbx data file', '*.lbxstripper')
+              if retval == true then
+              
+                --SaveData()
+                SaveProj(true,nil,true)
+                
+                lvar.striploadoverride = fn
+                update_gfx = true    
+                
+                LoadData()
+                
+                --newloc = true
+                --lvar.newloc_preserveid = true
+                
+              end
+            else
+              lvar.striploadoverride = nil
+              update_gfx = true    
+
+              lvar.striploadoverride_active = nil
+              LoadData()
+              
+              --newloc = true
+              --lvar.newloc_preserveid = true
+            end
+            
+          elseif MOUSE_click_RB(obj.sections[736]) then
+          
+            local mstr = 'Clear'
+            gfx.x = mx
+            gfx.y = my
+            local res = gfx.showmenu(mstr)
+            if res > 0 then
+              if res == 1 then
+                lvar.striploadoverride = nil
+                update_gfx = true
+
+                lvar.striploadoverride_active = nil
+                LoadData()
+                
+                --newloc = true
+                --lvar.newloc_preserveid = true
+              end
+            end
+          
           end
           
         end
@@ -46455,7 +46656,7 @@ function GUI_DrawCtlBitmap_Strips()
     lvar.settingsinf[2] = {74,731,88,715,726,72}
     lvar.settingsinf[3] = {73,87,95,98,728}
     lvar.settingsinf[4] = {85,86,89,96,720,721,722,723,724,725,702,706,717}
-    lvar.settingsinf[5] = {703,704,714,730,729,712}
+    lvar.settingsinf[5] = {703,704,714,730,729,712,736}
     
     lvar.settingsinf_txt = {}
 
@@ -46557,6 +46758,9 @@ function GUI_DrawCtlBitmap_Strips()
     lvar.settingsinf_txt[729] = {'Execute a batch file called lbxstart.bat located in the resources folder when the script loads',
                                  'You decide what the batch file does - but possible uses are to run an AutoHotKey script to alter the','window properties of the script'}
     lvar.settingsinf_txt[712] = {'Disables keyboard shortcuts when the surface is locked'}
+    lvar.settingsinf_txt[736] = {'EXPERIMENTAL: This option forces Stripper to load the specified data file for every project and disables saving',
+                                 'Useful if you use Stripper just as a template for performing actions',
+                                 'Be careful what you include in the data file as any links to fx plugins etc. will likely not work'}
 
     --lvar.settingsinf_txt[0] = {''}
         
@@ -46575,7 +46779,7 @@ function GUI_DrawCtlBitmap_Strips()
       if strips and tracks[track_select] and strips[tracks[track_select].strip] and #strips[tracks[track_select].strip][page].controls > 0 then
         --check track
         local strip = tracks[track_select].strip
-        
+
         if CheckTrack(strips[strip].track, strip) then        
           if tracks[track_select] and strips[tracks[track_select].strip] then
             local strip = tracks[track_select].strip
@@ -46901,6 +47105,26 @@ function GUI_DrawCtlBitmap_Strips()
                             CheckStripControls()
                           end
                         end
+
+
+                      elseif ctl.ctlcat == ctlcats.midieditor_pageswitch then
+                        
+                        if mode == 0 then
+                          local hwnd = reaper.MIDIEditor_GetActive()
+                          if hwnd then
+                            if page ~= ctl.param_info.paramidx then
+                              setpage_wait = tonumber(ctl.param_info.paramidx)
+                              SetPage(setpage_wait)
+                              break
+                            end
+                          else
+                            if page ~= ctl.param then
+                              setpage_wait = tonumber(ctl.param)
+                              SetPage(setpage_wait)
+                              break
+                            end                        
+                          end
+                        end                        
                       end
                       
                       --if ctl.macrofader then                    
@@ -49552,7 +49776,7 @@ function GUI_DrawCtlBitmap_Strips()
       strips[ss][p] = LoadStripDataX(key, data)
       
     end
-    
+
   end  
   
   function LoadStripDataX(pfx, data)
@@ -50008,6 +50232,10 @@ function GUI_DrawCtlBitmap_Strips()
               strip.controls[c].rsdata.samples[sm] = {fol = fol, fn = nil, fav = nil}
             end
           end
+        else
+          strip.controls[c].rsdata = {}
+          strip.controls[c].rsdata.samples = {}
+          strip.controls[c].rsdata.samplesidx = {}        
         end
 
  
@@ -51297,8 +51525,12 @@ function GUI_DrawCtlBitmap_Strips()
     DBGOut('*** LOADING DATA ***')    
     DBGOut('LoadData: Saved OK: '..tostring(GPES('savedok')))
   
-    if GPES('savedok') ~= '' then
-  
+    if lvar.striploadoverride and not reaper.file_exists(lvar.striploadoverride) then
+      lvar.striploadoverride = nil
+    end
+    
+    if GPES('savedok') ~= '' or lvar.striploadoverride then
+
       if lbxwin_dim then
         gfx1 = {main_w = lbxwin_dim.w,
                 main_h = lbxwin_dim.h}
@@ -51322,12 +51554,15 @@ function GUI_DrawCtlBitmap_Strips()
       
       local rv, v = reaper.GetProjExtState(0,lvar.SCRIPT,'version')
       DBGOut('LoadData: version: '..tostring(v))
-      if v ~= '' then
+      --DBG('LoadData: version: '..tostring(v))
+      
+      if v ~= '' or lvar.striploadoverride then
   
         PROJECTID = tonumber(GPES('projectid'))
+        --DBG('LProjid: '..PROJECTID)
         settings_gridsize = tonumber(nz(GPES('gridsize',true),settings_gridsize))
         settings_showgrid = tobool(nz(GPES('showgrid',true),true))
-        show_editbar = tobool(nz(GPES('showeditbar',true),true))
+        show_editbar = tobool(nz(GPES('showeditbar',true),not settings_hideeditbaronnewproject))
         ogrid = settings_gridsize
         osg = settings_showgrid
         settings_locksurface = tobool(nz(GPES('locksurface',true),false))
@@ -51343,19 +51578,32 @@ function GUI_DrawCtlBitmap_Strips()
         stripfol_select = tonumber(nz(GPES('sb_fol',true),stripfol_select))
         PopulateStrips()
         
+        if show_editbar then
+          plist_w = oplist_w
+        else
+          plist_w = 0
+        end
+        
         DBGOut('LoadData: PROJECT ID: '..tostring(PROJECTID))
         
-        
-        
-        if tonumber(v) >= 0.94 then
+        if lvar.striploadoverride then
+          v = lvar.VERSION
+        end
+                
+        if lvar.striploadoverride or tonumber(v) >= 0.94 then
         
           data = {}
           local load_path
           local fn = GPES('lbxstripper_datafile', true)
+
           LDF = fn
       
-          if fn == nil then return end
-      
+          if fn == nil and lvar.striploadoverride == nil then return end
+
+          if lvar.striploadoverride then
+            fn = ''
+          end
+            
           if settings_savedatainprojectfolder == true then
             load_path=reaper.GetProjectPath('')..'/'
             if reaper.file_exists(load_path..fn) ~= true then
@@ -51367,8 +51615,21 @@ function GUI_DrawCtlBitmap_Strips()
               load_path=reaper.GetProjectPath('')..'/'
             end      
           end
-        
-          local ffn=load_path..fn
+                  
+          local ffn
+          if lvar.striploadoverride then
+            if reaper.file_exists(lvar.striploadoverride) then
+              ffn = lvar.striploadoverride
+              fn = string.match(ffn,'.+[\\/](.*)')
+              lvar.striploadoverride_active = true
+            else
+              DBG('Missing file: '..lvar.striploadoverride)
+              return 0
+            end
+          else
+            ffn=load_path..fn  
+          end
+          
           DBGOut('LoadData: ffn: '..tostring(ffn))
           if reaper.file_exists(ffn) ~= true then
           
@@ -51421,9 +51682,14 @@ function GUI_DrawCtlBitmap_Strips()
         end
         
         if cont == true then
-          local scnt = tonumber(nz(GPES('strips_count'),0))
+          local scnt 
+          if lvar.striploadoverride_active == true then
+            scnt = tonumber(data['stripcount'])
+          else
+            scnt = tonumber(nz(GPES('strips_count'),0)) or tonumber(data['stripcount'])
+          end
           DBGOut('LoadData: strip count: '..tostring(scnt))
-          
+
           strips = {}
           local ss = 1
           if scnt > 0 then
@@ -51440,7 +51706,7 @@ function GUI_DrawCtlBitmap_Strips()
                 --  ss = ss - 1
                 --end
               elseif tonumber(v) >= 0.94 then
-                LoadStripData(s, ss, data)
+                LoadStripData(s, ss, data) 
                 ss=ss+1           
               else
               
@@ -51658,7 +51924,7 @@ function GUI_DrawCtlBitmap_Strips()
             end
             
           end
-          
+
           PopulateTracks()
           Snapshots_INIT()
           local scnt = tonumber(nz(GPES('snapshots_count'),0))
@@ -51771,11 +52037,12 @@ function GUI_DrawCtlBitmap_Strips()
               
             end
             
-            local strip = tracks[track_select].strip
-            if sstype_select and snapshots[strip] and snapshots[strip][page][sstype_select].selected then
-              ss_select = snapshots[strip][page][sstype_select].selected
+            if track_select and tracks[track_select] and tracks[track_select].strip then
+              local strip = tracks[track_select].strip
+              if sstype_select and snapshots[strip] and snapshots[strip][page][sstype_select].selected then
+                ss_select = snapshots[strip][page][sstype_select].selected
+              end
             end
-            
           end
           
           --XXY
@@ -51849,12 +52116,6 @@ function GUI_DrawCtlBitmap_Strips()
       
       PopulateTracks() --must be called to link tracks to strips
       
-      if show_editbar then
-        plist_w = oplist_w
-      else
-        plist_w = 0
-      end
-      
     else
       --error with saved data
       SaveData()
@@ -51918,7 +52179,7 @@ function GUI_DrawCtlBitmap_Strips()
   
   function LoadCompatibility(v, strips)
   
-    if v == nil or tonumber(v) < 0.95 then
+    if v == nil or (tonumber(v) ~= nil and tonumber(v) < 0.95) then
       
       if strips and #strips > 0 then
         for s = 1, #strips do
@@ -52084,6 +52345,8 @@ function GUI_DrawCtlBitmap_Strips()
     if sd and sdf then
       strip_default_glob = {stripfol_select = sdf, strip_select = sd}
     end
+    
+    lvar.striploadoverride = zn(GES('striploadoverride',true))
     
     LoadFavStrips()
     
@@ -52259,6 +52522,8 @@ function GUI_DrawCtlBitmap_Strips()
       reaper.SetExtState(SCRIPT,'strip_default_glob', '', true)
       reaper.SetExtState(SCRIPT,'stripfol_default_glob', '', true)    
     end
+    
+    reaper.SetExtState(SCRIPT,'striploadoverride', lvar.striploadoverride or '', true)
     
     SaveFavStrips()
   end
@@ -53452,8 +53717,8 @@ function GUI_DrawCtlBitmap_Strips()
     
   end
   
-  function SaveData(tmp, bak, noclean)
-  
+  function SaveData(tmp, bak, noclean)  
+    
     local SCRIPT = lvar.SCRIPT
     
     ZeroProjectFlags()
@@ -53461,37 +53726,23 @@ function GUI_DrawCtlBitmap_Strips()
     DBGOut('')
     DBGOut('*** SAVING DATA ***')    
   
-    SaveSettings()
-    
-    if noclean == nil then
-      PopulateTracks()
-      CleanData()
-    end
-        
-    local t = reaper.time_precise()
-        
-    local ffn, save_path, fn = GetSaveFN(tmp)
-
-    local rfn     
-    if settings_backupduringsave == true then
-      local id = tostring(math.floor(math.random() * 0xFFFFFFFF))
-      rfn = string.match(ffn,'(.+).lbxstripper')..'_'..id..'.lbxbak_tmp'
-      copyfile(ffn, rfn)
-    end
-    
-    DBGOut('SaveData: ffn: '..tostring(ffn))
-    
-    file=io.open(ffn,"w")
-    if file == nil then
-      DBG('Failed to create save file:\n\n'..ffn)
-      return nil
-    end
+    SaveSettings()    
         
     local s, p, c, g
+    
+    --backup datafn
+    local datafn = GPES('lbxstripper_datafile', true)
     reaper.SetProjExtState(0,SCRIPT,"","") -- clear first
     
+    --this will retain any original data file name when the overridden datafile is used
+    if datafn then
+      reaper.SetProjExtState(0,SCRIPT,'lbxstripper_datafile',datafn)
+    end
+    
     reaper.SetProjExtState(0,SCRIPT,'version',lvar.VERSION)
-    reaper.SetProjExtState(0,SCRIPT,'projectid',PROJECTID)
+    if PROJECTID then
+      reaper.SetProjExtState(0,SCRIPT,'projectid',PROJECTID)
+    end
     reaper.SetProjExtState(0,SCRIPT,'gridsize',ogrid)
     reaper.SetProjExtState(0,SCRIPT,'showgrid',tostring(settings_showgrid))
     reaper.SetProjExtState(0,SCRIPT,'showeditbar',tostring(show_editbar))
@@ -53512,6 +53763,39 @@ function GUI_DrawCtlBitmap_Strips()
       reaper.SetProjExtState(0,SCRIPT,'win_w',nz(gfx1.main_w,800))
       reaper.SetProjExtState(0,SCRIPT,'win_h',nz(gfx1.main_h,450))    
     end
+    
+    if lvar.striploadoverride_active then 
+      reaper.SetProjExtState(0,SCRIPT,'savedok',tostring(true))
+      return 
+    end
+    
+    --------------------------------------------
+    
+    if noclean == nil then
+      PopulateTracks()
+      CleanData()
+    end
+        
+    local t = reaper.time_precise()
+        
+    local ffn, save_path, fn = GetSaveFN(tmp)
+    
+    local rfn     
+    if settings_backupduringsave == true then
+      local id = tostring(math.floor(math.random() * 0xFFFFFFFF))
+      rfn = string.match(ffn,'(.+).lbxstripper')..'_'..id..'.lbxbak_tmp'
+      copyfile(ffn, rfn)
+    end
+    
+    DBGOut('SaveData: ffn: '..tostring(ffn))
+    
+    file=io.open(ffn,"w")
+    if file == nil then
+      DBG('Failed to create save file:\n\n'..ffn)
+      return nil
+    end
+    
+    --------------------------------------------
     
     SaveDataFile(file, save_path)
     
@@ -58457,7 +58741,7 @@ function GUI_DrawCtlBitmap_Strips()
   settings_locksurfaceonnewproject = false
   setting_reddotindicator = false
   settings_showminimaltopbar = true
-  settings_createbackuponmanualsave = false
+  settings_createbackuponmanualsave = true
   settings_UCV = 1
   settings_touchFB = false
   settings_trackchangemidi = false
@@ -58619,7 +58903,6 @@ function GUI_DrawCtlBitmap_Strips()
     LoadSettings()
     skin, ret = LoadSkin()
     
-
     LoadData()
     CleanData()
     
