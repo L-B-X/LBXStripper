@@ -14,7 +14,7 @@
 
 
   local lvar = {}
-  lvar.scriptver = '0.94.0040' --Script Version
+  lvar.scriptver = '0.94.0041' --Script Version
   
   lvar.ctlupdate_rr = nil
   lvar.ctlupdate_pos = 1
@@ -4050,6 +4050,10 @@
                               h = bh}
     obj.sections[717] = {x = obj.sections[70].w/2+xofft,
                               y = settingswin_off + yoff + yoffm*11,
+                              w = bw,
+                              h = bh}
+    obj.sections[737] = {x = obj.sections[70].w/2+xofft,
+                              y = settingswin_off + yoff + yoffm*12,
                               w = bw,
                               h = bh}
     obj.sections[96] = {x = xofft,
@@ -10358,6 +10362,7 @@ function GUI_DrawCtlBitmap_Strips()
                 local dvoff = ctl.dvaloffset
                 local tnum = ctl.tracknum
                 local font = ctl.font
+                local missing
   
   --              if fxnum == nil then return end
       
@@ -10488,10 +10493,18 @@ function GUI_DrawCtlBitmap_Strips()
                   end
                   if ctlcat == ctlcats.fxparam then
                     if not found then
-                      Disp_Name = CropFXName(ctl.fxname)
-                      Disp_ParamV = 'PLUGIN NOT FOUND'
-                      tc = gui.color.red
-                      val2 = 0
+                      if settings_hideplugnotfound ~= true then
+                        Disp_Name = CropFXName(ctl.fxname)
+                        Disp_ParamV = 'PLUGIN NOT FOUND'
+                        tc = gui.color.red
+                        val2 = 0
+                        missing = true
+                      else
+                        Disp_Name = ''
+                        Disp_ParamV = ''
+                        val2 = 0
+                        missing = true
+                      end
                     else
                       if nz(ctlnmov,'') == '' then
                         _, Disp_Name = reaper.TrackFX_GetParamName(track, fxnum, param, "")
@@ -10768,7 +10781,7 @@ function GUI_DrawCtlBitmap_Strips()
                 end
   
                 gfx.a=1
-                if ctlcat == ctlcats.fxparam and ((track ~= nil and not reaper.TrackFX_GetEnabled(track, fxnum) and pname ~= 'Bypass') or ctl.offline) then
+                if ctlcat == ctlcats.fxparam and ((track ~= nil and not reaper.TrackFX_GetEnabled(track, fxnum) and pname ~= 'Bypass') or ctl.offline or missing) then
                   gfx.a = 0.5
                 elseif (mode == 1 and submode == 1) or ctl.hidden then
                   gfx.a = 0.5
@@ -18137,6 +18150,7 @@ function GUI_DrawCtlBitmap_Strips()
       GUI_DrawColorBox(gui, 'Main background colour', obj.sections[702], gui.color.white, backcol, gui.fontsz.settings,true)
       GUI_DrawTick(gui, 'Show fader assignments on grid', obj.sections[706], gui.color.white, settings_showfaderassignments, gui.fontsz.settings,true)
       GUI_DrawTick(gui, 'Activate snapshot morphing pop-ups', obj.sections[717], gui.color.white, settings_showmorphpop, gui.fontsz.settings, true)
+      GUI_DrawTick(gui, 'Hide "plugin not found" text when plugin missing', obj.sections[737], gui.color.white, settings_hideplugnotfound, gui.fontsz.settings, true)
       
 
     elseif lvar.settingspage == 5 then
@@ -46479,6 +46493,10 @@ function GUI_DrawCtlBitmap_Strips()
           elseif MOUSE_click(obj.sections[717]) then
             settings_showmorphpop = not settings_showmorphpop
             update_gfx = true
+            
+          elseif MOUSE_click(obj.sections[737]) then
+            settings_hideplugnotfound = not settings_hideplugnotfound
+            update_gfx = true
           end
         
         elseif lvar.settingspage == 5 then
@@ -52367,6 +52385,7 @@ function GUI_DrawCtlBitmap_Strips()
     autosnap_itemgapmax = tonumber(nz(GES('autosnap_itemgapmax',true),autosnap_itemgapmax))        
     settings_ssdock = tobool(nz(GES('settings_ssdock',true),settings_ssdock))
     settings_sbdock = tobool(nz(GES('settings_sbdock',true),settings_sbdock))
+    settings_hideplugnotfound = tobool(nz(GES('settings_hideplugnotfound',true),settings_hideplugnotfound))
     
     show_stripbrowser = tobool(nz(GES('show_stripbrowser',true),show_stripbrowser))
     sbwin.x = tonumber(nz(GES('sbwin_x',true),sbwin.x))
@@ -52552,6 +52571,7 @@ function GUI_DrawCtlBitmap_Strips()
     reaper.SetExtState(SCRIPT,'settings_pagescrolldir',tostring(settings_pagescrolldir), true)    
     reaper.SetExtState(SCRIPT,'settings_ssdock',tostring(settings_ssdock), true)    
     reaper.SetExtState(SCRIPT,'settings_sbdock',tostring(settings_sbdock), true)    
+    reaper.SetExtState(SCRIPT,'settings_hideplugnotfound',tostring(settings_hideplugnotfound), true)    
 
     reaper.SetExtState(SCRIPT,'show_stripbrowser',tostring(show_stripbrowser), true)    
     reaper.SetExtState(SCRIPT,'sbwin_x',tostring(sbwin.x), true)    
@@ -58872,6 +58892,7 @@ function GUI_DrawCtlBitmap_Strips()
   settings_runstartbat = false
   settings_lockpinmatrix = false
   settings_backupduringsave = true
+  settings_hideplugnotfound = false
   
   hideunusedtracks = false
   logflag = false
