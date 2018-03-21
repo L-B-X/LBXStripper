@@ -14,7 +14,7 @@
 
 
   local lvar = {}
-  lvar.scriptver = '0.94.0039' --Script Version
+  lvar.scriptver = '0.94.0040' --Script Version
   
   lvar.ctlupdate_rr = nil
   lvar.ctlupdate_pos = 1
@@ -25716,7 +25716,7 @@ function GUI_DrawCtlBitmap_Strips()
     if ra == nil then
       ra = '||#Reassign Parameter'
     end
-    local mstr = 'Duplicate||Align Top|Align Left|Distribute Vertically|Distribute Horizontally||'..gg..ss..sw..mm..'||'..vv..'||Delete'..ra..ac..cp..cpg..'||Control Info'
+    local mstr = 'Duplicate||Align Top|Align Left|Distribute Vertically|Distribute Horizontally||'..gg..ss..sw..mm..'||'..vv..'||Delete'..ra..ac..cp..cpg..'||Control Info||Repatriate Lost Controls'
     gfx.x, gfx.y = mouse.mx, mouse.my
     local res = OpenMenu(mstr)
     if res == 1 then
@@ -25908,7 +25908,40 @@ function GUI_DrawCtlBitmap_Strips()
           CtlInfo(tracks[track_select].strip, page, ctl_select[c].ctl)
         end
       end
+    elseif res == 21 then
+      RepatriateControls()
     end
+  end
+  
+  function RepatriateControls()
+  
+    local strip = tracks[track_select].strip
+    if strips and strips[strip] then
+    
+      if #strips[strip][page].controls > 0 then
+        for i = 1, #strips[strip][page].controls do
+          local ctl = strips[strip][page].controls[i]
+          if ctl.xsc+ctl.wsc < 0 or ctl.ysc + ctl.hsc < 0 or ctl.xsc > surface_size.w or ctl.ysc > surface_size.h then 
+            ctl.x = 0
+            ctl.y = 0
+            ctl.xsc = ctl.x + math.floor(ctl.w/2 - (ctl.w*ctl.scale)/2)
+            ctl.ysc = ctl.y + math.floor(ctl.ctl_info.cellh/2 - (ctl.ctl_info.cellh*ctl.scale)/2)
+          end
+        end
+      end
+      if #strips[strip][page].graphics > 0 then
+        for i = 1, #strips[strip][page].graphics do
+          local ctl = strips[strip][page].graphics[i]
+          if ctl.x+ctl.stretchw < 0 or ctl.y + ctl.stretchh < 0 or ctl.x > surface_size.w or ctl.y > surface_size.h then 
+            ctl.x = 0
+            ctl.y = 0
+          end
+        end    
+      end
+      update_gfx = true
+      SetCtlBitmapRedraw()
+    end
+  
   end
   
   function CtlInfo(strip, page, c)
@@ -26678,7 +26711,7 @@ function GUI_DrawCtlBitmap_Strips()
     else
       gv = '#Page View|#Gallery View'
     end
-    sub = sub .. '||Load Set|Merge Set|Save Set||Clear Set||>Script Data|Load Data File|<Load Backup Data File|Statistics'
+    sub = sub .. '||Load Set|Merge Set|Save Set||Clear Set||>Script Data|Load Data File|<Load Backup Data File|Statistics||Quit without saving'
     if mode == 0 then
       mstr = 'Toggle Topbar|Toggle Sidebar||'..gv..'||Lock X|Lock Y|Scroll Up|Scroll Down||Save Project|Open Settings||>Pages|Page 1|Page 2|Page 3|<Page 4||'..ds..'||'..ls..'Lock Surface||'..dt..'Insert Default Strip'
     else
@@ -26799,6 +26832,8 @@ function GUI_DrawCtlBitmap_Strips()
         end
       elseif res == 32 then
         ShowStats()
+      elseif res == 33 then
+        fquit()
       end
       update_gfx = true
     end
@@ -35490,6 +35525,44 @@ function GUI_DrawCtlBitmap_Strips()
             end
           end
         end
+      elseif MOUSE_click_RB(obj.sections[500]) then
+        if mouse.my > obj.sections[500].y + obj.sections[500].h - tb_butt_h then
+        else
+          local i = math.floor((mouse.my - obj.sections[500].y) / tb_butt_h)-1
+          if i > -1 then
+            if (hideunusedtracks ~= true and tracks[i-1 + tlist_offset]) or (hideunusedtracks == true and tracksused_idx[i + tlist_offset]) then
+              local tr
+              if hideunusedtracks == true then
+                tr = tracksused_idx[i + tlist_offset]
+              else
+                tr = i-1 + tlist_offset
+              end
+              if tr then
+              
+                local mstr = 'Clear track strip data: '..tracks[tr].name..'||Clear strips for ALL tracks' 
+                gfx.x = mouse.mx
+                gfx.y = mouse.my
+                local res = gfx.showmenu(mstr)
+                if res > 0 then
+                  if res == 1 then
+                    ClearTrackStrip(tr)   
+                  elseif res == 2 then
+                    if tracks then
+                      local ret = reaper.MB("Delete ALL strip data?",'Delete Strip Data',4)
+                      if ret == 6 then
+                        for i = -1, #tracks do
+                          ClearTrackStrip(i, true)
+                        end
+                        CleanData()
+                      end
+                    end
+                  end
+                
+                end
+              end
+            end
+          end
+        end      
       end
       
     elseif mode0_submode == 1 then
@@ -38912,6 +38985,7 @@ function GUI_DrawCtlBitmap_Strips()
           movefrom_sc = nil
           update_ctls = true
         end
+        
       elseif lasso ~= nil then
         --Dropped
        
@@ -38937,19 +39011,22 @@ function GUI_DrawCtlBitmap_Strips()
             else
             
               local cp
-              if copy_ctls ~= nil then
-                cp = 'Paste'
+              local cpp = ''
+              if copy_ctls == nil then
+                cpp = '#'  
               end
-              if cp then
-                local mstr = cp
-                gfx.x, gfx.y = mouse.mx, mouse.my
-                local res = OpenMenu(mstr)
-                if res == 1 then
-                  Paste_Selected()
-                  SetCtlBitmapRedraw()  
-                  update_gfx = true
-                end
-              end  
+            
+              cp = cpp..'Paste||Repatriate Lost Controls'
+              local mstr = cp
+              gfx.x, gfx.y = mouse.mx, mouse.my
+              local res = OpenMenu(mstr)
+              if res == 1 then
+                Paste_Selected()
+                SetCtlBitmapRedraw()  
+                update_gfx = true
+              elseif res == 2 then
+                RepatriateControls()
+              end
             end              
           end
         
@@ -57104,6 +57181,22 @@ function GUI_DrawCtlBitmap_Strips()
     end
   end
   
+  function ClearTrackStrip(tr_select, force)
+  
+    if tracks[tr_select] then
+    
+      local res
+      if force ~= true then
+        res = reaper.MB("Delete track's strip data?",'Delete Strip Data',4)
+      end
+      if res == 6 or force == true then
+        tracks[tr_select].strip = -1
+        CleanData()
+      end    
+    end
+  
+  end
+  
   function CleanData()
   
     local striptbl = {}
@@ -58337,7 +58430,16 @@ function GUI_DrawCtlBitmap_Strips()
       reaper.SetProjExtState(0,'LBXFLAGS','LBX_RUNNING','')    
     end
   end    
-  
+
+  function fquit()
+
+    lvar.nosave = true
+    --SaveSettings()    
+    --StripperRunning(false)
+    gfx.quit()
+    
+  end
+    
   function quit()
 
       
@@ -58351,10 +58453,12 @@ function GUI_DrawCtlBitmap_Strips()
     file:write('[strips]'..#strips..'\n')
     file:write('[snapshots]'..#snapshots..'\n')
     file:write('[tracks]'..#tracks..'\n')]]
-      
-    SaveProj(true,nil,true)
+    
+    if lvar.nosave ~= true then
+      SaveProj(true,nil,true)
+    end
     SaveSettings()
-
+    
     --[[file:write('[strips]'..#strips..'\n')
     file:write('[snapshots]'..#snapshots..'\n')
     file:write('[tracks]'..#tracks..'\n')
