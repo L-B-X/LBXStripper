@@ -14,7 +14,7 @@
 
 
   local lvar = {}
-  lvar.scriptver = '0.94.0041' --Script Version
+  lvar.scriptver = '0.94.0042' --Script Version
   
   lvar.ctlupdate_rr = nil
   lvar.ctlupdate_pos = 1
@@ -10356,7 +10356,7 @@ function GUI_DrawCtlBitmap_Strips()
                 local tsz2 = ctl.textsizev or 0
                 local frames = math.floor(ctl.ctl_info.frames)
                 local ctltype = ctl.ctltype
-                local ctlnmov = ctl.ctlname_override
+                local ctlnmov = ctl.ctlname_override or ''
                 local found = ctl.fxfound
                 local maxdp = ctl.maxdp or -1
                 local dvoff = ctl.dvaloffset
@@ -10500,13 +10500,27 @@ function GUI_DrawCtlBitmap_Strips()
                         val2 = 0
                         missing = true
                       else
-                        Disp_Name = ''
+                        Disp_Name = ctlnmov or ctl.param_info.paramname
                         Disp_ParamV = ''
+                        --[[if ctlnmov == '' then
+                          _, Disp_Name = reaper.TrackFX_GetParamName(track, fxnum, param, "")
+                        else
+                          Disp_Name = ctlnmov
+                        end
+                        Disp_ParamV = ctl.dval or ctl.val
+
+                        if dvoff and dvoff ~= 0 then
+                          Disp_ParamV = dvaloffset(Disp_ParamV, ctl.dvaloffset)  
+                        end
+                        if maxdp > -1 then
+                          Disp_ParamV = roundX(Disp_ParamV, maxdp)                  
+                        end]]
+                        
                         val2 = 0
                         missing = true
                       end
                     else
-                      if nz(ctlnmov,'') == '' then
+                      if ctlnmov == '' then
                         _, Disp_Name = reaper.TrackFX_GetParamName(track, fxnum, param, "")
                       else
                         Disp_Name = ctlnmov
@@ -10522,7 +10536,7 @@ function GUI_DrawCtlBitmap_Strips()
                       
                     end
                   elseif ctlcat == ctlcats.trackparam or ctlcat == ctlcats.tracksend then
-                    if nz(ctlnmov,'') == '' then
+                    if ctlnmov == '' then
                       Disp_Name = pname
                     else
                       Disp_Name = ctlnmov                  
@@ -10532,7 +10546,7 @@ function GUI_DrawCtlBitmap_Strips()
                       Disp_ParamV = roundX(Disp_ParamV, maxdp)                  
                     end                  
                   elseif ctlcat == ctlcats.action then
-                    if nz(ctlnmov,'') == '' then
+                    if ctlnmov == '' then
                       Disp_Name = pname
                     else
                       Disp_Name = ctlnmov
@@ -10542,7 +10556,7 @@ function GUI_DrawCtlBitmap_Strips()
                       spv = false  
                     end
                   elseif ctlcat == ctlcats.pkmeter then
-                    if nz(ctlnmov,'') == '' then
+                    if ctlnmov == '' then
                       Disp_Name = pname
                     else
                       Disp_Name = ctlnmov
@@ -10556,7 +10570,7 @@ function GUI_DrawCtlBitmap_Strips()
                       Disp_ParamV = ''
                     end
                   elseif ctlcat == ctlcats.snapshot then
-                    if nz(ctlnmov,'') == '' then
+                    if ctlnmov == '' then
                       Disp_Name = pname
                     else
                       Disp_Name = ctlnmov
@@ -10579,7 +10593,7 @@ function GUI_DrawCtlBitmap_Strips()
                         end
                       end
                     else
-                      v = nz(ctl.val,-1)                  
+                      v = ctl.val or -1                  
                       Disp_ParamV = ''
                       if v > -1 then
                         if snapshots and snapshots[strip] and snapshots[strip][page][param] and snapshots[strip][page][param].selected then
@@ -10597,7 +10611,7 @@ function GUI_DrawCtlBitmap_Strips()
                     end
                     
                   elseif ctlcat == ctlcats.xy or ctlcat == ctlcats.snapshotrand or ctlcat == ctlcats.fxgui then
-                    if nz(ctlnmov,'') == '' then
+                    if ctlnmov == '' then
                       Disp_Name = pname
                     else
                       Disp_Name = ctlnmov
@@ -10607,13 +10621,13 @@ function GUI_DrawCtlBitmap_Strips()
                     end
                   elseif ctlcat == ctlcats.fxoffline then
                     spv = false
-                    if nz(ctlnmov,'') == '' then
+                    if ctlnmov == '' then
                       Disp_Name = pname
                     else
                       Disp_Name = ctlnmov
                     end
                   elseif ctlcat == ctlcats.rcm_switch then
-                    if nz(ctlnmov,'') == '' then
+                    if ctlnmov == '' then
                       Disp_Name = pname
                     else
                       Disp_Name = ctlnmov
@@ -10637,7 +10651,7 @@ function GUI_DrawCtlBitmap_Strips()
                       ctv = roundX(ctv,0)]]
                     end
                     Disp_ParamV = ctv
-                    if nz(ctlnmov,'') == '' then
+                    if ctlnmov == '' then
                       Disp_Name = pname
                     else
                       Disp_Name = ctlnmov
@@ -10646,21 +10660,21 @@ function GUI_DrawCtlBitmap_Strips()
                   elseif ctlcat == ctlcats.macro then
                     --spv = false
                     Disp_ParamV = round(ctl.val,2)
-                    if nz(ctlnmov,'') == '' then
+                    if ctlnmov == '' then
                       Disp_Name = pname
                     else
                       Disp_Name = ctlnmov
                     end
                   elseif ctlcat == ctlcats.eqcontrol then
                     spv = false
-                    if nz(ctlnmov,'') == '' then
+                    if ctlnmov == '' then
                       Disp_Name = pname
                     else
                       Disp_Name = ctlnmov
                     end
                   elseif ctlcat == ctlcats.rs5k then
                     
-                    if nz(ctlnmov,'') == '' then
+                    if ctlnmov == '' then
                       Disp_Name = pname
                     else
                       Disp_Name = ctlnmov
@@ -10678,14 +10692,14 @@ function GUI_DrawCtlBitmap_Strips()
                     
                   elseif ctlcat == ctlcats.switcher then
                     spv = false
-                    --if nz(ctlnmov,'') == '' then
+                    --if ctlnmov == '' then
                       Disp_Name = pname
                     --else
                     --  Disp_Name = ctlnmov
                     --end
                     
                   elseif ctlcat == ctlcats.takeswitcher then
-                    if nz(ctlnmov,'') == '' then
+                    if ctlnmov == '' then
                       Disp_Name = pname
                     else
                       Disp_Name = ctlnmov
@@ -10697,7 +10711,7 @@ function GUI_DrawCtlBitmap_Strips()
                     end
                       
                   elseif ctlcat == ctlcats.midieditor_pageswitch then
-                    if nz(ctlnmov,'') == '' then
+                    if ctlnmov == '' then
                       Disp_Name = pname
                     else
                       Disp_Name = ctlnmov
@@ -22255,33 +22269,34 @@ function GUI_DrawCtlBitmap_Strips()
       local minx, miny, maxx, maxy = nil,nil,nil,nil 
       if #strip.graphics > 0 then
         for i = 1, #strip.graphics do
-          if strip.graphics[i].stretchw == nil then strip.graphics[i].stretchw = strip.graphics[i].w end
-          if strip.graphics[i].stretchh == nil then strip.graphics[i].stretchh = strip.graphics[i].h end
+          local gfxx = strip.graphics[i]
+          if gfxx.stretchw == nil then gfxx.stretchw = gfxx.w end
+          if gfxx.stretchh == nil then gfxx.stretchh = gfxx.h end
           
-          if strip.graphics[i].stretchw > 0 and strip.graphics[i].stretchh > 0 then
+          if gfxx.stretchw > 0 and gfxx.stretchh > 0 then
             if minx == nil then
-              minx = strip.graphics[i].x
-              miny = strip.graphics[i].y
-              maxx = strip.graphics[i].x + strip.graphics[i].stretchw
-              maxy = strip.graphics[i].y + strip.graphics[i].stretchh
+              minx = gfxx.x
+              miny = gfxx.y
+              maxx = gfxx.x + gfxx.stretchw
+              maxy = gfxx.y + gfxx.stretchh
             else
-              minx = math.min(minx, strip.graphics[i].x)
-              miny = math.min(miny, strip.graphics[i].y)
-              maxx = math.max(maxx, strip.graphics[i].x + strip.graphics[i].stretchw)
-              maxy = math.max(maxy, strip.graphics[i].y + strip.graphics[i].stretchh)   
+              minx = math.min(minx, gfxx.x)
+              miny = math.min(miny, gfxx.y)
+              maxx = math.max(maxx, gfxx.x + gfxx.stretchw)
+              maxy = math.max(maxy, gfxx.y + gfxx.stretchh)   
             end
           end
           local fnd = false
-          if nz(strip.graphics[i].gfxtype,lvar.gfxtype.img) == lvar.gfxtype.img then
+          if (gfxx.gfxtype or lvar.gfxtype.img) == lvar.gfxtype.img then
             for j = 0, #graphics_files do
-              if graphics_files[j].fn == strip.graphics[i].fn then
+              if graphics_files[j].fn == gfxx.fn then
               
-                local iidx = LoadGraphics(strip.graphics[i].fn)
+                local iidx = LoadGraphics(gfxx.fn)
                 if iidx then
                   if iidx > image_count_add  then
                     image_count_add = iidx
                   end
-                  strip.graphics[i].imageidx = iidx
+                  gfxx.imageidx = iidx
                   fnd = true
                 end
                 
@@ -22296,31 +22311,32 @@ function GUI_DrawCtlBitmap_Strips()
 
       if #strip.controls > 0 then      
         for i = 1, #strip.controls do
+          local ctl = strip.controls[i]
           if minx == nil then
-            minx = strip.controls[i].x
-            miny = strip.controls[i].y
-            maxx = strip.controls[i].x + strip.controls[i].w
-            maxy = strip.controls[i].y + strip.controls[i].ctl_info.cellh
+            minx = ctl.x
+            miny = ctl.y
+            maxx = ctl.x + ctl.w
+            maxy = ctl.y + ctl.ctl_info.cellh
           else
-            minx = math.min(minx, strip.controls[i].x)
-            miny = math.min(miny, strip.controls[i].y)
-            maxx = math.max(maxx, strip.controls[i].x + strip.controls[i].w)
-            maxy = math.max(maxy, strip.controls[i].y + strip.controls[i].ctl_info.cellh)
+            minx = math.min(minx, ctl.x)
+            miny = math.min(miny, ctl.y)
+            maxx = math.max(maxx, ctl.x + ctl.w)
+            maxy = math.max(maxy, ctl.y + ctl.ctl_info.cellh)
           end
           local fnd = false
           for j = 0, #ctl_files do
-            if ctl_files[j].fn == strip.controls[i].ctl_info.fn then
+            if ctl_files[j].fn == ctl.ctl_info.fn then
               if ctl_files[j].imageidx ~= nil then
                 fnd = true
-                strip.controls[i].ctl_info.imageidx = ctl_files[j].imageidx
-                strip.controls[i].knob_select = j
+                ctl.ctl_info.imageidx = ctl_files[j].imageidx
+                ctl.knob_select = j
               else
                 fnd = true
                 image_count_add = F_limit(image_count_add + 1,0,image_max)
-                gfx.loadimg(image_count_add, paths.controls_path..strip.controls[i].ctl_info.fn)
+                gfx.loadimg(image_count_add, paths.controls_path..ctl.ctl_info.fn)
                 ctl_files[j].imageidx = image_count_add
-                strip.controls[i].ctl_info.imageidx = image_count_add
-                strip.controls[i].knob_select = j
+                ctl.ctl_info.imageidx = image_count_add
+                ctl.knob_select = j
               end
               break
             end
@@ -22359,7 +22375,7 @@ function GUI_DrawCtlBitmap_Strips()
         
           local hidden = GenStripPreview_CtlsHidden(switchers, switchconvtab, gfxx.switcher, gfxx.grpid)
           if hidden == false then
-            if nz(gfxx.gfxtype, lvar.gfxtype.img) == lvar.gfxtype.img then
+            if (gfxx.gfxtype or lvar.gfxtype.img) == lvar.gfxtype.img then
   
               local x = gfxx.x+offsetx 
               local y = gfxx.y+offsety
@@ -22470,8 +22486,8 @@ function GUI_DrawCtlBitmap_Strips()
                             gfxx.font.size,flags)
               if gfxx.font.shadow then
               
-                local shadx = nz(gfxx.font.shadow_x,1)
-                local shady = nz(gfxx.font.shadow_y,1)
+                local shadx = gfxx.font.shadow_x or 1
+                local shady = gfxx.font.shadow_y or 1
               
                 f_Get_SSV(gui.color.black)
                 gfx.a = 0.5
@@ -22494,39 +22510,40 @@ function GUI_DrawCtlBitmap_Strips()
       if #strip.controls > 0 then
       
         for i = 1, #strip.controls do
-        
-          local hidden = GenStripPreview_CtlsHidden(switchers, switchconvtab, strip.controls[i].switcher, strip.controls[i].grpid)
+          local ctl = strip.controls[i]
+          local hidden = GenStripPreview_CtlsHidden(switchers, switchconvtab, ctl.switcher, ctl.grpid)
           if hidden == false then
-            local scale = strip.controls[i].scale
-            local x = strip.controls[i].x+offsetx 
-            local y = strip.controls[i].y+offsety
-            local w = strip.controls[i].w
-            local h = strip.controls[i].ctl_info.cellh
+            local scale = ctl.scale
+            local x = ctl.x+offsetx 
+            local y = ctl.y+offsety
+            local w = ctl.w
+            local h = ctl.ctl_info.cellh
             local gh = h
-            local val = math.floor(100*nz(strip.controls[i].val,0))
-            local fxnum = strip.controls[i].fxnum
-            local param = strip.controls[i].param
-            local iidx = strip.controls[i].ctl_info.imageidx
-            local spn = strip.controls[i].show_paramname
-            local spv = strip.controls[i].show_paramval
-            local ctlnmov = nz(strip.controls[i].ctlname_override,'')
-            local tc = strip.controls[i].textcol
-            local toff = strip.controls[i].textoff
-            local tsze = nz(strip.controls[i].textsize,0)
-            local frames = strip.controls[i].ctl_info.frames
-            local ctltype = strip.controls[i].ctltype
-            local found = strip.controls[i].fxfound
-            local gauge = strip.controls[i].gauge
-            local font = strip.controls[i].font
+            local val = math.floor(100*(ctl.val or 0))
+            local fxnum = ctl.fxnum
+            local param = ctl.param
+            local iidx = ctl.ctl_info.imageidx
+            local spn = ctl.show_paramname
+            local spv = ctl.show_paramval
+            local ctlnmov = ctl.ctlname_override or ''
+            local tc = ctl.textcol
+            local toff = ctl.textoff
+            local toffx = math.floor(ctl.textoffx)
+            local tsze = ctl.textsize or 0
+            local frames = ctl.ctl_info.frames
+            local ctltype = ctl.ctltype
+            local found = ctl.fxfound
+            local gauge = ctl.gauge
+            local font = ctl.font
             if not font then
               font = fontname_def
             end
             
             if gauge then
-              GUI_DrawGauge2(gauge,x+w/2,y+h/2,strip.controls[i])
+              GUI_DrawGauge2(gauge,x+w/2,y+h/2,ctl)
             end
       
-            local v2 = nz(strip.controls[i].val,0)
+            local v2 = ctl.val or 0
             local val2 = F_limit(round(frames*v2,0),0,frames-1)
             gfx.a = 1
             
@@ -22539,12 +22556,12 @@ function GUI_DrawCtlBitmap_Strips()
             
             --load image
             gfx.blit(iidx,scale,0, 0, (val2)*gh, w, h, x + w/2-w*scale/2, y + h/2-h*scale/2)
-            xywh = {x = x, y = y+(h/2)-toff, w = w, h = 1}
-            if w > strip.controls[i].w/2 then
+            xywh = {x = x-toffx, y = y+(h/2)-toff, w = w, h = 1}
+            if w > ctl.w/2 then
               local Disp_ParamV
               local Disp_Name
               if ctlnmov == '' then
-                Disp_Name = strip.controls[i].param_info.paramname
+                Disp_Name = ctl.param_info.paramname
               else
                 Disp_Name = ctlnmov
               end
@@ -46750,7 +46767,7 @@ function GUI_DrawCtlBitmap_Strips()
     lvar.settingsinf[1] = {71,75,76,77,78,79,80,81,82,83,84,97,719,700,705,718,707,708,709,710,711,727,713,716,733,701,734,735}
     lvar.settingsinf[2] = {74,731,88,715,726,72}
     lvar.settingsinf[3] = {73,87,95,98,728}
-    lvar.settingsinf[4] = {85,86,89,96,720,721,722,723,724,725,702,706,717}
+    lvar.settingsinf[4] = {85,86,89,96,720,721,722,723,724,725,702,706,717,737}
     lvar.settingsinf[5] = {703,704,714,730,729,712,736}
     
     lvar.settingsinf_txt = {}
@@ -46837,6 +46854,7 @@ function GUI_DrawCtlBitmap_Strips()
     lvar.settingsinf_txt[702] = {'Set the main surface background colour'}
     lvar.settingsinf_txt[706] = {'Draw coloured boxes around controls that have fader and modulator assignments'}
     lvar.settingsinf_txt[717] = {'When morphing - draw a pop-up control on the top left of the strip surface','Use this pop-up to stop/pause/change direction of and crossfade the morph'}
+    lvar.settingsinf_txt[737] = {'Removes "plugin not found" text when a plugin is not found - makes it look offline'}
     
     --PAGE 5
     
