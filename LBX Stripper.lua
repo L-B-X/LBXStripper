@@ -14,7 +14,7 @@
 
 
   local lvar = {}
-  lvar.scriptver = '0.94.0042' --Script Version
+  lvar.scriptver = '0.94.0043' --Script Version
   
   lvar.ctlupdate_rr = nil
   lvar.ctlupdate_pos = 1
@@ -22528,7 +22528,7 @@ function GUI_DrawCtlBitmap_Strips()
             local ctlnmov = ctl.ctlname_override or ''
             local tc = ctl.textcol
             local toff = ctl.textoff
-            local toffx = math.floor(ctl.textoffx)
+            local toffx = math.floor(ctl.textoffx or 0)
             local tsze = ctl.textsize or 0
             local frames = ctl.ctl_info.frames
             local ctltype = ctl.ctltype
