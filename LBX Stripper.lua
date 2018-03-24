@@ -14,7 +14,7 @@
 
 
   local lvar = {}
-  lvar.scriptver = '0.94.0043' --Script Version
+  lvar.scriptver = '0.94.0044' --Script Version
   
   lvar.ctlupdate_rr = nil
   lvar.ctlupdate_pos = 1
@@ -2281,6 +2281,11 @@
                           y = (butt_h+10 + (butt_h/2+4 + 10) * 5)*pnl_scale,
                           w = (butt_h/2+4)*pnl_scale,
                           h = (butt_h/2+4)*pnl_scale}
+      --DNU
+      obj.sections[864] = {x = obj.sections[45].w-(40-butt_h/2+4)*pnl_scale,
+                          y = (butt_h+10 + (butt_h/2+4 + 10) * 7)*pnl_scale,
+                          w = (butt_h/2+4)*pnl_scale,
+                          h = (butt_h/2+4)*pnl_scale}
                              
       --[[SNAPSHOTS
       
@@ -3970,6 +3975,10 @@
                               h = bh}
     obj.sections[72] = {x = xofftm,
                               y = settingswin_off + yoff + yoffm*10,
+                              w = bw,
+                              h = bh}
+    obj.sections[738] = {x = xofftm,
+                              y = settingswin_off + yoff + yoffm*12,
                               w = bw,
                               h = bh}
     
@@ -6077,6 +6086,7 @@
     end  
   
     GUI_DrawCtlBitmap()
+    ctls_dnu, ctls_upd = CtlDNU(ctlnum)
     
     return ctlnum
   end
@@ -9727,6 +9737,7 @@
       GUI_DrawTick(gui, 'BYPASS BG VAL', obj.sections[862], gui.skol.pnl_txt, bypass_bgdraw_v_select)
       
       GUI_DrawTick(gui, 'CLICK THROUGH', obj.sections[863], gui.skol.pnl_txt, clickthrough_select)
+      GUI_DrawTick(gui, "AUTO MONITOR VALUE", obj.sections[864], gui.skol.pnl_txt, not dnu_select)
 
     end
     
@@ -18140,6 +18151,7 @@ function GUI_DrawCtlBitmap_Strips()
       GUI_DrawTick(gui, 'Run modulators when stopped', obj.sections[715], gui.color.white, settings_alwaysrunmods, gui.fontsz.settings,true)
       GUI_DrawTick(gui, 'Alternative edit mode drag', obj.sections[726], gui.color.white, settings_dragmode, gui.fontsz.settings,true)
       GUI_DrawTick(gui, 'Disable send checks', obj.sections[72], gui.color.white, settings_disablesendchecks, gui.fontsz.settings,true)             
+      GUI_DrawTick(gui, 'Allow control value monitoring to be disabled', obj.sections[738], gui.color.white, settings_enablednu, gui.fontsz.settings,true)             
       
     elseif lvar.settingspage == 3 then
 
@@ -18880,6 +18892,8 @@ function GUI_DrawCtlBitmap_Strips()
   
     local val = DenormalizeValue(min,max,v)
     reaper.SetMediaTrackInfo_Value(track, trctls_table[trctl_idx].parmname, val)
+    --DBG(v..'  '..val)
+    return v
     
   end
 
@@ -18904,6 +18918,7 @@ function GUI_DrawCtlBitmap_Strips()
     else
       reaper.SetTrackSendInfo_Value(track, 0, idx, paramstr, val)
     end
+    return val
     
   end
 
@@ -19768,21 +19783,23 @@ function GUI_DrawCtlBitmap_Strips()
         local fxnum = nz(ctl.fxnum,-1)
         local param = ctl.param
         local min, max = A_GetParamMinMax(cc,track,ctl,fxnum,param,true,c)
-        reaper.TrackFX_SetParam(track, fxnum, param, DenormalizeValue(min, max, v))
+        ctl.val = DenormalizeValue(min, max, v)
+        reaper.TrackFX_SetParam(track, fxnum, param, ctl.val)
 
       elseif cc == ctlcats.trackparam then
         local param = ctl.param
-        if strip == tracks[track_select].strip and page == page then
+        if (settings_enablednu ~= true or ctl.dnu ~= true) and strip == tracks[track_select].strip and page == page then
           SetCtlDirty(c)
         end
         local min, max = A_GetParamMinMax(cc,track,ctl,nil,param,true,c)
-        SMTI_norm(track,param,v,min,max)
+        ctl.val = SMTI_norm(track,param,v,min,max)
 
       elseif cc == ctlcats.tracksend then
         local param = ctl.param
         ctl.dirty = true
         local min, max = A_GetParamMinMax(cc,track,ctl,nil,param,true,c)
-        STSI_norm(track,param,v,min,max,c,strip,page)
+        ctl.val = STSI_norm(track,param,v,min,max,c,strip,page)
+        
       elseif cc == ctlcats.fxoffline then
         SetFXOffline2(strip, page, c, track, v)
       
@@ -19822,13 +19839,15 @@ function GUI_DrawCtlBitmap_Strips()
           reaper.TrackFX_SetNamedConfigParm(track, ctl.fxnum, 'DONE', '')        
         end
 
-        SetCtlDirty(c)
-        
+        if (settings_enablednu ~= true or ctl.dnu ~= true) and strip == tracks[track_select].strip and page == page then      
+          SetCtlDirty(c)
+        end
+              
       elseif cc == ctlcats.macro then
         
         ctl.val = v
         SetMacro(strip, page, c)
-        if strip == tracks[track_select].strip and page == page then      
+        if (settings_enablednu ~= true or ctl.dnu ~= true) and strip == tracks[track_select].strip and page == page then      
           SetCtlDirty(c)
         end
       end    
@@ -20463,6 +20482,8 @@ function GUI_DrawCtlBitmap_Strips()
     if delfx_flag and settings_deletefxwithstrip and #delfx > 0 and #delfxtracks.idx > 0 then
       DeleteFXPlugins(delfx, delfxtracks)
     end
+    
+    ctls_dnu, ctls_upd = CtlDNU()
     
     show_samplemanager = false
     
@@ -22232,7 +22253,7 @@ function GUI_DrawCtlBitmap_Strips()
     PopulateTrackFX()
     
     GUI_DrawCtlBitmap()
-    
+    ctls_dnu, ctls_upd = CtlDNU() 
     
     return stripid, strip, grpid
     
@@ -23588,7 +23609,7 @@ function GUI_DrawCtlBitmap_Strips()
   
   end
 
-  --[[function GetLeftTopControlSelected()
+  function GetLeftTopControlSelected()
   
     local minx,x = 2048,2048
     local miny,y = 2048,2048
@@ -23598,18 +23619,23 @@ function GUI_DrawCtlBitmap_Strips()
     local ctls = strips[tracks[track_select].strip][page].controls
 
     for j = 1, #ctl_select do
-    
-      if controls[j].id == stripid or stripid == nil then
-        local x = math.min(x,controls[j].x)
+      local ctl = ctls[ctl_select[j].ctl] 
+      if ctl then
+        local x = math.min(x,ctl.x)
         if x < minx then
           minx = x
           lctl = j
         end
+        local y = math.min(y,ctl.y)
+        if y < miny then
+          miny = y
+          tctl = j
+        end
       end
     end
-    return lctl
+    return minx, miny, lctl, tctl
     
-  end]]
+  end
 
   function CheckSwitcherCtls(c,switchid)
     local ret = false
@@ -25747,7 +25773,8 @@ function GUI_DrawCtlBitmap_Strips()
     if ra == nil then
       ra = '||#Reassign Parameter'
     end
-    local mstr = 'Duplicate||Align Top|Align Left|Distribute Vertically|Distribute Horizontally||'..gg..ss..sw..mm..'||'..vv..'||Delete'..ra..ac..cp..cpg..'||Control Info||Repatriate Lost Controls'
+    local mstr = 'Duplicate||Align Top|Align Left|Distribute Vertically|Distribute Horizontally||'..gg..ss..sw..mm..'||'..vv..'||Delete'..ra..ac..cp..cpg..
+                 '||Control Info||Repatriate Lost Controls||>Cluster Controls|4 columns|8 columns|12 columns|16 columns|Stack'
     gfx.x, gfx.y = mouse.mx, mouse.my
     local res = OpenMenu(mstr)
     if res == 1 then
@@ -25941,9 +25968,47 @@ function GUI_DrawCtlBitmap_Strips()
       end
     elseif res == 21 then
       RepatriateControls()
+    elseif res == 22 then
+      ClusterControls(4)
+    elseif res == 23 then
+      ClusterControls(8)
+    elseif res == 24 then
+      ClusterControls(12)
+    elseif res == 25 then
+      ClusterControls(16)
+    elseif res == 26 then
+      ClusterControls(-1)
     end
   end
-  
+
+  function ClusterControls(col)
+
+    local strip = tracks[track_select].strip
+    if strips and strips[strip] and ctl_select then
+    
+      local l,t,lctl = GetLeftTopControlSelected()
+      local ctl = strips[strip][page].controls[lctl]
+      local w, h = 0,0
+      if ctl and col ~= -1 then
+        w, h = ctl.wsc, ctl.hsc 
+      end
+      for i = 1, #ctl_select do
+        local ctl = strips[strip][page].controls[ctl_select[i].ctl]
+        if ctl then
+          local xp = (i-1) % col
+          local yp = math.floor((i-1) / col)
+          ctl.x = l + math.floor(xp*w)
+          ctl.y = t + math.floor(yp*h)
+          ctl.xsc = ctl.x + math.floor(ctl.w/2 - (ctl.w*ctl.scale)/2)
+          ctl.ysc = ctl.y + math.floor(ctl.ctl_info.cellh/2 - (ctl.ctl_info.cellh*ctl.scale)/2)
+        end        
+      end
+      update_gfx = true
+      
+    end
+    
+  end
+    
   function RepatriateControls()
   
     local strip = tracks[track_select].strip
@@ -27193,6 +27258,8 @@ function GUI_DrawCtlBitmap_Strips()
       TrackChangeMidi()
     end
     
+    ctls_dnu, ctls_upd = CtlDNU()
+    
     --if settings_autocentrectls then
     --  AutoCentreCtls()
     --end
@@ -27257,6 +27324,7 @@ function GUI_DrawCtlBitmap_Strips()
       bypass_bgdraw_n_select = ctl.bypassbg_n
       bypass_bgdraw_v_select = ctl.bypassbg_v
       clickthrough_select = ctl.clickthrough
+      dnu_select = ctl.dnu
       
       SetKnobScaleMode()
       cycle_select = Cycle_CopySelectIn(ctl_select[1].ctl)
@@ -28163,6 +28231,9 @@ function GUI_DrawCtlBitmap_Strips()
     if settings_trackchangemidi == true then
       TrackChangeMidi()
     end
+    
+    ctls_dnu, ctls_upd = CtlDNU()
+    
     --Env_Test(tracks[track_select].strip, page)
   end
   
@@ -30541,7 +30612,7 @@ function GUI_DrawCtlBitmap_Strips()
     
     if show_trackfxorder then
 
-      UpdateControlValues2(rt)    
+      UpdateControlValues3(rt, ctls_upd)    
       char = A_Run_TFXOrder(char)
       if mode == 0 and show_pinmatrix == true then
         noscroll = A_Run_PinMatrix(noscroll, rt, char)
@@ -30549,12 +30620,12 @@ function GUI_DrawCtlBitmap_Strips()
     
     elseif show_midiout then
     
-      UpdateControlValues2(rt)
+      UpdateControlValues3(rt, ctls_upd)    
       A_Run_MidiOut(char)
     
     elseif lbx_midilrnctl then
     
-      UpdateControlValues2(rt)
+      UpdateControlValues3(rt, ctls_upd)    
       A_Run_MidiLrn(char)
     
     elseif show_xxy == false then
@@ -30571,7 +30642,7 @@ function GUI_DrawCtlBitmap_Strips()
         checksends = true
       end      
 
-      UpdateControlValues2(rt)
+      UpdateControlValues3(rt, ctls_upd)    
 
       if show_settings then
         
@@ -38141,6 +38212,13 @@ function GUI_DrawCtlBitmap_Strips()
             for i = 1, #ctl_select do
               strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].clickthrough = clickthrough_select
             end            
+            update_gfx = true
+          elseif mouse.context == nil and MOUSE_click(obj.sections[864]) then
+            dnu_select = not dnu_select 
+            for i = 1, #ctl_select do
+              strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].dnu = dnu_select
+            end
+            ctls_dnu, ctls_upd = CtlDNU()
             update_gfx = true
           end
           
@@ -46429,6 +46507,10 @@ function GUI_DrawCtlBitmap_Strips()
           elseif MOUSE_click(obj.sections[72]) then
             settings_disablesendchecks = not settings_disablesendchecks
             update_settings = true
+          elseif MOUSE_click(obj.sections[738]) then
+            settings_enablednu = not settings_enablednu
+            ctls_dnu, ctls_upd = CtlDNU()
+            update_settings = true
           end  
           
         elseif lvar.settingspage == 3 then
@@ -46765,7 +46847,7 @@ function GUI_DrawCtlBitmap_Strips()
   
     lvar.settingsinf = {}
     lvar.settingsinf[1] = {71,75,76,77,78,79,80,81,82,83,84,97,719,700,705,718,707,708,709,710,711,727,713,716,733,701,734,735}
-    lvar.settingsinf[2] = {74,731,88,715,726,72}
+    lvar.settingsinf[2] = {74,731,88,715,726,72,738}
     lvar.settingsinf[3] = {73,87,95,98,728}
     lvar.settingsinf[4] = {85,86,89,96,720,721,722,723,724,725,702,706,717,737}
     lvar.settingsinf[5] = {703,704,714,730,729,712,736}
@@ -46829,6 +46911,8 @@ function GUI_DrawCtlBitmap_Strips()
                                 'Although monitoring of track sends is useful to try to keep track of any changes - it can also',
                                 'cause small but noticeable delays under certain conditions - so can be disabled'}
     lvar.settingsinf_txt[715] = {'Setting this option will cause modulators to continue running even when transport has been paused or stopped'}
+    lvar.settingsinf_txt[738] = {"EXPERIMENTAL: Allow the disabling of constant monitoring of a control's value",'This option works in conjunction with the "auto monitor value" option in CTL OPTIONS page 3',
+                                 'This option can be useful to save CPU when you do not require a control to keep track of its current value'}
     
     --PAGE 3
     
@@ -46880,6 +46964,451 @@ function GUI_DrawCtlBitmap_Strips()
     lvar.settings_rrpos = 1
     lvar.settings_rr = 5
     lvar.settings_last = -1
+  end
+  
+  --returns ctls_dnu, ctls_upd
+  function CtlDNU(c)
+    local strip = tracks[track_select].strip
+
+    if settings_enablednu == true then
+      if strips[strip] then
+        local ctls_dnu_ret, ctls_upd_ret = {}, {}
+        if c == nil then
+          for i = 1, #strips[strip][page].controls do
+            local ctl = strips[strip][page].controls[i]
+            ctl.ctli = i
+            if ctl.dnu == true then
+              ctls_dnu_ret[#ctls_dnu_ret+1] = ctl
+            else
+              ctls_upd_ret[#ctls_upd_ret+1] = ctl          
+            end
+          end
+        else
+          ctls_dnu_ret = ctls_dnu or {}
+          ctls_upd_ret = ctls_upd or {}
+          local ctl = strips[strip][page].controls[c]
+          if ctl then
+            ctl.ctli = c
+            if ctl.dnu == true then
+              ctls_dnu[#ctls_dnu+1] = ctl
+            else
+              ctls_upd[#ctls_upd+1] = ctl          
+            end
+          end
+        end
+        return ctls_dnu_ret, ctls_upd_ret
+      else
+        return {}, {}
+      end
+    else
+      if strips[strip] then
+        return {}, strips[strip][page].controls
+      else
+        return {}, {}
+      end
+    end
+  end
+  
+  function UpdateControlValues3(rt, ctls_upd, force)
+  
+    --local ttt = reaper.time_precise()
+    if rt == nil then rt = time_nextupdate end
+    
+    if rt >= time_nextupdate then
+      --local suf = settings_updatefreq
+      --if mode == 1 then suf = 0.2 end
+  
+      time_nextupdate = rt + settings_updatefreq
+      if ctls_upd and #ctls_upd > 0 and tracks[track_select] then
+        --check track
+        local strip = tracks[track_select].strip
+  
+        if CheckTrack(strips[strip].track, strip) then        
+          if tracks[track_select] and strips[tracks[track_select].strip] then
+            local strip = tracks[track_select].strip
+  
+            local tr2 = GetTrack(strips[strip].track.tracknum)
+            if tr2 ~= nil then
+              if strips and strips[strip] then
+                local chktbl = {}
+                local pkmts = false
+  
+                --rr
+                
+                local rrend
+                if lvar.ctlupdate_rr and not force then
+                  if not ctls_upd[lvar.ctlupdate_pos] then
+                    lvar.ctlupdate_pos = 1
+                  end
+                  rrend = math.min(lvar.ctlupdate_pos+(lvar.ctlupdate_rr or 0),#ctls_upd)
+                end
+                
+                for updi = lvar.ctlupdate_pos, (rrend or #ctls_upd) do
+                  --check fx
+                  local ctl = ctls_upd[updi]
+                  local i = updi
+                  if settings_enablednu then
+                    i = ctl.ctli
+                  end
+                  
+                  if not ctl.trackmissing then
+                  
+                    tr = tr2
+                    local tr_found = true
+                    if ctl.tracknum ~= nil then
+                      tr_found = CheckTrack(tracks[ctl.tracknum], strip, page, i)
+                      if tr_found then
+                        tr = GetTrack(ctl.tracknum)
+                      end 
+                    end
+                    
+                    if tr_found then
+                      if ctl.ctlcat == ctlcats.fxparam then
+                        local fxguid = reaper.TrackFX_GetFXGUID(tr, ctl.fxnum)
+                        if ctl.fxguid == fxguid then
+    
+                          local pn = reaper.TrackFX_GetNumParams(tr,ctl.fxnum)
+                          if pn ~= 2 then
+                            if ctl.offline ~= nil then
+                              ctl.dirty = true
+                            end
+                            ctl.offline = nil
+                          else
+                            if ctl.offline == nil then
+                              ctl.dirty = true
+                            end
+                            ctl.offline = true
+                          end
+                        
+                          local _, v = reaper.TrackFX_GetFormattedParamValue(tr, ctl.fxnum, ctl.param, "")                          
+                          local v2, min, max = reaper.TrackFX_GetParam(tr, ctl.fxnum, ctl.param)
+                          min = ctl.minov or min
+                          max = ctl.maxov or max
+                          v2 = normalize(min, max, v2)
+                          
+                          --[[local v2 = GetParamValue2(ctl.ctlcat,
+                                                   tr,
+                                                   ctl.fxnum,
+                                                   ctl.param, i)]]
+                            
+                          if ctl.ctltype == 4 then
+                            if tostring(ctl.dval) ~= tostring(v) then
+                            
+                              ctl.val = v2
+                              ctl.dval = v
+                              ctl.dirty = true
+                              ctl.cycledata.posdirty = true 
+                              update_ctls = true
+      
+                              if ctl.midiout then
+                                SendMIDIMsg(ctl.midiout, ctl.val)
+                              end
+                            end
+                          else
+                            if v ~= '' then
+                              if ctl.dval ~= v then
+                                ctl.val = v2
+                                ctl.dval = v
+                                ctl.dirty = true
+                                if ctl.param_info.paramname == 'Bypass' then
+                                  SetCtlEnabled(ctl.fxnum) 
+                                end
+                                update_ctls = true
+    
+                                if ctl.midiout then
+                                  SendMIDIMsg(ctl.midiout, ctl.val)
+                                end
+                              end
+                            elseif ctl.val ~= v2 then
+                              ctl.val = v2
+                              ctl.dval = v
+                              ctl.dirty = true
+                              if ctl.param_info.paramname == 'Bypass' then
+                                SetCtlEnabled(ctl.fxnum) 
+                              end
+                              update_ctls = true
+  
+                              if ctl.midiout then
+                                SendMIDIMsg(ctl.midiout, ctl.val)
+                              end
+                            
+                            end  
+                          end
+                        else
+                          if ctl.fxfound then
+                            CheckStripControls()
+                          end
+                        end
+                      elseif ctl.ctlcat == ctlcats.trackparam then
+                        local v = GetParamValue2(ctl.ctlcat,
+                                                 tr,
+                                                 nil,
+                                                 ctl.param, i)
+                        if ctl.ctltype == 4 then
+                          if tostring(ctl.val) ~= tostring(v) then
+                            ctl.val = v
+                            ctl.dirty = true
+                            ctl.cycledata.posdirty = true 
+                            update_ctls = true
+  
+                            if ctl.midiout then
+                              SendMIDIMsg(ctl.midiout, ctl.val)
+                            end                          
+                          end
+                        else
+                          if ctl.val ~= v then
+                            ctl.val = v
+                            ctl.dirty = true
+                            update_ctls = true
+  
+                            if ctl.midiout then
+                              SendMIDIMsg(ctl.midiout, ctl.val)
+                            end
+                          end
+                        end
+                                            
+                      elseif ctl.ctlcat == ctlcats.tracksend then
+    
+                        if settings_disablesendchecks == false and checksends == true then
+                          local tt = ctl.tracknum
+                          if tt == nil then
+                            tt = strips[strip].track.tracknum
+                          end
+                          local chk
+                          
+                          chk, chktbl[tt] = CheckSendGUID(tt,nil,ctl.param_info.paramnum,
+                                                                ctl.param_info.paramdestguid,
+                                                                ctl.param_info.paramdestchan,
+                                                                ctl.param_info.paramsrcchan,
+                                                                chktbl[tt])
+                          if chk == false then
+                            chktbl = CheckStripSends(chktbl)
+                          end
+                        end                    
+    
+                        local v = GetParamValue2(ctl.ctlcat,
+                                                 tr,
+                                                 nil,
+                                                 ctl.param, i)
+    
+                        if ctl.ctltype == 4 then
+                          if tostring(ctl.val) ~= tostring(v) then
+                            ctl.val = v
+                            ctl.dirty = true
+                            ctl.cycledata.posdirty = true 
+                            update_ctls = true                    
+  
+                            if ctl.midiout then
+                              SendMIDIMsg(ctl.midiout, ctl.val)
+                            end
+                          end
+                        else
+                          if ctl.val ~= v then
+                            ctl.val = v
+                            ctl.dirty = true
+                            update_ctls = true
+  
+                            if ctl.midiout then
+                              SendMIDIMsg(ctl.midiout, ctl.val)
+                            end
+                          end
+                        end
+                      elseif ctl.ctlcat == ctlcats.pkmeter then
+                        if rt >= time_nextupdate_pkmeter then
+                          pkmts = true
+                          local chd = 0
+                          local trn = strips[strip].track.tracknum
+                          if ctl.tracknum ~= nil then
+                            trn = ctl.tracknum
+                          end
+                          local p = ctl.param
+                          local v = GetParamValue2(ctl.ctlcat,
+                                                   tr,
+                                                   nil,
+                                                   p, i)
+                          if peak_info[trn] and peak_info[trn][p % 64] then
+                            chd = peak_info[trn][p % 64].ch_d
+                          else
+                            chd = -150
+                          end
+                          if tostring(ctl.val) ~= tostring(chd) then
+                            ctl.val = chd
+                            ctl.dirty = true
+                            update_ctls = true
+  
+                            if ctl.midiout then
+                              SendMIDIMsg(ctl.midiout, ctl.val)
+                            end
+                            --update_mtrs = true
+                          end
+                        end
+                      
+                      elseif ctl.ctlcat == ctlcats.rs5k then
+                        
+                        local fxguid = reaper.TrackFX_GetFXGUID(tr, ctl.fxnum)
+                        if ctl.fxguid == fxguid and ctl.rsdata.samplesidx then
+                          local lvar = lvar
+                          local retval, fn = reaper.TrackFX_GetNamedConfigParm(tr, ctl.fxnum, 'FILE')
+                          local ffn = string.match(fn, '.*[\\/](.*)')
+                          local si = ctl.rsdata.samplesidx[fn]
+                          if si and si ~= math.min(math.floor(ctl.val * lvar.maxsamples)+1,#ctl.rsdata.samples) then
+                            ctl.val = ((si-1) / lvar.maxsamples)
+                            ctl.dirty = true
+                            update_ctls = true
+                          end
+                          
+                          --Check keyboard controls - params 
+                          if show_samplemanager == true and rs5k_select == i then
+                            local pkey = 72 + lvar.rs.pitch
+                            local kstart = lvar.kb.kstart or -1
+                            local kend = lvar.kb.kend or -1    
+                            local pstart = 3
+                            local pend = 4
+                            
+                            local s = reaper.TrackFX_GetParam(tr,ctl.fxnum,pstart)
+                            local e = reaper.TrackFX_GetParam(tr,ctl.fxnum,pend)    
+                            local pit = reaper.TrackFX_GetParam(tr,ctl.fxnum,15)
+                            
+                            local single = 1/160
+                            local diff = 0.5-pit
+                      
+                            if s*128 ~= lvar.kb.kstart or
+                               e*128 ~= lvar.kb.kend or
+                               round(diff/single) ~= lvar.rs.pitch then
+                              lvar.rs.pitch = round(diff/single)
+                              lvar.kb.kstart = s*128
+                              lvar.kb.kend = e*128
+                              GUI_DrawKeyboardOverlay(obj, gui)
+                              update_samplemanager = true
+                            end                          
+                          end                          
+                        else
+                          if ctl.fxfound then
+                            CheckStripControls()
+                          end
+                        end
+                      
+                      elseif ctl.ctlcat == ctlcats.takeswitcher then
+                        
+                        if ctl.iteminfo then
+                          local item = GetMediaItemByGUID(ctl.iteminfo.guid)
+                          if item then
+                            local tkidx = reaper.GetMediaItemInfo_Value(item,'I_CURTAKE')
+                            if tkidx and tkidx >= 0 then
+                              tkidx2 = tkidx/takeswitch_max
+                              if tkidx2 ~= ctl.val then
+                                ctl.val = tkidx2
+                                --ctl.tkidx = tkidx
+                                local take = reaper.GetTake(item, tkidx)
+                                if take then
+                                  _, ctl.iteminfo.curtake = reaper.GetSetMediaItemTakeInfo_String(take, 'P_NAME', '', false)
+                                else
+                                  ctl.iteminfo.curtake = 'empty'
+                                end
+                                ctl.dirty = true
+                                update_ctls = true
+                              end
+                            end
+                          end
+                        end
+                        
+                      elseif ctl.ctlcat == ctlcats.fxoffline then
+                        local fxguid = reaper.TrackFX_GetFXGUID(tr, ctl.fxnum)
+                        if ctl.fxguid == fxguid then
+    
+                          local pn = reaper.TrackFX_GetNumParams(tr,ctl.fxnum)
+                          if pn ~= 2 then
+                            if ctl.offline ~= nil then
+                              ctl.dirty = true
+                              update_ctls = true
+                              
+                              if ctl.midiout then
+                                SendMIDIMsg(ctl.midiout, ctl.val)
+                              end
+                            end
+                            ctl.offline = nil
+                            ctl.val = 0
+                          else
+                            if ctl.offline == nil then
+                              ctl.dirty = true
+                              update_ctls = true
+                              
+                              if ctl.midiout then
+                                SendMIDIMsg(ctl.midiout, ctl.val)
+                              end
+                            end
+                            ctl.offline = true
+                            ctl.val = 1
+                          end
+                        else
+                          if ctl.fxfound then
+                            CheckStripControls()
+                          end
+                        end                  
+                      elseif ctl.ctlcat == ctlcats.fxgui or (ctl.ctlcat == ctlcats.rcm_switch and ctl.fxnum) then
+                        local fxguid = reaper.TrackFX_GetFXGUID(tr, ctl.fxnum)
+                        if ctl.fxguid and ctl.fxguid ~= fxguid then
+                          if ctl.fxfound then
+                            CheckStripControls()
+                          end
+                        end
+  
+  
+                      elseif ctl.ctlcat == ctlcats.midieditor_pageswitch then
+                        
+                        if mode == 0 then
+                          local hwnd = reaper.MIDIEditor_GetActive()
+                          if hwnd then
+                            if page ~= ctl.param_info.paramidx then
+                              setpage_wait = tonumber(ctl.param_info.paramidx)
+                              SetPage(setpage_wait)
+                              break
+                            end
+                          else
+                            if page ~= ctl.param then
+                              setpage_wait = tonumber(ctl.param)
+                              SetPage(setpage_wait)
+                              break
+                            end                        
+                          end
+                        end                        
+                      end
+                      
+                      --if ctl.macrofader then                    
+                        --SetFader(ctl.macrofader, ctl.val)                    
+                      --end
+                      
+                      if ctl.dirty == true then
+                        --[[if settings_enablednu == true then
+                          SetCtlDirty(ctl.ctli)                          
+                        else
+                          SetCtlDirty(i)
+                        end  ]]
+                        SetCtlDirty(i)         
+                      end
+                    
+                    else
+                      --track not found
+                      ctl.fxfound = false
+                      ctl.trackmissing = true
+                    end
+                  end
+                end
+                chktbl = nil
+                if pkmts then
+                  time_nextupdate_pkmeter = rt + settings_updatefreq_pkmeter
+                end
+                if lvar.ctlupdate_rr then
+                  lvar.ctlupdate_pos = lvar.ctlupdate_pos+lvar.ctlupdate_rr+1
+                end
+              end
+            end
+          end
+        end
+      end
+    end
+    --DBG(reaper.time_precise() - ttt)
+
   end
   
   function UpdateControlValues2(rt)
@@ -49983,6 +50512,7 @@ function GUI_DrawCtlBitmap_Strips()
                                     bypassbg_n = tobool(zn(data[key..'bypassbg_n'])),
                                     bypassbg_v = tobool(zn(data[key..'bypassbg_v'])),
                                     clickthrough = tobool(zn(data[key..'clickthrough'])),
+                                    dnu = tobool(zn(data[key..'dnu'])),
                                    }
         g_cids[strip.controls[c].c_id] = true
         if strip.controls[c].id then
@@ -51616,6 +52146,8 @@ function GUI_DrawCtlBitmap_Strips()
     end    
     GUI_DrawCtlBitmap()
     
+    --ctls_dnu, ctls_upd = CtlDNU()
+    
     ZeroProjectFlags()
     
   end
@@ -52404,6 +52936,7 @@ function GUI_DrawCtlBitmap_Strips()
     settings_ssdock = tobool(nz(GES('settings_ssdock',true),settings_ssdock))
     settings_sbdock = tobool(nz(GES('settings_sbdock',true),settings_sbdock))
     settings_hideplugnotfound = tobool(nz(GES('settings_hideplugnotfound',true),settings_hideplugnotfound))
+    settings_enablednu = tobool(nz(GES('settings_enablednu',true),settings_enablednu))
     
     show_stripbrowser = tobool(nz(GES('show_stripbrowser',true),show_stripbrowser))
     sbwin.x = tonumber(nz(GES('sbwin_x',true),sbwin.x))
@@ -52590,6 +53123,7 @@ function GUI_DrawCtlBitmap_Strips()
     reaper.SetExtState(SCRIPT,'settings_ssdock',tostring(settings_ssdock), true)    
     reaper.SetExtState(SCRIPT,'settings_sbdock',tostring(settings_sbdock), true)    
     reaper.SetExtState(SCRIPT,'settings_hideplugnotfound',tostring(settings_hideplugnotfound), true)    
+    reaper.SetExtState(SCRIPT,'settings_enablednu',tostring(settings_enablednu), true)    
 
     reaper.SetExtState(SCRIPT,'show_stripbrowser',tostring(show_stripbrowser), true)    
     reaper.SetExtState(SCRIPT,'sbwin_x',tostring(sbwin.x), true)    
@@ -53376,6 +53910,7 @@ function GUI_DrawCtlBitmap_Strips()
               file:write('['..key..'bypassbg_n]'..tostring(nz(stripdata.controls[c].bypassbg_n,''))..'\n')
               file:write('['..key..'bypassbg_v]'..tostring(nz(stripdata.controls[c].bypassbg_v,''))..'\n')
               file:write('['..key..'clickthrough]'..tostring(nz(stripdata.controls[c].clickthrough,''))..'\n')
+              file:write('['..key..'dnu]'..tostring(nz(stripdata.controls[c].dnu,''))..'\n')
   
               file:write('['..key..'id]'..convnum(stripdata.controls[c].id)..'\n')
               file:write('['..key..'grpid]'..convnum(stripdata.controls[c].grpid)..'\n')
@@ -54724,6 +55259,8 @@ function GUI_DrawCtlBitmap_Strips()
               else
                 SetParam5(v)                          
               end
+              SetCtlDirty(c)
+
             elseif ctl.ctlcat == ctlcats.takeswitcher then
               if ctl.iteminfo then
                 local v = math.max(round(math.random()*(ctl.iteminfo.numtakes-1))/takeswitch_max,0)
@@ -54771,6 +55308,8 @@ function GUI_DrawCtlBitmap_Strips()
                 else
                   SetParam5(v)                          
                 end
+                SetCtlDirty(c)
+                
               elseif cctl and cctl.ctlcat == ctlcats.takeswitcher then
                 if cctl.iteminfo then
                   local v = math.max(round(math.random()*cctl.iteminfo.numtakes-1)/takeswitch_max,0)
@@ -55171,6 +55710,10 @@ function GUI_DrawCtlBitmap_Strips()
     --local t = reaper.time_precise()
     local reaper = reaper
     local snaps = snapshots[strip][page][sstype_sel]
+    local setdirty
+    if settings_enablednu == true and strip == tracks[track_select].strip and page == page then
+      setdirty = true
+    end
     if snaps.ignorevals ~= true then
       if (snaps.morph_sync == false and snaps.morph_time == 0) or 
          (snaps.morph_sync == true and snaps.morph_syncv == 1) then
@@ -55222,6 +55765,9 @@ function GUI_DrawCtlBitmap_Strips()
                   track = gtrack
                 end
                 SetParam3_Denorm2_Safe2(track, v, strip, page, reaper, c)
+                if setdirty then
+                  SetCtlDirty(c)
+                end
               end
   
               if ctl.macrofader and (settings_morphfaderassignedctls == true) then
@@ -55313,6 +55859,9 @@ function GUI_DrawCtlBitmap_Strips()
                     track = gtrack
                   end
                   SetParam3_Denorm2_Safe2(track, v, strip, page, reaper, c)        
+                  if setdirty then
+                    SetCtlDirty(c)
+                  end
                 end
                 
                 if ctl.macrofader and (settings_morphfaderassignedctls == true) then
@@ -55561,6 +56110,11 @@ function GUI_DrawCtlBitmap_Strips()
       p = macScale(morph_data[data_id].morph_scale,p)
       morph_data[data_id].psc = p
     end
+    --local setdirty
+    --[[if settings_enablednu == true and strip == tracks[track_select].strip and page == page then
+      setdirty = true
+    end]]
+    
     if sstype_select == 1 then
       local snaptbl = snapshots[strip][page][sstype_select][ss_select]
       if snaptbl then
@@ -55595,7 +56149,7 @@ function GUI_DrawCtlBitmap_Strips()
           if gather == true then
             morph_data[data_id].data[ss] = {}
             morph_data[data_id].data[ss].val = tonumber(ctl.val)
-            ctl.dirty = true
+            --ctl.dirty = true
             update_ctls = true
           end
 
@@ -55624,14 +56178,16 @@ function GUI_DrawCtlBitmap_Strips()
               end
               
               ctl.macrofader = nil
-              ctl.dirty = true
+              --ctl.dirty = true
             end
           end
           
           if ctl.noss ~= true and ctl.ctllock ~= true and c and nv and tostring(nv) ~= tostring(ctl.val) 
              and (settings_morphfaderassignedctls == true or (ctl.macrofader == nil and ctl.mod == nil)) then
             SetParam3(strip,page,c,ctl,nv)
-          
+            --[[if setdirty then
+              SetCtlDirty(c)
+            end]]
             if ctl.macrofader --[[and (settings_morphfaderassignedctls == true)]] then
               SetFader(ctl.macrofader, nv)
             end
@@ -55677,7 +56233,7 @@ function GUI_DrawCtlBitmap_Strips()
             if gather == true then
               morph_data[data_id].data[ss] = {}
               morph_data[data_id].data[ss].val = tonumber(ctl.val)
-              ctl.dirty = true
+              --ctl.dirty = true
               update_ctls = true
             end
   
@@ -55715,6 +56271,9 @@ function GUI_DrawCtlBitmap_Strips()
             if c and ctl.ctllock ~= true and nv and tostring(nv) ~= tostring(ctl.val) and (settings_morphfaderassignedctls == true or (ctl.macrofader == nil and ctl.mod == nil)) then
               --trackfxparam_select = c
               SetParam3(strip,page,c,ctl,nv)        
+              --[[if setdirty then
+                SetCtlDirty(c)
+              end]]
             
               if ctl.macrofader and (settings_morphfaderassignedctls == true) then
                 SetFader(ctl.macrofader, nv)
@@ -55798,6 +56357,10 @@ function GUI_DrawCtlBitmap_Strips()
       end
       
       if snaps.ignorevals ~= true then
+        if settings_enablednu == true then
+          UpdateControlValues3(nil, ctls_dnu, true)
+        end
+        
         if sstype == 1 then
   
           --[[if snaps == nil then
@@ -57861,7 +58424,7 @@ function GUI_DrawCtlBitmap_Strips()
   function ctlScaleInv(m, v)
   
     local mm = 1/lvar.scalemode_table[m]
-    return v^mm
+    return (v or 0)^mm
   
   end
   
@@ -58911,6 +59474,7 @@ function GUI_DrawCtlBitmap_Strips()
   settings_lockpinmatrix = false
   settings_backupduringsave = true
   settings_hideplugnotfound = false
+  settings_enablednu = true
   
   hideunusedtracks = false
   logflag = false
