@@ -14,7 +14,7 @@
 
 
   local lvar = {}
-  lvar.scriptver = '0.94.0046' --Script Version
+  lvar.scriptver = '0.94.0047' --Script Version
   
   lvar.ctlupdate_rr = nil
   lvar.ctlupdate_pos = 1
@@ -46318,7 +46318,7 @@ function GUI_DrawCtlBitmap_Strips()
     if mouse.LB and not mouse.last_LB and not MOUSE_click(obj.sections[70]) then
       show_settings = false
       SaveSettings()
-      update_gfx = true      
+      update_surface = true      
     elseif gfx.mouse_wheel ~= 0 then
       local v = gfx.mouse_wheel/120
       settingswin_off = F_limit(settingswin_off + (v*25),(-settingswin_maxh)+settingswin_h,0)
@@ -54897,6 +54897,8 @@ function GUI_DrawCtlBitmap_Strips()
   
     local sst = random.sst
     local rctls = random.ctls
+    local enablednu = settings_enablednu
+    
     if random.snapshotsonly == true then
     
       local r = math.random()
@@ -54912,6 +54914,7 @@ function GUI_DrawCtlBitmap_Strips()
     else
     
       local r = math.random()
+      local lgtabcnt = 0
       local lg = {}      
       local lgs = random.linkgrps
       local ctls = strips[strip][page].controls
@@ -54924,6 +54927,7 @@ function GUI_DrawCtlBitmap_Strips()
             if not lg[rctl.linkgrp] then
               lg[rctl.linkgrp] = {}          
             end
+            lgtabcnt = math.max(lgtabcnt, rctl.linkgrp) 
             local lgptr = #lg[rctl.linkgrp]+1
             lg[rctl.linkgrp][lgptr] = cc
           elseif ctl.ctltype ~= 4 then
@@ -54981,6 +54985,9 @@ function GUI_DrawCtlBitmap_Strips()
               end
               if v ~= ctl.val then
                 SetParam3(strip,page,rctls[cc].ctl,ctl,v)
+                if enablednu == true and ctl.dnu == true then
+                  SetCtlDirty(rctls[cc].ctl)
+                end
               end
             end
           else
@@ -54998,6 +55005,9 @@ function GUI_DrawCtlBitmap_Strips()
                 v = cycle[np].val
                 if v ~= ctl.val then
                   SetParam3(strip,page,rctls[cc].ctl,ctl,v)
+                  if enablednu == true and ctl.dnu == true then
+                    SetCtlDirty(rctls[cc].ctl)
+                  end
                 end          
               end
             else          
@@ -55007,160 +55017,61 @@ function GUI_DrawCtlBitmap_Strips()
                 v = cycle[np].val
                 if v ~= ctl.val then
                   SetParam3(strip,page,rctls[cc].ctl,ctl,v)
+                  if enablednu == true and ctl.dnu == true then
+                    SetCtlDirty(rctls[cc].ctl)
+                  end
                 end          
               end
             end          
           end
         end
       end
-      if #lg > 0 then
-        for l = 1, #lg do
-          local lgcnt = #lg[l]
-          if lgs[l].type == 1 then
-            --random x
-
-            local XX = round(lgs[l].X*128)
-            lg[l] = table.shuffle(lg[l],XX)
-            for x = 1, math.min(XX,lgcnt) do
-              local ccc = lg[l][x]
-            
-              local rctl = rctls[ccc]
-              local ctl = ctls[rctls[ccc].ctl]
-              if ctl and ctl.ctltype ~= 4 then
-                local v = math.random()*(rctl.amount or 1)
-                local bias = math.random()
-                if (rctl.amount or 0) == 0 then
-                  if bias > rctl.bias then
-                    v = ctl.val - (ctl.val-math.min(rctl.min,ctl.val))*v
+      if lgtabcnt > 0 then
+        for l = 1, lgtabcnt do
+          if lg[l] then
+            local lgcnt = #lg[l]
+            if lgs[l].type == 1 then
+              --random x
+  
+              local XX = round(lgs[l].X*128)
+              lg[l] = table.shuffle(lg[l],XX)
+              for x = 1, math.min(XX,lgcnt) do
+                local ccc = lg[l][x]
+              
+                local rctl = rctls[ccc]
+                local ctl = ctls[rctls[ccc].ctl]
+                if ctl and ctl.ctltype ~= 4 then
+                  local v = math.random()*(rctl.amount or 1)
+                  local bias = math.random()
+                  if (rctl.amount or 0) == 0 then
+                    if bias > rctl.bias then
+                      v = ctl.val - (ctl.val-math.min(rctl.min,ctl.val))*v
+                    else
+                      v = ctl.val + (rctl.max-math.min(ctl.val,rctl.max))*v              
+                    end                        
+                    v = F_limit(v,rctl.min,rctl.max)
                   else
-                    v = ctl.val + (rctl.max-math.min(ctl.val,rctl.max))*v              
-                  end                        
-                  v = F_limit(v,rctl.min,rctl.max)
-                else
-                  if rctl.snap == true then
-                    local cnt = 0
-                    repeat
-                      cnt = cnt + 1
-                      local a = round(rctl.amount,5)
-                      if bias > rctl.bias then
-                        local r = math.random()*(ctl.val-math.min(rctl.min,ctl.val))
-                        v = -round((r / a)) * a
-                      else
-                        local r = math.random()*(rctl.max-math.min(ctl.val,rctl.max))
-                        v = round((r / a)) * a
+                    if rctl.snap == true then
+                      local cnt = 0
+                      repeat
+                        cnt = cnt + 1
+                        local a = round(rctl.amount,5)
+                        if bias > rctl.bias then
+                          local r = math.random()*(ctl.val-math.min(rctl.min,ctl.val))
+                          v = -round((r / a)) * a
+                        else
+                          local r = math.random()*(rctl.max-math.min(ctl.val,rctl.max))
+                          v = round((r / a)) * a
+                        end
+                      until (ctl.val+v > 0 and ctl.val+v < 1) or cnt == 5
+                      if ctl.val+v < 0 or ctl.val+v > 1 then
+                        v = 0
                       end
-                    until (ctl.val+v > 0 and ctl.val+v < 1) or cnt == 5
-                    if ctl.val+v < 0 or ctl.val+v > 1 then
-                      v = 0
+                    elseif bias > rctl.bias then
+                      v = -v
                     end
-                  elseif bias > rctl.bias then
-                    v = -v
+                    v = F_limit(ctl.val+v,rctl.min,rctl.max)
                   end
-                  v = F_limit(ctl.val+v,rctl.min,rctl.max)
-                end
-                if ctl.ctltype == 2 or 
-                   ctl.ctltype == 3 or 
-                   ctl.ctltype == 7 or
-                   ctl.ctltype == 8 or
-                   ctl.ctltype == 9 or
-                   ctl.ctltype == 10 then
-                   v = round(v)
-                end
-                if v ~= ctl.val then
-                  SetParam3(strip,page,rctls[ccc].ctl,ctl,v)
-                end
-              elseif ctl and ctl.ctltype == 4 then
-                --CYCLE CTL
-                local cycle = ctl.cycledata
-                local pos = cycle.pos or 1
-                local cnt = cycle.statecnt
-                --snap ignored
-                --amount ignored
-                local bias = math.random()
-                if bias > rctl.bias then
-                  local np = math.min(round(math.random() * math.max((pos-2),1) +1),pos)
-                  if cycle[np] and cycle[np].val then
-                    cycle.pos = np
-                    v = cycle[np].val
-                    if v ~= ctl.val then
-                      SetParam3(strip,page,rctls[ccc].ctl,ctl,v)          
-                    end
-                  end
-                else          
-                  local np = round(math.random() * (cnt-pos) +pos)
-                  if cycle[np] and cycle[np].val then
-                    cycle.pos = np
-                    v = cycle[np].val
-                    if v ~= ctl.val then
-                      SetParam3(strip,page,rctls[ccc].ctl,ctl,v)          
-                    end
-                  end
-                end          
-              end
-            end
-          
-          elseif lgs[l].type == 2 or lgs[l].type == 3 then
-            --random x on
-
-            local a, b = 1, 0
-            if lgs[l].type == 3 then
-              a, b = 0, 1
-            end
-            local XX = round(lgs[l].X*128)
-            lg[l] = table.shuffle(lg[l],XX)
-
-            for x = 1, math.min(XX,lgcnt) do
-              local ccc = lg[l][x]
-            
-              local ctl = ctls[rctls[ccc].ctl]
-              if ctl then
-                  --trackfxparam_select = rctls[ccc].ctl
-                local v = a
-                if v ~= ctl.val then
-                  SetParam3(strip,page,rctls[ccc].ctl,ctl,v)
-                end
-              end
-            end
-
-            if math.min(XX,lgcnt) < lgcnt then
-              for x = math.min(XX,lgcnt)+1, lgcnt do
-                local ccc = lg[l][x]
-              
-                local ctl = ctls[rctls[ccc].ctl]
-                if ctl then
-                  local v = b
-                  if v ~= ctl.val then
-                    SetParam3(strip,page,rctls[ccc].ctl,ctl,v)
-                  end
-                end
-              end
-            end
-                                  
-          elseif lgs[l].type == 4 then
-            
-            if lgs[l].snap == true then
-
-              local cccc = lg[l][1]
-              local dv = ctls[rctls[cccc].ctl].defval
-              local r = math.random()
-              local a = lgs[l].X
-              local vv = round((r / a)) * a
-              if vv > dv then vv = vv-dv end
-              if math.random(2) == 2 then
-                vv = -vv
-              end
-
-              for x = 1, lgcnt do
-                local ccc = lg[l][x]
-                local ctl = ctls[rctls[ccc].ctl]
-                if ctl then
-                  if rctls[ccc].inverted ~= true then
-                    v = ctl.defval + vv
-                  else
-                    v = ctl.defval - vv
-                  end
-                  
-                  v = F_limit(v,rctls[ccc].min,rctls[ccc].max)
                   if ctl.ctltype == 2 or 
                      ctl.ctltype == 3 or 
                      ctl.ctltype == 7 or
@@ -55171,57 +55082,182 @@ function GUI_DrawCtlBitmap_Strips()
                   end
                   if v ~= ctl.val then
                     SetParam3(strip,page,rctls[ccc].ctl,ctl,v)
+                    if enablednu == true and ctl.dnu == true then
+                      SetCtlDirty(rctls[ccc].ctl)
+                    end
+                  end
+                elseif ctl and ctl.ctltype == 4 then
+                  --CYCLE CTL
+                  local cycle = ctl.cycledata
+                  local pos = cycle.pos or 1
+                  local cnt = cycle.statecnt
+                  --snap ignored
+                  --amount ignored
+                  local bias = math.random()
+                  if bias > rctl.bias then
+                    local np = math.min(round(math.random() * math.max((pos-2),1) +1),pos)
+                    if cycle[np] and cycle[np].val then
+                      cycle.pos = np
+                      v = cycle[np].val
+                      if v ~= ctl.val then
+                        SetParam3(strip,page,rctls[ccc].ctl,ctl,v)          
+                        if enablednu == true and ctl.dnu == true then
+                          SetCtlDirty(rctls[ccc].ctl)
+                        end
+                      end
+                    end
+                  else          
+                    local np = round(math.random() * (cnt-pos) +pos)
+                    if cycle[np] and cycle[np].val then
+                      cycle.pos = np
+                      v = cycle[np].val
+                      if v ~= ctl.val then
+                        SetParam3(strip,page,rctls[ccc].ctl,ctl,v)          
+                        if enablednu == true and ctl.dnu == true then
+                          SetCtlDirty(rctls[ccc].ctl)
+                        end
+                      end
+                    end
+                  end          
+                end
+              end
+            
+            elseif lgs[l].type == 2 or lgs[l].type == 3 then
+              --random x on
+  
+              local a, b = 1, 0
+              if lgs[l].type == 3 then
+                a, b = 0, 1
+              end
+              local XX = round(lgs[l].X*128)
+              lg[l] = table.shuffle(lg[l],XX)
+  
+              for x = 1, math.min(XX,lgcnt) do
+                local ccc = lg[l][x]
+              
+                local ctl = ctls[rctls[ccc].ctl]
+                if ctl then
+                    --trackfxparam_select = rctls[ccc].ctl
+                  local v = a
+                  if v ~= ctl.val then
+                    SetParam3(strip,page,rctls[ccc].ctl,ctl,v)
+                    if enablednu == true and ctl.dnu == true then
+                      SetCtlDirty(rctls[ccc].ctl)
+                    end
                   end
                 end
               end
+  
+              if math.min(XX,lgcnt) < lgcnt then
+                for x = math.min(XX,lgcnt)+1, lgcnt do
+                  local ccc = lg[l][x]
+                
+                  local ctl = ctls[rctls[ccc].ctl]
+                  if ctl then
+                    local v = b
+                    if v ~= ctl.val then
+                      SetParam3(strip,page,rctls[ccc].ctl,ctl,v)
+                      if enablednu == true and ctl.dnu == true then
+                        SetCtlDirty(rctls[ccc].ctl)
+                      end
+                    end
+                  end
+                end
+              end
+                                    
+            elseif lgs[l].type == 4 then
               
-              
-            else
-              --NO SNAP
-              local cccc = lg[l][1]
-              local dv = ctls[rctls[cccc].ctl].defval
-              local d
-              local range = math.max(dv, 1-dv)
-              if dv == 0 then
-                d = 1
-              elseif dv == 1 then
-                d = -1
+              if lgs[l].snap == true then
+  
+                local cccc = lg[l][1]
+                local dv = ctls[rctls[cccc].ctl].defval
+                local r = math.random()
+                local a = lgs[l].X
+                local vv = round((r / a)) * a
+                if vv > dv then vv = vv-dv end
+                if math.random(2) == 2 then
+                  vv = -vv
+                end
+  
+                for x = 1, lgcnt do
+                  local ccc = lg[l][x]
+                  local ctl = ctls[rctls[ccc].ctl]
+                  if ctl then
+                    if rctls[ccc].inverted ~= true then
+                      v = ctl.defval + vv
+                    else
+                      v = ctl.defval - vv
+                    end
+                    
+                    v = F_limit(v,rctls[ccc].min,rctls[ccc].max)
+                    if ctl.ctltype == 2 or 
+                       ctl.ctltype == 3 or 
+                       ctl.ctltype == 7 or
+                       ctl.ctltype == 8 or
+                       ctl.ctltype == 9 or
+                       ctl.ctltype == 10 then
+                       v = round(v)
+                    end
+                    if v ~= ctl.val then
+                      SetParam3(strip,page,rctls[ccc].ctl,ctl,v)
+                      if enablednu == true and ctl.dnu == true then
+                        SetCtlDirty(rctls[ccc].ctl)
+                      end
+                    end
+                  end
+                end
+                
+                
               else
-                d = math.random(2)
-                if d == 2 then
+                --NO SNAP
+                local cccc = lg[l][1]
+                local dv = ctls[rctls[cccc].ctl].defval
+                local d
+                local range = math.max(dv, 1-dv)
+                if dv == 0 then
+                  d = 1
+                elseif dv == 1 then
                   d = -1
-                end
-              end
-              local vv = math.random() * (range * lgs[l].X) * d
-              for x = 1, lgcnt do
-                local ccc = lg[l][x]
-                local ctl = ctls[rctls[ccc].ctl]
-                if ctl then
-                  local v
-                  if rctls[ccc].inverted ~= true then
-                    v = dv + vv
-                  else
-                    v = dv - vv
-                  end
-                  --[[if v < 0 or v > 1 then
-                    v = ctl.val
-                  end]]
-                  v = F_limit(v,rctls[ccc].min,rctls[ccc].max)
-                  if ctl.ctltype == 2 or 
-                     ctl.ctltype == 3 or 
-                     ctl.ctltype == 7 or
-                     ctl.ctltype == 8 or
-                     ctl.ctltype == 9 or
-                     ctl.ctltype == 10 then
-                     v = round(v)
-                  end
-                  if v ~= ctl.val then
-                    SetParam3(strip,page,rctls[ccc].ctl,ctl,v)
+                else
+                  d = math.random(2)
+                  if d == 2 then
+                    d = -1
                   end
                 end
-              end
-            
-            end 
+                local vv = math.random() * (range * lgs[l].X) * d
+                for x = 1, lgcnt do
+                  local ccc = lg[l][x]
+                  local ctl = ctls[rctls[ccc].ctl]
+                  if ctl then
+                    local v
+                    if rctls[ccc].inverted ~= true then
+                      v = dv + vv
+                    else
+                      v = dv - vv
+                    end
+                    --[[if v < 0 or v > 1 then
+                      v = ctl.val
+                    end]]
+                    v = F_limit(v,rctls[ccc].min,rctls[ccc].max)
+                    if ctl.ctltype == 2 or 
+                       ctl.ctltype == 3 or 
+                       ctl.ctltype == 7 or
+                       ctl.ctltype == 8 or
+                       ctl.ctltype == 9 or
+                       ctl.ctltype == 10 then
+                       v = round(v)
+                    end
+                    if v ~= ctl.val then
+                      SetParam3(strip,page,rctls[ccc].ctl,ctl,v)
+                      if enablednu == true and ctl.dnu == true then
+                        SetCtlDirty(rctls[ccc].ctl)
+                      end
+                    end
+                  end
+                end
+              
+              end 
+            end
           end
         end
       
@@ -55269,7 +55305,7 @@ function GUI_DrawCtlBitmap_Strips()
                 ctl.val = v
                 SetItemTake(strip, page, c)
                 SetCtlDirty(c)
-                update_ctls = true
+                --update_ctls = true
               end
             elseif ctl.ctlcat == ctlcats.rs5k then
               local v = math.max(round(math.random()*(#ctl.rsdata.samples-1))/lvar.maxsamples,0)
@@ -55278,7 +55314,7 @@ function GUI_DrawCtlBitmap_Strips()
               A_SetParam(strip, page, c, ctl)
 
               SetCtlDirty(c)
-              update_ctls = true             
+              --update_ctls = true             
             end
           end
         end
@@ -55311,6 +55347,7 @@ function GUI_DrawCtlBitmap_Strips()
                   SetParam5(v)                          
                 end
                 SetCtlDirty(c)
+                --update_ctls = true
                 
               elseif cctl and cctl.ctlcat == ctlcats.takeswitcher then
                 if cctl.iteminfo then
@@ -55318,7 +55355,7 @@ function GUI_DrawCtlBitmap_Strips()
                   cctl.val = v
                   SetItemTake(strip, page, c)
                   SetCtlDirty(c)
-                  update_ctls = true
+                  --update_ctls = true
                 end
               elseif cctl and cctl.ctlcat == ctlcats.rs5k then
                 local v = math.max(round(math.random()*(#cctl.rsdata.samples-1))/lvar.maxsamples,0)
@@ -55327,7 +55364,7 @@ function GUI_DrawCtlBitmap_Strips()
                 A_SetParam(strip, page, c, cctl)
   
                 SetCtlDirty(c)
-                update_ctls = true             
+                --update_ctls = true             
               end
             end
           end
@@ -55335,7 +55372,8 @@ function GUI_DrawCtlBitmap_Strips()
       end    
     
     end
-
+    update_ctls = true
+    
   end
 
   function Snapshot_MUTATE(strip, page, sstype_select, respectminmax)
@@ -55384,6 +55422,7 @@ function GUI_DrawCtlBitmap_Strips()
               else
                 SetParam5(v)                          
               end
+              SetCtlDirty(c)
             end
           end
         end
@@ -55422,13 +55461,14 @@ function GUI_DrawCtlBitmap_Strips()
               else
                 SetParam5(v)                          
               end
+              SetCtlDirty(c)
             end
           end
         end
       end    
     
     end
-
+    update_ctls = true
   end
   
   function XXYPath_Delete(path)
