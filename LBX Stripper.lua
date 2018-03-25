@@ -14,7 +14,7 @@
 
 
   local lvar = {}
-  lvar.scriptver = '0.94.0045' --Script Version
+  lvar.scriptver = '0.94.0046' --Script Version
   
   lvar.ctlupdate_rr = nil
   lvar.ctlupdate_pos = 1
@@ -26005,6 +26005,8 @@ function GUI_DrawCtlBitmap_Strips()
       end
       update_gfx = true
       SetCtlBitmapRedraw()
+      ReselectSelection()
+      movefrom_sc = nil
     end
     
   end
