@@ -14,7 +14,7 @@
 
 
   local lvar = {}
-  lvar.scriptver = '0.94.0047' --Script Version
+  lvar.scriptver = '0.94.0048' --Script Version
   
   lvar.ctlupdate_rr = nil
   lvar.ctlupdate_pos = 1
@@ -41671,8 +41671,6 @@ function GUI_DrawCtlBitmap_Strips()
   
     local strip = tracks[track_select].strip
     if strips[strip] then
-      --local ctls = strips[strip][page].controls
-      --local gfxs = strips[strip][page].graphics
       local xflag = false
       local xpos
       if stlay_data and stlay_data.xpos then
@@ -41705,6 +41703,8 @@ function GUI_DrawCtlBitmap_Strips()
         
         end
       else
+		local ctls = strips[strip][page].controls
+		local gfxs = strips[strip][page].graphics
         for i = 1, #ctls do
           local ctl = ctls[i]
           if ctl.id then
@@ -47024,6 +47024,8 @@ function GUI_DrawCtlBitmap_Strips()
       if ctls_upd and #ctls_upd > 0 and tracks[track_select] then
         --check track
         local strip = tracks[track_select].strip
+  
+		if not strips[strip] then return end
   
         if CheckTrack(strips[strip].track, strip) then        
           if tracks[track_select] and strips[tracks[track_select].strip] then
