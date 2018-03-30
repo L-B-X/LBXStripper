@@ -14,7 +14,7 @@
 
 
   local lvar = {}
-  lvar.scriptver = '0.94.0049' --Script Version
+  lvar.scriptver = '0.94.0048' --Script Version
   
   lvar.ctlupdate_rr = nil
   lvar.ctlupdate_pos = 1
@@ -100,7 +100,7 @@
   --1300 = Sample Manager
   --1350 = Strip Browser
   
-  lvar.stripbrowser = {page = 0, favs = true, dockpos = 1}
+  lvar.stripbrowser = {page = 0, favs = true, dockpos = 1, showlabel = true}
   lvar.sbmin = 120
   
   lvar.maxsamples = 2048
@@ -456,6 +456,8 @@
   local update_actcho
   local update_xxy
   local force_gfx_update
+  
+  local settings_localfaders = false
 
   function SetFaderBoxVal(i, v)
   
@@ -3872,8 +3874,12 @@
     end
     
     lvar.stripbrowser.xnum = math.max(math.floor((obj.sections[1352].w-20) / (lvar.stripbrowser.minw+10)),1)
-    lvar.stripbrowser.ynum = math.max(math.floor((obj.sections[1352].h-20) / (lvar.stripbrowser.minh+30)),1)
-    
+    local lbl = 30
+    --if lvar.stripbrowser.showlabel == true then
+    --  lbl = 30
+    --end
+    lvar.stripbrowser.ynum = math.max(math.floor((obj.sections[1352].h-20) / (lvar.stripbrowser.minh+lbl)),1)
+
     lvar.stripbrowser.imgw = math.max(math.floor((obj.sections[1352].w-20) / lvar.stripbrowser.xnum)-10,lvar.stripbrowser.minw)
     lvar.stripbrowser.imgh = math.max(math.floor((obj.sections[1352].h-20) / lvar.stripbrowser.ynum)-10,lvar.stripbrowser.minh)
     
@@ -4067,6 +4073,10 @@
                               h = bh}
     obj.sections[96] = {x = xofft,
                                y = settingswin_off + yoff + yoffm*12,
+                               w = bw,
+                               h = bh}
+    obj.sections[739] = {x = xofft,
+                               y = settingswin_off + yoff + yoffm*13,
                                w = bw,
                                h = bh}
     
@@ -7205,7 +7215,11 @@
                           y = obj.sections[15].y, 
                           w = obj.sections[15].w,
                           h = obj.sections[15].h}
-    GUI_DrawBar(gui,'GLOBAL',xywh,skin.bar,true,gui.skol.sb_txt_on,nil,-2 + gui.fontsz.sb,nil,gui.skol.sb_shad,gui.fontnm.sb,gui.fontflag.sb)
+    local txt = 'GLOBAL'
+    if settings_localfaders == true then
+      txt = 'TRACK'
+    end
+    GUI_DrawBar(gui,txt,xywh,skin.bar,true,gui.skol.sb_txt_on,nil,-2 + gui.fontsz.sb,nil,gui.skol.sb_shad,gui.fontnm.sb,gui.fontflag.sb)
                               
     local xywh = {x = obj.sections[500].x,
                   y = obj.sections[500].y+butt_h+2,
@@ -15462,24 +15476,26 @@ function GUI_DrawCtlBitmap_Strips()
           
           gfx.blit(iidx,scale,0,0,0,w,h,px+xoff,py+yoff)
 
-          local xywh = {x = px, y = py+ph,
-                        w = pw, h = 20}
-          local tw, th = gfx.measurestr(tfn)
-          local just = 5
-          if tw > xywh.w then
-            just = 4
-          end
-          GUI_DrawButton(gui, tfn, xywh, -1, gui.skol.butt1_txt, true, '', false, 0, false, just)
-
-          if lvar.stripbrowser.select and lvar.stripbrowser.select == n then
-            f_Get_SSV(gui.color.yellow)
-            gfx.rect(px+xoff,py+yoff,math.floor(w*scale),math.floor(h*scale),0)
-
+          if lvar.stripbrowser.showlabel == true then
+            local xywh = {x = px, y = py+ph,
+                          w = pw, h = 20}
             local tw, th = gfx.measurestr(tfn)
-            htxt = {x = px+(pw/2)-(tw/2)-6, y = py+ph,
-                    w = tw+12, h = 20, txt = tfn}            
+            local just = 5
+            if tw > xywh.w then
+              just = 4
+            end
+            GUI_DrawButton(gui, tfn, xywh, -1, gui.skol.butt1_txt, true, '', false, 0, false, just)
+  
+            if lvar.stripbrowser.select and lvar.stripbrowser.select == n then
+              f_Get_SSV(gui.color.yellow)
+              gfx.rect(px+xoff,py+yoff,math.floor(w*scale),math.floor(h*scale),0)
+  
+              local tw, th = gfx.measurestr(tfn)
+              htxt = {x = px+(pw/2)-(tw/2)-6, y = py+ph,
+                      w = tw+12, h = 20, txt = tfn}            
+            end
           end
-          
+                    
           if InFavs(ffn) then
             gfx.blit(skin.star,1,0,0,0,sw,sh,px+math.floor(pw/2)-math.floor(sw/2),py-math.floor(sh/2))
           else
@@ -16274,16 +16290,20 @@ function GUI_DrawCtlBitmap_Strips()
               for ssc = 1, scnt do
                 local ctl = snapshots[strip][page][sstype_select].ctls[ssc].ctl
                 if ctl then
-                  if nz(snapshots[strip][page][sstype_select].ctls[ssc].delete,false) == false then
-                    local x = strips[strip][page].controls[ctl].xsc
-                    local y = strips[strip][page].controls[ctl].ysc
-                    local w = strips[strip][page].controls[ctl].wsc
-                    local h = strips[strip][page].controls[ctl].hsc
-                    x=x-surface_offset.x+obj.sections[10].x
-                    y=y-surface_offset.y+obj.sections[10].y
-                    f_Get_SSV(gui.color.green)
-                    gfx.a = 1
-                    gfx.roundrect(x, y, w, h, 5, 1)
+                  if (snapshots[strip][page][sstype_select].ctls[ssc].delete or false) == false then
+                    local cctl = strips[strip][page].controls[ctl]
+                    local hidden = Switcher_CtlsHidden(cctl.switcher, cctl.grpid)
+                    if hidden ~= true then
+                      local x = cctl.xsc
+                      local y = cctl.ysc
+                      local w = cctl.wsc
+                      local h = cctl.hsc
+                      x=x-surface_offset.x+obj.sections[10].x
+                      y=y-surface_offset.y+obj.sections[10].y
+                      f_Get_SSV(gui.color.green)
+                      gfx.a = 1
+                      gfx.roundrect(x, y, w, h, 5, 1)
+                    end
                   end
                 end           
               end
@@ -18177,6 +18197,7 @@ function GUI_DrawCtlBitmap_Strips()
       GUI_DrawTick(gui, 'Show fader assignments on grid', obj.sections[706], gui.color.white, settings_showfaderassignments, gui.fontsz.settings,true)
       GUI_DrawTick(gui, 'Activate snapshot morphing pop-ups', obj.sections[717], gui.color.white, settings_showmorphpop, gui.fontsz.settings, true)
       GUI_DrawTick(gui, 'Hide "plugin not found" text when plugin missing', obj.sections[737], gui.color.white, settings_hideplugnotfound, gui.fontsz.settings, true)
+      GUI_DrawTick(gui, 'Show labels in strip browser', obj.sections[739], gui.color.white, lvar.stripbrowser.showlabel, gui.fontsz.settings,true)
       
 
     elseif lvar.settingspage == 5 then
@@ -19896,11 +19917,13 @@ function GUI_DrawCtlBitmap_Strips()
         
       elseif cc == ctlcats.trackparam then
         local param = ctl.param
+        ctl.val = v
         ctl.dirty = true
         SMTI_denorm(track,param,v)
 
       elseif cc == ctlcats.tracksend then
         local param = ctl.param
+        ctl.val = v
         ctl.dirty = true
         STSI_denorm(track,param,v,c,strip,page)
       
@@ -24623,6 +24646,9 @@ function GUI_DrawCtlBitmap_Strips()
   end
   
   function Switcher_CtlsHidden(switchid, ctl_grpid)
+    
+    if switchid == nil then return false end
+    
     local deleted 
     if switchid and switchers[switchid] and switchers[switchid].deleted ~= true then
       if switchers[switchid].current ~= ctl_grpid then
@@ -28189,6 +28215,10 @@ function GUI_DrawCtlBitmap_Strips()
   
     if mouse.context ~= nil then return end
     
+    if settings_localfaders == true then
+      StoreFaders()
+    end
+    
     show_randomopts = false
     show_samplemanager = false
     
@@ -28235,6 +28265,10 @@ function GUI_DrawCtlBitmap_Strips()
     end
     
     ctls_dnu, ctls_upd = CtlDNU()
+    
+    if settings_localfaders == true then
+      RecallFaders()
+    end
     
     --Env_Test(tracks[track_select].strip, page)
   end
@@ -35677,7 +35711,15 @@ function GUI_DrawCtlBitmap_Strips()
         end
         
         local i = math.floor((mouse.my - obj.sections[500].y) / tb_butt_h)-1
-        if i == 0 then
+        if i == -1 then
+          --if settings_localfaders == true then
+          StoreFaders()
+          --end
+          settings_localfaders = not settings_localfaders
+          RecallFaders()
+          update_sidebar = true
+          
+        elseif i == 0 then
           if LBX_CTL_TRACK_INF then
             if mouse.mx < obj.sections[500].w/2 then
               fdlist_offset = fdlist_offset - (FD_butt_cnt-3)
@@ -41703,8 +41745,8 @@ function GUI_DrawCtlBitmap_Strips()
         
         end
       else
-		local ctls = strips[strip][page].controls
-		local gfxs = strips[strip][page].graphics
+        local ctls = strips[strip][page].controls
+        local gfxs = strips[strip][page].graphics
         for i = 1, #ctls do
           local ctl = ctls[i]
           if ctl.id then
@@ -46549,6 +46591,9 @@ function GUI_DrawCtlBitmap_Strips()
           elseif MOUSE_click(obj.sections[96]) then
             settings_hideeditbaronnewproject = not settings_hideeditbaronnewproject
             update_gfx = true
+          elseif MOUSE_click(obj.sections[739]) then
+            lvar.stripbrowser.showlabel = not lvar.stripbrowser.showlabel
+            update_gfx = true
           elseif MOUSE_click(obj.sections[89]) then
             settings_showminimaltopbar = not settings_showminimaltopbar
             obj = GetObjects()
@@ -47024,9 +47069,9 @@ function GUI_DrawCtlBitmap_Strips()
       if ctls_upd and #ctls_upd > 0 and tracks[track_select] then
         --check track
         local strip = tracks[track_select].strip
-  
-		if not strips or strip == nil or not strips[strip] then return end
-  
+
+        if not strips or strip == nil or not strips[strip] then return end
+
         if CheckTrack(strips[strip].track, strip) then        
           if tracks[track_select] and strips[tracks[track_select].strip] then
             local strip = tracks[track_select].strip
@@ -50414,7 +50459,7 @@ function GUI_DrawCtlBitmap_Strips()
                        tracknum = tonumber(data[pfx..'track_num']),
                        strip = tonumber(data[pfx..'track_strip'])
                       }
-
+  
     for p = 1, 4 do
     
       local key = pfx..'p'..p..'_'
@@ -50422,6 +50467,10 @@ function GUI_DrawCtlBitmap_Strips()
       strips[ss][p] = LoadStripDataX(key, data)
       
     end
+    if pfx ~= '' and data[pfx..'fadercnt'] then
+      strips[ss].faders = LoadFaders(data,pfx,true)
+    end
+    
 
   end  
   
@@ -50505,7 +50554,7 @@ function GUI_DrawCtlBitmap_Strips()
                                     poslock = tobool(zn(data[key..'poslock'],false)),
                                     ctllock = tobool(zn(data[key..'ctllock'])),
                                     horiz = tobool(zn(data[key..'horiz'],false)),
-                                    macrofader = tonumber(zn(data[key..'macrofader'])),
+                                    --macrofader = tonumber(zn(data[key..'macrofader'])),
                                     mod = tonumber(zn(data[key..'mod'])),
                                     switchfader = tonumber(zn(data[key..'switchfader'])),
                                     hidden = tobool(zn(data[key..'hidden'],false)),
@@ -51540,8 +51589,11 @@ function GUI_DrawCtlBitmap_Strips()
     
   end
   
-  function LoadFaders(data)
+  function LoadFaders(data, pfx, donotsetoval, check)
 
+    pfx = pfx or ''
+    
+    local faders, snapshot_fader
     if data == nil then
       local load_path
       local fn = GPES('fader_datafile', true)
@@ -51576,19 +51628,19 @@ function GUI_DrawCtlBitmap_Strips()
       end
     else
     
-      local key = 'fadercnt'
+      local key = pfx..'fadercnt'
       local fadercnt = tonumber(zn(data[key]))
 
       if fadercnt and fadercnt > 0 then
 
-        local key = 'snapshot_fader'
+        local key = pfx..'snapshot_fader'
         snapshot_fader = tonumber(zn(data[key]))
 
         faders = {}
         
         for f = 1, fadercnt do      
           
-          local key = 'fader_'..f..'_'
+          local key = pfx..'fader_'..f..'_'
         
           faders[f] = {}
           faders[f].targettype = tonumber(zn(data[key..'targettype']))
@@ -51607,9 +51659,14 @@ function GUI_DrawCtlBitmap_Strips()
         end 
     
       end
-    end  
-    CheckFaders()
-    Faders_SetOVAL()
+    end
+    if check == true then  
+      CheckFaders(faders)
+    end
+    if donotsetoval ~= true then
+      Faders_SetOVAL()
+    end
+    return faders, snapshot_fader
     
   end
   
@@ -51629,6 +51686,7 @@ function GUI_DrawCtlBitmap_Strips()
           local p = fads[f].page
           local c = fads[f].ctl
           local cid = fads[f].c_id
+          --DBG(s..'  '..tostring(strips[s])..' '..tostring(strips[s][p].controls[c]))
           if strips[s] and strips[s][p].controls[c] and cid == strips[s][p].controls[c].c_id and 
              strips[s][p].controls[c].macrofader == f then
             --all good
@@ -52116,7 +52174,11 @@ function GUI_DrawCtlBitmap_Strips()
       end
       
       LoadXXYPathData(data)
-      LoadFaders(data)
+      faders, snapshot_fader = LoadFaders(data,_,_,true)
+      if data['global_fadercnt'] then
+        lvar.gfaders = LoadFaders(data,'global_',true)
+      end
+      
       LoadMods(data)
       LoadSwitchers(data)
                 
@@ -52225,6 +52287,11 @@ function GUI_DrawCtlBitmap_Strips()
         lvar.stripbrowser.page = tonumber(nz(GPES('sb_page',true),lvar.stripbrowser.page))
         lvar.stripbrowser.favs = tobool(nz(GPES('sb_favs',true),lvar.stripbrowser.favs))
         stripfol_select = tonumber(nz(GPES('sb_fol',true),stripfol_select))
+        if not strip_folders[stripfol_select] then
+          stripfol_select = 0
+        end
+        settings_localfaders = tobool(nz(GPES('localfaders',true),settings_localfaders))
+        
         PopulateStrips()
         
         if show_editbar then
@@ -52740,12 +52807,15 @@ function GUI_DrawCtlBitmap_Strips()
           
           if tonumber(v) == 0.93 then
             LoadXXYPathData()
-            LoadFaders()
+            faders, snapshot_fader = LoadFaders()
   
           elseif tonumber(v) >= 0.94 then
   
             LoadXXYPathData(data)
-            LoadFaders(data)
+            faders, snapshot_fader = LoadFaders(data,_,_,true)
+            if data['global_fadercnt'] then
+              lvar.gfaders = LoadFaders(data,'global_',true)
+            end
             LoadMods(data)
             LoadSwitchers(data)
   
@@ -52950,6 +53020,7 @@ function GUI_DrawCtlBitmap_Strips()
     lvar.stripbrowser.minw = tonumber(nz(GES('stripbrowser_minw',true),lvar.stripbrowser.minw))
     lvar.stripbrowser.minh = tonumber(nz(GES('stripbrowser_minh',true),lvar.stripbrowser.minh))
     lvar.stripbrowser.dockpos = tonumber(nz(GES('stripbrowser_dockpos',true),lvar.stripbrowser.dockpos))
+    lvar.stripbrowser.showlabel = tobool(nz(GES('stripbrowser_showlabel',true),lvar.stripbrowser.showlabel))
     
     settings_moddock = tobool(nz(GES('settings_moddock',true),settings_moddock))
     modwinsz = {}
@@ -53137,6 +53208,7 @@ function GUI_DrawCtlBitmap_Strips()
     reaper.SetExtState(SCRIPT,'stripbrowser_minw',tostring(lvar.stripbrowser.minw), true)    
     reaper.SetExtState(SCRIPT,'stripbrowser_minh',tostring(lvar.stripbrowser.minh), true)    
     reaper.SetExtState(SCRIPT,'stripbrowser_dockpos',tostring(lvar.stripbrowser.dockpos or 1), true)    
+    reaper.SetExtState(SCRIPT,'stripbrowser_showlabel',tostring(lvar.stripbrowser.showlabel or true), true)    
     
     reaper.SetExtState(SCRIPT,'settings_moddock',tostring(settings_moddock), true)    
     reaper.SetExtState(SCRIPT,'modwin_min',tostring(modwinsz.minimized), true)    
@@ -53242,21 +53314,23 @@ function GUI_DrawCtlBitmap_Strips()
     
   end
 
-  function SaveFaders(file)
+  function SaveFaders(file, pfx, faders, excludessfader)
   
     if file and faders and #faders > 0 then
   
-      CheckFaders()
+      CheckFaders(faders)
   
-      local key = 'fadercnt'
+      local key = pfx..'fadercnt'
       file:write('['..key..']'.. #faders ..'\n')
-      file:write('[snapshot_fader]'.. nz(snapshot_fader,'') ..'\n')
+      if not excludessfader then
+        file:write('[snapshot_fader]'.. nz(snapshot_fader,'') ..'\n')
+      end
       
       for f = 1, #faders do
     
         if faders[f] then
   
-          local key = 'fader_'..f..'_'
+          local key = pfx..'fader_'..f..'_'
           file:write('['..key..'targettype]'.. nz(faders[f].targettype,'') ..'\n')
           file:write('['..key..'strip]'.. nz(faders[f].strip,'') ..'\n')
           file:write('['..key..'page]'.. nz(faders[f].page,'') ..'\n')
@@ -53807,6 +53881,10 @@ function GUI_DrawCtlBitmap_Strips()
       file:write('[' ..pfx ..'track_num]'..strips[s].track.tracknum..'\n')
       file:write('[' ..pfx ..'track_strip]'..strips[s].track.strip..'\n')
     
+      if strips[s].faders then
+        SaveFaders(file,pfx,strips[s].faders,true)
+      end
+      
       for p = 1, 4 do
       
         local key = pfx..'p'..p..'_'
@@ -54408,6 +54486,7 @@ function GUI_DrawCtlBitmap_Strips()
     reaper.SetProjExtState(0,SCRIPT,'snapwinpos_y',nz(snapshot_win_pos.y,''))
     reaper.SetProjExtState(0,SCRIPT,'showsnap',tostring(show_snapshots))
     reaper.SetProjExtState(0,SCRIPT,'hidetracks',tostring(hideunusedtracks))
+    reaper.SetProjExtState(0,SCRIPT,'localfaders',tostring(settings_localfaders))
 
     reaper.SetProjExtState(0,SCRIPT,'sb_favs',tostring(lvar.stripbrowser.favs))
     reaper.SetProjExtState(0,SCRIPT,'sb_page',tostring(lvar.stripbrowser.page))
@@ -54527,7 +54606,10 @@ function GUI_DrawCtlBitmap_Strips()
     end
     
     if faders then
-      SaveFaders(file)
+      SaveFaders(file, '', faders)
+      if lvar.gfaders then
+        SaveFaders(file, 'global_', lvar.gfaders)    
+      end
     end
     if modulators then
       SaveMods(file)
@@ -55747,7 +55829,63 @@ function GUI_DrawCtlBitmap_Strips()
     update_fsnaps = true
   
   end
+  
+  function StoreFaders()
+    if settings_localfaders == true then
+      if faders and strips[tracks[track_select].strip] then
+        strips[tracks[track_select].strip].faders = table.deepcopy(faders)
+      elseif strips[tracks[track_select].strip] then
+        strips[tracks[track_select].strip].faders = nil
+      end
+    else
+      lvar.gfaders = table.deepcopy(faders)
+    end
+  end
+
+  function RecallFaders()
+    if faders == nil then return end
     
+    local fdata
+    if settings_localfaders == true then
+      local strip = tracks[track_select].strip
+      fdata = {}
+      if strips[strip] and strips[strip].faders then
+        fdata = strips[strip].faders
+      end
+    else
+      fdata = lvar.gfaders or {}   
+    end
+
+    for f = 1, #faders do
+      if fdata[f] then
+        if fdata[f].targettype == 4 or
+           fdata[f].targettype == 7 then
+          if not faders[f].targettype or (faders[f].targettype == 4 or 
+                                          faders[f].targettype == 7) then
+            local ctl = strips[fdata[f].strip][fdata[f].page].controls[fdata[f].ctl]
+            if ctl then
+              
+              AssignFader(f,fdata[f])
+              --SetFader(ctl.macrofader, ctl.val)
+                            
+            end                  
+          end
+    
+        else
+          if faders[f].targettype == 4 or 
+             faders[f].targettype == 7 then
+            DeleteFader(f)
+          end
+        end
+      else
+        if faders[f] and (faders[f].targettype == 4 or 
+                          faders[f].targettype == 7) then
+          DeleteFader(f)
+        end
+      end
+    end
+  end
+  
   function Snapshot_Set(strip, page, sstype_sel, ss_sel)
 
     --local r = reaper
@@ -55762,6 +55900,8 @@ function GUI_DrawCtlBitmap_Strips()
       if (snaps.morph_sync == false and snaps.morph_time == 0) or 
          (snaps.morph_sync == true and snaps.morph_syncv == 1) then
         local mfs
+        local enablednu = settings_enablednu
+        
         if sstype_sel == 1 then
           local snaptbl = snaps[ss_sel]
           if snaptbl then
@@ -55801,7 +55941,8 @@ function GUI_DrawCtlBitmap_Strips()
                 end
               end
   
-              if ctl.noss ~= true and ctl.ctllock ~= true and c and v and tostring(nv) ~= tostring(ctl.val) and (settings_morphfaderassignedctls == true or ctl.macrofader == nil) then
+              if ctl.noss ~= true and ctl.ctllock ~= true and c and v and (tostring(nv) ~= tostring(ctl.val) or (ctl.dnu == true and enablednu == true))
+                 and (settings_morphfaderassignedctls == true or ctl.macrofader == nil) then
                 trackfxparam_select = c
                 if ctl.tracknum then
                   track = GetTrack(ctl.tracknum)
@@ -55894,8 +56035,9 @@ function GUI_DrawCtlBitmap_Strips()
                     ctl.macrofader = nil
                   end
                 end
-    
-                if c and v and ctl.ctllock ~= true and tostring(nv) ~= tostring(ctl.val) and (settings_morphfaderassignedctls == true or ctl.macrofader == nil) then
+
+                if c and v and ctl.ctllock ~= true and (tostring(nv) ~= tostring(ctl.val) or (ctl.dnu == true and enablednu == true)) 
+                   and (settings_morphfaderassignedctls == true or ctl.macrofader == nil) then
                   trackfxparam_select = c
                   if ctl.tracknum then
                     track = GetTrack(ctl.tracknum)
