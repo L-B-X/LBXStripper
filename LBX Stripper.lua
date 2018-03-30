@@ -14,7 +14,7 @@
 
 
   local lvar = {}
-  lvar.scriptver = '0.94.0050' --Script Version
+  lvar.scriptver = '0.94.0051' --Script Version
   
   lvar.ctlupdate_rr = nil
   lvar.ctlupdate_pos = 1
@@ -6893,7 +6893,7 @@
               LBX_CTL_TRACK_INF.guids[f] = reaper.TrackFX_GetFXGUID(track,f)
             end
             if LBX_CTL_TRACK_INF_CNT ~= LBX_CTL_TRACK_INF.count then
-              Faders_INIT()
+              faders = Faders_INIT(_, faders)
             end
           end
         elseif trname == LBX_GTRACK_NAME then
@@ -7167,7 +7167,7 @@
       FD_butt_cnt = math.floor(obj.sections[500].h / butt_h) - 1
     end
     
-    if LBX_CTL_TRACK_INF then
+    if LBX_CTL_TRACK_INF and faders then
       for i = 1, FD_butt_cnt-1 do
         local f = faders[i+fdlist_offset]
       
@@ -28345,8 +28345,9 @@ function GUI_DrawCtlBitmap_Strips()
   end
   ------------------------------------------------------------    
 
-  function Faders_INIT(force)
+  function Faders_INIT(force, fads)
 
+    local faders = fads
     if faders == nil or force then
       faders = {}
     end
@@ -28359,7 +28360,8 @@ function GUI_DrawCtlBitmap_Strips()
         
       end
   
-    end  
+    end
+    return faders  
     
   end
 
@@ -28484,7 +28486,7 @@ function GUI_DrawCtlBitmap_Strips()
               faders[p+1].val = round(reaper.TrackFX_GetParam(track, fxnum, pf),5)
               faders[p+1].oval = faders[p+1].val
             else
-              Faders_INIT()
+              Faders_INIT(_,faders)
               faders[p+1].val = round(reaper.TrackFX_GetParam(track, fxnum, pf),5)
               faders[p+1].oval = faders[p+1].val
             end
@@ -28497,8 +28499,10 @@ function GUI_DrawCtlBitmap_Strips()
   
   function ReadAutomationFaders()
   
-    if LBX_CTL_TRACK then    
+    if LBX_CTL_TRACK and faders then    
     
+      local faders = faders or {}
+      
       if lbx_midilrnctl == nil then
         local ccc = trackfxparam_select
       
@@ -35709,7 +35713,7 @@ function GUI_DrawCtlBitmap_Strips()
           show_fsnapshots = false
           update_surface = true
         end
-        
+
         local i = math.floor((mouse.my - obj.sections[500].y) / tb_butt_h)-1
         if i == -1 then
           --if settings_localfaders == true then
@@ -49296,7 +49300,7 @@ function GUI_DrawCtlBitmap_Strips()
   end
 
   function Faders_Check(strip, page)
-    if LBX_CTL_TRACK then    
+    if LBX_CTL_TRACK and faders then    
     
       local ccc = trackfxparam_select
     
@@ -51593,8 +51597,10 @@ function GUI_DrawCtlBitmap_Strips()
 
     pfx = pfx or ''
     
-    local faders, snapshot_fader
+    local fadrs, snapshot_fader
+
     if data == nil then
+    
       local load_path
       local fn = GPES('fader_datafile', true)
       if fn == nil then return end
@@ -51617,14 +51623,14 @@ function GUI_DrawCtlBitmap_Strips()
         return 0
       end    
       
-      faders = {}
+      fadrs = {}
       if reaper.file_exists(ffn) then
         local file
         file=io.open(ffn,"r")
         local content=file:read("*a")
         file:close()
         
-        faders = unpickle(content)
+        fadrs = unpickle(content)
       end
     else
     
@@ -51636,37 +51642,40 @@ function GUI_DrawCtlBitmap_Strips()
         local key = pfx..'snapshot_fader'
         snapshot_fader = tonumber(zn(data[key]))
 
-        faders = {}
+        fadrs = {}
         
         for f = 1, fadercnt do      
           
           local key = pfx..'fader_'..f..'_'
         
-          faders[f] = {}
-          faders[f].targettype = tonumber(zn(data[key..'targettype']))
-          faders[f].strip = tonumber(zn(data[key..'strip']))
-          faders[f].page = tonumber(zn(data[key..'page']))
-          faders[f].ctl = tonumber(zn(data[key..'ctl']))
-          faders[f].c_id = tonumber(zn(data[key..'c_id']))
-          faders[f].sstype = tonumber(zn(data[key..'sstype']))
-          faders[f].xy = tonumber(zn(data[key..'xy'])) 
-          faders[f].mode = tonumber(zn(data[key..'mode'])) 
-          faders[f].voffset = tonumber(zn(data[key..'voffset'])) 
+          fadrs[f] = {}
+          fadrs[f].targettype = tonumber(zn(data[key..'targettype']))
+          fadrs[f].strip = tonumber(zn(data[key..'strip']))
+          fadrs[f].page = tonumber(zn(data[key..'page']))
+          fadrs[f].ctl = tonumber(zn(data[key..'ctl']))
+          fadrs[f].c_id = tonumber(zn(data[key..'c_id']))
+          fadrs[f].sstype = tonumber(zn(data[key..'sstype']))
+          fadrs[f].xy = tonumber(zn(data[key..'xy'])) 
+          fadrs[f].mode = tonumber(zn(data[key..'mode'])) 
+          fadrs[f].voffset = tonumber(zn(data[key..'voffset'])) 
           
-          if faders[f].targettype == 7 then
-            faders[f].voffset = nz(faders[f].voffset,0)
+          if fadrs[f].targettype == 7 then
+            fadrs[f].voffset = nz(fadrs[f].voffset,0)
           end
         end 
     
       end
     end
     if check == true then  
-      CheckFaders(faders)
+      CheckFaders(fadrs)
     end
     if donotsetoval ~= true then
       Faders_SetOVAL()
     end
-    return faders, snapshot_fader
+    if fadrs == nil then
+      fadrs = Faders_INIT(true)
+    end
+    return fadrs, snapshot_fader
     
   end
   
@@ -52177,6 +52186,9 @@ function GUI_DrawCtlBitmap_Strips()
       faders, snapshot_fader = LoadFaders(data,_,_,true)
       if data['global_fadercnt'] then
         lvar.gfaders = LoadFaders(data,'global_',true)
+      end
+      if faders == nil then
+        faders = Faders_INIT(true)
       end
       
       LoadMods(data)
@@ -52808,6 +52820,9 @@ function GUI_DrawCtlBitmap_Strips()
           if tonumber(v) == 0.93 then
             LoadXXYPathData()
             faders, snapshot_fader = LoadFaders()
+            if faders == nil then
+              faders = Faders_INIT(true)
+            end
   
           elseif tonumber(v) >= 0.94 then
   
@@ -52816,6 +52831,10 @@ function GUI_DrawCtlBitmap_Strips()
             if data['global_fadercnt'] then
               lvar.gfaders = LoadFaders(data,'global_',true)
             end
+            if faders == nil then
+              faders = Faders_INIT(true)
+            end
+
             LoadMods(data)
             LoadSwitchers(data)
   
@@ -58311,7 +58330,7 @@ function GUI_DrawCtlBitmap_Strips()
     PopulateTrackFX()
     PopulateTrackFXParams()
 
-    Faders_INIT(force)
+    faders = Faders_INIT(force, faders)
             
     EB_Open = 0
     EB_Enter = false
