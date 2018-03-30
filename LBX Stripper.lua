@@ -14,7 +14,7 @@
 
 
   local lvar = {}
-  lvar.scriptver = '0.94.0051' --Script Version
+  lvar.scriptver = '0.94.0052' --Script Version
   
   lvar.ctlupdate_rr = nil
   lvar.ctlupdate_pos = 1
@@ -7167,7 +7167,7 @@
       FD_butt_cnt = math.floor(obj.sections[500].h / butt_h) - 1
     end
     
-    if LBX_CTL_TRACK_INF and faders then
+    if LBX_CTL_TRACK_INF --[[and faders]] then
       for i = 1, FD_butt_cnt-1 do
         local f = faders[i+fdlist_offset]
       
@@ -28499,9 +28499,9 @@ function GUI_DrawCtlBitmap_Strips()
   
   function ReadAutomationFaders()
   
-    if LBX_CTL_TRACK and faders then    
+    if LBX_CTL_TRACK --[[and faders]] then    
     
-      local faders = faders or {}
+      local faders = faders --or {}
       
       if lbx_midilrnctl == nil then
         local ccc = trackfxparam_select
@@ -49300,7 +49300,7 @@ function GUI_DrawCtlBitmap_Strips()
   end
 
   function Faders_Check(strip, page)
-    if LBX_CTL_TRACK and faders then    
+    if LBX_CTL_TRACK --[[and faders]] then    
     
       local ccc = trackfxparam_select
     
@@ -53227,7 +53227,7 @@ function GUI_DrawCtlBitmap_Strips()
     reaper.SetExtState(SCRIPT,'stripbrowser_minw',tostring(lvar.stripbrowser.minw), true)    
     reaper.SetExtState(SCRIPT,'stripbrowser_minh',tostring(lvar.stripbrowser.minh), true)    
     reaper.SetExtState(SCRIPT,'stripbrowser_dockpos',tostring(lvar.stripbrowser.dockpos or 1), true)    
-    reaper.SetExtState(SCRIPT,'stripbrowser_showlabel',tostring(lvar.stripbrowser.showlabel or true), true)    
+    reaper.SetExtState(SCRIPT,'stripbrowser_showlabel',tostring(lvar.stripbrowser.showlabel), true)    
     
     reaper.SetExtState(SCRIPT,'settings_moddock',tostring(settings_moddock), true)    
     reaper.SetExtState(SCRIPT,'modwin_min',tostring(modwinsz.minimized), true)    
