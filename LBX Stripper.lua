@@ -14,7 +14,7 @@
 
 
   local lvar = {}
-  lvar.scriptver = '0.94.0052' --Script Version
+  lvar.scriptver = '0.94.0053' --Script Version
   
   lvar.ctlupdate_rr = nil
   lvar.ctlupdate_pos = 1
@@ -19089,8 +19089,9 @@ function GUI_DrawCtlBitmap_Strips()
       return 0
     elseif ctlcat == ctlcats.pkmeter then
       local tracknum = strips[tracks[track_select].strip].track.tracknum
-      if strips[tracks[track_select].strip][page].controls[c].tracknum ~= nil then
-        tracknum = strips[tracks[track_select].strip][page].controls[c].tracknum
+      local ctl = strips[tracks[track_select].strip][page].controls[c]
+      if ctl and ctl.tracknum ~= nil then
+        tracknum = ctl.tracknum
       end
       if peak_info[tracknum] and peak_info[tracknum][paramnum % 64] then
         if paramnum < 64 then
@@ -19801,6 +19802,9 @@ function GUI_DrawCtlBitmap_Strips()
       end
       local cc = ctl.ctlcat
       if cc == ctlcats.fxparam then
+        
+        if not track then return end
+        
         local fxnum = nz(ctl.fxnum,-1)
         local param = ctl.param
         local min, max = A_GetParamMinMax(cc,track,ctl,fxnum,param,true,c)
@@ -19808,6 +19812,9 @@ function GUI_DrawCtlBitmap_Strips()
         reaper.TrackFX_SetParam(track, fxnum, param, ctl.val)
 
       elseif cc == ctlcats.trackparam then
+
+        if not track then return end
+
         local param = ctl.param
         if (settings_enablednu ~= true or ctl.dnu ~= true) and strip == tracks[track_select].strip and page == page then
           SetCtlDirty(c)
@@ -19816,12 +19823,17 @@ function GUI_DrawCtlBitmap_Strips()
         ctl.val = SMTI_norm(track,param,v,min,max)
 
       elseif cc == ctlcats.tracksend then
+
+        if not track then return end
+
         local param = ctl.param
         ctl.dirty = true
         local min, max = A_GetParamMinMax(cc,track,ctl,nil,param,true,c)
         ctl.val = STSI_norm(track,param,v,min,max,c,strip,page)
         
       elseif cc == ctlcats.fxoffline then
+
+        if not track then return end
         SetFXOffline2(strip, page, c, track, v)
       
       elseif cc == ctlcats.takeswitcher then
@@ -19903,12 +19915,14 @@ function GUI_DrawCtlBitmap_Strips()
       
   end
 
-  function SetParam3_Denorm2_Safe2(track, v, strip, page, reaper, c)
-  
+  function SetParam3_Denorm2_Safe2(track, v, strip, page, reaper, c)  
+    
     local ctl = strips[strip][page].controls[c]
     if strips and strips[strip] and ctl then
       local cc = ctl.ctlcat
       if cc == ctlcats.fxparam then
+        if not track then return end
+        
         local fxnum = ctl.fxnum
         local param = ctl.param
         reaper.TrackFX_SetParam(track, nz(fxnum,-1), param, v)
@@ -19916,12 +19930,14 @@ function GUI_DrawCtlBitmap_Strips()
         ctl.dirty = true
         
       elseif cc == ctlcats.trackparam then
+        if not track then return end
         local param = ctl.param
         ctl.val = v
         ctl.dirty = true
         SMTI_denorm(track,param,v)
 
       elseif cc == ctlcats.tracksend then
+        if not track then return end
         local param = ctl.param
         ctl.val = v
         ctl.dirty = true
@@ -19935,6 +19951,7 @@ function GUI_DrawCtlBitmap_Strips()
         end
 
       elseif cc == ctlcats.fxoffline then
+        if not track then return end
         SetFXOffline2(strip, page, c, track, v)
         
       elseif cc == ctlcats.rs5k then
@@ -54671,6 +54688,7 @@ function GUI_DrawCtlBitmap_Strips()
   
   ------------------------------------------------------------
 
+  --### Need to also check ctl track (check by guid) exists if ctl.tracknum ~= nil - also should check in any ctls check.
   function Snapshots_Check(strip, page)
     if snapshots and snapshots[strip] then
       if #snapshots[strip][page] > 0 then    
