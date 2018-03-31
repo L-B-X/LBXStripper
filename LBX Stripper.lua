@@ -14,7 +14,7 @@
 
 
   local lvar = {}
-  lvar.scriptver = '0.94.0053' --Script Version
+  lvar.scriptver = '0.94.0054' --Script Version
   
   lvar.ctlupdate_rr = nil
   lvar.ctlupdate_pos = 1
@@ -24943,11 +24943,15 @@ function GUI_DrawCtlBitmap_Strips()
       if switchers[switchid].grpids and #switchers[switchid].grpids > 0 then
         switchers[switchid].current = switchers[switchid].grpids[1].id
         local ctl = strips[tracks[track_select].strip][page].controls[switcher_select]
-        ctl.param_info.paramname = string.format('%i',1)..': '..switchers[switchid].grpids[1].name
+        if ctl then
+          ctl.param_info.paramname = string.format('%i',1)..': '..switchers[switchid].grpids[1].name
+        end
       else
         switchers[switchid].current = -1
         local ctl = strips[tracks[track_select].strip][page].controls[switcher_select]
-        ctl.param_info.paramname = 'No pages'
+        if ctl then
+          ctl.param_info.paramname = 'No pages'
+        end
       end
             
       CheckDataTables()
@@ -52200,7 +52204,7 @@ function GUI_DrawCtlBitmap_Strips()
       end
       
       LoadXXYPathData(data)
-      faders, snapshot_fader = LoadFaders(data,_,_,true)
+      faders, snapshot_fader = LoadFaders(data,'',_,true)
       if data['global_fadercnt'] then
         lvar.gfaders = LoadFaders(data,'global_',true)
       end
@@ -52844,7 +52848,7 @@ function GUI_DrawCtlBitmap_Strips()
           elseif tonumber(v) >= 0.94 then
   
             LoadXXYPathData(data)
-            faders, snapshot_fader = LoadFaders(data,_,_,true)
+            faders, snapshot_fader = LoadFaders(data,'',_,true)
             if data['global_fadercnt'] then
               lvar.gfaders = LoadFaders(data,'global_',true)
             end
