@@ -14,7 +14,7 @@
 
 
   local lvar = {}
-  lvar.scriptver = '0.94.0055' --Script Version
+  lvar.scriptver = '0.94.0056' --Script Version
   
   lvar.ctlupdate_rr = nil
   lvar.ctlupdate_pos = 1
@@ -24958,6 +24958,8 @@ function GUI_DrawCtlBitmap_Strips()
       end
             
       CheckDataTables()
+      ctls_dnu, ctls_upd = CtlDNU()
+      
     end
   end
   
