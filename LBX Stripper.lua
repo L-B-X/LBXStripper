@@ -14,7 +14,7 @@
 
 
   local lvar = {}
-  lvar.scriptver = '0.94.0054' --Script Version
+  lvar.scriptver = '0.94.0055' --Script Version
   
   lvar.ctlupdate_rr = nil
   lvar.ctlupdate_pos = 1
@@ -24876,6 +24876,7 @@ function GUI_DrawCtlBitmap_Strips()
           end
         end
         strips[tracks[track_select].strip][page].controls = tbl
+        
         local tbl = {}
         for i = 1, gcnt do
           if gctls[i] ~= nil then
@@ -24884,6 +24885,8 @@ function GUI_DrawCtlBitmap_Strips()
         end
         strips[tracks[track_select].strip][page].graphics = tbl
         CheckDataTables()
+        
+        ctls_dnu, ctls_upd = CtlDNU()
       end
 
     end    
