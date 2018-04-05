@@ -14,7 +14,7 @@
 
 
   local lvar = {}
-  lvar.scriptver = '0.94.0056' --Script Version
+  lvar.scriptver = '0.94.0057' --Script Version
   
   lvar.ctlupdate_rr = nil
   lvar.ctlupdate_pos = 1
@@ -47896,19 +47896,20 @@ function GUI_DrawCtlBitmap_Strips()
     --if ctl_select == nil then return end
     local updallowed = true
     --if ctl_select then
-      if newgrp then
-        for i = 1, #ctl_select do --might need to do nested checks
-          if strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].switcherid == strips[tracks[track_select].strip][page].controls[newgrp.switchid].switcherid then 
-            updallowed = false
-            break
-          end
-        end
-        if updallowed == true then
-          if newgrp.grpid == nil or newgrp.grpid == -1 then
-            newgrp.grpid = Switcher_AddPage(newgrp.switchid)
-          end
+    if newgrp and ctl_select then
+      for i = 1, #ctl_select do --might need to do nested checks
+        if strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].switcherid == strips[tracks[track_select].strip][page].controls[newgrp.switchid].switcherid then 
+          updallowed = false
+          break
         end
       end
+      if updallowed == true then
+        if newgrp.grpid == nil or newgrp.grpid == -1 then
+          newgrp.grpid = Switcher_AddPage(newgrp.switchid)
+        end
+      end
+    end
+    if ctl_select then
       local ctls = strips[tracks[track_select].strip][page].controls
       for i = 1, #ctl_select do
         local ctl = ctls[ctl_select[i].ctl]
@@ -47930,29 +47931,32 @@ function GUI_DrawCtlBitmap_Strips()
         end
         ctl.hide = nil
       end
-      if gfx3_select and #gfx3_select > 0 then
-        local gfxx = strips[tracks[track_select].strip][page].graphics
-        for i = 1, #gfx3_select do
-          local gfxc = strips[tracks[track_select].strip][page].graphics[gfx3_select[i].ctl]
-          if newgrp then
-            if updallowed == true then 
-              --is parent switcher in selection?
-              local par = IsParentSwitchInSel(ctl_select, gfxc, i) 
-              if par == false then
-                gfxc.grpid = newgrp.grpid
-                gfxc.switcher = ctls[newgrp.switchid].switcherid
-              end
+    end
+    if gfx3_select and #gfx3_select > 0 then
+      local gfxx = strips[tracks[track_select].strip][page].graphics
+      for i = 1, #gfx3_select do
+        local gfxc = strips[tracks[track_select].strip][page].graphics[gfx3_select[i].ctl]
+        if newgrp then
+          if updallowed == true then 
+            --is parent switcher in selection?
+            local par = IsParentSwitchInSel(ctl_select, gfxc, i) 
+            if par == false then
+              gfxc.grpid = newgrp.grpid
+              gfxc.switcher = ctls[newgrp.switchid].switcherid
             end
-          end 
-          gfxc.hide = nil
-        end                    
-      end
+          end
+        end 
+        gfxc.hide = nil
+      end                    
+    end
     --end
     newgrp = nil
     update_gfx = true
   end
   
   function IsParentSwitchInSel(ctlselect, ctl, i)
+    if not ctlselect then return false end
+    
     local par = false
     local ctls = strips[tracks[track_select].strip][page].controls
     if ctl.switcher then
