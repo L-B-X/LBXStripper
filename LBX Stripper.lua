@@ -14,7 +14,7 @@
 
 
   local lvar = {}
-  lvar.scriptver = '0.94.0058' --Script Version
+  lvar.scriptver = '0.94.0059' --Script Version
   
   lvar.ctlupdate_rr = nil
   lvar.ctlupdate_pos = 1
@@ -10666,8 +10666,8 @@ function GUI_DrawCtlBitmap_Strips()
 
                   elseif ctlcat == ctlcats.fxmulti then
                     v2 = ctl.val
-                    val2 = F_limit(round(frames*v2),0,frames-1)
-                    Disp_ParamV = lvar.fxmulti_table[v2*(#lvar.fxmulti_table-1) + 1]
+                    val2 = F_limit(math.floor(frames*v2),0,frames-1)
+                    Disp_ParamV = lvar.fxmulti_table[math.floor(v2*(#lvar.fxmulti_table-1) + 1)]
                     if ctlnmov == '' then
                       Disp_Name = pname
                     else
