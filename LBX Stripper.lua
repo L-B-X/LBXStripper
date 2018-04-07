@@ -14,7 +14,7 @@
 
 
   local lvar = {}
-  lvar.scriptver = '0.94.0059' --Script Version
+  lvar.scriptver = '0.94.0060' --Script Version
   
   lvar.ctlupdate_rr = nil
   lvar.ctlupdate_pos = 1
@@ -10793,8 +10793,13 @@ function GUI_DrawCtlBitmap_Strips()
                   local offl = false
                   if ctlcat == ctlcats.fxparam and ctl.offline then
                     offl = true
-                    if settings_showparamnamelabelwhenoffline == false then
-                      Disp_Name = 'Offline'
+                    Disp_Name = ''
+                    if settings_showparamnamelabelwhenoffline == true then
+                      if ctlnmov ~= '' then
+                        Disp_Name = ctlnmov 
+                      else
+                        Disp_Name = pname
+                      end
                     end
                     Disp_ParamV = ''
                   end
@@ -10855,7 +10860,11 @@ function GUI_DrawCtlBitmap_Strips()
   
                 gfx.a=1
                 if ctlcat == ctlcats.fxparam and ((track ~= nil and not reaper.TrackFX_GetEnabled(track, fxnum) and pname ~= 'Bypass') or ctl.offline or missing) then
-                  gfx.a = 0.5
+                  if ctl.offline or missing then
+                    gfx.a = 0.25
+                  else
+                    gfx.a = 0.5
+                  end
                 elseif (mode == 1 and submode == 1) or ctl.hidden then
                   gfx.a = 0.5
                 end
@@ -10944,12 +10953,16 @@ function GUI_DrawCtlBitmap_Strips()
                 end
                 
                 if not update_gfx and not update_bg and update_ctls then
-                
                   --just blit control area to main backbuffer - create area table
+                  local ttl1x = math.max(text_len1x, tl1)
+                  local ttl2x = math.max(text_len2x, tl2)
+                  local ttl1y = math.max(text_len1y, th1)
+                  local ttl2y = math.max(text_len2y, th2)
+                  
                   local al = math.min(px, xywh1.x, xywh2.x, tx1, tx2)
-                  local ar = math.max(px+math.floor(w*scale), tx1+tl1, tx2+tl2, xywh1.x+xywh1.w, xywh2.x+xywh2.w)
-                  local at = math.min(py, xywh1.y-math.floor(th1/2), xywh2.y-math.floor(th2/2))
-                  local ab = math.max(py+math.floor(h*scale),xywh1.y+math.floor(th1/2), xywh2.y+math.floor(th2/2))
+                  local ar = math.max(px+math.floor(w*scale), tx1+ttl1x, tx2+ttl2x, xywh1.x+xywh1.w, xywh2.x+xywh2.w)
+                  local at = math.min(py, xywh1.y-math.floor(ttl1y/2), xywh2.y-math.floor(ttl2y/2))
+                  local ab = math.max(py+math.floor(h*scale),xywh1.y+math.floor(ttl1y/2), xywh2.y+math.floor(ttl2y/2))
                   xywharea[#xywharea+1] = {x=al,y=at,w=ar-al,h=ab-at,r=ar,b=ab}
                 end
               end
@@ -48051,6 +48064,7 @@ function GUI_DrawCtlBitmap_Strips()
     
     end
   
+    SetCtlEnabled(fxnum)
   end
   
   function FXMulti_SetAddFX(ctl, state)
@@ -48061,6 +48075,8 @@ function GUI_DrawCtlBitmap_Strips()
     local hitrn = -2
     local notfnd
     local afxcnt = #addfx
+    local fxnums = {}
+    
     for a = 1, afxcnt do
     
       local tr = GetTrack(addfx[a].trn)
@@ -48072,11 +48088,14 @@ function GUI_DrawCtlBitmap_Strips()
         addfx[a] = FXMulti_AddFXFindFX(addfx[a].guid)      
       end
       
+        
       if addfx[a] then
         local trn = addfx[a].trn
         local fxnum = addfx[a].fxnum
         local trguid = addfx[a].trguid
         local guid = addfx[a].guid
+        
+        fxnums[#fxnums+1] = fxnum
         
         hitrn = math.max(hitrn,trn)    
         if state == 1 then
@@ -48125,6 +48144,10 @@ function GUI_DrawCtlBitmap_Strips()
       end
     end
 
+    if #fxnums > 0 then
+      SetCtlsEnabled(fxnums)
+    end
+    
   end
   
   function UpdateControlValues2(rt)
@@ -50603,13 +50626,13 @@ function GUI_DrawCtlBitmap_Strips()
   
   function SetCtlEnabled(fxnum)
   
-    local i
-    local enabled = reaper.TrackFX_GetEnabled(GetTrack(tracks[track_select].tracknum),fxnum)
+    --local i
+    --local enabled = reaper.TrackFX_GetEnabled(GetTrack(tracks[track_select].tracknum),fxnum)
     local strip = tracks[track_select].strip
     for i = 1, #strips[strip][page].controls do
       local ctl = strips[strip][page].controls[i]
       if ctl.fxnum == fxnum then
-        ctl.dirty = true
+        --ctl.dirty = true
         SetCtlDirty(i)
       end
     end
@@ -50618,7 +50641,7 @@ function GUI_DrawCtlBitmap_Strips()
 
   function SetCtlsEnabled(fxnum)
   
-    local i
+    --local i
     --local enabled = reaper.TrackFX_GetEnabled(GetTrack(tracks[track_select].tracknum),fxnum)
     local strip = tracks[track_select].strip
     for i = 1, #strips[strip][page].controls do
