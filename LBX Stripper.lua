@@ -14,7 +14,7 @@
 
 
   local lvar = {}
-  lvar.scriptver = '0.94.0057' --Script Version
+  lvar.scriptver = '0.94.0058' --Script Version
   
   lvar.ctlupdate_rr = nil
   lvar.ctlupdate_pos = 1
@@ -22,7 +22,8 @@
   lvar.stripctlbox = {}
   
   lvar.noteletters_tab = {'C','C#','D','D#','E','F','F#','G','G#','A','A#','B'}
-        
+  
+  lvar.fxmulti_table = {'Wet On','Wet Off','Bypass','Offline'}      
   lvar.submode_table = {'FX PARAMS','GRAPHICS','STRIPS'}
   lvar.submode_table2 = {'STRIP','FX','TRACK','GFX'}
   lvar.mode0_submode_table = {'LIVE MODE','FADERS','MODULATORS'}
@@ -293,7 +294,9 @@
              oscctl = 17,
              takeswitcher = 18,
              rs5k = 19,
-             midieditor_pageswitch = 20}
+             midieditor_pageswitch = 20,
+             switcher_pagesel = 21,
+             fxmulti = 22}
 
   lvar.ctlcats_nm = {'fxparam',
                 'trackparam',
@@ -315,7 +318,9 @@
                  'oscctl',
                  'takeswitcher',
                  'rs5k',
-                 'midi editor - page switcher'}
+                 'midi editor - page switcher',
+                 'switcher_pagesel',
+                 'fxmulti'}
              
   lvar.gfxtype = {img = 0,
                   txt = 1
@@ -4968,9 +4973,12 @@
         local cts = ctltype_select
         local spv = show_paramval
         local toff = textoff_select
-        if trackfxparam_select == #trackfxparams-1 then
+        if trackfxparam_select == #trackfxparams-2 then
           ccats = ctlcats.fxoffline
           cts = 2
+        elseif trackfxparam_select == #trackfxparams-1 then
+          ccats = ctlcats.fxmulti
+          cts = 2          
         elseif trackfxparam_select == #trackfxparams then
           ccats = ctlcats.fxgui
           cts = 2
@@ -5895,6 +5903,7 @@
                                                 clickthrough = clickthrough_select,
                                                 eqgraph = def_graph
                                                }
+
 
       elseif dragparam.type == 'snaprand' then
         local pname = 'RND PAGE'
@@ -7036,6 +7045,9 @@
       local p = #trackfxparams+1
       trackfxparams[p] = {paramnum = p,
                           paramname = 'Offline'}
+      p=p+1
+      trackfxparams[p] = {paramnum = p,
+                          paramname = 'Off/Byp/Wet'}
       p=p+1
       trackfxparams[p] = {paramnum = p,
                           paramname = 'Open GUI'}      
@@ -10407,7 +10419,7 @@ function GUI_DrawCtlBitmap_Strips()
                   if ctlcat == ctlcats.fxparam or ctlcat == ctlcats.trackparam or ctlcat == ctlcats.tracksend or ctlcat == ctlcats.pkmeter then
                     v2 = frameScale(ctl.framemode, math.max(math.min(GetParamValue2(ctlcat,track,fxnum,param,i),1),0)) or 0
                     val2 = F_limit(round(frames*v2),0,frames-1)
-                  elseif ctlcat == ctlcats.fxoffline or ctlcat == ctlcats.macro or ctlcat == ctlcats.midictl then
+                  elseif ctlcat == ctlcats.fxoffline or ctlcat == ctlcats.macro or ctlcat == ctlcats.midictl or ctlcat == ctlcats.switcher_pagesel then
                     v2 = ctl.val
                     val2 = F_limit(round(frames*v2),0,frames-1)
                   elseif ctlcat == ctlcats.rs5k then
@@ -10651,6 +10663,17 @@ function GUI_DrawCtlBitmap_Strips()
                     else
                       Disp_Name = ctlnmov
                     end
+
+                  elseif ctlcat == ctlcats.fxmulti then
+                    v2 = ctl.val
+                    val2 = F_limit(round(frames*v2),0,frames-1)
+                    Disp_ParamV = lvar.fxmulti_table[v2*(#lvar.fxmulti_table-1) + 1]
+                    if ctlnmov == '' then
+                      Disp_Name = pname
+                    else
+                      Disp_Name = ctlnmov
+                    end
+
                   elseif ctlcat == ctlcats.rcm_switch then
                     if ctlnmov == '' then
                       Disp_Name = pname
@@ -10741,6 +10764,17 @@ function GUI_DrawCtlBitmap_Strips()
                     else
                       Disp_Name = ctlnmov
                     end
+                  
+                  elseif ctlcat == ctlcats.switcher_pagesel then
+                    if ctlnmov == '' then
+                      --local switchid = ctl.switcher
+                      --local grpid = ctl.grpid
+                      
+                      --Disp_Name = switcher[switchid].grpids[
+                      Disp_Name = pname
+                    else
+                      Disp_Name = ctlnmov
+                    end                  
                   end
     
                   if ctltype == 4 and cycle_editmode == false then
@@ -16876,7 +16910,7 @@ function GUI_DrawCtlBitmap_Strips()
             GUI_DrawGaugeEdit(obj, gu)
           end
           
-          if (lvar.ctlpreview_img or dragparam) and lvar.ctlpreview == true then --and (update_surface or update_gfx or update_sidebar) then
+          if (lvar.ctlpreview_img or (dragparam and dragparam.type ~= 'reassplugin')) and lvar.ctlpreview == true then --and (update_surface or update_gfx or update_sidebar) then
             
             local fxn, prm
             if fxmode == 0 then
@@ -19532,6 +19566,11 @@ function GUI_DrawCtlBitmap_Strips()
         end
         SetCtlDirty(c)
         
+      elseif cc == ctlcats.switcher_pagesel then
+        Switcher_ClickPageButton(c)
+        ctl.val = 1
+        SetCtlDirty(c)
+        
       end
       if ctl.midiout then SendMIDIMsg(ctl.midiout,val) end
       if ctl.macrofader then
@@ -19542,6 +19581,51 @@ function GUI_DrawCtlBitmap_Strips()
       end]]
     end
       
+  end
+  
+  function Switcher_ClickPageButton(c)
+    
+    --local t = reaper.time_precise()
+    local ctls = strips[tracks[track_select].strip][page].controls
+    local switchid = ctls[c].switcherid
+    local grpid = ctls[c].param
+
+    if switchers[switchid] then
+      local grpids = switchers[switchid].grpids
+      
+      local grpididx
+      for g = 1, #grpids do
+        if grpids[g].id == grpid then
+          grpididx = g
+          break
+        end
+      end
+  
+      if grpididx then
+      
+        switchers[switchid].current = switchers[switchid].grpids[grpididx].id
+        for i = 1, #ctls do
+          if ctls[i].ctlcat == ctlcats.switcher then
+            if ctls[i].switcherid == switchid then
+              ctls[i].param_info.paramname = string.format('%i',grpididx)..': '..switchers[switchid].grpids[grpididx].name
+              SetCtlDirty(i)
+            end
+          elseif ctls[i].ctlcat == ctlcats.switcher_pagesel then
+            if ctls[i].switcherid == switchid and ctls[i].param ~= grpid then
+              ctls[i].val = 0
+              SetCtlDirty(i)
+            end        
+          end
+        
+        end
+        update_gfx = true
+        update_bg = true
+        
+        SetCtlBitmapRedraw()
+      
+      end
+    end
+    --DBG(reaper.time_precise() - t)
   end
   
   function SendAllNotesOffToTrack(trn)
@@ -19949,7 +20033,7 @@ function GUI_DrawCtlBitmap_Strips()
         if strip == tracks[track_select].strip and page == page then      
           SetCtlDirty(c)
         end
-
+        
       elseif cc == ctlcats.fxoffline then
         if not track then return end
         SetFXOffline2(strip, page, c, track, v)
@@ -19981,6 +20065,15 @@ function GUI_DrawCtlBitmap_Strips()
       elseif cc == ctlcats.midictl then
         ctl.val = v
         ctl.dirty = true
+
+      elseif cc == ctlcats.fxmulti then
+        ctl.val = v
+        local state = FXMulti_GetState2(v)
+        FXMulti_SetMainFX(ctl, state)
+        
+        --local state = FXMulti_GetState(track, ctl)
+        FXMulti_SetAddFX(ctl, state)
+        
       end    
       if ctl.midiout then SendMIDIMsg(ctl.midiout,v) end
 
@@ -20439,23 +20532,32 @@ function GUI_DrawCtlBitmap_Strips()
         local cnt = #strips[tracks[track_select].strip][page].controls
         for c = 1, cnt do
           local ctl = strips[tracks[track_select].strip][page].controls[c]
-          _, deleted = Switcher_CtlsDeleted(ctl.switcher,ctl.grpid)
-        
-          if deleted == true then
-            if delfx_flag and settings_deletefxwithstrip then
-              if ctl.ctlcats == ctlcats.fxparam and delfxidx[ctl.fxsguid] == nil then
-                local delfxcnt = #delfx+1
-                local trn = nz(ctl.tracknum, tracks[track_select].tracknum)
-                delfx[delfxcnt] = {tracknum = trn, 
-                                   guid = ctl.fxguid}
-                delfxidx[ctl.fxguid] = delfxcnt
-                if not delfxtracks.tracks[trn] then
-                  delfxtracks.tracks[trn] = true 
-                  delfxtracks.idx[#delfxtracks.idx+1] = trn
+          if ctl.ctlcat == ctlcats.switcher_pagesel then
+            local swid = ctl.switcherid
+            if switchers[swid].deleted == true then
+              strips[tracks[track_select].strip][page].controls[c] = nil
+            end
+          end
+          local ctl = strips[tracks[track_select].strip][page].controls[c]
+          if ctl then          
+            _, deleted = Switcher_CtlsDeleted(ctl.switcher,ctl.grpid)
+          
+            if deleted == true then
+              if delfx_flag and settings_deletefxwithstrip then
+                if ctl.ctlcats == ctlcats.fxparam and delfxidx[ctl.fxsguid] == nil then
+                  local delfxcnt = #delfx+1
+                  local trn = nz(ctl.tracknum, tracks[track_select].tracknum)
+                  delfx[delfxcnt] = {tracknum = trn, 
+                                     guid = ctl.fxguid}
+                  delfxidx[ctl.fxguid] = delfxcnt
+                  if not delfxtracks.tracks[trn] then
+                    delfxtracks.tracks[trn] = true 
+                    delfxtracks.idx[#delfxtracks.idx+1] = trn
+                  end
                 end
               end
+              strips[tracks[track_select].strip][page].controls[c] = nil
             end
-            strips[tracks[track_select].strip][page].controls[c] = nil
           end
         end
         
@@ -20495,15 +20597,30 @@ function GUI_DrawCtlBitmap_Strips()
             if deleted == true then
               strips[tracks[track_select].strip][page].controls[c].switcher = nil
             end
+          elseif ctl.ctlcat == ctlcats.switcher_pagesel then
+            local swid = ctl.switcherid
+            if switchers[swid].deleted == true then
+              strips[tracks[track_select].strip][page].controls[c] = nil
+            end
           end
         end
+        local tbl = {}
+        for i = 1, cnt do
+          if strips[tracks[track_select].strip][page].controls[i] ~= nil then
+            table.insert(tbl, strips[tracks[track_select].strip][page].controls[i])
+          end
+        end
+        strips[tracks[track_select].strip][page].controls = tbl
+
         -- check rest of controls
         local cnt = #strips[tracks[track_select].strip][page].controls
         for c = 1, cnt do
           local ctl = strips[tracks[track_select].strip][page].controls[c]
-          _, deleted = Switcher_CtlsDeleted(ctl.switcher,ctl.grpid)
-          if deleted == true then
-            strips[tracks[track_select].strip][page].controls[c].switcher = nil
+          if ctl then
+            _, deleted = Switcher_CtlsDeleted(ctl.switcher,ctl.grpid)
+            if deleted == true then
+              strips[tracks[track_select].strip][page].controls[c].switcher = nil
+            end
           end
         end
         local cnt = #strips[tracks[track_select].strip][page].graphics
@@ -20515,6 +20632,7 @@ function GUI_DrawCtlBitmap_Strips()
           end
         end        
       end
+            
     end
 
     CheckDataTables()
@@ -21586,7 +21704,8 @@ function GUI_DrawCtlBitmap_Strips()
         return
       end
     else
-      trnum = strips[strip].track.tracknum 
+      trnum = strips[strip].track.tracknum
+      trguid = strips[strip].track.guid
       tr = GetTrack(trnum)
     end
     
@@ -21802,7 +21921,8 @@ function GUI_DrawCtlBitmap_Strips()
             or stripdata.strip.controls[j].ctlcat == ctlcats.fxoffline
             or stripdata.strip.controls[j].ctlcat == ctlcats.fxgui
             or stripdata.strip.controls[j].ctlcat == ctlcats.rcm_switch
-            or stripdata.strip.controls[j].ctlcat == ctlcats.rs5k) 
+            or stripdata.strip.controls[j].ctlcat == ctlcats.rs5k
+            or stripdata.strip.controls[j].ctlcat == ctlcats.fxmulti) 
             and stripdata.strip.controls[j].fxguid then
           if stripdata.version == 3 then
             stripdata.strip.controls[j].fxguid = '{'..stripdata.strip.controls[j].fxguid..'}'
@@ -21826,6 +21946,28 @@ function GUI_DrawCtlBitmap_Strips()
             stripdata.strip.controls[j].tracknum = trnum
             stripdata.strip.controls[j].trackguid = trguid
           end
+
+          if stripdata.strip.controls[j].ctlcat == ctlcats.fxmulti then
+            local addfx = stripdata.strip.controls[j].addfx            
+            if addfx and #addfx > 0 then
+              local afxcnt = #addfx
+              local ntab = {}
+              for afx = 1, #addfx do
+              
+                if fxguids[addfx[afx].guid] then
+                  ncnt = #ntab + 1
+                  ntab[ncnt] = {}
+                  ntab[ncnt].guid = fxguids[addfx[afx].guid].guid
+                  ntab[ncnt].fxnum = fxguids[addfx[afx].guid].fxnum
+                  ntab[ncnt].trn = trnum
+                  ntab[ncnt].trguid = trguid
+                  --DBG(afx..' '..ntab[ncnt].guid..' '..ntab[ncnt].fxnum..' '..ntab[ncnt].trn..' '..ntab[ncnt].trguid)
+                end              
+              end
+              stripdata.strip.controls[j].addfx = ntab
+            end
+          end
+
         else
           stripdata.strip.controls[j].fxfound = true
           stripdata.strip.controls[j].fxguid = nil
@@ -21936,8 +22078,21 @@ function GUI_DrawCtlBitmap_Strips()
       else
       
         strips[strip][page].controls[cc].grpid = grpid --give main group id
-      end      
+      end
       
+      if strips[strip][page].controls[cc].ctlcat == ctlcats.switcher_pagesel then
+        local ogid = strips[strip][page].controls[cc].param
+        if ogid then
+        
+          if gidtrack[ogid] then
+            strips[strip][page].controls[cc].param = gidtrack[ogid].grpid
+          else
+            strips[strip][page].controls[cc].param = GenID() --give a new group id
+            gidtrack[ogid] = {grpid = strips[strip][page].controls[cc].param}
+          end      
+        end       
+      end
+            
       if switchstart and strips[strip][page].controls[cc].switcher then
       
         local swid = stripdata.switchconvtab[strips[strip][page].controls[cc].switcher]
@@ -24754,6 +24909,118 @@ function GUI_DrawCtlBitmap_Strips()
   
   end
   
+  function Switcher_CreatePageButtons(switcher)
+
+    local ctls = strips[tracks[track_select].strip][page].controls
+    local switchid = ctls[switcher].switcherid
+
+    if switchid then
+      local x = ctls[switcher].xsc
+      local y = ctls[switcher].ysc
+      local h = ctls[switcher].hsc
+      scale_select = ctls[switcher].scale
+      knob_select = ctls[switcher].knob_select
+      
+      local grpids = switchers[switchid].grpids
+      if #grpids > 0 then
+        local bc = 0
+        for g = 1, #grpids do
+        
+          if not SwitcherPage_CheckExists(switchid, grpids[g].id) then
+            y = y + h + 1
+            
+            Switcher_AddPageButton(switcher, switchid,g,x,y)
+          end
+        end
+        SetCtlBitmapRedraw()
+        update_gfx = true
+        
+      end
+    end
+  end
+  
+  function SwitcherPage_CheckExists(switchid, grpid)
+  
+    local ctls = strips[tracks[track_select].strip][page].controls
+    for i = 1, #ctls do
+      if ctls[i].ctlcat == ctlcats.switcher_pagesel then
+        if ctls[i].param == grpid then
+          return true
+        end
+      end
+    end
+    
+  end
+  
+  function Switcher_AddPageButton(switcher, switchid,grpididx, x, y)
+
+      local sctl = strips[tracks[track_select].strip][page].controls[switcher]
+      local grpids = switchers[switchid].grpids
+      local strip = tracks[track_select].strip
+      local ctlnum = #strips[strip][page].controls + 1
+      local w, h = gfx.getimgdim(ctl_files[knob_select].imageidx)
+      strips[strip][page].controls[ctlnum] = {c_id = GenID(),
+                                              ctlcat = ctlcats.switcher_pagesel,
+                                              switcher = sctl.switcher,
+                                              fxname='Strip Switcher Page Button',
+                                              fxguid=nil, 
+                                              fxnum=nil, 
+                                              fxfound = true,
+                                              param = grpids[grpididx].id,
+                                              param_info = {paramname = grpids[grpididx].name,
+                                                            paramidx = grpididx},
+                                              ctltype = 2,
+                                              knob_select = knob_select,
+                                              ctl_info = {fn = ctl_files[knob_select].fn,
+                                                          frames = ctl_files[knob_select].frames,
+                                                          imageidx = ctl_files[knob_select].imageidx, 
+                                                          cellh = ctl_files[knob_select].cellh},
+                                              x = x,
+                                              y = y,
+                                              w = w,
+                                              poslock = false,
+                                              scale = scale_select,
+                                              xsc = x + math.floor(w/2 - (w*scale_select)/2),
+                                              ysc = y + math.floor(ctl_files[knob_select].cellh/2 - (ctl_files[knob_select].cellh*scale_select)/2),
+                                              wsc = w*scale_select,
+                                              hsc = ctl_files[knob_select].cellh*scale_select,
+                                              show_paramname = show_paramname,
+                                              show_paramval = false,
+                                              ctlname_override = '',
+                                              textcol = textcol_select,
+                                              textoff = 1,
+                                              textoffval = textoffval_select,
+                                              textoffx = textoff_selectx,
+                                              textoffvalx = textoffval_selectx,
+                                              textsize = textsize_select,
+                                              textsizev = textsizev_select,
+                                              textcolv = textcolv_select,
+                                              val = 0,
+                                              defval = 0,
+                                              maxdp = maxdp_select,
+                                              cycledata = {statecnt = 0,val = 0,mapptof = false,draggable = false,spread = false, {}},
+                                              xydata = {snapa = 1, snapb = 1, snapc = 1, snapd = 1, x = 0.5, y = 0.5},
+                                              membtn = {state = false,
+                                                        mem = nil},
+                                              switcherid = switchid,
+                                              id = nil,
+                                              grpid = sctl.grpid,
+                                              tracknum = nil,
+                                              trackguid = nil,
+                                              scalemode = 8,
+                                              framemode = 1,
+                                              horiz = horiz_select,
+                                              poslock = false,
+                                              bypassbg_c = bypass_bgdraw_c_select,
+                                              bypassbg_n = bypass_bgdraw_n_select,
+                                              bypassbg_v = bypass_bgdraw_v_select,
+                                              knobsens = table.copy(settings_defknobsens),
+                                              clickthrough = clickthrough_select,
+                                              eqgraph = def_graph
+                                             }
+    
+  end
+  
   function Switcher_AddPage(switcher)
   
     local grpid = GenID()
@@ -24854,6 +25121,8 @@ function GUI_DrawCtlBitmap_Strips()
             Switcher_Delete(c, false, ccnt, gcnt)
           end
           ctls[c] = nil      
+        elseif ctl and ctl.ctlcat == ctlcats.switcher_pagesel and ctl.switcherid == switchid then
+          ctls[c] = nfil
         end
       end
       for c = 1, gcnt do
@@ -24919,6 +25188,8 @@ function GUI_DrawCtlBitmap_Strips()
           if ctls[c].ctlcat == ctlcats.switcher then
             Switcher_Delete(c,false,cnt,gcnt)
           end    
+          ctls[c] = nil
+        elseif ctls[c] and ctls[c].ctlcat == ctlcats.switcher_pagesel and ctls[c].switcherid == switchid and ctls[c].param == grpid then
           ctls[c] = nil
         end
       end
@@ -25377,8 +25648,8 @@ function GUI_DrawCtlBitmap_Strips()
     else
       mstr = ''
     end
-    mstr = mstr .. 'Add page|Rename page|Remove page|'
-    local exopts = 3
+    mstr = mstr .. 'Add page|Rename page|Remove page||Create Page Buttons|'
+    local exopts = 4
     local fm, lastp = FaderMenu(sfad,true)
     mstr = mstr ..'|'..fm..'|'
     local vo = '>Fader value offset'
@@ -25396,11 +25667,13 @@ function GUI_DrawCtlBitmap_Strips()
       end
       vo = vo.. string.format('%i',i)..'  -  '..num2note(i)
     end
-    local exopts2 = 3 + lastp + 128
+    local exopts2 = exopts + lastp + 128
     mstr = mstr..vo..'|'
 
     local ctl = strips[tracks[track_select].strip][page].controls[switcher_select]
     local switchid = ctl.switcherid
+    if not switchid then return end
+    
     local swc = #switchers[switchid].grpids
     for sid = 1, swc do
       mstr = mstr..'|'..string.format('%i',sid)..': '..tostring(switchers[switchid].grpids[sid].name)
@@ -25436,8 +25709,12 @@ function GUI_DrawCtlBitmap_Strips()
         
         Switcher_DeletePage(switchid)
       
-      elseif res >= sfcnt + 3 and res < sfcnt + 3 + lastp then
-        res = res - (sfcnt + 3)
+      elseif res == sfcnt + 4 then
+
+        Switcher_CreatePageButtons(switcher_select)
+
+      elseif res >= sfcnt + exopts and res < sfcnt + exopts + lastp then
+        res = res - (sfcnt + exopts)
         local f = {targettype = 6,
                    strip = tracks[track_select].strip,
                    page = page,
@@ -25446,11 +25723,11 @@ function GUI_DrawCtlBitmap_Strips()
                    voffset = 0}
         AssignFader(res,f)
 
-      elseif res == sfcnt + 3 + lastp then
+      elseif res == sfcnt + exopts + lastp then
       
         DeleteFader(sfad)
       
-      elseif res > sfcnt + 3 + lastp and res < sfcnt + exopts2 then
+      elseif res > sfcnt + exopts + lastp and res < sfcnt + exopts2 then
         
         res = res - (sfcnt + exopts2 -128)
         if sfad then
@@ -26408,6 +26685,143 @@ function GUI_DrawCtlBitmap_Strips()
     end
   end
   
+  function GetTrackFXTable(trn)
+  
+    local tab = {}
+    local track = GetTrack(trn)
+    if track then
+      local fxcnt = reaper.TrackFX_GetCount(track)-1
+      local _, trnm = reaper.GetTrackName(track,'')
+      tab.fxcnt = fxcnt
+      tab.trackname = trnm
+      for i = 0, fxcnt do
+        local _, fxnm = reaper.TrackFX_GetFXName(track, i, '')
+        tab[i] = {name = fxnm,
+                  guid = reaper.TrackFX_GetFXGUID(track, i)}
+      end
+    end
+    return tab
+    
+  end
+  
+  function GetAllTrackFXTable()
+  
+    local tab = {}
+    local trcnt = reaper.GetNumTracks()-1
+    tab.trcnt = trcnt
+    for i = -1, trcnt do
+      tab[i] = GetTrackFXTable(i)
+    end
+    return tab
+    
+  end
+  
+  function FXMultiMenu_RB(i)
+  
+    local strip = tracks[track_select].strip
+    local ctl = strips[strip][page].controls[i]    
+    
+    local fxtab = GetAllTrackFXTable()
+    local ctrtab = GetTrackFXTable(tracks[track_select].tracknum)
+    
+    local guids = {}
+    guids[ctl.fxguid] = '!'
+    if ctl.addfx then
+      for i = 1, #ctl.addfx do
+        guids[ctl.addfx[i].guid] = '!'
+      end
+    end
+        
+    local mstr = ''
+    if ctrtab.fxcnt >= 0 then
+      mstr = '>Current Track'
+    else
+      mstr = '>#Current Track'
+    end
+    for i = 0, ctrtab.fxcnt do
+      mstr = mstr .. '|'
+      if i == ctrtab.fxcnt then
+        mstr = mstr .. '<'
+      end
+      mstr = mstr .. (guids[ctrtab[i].guid] or '') .. ctrtab[i].name
+    end
+    mstr = mstr .. '|'
+    for i = -1, fxtab.trcnt do
+      if fxtab[i].fxcnt >= 0 then
+        mstr = mstr .. '|>'..i+1 ..': ' .. fxtab[i].trackname
+      else
+        mstr = mstr .. '|#'..i+1 ..': ' .. fxtab[i].trackname
+      end
+      for f = 0, fxtab[i].fxcnt do
+        mstr = mstr .. '|'
+        if f == fxtab[i].fxcnt then
+          mstr = mstr .. '<'
+        end
+        mstr = mstr .. (guids[fxtab[i][f].guid] or '') .. fxtab[i][f].name
+      end
+    end
+    
+    gfx.x = mouse.mx
+    gfx.y = mouse.my
+    local res = gfx.showmenu(mstr)
+    if res > 0 then
+      res = res - 1
+      if res <= ctrtab.fxcnt then
+        --DBG(ctrtab[res].name)
+        if not guids[ctrtab[res].guid] then
+          CtlAddFX_Add(ctl, tracks[track_select].tracknum, res, ctrtab[res].guid)    
+        else
+          CtlAddFX_Rem(ctl, ctrtab[res].guid)            
+        end
+      else
+        res = res - (ctrtab.fxcnt+1)
+        local trn
+        for tr = -1, fxtab.trcnt do
+          if fxtab[tr].fxcnt >= 0 then
+            if res <= fxtab[tr].fxcnt then
+              trn = tr
+              break
+            end
+            res = res - (fxtab[tr].fxcnt+1)
+          else
+            res = res - 1
+          end
+        end
+        --DBG('fx: '..fxtab[trn][res].name)
+        if not guids[fxtab[trn][res].guid] then
+          CtlAddFX_Add(ctl, trn, res, fxtab[trn][res].guid)
+        else
+          CtlAddFX_Rem(ctl, fxtab[trn][res].guid)            
+        end
+      end
+    
+    end
+  
+  end
+  
+  function CtlAddFX_Add(ctl, trn, fxnum, guid)
+    if not ctl.addfx then
+      ctl.addfx = {}
+    end
+    local trguid = tracks[trn].guid
+    ctl.addfx[#ctl.addfx+1] = {trn = trn, trguid = trguid, fxnum = fxnum, guid = guid}
+  end
+
+  function CtlAddFX_Rem(ctl, guid)
+    if ctl.addfx then
+      local tab = {}
+      for i = 1, #ctl.addfx do
+        if ctl.addfx[i].guid ~= guid then
+          table.insert(tab, ctl.addfx[i])
+        end
+      end
+      ctl.addfx = tab
+      if ctl.addfx and #ctl.addfx == 0 then
+        ctl.addfx = nil
+      end
+    end
+  end
+    
   function RBMenu(mtype,ccat,i)
     if mtype == 0 then
     
@@ -26418,6 +26832,8 @@ function GUI_DrawCtlBitmap_Strips()
         TakeSwitcherMenu_RB(i)
       elseif ccat == ctlcats.rs5k then
         RS5kMenu_RB(i)
+      elseif ccat == ctlcats.fxmulti then
+        FXMultiMenu_RB(i)
       else
         local strip = tracks[track_select].strip
         local ctl = strips[strip][page].controls[i]
@@ -34505,420 +34921,279 @@ function GUI_DrawCtlBitmap_Strips()
               if MOUSE_LB() or gfx.mouse_wheel ~= 0 then
                 lvar.disabletakeover_ctl = i
               end
-              if MOUSE_LB() and not mouse.ctrl and not mouse.alt then
-                local ctltype = ctls[i].ctltype
               
-                if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.2 and ctltype ~= 5 and ctltype ~= 2 and ctltype ~= 3 then
-                  if ctls[i].ctlcat ~= ctlcats.rs5k then
-                    if settings_swapctrlclick == false then
-                      SetParam_ToDef(i)             
-                    else
-                      SetParam_EnterVal(i)
-                    end
-                  else
-                    SetShowSampleManager(true, i)
-                  end                      
-                  noscroll = true
-                  
-                end
+              local skip
+              if ctls[i].ctlcat == ctlcats.fxmulti then
                 
-                if ctltype == 1 then
-                  
-                  if ctls[i].ctlcat ~= ctlcats.macro then
-                    --knob/slider
-                    if lvar.sliderxy == true then
-                      mouse.context = contexts.sliderctlxy
-                      mouse.slideoff = ctlxywh.y+ctlxywh.h/2 - mouse.my
-                      mouse.slideoffh = ctlxywh.x+ctlxywh.w/2 - mouse.mx                    
-                    else
-                      if ctls[i].horiz then
-                        mouse.context = contexts.sliderctl_h
-                        mouse.slideoff = ctlxywh.x+ctlxywh.w/2 - mouse.mx
-                      else
-                        mouse.context = contexts.sliderctl
-                        mouse.slideoff = ctlxywh.y+ctlxywh.h/2 - mouse.my
-                      end
-                    end
-                    --knobslider = 'ks'
-                    ctlpos = ctlScaleInv(ctls[i].scalemode or 8,
-                                         ctls[i].val)
-                    trackfxparam_select = i
-                    oms = mouse.shift
+                if MOUSE_LB() then
+                  local ctl = ctls[i]
+                  local cval = ctl.val
+                  local trn = ctl.tracknum or tracks[track_select].tracknum
+                  if mouse.ctrl then
+                    SetFXOffline3(trn, ctl.fxnum, 1)
+                  elseif mouse.shift then
+                    SetFXOffline3(trn, ctl.fxnum, 0, 1)
                   else
-                    if lvar.sliderxy == true then
-                      mouse.context = contexts.macctlxy
-                      mouse.slideoff = ctlxywh.y+ctlxywh.h/2 - mouse.my
-                      mouse.slideoffh = ctlxywh.x+ctlxywh.w/2 - mouse.mx                    
+                    SetFXOffline3(trn, ctl.fxnum, 0, 0)                    
+                    if cval <= 0.34 then
+                      ToggleFXWet(strip, page, i, strips[strip].track.tracknum)                
                     else
-                      if ctls[i].horiz then
-                        mouse.context = contexts.macctl_h
-                        mouse.slideoff = ctlxywh.x+ctlxywh.w/2 - mouse.mx
-                      else
-                        mouse.context = contexts.macctl
-                        mouse.slideoff = ctlxywh.y+ctlxywh.h/2 - mouse.my
-                      end
+                      ToggleFXWet(strip, page, i, strips[strip].track.tracknum,true)                                  
                     end
-                    --knobslider = 'ks'
-                    ctlpos = ctlScaleInv(nz(ctls[i].scalemode,8),
-                                         ctls[i].val)
-                    macctlactive = i 
-                    --ctls[i].mval = nil
-                    trackfxparam_select = i
-                    oms = mouse.shift                      
                   end
-                  if ctls[i].mod and mod_select ~= ctls[i].mod then
-                    mod_select = ctls[i].mod
-                    update_gfx = true
+
+                  local state = FXMulti_GetState(tr, ctl)
+                  ctl.val = (state-1)/(#lvar.fxmulti_table-1)
+
+                  if ctl.addfx and #ctl.addfx > 0 then
+                    local tr = GetTrack(ctl.tracknum or tracks[track_select].tracknum)
+                    if tr then
+                      FXMulti_SetAddFX(ctl, state)
+                    end
                   end
                   
-                  --undotxt = 'Parameter Change'
-                  --reaper.Undo_BeginBlock2()
-                  
-                elseif ctltype == 2 or ctltype == 3 then
-                  --button/button inverse
-                  trackfxparam_select = i
-                  if ctls[i].val < 0.5 then
-                    ctls[i].val = 1
-                  else
-                    ctls[i].val = 0
-                  end
-                  if ctls[i].mod == nil or (ctls[i].mod and modulators[ctls[i].mod].active ~= true) then
-                    A_SetParam(tracks[track_select].strip,page,i,ctls[i])
-                    --ctls[i].dirty = true
-                    SetCtlDirty(i)
-                    if ctls[i].param_info.paramname == 'Bypass' then
-                      SetCtlEnabled(ctls[i].fxnum) 
-                    end
-                    if ctls[i].random then
-                      if show_randomopts == true and randopts_selectctl then
-                        SetCtlDirty(randopts_selectctl)
-                        RandomOpts_INIT(i)
-                        randopts_selectctl = i
-                        update_randomopts = true
-                      end
-                    end
-                  end 
-                  if ctls[i].mod and mod_select ~= ctls[i].mod then
-                    mod_select = ctls[i].mod
-                    update_gfx = true
-                  end
-                  noscroll = true
                   SetCtlDirty(i)
                   update_ctls = true
-                  
-                elseif ctltype == 4 then
-                  --cycle
-                  if ctls[i].cycledata.draggable then
-                    if lvar.sliderxy == true then
-                      mouse.context = contexts.dragcyclexy
-                      mouse.slideoff = ctlxywh.y+ctlxywh.h/2 - mouse.my
-                      mouse.slideoffh = ctlxywh.x+ctlxywh.w/2 - mouse.mx                    
-                    else
-                      if ctls[i].horiz then
-                        mouse.context = contexts.dragcycle_h
-                        mouse.slideoff = ctlxywh.x+ctlxywh.w/2 - mouse.mx
-                      else
-                        mouse.context = contexts.dragcycle
-                        mouse.slideoff = ctlxywh.y+ctlxywh.h/2 - mouse.my
-                      end
-                    end
-                    ctlpos = normalize(0, ctls[i].cycledata.statecnt,
-                                       ctls[i].cycledata.pos)
-                    trackfxparam_select = i
-                    ctls[i].cycledata.posdirty = false
-                    oms = mouse.shift
-                  else
-                    if ctls[i].cycledata.pos == nil then
-                      ctls[i].cycledata.pos = 1
-                    else
-                      ctls[i].cycledata.pos = ctls[i].cycledata.pos +1
-                      if ctls[i].cycledata.pos > ctls[i].cycledata.statecnt 
-                         or ctls[i].cycledata.pos < 1 then
-                        ctls[i].cycledata.pos = 1
-                      end
-                    end
-                    if ctls[i].cycledata.pos <=     
-                              ctls[i].cycledata.statecnt then
-                      trackfxparam_select = i
-                      ctls[i].val = 
-                          ctls[i].cycledata[ctls[i].cycledata.pos].val
-                      A_SetParam(tracks[track_select].strip,page,i,ctls[i])
-                      ctls[i].dirty = true
-                      ctls[i].cycledata.posdirty = false
-                      update_ctls = true
-                    end
-                    SetCtlDirty(i)
-                    update_ctls = true
-                  end
-                  if ctls[i].mod and mod_select ~= ctls[i].mod then
-                    mod_select = ctls[i].mod
-                    update_gfx = true
-                  end
-                  
+                
+                  skip = true
                   noscroll = true
-                elseif ctltype == 6 then
-                  --mem button
-                  trackfxparam_select = i
-                  if ctls[i].membtn.state == nil then
-                    ctls[i].membtn.state = false
-                  end
-                  ctls[i].membtn.state = not ctls[i].membtn.state
-                  if ctls[i].membtn.state == true then
-                    ctls[i].membtn.mem = ctls[i].val
-                    ctls[i].val = ctls[i].defval
-                    A_SetParam(strip,page,i,ctls[i])
-                  else
-                    ctls[i].val = ctls[i].membtn.mem
-                    A_SetParam(strip,page,i,ctls[i])
-                  end
-                  if ctls[i].mod and mod_select ~= ctls[i].mod then
-                    mod_select = ctls[i].mod
-                    update_gfx = true
-                  end
-                  SetCtlDirty(i)
-                  update_ctls = true        
-                              
-                elseif ctltype == 5 then
-                  if ctls[i].ctlcat == ctlcats.xy then
-                    if mouse.my - obj.sections[10].y + surface_offset.y - ctls[i].y < ctls[i].ctl_info.cellh - 38 then
-                      mouse.context = contexts.dragxy
-                      xy_select = i
-                    else
-                      local xp = math.floor((mouse.mx-12 - obj.sections[10].x + surface_offset.x - ctls[i].x)/((ctls[i].w-24)/4))+1
-                      xysnap_select = xp
-                      xy_select = i
-                      
-                      --open fss
-                      togfsnap = true
-                      if fsstype_select == ctls[i].param then
-                        show_xysnapshots = not show_xysnapshots
-                        show_fsnapshots = false
+                end
+              end
+
+              if not skip then
+                if MOUSE_LB() and not mouse.ctrl and not mouse.alt then
+                  local ctltype = ctls[i].ctltype
+                
+                  if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.2 and ctltype ~= 5 and ctltype ~= 2 and ctltype ~= 3 then
+                    if ctls[i].ctlcat ~= ctlcats.rs5k then
+                      if settings_swapctrlclick == false then
+                        SetParam_ToDef(i)             
                       else
-                        show_xysnapshots = true
-                        show_fsnapshots = false
+                        SetParam_EnterVal(i)
                       end
-                      fsstype_select = ctls[i].param
-                      fsstype_color = ctls[i].textcolv
-                      if show_xysnapshots then
-                        if snapshots and snapshots[tracks[track_select].strip] and snapshots[tracks[track_select].strip][page][fsstype_select] then
-                        
-                          if xysnap_select == 1 then
-                            fss_select = ctls[i].xydata.snapa
-                          elseif xysnap_select == 2 then
-                            fss_select = ctls[i].xydata.snapb
-                          elseif xysnap_select == 3 then
-                            fss_select = ctls[i].xydata.snapc
-                          elseif xysnap_select == 4 then
-                            fss_select = ctls[i].xydata.snapd
-                          end
-                          obj.sections[180].x = F_limit(ctls[i].x - surface_offset.x + obj.sections[10].x + 
-                                                        math.floor((ctls[i].w - obj.sections[180].w)/2),
-                                                        obj.sections[10].x,obj.sections[10].x+obj.sections[10].w-obj.sections[180].w)
-                          obj.sections[180].y = F_limit(ctls[i].y+ctls[i].ctl_info.cellh
-                                                        - surface_offset.y  + obj.sections[10].y - 3,
-                                                        obj.sections[10].y,obj.sections[10].y+obj.sections[10].h-obj.sections[180].h)
+                    else
+                      SetShowSampleManager(true, i)
+                    end                      
+                    noscroll = true
+                    
+                  end
+                  
+                  if ctltype == 1 then
+                    
+                    if ctls[i].ctlcat ~= ctlcats.macro then
+                      --knob/slider
+                      if lvar.sliderxy == true then
+                        mouse.context = contexts.sliderctlxy
+                        mouse.slideoff = ctlxywh.y+ctlxywh.h/2 - mouse.my
+                        mouse.slideoffh = ctlxywh.x+ctlxywh.w/2 - mouse.mx                    
+                      else
+                        if ctls[i].horiz then
+                          mouse.context = contexts.sliderctl_h
+                          mouse.slideoff = ctlxywh.x+ctlxywh.w/2 - mouse.mx
                         else
-                          show_xysnapshots = false
+                          mouse.context = contexts.sliderctl
+                          mouse.slideoff = ctlxywh.y+ctlxywh.h/2 - mouse.my
                         end
                       end
-                      update_fsnaps = true
-                      update_surface = true
-                    end
-                    
-                  elseif ctls[i].ctlcat == ctlcats.snapshot then
-                    --SNAPSHOTS
-                    fss_ctl = i
-                    local mmx = mouse.mx - ctlxywh.x
-                    local mmy = mouse.my - ctlxywh.y
-                    local ci
-                    if stripgallery_view > 0 then
-                      mmx, mmy, ci = TranslateGalleryPos(mouse.mx, mouse.my, i)
-                      mmx, mmy = mmx - ctlxywh.x, mmy - ctlxywh.y
-                    end
-                    
-                    if ctls[i].param_info.paramnum == 1 then
-                      --BASIC SNAPSHOT CTL
-                      --open fss
-                      togfsnap = true
-                      if fsstype_select == ctls[i].param then
-                        show_fsnapshots = not show_fsnapshots
-                        show_xysnapshots = false
+                      --knobslider = 'ks'
+                      ctlpos = ctlScaleInv(ctls[i].scalemode or 8,
+                                           ctls[i].val)
+                      trackfxparam_select = i
+                      oms = mouse.shift
+                    else
+                      if lvar.sliderxy == true then
+                        mouse.context = contexts.macctlxy
+                        mouse.slideoff = ctlxywh.y+ctlxywh.h/2 - mouse.my
+                        mouse.slideoffh = ctlxywh.x+ctlxywh.w/2 - mouse.mx                    
                       else
-                        show_fsnapshots = true
-                        show_xysnapshots = false
+                        if ctls[i].horiz then
+                          mouse.context = contexts.macctl_h
+                          mouse.slideoff = ctlxywh.x+ctlxywh.w/2 - mouse.mx
+                        else
+                          mouse.context = contexts.macctl
+                          mouse.slideoff = ctlxywh.y+ctlxywh.h/2 - mouse.my
+                        end
                       end
-                      fsstype_select = ctls[i].param
-                      fsstype_color = ctls[i].textcolv
-                      if show_fsnapshots then
-                        if snapshots and snapshots[tracks[track_select].strip] and snapshots[tracks[track_select].strip][page][fsstype_select] 
-                          and snapshots[tracks[track_select].strip][page][fsstype_select].selected then
+                      --knobslider = 'ks'
+                      ctlpos = ctlScaleInv(nz(ctls[i].scalemode,8),
+                                           ctls[i].val)
+                      macctlactive = i 
+                      --ctls[i].mval = nil
+                      trackfxparam_select = i
+                      oms = mouse.shift                      
+                    end
+                    if ctls[i].mod and mod_select ~= ctls[i].mod then
+                      mod_select = ctls[i].mod
+                      update_gfx = true
+                    end
+                    
+                    --undotxt = 'Parameter Change'
+                    --reaper.Undo_BeginBlock2()
+                    
+                  elseif ctltype == 2 or ctltype == 3 then
+                    --button/button inverse
+                    trackfxparam_select = i
+                    if ctls[i].val < 0.5 then
+                      ctls[i].val = 1
+                    else
+                      ctls[i].val = 0
+                    end
+                    if ctls[i].mod == nil or (ctls[i].mod and modulators[ctls[i].mod].active ~= true) then
+                      A_SetParam(tracks[track_select].strip,page,i,ctls[i])
+                      --ctls[i].dirty = true
+                      SetCtlDirty(i)
+                      if ctls[i].param_info.paramname == 'Bypass' then
+                        SetCtlEnabled(ctls[i].fxnum) 
+                      end
+                      if ctls[i].random then
+                        if show_randomopts == true and randopts_selectctl then
+                          SetCtlDirty(randopts_selectctl)
+                          RandomOpts_INIT(i)
+                          randopts_selectctl = i
+                          update_randomopts = true
+                        end
+                      end
+                    end 
+                    if ctls[i].mod and mod_select ~= ctls[i].mod then
+                      mod_select = ctls[i].mod
+                      update_gfx = true
+                    end
+                    noscroll = true
+                    SetCtlDirty(i)
+                    update_ctls = true
+                    
+                  elseif ctltype == 4 then
+                    --cycle
+                    if ctls[i].cycledata.draggable then
+                      if lvar.sliderxy == true then
+                        mouse.context = contexts.dragcyclexy
+                        mouse.slideoff = ctlxywh.y+ctlxywh.h/2 - mouse.my
+                        mouse.slideoffh = ctlxywh.x+ctlxywh.w/2 - mouse.mx                    
+                      else
+                        if ctls[i].horiz then
+                          mouse.context = contexts.dragcycle_h
+                          mouse.slideoff = ctlxywh.x+ctlxywh.w/2 - mouse.mx
+                        else
+                          mouse.context = contexts.dragcycle
+                          mouse.slideoff = ctlxywh.y+ctlxywh.h/2 - mouse.my
+                        end
+                      end
+                      ctlpos = normalize(0, ctls[i].cycledata.statecnt,
+                                         ctls[i].cycledata.pos)
+                      trackfxparam_select = i
+                      ctls[i].cycledata.posdirty = false
+                      oms = mouse.shift
+                    else
+                      if ctls[i].cycledata.pos == nil then
+                        ctls[i].cycledata.pos = 1
+                      else
+                        ctls[i].cycledata.pos = ctls[i].cycledata.pos +1
+                        if ctls[i].cycledata.pos > ctls[i].cycledata.statecnt 
+                           or ctls[i].cycledata.pos < 1 then
+                          ctls[i].cycledata.pos = 1
+                        end
+                      end
+                      if ctls[i].cycledata.pos <=     
+                                ctls[i].cycledata.statecnt then
+                        trackfxparam_select = i
+                        ctls[i].val = 
+                            ctls[i].cycledata[ctls[i].cycledata.pos].val
+                        A_SetParam(tracks[track_select].strip,page,i,ctls[i])
+                        ctls[i].dirty = true
+                        ctls[i].cycledata.posdirty = false
+                        update_ctls = true
+                      end
+                      SetCtlDirty(i)
+                      update_ctls = true
+                    end
+                    if ctls[i].mod and mod_select ~= ctls[i].mod then
+                      mod_select = ctls[i].mod
+                      update_gfx = true
+                    end
+                    
+                    noscroll = true
+                  elseif ctltype == 6 then
+                    --mem button
+                    trackfxparam_select = i
+                    if ctls[i].membtn.state == nil then
+                      ctls[i].membtn.state = false
+                    end
+                    ctls[i].membtn.state = not ctls[i].membtn.state
+                    if ctls[i].membtn.state == true then
+                      ctls[i].membtn.mem = ctls[i].val
+                      ctls[i].val = ctls[i].defval
+                      A_SetParam(strip,page,i,ctls[i])
+                    else
+                      ctls[i].val = ctls[i].membtn.mem
+                      A_SetParam(strip,page,i,ctls[i])
+                    end
+                    if ctls[i].mod and mod_select ~= ctls[i].mod then
+                      mod_select = ctls[i].mod
+                      update_gfx = true
+                    end
+                    SetCtlDirty(i)
+                    update_ctls = true        
+                                
+                  elseif ctltype == 5 then
+                    if ctls[i].ctlcat == ctlcats.xy then
+                      if mouse.my - obj.sections[10].y + surface_offset.y - ctls[i].y < ctls[i].ctl_info.cellh - 38 then
+                        mouse.context = contexts.dragxy
+                        xy_select = i
+                      else
+                        local xp = math.floor((mouse.mx-12 - obj.sections[10].x + surface_offset.x - ctls[i].x)/((ctls[i].w-24)/4))+1
+                        xysnap_select = xp
+                        xy_select = i
                         
-                          local w = ctls[i].wsc
-                          obj.sections[180].w = math.max(w,100)
-                          obj.sections[181].w = obj.sections[180].w-6
-                          obj.sections[182].w = obj.sections[180].w
+                        --open fss
+                        togfsnap = true
+                        if fsstype_select == ctls[i].param then
+                          show_xysnapshots = not show_xysnapshots
+                          show_fsnapshots = false
+                        else
+                          show_xysnapshots = true
+                          show_fsnapshots = false
+                        end
+                        fsstype_select = ctls[i].param
+                        fsstype_color = ctls[i].textcolv
+                        if show_xysnapshots then
+                          if snapshots and snapshots[tracks[track_select].strip] and snapshots[tracks[track_select].strip][page][fsstype_select] then
                           
-                          fss_select = snapshots[tracks[track_select].strip][page][fsstype_select].selected
-                          
-                          if stripgallery_view == 0 then
-                          
+                            if xysnap_select == 1 then
+                              fss_select = ctls[i].xydata.snapa
+                            elseif xysnap_select == 2 then
+                              fss_select = ctls[i].xydata.snapb
+                            elseif xysnap_select == 3 then
+                              fss_select = ctls[i].xydata.snapc
+                            elseif xysnap_select == 4 then
+                              fss_select = ctls[i].xydata.snapd
+                            end
                             obj.sections[180].x = F_limit(ctls[i].x - surface_offset.x + obj.sections[10].x + 
                                                           math.floor((ctls[i].w - obj.sections[180].w)/2),
                                                           obj.sections[10].x,obj.sections[10].x+obj.sections[10].w-obj.sections[180].w)
-                            obj.sections[180].y = F_limit(ctls[i].y+ctls[i].hsc
+                            obj.sections[180].y = F_limit(ctls[i].y+ctls[i].ctl_info.cellh
                                                           - surface_offset.y  + obj.sections[10].y - 3,
                                                           obj.sections[10].y,obj.sections[10].y+obj.sections[10].h-obj.sections[180].h)
                           else
-                            local x,y = TranslateGalleryCtlPos(i,ci)
-                            if x and y then
-                              obj.sections[180].x = x + math.floor((ctls[i].wsc - obj.sections[180].w)/2)
-                              obj.sections[180].y = y + ctls[i].hsc
-                            else
-                              x = mouse.mx
-                              y = mouse.my
-                              obj.sections[180].x = x + math.floor((ctls[i].wsc - obj.sections[180].w)/2)
-                              obj.sections[180].y = y + ctls[i].hsc
-                              
-                              --DBG('xy error')
-                            end
+                            show_xysnapshots = false
                           end
-                        else
-                          show_fsnapshots = false
                         end
+                        update_fsnaps = true
+                        update_surface = true
                       end
-                      update_fsnaps = true
-                      update_surface = true
                       
-                    elseif ctls[i].param_info.paramnum == 2 then
-                      --FIXED SNAPSHOT CTL
-                      local xsstype_select = ctls[i].param
-                      local xss_select = tonumber(ctls[i].param_info.paramidx)
-                      if xss_select then
-                        if xsstype_select == 1 then
-                          if snapshots and snapshots[tracks[track_select].strip] and snapshots[tracks[track_select].strip][page][xsstype_select]
-                             and snapshots[tracks[track_select].strip][page][xsstype_select][xss_select] then
-                            Snapshot_Set(tracks[track_select].strip, page, xsstype_select, xss_select)                          
-                            if xsstype_select == sstype_select then
-                              ss_select = xss_select
-                            end
-                            update_ctls = true
-                            update_snaps = true 
-                          end
-                        else
-                          if snapshots and snapshots[tracks[track_select].strip] and snapshots[tracks[track_select].strip][page][xsstype_select] 
-                             and snapshots[tracks[track_select].strip][page][xsstype_select].snapshot[xss_select] then
-                            Snapshot_Set(tracks[track_select].strip, page, xsstype_select, xss_select)                          
-                            if xsstype_select == sstype_select then
-                              ss_select = xss_select
-                            end
-                            update_ctls = true
-                            update_snaps = true 
-                          end                      
-                        end
+                    elseif ctls[i].ctlcat == ctlcats.snapshot then
+                      --SNAPSHOTS
+                      fss_ctl = i
+                      local mmx = mouse.mx - ctlxywh.x
+                      local mmy = mouse.my - ctlxywh.y
+                      local ci
+                      if stripgallery_view > 0 then
+                        mmx, mmy, ci = TranslateGalleryPos(mouse.mx, mouse.my, i)
+                        mmx, mmy = mmx - ctlxywh.x, mmy - ctlxywh.y
                       end
-                                            
-                    else
-                      --ADVANCED SNAPSHOT CTL
-                      if mmy < ctlxywh.h/2 then
-                        sstype_select = ctls[i].param
-                        if snapshots and snapshots[tracks[track_select].strip] and snapshots[tracks[track_select].strip][page][sstype_select] 
-                                                    and snapshots[tracks[track_select].strip][page][sstype_select].selected then
-                          ss_select = snapshots[tracks[track_select].strip][page][sstype_select].selected
-                          
-                          if settings_followsnapshot then
-                            local snaps = snapshots[tracks[track_select].strip][page][sstype_select]
-                            if ss_select < ssoffset+1 or ss_select > ssoffset+SS_butt_cnt then
-                              if sstype_select == 1 then
-                                ssoffset = math.max(math.min(ss_select-math.floor(SS_butt_cnt/2),#snaps-SS_butt_cnt),0)
-                              else
-                                ssoffset = math.max(math.min(ss_select-math.floor(SS_butt_cnt/2),#snaps.snapshot-SS_butt_cnt),0)
-                              end
-                              --update_snaps = true
-                            end
-                          end
-                          
-                          show_snapshots = true
-                          SetShowSS(show_snapshots)
-                          update_snaps = true
-                        end                      
-                      elseif mmx < 20 then
-                        local xsstype_select,xss_select
-                        xsstype_select = ctls[i].param
-                        if snapshots and snapshots[tracks[track_select].strip] and snapshots[tracks[track_select].strip][page][xsstype_select] 
-                                                    and snapshots[tracks[track_select].strip][page][xsstype_select].selected then
-                          if snapshots[tracks[track_select].strip][page][xsstype_select].selected then
-                            if xsstype_select == 1 then
-                              xss_select = snapshots[tracks[track_select].strip][page][xsstype_select].selected-1
-                              if xss_select < 1 then
-                                xss_select = #snapshots[tracks[track_select].strip][page][xsstype_select]
-                              end
-                            else
-                              xss_select = snapshots[tracks[track_select].strip][page][xsstype_select].selected-1
-                              if xss_select < 1 then                            
-                                xss_select = #snapshots[tracks[track_select].strip][page][xsstype_select].snapshot
-                              end
-                            end
-                          else
-                            if xsstype_select == 1 then
-                              if #snapshots[tracks[track_select].strip][page][xsstype_select] > 0 then
-                                xss_select = 1
-                              end
-                            else
-                              if #snapshots[tracks[track_select].strip][page][xsstype_select].snapshot > 0 then
-                                xss_select = 1                            
-                              end
-                            end
-                          end
-                          if xss_select then
-                            Snapshot_Set(tracks[track_select].strip, page, xsstype_select, xss_select)
-                            if xsstype_select == sstype_select then
-                              ss_select = xss_select
-                            end
-                            update_ctls = true
-                            update_snaps = true
-                            --update_fsnaps = true                       
-                          end
-                        end                                            
-                      elseif mmx > ctlxywh.w-20 then
-                        local xsstype_select,xss_select
-                        xsstype_select = ctls[i].param
-                        if snapshots and snapshots[tracks[track_select].strip] and snapshots[tracks[track_select].strip][page][xsstype_select] 
-                                                    and snapshots[tracks[track_select].strip][page][xsstype_select].selected then
-                          if snapshots[tracks[track_select].strip][page][xsstype_select].selected then
-                            if xsstype_select == 1 then
-                              xss_select = snapshots[tracks[track_select].strip][page][xsstype_select].selected+1
-                              if xss_select > #snapshots[tracks[track_select].strip][page][xsstype_select] then
-                                xss_select = 1
-                              end
-                            else
-                              xss_select = snapshots[tracks[track_select].strip][page][xsstype_select].selected+1
-                              if xss_select > #snapshots[tracks[track_select].strip][page][xsstype_select].snapshot then
-                                xss_select = 1
-                              end
-                            end
-                          else
-                            if xsstype_select == 1 then
-                              if #snapshots[tracks[track_select].strip][page][xsstype_select] > 0 then
-                                xss_select = 1
-                              end
-                            else
-                              if #snapshots[tracks[track_select].strip][page][xsstype_select].snapshot > 0 then
-                                xss_select = 1                            
-                              end
-                            end
-                          end
-                          if xss_select then
-                            Snapshot_Set(tracks[track_select].strip, page, xsstype_select, xss_select)                          
-                            if xsstype_select == sstype_select then
-                              ss_select = xss_select
-                            end
-                            update_ctls = true
-                            update_snaps = true
-                            --update_fsnaps = true                       
-                          end
-                        end
-                                              
-                      else
+                      
+                      if ctls[i].param_info.paramnum == 1 then
+                        --BASIC SNAPSHOT CTL
                         --open fss
                         togfsnap = true
                         if fsstype_select == ctls[i].param then
@@ -34935,7 +35210,7 @@ function GUI_DrawCtlBitmap_Strips()
                             and snapshots[tracks[track_select].strip][page][fsstype_select].selected then
                           
                             local w = ctls[i].wsc
-                            obj.sections[180].w = math.max(w - (170-138),138)
+                            obj.sections[180].w = math.max(w,100)
                             obj.sections[181].w = obj.sections[180].w-6
                             obj.sections[182].w = obj.sections[180].w
                             
@@ -34951,8 +35226,17 @@ function GUI_DrawCtlBitmap_Strips()
                                                             obj.sections[10].y,obj.sections[10].y+obj.sections[10].h-obj.sections[180].h)
                             else
                               local x,y = TranslateGalleryCtlPos(i,ci)
-                              obj.sections[180].x = x + math.floor((ctls[i].wsc - obj.sections[180].w)/2)
-                              obj.sections[180].y = y + ctls[i].hsc
+                              if x and y then
+                                obj.sections[180].x = x + math.floor((ctls[i].wsc - obj.sections[180].w)/2)
+                                obj.sections[180].y = y + ctls[i].hsc
+                              else
+                                x = mouse.mx
+                                y = mouse.my
+                                obj.sections[180].x = x + math.floor((ctls[i].wsc - obj.sections[180].w)/2)
+                                obj.sections[180].y = y + ctls[i].hsc
+                                
+                                --DBG('xy error')
+                              end
                             end
                           else
                             show_fsnapshots = false
@@ -34960,229 +35244,402 @@ function GUI_DrawCtlBitmap_Strips()
                         end
                         update_fsnaps = true
                         update_surface = true
+                        
+                      elseif ctls[i].param_info.paramnum == 2 then
+                        --FIXED SNAPSHOT CTL
+                        local xsstype_select = ctls[i].param
+                        local xss_select = tonumber(ctls[i].param_info.paramidx)
+                        if xss_select then
+                          if xsstype_select == 1 then
+                            if snapshots and snapshots[tracks[track_select].strip] and snapshots[tracks[track_select].strip][page][xsstype_select]
+                               and snapshots[tracks[track_select].strip][page][xsstype_select][xss_select] then
+                              Snapshot_Set(tracks[track_select].strip, page, xsstype_select, xss_select)                          
+                              if xsstype_select == sstype_select then
+                                ss_select = xss_select
+                              end
+                              update_ctls = true
+                              update_snaps = true 
+                            end
+                          else
+                            if snapshots and snapshots[tracks[track_select].strip] and snapshots[tracks[track_select].strip][page][xsstype_select] 
+                               and snapshots[tracks[track_select].strip][page][xsstype_select].snapshot[xss_select] then
+                              Snapshot_Set(tracks[track_select].strip, page, xsstype_select, xss_select)                          
+                              if xsstype_select == sstype_select then
+                                ss_select = xss_select
+                              end
+                              update_ctls = true
+                              update_snaps = true 
+                            end                      
+                          end
+                        end
+                                              
+                      else
+                        --ADVANCED SNAPSHOT CTL
+                        if mmy < ctlxywh.h/2 then
+                          sstype_select = ctls[i].param
+                          if snapshots and snapshots[tracks[track_select].strip] and snapshots[tracks[track_select].strip][page][sstype_select] 
+                                                      and snapshots[tracks[track_select].strip][page][sstype_select].selected then
+                            ss_select = snapshots[tracks[track_select].strip][page][sstype_select].selected
+                            
+                            if settings_followsnapshot then
+                              local snaps = snapshots[tracks[track_select].strip][page][sstype_select]
+                              if ss_select < ssoffset+1 or ss_select > ssoffset+SS_butt_cnt then
+                                if sstype_select == 1 then
+                                  ssoffset = math.max(math.min(ss_select-math.floor(SS_butt_cnt/2),#snaps-SS_butt_cnt),0)
+                                else
+                                  ssoffset = math.max(math.min(ss_select-math.floor(SS_butt_cnt/2),#snaps.snapshot-SS_butt_cnt),0)
+                                end
+                                --update_snaps = true
+                              end
+                            end
+                            
+                            show_snapshots = true
+                            SetShowSS(show_snapshots)
+                            update_snaps = true
+                          end                      
+                        elseif mmx < 20 then
+                          local xsstype_select,xss_select
+                          xsstype_select = ctls[i].param
+                          if snapshots and snapshots[tracks[track_select].strip] and snapshots[tracks[track_select].strip][page][xsstype_select] 
+                                                      and snapshots[tracks[track_select].strip][page][xsstype_select].selected then
+                            if snapshots[tracks[track_select].strip][page][xsstype_select].selected then
+                              if xsstype_select == 1 then
+                                xss_select = snapshots[tracks[track_select].strip][page][xsstype_select].selected-1
+                                if xss_select < 1 then
+                                  xss_select = #snapshots[tracks[track_select].strip][page][xsstype_select]
+                                end
+                              else
+                                xss_select = snapshots[tracks[track_select].strip][page][xsstype_select].selected-1
+                                if xss_select < 1 then                            
+                                  xss_select = #snapshots[tracks[track_select].strip][page][xsstype_select].snapshot
+                                end
+                              end
+                            else
+                              if xsstype_select == 1 then
+                                if #snapshots[tracks[track_select].strip][page][xsstype_select] > 0 then
+                                  xss_select = 1
+                                end
+                              else
+                                if #snapshots[tracks[track_select].strip][page][xsstype_select].snapshot > 0 then
+                                  xss_select = 1                            
+                                end
+                              end
+                            end
+                            if xss_select then
+                              Snapshot_Set(tracks[track_select].strip, page, xsstype_select, xss_select)
+                              if xsstype_select == sstype_select then
+                                ss_select = xss_select
+                              end
+                              update_ctls = true
+                              update_snaps = true
+                              --update_fsnaps = true                       
+                            end
+                          end                                            
+                        elseif mmx > ctlxywh.w-20 then
+                          local xsstype_select,xss_select
+                          xsstype_select = ctls[i].param
+                          if snapshots and snapshots[tracks[track_select].strip] and snapshots[tracks[track_select].strip][page][xsstype_select] 
+                                                      and snapshots[tracks[track_select].strip][page][xsstype_select].selected then
+                            if snapshots[tracks[track_select].strip][page][xsstype_select].selected then
+                              if xsstype_select == 1 then
+                                xss_select = snapshots[tracks[track_select].strip][page][xsstype_select].selected+1
+                                if xss_select > #snapshots[tracks[track_select].strip][page][xsstype_select] then
+                                  xss_select = 1
+                                end
+                              else
+                                xss_select = snapshots[tracks[track_select].strip][page][xsstype_select].selected+1
+                                if xss_select > #snapshots[tracks[track_select].strip][page][xsstype_select].snapshot then
+                                  xss_select = 1
+                                end
+                              end
+                            else
+                              if xsstype_select == 1 then
+                                if #snapshots[tracks[track_select].strip][page][xsstype_select] > 0 then
+                                  xss_select = 1
+                                end
+                              else
+                                if #snapshots[tracks[track_select].strip][page][xsstype_select].snapshot > 0 then
+                                  xss_select = 1                            
+                                end
+                              end
+                            end
+                            if xss_select then
+                              Snapshot_Set(tracks[track_select].strip, page, xsstype_select, xss_select)                          
+                              if xsstype_select == sstype_select then
+                                ss_select = xss_select
+                              end
+                              update_ctls = true
+                              update_snaps = true
+                              --update_fsnaps = true                       
+                            end
+                          end
+                                                
+                        else
+                          --open fss
+                          togfsnap = true
+                          if fsstype_select == ctls[i].param then
+                            show_fsnapshots = not show_fsnapshots
+                            show_xysnapshots = false
+                          else
+                            show_fsnapshots = true
+                            show_xysnapshots = false
+                          end
+                          fsstype_select = ctls[i].param
+                          fsstype_color = ctls[i].textcolv
+                          if show_fsnapshots then
+                            if snapshots and snapshots[tracks[track_select].strip] and snapshots[tracks[track_select].strip][page][fsstype_select] 
+                              and snapshots[tracks[track_select].strip][page][fsstype_select].selected then
+                            
+                              local w = ctls[i].wsc
+                              obj.sections[180].w = math.max(w - (170-138),138)
+                              obj.sections[181].w = obj.sections[180].w-6
+                              obj.sections[182].w = obj.sections[180].w
+                              
+                              fss_select = snapshots[tracks[track_select].strip][page][fsstype_select].selected
+                              
+                              if stripgallery_view == 0 then
+                              
+                                obj.sections[180].x = F_limit(ctls[i].x - surface_offset.x + obj.sections[10].x + 
+                                                              math.floor((ctls[i].w - obj.sections[180].w)/2),
+                                                              obj.sections[10].x,obj.sections[10].x+obj.sections[10].w-obj.sections[180].w)
+                                obj.sections[180].y = F_limit(ctls[i].y+ctls[i].hsc
+                                                              - surface_offset.y  + obj.sections[10].y - 3,
+                                                              obj.sections[10].y,obj.sections[10].y+obj.sections[10].h-obj.sections[180].h)
+                              else
+                                local x,y = TranslateGalleryCtlPos(i,ci)
+                                obj.sections[180].x = x + math.floor((ctls[i].wsc - obj.sections[180].w)/2)
+                                obj.sections[180].y = y + ctls[i].hsc
+                              end
+                            else
+                              show_fsnapshots = false
+                            end
+                          end
+                          update_fsnaps = true
+                          update_surface = true
+                        end
                       end
+                                        
+                    elseif ctls[i].ctlcat == ctlcats.eqcontrol then
+                      eqcontrol_select = i
+                      show_eqcontrol = true
+                      --navigate = false
+                      if ctls[i].eqbands and ctls[i].eqbands[1] then
+                        eqcontrolband_select = 1
+                      end
+                      --EQC_OpenEQs()
+                      update_gfx = true
+                    elseif ctls[i].ctlcat == ctlcats.switcher then
+                      switcher_select = i
+                      SwitcherMenu_LB()
+                    elseif ctls[i].ctlcat == ctlcats.rcm_switch then
+                      rcm_select = i
+                      RCMMenu_RB()
                     end
-                                      
-                  elseif ctls[i].ctlcat == ctlcats.eqcontrol then
-                    eqcontrol_select = i
-                    show_eqcontrol = true
-                    --navigate = false
-                    if ctls[i].eqbands and ctls[i].eqbands[1] then
-                      eqcontrolband_select = 1
-                    end
-                    --EQC_OpenEQs()
-                    update_gfx = true
-                  elseif ctls[i].ctlcat == ctlcats.switcher then
-                    switcher_select = i
-                    SwitcherMenu_LB()
-                  elseif ctls[i].ctlcat == ctlcats.rcm_switch then
-                    rcm_select = i
-                    RCMMenu_RB()
+                  elseif ctltype == 7 or ctltype == 8 or ctltype == 9 or ctltype == 10 then
+                    --hold button
+                    holdbtn = i
+                    trackfxparam_select = i
+                    mouse.context = contexts.hold
+                    ctls[i].val = 1
+                    ctls[i].dirty = true
+                    SetCtlDirty(i)
+                    update_ctls = true
+                    A_SetParam(strip, page, i, ctls[i])
                   end
-                elseif ctltype == 7 or ctltype == 8 or ctltype == 9 or ctltype == 10 then
-                  --hold button
-                  holdbtn = i
-                  trackfxparam_select = i
-                  mouse.context = contexts.hold
-                  ctls[i].val = 1
-                  ctls[i].dirty = true
-                  SetCtlDirty(i)
-                  update_ctls = true
-                  A_SetParam(strip, page, i, ctls[i])
-                end
-                noscroll = true
-                --break
-                
-              elseif MOUSE_RB() and mouse.ctrl == false then
-                local ccat = ctls[i].ctlcat 
-                if ccat == ctlcats.macro then
-                 -- mstr = 'Select Macro Parameters|Edit Macro Parameters'
-                  macro_edit_mode = true
-                  macroedit_poffs = 0
-                  trackfxparam_select = i
-                  macroctl_select = trackfxparam_select
-                  --update_surface = true
-                  update_gfx = true 
-                elseif ccat == ctlcats.snapshotrand then
-                  if not mouse.shift then
-                    if show_mutate then
-                      local ctltype = ctls[i].ctltype
-                      if ctltype == 7 or ctltype == 8 or ctltype == 9 or ctltype == 10 then
-                        --hold button
-                        holdbtn = i
-                        trackfxparam_select = i
-                        mouse.context = contexts.hold
-                        ctls[i].val = 1
-                        ctls[i].dirty = true
-                        SetCtlDirty(i)
-                        update_ctls = true
+                  noscroll = true
+                  --break
+                  
+                elseif MOUSE_RB() and mouse.ctrl == false then
+                  local ccat = ctls[i].ctlcat 
+                  if ccat == ctlcats.macro then
+                   -- mstr = 'Select Macro Parameters|Edit Macro Parameters'
+                    macro_edit_mode = true
+                    macroedit_poffs = 0
+                    trackfxparam_select = i
+                    macroctl_select = trackfxparam_select
+                    --update_surface = true
+                    update_gfx = true 
+                  elseif ccat == ctlcats.snapshotrand then
+                    if not mouse.shift then
+                      if show_mutate then
+                        local ctltype = ctls[i].ctltype
+                        if ctltype == 7 or ctltype == 8 or ctltype == 9 or ctltype == 10 then
+                          --hold button
+                          holdbtn = i
+                          trackfxparam_select = i
+                          mouse.context = contexts.hold
+                          ctls[i].val = 1
+                          ctls[i].dirty = true
+                          SetCtlDirty(i)
+                          update_ctls = true
+                        end
+                        A_SetParam(strip, page, i, ctls[i])
+                      else
+                        show_mutate = not show_mutate
+                        update_gfx = true                      
                       end
-                      A_SetParam(strip, page, i, ctls[i])
                     else
                       show_mutate = not show_mutate
-                      update_gfx = true                      
+                      update_gfx = true
+                      --RBMenu(0, ccat, i)                  
                     end
+                  elseif ccat == ctlcats.fxgui then
+                    CloseFXGUI(ctls[i])
                   else
-                    show_mutate = not show_mutate
-                    update_gfx = true
-                    --RBMenu(0, ccat, i)                  
-                  end
-                elseif ccat == ctlcats.fxgui then
-                  CloseFXGUI(ctls[i])
-                else
-                  RBMenu(0, ccat, i)
-                end
-                noscroll = true
-              
-              elseif MOUSE_LB() and mouse.alt then
-              
-                if ctls[i].ctlcat == ctlcats.fxparam or 
-                   ctls[i].ctlcat == ctlcats.fxoffline then
-                  OpenFXGUI(ctls[i])
-                end
-                                
-              elseif MOUSE_LB() and mouse.ctrl then --make double-click?
-                local ccat = ctls[i].ctlcat 
-                if ccat == ctlcats.snapshotrand then
-                  show_randomopts = true
-                  if randopts_selectctl then
-                    SetCtlDirty(randopts_selectctl)
-                  end
-                  randopts_selectctl = i
-                  SetCtlDirty(i)
-                  update_ctls = true
-                  
-                  if ctls[i].param == 1 then
-                    show_randomopts = false
-                  end
-                  if show_randomopts == true then
-                  
-                    RandomOpts_INIT(i)
-                  
-                  end
-                  update_gfx = true
-                else
-                  if settings_swapctrlclick == true then
-                    SetParam_ToDef(i)
-                  else
-                    SetParam_EnterVal(i)
-                  end
-                end
-                noscroll = true
-                           
-              elseif settings_mousewheelknob and gfx.mouse_wheel ~= 0 --[[and i]] then
-                local ctltype = ctls[i].ctltype
-                if ctltype == 1 then
-                  trackfxparam_select = i
-                  local v
-                  if ctls[i].ctlcat ~= ctlcats.rs5k then
-                    if mouse.shift then
-                      local mult = ctls[i].knobsens.wheelfine
-                      if mult == 0 then mult = settings_defknobsens.wheelfine end
-                      v = gfx.mouse_wheel/120 * mult
-                    else
-                      local mult = ctls[i].knobsens.wheel
-                      if mult == 0 then mult = settings_defknobsens.wheel end
-                      v = gfx.mouse_wheel/120 * mult
-                    end
-                  else
-                    local mult = 1/lvar.maxsamples
-                    v = gfx.mouse_wheel/120 * mult
-                  end
-                  ctls[i].val = F_limit(ctls[i].val+v,0,1)
-                  A_SetParam(tracks[track_select].strip,page,i,ctls[i])
-                  --SetParam()
-                  ctls[i].dirty = true
-                  update_ctls = true
-                  gfx.mouse_wheel = 0
-                elseif ctltype == 4 then
-                  local v = gfx.mouse_wheel/120
-                  if ctls[i].cycledata.pos == nil then
-                    ctls[i].cycledata.pos = 1
-                  else
-                    ctls[i].cycledata.pos = ctls[i].cycledata.pos + v
-                    if ctls[i].cycledata.pos < 1 then
-                      if ctls[i].cycledata.draggable then
-                        ctls[i].cycledata.pos = 1
-                      else
-                        ctls[i].cycledata.pos = ctls[i].cycledata.statecnt
-                      end
-                    elseif ctls[i].cycledata.pos > 
-                            ctls[i].cycledata.statecnt then
-                      if ctls[i].cycledata.draggable then
-                        ctls[i].cycledata.pos = ctls[i].cycledata.statecnt
-                      else
-                        ctls[i].cycledata.pos = 1
-                      end
-                    end
-                  end
-                  if ctls[i].cycledata.pos <=     
-                            ctls[i].cycledata.statecnt then
-                    trackfxparam_select = i
-                    if ctls[i].cycledata[ctls[i].cycledata.pos] then
-                      ctls[i].val = 
-                          ctls[i].cycledata[ctls[i].cycledata.pos].val
-                      --SetParam()
-                      A_SetParam(tracks[track_select].strip,page,i,ctls[i])
-                      ctls[i].dirty = true
-                      update_ctls = true
-                    end
+                    RBMenu(0, ccat, i)
                   end
                   noscroll = true
-                  gfx.mouse_wheel = 0       
-                             
-                elseif ctls[i].ctlcat == ctlcats.snapshot then
                 
-                  if ctls[i].param_info.paramnum == 1 then
-                    local v = gfx.mouse_wheel/120
-                    local xsstype_select,xss_select
-                    xsstype_select = ctls[i].param
-                    if snapshots and snapshots[tracks[track_select].strip] and snapshots[tracks[track_select].strip][page][xsstype_select] 
-                                                and snapshots[tracks[track_select].strip][page][xsstype_select].selected then
-                      if snapshots[tracks[track_select].strip][page][xsstype_select].selected then
-                        if xsstype_select == 1 then
-                          xss_select = snapshots[tracks[track_select].strip][page][xsstype_select].selected-v
-                          if xss_select < 1 then
-                            xss_select = #snapshots[tracks[track_select].strip][page][xsstype_select]
-                          elseif xss_select > #snapshots[tracks[track_select].strip][page][xsstype_select] then
-                            xss_select = 1
-                          end
-                          
-                        else
-                          xss_select = snapshots[tracks[track_select].strip][page][xsstype_select].selected-v
-                          if xss_select < 1 then                            
-                            xss_select = #snapshots[tracks[track_select].strip][page][xsstype_select].snapshot
-                          elseif xss_select > #snapshots[tracks[track_select].strip][page][xsstype_select].snapshot then
-                            xss_select = 1
-                          end
-                        end
-                      else
-                        if xsstype_select == 1 then
-                          if #snapshots[tracks[track_select].strip][page][xsstype_select] > 0 then
-                            xss_select = 1
-                          end
-                        else
-                          if #snapshots[tracks[track_select].strip][page][xsstype_select].snapshot > 0 then
-                            xss_select = 1                            
-                          end
-                        end
-                      end
-                      if xss_select then
-                        Snapshot_Set(tracks[track_select].strip, page, xsstype_select, xss_select)
-                        if xsstype_select == sstype_select then
-                          ss_select = xss_select
-                        end
-                        update_ctls = true
-                        update_snaps = true
-                        --update_fsnaps = true                       
-                      end
-                    end   
-                  end                                       
+                elseif MOUSE_LB() and mouse.alt then
+                
+                  if ctls[i].ctlcat == ctlcats.fxparam or 
+                     ctls[i].ctlcat == ctlcats.fxoffline then
+                    OpenFXGUI(ctls[i])
+                  end
+                                  
+                elseif MOUSE_LB() and mouse.ctrl then --make double-click?
+                  local ccat = ctls[i].ctlcat 
+                  if ccat == ctlcats.snapshotrand then
+                    show_randomopts = true
+                    if randopts_selectctl then
+                      SetCtlDirty(randopts_selectctl)
+                    end
+                    randopts_selectctl = i
+                    SetCtlDirty(i)
+                    update_ctls = true
+                    
+                    if ctls[i].param == 1 then
+                      show_randomopts = false
+                    end
+                    if show_randomopts == true then
+                    
+                      RandomOpts_INIT(i)
+                    
+                    end
+                    update_gfx = true
+                  else
+                    if settings_swapctrlclick == true then
+                      SetParam_ToDef(i)
+                    else
+                      SetParam_EnterVal(i)
+                    end
+                  end
                   noscroll = true
-                  gfx.mouse_wheel = 0                                  
+                             
+                elseif settings_mousewheelknob and gfx.mouse_wheel ~= 0 --[[and i]] then
+                  local ctltype = ctls[i].ctltype
+                  if ctltype == 1 then
+                    trackfxparam_select = i
+                    local v
+                    if ctls[i].ctlcat ~= ctlcats.rs5k then
+                      if mouse.shift then
+                        local mult = ctls[i].knobsens.wheelfine
+                        if mult == 0 then mult = settings_defknobsens.wheelfine end
+                        v = gfx.mouse_wheel/120 * mult
+                      else
+                        local mult = ctls[i].knobsens.wheel
+                        if mult == 0 then mult = settings_defknobsens.wheel end
+                        v = gfx.mouse_wheel/120 * mult
+                      end
+                    else
+                      local mult = 1/lvar.maxsamples
+                      v = gfx.mouse_wheel/120 * mult
+                    end
+                    ctls[i].val = F_limit(ctls[i].val+v,0,1)
+                    A_SetParam(tracks[track_select].strip,page,i,ctls[i])
+                    --SetParam()
+                    ctls[i].dirty = true
+                    update_ctls = true
+                    gfx.mouse_wheel = 0
+                  elseif ctltype == 4 then
+                    local v = gfx.mouse_wheel/120
+                    if ctls[i].cycledata.pos == nil then
+                      ctls[i].cycledata.pos = 1
+                    else
+                      ctls[i].cycledata.pos = ctls[i].cycledata.pos + v
+                      if ctls[i].cycledata.pos < 1 then
+                        if ctls[i].cycledata.draggable then
+                          ctls[i].cycledata.pos = 1
+                        else
+                          ctls[i].cycledata.pos = ctls[i].cycledata.statecnt
+                        end
+                      elseif ctls[i].cycledata.pos > 
+                              ctls[i].cycledata.statecnt then
+                        if ctls[i].cycledata.draggable then
+                          ctls[i].cycledata.pos = ctls[i].cycledata.statecnt
+                        else
+                          ctls[i].cycledata.pos = 1
+                        end
+                      end
+                    end
+                    if ctls[i].cycledata.pos <=     
+                              ctls[i].cycledata.statecnt then
+                      trackfxparam_select = i
+                      if ctls[i].cycledata[ctls[i].cycledata.pos] then
+                        ctls[i].val = 
+                            ctls[i].cycledata[ctls[i].cycledata.pos].val
+                        --SetParam()
+                        A_SetParam(tracks[track_select].strip,page,i,ctls[i])
+                        ctls[i].dirty = true
+                        update_ctls = true
+                      end
+                    end
+                    noscroll = true
+                    gfx.mouse_wheel = 0       
+                               
+                  elseif ctls[i].ctlcat == ctlcats.snapshot then
+                  
+                    if ctls[i].param_info.paramnum == 1 then
+                      local v = gfx.mouse_wheel/120
+                      local xsstype_select,xss_select
+                      xsstype_select = ctls[i].param
+                      if snapshots and snapshots[tracks[track_select].strip] and snapshots[tracks[track_select].strip][page][xsstype_select] 
+                                                  and snapshots[tracks[track_select].strip][page][xsstype_select].selected then
+                        if snapshots[tracks[track_select].strip][page][xsstype_select].selected then
+                          if xsstype_select == 1 then
+                            xss_select = snapshots[tracks[track_select].strip][page][xsstype_select].selected-v
+                            if xss_select < 1 then
+                              xss_select = #snapshots[tracks[track_select].strip][page][xsstype_select]
+                            elseif xss_select > #snapshots[tracks[track_select].strip][page][xsstype_select] then
+                              xss_select = 1
+                            end
+                            
+                          else
+                            xss_select = snapshots[tracks[track_select].strip][page][xsstype_select].selected-v
+                            if xss_select < 1 then                            
+                              xss_select = #snapshots[tracks[track_select].strip][page][xsstype_select].snapshot
+                            elseif xss_select > #snapshots[tracks[track_select].strip][page][xsstype_select].snapshot then
+                              xss_select = 1
+                            end
+                          end
+                        else
+                          if xsstype_select == 1 then
+                            if #snapshots[tracks[track_select].strip][page][xsstype_select] > 0 then
+                              xss_select = 1
+                            end
+                          else
+                            if #snapshots[tracks[track_select].strip][page][xsstype_select].snapshot > 0 then
+                              xss_select = 1                            
+                            end
+                          end
+                        end
+                        if xss_select then
+                          Snapshot_Set(tracks[track_select].strip, page, xsstype_select, xss_select)
+                          if xsstype_select == sstype_select then
+                            ss_select = xss_select
+                          end
+                          update_ctls = true
+                          update_snaps = true
+                          --update_fsnaps = true                       
+                        end
+                      end   
+                    end                                       
+                    noscroll = true
+                    gfx.mouse_wheel = 0                                  
+                  end
                 end
               end
-
+              
               if show_randomopts == true and randomopts_ctls then
                 if randomopts_ctls[i] and randomopts_ctls[i] ~= randomopts_select.param then
                   randomopts_select.param = randomopts_ctls[i]
@@ -46036,15 +46493,30 @@ function GUI_DrawCtlBitmap_Strips()
   
         elseif EB_Open == 51 then
         
-          local ctl = strips[tracks[track_select].strip][page].controls[switcher_select]
+          local ctls = strips[tracks[track_select].strip][page].controls
+          local ctl = ctls[switcher_select]
           local switchid = ctl.switcherid
           local newname = editbox.text
+          local grpid 
           for g = 1, #switchers[switchid].grpids do
             if switchers[switchid].grpids[g].id == switchers[switchid].current then
               switchers[switchid].grpids[g].name = newname
               ctl.param_info.paramname = string.format('%i',g)..': '..switchers[switchid].grpids[g].name
               update_gfx = true
+              grpid = switchers[switchid].grpids[g].id
               break
+            end
+          end
+          if grpid then
+            for i = 1, #ctls do
+              local ctl = ctls[i]
+              if ctl.ctlcat == ctlcats.switcher_pagesel then
+                if ctl.switcherid == switchid and ctl.param == grpid then
+                  ctl.param_info.paramname = newname
+                  SetCtlDirty(i)
+                  update_ctls = true
+                end
+              end
             end
           end
         
@@ -47424,6 +47896,24 @@ function GUI_DrawCtlBitmap_Strips()
                             CheckStripControls()
                           end
                         end                  
+
+                      elseif ctl.ctlcat == ctlcats.fxmulti then
+                      
+                        local fxguid = reaper.TrackFX_GetFXGUID(tr, ctl.fxnum)
+                        if ctl.fxguid == fxguid then
+                          local state = FXMulti_GetState(tr, ctl)
+                          
+                          local v = (state-1)/(#lvar.fxmulti_table-1)
+                          if ctl.val ~= v then
+                            ctl.val = v
+                            ctl.dirty = true
+                          end 
+                        else
+                          if ctl.fxfound then
+                            CheckStripControls()
+                          end
+                        end
+                                              
                       elseif ctl.ctlcat == ctlcats.fxgui or (ctl.ctlcat == ctlcats.rcm_switch and ctl.fxnum) then
                         local fxguid = reaper.TrackFX_GetFXGUID(tr, ctl.fxnum)
                         if ctl.fxguid and ctl.fxguid ~= fxguid then
@@ -47487,6 +47977,153 @@ function GUI_DrawCtlBitmap_Strips()
       end
     end
     --DBG(reaper.time_precise() - ttt)
+
+  end
+  
+  function FXMulti_GetState2(v)
+    --local v = (state-1)/(#lvar.fxmulti_table-1)
+    return (v * (#lvar.fxmulti_table-1)) + 1
+  end
+  
+  function FXMulti_GetState(tr, ctl)
+    local state = 1
+  
+    local pn = reaper.TrackFX_GetNumParams(tr,ctl.fxnum)
+    if pn == 2 then
+      state = 4
+    else
+      local byp = reaper.TrackFX_GetParam(tr,ctl.fxnum,pn-2)
+      if byp == 1 then
+        state = 3
+      else
+        local wet = reaper.TrackFX_GetParam(tr,ctl.fxnum,pn-1)
+        if wet == 0 then
+          state = 2
+        end
+      end                            
+    
+    end
+    return state
+  end
+
+  function FXMulti_AddFXFindFX(guid)
+    local trcnt = reaper.GetNumTracks()
+    for t = -1, trcnt-1 do
+    
+      local tr = GetTrack(t)
+      if tr then
+        local fxcnt = reaper.TrackFX_GetCount(tr)
+        local fnd
+        for f = 0, fxcnt-1 do
+        
+          if guid == reaper.TrackFX_GetFXGUID(tr, f) then
+          
+            local ntrguid = reaper.GetTrackGUID(tr)
+            return {fxnum = f, guid = guid, trn = t, trguid = ntrguid}
+          
+          end
+        
+        end
+      end
+    end
+    
+    --not found
+    
+  end
+  
+  function FXMulti_SetMainFX(ctl, state)
+  
+    local trn = ctl.tracknum or tracks[track_select].tracknum
+    local fxnum = ctl.fxnum
+    if state == 1 then
+      SetFXOffline3(trn, fxnum, 0, 0)
+      SetFXWet(trn, fxnum, 1)
+                    
+    elseif state == 2 then
+      SetFXOffline3(trn, fxnum, 0, 0)
+      SetFXWet(trn, fxnum, 0)
+    
+    elseif state == 3 then
+      SetFXOffline3(trn, fxnum, 0, 1)
+      
+    elseif state == 4 then
+      SetFXOffline3(trn, fxnum, 1, nil)
+    
+    end
+  
+  end
+  
+  function FXMulti_SetAddFX(ctl, state)
+    
+    local addfx = ctl.addfx
+    --won, woff, byp, off
+    local trchunk = {}
+    local hitrn = -2
+    local notfnd
+    local afxcnt = #addfx
+    for a = 1, afxcnt do
+    
+      local tr = GetTrack(addfx[a].trn)
+      if tr then
+        if addfx[a].guid ~= reaper.TrackFX_GetFXGUID(tr, addfx[a].fxnum) then
+          addfx[a] = FXMulti_AddFXFindFX(addfx[a].guid)
+        end
+      else
+        addfx[a] = FXMulti_AddFXFindFX(addfx[a].guid)      
+      end
+      
+      if addfx[a] then
+        local trn = addfx[a].trn
+        local fxnum = addfx[a].fxnum
+        local trguid = addfx[a].trguid
+        local guid = addfx[a].guid
+        
+        hitrn = math.max(hitrn,trn)    
+        if state == 1 then
+          trchunk[trn] = SetFXOffline3(trn, fxnum, 0, 0, true, trchunk[trn])
+                        
+        elseif state == 2 then
+          trchunk[trn] = SetFXOffline3(trn, fxnum, 0, 0, true, trchunk[trn])
+        
+        elseif state == 3 then
+          trchunk[trn] = SetFXOffline3(trn, fxnum, 0, 1, true, trchunk[trn])
+          
+        elseif state == 4 then
+          trchunk[trn] = SetFXOffline3(trn, fxnum, 1, nil, true, trchunk[trn])
+        
+        end
+      else
+        notfnd = true
+      end
+    end
+    
+    if notfnd == true then
+      ctl.addfx = Table_RemoveNils(addfx, afxcnt)
+      addfx = ctl.addfx
+    end
+    
+    for t = -1, hitrn do
+      if trchunk[t] then
+        local tr = GetTrack(t)
+        SetTrackChunk(tr, trchunk[t])
+      end
+    end
+
+    for a = 1, #addfx do
+    
+      local trn = addfx[a].trn
+      local fxnum = addfx[a].fxnum
+      local trguid = addfx[a].trguid
+      local guid = addfx[a].guid
+          
+      if state == 1 then
+        SetFXWet(trn, fxnum, 1)
+                
+      elseif state == 2 then
+        SetFXWet(trn, fxnum, 0)
+      
+      end
+    end
 
   end
   
@@ -47896,6 +48533,7 @@ function GUI_DrawCtlBitmap_Strips()
     --if ctl_select == nil then return end
     local updallowed = true
     --if ctl_select then
+    local ctls = strips[tracks[track_select].strip][page].controls
     if newgrp and ctl_select then
       for i = 1, #ctl_select do --might need to do nested checks
         if strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].switcherid == strips[tracks[track_select].strip][page].controls[newgrp.switchid].switcherid then 
@@ -47910,7 +48548,6 @@ function GUI_DrawCtlBitmap_Strips()
       end
     end
     if ctl_select then
-      local ctls = strips[tracks[track_select].strip][page].controls
       for i = 1, #ctl_select do
         local ctl = ctls[ctl_select[i].ctl]
         if newgrp then
@@ -50706,6 +51343,19 @@ function GUI_DrawCtlBitmap_Strips()
           strip.controls[c].rcmrefresh = {guid = rcmrefresh_guid,
                                           delay = rcmrefresh_delay,
                                           setvals = rcmrefresh_setvals}
+        end
+        
+        local afxcnt = tonumber(data[key..'addfx_cnt'])
+        if afxcnt and afxcnt > 0 then
+          strip.controls[c].addfx = {}
+          for afx = 1, afxcnt do
+            local  key = pfx..'c_'..c..'_addfx_'..afx..'_'
+            strip.controls[c].addfx[afx] = {}
+            strip.controls[c].addfx[afx].trn = tonumber(data[key..'trn'])
+            strip.controls[c].addfx[afx].trguid = zn(data[key..'trguid'])
+            strip.controls[c].addfx[afx].fxnum = tonumber(data[key..'fxnum'])
+            strip.controls[c].addfx[afx].guid = zn(data[key..'guid'])
+          end
         end
         
         local gauge = data[key..'gauge']
@@ -53674,55 +54324,61 @@ function GUI_DrawCtlBitmap_Strips()
     
       local key = pfx..'sst_'..sst..'_'
       
-      file:write('['..key..'morph_time]'..nz(snaps[sst].morph_time,0)..'\n')
-      file:write('['..key..'morph_sync]'..tostring(nz(snaps[sst].morph_sync,false))..'\n')
-      file:write('['..key..'morph_syncv]'..nz(snaps[sst].morph_syncv,14)..'\n')
-      file:write('['..key..'morph_scale]'..nz(snaps[sst].morph_scale,1)..'\n')
-      file:write('['..key..'morph_time_fader]'..nz(snaps[sst].morph_time_fader,'')..'\n')
-      file:write('['..key..'ss_selected]'..nz(snaps[sst].selected,'')..'\n')
-      file:write('['..key..'morph_loop]'..nz(snaps[sst].morph_loop,1)..'\n')
-      file:write('['..key..'capturefaders]'..tostring(nz(snaps[sst].capturefaders,false))..'\n')
-      file:write('['..key..'capturemods]'..tostring(nz(snaps[sst].capturemods,false))..'\n')
-      file:write('['..key..'ignorevals]'..tostring(nz(snaps[sst].ignorevals,false))..'\n')
+      local snp = snaps[sst]
+      
+      file:write('['..key..'morph_time]'..nz(snp.morph_time,0)..'\n')
+      file:write('['..key..'morph_sync]'..tostring(nz(snp.morph_sync,false))..'\n')
+      file:write('['..key..'morph_syncv]'..nz(snp.morph_syncv,14)..'\n')
+      file:write('['..key..'morph_scale]'..nz(snp.morph_scale,1)..'\n')
+      file:write('['..key..'morph_time_fader]'..nz(snp.morph_time_fader,'')..'\n')
+      file:write('['..key..'ss_selected]'..nz(snp.selected,'')..'\n')
+      file:write('['..key..'morph_loop]'..nz(snp.morph_loop,1)..'\n')
+      file:write('['..key..'capturefaders]'..tostring(nz(snp.capturefaders,false))..'\n')
+      file:write('['..key..'capturemods]'..tostring(nz(snp.capturemods,false))..'\n')
+      file:write('['..key..'ignorevals]'..tostring(nz(snp.ignorevals,false))..'\n')
       
       if sst == 1 then          
-        file:write('['..key..'ss_count]'..#snaps[sst]..'\n')
+        file:write('['..key..'ss_count]'..#snp..'\n')
       
-        if #snaps[sst] > 0 then
+        if #snp > 0 then
     
-          for ss = 1, #snaps[sst] do
+          for ss = 1, #snp do
     
             local key = pfx..'sst_'..sst..'_ss_'..ss..'_'
           
-            file:write('['..key..'name]'.. snaps[sst][ss].name ..'\n')
-            file:write('['..key..'data_count]'.. #snaps[sst][ss].data ..'\n')
+            local snpss = snp[ss]
+          
+            file:write('['..key..'name]'.. snpss.name ..'\n')
+            file:write('['..key..'data_count]'.. #snpss.data ..'\n')
         
-            if #snaps[sst][ss].data > 0 then
-              for d = 1, #snaps[sst][ss].data do
+            if #snpss.data > 0 then
+              for d = 1, #snpss.data do
     
                 local key = pfx..'sst_'..sst..'_ss_'..ss..'_d_'..d..'_'
     
-                file:write('['..key..'cid]'.. snaps[sst][ss].data[d].c_id ..'\n')
-                file:write('['..key..'ctl]'.. snaps[sst][ss].data[d].ctl ..'\n')
-                file:write('['..key..'val]'.. snaps[sst][ss].data[d].val ..'\n')
-                file:write('['..key..'dval]'.. nz(snaps[sst][ss].data[d].dval,'') ..'\n')
+                local snpssdata = snpss.data[d]
+    
+                file:write('['..key..'cid]'.. snpssdata.c_id ..'\n')
+                file:write('['..key..'ctl]'.. snpssdata.ctl ..'\n')
+                file:write('['..key..'val]'.. snpssdata.val ..'\n')
+                file:write('['..key..'dval]'.. nz(snpssdata.dval,'') ..'\n')
                           
-                file:write('['..key..'mfset]'.. tostring(nz(snaps[sst][ss].data[d].mfset,'')) ..'\n')                
-                if snaps[sst][ss].data[d].mf then
-                  file:write('['..key..'mf]'.. snaps[sst][ss].data[d].mf ..'\n')
-                  file:write('['..key..'mfdata_targettype]'.. snaps[sst][ss].data[d].mfdata.targettype ..'\n')
-                  file:write('['..key..'mfdata_strip]'.. snaps[sst][ss].data[d].mfdata.strip ..'\n')                
-                  file:write('['..key..'mfdata_page]'.. snaps[sst][ss].data[d].mfdata.page ..'\n')                
-                  file:write('['..key..'mfdata_ctl]'.. snaps[sst][ss].data[d].mfdata.ctl ..'\n')                
-                  file:write('['..key..'mfdata_c_id]'.. snaps[sst][ss].data[d].mfdata.c_id ..'\n')                
+                file:write('['..key..'mfset]'.. tostring(nz(snpssdata.mfset,'')) ..'\n')                
+                if snpssdata.mf then
+                  file:write('['..key..'mf]'.. snpssdata.mf ..'\n')
+                  file:write('['..key..'mfdata_targettype]'.. snpssdata.mfdata.targettype ..'\n')
+                  file:write('['..key..'mfdata_strip]'.. snpssdata.mfdata.strip ..'\n')                
+                  file:write('['..key..'mfdata_page]'.. snpssdata.mfdata.page ..'\n')                
+                  file:write('['..key..'mfdata_ctl]'.. snpssdata.mfdata.ctl ..'\n')                
+                  file:write('['..key..'mfdata_c_id]'.. snpssdata.mfdata.c_id ..'\n')                
                 end
           
               end
             end
             
-            file:write('['..key..'modset]'.. tostring(nz(snaps[sst][ss].modset,'')) ..'\n')
-            if snaps[sst][ss].modset then
-              local mm = snaps[sst][ss].moddata
+            file:write('['..key..'modset]'.. tostring(nz(snpss.modset,'')) ..'\n')
+            if snpss.modset then
+              local mm = snpss.moddata
 
               local key = pfx..'sst_'..sst..'_ss_'..ss..'_'              
               file:write('['..key..'modcnt]'.. #mm ..'\n')
@@ -53763,10 +54419,10 @@ function GUI_DrawCtlBitmap_Strips()
               end  
             end
 
-            local mm = snaps[sst][ss].faddata
+            local mm = snpss.faddata
             if mm then
-              file:write('['..key..'fadset]'.. tostring(nz(snaps[sst][ss].fadset,'')) ..'\n')
-              if snaps[sst][ss].fadset then
+              file:write('['..key..'fadset]'.. tostring(nz(snpss.fadset,'')) ..'\n')
+              if snpss.fadset then
                 local key = pfx..'sst_'..sst..'_ss_'..ss..'_'              
                 file:write('['..key..'fadcnt]'.. #faders ..'\n')
                 
@@ -53792,52 +54448,56 @@ function GUI_DrawCtlBitmap_Strips()
     
       elseif sst > 1 then
       
-        file:write('['..key..'subsetname]'.. snaps[sst].subsetname ..'\n')
-        file:write('['..key..'ss_count]'.. #snaps[sst].snapshot ..'\n')
-        file:write('['..key..'ctl_count]'.. #snaps[sst].ctls ..'\n')
+        file:write('['..key..'subsetname]'.. snp.subsetname ..'\n')
+        file:write('['..key..'ss_count]'.. #snp.snapshot ..'\n')
+        file:write('['..key..'ctl_count]'.. #snp.ctls ..'\n')
         
-        if #snaps[sst].ctls > 0 then
+        if #snp.ctls > 0 then
     
-          for ctl = 1, #snaps[sst].ctls do
+          for ctl = 1, #snp.ctls do
             local key = pfx..'sst_'..sst..'_c_'..ctl..'_'
-            file:write('['..key..'cid]'.. snaps[sst].ctls[ctl].c_id ..'\n')
-            file:write('['..key..'ctl]'.. snaps[sst].ctls[ctl].ctl ..'\n')                            
+            file:write('['..key..'cid]'.. snp.ctls[ctl].c_id ..'\n')
+            file:write('['..key..'ctl]'.. snp.ctls[ctl].ctl ..'\n')                            
           end
         end
-        if #snaps[sst].snapshot > 0 then
+        if #snp.snapshot > 0 then
         
-          for ss = 1, #snaps[sst].snapshot do
+          for ss = 1, #snp.snapshot do
           
+            local snpss = snp.snapshot[ss]
+            
             local key = pfx..'sst_'..sst..'_ss_'..ss..'_'
-            file:write('['..key..'name]'.. snaps[sst].snapshot[ss].name ..'\n')
-            file:write('['..key..'data_count]'.. #snaps[sst].snapshot[ss].data ..'\n')
+            file:write('['..key..'name]'.. snpss.name ..'\n')
+            file:write('['..key..'data_count]'.. #snpss.data ..'\n')
           
-            if #snaps[sst].snapshot[ss].data > 0 then
-              for d = 1, #snaps[sst].snapshot[ss].data do
+            if #snpss.data > 0 then
+              for d = 1, #snpss.data do
     
+                local snpssdata = snpss.data[d]
+                
                 local key = pfx..'sst_'..sst..'_ss_'..ss..'_d_'..d..'_'
           
-                file:write('['..key..'cid]'.. snaps[sst].snapshot[ss].data[d].c_id ..'\n')
-                file:write('['..key..'ctl]'.. snaps[sst].snapshot[ss].data[d].ctl ..'\n')
-                file:write('['..key..'val]'.. snaps[sst].snapshot[ss].data[d].val ..'\n')
-                file:write('['..key..'dval]'.. nz(snaps[sst].snapshot[ss].data[d].dval,'') ..'\n')
+                file:write('['..key..'cid]'.. snpssdata.c_id ..'\n')
+                file:write('['..key..'ctl]'.. snpssdata.ctl ..'\n')
+                file:write('['..key..'val]'.. snpssdata.val ..'\n')
+                file:write('['..key..'dval]'.. nz(snpssdata.dval,'') ..'\n')
 
-                file:write('['..key..'mfset]'.. tostring(nz(snaps[sst].snapshot[ss].data[d].mfset,'')) ..'\n')                
-                if snaps[sst].snapshot[ss].data[d].mf then
-                  file:write('['..key..'mf]'.. snaps[sst].snapshot[ss].data[d].mf ..'\n')
-                  file:write('['..key..'mfdata_targettype]'.. snaps[sst].snapshot[ss].data[d].mfdata.targettype ..'\n')
-                  file:write('['..key..'mfdata_strip]'.. snaps[sst].snapshot[ss].data[d].mfdata.strip ..'\n')                
-                  file:write('['..key..'mfdata_page]'.. snaps[sst].snapshot[ss].data[d].mfdata.page ..'\n')                
-                  file:write('['..key..'mfdata_ctl]'.. snaps[sst].snapshot[ss].data[d].mfdata.ctl ..'\n')                
-                  file:write('['..key..'mfdata_c_id]'.. snaps[sst].snapshot[ss].data[d].mfdata.c_id ..'\n')                
+                file:write('['..key..'mfset]'.. tostring(nz(snpssdata.mfset,'')) ..'\n')                
+                if snpssdata.mf then
+                  file:write('['..key..'mf]'.. snpssdata.mf ..'\n')
+                  file:write('['..key..'mfdata_targettype]'.. snpssdata.mfdata.targettype ..'\n')
+                  file:write('['..key..'mfdata_strip]'.. snpssdata.mfdata.strip ..'\n')                
+                  file:write('['..key..'mfdata_page]'.. snpssdata.mfdata.page ..'\n')                
+                  file:write('['..key..'mfdata_ctl]'.. snpssdata.mfdata.ctl ..'\n')                
+                  file:write('['..key..'mfdata_c_id]'.. snpssdata.mfdata.c_id ..'\n')                
                 end
           
               end
             end
             
-            file:write('['..key..'modset]'.. tostring(nz(snaps[sst].snapshot[ss].modset,'')) ..'\n')
-            if snaps[sst].snapshot[ss].modset then
-              local mm = snaps[sst].snapshot[ss].moddata
+            file:write('['..key..'modset]'.. tostring(nz(snpss.modset,'')) ..'\n')
+            if snpss.modset then
+              local mm = snpss.moddata
             
               local key = pfx..'sst_'..sst..'_ss_'..ss..'_'              
               file:write('['..key..'modcnt]'.. #mm ..'\n')
@@ -53878,10 +54538,10 @@ function GUI_DrawCtlBitmap_Strips()
               end  
             end
 
-            local mm = snaps[sst].snapshot[ss].faddata
+            local mm = snpss.faddata
             if mm then
-              file:write('['..key..'fadset]'.. tostring(nz(snaps[sst].snapshot[ss].fadset,'')) ..'\n')
-              if snaps[sst].snapshot[ss].fadset then
+              file:write('['..key..'fadset]'.. tostring(nz(snpss.fadset,'')) ..'\n')
+              if snpss.fadset then
                 local key = pfx..'sst_'..sst..'_ss_'..ss..'_'              
                 file:write('['..key..'fadcnt]'.. #mm ..'\n')
                 
@@ -53981,242 +54641,255 @@ function GUI_DrawCtlBitmap_Strips()
           
               local key = pfx..'c_'..c..'_'
               
-              file:write('['..key..'cid]'..stripdata.controls[c].c_id..'\n')
-              file:write('['..key..'fxname]'..stripdata.controls[c].fxname..'\n')
-              file:write('['..key..'fxguid]'..nz(stripdata.controls[c].fxguid,'')..'\n')
-              file:write('['..key..'fxnum]'..nz(stripdata.controls[c].fxnum,'')..'\n')
-              file:write('['..key..'fxfound]'..tostring(stripdata.controls[c].fxfound)..'\n')
-              file:write('['..key..'param]'..tostring(stripdata.controls[c].param)..'\n')
+              local ctl = stripdata.controls[c]
+              
+              file:write('['..key..'cid]'..ctl.c_id..'\n')
+              file:write('['..key..'fxname]'..ctl.fxname..'\n')
+              file:write('['..key..'fxguid]'..nz(ctl.fxguid,'')..'\n')
+              file:write('['..key..'fxnum]'..nz(ctl.fxnum,'')..'\n')
+              file:write('['..key..'fxfound]'..tostring(ctl.fxfound)..'\n')
+              file:write('['..key..'param]'..tostring(ctl.param)..'\n')
   
-              file:write('['..key..'param_info_name]'..stripdata.controls[c].param_info.paramname..'\n')
-              file:write('['..key..'param_info_paramnum]'..nz(stripdata.controls[c].param_info.paramnum,'')..'\n')
-              file:write('['..key..'param_info_idx]'..nz(stripdata.controls[c].param_info.paramidx,'')..'\n')
-              file:write('['..key..'param_info_str]'..nz(stripdata.controls[c].param_info.paramstr,'')..'\n')
-              file:write('['..key..'param_info_guid]'..nz(stripdata.controls[c].param_info.paramdestguid,'')..'\n')
-              file:write('['..key..'param_info_chan]'..nz(stripdata.controls[c].param_info.paramdestchan,'')..'\n')
-              file:write('['..key..'param_info_srcchan]'..nz(stripdata.controls[c].param_info.paramsrcchan,'')..'\n')
-              file:write('['..key..'ctltype]'..stripdata.controls[c].ctltype..'\n')
-              file:write('['..key..'knob_select]'..stripdata.controls[c].knob_select..'\n')
-              file:write('['..key..'ctl_info_fn]'..stripdata.controls[c].ctl_info.fn..'\n')
-              file:write('['..key..'ctl_info_frames]'..stripdata.controls[c].ctl_info.frames..'\n')
-              file:write('['..key..'ctl_info_imageidx]'..stripdata.controls[c].ctl_info.imageidx..'\n')
-              file:write('['..key..'ctl_info_cellh]'..stripdata.controls[c].ctl_info.cellh..'\n')
-              file:write('['..key..'x]'..stripdata.controls[c].x..'\n')
-              file:write('['..key..'y]'..stripdata.controls[c].y..'\n')
-              file:write('['..key..'w]'..stripdata.controls[c].w..'\n')
-              file:write('['..key..'scale]'..stripdata.controls[c].scale..'\n')
-              file:write('['..key..'show_paramname]'..tostring(stripdata.controls[c].show_paramname)..'\n')
-              file:write('['..key..'show_paramval]'..tostring(stripdata.controls[c].show_paramval)..'\n')
-              file:write('['..key..'ctlname_override]'..nz(stripdata.controls[c].ctlname_override,'')..'\n')
-              file:write('['..key..'textcol]'..stripdata.controls[c].textcol..'\n')
-              file:write('['..key..'textcolv]'..nz(stripdata.controls[c].textcolv,stripdata.controls[c].textcol)..'\n')
-              file:write('['..key..'textoff]'..stripdata.controls[c].textoff..'\n')
-              file:write('['..key..'textoffval]'..stripdata.controls[c].textoffval..'\n')
-              file:write('['..key..'textoffx]'..stripdata.controls[c].textoffx..'\n')
-              file:write('['..key..'textoffvalx]'..stripdata.controls[c].textoffvalx..'\n')
-              file:write('['..key..'textsize]'..nz(stripdata.controls[c].textsize,0)..'\n')
-              file:write('['..key..'textsizev]'..nz(stripdata.controls[c].textsizev,nz(stripdata.controls[c].textsize,0))..'\n')
-              file:write('['..key..'font]'..nz(stripdata.controls[c].font,fontname_def)..'\n')
-              file:write('['..key..'val]'..nz(stripdata.controls[c].val,0)..'\n')
-              file:write('['..key..'mval]'..nz(stripdata.controls[c].mval,nz(stripdata.controls[c].val,0))..'\n')
-              file:write('['..key..'defval]'..nz(stripdata.controls[c].defval,0)..'\n')   
-              file:write('['..key..'maxdp]'..nz(stripdata.controls[c].maxdp,-1)..'\n')   
-              file:write('['..key..'dvaloffset]'..nz(stripdata.controls[c].dvaloffset,'')..'\n')   
-              file:write('['..key..'minov]'..nz(stripdata.controls[c].minov,'')..'\n')   
-              file:write('['..key..'maxov]'..nz(stripdata.controls[c].maxov,'')..'\n')   
-              file:write('['..key..'scalemodex]'..nz(stripdata.controls[c].scalemode,8)..'\n')   
-              file:write('['..key..'framemodex]'..nz(stripdata.controls[c].framemode,1)..'\n')   
-              file:write('['..key..'poslock]'..nz(tostring(stripdata.controls[c].poslock),false)..'\n')   
-              file:write('['..key..'ctllock]'..nz(tostring(stripdata.controls[c].ctllock),false)..'\n')   
-              file:write('['..key..'horiz]'..tostring(nz(stripdata.controls[c].horiz,false))..'\n')
-              file:write('['..key..'knobsens_norm]'..tostring(nz(stripdata.controls[c].knobsens.norm,settings_defknobsens.norm))..'\n')
-              file:write('['..key..'knobsens_fine]'..tostring(nz(stripdata.controls[c].knobsens.fine,settings_defknobsens.fine))..'\n')                 
-              file:write('['..key..'knobsens_wheel]'..tostring(nz(stripdata.controls[c].knobsens.wheel,settings_defknobsens.wheel))..'\n')
-              file:write('['..key..'knobsens_wheelfine]'..tostring(nz(stripdata.controls[c].knobsens.wheelfine,settings_defknobsens.wheelfine))..'\n')                 
-              file:write('['..key..'hidden]'..tostring(nz(stripdata.controls[c].hidden,false))..'\n')
-              file:write('['..key..'switcherid]'..tostring(nz(stripdata.controls[c].switcherid,''))..'\n')
-              file:write('['..key..'switcher]'..tostring(nz(stripdata.controls[c].switcher,''))..'\n')
-              file:write('['..key..'noss]'..tostring(nz(stripdata.controls[c].noss,''))..'\n')
-              file:write('['..key..'bypassbg_c]'..tostring(nz(stripdata.controls[c].bypassbg_c,''))..'\n')
-              file:write('['..key..'bypassbg_n]'..tostring(nz(stripdata.controls[c].bypassbg_n,''))..'\n')
-              file:write('['..key..'bypassbg_v]'..tostring(nz(stripdata.controls[c].bypassbg_v,''))..'\n')
-              file:write('['..key..'clickthrough]'..tostring(nz(stripdata.controls[c].clickthrough,''))..'\n')
-              file:write('['..key..'dnu]'..tostring(nz(stripdata.controls[c].dnu,''))..'\n')
+              file:write('['..key..'param_info_name]'..ctl.param_info.paramname..'\n')
+              file:write('['..key..'param_info_paramnum]'..nz(ctl.param_info.paramnum,'')..'\n')
+              file:write('['..key..'param_info_idx]'..nz(ctl.param_info.paramidx,'')..'\n')
+              file:write('['..key..'param_info_str]'..nz(ctl.param_info.paramstr,'')..'\n')
+              file:write('['..key..'param_info_guid]'..nz(ctl.param_info.paramdestguid,'')..'\n')
+              file:write('['..key..'param_info_chan]'..nz(ctl.param_info.paramdestchan,'')..'\n')
+              file:write('['..key..'param_info_srcchan]'..nz(ctl.param_info.paramsrcchan,'')..'\n')
+              file:write('['..key..'ctltype]'..ctl.ctltype..'\n')
+              file:write('['..key..'knob_select]'..ctl.knob_select..'\n')
+              file:write('['..key..'ctl_info_fn]'..ctl.ctl_info.fn..'\n')
+              file:write('['..key..'ctl_info_frames]'..ctl.ctl_info.frames..'\n')
+              file:write('['..key..'ctl_info_imageidx]'..ctl.ctl_info.imageidx..'\n')
+              file:write('['..key..'ctl_info_cellh]'..ctl.ctl_info.cellh..'\n')
+              file:write('['..key..'x]'..ctl.x..'\n')
+              file:write('['..key..'y]'..ctl.y..'\n')
+              file:write('['..key..'w]'..ctl.w..'\n')
+              file:write('['..key..'scale]'..ctl.scale..'\n')
+              file:write('['..key..'show_paramname]'..tostring(ctl.show_paramname)..'\n')
+              file:write('['..key..'show_paramval]'..tostring(ctl.show_paramval)..'\n')
+              file:write('['..key..'ctlname_override]'..nz(ctl.ctlname_override,'')..'\n')
+              file:write('['..key..'textcol]'..ctl.textcol..'\n')
+              file:write('['..key..'textcolv]'..nz(ctl.textcolv,ctl.textcol)..'\n')
+              file:write('['..key..'textoff]'..ctl.textoff..'\n')
+              file:write('['..key..'textoffval]'..ctl.textoffval..'\n')
+              file:write('['..key..'textoffx]'..ctl.textoffx..'\n')
+              file:write('['..key..'textoffvalx]'..ctl.textoffvalx..'\n')
+              file:write('['..key..'textsize]'..nz(ctl.textsize,0)..'\n')
+              file:write('['..key..'textsizev]'..nz(ctl.textsizev,nz(ctl.textsize,0))..'\n')
+              file:write('['..key..'font]'..nz(ctl.font,fontname_def)..'\n')
+              file:write('['..key..'val]'..nz(ctl.val,0)..'\n')
+              file:write('['..key..'mval]'..nz(ctl.mval,nz(ctl.val,0))..'\n')
+              file:write('['..key..'defval]'..nz(ctl.defval,0)..'\n')   
+              file:write('['..key..'maxdp]'..nz(ctl.maxdp,-1)..'\n')   
+              file:write('['..key..'dvaloffset]'..nz(ctl.dvaloffset,'')..'\n')   
+              file:write('['..key..'minov]'..nz(ctl.minov,'')..'\n')   
+              file:write('['..key..'maxov]'..nz(ctl.maxov,'')..'\n')   
+              file:write('['..key..'scalemodex]'..nz(ctl.scalemode,8)..'\n')   
+              file:write('['..key..'framemodex]'..nz(ctl.framemode,1)..'\n')   
+              file:write('['..key..'poslock]'..nz(tostring(ctl.poslock),false)..'\n')   
+              file:write('['..key..'ctllock]'..nz(tostring(ctl.ctllock),false)..'\n')   
+              file:write('['..key..'horiz]'..tostring(nz(ctl.horiz,false))..'\n')
+              file:write('['..key..'knobsens_norm]'..tostring(nz(ctl.knobsens.norm,settings_defknobsens.norm))..'\n')
+              file:write('['..key..'knobsens_fine]'..tostring(nz(ctl.knobsens.fine,settings_defknobsens.fine))..'\n')                 
+              file:write('['..key..'knobsens_wheel]'..tostring(nz(ctl.knobsens.wheel,settings_defknobsens.wheel))..'\n')
+              file:write('['..key..'knobsens_wheelfine]'..tostring(nz(ctl.knobsens.wheelfine,settings_defknobsens.wheelfine))..'\n')                 
+              file:write('['..key..'hidden]'..tostring(nz(ctl.hidden,false))..'\n')
+              file:write('['..key..'switcherid]'..tostring(nz(ctl.switcherid,''))..'\n')
+              file:write('['..key..'switcher]'..tostring(nz(ctl.switcher,''))..'\n')
+              file:write('['..key..'noss]'..tostring(nz(ctl.noss,''))..'\n')
+              file:write('['..key..'bypassbg_c]'..tostring(nz(ctl.bypassbg_c,''))..'\n')
+              file:write('['..key..'bypassbg_n]'..tostring(nz(ctl.bypassbg_n,''))..'\n')
+              file:write('['..key..'bypassbg_v]'..tostring(nz(ctl.bypassbg_v,''))..'\n')
+              file:write('['..key..'clickthrough]'..tostring(nz(ctl.clickthrough,''))..'\n')
+              file:write('['..key..'dnu]'..tostring(nz(ctl.dnu,''))..'\n')
   
-              file:write('['..key..'id]'..convnum(stripdata.controls[c].id)..'\n')
-              file:write('['..key..'grpid]'..convnum(stripdata.controls[c].grpid)..'\n')
+              file:write('['..key..'id]'..convnum(ctl.id)..'\n')
+              file:write('['..key..'grpid]'..convnum(ctl.grpid)..'\n')
       
-              file:write('['..key..'ctlcat]'..nz(stripdata.controls[c].ctlcat,'')..'\n')
-              file:write('['..key..'tracknum]'..nz(stripdata.controls[c].tracknum,'')..'\n')
-              file:write('['..key..'trackguid]'..nz(stripdata.controls[c].trackguid,'')..'\n')
-              file:write('['..key..'memstate]'..tostring(nz(stripdata.controls[c].membtn.state,false))..'\n')
-              file:write('['..key..'memmem]'..nz(stripdata.controls[c].membtn.mem,0)..'\n')
+              file:write('['..key..'ctlcat]'..nz(ctl.ctlcat,'')..'\n')
+              file:write('['..key..'tracknum]'..nz(ctl.tracknum,'')..'\n')
+              file:write('['..key..'trackguid]'..nz(ctl.trackguid,'')..'\n')
+              file:write('['..key..'memstate]'..tostring(nz(ctl.membtn.state,false))..'\n')
+              file:write('['..key..'memmem]'..nz(ctl.membtn.mem,0)..'\n')
               
-              file:write('['..key..'xydata_x]'..nz(stripdata.controls[c].xydata.x,0.5)..'\n')
-              file:write('['..key..'xydata_y]'..nz(stripdata.controls[c].xydata.y,0.5)..'\n')
-              file:write('['..key..'xydata_snapa]'..nz(stripdata.controls[c].xydata.snapa,1)..'\n')
-              file:write('['..key..'xydata_snapb]'..nz(stripdata.controls[c].xydata.snapb,1)..'\n')
-              file:write('['..key..'xydata_snapc]'..nz(stripdata.controls[c].xydata.snapc,1)..'\n')
-              file:write('['..key..'xydata_snapd]'..nz(stripdata.controls[c].xydata.snapd,1)..'\n')
+              file:write('['..key..'xydata_x]'..nz(ctl.xydata.x,0.5)..'\n')
+              file:write('['..key..'xydata_y]'..nz(ctl.xydata.y,0.5)..'\n')
+              file:write('['..key..'xydata_snapa]'..nz(ctl.xydata.snapa,1)..'\n')
+              file:write('['..key..'xydata_snapb]'..nz(ctl.xydata.snapb,1)..'\n')
+              file:write('['..key..'xydata_snapc]'..nz(ctl.xydata.snapc,1)..'\n')
+              file:write('['..key..'xydata_snapd]'..nz(ctl.xydata.snapd,1)..'\n')
 
-              file:write('['..key..'macrofader]'..nz(stripdata.controls[c].macrofader,'')..'\n')
-              file:write('['..key..'mod]'..nz(stripdata.controls[c].mod,'')..'\n')
-              file:write('['..key..'switchfader]'..nz(stripdata.controls[c].switchfader,'')..'\n')
+              file:write('['..key..'macrofader]'..nz(ctl.macrofader,'')..'\n')
+              file:write('['..key..'mod]'..nz(ctl.mod,'')..'\n')
+              file:write('['..key..'switchfader]'..nz(ctl.switchfader,'')..'\n')
   
-              if stripdata.controls[c].iteminfo then
+              if ctl.iteminfo then
               
-                file:write('['..key..'iteminfo_itemno]'..nz(stripdata.controls[c].iteminfo.itemno,'')..'\n')
-                file:write('['..key..'iteminfo_guid]'..nz(stripdata.controls[c].iteminfo.guid,'')..'\n')
-                file:write('['..key..'iteminfo_tracknum]'..nz(stripdata.controls[c].iteminfo.tracknum,'')..'\n')
-                file:write('['..key..'iteminfo_trackguid]'..nz(stripdata.controls[c].iteminfo.trackguid,'')..'\n')
-                file:write('['..key..'iteminfo_numtakes]'..nz(stripdata.controls[c].iteminfo.numtakes,'')..'\n')
-                file:write('['..key..'iteminfo_maxtakes]'..nz(stripdata.controls[c].iteminfo.maxtakes,511)..'\n')
-                file:write('['..key..'iteminfo_noteoff]'..tostring(nz(stripdata.controls[c].iteminfo.noteoff,''))..'\n')
-                file:write('['..key..'iteminfo_utilfxn]'..nz(stripdata.controls[c].iteminfo.utilfxn,'')..'\n')
-                file:write('['..key..'iteminfo_utilguid]'..nz(stripdata.controls[c].iteminfo.utilguid,'')..'\n')
+                file:write('['..key..'iteminfo_itemno]'..nz(ctl.iteminfo.itemno,'')..'\n')
+                file:write('['..key..'iteminfo_guid]'..nz(ctl.iteminfo.guid,'')..'\n')
+                file:write('['..key..'iteminfo_tracknum]'..nz(ctl.iteminfo.tracknum,'')..'\n')
+                file:write('['..key..'iteminfo_trackguid]'..nz(ctl.iteminfo.trackguid,'')..'\n')
+                file:write('['..key..'iteminfo_numtakes]'..nz(ctl.iteminfo.numtakes,'')..'\n')
+                file:write('['..key..'iteminfo_maxtakes]'..nz(ctl.iteminfo.maxtakes,511)..'\n')
+                file:write('['..key..'iteminfo_noteoff]'..tostring(nz(ctl.iteminfo.noteoff,''))..'\n')
+                file:write('['..key..'iteminfo_utilfxn]'..nz(ctl.iteminfo.utilfxn,'')..'\n')
+                file:write('['..key..'iteminfo_utilguid]'..nz(ctl.iteminfo.utilguid,'')..'\n')
                    
               end
   
-              if stripdata.controls[c].cycledata and stripdata.controls[c].cycledata.statecnt then
-                file:write('['..key..'cycledata_statecnt]'..nz(stripdata.controls[c].cycledata.statecnt,0)..'\n')
-                file:write('['..key..'cycledata_mapptof]'..tostring(nz(stripdata.controls[c].cycledata.mapptof,false))..'\n')
-                file:write('['..key..'cycledata_invert]'..tostring(nz(stripdata.controls[c].cycledata.invert,false))..'\n')
-                file:write('['..key..'cycledata_draggable]'..tostring(nz(stripdata.controls[c].cycledata.draggable,false))..'\n')
-                file:write('['..key..'cycledata_spread]'..tostring(nz(stripdata.controls[c].cycledata.spread,false))..'\n')
-                file:write('['..key..'cycledata_pos]'..tostring(nz(stripdata.controls[c].cycledata.pos,1))..'\n')
-                file:write('['..key..'cycledata_posdirty]'..tostring(nz(stripdata.controls[c].cycledata.posdirty,false))..'\n')
-                if nz(stripdata.controls[c].cycledata.statecnt,0) > 0 then
-                  for i = 1, stripdata.controls[c].cycledata.statecnt do
+              if ctl.cycledata and ctl.cycledata.statecnt then
+                file:write('['..key..'cycledata_statecnt]'..nz(ctl.cycledata.statecnt,0)..'\n')
+                file:write('['..key..'cycledata_mapptof]'..tostring(nz(ctl.cycledata.mapptof,false))..'\n')
+                file:write('['..key..'cycledata_invert]'..tostring(nz(ctl.cycledata.invert,false))..'\n')
+                file:write('['..key..'cycledata_draggable]'..tostring(nz(ctl.cycledata.draggable,false))..'\n')
+                file:write('['..key..'cycledata_spread]'..tostring(nz(ctl.cycledata.spread,false))..'\n')
+                file:write('['..key..'cycledata_pos]'..tostring(nz(ctl.cycledata.pos,1))..'\n')
+                file:write('['..key..'cycledata_posdirty]'..tostring(nz(ctl.cycledata.posdirty,false))..'\n')
+                if nz(ctl.cycledata.statecnt,0) > 0 then
+                  for i = 1, ctl.cycledata.statecnt do
                     local key = pfx..'c_'..c..'_cyc_'..i..'_'
-                    file:write('['..key..'val]'..nz(stripdata.controls[c].cycledata[i].val,0)..'\n')   
-                    file:write('['..key..'dispval]'..nz(stripdata.controls[c].cycledata[i].dispval,'')..'\n')   
-                    file:write('['..key..'dv]'..nz(stripdata.controls[c].cycledata[i].dv,'')..'\n')   
+                    file:write('['..key..'val]'..nz(ctl.cycledata[i].val,0)..'\n')   
+                    file:write('['..key..'dispval]'..nz(ctl.cycledata[i].dispval,'')..'\n')   
+                    file:write('['..key..'dv]'..nz(ctl.cycledata[i].dv,'')..'\n')   
                   end
                 end
               else
                 file:write('['..key..'cycledata_statecnt]'..0 ..'\n')                   
               end
 
-              if stripdata.controls[c].midiout then
-                file:write('['..key..'midiout_output]'..nz(stripdata.controls[c].midiout.output,'')..'\n')
-                file:write('['..key..'midiout_mchan]'..nz(stripdata.controls[c].midiout.mchan,'')..'\n')
-                file:write('['..key..'midiout_msg3]'..nz(stripdata.controls[c].midiout.msg3,'')..'\n')              
-                file:write('['..key..'midiout_msgtype]'..nz(stripdata.controls[c].midiout.msgtype,4)..'\n')              
-                file:write('['..key..'midiout_osc]'..nz(stripdata.controls[c].midiout.osc,'')..'\n')              
-                file:write('['..key..'midiout_vmin]'..nz(stripdata.controls[c].midiout.vmin,0)..'\n')              
-                file:write('['..key..'midiout_vmax]'..nz(stripdata.controls[c].midiout.vmax,127)..'\n')              
-                file:write('['..key..'midiout_focus]'..nz(stripdata.controls[c].midiout.focus,1)..'\n')              
-                file:write('['..key..'midiout_updategfx]'..tostring(nz(stripdata.controls[c].midiout.updategfx,false))..'\n')              
-                file:write('['..key..'midiout_onmu]'..tostring(nz(stripdata.controls[c].midiout.onmu,false))..'\n')              
+              if ctl.midiout then
+                file:write('['..key..'midiout_output]'..nz(ctl.midiout.output,'')..'\n')
+                file:write('['..key..'midiout_mchan]'..nz(ctl.midiout.mchan,'')..'\n')
+                file:write('['..key..'midiout_msg3]'..nz(ctl.midiout.msg3,'')..'\n')              
+                file:write('['..key..'midiout_msgtype]'..nz(ctl.midiout.msgtype,4)..'\n')              
+                file:write('['..key..'midiout_osc]'..nz(ctl.midiout.osc,'')..'\n')              
+                file:write('['..key..'midiout_vmin]'..nz(ctl.midiout.vmin,0)..'\n')              
+                file:write('['..key..'midiout_vmax]'..nz(ctl.midiout.vmax,127)..'\n')              
+                file:write('['..key..'midiout_focus]'..nz(ctl.midiout.focus,1)..'\n')              
+                file:write('['..key..'midiout_updategfx]'..tostring(nz(ctl.midiout.updategfx,false))..'\n')              
+                file:write('['..key..'midiout_onmu]'..tostring(nz(ctl.midiout.onmu,false))..'\n')              
               end
 
-              if stripdata.controls[c].rcmdata and #stripdata.controls[c].rcmdata > 0 then
-                file:write('['..key..'rcmdata_cnt]'..#stripdata.controls[c].rcmdata ..'\n')                                 
-                for r = 1, #stripdata.controls[c].rcmdata do
+              if ctl.rcmdata and #ctl.rcmdata > 0 then
+                file:write('['..key..'rcmdata_cnt]'..#ctl.rcmdata ..'\n')                                 
+                for r = 1, #ctl.rcmdata do
                   local key = pfx..'c_'..c..'_rcm_'..r..'_'
-                  file:write('['..key..'name]'..stripdata.controls[c].rcmdata[r].name..'\n')                                 
-                  file:write('['..key..'msb]'..stripdata.controls[c].rcmdata[r].msb..'\n')
-                  file:write('['..key..'lsb]'..stripdata.controls[c].rcmdata[r].lsb..'\n')
-                  file:write('['..key..'prog]'..stripdata.controls[c].rcmdata[r].prog..'\n')                  
-                  file:write('['..key..'nebfn]'..nz(stripdata.controls[c].rcmdata[r].nebfn,'')..'\n')                  
+                  file:write('['..key..'name]'..ctl.rcmdata[r].name..'\n')                                 
+                  file:write('['..key..'msb]'..ctl.rcmdata[r].msb..'\n')
+                  file:write('['..key..'lsb]'..ctl.rcmdata[r].lsb..'\n')
+                  file:write('['..key..'prog]'..ctl.rcmdata[r].prog..'\n')                  
+                  file:write('['..key..'nebfn]'..nz(ctl.rcmdata[r].nebfn,'')..'\n')                  
                 end 
               else
                 file:write('['..key..'rcmdata_cnt]'..0 ..'\n')                                               
               end
               
-              if stripdata.controls[c].rcmrefresh then
-                file:write('['..key..'rcmrefresh_guid]'..nz(stripdata.controls[c].rcmrefresh.guid,'')..'\n')                                 
-                file:write('['..key..'rcmrefresh_delay]'..nz(stripdata.controls[c].rcmrefresh.delay,'')..'\n')              
-                file:write('['..key..'rcmrefresh_setvals]'..tostring(nz(stripdata.controls[c].rcmrefresh.setvals,''))..'\n')              
+              if ctl.rcmrefresh then
+                file:write('['..key..'rcmrefresh_guid]'..nz(ctl.rcmrefresh.guid,'')..'\n')                                 
+                file:write('['..key..'rcmrefresh_delay]'..nz(ctl.rcmrefresh.delay,'')..'\n')              
+                file:write('['..key..'rcmrefresh_setvals]'..tostring(nz(ctl.rcmrefresh.setvals,''))..'\n')              
               end
               
-              if stripdata.controls[c].gauge then
+              if ctl.addfx and #ctl.addfx > 0 then
+                file:write('['..key..'addfx_cnt]'..#ctl.addfx ..'\n')                                 
+                for afx = 1, #ctl.addfx do
+                  local key = pfx..'c_'..c..'_addfx_'..afx..'_'
+                  file:write('['..key..'trn]'..nz(ctl.addfx[afx].trn,-2)..'\n')                                 
+                  file:write('['..key..'trguid]'..nz(ctl.addfx[afx].trguid,'')..'\n')                                 
+                  file:write('['..key..'fxnum]'..nz(ctl.addfx[afx].fxnum,0)..'\n')                                 
+                  file:write('['..key..'guid]'..nz(ctl.addfx[afx].guid,'')..'\n')
+                end
+              end
+              
+              if ctl.gauge then
                 file:write('['..key..'gauge]'..tostring(true)..'\n')
               
-                file:write('['..key..'gauge_type]'..nz(stripdata.controls[c].gauge.type,1)..'\n')
-                file:write('['..key..'gauge_x_offs]'..nz(stripdata.controls[c].gauge.x_offs,0)..'\n')
-                file:write('['..key..'gauge_y_offs]'..nz(stripdata.controls[c].gauge.y_offs,0)..'\n')
-                file:write('['..key..'gauge_radius]'..nz(stripdata.controls[c].gauge.radius,50)..'\n')
-                file:write('['..key..'gauge_arclen]'..nz(stripdata.controls[c].gauge.arclen,1)..'\n')
-                file:write('['..key..'gauge_rotation]'..nz(stripdata.controls[c].gauge.rotation,0)..'\n')
-                file:write('['..key..'gauge_ticks]'..nz(stripdata.controls[c].gauge.ticks,0)..'\n')
-                file:write('['..key..'gauge_tick_size]'..nz(stripdata.controls[c].gauge.tick_size,2)..'\n')
-                file:write('['..key..'gauge_tick_offs]'..nz(stripdata.controls[c].gauge.tick_offs,1)..'\n')
-                file:write('['..key..'gauge_val_freq]'..nz(stripdata.controls[c].gauge.val_freq,0)..'\n')
-                file:write('['..key..'gauge_col_tick]'..nz(stripdata.controls[c].gauge.col_tick,'205 205 205')..'\n')
-                file:write('['..key..'gauge_col_arc]'..nz(stripdata.controls[c].gauge.col_arc,'205 205 205')..'\n')
-                file:write('['..key..'gauge_col_val]'..nz(stripdata.controls[c].gauge.col_val,'205 205 205')..'\n')
-                file:write('['..key..'gauge_show_arc]'..tostring(nz(stripdata.controls[c].gauge.show_arc,true))..'\n')
-                file:write('['..key..'gauge_show_tick]'..tostring(nz(stripdata.controls[c].gauge.show_tick,true))..'\n')
-                file:write('['..key..'gauge_show_val]'..tostring(nz(stripdata.controls[c].gauge.show_val,true))..'\n')
-                file:write('['..key..'gauge_val_dp]'..nz(stripdata.controls[c].gauge.val_dp,0)..'\n')
-                file:write('['..key..'gauge_font]'..nz(stripdata.controls[c].gauge.font,fontname_def)..'\n')
-                file:write('['..key..'gauge_fontsz]'..nz(stripdata.controls[c].gauge.fontsz,0)..'\n')
-                file:write('['..key..'gauge_spread]'..tostring(nz(stripdata.controls[c].gauge.spread,''))..'\n')
-                file:write('['..key..'gauge_mapptof]'..tostring(nz(stripdata.controls[c].gauge.mapptof,''))..'\n')
-                file:write('['..key..'gauge_numonly]'..tostring(nz(stripdata.controls[c].gauge.numonly,''))..'\n')
-                file:write('['..key..'gauge_abbrev]'..tostring(nz(stripdata.controls[c].gauge.abbrev,''))..'\n')
-                file:write('['..key..'gauge_valcnt]'..#stripdata.controls[c].gauge.vals..'\n')
+                file:write('['..key..'gauge_type]'..nz(ctl.gauge.type,1)..'\n')
+                file:write('['..key..'gauge_x_offs]'..nz(ctl.gauge.x_offs,0)..'\n')
+                file:write('['..key..'gauge_y_offs]'..nz(ctl.gauge.y_offs,0)..'\n')
+                file:write('['..key..'gauge_radius]'..nz(ctl.gauge.radius,50)..'\n')
+                file:write('['..key..'gauge_arclen]'..nz(ctl.gauge.arclen,1)..'\n')
+                file:write('['..key..'gauge_rotation]'..nz(ctl.gauge.rotation,0)..'\n')
+                file:write('['..key..'gauge_ticks]'..nz(ctl.gauge.ticks,0)..'\n')
+                file:write('['..key..'gauge_tick_size]'..nz(ctl.gauge.tick_size,2)..'\n')
+                file:write('['..key..'gauge_tick_offs]'..nz(ctl.gauge.tick_offs,1)..'\n')
+                file:write('['..key..'gauge_val_freq]'..nz(ctl.gauge.val_freq,0)..'\n')
+                file:write('['..key..'gauge_col_tick]'..nz(ctl.gauge.col_tick,'205 205 205')..'\n')
+                file:write('['..key..'gauge_col_arc]'..nz(ctl.gauge.col_arc,'205 205 205')..'\n')
+                file:write('['..key..'gauge_col_val]'..nz(ctl.gauge.col_val,'205 205 205')..'\n')
+                file:write('['..key..'gauge_show_arc]'..tostring(nz(ctl.gauge.show_arc,true))..'\n')
+                file:write('['..key..'gauge_show_tick]'..tostring(nz(ctl.gauge.show_tick,true))..'\n')
+                file:write('['..key..'gauge_show_val]'..tostring(nz(ctl.gauge.show_val,true))..'\n')
+                file:write('['..key..'gauge_val_dp]'..nz(ctl.gauge.val_dp,0)..'\n')
+                file:write('['..key..'gauge_font]'..nz(ctl.gauge.font,fontname_def)..'\n')
+                file:write('['..key..'gauge_fontsz]'..nz(ctl.gauge.fontsz,0)..'\n')
+                file:write('['..key..'gauge_spread]'..tostring(nz(ctl.gauge.spread,''))..'\n')
+                file:write('['..key..'gauge_mapptof]'..tostring(nz(ctl.gauge.mapptof,''))..'\n')
+                file:write('['..key..'gauge_numonly]'..tostring(nz(ctl.gauge.numonly,''))..'\n')
+                file:write('['..key..'gauge_abbrev]'..tostring(nz(ctl.gauge.abbrev,''))..'\n')
+                file:write('['..key..'gauge_valcnt]'..#ctl.gauge.vals..'\n')
               
-                if stripdata.controls[c].gauge.vals and #stripdata.controls[c].gauge.vals > 0 then
-                  for gv = 1, #stripdata.controls[c].gauge.vals do
+                if ctl.gauge.vals and #ctl.gauge.vals > 0 then
+                  for gv = 1, #ctl.gauge.vals do
                     local key = pfx..'c_'..c..'_gaugevals_'..gv..'_' 
-                    file:write('['..key..'val]'..nz(stripdata.controls[c].gauge.vals[gv].val,0)..'\n')
-                    file:write('['..key..'dval]'..nz(stripdata.controls[c].gauge.vals[gv].dval,'-')..'\n')
-                    file:write('['..key..'dover]'..nz(stripdata.controls[c].gauge.vals[gv].dover,'')..'\n')                  
-                    file:write('['..key..'nudge]'..nz(stripdata.controls[c].gauge.vals[gv].nudge,0)..'\n')                  
+                    file:write('['..key..'val]'..nz(ctl.gauge.vals[gv].val,0)..'\n')
+                    file:write('['..key..'dval]'..nz(ctl.gauge.vals[gv].dval,'-')..'\n')
+                    file:write('['..key..'dover]'..nz(ctl.gauge.vals[gv].dover,'')..'\n')                  
+                    file:write('['..key..'nudge]'..nz(ctl.gauge.vals[gv].nudge,0)..'\n')                  
                   end
                 end
               end
                             
-              if stripdata.controls[c].macroctl then
-                local mcnt = #stripdata.controls[c].macroctl
+              if ctl.macroctl then
+                local mcnt = #ctl.macroctl
                 file:write('['..key..'macroctl_cnt]'..mcnt..'\n')                                 
                 for mc = 1,mcnt do
                   local key = pfx..'c_'..c..'_mc_'..mc..'_'
-                  file:write('['..key..'c_id]'..stripdata.controls[c].macroctl[mc].c_id..'\n')                                 
-                  file:write('['..key..'ctl]'..stripdata.controls[c].macroctl[mc].ctl..'\n')                                 
-                  file:write('['..key..'A]'..stripdata.controls[c].macroctl[mc].A_val..'\n')                                 
-                  file:write('['..key..'B]'..stripdata.controls[c].macroctl[mc].B_val..'\n')                                 
-                  file:write('['..key..'shape]'..stripdata.controls[c].macroctl[mc].shape..'\n')                                 
-                  file:write('['..key..'mute]'..tostring(nz(stripdata.controls[c].macroctl[mc].mute,false))..'\n')                                 
-                  file:write('['..key..'bi]'..tostring(nz(stripdata.controls[c].macroctl[mc].bi,false))..'\n')
-                  file:write('['..key..'inv]'..tostring(nz(stripdata.controls[c].macroctl[mc].inv,false))..'\n')                                 
-                  file:write('['..key..'rel]'..tostring(nz(stripdata.controls[c].macroctl[mc].relative,false))..'\n')                                 
+                  file:write('['..key..'c_id]'..ctl.macroctl[mc].c_id..'\n')                                 
+                  file:write('['..key..'ctl]'..ctl.macroctl[mc].ctl..'\n')                                 
+                  file:write('['..key..'A]'..ctl.macroctl[mc].A_val..'\n')                                 
+                  file:write('['..key..'B]'..ctl.macroctl[mc].B_val..'\n')                                 
+                  file:write('['..key..'shape]'..ctl.macroctl[mc].shape..'\n')                                 
+                  file:write('['..key..'mute]'..tostring(nz(ctl.macroctl[mc].mute,false))..'\n')                                 
+                  file:write('['..key..'bi]'..tostring(nz(ctl.macroctl[mc].bi,false))..'\n')
+                  file:write('['..key..'inv]'..tostring(nz(ctl.macroctl[mc].inv,false))..'\n')                                 
+                  file:write('['..key..'rel]'..tostring(nz(ctl.macroctl[mc].relative,false))..'\n')                                 
                 end
               else
                 file:write('['..key..'macroctl_cnt]'..0 ..'\n')                                 
               end
 
-              if stripdata.controls[c].random then
+              if ctl.random then
 
                 local key = pfx..'c_'..c..'_rnd_'
-                file:write('['..key..'par_c_id]'..stripdata.controls[c].random.parent_cid..'\n')                                 
-                file:write('['..key..'par_ctl]'..stripdata.controls[c].random.parent..'\n')                                 
-                file:write('['..key..'sst]'..stripdata.controls[c].random.sst..'\n')                                 
-                file:write('['..key..'sso]'..tostring(nz(stripdata.controls[c].random.snapshotsonly,false))..'\n') 
-                file:write('['..key..'ua]'..tostring(nz(stripdata.controls[c].random.useadv,false))..'\n')                                 
-                file:write('['..key..'ccnt]'..#stripdata.controls[c].random.ctls..'\n')                                 
+                file:write('['..key..'par_c_id]'..ctl.random.parent_cid..'\n')                                 
+                file:write('['..key..'par_ctl]'..ctl.random.parent..'\n')                                 
+                file:write('['..key..'sst]'..ctl.random.sst..'\n')                                 
+                file:write('['..key..'sso]'..tostring(nz(ctl.random.snapshotsonly,false))..'\n') 
+                file:write('['..key..'ua]'..tostring(nz(ctl.random.useadv,false))..'\n')                                 
+                file:write('['..key..'ccnt]'..#ctl.random.ctls..'\n')                                 
 
                 local lgs = {}
 
-                if #stripdata.controls[c].random.ctls > 0 then
-                  for cc = 1, #stripdata.controls[c].random.ctls do
+                if #ctl.random.ctls > 0 then
+                  for cc = 1, #ctl.random.ctls do
                     local key = pfx..'c_'..c..'_rnd_ctls_'..cc..'_'
-                    file:write('['..key..'c_id]'..stripdata.controls[c].random.ctls[cc].c_id..'\n')                                 
-                    file:write('['..key..'ctl]'..stripdata.controls[c].random.ctls[cc].ctl..'\n')                                 
-                    file:write('['..key..'min]'..stripdata.controls[c].random.ctls[cc].min..'\n')                                 
-                    file:write('['..key..'max]'..stripdata.controls[c].random.ctls[cc].max..'\n')                                 
-                    file:write('['..key..'linkgrp]'..nz(stripdata.controls[c].random.ctls[cc].linkgrp,'')..'\n')
-                    file:write('['..key..'rprob]'..stripdata.controls[c].random.ctls[cc].rprob..'\n')                                 
-                    file:write('['..key..'bias]'..stripdata.controls[c].random.ctls[cc].bias..'\n')                                 
-                    file:write('['..key..'amount]'..nz(stripdata.controls[c].random.ctls[cc].amount,'')..'\n')
-                    file:write('['..key..'inverted]'..tostring(nz(stripdata.controls[c].random.ctls[cc].inverted,false))..'\n')
-                    file:write('['..key..'wild]'..nz(stripdata.controls[c].random.ctls[cc].wild,0)..'\n')
-                    file:write('['..key..'snap]'..tostring(nz(stripdata.controls[c].random.ctls[cc].snap,false))..'\n')
+                    file:write('['..key..'c_id]'..ctl.random.ctls[cc].c_id..'\n')                                 
+                    file:write('['..key..'ctl]'..ctl.random.ctls[cc].ctl..'\n')                                 
+                    file:write('['..key..'min]'..ctl.random.ctls[cc].min..'\n')                                 
+                    file:write('['..key..'max]'..ctl.random.ctls[cc].max..'\n')                                 
+                    file:write('['..key..'linkgrp]'..nz(ctl.random.ctls[cc].linkgrp,'')..'\n')
+                    file:write('['..key..'rprob]'..ctl.random.ctls[cc].rprob..'\n')                                 
+                    file:write('['..key..'bias]'..ctl.random.ctls[cc].bias..'\n')                                 
+                    file:write('['..key..'amount]'..nz(ctl.random.ctls[cc].amount,'')..'\n')
+                    file:write('['..key..'inverted]'..tostring(nz(ctl.random.ctls[cc].inverted,false))..'\n')
+                    file:write('['..key..'wild]'..nz(ctl.random.ctls[cc].wild,0)..'\n')
+                    file:write('['..key..'snap]'..tostring(nz(ctl.random.ctls[cc].snap,false))..'\n')
                     
-                    if stripdata.controls[c].random.ctls[cc].linkgrp then
-                      lgs[#lgs+1] = stripdata.controls[c].random.ctls[cc].linkgrp
+                    if ctl.random.ctls[cc].linkgrp then
+                      lgs[#lgs+1] = ctl.random.ctls[cc].linkgrp
                     end
                   end
                 end
@@ -54225,83 +54898,83 @@ function GUI_DrawCtlBitmap_Strips()
                   for l = 1, #lgs do
                     local lg = lgs[l]
                     local key = pfx..'c_'..c..'_rnd_lgs_'..lg..'_'
-                    file:write('['..key..'type]'..stripdata.controls[c].random.linkgrps[lg].type..'\n')                                 
-                    file:write('['..key..'X]'..stripdata.controls[c].random.linkgrps[lg].X..'\n')                                                   
-                    file:write('['..key..'snap]'..tostring(nz(stripdata.controls[c].random.linkgrps[lg].snap,false))..'\n')                                                   
+                    file:write('['..key..'type]'..ctl.random.linkgrps[lg].type..'\n')                                 
+                    file:write('['..key..'X]'..ctl.random.linkgrps[lg].X..'\n')                                                   
+                    file:write('['..key..'snap]'..tostring(nz(ctl.random.linkgrps[lg].snap,false))..'\n')                                                   
                   end
                 end              
               end
 
-              if stripdata.controls[c].eqbands then
-                local bcnt = #stripdata.controls[c].eqbands
+              if ctl.eqbands then
+                local bcnt = #ctl.eqbands
                 file:write('['..key..'eqband_cnt]'..bcnt..'\n')
                 if bcnt > 0 then                                 
                   for bc = 1,bcnt do
                     local key = pfx..'c_'..c..'_eqband_'..bc..'_'
-                    file:write('['..key..'posmin]'..nz(stripdata.controls[c].eqbands[bc].posmin,'')..'\n')                                 
-                    file:write('['..key..'posmax]'..nz(stripdata.controls[c].eqbands[bc].posmax,'')..'\n')                                 
-                    file:write('['..key..'col]'..nz(stripdata.controls[c].eqbands[bc].col,'')..'\n')                                 
-                    file:write('['..key..'fxnum]'..nz(stripdata.controls[c].eqbands[bc].fxnum,'')..'\n')                                 
-                    file:write('['..key..'fxguid]'..nz(stripdata.controls[c].eqbands[bc].fxguid,'')..'\n')                                 
-                    file:write('['..key..'fxname]'..nz(stripdata.controls[c].eqbands[bc].fxname,'')..'\n')                                 
-                    file:write('['..key..'freq_param]'..nz(stripdata.controls[c].eqbands[bc].freq_param,'')..'\n')                                 
-                    file:write('['..key..'freq_param_name]'..nz(stripdata.controls[c].eqbands[bc].freq_param_name,'')..'\n')                                 
-                    file:write('['..key..'gain_param]'..nz(stripdata.controls[c].eqbands[bc].gain_param,'')..'\n')                                 
-                    file:write('['..key..'gain_param_name]'..nz(stripdata.controls[c].eqbands[bc].gain_param_name,'')..'\n')                                 
-                    file:write('['..key..'q_param]'..nz(stripdata.controls[c].eqbands[bc].q_param,'')..'\n')                                 
-                    file:write('['..key..'q_param_name]'..nz(stripdata.controls[c].eqbands[bc].q_param_name,'')..'\n')                                 
-                    file:write('['..key..'bypass_param]'..nz(stripdata.controls[c].eqbands[bc].bypass_param,'')..'\n')                                 
-                    file:write('['..key..'bypass_param_name]'..nz(stripdata.controls[c].eqbands[bc].bypass_param_name,'')..'\n')                                 
-                    file:write('['..key..'c1_param]'..nz(stripdata.controls[c].eqbands[bc].c1_param,'')..'\n')                                 
-                    file:write('['..key..'c1_param_name]'..nz(stripdata.controls[c].eqbands[bc].c1_param_name,'')..'\n')                                 
-                    file:write('['..key..'c2_param]'..nz(stripdata.controls[c].eqbands[bc].c2_param,'')..'\n')                                 
-                    file:write('['..key..'c2_param_name]'..nz(stripdata.controls[c].eqbands[bc].c2_param_name,'')..'\n')                                 
-                    file:write('['..key..'c3_param]'..nz(stripdata.controls[c].eqbands[bc].c3_param,'')..'\n')                                 
-                    file:write('['..key..'c3_param_name]'..nz(stripdata.controls[c].eqbands[bc].c3_param_name,'')..'\n')                                 
-                    file:write('['..key..'c4_param]'..nz(stripdata.controls[c].eqbands[bc].c4_param,'')..'\n')                                 
-                    file:write('['..key..'c4_param_name]'..nz(stripdata.controls[c].eqbands[bc].c4_param_name,'')..'\n')                                 
-                    file:write('['..key..'c5_param]'..nz(stripdata.controls[c].eqbands[bc].c5_param,'')..'\n')                                 
-                    file:write('['..key..'c5_param_name]'..nz(stripdata.controls[c].eqbands[bc].c5_param_name,'')..'\n')                                 
-                    file:write('['..key..'freq_val]'..nz(stripdata.controls[c].eqbands[bc].freq_val,'')..'\n')                                 
-                    file:write('['..key..'gain_val]'..nz(stripdata.controls[c].eqbands[bc].gain_val,'')..'\n')                                 
-                    file:write('['..key..'q_val]'..nz(stripdata.controls[c].eqbands[bc].q_val,'')..'\n')                                 
-                    file:write('['..key..'c1_val]'..nz(stripdata.controls[c].eqbands[bc].c1_val,'')..'\n')                                 
-                    file:write('['..key..'c2_val]'..nz(stripdata.controls[c].eqbands[bc].c2_val,'')..'\n')                                 
-                    file:write('['..key..'c3_val]'..nz(stripdata.controls[c].eqbands[bc].c3_val,'')..'\n')                                 
-                    file:write('['..key..'c4_val]'..nz(stripdata.controls[c].eqbands[bc].c4_val,'')..'\n')                                 
-                    file:write('['..key..'c5_val]'..nz(stripdata.controls[c].eqbands[bc].c5_val,'')..'\n')                                 
+                    file:write('['..key..'posmin]'..nz(ctl.eqbands[bc].posmin,'')..'\n')                                 
+                    file:write('['..key..'posmax]'..nz(ctl.eqbands[bc].posmax,'')..'\n')                                 
+                    file:write('['..key..'col]'..nz(ctl.eqbands[bc].col,'')..'\n')                                 
+                    file:write('['..key..'fxnum]'..nz(ctl.eqbands[bc].fxnum,'')..'\n')                                 
+                    file:write('['..key..'fxguid]'..nz(ctl.eqbands[bc].fxguid,'')..'\n')                                 
+                    file:write('['..key..'fxname]'..nz(ctl.eqbands[bc].fxname,'')..'\n')                                 
+                    file:write('['..key..'freq_param]'..nz(ctl.eqbands[bc].freq_param,'')..'\n')                                 
+                    file:write('['..key..'freq_param_name]'..nz(ctl.eqbands[bc].freq_param_name,'')..'\n')                                 
+                    file:write('['..key..'gain_param]'..nz(ctl.eqbands[bc].gain_param,'')..'\n')                                 
+                    file:write('['..key..'gain_param_name]'..nz(ctl.eqbands[bc].gain_param_name,'')..'\n')                                 
+                    file:write('['..key..'q_param]'..nz(ctl.eqbands[bc].q_param,'')..'\n')                                 
+                    file:write('['..key..'q_param_name]'..nz(ctl.eqbands[bc].q_param_name,'')..'\n')                                 
+                    file:write('['..key..'bypass_param]'..nz(ctl.eqbands[bc].bypass_param,'')..'\n')                                 
+                    file:write('['..key..'bypass_param_name]'..nz(ctl.eqbands[bc].bypass_param_name,'')..'\n')                                 
+                    file:write('['..key..'c1_param]'..nz(ctl.eqbands[bc].c1_param,'')..'\n')                                 
+                    file:write('['..key..'c1_param_name]'..nz(ctl.eqbands[bc].c1_param_name,'')..'\n')                                 
+                    file:write('['..key..'c2_param]'..nz(ctl.eqbands[bc].c2_param,'')..'\n')                                 
+                    file:write('['..key..'c2_param_name]'..nz(ctl.eqbands[bc].c2_param_name,'')..'\n')                                 
+                    file:write('['..key..'c3_param]'..nz(ctl.eqbands[bc].c3_param,'')..'\n')                                 
+                    file:write('['..key..'c3_param_name]'..nz(ctl.eqbands[bc].c3_param_name,'')..'\n')                                 
+                    file:write('['..key..'c4_param]'..nz(ctl.eqbands[bc].c4_param,'')..'\n')                                 
+                    file:write('['..key..'c4_param_name]'..nz(ctl.eqbands[bc].c4_param_name,'')..'\n')                                 
+                    file:write('['..key..'c5_param]'..nz(ctl.eqbands[bc].c5_param,'')..'\n')                                 
+                    file:write('['..key..'c5_param_name]'..nz(ctl.eqbands[bc].c5_param_name,'')..'\n')                                 
+                    file:write('['..key..'freq_val]'..nz(ctl.eqbands[bc].freq_val,'')..'\n')                                 
+                    file:write('['..key..'gain_val]'..nz(ctl.eqbands[bc].gain_val,'')..'\n')                                 
+                    file:write('['..key..'q_val]'..nz(ctl.eqbands[bc].q_val,'')..'\n')                                 
+                    file:write('['..key..'c1_val]'..nz(ctl.eqbands[bc].c1_val,'')..'\n')                                 
+                    file:write('['..key..'c2_val]'..nz(ctl.eqbands[bc].c2_val,'')..'\n')                                 
+                    file:write('['..key..'c3_val]'..nz(ctl.eqbands[bc].c3_val,'')..'\n')                                 
+                    file:write('['..key..'c4_val]'..nz(ctl.eqbands[bc].c4_val,'')..'\n')                                 
+                    file:write('['..key..'c5_val]'..nz(ctl.eqbands[bc].c5_val,'')..'\n')                                 
 
-                    file:write('['..key..'freq_min]'..nz(stripdata.controls[c].eqbands[bc].freq_min,'')..'\n')                                 
-                    file:write('['..key..'freq_max]'..nz(stripdata.controls[c].eqbands[bc].freq_max,'')..'\n')
-                    file:write('['..key..'gain_min]'..nz(stripdata.controls[c].eqbands[bc].gain_min,'')..'\n')                                 
-                    file:write('['..key..'gain_max]'..nz(stripdata.controls[c].eqbands[bc].gain_max,'')..'\n')
-                    file:write('['..key..'bandtype]'..nz(stripdata.controls[c].eqbands[bc].bandtype,'')..'\n')                                 
-                    file:write('['..key..'bandname]'..nz(stripdata.controls[c].eqbands[bc].bandname,'')..'\n')                    
-                    file:write('['..key..'khz]'..nz(tostring(stripdata.controls[c].eqbands[bc].khz),tostring(false))..'\n')                    
-                    file:write('['..key..'gaininv]'..nz(tostring(stripdata.controls[c].eqbands[bc].gain_inv),tostring(false))..'\n')                    
-                    file:write('['..key..'qinv]'..nz(tostring(stripdata.controls[c].eqbands[bc].q_inv),tostring(false))..'\n')                    
-                    file:write('['..key..'gmin]'..nz(stripdata.controls[c].eqbands[bc].gmin,'')..'\n')                                 
-                    file:write('['..key..'gmax]'..nz(stripdata.controls[c].eqbands[bc].gmax,'')..'\n')                                 
+                    file:write('['..key..'freq_min]'..nz(ctl.eqbands[bc].freq_min,'')..'\n')                                 
+                    file:write('['..key..'freq_max]'..nz(ctl.eqbands[bc].freq_max,'')..'\n')
+                    file:write('['..key..'gain_min]'..nz(ctl.eqbands[bc].gain_min,'')..'\n')                                 
+                    file:write('['..key..'gain_max]'..nz(ctl.eqbands[bc].gain_max,'')..'\n')
+                    file:write('['..key..'bandtype]'..nz(ctl.eqbands[bc].bandtype,'')..'\n')                                 
+                    file:write('['..key..'bandname]'..nz(ctl.eqbands[bc].bandname,'')..'\n')                    
+                    file:write('['..key..'khz]'..nz(tostring(ctl.eqbands[bc].khz),tostring(false))..'\n')                    
+                    file:write('['..key..'gaininv]'..nz(tostring(ctl.eqbands[bc].gain_inv),tostring(false))..'\n')                    
+                    file:write('['..key..'qinv]'..nz(tostring(ctl.eqbands[bc].q_inv),tostring(false))..'\n')                    
+                    file:write('['..key..'gmin]'..nz(ctl.eqbands[bc].gmin,'')..'\n')                                 
+                    file:write('['..key..'gmax]'..nz(ctl.eqbands[bc].gmax,'')..'\n')                                 
 
-                    file:write('['..key..'freq_def]'..nz(stripdata.controls[c].eqbands[bc].freq_def,'')..'\n')                                 
-                    file:write('['..key..'gain_def]'..nz(stripdata.controls[c].eqbands[bc].gain_def,'')..'\n')                                 
-                    file:write('['..key..'q_def]'..nz(stripdata.controls[c].eqbands[bc].q_def,'')..'\n')                                 
-                    file:write('['..key..'c1_def]'..nz(stripdata.controls[c].eqbands[bc].c1_def,'')..'\n')                                 
-                    file:write('['..key..'c2_def]'..nz(stripdata.controls[c].eqbands[bc].c2_def,'')..'\n')                                 
-                    file:write('['..key..'c3_def]'..nz(stripdata.controls[c].eqbands[bc].c3_def,'')..'\n')                                 
-                    file:write('['..key..'c4_def]'..nz(stripdata.controls[c].eqbands[bc].c4_def,'')..'\n')                                 
-                    file:write('['..key..'c5_def]'..nz(stripdata.controls[c].eqbands[bc].c5_def,'')..'\n')                                 
+                    file:write('['..key..'freq_def]'..nz(ctl.eqbands[bc].freq_def,'')..'\n')                                 
+                    file:write('['..key..'gain_def]'..nz(ctl.eqbands[bc].gain_def,'')..'\n')                                 
+                    file:write('['..key..'q_def]'..nz(ctl.eqbands[bc].q_def,'')..'\n')                                 
+                    file:write('['..key..'c1_def]'..nz(ctl.eqbands[bc].c1_def,'')..'\n')                                 
+                    file:write('['..key..'c2_def]'..nz(ctl.eqbands[bc].c2_def,'')..'\n')                                 
+                    file:write('['..key..'c3_def]'..nz(ctl.eqbands[bc].c3_def,'')..'\n')                                 
+                    file:write('['..key..'c4_def]'..nz(ctl.eqbands[bc].c4_def,'')..'\n')                                 
+                    file:write('['..key..'c5_def]'..nz(ctl.eqbands[bc].c5_def,'')..'\n')                                 
                     
                     local key = pfx..'c_'..c..'_eqband_'..bc..'_'
-                    if stripdata.controls[c].eqbands[bc].lookmap then
-                      local lcnt = #stripdata.controls[c].eqbands[bc].lookmap
+                    if ctl.eqbands[bc].lookmap then
+                      local lcnt = #ctl.eqbands[bc].lookmap
                       file:write('['..key..'lookmap_cnt]'..lcnt..'\n')
                       
                       if lcnt > 0 then
                         for lc = 1, lcnt do
                           local key = pfx..'c_'..c..'_eqband_'..bc..'_lm_'..lc..'_'
-                          file:write('['..key..'pix]'..nz(stripdata.controls[c].eqbands[bc].lookmap[lc].pix,'')..'\n')                                 
-                          file:write('['..key..'hz]'..nz(stripdata.controls[c].eqbands[bc].lookmap[lc].hz,'')..'\n')                                 
+                          file:write('['..key..'pix]'..nz(ctl.eqbands[bc].lookmap[lc].pix,'')..'\n')                                 
+                          file:write('['..key..'hz]'..nz(ctl.eqbands[bc].lookmap[lc].hz,'')..'\n')                                 
                         end
                       end
                     
@@ -54310,15 +54983,15 @@ function GUI_DrawCtlBitmap_Strips()
                     end
 
                     local key = pfx..'c_'..c..'_eqband_'..bc..'_'
-                    if stripdata.controls[c].eqbands[bc].gmap then
-                      local lcnt = #stripdata.controls[c].eqbands[bc].gmap
+                    if ctl.eqbands[bc].gmap then
+                      local lcnt = #ctl.eqbands[bc].gmap
                       file:write('['..key..'gmap_cnt]'..lcnt..'\n')
                       
                       if lcnt > 0 then
                         for lc = 1, lcnt do
                           local key = pfx..'c_'..c..'_eqband_'..bc..'_gm_'..lc..'_'
-                          file:write('['..key..'pix]'..nz(stripdata.controls[c].eqbands[bc].gmap[lc].pix,'')..'\n')                                 
-                          file:write('['..key..'db]'..nz(stripdata.controls[c].eqbands[bc].gmap[lc].db,'')..'\n')                                 
+                          file:write('['..key..'pix]'..nz(ctl.eqbands[bc].gmap[lc].pix,'')..'\n')                                 
+                          file:write('['..key..'db]'..nz(ctl.eqbands[bc].gmap[lc].db,'')..'\n')                                 
                         end
                       end
                     
@@ -54333,24 +55006,24 @@ function GUI_DrawCtlBitmap_Strips()
                 file:write('['..key..'eqband_cnt]'..0 ..'\n')                                 
               end
 
-              if stripdata.controls[c].eqgraph and type(stripdata.controls[c].eqgraph) == 'table' then
+              if ctl.eqgraph and type(ctl.eqgraph) == 'table' then
 
                 local key = pfx..'c_'..c..'_'
                 file:write('['..key..'ecg_graph]'..tostring(true)..'\n')                                               
-                file:write('['..key..'ecg_gmin]'..nz(stripdata.controls[c].eqgraph.gmin,'')..'\n')                                 
-                file:write('['..key..'ecg_gmax]'..nz(stripdata.controls[c].eqgraph.gmax,'')..'\n')                                 
-                file:write('['..key..'ecg_posmin]'..nz(stripdata.controls[c].eqgraph.posmin,'')..'\n')                                 
-                file:write('['..key..'ecg_posmax]'..nz(stripdata.controls[c].eqgraph.posmax,'')..'\n')                                 
+                file:write('['..key..'ecg_gmin]'..nz(ctl.eqgraph.gmin,'')..'\n')                                 
+                file:write('['..key..'ecg_gmax]'..nz(ctl.eqgraph.gmax,'')..'\n')                                 
+                file:write('['..key..'ecg_posmin]'..nz(ctl.eqgraph.posmin,'')..'\n')                                 
+                file:write('['..key..'ecg_posmax]'..nz(ctl.eqgraph.posmax,'')..'\n')                                 
 
-                if stripdata.controls[c].eqgraph.lookmap then
-                  local lcnt = #stripdata.controls[c].eqgraph.lookmap
+                if ctl.eqgraph.lookmap then
+                  local lcnt = #ctl.eqgraph.lookmap
                   file:write('['..key..'ecg_lookmap_cnt]'..lcnt..'\n')
                   
                   if lcnt > 0 then
                     for lc = 1, lcnt do
                       local key = pfx..'c_'..c..'_ecg_lm_'..lc..'_'
-                      file:write('['..key..'pix]'..nz(stripdata.controls[c].eqgraph.lookmap[lc].pix,'')..'\n')                                 
-                      file:write('['..key..'hz]'..nz(stripdata.controls[c].eqgraph.lookmap[lc].hz,'')..'\n')                                 
+                      file:write('['..key..'pix]'..nz(ctl.eqgraph.lookmap[lc].pix,'')..'\n')                                 
+                      file:write('['..key..'hz]'..nz(ctl.eqgraph.lookmap[lc].hz,'')..'\n')                                 
                     end
                   end
                 
@@ -54359,15 +55032,15 @@ function GUI_DrawCtlBitmap_Strips()
                 end
 
                 local key = pfx..'c_'..c..'_'
-                if stripdata.controls[c].eqgraph.gmap then
-                  local lcnt = #stripdata.controls[c].eqgraph.gmap
+                if ctl.eqgraph.gmap then
+                  local lcnt = #ctl.eqgraph.gmap
                   file:write('['..key..'ecg_gmap_cnt]'..lcnt..'\n')
                   
                   if lcnt > 0 then
                     for lc = 1, lcnt do
                       local key = pfx..'c_'..c..'_ecg_gm_'..lc..'_'
-                      file:write('['..key..'pix]'..nz(stripdata.controls[c].eqgraph.gmap[lc].pix,'')..'\n')                                 
-                      file:write('['..key..'db]'..nz(stripdata.controls[c].eqgraph.gmap[lc].db,'')..'\n')                                 
+                      file:write('['..key..'pix]'..nz(ctl.eqgraph.gmap[lc].pix,'')..'\n')                                 
+                      file:write('['..key..'db]'..nz(ctl.eqgraph.gmap[lc].db,'')..'\n')                                 
                     end
                   end
                 
@@ -54377,17 +55050,17 @@ function GUI_DrawCtlBitmap_Strips()
                 
               end
 
-              if stripdata.controls[c].rsdata then
+              if ctl.rsdata then
                 local key = pfx..'c_'..c..'_rs5k_'
-                file:write('['..key..'samplefolder]'..nz(stripdata.controls[c].rsdata.samplefolder,'')..'\n')
-                file:write('['..key..'recurse]'..nz(tostring(stripdata.controls[c].rsdata.recurse),'')..'\n')
+                file:write('['..key..'samplefolder]'..nz(ctl.rsdata.samplefolder,'')..'\n')
+                file:write('['..key..'recurse]'..nz(tostring(ctl.rsdata.recurse),'')..'\n')
                 
-                file:write('['..key..'samplecnt]'..#stripdata.controls[c].rsdata.samples..'\n')
-                for sm = 1, #stripdata.controls[c].rsdata.samples do
+                file:write('['..key..'samplecnt]'..#ctl.rsdata.samples..'\n')
+                for sm = 1, #ctl.rsdata.samples do
                   local key = pfx..'c_'..c..'_rs5k_sample_'..sm..'_'
-                  file:write('['..key..'fol]'..nz(stripdata.controls[c].rsdata.samples[sm].fol,'')..'\n')
-                  file:write('['..key..'fn]'..nz(stripdata.controls[c].rsdata.samples[sm].fn,'')..'\n')
-                  file:write('['..key..'fav]'..nz(tostring(stripdata.controls[c].rsdata.samples[sm].fav),false)..'\n')
+                  file:write('['..key..'fol]'..nz(ctl.rsdata.samples[sm].fol,'')..'\n')
+                  file:write('['..key..'fn]'..nz(ctl.rsdata.samples[sm].fn,'')..'\n')
+                  file:write('['..key..'fav]'..nz(tostring(ctl.rsdata.samples[sm].fav),false)..'\n')
                 end              
               
               end
@@ -56633,7 +57306,8 @@ function GUI_DrawCtlBitmap_Strips()
                  ctl.ctlcat == ctlcats.fxoffline or 
                  ctl.ctlcat == ctlcats.midictl or 
                  ctl.ctlcat == ctlcats.takeswitcher or 
-                 ctl.ctlcat == ctlcats.rs5k then
+                 ctl.ctlcat == ctlcats.rs5k or 
+                 ctl.ctlcat == ctlcats.fxmulti then
                 if ctl.ctltype ~= 5 then
                   local track = GetTrack(nz(ctl.tracknum,strips[strip].track.tracknum))
                   local cc = ctl.ctlcat
@@ -56645,7 +57319,7 @@ function GUI_DrawCtlBitmap_Strips()
                                                 ctl = c,
                                                 val = ctl.val,
                                                 dval = dval}
-                  if cc == ctlcats.fxoffline then
+                  if cc == ctlcats.fxoffline or cc == ctlcats.fxmulti then
                     offflag = true
                   end
   
@@ -56682,14 +57356,26 @@ function GUI_DrawCtlBitmap_Strips()
           if offflag == true then
             --place offline buttons at top of list otherwise snapshots not recalled correctly first click
             local tmp = {}
-            --local sscnt = 1
+            for sspos = 1, #snaps[snappos].data do
+              if strips[strip][page].controls[snaps[snappos].data[sspos].ctl].ctlcat == ctlcats.fxmulti and
+                 strips[strip][page].controls[snaps[snappos].data[sspos].ctl].addfx then
+                table.insert(tmp, snaps[snappos].data[sspos])
+              end
+            end
+            for sspos = 1, #snaps[snappos].data do
+              if strips[strip][page].controls[snaps[snappos].data[sspos].ctl].ctlcat == ctlcats.fxmulti and
+                 not strips[strip][page].controls[snaps[snappos].data[sspos].ctl].addfx then
+                table.insert(tmp, snaps[snappos].data[sspos])
+              end
+            end
             for sspos = 1, #snaps[snappos].data do
               if strips[strip][page].controls[snaps[snappos].data[sspos].ctl].ctlcat == ctlcats.fxoffline then
                 table.insert(tmp, snaps[snappos].data[sspos])
               end
             end
             for sspos = 1, #snaps[snappos].data do
-              if strips[strip][page].controls[snaps[snappos].data[sspos].ctl].ctlcat ~= ctlcats.fxoffline then
+              if strips[strip][page].controls[snaps[snappos].data[sspos].ctl].ctlcat ~= ctlcats.fxoffline and 
+                 strips[strip][page].controls[snaps[snappos].data[sspos].ctl].ctlcat ~= ctlcats.fxmulti then
                 table.insert(tmp, snaps[snappos].data[sspos])
               end
             end
@@ -56739,7 +57425,8 @@ function GUI_DrawCtlBitmap_Strips()
                    ctl.ctlcat == ctlcats.fxoffline or 
                    ctl.ctlcat == ctlcats.midictl or 
                    ctl.ctlcat == ctlcats.takeswitcher or 
-                   ctl.ctlcat == ctlcats.rs5k then
+                   ctl.ctlcat == ctlcats.rs5k or 
+                   ctl.ctlcat == ctlcats.fxmulti then
                   if ctl.ctltype ~= 5 then
                     local track = GetTrack(nz(ctl.tracknum,strips[strip].track.tracknum))
                     local cc = ctl.ctlcat
@@ -56751,7 +57438,7 @@ function GUI_DrawCtlBitmap_Strips()
                                                             ctl = c,
                                                             val = ctl.val,
                                                             dval = dval}
-                    if cc == ctlcats.fxoffline then
+                    if cc == ctlcats.fxoffline or cc == ctlcats.fxmulti then
                       offflag = true
                     end
   
@@ -56784,12 +57471,25 @@ function GUI_DrawCtlBitmap_Strips()
               local tmp = {}
               --local sscnt = 1
               for sspos = 1, #snaps.snapshot[snappos].data do
+                if strips[strip][page].controls[snaps.snapshot[snappos].data[sspos].ctl].ctlcat == ctlcats.fxmulti and 
+                   strips[strip][page].controls[snaps.snapshot[snappos].data[sspos].ctl].addfx then
+                  table.insert(tmp, snaps.snapshot[snappos].data[sspos])
+                end
+              end
+              for sspos = 1, #snaps.snapshot[snappos].data do
+                if strips[strip][page].controls[snaps.snapshot[snappos].data[sspos].ctl].ctlcat == ctlcats.fxmulti and 
+                   not strips[strip][page].controls[snaps.snapshot[snappos].data[sspos].ctl].addfx then
+                  table.insert(tmp, snaps.snapshot[snappos].data[sspos])
+                end
+              end
+              for sspos = 1, #snaps.snapshot[snappos].data do
                 if strips[strip][page].controls[snaps.snapshot[snappos].data[sspos].ctl].ctlcat == ctlcats.fxoffline then
                   table.insert(tmp, snaps.snapshot[snappos].data[sspos])
                 end
               end
               for sspos = 1, #snaps.snapshot[snappos].data do
-                if strips[strip][page].controls[snaps.snapshot[snappos].data[sspos].ctl].ctlcat ~= ctlcats.fxoffline then
+                if strips[strip][page].controls[snaps.snapshot[snappos].data[sspos].ctl].ctlcat ~= ctlcats.fxoffline and 
+                   strips[strip][page].controls[snaps.snapshot[snappos].data[sspos].ctl].ctlcat ~= ctlcats.fxmulti then
                   table.insert(tmp, snaps.snapshot[snappos].data[sspos])
                 end
               end
@@ -57526,6 +58226,26 @@ function GUI_DrawCtlBitmap_Strips()
                   end
                 end
                 
+                if ctl.ctlcat == ctlcats.fxmulti then
+                  local addfx = ctl.addfx            
+                  if addfx and #addfx > 0 then
+                    local afxcnt = #addfx
+                    local ntab = {}
+                    for afx = 1, #addfx do
+                    
+                      if guids[addfx[afx].guid] then
+                        ncnt = #ntab + 1
+                        ntab[ncnt] = {}
+                        ntab[ncnt].guid = guids[addfx[afx].guid]
+                        ntab[ncnt].fxnum = addfx[afx].fxnum
+                        ntab[ncnt].trn = addfx[afx].trn + t_offset
+                        ntab[ncnt].trguid = guids[addfx[afx].trguid]
+                      end              
+                    end
+                    ctl.addfx = ntab
+                  end
+                end
+                
                 --compatibility
                 if ctl.font == nil then ctl.font = fontname_def end
                 if ctl.xydata == nil then ctl.xydata = {snapa = 1, snapb = 1, snapc = 1, snapd = 1, x = 0.5, y = 0.5} end
@@ -57714,7 +58434,9 @@ function GUI_DrawCtlBitmap_Strips()
             if grids[switchers[s].grpids[g].id] then
               switchers[s].grpids[g].id = grids[switchers[s].grpids[g].id]
             else
+              local ogid = switchers[s].grpids[g].id
               switchers[s].grpids[g].id = GenID()
+              grids[ogid] = switchers[s].grpids[g].id
             end
           end
         end
@@ -57747,6 +58469,11 @@ function GUI_DrawCtlBitmap_Strips()
                 if ctl.switcherid then
                   if swids[ctl.switcherid] then
                     ctl.switcherid = swids[ctl.switcherid]
+                  else
+                  
+                  end
+                  if ctl.ctlcat == ctlcats.switcher_pagesel and grids[ctl.param] then
+                    ctl.param = grids[ctl.param]
                   else
                   
                   end
@@ -59044,8 +59771,55 @@ function GUI_DrawCtlBitmap_Strips()
     return fnd, fxchunk, s, e  
   
   end
-  
-  function ToggleFXOffline(strip, page, ctl, trn)
+
+  function ToggleFXBypass(strip, page, c, trn, forceval)
+
+    local ctl = strips[strip][page].controls[c]
+    trn = ctl.tracknum or trn
+    local track = GetTrack(trn)
+    if track then
+      local pn = reaper.TrackFX_GetNumParams(track,ctl.fxnum)
+      local v = reaper.TrackFX_GetParam(track,ctl.fxnum,pn-2)
+      local val = 1-v
+      --if forceval then
+        val = forceval or val
+      --end
+      reaper.TrackFX_SetParam(track,ctl.fxnum,pn-2,val)
+      if strip == tracks[track_select].strip then
+        SetCtlDirty(c)
+      end
+    end
+  end
+
+  function ToggleFXWet(strip, page, c, trn, notoggle, val)
+
+    local ctl = strips[strip][page].controls[c]
+    trn = ctl.tracknum or trn
+    local track = GetTrack(trn)
+    if track then
+      local pn = reaper.TrackFX_GetNumParams(track,ctl.fxnum)
+      local nv
+      if val then
+        nv = val
+      else
+        local v = reaper.TrackFX_GetParam(track,ctl.fxnum,pn-1)
+        if v > 0 then
+          v = 1
+        end
+        nv = v
+        if not notoggle then
+          nv = 1-nv
+        end
+      end
+        
+      reaper.TrackFX_SetParam(track,ctl.fxnum,pn-1,nv)
+      if strip == tracks[track_select].strip then
+        SetCtlDirty(c)
+      end
+    end
+  end
+    
+  function ToggleFXOffline(strip, page, ctl, trn, forceval)
     local trn = nz(strips[strip][page].controls[ctl].tracknum, trn)
     local fxn = strips[strip][page].controls[ctl].fxnum
     local str = GetTrack(trn)
@@ -59060,10 +59834,17 @@ function GUI_DrawCtlBitmap_Strips()
       if s and e then
         if i == fxn then 
           local byp = string.sub(chunk,s,e)
-          byp = string.gsub(byp,'(%d) (%d) (%d)', function(d,e,f) if e == '0' then return d..' 1 '..f else return d..' 0 '..f end end)
-          local nchunk = string.sub(chunk,0,s-1)..byp..string.sub(chunk,e+1)
-          SetTrackChunk(str,nchunk, false)
-          fnd = true 
+          local nbyp
+          if forceval then
+            nbyp = string.gsub(byp,'(%d) (%d) (%d)', function(d,e,f) return d..' '..forceval..' '..f end)
+          else
+            nbyp = string.gsub(byp,'(%d) (%d) (%d)', function(d,e,f) if e == '0' then return d..' 1 '..f else return d..' 0 '..f end end)
+          end
+          if nbyp ~= byp then
+            local nchunk = string.sub(chunk,0,s-1)..nbyp..string.sub(chunk,e+1)
+            SetTrackChunk(str,nchunk, false)
+          end
+          --fnd = true
           break 
         end
         s=e+1
@@ -59071,8 +59852,62 @@ function GUI_DrawCtlBitmap_Strips()
         break
       end
     end
-    return fnd, fxchunk, s, e  
+    --return fnd, fxchunk, s, e  
   
+  end
+
+  function SetFXOffline3(trn, fxn, offline, bypass, donotsetchunk, chunk)
+    local str = GetTrack(trn)
+    local chunk = chunk or GetTrackChunk(str, settings_usetrackchunkfix)
+    local retchunk = chunk
+    
+    local s,e, fnd = 0,0,nil
+    for i = 0,fxn do
+      s, e = string.find(chunk,'BYPASS %d %d %d',s)
+      if s and e then
+        if i == fxn then 
+          local byp = string.sub(chunk,s,e)
+          local nbyp
+          if offline then
+            nbyp = string.gsub(byp,'(%d) (%d) (%d)', function(d,e,f) return d..' '..offline..' '..f end)
+          else
+            nbyp = string.gsub(byp,'(%d) (%d) (%d)', function(d,e,f) if e == '0' then return d..' 1 '..f else return d..' 0 '..f end end)
+          end
+          if bypass then
+            nbyp = string.gsub(nbyp,'(%d) (%d) (%d)', function(d,e,f) return bypass..' '..e..' '..f end)          
+          end
+          if nbyp ~= byp then
+            local nchunk = string.sub(chunk,0,s-1)..nbyp..string.sub(chunk,e+1)
+            if donotsetchunk == true then
+              retchunk = nchunk
+            else
+              SetTrackChunk(str,nchunk, false)
+            end
+          end
+          break 
+        end
+        s=e+1
+      else
+        break
+      end
+    end
+    return retchunk
+  end
+  
+  function SetFXBypass(trn, fxn, forceval)
+    local tr = GetTrack(trn)
+    if tr then
+      local pn = reaper.TrackFX_GetNumParams(tr, fxn)
+      reaper.TrackFX_SetParam(tr, fxn, pn-2, forceval)
+    end    
+  end
+
+  function SetFXWet(trn, fxn, forceval)
+    local tr = GetTrack(trn)
+    if tr then
+      local pn = reaper.TrackFX_GetNumParams(tr, fxn)
+      reaper.TrackFX_SetParam(tr, fxn, pn-1, forceval)
+    end
   end
   
   function testchunkcopy(srctrn, dsttrn)
