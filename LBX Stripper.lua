@@ -14,7 +14,7 @@
 
 
   local lvar = {}
-  lvar.scriptver = '0.94.0060' --Script Version
+  lvar.scriptver = '0.94.0061' --Script Version
   
   lvar.ctlupdate_rr = nil
   lvar.ctlupdate_pos = 1
@@ -47995,7 +47995,7 @@ function GUI_DrawCtlBitmap_Strips()
   
   function FXMulti_GetState2(v)
     --local v = (state-1)/(#lvar.fxmulti_table-1)
-    return (v * (#lvar.fxmulti_table-1)) + 1
+    return round(v * (#lvar.fxmulti_table-1)) + 1
   end
   
   function FXMulti_GetState(tr, ctl)
@@ -48076,7 +48076,7 @@ function GUI_DrawCtlBitmap_Strips()
     local notfnd
     local afxcnt = #addfx
     local fxnums = {}
-    
+    --state = round(state)
     for a = 1, afxcnt do
     
       local tr = GetTrack(addfx[a].trn)
@@ -48145,7 +48145,8 @@ function GUI_DrawCtlBitmap_Strips()
     end
 
     if #fxnums > 0 then
-      SetCtlsEnabled(fxnums)
+      SetCtlsEnabled(fxnums, state)
+      update_ctls = true
     end
     
   end
@@ -50624,7 +50625,7 @@ function GUI_DrawCtlBitmap_Strips()
   
   end
   
-  function SetCtlEnabled(fxnum)
+  function SetCtlEnabled(fxnum, state)
   
     --local i
     --local enabled = reaper.TrackFX_GetEnabled(GetTrack(tracks[track_select].tracknum),fxnum)
@@ -50633,13 +50634,18 @@ function GUI_DrawCtlBitmap_Strips()
       local ctl = strips[strip][page].controls[i]
       if ctl.fxnum == fxnum then
         --ctl.dirty = true
+        if state == 4 then
+          ctl.offline = true
+        elseif state then
+          ctl.offline = false          
+        end        
         SetCtlDirty(i)
       end
     end
     
   end
 
-  function SetCtlsEnabled(fxnum)
+  function SetCtlsEnabled(fxnum, state)
   
     --local i
     --local enabled = reaper.TrackFX_GetEnabled(GetTrack(tracks[track_select].tracknum),fxnum)
@@ -50649,6 +50655,11 @@ function GUI_DrawCtlBitmap_Strips()
       for f = 1, #fxnum do
         if ctl.fxnum == fxnum[f] then
           --ctl.dirty = true
+          if state == 4 then
+            ctl.offline = true
+          elseif state then
+            ctl.offline = false          
+          end
           SetCtlDirty(i)
           break
         end
