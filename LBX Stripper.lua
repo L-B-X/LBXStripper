@@ -14,7 +14,7 @@
 
 
   local lvar = {}
-  lvar.scriptver = '0.94.0061' --Script Version
+  lvar.scriptver = '0.94.0062' --Script Version
   
   lvar.ctlupdate_rr = nil
   lvar.ctlupdate_pos = 1
@@ -34954,6 +34954,7 @@ function GUI_DrawCtlBitmap_Strips()
                       ToggleFXWet(strip, page, i, strips[strip].track.tracknum,true)                                  
                     end
                   end
+                  SetCtlEnabled(ctl.fxnum)
 
                   local state = FXMulti_GetState(tr, ctl)
                   ctl.val = (state-1)/(#lvar.fxmulti_table-1)
@@ -48065,6 +48066,7 @@ function GUI_DrawCtlBitmap_Strips()
     end
   
     SetCtlEnabled(fxnum)
+    update_ctls = true
   end
   
   function FXMulti_SetAddFX(ctl, state)
