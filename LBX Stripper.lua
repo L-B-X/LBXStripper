@@ -14,7 +14,7 @@
 
 
   local lvar = {}
-  lvar.scriptver = '0.94.0062' --Script Version
+  lvar.scriptver = '0.94.0063' --Script Version
   
   lvar.ctlupdate_rr = nil
   lvar.ctlupdate_pos = 1
@@ -43468,6 +43468,7 @@ function GUI_DrawCtlBitmap_Strips()
                        ctl.ctlcat == ctlcats.trackparam or 
                        ctl.ctlcat == ctlcats.tracksend or 
                        ctl.ctlcat == ctlcats.fxoffline or
+                       ctl.ctlcat == ctlcats.fxmulti or
                        ctl.ctlcat == ctlcats.midictl or 
                        ctl.ctlcat == ctlcats.takeswitcher or 
                        ctl.ctlcat == ctlcats.macro or 
@@ -43518,6 +43519,7 @@ function GUI_DrawCtlBitmap_Strips()
                strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.trackparam or 
                strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.tracksend or 
                strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.fxoffline or 
+               strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.fxmulti or 
                strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.midictl or 
                strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.takeswitcher or 
                strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.macro or 
