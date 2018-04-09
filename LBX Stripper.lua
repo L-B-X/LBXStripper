@@ -14,7 +14,7 @@
 
 
   local lvar = {}
-  lvar.scriptver = '0.94.0063' --Script Version
+  lvar.scriptver = '0.94.0064' --Script Version
   
   lvar.ctlupdate_rr = nil
   lvar.ctlupdate_pos = 1
@@ -29725,6 +29725,7 @@ function GUI_DrawCtlBitmap_Strips()
   end]]
 
   function keypress(char)
+  
     --DBG(tostring(mouse.ctrl)..'  '..tostring(mouse.shift)..'  '..tostring(mouse.alt)..'  '..char)
     
     if settings_disablekeysonlockedsurface and settings_locksurface then return end
@@ -60308,10 +60309,10 @@ function GUI_DrawCtlBitmap_Strips()
                                   lvar.midimsgval_table[miditab.msgtype]..string.format('%x',miditab.mchan-1),
                                   miditab.msg3, --CC num
                                   F_limit(vald,0,127)) -- CC val
-        elseif miditab.msgtype == 5 or miditab.msgtype == 6 then      
+        elseif miditab.msgtype == 5 or miditab.msgtype == 6 then
           reaper.StuffMIDIMessage(midioutsidx[miditab.output], 
                                   lvar.midimsgval_table[miditab.msgtype]..string.format('%x',miditab.mchan-1),
-                                  F_limit(vald,0,127), 
+                                  F_limit(vald,0,miditab.vmax), 
                                   0) -- CC val      
         elseif miditab.msgtype == 6 then      
           reaper.StuffMIDIMessage(midioutsidx[miditab.output], 
