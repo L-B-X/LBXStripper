@@ -14,7 +14,7 @@
 
 
   local lvar = {}
-  lvar.scriptver = '0.94.0064' --Script Version
+  lvar.scriptver = '0.94.0065' --Script Version
   
   lvar.ctlupdate_rr = nil
   lvar.ctlupdate_pos = 1
@@ -26875,7 +26875,7 @@ function GUI_DrawCtlBitmap_Strips()
         end
         local fdinact = false
         if ccat == ctlcats.fxparam then
-        elseif ccat == ctlcats.trackparam or ccat == ctlcats.tracksend or ccat == ctlcats.macro or ccat == ctlcats.snapshot then
+        elseif ccat == ctlcats.trackparam or ccat == ctlcats.tracksend or ccat == ctlcats.macro or ccat == ctlcats.snapshot or ccat == ctlcats.midictl then
         else
           fdinact = true
         end
@@ -26903,7 +26903,7 @@ function GUI_DrawCtlBitmap_Strips()
         local unl = '||Unlock All Controls'
         if ccat == ctlcats.fxparam then
           mstr = fft..'Faderbox learn (global)'..ff..'||'..fd..mod..'||Param Modulation||Enter value||'..mido..'||Open FX window||Add Envelope|Add All Envelopes For Plugin||'..mm..'Snapshots||>Tools|<Regenerate ID   (emergency only)||Toggle Topbar|Toggle Sidebar||'..lspfx..'Lock Surface'..unl
-        elseif ccat == ctlcats.trackparam or ccat == ctlcats.tracksend or ccat == ctlcats.macro or ccat == ctlcats.snapshot then
+        elseif ccat == ctlcats.trackparam or ccat == ctlcats.tracksend or ccat == ctlcats.macro or ccat == ctlcats.snapshot or ccat == ctlcats.midictl then
           mstr = fft..'Faderbox learn (global)'..ff..'||'..fd..mod..'|#Param Modulation||Enter value||'..mido..'||#Open FX window||#Add Envelope|#Add All Envelopes For Plugin||'..mm..'Snapshots||>Tools|<Regenerate ID   (emergency only)||Toggle Topbar|Toggle Sidebar||'..lspfx..'Lock Surface'..unl..snap                  
         else
           mstr = fft..'#Faderbox learn (global)'..ff..'||'..fd..mod..'|#Param Modulation||Enter value||'..mido..'||#Open FX window||#Add Envelope|#Add All Envelopes For Plugin||'..mm..'Snapshots||>Tools|<Regenerate ID   (emergency only)||Toggle Topbar|Toggle Sidebar||'..lspfx..'Lock Surface'..unl                  
@@ -36647,7 +36647,8 @@ function GUI_DrawCtlBitmap_Strips()
                         ctl.ctlcat == ctlcats.tracksend or
                         ctl.ctlcat == ctlcats.macro or  
                         ctl.ctlcat == ctlcats.snapshot or
-                        ctl.ctlcat == ctlcats.switcher) then 
+                        ctl.ctlcat == ctlcats.switcher or 
+                        ctl.ctlcat == ctlcats.midictl) then 
               dragfader = {x = mouse.mx, y = mouse.my, ctl = c}
             else
               dragfader = {x = mouse.mx, y = mouse.my, ctl = -1}          
