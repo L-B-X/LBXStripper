@@ -14,7 +14,7 @@
 
 
   local lvar = {}
-  lvar.scriptver = '0.94.0065' --Script Version
+  lvar.scriptver = '0.94.0066' --Script Version
   
   lvar.ctlupdate_rr = nil
   lvar.ctlupdate_pos = 1
@@ -19156,44 +19156,26 @@ function GUI_DrawCtlBitmap_Strips()
     if ctlcat == ctlcats.fxparam then    
       if track == nil then return end
       local _, min, max = reaper.TrackFX_GetParam(track, fxnum, paramnum)
-      if checkov and checkov == true and c then
+      if checkov and checkov == true and ctl then
         min = ctl.minov or min
         max = ctl.maxov or max
-        --[[if ctl.minov then
-          min = ctl.minov
-        end
-        if ctl.maxov then
-          max = ctl.maxov
-        end ]]     
       end
       return min, max  
     
     elseif ctlcat == ctlcats.trackparam then
       local min, max = trctls_table[paramnum].min, trctls_table[paramnum].max
-      if checkov and checkov == true and c then
+      if checkov and checkov == true and ctl then
         min = ctl.minov or min
         max = ctl.maxov or max
-        --[[if ctl.minov then
-          min = ctl.minov
-        end
-        if ctl.maxov then
-          max = ctl.maxov
-        end ]]     
       end
       return tonumber(min), tonumber(max)  
       
     elseif ctlcat == ctlcats.tracksend then
       local idx = math.floor((paramnum-1) % 3)+1
       local min, max = trsends_mmtable[idx].min, trsends_mmtable[idx].max
-      if checkov and checkov == true and c then
+      if checkov and checkov == true and ctl then
         min = ctl.minov or min
         max = ctl.maxov or max
-        --[[if ctl.minov then
-          min = ctl.minov
-        end
-        if ctl.maxov then
-          max = ctl.maxov
-        end ]]     
       end
       return tonumber(min), tonumber(max)  
     else 
@@ -19207,14 +19189,10 @@ function GUI_DrawCtlBitmap_Strips()
       local _, min, max = reaper.TrackFX_GetParam(track, fxnum, paramnum)
       if checkov and checkov == true and c then
         local ctl = strips[tracks[track_select].strip][page].controls[c]
-        min = ctl.minov or min
-        max = ctl.maxov or max
-        --[[if ctl.minov then
-          min = ctl.minov
+        if ctl then
+          min = ctl.minov or min
+          max = ctl.maxov or max
         end
-        if ctl.maxov then
-          max = ctl.maxov
-        end ]]     
       end
       return min, max  
     
@@ -19222,14 +19200,10 @@ function GUI_DrawCtlBitmap_Strips()
       local min, max = trctls_table[paramnum].min, trctls_table[paramnum].max
       if checkov and checkov == true and c then
         local ctl = strips[tracks[track_select].strip][page].controls[c]
-        min = ctl.minov or min
-        max = ctl.maxov or max
-        --[[if ctl.minov then
-          min = ctl.minov
+        if ctl then
+          min = ctl.minov or min
+          max = ctl.maxov or max
         end
-        if ctl.maxov then
-          max = ctl.maxov
-        end ]]     
       end
       return tonumber(min), tonumber(max)  
       
@@ -19238,14 +19212,10 @@ function GUI_DrawCtlBitmap_Strips()
       local min, max = trsends_mmtable[idx].min, trsends_mmtable[idx].max
       if checkov and checkov == true and c then
         local ctl = strips[tracks[track_select].strip][page].controls[c]
-        min = ctl.minov or min
-        max = ctl.maxov or max
-        --[[if ctl.minov then
-          min = ctl.minov
+        if ctl then
+          min = ctl.minov or min
+          max = ctl.maxov or max
         end
-        if ctl.maxov then
-          max = ctl.maxov
-        end ]]     
       end
       return tonumber(min), tonumber(max)  
     else 
