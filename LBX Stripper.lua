@@ -14,7 +14,7 @@
 
 
   local lvar = {}
-  lvar.scriptver = '0.94.0066' --Script Version
+  lvar.scriptver = '0.94.0068' --Script Version
   
   lvar.ctlupdate_rr = nil
   lvar.ctlupdate_pos = 1
@@ -31,7 +31,7 @@
   lvar.ctltype_table = {'KNOB/SLIDER','BUTTON','BUTTON INV','CYCLE BUTTON','METER','MEM BUTTON','MOMENT BTN','MOMENT INV','FLASH BUTTON','FLASH INV'}
   lvar.trctltype_table = {'Track Controls','Track Sends','Track Meters','Other Controls'}
   lvar.special_table = {}
-  lvar.otherctl_table = {'Action Trigger','Macro Control','EQ Engine','Strip Switcher','ReaControlMidi Switch','Midi/OSC Control','Take Switcher','RS5K Control'}
+  lvar.otherctl_table = {'Action Trigger','Macro Control','EQ Engine','Strip Switcher','ReaControlMidi Switch','Midi/OSC Control','Take Switcher','RS5K Control','Param Update Ctl'}
   lvar.scalemode_preset_table = {'','NORMAL','REAPER VOL'}
   lvar.lfomode_table = {'NORMAL MODE','TAKESWITCH MODE','RS5K MODE'}
   lvar.scalemode_table = {1/8,1/7,1/6,1/5,1/4,1/3,1/2,1,2,3,4,5,6,7,8}
@@ -296,7 +296,8 @@
              rs5k = 19,
              midieditor_pageswitch = 20,
              switcher_pagesel = 21,
-             fxmulti = 22}
+             fxmulti = 22,
+             macro_updateparam = 23}
 
   lvar.ctlcats_nm = {'fxparam',
                 'trackparam',
@@ -320,7 +321,8 @@
                  'rs5k',
                  'midi editor - page switcher',
                  'switcher_pagesel',
-                 'fxmulti'}
+                 'fxmulti',
+                 'macro_updateparam'}
              
   lvar.gfxtype = {img = 0,
                   txt = 1
@@ -5649,12 +5651,13 @@
       elseif dragparam.type == 'macro' then
         local mcnt = 0
         for c = 1, #strips[strip][page].controls do
-          if strips[strip][page].controls[c].ctlcat == ctlcats.macro then
+          if strips[strip][page].controls[c].ctlcat == ctlcats.macro and strips[strip][page].controls[c].macrotype == 0 then
             mcnt = mcnt + 1
           end
         end
         strips[strip][page].controls[ctlnum] = {c_id = GenID(),
                                                 ctlcat = ctlcats.macro,
+                                                macrotype = 0,
                                                 fxname='Macro Control',
                                                 fxguid=nil, 
                                                 fxnum=nil, 
@@ -5708,6 +5711,70 @@
                                                 clickthrough = clickthrough_select,
                                                 knobsens = table.copy(settings_defknobsens)
                                                }
+      elseif dragparam.type == 'macro_updateparam' then
+        local mcnt = 0
+        for c = 1, #strips[strip][page].controls do
+          if strips[strip][page].controls[c].ctlcat == ctlcats.macro and strips[strip][page].controls[c].macrotype == 1 then
+            mcnt = mcnt + 1
+          end
+        end
+        strips[strip][page].controls[ctlnum] = {c_id = GenID(),
+                                                ctlcat = ctlcats.macro_updateparam,
+                                                macrotype = 1,
+                                                fxname='Param Update Control',
+                                                fxguid=nil, 
+                                                fxnum=nil, 
+                                                fxfound = true,
+                                                param = trctl_select,
+                                                param_info = {paramname = 'Param UC'..string.format('%i',mcnt+1),
+                                                              paramidx = nil},
+                                                ctltype = 2,
+                                                knob_select = knob_select,
+                                                ctl_info = {fn = ctl_files[knob_select].fn,
+                                                            frames = ctl_files[knob_select].frames,
+                                                            imageidx = ctl_files[knob_select].imageidx, 
+                                                            cellh = ctl_files[knob_select].cellh},
+                                                x = x,
+                                                y = y,
+                                                w = w,
+                                                poslock = false,
+                                                scale = scale_select,
+                                                xsc = x + math.floor(w/2 - (w*scale_select)/2),
+                                                ysc = y + math.floor(ctl_files[knob_select].cellh/2 - (ctl_files[knob_select].cellh*scale_select)/2),
+                                                wsc = w*scale_select,
+                                                hsc = ctl_files[knob_select].cellh*scale_select,
+                                                show_paramname = show_paramname,
+                                                show_paramval = show_paramval,
+                                                ctlname_override = '',
+                                                textcol = textcol_select,
+                                                textoff = textoff_select,
+                                                textoffval = textoffval_select,
+                                                textoffx = textoff_selectx,
+                                                textoffvalx = textoffval_selectx,
+                                                textsize = textsize_select,
+                                                textsizev = textsizev_select,
+                                                textcolv = textcolv_select,
+                                                val = 0,
+                                                defval = 0,
+                                                maxdp = maxdp_select,
+                                                cycledata = {statecnt = 0,val = 0,mapptof = false,draggable = false,spread = false, {}},
+                                                xydata = {snapa = 1, snapb = 1, snapc = 1, snapd = 1, x = 0.5, y = 0.5},
+                                                membtn = {state = false,
+                                                          mem = nil},
+                                                id = nil,
+                                                tracknum = nil,
+                                                trackguid = nil,
+                                                scalemode = 8,
+                                                framemode = 1,
+                                                horiz = horiz_select,
+                                                poslock = false,
+                                                bypassbg_c = bypass_bgdraw_c_select,
+                                                bypassbg_n = bypass_bgdraw_n_select,
+                                                bypassbg_v = bypass_bgdraw_v_select,
+                                                clickthrough = clickthrough_select,
+                                                knobsens = table.copy(settings_defknobsens)
+                                               }
+
       elseif dragparam.type == 'eqcontrol' then
         local mcnt = 0
         for c = 1, #strips[strip][page].controls do
@@ -10398,7 +10465,7 @@ function GUI_DrawCtlBitmap_Strips()
                 local maxdp = ctl.maxdp or -1
                 local dvoff = ctl.dvaloffset
                 local tnum = ctl.tracknum
-                local font = ctl.font
+                local font = ctl.fontf
                 local missing
   
   --              if fxnum == nil then return end
@@ -10417,8 +10484,16 @@ function GUI_DrawCtlBitmap_Strips()
                 
                 if track ~= nil then
                   if ctlcat == ctlcats.fxparam or ctlcat == ctlcats.trackparam or ctlcat == ctlcats.tracksend or ctlcat == ctlcats.pkmeter then
-                    v2 = frameScale(ctl.framemode, math.max(math.min(GetParamValue2(ctlcat,track,fxnum,param,i),1),0)) or 0
-                    val2 = F_limit(round(frames*v2),0,frames-1)
+                    if settings_enablednu ~= true or ctl.dnu ~= true then
+                      v2 = frameScale(ctl.framemode, math.max(math.min(GetParamValue2(ctlcat,track,fxnum,param,i),1),0)) or 0
+                      val2 = F_limit(round(frames*v2),0,frames-1)
+                    else
+                      --local mn,mx = GetParamMinMax(ctlcat,track,fxnum,param,false,i)
+                      --mn,mx = 0,1
+                      --v2 = frameScale(ctl.framemode, normalize(mn,mx,ctl.val)) or 0
+                      v2 = frameScale(ctl.framemode, ctl.val) or 0
+                      val2 = F_limit(round(frames*v2),0,frames-1)                    
+                    end
                   elseif ctlcat == ctlcats.fxoffline or ctlcat == ctlcats.macro or ctlcat == ctlcats.midictl or ctlcat == ctlcats.switcher_pagesel then
                     v2 = ctl.val
                     val2 = F_limit(round(frames*v2),0,frames-1)
@@ -10539,19 +10614,6 @@ function GUI_DrawCtlBitmap_Strips()
                       else
                         Disp_Name = ctlnmov or ctl.param_info.paramname
                         Disp_ParamV = ''
-                        --[[if ctlnmov == '' then
-                          _, Disp_Name = reaper.TrackFX_GetParamName(track, fxnum, param, "")
-                        else
-                          Disp_Name = ctlnmov
-                        end
-                        Disp_ParamV = ctl.dval or ctl.val
-
-                        if dvoff and dvoff ~= 0 then
-                          Disp_ParamV = dvaloffset(Disp_ParamV, ctl.dvaloffset)  
-                        end
-                        if maxdp > -1 then
-                          Disp_ParamV = roundX(Disp_ParamV, maxdp)                  
-                        end]]
                         
                         val2 = 0
                         missing = true
@@ -10562,8 +10624,11 @@ function GUI_DrawCtlBitmap_Strips()
                       else
                         Disp_Name = ctlnmov
                       end
-                      _, Disp_ParamV = reaper.TrackFX_GetFormattedParamValue(track, fxnum, param, "")
-                     
+                      if settings_enablednu ~= true or ctl.dnu ~= true then
+                        _, Disp_ParamV = reaper.TrackFX_GetFormattedParamValue(track, fxnum, param, "")
+                      else
+                        Disp_ParamV = ctl.dval
+                      end
                       if dvoff and dvoff ~= 0 then
                         Disp_ParamV = dvaloffset(Disp_ParamV, ctl.dvaloffset)  
                       end
@@ -10656,7 +10721,7 @@ function GUI_DrawCtlBitmap_Strips()
                     if show_randomopts == true and randopts_selectctl == i then
                       snaprand_hl = true
                     end
-                  elseif ctlcat == ctlcats.fxoffline then
+                  elseif ctlcat == ctlcats.fxoffline or ctlcat == ctlcats.macro_updateparam then
                     spv = false
                     if ctlnmov == '' then
                       Disp_Name = pname
@@ -13946,40 +14011,43 @@ function GUI_DrawCtlBitmap_Strips()
                       y = obj.sections[408].y - obj.sections[408].h,
                       w = obj.sections[408].w,
                       h = obj.sections[408].h}
-                      
-        GUI_textC(gui,xywh,'AUTOMATION',gui.color.white,-2)
-        local macrofader = strips[tracks[track_select].strip][page].controls[macroctl_select].macrofader
-        if macrofader then
-          GUI_DrawButton(gui, 'FADER '..string.format('%i',macrofader), obj.sections[408], gui.color.white, gui.skol.butt1_txt, true, '', false)      
-        else
-          GUI_DrawButton(gui, 'NONE', obj.sections[408], -3, gui.color.black, false, '', false)
+        
+        GUI_DrawButton(gui, 'ADD PARAMETERS', obj.sections[409], gui.color.white, gui.skol.butt1_txt, true, '', false)
+        if macroedittype_select == 0 then                    
+          GUI_textC(gui,xywh,'AUTOMATION',gui.color.white,-2)
+          local macrofader = strips[tracks[track_select].strip][page].controls[macroctl_select].macrofader
+          if macrofader then
+            GUI_DrawButton(gui, 'FADER '..string.format('%i',macrofader), obj.sections[408], gui.color.white, gui.skol.butt1_txt, true, '', false)      
+          else
+            GUI_DrawButton(gui, 'NONE', obj.sections[408], -3, gui.color.black, false, '', false)
+          end
+          GUI_DrawButton(gui, 'CAPTURE A', obj.sections[411], gui.color.white, gui.skol.butt1_txt, true, '', false)      
+          GUI_DrawButton(gui, 'CAPTURE B', obj.sections[412], gui.color.white, gui.skol.butt1_txt, true, '', false)      
+          if settings_macroeditmonitor == true then
+            GUI_DrawButton(gui, 'MONITOR', obj.sections[413], -4, gui.skol.butt1_txt, true, '', false)      
+            --GUI_DrawBar(gui, 'MONITOR', obj.sections[413], skin.butt18Y, true, gui.color.black, nil, -2)     
+          else
+            --GUI_DrawBar(gui, 'MONITOR', obj.sections[413], skin.butt18, true, gui.color.black, nil, -2)              
+            GUI_DrawButton(gui, 'MONITOR', obj.sections[413], gui.color.white, gui.skol.butt1_txt, true, '', false)      
+          end
         end
-        GUI_DrawButton(gui, 'ADD PARAMETERS', obj.sections[409], gui.color.white, gui.skol.butt1_txt, true, '', false)      
-        GUI_DrawButton(gui, 'CAPTURE A', obj.sections[411], gui.color.white, gui.skol.butt1_txt, true, '', false)      
-        GUI_DrawButton(gui, 'CAPTURE B', obj.sections[412], gui.color.white, gui.skol.butt1_txt, true, '', false)      
-        if settings_macroeditmonitor == true then
-          GUI_DrawButton(gui, 'MONITOR', obj.sections[413], -4, gui.skol.butt1_txt, true, '', false)      
-          --GUI_DrawBar(gui, 'MONITOR', obj.sections[413], skin.butt18Y, true, gui.color.black, nil, -2)     
-        else
-          --GUI_DrawBar(gui, 'MONITOR', obj.sections[413], skin.butt18, true, gui.color.black, nil, -2)              
-          GUI_DrawButton(gui, 'MONITOR', obj.sections[413], gui.color.white, gui.skol.butt1_txt, true, '', false)      
-        end      
       end
   
-      local w = gfx.getimgdim(def_eqcknobf)
-      local h = ctl_files[def_eqcknobfctl].cellh
-      local frames = ctl_files[def_eqcknobfctl].frames-1
-      local v = math.floor(strips[tracks[track_select].strip][page].controls[macroctl_select].val*frames)
-      f_Get_SSV(gui.color.black)
-      gfx.rect(obj.sections[410].x,
-               obj.sections[410].y,
-               obj.sections[410].w,
-               obj.sections[410].h,1)          
+      if macroedittype_select == 0 then                    
       
-      gfx.blit(def_eqcknobf, 1, 0, 0, v* h, w, h, obj.sections[410].x, obj.sections[410].y)
-      --xywh.y = xywh.y + 30
-      --GUI_textC(gui,xywh,roundX(freq_d,1, suffix),gui.color.white,-2)    
-    
+        local w = gfx.getimgdim(def_eqcknobf)
+        local h = ctl_files[def_eqcknobfctl].cellh
+        local frames = ctl_files[def_eqcknobfctl].frames-1
+        local v = math.floor(strips[tracks[track_select].strip][page].controls[macroctl_select].val*frames)
+        f_Get_SSV(gui.color.black)
+        gfx.rect(obj.sections[410].x,
+                 obj.sections[410].y,
+                 obj.sections[410].w,
+                 obj.sections[410].h,1)          
+        
+        gfx.blit(def_eqcknobf, 1, 0, 0, v* h, w, h, obj.sections[410].x, obj.sections[410].y)
+      end
+      
       for m = 1, macroedit.pcnt do
       
         local mm = m-1
@@ -13988,6 +14056,7 @@ function GUI_DrawCtlBitmap_Strips()
 
           local ctl = strips[tracks[track_select].strip][page].controls[macro[m+macroedit_poffs].ctl]
           if ctl then
+
             if update_gfx then --or update_surface then
               local xywh = {x = obj.sections[402].x,
                             y = obj.sections[402].y + mm*macroedit.sech +2,
@@ -13999,17 +14068,20 @@ function GUI_DrawCtlBitmap_Strips()
                        xywh.w,
                        xywh.h, 1)
     
-              local xywh = {x = obj.sections[405].x,
-                            y = obj.sections[405].y + mm*macroedit.sech +2,
-                            w = obj.sections[405].w,
-                            h = macroedit.sech-4}
-              f_Get_SSV('32 32 32')              
-              gfx.rect(xywh.x,
-                       xywh.y, 
-                       xywh.w,
-                       xywh.h, 1)
-              --GUI_textC(gui, xywh, lvar.macroscale_table[macro[m+macroedit_poffs].shape], gui.color.white, -2)          
-              GUI_Str(gui, xywh, lvar.macroscale_table[macro[m+macroedit_poffs].shape], 5, gui.color.white, -2, 1)
+              if macroedittype_select == 0 then                    
+              
+                local xywh = {x = obj.sections[405].x,
+                              y = obj.sections[405].y + mm*macroedit.sech +2,
+                              w = obj.sections[405].w,
+                              h = macroedit.sech-4}
+                f_Get_SSV('32 32 32')              
+                gfx.rect(xywh.x,
+                         xywh.y, 
+                         xywh.w,
+                         xywh.h, 1)
+                --GUI_textC(gui, xywh, lvar.macroscale_table[macro[m+macroedit_poffs].shape], gui.color.white, -2)          
+                GUI_Str(gui, xywh, lvar.macroscale_table[macro[m+macroedit_poffs].shape], 5, gui.color.white, -2, 1)
+              end
               
               xywh = {x = obj.sections[402].x+30,
                       y = obj.sections[402].y + mm*macroedit.sech,
@@ -14030,143 +14102,146 @@ function GUI_DrawCtlBitmap_Strips()
                 GUI_DrawBar(gui,'M',xywh,skin.butt18,true,gui.skol.sb_txt_on,gui.skol.sb_txt_off,-2)
               end
     
-              xywh = {x = obj.sections[414].x,
-                      y = obj.sections[414].y + mm*macroedit.sech + 0.5*macroedit.sech - 10,
-                      w = obj.sections[414].w,
-                      h = 20}
-              if macro[m+macroedit_poffs].bi then
-                GUI_DrawBar(gui,'BI',xywh,skin.butt18Y,true,gui.color.black,gui.color.black,-5)
-              else
-                GUI_DrawBar(gui,'BI',xywh,skin.butt18,true,gui.skol.sb_txt_on,gui.color.black,-5)
+              if macroedittype_select == 0 then    
+                
+                xywh = {x = obj.sections[414].x,
+                        y = obj.sections[414].y + mm*macroedit.sech + 0.5*macroedit.sech - 10,
+                        w = obj.sections[414].w,
+                        h = 20}
+                if macro[m+macroedit_poffs].bi then
+                  GUI_DrawBar(gui,'BI',xywh,skin.butt18Y,true,gui.color.black,gui.color.black,-5)
+                else
+                  GUI_DrawBar(gui,'BI',xywh,skin.butt18,true,gui.skol.sb_txt_on,gui.color.black,-5)
+                end
+  
+                xywh = {x = obj.sections[416].x,
+                        y = obj.sections[416].y + mm*macroedit.sech + 0.5*macroedit.sech - 10,
+                        w = obj.sections[416].w,
+                        h = 20}
+                if macro[m+macroedit_poffs].relative then
+                  GUI_DrawBar(gui,'REL',xywh,skin.butt18Y,true,gui.color.black,gui.color.black,-5)
+                else
+                  GUI_DrawBar(gui,'REL',xywh,skin.butt18,true,gui.skol.sb_txt_on,gui.color.black,-5)
+                end
+      
+                xywh = {x = obj.sections[415].x,
+                        y = obj.sections[415].y + mm*macroedit.sech + 0.5*macroedit.sech - 10,
+                        w = obj.sections[415].w,
+                        h = 20}
+                if macro[m+macroedit_poffs].inv then
+                  GUI_DrawBar(gui,'INV',xywh,skin.butt18Y,true,gui.color.black,gui.color.black,-6)
+                else
+                  GUI_DrawBar(gui,'INV',xywh,skin.butt18,true,gui.skol.sb_txt_on,gui.color.black,-6)
+                end
               end
-
-              xywh = {x = obj.sections[416].x,
-                      y = obj.sections[416].y + mm*macroedit.sech + 0.5*macroedit.sech - 10,
-                      w = obj.sections[416].w,
-                      h = 20}
-              if macro[m+macroedit_poffs].relative then
-                GUI_DrawBar(gui,'REL',xywh,skin.butt18Y,true,gui.color.black,gui.color.black,-5)
-              else
-                GUI_DrawBar(gui,'REL',xywh,skin.butt18,true,gui.skol.sb_txt_on,gui.color.black,-5)
-              end
-    
-              xywh = {x = obj.sections[415].x,
-                      y = obj.sections[415].y + mm*macroedit.sech + 0.5*macroedit.sech - 10,
-                      w = obj.sections[415].w,
-                      h = 20}
-              if macro[m+macroedit_poffs].inv then
-                GUI_DrawBar(gui,'INV',xywh,skin.butt18Y,true,gui.color.black,gui.color.black,-6)
-              else
-                GUI_DrawBar(gui,'INV',xywh,skin.butt18,true,gui.skol.sb_txt_on,gui.color.black,-6)
-              end
-    
+              
               xywh = {x = obj.sections[407].x,
                       y = obj.sections[407].y + mm*macroedit.sech + 0.5*macroedit.sech - 10,
                       w = obj.sections[407].w,
                       h = 20}
               GUI_DrawBar(gui,'X',xywh,skin.butt18,true,gui.skol.sb_txt_on,gui.color.black,-2)
-    
             end
-  
-  
-  
-            local w, h = macroedit.sliderw, macroedit.sliderh
+          
+            if macroedittype_select == 0 then                    
             
-            local p = macro[m+macroedit_poffs].A_val           
-            local p2 = macro[m+macroedit_poffs].B_val           
-  
-            local py = (obj.sections[403].y + mm*macroedit.sech) + math.floor(macroedit.sech/2)-1
-  
-            local xywh = {x = obj.sections[403].x - macroedit.sliderw*0.5-6,
-                          y = obj.sections[403].y + mm*macroedit.sech +2,
-                          w = obj.sections[403].w + macroedit.sliderw+12,
-                          h = macroedit.sech-4}          
-            f_Get_SSV('32 32 32')              
-            gfx.rect(xywh.x,
-                     xywh.y, 
-                     xywh.w,
-                     xywh.h, 1)
-  
-            local xywh = {x = obj.sections[404].x - macroedit.sliderw*0.5-6,
-                          y = obj.sections[404].y + mm*macroedit.sech +2,
-                          w = obj.sections[404].w + macroedit.sliderw+12,
-                          h = macroedit.sech-4}          
-            f_Get_SSV('32 32 32')              
-            gfx.rect(xywh.x,
-                     xywh.y, 
-                     xywh.w,
-                     xywh.h, 1)
-  
-            xywh = {x = obj.sections[403].x,
-                    y = (obj.sections[403].y + mm*macroedit.sech) + math.floor(macroedit.sech/2)-1,
-                    w = obj.sections[403].w,
-                    h = 2}
-            f_Get_SSV('16 16 16')              
-            gfx.rect(xywh.x,
-                     xywh.y, 
-                     xywh.w,
-                     xywh.h, 1)
-            
-            xywh.x = obj.sections[404].x
-            gfx.rect(xywh.x,
-                     xywh.y, 
-                     xywh.w,
-                     xywh.h, 1)
-            
-            xywh = {x = obj.sections[403].x + p*obj.sections[403].w - (w/2),
-                    y = (obj.sections[403].y + mm*macroedit.sech) + math.floor(macroedit.sech/2) - (h/2),
-                    w = w,
-                    h = h}
-            if macro[m+macroedit_poffs].mute == true then
-              f_Get_SSV(gui.color.red)          
-            else
-              f_Get_SSV(gui.color.blue)
-            end
-            gfx.a = 0.6
-            if macro[m+macroedit_poffs].relative == false then
-              if macro[m+macroedit_poffs].bi == true then
-                x1 = F_limit(p*obj.sections[403].w - p2*obj.sections[403].w,0,obj.sections[403].w)
-                x2 = F_limit(p*obj.sections[403].w + p2*obj.sections[403].w,0,obj.sections[403].w)
-                gfx.line(obj.sections[403].x + x1,py,obj.sections[403].x + x2,py)          
-              else
-                gfx.line(obj.sections[403].x + p*obj.sections[403].w,py,obj.sections[403].x + p2*obj.sections[403].w,py)
-              end
-            end
+              local w, h = macroedit.sliderw, macroedit.sliderh
               
-            gfx.a = 1
-            if macro[m+macroedit_poffs].relative ~= true then
-              GUI_DrawBar(gui,'',xywh,skin.slidbutt,true,gui.color.black,gui.color.black,-2)
-            end
-            
-            if macro[m+macroedit_poffs].mute == nil or macro[m+macroedit_poffs].mute == false then
-              f_Get_SSV(gui.color.yellow)
-              xywh.x = obj.sections[403].x + ctl.val*obj.sections[403].w
-              xywh.w = 1
-              xywh.y = xywh.y + 2
-              xywh.h = xywh.h - 4
+              local p = macro[m+macroedit_poffs].A_val           
+              local p2 = macro[m+macroedit_poffs].B_val           
+    
+              local py = (obj.sections[403].y + mm*macroedit.sech) + math.floor(macroedit.sech/2)-1
+    
+              local xywh = {x = obj.sections[403].x - macroedit.sliderw*0.5-6,
+                            y = obj.sections[403].y + mm*macroedit.sech +2,
+                            w = obj.sections[403].w + macroedit.sliderw+12,
+                            h = macroedit.sech-4}          
+              f_Get_SSV('32 32 32')              
               gfx.rect(xywh.x,
                        xywh.y, 
                        xywh.w,
                        xywh.h, 1)
+    
+              local xywh = {x = obj.sections[404].x - macroedit.sliderw*0.5-6,
+                            y = obj.sections[404].y + mm*macroedit.sech +2,
+                            w = obj.sections[404].w + macroedit.sliderw+12,
+                            h = macroedit.sech-4}          
+              f_Get_SSV('32 32 32')              
+              gfx.rect(xywh.x,
+                       xywh.y, 
+                       xywh.w,
+                       xywh.h, 1)
+    
+              xywh = {x = obj.sections[403].x,
+                      y = (obj.sections[403].y + mm*macroedit.sech) + math.floor(macroedit.sech/2)-1,
+                      w = obj.sections[403].w,
+                      h = 2}
+              f_Get_SSV('16 16 16')              
+              gfx.rect(xywh.x,
+                       xywh.y, 
+                       xywh.w,
+                       xywh.h, 1)
+              
+              xywh.x = obj.sections[404].x
+              gfx.rect(xywh.x,
+                       xywh.y, 
+                       xywh.w,
+                       xywh.h, 1)
+              
+              xywh = {x = obj.sections[403].x + p*obj.sections[403].w - (w/2),
+                      y = (obj.sections[403].y + mm*macroedit.sech) + math.floor(macroedit.sech/2) - (h/2),
+                      w = w,
+                      h = h}
+              if macro[m+macroedit_poffs].mute == true then
+                f_Get_SSV(gui.color.red)          
+              else
+                f_Get_SSV(gui.color.blue)
+              end
+              gfx.a = 0.6
+              if macro[m+macroedit_poffs].relative == false then
+                if macro[m+macroedit_poffs].bi == true then
+                  x1 = F_limit(p*obj.sections[403].w - p2*obj.sections[403].w,0,obj.sections[403].w)
+                  x2 = F_limit(p*obj.sections[403].w + p2*obj.sections[403].w,0,obj.sections[403].w)
+                  gfx.line(obj.sections[403].x + x1,py,obj.sections[403].x + x2,py)          
+                else
+                  gfx.line(obj.sections[403].x + p*obj.sections[403].w,py,obj.sections[403].x + p2*obj.sections[403].w,py)
+                end
+              end
+                
+              gfx.a = 1
+              if macro[m+macroedit_poffs].relative ~= true then
+                GUI_DrawBar(gui,'',xywh,skin.slidbutt,true,gui.color.black,gui.color.black,-2)
+              end
+              
+              if macro[m+macroedit_poffs].mute == nil or macro[m+macroedit_poffs].mute == false then
+                f_Get_SSV(gui.color.yellow)
+                xywh.x = obj.sections[403].x + ctl.val*obj.sections[403].w
+                xywh.w = 1
+                xywh.y = xywh.y + 2
+                xywh.h = xywh.h - 4
+                gfx.rect(xywh.x,
+                         xywh.y, 
+                         xywh.w,
+                         xywh.h, 1)
+              end
+    
+              xywh = {x = obj.sections[404].x + p2*obj.sections[404].w - (w/2),
+                      y = (obj.sections[404].y + mm*macroedit.sech) + math.floor(macroedit.sech/2) - (h/2),
+                      w = w,
+                      h = h}
+              if macro[m+macroedit_poffs].mute == true then
+                f_Get_SSV(gui.color.red)          
+              else
+                f_Get_SSV(gui.color.blue)
+              end
+              gfx.a = 0.6
+              if macro[m+macroedit_poffs].bi == true or macro[m+macroedit_poffs].relative == true then
+                gfx.line(obj.sections[404].x,py,obj.sections[404].x + p2*obj.sections[404].w,py)
+              else
+                gfx.line(obj.sections[404].x + p*obj.sections[404].w,py,obj.sections[404].x + p2*obj.sections[404].w,py)
+              end
+              gfx.a = 1
+              GUI_DrawBar(gui,'',xywh,skin.slidbutt,true,gui.color.black,gui.color.black,-2)
             end
-  
-            xywh = {x = obj.sections[404].x + p2*obj.sections[404].w - (w/2),
-                    y = (obj.sections[404].y + mm*macroedit.sech) + math.floor(macroedit.sech/2) - (h/2),
-                    w = w,
-                    h = h}
-            if macro[m+macroedit_poffs].mute == true then
-              f_Get_SSV(gui.color.red)          
-            else
-              f_Get_SSV(gui.color.blue)
-            end
-            gfx.a = 0.6
-            if macro[m+macroedit_poffs].bi == true or macro[m+macroedit_poffs].relative == true then
-              gfx.line(obj.sections[404].x,py,obj.sections[404].x + p2*obj.sections[404].w,py)
-            else
-              gfx.line(obj.sections[404].x + p*obj.sections[404].w,py,obj.sections[404].x + p2*obj.sections[404].w,py)
-            end
-            gfx.a = 1
-            GUI_DrawBar(gui,'',xywh,skin.slidbutt,true,gui.color.black,gui.color.black,-2)
           end
         end      
       end
@@ -16300,17 +16375,19 @@ function GUI_DrawCtlBitmap_Strips()
             for c = 1, #ctl_select do
 
               local cx = ctl_select[c].ctl
+              local sctl = strips[tracks[track_select].strip][page].controls[cx]
+              if sctl.ctlcat == ctlcats.fxparam or 
+                 sctl.ctlcat == ctlcats.trackparam or 
+                 sctl.ctlcat == ctlcats.tracksend or 
+                 sctl.ctlcat == ctlcats.fxoffline or 
+                 sctl.ctlcat == ctlcats.rs5k or 
+                 sctl.ctlcat == ctlcats.midictl or 
+                 (sctl.ctlcat == ctlcats.macro and macroedittype_select == 1) then 
 
-              if strips[tracks[track_select].strip][page].controls[cx].ctlcat == ctlcats.fxparam or 
-                 strips[tracks[track_select].strip][page].controls[cx].ctlcat == ctlcats.trackparam or 
-                 strips[tracks[track_select].strip][page].controls[cx].ctlcat == ctlcats.tracksend or 
-                 strips[tracks[track_select].strip][page].controls[cx].ctlcat == ctlcats.fxoffline or 
-                 strips[tracks[track_select].strip][page].controls[cx].ctlcat == ctlcats.rs5k then 
-
-                local x = strips[tracks[track_select].strip][page].controls[cx].xsc+4
-                local y = strips[tracks[track_select].strip][page].controls[cx].ysc+4
-                local w = strips[tracks[track_select].strip][page].controls[cx].wsc-8
-                local h = strips[tracks[track_select].strip][page].controls[cx].hsc-8
+                local x = sctl.xsc+4
+                local y = sctl.ysc+4
+                local w = sctl.wsc-8
+                local h = sctl.hsc-8
                 x=x-surface_offset.x+obj.sections[10].x
                 y=y-surface_offset.y+obj.sections[10].y
                 gfx.line(x,y,x+ls,y,1)
@@ -19115,12 +19192,6 @@ function GUI_DrawCtlBitmap_Strips()
         local ctl = strips[tracks[track_select].strip][page].controls[c]
         min = ctl.minov or min
         max = ctl.maxov or max
-        --[[if strips[tracks[track_select].strip][page].controls[c].minov then
-          min = strips[tracks[track_select].strip][page].controls[c].minov
-        end
-        if strips[tracks[track_select].strip][page].controls[c].maxov then
-          max = strips[tracks[track_select].strip][page].controls[c].maxov
-        end]]
       end  
       return normalize(min, max, v)
 
@@ -19448,7 +19519,7 @@ function GUI_DrawCtlBitmap_Strips()
   ------------------------------------------------------------
   
   function A_SetParam(strip, page, c, ctl)
-  
+
     if strips and strips[strip] and ctl then
       local val = ctl.val
       ctl.mval = val
@@ -19468,6 +19539,7 @@ function GUI_DrawCtlBitmap_Strips()
         --SetCtlDirty(c)
         local min, max = A_GetParamMinMax(cc,track,ctl,fxnum,param,true,c)
         reaper.TrackFX_SetParam(track, fxnum, param, DenormalizeValue(min, max, val))
+        _, ctl.dval = reaper.TrackFX_GetFormattedParamValue(track, fxnum, param, "")
         
       elseif cc == ctlcats.trackparam then
         local param = ctl.param
@@ -19554,6 +19626,10 @@ function GUI_DrawCtlBitmap_Strips()
         ctl.val = 1
         SetCtlDirty(c)
         
+      elseif cc == ctlcats.macro_updateparam then
+
+        MacroUC_Click(ctl)
+        
       end
       if ctl.midiout then SendMIDIMsg(ctl.midiout,val) end
       if ctl.macrofader then
@@ -19564,6 +19640,27 @@ function GUI_DrawCtlBitmap_Strips()
       end]]
     end
       
+  end
+  
+  function MacroUC_Click(ctl)
+
+    local macro = ctl.macroctl
+    if macro then
+      local strip = tracks[track_select].strip
+    
+      for i = 1, #macro do
+        local cctl = strips[strip][page].controls[macro[i].ctl]
+        if cctl then
+          if macro[i].c_id == cctl.c_id then
+          
+            A_SetParam(strip,page,macro[i].ctl,cctl)
+        
+          end
+        end
+      end
+    
+    end
+  
   end
   
   function Switcher_ClickPageButton(c)
@@ -19965,7 +20062,7 @@ function GUI_DrawCtlBitmap_Strips()
       if cc == ctlcats.fxparam then
         local fxnum = ctl.fxnum
         local param = ctl.param
-        reaper.TrackFX_SetParam(track, nz(fxnum,-1), param, v)
+        reaper.TrackFX_SetParam(track, fxnum or -1, param, v)
 
       elseif cc == ctlcats.trackparam then
         local param = ctl.param
@@ -19982,7 +20079,7 @@ function GUI_DrawCtlBitmap_Strips()
       
   end
 
-  function SetParam3_Denorm2_Safe2(track, v, strip, page, reaper, c)  
+  function SetParam3_Denorm2_Safe2(track, v, strip, page, reaper, c, nv)  
     
     local ctl = strips[strip][page].controls[c]
     if strips and strips[strip] and ctl then
@@ -19992,8 +20089,8 @@ function GUI_DrawCtlBitmap_Strips()
         
         local fxnum = ctl.fxnum
         local param = ctl.param
-        reaper.TrackFX_SetParam(track, nz(fxnum,-1), param, v)
-        ctl.val = v
+        reaper.TrackFX_SetParam(track, fxnum or -1, param, v)
+        ctl.val = nv
         ctl.dirty = true
         
       elseif cc == ctlcats.trackparam then
@@ -21228,10 +21325,12 @@ function GUI_DrawCtlBitmap_Strips()
           end
           
           if ctl.ctlcat == ctlcats.switcher then
-            switchtab[ctl.switcherid] = switchcnt
-            saveswitchers[switchcnt] = switchers[ctl.switcherid]
-            --savestrip.strip.controls[i].switcherid = switchcnt -- eek
-            switchcnt = switchcnt + 1    
+            if ctl.switcherid and switchers[ctl.switcherid] then
+              switchtab[ctl.switcherid] = switchcnt
+              saveswitchers[switchcnt] = switchers[ctl.switcherid]
+              --savestrip.strip.controls[i].switcherid = switchcnt -- eek
+              switchcnt = switchcnt + 1    
+            end
           end
         end
         
@@ -22045,6 +22144,7 @@ function GUI_DrawCtlBitmap_Strips()
       local ocid = strips[strip][page].controls[cc].c_id
       strips[strip][page].controls[cc].c_id = GenID() --give a new control id
       if ocid then
+        --DBG(ocid..'  '..j..'  '..strips[strip][page].controls[cc].c_id..'  '..cc)
         cidtrack[ocid] = {c_id = strips[strip][page].controls[cc].c_id,
                           ctl = cc}
       end
@@ -22354,6 +22454,28 @@ function GUI_DrawCtlBitmap_Strips()
                       end
                     end            
                   end
+                
+                  --faddata
+                  if snapshots[strip][page][sstcnt].snapshot[ss].faddata and #snapshots[strip][page][sstcnt].snapshot[ss].faddata > 0 then
+                    local fdcnt = #snapshots[strip][page][sstcnt].snapshot[ss].faddata
+                    for d = 1, fdcnt do
+                  
+                      local ocid = snapshots[strip][page][sstcnt].snapshot[ss].faddata[d].c_id
+                      if cidtrack[ocid] then
+                        snapshots[strip][page][sstcnt].snapshot[ss].faddata[d].c_id = cidtrack[ocid].c_id
+                        snapshots[strip][page][sstcnt].snapshot[ss].faddata[d].ctl = cidtrack[ocid].ctl
+                        snapshots[strip][page][sstcnt].snapshot[ss].faddata[d].strip = strip
+                        snapshots[strip][page][sstcnt].snapshot[ss].faddata[d].page = page
+                      else
+                        --probably from another strip = need to delete
+                        snapshots[strip][page][sstcnt].snapshot[ss].faddata[d] = nil
+                        
+                      end
+                      
+                    end
+                    snapshots[strip][page][sstcnt].snapshot[ss].faddata = Table_RemoveNils(snapshots[strip][page][sstcnt].snapshot[ss].faddata, fdcnt)
+                  end
+                  
                 end
                                        
               end
@@ -22396,6 +22518,40 @@ function GUI_DrawCtlBitmap_Strips()
                     end            
                   end
                 end
+                
+                --faddata
+                if snapshots[strip][page][sstcnt].snapshot[ss].faddata and #snapshots[strip][page][sstcnt].snapshot[ss].faddata > 0 then
+                  local fdcnt = #snapshots[strip][page][sstcnt].snapshot[ss].faddata
+                  
+                  for d = 1, fdcnt do
+                
+                    local ocid = snapshots[strip][page][sstcnt].snapshot[ss].faddata[d].c_id
+                    
+                    --[[local octl = snapshots[strip][page][sstcnt].snapshot[ss].faddata[d].ctl
+                    local fffff, ggggg
+                    if ocid then
+                      if cidtrack[tonumber(ocid)] then 
+                        fffff = cidtrack[ocid].c_id
+                        ggggg = cidtrack[ocid].ctl
+                      end
+                      --DBG('ocid: '..tostring(ocid)..'  '..tostring(fffff)..' ctl: '..tostring(octl)..'  '..tostring(ggggg))
+                    end]]
+                    
+                    if cidtrack[ocid] then
+                      snapshots[strip][page][sstcnt].snapshot[ss].faddata[d].c_id = cidtrack[ocid].c_id
+                      snapshots[strip][page][sstcnt].snapshot[ss].faddata[d].ctl = cidtrack[ocid].ctl
+                      snapshots[strip][page][sstcnt].snapshot[ss].faddata[d].strip = strip
+                      snapshots[strip][page][sstcnt].snapshot[ss].faddata[d].page = page
+                    else
+                      --probably from another strip = need to delete
+                      snapshots[strip][page][sstcnt].snapshot[ss].faddata[d] = nil
+                      
+                    end
+                    
+                  end
+                  snapshots[strip][page][sstcnt].snapshot[ss].faddata = Table_RemoveNils(snapshots[strip][page][sstcnt].snapshot[ss].faddata, fdcnt)
+                end
+                
               end
             end
     
@@ -25105,7 +25261,7 @@ function GUI_DrawCtlBitmap_Strips()
           end
           ctls[c] = nil      
         elseif ctl and ctl.ctlcat == ctlcats.switcher_pagesel and ctl.switcherid == switchid then
-          ctls[c] = nfil
+          ctls[c] = nil
         end
       end
       for c = 1, gcnt do
@@ -35018,7 +35174,7 @@ function GUI_DrawCtlBitmap_Strips()
                   elseif ctltype == 2 or ctltype == 3 then
                     --button/button inverse
                     trackfxparam_select = i
-                    if ctls[i].val < 0.5 then
+                    if ctls[i].val and ctls[i].val < 0.5 then
                       ctls[i].val = 1
                     else
                       ctls[i].val = 0
@@ -35438,12 +35594,21 @@ function GUI_DrawCtlBitmap_Strips()
                   local ccat = ctls[i].ctlcat 
                   if ccat == ctlcats.macro then
                    -- mstr = 'Select Macro Parameters|Edit Macro Parameters'
+                    macroedittype_select = 0
                     macro_edit_mode = true
                     macroedit_poffs = 0
                     trackfxparam_select = i
                     macroctl_select = trackfxparam_select
                     --update_surface = true
                     update_gfx = true 
+                  elseif ccat == ctlcats.macro_updateparam then
+                    macroedittype_select = 1
+                    macro_edit_mode = true
+                    macroedit_poffs = 0
+                    trackfxparam_select = i
+                    macroctl_select = trackfxparam_select
+                    --update_surface = true
+                    update_gfx = true                   
                   elseif ccat == ctlcats.snapshotrand then
                     if not mouse.shift then
                       if show_mutate then
@@ -40308,6 +40473,8 @@ function GUI_DrawCtlBitmap_Strips()
           dragparam = {x = mouse.mx-ksel_size.w, y = mouse.my-ksel_size.h, type = 'takeswitcher'}
         elseif trctl_select == 8 then
           dragparam = {x = mouse.mx-ksel_size.w, y = mouse.my-ksel_size.h, type = 'rs5k'}
+        elseif trctl_select == 9 then
+          dragparam = {x = mouse.mx-ksel_size.w, y = mouse.my-ksel_size.h, type = 'macro_updateparam'}
         end
         
         reass_param = nil
@@ -40553,6 +40720,15 @@ function GUI_DrawCtlBitmap_Strips()
             if dragparam.x+ksel_size.w > obj.sections[10].x and dragparam.x+ksel_size.w < obj.sections[10].x+obj.sections[10].w and dragparam.y+ksel_size.h > obj.sections[10].y and dragparam.y+ksel_size.h < obj.sections[10].y+obj.sections[10].h then
               trackfxparam_select = i
               Strip_AddParam()              
+            end
+          else
+          
+          end
+        elseif dragparam.type == 'macro_updateparam' then
+          if reass_param == nil then
+            if dragparam.x+ksel_size.w > obj.sections[10].x and dragparam.x+ksel_size.w < obj.sections[10].x+obj.sections[10].w and dragparam.y+ksel_size.h > obj.sections[10].y and dragparam.y+ksel_size.h < obj.sections[10].y+obj.sections[10].h then
+              trackfxparam_select = i
+              Strip_AddParam()
             end
           else
           
@@ -44110,27 +44286,30 @@ function GUI_DrawCtlBitmap_Strips()
                        y = ctl.ysc - surface_offset.y +obj.sections[10].y, 
                        w = ctl.wsc, 
                        h = ctl.hsc} 
-          end
+          --end
                       
-          if i then
+          --if i then
 
-            if strips[tracks[track_select].strip][page].controls[i].fxfound then
+            if ctl.fxfound then
               if MOUSE_click(ctlxywh) then
     
-                if strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.fxparam or 
-                   strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.trackparam or 
-                   strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.tracksend or 
-                   strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.fxoffline then 
+                if ctl.ctlcat == ctlcats.fxparam or 
+                   ctl.ctlcat == ctlcats.trackparam or 
+                   ctl.ctlcat == ctlcats.tracksend or 
+                   ctl.ctlcat == ctlcats.fxoffline or
+                   ctl.ctlcat == ctlcats.midictl or
+                   (ctl.ctlcat == ctlcats.macro and macroedittype_select == 1) then 
                   local strip = tracks[track_select].strip
                   
                   --Add / Remove
                   local ctlidx = GetMacroCtlIdx(strip, page, macroctl_select, i)
                   if ctlidx then
                     --already added - remove?
-                    if strips[strip][page].controls[macroctl_select].macroctl[ctlidx].delete then
-                      strips[strip][page].controls[macroctl_select].macroctl[ctlidx].delete = not strips[strip][page].controls[macroctl_select].macroctl[ctlidx].delete
+                    local mctl = strips[strip][page].controls[macroctl_select].macroctl[ctlidx]
+                    if mctl.delete then
+                      mctl.delete = not mctl.delete
                     else
-                      strips[strip][page].controls[macroctl_select].macroctl[ctlidx].delete = true
+                      mctl.delete = true
                     end
                   
                   else
@@ -44139,7 +44318,7 @@ function GUI_DrawCtlBitmap_Strips()
                       strips[strip][page].controls[macroctl_select].macroctl = {}
                     end
                     local ctlidx = #strips[strip][page].controls[macroctl_select].macroctl + 1
-                    strips[strip][page].controls[macroctl_select].macroctl[ctlidx] = {c_id = strips[tracks[track_select].strip][page].controls[i].c_id,
+                    strips[strip][page].controls[macroctl_select].macroctl[ctlidx] = {c_id = ctl.c_id,
                                                                                       ctl = i,
                                                                                       A_val = 0,
                                                                                       B_val = 1,
@@ -44177,18 +44356,21 @@ function GUI_DrawCtlBitmap_Strips()
         
         for c = 1, #ctl_select do
           local i = ctl_select[c].ctl
-          
-          if strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.fxparam or 
-             strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.trackparam or 
-             strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.tracksend or 
-             strips[tracks[track_select].strip][page].controls[i].ctlcat == ctlcats.fxoffline then 
+          local ctl = strips[tracks[track_select].strip][page].controls[i]
+          if ctl.ctlcat == ctlcats.fxparam or 
+             ctl.ctlcat == ctlcats.trackparam or 
+             ctl.ctlcat == ctlcats.tracksend or 
+             ctl.ctlcat == ctlcats.fxoffline or
+             ctl.ctlcat == ctlcats.midictl or
+             (ctl.ctlcat == ctlcats.macro and macrotypeedit_select == 1) then 
             --Add / Remove
             local ctlidx = GetMacroCtlIdx(strip, page, macroctl_select, i)
             if ctlidx then
               --re-add deleted
-              if strips[strip][page].controls[macroctl_select].macroctl[ctlidx].delete then
-                strips[strip][page].controls[macroctl_select].macroctl[ctlidx].delete = false
-                strips[tracks[track_select].strip][page].controls[i].dirty = true                  
+              local mctl = strips[strip][page].controls[macroctl_select].macroctl[ctlidx]
+              if mctl.delete then
+                mctl.delete = false
+                ctl.dirty = true                  
               end
             else
               --add
@@ -44196,13 +44378,13 @@ function GUI_DrawCtlBitmap_Strips()
                 strips[strip][page].controls[macroctl_select].macroctl = {}
               end
               local ctlidx = #strips[strip][page].controls[macroctl_select].macroctl + 1
-              strips[strip][page].controls[macroctl_select].macroctl[ctlidx] = {c_id = strips[tracks[track_select].strip][page].controls[i].c_id,
+              strips[strip][page].controls[macroctl_select].macroctl[ctlidx] = {c_id = ctl.c_id,
                                                                                 ctl = i,
                                                                                 A_val = 0,
                                                                                 B_val = 1,
                                                                                 shape = 1,
                                                                                 bi = false}
-              strips[tracks[track_select].strip][page].controls[i].dirty = true
+              ctl.dirty = true
             end
           end
             
@@ -44220,7 +44402,8 @@ function GUI_DrawCtlBitmap_Strips()
   function A_Run_MacroEdit(noscroll, rt)
 
     if strips[tracks[track_select].strip] and strips[tracks[track_select].strip][page].controls[macroctl_select] and
-       strips[tracks[track_select].strip][page].controls[macroctl_select].ctlcat == ctlcats.macro then
+       strips[tracks[track_select].strip][page].controls[macroctl_select].ctlcat == ctlcats.macro or 
+       strips[tracks[track_select].strip][page].controls[macroctl_select].ctlcat == ctlcats.macro_updateparam then
       
       navigate = false
       noscroll = true
@@ -44230,7 +44413,7 @@ function GUI_DrawCtlBitmap_Strips()
                     w = obj.sections[401].w,
                     h = obj.sections[401].h}
       if mouse.context == nil and MOUSE_click(xywh) then
-      
+
         navigate = true
         macro_edit_mode = false
         macroctl_select = nil
@@ -44260,7 +44443,7 @@ function GUI_DrawCtlBitmap_Strips()
                           w = obj.sections[404].w + macroedit.sliderw,
                           h = obj.sections[404].h}
 
-        if mouse.context == nil and MOUSE_click(obj.sections[410]) then
+        if mouse.context == nil and MOUSE_click(obj.sections[410]) and macroedittype_select == 0 then --macro test knob
         
           if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.15 then
             local i = macroctl_select
@@ -44277,7 +44460,7 @@ function GUI_DrawCtlBitmap_Strips()
             oms = mouse.shift
           end
           
-        elseif mouse.context == nil and MOUSE_click(xywh_403) then
+        elseif mouse.context == nil and MOUSE_click(xywh_403) and macroedittype_select == 0 then
           local yy = math.floor((mouse.my - obj.sections[403].y)/macroedit.sech)
           if macroctl[(yy+1)+macroedit_poffs] then
 
@@ -44295,7 +44478,7 @@ function GUI_DrawCtlBitmap_Strips()
         
           end
           
-        elseif mouse.context == nil and MOUSE_click(xywh_404) then
+        elseif mouse.context == nil and MOUSE_click(xywh_404) and macroedittype_select == 0 then
           local yy = math.floor((mouse.my - obj.sections[404].y)/macroedit.sech)
           if macroctl[(yy+1)+macroedit_poffs] then
 
@@ -44313,7 +44496,7 @@ function GUI_DrawCtlBitmap_Strips()
         
           end                  
             
-        elseif mouse.context == nil and MOUSE_click(obj.sections[405]) then
+        elseif mouse.context == nil and MOUSE_click(obj.sections[405]) and macroedittype_select == 0 then
           local yy = math.floor((mouse.my - obj.sections[405].y)/macroedit.sech)
           if macroctl[(yy+1)+macroedit_poffs] then
 
@@ -44325,7 +44508,7 @@ function GUI_DrawCtlBitmap_Strips()
 
           end              
 
-        elseif mouse.context == nil and MOUSE_click_RB(obj.sections[405]) then
+        elseif mouse.context == nil and MOUSE_click_RB(obj.sections[405]) and macroedittype_select == 0 then
           local yy = math.floor((mouse.my - obj.sections[405].y)/macroedit.sech)
           if macroctl[(yy+1)+macroedit_poffs] then
 
@@ -44352,7 +44535,7 @@ function GUI_DrawCtlBitmap_Strips()
             end
           end    
 
-        elseif mouse.context == nil and MOUSE_click(obj.sections[414]) then
+        elseif mouse.context == nil and MOUSE_click(obj.sections[414]) and macroedittype_select == 0 then
           local yy = math.floor((mouse.my - obj.sections[414].y)/macroedit.sech)
           if macroctl[(yy+1)+macroedit_poffs] then
             local xywh = {x = obj.sections[414].x,
@@ -44371,7 +44554,7 @@ function GUI_DrawCtlBitmap_Strips()
             end
           end    
 
-        elseif mouse.context == nil and MOUSE_click(obj.sections[415]) then
+        elseif mouse.context == nil and MOUSE_click(obj.sections[415]) and macroedittype_select == 0 then
           local yy = math.floor((mouse.my - obj.sections[415].y)/macroedit.sech)
           if macroctl[(yy+1)+macroedit_poffs] then
             local xywh = {x = obj.sections[415].x,
@@ -44390,7 +44573,7 @@ function GUI_DrawCtlBitmap_Strips()
             end
           end    
 
-        elseif mouse.context == nil and MOUSE_click(obj.sections[416]) then
+        elseif mouse.context == nil and MOUSE_click(obj.sections[416]) and macroedittype_select == 0 then
           local yy = math.floor((mouse.my - obj.sections[416].y)/macroedit.sech)
           if macroctl[(yy+1)+macroedit_poffs] then
             local xywh = {x = obj.sections[416].x,
@@ -44409,7 +44592,7 @@ function GUI_DrawCtlBitmap_Strips()
             end
           end    
 
-        elseif mouse.context == nil and MOUSE_click(obj.sections[407]) then
+        elseif mouse.context == nil and MOUSE_click(obj.sections[407]) then -- delete param
           local yy = math.floor((mouse.my - obj.sections[407].y)/macroedit.sech)
           if macroctl[(yy+1)+macroedit_poffs] then
             local xywh = {x = obj.sections[407].x,
@@ -44427,7 +44610,7 @@ function GUI_DrawCtlBitmap_Strips()
             end
           end    
 
-        elseif mouse.context == nil and MOUSE_click(obj.sections[408]) then
+        elseif mouse.context == nil and MOUSE_click(obj.sections[408]) and macroedittype_select == 0 then
 
           local f = {targettype = 2,
                      strip = tracks[track_select].strip,
@@ -44460,7 +44643,7 @@ function GUI_DrawCtlBitmap_Strips()
           obj = GetObjects()
           update_gfx = true
 
-        elseif mouse.context == nil and MOUSE_click(obj.sections[411]) then
+        elseif mouse.context == nil and MOUSE_click(obj.sections[411]) and macroedittype_select == 0 then
 
           Macro_Capture(tracks[track_select].strip,page,macroctl_select,0)
           if settings_macroeditmonitor then
@@ -44468,7 +44651,7 @@ function GUI_DrawCtlBitmap_Strips()
           end
           update_macroedit = true
 
-        elseif mouse.context == nil and MOUSE_click(obj.sections[412]) then
+        elseif mouse.context == nil and MOUSE_click(obj.sections[412]) and macroedittype_select == 0 then
 
           Macro_Capture(tracks[track_select].strip,page,macroctl_select,1)
           if settings_macroeditmonitor then
@@ -44476,7 +44659,7 @@ function GUI_DrawCtlBitmap_Strips()
           end
           update_macroedit = true
 
-        elseif mouse.context == nil and MOUSE_click(obj.sections[413]) then
+        elseif mouse.context == nil and MOUSE_click(obj.sections[413]) and macroedittype_select == 0 then
 
           settings_macroeditmonitor = not settings_macroeditmonitor
           update_gfx = true
@@ -47585,67 +47768,83 @@ function GUI_DrawCtlBitmap_Strips()
                 for updi = lvar.ctlupdate_pos, (rrend or #ctls_upd) do
                   --check fx
                   local ctl = ctls_upd[updi]
-                  local i = updi
-                  if settings_enablednu then
-                    i = ctl.ctli
-                  end
                   
-                  if not ctl.trackmissing then
+                  if ctl then
                   
-                    tr = tr2
-                    local tr_found = true
-                    if ctl.tracknum ~= nil then
-                      tr_found = CheckTrack(tracks[ctl.tracknum], strip, page, i)
-                      if tr_found then
-                        tr = GetTrack(ctl.tracknum)
-                      end 
+                    local i = updi
+                    if settings_enablednu then
+                      i = ctl.ctli
                     end
                     
-                    if tr_found then
-                      if ctl.ctlcat == ctlcats.fxparam then
-                        local fxguid = reaper.TrackFX_GetFXGUID(tr, ctl.fxnum)
-                        if ctl.fxguid == fxguid then
-    
-                          local pn = reaper.TrackFX_GetNumParams(tr,ctl.fxnum)
-                          if pn ~= 2 then
-                            if ctl.offline ~= nil then
-                              ctl.dirty = true
-                            end
-                            ctl.offline = nil
-                          else
-                            if ctl.offline == nil then
-                              ctl.dirty = true
-                            end
-                            ctl.offline = true
-                          end
-                        
-                          local _, v = reaper.TrackFX_GetFormattedParamValue(tr, ctl.fxnum, ctl.param, "")                          
-                          local v2, min, max = reaper.TrackFX_GetParam(tr, ctl.fxnum, ctl.param)
-                          min = ctl.minov or min
-                          max = ctl.maxov or max
-                          v2 = normalize(min, max, v2)
-                          
-                          --[[local v2 = GetParamValue2(ctl.ctlcat,
-                                                   tr,
-                                                   ctl.fxnum,
-                                                   ctl.param, i)]]
-                            
-                          if ctl.ctltype == 4 then
-                            if tostring(ctl.dval) ~= tostring(v) then
-                            
-                              ctl.val = v2
-                              ctl.dval = v
-                              ctl.dirty = true
-                              ctl.cycledata.posdirty = true 
-                              update_ctls = true
+                    if not ctl.trackmissing then
+                    
+                      tr = tr2
+                      local tr_found = true
+                      if ctl.tracknum ~= nil then
+                        tr_found = CheckTrack(tracks[ctl.tracknum], strip, page, i)
+                        if tr_found then
+                          tr = GetTrack(ctl.tracknum)
+                        end 
+                      end
+                      
+                      if tr_found then
+                        if ctl.ctlcat == ctlcats.fxparam then
+                          local fxguid = reaper.TrackFX_GetFXGUID(tr, ctl.fxnum)
+                          if ctl.fxguid == fxguid then
       
-                              if ctl.midiout then
-                                SendMIDIMsg(ctl.midiout, ctl.val)
+                            local pn = reaper.TrackFX_GetNumParams(tr,ctl.fxnum)
+                            if pn ~= 2 then
+                              if ctl.offline ~= nil then
+                                ctl.dirty = true
                               end
+                              ctl.offline = nil
+                            else
+                              if ctl.offline == nil then
+                                ctl.dirty = true
+                              end
+                              ctl.offline = true
                             end
-                          else
-                            if v ~= '' then
-                              if ctl.dval ~= v then
+                          
+                            local _, v = reaper.TrackFX_GetFormattedParamValue(tr, ctl.fxnum, ctl.param, "")                          
+                            local v2, min, max = reaper.TrackFX_GetParam(tr, ctl.fxnum, ctl.param)
+                            min = ctl.minov or min
+                            max = ctl.maxov or max
+                            v2 = normalize(min, max, v2)
+                            
+                            --[[local v2 = GetParamValue2(ctl.ctlcat,
+                                                     tr,
+                                                     ctl.fxnum,
+                                                     ctl.param, i)]]
+                              
+                            if ctl.ctltype == 4 then
+                              if tostring(ctl.dval) ~= tostring(v) then
+                              
+                                ctl.val = v2
+                                ctl.dval = v
+                                ctl.dirty = true
+                                ctl.cycledata.posdirty = true 
+                                update_ctls = true
+        
+                                if ctl.midiout then
+                                  SendMIDIMsg(ctl.midiout, ctl.val)
+                                end
+                              end
+                            else
+                              if v ~= '' then
+                                if ctl.dval ~= v then
+                                  ctl.val = v2
+                                  ctl.dval = v
+                                  ctl.dirty = true
+                                  if ctl.param_info.paramname == 'Bypass' then
+                                    SetCtlEnabled(ctl.fxnum) 
+                                  end
+                                  update_ctls = true
+      
+                                  if ctl.midiout then
+                                    SendMIDIMsg(ctl.midiout, ctl.val)
+                                  end
+                                end
+                              elseif ctl.val ~= v2 then
                                 ctl.val = v2
                                 ctl.dval = v
                                 ctl.dirty = true
@@ -47657,298 +47856,289 @@ function GUI_DrawCtlBitmap_Strips()
                                 if ctl.midiout then
                                   SendMIDIMsg(ctl.midiout, ctl.val)
                                 end
-                              end
-                            elseif ctl.val ~= v2 then
-                              ctl.val = v2
-                              ctl.dval = v
-                              ctl.dirty = true
-                              if ctl.param_info.paramname == 'Bypass' then
-                                SetCtlEnabled(ctl.fxnum) 
-                              end
-                              update_ctls = true
-  
-                              if ctl.midiout then
-                                SendMIDIMsg(ctl.midiout, ctl.val)
-                              end
-                            
-                            end  
-                          end
-                        else
-                          if ctl.fxfound then
-                            CheckStripControls()
-                          end
-                        end
-                      elseif ctl.ctlcat == ctlcats.trackparam then
-                        local v = GetParamValue2(ctl.ctlcat,
-                                                 tr,
-                                                 nil,
-                                                 ctl.param, i)
-                        if ctl.ctltype == 4 then
-                          if tostring(ctl.val) ~= tostring(v) then
-                            ctl.val = v
-                            ctl.dirty = true
-                            ctl.cycledata.posdirty = true 
-                            update_ctls = true
-  
-                            if ctl.midiout then
-                              SendMIDIMsg(ctl.midiout, ctl.val)
-                            end                          
-                          end
-                        else
-                          if ctl.val ~= v then
-                            ctl.val = v
-                            ctl.dirty = true
-                            update_ctls = true
-  
-                            if ctl.midiout then
-                              SendMIDIMsg(ctl.midiout, ctl.val)
+                              
+                              end  
+                            end
+                          else
+                            if ctl.fxfound then
+                              CheckStripControls()
                             end
                           end
-                        end
-                                            
-                      elseif ctl.ctlcat == ctlcats.tracksend then
-    
-                        if settings_disablesendchecks == false and checksends == true then
-                          local tt = ctl.tracknum
-                          if tt == nil then
-                            tt = strips[strip].track.tracknum
-                          end
-                          local chk
-                          
-                          chk, chktbl[tt] = CheckSendGUID(tt,nil,ctl.param_info.paramnum,
-                                                                ctl.param_info.paramdestguid,
-                                                                ctl.param_info.paramdestchan,
-                                                                ctl.param_info.paramsrcchan,
-                                                                chktbl[tt])
-                          if chk == false then
-                            chktbl = CheckStripSends(chktbl)
-                          end
-                        end                    
-    
-                        local v = GetParamValue2(ctl.ctlcat,
-                                                 tr,
-                                                 nil,
-                                                 ctl.param, i)
-    
-                        if ctl.ctltype == 4 then
-                          if tostring(ctl.val) ~= tostring(v) then
-                            ctl.val = v
-                            ctl.dirty = true
-                            ctl.cycledata.posdirty = true 
-                            update_ctls = true                    
-  
-                            if ctl.midiout then
-                              SendMIDIMsg(ctl.midiout, ctl.val)
-                            end
-                          end
-                        else
-                          if ctl.val ~= v then
-                            ctl.val = v
-                            ctl.dirty = true
-                            update_ctls = true
-  
-                            if ctl.midiout then
-                              SendMIDIMsg(ctl.midiout, ctl.val)
-                            end
-                          end
-                        end
-                      elseif ctl.ctlcat == ctlcats.pkmeter then
-                        if rt >= time_nextupdate_pkmeter then
-                          pkmts = true
-                          local chd = 0
-                          local trn = strips[strip].track.tracknum
-                          if ctl.tracknum ~= nil then
-                            trn = ctl.tracknum
-                          end
-                          local p = ctl.param
+                        elseif ctl.ctlcat == ctlcats.trackparam then
                           local v = GetParamValue2(ctl.ctlcat,
                                                    tr,
                                                    nil,
-                                                   p, i)
-                          if peak_info[trn] and peak_info[trn][p % 64] then
-                            chd = peak_info[trn][p % 64].ch_d
-                          else
-                            chd = -150
-                          end
-                          if tostring(ctl.val) ~= tostring(chd) then
-                            ctl.val = chd
-                            ctl.dirty = true
-                            update_ctls = true
-  
-                            if ctl.midiout then
-                              SendMIDIMsg(ctl.midiout, ctl.val)
+                                                   ctl.param, i)
+                          if ctl.ctltype == 4 then
+                            if tostring(ctl.val) ~= tostring(v) then
+                              ctl.val = v
+                              ctl.dirty = true
+                              ctl.cycledata.posdirty = true 
+                              update_ctls = true
+    
+                              if ctl.midiout then
+                                SendMIDIMsg(ctl.midiout, ctl.val)
+                              end                          
                             end
-                            --update_mtrs = true
+                          else
+                            if ctl.val ~= v then
+                              ctl.val = v
+                              ctl.dirty = true
+                              update_ctls = true
+    
+                              if ctl.midiout then
+                                SendMIDIMsg(ctl.midiout, ctl.val)
+                              end
+                            end
                           end
-                        end
-                      
-                      elseif ctl.ctlcat == ctlcats.rs5k then
+                                              
+                        elseif ctl.ctlcat == ctlcats.tracksend then
+      
+                          if settings_disablesendchecks == false and checksends == true then
+                            local tt = ctl.tracknum
+                            if tt == nil then
+                              tt = strips[strip].track.tracknum
+                            end
+                            local chk
+                            
+                            chk, chktbl[tt] = CheckSendGUID(tt,nil,ctl.param_info.paramnum,
+                                                                  ctl.param_info.paramdestguid,
+                                                                  ctl.param_info.paramdestchan,
+                                                                  ctl.param_info.paramsrcchan,
+                                                                  chktbl[tt])
+                            if chk == false then
+                              chktbl = CheckStripSends(chktbl)
+                            end
+                          end                    
+      
+                          local v = GetParamValue2(ctl.ctlcat,
+                                                   tr,
+                                                   nil,
+                                                   ctl.param, i)
+      
+                          if ctl.ctltype == 4 then
+                            if tostring(ctl.val) ~= tostring(v) then
+                              ctl.val = v
+                              ctl.dirty = true
+                              ctl.cycledata.posdirty = true 
+                              update_ctls = true                    
+    
+                              if ctl.midiout then
+                                SendMIDIMsg(ctl.midiout, ctl.val)
+                              end
+                            end
+                          else
+                            if ctl.val ~= v then
+                              ctl.val = v
+                              ctl.dirty = true
+                              update_ctls = true
+    
+                              if ctl.midiout then
+                                SendMIDIMsg(ctl.midiout, ctl.val)
+                              end
+                            end
+                          end
+                        elseif ctl.ctlcat == ctlcats.pkmeter then
+                          if rt >= time_nextupdate_pkmeter then
+                            pkmts = true
+                            local chd = 0
+                            local trn = strips[strip].track.tracknum
+                            if ctl.tracknum ~= nil then
+                              trn = ctl.tracknum
+                            end
+                            local p = ctl.param
+                            local v = GetParamValue2(ctl.ctlcat,
+                                                     tr,
+                                                     nil,
+                                                     p, i)
+                            if peak_info[trn] and peak_info[trn][p % 64] then
+                              chd = peak_info[trn][p % 64].ch_d
+                            else
+                              chd = -150
+                            end
+                            if tostring(ctl.val) ~= tostring(chd) then
+                              ctl.val = chd
+                              ctl.dirty = true
+                              update_ctls = true
+    
+                              if ctl.midiout then
+                                SendMIDIMsg(ctl.midiout, ctl.val)
+                              end
+                              --update_mtrs = true
+                            end
+                          end
                         
-                        local fxguid = reaper.TrackFX_GetFXGUID(tr, ctl.fxnum)
-                        if ctl.fxguid == fxguid and ctl.rsdata.samplesidx then
-                          local lvar = lvar
-                          local retval, fn = reaper.TrackFX_GetNamedConfigParm(tr, ctl.fxnum, 'FILE')
-                          local ffn = string.match(fn, '.*[\\/](.*)')
-                          local si = ctl.rsdata.samplesidx[fn]
-                          if si and si ~= math.min(math.floor(ctl.val * lvar.maxsamples)+1,#ctl.rsdata.samples) then
-                            ctl.val = ((si-1) / lvar.maxsamples)
-                            ctl.dirty = true
-                            update_ctls = true
+                        elseif ctl.ctlcat == ctlcats.rs5k then
+                          
+                          local fxguid = reaper.TrackFX_GetFXGUID(tr, ctl.fxnum)
+                          if ctl.fxguid == fxguid and ctl.rsdata.samplesidx then
+                            local lvar = lvar
+                            local retval, fn = reaper.TrackFX_GetNamedConfigParm(tr, ctl.fxnum, 'FILE')
+                            local ffn = string.match(fn, '.*[\\/](.*)')
+                            local si = ctl.rsdata.samplesidx[fn]
+                            if si and si ~= math.min(math.floor(ctl.val * lvar.maxsamples)+1,#ctl.rsdata.samples) then
+                              ctl.val = ((si-1) / lvar.maxsamples)
+                              ctl.dirty = true
+                              update_ctls = true
+                            end
+                            
+                            --Check keyboard controls - params 
+                            if show_samplemanager == true and rs5k_select == i then
+                              local pkey = 72 + lvar.rs.pitch
+                              local kstart = lvar.kb.kstart or -1
+                              local kend = lvar.kb.kend or -1    
+                              local pstart = 3
+                              local pend = 4
+                              
+                              local s = reaper.TrackFX_GetParam(tr,ctl.fxnum,pstart)
+                              local e = reaper.TrackFX_GetParam(tr,ctl.fxnum,pend)    
+                              local pit = reaper.TrackFX_GetParam(tr,ctl.fxnum,15)
+                              
+                              local single = 1/160
+                              local diff = 0.5-pit
+                        
+                              if s*128 ~= lvar.kb.kstart or
+                                 e*128 ~= lvar.kb.kend or
+                                 round(diff/single) ~= lvar.rs.pitch then
+                                lvar.rs.pitch = round(diff/single)
+                                lvar.kb.kstart = s*128
+                                lvar.kb.kend = e*128
+                                GUI_DrawKeyboardOverlay(obj, gui)
+                                update_samplemanager = true
+                              end                          
+                            end                          
+                          else
+                            if ctl.fxfound then
+                              CheckStripControls()
+                            end
+                          end
+                        
+                        elseif ctl.ctlcat == ctlcats.takeswitcher then
+                          
+                          if ctl.iteminfo then
+                            local item = GetMediaItemByGUID(ctl.iteminfo.guid)
+                            if item then
+                              local tkidx = reaper.GetMediaItemInfo_Value(item,'I_CURTAKE')
+                              if tkidx and tkidx >= 0 then
+                                tkidx2 = tkidx/takeswitch_max
+                                if tkidx2 ~= ctl.val then
+                                  ctl.val = tkidx2
+                                  --ctl.tkidx = tkidx
+                                  local take = reaper.GetTake(item, tkidx)
+                                  if take then
+                                    _, ctl.iteminfo.curtake = reaper.GetSetMediaItemTakeInfo_String(take, 'P_NAME', '', false)
+                                  else
+                                    ctl.iteminfo.curtake = 'empty'
+                                  end
+                                  ctl.dirty = true
+                                  update_ctls = true
+                                end
+                              end
+                            end
                           end
                           
-                          --Check keyboard controls - params 
-                          if show_samplemanager == true and rs5k_select == i then
-                            local pkey = 72 + lvar.rs.pitch
-                            local kstart = lvar.kb.kstart or -1
-                            local kend = lvar.kb.kend or -1    
-                            local pstart = 3
-                            local pend = 4
-                            
-                            local s = reaper.TrackFX_GetParam(tr,ctl.fxnum,pstart)
-                            local e = reaper.TrackFX_GetParam(tr,ctl.fxnum,pend)    
-                            local pit = reaper.TrackFX_GetParam(tr,ctl.fxnum,15)
-                            
-                            local single = 1/160
-                            local diff = 0.5-pit
-                      
-                            if s*128 ~= lvar.kb.kstart or
-                               e*128 ~= lvar.kb.kend or
-                               round(diff/single) ~= lvar.rs.pitch then
-                              lvar.rs.pitch = round(diff/single)
-                              lvar.kb.kstart = s*128
-                              lvar.kb.kend = e*128
-                              GUI_DrawKeyboardOverlay(obj, gui)
-                              update_samplemanager = true
-                            end                          
-                          end                          
-                        else
-                          if ctl.fxfound then
-                            CheckStripControls()
-                          end
-                        end
-                      
-                      elseif ctl.ctlcat == ctlcats.takeswitcher then
-                        
-                        if ctl.iteminfo then
-                          local item = GetMediaItemByGUID(ctl.iteminfo.guid)
-                          if item then
-                            local tkidx = reaper.GetMediaItemInfo_Value(item,'I_CURTAKE')
-                            if tkidx and tkidx >= 0 then
-                              tkidx2 = tkidx/takeswitch_max
-                              if tkidx2 ~= ctl.val then
-                                ctl.val = tkidx2
-                                --ctl.tkidx = tkidx
-                                local take = reaper.GetTake(item, tkidx)
-                                if take then
-                                  _, ctl.iteminfo.curtake = reaper.GetSetMediaItemTakeInfo_String(take, 'P_NAME', '', false)
-                                else
-                                  ctl.iteminfo.curtake = 'empty'
-                                end
+                        elseif ctl.ctlcat == ctlcats.fxoffline then
+                          local fxguid = reaper.TrackFX_GetFXGUID(tr, ctl.fxnum)
+                          if ctl.fxguid == fxguid then
+      
+                            local pn = reaper.TrackFX_GetNumParams(tr,ctl.fxnum)
+                            if pn ~= 2 then
+                              if ctl.offline ~= nil then
                                 ctl.dirty = true
                                 update_ctls = true
+                                
+                                if ctl.midiout then
+                                  SendMIDIMsg(ctl.midiout, ctl.val)
+                                end
                               end
+                              ctl.offline = nil
+                              ctl.val = 0
+                            else
+                              if ctl.offline == nil then
+                                ctl.dirty = true
+                                update_ctls = true
+                                
+                                if ctl.midiout then
+                                  SendMIDIMsg(ctl.midiout, ctl.val)
+                                end
+                              end
+                              ctl.offline = true
+                              ctl.val = 1
+                            end
+                          else
+                            if ctl.fxfound then
+                              CheckStripControls()
+                            end
+                          end                  
+  
+                        elseif ctl.ctlcat == ctlcats.fxmulti then
+                        
+                          local fxguid = reaper.TrackFX_GetFXGUID(tr, ctl.fxnum)
+                          if ctl.fxguid == fxguid then
+                            local state = FXMulti_GetState(tr, ctl)
+                            
+                            local v = (state-1)/(#lvar.fxmulti_table-1)
+                            if ctl.val ~= v then
+                              ctl.val = v
+                              ctl.dirty = true
+                            end 
+                          else
+                            if ctl.fxfound then
+                              CheckStripControls()
                             end
                           end
-                        end
-                        
-                      elseif ctl.ctlcat == ctlcats.fxoffline then
-                        local fxguid = reaper.TrackFX_GetFXGUID(tr, ctl.fxnum)
-                        if ctl.fxguid == fxguid then
+                                                
+                        elseif ctl.ctlcat == ctlcats.fxgui or (ctl.ctlcat == ctlcats.rcm_switch and ctl.fxnum) then
+                          local fxguid = reaper.TrackFX_GetFXGUID(tr, ctl.fxnum)
+                          if ctl.fxguid and ctl.fxguid ~= fxguid then
+                            if ctl.fxfound then
+                              CheckStripControls()
+                            end
+                          end
     
-                          local pn = reaper.TrackFX_GetNumParams(tr,ctl.fxnum)
-                          if pn ~= 2 then
-                            if ctl.offline ~= nil then
-                              ctl.dirty = true
-                              update_ctls = true
-                              
-                              if ctl.midiout then
-                                SendMIDIMsg(ctl.midiout, ctl.val)
-                              end
-                            end
-                            ctl.offline = nil
-                            ctl.val = 0
-                          else
-                            if ctl.offline == nil then
-                              ctl.dirty = true
-                              update_ctls = true
-                              
-                              if ctl.midiout then
-                                SendMIDIMsg(ctl.midiout, ctl.val)
-                              end
-                            end
-                            ctl.offline = true
-                            ctl.val = 1
-                          end
-                        else
-                          if ctl.fxfound then
-                            CheckStripControls()
-                          end
-                        end                  
-
-                      elseif ctl.ctlcat == ctlcats.fxmulti then
-                      
-                        local fxguid = reaper.TrackFX_GetFXGUID(tr, ctl.fxnum)
-                        if ctl.fxguid == fxguid then
-                          local state = FXMulti_GetState(tr, ctl)
+    
+                        elseif ctl.ctlcat == ctlcats.midieditor_pageswitch then
                           
-                          local v = (state-1)/(#lvar.fxmulti_table-1)
-                          if ctl.val ~= v then
-                            ctl.val = v
-                            ctl.dirty = true
-                          end 
-                        else
-                          if ctl.fxfound then
-                            CheckStripControls()
-                          end
-                        end
-                                              
-                      elseif ctl.ctlcat == ctlcats.fxgui or (ctl.ctlcat == ctlcats.rcm_switch and ctl.fxnum) then
-                        local fxguid = reaper.TrackFX_GetFXGUID(tr, ctl.fxnum)
-                        if ctl.fxguid and ctl.fxguid ~= fxguid then
-                          if ctl.fxfound then
-                            CheckStripControls()
-                          end
-                        end
-  
-  
-                      elseif ctl.ctlcat == ctlcats.midieditor_pageswitch then
-                        
-                        if mode == 0 then
-                          local hwnd = reaper.MIDIEditor_GetActive()
-                          if hwnd then
-                            if page ~= ctl.param_info.paramidx then
-                              setpage_wait = tonumber(ctl.param_info.paramidx)
-                              SetPage(setpage_wait)
-                              break
+                          if mode == 0 then
+                            local hwnd = reaper.MIDIEditor_GetActive()
+                            if hwnd then
+                              if page ~= ctl.param_info.paramidx then
+                                setpage_wait = tonumber(ctl.param_info.paramidx)
+                                SetPage(setpage_wait)
+                                break
+                              end
+                            else
+                              if page ~= ctl.param then
+                                setpage_wait = tonumber(ctl.param)
+                                SetPage(setpage_wait)
+                                break
+                              end                        
                             end
+                          end                        
+                        end
+                        
+                        --if ctl.macrofader then                    
+                          --SetFader(ctl.macrofader, ctl.val)                    
+                        --end
+                        
+                        if ctl.dirty == true then
+                          --[[if settings_enablednu == true then
+                            SetCtlDirty(ctl.ctli)                          
                           else
-                            if page ~= ctl.param then
-                              setpage_wait = tonumber(ctl.param)
-                              SetPage(setpage_wait)
-                              break
-                            end                        
-                          end
-                        end                        
-                      end
+                            SetCtlDirty(i)
+                          end  ]]
+                          SetCtlDirty(i)         
+                        end
                       
-                      --if ctl.macrofader then                    
-                        --SetFader(ctl.macrofader, ctl.val)                    
-                      --end
-                      
-                      if ctl.dirty == true then
-                        --[[if settings_enablednu == true then
-                          SetCtlDirty(ctl.ctli)                          
-                        else
-                          SetCtlDirty(i)
-                        end  ]]
-                        SetCtlDirty(i)         
+                      else
+                        --track not found
+                        ctl.fxfound = false
+                        ctl.trackmissing = true
                       end
-                    
-                    else
-                      --track not found
-                      ctl.fxfound = false
-                      ctl.trackmissing = true
                     end
+                  else
+                    --ctl not found -- hmm - what to do here...
+                  
                   end
                 end
                 chktbl = nil
@@ -50043,7 +50233,7 @@ function GUI_DrawCtlBitmap_Strips()
         
         for c = 1,#ctls do
       
-          if ctls[c].ctlcat == ctlcats.macro then  
+          if ctls[c].ctlcat == ctlcats.macro or ctls[c].ctlcat == ctlcats.macro_updateparam then  
       
             local macro = ctls[c].macroctl
             
@@ -51218,6 +51408,7 @@ function GUI_DrawCtlBitmap_Strips()
                                     textsizev = tonumber(zn(data[key..'textsizev'],zn(data[key..'textsize'],0))),
                                     font = zn(data[key..'font'],fontname_def),
                                     val = tonumber(data[key..'val']),
+                                    dval = zn(data[key..'dval'],''),
                                     mval = tonumber(data[key..'mval']),
                                     defval = tonumber(data[key..'defval']),
                                     maxdp = tonumber(zn(data[key..'maxdp'],-1)),
@@ -51258,6 +51449,10 @@ function GUI_DrawCtlBitmap_Strips()
         
         if strip.controls[c].maxdp == nil or (strip.controls[c].maxdp and strip.controls[c].maxdp == '') then
           strip.controls[c].maxdp = -1
+        end
+        
+        if strip.controls[c].ctlcat == ctlcats.macro then
+          strip.controls[c].macrotype = tonumber(zn(data[key..'macrotype'],0))
         end
         
         strip.controls[c].xsc = math.floor(strip.controls[c].x + strip.controls[c].w/2 - (strip.controls[c].w*strip.controls[c].scale)/2)
@@ -54690,6 +54885,7 @@ function GUI_DrawCtlBitmap_Strips()
               file:write('['..key..'textsizev]'..nz(ctl.textsizev,nz(ctl.textsize,0))..'\n')
               file:write('['..key..'font]'..nz(ctl.font,fontname_def)..'\n')
               file:write('['..key..'val]'..nz(ctl.val,0)..'\n')
+              file:write('['..key..'dval]'..nz(ctl.dval,'')..'\n')
               file:write('['..key..'mval]'..nz(ctl.mval,nz(ctl.val,0))..'\n')
               file:write('['..key..'defval]'..nz(ctl.defval,0)..'\n')   
               file:write('['..key..'maxdp]'..nz(ctl.maxdp,-1)..'\n')   
@@ -54850,6 +55046,10 @@ function GUI_DrawCtlBitmap_Strips()
                     file:write('['..key..'nudge]'..nz(ctl.gauge.vals[gv].nudge,0)..'\n')                  
                   end
                 end
+              end
+
+              if ctl.macrotype then
+                file:write('['..key..'macrotype]'..ctl.macrotype..'\n')
               end
                             
               if ctl.macroctl then
@@ -55694,7 +55894,7 @@ function GUI_DrawCtlBitmap_Strips()
             else
               track = gtrack
             end
-            SetParam3_Denorm2_Safe2(track, v_ABCD, strip, page, reaper, c)
+            SetParam3_Denorm2_Safe2(track, v_ABCD, strip, page, reaper, c, v_ABCD)
           end      
         end
       end
@@ -56682,8 +56882,11 @@ function GUI_DrawCtlBitmap_Strips()
                 else
                   track = gtrack
                 end
-                SetParam3_Denorm2_Safe2(track, v, strip, page, reaper, c)
+                SetParam3_Denorm2_Safe2(track, v, strip, page, reaper, c, nv)
                 if setdirty then
+                  if enablednu == true and ctl.dnu == true and ctl.show_paramval == true then
+                    ctl.dval = GetParamDisp(ctl.ctlcat,ctl.tracknum or tracks[track_select].tracknum,ctl.fxnum,ctl.param,ctl.dvaloffset,c)
+                  end
                   SetCtlDirty(c)
                 end
               end
@@ -56777,8 +56980,11 @@ function GUI_DrawCtlBitmap_Strips()
                   else
                     track = gtrack
                   end
-                  SetParam3_Denorm2_Safe2(track, v, strip, page, reaper, c)        
+                  SetParam3_Denorm2_Safe2(track, v, strip, page, reaper, c, nv)        
                   if setdirty then
+                    if enablednu == true and ctl.dnu == true and ctl.show_paramval == true then
+                      ctl.dval = GetParamDisp(ctl.ctlcat,ctl.tracknum or tracks[track_select].tracknum,ctl.fxnum,ctl.param,ctl.dvaloffset,c)
+                    end
                     SetCtlDirty(c)
                   end
                 end
