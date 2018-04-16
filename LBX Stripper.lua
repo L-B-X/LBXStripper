@@ -14,7 +14,7 @@
 
 
   local lvar = {}
-  lvar.scriptver = '0.94.0068' --Script Version
+  lvar.scriptver = '0.94.0069' --Script Version
   
   lvar.ctlupdate_rr = nil
   lvar.ctlupdate_pos = 1
@@ -22468,12 +22468,12 @@ function GUI_DrawCtlBitmap_Strips()
                         snapshots[strip][page][sstcnt].snapshot[ss].faddata[d].page = page
                       else
                         --probably from another strip = need to delete
-                        snapshots[strip][page][sstcnt].snapshot[ss].faddata[d] = nil
+                        snapshots[strip][page][sstcnt].snapshot[ss].faddata[d] = {}
                         
                       end
                       
                     end
-                    snapshots[strip][page][sstcnt].snapshot[ss].faddata = Table_RemoveNils(snapshots[strip][page][sstcnt].snapshot[ss].faddata, fdcnt)
+                    --snapshots[strip][page][sstcnt].snapshot[ss].faddata = Table_RemoveNils(snapshots[strip][page][sstcnt].snapshot[ss].faddata, fdcnt)
                   end
                   
                 end
@@ -22544,12 +22544,12 @@ function GUI_DrawCtlBitmap_Strips()
                       snapshots[strip][page][sstcnt].snapshot[ss].faddata[d].page = page
                     else
                       --probably from another strip = need to delete
-                      snapshots[strip][page][sstcnt].snapshot[ss].faddata[d] = nil
+                      snapshots[strip][page][sstcnt].snapshot[ss].faddata[d] = {}
                       
                     end
                     
                   end
-                  snapshots[strip][page][sstcnt].snapshot[ss].faddata = Table_RemoveNils(snapshots[strip][page][sstcnt].snapshot[ss].faddata, fdcnt)
+                  --snapshots[strip][page][sstcnt].snapshot[ss].faddata = Table_RemoveNils(snapshots[strip][page][sstcnt].snapshot[ss].faddata, fdcnt)
                 end
                 
               end
@@ -50168,7 +50168,7 @@ function GUI_DrawCtlBitmap_Strips()
       for fxnum = 0, LBX_CTL_TRACK_INF.count-1 do
         for pf = 0, lvar.LBX_FB_CNT-1 do
           p = fxnum * lvar.LBX_FB_CNT + pf
-          if faders[p+1].targettype then
+          if faders[p+1] and faders[p+1].targettype then
             if faders[p+1].targettype == 2 or faders[p+1].targettype == 4 then
               --macro/fx param check
               if faders[p+1].c_id then
@@ -50193,6 +50193,8 @@ function GUI_DrawCtlBitmap_Strips()
                 end
               end
             end
+          elseif faders[p+1] == nil then
+            faders[p+1] = {}
           end    
         end
       end
