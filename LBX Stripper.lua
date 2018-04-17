@@ -14,7 +14,7 @@
 
 
   local lvar = {}
-  lvar.scriptver = '0.94.0069' --Script Version
+  lvar.scriptver = '0.94.0070' --Script Version
   
   lvar.ctlupdate_rr = nil
   lvar.ctlupdate_pos = 1
@@ -35698,9 +35698,11 @@ function GUI_DrawCtlBitmap_Strips()
                     ctls[i].val = F_limit(ctls[i].val+v,0,1)
                     A_SetParam(tracks[track_select].strip,page,i,ctls[i])
                     --SetParam()
-                    ctls[i].dirty = true
+                    SetCtlDirty(i)
+                    --ctls[i].dirty = true
                     update_ctls = true
                     gfx.mouse_wheel = 0
+                    
                   elseif ctltype == 4 then
                     local v = gfx.mouse_wheel/120
                     if ctls[i].cycledata.pos == nil then
@@ -35730,7 +35732,8 @@ function GUI_DrawCtlBitmap_Strips()
                             ctls[i].cycledata[ctls[i].cycledata.pos].val
                         --SetParam()
                         A_SetParam(tracks[track_select].strip,page,i,ctls[i])
-                        ctls[i].dirty = true
+                        --ctls[i].dirty = true
+                        SetCtlDirty(i)
                         update_ctls = true
                       end
                     end
