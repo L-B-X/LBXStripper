@@ -14,7 +14,7 @@
 
 
   local lvar = {}
-  lvar.scriptver = '0.94.0070' --Script Version
+  lvar.scriptver = '0.94.0071' --Script Version
   
   lvar.ctlupdate_rr = nil
   lvar.ctlupdate_pos = 1
@@ -35677,6 +35677,7 @@ function GUI_DrawCtlBitmap_Strips()
                   noscroll = true
                              
                 elseif settings_mousewheelknob and gfx.mouse_wheel ~= 0 --[[and i]] then
+                  
                   local ctltype = ctls[i].ctltype
                   if ctltype == 1 then
                     trackfxparam_select = i
@@ -35741,7 +35742,7 @@ function GUI_DrawCtlBitmap_Strips()
                     gfx.mouse_wheel = 0       
                                
                   elseif ctls[i].ctlcat == ctlcats.snapshot then
-                  
+
                     if ctls[i].param_info.paramnum == 1 then
                       local v = gfx.mouse_wheel/120
                       local xsstype_select,xss_select
@@ -35781,6 +35782,7 @@ function GUI_DrawCtlBitmap_Strips()
                           if xsstype_select == sstype_select then
                             ss_select = xss_select
                           end
+                          SetCtlDirty(i)
                           update_ctls = true
                           update_snaps = true
                           --update_fsnaps = true                       
