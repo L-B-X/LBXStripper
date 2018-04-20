@@ -14,7 +14,7 @@
 
 
   local lvar = {}
-  lvar.scriptver = '0.94.0072' --Script Version
+  lvar.scriptver = '0.94.0073' --Script Version
   
   lvar.ctlupdate_rr = nil
   lvar.ctlupdate_pos = 1
@@ -271,12 +271,6 @@
               sliderctlxy = 168,
               macctlxy = 169,
               dragcyclexy = 170,
-              sliderctl_rev = 171,
-              sliderctl_h_rev = 172,
-              sliderctlxy_rev = 173,
-              macctl_rev = 174,
-              macctl_h_rev = 175,
-              macctlxy_rev = 176,
               dummy = 999
               }
   
