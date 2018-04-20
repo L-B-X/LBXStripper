@@ -14,7 +14,7 @@
 
 
   local lvar = {}
-  lvar.scriptver = '0.94.0071' --Script Version
+  lvar.scriptver = '0.94.0072' --Script Version
   
   lvar.ctlupdate_rr = nil
   lvar.ctlupdate_pos = 1
@@ -28,7 +28,7 @@
   lvar.submode_table2 = {'STRIP','FX','TRACK','GFX'}
   lvar.mode0_submode_table = {'LIVE MODE','FADERS','MODULATORS'}
   lvar.xxymode_table = {'SNAPSHOTS','PATHS'}
-  lvar.ctltype_table = {'KNOB/SLIDER','BUTTON','BUTTON INV','CYCLE BUTTON','METER','MEM BUTTON','MOMENT BTN','MOMENT INV','FLASH BUTTON','FLASH INV'}
+  lvar.ctltype_table = {'KNOB/SLIDER','BUTTON','BUTTON INV','CYCLE BUTTON','METER','MEM BUTTON','MOMENT BTN','MOMENT INV','FLASH BUTTON','FLASH INV','KNOB/SLIDER REV'}
   lvar.trctltype_table = {'Track Controls','Track Sends','Track Meters','Other Controls'}
   lvar.special_table = {}
   lvar.otherctl_table = {'Action Trigger','Macro Control','EQ Engine','Strip Switcher','ReaControlMidi Switch','Midi/OSC Control','Take Switcher','RS5K Control','Param Update Ctl'}
@@ -271,6 +271,12 @@
               sliderctlxy = 168,
               macctlxy = 169,
               dragcyclexy = 170,
+              sliderctl_rev = 171,
+              sliderctl_h_rev = 172,
+              sliderctlxy_rev = 173,
+              macctl_rev = 174,
+              macctl_h_rev = 175,
+              macctlxy_rev = 176,
               dummy = 999
               }
   
@@ -10513,6 +10519,9 @@ function GUI_DrawCtlBitmap_Strips()
                   if ctltype == 3 then
                     --invert button
                     val2 = 1-val2
+                  elseif ctltype == 11 then
+                    --invert knob/slider
+                    val2 = frames-val2-1
                   elseif ctltype == 4 then
 
                     --cycle button
@@ -35119,7 +35128,7 @@ function GUI_DrawCtlBitmap_Strips()
                     
                   end
                   
-                  if ctltype == 1 then
+                  if ctltype == 1 or ctltype == 11 then
                     
                     if ctls[i].ctlcat ~= ctlcats.macro then
                       --knob/slider
@@ -35170,7 +35179,7 @@ function GUI_DrawCtlBitmap_Strips()
                     
                     --undotxt = 'Parameter Change'
                     --reaper.Undo_BeginBlock2()
-                    
+                  
                   elseif ctltype == 2 or ctltype == 3 then
                     --button/button inverse
                     trackfxparam_select = i
@@ -35851,11 +35860,19 @@ function GUI_DrawCtlBitmap_Strips()
             if mouse.shift then
               local mult = ctl.knobsens.fine
               if mult == 0 then mult = settings_defknobsens.fine end
-              val = ctlpos + ((0-val)*2)*mult
+              if ctl.ctltype ~= 11 then
+                val = ctlpos + ((0-val)*2)*mult
+              else
+                val = ctlpos - ((0-val)*2)*mult              
+              end
             else
               local mult = ctl.knobsens.norm
               if mult == 0 then mult = settings_defknobsens.norm end
-              val = ctlpos + (0-val)*mult
+              if ctl.ctltype ~= 11 then
+                val = ctlpos + (0-val)*mult
+              else
+                val = ctlpos - (0-val)*mult              
+              end
             end
             if val < 0 then val = 0 end
             if val > 1 then val = 1 end
@@ -35870,7 +35887,7 @@ function GUI_DrawCtlBitmap_Strips()
           end
         end
       end
-      
+          
     elseif mouse.context and mouse.context == contexts.sliderctl then
 
       local val = MOUSE_slider(ctlxywh,mouse.slideoff)
@@ -35888,11 +35905,19 @@ function GUI_DrawCtlBitmap_Strips()
             if mouse.shift then
               local mult = ctl.knobsens.fine
               if mult == 0 then mult = settings_defknobsens.fine end
-              val = ctlpos + ((0.5-val)*2)*mult
+              if ctl.ctltype ~= 11 then
+                val = ctlpos + ((0.5-val)*2)*mult
+              else
+                val = ctlpos - ((0.5-val)*2)*mult              
+              end
             else
               local mult = ctl.knobsens.norm
               if mult == 0 then mult = settings_defknobsens.norm end
-              val = ctlpos + (0.5-val)*mult
+              if ctl.ctltype ~= 11 then
+                val = ctlpos + (0.5-val)*mult
+              else
+                val = ctlpos - (0.5-val)*mult              
+              end
             end
             if val < 0 then val = 0 end
             if val > 1 then val = 1 end
@@ -35907,7 +35932,7 @@ function GUI_DrawCtlBitmap_Strips()
           end
         end
       end
-      
+
     elseif mouse.context and mouse.context == contexts.sliderctl_h then
       local val = MOUSE_slider_horiz(ctlxywh,mouse.slideoff)
       if val ~= nil then
@@ -35923,11 +35948,19 @@ function GUI_DrawCtlBitmap_Strips()
           if mouse.shift then
             local mult = ctl.knobsens.fine
             if mult == 0 then mult = settings_defknobsens.fine end
-            val = ctlpos - ((0.5-val)*2)*mult
+            if ctl.ctltype ~= 11 then
+              val = ctlpos - ((0.5-val)*2)*mult
+            else
+              val = ctlpos + ((0.5-val)*2)*mult
+            end
           else
             local mult = ctl.knobsens.norm
             if mult == 0 then mult = settings_defknobsens.norm end
-            val = ctlpos - (0.5-val)*mult
+            if ctl.ctltype ~= 11 then
+              val = ctlpos - (0.5-val)*mult
+            else
+              val = ctlpos + (0.5-val)*mult
+            end
           end
           if val < 0 then val = 0 end
           if val > 1 then val = 1 end
@@ -35960,11 +35993,19 @@ function GUI_DrawCtlBitmap_Strips()
           if mouse.shift then
             local mult = ctl.knobsens.fine
             if mult == 0 then mult = settings_defknobsens.fine end
-            val = ctlpos + ((0-val)*2)*mult
+            if ctl.ctltype ~= 11 then
+              val = ctlpos + ((0-val)*2)*mult
+            else
+              val = ctlpos - ((0-val)*2)*mult
+            end
           else
             local mult = ctl.knobsens.norm
             if mult == 0 then mult = settings_defknobsens.norm end
-            val = ctlpos + (0-val)*mult
+            if ctl.ctltype ~= 11 then
+              val = ctlpos + (0-val)*mult
+            else
+              val = ctlpos - (0-val)*mult
+            end
           end
           if val < 0 then val = 0 end
           if val > 1 then val = 1 end
@@ -35983,7 +36024,7 @@ function GUI_DrawCtlBitmap_Strips()
           end
         end
       end
-      
+
     elseif mouse.context and mouse.context == contexts.macctl then
       
       local tfxp_s = trackfxparam_select
@@ -36001,11 +36042,19 @@ function GUI_DrawCtlBitmap_Strips()
           if mouse.shift then
             local mult = ctl.knobsens.fine
             if mult == 0 then mult = settings_defknobsens.fine end
-            val = ctlpos + ((0.5-val)*2)*mult
+            if ctl.ctltype ~= 11 then
+              val = ctlpos + ((0.5-val)*2)*mult
+            else
+              val = ctlpos - ((0.5-val)*2)*mult
+            end
           else
             local mult = ctl.knobsens.norm
             if mult == 0 then mult = settings_defknobsens.norm end
-            val = ctlpos + (0.5-val)*mult
+            if ctl.ctltype ~= 11 then
+              val = ctlpos + (0.5-val)*mult
+            else
+              val = ctlpos - (0.5-val)*mult
+            end
           end
           if val < 0 then val = 0 end
           if val > 1 then val = 1 end
@@ -36042,11 +36091,19 @@ function GUI_DrawCtlBitmap_Strips()
           if mouse.shift then
             local mult = ctl.knobsens.fine
             if mult == 0 then mult = settings_defknobsens.fine end
-            val = ctlpos - ((0.5-val)*2)*mult
+            if ctl.ctltype ~= 11 then
+              val = ctlpos - ((0.5-val)*2)*mult
+            else
+              val = ctlpos + ((0.5-val)*2)*mult
+            end
           else
             local mult = ctl.knobsens.norm
             if mult == 0 then mult = settings_defknobsens.norm end
-            val = ctlpos - (0.5-val)*mult
+            if ctl.ctltype ~= 11 then
+              val = ctlpos - (0.5-val)*mult
+            else
+              val = ctlpos + (0.5-val)*mult
+            end
           end
           if val < 0 then val = 0 end
           if val > 1 then val = 1 end
