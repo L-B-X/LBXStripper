@@ -14,7 +14,7 @@
 
 
   local lvar = {}
-  lvar.scriptver = '0.94.0073' --Script Version
+  lvar.scriptver = '0.94.0074' --Script Version
   
   lvar.ctlupdate_rr = nil
   lvar.ctlupdate_pos = 1
@@ -35682,7 +35682,7 @@ function GUI_DrawCtlBitmap_Strips()
                 elseif settings_mousewheelknob and gfx.mouse_wheel ~= 0 --[[and i]] then
                   
                   local ctltype = ctls[i].ctltype
-                  if ctltype == 1 then
+                  if ctltype == 1 or ctltype == 11 then
                     trackfxparam_select = i
                     local v
                     if ctls[i].ctlcat ~= ctlcats.rs5k then
@@ -35699,6 +35699,7 @@ function GUI_DrawCtlBitmap_Strips()
                       local mult = 1/lvar.maxsamples
                       v = gfx.mouse_wheel/120 * mult
                     end
+                    if ctltype == 11 then v=-v end
                     ctls[i].val = F_limit(ctls[i].val+v,0,1)
                     A_SetParam(tracks[track_select].strip,page,i,ctls[i])
                     --SetParam()
