@@ -14,7 +14,7 @@
 
 
   local lvar = {}
-  lvar.scriptver = '0.94.0074' --Script Version
+  lvar.scriptver = '0.94.0075' --Script Version
   
   lvar.ctlupdate_rr = nil
   lvar.ctlupdate_pos = 1
@@ -31,7 +31,7 @@
   lvar.ctltype_table = {'KNOB/SLIDER','BUTTON','BUTTON INV','CYCLE BUTTON','METER','MEM BUTTON','MOMENT BTN','MOMENT INV','FLASH BUTTON','FLASH INV','KNOB/SLIDER REV'}
   lvar.trctltype_table = {'Track Controls','Track Sends','Track Meters','Other Controls'}
   lvar.special_table = {}
-  lvar.otherctl_table = {'Action Trigger','Macro Control','EQ Engine','Strip Switcher','ReaControlMidi Switch','Midi/OSC Control','Take Switcher','RS5K Control','Param Update Ctl'}
+  lvar.otherctl_table = {'Action Trigger','Macro Control','EQ Engine','Strip Switcher','ReaControlMidi Switch','Midi/OSC Control','Take Switcher','RS5K Control','Param Update Ctl','Param Value Ctl (Global)'}
   lvar.scalemode_preset_table = {'','NORMAL','REAPER VOL'}
   lvar.lfomode_table = {'NORMAL MODE','TAKESWITCH MODE','RS5K MODE'}
   lvar.scalemode_table = {1/8,1/7,1/6,1/5,1/4,1/3,1/2,1,2,3,4,5,6,7,8}
@@ -275,54 +275,56 @@
               }
   
   local ctlcats = {fxparam = 0,
-             trackparam = 1,
-             tracksend = 2,
-             trackrecv = 3,
-             trackhwout = 4,
-             action = 5,
-             snapshot = 6,
-             pkmeter = 7,
-             xy = 8,
-             fxoffline = 9,
-             macro = 10,
-             eqcontrol = 11,
-             switcher = 12,
-             snapshotrand = 13,
-             fxgui = 14,
-             rcm_switch = 15,
-             midictl = 16,
-             oscctl = 17,
-             takeswitcher = 18,
-             rs5k = 19,
-             midieditor_pageswitch = 20,
-             switcher_pagesel = 21,
-             fxmulti = 22,
-             macro_updateparam = 23}
+                   trackparam = 1,
+                   tracksend = 2,
+                   trackrecv = 3,
+                   trackhwout = 4,
+                   action = 5,
+                   snapshot = 6,
+                   pkmeter = 7,
+                   xy = 8,
+                   fxoffline = 9,
+                   macro = 10,
+                   eqcontrol = 11,
+                   switcher = 12,
+                   snapshotrand = 13,
+                   fxgui = 14,
+                   rcm_switch = 15,
+                   midictl = 16,
+                   oscctl = 17,
+                   takeswitcher = 18,
+                   rs5k = 19,
+                   midieditor_pageswitch = 20,
+                   switcher_pagesel = 21,
+                   fxmulti = 22,
+                   macro_updateparam = 23,
+                   paramvalue_glob = 24}
 
   lvar.ctlcats_nm = {'fxparam',
-                'trackparam',
-                'tracksend',
-                'trackrecv',
-                'trackhwout',
-                 'action',
-                 'snapshot',
-                 'pkmeter',
-                 'xy',
-                 'fxoffline',
-                 'macro',
-                 'eqcontrol',
-                 'switcher',
-                 'snapshotrand',
-                 'fxgui',
-                 'rcm_switch',
-                 'midictl',
-                 'oscctl',
-                 'takeswitcher',
-                 'rs5k',
-                 'midi editor - page switcher',
-                 'switcher_pagesel',
-                 'fxmulti',
-                 'macro_updateparam'}
+                     'trackparam',
+                     'tracksend',
+                     'trackrecv',
+                     'trackhwout',
+                     'action',
+                     'snapshot',
+                     'pkmeter',
+                     'xy',
+                     'fxoffline',
+                     'macro',
+                     'eqcontrol',
+                     'switcher',
+                     'snapshotrand',
+                     'fxgui',
+                     'rcm_switch',
+                     'midictl',
+                     'oscctl',
+                     'takeswitcher',
+                     'rs5k',
+                     'midi editor - page switcher',
+                     'switcher_pagesel',
+                     'fxmulti',
+                     'macro_updateparam',
+                     'paramvalue_glob'}
              
   lvar.gfxtype = {img = 0,
                   txt = 1
@@ -2049,7 +2051,7 @@
       --Default value slider
       obj.sections[57] = {x = math.floor(60*pnl_scale),
                           y = math.floor(coff+(butt_h+10 + (butt_h/2+4 + 10) * 10 - 8)*pnl_scale),
-                          w = math.floor(obj.sections[45].w-70*pnl_scale),
+                          w = math.floor(obj.sections[45].w-90*pnl_scale),
                           h = math.floor((butt_h/2+8)*pnl_scale)}                           
 
       --Font button
@@ -2087,6 +2089,12 @@
                           y = math.floor(coff+(butt_h+10 + (butt_h/2+4 + 10) * 11 -8)*pnl_scale),
                           w = math.floor(40*pnl_scale),
                           h = math.floor((butt_h)*pnl_scale)}
+
+      --Disable DefVal tick
+      obj.sections[962] = {x = obj.sections[59].x + obj.sections[59].w - math.floor(((butt_h/2+4)*pnl_scale)),
+                          y = obj.sections[57].y + math.floor(obj.sections[57].h/2) - math.floor(((butt_h/2+4)*pnl_scale)/2),
+                          w = math.floor((butt_h/2+4)*pnl_scale),
+                          h = math.floor((butt_h/2+4)*pnl_scale)}                           
 
       --Set MIDI button
       local xx = obj.sections[66].x+obj.sections[66].w + math.floor(6*pnl_scale)
@@ -5021,6 +5029,7 @@
                                                 textsize = textsize_select,
                                                 textsizev = textsizev_select,
                                                 textcolv = textcolv_select,
+                                                enabledefval = enabledefval_select,
                                                 val = GetParamValue(ctlcats.fxparam,
                                                                     tracks[trackedit_select].tracknum,
                                                                     trackfx[trackfx_select].fxnum,
@@ -5091,6 +5100,7 @@
                                                 textsize = textsize_select,
                                                 textsizev = textsizev_select,
                                                 textcolv = textcolv_select,
+                                                enabledefval = enabledefval_select,
                                                 val = 0,
                                                 defval = 0,
                                                 maxdp = maxdp_select,
@@ -5155,6 +5165,7 @@
                                                 textsize = textsize_select,
                                                 textsizev = textsizev_select,
                                                 textcolv = textcolv_select,
+                                                enabledefval = enabledefval_select,
                                                 val = 0,
                                                 defval = 0,
                                                 maxdp = maxdp_select,
@@ -5215,6 +5226,7 @@
                                                 textsize = textsize_select,
                                                 textsizev = textsizev_select,
                                                 textcolv = textcolv_select,
+                                                enabledefval = enabledefval_select,
                                                 val = GetParamValue(ctlcats.fxparam,
                                                                     last_touch_fx.tracknum,
                                                                     last_touch_fx.fxnum,
@@ -5282,6 +5294,7 @@
                                                 textsize = textsize_select,
                                                 textsizev = textsizev_select,
                                                 textcolv = textcolv_select,
+                                                enabledefval = enabledefval_select,
                                                 val = GetParamValue(ctlcats.trackparam,
                                                                     tracks[trackedit_select].tracknum,
                                                                     nil,
@@ -5360,6 +5373,7 @@
                                                   textsize = textsize_select,
                                                   textsizev = textsizev_select,
                                                   textcolv = textcolv_select,
+                                                  enabledefval = enabledefval_select,
                                                   val = 0,
                                                   defval = 0,
                                                   maxdp = maxdp_select,
@@ -5431,6 +5445,7 @@
                                                 textsize = textsize_select,
                                                 textsizev = textsizev_select,
                                                 textcolv = textcolv_select,
+                                                enabledefval = enabledefval_select,
                                                 val = 0,
                                                 defval = 0,
                                                 maxdp = maxdp_select,
@@ -5500,6 +5515,7 @@
                                                 textsize = textsize_select,
                                                 textsizev = textsizev_select,
                                                 textcolv = textcolv_select,
+                                                enabledefval = enabledefval_select,
                                                 val = 0,
                                                 defval = 0,
                                                 maxdp = maxdp_select,
@@ -5566,6 +5582,7 @@
                                                 textsize = textsize_select,
                                                 textsizev = textsizev_select,
                                                 textcolv = textcolv_select,
+                                                enabledefval = enabledefval_select,
                                                 val = 0,
                                                 defval = 0,
                                                 maxdp = maxdp_select,
@@ -5628,6 +5645,7 @@
                                                 textsize = textsize_select,
                                                 textsizev = textsizev_select,
                                                 textcolv = textcolv_select,
+                                                enabledefval = enabledefval_select,
                                                 val = 0,
                                                 defval = 0,
                                                 maxdp = maxdp_select,
@@ -5691,6 +5709,7 @@
                                                 textsize = textsize_select,
                                                 textsizev = textsizev_select,
                                                 textcolv = textcolv_select,
+                                                enabledefval = enabledefval_select,
                                                 val = 0,
                                                 defval = 0,
                                                 maxdp = maxdp_select,
@@ -5711,6 +5730,7 @@
                                                 clickthrough = clickthrough_select,
                                                 knobsens = table.copy(settings_defknobsens)
                                                }
+      
       elseif dragparam.type == 'macro_updateparam' then
         local mcnt = 0
         for c = 1, #strips[strip][page].controls do
@@ -5754,6 +5774,67 @@
                                                 textsize = textsize_select,
                                                 textsizev = textsizev_select,
                                                 textcolv = textcolv_select,
+                                                enabledefval = enabledefval_select,
+                                                val = 0,
+                                                defval = 0,
+                                                maxdp = maxdp_select,
+                                                cycledata = {statecnt = 0,val = 0,mapptof = false,draggable = false,spread = false, {}},
+                                                xydata = {snapa = 1, snapb = 1, snapc = 1, snapd = 1, x = 0.5, y = 0.5},
+                                                membtn = {state = false,
+                                                          mem = nil},
+                                                id = nil,
+                                                tracknum = nil,
+                                                trackguid = nil,
+                                                scalemode = 8,
+                                                framemode = 1,
+                                                horiz = horiz_select,
+                                                poslock = false,
+                                                bypassbg_c = bypass_bgdraw_c_select,
+                                                bypassbg_n = bypass_bgdraw_n_select,
+                                                bypassbg_v = bypass_bgdraw_v_select,
+                                                clickthrough = clickthrough_select,
+                                                knobsens = table.copy(settings_defknobsens)
+                                               }
+
+      elseif dragparam.type == 'paramvalue_glob' then
+
+        strips[strip][page].controls[ctlnum] = {c_id = GenID(),
+                                                ctlcat = ctlcats.paramvalue_glob,
+                                                macrotype = 1,
+                                                fxname='Param Value Control',
+                                                fxguid=nil, 
+                                                fxnum=nil, 
+                                                fxfound = true,
+                                                param = trctl_select,
+                                                param_info = {paramname = 'Param Value Control',
+                                                              paramidx = nil},
+                                                ctltype = 5,
+                                                knob_select = knob_select,
+                                                ctl_info = {fn = ctl_files[knob_select].fn,
+                                                            frames = ctl_files[knob_select].frames,
+                                                            imageidx = ctl_files[knob_select].imageidx, 
+                                                            cellh = ctl_files[knob_select].cellh},
+                                                x = x,
+                                                y = y,
+                                                w = w,
+                                                poslock = false,
+                                                scale = scale_select,
+                                                xsc = x + math.floor(w/2 - (w*scale_select)/2),
+                                                ysc = y + math.floor(ctl_files[knob_select].cellh/2 - (ctl_files[knob_select].cellh*scale_select)/2),
+                                                wsc = w*scale_select,
+                                                hsc = ctl_files[knob_select].cellh*scale_select,
+                                                show_paramname = false,
+                                                show_paramval = true,
+                                                ctlname_override = '',
+                                                textcol = textcol_select,
+                                                textoff = textoff_select,
+                                                textoffval = textoffval_select,
+                                                textoffx = textoff_selectx,
+                                                textoffvalx = textoffval_selectx,
+                                                textsize = textsize_select,
+                                                textsizev = textsizev_select,
+                                                textcolv = textcolv_select,
+                                                enabledefval = enabledefval_select,
                                                 val = 0,
                                                 defval = 0,
                                                 maxdp = maxdp_select,
@@ -5817,6 +5898,7 @@
                                                 textsize = textsize_select,
                                                 textsizev = textsizev_select,
                                                 textcolv = textcolv_select,
+                                                enabledefval = enabledefval_select,
                                                 val = 0,
                                                 defval = 0,
                                                 maxdp = maxdp_select,
@@ -5881,6 +5963,7 @@
                                                 textsize = textsize_select,
                                                 textsizev = textsizev_select,
                                                 textcolv = textcolv_select,
+                                                enabledefval = enabledefval_select,
                                                 val = 0,
                                                 defval = 0,
                                                 maxdp = maxdp_select,
@@ -5947,6 +6030,7 @@
                                                 textsize = textsize_select,
                                                 textsizev = textsizev_select,
                                                 textcolv = textcolv_select,
+                                                enabledefval = enabledefval_select,
                                                 val = 0,
                                                 defval = 0,
                                                 maxdp = maxdp_select,
@@ -6013,6 +6097,7 @@
                                                 textsize = textsize_select,
                                                 textsizev = textsizev_select,
                                                 textcolv = textcolv_select,
+                                                enabledefval = enabledefval_select,
                                                 val = 0,
                                                 defval = 0,
                                                 maxdp = maxdp_select,
@@ -6081,6 +6166,7 @@
                                                 textsize = textsize_select,
                                                 textsizev = textsizev_select,
                                                 textcolv = textcolv_select,
+                                                enabledefval = enabledefval_select,
                                                 val = 0,
                                                 defval = 0,
                                                 maxdp = maxdp_select,
@@ -6147,6 +6233,7 @@
                                                 textsize = textsize_select,
                                                 textsizev = textsizev_select,
                                                 textcolv = textcolv_select,
+                                                enabledefval = enabledefval_select,
                                                 val = 0,
                                                 defval = 0,
                                                 maxdp = maxdp_select,
@@ -8803,9 +8890,18 @@
 
               local theta
               if gtab.mapptof and gtab.spread then
-                theta = -pi*gtab.arclen -(pi*0.5) +(gtab.rotation*(2*pi)) + (i/(#vals-1) + nudge) * len
+                if ctl.ctltype == 11 then
+                  theta = pi*gtab.arclen -(pi*0.5) +(gtab.rotation*(2*pi)) - (i/(#vals-1) + nudge) * len
+                else
+                  theta = -pi*gtab.arclen -(pi*0.5) +(gtab.rotation*(2*pi)) + (i/(#vals-1) + nudge) * len
+                end
               else
-                theta = frameScale(ctl.framemode, vals[i+1].val+nudge) * (2*pi*gtab.arclen) - pi*gtab.arclen -(pi*0.5) +(gtab.rotation*(2*pi))
+
+                if ctl.ctltype == 11 then
+                  theta = frameScale(ctl.framemode, vals[i+1].val+nudge) * (-2*pi*gtab.arclen) + pi*gtab.arclen -(pi*0.5) +(gtab.rotation*(2*pi))
+                else
+                  theta = frameScale(ctl.framemode, vals[i+1].val+nudge) * (2*pi*gtab.arclen) - pi*gtab.arclen -(pi*0.5) +(gtab.rotation*(2*pi))                
+                end
               end
               
               local showv
@@ -8897,7 +8993,11 @@
               if gtab.mapptof and gtab.spread then
                 theta = (i/(#vals-1) +nudge) * len
               else
-                theta = (frameScale(ctl.framemode, vals[i+1].val)+nudge) * len
+                if ctl.ctltype == 11 then
+                  theta = len - (frameScale(ctl.framemode, vals[i+1].val)+nudge) * len
+                else
+                  theta = (frameScale(ctl.framemode, vals[i+1].val)+nudge) * len
+                end   
               end
               
               local showv
@@ -8988,7 +9088,11 @@
               if gtab.mapptof and gtab.spread then
                 theta = (i/(#vals-1) +nudge) * len
               else
-                theta = (frameScale(ctl.framemode, vals[i+1].val)+nudge) * len
+                if ctl.ctltype == 11 then
+                  theta = len - (frameScale(ctl.framemode, vals[i+1].val)+nudge) * len
+                else
+                  theta = (frameScale(ctl.framemode, vals[i+1].val)+nudge) * len
+                end
               end
               
               local showv
@@ -9734,6 +9838,8 @@
       GUI_DrawSliderH(gui, '', obj.sections[58], gui.color.black, gui.skol.pnl_txt, (textsize_select+2)/35)
       GUI_DrawSliderH(gui, '', obj.sections[851], gui.color.black, gui.skol.pnl_txt, (textsizev_select+2)/35)
       GUI_DrawSliderH(gui, 'DEF VAL', obj.sections[57], gui.color.black, gui.skol.pnl_txt, F_limit(defval_select,0,1))
+      GUI_DrawTick(gui, '', obj.sections[962], gui.skol.pnl_txt, enabledefval_select)
+      
       GUI_DrawButton(gui, 'SET IMAGE', obj.sections[51], gui.color.white, gui.skol.butt1_txt, true)
       GUI_DrawButton(gui, 'EDIT NAME', obj.sections[59], gui.color.white, gui.skol.butt1_txt, true)
 
@@ -10524,19 +10630,29 @@ function GUI_DrawCtlBitmap_Strips()
                       --prelim code for single state notify
                       if ctl.cycledata.statecnt == 1 then
                         local v3 = ctl.val
-                        --must convert to string to compare               
-                        if tostring(v3) ~= tostring(ctl.cycledata[1].val) then
-                          --not selected
-                          val2 = frames-1
+                        --must convert to string to compare
+                        if not ctl.cycledata[1].startval then               
+                          if tostring(v3) ~= tostring(ctl.cycledata[1].val) then
+                            --not selected
+                            val2 = frames-1
+                          else
+                            --selected
+                            val2 = 0
+                          end
                         else
-                          --selected
-                          val2 = 0
+                          if v3 >= ctl.cycledata[1].startval and v3 < ctl.cycledata[1].nextval-0.001 then
+                            --DBG(v3..'  '..ctl.cycledata[1].startval..'  '..ctl.cycledata[1].nextval)
+                            --selected
+                            val2 = 0
+                          else                          
+                            --not selected
+                            val2 = frames-1
+                          end 
                         end
                       else
                       
                         Disp_ParamV = GetParamDisp(ctlcat, tnum, fxnum, param, dvoff, i)
                         local p = ctl.cycledata.pos
-                        
                         if ctl.cycledata[p] and
                            Disp_ParamV ~= ctl.cycledata[p].dv then
                           for p = 1, ctl.cycledata.statecnt do
@@ -10544,7 +10660,6 @@ function GUI_DrawCtlBitmap_Strips()
                             if p < ctl.cycledata.statecnt then
                               vc = vc + (ctl.cycledata[p+1].val - vc)/2
                             end
-                            
                             if Disp_ParamV == ctl.cycledata[p].dv or 
                                (ctl.val and ctl.val <= vc) then
                               ctl.cycledata.pos = p
@@ -10575,9 +10690,11 @@ function GUI_DrawCtlBitmap_Strips()
                       end
 
                     end
+                    
+                    --val2 = math.min(frames, val2)
 
                     if ctl.cycledata.invert then
-                      val2 = 1-val2
+                      val2 = (frames-1)-val2
                     end
 
 
@@ -10825,6 +10942,9 @@ function GUI_DrawCtlBitmap_Strips()
                     else
                       Disp_ParamV = ''
                     end
+
+                  elseif ctlcat == ctlcats.paramvalue_glob then
+                      Disp_ParamV = ctl.pvc_val or ''
                       
                   elseif ctlcat == ctlcats.midieditor_pageswitch then
                     if ctlnmov == '' then
@@ -18838,7 +18958,7 @@ function GUI_DrawCtlBitmap_Strips()
     
   end
     
-  function GetParamDisp(ctlcat,tracknum,fxnum,paramnum, dvoff,c)
+  function GetParamDisp(ctlcat,tracknum,fxnum,paramnum, dvoff, c)
     track = GetTrack(tracknum)
     if ctlcat == ctlcats.fxparam then
       local _, d = reaper.TrackFX_GetFormattedParamValue(track, fxnum, paramnum, "")
@@ -25137,6 +25257,7 @@ function GUI_DrawCtlBitmap_Strips()
                                               textsize = textsize_select,
                                               textsizev = textsizev_select,
                                               textcolv = textcolv_select,
+                                              enabledefval = enabledefval_select,
                                               val = 0,
                                               defval = 0,
                                               maxdp = maxdp_select,
@@ -27913,6 +28034,7 @@ function GUI_DrawCtlBitmap_Strips()
       textsize_select = ctl.textsize
       textsizev_select = ctl.textsizev
       defval_select = ctl.defval
+      enabledefval_select = ctl.enabledefval
       maxdp_select = nz(ctl.maxdp,-1)                  
       dvaloff_select = nz(ctl.dvaloffset,'')                  
       --knob_scalemode_select = nz(ctl.scalemode,1)                  
@@ -28510,7 +28632,8 @@ function GUI_DrawCtlBitmap_Strips()
                   {}}
     local dcnt = #dtbl
     for i = 1, dcnt do
-      otbl[i] = {val = dtbl[dcnt-(i-1)].val, dispval = dtbl[dcnt-(i-1)].dispval, dv = dtbl[dcnt-(i-1)].dv}
+      otbl[i] = {val = dtbl[dcnt-(i-1)].val, dispval = dtbl[dcnt-(i-1)].dispval, dv = dtbl[dcnt-(i-1)].dv, 
+                 startval = dtbl[dcnt-(i-1)].startval, nextval = dtbl[dcnt-(i-1)].nextval}
     end
                   
     return otbl    
@@ -28565,24 +28688,25 @@ function GUI_DrawCtlBitmap_Strips()
   
     local ctltype = strips[tracks[track_select].strip][page].controls[i].ctltype
     trackfxparam_select = i
+    local ctl = strips[tracks[track_select].strip][page].controls[i]
+    if ctl.enabledefval == false then return end
     if ctltype == 1 then                  
-      strips[tracks[track_select].strip][page].controls[i].val = strips[tracks[track_select].strip][page].controls[i].defval
+      ctl.val = ctl.defval
       SetParam()
-      strips[tracks[track_select].strip][page].controls[i].dirty = true
+      ctl.dirty = true
       update_ctls = true
       
     elseif ctltype == 4 then                  
-      strips[tracks[track_select].strip][page].controls[i].cycledata.pos = round(strips[tracks[track_select].strip][page].controls[i].cycledata.statecnt *
-                                                                           strips[tracks[track_select].strip][page].controls[i].defval)
-      if strips[tracks[track_select].strip][page].controls[i].cycledata.pos < 1 then strips[tracks[track_select].strip][page].controls[i].cycledata.pos = 1 
-      elseif strips[tracks[track_select].strip][page].controls[i].cycledata.pos > strips[tracks[track_select].strip][page].controls[i].cycledata.statecnt then
-        strips[tracks[track_select].strip][page].controls[i].cycledata.pos = strips[tracks[track_select].strip][page].controls[i].cycledata.statecnt
+      ctl.cycledata.pos = round(ctl.cycledata.statecnt *
+                                ctl.defval)
+      if ctl.cycledata.pos < 1 then ctl.cycledata.pos = 1 
+      elseif ctl.cycledata.pos > ctl.cycledata.statecnt then
+        ctl.cycledata.pos = ctl.cycledata.statecnt
       end
             
-      strips[tracks[track_select].strip][page].controls[i].val = 
-          strips[tracks[track_select].strip][page].controls[i].cycledata[strips[tracks[track_select].strip][page].controls[i].cycledata.pos].val
+      ctl.val = ctl.cycledata[ctl.cycledata.pos].val
       SetParam()
-      strips[tracks[track_select].strip][page].controls[i].dirty = true
+      ctl.dirty = true
 
       update_ctls = true
       
@@ -36131,7 +36255,7 @@ function GUI_DrawCtlBitmap_Strips()
       macctlactive = nil
     
     elseif mouse.context and mouse.context == contexts.dragcyclexy then
-      local val = MOUSE_slider(ctlxywh,mouse.slideoff,mouse.slideoffh)
+      local val = MOUSE_slider_alt(ctlxywh,mouse.slideoff,mouse.slideoffh)
       if val ~= nil then
         local strip = tracks[track_select].strip
         local ctl = strips[strip][page].controls[trackfxparam_select]
@@ -38724,6 +38848,13 @@ function GUI_DrawCtlBitmap_Strips()
               end
               update_ctlopts = true
             end
+          elseif mouse.context == nil and MOUSE_click(obj.sections[962]) then
+            enabledefval_select = not enabledefval_select
+            for i = 1, #ctl_select do
+              strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].enabledefval = enabledefval_select
+            end
+            update_ctlopts = true
+            
           elseif mouse.context == nil and MOUSE_click(obj.sections[51]) then
             --apply
             if ctl_files[knob_select].imageidx == nil then  
@@ -38999,6 +39130,22 @@ function GUI_DrawCtlBitmap_Strips()
           ctlpos = cycle_select.val
           mouse.slideoff = obj.sections[101].y+obj.sections[101].h/2 - mouse.my
           oms = mouse.shift
+        
+        elseif mouse.context == nil and MOUSE_click_RB(obj.sections[101]) then 
+        
+          trackfxparam_select = ctl_select[1].ctl
+          local ctl = strips[tracks[track_select].strip][page].controls[trackfxparam_select]
+          cycle_select.val = ctl.val
+          if cycle_select.selected then
+            local v = GetParamValue(ctl.ctlcat, ctl.tracknum or tracks[track_select].tracknum, ctl.fxnum, ctl.param, trackfxparam_select)
+            local dispval = GetParamDisp(ctl.ctlcat, ctl.tracknum or tracks[track_select].tracknum, ctl.fxnum, ctl.param, ctl.dvaloffset, trackfxparam_select)
+            cycle_select[cycle_select.selected].val = ctl.val
+            DBG(ctl.val..'  '..cycle_select[cycle_select.selected].val..'  '..v)
+            cycle_select[cycle_select.selected].dispval = dispval
+            cycle_select[cycle_select.selected].dv = dispval
+          end
+          update_gfx = true
+        
         end
         
         if MOUSE_click(obj.sections[103]) then
@@ -39006,9 +39153,10 @@ function GUI_DrawCtlBitmap_Strips()
           cycle_select.selected = F_limit(i+cyclist_offset,1,cycle_select.statecnt)
           --strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].cycledata.pos = cycle_select.selected
           update_gfx = true
+        
         elseif MOUSE_click_RB(obj.sections[103]) then
           if cycle_select and cycle_select.selected then
-            local mstr = 'Rename||Delete'
+            local mstr = 'Rename||Delete||Create Radio Button|Create All Radio Buttons'
             gfx.x, gfx.y = mouse.mx, mouse.my
             local res = OpenMenu(mstr)
             if res == 1 then
@@ -39017,6 +39165,32 @@ function GUI_DrawCtlBitmap_Strips()
             elseif res == 2 then
               cycle_select = Cycle_DeleteStep(cycle_select.selected)
               update_gfx = true
+            elseif res == 3 then
+              
+              if cycle_select.statecnt > 0 then
+                local c = ctl_select[1].ctl
+                Cycle_CreateRadioButton(c)
+                ctls_dnu, ctls_upd = CtlDNU()
+              end
+            
+            elseif res == 4 then
+              
+              if cycle_select.statecnt > 0 then
+                local c = ctl_select[1].ctl
+                local ctl = strips[tracks[track_select].strip][page].controls[c]
+                if ctl then
+                  local ch = ctl.ctl_info.cellh
+                  local dx, dy = 0, ch
+                  for i = 1, cycle_select.statecnt do
+                    cycle_select.selected = i
+                    
+                    Cycle_CreateRadioButton(c,dx,dy)
+                    dy = dy + ch
+                  end
+                  ctls_dnu, ctls_upd = CtlDNU()
+                end
+              end
+
             end
           end            
         end          
@@ -40532,6 +40706,8 @@ function GUI_DrawCtlBitmap_Strips()
           dragparam = {x = mouse.mx-ksel_size.w, y = mouse.my-ksel_size.h, type = 'rs5k'}
         elseif trctl_select == 9 then
           dragparam = {x = mouse.mx-ksel_size.w, y = mouse.my-ksel_size.h, type = 'macro_updateparam'}
+        elseif trctl_select == 10 then
+          dragparam = {x = mouse.mx-ksel_size.w, y = mouse.my-ksel_size.h, type = 'paramvalue_glob'}
         end
         
         reass_param = nil
@@ -40629,29 +40805,7 @@ function GUI_DrawCtlBitmap_Strips()
               end
               if cnt <= 1 then
                 ReassParam(tracks[track_select].strip, page, reass_param, trackedit_select, trackfx_select, trackfxparam_select)
-                --[[strips[tracks[track_select].strip][page].controls[reass_param].c_id = GenID()
-                if tracks[trackedit_select].tracknum ~= tracks[track_select].tracknum then
-                  strips[tracks[track_select].strip][page].controls[reass_param].tracknum=tracks[trackedit_select].tracknum
-                  strips[tracks[track_select].strip][page].controls[reass_param].trackguid=tracks[trackedit_select].guid
-                else
-                  strips[tracks[track_select].strip][page].controls[reass_param].tracknum=nil
-                  strips[tracks[track_select].strip][page].controls[reass_param].trackguid=nil                  
-                end
-                strips[tracks[track_select].strip][page].controls[reass_param].ctlcat = ctlcats.fxparam
-                strips[tracks[track_select].strip][page].controls[reass_param].fxname=trackfx[trackfx_select].name
-                strips[tracks[track_select].strip][page].controls[reass_param].fxguid=trackfx[trackfx_select].guid
-                strips[tracks[track_select].strip][page].controls[reass_param].fxnum=trackfx[trackfx_select].fxnum
-                strips[tracks[track_select].strip][page].controls[reass_param].fxfound = true
-                strips[tracks[track_select].strip][page].controls[reass_param].param = trackfxparam_select
-                strips[tracks[track_select].strip][page].controls[reass_param].param_info = trackfxparams[trackfxparam_select]
-                strips[tracks[track_select].strip][page].controls[reass_param].val = GetParamValue(ctlcats.fxparam,
-                                                                                                   tracks[trackedit_select].tracknum,
-                                                                                                   trackfx[trackfx_select].fxnum,
-                                                                                                   trackfxparam_select, reass_param)
-                strips[tracks[track_select].strip][page].controls[reass_param].defval = GetParamValue(ctlcats.fxparam,
-                                                                                                   tracks[trackedit_select].tracknum,
-                                                                                                   trackfx[trackfx_select].fxnum,
-                                                                                                   trackfxparam_select, reass_param)]]
+             
               else
                 OpenMsgBox(1, 'You cannot reassign multiple controls at once.', 1)
               end
@@ -40842,6 +40996,15 @@ function GUI_DrawCtlBitmap_Strips()
             if dragparam.x+ksel_size.w > obj.sections[10].x and dragparam.x+ksel_size.w < obj.sections[10].x+obj.sections[10].w and dragparam.y+ksel_size.h > obj.sections[10].y and dragparam.y+ksel_size.h < obj.sections[10].y+obj.sections[10].h then
               trackfxparam_select = i
               Strip_AddParam()              
+            end
+          else
+          
+          end
+        elseif dragparam.type == 'paramvalue_glob' then
+          if reass_param == nil then
+            if dragparam.x+ksel_size.w > obj.sections[10].x and dragparam.x+ksel_size.w < obj.sections[10].x+obj.sections[10].w and dragparam.y+ksel_size.h > obj.sections[10].y and dragparam.y+ksel_size.h < obj.sections[10].y+obj.sections[10].h then
+              trackfxparam_select = i
+              Strip_AddParam()
             end
           else
           
@@ -48172,6 +48335,54 @@ function GUI_DrawCtlBitmap_Strips()
                               end                        
                             end
                           end                        
+
+                        elseif ctl.ctlcat == ctlcats.paramvalue_glob then
+
+                          --get control under mouse
+                          if mouse.context == nil then
+                            local strip = tracks[track_select].strip
+                            local tctls = strips[strip][page].controls
+                            local c, stripidx, stripid = GetControlAtXY(strip, page, mouse.mx, mouse.my)
+                            if c then
+                              local tctl = tctls[c]
+                              if tctl then
+                                ctl.pvc_ctl = c
+                                local v
+                                if tctl.ctlcat == ctlcats.fxparam then
+                                  _, v = reaper.TrackFX_GetFormattedParamValue(tr, tctl.fxnum, tctl.param, "")
+                                else
+                                  v = GetParamDisp(tctl.ctlcat,tctl.tracknum or tracks[track_select].tracknum,tctl.fxnum,tctl.param,tctl.dvaloffset,c)
+                                end
+                                if v ~= ctl.pvc_val then
+                                  ctl.pvc_val = v
+                                  ctl.dirty = true
+                                  update_ctls = true
+                                end
+                              end
+                            elseif ctl.pvc_val ~= nil then
+                              ctl.pvc_val = nil
+                              ctl.pvc_ctl = nil
+                              ctl.dirty = true
+                              update_ctls = true
+                            end
+                          elseif ctl.pvc_ctl then
+                            local c = ctl.pvc_ctl
+                            local strip = tracks[track_select].strip
+                            local tctl = strips[strip][page].controls[c]
+                            if tctl then
+                              local v
+                              if tctl.ctlcat == ctlcats.fxparam then
+                                _, v = reaper.TrackFX_GetFormattedParamValue(tr, tctl.fxnum, tctl.param, "")
+                              else
+                                v = GetParamDisp(tctl.ctlcat,tctl.tracknum or tracks[track_select].tracknum,tctl.fxnum,tctl.param,tctl.dvaloffset,c)
+                              end
+                              if v ~= ctl.pvc_val then
+                                ctl.pvc_val = v
+                                ctl.dirty = true
+                                update_ctls = true
+                              end
+                            end
+                          end
                         end
                         
                         --if ctl.macrofader then                    
@@ -50650,7 +50861,7 @@ function GUI_DrawCtlBitmap_Strips()
       end
       for i = 1, max_cycle do
         if cd[i] then
-          co[i] = {val = cd[i].val, dispval = cd[i].dispval, dv = cd[i].dv}
+          co[i] = {val = cd[i].val, dispval = cd[i].dispval, dv = cd[i].dv, startval = cd[i].startval, nextval = cd[i].nextval}
         end
       end
       return co
@@ -50674,7 +50885,7 @@ function GUI_DrawCtlBitmap_Strips()
       for i = 1, max_cycle do
         if cd[i] then
           cd[i].val = cd[i].val or 0
-          co[i] = {val = tonumber(cd[i].val), dispval = cd[i].dispval, dv = cd[i].dv}
+          co[i] = {val = tonumber(cd[i].val), dispval = cd[i].dispval, dv = cd[i].dv, startval = tonumber(cd[i].startval), nextval = tonumber(cd[i].nextval)}
           --DBG(tostring(co[i].val)..'  '..tostring(cd[i].val))
         end
       end
@@ -50730,6 +50941,61 @@ function GUI_DrawCtlBitmap_Strips()
     end    
   end
   
+  function Cycle_CreateRadioButton(c,dx,dy)
+  
+    local ctls = strips[tracks[track_select].strip][page].controls
+    local c1 = #ctls+1
+
+    if dx == nil or dy == nil then
+      dx = 0
+      dy = ctls[c].ctl_info.cellh
+    end   
+
+    local ocd = cycle_select
+    local sel = ocd.selected
+
+    local cc = c1
+    ctls[cc]=GetControlTable(tracks[track_select].strip, page, c)
+    
+    local ctl = ctls[cc]
+    ctl.poslock = false
+    ctl.x = ctl.x + dx
+    ctl.y = ctl.y + dy
+    ctl.xsc = ctl.xsc + dx
+    ctl.ysc = ctl.ysc + dy
+    ctl.id = nil
+    
+    local cd = Cycle_CopySelectOut()
+
+    cd.pos = 1
+
+    cd[1] = {val = tonumber(ocd[sel].val), dispval = ocd[sel].dispval, dv = ocd[sel].dv, 
+             startval = tonumber(ocd[sel].startval), nextval = tonumber(ocd[sel].nextval)}
+    for i = 2, #cd do
+      cd[i] = nil
+    end
+    cd.statecnt = 1
+    cd.mapptof = true
+    cd.draggable = false
+    cd.val = 0
+    cd.spread = false
+    cd.invert = true
+    cd.selected = 1
+    
+    ctl.ctlname_override = cd[1].dispval
+    ctl.show_paramval = false
+    ctl.show_paramname = true
+    
+    ctl.cycledata = cd
+    ctl.val = 0
+
+    ctl.gauge = nil
+    update_bg = true    
+    update_gfx = true
+    SetCtlBitmapRedraw()    
+  
+  end
+  
   function Cycle_Auto()
   
     local sldiv = 400
@@ -50759,7 +51025,8 @@ function GUI_DrawCtlBitmap_Strips()
       local ndval
       
       cycle_temp = {}
-      cycle_temp[1] = {val = v, dispval = dval, dv = dval}
+      --nextval must be > 1 to allow detection of final radio button in single state mode
+      cycle_temp[1] = {val = v, dispval = dval, dv = dval, startval = v, nextval = 1.01}
       
       for v = 0.01, 1, 0.01 do
         
@@ -50771,7 +51038,8 @@ function GUI_DrawCtlBitmap_Strips()
         if ndval ~= dval then
           dval = ndval
           local v2 = GetParamValue(cc, tracknum, fxnum, param, trackfxparam_select)
-          cycle_temp[#cycle_temp+1] = {val = v2, dispval = dval, dv = dval}
+          cycle_temp[#cycle_temp].nextval = math.min(v,v2)
+          cycle_temp[#cycle_temp+1] = {val = v2, dispval = dval, dv = dval, startval = math.min(v,v2), nextval = 1.01}
           stcnt = stcnt + 1
         end
       
@@ -51000,11 +51268,12 @@ function GUI_DrawCtlBitmap_Strips()
                  textsize = ctl.textsize,
                  textsizev = ctl.textsizev,
                  textcolv = ctl.textcolv,
+                 enabledefval = ctl.enabledefval,
                  font = ctl.font,
                  val = ctl.val,
                  defval = ctl.defval,
                  maxdp = ctl.maxdp,
-                 cycledata = ctl.cycledata,
+                 cycledata = table.deepcopy(ctl.cycledata),
                  switcherid = ctl.switcherid,
                  switcher = ctl.switcher,
                  id = ctl.id,
@@ -51469,6 +51738,7 @@ function GUI_DrawCtlBitmap_Strips()
                                     val = tonumber(data[key..'val']),
                                     dval = zn(data[key..'dval'],''),
                                     mval = tonumber(data[key..'mval']),
+                                    enabledefval = tobool(nz(data[key..'enabledefval'],true)),
                                     defval = tonumber(data[key..'defval']),
                                     maxdp = tonumber(zn(data[key..'maxdp'],-1)),
                                     cycledata = {statecnt = 0,{}},
@@ -51498,6 +51768,7 @@ function GUI_DrawCtlBitmap_Strips()
                                     clickthrough = tobool(zn(data[key..'clickthrough'])),
                                     dnu = tobool(zn(data[key..'dnu'])),
                                    }
+
         g_cids[strip.controls[c].c_id] = true
         if strip.controls[c].id then
           g_cids[strip.controls[c].id] = true
@@ -51564,8 +51835,10 @@ function GUI_DrawCtlBitmap_Strips()
             local key = pfx..'c_'..c..'_cyc_'..i..'_'
           
             strip.controls[c].cycledata[i] = {val = tonumber(zn(data[key..'val'],0)),
-                                                      dispval = zn(data[key..'dispval'],'no disp val'),
-                                                      dv = zn(data[key..'dispval'])}
+                                              dispval = zn(data[key..'dispval'],'no disp val'),
+                                              dv = zn(data[key..'dispval']),
+                                              startval = tonumber(zn(data[key..'startval'])),
+                                              nextval = tonumber(zn(data[key..'nextval']))}
             if strip.controls[c].cycledata[i].dv == nil then
               strip.controls[c].cycledata[i].dv = strip.controls[c].cycledata[i].dispval
             end 
@@ -54946,6 +55219,7 @@ function GUI_DrawCtlBitmap_Strips()
               file:write('['..key..'val]'..nz(ctl.val,0)..'\n')
               file:write('['..key..'dval]'..nz(ctl.dval,'')..'\n')
               file:write('['..key..'mval]'..nz(ctl.mval,nz(ctl.val,0))..'\n')
+              file:write('['..key..'enabledefval]'..tostring(nz(ctl.enabledefval,true))..'\n')   
               file:write('['..key..'defval]'..nz(ctl.defval,0)..'\n')   
               file:write('['..key..'maxdp]'..nz(ctl.maxdp,-1)..'\n')   
               file:write('['..key..'dvaloffset]'..nz(ctl.dvaloffset,'')..'\n')   
@@ -55018,6 +55292,8 @@ function GUI_DrawCtlBitmap_Strips()
                     file:write('['..key..'val]'..nz(ctl.cycledata[i].val,0)..'\n')   
                     file:write('['..key..'dispval]'..nz(ctl.cycledata[i].dispval,'')..'\n')   
                     file:write('['..key..'dv]'..nz(ctl.cycledata[i].dv,'')..'\n')   
+                    file:write('['..key..'startval]'..nz(ctl.cycledata[i].startval,'')..'\n')   
+                    file:write('['..key..'nextval]'..nz(ctl.cycledata[i].nextval,'')..'\n')   
                   end
                 end
               else
@@ -56880,9 +57156,11 @@ function GUI_DrawCtlBitmap_Strips()
   
   function Snapshot_Set(strip, page, sstype_sel, ss_sel)
 
+            
     --local r = reaper
     --local t = reaper.time_precise()
     local reaper = reaper
+    --reaper.Undo_BeginBlock2(0)
     local snaps = snapshots[strip][page][sstype_sel]
     local setdirty
     if settings_enablednu == true and strip == tracks[track_select].strip and page == page then
@@ -57245,6 +57523,9 @@ function GUI_DrawCtlBitmap_Strips()
         update_snaps = true
       end
     end
+    
+    --reaper.Undo_EndBlock2(0,"LBX_Snapshot_Set",-1)
+    
   end
 
   function CalcSyncTime(syncidx)
@@ -59247,6 +59528,7 @@ function GUI_DrawCtlBitmap_Strips()
     textsize_select = 0
     textsizev_select = 0
     defval_select = 0
+    enabledefval_select = true
     strip_select = 0
     stripfol_select = 0
     maxdp_select = -1
