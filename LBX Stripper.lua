@@ -14,7 +14,7 @@
 
 
   local lvar = {}
-  lvar.scriptver = '0.94.0075' --Script Version
+  lvar.scriptver = '0.94.0076' --Script Version
   
   lvar.ctlupdate_rr = nil
   lvar.ctlupdate_pos = 1
@@ -29272,6 +29272,7 @@ function GUI_DrawCtlBitmap_Strips()
                       local ctl = strips[strip][page].controls[c]
                       if ctl.ctllock ~= true then
                         A_SetParam(strip,page,c,ctl)
+                        SetCtlDirty(c)
                         update_ctls = true
                       end
                     else
