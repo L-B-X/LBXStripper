@@ -1,0 +1,16 @@
+
+in_pin:input 1 L
+in_pin:input 1 R
+
+out_pin:output L
+out_pin:output R
+
+@sample
+s0=spl0;
+s1=spl1;
+
+spl0=s0;
+spl1=s1;
+
+
+

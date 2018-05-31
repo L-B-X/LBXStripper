@@ -1,0 +1,53 @@
+/*******************************************************************************
+version: 1.0
+desc: Mixer_2xS-1xS (2 x stereo to 1 x stereo)
+author: IX
+edited: LBX
+provides: . > ../../Mixer_2xS-1xS
+about:
+  # Mixer 2xS - 1xS
+  Mix stereo input pairs 1+2 through 3+4 into outputs 1+2.
+  
+  http://wiki.cockos.com/wiki/index.php/Jesusonic_Effects_Documentation#Mixer_8xS-1xS
+********************************************************************************
+* Copyright 2007-2011 Philip S. Considine
+* License: GPL - http://www.gnu.org/licenses/gpl.html
+*******************************************************************************/
+
+desc:2x Stereo to 1x Stereo Mixer
+desc:2x Stereo to 1x Stereo Mixer [IXix - LBX Edit]
+//tags: mixer gain
+//author: IXix
+
+slider1:0<-60,30,0.1>-Level 1+2 (dB)
+slider2:0<-60,30,0.1>-Level 3+4 (dB)
+ 
+in_pin:input 1 L
+in_pin:input 1 R
+in_pin:input 2 L
+in_pin:input 2 R
+
+out_pin:output L
+out_pin:output R
+///////////////////////////////////////////////////////////////////////////////
+@init
+gainMin = -60;
+gainMax = 30;
+
+///////////////////////////////////////////////////////////////////////////////
+@slider
+slider1 = min(max(slider1, gainMin), gainMax);
+slider2 = min(max(slider2, gainMin), gainMax);
+
+levelA = 2 ^ (slider1 / 6);
+levelB = 2 ^ (slider2 / 6);
+
+///////////////////////////////////////////////////////////////////////////////
+@sample
+// Do the left mix
+spl0 = (spl0 * levelA) + 
+       (spl2 * levelB);
+
+// Do the right mix
+spl1 = (spl1 * levelA) + 
+       (spl3 * levelB);
