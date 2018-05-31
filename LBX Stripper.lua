@@ -12,12 +12,14 @@
     
   --------------------------------------------
 
+  DBG_mode = false
 
   local lvar = {}
-  lvar.scriptver = '0.94.0076' --Script Version
+  lvar.scriptver = '0.94.0077' --Script Version
   
   lvar.ctlupdate_rr = nil
   lvar.ctlupdate_pos = 1
+  lvar.snapstages = 32
 
   lvar.stripctlbox = {}
   
@@ -31,7 +33,8 @@
   lvar.ctltype_table = {'KNOB/SLIDER','BUTTON','BUTTON INV','CYCLE BUTTON','METER','MEM BUTTON','MOMENT BTN','MOMENT INV','FLASH BUTTON','FLASH INV','KNOB/SLIDER REV'}
   lvar.trctltype_table = {'Track Controls','Track Sends','Track Meters','Other Controls'}
   lvar.special_table = {}
-  lvar.otherctl_table = {'Action Trigger','Macro Control','EQ Engine','Strip Switcher','ReaControlMidi Switch','Midi/OSC Control','Take Switcher','RS5K Control','Param Update Ctl','Param Value Ctl (Global)'}
+  lvar.otherctl_table = {'Action Trigger','Macro Control','EQ Engine','Strip Switcher','ReaControlMidi Switch','Midi/OSC Control','Take Switcher','RS5K Control','Param Update Ctl','Param Value Ctl (Global)',
+                         'Threshold Switch'}
   lvar.scalemode_preset_table = {'','NORMAL','REAPER VOL'}
   lvar.lfomode_table = {'NORMAL MODE','TAKESWITCH MODE','RS5K MODE'}
   lvar.scalemode_table = {1/8,1/7,1/6,1/5,1/4,1/3,1/2,1,2,3,4,5,6,7,8}
@@ -271,6 +274,8 @@
               sliderctlxy = 168,
               macctlxy = 169,
               dragcyclexy = 170,
+              snapslider = 171,
+              snapparamdrag = 172,
               dummy = 999
               }
   
@@ -298,7 +303,8 @@
                    switcher_pagesel = 21,
                    fxmulti = 22,
                    macro_updateparam = 23,
-                   paramvalue_glob = 24}
+                   paramvalue_glob = 24,
+                   threshold = 25}
 
   lvar.ctlcats_nm = {'fxparam',
                      'trackparam',
@@ -324,7 +330,8 @@
                      'switcher_pagesel',
                      'fxmulti',
                      'macro_updateparam',
-                     'paramvalue_glob'}
+                     'paramvalue_glob',
+                     'threshold'}
              
   lvar.gfxtype = {img = 0,
                   txt = 1
@@ -597,42 +604,6 @@
       local dir = paths.resource_path..'updater/oldversions/' 
       local path = reaper.GetResourcePath().."/Scripts/LBX/"
       
-      --[[fn = reaper.EnumerateFiles(dir, f)
-      while fn do
-        
-        if reaper.file_exists(dir..fn) then
-        
-          local file = io.open(dir..fn, 'rb')
-          if file then
-          
-            local body = file:read('*a')
-            file:close()
-            
-            if body then
-              file = io.open(path..fn, 'rb')
-              local old
-              if file then
-                old = file:read('*a')
-                file:close()
-              end
-              
-              if not old or old ~= body then
-                file = io.open(path..fn, 'wb')
-                if file then
-                  file:write(body)
-                  file:close()
-                end
-              else
-                err = 1
-              end
-            end
-          end
-        end
-
-        f = f + 1
-        fn = reaper.EnumerateFiles(dir, f)
-      end]]
-
       if reaper.file_exists(dir..ffn) then
 
         -- rollback version      
@@ -944,25 +915,7 @@
 
   -----------------------------------
   -----------------------------------
-    
-  --[[local x_table =
-                 {10,  -- x1
-                  70,  -- x2
-                  0,  -- x3
-                  0,  -- x4
-                  --300,  -- x5
-                  }
-  local y_table =
-                 {10,  -- y1
-                  50,  -- y2
-                  100,  -- y3
-                  0,  -- y4
-                  --0,  -- y5
-                  }]]                 
-                   
-  --gfx.init('Draw Bézier curve by mpl',300, 300)                
-  --draw_curve(x_table, y_table)                        
-  
+      
   local log10 = function(x) return math.log(x, 10) end
   
   function get_peak_info(trn)
@@ -2833,114 +2786,11 @@
                            y = obj.sections[316].y + obj.sections[316].h + 10,
                            w = 50,
                            h = (obj.sections[338].y + obj.sections[338].h)-(obj.sections[316].y + obj.sections[316].h+6) + butt_h}
-      
-      macroedit = {}
-      macroedit.secyoff = 100
-      macroedit.sech = 40
-      macroedit.pcnt = math.floor((obj.sections[300].h-macroedit.secyoff-10)/macroedit.sech)
-      macroedit.h = macroedit.pcnt*macroedit.sech
-      macroedit.sliderw = 12
-      macroedit.sliderh = 24
 
-      --close macro edit button
-      obj.sections[401] = {x = obj.sections[300].w-16,
-                           y = 0,
-                           w = 16,
-                           h = 16}
-                          
-      --Param name
-      local sw = math.max(math.floor((obj.sections[300].w-470)/2),120)
-      
-      obj.sections[402] = {x = 20,
-                           y = macroedit.secyoff,
-                           w = 250,
-                           h = macroedit.sech}
-      --A - slider
-      obj.sections[403] = {x = obj.sections[402].x+obj.sections[402].w+20,
-                           y = macroedit.secyoff,
-                           w = sw,
-                           h = macroedit.h}
-      --B - slider
-      obj.sections[404] = {x = obj.sections[403].x+obj.sections[403].w+26,
-                           y = macroedit.secyoff,
-                           w = sw,
-                           h = macroedit.h}
-      
-      --shape button
-      obj.sections[405] = {x = obj.sections[404].x + obj.sections[404].w + 14,
-                           y = macroedit.secyoff,
-                           w = math.max(obj.sections[300].w - (obj.sections[404].x+obj.sections[404].w)-30,100),
-                           h = macroedit.h}
-
-      --X button
-      obj.sections[407] = {x = obj.sections[402].x+5,
-                           y = macroedit.secyoff,
-                           w = 20,
-                           h = macroedit.h}
-      
-      --M button
-      obj.sections[406] = {x = obj.sections[402].x+obj.sections[402].w-25,
-                           y = macroedit.secyoff,
-                           w = 20,
-                           h = macroedit.h}
-      
-      --Faders
-      obj.sections[408] = {x = obj.sections[404].x + 10,
-                           y = 30,
-                           w = obj.sections[404].w-20,
-                           h = butt_h+2} 
-
-      --Add parameters button
-      obj.sections[409] = {x = 40,
-                           y = 20,
-                           w = obj.sections[402].w-40,
-                           h = butt_h*3} 
-      
-      local w = gfx.getimgdim(def_eqcknobf)
-      local h = ctl_files[def_eqcknobfctl].cellh
-            
-      --Knob control
-      obj.sections[410] = {x = obj.sections[405].x + math.floor(obj.sections[405].w/2 - w/2),
-                           y = obj.sections[405].y /2 - math.floor(h/2),
-                           w = w,
-                           h = h}
-
-      --Capture A button
-      obj.sections[411] = {x = obj.sections[403].x + 10,
-                           y = obj.sections[409].y+obj.sections[409].h-(butt_h+4),
-                           w = obj.sections[403].w-20,
-                           h = butt_h+4} 
-      
-      --Capture B button
-      obj.sections[412] = {x = obj.sections[404].x + 10,
-                           y = obj.sections[411].y,
-                           w = obj.sections[404].w - 20,
-                           h = butt_h+4} 
-      
-      --Monitor button
-      obj.sections[413] = {x = obj.sections[403].x + 10,
-                           y = 30,
-                           w = obj.sections[403].w-20,
-                           h = butt_h+2} 
-
-      --BI button
-      obj.sections[414] = {x = obj.sections[402].x+obj.sections[402].w-75,
-                           y = macroedit.secyoff,
-                           w = 20,
-                           h = macroedit.h} 
-      
-      --INV button
-      obj.sections[415] = {x = obj.sections[402].x+obj.sections[402].w-50,
-                           y = macroedit.secyoff,
-                           w = 20,
-                           h = macroedit.h} 
-      
-      --REL button
-      obj.sections[416] = {x = obj.sections[402].x+obj.sections[402].w-100,
-                           y = macroedit.secyoff,
-                           w = 20,
-                           h = macroedit.h} 
-
+      if not lvar.macrosech then
+        lvar.macrosech = 40
+      end
+      obj = PopMacroEditSec(obj,lvar.macrosech)
 
       --MIDI OUt
       local mow, moh = math.floor(350*pnl_scale), math.floor(430*pnl_scale)
@@ -3010,169 +2860,7 @@
                            w = math.floor(60*pnl_scale),
                            h = math.floor(butt_h*pnl_scale)} 
       
-      --MOD EDIT (LFO)
-      --[[
-      local mow, moh, x, y
-      if settings_moddock == true and modwinsz and modwinsz.minimized == true then
-        mow = math.max(obj.sections[10].w+1,modwin.minw*pnl_scale)
-        moh = gui.winsz.pnltit*pnl_scale
-        x = obj.sections[10].x
-        y = gfx1.main_h - moh
-
-      elseif settings_moddock == true then
-        mow = math.max(obj.sections[10].w+1,modwin.minw*pnl_scale)
-        if modwinsz then
-          moh = modwinsz.h
-        else
-          moh = 300*pnl_scale
-        end
-        moh = math.max(math.min(moh,gfx1.main_h-obj.sections[10].y),modwin.minh*pnl_scale)
-        x = obj.sections[10].x
-        y = gfx1.main_h - moh
-        if not modwinsz then
-          modwinsz = {x = x, y = y, w = mow, h = moh}        
-        end
       
-      else
-        if modwinsz and modwinsz.resize ~= true then
-          mow = modwinsz.w*pnl_scale
-          moh = (modwinsz.h or 300)*pnl_scale
-          x = modwinsz.x
-          y = modwinsz.y
-        elseif modwinsz then
-          mow = modwinsz.w*pnl_scale
-          moh = (modwinsz.h or 300)*pnl_scale
-          x = modwinsz.x
-          y = modwinsz.y        
-        else
-          mow, moh = modwin.minw*pnl_scale, 300*pnl_scale
-          x = math.floor(obj.sections[10].x+obj.sections[10].w/2 - mow/2)
-          y = math.floor(obj.sections[10].y+obj.sections[10].h/2 - moh/2)
-          modwinsz = {x = x, y = y, w = mow, h = moh}
-        end
-        if x < obj.sections[10].x then x = obj.sections[10].x end
-        if y < obj.sections[10].y then y = obj.sections[10].y end
-      end
-      
-      obj.sections[1100] = {x = x,
-                           y = y,
-                           w = math.floor(mow),
-                           h = math.floor(moh)}
-      if obj.sections[1100].x < plist_w + 2 then
-        obj.sections[1100].x = plist_w + 2
-      end
-      
-      modpos = 8 
-      
-      --Dock button
-      obj.sections[1123] = {x = obj.sections[1100].w - 38,
-                            y = 2,
-                            w = 34,
-                            h = math.floor(gui.winsz.pnltit*pnl_scale-2)}
-      
-      --Main bar display
-      obj.sections[1101] = {x = 10,
-                           y = 30*pnl_scale,
-                           w = obj.sections[1100].w-(20),
-                           h = obj.sections[1100].h-(90*pnl_scale)-(modpos*pnl_scale)} 
-
-      --Step mult button
-      obj.sections[1102] = {x = math.floor(obj.sections[1101].x + obj.sections[1101].w - (102*pnl_scale)),
-                           y = math.floor(obj.sections[1101].y + obj.sections[1101].h + (10 + modpos)*pnl_scale),
-                           w = math.floor(100*pnl_scale),
-                           h = math.floor(20*pnl_scale)} 
-                           
-            
-      --ON button
-      obj.sections[1106] = {x = obj.sections[1101].x,
-                           y = math.floor(obj.sections[1101].y + obj.sections[1101].h + (10 + modpos)*pnl_scale),
-                           w = math.floor(40*pnl_scale),
-                           h = math.floor(42*pnl_scale)} 
-      
-      --Length button
-      obj.sections[1104] = {x = math.floor(obj.sections[1106].x + obj.sections[1106].w + (6*pnl_scale)),
-                           y = math.floor(obj.sections[1101].y + obj.sections[1101].h + (10 + modpos)*pnl_scale),
-                           w = math.floor(80*pnl_scale),
-                           h = math.floor(20*pnl_scale)} 
-      
-      --Smooth button
-      obj.sections[1105] = {x = math.floor(obj.sections[1104].x + obj.sections[1104].w + 2*pnl_scale),
-                           y = math.floor(obj.sections[1101].y + obj.sections[1101].h + (10 + modpos)*pnl_scale),
-                           w = math.floor(80*pnl_scale),
-                           h = math.floor(20*pnl_scale)} 
-      
-      --Steps button
-      obj.sections[1107] = {x = math.floor(obj.sections[1102].x -(82*pnl_scale)),
-                           y = math.floor(obj.sections[1101].y + obj.sections[1101].h + (10 + modpos)*pnl_scale),
-                           w = math.floor(80*pnl_scale),
-                           h = math.floor(20*pnl_scale)} 
-
-      --Shift button
-      obj.sections[1108] = {x = math.floor(obj.sections[1105].x + obj.sections[1105].w + 2*pnl_scale),
-                           y = math.floor(obj.sections[1101].y + obj.sections[1101].h + (10 + modpos)*pnl_scale),
-                           w = math.floor(120*pnl_scale),
-                           h = math.floor(20*pnl_scale)} 
-
-      --Min button
-      obj.sections[1109] = {x = obj.sections[1104].x,
-                           y = math.floor(obj.sections[1102].y + obj.sections[1102].h + 2*pnl_scale),
-                           w = math.floor(80*pnl_scale),
-                           h = math.floor(20*pnl_scale)} 
-      
-      --Max button
-      obj.sections[1110] = {x = math.floor(obj.sections[1109].x + obj.sections[1109].w + 2*pnl_scale),
-                           y = obj.sections[1109].y,
-                           w = math.floor(80*pnl_scale),
-                           h = math.floor(20*pnl_scale)} 
-      
-      --Corner resize 
-      obj.sections[1111] = {x = obj.sections[1100].w -20,
-                           y = obj.sections[1100].h -20,
-                           w = 20,
-                           h = 20} 
-      
-      --Title bar
-      obj.sections[1112] = {x = 0,
-                           y = 0,
-                           w = obj.sections[1100].w,
-                           h = gui.winsz.pnltit*pnl_scale} 
-      
-      --Randomize button
-      obj.sections[1113] = {x = obj.sections[1102].x,
-                           y = math.floor(obj.sections[1102].y + obj.sections[1102].h + 2*pnl_scale),
-                           w = math.floor(100*pnl_scale),
-                           h = math.floor(20*pnl_scale)} 
-
-      --Mode button
-      obj.sections[1114] = {x = math.floor(obj.sections[1110].x+obj.sections[1110].w + 2*pnl_scale),
-                           y = math.floor(obj.sections[1102].y + obj.sections[1102].h + 2*pnl_scale),
-                           w = math.floor(120*pnl_scale),
-                           h = math.floor(20*pnl_scale)} 
-
-      --Mod title <
-      obj.sections[1115] = {x = 10,
-                            y = 2,
-                            w = 30,
-                            h = math.floor(gui.winsz.pnltit*pnl_scale-2)}
-      
-      --Mod title >
-      obj.sections[1116] = {x = obj.sections[1115].x+obj.sections[1115].w+2,
-                            y = 2,
-                            w = 30,
-                            h = math.floor(gui.winsz.pnltit*pnl_scale-2)}
-      
-      --Mod title Assign
-      obj.sections[1117] = {x = obj.sections[1116].x+obj.sections[1116].w+8,
-                            y = 2,
-                            w = 60,
-                            h = math.floor(gui.winsz.pnltit*pnl_scale-2)}
-      
-      --Mod title Clear all
-      obj.sections[1118] = {x = obj.sections[1117].x+obj.sections[1117].w+8,
-                            y = 2,
-                            w = 80,
-                            h = math.floor(gui.winsz.pnltit*pnl_scale-2)}
-      ]]
 
       --MUTATE panel
 
@@ -3327,79 +3015,6 @@
 
       obj = PosSampleManager(obj)            
       
-      --[[STRIP BROWSER
-      local sbw,sbh
-      if settings_sbdock == true then
-        if lvar.stripbrowser.dockpos == 1 then
-          local maxh2 = obj.sections[10].h + sbwin.h
-
-          sbwin.h = math.floor(math.min(math.max(sbwin.h,lvar.sbmin),maxh2))
-          --maxh2 = obj.sections[10].h + sbwin.h*pnl_scale
-          sbw,sbh = math.max(math.floor(sbwin.w*pnl_scale),lvar.sbmin*pnl_scale),
-                    math.max(math.min(math.floor((sbwin.h*pnl_scale)),maxh2*pnl_scale),lvar.sbmin*pnl_scale)
-        
-        else
-          local maxw2 = obj.sections[10].w + sbwin.w
-          
-          sbwin.w = math.floor(math.min(math.max(sbwin.w,lvar.sbmin),maxw2))
-          sbw,sbh = math.max(math.floor(sbwin.w*pnl_scale),lvar.sbmin*pnl_scale),
-                    math.max(math.min(math.floor((sbwin.h*pnl_scale)),obj.sections[10].h),lvar.sbmin*pnl_scale)
-        end
-      else
-        sbw,sbh = math.max(math.min(math.floor(sbwin.w*pnl_scale),obj.sections[10].w),lvar.sbmin*pnl_scale),
-                      math.max(math.min(math.floor((sbwin.h*pnl_scale)),obj.sections[10].h),lvar.sbmin*pnl_scale)
-      end
-      if mm1350 then
-        obj.sections[1350] = {x = math.max(F_limit(mm1350.x,obj.sections[10].x,obj.sections[10].x+obj.sections[10].w-sbw),obj.sections[10].x),
-                              y = math.max(F_limit(mm1350.y,obj.sections[10].y,obj.sections[10].y+obj.sections[10].h-sbh),obj.sections[10].y),
-                              w = sbw,
-                              h = sbh}
-      elseif sbwin.x and sbwin.y then
-        obj.sections[1350] = {x = F_limit(sbwin.x,obj.sections[10].x,obj.sections[10].x+obj.sections[10].w-sbw),
-                              y = F_limit(sbwin.y,obj.sections[10].y,obj.sections[10].y+obj.sections[10].h-sbh),
-                              w = sbw,
-                              h = sbh}      
-      else
-        obj.sections[1350] = {x = math.max(obj.sections[10].x+math.floor(obj.sections[10].w/2-sbw/2),obj.sections[10].x),
-                              y = math.max(obj.sections[10].y+math.floor(obj.sections[10].h/2-sbh/2),obj.sections[10].y),
-                              w = sbw,
-                              h = sbh}
-      end
-      if settings_sbdock == true then
-        if lvar.stripbrowser.dockpos == 1 then
-          local sb = 0
-          if settings_showbars then
-            sb = sb_size
-          end
-          local sbyy = topbarheight + sb + 2
-          obj.sections[1350].x = obj.sections[10].x
-          obj.sections[1350].w = gfx1.main_w - plist_w
-          obj.sections[1350].y = sbyy
-        else
-          if settings_ssdock == true and show_snapshots == true then
-            obj.sections[1350].x = obj.sections[160].x-obj.sections[1350].w
-          else
-            obj.sections[1350].x = obj.sections[10].x+obj.sections[10].w
-          end
-          if obj.sections[1350].x < plist_w + 2 then
-            obj.sections[1350].x = plist_w + 2
-            if settings_ssdock == true and show_snapshots == true then
-              obj.sections[1350].w = obj.sections[160].x - obj.sections[1350].x
-            else
-              obj.sections[1350].w = gfx1.main_w - obj.sections[1350].x
-            end
-            --sbwin.x = math.floor(obj.sections[1350].x / pnl_scale)
-            --sbwin.w = math.floor(obj.sections[1350].w / pnl_scale)
-          end
-          
-          obj.sections[1350].y = obj.sections[10].y
-          local hh = math.min(math.max((gfx1.main_h-obj.sections[10].y),lvar.sbmin*pnl_scale),2048)
-          obj.sections[1350].h = hh
-        end
-      end
-      
-      obj = PosStripBrowser(obj)]]
-      
       local gfxpw,gfxph = 300,300
       obj.sections[1400] = {x = obj.sections[10].x + 10,
                             y = obj.sections[10].y + obj.sections[10].h - gfxph,
@@ -3410,6 +3025,219 @@
     return obj
   end
 
+  function PopMacroEditSec(obj,sech)
+      
+    --MACRO EDIT
+          
+    macroedit = {}
+    macroedit.secyoff = 100
+    macroedit.secyoff2 = 135
+    macroedit.sech = sech
+    macroedit.pcnt = math.floor((obj.sections[300].h-macroedit.secyoff-10)/macroedit.sech)
+    macroedit.h = macroedit.pcnt*macroedit.sech
+    macroedit.pcnt2 = math.floor((obj.sections[300].h-macroedit.secyoff2-10)/macroedit.sech)
+    macroedit.h2 = macroedit.pcnt2*macroedit.sech
+    
+    macroedit.sliderw = 12
+    macroedit.sliderh = 24
+
+    --close macro edit button
+    obj.sections[401] = {x = obj.sections[300].w-16,
+                         y = 0,
+                         w = 16,
+                         h = 16}
+                        
+    --Param name
+    local sw = math.max(math.floor((obj.sections[300].w-470)/2),120)
+    
+    obj.sections[402] = {x = 20,
+                         y = macroedit.secyoff,
+                         w = 250,
+                         h = macroedit.sech}
+    --A - slider
+    obj.sections[403] = {x = obj.sections[402].x+obj.sections[402].w+20,
+                         y = macroedit.secyoff,
+                         w = sw,
+                         h = macroedit.h}
+    --B - slider
+    obj.sections[404] = {x = obj.sections[403].x+obj.sections[403].w+26,
+                         y = macroedit.secyoff,
+                         w = sw,
+                         h = macroedit.h}
+    
+    --shape button
+    obj.sections[405] = {x = obj.sections[404].x + obj.sections[404].w + 14,
+                         y = macroedit.secyoff,
+                         w = math.max(obj.sections[300].w - (obj.sections[404].x+obj.sections[404].w)-30,100),
+                         h = macroedit.h}
+
+    --X button
+    obj.sections[407] = {x = obj.sections[402].x+5,
+                         y = macroedit.secyoff,
+                         w = 20,
+                         h = macroedit.h}
+    
+    --M button
+    obj.sections[406] = {x = obj.sections[402].x+obj.sections[402].w-25,
+                         y = macroedit.secyoff,
+                         w = 20,
+                         h = macroedit.h}
+    
+    --Faders
+    obj.sections[408] = {x = obj.sections[404].x + 10,
+                         y = 30,
+                         w = obj.sections[404].w-20,
+                         h = butt_h+2} 
+
+    --Add parameters button
+    obj.sections[409] = {x = 40,
+                         y = 20,
+                         w = obj.sections[402].w-40,
+                         h = butt_h*3} 
+    
+    local w = gfx.getimgdim(def_eqcknobf)
+    local h = ctl_files[def_eqcknobfctl].cellh
+          
+    --Knob control
+    obj.sections[410] = {x = obj.sections[405].x + math.floor(obj.sections[405].w/2 - w/2),
+                         y = obj.sections[405].y /2 - math.floor(h/2),
+                         w = w,
+                         h = h}
+
+    --Capture A button
+    obj.sections[411] = {x = obj.sections[403].x + 10,
+                         y = obj.sections[409].y+obj.sections[409].h-(butt_h+4),
+                         w = obj.sections[403].w-20,
+                         h = butt_h+4} 
+    
+    --Capture B button
+    obj.sections[412] = {x = obj.sections[404].x + 10,
+                         y = obj.sections[411].y,
+                         w = obj.sections[404].w - 20,
+                         h = butt_h+4} 
+    
+    --Monitor button
+    obj.sections[413] = {x = obj.sections[403].x + 10,
+                         y = 30,
+                         w = obj.sections[403].w-20,
+                         h = butt_h+2} 
+
+    --BI button
+    obj.sections[414] = {x = obj.sections[402].x+obj.sections[402].w-75,
+                         y = macroedit.secyoff,
+                         w = 20,
+                         h = macroedit.h} 
+    
+    --INV button
+    obj.sections[415] = {x = obj.sections[402].x+obj.sections[402].w-50,
+                         y = macroedit.secyoff,
+                         w = 20,
+                         h = macroedit.h} 
+    
+    --REL button
+    obj.sections[416] = {x = obj.sections[402].x+obj.sections[402].w-100,
+                         y = macroedit.secyoff,
+                         w = 20,
+                         h = macroedit.h} 
+
+
+    --SNAP EDIT
+    
+    local sw = math.max(math.floor((obj.sections[300].w-280) / 3),120)
+    
+    --param
+    obj.sections[420] = {x = 20,
+                         y = macroedit.secyoff2,
+                         w = sw, --math.max(sw,200), --200,
+                         h = macroedit.h}
+    --stage col
+    obj.sections[421] = {x = obj.sections[420].x+obj.sections[420].w+2,
+                         y = macroedit.secyoff2,
+                         w = 80,
+                         h = macroedit.h}
+    --morph col
+    obj.sections[422] = {x = obj.sections[421].x+obj.sections[421].w+2,
+                         y = macroedit.secyoff2,
+                         w = 80,
+                         h = macroedit.h}
+    --mem col
+    obj.sections[435] = {x = obj.sections[422].x+obj.sections[422].w+2,
+                         y = macroedit.secyoff2,
+                         w = 40,
+                         h = macroedit.h}
+
+    --snap value
+    obj.sections[423] = {x = obj.sections[435].x+obj.sections[435].w+22,
+                         y = macroedit.secyoff2,
+                         w = sw, --math.min(sw,400),
+                         h = macroedit.h2}
+    obj.sections[424] = {x = obj.sections[423].x+obj.sections[423].w+14,
+                         y = macroedit.secyoff2,
+                         w = sw, --math.min(sw,400),
+                         h = macroedit.sech}
+
+    local heady = macroedit.secyoff2-butt_h-10
+
+    --stage butt
+    obj.sections[427] = {x = obj.sections[421].x,
+                         y = heady,
+                         w = 80,
+                         h = butt_h+8}
+
+    --stages butt
+    obj.sections[429] = {x = obj.sections[421].x,
+                         y = 25,
+                         w = 80,
+                         h = (butt_h+8)*2}
+
+    --sstype
+    obj.sections[430] = {x = obj.sections[420].x,
+                         y = 25,
+                         w = sw, --200,
+                         h = (butt_h+8) * 2}
+
+    --morph butt
+    obj.sections[428] = {x = obj.sections[422].x,
+                         y = heady,
+                         w = 80,
+                         h = butt_h+8}
+    --mem butt
+    obj.sections[434] = {x = obj.sections[435].x,
+                         y = heady,
+                         w = 40,
+                         h = butt_h+8}
+
+    --ss name
+    obj.sections[425] = {x = obj.sections[423].x-12 +(butt_h+8),
+                         y = heady,
+                         w = obj.sections[423].w+24 -(butt_h+8),
+                         h = butt_h+8}
+    --*
+    obj.sections[433] = {x = obj.sections[423].x-12,
+                         y = heady,
+                         w = butt_h+8-2,
+                         h = butt_h+8}
+
+    --monitor
+    obj.sections[426] = {x = obj.sections[424].x,
+                         y = heady,
+                         w = obj.sections[424].w,
+                         h = butt_h+8}
+    --stage delays
+    obj.sections[431] = {x = obj.sections[423].x,
+                             y = 25,
+                             w = obj.sections[423].w+obj.sections[424].w+14,
+                             h = (butt_h+8)*2}
+
+    obj.sections[432] = {x = obj.sections[431].x-50,
+                             y = 10,
+                             w = 40,
+                             h = butt_h}
+
+    return obj
+    
+  end
+  
   function DockableWindows(obj, ss160, mm1350)
   
     --SNAPSHOTS
@@ -3676,6 +3504,12 @@
                           y = 2,
                           w = 34,
                           h = math.floor(gui.winsz.pnltit*pnl_scale-2)}
+
+    --Edit button
+    obj.sections[1161] = {x = 4,
+                          y = 2,
+                          w = 34,
+                          h = math.floor(gui.winsz.pnltit*pnl_scale-2)}
     
     --Rename subset button                             
     obj.sections[164] = {x = math.floor(10*pnl_scale),
@@ -3725,6 +3559,31 @@
   function PosMod(obj)
   
     modpos = 8 
+    
+    --assign win
+    local ma_w = math.floor(140*pnl_scale)
+    local mh
+    if show_lfoedit == true then
+      mh = gfx1.main_h - obj.sections[1100].h - obj.sections[10].y
+    else
+      mh = obj.sections[10].h    
+    end
+    obj.sections[1125] = {x = obj.sections[10].x,
+                          y = obj.sections[10].y,
+                          w = obj.sections[10].w,
+                          h = mh}
+
+    --fx
+    --[[obj.sections[1126] = {x = 2,
+                          y = 30,
+                          w = ma_w,
+                          h = obj.sections[1125].h-32}]]
+
+    obj.sections[1127] = {x = 2,
+                          y = math.floor(30*pnl_scale),
+                          w = obj.sections[1125].w-4,
+                          h = obj.sections[1125].h-math.floor(30*pnl_scale)-2}
+                          
           
     --Dock button
     obj.sections[1123] = {x = obj.sections[1100].w - 38,
@@ -4772,6 +4631,35 @@
     gfx.drawstr(text,justify,xywh.x+xywh.w,xywh.y+xywh.h)
   end
 
+  function GUI_StrB(gui, xywh, text, justify, color, size_offset, alpha, shadowcol, fontnm, flags, backcolor)
+    
+    gfx.setfont(1, fontnm or gui.fontname, gui.fontsz_knob + size_offset, flags)
+    if backcolor then
+      local w, h = gfx.measurestr(text)
+      local ho = math.floor((xywh.h-h)/2)
+      f_Get_SSV(backcolor)
+      if justify == 4 then
+        gfx.rect(xywh.x-4,xywh.y+ho,w,h,1)
+      elseif justify == 5 then        
+        gfx.rect(xywh.x-4+math.floor(xywh.w/2)-math.floor(w/2),xywh.y+ho,w,h,1)
+      elseif justify == 6 then              
+        gfx.rect(xywh.x-4+xywh.w-w,xywh.y+ho,w,h,1)
+      end
+    end
+    if (shadowcol or '') ~= '' then
+      gfx.x, gfx.y = xywh.x+2, xywh.y+2
+      f_Get_SSV(shadowcol)  
+      gfx.a = 0.5
+      gfx.drawstr(text,justify,xywh.x+xywh.w,xywh.y+xywh.h)
+      gfx.x, gfx.y = xywh.x+1, xywh.y+1
+      gfx.a = alpha or 1
+      gfx.drawstr(text,justify,xywh.x+xywh.w,xywh.y+xywh.h)
+    end
+    gfx.x, gfx.y = xywh.x, xywh.y
+    gfx.a = alpha or 1
+    f_Get_SSV(color)  
+    gfx.drawstr(text,justify,xywh.x+xywh.w,xywh.y+xywh.h)
+  end
 
   function GUI_textCtl(gui, xywh, text, color, offs, alpha, yoff)
         f_Get_SSV(color)  
@@ -7378,9 +7266,9 @@
     end
     
     local xywh = {x = obj.sections[15].x,
-                          y = obj.sections[15].y, 
-                          w = obj.sections[15].w,
-                          h = obj.sections[15].h}
+                  y = obj.sections[15].y, 
+                  w = obj.sections[15].w,
+                  h = obj.sections[15].h}
     local txt = 'GLOBAL'
     if settings_localfaders == true then
       txt = 'TRACK'
@@ -7399,6 +7287,195 @@
      
   end
 
+  function PopModAssObj()
+  
+    local modass = {}
+    local modasssort = {}
+    local trhi = -2
+    local fxhi = {}
+    lvar.modass = {}
+    
+    local butt_h = math.floor(butt_h*pnl_scale)+2    
+    local but_cy = math.max(math.floor(obj.sections[1127].h / butt_h),1)
+    
+    local strip = tracks[track_select].strip
+    
+    if strips[strip] then
+      for c = 1, #strips[strip][page].controls do
+        local ctl = strips[strip][page].controls[c]
+        if ctl.ctlcat == ctlcats.fxparam then
+          local trn = ctl.tracknum or tracks[track_select].tracknum
+          if not modass[trn] then
+            modass[trn] = {}
+          end
+          if not modass[trn][ctl.fxnum] then
+            modass[trn][ctl.fxnum] = {}
+          end
+          local p = #modass[trn][ctl.fxnum]
+          modass[trn][ctl.fxnum][p+1] = {c = c,
+                                         trn = trn,
+                                         fxnum = ctl.fxnum,
+                                         fxname = CropFXName(ctl.fxname),
+                                         param = ctl.param}
+          trhi = math.max(trhi, trn)
+          fxhi[trn] = math.max(fxhi[trn] or 0,ctl.fxnum)
+        
+        elseif ctl.ctlcat == ctlcats.trackparam then
+          local fxnum = -3
+          local trn = ctl.tracknum or tracks[track_select].tracknum
+          if not modass[trn] then
+            modass[trn] = {}
+          end
+          if not modass[trn][fxnum] then
+            modass[trn][fxnum] = {}
+          end
+          local p = #modass[trn][fxnum]
+          modass[trn][fxnum][p+1] = {c = c,
+                                     trn = trn,
+                                     fxnum = fxnum,
+                                     fxname = ctl.fxname,
+                                     param = ctl.param}
+          trhi = math.max(trhi, trn)
+          fxhi[trn] = math.max(fxhi[trn] or 0,fxnum)
+
+        elseif ctl.ctlcat == ctlcats.tracksend then
+          local fxnum = -2
+          local trn = ctl.tracknum or tracks[track_select].tracknum
+          if not modass[trn] then
+            modass[trn] = {}
+          end
+          if not modass[trn][fxnum] then
+            modass[trn][fxnum] = {}
+          end
+          local p = #modass[trn][fxnum]
+          modass[trn][fxnum][p+1] = {c = c,
+                                     trn = trn,
+                                     fxnum = fxnum,
+                                     fxname = ctl.fxname,
+                                     param = ctl.param}
+          trhi = math.max(trhi, trn)
+          fxhi[trn] = math.max(fxhi[trn] or 0,fxnum)
+        
+        end
+      end
+      
+      local mof = 1 
+      for t = -1, trhi do
+        if modass[t] then
+          local skip = 0
+          if t > -1 then
+            skip = (but_cy - ((mof) % (but_cy))+1) % but_cy
+           -- skip = skip % but_cy
+          end
+          mof = mof + skip
+          if t == -1 then
+            modasssort[mof] = {dispt = 'TRACK MASTER'}
+          else
+            modasssort[mof] = {dispt = 'TRACK '..t+1}
+          end
+          mof = mof + 2
+          for f = -3, fxhi[t] do
+            if modass[t][f] then
+              if f >= 0 then
+                modasssort[mof] = {dispf = modass[t][f][1].fxname}
+                mof = mof + 1
+              end
+              for p = 1, #modass[t][f] do
+                modasssort[mof] = modass[t][f][p]
+                strips[strip][page].controls[modasssort[mof].c].modassc = mof
+                mof = mof + 1
+              end
+            end
+          end
+      
+        end
+      end
+      modasssort.count = mof
+      modasssort.rows = but_cy
+      return modasssort
+    end
+  end
+  
+  function GUI_DrawModAssign(obj, gui)
+
+    gfx.dest = 983
+    
+    gfx.setimgdim(983,-1,-1)
+    gfx.setimgdim(983,obj.sections[1125].w,obj.sections[1125].h)
+    GUI_DrawPanel(obj.sections[1125], nil, 'ASSIGN MODULATOR '..mod_select)
+    
+    local butt_h = math.floor(butt_h*pnl_scale)+2
+    
+    local bw = 150
+    local bwc = math.max(math.floor(obj.sections[1127].w / bw),1)
+    local but_cx = math.floor(obj.sections[1127].w / bwc) 
+    local but_cy = math.max(math.floor(obj.sections[1127].h / butt_h),1)
+    
+    local tscale = (pnl_scale-1)*fontscale
+    local fs = -4 + gui.fontsz.butt +tscale
+    
+    if lvar.modass then
+      local offs = lvar.modass.offset
+      if but_cy ~= lvar.modass.rows then
+        lvar.modass = PopModAssObj()
+        lvar.modass.offset = offs
+      end
+      local modass = lvar.modass
+    
+      local c_tr, c_fx
+      local strip = tracks[track_select].strip
+  
+      local pp = math.max(but_cy,1)*math.max(bwc,1)
+  
+      for p = 1, pp do
+  
+        if modass[p+offs] then
+          local x = math.floor((p-1) / but_cy)
+          local y = (p-1) % but_cy
+        
+          local xywh = {x = obj.sections[1127].x + x*but_cx,
+                        y = obj.sections[1127].y + y*butt_h,
+                        w = but_cx-2,
+                        h = butt_h-2}
+          if modass[p+offs].dispt then
+            GUI_DrawButton(gui, modass[p+offs].dispt, xywh, -1, gui.color.white, true, '', false, gui.fontsz.butt)            
+          elseif modass[p+offs].dispf then
+            GUI_DrawButton(gui, modass[p+offs].dispf, xywh, -3, gui.color.white, true, '', false, gui.fontsz.butt)            
+          elseif modass[p+offs].c then
+            local ctl = strips[strip][page].controls[modass[p+offs].c]
+            if ctl then
+              local bc = '48 48 48'
+              local c = gui.skol.lst_txt
+              if ctl.mod then
+                if ctl.mod == mod_select then
+                  --bc = -4
+                  bc = gui.skol.modselcol
+                else
+                  --bc = -2
+                  bc = gui.skol.modhighcol
+                end
+                c = gui.skol.lst_txthl
+              end
+              --GUI_DrawButton(gui, ctl.param_info.paramname, xywh, bc, gui.color.white, true, '', false, gui.fontsz.butt)      
+              f_Get_SSV(bc)
+              
+              gfx.rect(xywh.x,xywh.y,xywh.w,xywh.h,1,1)
+              GUI_Str(gui, xywh, ctl.param_info.paramname, 5, c, fs, 1, nil, gui.fontnm.butt,gui.fontflag.butt)            
+              
+            end
+          end
+        end      
+      end
+      
+      --[[gfx.rect(obj.sections[1127].x,
+               obj.sections[1127].y,
+               obj.sections[1127].w,
+               obj.sections[1127].h,0)]]
+    end
+    gfx.dest = 1
+    
+  end
+  
   function GUI_DrawMods(obj, gui)
   
     gfx.dest = 1001
@@ -7453,9 +7530,9 @@
     end           
     
     local xywh = {x = obj.sections[15].x,
-                          y = obj.sections[15].y, 
-                          w = obj.sections[15].w,
-                          h = obj.sections[15].h}
+                  y = obj.sections[15].y, 
+                  w = math.floor(obj.sections[15].w/2)-1,
+                  h = obj.sections[15].h}
     local txt
     if show_lfoedit == true then
       txt = 'CLOSE'
@@ -7463,6 +7540,11 @@
       txt = 'OPEN'    
     end
     GUI_DrawBar(gui,txt..' EDITOR',xywh,skin.bar,true,gui.skol.sb_txt_on,nil,-2 + gui.fontsz.sb,nil,gui.skol.sb_shad,gui.fontnm.sb,gui.fontflag.sb)
+    local xywh = {x = obj.sections[15].x+math.floor(obj.sections[15].w/2)+1,
+                  y = obj.sections[15].y, 
+                  w = math.floor(obj.sections[15].w/2)-1,
+                  h = obj.sections[15].h}
+    GUI_DrawBar(gui,'ASSIGN',xywh,skin.bar,true,gui.skol.sb_txt_on,nil,-2 + gui.fontsz.sb,nil,gui.skol.sb_shad,gui.fontnm.sb,gui.fontflag.sb)
                               
     local xywh = {x = obj.sections[500].x,
                   y = obj.sections[500].y+butt_h+2,
@@ -9569,6 +9651,8 @@
     f_Get_SSV('0 0 0')
     gfx.a = 1  
 
+    if not cycle_select.val then cycle_select.val = 0 end
+
     local p = F_limit(math.floor(cycle_select.val*(defctls[def_knob].frames-1)),0,defctls[def_knob].frames-1)
     local kw, _ = gfx.getimgdim(0)
     local kh = defctls[def_knob].cellh
@@ -10600,7 +10684,7 @@ function GUI_DrawCtlBitmap_Strips()
                       v2 = frameScale(ctl.framemode, ctl.val) or 0
                       val2 = F_limit(round(frames*v2),0,frames-1)                    
                     end
-                  elseif ctlcat == ctlcats.fxoffline or ctlcat == ctlcats.macro or ctlcat == ctlcats.midictl or ctlcat == ctlcats.switcher_pagesel then
+                  elseif ctlcat == ctlcats.fxoffline or ctlcat == ctlcats.macro or ctlcat == ctlcats.midictl or ctlcat == ctlcats.switcher_pagesel or ctlcat == ctlcats.threshold then
                     v2 = ctl.val
                     val2 = F_limit(round(frames*v2),0,frames-1)
                   elseif ctlcat == ctlcats.rs5k then
@@ -10898,6 +10982,16 @@ function GUI_DrawCtlBitmap_Strips()
                     else
                       Disp_Name = ctlnmov
                     end
+
+                  elseif ctlcat == ctlcats.threshold then
+                    --spv = false
+                    Disp_ParamV = math.floor(ctl.val*127)
+                    if ctlnmov == '' then
+                      Disp_Name = pname..' (Threshold)'
+                    else
+                      Disp_Name = ctlnmov..' (Threshold)'
+                    end
+
                   elseif ctlcat == ctlcats.eqcontrol then
                     spv = false
                     if ctlnmov == '' then
@@ -11697,12 +11791,21 @@ function GUI_DrawCtlBitmap_Strips()
       b = -5
     end
     GUI_DrawButton(gui, 'DOCK', obj.sections[1160], b, gui.skol.butt1_txt, true, '', false, -2, true)
+    b = gui.color.white
+    if sstype_select > 1 then
+      GUI_DrawButton(gui, 'EDIT', obj.sections[1161], b, gui.skol.butt1_txt, true, '', false, -2, true)
+    end
+    
+    local snaps
+    if tracks[track_select] and tracks[track_select].strip and snapshots[tracks[track_select].strip] and 
+       snapshots[tracks[track_select].strip][page][sstype_select] then
+      snaps = snapshots[tracks[track_select].strip][page][sstype_select]
+    end
     
     local sstypestr = 'PAGE'
     if sstype_select > 1 then
-      if tracks[track_select] and tracks[track_select].strip and snapshots[tracks[track_select].strip] and 
-         snapshots[tracks[track_select].strip][page][sstype_select] then
-        sstypestr = snapshots[tracks[track_select].strip][page][sstype_select].subsetname
+      if snaps then
+        sstypestr = snaps.subsetname
       else
         sstypestr = ''
       end
@@ -11718,9 +11821,7 @@ function GUI_DrawCtlBitmap_Strips()
     GUI_DrawButton(gui, 'RANDOMIZE', obj.sections[169], gui.color.white, gui.skol.butt1_txt, true, '', false)
     
     local txt = 'CAPTURE'
-    if tracks[track_select] and tracks[track_select].strip and snapshots[tracks[track_select].strip] and 
-       snapshots[tracks[track_select].strip][page][sstype_select] then
-      local snaps = snapshots[tracks[track_select].strip][page][sstype_select]
+    if snaps then
       if snaps.ignorevals ~= true then
         if snaps.capturemods then
           txt = txt..' (+MOD)'
@@ -11762,9 +11863,7 @@ function GUI_DrawCtlBitmap_Strips()
     local mv = 0
     local sync = false
     local scale = 1
-    if tracks[track_select] and tracks[track_select].strip and snapshots[tracks[track_select].strip] and 
-       snapshots[tracks[track_select].strip][page][sstype_select] then
-      local snaps = snapshots[tracks[track_select].strip][page][sstype_select]
+    if snaps then
       scale = snaps.morph_scale
       sync = snaps.morph_sync
       if sync == true then
@@ -11835,7 +11934,7 @@ function GUI_DrawCtlBitmap_Strips()
     if snaplrn_mode == false then
       
       local strip = tracks[track_select].strip
-      if strip and snapshots and snapshots[strip] and snapshots[strip][page][sstype_select] then
+      if snaps then
 
         local morphing = false
         local p, bbcol
@@ -11862,7 +11961,7 @@ function GUI_DrawCtlBitmap_Strips()
           end
         end
         
-        loop = snapshots[tracks[track_select].strip][page][sstype_select].morph_loop
+        loop = snaps.morph_loop
         if loop == 2 then
           txt = dir..dir
           loop = true
@@ -11881,9 +11980,9 @@ function GUI_DrawCtlBitmap_Strips()
 
         local ss
         if sstype_select == 1 then
-          ss = snapshots[strip][page][sstype_select]
+          ss = snaps
         else
-          ss = snapshots[strip][page][sstype_select].snapshot
+          ss = snaps.snapshot
         end
         if SS_butt_cnt < #ss then
           xywh.w = xywh.w - sbobj.w
@@ -11944,99 +12043,6 @@ function GUI_DrawCtlBitmap_Strips()
         end
         
         
-        
-        
-        
-        --[[if sstype_select == 1 then
-          if #snapshots[strip][page][sstype_select] > 0 then
-            for i = 1,SS_butt_cnt do
-            
-              xywh.y = obj.sections[163].y + i*butt_h
-              local c = gui.skol.ss_txt
-              if ss_select == ssoffset+i then
-                if morphing == false then
-                  f_Get_SSV(gui.skol.lst_barhl)
-                  gfx.rect(xywh.x,
-                   xywh.y+1, 
-                   xywh.w,
-                   xywh.h-1, 1 )
-                  c = gui.skol.lst_txthl
-                else 
-                  f_Get_SSV(bbcol)
-                  gfx.rect(xywh.x,
-                   xywh.y+1, 
-                   xywh.w,
-                   xywh.h-1, 1 )
-                  f_Get_SSV(gui.skol.lst_barhl)
-                  gfx.rect(xywh.x,
-                   xywh.y+1, 
-                   xywh.w*p,
-                   xywh.h-1, 1 )
-                  c = gui.skol.lst_txthl
-                end
-              end
-              if snapshots[strip][page][sstype_select][i+ssoffset] then
-                GUI_textsm_LJ(gui,xywh,roundX(i+ssoffset,0)..': '..snapshots[strip][page][sstype_select][i+ssoffset].name,c,-2 +(pnl_scale-1)*fontscale,xywh.w)
-              end
-          
-              if snap_move and snap_move.epos == i+ssoffset and snap_move.epos ~= snap_move.spos and snap_move.epos ~= snap_move.spos+1 then
-                f_Get_SSV(gui.color.red)
-                gfx.rect(xywh.x,
-                 xywh.y-1, 
-                 xywh.w,
-                 2, 1)              
-              end
-            end
-        
-          end
-        elseif sstype_select > 1 then
-          if #snapshots[strip][page][sstype_select].snapshot > 0 then
-            for i = 1,SS_butt_cnt do
-            
-              xywh.y = obj.sections[163].y + i*butt_h
-              local c = gui.skol.ss_txt
-              if ss_select == ssoffset+i then
-                if morphing == false then
-                  f_Get_SSV(gui.skol.lst_barhl)
-                  gfx.rect(xywh.x,
-                   xywh.y+1, 
-                   xywh.w,
-                   xywh.h-1, 1 )
-                  c = gui.skol.lst_txthl
-                else 
-                  f_Get_SSV(bbcol)
-                  gfx.rect(xywh.x,
-                   xywh.y+1, 
-                   xywh.w,
-                   xywh.h-1, 1 )
-                  f_Get_SSV(gui.skol.lst_barhl)
-                  gfx.rect(xywh.x,
-                   xywh.y+1, 
-                   xywh.w*p,
-                   xywh.h-1, 1 )
-                  c = gui.skol.lst_txthl
-                end
-              end
-              if snapshots[strip][page][sstype_select].snapshot[i+ssoffset] then
-                GUI_textsm_LJ(gui,xywh,roundX(i+ssoffset,0)..': '..snapshots[strip][page][sstype_select].snapshot[i+ssoffset].name,c,-2 +(pnl_scale-1)*fontscale,xywh.w)
-              end
-
-              if snap_move and snap_move.epos == i+ssoffset and snap_move.epos ~= snap_move.spos and snap_move.epos ~= snap_move.spos+1 then
-                f_Get_SSV(gui.color.red)
-                gfx.rect(xywh.x,
-                 xywh.y-1, 
-                 xywh.w,
-                 2, 1)              
-              end
-          
-            end
-        
-          end
-        
-        
-        
-        end]]
-
       end
 
       if pause then
@@ -12046,20 +12052,30 @@ function GUI_DrawCtlBitmap_Strips()
       end
       GUI_DrawButton(gui, 'PAUSED', obj.sections[1013], bc, gui.skol.butt1_txt, true, '', false)
       
-      GUI_DrawButton(gui, dir, obj.sections[1014], gui.color.white, gui.skol.butt1_txt, true, '', false)
+      local btc = gui.color.white
+      local ctc = gui.color.white
+      if snaps then
+        if snaps.stages and snaps.stages > 1 then
+          if snaps.morph_loop == 3 then
+            btc = -2
+            ctc = -2
+          elseif snaps.morph_loop ~= 1 then
+            ctc = -2
+          end
+        end
+      end
+      
+      GUI_DrawButton(gui, dir, obj.sections[1014], ctc, gui.skol.butt1_txt, true, '', false)
       if loop then
         bc = gui.color.white
       else
         bc = -1
       end
+      if btc ~= gui.color.white then
+        bc = btc
+      end
       GUI_DrawButton(gui, txt, obj.sections[1015], bc, gui.skol.butt1_txt, true, '', false)
       
-      --[[f_Get_SSV('64 64 64')
-      gfx.a = 1 
-      gfx.rect(obj.sections[163].x,
-               obj.sections[163].y, 
-               obj.sections[163].w,
-               obj.sections[163].h, 0 )]]      
       
     else
       --learn mode
@@ -14107,6 +14123,341 @@ function GUI_DrawCtlBitmap_Strips()
 
     gfx.dest = 1
   
+  end
+
+  ------------------------------------------------------------
+
+  function GUI_DrawSnapEdit(obj, gui)
+
+    local strip = tracks[track_select].strip
+    local page = page
+    local snaptype = snapshots[strip][page][sstype_select]
+    local snapctl = snaptype.ctls
+    local snap = snaptype.snapshot
+
+    local snapedit_ss = lvar.snapedit.snapedit_ss
+    local snapedit_poffs = lvar.snapedit.snapedit_poffs
+    local monitor = lvar.snapedit.monitor    
+
+    gfx.dest = 1008
+    local w, h = gfx.getimgdim(1008)
+    
+    local update_size
+    if obj.sections[300].w ~= w or obj.sections[300].h ~= h then update_size = true update_gfx = true end
+    if update_gfx or update_surface or update_macroedit or update_macrobutt then
+      if update_size then
+        gfx.setimgdim(1008, obj.sections[300].w, obj.sections[300].h)
+      end
+      
+      if update_gfx or update_macrobutt then 
+        --f_Get_SSV(gui.color.black)
+        f_Get_SSV('8 8 8')
+        gfx.rect(0,
+                 0, 
+                 obj.sections[300].w,
+                 obj.sections[300].h, 1)
+  
+      end
+
+      if update_gfx or update_macrobutt then 
+        local xywh = {x = obj.sections[401].x+2,
+                      y = obj.sections[401].y+2,
+                      w = obj.sections[401].w-4,
+                      h = obj.sections[401].h-4}
+        f_Get_SSV(gui.color.white)              
+        gfx.rect(obj.sections[401].x,
+                 obj.sections[401].y, 
+                 obj.sections[401].w,
+                 obj.sections[401].h, 1)
+        f_Get_SSV(gui.color.black)
+        gfx.line(xywh.x,xywh.y,xywh.x+xywh.w,xywh.y+xywh.h,1)
+        gfx.line(xywh.x+xywh.w,xywh.y,xywh.x,xywh.y+xywh.h,1)
+
+        local xywh = {x = obj.sections[429].x, y = obj.sections[429].y - 20, w = obj.sections[429].w, h = 20}
+        --GUI_Str(gui, xywh, 'STAGES', 5, gui.color.white, -2, 1)
+      end      
+
+      local stages = snaptype.stages
+      GUI_DrawButton(gui, 'STAGE', obj.sections[427], gui.color.white, gui.skol.butt1_txt, true, '', false,0,true)
+      GUI_DrawButton(gui, 'MORPH', obj.sections[428], gui.color.white, gui.skol.butt1_txt, true, '', false,0,true)
+      GUI_DrawButton(gui, 'MEM', obj.sections[434], gui.color.white, gui.skol.butt1_txt, true, '', false,0,true)
+
+      GUI_DrawButton(gui, snaptype.subsetname, obj.sections[430], gui.color.white, gui.skol.butt1_txt, true, '', false,0,true)
+      GUI_DrawButton(gui, 'STAGES: '..stages, obj.sections[429], gui.color.white, gui.skol.butt1_txt, true, '', false,2,true)
+      
+      local ssname = ''
+      if snap[snapedit_ss] then
+        ssname = snap[snapedit_ss].name
+      end
+      GUI_DrawButton(gui, ssname, obj.sections[425], gui.color.white, gui.skol.butt1_txt, true, '', false,0,true)
+      GUI_DrawButton(gui, '', obj.sections[433], gui.color.white, gui.skol.butt1_txt, true, '', false,12,true)
+      local xywh = {x = obj.sections[433].x, 
+                        y = obj.sections[433].y+3,
+                        w = obj.sections[433].w,
+                        h = obj.sections[433].h}
+      GUI_textC(gui,xywh,'*',gui.skol.butt1_txt,9)
+      
+      local b = -1
+      if monitor == true then
+        b = -4
+      end
+      GUI_DrawButton(gui, 'MONITOR', obj.sections[426], b, gui.skol.butt1_txt, true, '', false,0,true)
+
+      b = -1
+      if snaptype.mult == true then
+        b = -4
+      end
+      GUI_DrawButton(gui, 'MULT', obj.sections[432], b, gui.skol.butt1_txt, true, '', false,0,true)
+
+      local xywh = {x = obj.sections[431].x, 
+                    y = obj.sections[431].y,
+                    w = math.floor(obj.sections[431].w/5)-2,
+                    h = math.floor(obj.sections[431].h/2)-2}
+      local xywh2 = {x = obj.sections[431].x, 
+                    y = obj.sections[431].y,
+                    w = math.floor(obj.sections[431].w/5)-2,
+                    h = 18}
+      local xx = obj.sections[431].x
+      local yy = obj.sections[431].y
+      
+      for y = 0, 1 do
+        for x = 0, 4 do
+
+          local v = (lvar.snapedit.SToffs*10) + x+(y*5)+1            
+        
+          xywh.x = xx + x*(xywh.w+2)
+          xywh.y = yy + y*xywh.h+2
+          xywh2.x = xywh.x
+          local txt = ''
+          if v % 10 == 1 then
+            txt = 'TIME'
+          elseif v % 10 == 6 then
+            txt = 'TIME'
+          end
+          
+          if v <= stages then
+            if snaptype.deltype[v] == 0 then
+              GUI_DrawButton(gui, snaptype.delay[v]..' s', xywh, gui.color.white, gui.skol.butt1_txt, true, txt, false,2,true)
+            elseif snaptype.deltype[v] == 1 then
+              local t = lvar.sync_table[snaptype.mtime[v]]
+              if t == nil then
+                snaptype.mtime[v] = 15
+                t = lvar.sync_table[snaptype.mtime[v]]
+              end
+              GUI_DrawButton(gui, t, xywh, gui.color.white, gui.skol.butt1_txt, true, txt, false,2,true)            
+            else
+              GUI_DrawButton(gui, 'REM', xywh, gui.color.white, gui.skol.butt1_txt, true, txt, false,2,true)                        
+            end
+          else
+            GUI_DrawButton(gui, '', xywh, -1, gui.skol.butt1_txt, true, txt, false,2,true)              
+          end
+          local lbly 
+          if (v-1)%10 < 5 then
+            xywh2.y = yy-16
+          else
+            xywh2.y = yy + obj.sections[431].h - 2
+          end
+          if v <= stages then
+            GUI_DrawButton(gui, 'STAGE '..string.format('%i',v), xywh2, -1, gui.skol.butt1_txt, true, '', false,-2,true)
+          end
+        end
+      end
+      
+      for s = 1, macroedit.pcnt2 do
+      
+        gfx.a = 1
+        local ss = s-1
+        
+        if snapctl and snapctl[s+snapedit_poffs] then
+          local sctl = snapctl[s+snapedit_poffs]
+          local ctl = strips[strip][page].controls[sctl.ctl]
+          if ctl then
+  
+            local scol = 32+((sctl.stage-1)%10)*10
+            local tcoffs = 0
+            if sctl.stage > 4 then
+              tcoffs = 60
+            end
+            local fxtc = 160-((sctl.stage-1)%10)*10 -tcoffs
+            if update_gfx or update_macrobutt then 
+              local xywh = {x = obj.sections[420].x,
+                            y = obj.sections[420].y + ss*macroedit.sech +2,
+                            w = obj.sections[420].w,
+                            h = macroedit.sech-4}
+              local stc = '64 0 0'
+              if sctl.stage <= stages then
+                stc = scol..' '..scol..' '..scol
+              end
+              f_Get_SSV(stc)
+              local tc = gui.color.white
+              if snapparamdrag and snapparamdrag.p == s+snapedit_poffs then
+                f_Get_SSV('8 8 8')
+                tc = '64 64 64'
+                stc = '8 8 8'
+              end
+              gfx.rect(xywh.x,
+                       xywh.y, 
+                       xywh.w,
+                       xywh.h, 1)
+              if lvar.snapedit.selected and lvar.snapedit.selected == s+snapedit_poffs and snapparamdrag == nil then
+                f_Get_SSV(gui.color.yellow)
+                gfx.rect(xywh.x,
+                         xywh.y, 
+                         xywh.w,
+                         xywh.h, 0)              
+              end
+              xywh = {x = obj.sections[420].x+10,
+                      y = obj.sections[420].y + ss*macroedit.sech,
+                      w = obj.sections[420].w-20,
+                      h = macroedit.sech}
+              local ctlnm = ctl.param_info.paramname
+              local fxnm2 = CropFXName(ctl.fxname or '')
+              local fxnm
+              if fxnm2 ~= '' and fxnm2 ~= nil and ctl.fxnum then
+                fxnm = '('..ctl.fxnum+1 ..': '..fxnm2..')'
+              end
+              if ctl.ctlname_override ~= '' then
+                ctlnm = ctl.ctlname_override or ctl.param_info.paramname
+              end
+              if fxnm then
+                GUI_Str(gui, xywh, fxnm, 4, '0 '..fxtc..' 0', -2, 1, nil, nil, 'i')
+              end
+              GUI_StrB(gui, xywh, ctlnm, 6, tc, -2, 1,nil,nil,'ib',stc)
+              gfx.a = 1
+            end          
+            
+            local xywh = {x = obj.sections[421].x,
+                          y = obj.sections[421].y + ss*macroedit.sech +2,
+                          w = obj.sections[421].w,
+                          h = macroedit.sech-4}          
+            if sctl.stage > stages then
+              f_Get_SSV('64 0 0')
+            else          
+              f_Get_SSV(scol..' '..scol..' '..scol)
+            end
+            gfx.rect(xywh.x,
+                     xywh.y, 
+                     xywh.w,
+                     xywh.h, 1)
+            GUI_Str(gui, xywh, sctl.stage, 5, gui.color.white, 0, 1)
+
+            local xywh = {x = obj.sections[422].x,
+                          y = obj.sections[422].y + ss*macroedit.sech +2,
+                          w = obj.sections[422].w,
+                          h = macroedit.sech-4}          
+            if sctl.stage > stages then
+              f_Get_SSV('64 0 0')
+            else          
+              f_Get_SSV(scol..' '..scol..' '..scol)
+            end
+            gfx.rect(xywh.x,
+                     xywh.y, 
+                     xywh.w,
+                     xywh.h, 1)
+            local b = -1
+            local txt = 'OFF'
+            if sctl.morph == true then
+              b = -4
+              txt = 'ON'
+            end
+            
+            local mbh = math.max(xywh.h -12,20)
+            xywh = {x = xywh.x + 20, y = math.floor(xywh.y+xywh.h/2-mbh/2), w = xywh.w -40, h = mbh}
+            GUI_DrawButton(gui, txt, xywh, b, gui.skol.butt1_txt, true, '', false,2,true)
+
+            local xywh = {x = obj.sections[435].x,
+                          y = obj.sections[435].y + ss*macroedit.sech +2,
+                          w = obj.sections[435].w,
+                          h = macroedit.sech-4}          
+            if sctl.stage > stages then
+              f_Get_SSV('64 0 0')
+            else          
+              f_Get_SSV(scol..' '..scol..' '..scol)
+            end
+            gfx.rect(xywh.x,
+                     xywh.y, 
+                     xywh.w,
+                     xywh.h, 1)
+            local b = -1
+            local txt = 'OFF'
+            local mem = false
+            if sctl.mem == true then
+              b = -4
+              txt = 'ON'
+              mem = true
+            end
+            xywh = {x = xywh.x + 2, y = math.floor(xywh.y+xywh.h/2-mbh/2), w = xywh.w -4, h = mbh}            
+            GUI_DrawButton(gui, txt, xywh, b, gui.skol.butt1_txt, true, '', false,2,true)
+
+            local xywh = {x = obj.sections[423].x - 12,
+                          y = obj.sections[423].y + ss*macroedit.sech +2,
+                          w = obj.sections[423].w + 24,
+                          h = macroedit.sech-4}          
+            f_Get_SSV('16 16 16')              
+            gfx.rect(xywh.x,
+                     xywh.y, 
+                     xywh.w,
+                     xywh.h, 1)
+            local xywh2 = {x = obj.sections[424].x,
+                          y = obj.sections[424].y + ss*macroedit.sech +2,
+                          w = obj.sections[424].w,
+                          h = macroedit.sech-4}          
+            gfx.rect(xywh2.x,
+                     xywh2.y, 
+                     xywh2.w,
+                     xywh2.h, 1)
+            
+            if --[[mem == false and]] snap[snapedit_ss] and snap[snapedit_ss].data[s+snapedit_poffs] then
+              
+              local w, h = macroedit.sliderw, macroedit.sliderh
+              
+              local p = math.min(math.max(snap[snapedit_ss].data[s+snapedit_poffs].val,0),1)    
+              
+              local py = (obj.sections[423].y + ss*macroedit.sech) + math.floor(macroedit.sech/2)-1
+                          
+              xywh = {x = obj.sections[423].x,
+                      y = (obj.sections[423].y + ss*macroedit.sech) + math.floor(macroedit.sech/2)-1,
+                      w = obj.sections[423].w,
+                      h = 2}
+              if mem == false then
+                f_Get_SSV(gui.color.blue)
+              else
+                f_Get_SSV(gui.color.red)
+                gfx.a = 0.5              
+              end
+              gfx.rect(xywh.x,
+                       xywh.y, 
+                       xywh.w,
+                       xywh.h, 1)
+              
+              if mem == false then            
+                xywh = {x = obj.sections[423].x + p*obj.sections[423].w - (w/2),
+                        y = (obj.sections[423].y + ss*macroedit.sech) + math.floor(macroedit.sech/2) - (h/2),
+                        w = w,
+                        h = h}
+                GUI_DrawBar(gui,'',xywh,skin.slidbutt,true,gui.color.black,gui.color.black,-2)
+  
+                if monitor == true then
+                  local dv
+                  if snap[snapedit_ss].data[s+snapedit_poffs].dispval then
+                    dv = snap[snapedit_ss].data[s+snapedit_poffs].dispval
+                  else
+                    dv = GetParamDisp_Ctl(sctl.ctl)
+                    snap[snapedit_ss].data[s+snapedit_poffs].dispval = dv
+                  end
+                  GUI_Str(gui, xywh2, dv, 5, gui.color.white, 0, 1)
+                end
+              end
+            end
+                      
+          end
+
+        end
+      end
+    end
+    
+    gfx.dest = 1
+
   end
   
   ------------------------------------------------------------
@@ -16341,7 +16692,7 @@ function GUI_DrawCtlBitmap_Strips()
 
   function GUI_draw(obj, gui)
     gfx.mode = gmode
-    
+
     if show_xxy == false and (update_gfx or update_surface or update_sidebar or update_topbar or update_ctlopts or update_ctls or update_bg or 
        update_settings or update_snaps or update_msnaps or update_actcho or update_fsnaps or update_mfsnaps or update_eqcontrol or update_macroedit or
        update_macrobutt or update_snapmorph or update_lfoedit or update_lfoeditbar or update_lfopos or update_mutate or update_randomopts or update_samplemanager or 
@@ -16739,8 +17090,8 @@ function GUI_DrawCtlBitmap_Strips()
           gfx.a=1
           
           gfx.blit(1009,1,0,0,0,obj.sections[300].w,obj.sections[300].h,obj.sections[300].x,obj.sections[300].y)  
-          GUI_DrawEQBands(obj, gui)              
-        
+          GUI_DrawEQBands(obj, gui)                      
+                  
         elseif show_pinmatrix then
         
           if (matrixoff and matrixoff.update == true) or (not matrixoff and (update_gfx or update_surface)) then
@@ -16775,7 +17126,22 @@ function GUI_DrawCtlBitmap_Strips()
           gfx.a=1
 
           gfx.blit(1008,1,0,0,0,obj.sections[300].w,obj.sections[300].h,obj.sections[300].x,obj.sections[300].y) 
-                
+
+        elseif snap_edit_mode == true and snaplrn_mode ~= true then
+          if update_gfx or update_macrobutt or update_macroedit or resize_display then
+            GUI_DrawSnapEdit(obj, gui)
+          end
+          gfx.a=1
+
+          gfx.blit(1008,1,0,0,0,obj.sections[300].w,obj.sections[300].h,obj.sections[300].x,obj.sections[300].y) 
+          
+          if snapparamdrag then
+            local w,h = gfx.getimgdim(snapparamdrag.iidx)
+            local x = mouse.mx - snapparamdrag.xoff
+            local y = mouse.my - snapparamdrag.yoff
+            gfx.blit(snapparamdrag.iidx,1,0,0,0,w,h,x,y) 
+          end
+             
         elseif show_lfoedit and show_eqcontrol ~= true and macro_edit_mode ~= true then
           if update_gfx or update_lfoedit or resize_display then
             GUI_DrawLFOEdit(obj, gui)
@@ -16796,7 +17162,7 @@ function GUI_DrawCtlBitmap_Strips()
           gfx.blit(986,1,0,0,0,obj.sections[1300].w,obj.sections[1300].h,obj.sections[1300].x,obj.sections[1300].y)         
         end
 
-        if show_stripbrowser and show_eqcontrol ~= true and macro_edit_mode ~= true and show_pinmatrix ~= true then
+        if show_stripbrowser and show_eqcontrol ~= true and macro_edit_mode ~= true and snap_edit_mode ~= true and show_pinmatrix ~= true then
           if update_gfx or update_stripbrowser or resize_display then
             GUI_DrawStripBrowser(obj, gui)
           end
@@ -16809,7 +17175,14 @@ function GUI_DrawCtlBitmap_Strips()
             gfx.a = 1
           end         
         end
-        
+
+        if show_modass and show_eqcontrol ~= true and macro_edit_mode ~= true and snap_edit_mode ~= true and show_pinmatrix ~= true then
+          if update_gfx or update_surface then
+            GUI_DrawModAssign(obj, gui)
+          end
+          gfx.blit(983,1,0,0,0,obj.sections[1125].w,obj.sections[1125].h,obj.sections[1125].x,obj.sections[1125].y)  
+        end
+                
         if dragfader then
           local sz = 30
           local xywh = {x = dragfader.x-sz, y = dragfader.y-butt_h/2, w = sz*2, h = butt_h}
@@ -17710,6 +18083,7 @@ function GUI_DrawCtlBitmap_Strips()
     update_xxy = false
     update_xxypos = false
     update_eqcontrol = false
+    update_macroedit = false
     update_macrobutt = false
     update_trackfxorder = false
     update_dd = false
@@ -19690,11 +20064,16 @@ function GUI_DrawCtlBitmap_Strips()
             reaper.Main_OnCommand(reaper.NamedCommandLookup(cmd), 0)
           end
         end        
+        
       elseif cc == ctlcats.fxoffline then
         ToggleFXOffline(strip, page, c, strips[strip].track.tracknum)
         
       elseif cc == ctlcats.macro then
         SetMacro(strip, page, c)
+
+      elseif cc == ctlcats.threshold then
+
+        SetThreshold(strip, page, c)
 
       elseif cc == ctlcats.takeswitcher then
         SetItemTake(strip, page, c)
@@ -19702,6 +20081,11 @@ function GUI_DrawCtlBitmap_Strips()
           SetCtlDirty(c)
         end
         update_ctls = true
+      
+      elseif cc == ctlcats.snapshot then
+        if ctl.param_info.paramnum == 2 then
+          FixedSS(c)     
+        end
         
       elseif cc == ctlcats.snapshotrand then
         
@@ -19754,7 +20138,10 @@ function GUI_DrawCtlBitmap_Strips()
         MacroUC_Click(ctl)
         
       end
-      if ctl.midiout then SendMIDIMsg(ctl.midiout,val) end
+      
+      if ctl.midiout then 
+        SendMIDIMsg(ctl.midiout,val) 
+      end
       if ctl.macrofader then
         SetFader(ctl.macrofader, ctl.val)
       end
@@ -19763,6 +20150,42 @@ function GUI_DrawCtlBitmap_Strips()
       end]]
     end
       
+  end
+  
+  function SetThreshold(strip, page, c)
+  
+    local ctl = strips[strip][page].controls[c]
+    local thresh_on = ctl.thresh.thresh_on/128
+    local thresh_off = ctl.thresh.thresh_off/128
+    
+    local onval = ctl.thresh.val_on
+    local offval = ctl.thresh.val_off
+    if ctl.thresh.invert == true then
+      offval = ctl.thresh.val_on
+      onval = ctl.thresh.val_off
+    end
+    
+    local track = GetTrack(ctl.tracknum or strips[strip].track.tracknum)
+    local curval = reaper.TrackFX_GetParam(track,ctl.fxnum,ctl.param)
+
+    if ctl.val <= thresh_off and curval ~= offval then
+    
+      --if ctl.threshval ~= false then
+        --local track = GetTrack(ctl.tracknum or strips[strip].track.tracknum)
+        reaper.TrackFX_SetParam(track, ctl.fxnum, ctl.param, offval)      
+        ctl.threshval = false
+      --end
+          
+    elseif ctl.val >= thresh_on and curval ~= onval then
+    
+      --if ctl.threshval ~= true then
+        --local track = GetTrack(ctl.tracknum or strips[strip].track.tracknum)
+        reaper.TrackFX_SetParam(track, ctl.fxnum, ctl.param, onval)
+        ctl.threshval = true
+      --end
+      
+    end
+  
   end
   
   function MacroUC_Click(ctl)
@@ -20027,6 +20450,8 @@ function GUI_DrawCtlBitmap_Strips()
         ToggleFXOffline(tracks[track_select].strip, page, trackfxparam_select, tracks[track_select].tracknum)
       elseif cc == ctlcats.macro then
         SetMacro(tracks[track_select].strip, page, trackfxparam_select)
+      elseif cc == ctlcats.threshold then
+        SetThreshold(tracks[track_select].strip, page, trackfxparam_select)
       end
     end
       
@@ -21242,6 +21667,16 @@ function GUI_DrawCtlBitmap_Strips()
         strips[tracks[track_select].strip][page].controls[trackfxparam_select].val = F_limit(v,0,1)
         strips[tracks[track_select].strip][page].controls[trackfxparam_select].dirty = true
         SetParam()
+      end
+
+    elseif strips[tracks[track_select].strip][page].controls[trackfxparam_select].ctlcat == ctlcats.threshold then
+      local v = tonumber(txt)/127
+      if v then
+        strips[tracks[track_select].strip][page].controls[trackfxparam_select].val = F_limit(v,0,1)
+        strips[tracks[track_select].strip][page].controls[trackfxparam_select].dirty = true
+        SetParam()
+        SetCtlDirty(trackfxparam_select)
+        update_ctls = true
       end
           
     else
@@ -22990,7 +23425,7 @@ function GUI_DrawCtlBitmap_Strips()
         for i = 1, #strip.controls do
           local ctl = strip.controls[i]
           local hidden = GenStripPreview_CtlsHidden(switchers, switchconvtab, ctl.switcher, ctl.grpid)
-          if hidden == false then
+          if hidden == false and ctl.hidden ~= true then
             local scale = ctl.scale
             local x = ctl.x+offsetx 
             local y = ctl.y+offsety
@@ -26377,7 +26812,6 @@ function GUI_DrawCtlBitmap_Strips()
         local cc = c1+i-1
         strips[tracks[track_select].strip][page].controls[cc]=GetControlTable(tracks[track_select].strip, page, ctl_select[i].ctl)
         strips[tracks[track_select].strip][page].controls[cc].poslock = false
-        --table.insert(strips[tracks[track_select].strip][page].controls[cc], strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl])
         strips[tracks[track_select].strip][page].controls[cc].x = strips[tracks[track_select].strip][page].controls[cc].x - dx
         strips[tracks[track_select].strip][page].controls[cc].y = strips[tracks[track_select].strip][page].controls[cc].y - dy
         strips[tracks[track_select].strip][page].controls[cc].xsc = strips[tracks[track_select].strip][page].controls[cc].xsc - dx
@@ -26579,11 +27013,14 @@ function GUI_DrawCtlBitmap_Strips()
     if strips and strips[strip] and ctl_select then
     
       local l,t,lctl = GetLeftTopControlSelected()
-      local ctl = strips[strip][page].controls[lctl]
+      local ctl = strips[strip][page].controls[ctl_select[lctl].ctl]
+
       local w, h = 0,0
       if ctl and col ~= -1 then
-        w, h = ctl.wsc, ctl.hsc 
+        w, h = ctl.wsc, ctl.hsc --gfx.getimgdim(ctl.ctl_info.imageidx)--
+        --h = math.floor(h/ctl.ctl_info.frames)
       end
+
       for i = 1, #ctl_select do
         local ctl = strips[strip][page].controls[ctl_select[i].ctl]
         if ctl then
@@ -27131,17 +27568,31 @@ function GUI_DrawCtlBitmap_Strips()
         end
         local fd, lastp = FaderMenu(-1,true,fdinact)
     
-        local snap = ''
+        local cspec = ''
         if ccat == ctlcats.snapshot then
-          local asc, bsc, fsc = '', '', ''
+          local asc, bsc, fsc, ffsc = '', '', '', '#'
           if ctl.param_info.paramnum == 1 then
             bsc = '!'
           elseif ctl.param_info.paramnum == 2 then
             fsc = '!'
+            ffsc = ''
           else 
             asc = '!'
           end
-          snap = '||>Control Specific|'..asc..'Advanced Snapshot Control|'..bsc..'Basic Snapshot Control||<'..fsc..'Fixed Snapshot Control'
+          cspec = '||>Control Specific|'..asc..'Advanced Snapshot Control|'..bsc..'Basic Snapshot Control||'..fsc..'Fixed Snapshot Control||<'..ffsc..'Assign To Selected Subset/Snapshot'
+        elseif ccat == ctlcats.fxparam then
+          cspec = '||>Control Specific|Threshold Switch'
+        elseif ccat == ctlcats.threshold then
+          --[[if ctl.thresh == nil then
+            ctl.thresh = {off = 5,
+                          on = 10}
+          end]]
+          local threshinv = ''
+          if ctl.thresh.invert == true then
+            threshinv = '!'
+          end
+          cspec = '||>Control Specific|!Threshold Switch||Set Off Threshold To Current Value|Set On Threshold To Current Value||#Off Threshold = '..ctl.thresh.thresh_off..'|#On Threshold =  '..
+                  ctl.thresh.thresh_on..'||'..threshinv..'Invert On/Off Values'
         end
         
         local mod = '||Clear Modulator'
@@ -27152,11 +27603,11 @@ function GUI_DrawCtlBitmap_Strips()
         
         local unl = '||Unlock All Controls'
         if ccat == ctlcats.fxparam then
-          mstr = fft..'Faderbox learn (global)'..ff..'||'..fd..mod..'||Param Modulation||Enter value||'..mido..'||Open FX window||Add Envelope|Add All Envelopes For Plugin||'..mm..'Snapshots||>Tools|<Regenerate ID   (emergency only)||Toggle Topbar|Toggle Sidebar||'..lspfx..'Lock Surface'..unl
+          mstr = fft..'Faderbox learn (global)'..ff..'||'..fd..mod..'||Param Modulation||Enter value||'..mido..'||Open FX window||Add Envelope|Add All Envelopes For Plugin||'..mm..'Snapshots||>Tools|<Regenerate ID   (emergency only)||Toggle Topbar|Toggle Sidebar||'..lspfx..'Lock Surface'..unl..cspec
         elseif ccat == ctlcats.trackparam or ccat == ctlcats.tracksend or ccat == ctlcats.macro or ccat == ctlcats.snapshot or ccat == ctlcats.midictl then
-          mstr = fft..'Faderbox learn (global)'..ff..'||'..fd..mod..'|#Param Modulation||Enter value||'..mido..'||#Open FX window||#Add Envelope|#Add All Envelopes For Plugin||'..mm..'Snapshots||>Tools|<Regenerate ID   (emergency only)||Toggle Topbar|Toggle Sidebar||'..lspfx..'Lock Surface'..unl..snap                  
+          mstr = fft..'Faderbox learn (global)'..ff..'||'..fd..mod..'|#Param Modulation||Enter value||'..mido..'||#Open FX window||#Add Envelope|#Add All Envelopes For Plugin||'..mm..'Snapshots||>Tools|<Regenerate ID   (emergency only)||Toggle Topbar|Toggle Sidebar||'..lspfx..'Lock Surface'..unl..cspec                  
         else
-          mstr = fft..'#Faderbox learn (global)'..ff..'||'..fd..mod..'|#Param Modulation||Enter value||'..mido..'||#Open FX window||#Add Envelope|#Add All Envelopes For Plugin||'..mm..'Snapshots||>Tools|<Regenerate ID   (emergency only)||Toggle Topbar|Toggle Sidebar||'..lspfx..'Lock Surface'..unl                  
+          mstr = fft..'#Faderbox learn (global)'..ff..'||'..fd..mod..'|#Param Modulation||Enter value||'..mido..'||#Open FX window||#Add Envelope|#Add All Envelopes For Plugin||'..mm..'Snapshots||>Tools|<Regenerate ID   (emergency only)||Toggle Topbar|Toggle Sidebar||'..lspfx..'Lock Surface'..unl..cspec                  
         end
 
         --if ccat ~= ctlcats.macro then
@@ -27267,17 +27718,46 @@ function GUI_DrawCtlBitmap_Strips()
               UnlockControls(tracks[track_select].strip,page)
               
             elseif res == 16 +lastp then
-              ctl.param_info.paramnum = nil
+              if ccat == ctlcats.snapshot then
+                ctl.param_info.paramnum = nil
+              elseif ccat == ctlcats.fxparam then
+                ctl.param_info.paramidx = ctlcats.fxparam
+                ctl.ctlcat = ctlcats.threshold
+                ctl.thresh = {thresh_off = 5, thresh_on = 10, val_off = 0, val_on = 1, invert = false}
+                
+              elseif ccat == ctlcats.threshold then
+                ctl.ctlcat = tonumber(ctl.param_info.paramidx)
+              end
+              SetCtlDirty(i)
+              update_ctls = true
             elseif res == 17 +lastp then
-              ctl.param_info.paramnum = 1
+              if ccat == ctlcats.snapshot then
+                ctl.param_info.paramnum = 1
+              elseif ccat == ctlcats.threshold then
+                ctl.thresh.thresh_off = math.floor(ctl.val*127)
+              end
             elseif res == 18 +lastp then
-              local xsstype_select = ctl.param
-              if snapshots and snapshots[strip] and snapshots[strip][page][xsstype_select] 
-                                          and snapshots[strip][page][xsstype_select].selected then
-                local xss_select = snapshots[strip][page][xsstype_select].selected
-                ctl.param_info.paramnum = 2
-                ctl.param_info.paramidx = xss_select
+              if ccat == ctlcats.snapshot then
+                local xsstype_select = ctl.param
+                if snapshots and snapshots[strip] and snapshots[strip][page][xsstype_select] 
+                                            and snapshots[strip][page][xsstype_select].selected then
+                  local xss_select = snapshots[strip][page][xsstype_select].selected
+                  ctl.param_info.paramnum = 2
+                  ctl.param_info.paramidx = xss_select
+                  SetCtlDirty(i)
+                end
+              elseif ccat == ctlcats.threshold then
+                ctl.thresh.thresh_on = math.floor(ctl.val*127)
+              end
+            elseif res == 19 +lastp then
+              if ccat == ctlcats.snapshot then
+                ctl.param = sstype_select
+                ctl.param_info.paramidx = ss_select
                 SetCtlDirty(i)
+              end              
+            elseif res == 21 +lastp then
+              if ccat == ctlcats.threshold then
+                ctl.thresh.invert = not ctl.thresh.invert
               end
             end
           end
@@ -28978,6 +29458,12 @@ function GUI_DrawCtlBitmap_Strips()
       RecallFaders()
     end
     
+    if show_modass then
+      lvar.modass = PopModAssObj()
+      if lvar.modass then
+        lvar.modass.offset = 0
+      end
+    end
     --Env_Test(tracks[track_select].strip, page)
   end
   
@@ -29253,6 +29739,7 @@ function GUI_DrawCtlBitmap_Strips()
                       --strips[faders[p+1].strip][faders[p+1].page].controls[faders[p+1].ctl].mval = faders[p+1].val
                       strips[faders[p+1].strip][faders[p+1].page].controls[faders[p+1].ctl].dirty = true
                       SetMacro(faders[p+1].strip,faders[p+1].page,faders[p+1].ctl)
+                      update_ctls = true
                       if macro_edit_mode == true then
                         update_macroedit = true
                       end 
@@ -31129,7 +31616,7 @@ function GUI_DrawCtlBitmap_Strips()
     local PROJNAME = GetProjectName()
     projdirty = reaper.IsProjectDirty()
 
-    if (PROJECTID ~= tonumber(GPES('projectid'))) or newloc then
+    if not lvar.striploadoverride_active and ((PROJECTID ~= tonumber(GPES('projectid'))) or newloc) then
     
       if newloc then
         --SaveData()
@@ -31139,6 +31626,7 @@ function GUI_DrawCtlBitmap_Strips()
         INIT(lvar.newloc_preserveid)
         lvar.newloc_preserveid = nil
       else
+        DBGOut('*** INIT ***')
         INIT()                
       end
       LoadData()
@@ -31154,7 +31642,7 @@ function GUI_DrawCtlBitmap_Strips()
       end
       loadset_fn = nil
    
-    elseif lastprojdirty ~= projdirty or PROJNAME ~= lastprojname then
+    elseif not lvar.striploadoverride_active and (lastprojdirty ~= projdirty or PROJNAME ~= lastprojname) then
       
       --local fn = GPES('lbxstripper_datafile', true)
       local pfname = string.sub(PROJNAME,0,string.len(PROJNAME)-4)
@@ -31166,6 +31654,8 @@ function GUI_DrawCtlBitmap_Strips()
         
       elseif PROJNAME ~= lastprojname then
       
+        DBGOut('*** PROJECT NAME MISMATCH ***')
+        
         local pr_pfx = string.match(PROJNAME,'(.*%_)%d+.*')
         local pr_n = string.match(PROJNAME,'%_(%d+).*')
         local ls_pfx = string.match(lastprojname ,'(.*%_)%d+.*')
@@ -31283,6 +31773,11 @@ function GUI_DrawCtlBitmap_Strips()
         if stripgallery_view ~= 0 then
           GUI_DrawCtlBitmap2()
         end
+        --[[if show_modass then
+          local offs = lvar.modass.offset
+          lvar.modass = PopModAssObj()
+          lvar.modass.offset = offs
+        end]]
       end
     end
     
@@ -31973,6 +32468,9 @@ function GUI_DrawCtlBitmap_Strips()
     if #morph_data > 0 then
       A_RunMorph()
     end
+    if #snapstage_data > 0 then
+      A_RunSnapStage()
+    end
   
     A_RunMod()
     
@@ -32100,94 +32598,193 @@ function GUI_DrawCtlBitmap_Strips()
     
   end 
 
+  function A_RunSnapStage()
+
+    local stage_data = snapstage_data
+    local t = reaper.time_precise()
+    local cnt = #stage_data
+    local actcnt = 0
+    
+    for i = 1, cnt do
+    
+      if stage_data[i] and stage_data[i].active == true then
+        
+        actcnt = actcnt + 1
+
+        if t >= stage_data[i].trigtime then
+          local ostage = stage_data[i].stage
+
+          Snapshot_Set(stage_data[i].strip, 
+                       stage_data[i].page, 
+                       stage_data[i].sstype_sel,
+                       stage_data[i].ss_sel,
+                       stage_data[i].nomorph,
+                       stage_data[i].stage,
+                       i,
+                       stage_data[i].retain,
+                       stage_data[i].trigtime)
+          if ostage == stage_data[i].stage then
+            stage_data[i] = {}
+          end
+        end
+      end
+    
+    end
+
+    if actcnt == 0 then
+      snapstage_data = {}
+    end
+
+  end
+  
   function A_RunMorph()
     
-    local morph_data = morph_data
+    local lmorph_data = morph_data
     local runcnt = 0
     local t = reaper.time_precise()
-    for i = 1, #morph_data do
-      if morph_data[i].active then
+
+    for i = 1, #lmorph_data do
+
+      if lmorph_data[i].active then
         runcnt = runcnt + 1
         local p, man
-        if not morph_data[i].paused then
-          p = math.min((t-morph_data[i].start_time) / morph_data[i].morph_time,1)
-          Snapshot_Morph(morph_data[i].strip, morph_data[i].page, morph_data[i].sstype, morph_data[i].targetss, i, p)
-        elseif morph_data[i].manual then
-          p = morph_data[i].p
-          Snapshot_Morph(morph_data[i].strip, morph_data[i].page, morph_data[i].sstype, morph_data[i].targetss, i, p)        
-          morph_data[i].manual = nil
+
+        if not lmorph_data[i].paused then
+          p = math.min((t-lmorph_data[i].start_time) / lmorph_data[i].morph_time,1)
+          Snapshot_Morph(lmorph_data[i].strip, lmorph_data[i].page, lmorph_data[i].sstype, lmorph_data[i].targetss, i, p)
+        elseif lmorph_data[i].manual then
+
+          p = lmorph_data[i].p
+          Snapshot_Morph(lmorph_data[i].strip, lmorph_data[i].page, lmorph_data[i].sstype, lmorph_data[i].targetss, i, p)        
+          lmorph_data[i].manual = nil
           man = true
         end
         
         update_ctls = true
 
         if p == 1 and man == nil then
-          if morph_data[i].morph_loop == 2 then
-            morph_data[i].start_time = morph_data[i].end_time
-            morph_data[i].end_time = morph_data[i].start_time + morph_data[i].morph_time
-            update_snaps = true             
-          elseif morph_data[i].morph_loop == 3 then
-            morph_data[i].start_time = morph_data[i].end_time
-            morph_data[i].end_time = morph_data[i].start_time + morph_data[i].morph_time
-            morph_data[i].dir = 1-(morph_data[i].dir or 0)
-            update_snaps = true             
-          elseif morph_data[i].morph_loop == 4 then
-            if morph_data[i].dir == 1 then
-              morph_data[i].dir = 0
+  
+          local snaps = snapshots[lmorph_data[i].strip][lmorph_data[i].page][lmorph_data[i].sstype]
+          
+          if lmorph_data[i].morph_loop == 2 and lmorph_data[i].stage >= (snaps.stages or 1) then
+            --RETRIGGER
+            lmorph_data[i].stage = 1
+
+            local mt = lmorph_data[i].morph_time
+            if (snaps.stages or 1) > 1 then
+              mt = Morph_GetStageTime(snaps,lmorph_data[i].stage)
+            end
+            lmorph_data[i].start_time = lmorph_data[i].end_time
+            lmorph_data[i].morph_time = mt
+            lmorph_data[i].end_time = lmorph_data[i].start_time + mt
+            update_snaps = true      
+                   
+          elseif lmorph_data[i].morph_loop == 3 and lmorph_data[i].stage >= (snaps.stages or 1) then
+            --REVERSE
+
+            lmorph_data[i].start_time = lmorph_data[i].end_time
+            lmorph_data[i].end_time = lmorph_data[i].start_time + lmorph_data[i].morph_time
+            lmorph_data[i].dir = 1-(lmorph_data[i].dir or 0)
+            lmorph_data[i].stage = 1
+            update_snaps = true   
+                      
+          elseif lmorph_data[i].morph_loop == 4 and lmorph_data[i].stage >= (snaps.stages or 1) then
+
+            lmorph_data[i].stage = 1
+            if lmorph_data[i].dir == 1 then
+              lmorph_data[i].dir = 0
             else
-              morph_data[i].data = {}
-              morph_data[i].targetss = morph_data[i].targetss + 1
-              morph_data[i].p = 0
-              if morph_data[i].sstype == 1 then
-                if morph_data[i].targetss > #snapshots[morph_data[i].strip][morph_data[i].page][morph_data[i].sstype] then
-                  morph_data[i].targetss = 1
+              lmorph_data[i].data = {}
+              lmorph_data[i].targetss = lmorph_data[i].targetss + 1
+              lmorph_data[i].p = 0
+              if lmorph_data[i].sstype == 1 then
+                if lmorph_data[i].targetss > #snapshots[lmorph_data[i].strip][lmorph_data[i].page][lmorph_data[i].sstype] then
+                  lmorph_data[i].targetss = 1
                 end
               else
-                if morph_data[i].targetss > #snapshots[morph_data[i].strip][morph_data[i].page][morph_data[i].sstype].snapshot then
-                  morph_data[i].targetss = 1
+                if lmorph_data[i].targetss > #snapshots[lmorph_data[i].strip][lmorph_data[i].page][lmorph_data[i].sstype].snapshot then
+                  lmorph_data[i].targetss = 1
                 end            
               end
             end
-            snapshots[morph_data[i].strip][morph_data[i].page][morph_data[i].sstype].selected = morph_data[i].targetss
-            if morph_data[i].strip == tracks[track_select].strip and 
-               morph_data[i].page == page and
-               morph_data[i].sstype == sstype_select then
-              ss_select = morph_data[i].targetss
+            snapshots[lmorph_data[i].strip][lmorph_data[i].page][lmorph_data[i].sstype].selected = lmorph_data[i].targetss
+            if lmorph_data[i].strip == tracks[track_select].strip and 
+               lmorph_data[i].page == page and
+               lmorph_data[i].sstype == sstype_select then
+              ss_select = lmorph_data[i].targetss
             end
-            morph_data[i].start_time = morph_data[i].end_time
-            morph_data[i].end_time = morph_data[i].start_time + morph_data[i].morph_time
-            update_snaps = true           
+            
+            local mt = lmorph_data[i].morph_time
+            if (snaps.stages or 1) > 1 then
+              mt = Morph_GetStageTime(snaps,lmorph_data[i].stage)
+            end
+            lmorph_data[i].start_time = lmorph_data[i].end_time
+            lmorph_data[i].morph_time = mt
+            lmorph_data[i].end_time = lmorph_data[i].start_time + mt
+            update_snaps = true
               
-          elseif morph_data[i].morph_loop == 5 then
-            if morph_data[i].dir == 1 then
-              morph_data[i].dir = 0
+          elseif lmorph_data[i].morph_loop == 5 and lmorph_data[i].stage >= (snaps.stages or 1) then
+            lmorph_data[i].stage = 1
+            if lmorph_data[i].dir == 1 then
+              lmorph_data[i].dir = 0
             else
-              morph_data[i].data = {}
+              lmorph_data[i].data = {}
               local sscnt
-              if morph_data[i].sstype == 1 then
-                sscnt = #snapshots[morph_data[i].strip][morph_data[i].page][morph_data[i].sstype]
+              if lmorph_data[i].sstype == 1 then
+                sscnt = #snapshots[lmorph_data[i].strip][lmorph_data[i].page][lmorph_data[i].sstype]
               else
-                sscnt = #snapshots[morph_data[i].strip][morph_data[i].page][morph_data[i].sstype].snapshot
+                sscnt = #snapshots[lmorph_data[i].strip][lmorph_data[i].page][lmorph_data[i].sstype].snapshot
               end
-              local oss = morph_data[i].targetss
-              morph_data[i].p = 0
+              local oss = lmorph_data[i].targetss
+              lmorph_data[i].p = 0
               
-              morph_data[i].targetss = math.min(math.floor(math.random() * (sscnt))+1,sscnt)
-              while oss == morph_data[i].targetss do
-                morph_data[i].targetss = math.min(math.floor(math.random() * (sscnt))+1,sscnt)
+              lmorph_data[i].targetss = math.min(math.floor(math.random() * (sscnt))+1,sscnt)
+              if sscnt > 1 then
+                while oss == lmorph_data[i].targetss do
+                  lmorph_data[i].targetss = math.min(math.floor(math.random() * (sscnt))+1,sscnt)
+                end
               end
             end
-            snapshots[morph_data[i].strip][morph_data[i].page][morph_data[i].sstype].selected = morph_data[i].targetss
-            if morph_data[i].strip == tracks[track_select].strip and 
-               morph_data[i].page == page and
-               morph_data[i].sstype == sstype_select then
-              ss_select = morph_data[i].targetss
+            snapshots[lmorph_data[i].strip][lmorph_data[i].page][lmorph_data[i].sstype].selected = lmorph_data[i].targetss
+            if lmorph_data[i].strip == tracks[track_select].strip and 
+               lmorph_data[i].page == page and
+               lmorph_data[i].sstype == sstype_select then
+              ss_select = lmorph_data[i].targetss
             end
-            morph_data[i].start_time = morph_data[i].end_time
-            morph_data[i].end_time = morph_data[i].start_time + morph_data[i].morph_time
+
+            local mt = lmorph_data[i].morph_time
+            if (snaps.stages or 1) > 1 then
+              mt = Morph_GetStageTime(snaps,lmorph_data[i].stage)
+            end
+            lmorph_data[i].start_time = lmorph_data[i].end_time
+            lmorph_data[i].morph_time = mt
+            lmorph_data[i].end_time = lmorph_data[i].start_time + mt
             update_snaps = true             
-          else
-            morph_data[i].active = false
+          
+          elseif lmorph_data[i].stage < (snaps.stages or 1) and (snaps.deltype ~= 1 or snaps.delay[lmorph_data[i].stage+1] == 0) then
+
+            --DBG('NEXT STAGE')
+            
+            local retain = false
+            if lmorph_data[i].morph_loop == 2 or lmorph_data[i].morph_loop == 3 then
+              retain = true
+            end
+            Snapshot_Set(lmorph_data[i].strip, 
+                         lmorph_data[i].page, 
+                         lmorph_data[i].sstype, 
+                         lmorph_data[i].targetss, 
+                         lmorph_data[i].nomorph, 
+                         lmorph_data[i].stage+1,
+                         nil,
+                         retain,
+                         lmorph_data[i].end_time)
+            
+          
+          elseif lmorph_data[i].morph_loop == 1 then
+          
+            --DBG('EXIT MORPH')
+            lmorph_data[i].active = false
+
             runcnt = runcnt - 1
             update_snaps = true
             update_gfx = true
@@ -33709,101 +34306,113 @@ function GUI_DrawCtlBitmap_Strips()
         gfx.mouse_wheel = 0
       end
 
-      local xywh = {x = obj.sections[1350].x,
-                    y = obj.sections[1350].y,
-                    w = obj.sections[1350].w,
-                    h = obj.sections[1350].h}
-      if show_stripbrowser == true and MOUSE_over(xywh) then
-
-        local mx, my = mouse.mx, mouse.my
-        mouse.mx, mouse.my = mouse.mx - obj.sections[1350].x, mouse.my - obj.sections[1350].y
-        
-        if lvar.stripbrowser.showlist == true and MOUSE_over(obj.sections[1351]) then
-          local bcnt = math.floor(obj.sections[1351].h/(butt_h*pnl_scale))-1
-        
-          sbsflist_offset = F_limit(sbsflist_offset - v,0,math.max(#strip_folders - bcnt +1,0))
-          update_stripbrowser = true
+      if snap_edit_mode ~= true and macro_edit_mode ~= true and show_pinmatrix ~= true then
+        local xywh = {x = obj.sections[1350].x,
+                      y = obj.sections[1350].y,
+                      w = obj.sections[1350].w,
+                      h = obj.sections[1350].h}
+        if show_stripbrowser == true and MOUSE_over(xywh) then
+  
+          local mx, my = mouse.mx, mouse.my
+          mouse.mx, mouse.my = mouse.mx - obj.sections[1350].x, mouse.my - obj.sections[1350].y
           
-        elseif MOUSE_over(obj.sections[1352]) then
-          if mouse.shift ~= true then
-            local perpage = lvar.stripbrowser.xnum * lvar.stripbrowser.ynum
-            local max
-            if lvar.stripbrowser.favs == true then
-              max = math.floor((#strip_favs-1) / perpage)
+          if lvar.stripbrowser.showlist == true and MOUSE_over(obj.sections[1351]) then
+            local bcnt = math.floor(obj.sections[1351].h/(butt_h*pnl_scale))-1
+          
+            sbsflist_offset = F_limit(sbsflist_offset - v,0,math.max(#strip_folders - bcnt +1,0))
+            update_stripbrowser = true
+            
+          elseif MOUSE_over(obj.sections[1352]) then
+            if mouse.shift ~= true then
+              local perpage = lvar.stripbrowser.xnum * lvar.stripbrowser.ynum
+              local max
+              if lvar.stripbrowser.favs == true then
+                max = math.floor((#strip_favs-1) / perpage)
+              else
+                max = math.floor(#strip_files / perpage)
+              end
+              lvar.stripbrowser.page = F_limit(lvar.stripbrowser.page - v,0,max)
+              GUI_DrawSB_Strips(obj, gui)
+              update_stripbrowser = true
             else
-              max = math.floor(#strip_files / perpage)
-            end
-            lvar.stripbrowser.page = F_limit(lvar.stripbrowser.page - v,0,max)
-            GUI_DrawSB_Strips(obj, gui)
-            update_stripbrowser = true
+              lvar.stripbrowser.minw = math.max(lvar.stripbrowser.minw + v*5, 60)
+              lvar.stripbrowser.minh = math.floor(lvar.stripbrowser.minw * 3/4)
+              lvar.stripbrowser.minw = math.floor(lvar.stripbrowser.minw)
+              lvar.stripbrowser.page = 0   
+              update_stripbrowser = true
+              obj = PosStripBrowser(obj)         
+            end        
+          end
+          mouse.mx, mouse.my = mx, my
+          gfx.mouse_wheel = 0
+        elseif show_modass == true and MOUSE_over(obj.sections[1125]) then
+        
+          local butt_h = math.floor(butt_h*pnl_scale)+2          
+          local but_cy = math.max(math.floor(obj.sections[1127].h / butt_h),1)
+          local cnt = #lvar.modass
+          local mcnt = cnt % but_cy
+          lvar.modass.offset = F_limit(lvar.modass.offset + (-v*but_cy),0,lvar.modass.count-(mcnt+1))
+          gfx.mouse_wheel = 0
+          update_surface = true
+        
+        end
+  
+        local xywh = {x = obj.sections[1300].x+obj.sections[1302].x,
+                      y = obj.sections[1300].y+obj.sections[1302].y,
+                      w = obj.sections[1302].w,
+                      h = obj.sections[1302].h}
+        if show_samplemanager == true and MOUSE_over(xywh) then
+          local ctl = strips[tracks[track_select].strip][page].controls[rs5k_select]
+          local rsdata
+          if smshowfavs then
+            rsdata = samplefavs
           else
-            lvar.stripbrowser.minw = math.max(lvar.stripbrowser.minw + v*5, 60)
-            lvar.stripbrowser.minh = math.floor(lvar.stripbrowser.minw * 3/4)
-            lvar.stripbrowser.minw = math.floor(lvar.stripbrowser.minw)
-            lvar.stripbrowser.page = 0   
-            update_stripbrowser = true
-            obj = PosStripBrowser(obj)         
-          end        
-        end
-        mouse.mx, mouse.my = mx, my
-        gfx.mouse_wheel = 0
-      end
-
-      local xywh = {x = obj.sections[1300].x+obj.sections[1302].x,
-                    y = obj.sections[1300].y+obj.sections[1302].y,
-                    w = obj.sections[1302].w,
-                    h = obj.sections[1302].h}
-      if show_samplemanager == true and MOUSE_over(xywh) then
-        local ctl = strips[tracks[track_select].strip][page].controls[rs5k_select]
-        local rsdata
-        if smshowfavs then
-          rsdata = samplefavs
-        else
-          rsdata = ctl.rsdata
-        end
-        if ctl and SM_butt_cnt < #rsdata.samples then
-          smlist_offset = F_limit(smlist_offset - v*3, 0, #rsdata.samples-SM_butt_cnt)
-        else
-          smlist_offset = 0
-        end
-        update_samplemanager = true
-        gfx.mouse_wheel = 0
-      end
-
-      local xywh = {x = obj.sections[1300].x+obj.sections[1304].x,
-                    y = obj.sections[1300].y+obj.sections[1304].y,
-                    w = obj.sections[1304].w,
-                    h = obj.sections[1304].h}
-      if show_samplemanager == true and MOUSE_over(xywh) then
-        lvar.kb.offset = F_limit(lvar.kb.offset - v*20,0,lvar.kb.wkey_w*lvar.kb.wkeys - obj.sections[1304].w)
-        update_samplemanager = true
-        gfx.mouse_wheel = 0      
-      end
-      
-      if show_snapshots == true and MOUSE_over(obj.sections[160]) then
-        if snapshots and snapshots[tracks[track_select].strip] and
-           snapshots[tracks[track_select].strip][page][sstype_select] then
-          if sstype_select == 1 then
-            ssoffset = F_limit(ssoffset - v, 0, #snapshots[tracks[track_select].strip][page][sstype_select]-1)
-          elseif sstype_select > 1 then
-            ssoffset = F_limit(ssoffset - v, 0, #snapshots[tracks[track_select].strip][page][sstype_select].snapshot-1)
+            rsdata = ctl.rsdata
           end
-          update_snaps = true
-        end     
-        gfx.mouse_wheel = 0
-      end
-
-      if show_fsnapshots == true and MOUSE_over(obj.sections[180]) then
-        if snapshots and snapshots[tracks[track_select].strip] and
-           snapshots[tracks[track_select].strip][page][fsstype_select] then
-          if fsstype_select == 1 then
-            fssoffset = F_limit(fssoffset - v, 0, #snapshots[tracks[track_select].strip][page][fsstype_select]-1)
-          elseif fsstype_select > 1 then
-            fssoffset = F_limit(fssoffset - v, 0, #snapshots[tracks[track_select].strip][page][fsstype_select].snapshot-1)
+          if ctl and SM_butt_cnt < #rsdata.samples then
+            smlist_offset = F_limit(smlist_offset - v*3, 0, #rsdata.samples-SM_butt_cnt)
+          else
+            smlist_offset = 0
           end
-          update_fsnaps = true
-        end     
-        gfx.mouse_wheel = 0
+          update_samplemanager = true
+          gfx.mouse_wheel = 0
+        end
+  
+        local xywh = {x = obj.sections[1300].x+obj.sections[1304].x,
+                      y = obj.sections[1300].y+obj.sections[1304].y,
+                      w = obj.sections[1304].w,
+                      h = obj.sections[1304].h}
+        if show_samplemanager == true and MOUSE_over(xywh) then
+          lvar.kb.offset = F_limit(lvar.kb.offset - v*20,0,lvar.kb.wkey_w*lvar.kb.wkeys - obj.sections[1304].w)
+          update_samplemanager = true
+          gfx.mouse_wheel = 0      
+        end
+        
+        if show_snapshots == true and snap_edit_mode ~= true and macro_edit_mode ~= true and MOUSE_over(obj.sections[160]) then
+          if snapshots and snapshots[tracks[track_select].strip] and
+             snapshots[tracks[track_select].strip][page][sstype_select] then
+            if sstype_select == 1 then
+              ssoffset = F_limit(ssoffset - v, 0, #snapshots[tracks[track_select].strip][page][sstype_select]-1)
+            elseif sstype_select > 1 then
+              ssoffset = F_limit(ssoffset - v, 0, #snapshots[tracks[track_select].strip][page][sstype_select].snapshot-1)
+            end
+            update_snaps = true
+          end     
+          gfx.mouse_wheel = 0
+        end
+  
+        if show_fsnapshots == true and MOUSE_over(obj.sections[180]) then
+          if snapshots and snapshots[tracks[track_select].strip] and
+             snapshots[tracks[track_select].strip][page][fsstype_select] then
+            if fsstype_select == 1 then
+              fssoffset = F_limit(fssoffset - v, 0, #snapshots[tracks[track_select].strip][page][fsstype_select]-1)
+            elseif fsstype_select > 1 then
+              fssoffset = F_limit(fssoffset - v, 0, #snapshots[tracks[track_select].strip][page][fsstype_select].snapshot-1)
+            end
+            update_fsnaps = true
+          end     
+          gfx.mouse_wheel = 0
+        end
       end
     end
     
@@ -33818,18 +34427,19 @@ function GUI_DrawCtlBitmap_Strips()
     elseif show_pinmatrix == true then
     
       noscroll = A_Run_PinMatrix(noscroll, rt)
-    
+      
     elseif macro_edit_mode == true and macro_lrn_mode == false then
     
       noscroll = A_Run_MacroEdit(noscroll, rt)
+
+    elseif snap_edit_mode == true and snaplrn_mode ~= true then
     
-    --[[elseif mouse.context == nil and show_lfoedit == true and mouse.LB and not MOUSE_over(obj.sections[1100]) then
+      noscroll = A_Run_SnapEdit(noscroll, rt)    
+
+    elseif show_modass == true and (MOUSE_click(obj.sections[1125]) or MOUSE_click_RB(obj.sections[1125])) then
     
-      if mouse.lastLBclicktime == nil or (mouse.lastLBclicktime and reaper.time_precise() - mouse.lastLBclicktime > 0.5)  then
-        show_lfoedit = false
-        update_gfx = true
-      end]]
-    
+      noscroll = A_Run_ModAss(noscroll, rt)
+
     elseif mouse.context == nil and show_stripbrowser == true and show_eqcontrol ~= true and show_pinmatrix ~= true and (MOUSE_click(obj.sections[1350]) or MOUSE_click_RB(obj.sections[1350])) then
 
       noscroll = true
@@ -34599,6 +35209,11 @@ function GUI_DrawCtlBitmap_Strips()
     elseif mouse.context == nil and show_lfoedit == true and show_eqcontrol ~= true and show_pinmatrix ~= true and (MOUSE_click(obj.sections[1100]) or MOUSE_click_RB(obj.sections[1100])) then
 
       noscroll = true
+      if show_fsnapshots == true or show_xysnapshots then
+        show_fsnapshots = false
+        show_xysnapshots = false
+        update_surface = true
+      end
 
       if modulators[mod_select] then
 
@@ -34649,13 +35264,35 @@ function GUI_DrawCtlBitmap_Strips()
           end
           update_gfx = true
 
+        elseif MOUSE_click_RB(obj.sections[1117]) and modwinsz.minimized ~= true then
+          show_modass = not show_modass
+          if show_modass == true then
+            lvar.modass = PopModAssObj()
+            if lvar.modass then
+              lvar.modass.offset = 0
+            end
+          else
+          
+          end
+          update_gfx = true
+        
         elseif MOUSE_click(obj.sections[1117]) and modwinsz.minimized ~= true then
         
-          if show_striplayout == false then
-            mouse.context = contexts.dragmod
-            dragmod = {x = mouse.mx, y = mouse.my}
-          end
-          update_surface = true
+          if not mouse.ctrl then
+            show_modass = false 
+            if show_striplayout == false then
+              mouse.context = contexts.dragmod
+              dragmod = {x = mouse.mx, y = mouse.my}
+            end
+            update_surface = true
+          else
+            lvar.modass = PopModAssObj()
+            if lvar.modass then
+              lvar.modass.offset = 0
+            end
+            show_modass = true
+            update_gfx = true
+          end 
 
         elseif MOUSE_click(obj.sections[1118]) and modwinsz.minimized ~= true then
         
@@ -34675,6 +35312,7 @@ function GUI_DrawCtlBitmap_Strips()
                 end
                 update_sidebar = true
                 update_lfoedit = true
+                update_surface = true
                 update_ctls = true
               end
             end
@@ -34830,9 +35468,11 @@ function GUI_DrawCtlBitmap_Strips()
                      y = obj.sections[1100].y + obj.sections[1109].y,
                      w = obj.sections[1109].w,
                      h = obj.sections[1109].h,
-                     val = m.min}
+                     val = m.min,
+                     odiff = m.max-m.min}
           modoffs.yoff = -(my - (modoffs.y+modoffs.h/2))
           oms = mouse.shift
+          omc = mouse.ctrl
 
         elseif MOUSE_click(obj.sections[1110]) then
 
@@ -34841,9 +35481,11 @@ function GUI_DrawCtlBitmap_Strips()
                      y = obj.sections[1100].y + obj.sections[1110].y,
                      w = obj.sections[1110].w,
                      h = obj.sections[1110].h,
-                     val = m.max}
+                     val = m.max,
+                     odiff = m.max-m.min}
           modoffs.yoff = -(my - (modoffs.y+modoffs.h/2))
           oms = mouse.shift
+          omc = mouse.ctrl
 
         elseif MOUSE_click(obj.sections[1107]) then
 
@@ -35088,10 +35730,9 @@ function GUI_DrawCtlBitmap_Strips()
       mouse.mx = snapmx
       mouse.my = snapmy
       noscroll = true
-
-    elseif mouse.context == nil and (show_snapshots == true and macro_edit_mode ~= true and show_eqcontrol ~= true and show_pinmatrix ~= true) and (MOUSE_click(obj.sections[160]) or MOUSE_click_RB(obj.sections[160])) then
     
-      --mouse.context = 
+    elseif mouse.context == nil and (show_snapshots == true and snap_edit_mode ~= true and macro_edit_mode ~= true and show_eqcontrol ~= true and show_pinmatrix ~= true) and (MOUSE_click(obj.sections[160]) or MOUSE_click_RB(obj.sections[160])) then
+
       A_Run_SnapshotsWin(rt)
       noscroll = true
     
@@ -35109,7 +35750,6 @@ function GUI_DrawCtlBitmap_Strips()
       end
     
     elseif macro_lrn_mode == true then
-    
     
       A_Run_MacroLearn()          
     
@@ -35451,7 +36091,10 @@ function GUI_DrawCtlBitmap_Strips()
                       end
                       
                     elseif ctls[i].ctlcat == ctlcats.snapshot then
-                      --SNAPSHOTS
+                      
+                      togfsnap = FSS_Click(i, ctlxywh, togfsnap)
+                      
+                      --[[SNAPSHOTS
                       fss_ctl = i
                       local mmx = mouse.mx - ctlxywh.x
                       local mmy = mouse.my - ctlxywh.y
@@ -35686,7 +36329,7 @@ function GUI_DrawCtlBitmap_Strips()
                           update_fsnaps = true
                           update_surface = true
                         end
-                      end
+                      end]]
                                         
                     elseif ctls[i].ctlcat == ctlcats.eqcontrol then
                       eqcontrol_select = i
@@ -36641,25 +37284,57 @@ function GUI_DrawCtlBitmap_Strips()
         elseif i == -1 then
         
           --show_lfoedit = not show_lfoedit
-          SetShowLFO(not show_lfoedit)
-          update_gfx = true
-        
+          if mouse.mx < obj.sections[500].w/2 then
+            SetShowLFO(not show_lfoedit)
+            update_gfx = true
+          else
+            show_modass = not show_modass
+            if show_modass == true then
+              lvar.modass = PopModAssObj()
+              if lvar.modass then
+                lvar.modass.offset = 0
+              end
+            end
+            update_gfx = true            
+          end        
         elseif modulators[i + mdlist_offset] then
         
-          local md = i + mdlist_offset
-          mod_select = md
-          if show_striplayout == false then
-            mouse.context = contexts.dragmod
-            dragmod = {x = mouse.mx, y = mouse.my}
+          if not mouse.ctrl then
+            local md = i + mdlist_offset
+            mod_select = md
+            if show_striplayout == false and show_modass == false then
+              mouse.context = contexts.dragmod
+              dragmod = {x = mouse.mx, y = mouse.my}
+            end
+            update_gfx = true
+          else
+            local md = i + mdlist_offset
+            mod_select = md
+            lvar.modass = PopModAssObj()
+            if lvar.modass then
+              lvar.modass.offset = 0
+            end
+            show_modass = true
+            update_gfx = true
           end
-          update_gfx = true
         end
 
       elseif MOUSE_click_RB(obj.sections[500]) then
       
         --show_lfoedit = not show_lfoedit
-        SetShowLFO(not show_lfoedit)
-        update_gfx = true
+        if mouse.mx < obj.sections[500].w/2 then
+          SetShowLFO(not show_lfoedit)
+          update_gfx = true
+        else
+          show_modass = not show_modass
+          if show_modass == true then
+            lvar.modass = PopModAssObj()
+            if lvar.modass then
+              lvar.modass.offset = 0
+            end
+          end
+          update_gfx = true            
+        end        
       
       end    
     end
@@ -36795,7 +37470,6 @@ function GUI_DrawCtlBitmap_Strips()
         local val = MOUSE_slider(modoffs, modoffs.yoff)
         if val ~= nil then
           local m = modulators[mod_select]
-  
           if oms ~= mouse.shift then
             oms = mouse.shift
             modoffs.val = val
@@ -36810,8 +37484,17 @@ function GUI_DrawCtlBitmap_Strips()
             end
             if val < 0 then val = 0 end
             if val > 1 then val = 1 end
-            if val ~= octlval and val < m.max then
-              m.min = val
+
+            if omc ~= mouse.ctrl then
+              omc = mouse.ctrl
+              modoffs.odiff = math.min(math.max(m.max-val,0),1)   
+            end
+
+            if val ~= octlval --[[and val < m.max]] then
+              m.min = math.min(val,m.max)
+              if mouse.ctrl then
+                m.max = math.min(m.min+modoffs.odiff,1)
+              end
               octlval = val
               update_lfoedit = true
             end
@@ -36838,8 +37521,17 @@ function GUI_DrawCtlBitmap_Strips()
             end
             if val < 0 then val = 0 end
             if val > 1 then val = 1 end
-            if val ~= octlval and val > m.min then
-              m.max = val
+
+            if omc ~= mouse.ctrl then
+              omc = mouse.ctrl
+              modoffs.odiff = math.min(math.max(val-m.min,0),1)
+            end
+
+            if val ~= octlval then
+              m.max = math.max(val,m.min)
+              if mouse.ctrl then
+                m.min = math.max(m.max-modoffs.odiff,0)
+              end              
               octlval = val
               update_lfoedit = true
             end
@@ -36965,7 +37657,8 @@ function GUI_DrawCtlBitmap_Strips()
                         ctl.ctlcat == ctlcats.macro or  
                         ctl.ctlcat == ctlcats.snapshot or
                         ctl.ctlcat == ctlcats.switcher or 
-                        ctl.ctlcat == ctlcats.midictl) then 
+                        ctl.ctlcat == ctlcats.midictl or 
+                        ctl.ctlcat == ctlcats.threshold) then 
               dragfader = {x = mouse.mx, y = mouse.my, ctl = c}
             else
               dragfader = {x = mouse.mx, y = mouse.my, ctl = -1}          
@@ -37532,6 +38225,283 @@ function GUI_DrawCtlBitmap_Strips()
   
   end
 
+  function FSS_Click(i, ctlxywh, togfsnap)
+    
+    local ctls = strips[tracks[track_select].strip][page].controls
+    
+    fss_ctl = i
+    local mmx = mouse.mx - ctlxywh.x
+    local mmy = mouse.my - ctlxywh.y
+    local ci
+    if stripgallery_view > 0 then
+      mmx, mmy, ci = TranslateGalleryPos(mouse.mx, mouse.my, i)
+      mmx, mmy = mmx - ctlxywh.x, mmy - ctlxywh.y
+    end
+    
+    if ctls[i].param_info.paramnum == 1 then
+      --BASIC SNAPSHOT CTL
+      --open fss
+      togfsnap = true
+      if fsstype_select == ctls[i].param then
+        show_fsnapshots = not show_fsnapshots
+        show_xysnapshots = false
+      else
+        show_fsnapshots = true
+        show_xysnapshots = false
+      end
+      fsstype_select = ctls[i].param
+      fsstype_color = ctls[i].textcolv
+      if show_fsnapshots then
+        if snapshots and snapshots[tracks[track_select].strip] and snapshots[tracks[track_select].strip][page][fsstype_select] 
+          and snapshots[tracks[track_select].strip][page][fsstype_select].selected then
+        
+          local w = ctls[i].wsc
+          obj.sections[180].w = math.max(w,100)
+          obj.sections[181].w = obj.sections[180].w-6
+          obj.sections[182].w = obj.sections[180].w
+          
+          fss_select = snapshots[tracks[track_select].strip][page][fsstype_select].selected
+          
+          if stripgallery_view == 0 then
+          
+            obj.sections[180].x = F_limit(ctls[i].x - surface_offset.x + obj.sections[10].x + 
+                                          math.floor((ctls[i].w - obj.sections[180].w)/2),
+                                          obj.sections[10].x,obj.sections[10].x+obj.sections[10].w-obj.sections[180].w)
+            obj.sections[180].y = F_limit(ctls[i].y+ctls[i].hsc
+                                          - surface_offset.y  + obj.sections[10].y - 3,
+                                          obj.sections[10].y,obj.sections[10].y+obj.sections[10].h-obj.sections[180].h)
+          else
+            local x,y = TranslateGalleryCtlPos(i,ci)
+            if x and y then
+              obj.sections[180].x = x + math.floor((ctls[i].wsc - obj.sections[180].w)/2)
+              obj.sections[180].y = y + ctls[i].hsc
+            else
+              x = mouse.mx
+              y = mouse.my
+              obj.sections[180].x = x + math.floor((ctls[i].wsc - obj.sections[180].w)/2)
+              obj.sections[180].y = y + ctls[i].hsc
+              
+              --DBG('xy error')
+            end
+          end
+        else
+          show_fsnapshots = false
+        end
+      end
+      update_fsnaps = true
+      update_surface = true
+      
+    elseif ctls[i].param_info.paramnum == 2 then
+      --FIXED SNAPSHOT CTL
+      
+      FixedSS(i)
+      
+      --[[local xsstype_select = ctls[i].param
+      local xss_select = tonumber(ctls[i].param_info.paramidx)
+      if xss_select then
+        if xsstype_select == 1 then
+          if snapshots and snapshots[tracks[track_select].strip] and snapshots[tracks[track_select].strip][page][xsstype_select]
+             and snapshots[tracks[track_select].strip][page][xsstype_select][xss_select] then
+            Snapshot_Set(tracks[track_select].strip, page, xsstype_select, xss_select)                          
+            if xsstype_select == sstype_select then
+              ss_select = xss_select
+            end
+            update_ctls = true
+            update_snaps = true 
+          end
+        else
+          if snapshots and snapshots[tracks[track_select].strip] and snapshots[tracks[track_select].strip][page][xsstype_select] 
+             and snapshots[tracks[track_select].strip][page][xsstype_select].snapshot[xss_select] then
+            Snapshot_Set(tracks[track_select].strip, page, xsstype_select, xss_select)                          
+            if xsstype_select == sstype_select then
+              ss_select = xss_select
+            end
+            update_ctls = true
+            update_snaps = true 
+          end                      
+        end
+      end]]
+                            
+    else
+      --ADVANCED SNAPSHOT CTL
+      if mmy < ctlxywh.h/2 then
+        sstype_select = ctls[i].param
+        if snapshots and snapshots[tracks[track_select].strip] and snapshots[tracks[track_select].strip][page][sstype_select] 
+                                    and snapshots[tracks[track_select].strip][page][sstype_select].selected then
+          ss_select = snapshots[tracks[track_select].strip][page][sstype_select].selected
+          
+          if settings_followsnapshot then
+            local snaps = snapshots[tracks[track_select].strip][page][sstype_select]
+            if ss_select < ssoffset+1 or ss_select > ssoffset+SS_butt_cnt then
+              if sstype_select == 1 then
+                ssoffset = math.max(math.min(ss_select-math.floor(SS_butt_cnt/2),#snaps-SS_butt_cnt),0)
+              else
+                ssoffset = math.max(math.min(ss_select-math.floor(SS_butt_cnt/2),#snaps.snapshot-SS_butt_cnt),0)
+              end
+              --update_snaps = true
+            end
+          end
+          
+          show_snapshots = true
+          SetShowSS(show_snapshots)
+          update_snaps = true
+        end                      
+      elseif mmx < 20 then
+        local xsstype_select,xss_select
+        xsstype_select = ctls[i].param
+        if snapshots and snapshots[tracks[track_select].strip] and snapshots[tracks[track_select].strip][page][xsstype_select] 
+                                    and snapshots[tracks[track_select].strip][page][xsstype_select].selected then
+          if snapshots[tracks[track_select].strip][page][xsstype_select].selected then
+            if xsstype_select == 1 then
+              xss_select = snapshots[tracks[track_select].strip][page][xsstype_select].selected-1
+              if xss_select < 1 then
+                xss_select = #snapshots[tracks[track_select].strip][page][xsstype_select]
+              end
+            else
+              xss_select = snapshots[tracks[track_select].strip][page][xsstype_select].selected-1
+              if xss_select < 1 then                            
+                xss_select = #snapshots[tracks[track_select].strip][page][xsstype_select].snapshot
+              end
+            end
+          else
+            if xsstype_select == 1 then
+              if #snapshots[tracks[track_select].strip][page][xsstype_select] > 0 then
+                xss_select = 1
+              end
+            else
+              if #snapshots[tracks[track_select].strip][page][xsstype_select].snapshot > 0 then
+                xss_select = 1                            
+              end
+            end
+          end
+          if xss_select then
+            Snapshot_Set(tracks[track_select].strip, page, xsstype_select, xss_select)
+            if xsstype_select == sstype_select then
+              ss_select = xss_select
+            end
+            update_ctls = true
+            update_snaps = true
+            --update_fsnaps = true                       
+          end
+        end                                            
+      elseif mmx > ctlxywh.w-20 then
+        local xsstype_select,xss_select
+        xsstype_select = ctls[i].param
+        if snapshots and snapshots[tracks[track_select].strip] and snapshots[tracks[track_select].strip][page][xsstype_select] 
+                                    and snapshots[tracks[track_select].strip][page][xsstype_select].selected then
+          if snapshots[tracks[track_select].strip][page][xsstype_select].selected then
+            if xsstype_select == 1 then
+              xss_select = snapshots[tracks[track_select].strip][page][xsstype_select].selected+1
+              if xss_select > #snapshots[tracks[track_select].strip][page][xsstype_select] then
+                xss_select = 1
+              end
+            else
+              xss_select = snapshots[tracks[track_select].strip][page][xsstype_select].selected+1
+              if xss_select > #snapshots[tracks[track_select].strip][page][xsstype_select].snapshot then
+                xss_select = 1
+              end
+            end
+          else
+            if xsstype_select == 1 then
+              if #snapshots[tracks[track_select].strip][page][xsstype_select] > 0 then
+                xss_select = 1
+              end
+            else
+              if #snapshots[tracks[track_select].strip][page][xsstype_select].snapshot > 0 then
+                xss_select = 1                            
+              end
+            end
+          end
+          if xss_select then
+            Snapshot_Set(tracks[track_select].strip, page, xsstype_select, xss_select)                          
+            if xsstype_select == sstype_select then
+              ss_select = xss_select
+            end
+            update_ctls = true
+            update_snaps = true
+            --update_fsnaps = true                       
+          end
+        end
+                              
+      else
+        --open fss
+        togfsnap = true
+        if fsstype_select == ctls[i].param then
+          show_fsnapshots = not show_fsnapshots
+          show_xysnapshots = false
+        else
+          show_fsnapshots = true
+          show_xysnapshots = false
+        end
+        fsstype_select = ctls[i].param
+        fsstype_color = ctls[i].textcolv
+        if show_fsnapshots then
+          if snapshots and snapshots[tracks[track_select].strip] and snapshots[tracks[track_select].strip][page][fsstype_select] 
+            and snapshots[tracks[track_select].strip][page][fsstype_select].selected then
+          
+            local w = ctls[i].wsc
+            obj.sections[180].w = math.max(w - (170-138),138)
+            obj.sections[181].w = obj.sections[180].w-6
+            obj.sections[182].w = obj.sections[180].w
+            
+            fss_select = snapshots[tracks[track_select].strip][page][fsstype_select].selected
+            
+            if stripgallery_view == 0 then
+            
+              obj.sections[180].x = F_limit(ctls[i].x - surface_offset.x + obj.sections[10].x + 
+                                            math.floor((ctls[i].w - obj.sections[180].w)/2),
+                                            obj.sections[10].x,obj.sections[10].x+obj.sections[10].w-obj.sections[180].w)
+              obj.sections[180].y = F_limit(ctls[i].y+ctls[i].hsc
+                                            - surface_offset.y  + obj.sections[10].y - 3,
+                                            obj.sections[10].y,obj.sections[10].y+obj.sections[10].h-obj.sections[180].h)
+            else
+              local x,y = TranslateGalleryCtlPos(i,ci)
+              obj.sections[180].x = x + math.floor((ctls[i].wsc - obj.sections[180].w)/2)
+              obj.sections[180].y = y + ctls[i].hsc
+            end
+          else
+            show_fsnapshots = false
+          end
+        end
+        update_fsnaps = true
+        update_surface = true
+      end
+    end
+    return togfsnap
+  end
+    
+  function FixedSS(i)
+    
+    local ctls = strips[tracks[track_select].strip][page].controls
+    
+    local xsstype_select = ctls[i].param
+    local xss_select = tonumber(ctls[i].param_info.paramidx)
+    if xss_select then
+      if xsstype_select == 1 then
+        if snapshots and snapshots[tracks[track_select].strip] and snapshots[tracks[track_select].strip][page][xsstype_select]
+           and snapshots[tracks[track_select].strip][page][xsstype_select][xss_select] then
+          Snapshot_Set(tracks[track_select].strip, page, xsstype_select, xss_select)                          
+          if xsstype_select == sstype_select then
+            ss_select = xss_select
+          end
+          update_ctls = true
+          update_snaps = true 
+        end
+      else
+        if snapshots and snapshots[tracks[track_select].strip] and snapshots[tracks[track_select].strip][page][xsstype_select] 
+           and snapshots[tracks[track_select].strip][page][xsstype_select].snapshot[xss_select] then
+          Snapshot_Set(tracks[track_select].strip, page, xsstype_select, xss_select)                          
+          if xsstype_select == sstype_select then
+            ss_select = xss_select
+          end
+          update_ctls = true
+          update_snaps = true 
+        end                      
+      end
+    end
+    
+  end
+    
   function CreateStripCB(force)
   
     if strips and tracks[track_select] and strips[tracks[track_select].strip] then
@@ -38682,7 +39652,7 @@ function GUI_DrawCtlBitmap_Strips()
             end
             update_ctlopts = true
 
-          elseif mouse.LB and mouse.my > butt_h*pnl_scale and mouse.my < 150*pnl_scale then
+          elseif mouse.LB and mouse.my > butt_h*pnl_scale and mouse.my < obj.sections[99].y-4 then
           
             --PopulateCtlBrowser_Imgs()
             PopulateCtlBrowser_Cbi()
@@ -38850,6 +39820,7 @@ function GUI_DrawCtlBitmap_Strips()
               update_ctlopts = true
             end
           elseif mouse.context == nil and MOUSE_click(obj.sections[962]) then
+
             enabledefval_select = not enabledefval_select
             for i = 1, #ctl_select do
               strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl].enabledefval = enabledefval_select
@@ -43856,7 +44827,11 @@ function GUI_DrawCtlBitmap_Strips()
                         --add
                         local ctlidx = #snapshots[strip][page][sstype_select].ctls + 1
                         snapshots[strip][page][sstype_select].ctls[ctlidx] = {c_id = strips[strip][page].controls[i].c_id,
-                                                                              ctl = i}
+                                                                              ctl = i,
+                                                                              id = GenID(),
+                                                                              stage = 1,
+                                                                              morph = true,
+                                                                              mem = false}
                       end
 
                     elseif ctl.ctlcat == ctlcats.switcher then
@@ -43905,7 +44880,11 @@ function GUI_DrawCtlBitmap_Strips()
                 --add
                 local ctlidx = #snapshots[strip][page][sstype_select].ctls + 1
                 snapshots[strip][page][sstype_select].ctls[ctlidx] = {c_id = strips[tracks[track_select].strip][page].controls[i].c_id,
-                                                                      ctl = i}
+                                                                      ctl = i,
+                                                                      id = GenID(),
+                                                                      stage = 1,
+                                                                      morph = true,
+                                                                      mem = false}
                 strips[tracks[track_select].strip][page].controls[i].dirty = true
               end
             end
@@ -43938,10 +44917,19 @@ function GUI_DrawCtlBitmap_Strips()
             y = obj.sections[160].y,
             w = obj.sections[160].w,
             h = butt_h*pnl_scale}
-    xywh2 = {x = obj.sections[160].x+obj.sections[1160].x,
+    --[[xywh2 = {x = obj.sections[160].x+obj.sections[1160].x,
                 y = obj.sections[160].y+obj.sections[1160].y,
                 w = obj.sections[160].w,
-                h = butt_h}
+                h = butt_h}]]
+    xywh2 = {x = obj.sections[160].x+obj.sections[1160].x,
+                y = obj.sections[160].y+obj.sections[1160].y,
+                w = obj.sections[1160].w,
+                h = obj.sections[1160].h}
+    xywh3 = {x = obj.sections[160].x+obj.sections[1161].x,
+                y = obj.sections[160].y+obj.sections[1161].y,
+                w = obj.sections[1161].w,
+                h = obj.sections[1161].h}
+
     if mouse.context == nil and MOUSE_click(xywh2) then
       settings_ssdock = not settings_ssdock
       if settings_ssdock == true then
@@ -43957,6 +44945,20 @@ function GUI_DrawCtlBitmap_Strips()
       end
       obj = GetObjects()
       update_gfx = true
+
+    elseif mouse.context == nil and MOUSE_click(xywh3) then
+      if sstype_select > 1 then
+        snap_edit_mode = true
+        lvar.snapedit = {snapedit_poffs = 0,
+                         snapedit_ss = ss_select,
+                         monitor = false,
+                         SToffs = 0}
+        local strip = tracks[track_select].strip
+        if snapshots[strip][page][sstype_select].sorted ~= true then
+          CleanSortSS(strip,page,sstype_select)
+        end
+        update_gfx = true
+      end
       
     elseif mouse.context == nil and MOUSE_click(xywh) and settings_ssdock ~= true then
       mouse.context = contexts.movesnapwindow
@@ -44124,12 +45126,20 @@ function GUI_DrawCtlBitmap_Strips()
         
       elseif mouse.context == nil and MOUSE_click(obj.sections[1015]) then
 
+        local snaps
         if snapshots[tracks[track_select].strip] and snapshots[tracks[track_select].strip][page][sstype_select] then
-          local nl = (snapshots[tracks[track_select].strip][page][sstype_select].morph_loop or 1) + 1
+          snaps = snapshots[tracks[track_select].strip][page][sstype_select]
+        end
+        
+        if snaps then
+          local nl = (snaps.morph_loop or 1) + 1
+          if (snaps.stages or 1) > 1 and nl == 3 then
+            nl = 4
+          end
           if nl > 5 then
             nl = 2
           end 
-          snapshots[tracks[track_select].strip][page][sstype_select].morph_loop = nl
+          snaps.morph_loop = nl
           if #morph_data > 0 then
             for i = 1, #morph_data do
               if morph_data[i].strip == tracks[track_select].strip and
@@ -44145,9 +45155,14 @@ function GUI_DrawCtlBitmap_Strips()
         
       elseif mouse.context == nil and MOUSE_click_RB(obj.sections[1015]) then
 
+        local snaps
         if snapshots[tracks[track_select].strip] and snapshots[tracks[track_select].strip][page][sstype_select] then
+          snaps = snapshots[tracks[track_select].strip][page][sstype_select]
+        end
+
+        if snaps then
           nl = 1
-          snapshots[tracks[track_select].strip][page][sstype_select].morph_loop = nl
+          snaps.morph_loop = nl
           if #morph_data > 0 then
             for i = 1, #morph_data do
               if morph_data[i].strip == tracks[track_select].strip and
@@ -44385,6 +45400,9 @@ function GUI_DrawCtlBitmap_Strips()
                 ss_select = ssoffset+i
                 
                 if not mouse.shift then
+                  --DBG()
+                  --DBG()
+                  
                   Snapshot_Set(tracks[track_select].strip, page, sstype_select, ss_select)
                 end 
               --end
@@ -44464,8 +45482,7 @@ function GUI_DrawCtlBitmap_Strips()
     
       snaplrn_mode = false
       Snap_RemoveDeletedSS(tracks[track_select].strip,page,sstype_select)
-      CleanSS(tracks[track_select].strip, page, sstype_select)
-      
+      CleanSortSS(tracks[track_select].strip, page, sstype_select)      
       CheckRandom(tracks[track_select].strip, page, sstype_select)
       navigate = true
       
@@ -44619,6 +45636,565 @@ function GUI_DrawCtlBitmap_Strips()
   
     end
   end
+
+  function A_Run_SnapEdit(noscroll, rt)
+  
+    navigate = false
+    noscroll = true
+          
+    local xywh = {x = obj.sections[300].x+obj.sections[401].x,
+                  y = obj.sections[300].y+obj.sections[401].y,
+                  w = obj.sections[401].w,
+                  h = obj.sections[401].h}
+    if mouse.context == nil and MOUSE_click(xywh) then
+
+      navigate = true
+      snap_edit_mode = false
+      
+      CleanSortSS(tracks[track_select].strip,page,sstype_select)
+      
+      update_gfx = true
+      
+    else
+    
+      local mx, my = mouse.mx, mouse.my 
+      mouse.mx = mouse.mx - obj.sections[300].x
+      mouse.my = mouse.my - obj.sections[300].y
+
+      local snaps = snapshots[tracks[track_select].strip][page][sstype_select]
+      local snapctl = snaps.snapshot[lvar.snapedit.snapedit_ss]
+      local sctls = snaps.ctls
+      
+      if mouse.context == nil then
+
+        if sctls and gfx.mouse_wheel ~= 0 and MOUSE_over(obj.sections[300],mx,my) then
+
+          v = gfx.mouse_wheel/120
+          if mouse.ctrl then
+            lvar.macrosech = F_limit(math.floor(lvar.macrosech + v*2),26,60)
+            PopMacroEditSec(obj,lvar.macrosech)
+          else
+            if MOUSE_over(obj.sections[431],mx,my) then
+              lvar.snapedit.SToffs = F_limit(lvar.snapedit.SToffs - v,0,math.floor(((snaps.stages or 1)-1)/10))
+            else
+              lvar.snapedit.snapedit_poffs = F_limit(lvar.snapedit.snapedit_poffs-v,0,#sctls-1)
+            end
+          end
+          update_macrobutt = true
+        end
+        
+        local xywh_423 = {x = obj.sections[423].x - (macroedit.sliderw*0.5),
+                          y = obj.sections[423].y,
+                          w = obj.sections[423].w + macroedit.sliderw,
+                          h = obj.sections[423].h}
+                            
+        if mouse.context == nil and MOUSE_click(xywh_423) then
+          local yy = math.floor((mouse.my - obj.sections[423].y)/macroedit.sech)
+          if snapctl.data[(yy+1)+lvar.snapedit.snapedit_poffs] then
+        
+            local val = snapctl.data[(yy+1)+lvar.snapedit.snapedit_poffs].val
+            local xywh = {x = obj.sections[423].x + (val*obj.sections[423].w) -(macroedit.sliderw*0.5),
+                          y = obj.sections[423].y + (yy*macroedit.sech) + (macroedit.sech*0.5) - (macroedit.sliderh*0.5),
+                          w = macroedit.sliderw,
+                          h = macroedit.sliderh}
+            if MOUSE_over(xywh) then
+              mouse.context = contexts.snapslider
+              snapslide = {xoff = mouse.mx-(xywh.x+(xywh.w*0.5)), snapparamidx = (yy+1)+lvar.snapedit.snapedit_poffs}
+            end
+        
+          end
+        
+        elseif MOUSE_click(obj.sections[428]) then
+          if mouse.ctrl then
+            local val = not (sctls[1].morph or false)
+            for i = 1, #sctls do
+              sctls[i].morph = val
+            end
+            update_macroedit = true
+          end
+
+        elseif MOUSE_click_RB(obj.sections[428]) then
+          if mouse.ctrl then
+            for i = 1, #sctls do
+              sctls[i].morph = false
+            end
+            update_macroedit = true
+          end
+
+        elseif MOUSE_click(obj.sections[427]) then
+          if mouse.ctrl then
+            for i = 1, #sctls do
+              sctls[i].stage = 1
+            end
+            update_macrobutt = true
+          else
+            CleanSortSS(tracks[track_select].strip,page,sstype_select)
+            update_macrobutt = true
+          end
+
+        elseif MOUSE_click(obj.sections[429]) then
+        
+          local snaptype = snapshots[tracks[track_select].strip][page][sstype_select]
+          snaptype.stages = math.min(snaptype.stages+1, lvar.snapstages)
+          lvar.snapedit.SToffs = F_limit(lvar.snapedit.SToffs,0,math.floor((snaptype.stages-1)/10))
+          update_macrobutt = true
+
+        elseif MOUSE_click(obj.sections[432]) then
+        
+          local snaptype = snapshots[tracks[track_select].strip][page][sstype_select]
+          snaptype.mult = not snaptype.mult
+          if snaptype.mult == true then
+            for i = 1, #snaps.deltype do
+              if snaps.deltype[i] == 2 then
+                snaps.deltype[i] = 1
+              end
+            end
+          end
+          update_macrobutt = true
+
+        elseif MOUSE_click_RB(obj.sections[429]) then
+        
+          local snaptype = snapshots[tracks[track_select].strip][page][sstype_select]
+          snaptype.stages = math.max(snaptype.stages-1, 1)
+          lvar.snapedit.SToffs = F_limit(lvar.snapedit.SToffs,0,math.floor((snaptype.stages-1)/10))
+          update_macrobutt = true
+
+        elseif MOUSE_click(obj.sections[433]) then
+        
+          SnapEditSSMenu(mx,my)
+          
+        elseif MOUSE_click(obj.sections[425]) then
+      
+          local strip = tracks[track_select].strip
+          lvar.snapedit.snapedit_ss = math.min((lvar.snapedit.snapedit_ss or 1)+ 1,#snapshots[strip][page][sstype_select].snapshot)
+          if lvar.snapedit.monitor == true then
+            local strip = tracks[track_select].strip
+            Snapshot_Set(strip,page,sstype_select,lvar.snapedit.snapedit_ss, true)
+          end          
+          update_macrobutt = true
+
+        elseif MOUSE_click_RB(obj.sections[425]) then
+      
+          local strip = tracks[track_select].strip
+          lvar.snapedit.snapedit_ss = math.max((lvar.snapedit.snapedit_ss or 1) - 1,1)
+          if lvar.snapedit.monitor == true then
+            local strip = tracks[track_select].strip
+            Snapshot_Set(strip,page,sstype_select,lvar.snapedit.snapedit_ss, true)
+          end
+          update_macrobutt = true
+          
+        elseif MOUSE_click(obj.sections[426]) then
+        
+          lvar.snapedit.monitor = not lvar.snapedit.monitor
+          if lvar.snapedit.monitor == true then
+            local strip = tracks[track_select].strip
+            Snapshot_Set(strip,page,sstype_select,lvar.snapedit.snapedit_ss, true)
+          end
+          update_macrobutt = true
+
+        elseif MOUSE_click(obj.sections[435]) then
+          local yy = math.floor((mouse.my - obj.sections[435].y)/macroedit.sech)
+          if sctls[(yy+1)+lvar.snapedit.snapedit_poffs] then
+            if mouse.ctrl then
+              local stage = sctls[(yy+1)+lvar.snapedit.snapedit_poffs].stage
+              local val = not (sctls[(yy+1)+lvar.snapedit.snapedit_poffs].mem or false)
+              for i = 1, #sctls do
+                if sctls[i].stage == stage then            
+                  sctls[i].mem = val
+                end
+              end
+            else
+              sctls[(yy+1)+lvar.snapedit.snapedit_poffs].mem = not sctls[(yy+1)+lvar.snapedit.snapedit_poffs].mem
+            end
+            update_macroedit = true
+          end        
+        
+        elseif MOUSE_click(obj.sections[422]) then
+          local yy = math.floor((mouse.my - obj.sections[422].y)/macroedit.sech)
+          if sctls[(yy+1)+lvar.snapedit.snapedit_poffs] then
+            if mouse.ctrl then
+              local stage = sctls[(yy+1)+lvar.snapedit.snapedit_poffs].stage
+              local val = not (sctls[(yy+1)+lvar.snapedit.snapedit_poffs].morph or false)
+              for i = 1, #sctls do
+                if sctls[i].stage == stage then            
+                  sctls[i].morph = val
+                end
+              end
+            else
+              sctls[(yy+1)+lvar.snapedit.snapedit_poffs].morph = not sctls[(yy+1)+lvar.snapedit.snapedit_poffs].morph
+            end
+            update_macroedit = true
+          end        
+
+        elseif MOUSE_click(obj.sections[421]) then
+          local yy = math.floor((mouse.my - obj.sections[421].y)/macroedit.sech)
+          if sctls[(yy+1)+lvar.snapedit.snapedit_poffs] then
+            local stages = snapshots[tracks[track_select].strip][page][sstype_select].stages
+            sctls[(yy+1)+lvar.snapedit.snapedit_poffs].stage = F_limit(sctls[(yy+1)+lvar.snapedit.snapedit_poffs].stage+1,1,stages)
+            --update_macroedit = true
+            update_macrobutt = true
+          end        
+
+        elseif MOUSE_click_RB(obj.sections[421]) then
+          local yy = math.floor((mouse.my - obj.sections[421].y)/macroedit.sech)
+          if sctls[(yy+1)+lvar.snapedit.snapedit_poffs] then
+            local stages = snapshots[tracks[track_select].strip][page][sstype_select].stages
+            sctls[(yy+1)+lvar.snapedit.snapedit_poffs].stage = F_limit(sctls[(yy+1)+lvar.snapedit.snapedit_poffs].stage-1,1,stages)
+            --update_macroedit = true
+            update_macrobutt = true
+          end        
+
+        elseif MOUSE_click(obj.sections[431]) then
+          local xx = math.floor((mouse.mx - obj.sections[431].x)/(obj.sections[431].w/5))
+          local yy = math.floor((mouse.my - obj.sections[431].y)/(obj.sections[431].h/2))
+          local idx = (lvar.snapedit.SToffs*10) + xx+(yy*5)+1
+          local snaptype = snapshots[tracks[track_select].strip][page][sstype_select]
+          if idx <= snaptype.stages then
+            if mouse.ctrl then
+              snaptype.deltype[idx] = 1-snaptype.deltype[idx]
+            elseif mouse.alt then
+              if snaptype.mult == false then
+                snaptype.deltype[idx] = 2
+              end
+            elseif snaptype.deltype[idx] == 0 then
+              snaptype.delay[idx] = round(math.min(snaptype.delay[idx] + 0.1,2),1)
+            elseif snaptype.deltype[idx] == 1 then
+              snaptype.mtime[idx] = math.min(snaptype.mtime[idx] + 1,#lvar.sync_table)            
+            elseif snaptype.deltype[idx] == 2 then
+              snaptype.deltype[idx] = 1
+            end
+            update_macroedit = true
+          end        
+
+        elseif MOUSE_click_RB(obj.sections[431]) then
+          local xx = math.floor((mouse.mx - obj.sections[431].x)/(obj.sections[431].w/5))
+          local yy = math.floor((mouse.my - obj.sections[431].y)/(obj.sections[431].h/2))
+          local idx = (lvar.snapedit.SToffs*10) + xx+(yy*5)+1
+          local snaptype = snapshots[tracks[track_select].strip][page][sstype_select]
+          if idx <= snaptype.stages then
+            if snaptype.deltype[idx] == 0 then
+              snaptype.delay[idx] = round(math.max(snaptype.delay[idx] - 0.1,0),1)
+            elseif snaptype.deltype[idx] == 1 then
+              snaptype.mtime[idx] = math.max(snaptype.mtime[idx] - 1,1)            
+            end
+            update_macroedit = true
+          end        
+
+        elseif MOUSE_click(obj.sections[420]) then
+          local yy = math.floor((mouse.my - obj.sections[420].y)/macroedit.sech)
+          if sctls[(yy+1)+lvar.snapedit.snapedit_poffs] then
+            lvar.snapedit.selected = yy+1+lvar.snapedit.snapedit_poffs
+            mouse.context = contexts.snapparamdrag
+            local iidx = 980
+            --local rt = reaper.time_precise()
+            snapparamdrag = {iidx = 980, p = lvar.snapedit.selected, yy = yy, xoff = mouse.mx - obj.sections[420].x, yoff = mouse.my - obj.sections[420].y - (yy*macroedit.sech)}
+            
+            gfx.setimgdim(iidx,obj.sections[420].w+4,macroedit.sech)
+            gfx.dest = iidx
+            gfx.blit(1008,1,0,obj.sections[420].x-2,obj.sections[420].y+yy*macroedit.sech,obj.sections[420].w+4,macroedit.sech,0,0)
+            f_Get_SSV(gui.color.yellow)
+            gfx.rect(2,
+                     2, 
+                     obj.sections[420].w,
+                     macroedit.sech-4, 0)
+            update_macrobutt = true
+            
+          end
+        elseif snapparamdrag then
+        
+          local yy = math.floor((mouse.my - obj.sections[420].y)/macroedit.sech)
+          local np = F_limit((yy+1)+lvar.snapedit.snapedit_poffs,1,#snaps.ctls)
+          if np ~= p then
+            local id = snaps.ctls[snapparamdrag.p].id or snaps.ctls[snapparamdrag.p].c_id
+            snaps.ctls = Table_Move(snaps.ctls,snapparamdrag.p,np)
+            CleanSortSS(tracks[track_select].strip,page,sstype_select)
+            for i = 1, #snaps.ctls do
+              if snaps.ctls[i].id == id or snaps.ctls[i].c_id == id then
+                lvar.snapedit.selected = i
+                break
+              end
+            end
+          end
+          
+          snapparamdrag = nil
+          update_macrobutt = true
+
+        elseif MOUSE_click_RB(obj.sections[420]) then
+          local yy = math.floor((mouse.my - obj.sections[420].y)/macroedit.sech)
+          if sctls[(yy+1)+lvar.snapedit.snapedit_poffs] then
+            lvar.snapedit.selected = yy+1+lvar.snapedit.snapedit_poffs
+            update_macrobutt = true
+            GUI_draw(obj, gui)
+            gfx.update()
+            SnapEditParamMenu(mx,my)
+          end
+        end
+          
+      else
+      
+        if mouse.context == contexts.snapslider then
+      
+          local strip = tracks[track_select].strip
+          local v = F_limit((mouse.mx - snapslide.xoff - obj.sections[423].x)/obj.sections[423].w,0,1)
+          if v ~= snapctl.data[snapslide.snapparamidx].val then
+            snapctl.data[snapslide.snapparamidx].val = v
+            
+            local c = snapctl.data[snapslide.snapparamidx].ctl
+            local ctl = strips[strip][page].controls[c]
+            
+            local track = GetTrack(nz(ctl.tracknum,strips[strip].track.tracknum))
+            local cc = ctl.ctlcat
+            local fxnum = ctl.fxnum
+            local param = ctl.param
+            local min, max = GetParamMinMax(cc,track,nz(fxnum,-1),param,true,c)
+            local dval = DenormalizeValue(min,max,v)
+  
+            snapctl.data[snapslide.snapparamidx].dval = dval
+            
+            if lvar.snapedit.monitor then
+              ctl.val = v
+              A_SetParam(tracks[track_select].strip, page, c, ctl)
+              snapctl.data[snapslide.snapparamidx].dispval = ctl.dval
+            end
+            update_macroedit = true
+          end
+          
+        elseif mouse.context == contexts.snapparamdrag then
+        
+          local yy = math.floor((mouse.my - obj.sections[420].y)/macroedit.sech)
+          local np = F_limit((yy+1)+lvar.snapedit.snapedit_poffs,1,#snaps.ctls)
+          local hh = macroedit.pcnt2-1 --math.floor(obj.sections[420].h/macroedit.sech)-1
+
+          if (yy < 0 or yy >= hh) and snapparamdrag.t == nil then
+            snapparamdrag.t = reaper.time_precise()
+          elseif yy < 0 and snapparamdrag.t then
+            if reaper.time_precise() > snapparamdrag.t + 0.1 then
+              lvar.snapedit.snapedit_poffs = F_limit(lvar.snapedit.snapedit_poffs -1,0,#snaps.ctls-1)
+              snapparamdrag.t = reaper.time_precise()
+              update_macrobutt = true
+            end
+          elseif yy >= hh then
+            if reaper.time_precise() > snapparamdrag.t + 0.1 then
+              lvar.snapedit.snapedit_poffs = F_limit(lvar.snapedit.snapedit_poffs +1,0,#snaps.ctls-1-hh)
+              snapparamdrag.t = reaper.time_precise()
+              update_macrobutt = true
+            end
+          elseif yy >= 0 and yy < #snaps.ctls then
+            snapparamdrag.t = nil
+          end
+
+          if mouse.mx ~= omx or mouse.my ~= omy then          
+            update_surface = true
+          end
+          omx, omy = mouse.mx, mouse.my        
+        
+        end
+        
+      end
+      
+      mouse.mx, mouse.my = mx, my
+      
+    end
+    return noscroll
+    
+  end
+
+  function SnapEditSSMenu(mx,my)
+    local snaps = snapshots[tracks[track_select].strip][page][sstype_select]
+    gfx.x = mx
+    gfx.y = my
+    local str = 'Rename Snapshot||Duplicate Snapshot'
+    local res = gfx.showmenu(str)
+    if res > 0 then
+      if res == 1 then
+        if snaps.snapshot[lvar.snapedit.snapedit_ss] then
+          ss_select = lvar.snapedit.snapedit_ss
+          OpenEB(11,'Please enter new snapshot name:')
+        end
+      elseif res == 2 then
+        if snaps.snapshot[lvar.snapedit.snapedit_ss] then
+          local snew = #snaps.snapshot+1
+          snaps.snapshot[snew] = table.deepcopy(snaps.snapshot[lvar.snapedit.snapedit_ss])
+                  
+          local copy = string.match(snaps.snapshot[snew].name,'.+ %- Copy (%d+)')
+          local nm = string.match(snaps.snapshot[snew].name,'(.+) %- Copy %d+')
+  
+          if nm and copy then
+            local cn = tonumber(copy)+1
+            nm = nm ..' - Copy '..string.format('%i',cn)
+          else
+            nm = snaps.snapshot[snew].name..' - Copy 1'
+          end
+          snaps.snapshot[snew].name = nm
+          lvar.snapedit.snapedit_ss = snew
+          update_gfx = true
+        end
+      end
+    end  
+  end
+  
+  function SnapEditParamMenu(mx,my)   
+    local p = lvar.snapedit.selected
+    local snaps = snapshots[tracks[track_select].strip][page][sstype_select]
+    gfx.x = mx
+    gfx.y = my
+    local str = 'Duplicate Param|Duplicate Stage||Insert Stage|Lower Stages||Delete Param|Delete Stage'
+    local res = gfx.showmenu(str)
+    if res > 0 then
+      if res == 1 then
+
+        if snaps.stages < lvar.snapstages then
+          local nstage = (snaps.stages or 1) + 1
+          local nctl = #snaps.ctls + 1
+          local id = GenID()
+          snaps.ctls[nctl] = table.copy(snaps.ctls[p])
+          snaps.ctls[nctl].id = id
+          snaps.ctls[nctl].stage = nstage
+          for i = 1, #snaps.snapshot do
+            snaps.snapshot[i].data[nctl] = table.copy(snaps.snapshot[i].data[p])
+            snaps.snapshot[i].data[nctl].id = id
+          end
+          snaps.stages = snaps.stages + 1
+          
+          CleanSortSS(tracks[track_select].strip,page,sstype_select)
+          update_gfx = true
+        end
+              
+      elseif res == 2 then
+
+        if snaps.stages < lvar.snapstages then
+          local sstage = snaps.ctls[p].stage
+          local nstage = (snaps.stages or 1) + 1
+          for sc = 1, #snaps.ctls do
+            if snaps.ctls[sc].stage == sstage then
+              local nctl = #snaps.ctls + 1
+              local id = GenID()
+              snaps.ctls[nctl] = table.copy(snaps.ctls[sc])
+              snaps.ctls[nctl].id = id
+              snaps.ctls[nctl].stage = nstage
+              for i = 1, #snaps.snapshot do
+                snaps.snapshot[i].data[nctl] = table.copy(snaps.snapshot[i].data[sc])
+                snaps.snapshot[i].data[nctl].id = id
+              end
+            end
+          end
+          snaps.stages = snaps.stages + 1
+          
+          CleanSortSS(tracks[track_select].strip,page,sstype_select)
+          update_gfx = true
+        end
+        
+      elseif res == 3 then
+
+        if snaps.stages < lvar.snapstages then
+          local sstage = snaps.ctls[p].stage
+  
+          for sc = 1, #snaps.ctls do
+            if snaps.ctls[sc].stage >= sstage then
+              snaps.ctls[sc].stage = snaps.ctls[sc].stage+1
+            end
+          end
+          snaps.stages = snaps.stages + 1
+          CleanSortSS(tracks[track_select].strip,page,sstype_select)
+          update_gfx = true
+        end        
+
+      elseif res == 4 then
+
+        local sstage = snaps.ctls[p].stage
+        for sc = 1, #snaps.ctls do
+          if snaps.ctls[sc].stage >= sstage then
+            snaps.ctls[sc].stage = snaps.ctls[sc].stage-1
+          end
+        end
+        snaps.stages = snaps.stages - 1
+        CleanSortSS(tracks[track_select].strip,page,sstype_select)
+        update_gfx = true
+
+      elseif res == 5 then
+      
+        snaps.ctls[p].delete = true
+      
+        Snap_RemoveDeletedSS(tracks[track_select].strip,page,sstype_select)
+        CleanSortSS(tracks[track_select].strip, page, sstype_select)      
+        CheckRandom(tracks[track_select].strip, page, sstype_select)
+
+        update_gfx = true
+        
+      elseif res == 6 then
+
+        local sstage = snaps.ctls[p].stage      
+        for sc = 1, #snaps.ctls do
+          if snaps.ctls[sc].stage == sstage then
+            snaps.ctls[sc].delete = true
+          end
+        end
+        for sc = 1, #snaps.ctls do
+          if snaps.ctls[sc].stage > sstage then
+            snaps.ctls[sc].stage = snaps.ctls[sc].stage-1
+          end
+        end
+        snaps.stages = snaps.stages - 1
+      
+        Snap_RemoveDeletedSS(tracks[track_select].strip,page,sstype_select)
+        CleanSortSS(tracks[track_select].strip, page, sstype_select)      
+        CheckRandom(tracks[track_select].strip, page, sstype_select)
+
+        update_gfx = true
+
+      end
+    end
+  end
+  
+  function Table_Test()
+  
+    local t = {1,2,3,4,5,6,7,8,9,10}
+    local d = Table_Move(t,8,4)
+    DBG('')
+    for i = 1, #d do
+      DBG(i..':  '..d[i])
+    end
+  end
+  
+  function Table_Move(t,s,d)
+  
+    local tmp = {}
+    
+    local cnt = #t
+    local offs = 0
+    
+    if s < d then
+      for i = 1, cnt do
+        if i == s then
+          offs = offs + 1
+          tmp[i] = t[i+offs]
+        elseif i == d then
+          tmp[i] = t[s] 
+          offs = offs - 1
+        else
+          tmp[i] = t[i+offs]
+        end
+      end
+      return tmp
+      
+    elseif d < s then
+      for i = 1, cnt do
+        if i == s then
+          tmp[i] = t[i+offs]
+          offs = offs + 1
+        elseif i == d then
+          tmp[i] = t[s] 
+          offs = offs - 1
+        else
+          tmp[i] = t[i+offs]
+        end
+      end  
+      return tmp
+
+    else
+      return t
+    end    
+  end
   
   function A_Run_MacroEdit(noscroll, rt)
 
@@ -44646,8 +46222,12 @@ function GUI_DrawCtlBitmap_Strips()
         if macroctl and gfx.mouse_wheel ~= 0 and MOUSE_over(obj.sections[300]) then
         
           v = gfx.mouse_wheel/120
-          macroedit_poffs = F_limit(macroedit_poffs-v,0,#macroctl-1)
-       
+          if mouse.ctrl then
+            lvar.macrosech = F_limit(math.floor(lvar.macrosech + v*2),26,60)
+            PopMacroEditSec(obj,lvar.macrosech)
+          else
+            macroedit_poffs = F_limit(macroedit_poffs-v,0,#macroctl-1)
+          end
         
           update_gfx = true
         end
@@ -45394,6 +46974,66 @@ function GUI_DrawCtlBitmap_Strips()
     mouse.mx, mouse.my = mx, my
     return noscroll
   
+  end
+  
+  function A_Run_ModAss(noscroll, rt)
+
+    noscroll = true
+
+    local mx, my = mouse.mx, mouse.my
+    mouse.mx = mouse.mx-obj.sections[1125].x
+    mouse.my = mouse.my-obj.sections[1125].y
+    
+    if MOUSE_click(obj.sections[1127]) then
+    
+      local modass = lvar.modass
+      if modass then
+
+        local offs = modass.offset
+        local strip = tracks[track_select].strip
+        
+        local mmx = mouse.mx-obj.sections[1127].x
+        local mmy = mouse.my-obj.sections[1127].y
+
+        local butt_h = math.floor(butt_h*pnl_scale)+2        
+        local bw = 150
+        local bwc = math.max(math.floor(obj.sections[1127].w / bw),1)
+        local but_cx = math.floor(obj.sections[1127].w / bwc) 
+        local but_cy = math.max(math.floor(obj.sections[1127].h / butt_h),1)
+      
+        local px = math.floor(mmx / but_cx)
+        local py = math.floor(mmy / butt_h)
+    
+        if py < but_cy then  
+
+          local p = px*but_cy + py + 1
+          if modass[p+offs] and modass[p+offs].c then
+          
+            local ctl = strips[strip][page].controls[modass[p+offs].c]
+            if ctl.mod then
+              Mod_RemoveAssign(strip,page,modass[p+offs].c)
+              ctl.mod = nil
+            else
+              DragMod_Assign(mod_select,modass[p+offs].c)
+            end
+            update_surface = true
+            update_sidebar = true
+            if show_lfoedit == true and modwinsz.minimized ~= true then
+              update_lfoedit = true
+            end
+          end
+
+        end
+    
+      end
+      
+    elseif MOUSE_click_RB(obj.sections[1127]) then
+      show_modass = false
+      update_surface = true
+    end
+    
+    mouse.mx, mouse.my = mx, my
+    return noscroll
   end
   
   function A_Run_EQControl(noscroll, rt)
@@ -46826,6 +48466,7 @@ function GUI_DrawCtlBitmap_Strips()
         elseif EB_Open == 11 then
           EditSSName2(editbox.text)
           update_snaps = true
+          update_gfx = true
         --elseif EB_Open == 12 then
           --[[trackfxparam_select = ctl_select[1].ctl
           retval, comid = reaper.GetUserInputs('Action Button', 1, 'Please enter action command ID: ,extrawidth=196', '')
@@ -48032,6 +49673,10 @@ function GUI_DrawCtlBitmap_Strips()
                             max = ctl.maxov or max
                             v2 = normalize(min, max, v2)
                             
+                            local diff
+                            if tostring(ctl.dval) ~= tostring(v) then
+                              diff = true
+                            end
                             --[[local v2 = GetParamValue2(ctl.ctlcat,
                                                      tr,
                                                      ctl.fxnum,
@@ -48042,19 +49687,22 @@ function GUI_DrawCtlBitmap_Strips()
                               
                                 ctl.val = v2
                                 ctl.dval = v
-                                ctl.dirty = true
-                                ctl.cycledata.posdirty = true 
-                                update_ctls = true
-        
-                                if ctl.midiout then
-                                  SendMIDIMsg(ctl.midiout, ctl.val)
+
+                                if diff == true then
+                                  ctl.dirty = true
+                                  ctl.cycledata.posdirty = true 
+                                  update_ctls = true
+          
+                                  if ctl.midiout then
+                                    SendMIDIMsg(ctl.midiout, ctl.val)
+                                  end
                                 end
                               end
                             else
                               if v ~= '' then
-                                if ctl.dval ~= v then
-                                  ctl.val = v2
-                                  ctl.dval = v
+                                ctl.val = v2
+                                ctl.dval = v
+                                if diff == true then
                                   ctl.dirty = true
                                   if ctl.param_info.paramname == 'Bypass' then
                                     SetCtlEnabled(ctl.fxnum) 
@@ -48396,7 +50044,10 @@ function GUI_DrawCtlBitmap_Strips()
                           else
                             SetCtlDirty(i)
                           end  ]]
-                          SetCtlDirty(i)         
+                          SetCtlDirty(i)   
+                          --[[if show_modass == true and ctl.modassc then
+                            DBG('p')
+                          end  ]]    
                         end
                       
                       else
@@ -48509,7 +50160,14 @@ function GUI_DrawCtlBitmap_Strips()
     local trchunk = {}
     local hitrn = -2
     local notfnd
-    local afxcnt = #addfx
+    
+    local afxcnt = 0
+    if addfx then
+      afxcnt = #addfx
+    end   
+    
+    if afxcnt == 0 then return end
+    
     local fxnums = {}
     --state = round(state)
     for a = 1, afxcnt do
@@ -51785,6 +53443,17 @@ function GUI_DrawCtlBitmap_Strips()
         if strip.controls[c].ctlcat == ctlcats.macro then
           strip.controls[c].macrotype = tonumber(zn(data[key..'macrotype'],0))
         end
+
+        if strip.controls[c].ctlcat == ctlcats.threshold then
+          local thresh = {}
+          thresh.thresh_off = tonumber(zn(data[key..'thresh_threshoff'])) or 5
+          thresh.thresh_on = tonumber(zn(data[key..'thresh_threshon'])) or 10
+          thresh.val_off = tonumber(zn(data[key..'thresh_valoff'])) or 0
+          thresh.val_on = tonumber(zn(data[key..'thresh_valon'])) or 1
+          thresh.invert = tobool(zn(data[key..'thresh_invert'])) or false
+          
+          strip.controls[c].thresh = thresh
+        end
         
         strip.controls[c].xsc = math.floor(strip.controls[c].x + strip.controls[c].w/2 - (strip.controls[c].w*strip.controls[c].scale)/2)
         strip.controls[c].ysc = math.floor(strip.controls[c].y + strip.controls[c].ctl_info.cellh/2 - (strip.controls[c].ctl_info.cellh*strip.controls[c].scale)/2)
@@ -52498,6 +54167,21 @@ function GUI_DrawCtlBitmap_Strips()
                         capturemods = tobool(zn(data[key..'capturemods'],false)),
                         ignorevals = tobool(zn(data[key..'ignorevals'],false)),
                         snapshot = {}, ctls = {}}
+                        
+          snaps[sst].sorted = tobool(zn(data[key..'sorted'],false))
+          snaps[sst].mult = tobool(zn(data[key..'mult'],true))
+          snaps[sst].stages = tonumber(zn(data[key..'stages'],1))
+          snaps[sst].delay = {}
+          snaps[sst].mtime = {}
+          snaps[sst].deltype = {}
+          for sd = 1, lvar.snapstages do
+            local pkey = 'sdelay'..sd
+            local mkey = 'mtime'..sd
+            local tkey = 'deltype'..sd
+            snaps[sst].delay[sd] = tonumber(nz(data[key..pkey],0))          
+            snaps[sst].mtime[sd] = tonumber(nz(data[key..mkey],15))          
+            snaps[sst].deltype[sd] = tonumber(nz(data[key..tkey],0))
+          end
           
           lvar.snapsubsets_table[sst] = snaps[sst].subsetname
           
@@ -52509,7 +54193,11 @@ function GUI_DrawCtlBitmap_Strips()
             
               local key = pfx..'sst_'..sst..'_c_'..ctl..'_'
               snaps[sst].ctls[ctl] = {c_id = tonumber(data[key..'cid']),
-                                      ctl = tonumber(data[key..'ctl'])}
+                                      ctl = tonumber(data[key..'ctl']),
+                                      id = tonumber(zn(data[key..'id']))}
+              snaps[sst].ctls[ctl].stage = tonumber(zn(data[key..'stage'])) or 1
+              snaps[sst].ctls[ctl].morph = tobool(zn(data[key..'morph'],true))
+              snaps[sst].ctls[ctl].mem = tobool(zn(data[key..'mem'],false))
             end
           end
           if sscnt > 0 then
@@ -52524,6 +54212,7 @@ function GUI_DrawCtlBitmap_Strips()
               
                 snaps[sst].snapshot[ss].data[d] = {c_id = tonumber(data[key..'cid']),
                                                    ctl = tonumber(data[key..'ctl']),
+                                                   id = tonumber(zn(data[key..'id'])),
                                                    val = tonumber(data[key..'val']),
                                                    dval = tonumber(zn(data[key..'dval']))}
 
@@ -52617,7 +54306,8 @@ function GUI_DrawCtlBitmap_Strips()
               
             end
           end                 
-           
+          
+          
           --Snapshots_Check(s,p)
         end
         
@@ -53468,25 +55158,33 @@ function GUI_DrawCtlBitmap_Strips()
   
     if lvar.striploadoverride and not reaper.file_exists(lvar.striploadoverride) then
       lvar.striploadoverride = nil
-    end
+    end    
     
     if GPES('savedok') ~= '' or lvar.striploadoverride then
+
+      local globset = false
+      if lvar.striploadoverride then      
+        PROJECTID = tonumber(GPES('projectid'))
+        globset = LoadGlobOvProjSettingsFile()
+      end
 
       if lbxwin_dim then
         gfx1 = {main_w = lbxwin_dim.w,
                 main_h = lbxwin_dim.h}
         Lokasenna_Window_At_Center(gfx1.main_w,gfx1.main_h,lbxwin_dim.x,lbxwin_dim.y) 
       else
-        local ww, wh = GPES('win_w',true), GPES('win_h',true)
-        if ww ~= nil and wh ~= nil then
-          gfx1 = {main_w = tonumber(ww),
-                  main_h = tonumber(wh)}
-        else    
-          gfx1 = {main_w = 800,
-                  main_h = 450}
+        if globset == false then
+          local ww, wh = GPES('win_w',true), GPES('win_h',true)
+          if ww ~= nil and wh ~= nil then
+            gfx1 = {main_w = tonumber(ww),
+                    main_h = tonumber(wh)}
+          else    
+            gfx1 = {main_w = 800,
+                    main_h = 450}
+          end
+          Lokasenna_Window_At_Center(gfx1.main_w,gfx1.main_h) 
+          --gfx.dock(dockstate)
         end
-        Lokasenna_Window_At_Center(gfx1.main_w,gfx1.main_h) 
-        --gfx.dock(dockstate)
       end
       
       gfx.setimgdim(1, -1, -1)  
@@ -53499,28 +55197,31 @@ function GUI_DrawCtlBitmap_Strips()
       
       if v ~= '' or lvar.striploadoverride then
   
-        PROJECTID = tonumber(GPES('projectid'))
-        --DBG('LProjid: '..PROJECTID)
-        settings_gridsize = tonumber(nz(GPES('gridsize',true),settings_gridsize))
-        settings_showgrid = tobool(nz(GPES('showgrid',true),true))
-        show_editbar = tobool(nz(GPES('showeditbar',true),not settings_hideeditbaronnewproject))
-        ogrid = settings_gridsize
-        osg = settings_showgrid
-        settings_locksurface = tobool(nz(GPES('locksurface',true),false))
-        track_select = tonumber(nz(GPES('lasttrack',true),0))
-        xxy_gravity = tonumber(nz(GPES('metalite_gravity',true),xxy_gravity))
-        snapshot_win_pos = {x = tonumber(nz(GPES('snapwinpos_x',true))),
-                            y = tonumber(nz(GPES('snapwinpos_y',true)))}
-        show_snapshots = tobool(nz(GPES('showsnap',true),false))
-        hideunusedtracks = tobool(nz(GPES('hidetracks',true),false))
+        if globset == false then
         
-        lvar.stripbrowser.page = tonumber(nz(GPES('sb_page',true),lvar.stripbrowser.page))
-        lvar.stripbrowser.favs = tobool(nz(GPES('sb_favs',true),lvar.stripbrowser.favs))
-        stripfol_select = tonumber(nz(GPES('sb_fol',true),stripfol_select))
-        if not strip_folders[stripfol_select] then
-          stripfol_select = 0
+          PROJECTID = tonumber(GPES('projectid'))
+          --DBG('LProjid: '..PROJECTID)
+          settings_gridsize = tonumber(nz(GPES('gridsize',true),settings_gridsize))
+          settings_showgrid = tobool(nz(GPES('showgrid',true),true))
+          show_editbar = tobool(nz(GPES('showeditbar',true),not settings_hideeditbaronnewproject))
+          ogrid = settings_gridsize
+          osg = settings_showgrid
+          settings_locksurface = tobool(nz(GPES('locksurface',true),false))
+          track_select = tonumber(nz(GPES('lasttrack',true),0))
+          xxy_gravity = tonumber(nz(GPES('metalite_gravity',true),xxy_gravity))
+          snapshot_win_pos = {x = tonumber(nz(GPES('snapwinpos_x',true))),
+                              y = tonumber(nz(GPES('snapwinpos_y',true)))}
+          show_snapshots = tobool(nz(GPES('showsnap',true),false))
+          hideunusedtracks = tobool(nz(GPES('hidetracks',true),false))
+          
+          lvar.stripbrowser.page = tonumber(nz(GPES('sb_page',true),lvar.stripbrowser.page))
+          lvar.stripbrowser.favs = tobool(nz(GPES('sb_favs',true),lvar.stripbrowser.favs))
+          stripfol_select = tonumber(nz(GPES('sb_fol',true),stripfol_select))
+          if not strip_folders[stripfol_select] then
+            stripfol_select = 0
+          end
+          settings_localfaders = tobool(nz(GPES('localfaders',true),settings_localfaders))
         end
-        settings_localfaders = tobool(nz(GPES('localfaders',true),settings_localfaders))
         
         PopulateStrips()
         
@@ -54259,6 +55960,8 @@ function GUI_DrawCtlBitmap_Strips()
     lvar.stripbrowser.dockpos = tonumber(nz(GES('stripbrowser_dockpos',true),lvar.stripbrowser.dockpos))
     lvar.stripbrowser.showlabel = tobool(nz(GES('stripbrowser_showlabel',true),lvar.stripbrowser.showlabel))
     
+    lvar.macrosech = tonumber(nz(GES('macrosech',true),lvar.macrosech))
+    
     settings_moddock = tobool(nz(GES('settings_moddock',true),settings_moddock))
     modwinsz = {}
     modwinsz.x = tonumber(nz(GES('modwin_x',true),0))
@@ -54454,6 +56157,8 @@ function GUI_DrawCtlBitmap_Strips()
     reaper.SetExtState(SCRIPT,'modwin_x',tostring(modwinsz.x), true)    
     reaper.SetExtState(SCRIPT,'modwin_y',tostring(modwinsz.y), true)    
     reaper.SetExtState(SCRIPT,'modwin_show',tostring(show_lfoedit), true)    
+
+    reaper.SetExtState(SCRIPT,'macrosech',tostring(lvar.macrosech), true)    
 
     reaper.SetExtState(SCRIPT,'modulator_cnt',tostring(modulator_cnt), true)    
 
@@ -54836,6 +56541,16 @@ function GUI_DrawCtlBitmap_Strips()
     
     for p = 1, #snapshots[s] do
     
+      if snapshots[s] and snapshots[s][p] then
+        if #snapshots[s][p] > 1 then
+          for sst = 2, #snapshots[s][p] do
+            if snapshots[s][p][sst].sorted ~= true then
+              CleanSortSS(s,p,sst)
+            end
+          end
+        end
+      end
+    
       local key = pfx..'p'..p..'_'
       SaveSnapshotDataX(snapshots[s][p],key,file)
                 
@@ -54874,6 +56589,7 @@ function GUI_DrawCtlBitmap_Strips()
       file:write('['..key..'capturefaders]'..tostring(nz(snp.capturefaders,false))..'\n')
       file:write('['..key..'capturemods]'..tostring(nz(snp.capturemods,false))..'\n')
       file:write('['..key..'ignorevals]'..tostring(nz(snp.ignorevals,false))..'\n')
+      file:write('['..key..'sorted]'..tostring(nz(snp.sorted,''))..'\n')
       
       if sst == 1 then          
         file:write('['..key..'ss_count]'..#snp..'\n')
@@ -54986,6 +56702,20 @@ function GUI_DrawCtlBitmap_Strips()
     
       elseif sst > 1 then
       
+        file:write('['..key..'stages]'..tostring(nz(snp.stages,''))..'\n')
+        file:write('['..key..'mult]'..tostring(nz(snp.mult,''))..'\n')
+        
+        for sd = 1, lvar.snapstages do
+          local pkey = 'sdelay'..sd
+          local mkey = 'mtime'..sd
+          local tkey = 'deltype'..sd
+          if snp.delay then
+            file:write('['..key..pkey..']'..tostring(nz(snp.delay[sd],0))..'\n')
+            file:write('['..key..mkey..']'..tostring(nz(snp.mtime[sd],15))..'\n')
+            file:write('['..key..tkey..']'..tostring(nz(snp.deltype[sd],0))..'\n')
+          end
+        end
+
         file:write('['..key..'subsetname]'.. snp.subsetname ..'\n')
         file:write('['..key..'ss_count]'.. #snp.snapshot ..'\n')
         file:write('['..key..'ctl_count]'.. #snp.ctls ..'\n')
@@ -54995,7 +56725,11 @@ function GUI_DrawCtlBitmap_Strips()
           for ctl = 1, #snp.ctls do
             local key = pfx..'sst_'..sst..'_c_'..ctl..'_'
             file:write('['..key..'cid]'.. snp.ctls[ctl].c_id ..'\n')
-            file:write('['..key..'ctl]'.. snp.ctls[ctl].ctl ..'\n')                            
+            file:write('['..key..'id]'.. nz(snp.ctls[ctl].id,'') ..'\n')
+            file:write('['..key..'ctl]'.. snp.ctls[ctl].ctl ..'\n')
+            file:write('['..key..'stage]'.. snp.ctls[ctl].stage ..'\n')
+            file:write('['..key..'morph]'.. tostring(snp.ctls[ctl].morph) ..'\n')
+            file:write('['..key..'mem]'.. tostring(snp.ctls[ctl].mem) ..'\n')                                        
           end
         end
         if #snp.snapshot > 0 then
@@ -55016,6 +56750,7 @@ function GUI_DrawCtlBitmap_Strips()
                 local key = pfx..'sst_'..sst..'_ss_'..ss..'_d_'..d..'_'
           
                 file:write('['..key..'cid]'.. snpssdata.c_id ..'\n')
+                file:write('['..key..'id]'.. nz(snpssdata.id,'') ..'\n')
                 file:write('['..key..'ctl]'.. snpssdata.ctl ..'\n')
                 file:write('['..key..'val]'.. snpssdata.val ..'\n')
                 file:write('['..key..'dval]'.. nz(snpssdata.dval,'') ..'\n')
@@ -55264,6 +56999,16 @@ function GUI_DrawCtlBitmap_Strips()
               file:write('['..key..'macrofader]'..nz(ctl.macrofader,'')..'\n')
               file:write('['..key..'mod]'..nz(ctl.mod,'')..'\n')
               file:write('['..key..'switchfader]'..nz(ctl.switchfader,'')..'\n')
+  
+              if ctl.thresh then
+
+                file:write('['..key..'thresh_threshoff]'..nz(ctl.thresh.thresh_off,'')..'\n')
+                file:write('['..key..'thresh_threshon]'..nz(ctl.thresh.thresh_on,'')..'\n')
+                file:write('['..key..'thresh_valoff]'..nz(ctl.thresh.val_off,'')..'\n')
+                file:write('['..key..'thresh_valon]'..nz(ctl.thresh.val_on,'')..'\n')
+                file:write('['..key..'thresh_invert]'..nz(tostring(ctl.thresh.invert),'')..'\n')
+                
+              end
   
               if ctl.iteminfo then
               
@@ -55716,6 +57461,99 @@ function GUI_DrawCtlBitmap_Strips()
     return ffn, save_path, fn
     
   end
+
+  function LoadGlobOvProjSettingsFile(file,ffn)
+ 
+    local ffn
+    if file == nil then
+      ffn=paths.resource_path..'GlobalOverrideProjectSettings.lbxprojsett'        
+    end
+
+    local ret = false
+    if ffn and reaper.file_exists(ffn) then      
+      local flines = io.lines
+      local data = {}
+      local match = string.match
+            
+      for line in flines(ffn) do
+        local idx, val = match(line,'%[(.-)%](.*)') --decipher(line)
+        if idx then
+          data[idx] = val
+        end
+      end     
+  
+      settings_gridsize = tonumber(zn(data['gridsize'],16))
+      settings_showgrid = tobool(zn(data['showgrid'],true))
+      show_editbar = tobool(zn(data['showeditbar'],not settings_hideeditbaronnewproject))
+      ogrid = settings_gridsize
+      osg = settings_showgrid
+      settings_locksurface = tobool(zn(data['locksurface'],false))
+      track_select = tonumber(zn(data['lasttrack'],0))
+      xxy_gravity = tonumber(zn(data['metalite_gravity'],xxy_gravity))
+      snapshot_win_pos = {x = tonumber(zn(data['snapwinpos_x'])),
+                          y = tonumber(zn(data['snapwinpos_y']))}
+      show_snapshots = tobool(zn(data['showsnap'],false))
+      hideunusedtracks = tobool(zn(data['hidetracks'],false))
+      
+      lvar.stripbrowser.page = tonumber(zn(data['sb_page'],lvar.stripbrowser.page))
+      lvar.stripbrowser.favs = tobool(zn(data['sb_favs'],lvar.stripbrowser.favs))
+      stripfol_select = tonumber(zn(data['sb_fol'],stripfol_select))
+      if not strip_folders[stripfol_select] then
+        stripfol_select = 0
+      end
+      settings_localfaders = tobool(zn(data['localfaders'],settings_localfaders))
+      
+      local ww, wh = tonumber(zn(data['win_w'])), tonumber(zn(data['win_h']))
+      if ww ~= nil and wh ~= nil then
+        gfx1 = {main_w = tonumber(ww),
+                main_h = tonumber(wh)}
+      else    
+        gfx1 = {main_w = 800,
+                main_h = 450}
+      end
+      Lokasenna_Window_At_Center(gfx1.main_w,gfx1.main_h) 
+      
+      ret = true
+    end
+    
+    return ret
+  end
+  
+  function SaveGlobOvProjSettingsInFile(file, ffn)
+
+    local ffn
+    if file == nil then
+      ffn=paths.resource_path..'GlobalOverrideProjectSettings.lbxprojsett'        
+      file=io.open(ffn,"w")
+    end
+      
+    if file then
+      file:write('[version]'..lvar.VERSION..'\n')
+
+      file:write('[gridsize]'..ogrid..'\n')
+      file:write('[showgrid]'..tostring(settings_showgrid)..'\n')
+      file:write('[showeditbar]'..tostring(show_editbar)..'\n')
+      file:write('[locksurface]'..tostring(settings_locksurface)..'\n')
+      file:write('[lasttrack]'..track_select..'\n')
+      file:write('[metalite_gravity]'..xxy_gravity..'\n')
+  
+      if snapshot_win_pos == nil then snapshot_win_pos = {} end
+      file:write('[snapwinpos_x]'..nz(snapshot_win_pos.x,'')..'\n')
+      file:write('[snapwinpos_y]'..nz(snapshot_win_pos.y,'')..'\n')
+  
+      file:write('[showsnap]'..tostring(show_snapshots)..'\n')
+      file:write('[hidetracks]'..tostring(hideunusedtracks)..'\n')
+      file:write('[localfaders]'..tostring(settings_localfaders)..'\n')
+      file:write('[sb_favs]'..tostring(lvar.stripbrowser.favs)..'\n')
+      file:write('[sb_page]'..tostring(lvar.stripbrowser.page)..'\n')
+      file:write('[sb_fol]'..tostring(stripfol_select)..'\n')
+      file:write('[win_w]'..nz(gfx1.main_w,800)..'\n')
+      file:write('[win_h]'..nz(gfx1.main_h,450)..'\n')
+      
+    end
+    file:close()
+  
+  end
   
   function SaveData(tmp, bak, noclean)  
     
@@ -55727,7 +57565,13 @@ function GUI_DrawCtlBitmap_Strips()
     DBGOut('*** SAVING DATA ***')    
   
     SaveSettings()    
-        
+
+    if lvar.striploadoverride_active then 
+      reaper.SetProjExtState(0,SCRIPT,'savedok',tostring(true))
+      SaveGlobOvProjSettingsInFile()
+      return 
+    end
+            
     local s, p, c, g
     
     --backup datafn
@@ -55763,11 +57607,6 @@ function GUI_DrawCtlBitmap_Strips()
     if gfx1 then
       reaper.SetProjExtState(0,SCRIPT,'win_w',nz(gfx1.main_w,800))
       reaper.SetProjExtState(0,SCRIPT,'win_h',nz(gfx1.main_h,450))    
-    end
-    
-    if lvar.striploadoverride_active then 
-      reaper.SetProjExtState(0,SCRIPT,'savedok',tostring(true))
-      return 
     end
     
     --------------------------------------------
@@ -56094,13 +57933,21 @@ function GUI_DrawCtlBitmap_Strips()
           if snapshots[strip][page][sstype].ctls[ctl].delete then
           
             local cid = snapshots[strip][page][sstype].ctls[ctl].c_id
+            local id = snapshots[strip][page][sstype].ctls[ctl].id
             sscnt = #snapshots[strip][page][sstype].snapshot
             for ss = 1, sscnt do          
               dcnt = #snapshots[strip][page][sstype].snapshot[ss].data
               for d = 1, dcnt do
-                if snapshots[strip][page][sstype].snapshot[ss].data[d].c_id == cid then
-                  --remove
-                  snapshots[strip][page][sstype].snapshot[ss].data[d] = nil
+                if id then
+                  if snapshots[strip][page][sstype].snapshot[ss].data[d].id == id then
+                    --remove
+                    snapshots[strip][page][sstype].snapshot[ss].data[d] = nil
+                  end
+                else
+                  if snapshots[strip][page][sstype].snapshot[ss].data[d].c_id == cid then
+                    --remove
+                    snapshots[strip][page][sstype].snapshot[ss].data[d] = nil
+                  end
                 end
               end
               snapshots[strip][page][sstype].snapshot[ss].data = Table_RemoveNils(snapshots[strip][page][sstype].snapshot[ss].data,dcnt)
@@ -56115,6 +57962,128 @@ function GUI_DrawCtlBitmap_Strips()
       g_savedirty = true
     end
   
+  end
+
+  function CleanSortSS(strip, page, sstype)
+
+    DBGOut('CleanSortSS: '..sstype)
+
+    if sstype > 1 then
+      if (snapshots[strip] and snapshots[strip][page][sstype]) then
+  
+        local snaps = snapshots[strip][page][sstype]
+        local ctlcnt = #snaps.ctls
+        local nctls = {}
+        local done = {}
+        for stage = 1, 10 do
+
+          for ctl = 1, ctlcnt do
+            snaps.ctls[ctl].stage = snaps.ctls[ctl].stage or 1
+            
+            if snaps.ctls[ctl].stage == stage and 
+               strips[strip][page].controls[snaps.ctls[ctl].ctl].ctlcat == ctlcats.fxmulti and
+               strips[strip][page].controls[snaps.ctls[ctl].ctl].addfx then
+              nctls[#nctls+1] = snaps.ctls[ctl]
+              done[ctl] = true
+            end
+          end
+          for ctl = 1, ctlcnt do
+            if snaps.ctls[ctl].stage == stage and 
+               strips[strip][page].controls[snaps.ctls[ctl].ctl].ctlcat == ctlcats.fxmulti and
+               not strips[strip][page].controls[snaps.ctls[ctl].ctl].addfx then
+              nctls[#nctls+1] = snaps.ctls[ctl]
+              done[ctl] = true
+            end
+          end
+          for ctl = 1, ctlcnt do
+            if snaps.ctls[ctl].stage == stage and 
+               strips[strip][page].controls[snaps.ctls[ctl].ctl].ctlcat == ctlcats.fxoffline then
+              nctls[#nctls+1] = snaps.ctls[ctl]
+              done[ctl] = true
+            end
+          end
+          
+          for ctl = 1, ctlcnt do
+            if snaps.ctls[ctl].stage == stage and not done[ctl] then
+              nctls[#nctls+1] = snaps.ctls[ctl]
+            end
+          end
+
+        end
+        snaps.ctls = nctls
+
+        if #snaps.snapshot > 0 then
+          local latch = false
+          for ss = 1, #snaps.snapshot do
+
+            local ndata = {}
+            for ctl = 1, ctlcnt do
+    
+              local c = snaps.ctls[ctl].ctl
+              local cid = snaps.ctls[ctl].c_id
+              local id = snaps.ctls[ctl].id
+              --DBG(ctl..'  '..tostring(id))
+              if id == nil or latch == true then
+
+                latch = true
+                --search for c_id + add id
+                if id == nil then id = GenID() end
+                
+                snaps.ctls[ctl].id = id
+                
+                if #snaps.snapshot[ss].data > 0 then
+                  local fnd = false
+                  for d = 1, #snaps.snapshot[ss].data do
+                    if snaps.snapshot[ss].data[d].c_id == cid then
+                      ndata[ctl] = snaps.snapshot[ss].data[d]
+                      ndata[ctl].id = id
+                      fnd = true
+                      break
+                    end
+                  end
+                  if fnd == false then 
+                    --add to data  
+                    ndata[ctl] = AddCtlValToSS2(strip,page,sstype,ss,c)
+                    ndata[ctl].id = id
+                  end
+                else
+                  --add to data
+                  ndata[ctl] = AddCtlValToSS2(strip,page,sstype,ss,c)  
+                  ndata[ctl].id = id
+                end
+              else
+
+                --search for id
+                if #snaps.snapshot[ss].data > 0 then
+                  local fnd = false
+                  for d = 1, #snaps.snapshot[ss].data do
+                    if snaps.snapshot[ss].data[d].id == id then
+                      ndata[ctl] = snaps.snapshot[ss].data[d]
+                      fnd = true
+                      break
+                    end
+                  end
+                  if fnd == false then 
+                    --add to data  
+                    ndata[ctl] = AddCtlValToSS2(strip,page,sstype,ss,c)
+                    ndata[ctl].id = id
+                  end
+                else
+                  --add to data
+                  ndata[ctl] = AddCtlValToSS2(strip,page,sstype,ss,c)  
+                  ndata[ctl].id = id
+                end
+              end              
+            end
+            
+            snaps.snapshot[ss].data = ndata
+            
+          end
+        end
+        snaps.sorted = true
+      end
+    end    
+
   end
   
   function CleanSS(strip, page, sstype)
@@ -56181,6 +58150,24 @@ function GUI_DrawCtlBitmap_Strips()
                                                               val = strips[strip][page].controls[c].val,
                                                               dval = dval}
     end
+  end
+
+  function AddCtlValToSS2(strip, page, sstype, ss, c)
+ 
+    local ctl = strips[strip][page].controls[c]
+    
+    local track = GetTrack(nz(ctl.tracknum,strips[strip].track.tracknum))
+    local cc = ctl.ctlcat
+    local fxnum = ctl.fxnum
+    local param = ctl.param
+    local min, max = GetParamMinMax(cc,track,nz(fxnum,-1),param,true,c)
+    local dval = DenormalizeValue(min,max,ctl.val)
+    
+    return {c_id = ctl.c_id,
+            ctl = c,
+            val = ctl.val,
+            dval = dval}
+            
   end
 
   function XY_Set(strip, page, sstype_select, ctl)
@@ -56336,7 +58323,8 @@ function GUI_DrawCtlBitmap_Strips()
               if ctl.ctlcat == ctlcats.rs5k then            
                 v = v * ((#ctl.rsdata.samples-1)/lvar.maxsamples)
               end
-              if v ~= ctl.val then
+
+              if v ~= ctl.val --[[or ctl.forceval]] then
                 SetParam3(strip,page,rctls[cc].ctl,ctl,v)
                 if enablednu == true and ctl.dnu == true then
                   SetCtlDirty(rctls[cc].ctl)
@@ -56870,7 +58858,17 @@ function GUI_DrawCtlBitmap_Strips()
                                           morph_sync = false,
                                           morph_syncv = 15,
                                           morph_scale = 1,
+                                          stages = 1,
+                                          delay = {},
+                                          mtime = {},
+                                          deltype = {},
                                           snapshot = {}, ctls = {}}
+        for i = 1, lvar.snapstages do
+          snapshots[strip][page][newsst].delay[i] = 0
+          snapshots[strip][page][newsst].mtime[i] = 15
+          snapshots[strip][page][newsst].deltype[i] = 0
+        end
+        
         lvar.snapsubsets_table[newsst] = 'SUBSET '..newsst-1
         
         for i = 1, #ctls do
@@ -56883,7 +58881,9 @@ function GUI_DrawCtlBitmap_Strips()
             --add
             local ctlidx = #snapshots[strip][page][newsst].ctls + 1
             snapshots[strip][page][newsst].ctls[ctlidx] = {c_id = ctls[i].c_id,
-                                                           ctl = i}
+                                                           ctl = i,
+                                                           morph = true,
+                                                           stage = 1}
           end
         end
       end
@@ -56898,14 +58898,30 @@ function GUI_DrawCtlBitmap_Strips()
                                           morph_sync = false,
                                           morph_syncv = 15,
                                           morph_scale = 1,
+                                          stages = snapshots[strip][page][sst].stages or 1,
+                                          delay = table.deepcopy(snapshots[strip][page][sst].delay),
+                                          mtime = table.deepcopy(snapshots[strip][page][sst].mtime),
+                                          deltype = table.deepcopy(snapshots[strip][page][sst].deltype),
                                           snapshot = {}, ctls = {}}
         lvar.snapsubsets_table[newsst] = 'SUBSET '..newsst-1
         for i = 1, #ctls do
         
           --add
           local ctlidx = #snapshots[strip][page][newsst].ctls + 1
+          local mrp = true
+          if ctls[i].morph ~= nil then
+            mrp = ctls[i].morph
+          end
+          local mem = false
+          if ctls[i].mem ~= nil then
+            mem = ctls[i].mem
+          end          
           snapshots[strip][page][newsst].ctls[ctlidx] = {c_id = ctls[i].c_id,
-                                                         ctl = ctls[i].ctl}
+                                                         ctl = ctls[i].ctl,
+                                                         id = ctls[i].id,
+                                                         morph = mrp,
+                                                         mem = mem,
+                                                         stage = ctls[i].stage or 1}
         end
       end
 
@@ -57155,20 +59171,20 @@ function GUI_DrawCtlBitmap_Strips()
     end
   end
   
-  function Snapshot_Set(strip, page, sstype_sel, ss_sel)
+  function Snapshot_Set(strip, page, sstype_sel, ss_sel, nomorph, stage, stageidx, retaindata, morph_st)
 
-            
-    --local r = reaper
-    --local t = reaper.time_precise()
     local reaper = reaper
-    --reaper.Undo_BeginBlock2(0)
     local snaps = snapshots[strip][page][sstype_sel]
+    if stage == nil then stage = 1 end
+
+    --DBG('ss stage'..stage)
+
     local setdirty
     if settings_enablednu == true and strip == tracks[track_select].strip and page == page then
       setdirty = true
     end
     if snaps.ignorevals ~= true then
-      if (snaps.morph_sync == false and snaps.morph_time == 0) or 
+      if nomorph == true or (snaps.morph_sync == false and snaps.morph_time == 0) or 
          (snaps.morph_sync == true and snaps.morph_syncv == 1) then
         local mfs
         local enablednu = settings_enablednu
@@ -57179,6 +59195,7 @@ function GUI_DrawCtlBitmap_Strips()
             local gtrack = GetTrack(strips[strip].track.tracknum)
             mfchk = {}
             for ss = 1, #snaptbl.data do
+            
               local c = snaptbl.data[ss].ctl
               local v = snaptbl.data[ss].dval
               local nv = snaptbl.data[ss].val
@@ -57202,10 +59219,14 @@ function GUI_DrawCtlBitmap_Strips()
                                 page = f.page,
                                 ctl = f.ctl,
                                 c_id = f.c_id}              
-                
+                  if f.strip == tracks[track_select].strip and f.page == page then
+                    SetCtlDirty(c)
+                  end
+                  
                 elseif mf == nil then
                   if ctl.macrofader and not mfchk[ctl.macrofader] then
                     faders[ctl.macrofader] = {}
+                    SetCtlDirty(c)
                   end
                   
                   ctl.macrofader = nil
@@ -57272,100 +59293,154 @@ function GUI_DrawCtlBitmap_Strips()
         elseif sstype_sel > 1 then
         
           local snaptbl = snaps.snapshot[ss_sel]
+          local snapctls = snaps.ctls
+          
+          --DBG('ss'..stage)
+          
           if snaptbl then
             local gtrack = GetTrack(strips[strip].track.tracknum)
             mfchk = {}
             if #snaptbl.data > 0 then
   
               for ss = 1, #snaptbl.data do
-                local c = snaptbl.data[ss].ctl
-                local v = snaptbl.data[ss].dval
-                local nv = snaptbl.data[ss].val
-                local ctl = strips[strip][page].controls[c]
-      
-                mfs = snaptbl.data[ss].mfset
-                if mfs then
-                  local mf = snaptbl.data[ss].mf
-                  if mf and ctl.macrofader ~= mf then
-                    local f = snaptbl.data[ss].mfdata
+              
+                if snapctls[ss].stage == stage then
+                  local c = snaptbl.data[ss].ctl
+                  local v = snaptbl.data[ss].dval
+                  local nv = snaptbl.data[ss].val
+                  local ctl = strips[strip][page].controls[c]
+        
+                  mfs = snaptbl.data[ss].mfset
+                  if mfs then
+                    local mf = snaptbl.data[ss].mf
+                    if mf and ctl.macrofader ~= mf then
+                      local f = snaptbl.data[ss].mfdata
+                      
+                      if ctl.macrofader and not mfchk[ctl.macrofader] then
+                        faders[ctl.macrofader] = {}
+                      end
+                      
+                      ctl.macrofader = mf
+                      mfchk[mf] = true
+                      faders[mf] = {targettype = 4,
+                                    strip = f.strip,
+                                    page = f.page,
+                                    ctl = f.ctl,
+                                    c_id = f.c_id}              
+  
+                      if f.strip == tracks[track_select].strip and f.page == page then
+                        SetCtlDirty(c)
+                      end
                     
-                    if ctl.macrofader and not mfchk[ctl.macrofader] then
-                      faders[ctl.macrofader] = {}
+                    elseif mf == nil then
+                      if ctl.macrofader and not mfchk[ctl.macrofader] then
+                        faders[ctl.macrofader] = {}
+                        SetCtlDirty(c)
+                      end
+                      
+                      ctl.macrofader = nil
                     end
-                    
-                    ctl.macrofader = mf
-                    mfchk[mf] = true
-                    faders[mf] = {targettype = 4,
-                                  strip = f.strip,
-                                  page = f.page,
-                                  ctl = f.ctl,
-                                  c_id = f.c_id}              
+                  end
+  
+                  if c and v and ctl.ctllock ~= true and (tostring(nv) ~= tostring(ctl.val) or (ctl.dnu == true and enablednu == true)) 
+                     and (settings_morphfaderassignedctls == true or ctl.macrofader == nil) then
+                    trackfxparam_select = c
+                    if ctl.tracknum then
+                      track = GetTrack(ctl.tracknum)
+                    else
+                      track = gtrack
+                    end
+                    SetParam3_Denorm2_Safe2(track, v, strip, page, reaper, c, nv)        
+                    if setdirty then
+                      if enablednu == true and ctl.dnu == true and ctl.show_paramval == true then
+                        ctl.dval = GetParamDisp(ctl.ctlcat,ctl.tracknum or tracks[track_select].tracknum,ctl.fxnum,ctl.param,ctl.dvaloffset,c)
+                      end
+                      SetCtlDirty(c)
+                    end
+                  end
                   
-                  elseif mf == nil then
-                    if ctl.macrofader and not mfchk[ctl.macrofader] then
-                      faders[ctl.macrofader] = {}
-                    end
-                    
-                    ctl.macrofader = nil
+                  if ctl.macrofader and (settings_morphfaderassignedctls == true) then
+                    SetFader(ctl.macrofader, nv)
                   end
-                end
-
-                if c and v and ctl.ctllock ~= true and (tostring(nv) ~= tostring(ctl.val) or (ctl.dnu == true and enablednu == true)) 
-                   and (settings_morphfaderassignedctls == true or ctl.macrofader == nil) then
-                  trackfxparam_select = c
-                  if ctl.tracknum then
-                    track = GetTrack(ctl.tracknum)
-                  else
-                    track = gtrack
-                  end
-                  SetParam3_Denorm2_Safe2(track, v, strip, page, reaper, c, nv)        
-                  if setdirty then
-                    if enablednu == true and ctl.dnu == true and ctl.show_paramval == true then
-                      ctl.dval = GetParamDisp(ctl.ctlcat,ctl.tracknum or tracks[track_select].tracknum,ctl.fxnum,ctl.param,ctl.dvaloffset,c)
-                    end
-                    SetCtlDirty(c)
-                  end
+                
                 end
                 
-                if ctl.macrofader and (settings_morphfaderassignedctls == true) then
-                  SetFader(ctl.macrofader, nv)
+              end
+              
+              if stage < (snaps.stages or 1) then
+                if snaps.delay[stage+1] == 0 then
+                  Snapshot_Set(strip, page, sstype_sel, ss_sel, nomorph, stage+1)
+                else
+                
+                  local fnd = -1
+                  if stageidx then 
+                    fnd = stageidx
+                  else
+                    for md = 1, #snapstage_data do
+                      if snapstage_data[md] then
+                        
+                        if snapstage_data[md].sstype_sel == sstype_sel and
+                           snapstage_data[md].strip == strip and
+                           snapstage_data[md].page == page then
+                          fnd = md 
+                          break
+                        end
+                      end
+                    end
+                  end
+                  local mdcnt = fnd
+                  if fnd == -1 then
+                    mdcnt = #snapstage_data+1
+                  end
+                  
+                  local trigtime = reaper.time_precise()+snaps.delay[stage+1]
+                  snapstage_data[mdcnt] = {active = true,
+                                            strip = strip,
+                                            page = page,
+                                            sstype_sel = sstype_sel,
+                                            ss_sel = ss_sel,
+                                            trigtime = trigtime,
+                                            nomorph = nomorph,
+                                            stage = stage+1}
+                
                 end
-      
               end
             end
             
-            if snaptbl.modset then
-              for m = 1, #modulators do
-                local mm = modulators[m]
-                for t = 1, #mm.targets do
-                  if mm.targets[t].targettype == 1 then
-                    if strips[mm.targets[t].strip] and strips[mm.targets[t].strip][mm.targets[t].page].controls[mm.targets[t].ctl] then
-                      strips[mm.targets[t].strip][mm.targets[t].page].controls[mm.targets[t].ctl].mod = nil
-                      if mm.targets[t].strip == tracks[track_select].strip and 
-                         mm.targets[t].page == page then
-                        SetCtlDirty(mm.targets[t].ctl)
+            if stage == 1 then
+              if snaptbl.modset then
+                for m = 1, #modulators do
+                  local mm = modulators[m]
+                  for t = 1, #mm.targets do
+                    if mm.targets[t].targettype == 1 then
+                      if strips[mm.targets[t].strip] and strips[mm.targets[t].strip][mm.targets[t].page].controls[mm.targets[t].ctl] then
+                        strips[mm.targets[t].strip][mm.targets[t].page].controls[mm.targets[t].ctl].mod = nil
+                        if mm.targets[t].strip == tracks[track_select].strip and 
+                           mm.targets[t].page == page then
+                          SetCtlDirty(mm.targets[t].ctl)
+                        end
                       end
                     end
                   end
                 end
-              end
-              modulators = table.deepcopy(snaptbl.moddata)
-              for m = 1, #modulators do
-                local mm = modulators[m]
-                for t = 1, #mm.targets do
-                  if mm.targets[t].targettype == 1 then
-                    if strips[mm.targets[t].strip] and strips[mm.targets[t].strip][mm.targets[t].page].controls[mm.targets[t].ctl] then
-                      strips[mm.targets[t].strip][mm.targets[t].page].controls[mm.targets[t].ctl].mod = m
-                      if mm.targets[t].strip == tracks[track_select].strip and 
-                         mm.targets[t].page == page then
-                        SetCtlDirty(mm.targets[t].ctl)
+                modulators = table.deepcopy(snaptbl.moddata)
+                for m = 1, #modulators do
+                  local mm = modulators[m]
+                  for t = 1, #mm.targets do
+                    if mm.targets[t].targettype == 1 then
+                      if strips[mm.targets[t].strip] and strips[mm.targets[t].strip][mm.targets[t].page].controls[mm.targets[t].ctl] then
+                        strips[mm.targets[t].strip][mm.targets[t].page].controls[mm.targets[t].ctl].mod = m
+                        if mm.targets[t].strip == tracks[track_select].strip and 
+                           mm.targets[t].page == page then
+                          SetCtlDirty(mm.targets[t].ctl)
+                        end
                       end
                     end
                   end
                 end
+                update_lfoedit = true
+                update_sidebar = true
               end
-              update_lfoedit = true
-              update_sidebar = true
             end
             
           end    
@@ -57391,7 +59466,12 @@ function GUI_DrawCtlBitmap_Strips()
         if mfs and mode0_submode == 1 then
           update_sidebar = true
         end
+      
+      
       else
+      
+        --MORPH
+
         local fnd = -1
         for md = 1, #morph_data do
           if morph_data[md] then
@@ -57405,18 +59485,55 @@ function GUI_DrawCtlBitmap_Strips()
           end
         end
         local mdcnt = fnd
+        --local capmem
+        --[[if fnd ~= -1 then
+          DBG('FOUND')
+        else
+          DBG('NOT FOUND')
+          capmem = true
+        end]]
+
         if fnd == -1 then
           mdcnt = #morph_data+1
+          --capmem = true
         end
-        local start_time = reaper.time_precise()
+
+        local start_time = morph_st or reaper.time_precise()
         local mt
-        if snaps.morph_sync == true then
-          mt = CalcSyncTime(snaps.morph_syncv)        
+        
+        if (snaps.stages or 1) > 1 then
+          mt = Morph_GetStageTime(snaps,stage)
         else
-          mt = (snaps.morph_time*100)
+          if snaps.morph_sync == true then
+            mt = CalcSyncTime(snaps.morph_syncv)        
+          else
+            mt = (snaps.morph_time*100)
+          end
         end
+        
+        --[[if not morph_data[mdcnt] then
+          DBG('*** NO DATA ***')
+        elseif morph_data[mdcnt].data and not retaindata then
+          DBG('NOT RETAIN')
+        elseif morph_data[mdcnt].data then
+          DBG('RETAIN')
+        end]]
+        
+        local ddd = {}
+        local mem
+        local pop = start_time
+        if morph_data[mdcnt] then
+          pop = morph_data[mdcnt].popstart
+          mem = morph_data[mdcnt].mem
+        elseif retaindata then
+          pop = 0
+        end
+        if fnd ~= -1 and retaindata then 
+          ddd = morph_data[mdcnt].data 
+        end
+
         morph_data[mdcnt] = {active = true,
-                             popstart = start_time,
+                             popstart = pop,
                              start_time = start_time,
                              end_time = start_time + mt,
                              morph_time = mt,
@@ -57429,11 +59546,18 @@ function GUI_DrawCtlBitmap_Strips()
                              sstype = sstype_sel,
                              targetss = ss_sel,
                              sourcess = snaps.selected,
+                             dir = 0,
                              p = 0,
-                             data = {}}
+                             psc = 0,
+                             stage = stage,
+                             stages = snaps.stages or 1,
+                             data = ddd,
+                             mem = mem}
         snaps.selected = ss_sel
       end
+    
     else
+    
       --faders mods only
       local snaptbl
       if sstype_sel == 1 then
@@ -57514,6 +59638,7 @@ function GUI_DrawCtlBitmap_Strips()
       snaps.selected = ss_sel
       
     end
+    
     if settings_followsnapshot and sstype_sel == sstype_select then
       if ss_sel < ssoffset+1 or ss_sel > ssoffset+SS_butt_cnt then
         if sstype_sel == 1 then
@@ -57526,6 +59651,48 @@ function GUI_DrawCtlBitmap_Strips()
     end
     
     --reaper.Undo_EndBlock2(0,"LBX_Snapshot_Set",-1)
+    
+  end
+
+  function Morph_GetStageTime(snaps, stage)
+  
+    --DBG(snaps.deltype[stage]..'  '..stage)
+    if snaps.deltype[stage] == 0 then
+      mt = snaps.delay[stage]
+    elseif snaps.deltype[stage] == 1 then
+      mt = CalcSyncTime(snaps.mtime[stage])
+    elseif snaps.mult ~= true then
+
+      local st = 0
+      if stage > 1 then
+        for d = 1, stage-1 do
+          if snaps.deltype[d] == 0 then
+            st = st + snaps.delay[d]
+          elseif snaps.deltype[d] == 1 then
+            st = st + CalcSyncTime(snaps.mtime[d])
+          elseif snaps.deltype[d] == 2 then
+            st = 0
+          end
+        end
+      end
+    
+      if snaps.morph_sync == true then
+        tt = CalcSyncTime(snaps.morph_syncv)        
+      else
+        tt = (snaps.morph_time*100)
+      end
+
+      mt = tt - st
+    
+    end
+
+    if snaps.mult == true and snaps.morph_sync == true then
+      if snaps.morph_syncv > 1 then
+        mt = mt * lvar.sync_mult_table[snaps.morph_syncv]
+      end
+    end
+
+    return mt
     
   end
 
@@ -57560,14 +59727,18 @@ function GUI_DrawCtlBitmap_Strips()
   
   end
   
-  function Snapshot_Morph(strip, page, sstype_select, ss_select, data_id, p)
+  function Snapshot_Morph(strip, page, sstype_select, ss_select, data_id, p, stageidx)
+  
     local reaper = reaper
     local gather = false
     if #morph_data[data_id].data == 0 then
+      --DBG('GATHER')
       gather = true
       morph_data[data_id].data = {}
     end
-    --if morph_data[data_id].p then
+
+    p=math.max(math.min(p,1),0)
+
     if not morph_data[data_id].paused or morph_data[data_id].manual then
       if morph_data[data_id].dir == 1 then
         p = 1-p
@@ -57576,13 +59747,11 @@ function GUI_DrawCtlBitmap_Strips()
       p = macScale(morph_data[data_id].morph_scale,p)
       morph_data[data_id].psc = p
     end
-    --local setdirty
-    --[[if settings_enablednu == true and strip == tracks[track_select].strip and page == page then
-      setdirty = true
-    end]]
     
     if sstype_select == 1 then
+    
       local snaptbl = snapshots[strip][page][sstype_select][ss_select]
+      
       if snaptbl then
         local gtrack = GetTrack(strips[strip].track.tracknum)
         
@@ -57610,6 +59779,7 @@ function GUI_DrawCtlBitmap_Strips()
         
         mfchk = {}
         for ss = 1, #snaptbl.data do
+        
           local c = snaptbl.data[ss].ctl
           local ctl = strips[strip][page].controls[c]
           if gather == true then
@@ -57619,7 +59789,6 @@ function GUI_DrawCtlBitmap_Strips()
             update_ctls = true
           end
 
-          local nv = morph_data[data_id].data[ss].val + ((snaptbl.data[ss].val - morph_data[data_id].data[ss].val)*p)
           local mfs = snaptbl.data[ss].mfset
           
           if mfs and gather == true then
@@ -57648,9 +59817,11 @@ function GUI_DrawCtlBitmap_Strips()
             end
           end
           
+          local nv = morph_data[data_id].data[ss].val + ((snaptbl.data[ss].val - morph_data[data_id].data[ss].val)*p)
           if ctl.noss ~= true and ctl.ctllock ~= true and c and nv and tostring(nv) ~= tostring(ctl.val) 
              and (settings_morphfaderassignedctls == true or (ctl.macrofader == nil and ctl.mod == nil)) then
             SetParam3(strip,page,c,ctl,nv)
+            SetCtlDirty(c)
             --[[if setdirty then
               SetCtlDirty(c)
             end]]
@@ -57658,13 +59829,26 @@ function GUI_DrawCtlBitmap_Strips()
               SetFader(ctl.macrofader, nv)
             end
           end
-
         end
       
         
       end    
+      
     elseif sstype_select > 1 then
+    
       local snaptbl = snapshots[strip][page][sstype_select].snapshot[ss_select]
+      local snaps = snapshots[strip][page][sstype_select]
+      
+      local capmem
+      if morph_data[data_id].mem == nil then
+        capmem = true
+        --DBG('*******************CAPMEM')
+        morph_data[data_id].mem = {}
+      end
+      
+      local stage = morph_data[data_id].stage
+      if stage == nil then stage = 1 end
+      
       if snaptbl then
         local gtrack = GetTrack(strips[strip].track.tracknum)
         
@@ -57691,22 +59875,37 @@ function GUI_DrawCtlBitmap_Strips()
         end
         
         mfchk = {}
+        if gather == true then
+          update_ctls = true
+          if #snaptbl.data > 0 then
+            for ss = 1, #snaptbl.data do
+              local c = snaptbl.data[ss].ctl
+              local ctl = strips[strip][page].controls[c]
+    
+              --if gather == true then
+                
+                morph_data[data_id].data[ss] = {}
+                if settings_enablednu == true and ctl.dnu == true then
+                  morph_data[data_id].data[ss].val = GetParamValue_Ctl(c) or 0 --tonumber(ctl.val)
+                else
+                  morph_data[data_id].data[ss].val = tonumber(ctl.val) 
+                end
+                if capmem == true then
+                --DBG('CAPMEM'..morph_data[data_id].data[ss].val)
+                  morph_data[data_id].mem[ss] = morph_data[data_id].data[ss].val
+                end
+                --ctl.dirty = true
+                --update_ctls = true
+              --end
+            end
+          end
+        end
+                
         if #snaptbl.data > 0 then
           for ss = 1, #snaptbl.data do
             local c = snaptbl.data[ss].ctl
             local ctl = strips[strip][page].controls[c]
-  
-            if gather == true then
-              morph_data[data_id].data[ss] = {}
-              morph_data[data_id].data[ss].val = tonumber(ctl.val)
-              --ctl.dirty = true
-              update_ctls = true
-            end
-  
-            local nv = morph_data[data_id].data[ss].val + ((snaptbl.data[ss].val - morph_data[data_id].data[ss].val)*p)
-  
-            local mfs = snaptbl.data[ss].mfset
-  
+
             local mfs = snaptbl.data[ss].mfset
             if mfs and gather == true then
               local mf = snaptbl.data[ss].mf
@@ -57733,20 +59932,95 @@ function GUI_DrawCtlBitmap_Strips()
                 ctl.macrofader = nil
               end
             end
+
+            if snaps.ctls[ss].stage == morph_data[data_id].stage then
+              if snaps.ctls[ss].morph == true then
+--DBG('p')
+                local nv
+                if snaps.ctls[ss].mem ~= true then
+                  nv = morph_data[data_id].data[ss].val + ((snaptbl.data[ss].val - morph_data[data_id].data[ss].val)*p)                    
+                else
+                  nv = morph_data[data_id].data[ss].val + ((morph_data[data_id].mem[ss] - morph_data[data_id].data[ss].val)*p)    
+                end
+                
+                if c and ctl.ctllock ~= true and nv and tostring(nv) ~= tostring(ctl.val) and (settings_morphfaderassignedctls == true or (ctl.macrofader == nil and ctl.mod == nil)) then
+                  SetParam3(strip,page,c,ctl,nv)        
+                  SetCtlDirty(c)
+                  if ctl.macrofader and (settings_morphfaderassignedctls == true) then
+                    SetFader(ctl.macrofader, nv)
+                  end
+                end
   
-            if c and ctl.ctllock ~= true and nv and tostring(nv) ~= tostring(ctl.val) and (settings_morphfaderassignedctls == true or (ctl.macrofader == nil and ctl.mod == nil)) then
-              --trackfxparam_select = c
-              SetParam3(strip,page,c,ctl,nv)        
-              --[[if setdirty then
-                SetCtlDirty(c)
-              end]]
-            
-              if ctl.macrofader and (settings_morphfaderassignedctls == true) then
-                SetFader(ctl.macrofader, nv)
+              elseif gather == true then
+                local nv
+                if snaps.ctls[ss].mem ~= true then                
+                  nv = snaptbl.data[ss].val
+                else
+                  nv = morph_data[data_id].mem[ss]
+                end
+                if c and ctl.ctllock ~= true and nv and tostring(nv) ~= tostring(ctl.val) and (settings_morphfaderassignedctls == true or (ctl.macrofader == nil and ctl.mod == nil)) then
+                  SetParam3(strip,page,c,ctl,nv)        
+                  SetCtlDirty(c)
+                
+                  if ctl.macrofader and (settings_morphfaderassignedctls == true) then
+                    SetFader(ctl.macrofader, nv)
+                  end
+                end            
+  
               end
             end
             
           end
+
+          --[[if p >= 1 then
+            if stage < (snaps.stages or 1) then
+
+              local nstage = stage+1
+
+              if snaps.deltype == 1 and snaps.delay[nstage] ~= 0 then
+DBG('o')
+                local fnd = -1
+                if stageidx then 
+                  fnd = stageidx
+                else
+                  for md = 1, #snapstage_data do
+                    if snapstage_data[md] then
+                      if snapstage_data[md].sstype_sel == sstype_select and
+                         snapstage_data[md].strip == strip and
+                         snapstage_data[md].page == page then
+                        fnd = md 
+                        break
+                      end
+                    end
+                  end
+                end
+                
+                local mdcnt = fnd
+
+                if fnd == -1 then
+DBG('y')
+                  mdcnt = #snapstage_data+1
+                  local t = reaper.time_precise()
+                  local trigtime = morph_data[data_id].end_time
+DBG(t.. '  '..trigtime)
+                  local retain = true
+                  --[[if morph_data[data_id].morph_loop == 2 or morph_data[data_id].morph_loop == 3 then
+                    retain = true --morph_data[data_id].data
+                  end]
+                  snapstage_data[mdcnt] = {active = true,
+                                            strip = strip,
+                                            page = page,
+                                            sstype_sel = sstype_select,
+                                            ss_sel = ss_select,
+                                            trigtime = trigtime,
+                                            nomorph = nomorph,
+                                            stage = nstage,
+                                            retain = retain}
+                  
+                end
+              end
+            end
+          end]]
         end
         
         
@@ -57796,7 +60070,8 @@ function GUI_DrawCtlBitmap_Strips()
             snapshots[s][p][1] = {morph_time = 0,
                                   morph_sync = false,
                                   morph_syncv = 15,
-                                  morph_scale = 1}
+                                  morph_scale = 1,
+                                  morph_loop = 1}
           end
         end
       end
@@ -57810,14 +60085,26 @@ function GUI_DrawCtlBitmap_Strips()
           snaps = {morph_time = 0,
                   morph_sync = false,
                   morph_syncv = 15,
-                  morph_scale = 1}
+                  morph_scale = 1,
+                  morph_loop = 1}
         else
           snaps = {subsetname = 'SUBSET '..sstype-1, 
-                                            morph_time = 0,
-                                            morph_sync = false,
-                                            morph_syncv = 15,
-                                            morph_scale = 1,
-                                            snapshot = {}, ctls = {}}
+                    morph_time = 0,
+                    morph_sync = false,
+                    morph_syncv = 15,
+                    morph_scale = 1,
+                    morph_loop = 1,
+                    stages = 1,
+                    snapshot = {}, ctls = {}}
+          snaps.delay = {}
+          snaps.mtime = {}
+          snaps.deltype = {}
+          for i = 1, lvar.snapstages do
+            snaps.delay[i] = 0
+            snaps.mtime[i] = 15
+            snaps.deltype[i] = 0
+          end
+          
           lvar.snapsubsets_table[sstype] = 'SUBSET '..sstype-1
         end      
       end
@@ -57829,13 +60116,6 @@ function GUI_DrawCtlBitmap_Strips()
         
         if sstype == 1 then
   
-          --[[if snaps == nil then
-            snaps = {morph_time = 0,
-                    morph_sync = false,
-                    morph_syncv = 15,
-                    morph_scale = 1}
-          end]]
-        
           if ss_ovr then
             snappos = ss_ovr
             if snaps[snappos] then
@@ -57912,6 +60192,9 @@ function GUI_DrawCtlBitmap_Strips()
           
           if offflag == true then
             --place offline buttons at top of list otherwise snapshots not recalled correctly first click
+            
+            --### NEEDS TO BE MOVED TO CleanSortSS function
+            
             local tmp = {}
             for sspos = 1, #snaps[snappos].data do
               if strips[strip][page].controls[snaps[snappos].data[sspos].ctl].ctlcat == ctlcats.fxmulti and
@@ -57942,16 +60225,6 @@ function GUI_DrawCtlBitmap_Strips()
           
         elseif sstype > 1 then
         
-          --[[if snaps == nil then
-            snaps = {subsetname = 'SUBSET '..sstype-1, 
-                                              morph_time = 0,
-                                              morph_sync = false,
-                                              morph_syncv = 15,
-                                              morph_scale = 1,
-                                              snapshot = {}, ctls = {}}
-            lvar.snapsubsets_table[sstype] = 'SUBSET '..sstype-1
-          end]]
-  
           local sctls = #snaps.ctls
           if sctls > 0 or snaps.capturemods == true then
   
@@ -57970,6 +60243,7 @@ function GUI_DrawCtlBitmap_Strips()
           end
           
           if sctls > 0 then
+            local ctlsdone = {}
             local offflag = false
             local sscnt = 1
             for cctl = 1, sctls do
@@ -57993,13 +60267,14 @@ function GUI_DrawCtlBitmap_Strips()
                     local dval = DenormalizeValue(min,max,ctl.val)
                     snaps.snapshot[snappos].data[sscnt] = {c_id = ctl.c_id,
                                                             ctl = c,
+                                                            id = snaps.ctls[cctl].id,
                                                             val = ctl.val,
                                                             dval = dval}
                     if cc == ctlcats.fxoffline or cc == ctlcats.fxmulti then
                       offflag = true
                     end
   
-                    if snaps.capturefaders == true then
+                    if snaps.capturefaders == true and not ctlsdone[c] then
                       snaps.snapshot[snappos].data[sscnt].mfset = true
                       local mf = ctl.macrofader
                       if mf then
@@ -58021,9 +60296,10 @@ function GUI_DrawCtlBitmap_Strips()
                   end
                 end
               end
+              ctlsdone[c] = true
             end
             
-            if offflag == true then
+            --[[if offflag == true then
               --place offline buttons at top of list otherwise snapshots not recalled correctly first click
               local tmp = {}
               --local sscnt = 1
@@ -58051,7 +60327,7 @@ function GUI_DrawCtlBitmap_Strips()
                 end
               end
               snaps.snapshot[snappos].data = tmp
-            end
+            end]]
             ss_select = snappos
           end
           
@@ -59604,6 +61880,7 @@ function GUI_DrawCtlBitmap_Strips()
     show_bitmap = false
     show_dd = false
     show_lfoedit = false
+    show_modass = false
     show_eqcontrol = false
     show_pinmatrix = false
     
@@ -59669,6 +61946,7 @@ function GUI_DrawCtlBitmap_Strips()
     Snapshots_INIT()
     snapshot_fader = nil
     morph_data = {}
+    snapstage_data = {}
     
     mouse = {}
     
@@ -60823,22 +63101,29 @@ function GUI_DrawCtlBitmap_Strips()
         end
               
         local vald = math.floor((miditab.vmax - miditab.vmin)*val) + miditab.vmin
-        if miditab.msgtype <= 4 then      
+        if miditab.msgtype <= 4 then
+--[[DBG(midioutsidx[miditab.output])             
+DBG(lvar.midimsgval_table[miditab.msgtype]..string.format('%x',miditab.mchan-1))
+DBG(miditab.msg3)
+DBG(vald) ]]
           reaper.StuffMIDIMessage(midioutsidx[miditab.output], 
                                   lvar.midimsgval_table[miditab.msgtype]..string.format('%x',miditab.mchan-1),
                                   miditab.msg3, --CC num
                                   F_limit(vald,0,127)) -- CC val
         elseif miditab.msgtype == 5 or miditab.msgtype == 6 then
+
           reaper.StuffMIDIMessage(midioutsidx[miditab.output], 
                                   lvar.midimsgval_table[miditab.msgtype]..string.format('%x',miditab.mchan-1),
                                   F_limit(vald,0,miditab.vmax), 
                                   0) -- CC val      
         elseif miditab.msgtype == 6 then      
+
           reaper.StuffMIDIMessage(midioutsidx[miditab.output], 
                                   lvar.midimsgval_table[miditab.msgtype]..string.format('%x',miditab.mchan-1),
                                   miditab.msg3, --CC num
                                   F_limit(vald,0,127)) -- CC val      
         elseif miditab.msgtype == 7 then
+
           local v1 = math.floor(vald / 128)
           local v2 = vald % 128
           reaper.StuffMIDIMessage(midioutsidx[miditab.output], 
@@ -61133,9 +63418,7 @@ function GUI_DrawCtlBitmap_Strips()
   
   show_midioutind = true
   
-  save_subfolder = ''
-  
-  DBG_mode = false
+  save_subfolder = ''  
   
   backalpha = 1
   backalpha2 = 0
@@ -61198,6 +63481,8 @@ function GUI_DrawCtlBitmap_Strips()
   
   defctls = {}
   
+  --Table_Test()
+  
   --gfx.loadimg(1020,paths.controls_path.."missing.png") --update to missing png
   def_knob = LoadControl(1019, '__default.knb')
   def_knobsm = LoadControl(1018, 'SimpleFlat_48.knb')
@@ -61215,7 +63500,6 @@ function GUI_DrawCtlBitmap_Strips()
   --DBG(GetPlugIdentifierFromChunk('BYPASS 0 0 0\n<VST "VST: dpMeter2 (TBProAudio) (6ch)" "dpMeter2 x64.dll" 0 "" 1413632067\n'))
   
   --os.execute('E:\\AutoHotkey\\SRD_Home_TouchScreen.ahk')
-
   --TestStuff()  
   --testchunkcopy(0,3)
 --testfxinsert()
