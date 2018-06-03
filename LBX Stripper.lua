@@ -15,7 +15,7 @@
   DBG_mode = false
 
   local lvar = {}
-  lvar.scriptver = '0.94.0077' --Script Version
+  lvar.scriptver = '0.94.0078' --Script Version
   
   lvar.ctlupdate_rr = nil
   lvar.ctlupdate_pos = 1
@@ -9544,6 +9544,7 @@
                     gfx.blit(imageidx,1,0, xoff, yoff, w, h-yoff, x+xoff, y+yoff, sw, sh)
                   else
                     local edge = gfxx.edgesz
+                 
                     --cornersh
                     gfx.blit(imageidx,1,0, 0, 0, edge, edge, x+0, y+0)
                     gfx.blit(imageidx,1,0, w-edge, 0, edge, edge, x+sw-edge, y+0)
@@ -9915,7 +9916,7 @@
       GUI_DrawSliderH(gui, 'OFFSET', obj.sections[56], gui.color.black, gui.skol.pnl_txt, F_limit((off+150)/300,0,1))
       GUI_DrawSliderH(gui, 'VAL OFF', obj.sections[65], gui.color.black, gui.skol.pnl_txt, F_limit((valoff+150)/300,0,1))
 
-      GUI_DrawButton(gui, ctlfont_select, obj.sections[48], gui.color.white, gui.skol.butt1_txt, true, 'FONT', true)
+      GUI_DrawButton(gui, ctlfont_select or '-', obj.sections[48], gui.color.white, gui.skol.butt1_txt, true, 'FONT', true)
       local xywh = {x = obj.sections[58].x-10*pnl_scale, y = obj.sections[58].y-butt_h*pnl_scale, w = obj.sections[58].w, h = obj.sections[52].h}
       GUI_textC(gui,xywh,'F SIZE',gui.skol.pnl_txt,-5+tscale)
 
@@ -10655,7 +10656,7 @@ function GUI_DrawCtlBitmap_Strips()
                 local maxdp = ctl.maxdp or -1
                 local dvoff = ctl.dvaloffset
                 local tnum = ctl.tracknum
-                local font = ctl.fontf
+                local font = ctl.font
                 local missing
   
   --              if fxnum == nil then return end
