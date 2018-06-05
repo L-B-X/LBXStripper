@@ -15,7 +15,7 @@
   DBG_mode = false
 
   local lvar = {}
-  lvar.scriptver = '0.94.0078' --Script Version
+  lvar.scriptver = '0.94.0079' --Script Version
   
   lvar.ctlupdate_rr = nil
   lvar.ctlupdate_pos = 1
@@ -1011,7 +1011,7 @@
       local snapcontent = sdata.snapcontent
       local data = {}
       local cnt = 0          
-      local lines = split(snapcontent, "\n")
+      local lines = splitln(snapcontent)
       if lines and #lines > 0 then
         for ln = 1, #lines do
           local idx, val = string.match(lines[ln],'%[(.-)%](.*)') 
@@ -1158,20 +1158,34 @@
   
   function StripShare_Import()
   
-    local loadfn
+    local loadfn, path
+    DBGOut('IMPORT SHARESTRIP - Get Filename')
     local retval, fn = reaper.GetUserFileNameForRead(paths.share_path..'*', 'Load Strip Share File', '.sharestrip')
     if retval then
+
+      DBGOut('IMPORT SHARESTRIP - Retval True')
     
       if reaper.file_exists(fn) then
-        loadfn = string.match(fn, ".+\\(.*)")
+        DBGOut('IMPORT SHARESTRIP - File found')
+        
+        loadfn = string.match(fn, ".+[\\/](.*)")
+        path = string.match(fn, "(.+[\\/]).*")
+        DBGOut('IMPORT SHARESTRIP - Loadfn = ' .. tostring(loadfn))
+        
       end
     end
             
     if loadfn then
-      local stripdata, stripfiledata = LoadStripShareFN(nil,loadfn)
+    
+      DBGOut('IMPORT SHARESTRIP - Calling LoadStripShareFN')
+      
+      local stripdata, stripfiledata = LoadStripShareFN(nil,loadfn,path)
       local continue = false
       
       if stripdata.fx then
+      
+        DBGOut('IMPORT SHARESTRIP - Plugins required')
+        
         local fxstring = 'The following plugins are required by this strip layout:\n\n'
         local fxns = {}
         for f = 1, #stripdata.fx do
@@ -1199,6 +1213,8 @@
         end
       end      
 
+      DBGOut('IMPORT SHARESTRIP - Continue value:' .. tostring(continue))
+      
       if continue == true then
         GUI_DrawStateWin(obj,gui,'Importing shared strip data... ',true)
         GUI_DrawStateWin(obj,gui,'')
@@ -1578,11 +1594,9 @@
   
   function tobool(b)
   
-    local ret
-    if tostring(b) == "true" then
+    local ret = false
+    if tostring(b) == 'true' then
       ret = true
-    else
-      ret = false
     end
     return ret
     
@@ -6590,12 +6604,21 @@
 
   -------------------------------------------------------
   
-  function split(str,sep)
+  function splitln(str)
+  
+      local array = {}
+      for line in (str..'\n'):gmatch'(.-)\r?\n' do 
+        array[#array+1] = line
+      end
+      return array
+  end
+  
+  function split2(str,sep)
+
       local array = {}
       local reg = string.format("([^%s]+)",sep)
       for mem in string.gmatch(str,reg) do
-          --table.insert(array, mem)
-          array[#array+1] = mem
+        array[#array+1] = mem      
       end
       return array
   end
@@ -6750,7 +6773,7 @@
           le = le + e
           
           auxrcv = string.sub(chunk,ns,le-1)
-          local tx = split(auxrcv, ' ')
+          local tx = split2(auxrcv, ' ')
           src_tr = tonumber(tx[2])
           src = tonumber(tx[9])
           dst = tonumber(tx[10])
@@ -12743,6 +12766,8 @@ function GUI_DrawCtlBitmap_Strips()
     if gui == nil then
       gui = GetGUI_vars()
     end
+
+    DBGOut(txt)
 
     local lineh = 20
     if reset or statewin_txtpos == nil then
@@ -22008,7 +22033,9 @@ function GUI_DrawCtlBitmap_Strips()
     
   end
 
-  function LoadStripShareFN(sfn,ffn)
+  function LoadStripShareFN(sfn,ffn,path)
+
+    DBGOut('LoadStripShareFN: sfn='..tostring(sfn)..'  ffn='..tostring(ffn))
   
     local content, sharestripdata
     local stripdata = nil
@@ -22017,11 +22044,15 @@ function GUI_DrawCtlBitmap_Strips()
       load_path=paths.strips_path
       fn=load_path..sfn
     else
-      fn = ffn
+      fn = (path or '')..ffn
     end
+
+    DBGOut('LoadStripShareFN: fn='..tostring(fn))
 
     if reaper.file_exists(fn) then
 
+      DBGOut('LoadStripShareFN: FileExists')
+      
       local find = string.find
       local match = string.match
       local file
@@ -22030,27 +22061,32 @@ function GUI_DrawCtlBitmap_Strips()
       file:close()
       local _,e = find(content,'.-\n')
       local line = string.sub(content,0,e)
+      
       local newvers = string.match(line,'[[STRIPSHAREFILE_VERSION]](%d)')
       if newvers then
-      
+                
+        local sharedata = string.match(content,'%[SHAREDATA%](.-)%[\\SHAREDATA%]')
+        sharestripdata = string.match(content,'%[SHARESTRIPDATA%](.-)%[\\SHARESTRIPDATA%]')
+        local fxdata = string.match(content,'%[FXDATA%](.-)%[\\FXDATA%]')
         
-        local sharedata = match(content,'%[SHAREDATA%](.-)%[\\SHAREDATA%]')
-        sharestripdata = match(content,'%[SHARESTRIPDATA%]\n(.-)%[\\SHARESTRIPDATA%]')
-        
-        local fxdata = match(content,'%[FXDATA%](.-)%[\\FXDATA%]')
-        local stripcontent = match(sharestripdata,'%[STRIPDATA%](.-)%[\\STRIPDATA%]')
-        local snapcontent = match(sharestripdata,'%[SNAPSHOTDATA%](.-)%[\\SNAPSHOTDATA%]')
-        
+        local stripcontent = string.match(sharestripdata,'%[STRIPDATA%](.-)%[\\STRIPDATA%]')
+        local snapcontent = string.match(sharestripdata,'%[SNAPSHOTDATA%](.-)%[\\SNAPSHOTDATA%]')
+
         --SNAPSHOTS --only load if strip imported?
         if fxdata and stripcontent then
+
+          DBGOut('LoadStripShareFN: FXData and StripContent valid')
+
           stripdata = unpickle(fxdata)
           stripdata.sharedata = unpickle(sharedata)
           stripdata.version = tonumber(newvers)
           stripdata.snapcontent = snapcontent
           local data = {}
           local cnt = 0          
-          local lines = split(stripcontent, "\n")
+          local lines = splitln(stripcontent)
           if lines and #lines > 0 then
+            --DBGOut('LoadStripShareFN: stripcontent lines='..tostring(#lines))
+            
             for ln = 1, #lines do
               local idx, val = match(lines[ln],'%[(.-)%](.*)') 
               if idx then
@@ -22058,30 +22094,39 @@ function GUI_DrawCtlBitmap_Strips()
               end
             end
           end
+          
+          DBGOut('LoadStripShareFN: Calling LoadStripDataX')
+          
           stripdata.strip = LoadStripDataX(nil,data)
 
           if snapcontent then
             local data = {}
             local cnt = 0          
-            local lines = split(snapcontent, "\n")
+            local lines = splitln(snapcontent)
             if lines and #lines > 0 then
+
               for ln = 1, #lines do
-                local idx, val = match(lines[ln],'%[(.-)%](.*)') 
+                local idx, val = match(lines[ln],'%[(.-)%](.*)\n') 
                 if idx then
                   data[idx] = val
                 end
               end
             end
+            
+            DBGOut('LoadStripShareFN: Calling LoadSnapDataX')
             stripdata.snapshots = LoadSnapDataX(nil,data)
           end
         end
       
       else
+        DBGOut('LoadStripShareFN: Old Version')
+        
         stripdata = unpickle(content)
       end
       
       if newvers == nil or tonumber(newvers) < 2 then
       
+        DBGOut('LoadStripShareFN: Compatibility section')
         
         --compatibility
         local ctls = stripdata.strip.controls
@@ -22099,6 +22144,9 @@ function GUI_DrawCtlBitmap_Strips()
     else
       OpenMsgBox(1,'File not found.',1)
     end
+    --DBGOut('LoadStripShareFN: stripdata='..tostring(stripdata))
+    --DBGOut('LoadStripShareFN: sharestripdata='..tostring(sharestripdata))
+    
     return stripdata, sharestripdata
   
   end
@@ -22142,7 +22190,7 @@ function GUI_DrawCtlBitmap_Strips()
             stripdata.snapcontent = snapcontent
             local data = {}
             local cnt = 0          
-            local lines = split(stripcontent, "\n")
+            local lines = splitln(stripcontent)
             if lines and #lines > 0 then
               for ln = 1, #lines do
                 local idx, val = match(lines[ln],'%[(.-)%](.*)') 
@@ -22231,7 +22279,7 @@ function GUI_DrawCtlBitmap_Strips()
           stripdata.snapcontent = snapcontent
           local data = {}
           local cnt = 0          
-          local lines = split(stripcontent, "\n")
+          local lines = splitln(stripcontent)
           if lines and #lines > 0 then
             for ln = 1, #lines do
               local idx, val = match(lines[ln],'%[(.-)%](.*)') 
@@ -22455,7 +22503,7 @@ function GUI_DrawCtlBitmap_Strips()
         local snapcontent = stripdata.snapcontent
         local data = {}
         local cnt = 0          
-        local lines = split(snapcontent, "\n")
+        local lines = splitln(snapcontent)
         if lines and #lines > 0 then
           for ln = 1, #lines do
             local idx, val = string.match(lines[ln],'%[(.-)%](.*)') 
@@ -25938,7 +25986,7 @@ function GUI_DrawCtlBitmap_Strips()
     local retval, retcsv = reaper.GetUserInputs('Add RCM Program',4,'Program Name,Bank MSB,Bank LSB,Program Change,extrawidth=60',',0,0,0')
     if retval == true then
     
-      local vals = split(retcsv,',')
+      local vals = split2(retcsv,',')
       if vals[1] and vals[1] ~= '' and tonumber(vals[2]) and tonumber(vals[3]) and tonumber(vals[4]) then
         local msb = F_limit(tonumber(vals[2]),0,127)
         local lsb = F_limit(tonumber(vals[3]),0,127)
@@ -25965,7 +26013,7 @@ function GUI_DrawCtlBitmap_Strips()
     local retval, retcsv = reaper.GetUserInputs('Add RCM Program',2,'Program Name,Program ID,extrawidth=60',',0')
     if retval == true then
     
-      local vals = split(retcsv,',')
+      local vals = split2(retcsv,',')
       if vals[1] and vals[1] ~= '' and tonumber(vals[2]) then
         local msb = F_limit(tonumber(math.floor(math.floor(vals[2]/100) / 128)),0,127)
         local lsb = F_limit(tonumber(math.floor(vals[2]/100) % 128),0,127)
@@ -25998,7 +26046,7 @@ function GUI_DrawCtlBitmap_Strips()
       local retval, retcsv = reaper.GetUserInputs('Edit RCM Program',4,'Program Name,Bank MSB,Bank LSB,Program Change,extrawidth=60',defvals)
       if retval == true then
       
-        local vals = split(retcsv,',')
+        local vals = split2(retcsv,',')
         if vals[1] and vals[1] ~= '' and tonumber(vals[2]) and tonumber(vals[3]) and tonumber(vals[4]) then
           local msb = F_limit(tonumber(vals[2]),0,127)
           local lsb = F_limit(tonumber(vals[3]),0,127)
@@ -26024,7 +26072,7 @@ function GUI_DrawCtlBitmap_Strips()
       local retval, retcsv = reaper.GetUserInputs('Edit RCM Program',2,'Program Name,Program ID,extrawidth=60',defvals)
       if retval == true then
       
-        local vals = split(retcsv,',')
+        local vals = split2(retcsv,',')
         if vals[1] and vals[1] ~= '' and tonumber(vals[2]) then
           local msb = F_limit(tonumber(math.floor(math.floor(vals[2]/100) / 128)),0,127)
           local lsb = F_limit(tonumber(math.floor(vals[2]/100) % 128),0,127)
@@ -53354,6 +53402,7 @@ function GUI_DrawCtlBitmap_Strips()
       for c = 1, ccnt do
 
         local key = pfx..'c_'..c..'_'
+                
         strip.controls[c] = {
                                     c_id = tonumber(zn(data[key..'cid'],GenID())),
                                     ctlcat = tonumber(zn(data[key..'ctlcat'],0)),
@@ -53418,7 +53467,7 @@ function GUI_DrawCtlBitmap_Strips()
                                     --macrofader = tonumber(zn(data[key..'macrofader'])),
                                     mod = tonumber(zn(data[key..'mod'])),
                                     switchfader = tonumber(zn(data[key..'switchfader'])),
-                                    hidden = tobool(zn(data[key..'hidden'],false)),
+                                    hidden = tobool(zn(data[key..'hidden'],false),true),
                                     switcherid = tonumber(zn(data[key..'switcherid'])),
                                     switcher = tonumber(zn(data[key..'switcher'])),
                                     noss = tobool(zn(data[key..'noss'])),
@@ -53861,12 +53910,13 @@ function GUI_DrawCtlBitmap_Strips()
         if strip.controls[c].ctlcat == ctlcats.rcm_switch then
           rcms = true
         end
+      
       end
     
       if rcms == true then
         RCM_Neb_UpdateProgIDs(strip.controls,false)
       end
-        
+    
     end
     
     if gcnt and gcnt > 0 then
@@ -56970,7 +57020,8 @@ function GUI_DrawCtlBitmap_Strips()
               file:write('['..key..'knobsens_norm]'..tostring(nz(ctl.knobsens.norm,settings_defknobsens.norm))..'\n')
               file:write('['..key..'knobsens_fine]'..tostring(nz(ctl.knobsens.fine,settings_defknobsens.fine))..'\n')                 
               file:write('['..key..'knobsens_wheel]'..tostring(nz(ctl.knobsens.wheel,settings_defknobsens.wheel))..'\n')
-              file:write('['..key..'knobsens_wheelfine]'..tostring(nz(ctl.knobsens.wheelfine,settings_defknobsens.wheelfine))..'\n')                 
+              file:write('['..key..'knobsens_wheelfine]'..tostring(nz(ctl.knobsens.wheelfine,settings_defknobsens.wheelfine))..'\n')
+              DBGOut('SAVING HIDDEN '..c..' : '..tostring(ctl.hidden)..'  '..tostring(nz(ctl.hidden,false)))
               file:write('['..key..'hidden]'..tostring(nz(ctl.hidden,false))..'\n')
               file:write('['..key..'switcherid]'..tostring(nz(ctl.switcherid,''))..'\n')
               file:write('['..key..'switcher]'..tostring(nz(ctl.switcher,''))..'\n')
@@ -60898,7 +60949,7 @@ DBG(t.. '  '..trigtime)
           --local tt = reaper.time_precise()
           local ddata = {}
           if sdata then
-            local lines = split(sdata, "\n")
+            local lines = splitln(sdata)
             if lines and #lines > 0 then
               for ln = 1, #lines do
                 local idx, val = match(lines[ln],'%[(.-)%](.*)') 
@@ -60909,7 +60960,7 @@ DBG(t.. '  '..trigtime)
             end
           end
           if ssdata then
-            local lines = split(ssdata, "\n")
+            local lines = splitln(ssdata)
             if lines and #lines > 0 then
               for ln = 1, #lines do
                 local idx, val = match(lines[ln],'%[(.-)%](.*)') 
@@ -61506,7 +61557,7 @@ DBG(t.. '  '..trigtime)
       local content = file:read('*a')
       local data = {}
       local cnt = 0          
-      local lines = split(content, "\n")
+      local lines = splitln(content)
       if lines and #lines > 0 then
         for ln = 1, #lines do
           local idx, val = string.match(lines[ln],'%[(.-)%](.*)') 
@@ -62013,7 +62064,7 @@ DBG(t.. '  '..trigtime)
     
       if content then
         local data = {}
-        local lines = split(content, "\n")
+        local lines = splitln(content)
         if lines and #lines > 0 then
           for ln = 1, #lines do
             local idx, val = string.match(lines[ln],'%[(.-)%](.*)') 
@@ -63325,7 +63376,6 @@ DBG(vald) ]]
 
   midiouts, midioutsidx = PopMIDIOutputs()
   
-
   LBX_CTL_TRNAME='__LBX_CTL'
   LBX_GTRACK_NAME = '__GLOBAL'
   LBX_GTRACK = nil
@@ -63497,6 +63547,16 @@ DBG(vald) ]]
   ctl_bitmap = 1010
   ctl_bitmap2 = 994
   
+  DBGOut(OS)
+  
+  DBGOut('Boolean test true: '..tostring(tobool("true")))
+  DBGOut('Boolean test true: '..tostring(tobool('true')))
+  DBGOut('Boolean test true: '..tostring(tobool(' true')))
+  DBGOut('Boolean test nil: '..tostring(tobool(nil)))
+  DBGOut('Boolean test "": '..tostring(tobool("")))
+  DBGOut('Boolean test false: '..tostring(tobool("false")))
+  DBGOut('Boolean test false: '..tostring(tobool('false')))
+      
   --DBG(GetNewLogFN())
   --DBG(GetPlugIdentifierFromChunk('BYPASS 0 0 0\n<VST "VST: dpMeter2 (TBProAudio) (6ch)" "dpMeter2 x64.dll" 0 "" 1413632067\n'))
   
