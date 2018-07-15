@@ -1,0 +1,36 @@
+desc:- LBX Insert FX -
+
+in_pin:input 1
+in_pin:input 2
+in_pin:input 3
+in_pin:input 4
+in_pin:input 5
+in_pin:input 6
+in_pin:input 7
+in_pin:input 8
+in_pin:input 9
+in_pin:input 10
+in_pin:input 11
+in_pin:input 12
+in_pin:input 13
+in_pin:input 14
+in_pin:input 15
+in_pin:input 16
+
+
+out_pin:output 1
+out_pin:output 2
+out_pin:output 3
+out_pin:output 4
+out_pin:output 5
+out_pin:output 6
+out_pin:output 7
+out_pin:output 8
+out_pin:output 9
+out_pin:output 10
+out_pin:output 11
+out_pin:output 12
+out_pin:output 13
+out_pin:output 14
+out_pin:output 15
+out_pin:output 16
