@@ -14,7 +14,7 @@
   DBG_mode = false
 
   local lvar = {}
-  lvar.scriptver = '0.94.0080' --Script Version
+  lvar.scriptver = '0.94.0081' --Script Version
   
   lvar.ctlupdate_rr = nil
   lvar.ctlupdate_pos = 1
@@ -44756,7 +44756,7 @@ function GUI_DrawCtlBitmap_Strips()
         
         elseif MOUSE_click(obj.sections[522]) then
           local i = math.floor((mouse.my - obj.sections[522].y) / tb_butt_h)-1
-         -- DBG(i.. '  '..trackfxparams[i + plist_offset])
+          --DBG(i.. '  '..tostring(trackfxparams[i + plist_offset])..'  '..i..'  '..plist_offset)
           
           local dp = true
           if i == -1 then
@@ -44834,7 +44834,7 @@ function GUI_DrawCtlBitmap_Strips()
             else
               ksel_size = LoadTmpControl(knob_select)
             end
-            if dp and trackfx[trackfx_select + flist_offset] then
+            if dp and trackfx[trackfx_select --[[+ flist_offset]]] then
               mouse.context = contexts.dragparam
             end
           end
