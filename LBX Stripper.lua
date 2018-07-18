@@ -14,7 +14,7 @@
   DBG_mode = false
 
   local lvar = {}
-  lvar.scriptver = '0.94.0081' --Script Version
+  lvar.scriptver = '0.94.0082' --Script Version
   
   lvar.ctlupdate_rr = nil
   lvar.ctlupdate_pos = 1
@@ -17765,6 +17765,10 @@ function GUI_DrawCtlBitmap_Strips()
 
     if show_xxy == false and next(lupd) ~= nil then    
 
+      --[[for a,b in pairs(lupd) do
+        DBG(a)
+      end]]
+      
       local p = 0
       gfx.dest = 1
 
@@ -18310,7 +18314,7 @@ function GUI_DrawCtlBitmap_Strips()
         if submode == 0 then
 
           --DRAW SUBMODE 0
-
+          
           if lupd.update_gfx or lupd.update_bg then
             GUI_DrawControlBackG(obj, gui)
             GUI_DrawControls(obj, gui)
@@ -25910,7 +25914,7 @@ function GUI_DrawCtlBitmap_Strips()
                   if tr_found then
                     tr2 = GetTrack(ctl.tracknum)
                     
-                    if ctl.ctlcat == ctlcats.fxparam or ctl.ctlcat == ctlcats.fxoffline 
+                    if ctl.ctlcat == ctlcats.fxparam or ctl.ctlcat == ctlcats.fxoffline or ctl.ctlcat == ctlcats.fxmulti
                        or ctl.ctlcat == ctlcats.fxgui or ctl.ctlcat == ctlcats.rs5k or (ctl.ctlcat == ctlcats.rcm_switch and ctl.fxnum ~= nil) 
                        or (ctl.ctlcat == ctlcats.switcher and switchers[ctl.switcherid] and switchers[ctl.switcherid].switchmode == 1 and ctl.fxnum) then
                        
@@ -25978,7 +25982,7 @@ function GUI_DrawCtlBitmap_Strips()
                     ctl.fxfound = false
                   end              
                 else
-                  if ctl.ctlcat == ctlcats.fxparam or ctl.ctlcat == ctlcats.fxoffline 
+                  if ctl.ctlcat == ctlcats.fxparam or ctl.ctlcat == ctlcats.fxoffline or ctl.ctlcat == ctlcats.fxmulti
                      or ctl.ctlcat == ctlcats.fxgui or ctl.ctlcat == ctlcats.rs5k or (ctl.ctlcat == ctlcats.rcm_switch and ctl.fxnum ~= nil)
                      or (ctl.ctlcat == ctlcats.switcher and switchers[ctl.switcherid] and switchers[ctl.switcherid].switchmode == 1) then
                     if ctl.fxguid == reaper.TrackFX_GetFXGUID(tr2, nz(ctl.fxnum,-1)) then
@@ -44651,7 +44655,6 @@ function GUI_DrawCtlBitmap_Strips()
           end
         
         elseif MOUSE_click(obj.sections[520]) then
-          
           local i = math.floor((mouse.my - obj.sections[520].y) / tb_butt_h)-1
           if i ~= -1 and mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.15 then
             if i == -1 then
@@ -44679,7 +44682,9 @@ function GUI_DrawCtlBitmap_Strips()
               lupd.update_gfx = true
             elseif trackfx[i + flist_offset] then
               trackfx_select = i + flist_offset
+              
               PopulateTrackFXParams()
+
               mouse.context = contexts.reassplugin
               reass_plugin = {fx = trackfx_select, time = rt}
               local w,h = gfx.getimgdim(998)
