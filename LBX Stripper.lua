@@ -14,7 +14,7 @@
   DBG_mode = false
 
   local lvar = {}
-  lvar.scriptver = '0.94.0082' --Script Version
+  lvar.scriptver = '0.94.0083' --Script Version
   
   lvar.ctlupdate_rr = nil
   lvar.ctlupdate_pos = 1
@@ -27485,7 +27485,7 @@ function GUI_DrawCtlBitmap_Strips()
       y = y + ctl_sw.ctl_info.cellh
       
       local stripid, grpid, ngrpid, sw_cur
-      if switchers[switchid].switchmode == 0 then
+      if (switchers[switchid].switchmode or 0) == 0 then
         
         stripid, _, grpid = Strip_AddStrip(loadstrip,x,y,true)
         sw_cur = #switchers[switchid].grpids+1
@@ -28553,7 +28553,7 @@ function GUI_DrawCtlBitmap_Strips()
 
     if not switchers[ctl.switcherid] then return end
 
-    if switchers[ctl.switcherid].switchmode == 0 then
+    if (switchers[ctl.switcherid].switchmode or 0) == 0 then
     
       local ddtab = {idx = 2, x = mouse.mx, y = mouse.my, w = 100, h = 100, items = {}, wpad = 40}
       local exopts = 0
@@ -50229,7 +50229,7 @@ function GUI_DrawCtlBitmap_Strips()
       
         local ctl = strips[tracks[track_select].strip][page].controls[switcher_select]
         if ctl and ctl.ctlcat == ctlcats.switcher then
-          if switchers[ctl.switcherid].switchmode == 0 then 
+          if (switchers[ctl.switcherid].switchmode or 0) == 0 then 
             Switcher_Set(switcher_select, sel)
           elseif switchers[ctl.switcherid].switchmode == 1 then 
             if switchers[ctl.switcherid].stripfolder and ddlist.items[sel] then
