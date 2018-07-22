@@ -14,7 +14,7 @@
   DBG_mode = false
 
   local lvar = {}
-  lvar.scriptver = '0.94.0083' --Script Version
+  lvar.scriptver = '0.94.0084' --Script Version
   
   lvar.ctlupdate_rr = nil
   lvar.ctlupdate_pos = 1
@@ -24369,6 +24369,8 @@ function GUI_DrawCtlBitmap_Strips()
       for s = 1, #stripdata.switchers do
         local scnt = #switchers+1
         switchers[scnt] = stripdata.switchers[s]
+        
+        switchers[scnt].switchmode = switchers[scnt].switchmode or 0
       end
     end
     
@@ -28761,8 +28763,9 @@ function GUI_DrawCtlBitmap_Strips()
   function RBMenu_Snapshot(snapmx, snapmy)
   
     if sstype_select == 1 then
-      local fm, lp = FaderMenu(snapshot_fader, true)
-      mstr = 'Clone to subset (ctls only)||'..fm
+      local fm, lp = FaderMenu(snapshot_fader, true, nil, 'Recall ')
+      local cfm, clp = FaderMenu(capture_fader, true, nil, 'Capture ')
+      mstr = 'Clone to subset (ctls only)||'..fm..'||'..cfm
       gfx.x, gfx.y = snapmx, snapmy
       local res = OpenMenu(mstr)
       if res > 0 then
@@ -28772,19 +28775,29 @@ function GUI_DrawCtlBitmap_Strips()
             sstype_select = newsst
             lupd.update_snaps = true
           end
-        else
+        elseif res <= 1+lp then
           local f = {targettype = 5}
           res = res -1
-          if res ~= lastp then
+          if res ~= lp then
             AssignFader(res, f)            
-          elseif res == lastp then
+          elseif res == lp then
             DeleteFader(snapshot_fader)
           end
+        elseif res <= 1+lp+clp then
+          local f = {targettype = 9}
+          local p = res - (1+lp)
+          if p ~= clp then
+            AssignFader(p, f)            
+          elseif p == clp then
+            DeleteFader(capture_fader)
+          end
         end
-      end        
+      end    
+          
     elseif sstype_select > 1 then
-      local fm, lp = FaderMenu(-1, true)
-      mstr = 'Delete subset|Delete all subsets||Delete Empty/Orphaned Subsets||Clone to subset (ctls only)||'..fm
+      local fm, lp = FaderMenu(snapshot_fader, true, nil, 'Recall ')
+      local cfm, clp = FaderMenu(capture_fader, true, nil, 'Capture ')
+      mstr = 'Delete subset|Delete all subsets||Delete Empty/Orphaned Subsets||Clone to subset (ctls only)||'..fm..'||'..cfm
       gfx.x, gfx.y = snapmx, snapmy
       local res = OpenMenu(mstr)
       if res > 0 then
@@ -28814,7 +28827,7 @@ function GUI_DrawCtlBitmap_Strips()
             lupd.update_snaps = true
           end
 
-        else
+        elseif res <= 4+lp then
           local f = {targettype = 5}
           res = res -4
           if res ~= lastp then
@@ -28822,6 +28835,16 @@ function GUI_DrawCtlBitmap_Strips()
           elseif res == lastp then
             DeleteFader(snapshot_fader)
           end
+
+        elseif res <= 4+lp+clp then
+          local f = {targettype = 9}
+          local p = res - (4+lp)
+          if p ~= clp then
+            AssignFader(p, f)            
+          elseif p == clp then
+            DeleteFader(capture_fader)
+          end
+        
         end
       
       end
@@ -32370,7 +32393,7 @@ function GUI_DrawCtlBitmap_Strips()
     
   end
   
-  function FaderMenu(sel, returnonly, inactive)
+  function FaderMenu(sel, returnonly, inactive, prefix)
 
     if LBX_CTL_TRACK_INF and LBX_CTL_TRACK_INF.count > 0 then
       local mstr = ''
@@ -32384,7 +32407,7 @@ function GUI_DrawCtlBitmap_Strips()
         if mstr ~= '' then
           mstr = mstr .. '|'
         end
-        mstr = mstr .. '>'..act..'Fader '..string.format('%i',fs)..'-'..string.format('%i',fe)
+        mstr = mstr .. '>'..act..(prefix or '')..'Fader '..string.format('%i',fs)..'-'..string.format('%i',fe)
         
         for pf = 0, lvar.LBX_FB_CNT-1 do
           local p = fs + pf
@@ -32829,6 +32852,36 @@ function GUI_DrawCtlBitmap_Strips()
                       Snapshot_Set(strip,page,sstype_select,ss_select)
                       lupd.update_gfx = true
                     end                    
+
+                  elseif faders[p+1].targettype == 9 then
+                    local ss = round(faders[p+1].val*127)+1
+                    local strip = tracks[track_select].strip
+                    local fnd = false
+                    if sstype_select == 1 then
+                      if snapshots[strip] and 
+                         snapshots[strip][page] and
+                         snapshots[strip][page][sstype_select] then
+                        if snapshots[strip][page][sstype_select][ss] then
+                          ss_select = ss 
+                          fnd = true
+                        end
+                      end
+                    else
+                      if snapshots[strip] and 
+                         snapshots[strip][page] and
+                         snapshots[strip][page][sstype_select] then
+                        
+                        if snapshots[strip][page][sstype_select].snapshot[ss] then
+                          ss_select = ss
+                          fnd = true
+                        end
+                      end                    
+                    end
+                    if fnd then
+                      Snapshots_CREATE(strip, page, sstype_select, ss_select)
+                      lupd.update_snaps = true
+                      lupd.update_ctls = true --to update snapshot ctls
+                    end                    
                     
                   elseif faders[p+1].targettype == 6 then
                     local sel = round(faders[p+1].val*127)+1 - faders[p+1].voffset
@@ -33004,6 +33057,10 @@ function GUI_DrawCtlBitmap_Strips()
         snapshots[ftab.strip][ftab.page][ftab.sstype].morph_time_fader = f
         faders[f] = ftab
       end
+    elseif ftab.targettype == 9 then
+      DeleteFader(capture_fader)    
+      capture_fader = f      
+      faders[f] = ftab    
     
     elseif ftab.targettype == 3 then
       faders[f] = ftab
@@ -58390,6 +58447,8 @@ function GUI_DrawCtlBitmap_Strips()
 
         local key = pfx..'snapshot_fader'
         snapshot_fader = tonumber(zn(data[key]))
+        local key = pfx..'capture_fader'
+        capture_fader = tonumber(zn(data[key]))
 
         fadrs = {}
         
@@ -58424,7 +58483,7 @@ function GUI_DrawCtlBitmap_Strips()
     if fadrs == nil then
       fadrs = Faders_INIT(true)
     end
-    return fadrs, snapshot_fader
+    return fadrs, snapshot_fader, capture_fader
     
   end
   
@@ -58937,7 +58996,7 @@ function GUI_DrawCtlBitmap_Strips()
       end
       
       LoadXXYPathData(data)
-      faders, snapshot_fader = LoadFaders(data,'',_,true)
+      faders, snapshot_fader, capture_fader = LoadFaders(data,'',_,true)
       if data['global_fadercnt'] then
         lvar.gfaders = LoadFaders(data,'global_',true)
       end
@@ -59584,7 +59643,7 @@ function GUI_DrawCtlBitmap_Strips()
           
           if tonumber(v) == 0.93 then
             LoadXXYPathData()
-            faders, snapshot_fader = LoadFaders()
+            faders, snapshot_fader, capture_fader = LoadFaders()
             if faders == nil then
               faders = Faders_INIT(true)
             end
@@ -59592,7 +59651,7 @@ function GUI_DrawCtlBitmap_Strips()
           elseif tonumber(v) >= 0.94 then
   
             LoadXXYPathData(data)
-            faders, snapshot_fader = LoadFaders(data,'',_,true)
+            faders, snapshot_fader, capture_fader = LoadFaders(data,'',_,true)
             if data['global_fadercnt'] then
               lvar.gfaders = LoadFaders(data,'global_',true)
             end
@@ -60114,6 +60173,7 @@ function GUI_DrawCtlBitmap_Strips()
       file:write('['..key..']'.. #faders ..'\n')
       if not excludessfader then
         file:write('[snapshot_fader]'.. nz(snapshot_fader,'') ..'\n')
+        file:write('[capture_fader]'.. nz(capture_fader,'') ..'\n')
       end
       
       for f = 1, #faders do
@@ -65805,6 +65865,7 @@ DBG(t.. '  '..trigtime)
     
     Snapshots_INIT()
     snapshot_fader = nil
+    capture_fader = nil
     morph_data = {}
     snapstage_data = {}
     
