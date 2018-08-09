@@ -14,7 +14,7 @@
   DBG_mode = false
 
   local lvar = {}
-  lvar.scriptver = '0.94.0084' --Script Version
+  lvar.scriptver = '0.94.0085' --Script Version
   
   lvar.ctlupdate_rr = nil
   lvar.ctlupdate_pos = 1
@@ -6881,7 +6881,7 @@
       iteminfo.maxtakes = takeswitch_max
     end
     
-    if reaper.APIExists('BR_GetMediaItemGUID') then
+    if reaper.APIExists('BR_GetMediaItemGUID') == true then
       iteminfo.guid = reaper.BR_GetMediaItemGUID(item)
     else
       --item guid via track chunk?
@@ -6935,6 +6935,26 @@
         sf = reaper.EnumerateFiles(paths.strips_path..'/'..strip_folders[stripfol_select].fn,i)
       end
     end    
+  end
+
+  function FindStripFolder(fn)
+  
+    for f = 0, #strip_folders do 
+      if strip_folders[f] then
+        local i = 0
+        
+        local sf = reaper.EnumerateFiles(paths.strips_path..'/'..strip_folders[f].fn,i)
+        while sf ~= nil do
+          if sf == fn then
+            return strip_folders[f].fn, f
+          end
+          i=i+1
+          sf = reaper.EnumerateFiles(paths.strips_path..'/'..strip_folders[f].fn,i)
+        end
+      end    
+    
+    end
+  
   end
 
   -------------------------------------------------------
@@ -21523,7 +21543,7 @@ function GUI_DrawCtlBitmap_Strips()
     else
       if commandid then
         reaper.Main_OnCommand(commandid, 0)
-      else 
+      elseif cmd then 
         reaper.Main_OnCommand(reaper.NamedCommandLookup(cmd), 0)            
       end
     end 
@@ -22704,8 +22724,6 @@ function GUI_DrawCtlBitmap_Strips()
     
       if track then
         local removed = 0
-        local trchunk = GetTrackChunk(track, settings_usetrackchunkfix)
-
         local fxnums = {}
       
         for i = 1, #delfx do
@@ -22755,22 +22773,32 @@ function GUI_DrawCtlBitmap_Strips()
                 
         end
         
-        if #fxnums > 0 then
-          --sort and iterate through backwards
-          table.sort(fxnums)
-        
-          for i = #fxnums, 1, -1 do
-            _, trchunk = RemoveFXChunkFromTrackChunk(trchunk, fxnums[i])
-            removed = removed+1
+        if reaper.APIExists('TrackFX_Delete') == true then
+          if #fxnums > 0 then
+            table.sort(fxnums)
+            for i = #fxnums, 1, -1 do
+              reaper.TrackFX_Delete(track,fxnums[i]-1)
+            end
+          end        
+        else
+          local trchunk 
+          if #fxnums > 0 then
+            --sort and iterate through backwards
+            table.sort(fxnums)
+            trchunk = GetTrackChunk(track, settings_usetrackchunkfix)
+          
+            for i = #fxnums, 1, -1 do
+              _, trchunk = RemoveFXChunkFromTrackChunk(trchunk, fxnums[i])
+              removed = removed+1
+            end
           end
-        end
-        
-        if trchunk and removed > 0 then
-          SetTrackChunk(track, trchunk, false)
+          
+          if trchunk and removed > 0 then
+            SetTrackChunk(track, trchunk, false)
+          end
         end
       end
     end
-      
   end
 
   ------------------------------------------------------------    
@@ -24061,197 +24089,166 @@ function GUI_DrawCtlBitmap_Strips()
       end
       
       local retfx
-      --create new fx
-      local missing = 0
       
-      local t = reaper.time_precise()
+      ---------------------------
       
-      --[[for i = 1, #stripdata.fx do
-    
+      if targetfxpos ~= -1 then
+      
+        --create new fx
+        local missing = 0
+        
+        --local t = reaper.time_precise()
+        -------------------------
+  
+        local t = reaper.time_precise()
         local fxpos
-        local nchunk, nchunk2, nfxguid, ofxguid
-        DBG('Inserting fx: '..i..' Time: '..reaper.time_precise()-t)
-        if stripdata.plugpos == nil then
-        
-          fxpos = fxcnt+i-1-missing
-
-          local chunk = GetTrackChunk(tr, settings_usetrackchunkfix)
-          nchunk, nfxguid, ofxguid, nchunk2 = Chunk_InsertFXChunkAtEndOfFXChain(trnum, chunk, stripdata.fx[i].fxchunk, nil, logfn)
+        local nchunk, nchunk2
+        nchunk = GetTrackChunk(tr, settings_usetrackchunkfix)
+        for i = 1, #stripdata.fx do
+      
+          local nfxguid, ofxguid
+          if stripdata.plugpos == nil then
           
-          if logfn then
-            LogData(logfn, 'INSERTING FX '..i, '')
-            LogData(logfn, 'Pre-insertion chunk', chunk)
-            LogData(logfn, 'Chunk to be inserted', stripdata.fx[i].fxchunk)
-            if nchunk2 and nchunk2 ~= nchunk then
-              LogData(logfn, 'New CONDITIONED chunk', nchunk2)
+            if targetfxpos and reaper.APIExists('TrackFX_CopyToTrack') ~= true then
+              fxpos = targetfxpos+i
+              nchunk, nfxguid, ofxguid = InsertFXChunk(nchunk, trnum, stripdata.fx[i].fxchunk, fxpos, fxcnt+i)
+            else
+              if targetfxpos then
+                fxpos = targetfxpos+i
+              else
+                fxpos = fxcnt+i-1-missing
+              end
+              nchunk, nfxguid, ofxguid, nchunk2 = Chunk_InsertFXChunkAtEndOfFXChain(trnum, nchunk, stripdata.fx[i].fxchunk, nil, logfn)
             end
-            LogData(logfn, 'New chunk', nchunk)
-          end
-          
-          if nchunk ~= nil then
-            local retval 
             
-            if logfn then
-              LogData(logfn, 'UPDATING CHUNK...', '')
-            end
-            retval = SetTrackChunk(tr, nchunk, false)
-            if logfn then
-              LogData(logfn, 'UPDATING CHUNK SUCCEED', '')
-            end
-            if retval == true then
+            if nchunk ~= nil then
+  
+              ofxguids[fxpos] = ofxguid
               fxguids[ofxguid] = {guid = nfxguid, found = true, fxnum = fxpos}
+     
             end
           end
-        
-        else
-          
-          fxpos = stripdata.plugpos
-          ofxguid = '{'..stripdata.fx[i].fxguid..'}'
-          local track
-          if stripdata.plugtrack and tracks[stripdata.plugtrack] then
-            track = GetTrack(tracks[stripdata.plugtrack].tracknum)
-            tr = track
-          end
-          
-          nfxguid = reaper.TrackFX_GetFXGUID(tr, fxpos)
-          fxguids[ofxguid] = {guid = nfxguid, found = true, fxnum = fxpos}
-        
         end
-
-        --check guid
-        if settings_usetrackchunkfix == false then
-          nguid = reaper.TrackFX_GetFXGUID(tr, fxpos)
-          if nguid == nil then
-            missing = missing + 1
-            if fxguids[ofxguid] then
-              fxguids[ofxguid].found = false
-              fxguids[ofxguid].fxnum = -1
-            end 
+  
+        if logfn then
+          LogData(logfn, 'NCHUNK\n\n '..nchunk, '')
+        end
+        if nchunk then
+          retval = SetTrackChunk(tr, nchunk, false)
+          if targetfxpos and reaper.APIExists('TrackFX_CopyToTrack') == true then
+            local lastfx = fxcnt+#stripdata.fx-1
+            for i = 1, #stripdata.fx do
+              if lastfx ~= targetfxpos then
+                reaper.TrackFX_CopyToTrack(tr,lastfx,tr,targetfxpos,true)
+              end
+            end        
           end
-        else
-          nguid = reaper.TrackFX_GetFXGUID(tr, fxpos)
-          if nguid == nil then
-            missing = missing + 1
-            if fxguids[ofxguid] then
-              fxguids[ofxguid].found = false
-              fxguids[ofxguid].fxnum = -1
-            end 
-          else
-            --fxguids[ofxguid].found = true
-            fxguids[ofxguid].guid = nguid
-            
-          end
-          
-        end        
-      end
-      
-      DBG('All FX Added'..' Time: '..reaper.time_precise()-t)]]
-      
-      -------------------------
-      local t = reaper.time_precise()
-      local fxpos
-      local nchunk, nchunk2
-      nchunk = GetTrackChunk(tr, settings_usetrackchunkfix)
-      for i = 1, #stripdata.fx do
-    
-        local nfxguid, ofxguid
-        if stripdata.plugpos == nil then
+        end
         
-          if targetfxpos then
-            fxpos = targetfxpos+i
-            nchunk, nfxguid, ofxguid = InsertFXChunk(nchunk, trnum, stripdata.fx[i].fxchunk, fxpos, fxcnt+i)
-          else
-            fxpos = fxcnt+i-1-missing
-            nchunk, nfxguid, ofxguid, nchunk2 = Chunk_InsertFXChunkAtEndOfFXChain(trnum, nchunk, stripdata.fx[i].fxchunk, nil, logfn)
-          end
+        for i = 1, #stripdata.fx do
+        
+          if stripdata.plugpos == nil then
           
-          if nchunk ~= nil then
-
-            ofxguids[fxpos] = ofxguid
+            if targetfxpos then
+              fxpos = targetfxpos+i
+              ofxguid = ofxguids[fxpos]
+            else
+              fxpos = fxcnt+i-1-missing
+              ofxguid = ofxguids[fxpos]          
+            end   
+  
+            if pinmaps then
+            
+              SetPinMap(tr, fxpos-1, pinmaps.inLo, pinmaps.inHi, pinmaps.outLo, pinmaps.outHi)
+            
+            end
+                           
+          else
+            
+            fxpos = stripdata.plugpos
+            ofxguid = '{'..stripdata.fx[i].fxguid..'}'
+            local track
+            if stripdata.plugtrack and tracks[stripdata.plugtrack] then
+              track = GetTrack(tracks[stripdata.plugtrack].tracknum)
+              tr = track
+            end
+            
+            nfxguid = reaper.TrackFX_GetFXGUID(tr, fxpos)
             fxguids[ofxguid] = {guid = nfxguid, found = true, fxnum = fxpos}
-   
+          
           end
-        end
-      end
-
-      if logfn then
-        LogData(logfn, 'NCHUNK\n\n '..nchunk, '')
-      end
-      if nchunk then
-        retval = SetTrackChunk(tr, nchunk, false)
-      end
-      
-      for i = 1, #stripdata.fx do
-      
-        if stripdata.plugpos == nil then
-        
-          if targetfxpos then
-            fxpos = targetfxpos+i
-            ofxguid = ofxguids[fxpos]
+  
+          --check guid
+          if settings_usetrackchunkfix == false then
+            nguid = reaper.TrackFX_GetFXGUID(tr, fxpos)
+            if nguid == nil then
+              missing = missing + 1
+              if fxguids[ofxguid] then
+                fxguids[ofxguid].found = false
+                fxguids[ofxguid].fxnum = -1
+              end 
+            end
           else
-            fxpos = fxcnt+i-1-missing
-            ofxguid = ofxguids[fxpos]          
-          end   
-
-          if pinmaps then
-          
-            SetPinMap(tr, fxpos-1, pinmaps.inLo, pinmaps.inHi, pinmaps.outLo, pinmaps.outHi)
-          
-          end
-                         
-        else
-          
-          fxpos = stripdata.plugpos
+            if targetfxpos then
+              fxpos = fxpos -1
+            end
+            nguid = reaper.TrackFX_GetFXGUID(tr, fxpos)
+            if nguid == nil then
+              missing = missing + 1
+              if fxguids[ofxguid] then
+                fxguids[ofxguid].found = false
+                fxguids[ofxguid].fxnum = -1
+              end 
+            else
+              --fxguids[ofxguid].found = true
+              fxguids[ofxguid].guid = nguid
+              
+            end
+            
+          end        
+        end
+        
+        --DBG('Check data: '..reaper.time_precise() - t)
+        --------------------------------------
+        
+        if logfn then
+          LogData(logfn, 'ALL FX ADDED TO CHUNK', '')
+        end
+      
+      else
+        -- do NOT add new FX - link to existing
+        local linktab = {}
+        local linkcntidx = {}
+        
+        local tar_fxtbl = GetFXChunks(trnum)
+        for i = 1, #tar_fxtbl do
+          tar_fxtbl[i].identifier = GetPlugIdentifierFromChunk(tar_fxtbl[i].chunk)
+        end
+        
+        for i = 1, #stripdata.fx do
+          local nfxguid, ofxguid
           ofxguid = '{'..stripdata.fx[i].fxguid..'}'
-          local track
-          if stripdata.plugtrack and tracks[stripdata.plugtrack] then
-            track = GetTrack(tracks[stripdata.plugtrack].tracknum)
-            tr = track
-          end
-          
-          nfxguid = reaper.TrackFX_GetFXGUID(tr, fxpos)
-          fxguids[ofxguid] = {guid = nfxguid, found = true, fxnum = fxpos}
-        
-        end
-
-        --check guid
-        if settings_usetrackchunkfix == false then
-          nguid = reaper.TrackFX_GetFXGUID(tr, fxpos)
-          if nguid == nil then
-            missing = missing + 1
-            if fxguids[ofxguid] then
-              fxguids[ofxguid].found = false
-              fxguids[ofxguid].fxnum = -1
-            end 
-          end
-        else
-          if targetfxpos then
-            fxpos = fxpos -1
-          end
-          nguid = reaper.TrackFX_GetFXGUID(tr, fxpos)
-          if nguid == nil then
-            missing = missing + 1
-            if fxguids[ofxguid] then
-              fxguids[ofxguid].found = false
-              fxguids[ofxguid].fxnum = -1
-            end 
-          else
-            --fxguids[ofxguid].found = true
-
-            fxguids[ofxguid].guid = nguid
+          local l_fxn = GetPlugIdentifierFromChunk(stripdata.fx[i].fxchunk)
+          if l_fxn then
+            linktab[i] = {fxn = l_fxn}
+            linkcntidx[l_fxn] = (linkcntidx[l_fxn] or 0) +1
+            
+            local cntr = 0
+            for j = 1, #tar_fxtbl do
+              if tar_fxtbl[j].identifier == l_fxn then
+                cntr = cntr + 1
+                if cntr == linkcntidx[l_fxn] then
+                  nfxguid = tar_fxtbl[j].guid
+                  fxguids[ofxguid] = {guid = nfxguid, found = true, fxnum = j}
+                  break
+                end
+              end
+            end
             
           end
-          
-        end        
+        end
+              
       end
-      
-      --DBG('Check data: '..reaper.time_precise() - t)
-      --------------------------------------
-      
-      if logfn then
-        LogData(logfn, 'ALL FX ADDED TO CHUNK', '')
-      end
-      
       
       for j = 1, #stripdata.strip.controls do
         stripdata.strip.controls[j].ctllock = nil
@@ -27509,6 +27506,7 @@ function GUI_DrawCtlBitmap_Strips()
 
         local stripids, firstfxslot = Switcher_GetStripIDs(switchid, grpid)      
       
+        reaper.PreventUIRefresh(1) 
         for i = 1, #stripids do
           DeleteStrip(stripids[i],true)
         end
@@ -27518,7 +27516,7 @@ function GUI_DrawCtlBitmap_Strips()
 
         if not fxn then return end
 
-        --pins
+        --pins 
         local pinmaps
         if switchers[switchid].copypinmap == true then
           local tr = GetTrack(ctl_sw.tracknum or strips[tracks[track_select].strip].track.tracknum) 
@@ -27528,7 +27526,9 @@ function GUI_DrawCtlBitmap_Strips()
           end
         end
         
+        --reaper.PreventUIRefresh(1) 
         stripid, _, ngrpid = Strip_AddStrip(loadstrip,x,y,true,trn,trg,fxn+1,pinmaps)
+        reaper.PreventUIRefresh(-1) 
         grpid = ngrpid
         
         local pfx = ''
@@ -28765,7 +28765,11 @@ function GUI_DrawCtlBitmap_Strips()
     if sstype_select == 1 then
       local fm, lp = FaderMenu(snapshot_fader, true, nil, 'Recall ')
       local cfm, clp = FaderMenu(capture_fader, true, nil, 'Capture ')
-      mstr = 'Clone to subset (ctls only)||'..fm..'||'..cfm
+      local dttk = ''
+      if lvar.snapcapture_midi_dt == true then
+        dttk = '!'
+      end
+      mstr = 'Clone to subset (ctls only)||'..fm..'||'..cfm..'|'..dttk..'Requires double-tap on note'
       gfx.x, gfx.y = snapmx, snapmy
       local res = OpenMenu(mstr)
       if res > 0 then
@@ -28791,13 +28795,19 @@ function GUI_DrawCtlBitmap_Strips()
           elseif p == clp then
             DeleteFader(capture_fader)
           end
+        elseif res == (1+lp+clp)+1 then
+          lvar.snapcapture_midi_dt = not (lvar.snapcapture_midi_dt or false)
         end
       end    
           
     elseif sstype_select > 1 then
       local fm, lp = FaderMenu(snapshot_fader, true, nil, 'Recall ')
       local cfm, clp = FaderMenu(capture_fader, true, nil, 'Capture ')
-      mstr = 'Delete subset|Delete all subsets||Delete Empty/Orphaned Subsets||Clone to subset (ctls only)||'..fm..'||'..cfm
+      local dttk = ''
+      if lvar.snapcapture_midi_dt == true then
+        dttk = '!'
+      end
+      mstr = 'Delete subset|Delete all subsets||Delete Empty/Orphaned Subsets||Clone to subset (ctls only)||'..fm..'||'..cfm..'|'..dttk..'Requires double-tap on note'
       gfx.x, gfx.y = snapmx, snapmy
       local res = OpenMenu(mstr)
       if res > 0 then
@@ -28845,6 +28855,8 @@ function GUI_DrawCtlBitmap_Strips()
             DeleteFader(capture_fader)
           end
         
+        elseif res == (4+lp+clp)+1 then
+          lvar.snapcapture_midi_dt = not (lvar.snapcapture_midi_dt or false)
         end
       
       end
@@ -32854,34 +32866,40 @@ function GUI_DrawCtlBitmap_Strips()
                     end                    
 
                   elseif faders[p+1].targettype == 9 then
+                  
                     local ss = round(faders[p+1].val*127)+1
-                    local strip = tracks[track_select].strip
-                    local fnd = false
-                    if sstype_select == 1 then
-                      if snapshots[strip] and 
-                         snapshots[strip][page] and
-                         snapshots[strip][page][sstype_select] then
-                        if snapshots[strip][page][sstype_select][ss] then
-                          ss_select = ss 
-                          fnd = true
+                    if lvar.snapcapture_midi_dt ~= true or (reaper.time_precise() <= (lvar.capturelatchtime or 0) and ss == lvar.capturess) then
+                      local strip = tracks[track_select].strip
+                      local fnd = false
+                      if sstype_select == 1 then
+                        if snapshots[strip] and 
+                           snapshots[strip][page] and
+                           snapshots[strip][page][sstype_select] then
+                          if snapshots[strip][page][sstype_select][ss] then
+                            ss_select = ss 
+                            fnd = true
+                          end
                         end
+                      else
+                        if snapshots[strip] and 
+                           snapshots[strip][page] and
+                           snapshots[strip][page][sstype_select] then
+                          
+                          if snapshots[strip][page][sstype_select].snapshot[ss] then
+                            ss_select = ss
+                            fnd = true
+                          end
+                        end                    
+                      end
+                      if fnd then
+                        Snapshots_CREATE(strip, page, sstype_select, ss_select)
+                        lupd.update_snaps = true
+                        lupd.update_ctls = true --to update snapshot ctls
                       end
                     else
-                      if snapshots[strip] and 
-                         snapshots[strip][page] and
-                         snapshots[strip][page][sstype_select] then
-                        
-                        if snapshots[strip][page][sstype_select].snapshot[ss] then
-                          ss_select = ss
-                          fnd = true
-                        end
-                      end                    
+                      lvar.capturelatchtime = reaper.time_precise() + 0.5
+                      lvar.capturess = ss
                     end
-                    if fnd then
-                      Snapshots_CREATE(strip, page, sstype_select, ss_select)
-                      lupd.update_snaps = true
-                      lupd.update_ctls = true --to update snapshot ctls
-                    end                    
                     
                   elseif faders[p+1].targettype == 6 then
                     local sel = round(faders[p+1].val*127)+1 - faders[p+1].voffset
@@ -34513,6 +34531,55 @@ function GUI_DrawCtlBitmap_Strips()
   
   end
   
+  function TrackLabelCheck()
+    
+    local trcnt = reaper.CountTracks(0)
+    local otrack = track_select
+    local poptr = false
+    for t = -1, trcnt-1 do
+      local tr = GetTrack(t)
+      local trg = reaper.GetTrackGUID(tr)
+      local _, trlbl = reaper.GetTrackName(tr, '')
+      if trlbl then
+        local tracknm, stripnm = string.match(trlbl, '(.-)LBXSTRIP%[(.-)%]')
+        if stripnm then
+          if string.match(stripnm,'.+(%..*)') ~= '.strip' then
+            stripnm = stripnm..'.strip'
+          end
+
+          local fol = FindStripFolder(stripnm)
+          if fol then
+            loadstrip = LoadStrip(nil, fol, stripnm)
+            if loadstrip then
+              if gui == nil then
+                GetGUI_vars()
+              end
+              GenStripPreview(gui, loadstrip.strip, loadstrip.switchers, loadstrip.switchconvtab)
+              
+              track_select = t
+              local _, strip = Strip_AddStrip(loadstrip,0,0,nil,t,trg,-1)
+              track_select = otrack
+              poptr = true
+              
+              --image_count = image_count_add
+              loadstrip = nil
+              reaper.MarkProjectDirty(0)
+            end
+            
+            --rename track
+            reaper.GetSetMediaTrackInfo_String(tr, "P_NAME", tracknm, true)
+            
+          end
+          
+        end
+      end
+    end
+    if poptr then
+      PopulateTracks()
+    end
+    
+  end
+  
   function run()  
 
     --DBG()
@@ -34701,6 +34768,11 @@ function GUI_DrawCtlBitmap_Strips()
     if ct ~= otrkcnt then
       PopulateTracks()
       lupd.update_gfx = true
+      
+      if ct > otrkcnt then
+        TrackLabelCheck()
+      end
+      
       otrkcnt = ct
       local st = reaper.GetSelectedTrack(0,0)
       if st == nil then
@@ -54474,7 +54546,7 @@ function GUI_DrawCtlBitmap_Strips()
   end
 
   function GetMediaItemByGUID(guid)
-    if reaper.APIExists('BR_GetMediaItemByGUID') then
+    if reaper.APIExists('BR_GetMediaItemByGUID') == true then
       return reaper.BR_GetMediaItemByGUID(0, guid)
     end
   end
@@ -59737,6 +59809,8 @@ function GUI_DrawCtlBitmap_Strips()
     lastprojname = GetProjectName()
     LOADEDDATAFILE = LDF
     
+    TrackLabelCheck()
+    
   end
   
   function LoadCompatibility(v, strips)
@@ -59854,6 +59928,7 @@ function GUI_DrawCtlBitmap_Strips()
     settings_sbdock = tobool(nz(GES('settings_sbdock',true),settings_sbdock))
     settings_hideplugnotfound = tobool(nz(GES('settings_hideplugnotfound',true),settings_hideplugnotfound))
     settings_enablednu = tobool(nz(GES('settings_enablednu',true),settings_enablednu))
+    lvar.snapcapture_midi_dt = tobool(nz(GES('snapcapture_midi_dt',true),lvar.snapcapture_midi_dt))
     
     show_stripbrowser = tobool(nz(GES('show_stripbrowser',true),show_stripbrowser))
     sbwin.x = tonumber(nz(GES('sbwin_x',true),sbwin.x))
@@ -60045,6 +60120,7 @@ function GUI_DrawCtlBitmap_Strips()
     reaper.SetExtState(SCRIPT,'settings_sbdock',tostring(settings_sbdock), true)    
     reaper.SetExtState(SCRIPT,'settings_hideplugnotfound',tostring(settings_hideplugnotfound), true)    
     reaper.SetExtState(SCRIPT,'settings_enablednu',tostring(settings_enablednu), true)    
+    reaper.SetExtState(SCRIPT,'snapcapture_midi_dt',tostring((lvar.snapcapture_midi_dt or false)), true)    
 
     reaper.SetExtState(SCRIPT,'show_stripbrowser',tostring(show_stripbrowser), true)    
     reaper.SetExtState(SCRIPT,'sbwin_x',tostring(sbwin.x), true)    
@@ -66322,48 +66398,71 @@ DBG(t.. '  '..trigtime)
   end
 
   function DeleteFX(trn, fxnum)
-    local tr = GetTrack(trn)
-   -- local fxcnt = reaper.TrackFX_GetCount(tr)
-    local chunk = GetTrackChunk(tr, settings_usetrackchunkfix)
-    local _, nchunk, _ = RemoveFXChunkFromTrackChunk(chunk, fxnum)
-    if nchunk then
-      SetTrackChunk(tr, nchunk, false)      
+
+    if reaper.APIExists('TrackFX_Delete') == true then
+      local tr = GetTrack(trn)
+      reaper.TrackFX_Delete(tr, fxnum-1)      
+    else
+      local tr = GetTrack(trn)
+     -- local fxcnt = reaper.TrackFX_GetCount(tr)
+      local chunk = GetTrackChunk(tr, settings_usetrackchunkfix)
+      local _, nchunk, _ = RemoveFXChunkFromTrackChunk(chunk, fxnum)
+      if nchunk then
+        SetTrackChunk(tr, nchunk, false)      
+      end
     end
   end
   
   function MoveFXChunk(srcfxnum, dstfxnum)
-  
-    local writechunk = false
-    local trn = tracks[track_select].tracknum
-    local tr = GetTrack(trn)
-    local fxcnt = reaper.TrackFX_GetCount(tr)
-    local chunk = GetTrackChunk(tr, settings_usetrackchunkfix)
-    
-    local nchunk = MoveFXChunk2(chunk, trn, srcfxnum, dstfxnum, fxcnt)
-    if nchunk then
-      SetTrackChunk(tr, nchunk, false)      
-    end
-    
-  end
 
-  function MoveFXChunkX(srcfxnum, dstfxnum, trn)
-  
-    local writechunk = false
-    local tr
-    if trn == -3 then
-      tr = reaper.GetSelectedTrack2(0,0,true)
-      trn = reaper.GetMediaTrackInfo_Value(tr,'IP_TRACKNUMBER')-1
+    if reaper.APIExists('TrackFX_CopyToTrack') == true then
+      local trn = tracks[track_select].tracknum
+      local tr = GetTrack(trn)
+      reaper.TrackFX_CopyToTrack(tr,srcfxnum-1,tr,dstfxnum-1,true)
     else
-      tr = GetTrack(trn)
-    end
-    if tr then
+      local writechunk = false
+      local trn = tracks[track_select].tracknum
+      local tr = GetTrack(trn)
       local fxcnt = reaper.TrackFX_GetCount(tr)
       local chunk = GetTrackChunk(tr, settings_usetrackchunkfix)
+      
       local nchunk = MoveFXChunk2(chunk, trn, srcfxnum, dstfxnum, fxcnt)
       if nchunk then
         SetTrackChunk(tr, nchunk, false)      
       end
     end    
+  end
+
+  function MoveFXChunkX(srcfxnum, dstfxnum, trn)
+  
+    if reaper.APIExists('TrackFX_CopyToTrack') == true then
+      if trn == -3 then
+        tr = reaper.GetSelectedTrack2(0,0,true)
+        trn = reaper.GetMediaTrackInfo_Value(tr,'IP_TRACKNUMBER')-1
+      else
+        tr = GetTrack(trn)
+      end
+      if tr then
+        reaper.TrackFX_CopyToTrack(tr,srcfxnum-1,tr,dstfxnum-1,true)
+      end
+    else
+      local writechunk = false
+      local tr
+      if trn == -3 then
+        tr = reaper.GetSelectedTrack2(0,0,true)
+        trn = reaper.GetMediaTrackInfo_Value(tr,'IP_TRACKNUMBER')-1
+      else
+        tr = GetTrack(trn)
+      end
+      if tr then
+        local fxcnt = reaper.TrackFX_GetCount(tr)
+        local chunk = GetTrackChunk(tr, settings_usetrackchunkfix)
+        local nchunk = MoveFXChunk2(chunk, trn, srcfxnum, dstfxnum, fxcnt)
+        if nchunk then
+          SetTrackChunk(tr, nchunk, false)      
+        end
+      end    
+    end
   end
   
   function MoveFXChunk2(chunk, trn, srcfxnum, dstfxnum, fxcnt)
@@ -66549,33 +66648,40 @@ DBG(t.. '  '..trigtime)
 
   function SetFXOffline2(strip, page, ctl, track, v)
 
-    local fxn = strips[strip][page].controls[ctl].fxnum
-    local str = track
-    local chunk = GetTrackChunk(str, settings_usetrackchunkfix)
-
-    local s,e, fnd = 0,0,nil
-    for i = 0,fxn do
-      s, e = string.find(chunk,'BYPASS %d %d %d',s)
-      if s and e then
-        if i == fxn then 
-          local byp = string.sub(chunk,s,e)
-          if v == 1 then
-            byp = string.gsub(byp,'(%d) (%d) (%d)', function(d,e,f) return d..' 1 '..f end)
-          else
-            byp = string.gsub(byp,'(%d) (%d) (%d)', function(d,e,f) return d..' 0 '..f end)          
-          end
-          local nchunk = string.sub(chunk,0,s-1)..byp..string.sub(chunk,e+1)
-          SetTrackChunk(str,nchunk, false)
-          fnd = true 
-          break 
-        end
-        s=e+1
-      else
-        break
-      end
-    end
-    return fnd, fxchunk, s, e  
+    if reaper.APIExists('TrackFX_SetOffline') == true then
+      local fxn = strips[strip][page].controls[ctl].fxnum
+      local offl = false
+      if v == 1 then offl = true end
+      reaper.TrackFX_SetOffline(track,fxn,offl)
+    else
+      local fxn = strips[strip][page].controls[ctl].fxnum
+      local str = track
+      local chunk = GetTrackChunk(str, settings_usetrackchunkfix)
   
+      local s,e, fnd = 0,0,nil
+      for i = 0,fxn do
+        s, e = string.find(chunk,'BYPASS %d %d %d',s)
+        if s and e then
+          if i == fxn then 
+            local byp = string.sub(chunk,s,e)
+            if v == 1 then
+              byp = string.gsub(byp,'(%d) (%d) (%d)', function(d,e,f) return d..' 1 '..f end)
+            else
+              byp = string.gsub(byp,'(%d) (%d) (%d)', function(d,e,f) return d..' 0 '..f end)          
+            end
+            local nchunk = string.sub(chunk,0,s-1)..byp..string.sub(chunk,e+1)
+            SetTrackChunk(str,nchunk, false)
+            fnd = true 
+            break 
+          end
+          s=e+1
+        else
+          break
+        end
+      end
+      return fnd, fxchunk, s, e  
+    end
+      
   end
 
   function ToggleFXBypass(strip, page, c, trn, forceval)
@@ -66640,75 +66746,91 @@ DBG(t.. '  '..trigtime)
     local trn = nz(strips[strip][page].controls[ctl].tracknum, trn)
     local fxn = strips[strip][page].controls[ctl].fxnum
     local str = GetTrack(trn)
-    local chunk = GetTrackChunk(str, settings_usetrackchunkfix)
 
-    --local chlines = {}
-    --local s,e=0,0
-    
-    local s,e, fnd = 0,0,nil
-    for i = 0,fxn do
-      s, e = string.find(chunk,'BYPASS %d %d %d',s)
-      if s and e then
-        if i == fxn then 
-          local byp = string.sub(chunk,s,e)
-          local nbyp
-          if forceval then
-            nbyp = string.gsub(byp,'(%d) (%d) (%d)', function(d,e,f) return d..' '..forceval..' '..f end)
-          else
-            nbyp = string.gsub(byp,'(%d) (%d) (%d)', function(d,e,f) if e == '0' then return d..' 1 '..f else return d..' 0 '..f end end)
-          end
-          if nbyp ~= byp then
-            local nchunk = string.sub(chunk,0,s-1)..nbyp..string.sub(chunk,e+1)
-            SetTrackChunk(str,nchunk, false)
-          end
-          --fnd = true
-          break 
-        end
-        s=e+1
-      else
-        break
-      end
-    end
-    --return fnd, fxchunk, s, e  
+    if reaper.APIExists('TrackFX_SetOffline') == true then
+      local fxn = strips[strip][page].controls[ctl].fxnum
+      local offl = not reaper.TrackFX_GetOffline(str,fxn)
+      reaper.TrackFX_SetOffline(str,fxn,offl)
+    else
+      local chunk = GetTrackChunk(str, settings_usetrackchunkfix)
   
+      --local chlines = {}
+      --local s,e=0,0
+      
+      local s,e, fnd = 0,0,nil
+      for i = 0,fxn do
+        s, e = string.find(chunk,'BYPASS %d %d %d',s)
+        if s and e then
+          if i == fxn then 
+            local byp = string.sub(chunk,s,e)
+            local nbyp
+            if forceval then
+              nbyp = string.gsub(byp,'(%d) (%d) (%d)', function(d,e,f) return d..' '..forceval..' '..f end)
+            else
+              nbyp = string.gsub(byp,'(%d) (%d) (%d)', function(d,e,f) if e == '0' then return d..' 1 '..f else return d..' 0 '..f end end)
+            end
+            if nbyp ~= byp then
+              local nchunk = string.sub(chunk,0,s-1)..nbyp..string.sub(chunk,e+1)
+              SetTrackChunk(str,nchunk, false)
+            end
+            --fnd = true
+            break 
+          end
+          s=e+1
+        else
+          break
+        end
+      end
+      --return fnd, fxchunk, s, e  
+    end  
   end
 
   function SetFXOffline3(trn, fxn, offline, bypass, donotsetchunk, chunk)
     local str = GetTrack(trn)
-    local chunk = chunk or GetTrackChunk(str, settings_usetrackchunkfix)
-    local retchunk = chunk
-    
-    local s,e, fnd = 0,0,nil
-    for i = 0,fxn do
-      s, e = string.find(chunk,'BYPASS %d %d %d',s)
-      if s and e then
-        if i == fxn then 
-          local byp = string.sub(chunk,s,e)
-          local nbyp
-          if offline then
-            nbyp = string.gsub(byp,'(%d) (%d) (%d)', function(d,e,f) return d..' '..offline..' '..f end)
-          else
-            nbyp = string.gsub(byp,'(%d) (%d) (%d)', function(d,e,f) if e == '0' then return d..' 1 '..f else return d..' 0 '..f end end)
-          end
-          if bypass then
-            nbyp = string.gsub(nbyp,'(%d) (%d) (%d)', function(d,e,f) return bypass..' '..e..' '..f end)          
-          end
-          if nbyp ~= byp then
-            local nchunk = string.sub(chunk,0,s-1)..nbyp..string.sub(chunk,e+1)
-            if donotsetchunk == true then
-              retchunk = nchunk
-            else
-              SetTrackChunk(str,nchunk, false)
-            end
-          end
-          break 
-        end
-        s=e+1
-      else
-        break
+
+    if reaper.APIExists('TrackFX_SetOffline') == true then
+      local fxn = strips[strip][page].controls[ctl].fxnum
+      local offl = false
+      if offline == 1 then
+        offl = true
       end
+      reaper.TrackFX_SetOffline(str,fxn,offl)
+    else
+      local chunk = chunk or GetTrackChunk(str, settings_usetrackchunkfix)
+      local retchunk = chunk
+      
+      local s,e, fnd = 0,0,nil
+      for i = 0,fxn do
+        s, e = string.find(chunk,'BYPASS %d %d %d',s)
+        if s and e then
+          if i == fxn then 
+            local byp = string.sub(chunk,s,e)
+            local nbyp
+            if offline then
+              nbyp = string.gsub(byp,'(%d) (%d) (%d)', function(d,e,f) return d..' '..offline..' '..f end)
+            else
+              nbyp = string.gsub(byp,'(%d) (%d) (%d)', function(d,e,f) if e == '0' then return d..' 1 '..f else return d..' 0 '..f end end)
+            end
+            if bypass then
+              nbyp = string.gsub(nbyp,'(%d) (%d) (%d)', function(d,e,f) return bypass..' '..e..' '..f end)          
+            end
+            if nbyp ~= byp then
+              local nchunk = string.sub(chunk,0,s-1)..nbyp..string.sub(chunk,e+1)
+              if donotsetchunk == true then
+                retchunk = nchunk
+              else
+                SetTrackChunk(str,nchunk, false)
+              end
+            end
+            break 
+          end
+          s=e+1
+        else
+          break
+        end
+      end
+      return retchunk
     end
-    return retchunk
   end
   
   function SetFXBypass(trn, fxn, forceval)
@@ -66959,7 +67081,7 @@ DBG(t.. '  '..trigtime)
   
   function GetProjectName()
   
-    if reaper.APIExists('GetProjectName') then
+    if reaper.APIExists('GetProjectName') == true then
       return reaper.GetProjectName(0,'')
     else
       return 'RPR_LBXProjID_'
