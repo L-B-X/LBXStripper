@@ -14,7 +14,7 @@
   DBG_mode = false
 
   local lvar = {}
-  lvar.scriptver = '0.94.0086' --Script Version
+  lvar.scriptver = '0.94.0087' --Script Version
   
   lvar.ctlupdate_rr = nil
   lvar.ctlupdate_pos = 1
@@ -23378,22 +23378,12 @@ function GUI_DrawCtlBitmap_Strips()
           local t = reaper.time_precise()
           
           local fx_s, fx_e = string.find(datastr,'(%[FXDATA%].-%[\\FXDATA%]\r?\n)')
---          DBG('fxdata '..reaper.time_precise()-t)
---          local t = reaper.time_precise()
           local sd_s, sd_e = string.find(string.sub(datastr,fx_e),'(%[STRIPDATA%].-%[\\STRIPDATA%]\r?\n)')
           sd_s = sd_s + fx_e -1
           sd_e = sd_e + fx_e -1
- --         DBG(string.sub(datastr,sd_s,sd_s+20))
- --         DBG(string.sub(datastr,sd_e-20,sd_e))
- --         DBG('sddata '..reaper.time_precise()-t)
- --         local t = reaper.time_precise()
           local sn_s, sn_e = string.find(string.sub(datastr,sd_e),'(%[SNAPSHOTDATA%].-%[\\SNAPSHOTDATA%]\r?\n)')
           sn_s = sn_s + sd_e -1
           sn_e = sn_e + sd_e -1
- --         DBG(string.sub(datastr,sn_s,sn_s+20))
- --         DBG(string.sub(datastr,sn_e-20,sn_e))
- --         DBG('sndata '..reaper.time_precise()-t)
- --         local t = reaper.time_precise()
           
           local header = '[STRIPFILE_VERSION]6\n'
           header = header .. '[FXDATA_LOC]'..fx_s-fx_s..' '..fx_e-fx_s..'\n'
@@ -23753,6 +23743,63 @@ function GUI_DrawCtlBitmap_Strips()
       
   end
 
+  function UpdateStripFileHeader(fn)
+
+    if reaper.file_exists(fn) then
+
+      local find = string.find
+      local match = string.match
+
+      local file
+      file=io.open(fn,"r")
+      local content=file:read("*a")
+      file:close()
+  
+      local _,e = find(content,'.-\n')
+      local line = string.sub(content,0,e)
+      local newvers = tonumber(match(line,'[[STRIPFILE_VERSION]](%d+)'))
+      if newvers then
+        if newvers == 6 then
+
+          local s, e = find(content, '%[DATA%]\r?\n')
+          local header = string.sub(content, 1, s-1)
+          local body = string.sub(content, e+1)
+  
+          DBGOut(header)
+          --DBGOut('*'..string.sub(body,1,20))
+
+          local fx_s, fx_e = string.find(body,'(%[FXDATA%].-%[\\FXDATA%]\r?\n)')
+          fx_s = fx_s 
+          fx_e = fx_e 
+          local sd_s, sd_e = string.find(string.sub(body,fx_e),'(%[STRIPDATA%].-%[\\STRIPDATA%]\r?\n)')
+          sd_s = sd_s + fx_e -1
+          sd_e = sd_e + fx_e -1
+          local sn_s, sn_e = string.find(string.sub(body,sd_e),'(%[SNAPSHOTDATA%].-%[\\SNAPSHOTDATA%]\r?\n)')
+          sn_s = sn_s + sd_e -1
+          sn_e = sn_e + sd_e -1
+          
+          --DBGOut(fx_s..' '..fx_e..'  '..sd_s..'  '..sd_e..'  '..sn_s..'  '..sn_e)
+          --DBGOut('*'..string.sub(body,fx_s,fx_s+10))
+          --DBGOut('*'..string.sub(body,sd_s,sd_s+10))
+          --DBGOut('*'..string.sub(body,sn_s,sn_s+10))
+          local header = '[STRIPFILE_VERSION]6\n'
+          header = header .. '[FXDATA_LOC]'..fx_s-fx_s..' '..fx_e-fx_s..'\n'
+          header = header .. '[STRIPDATA_LOC]'..sd_s-fx_s..' '..sd_e-fx_s..'\n'
+          header = header .. '[SNAPSHOTDATA_LOC]'..sn_s-fx_s..' '..sn_e-fx_s..'\n'
+          header = header .. '[DATA]\n'
+          
+          file = io.open(fn,'w')
+          if file then
+            file:write(header..body)
+          end
+          file:close()
+  
+        end
+      end  
+    end
+    
+  end
+
   function LoadStripFN(sfn, ffn, skipcompat)
     local find = string.find
     local match = string.match
@@ -23802,11 +23849,11 @@ function GUI_DrawCtlBitmap_Strips()
             pickledcontent = match(content,'%[FXDATA%](.-)%[\\FXDATA%]')
             stripcontent = match(content,'%[STRIPDATA%](.-)%[\\STRIPDATA%]')
             snapcontent = match(content,'%[SNAPSHOTDATA%](.-)%[\\SNAPSHOTDATA%]')
-            --DBG('String parsing old way')
+            DBGOut('String parsing old way')
             --Option to reencode here
-            
+            UpdateStripFileHeader(fn)
           else
-            --DBG('String parsing new way')
+            DBGOut('String parsing new way')
           end
         end
         --SNAPSHOTS --only load if strip imported?
