@@ -14,7 +14,7 @@
   DBG_mode = false
 
   local lvar = {}
-  lvar.scriptver = '0.94.0085' --Script Version
+  lvar.scriptver = '0.94.0086' --Script Version
   
   lvar.ctlupdate_rr = nil
   lvar.ctlupdate_pos = 1
@@ -9460,11 +9460,12 @@
       
   ------------------------------------------------------------
 
-  function OpenDropDown(idx, ddtab, variwidth)
+  function OpenDropDown(idx, ddtab, variwidth, expandonly)
   
     ddlist = ddtab
     ddlist.idx = idx
     ddlist.offset = 0
+    ddlist.size = #ddtab.items
     ddlist.textsize = -5
     
     if variwidth == true then
@@ -9475,7 +9476,11 @@
         local w, h = gfx.measurestr(ddlist.items[i])
         text_len = math.max(w,text_len)
       end
-      ddlist.w = text_len + ddlist.wpad
+      if expandonly == true then
+        ddlist.w = math.max(text_len + ddlist.wpad,ddlist.w)
+      else
+        ddlist.w = text_len + ddlist.wpad
+      end
     end
 
     gfx.setimgdim(996,-1,-1)
@@ -9491,17 +9496,17 @@
   
     gfx.dest = 996
     if ddlist and ddlist.items then
-    
       local butt_h = tb_butt_h
     
       local size = #ddlist.items
       if size > 0 then
         local maxh = gfx1.main_h
-        local h = math.min(size*butt_h,maxh)
-        if h > gfx1.main_h then 
-          h = gfx1.main_h
+        local h = size*butt_h --math.min(size*butt_h,maxh)
+        if h > maxh then 
+          h = maxh
           size = math.floor(h / butt_h)
         end
+        ddlist.size = size
         ddlist.h = h
         
         local w = math.max(ddlist.w,100)
@@ -9533,9 +9538,9 @@
           if ddlist.over == i then
             f_Get_SSV(gui.skol.lst_barhl)
             gfx.rect(xywh.x+2,xywh.y+1,xywh.w-4,xywh.h-2,1)
-            GUI_Str(gui, xywh, ddlist.items[i+ddlist.offset], 5, gui.skol.lst_txthl, -4 + gui.fontsz.lst + lst_fontscale, 1, nil, gui.fontnm.lst, gui.fontflag.lst)            
+            GUI_Str(gui, xywh, ddlist.items[i+ddlist.offset] or '', 5, gui.skol.lst_txthl, -4 + gui.fontsz.lst + lst_fontscale, 1, nil, gui.fontnm.lst, gui.fontflag.lst)            
           else
-            GUI_Str(gui, xywh, ddlist.items[i+ddlist.offset], 5, gui.skol.lst_txt, -4 + gui.fontsz.lst + lst_fontscale, 1, nil, gui.fontnm.lst, gui.fontflag.lst)            
+            GUI_Str(gui, xywh, ddlist.items[i+ddlist.offset] or '', 5, gui.skol.lst_txt, -4 + gui.fontsz.lst + lst_fontscale, 1, nil, gui.fontnm.lst, gui.fontflag.lst)            
           end   
         end
   
@@ -23788,6 +23793,21 @@ function GUI_DrawCtlBitmap_Strips()
           pickledcontent = match(pickledcontent,'.-({.*})')
           stripcontent = string.sub(body,sd_s,sd_e)
           snapcontent = string.sub(body,sn_s,sn_e)
+          
+          --Required due to messed up calculations to load version 6 strips with incorrect encoding...
+          if not match(string.sub(stripcontent,1,20),'.-%[STRIPDATA%].*') or
+             not match(string.sub(stripcontent,string.len(stripcontent)-15,string.len(stripcontent)),'.-%[\\STRIPDATA') or
+             not match(string.sub(snapcontent,1,20),'.-%[SNAPSHOTDATA%].*') or
+             not match(string.sub(snapcontent,string.len(snapcontent)-15,string.len(snapcontent)),'.-%[\\SNAPSHOTDATA') then
+            pickledcontent = match(content,'%[FXDATA%](.-)%[\\FXDATA%]')
+            stripcontent = match(content,'%[STRIPDATA%](.-)%[\\STRIPDATA%]')
+            snapcontent = match(content,'%[SNAPSHOTDATA%](.-)%[\\SNAPSHOTDATA%]')
+            --DBG('String parsing old way')
+            --Option to reencode here
+            
+          else
+            --DBG('String parsing new way')
+          end
         end
         --SNAPSHOTS --only load if strip imported?
         if pickledcontent and stripcontent then
@@ -37450,8 +37470,16 @@ function GUI_DrawCtlBitmap_Strips()
       if MOUSE_click(obj.sections[1353]) then
             
         --lvar.stripbrowser.favs = true
-        lvar.stripbrowser.showlist = not (lvar.stripbrowser.showlist or false)
-        lupd.update_stripbrowser = true
+        --DBG('AA')
+        --lvar.stripbrowser.showlist = not (lvar.stripbrowser.showlist or false)
+        --lupd.update_stripbrowser = true
+        local ddtab = {idx = 3, x = obj.sections[1350].x+obj.sections[1353].x, y = obj.sections[1350].y+obj.sections[1353].y+obj.sections[1353].h+2, w = obj.sections[1353].w, h = 100, items = {}, wpad = 40}
+        local cnt = #strip_folders
+        ddtab.items[1] = 'FAVS'
+        for sid = 1, cnt do      
+          ddtab.items[sid+1] = strip_folders[sid].fn
+        end
+        OpenDropDown(3, ddtab, true, true)
 
       elseif mouse.my < butt_h*pnl_scale then
         if mouse.RB and MOUSE_over(obj.sections[1357]) then
@@ -50322,7 +50350,12 @@ function GUI_DrawCtlBitmap_Strips()
       
       end
       
-      if mouse.LB then
+      if gfx.mouse_wheel ~= 0 then
+        local v = gfx.mouse_wheel/120
+        ddlist.offset = F_limit(ddlist.offset - v,0,#ddlist.items-ddlist.size)
+        lupd.update_dd = true
+        gfx.mouse_wheel = 0
+      elseif mouse.LB then
         ddlist.select = over
         show_dd = false
         lupd.update_surface = true
@@ -50349,6 +50382,7 @@ function GUI_DrawCtlBitmap_Strips()
 
   function DropDown_ItemSel(sel)
   
+    sel = sel + ddlist.offset
     if sel then
       if ddlist.idx == 1 then
       
@@ -50367,6 +50401,20 @@ function GUI_DrawCtlBitmap_Strips()
             end
           end
         end
+        
+      elseif ddlist.idx == 3 then
+      
+        if sel == 1 then
+          lvar.stripbrowser.favs = true
+        else
+          local n = sel-1
+          if strip_folders[n] then
+            lvar.stripbrowser.favs = false
+            stripfol_select = n
+            PopulateStrips() 
+          end
+        end
+        lupd.update_stripbrowser = true
       end
     end
     mouse.context = contexts.dd
