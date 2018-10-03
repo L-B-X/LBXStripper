@@ -14,7 +14,7 @@
   DBG_mode = false
 
   local lvar = {}
-  lvar.scriptver = '0.94.0088' --Script Version
+  lvar.scriptver = '0.94.0089' --Script Version
   
   lvar.ctlupdate_rr = nil
   lvar.ctlupdate_pos = 1
@@ -16340,7 +16340,7 @@ function GUI_DrawCtlBitmap_Strips()
       GUI_DrawButton(gui, 'MEM', obj.sections[434], gui.color.white, gui.skol.butt1_txt, true, '', false,0,true)
 
       GUI_DrawButton(gui, snaptype.subsetname, obj.sections[430], gui.color.white, gui.skol.butt1_txt, true, '', false,0,true)
-      GUI_DrawButton(gui, 'STAGES: '..stages, obj.sections[429], gui.color.white, gui.skol.butt1_txt, true, '', false,2,true)
+      GUI_DrawButton(gui, 'STAGES: '..(stages or ''), obj.sections[429], gui.color.white, gui.skol.butt1_txt, true, '', false,2,true)
       
       local ssname = ''
       if snap[snapedit_ss] then
@@ -16392,7 +16392,7 @@ function GUI_DrawCtlBitmap_Strips()
             txt = 'TIME'
           end
           
-          if v <= stages then
+          if v <= (stages or 1) then
             if snaptype.deltype[v] == 0 then
               GUI_DrawButton(gui, snaptype.delay[v]..' s', xywh, gui.color.white, gui.skol.butt1_txt, true, txt, false,2,true)
             elseif snaptype.deltype[v] == 1 then
@@ -26261,7 +26261,7 @@ function GUI_DrawCtlBitmap_Strips()
                 --skip page snapshots
                 sstcnt = 2 
               end
-              paramchange[i] = sstcnt 
+              paramchange[i] = sstcnt  
               snapshots[strip][page][sstcnt] = {subsetname = '##Page Snapshots',
                                                 morph_time = nz(stripdata.snapshots[i].morph_time,0),
                                                 morph_scale = nz(stripdata.snapshots[i].morph_scale,1),
@@ -26269,6 +26269,17 @@ function GUI_DrawCtlBitmap_Strips()
                                                 morph_syncv = nz(stripdata.snapshots[i].morph_syncv,15),
                                                 snapshot = {},
                                                 ctls = {}}
+              
+              snapshots[strip][page][sstcnt].sorted = false
+              snapshots[strip][page][sstcnt].mult = true
+              snapshots[strip][page][sstcnt].stages = 1
+              snapshots[strip][page][sstcnt].delay = {}
+              snapshots[strip][page][sstcnt].mtime = {}
+              snapshots[strip][page][sstcnt].deltype = {}
+              snapshots[strip][page][sstcnt].delay[1] = 0
+              snapshots[strip][page][sstcnt].mtime[1] = 15
+              snapshots[strip][page][sstcnt].deltype[1] = 0
+              
               for ss = 1, #stripdata.snapshots[i] do
               
                 snapshots[strip][page][sstcnt].snapshot[ss] = stripdata.snapshots[i][ss]
@@ -26292,7 +26303,9 @@ function GUI_DrawCtlBitmap_Strips()
                     if #snapshots[strip][page][sstcnt].snapshot[ss].data > 0 then
                       for d = 1, #snapshots[strip][page][sstcnt].snapshot[ss].data do
                         snapshots[strip][page][sstcnt].ctls[d] = {c_id = snapshots[strip][page][sstcnt].snapshot[ss].data[d].c_id,
-                                                                  ctl = snapshots[strip][page][sstcnt].snapshot[ss].data[d].ctl}
+                                                                  ctl = snapshots[strip][page][sstcnt].snapshot[ss].data[d].ctl,
+                                                                  stage = 1,
+                                                                  mem = false}
                       end
                     end            
                   end
@@ -33778,20 +33791,12 @@ function GUI_DrawCtlBitmap_Strips()
       local mstr = ''
       local sfcnt = #strip_favs
       if sfcnt > 0 then
-        --mstr = mstr .. '>Insert strip (favorites)'
         for fvs = 1, sfcnt do
           if mstr ~= '' then
             mstr = mstr .. '|'
           end
-          --if fvs == sfcnt then
-          --  mstr = mstr .. '|<' .. string.match(strip_favs[fvs],'.+/(.-).strip')
-         -- else
-            mstr = mstr .. string.match(strip_favs[fvs],'.+/(.-).strip')
-          --end
+          mstr = mstr .. string.match(strip_favs[fvs],'.+/(.-).strip')
         end
-      --else
-      --  mstr = mstr .. '>Insert strip (favorites)|<#Empty'
-      --  sfcnt = 1                 
       end
       local sffcnt, sflist, msf = MenuStripFolders()
       if sflist ~= '' then
@@ -33802,9 +33807,13 @@ function GUI_DrawCtlBitmap_Strips()
       gfx.x, gfx.y = mouse.mx, mouse.my
       res = OpenMenu(mstr) 
       if res ~= 0 then
-        
+           
         if res <= #strip_favs and #strip_favs > 0 then
+          
           local fn = strip_favs[res]
+          InsStrip(fn)
+          
+          --[[local fn = strip_favs[res]
           --PopulateStrips()
           loadstrip = LoadStripFN(fn)
           if loadstrip then                  
@@ -33814,17 +33823,19 @@ function GUI_DrawCtlBitmap_Strips()
             local dx, dy = GetLeftControlInStrip2(loadstrip.strip)
             insertstrip = {x = mouse.mx, y = mouse.my, dx = dx, dy = dy}
           end
-          --loadstrip = nil
+          --loadstrip = nil]]
         else
           local fn = msf[res-#strip_favs]
-          loadstrip = LoadStripFN(fn)
+          InsStrip(fn)
+          
+          --[[loadstrip = LoadStripFN(fn)
           if loadstrip then                  
             GenStripPreview(gui, loadstrip.strip, loadstrip.switchers, loadstrip.switchconvtab)
             --image_count = image_count_add
             
             local dx, dy = GetLeftControlInStrip2(loadstrip.strip)
             insertstrip = {x = mouse.mx, y = mouse.my, dx = dx, dy = dy}
-          end
+          end]]
         
         end
       end
@@ -35458,10 +35469,12 @@ function GUI_DrawCtlBitmap_Strips()
     show_randomopts = false
     show_samplemanager = false
     
-    local strip = tracks[track_select].strip
-    if strips[strip] then
-      strips[strip][page].mixy = surface_offset.mixy
-      strips[strip][page].mixx = surface_offset.mixx
+    if tracks[track_select] then
+      local strip = tracks[track_select].strip
+      if strips[strip] then
+        strips[strip][page].mixy = surface_offset.mixy
+        strips[strip][page].mixx = surface_offset.mixx
+      end
     end
     
     if tracks[t] == nil then
@@ -37338,28 +37351,47 @@ function GUI_DrawCtlBitmap_Strips()
 
   function Copy_Selected()
   
-    if (ctl_select and #ctl_select > 0) or (gfx3_select and #gfx3_select > 0) then
-    
-      copy_ctls = {strip = tracks[track_select].strip,
-                   page = page,
-                   tracknum = tracks[track_select].tracknum,
-                   trackguid = tracks[track_select].guid,
-                   ctls = {},
-                   gfx = {}}
-      if ctl_select and #ctl_select > 0 then
-        for c = 1, #ctl_select do
-          copy_ctls.ctls[c] = ctl_select[c].ctl
-        end
-      end
-      if gfx3_select and #gfx3_select > 0 then
-        for c = 1, #gfx3_select do
-          copy_ctls.gfx[c] = gfx3_select[c].ctl
-        end      
-      end
+    if submode == 0 then
+      if (ctl_select and #ctl_select > 0) or (gfx3_select and #gfx3_select > 0) then
       
-      lupd.update_cbox = true
+        copy_ctls = {strip = tracks[track_select].strip,
+                     page = page,
+                     tracknum = tracks[track_select].tracknum,
+                     trackguid = tracks[track_select].guid,
+                     ctls = {},
+                     gfx = {}}
+        if ctl_select and #ctl_select > 0 then
+          for c = 1, #ctl_select do
+            copy_ctls.ctls[c] = ctl_select[c].ctl
+          end
+        end
+        if gfx3_select and #gfx3_select > 0 then
+          for c = 1, #gfx3_select do
+            copy_ctls.gfx[c] = gfx3_select[c].ctl
+          end      
+        end
+        
+        lupd.update_cbox = true
+      end
+    else
+      if (gfx4_select and #gfx4_select > 0) then
+      
+        copy_ctls = {strip = tracks[track_select].strip,
+                     page = page,
+                     tracknum = tracks[track_select].tracknum,
+                     trackguid = tracks[track_select].guid,
+                     ctls = {},
+                     gfx = {}}
+        if gfx4_select and #gfx4_select > 0 then
+          for c = 1, #gfx4_select do
+            copy_ctls.gfx[c] = gfx4_select[c]
+          end      
+        end
+        
+        lupd.update_cbox = true
+      end
+    
     end
-  
   end
 
   function Paste_Selected()
@@ -61007,43 +61039,45 @@ function GUI_DrawCtlBitmap_Strips()
       obj = strips[strip][page].graphics[c]
     end
     
-    local tbl = {gfxtype = obj.gfxtype,
-                 fn = obj.fn,
-                 imageidx = obj.imageidx,
-                 x = obj.x,
-                 y = obj.y,
-                 w = obj.w,
-                 h = obj.h,
-                 scale = obj.scale,
-                 stretchw = obj.stretchw,
-                 stretchh = obj.stretchh,
-                 switcher = obj.switcher,
-                 grpid = obj.grpid,
-                 font = {idx = obj.font.idx,
-                         name = obj.font.name,
-                         size = obj.font.size,
-                         bold = obj.font.bold,
-                         italics = obj.font.italics,
-                         underline = obj.font.underline,
-                         shadow = obj.font.shadow,
-                         shadow_x = obj.font.shadow_x,
-                         shadow_y = obj.font.shadow_y,
-                         shadow_a = obj.font.shadow_a
-                         },
-                 text = obj.text,
-                 text_col = obj.text_col,
-                 poslock = false,
-                 bright = obj.bright,
-                 contr = obj.contr,
-                 rmult = obj.rmult,
-                 gmult = obj.gmult,
-                 bmult = obj.bmult,
-                 alpha = obj.alpha,
-                 stretchmode = obj.stretchmode,
-                 edgesz = obj.edgesz,
-                 }
-    return tbl
-
+    if obj then
+      local tbl = {gfxtype = obj.gfxtype,
+                   fn = obj.fn,
+                   imageidx = obj.imageidx,
+                   x = obj.x,
+                   y = obj.y,
+                   w = obj.w,
+                   h = obj.h,
+                   scale = obj.scale,
+                   stretchw = obj.stretchw,
+                   stretchh = obj.stretchh,
+                   switcher = obj.switcher,
+                   grpid = obj.grpid,
+                   font = {idx = obj.font.idx,
+                           name = obj.font.name,
+                           size = obj.font.size,
+                           bold = obj.font.bold,
+                           italics = obj.font.italics,
+                           underline = obj.font.underline,
+                           shadow = obj.font.shadow,
+                           shadow_x = obj.font.shadow_x,
+                           shadow_y = obj.font.shadow_y,
+                           shadow_a = obj.font.shadow_a
+                           },
+                   text = obj.text,
+                   text_col = obj.text_col,
+                   poslock = false,
+                   bright = obj.bright,
+                   contr = obj.contr,
+                   rmult = obj.rmult,
+                   gmult = obj.gmult,
+                   bmult = obj.bmult,
+                   alpha = obj.alpha,
+                   stretchmode = obj.stretchmode,
+                   edgesz = obj.edgesz,
+                   }
+      return tbl
+    end
+    
   end
   
   function GetSwitcherTable(switchid)
