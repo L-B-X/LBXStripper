@@ -14,7 +14,7 @@
   DBG_mode = false
 
   local lvar = {}
-  lvar.scriptver = '0.94.0089' --Script Version
+  lvar.scriptver = '0.94.0090' --Script Version
   
   lvar.ctlupdate_rr = nil
   lvar.ctlupdate_pos = 1
@@ -9920,8 +9920,12 @@
     
       local strip = tracks[track_select].strip
 
-      gfx.dest = bg_image + (ctl.gfxpage or 0)
-
+      if edit then
+        gfx.dest = 1
+      else
+        gfx.dest = bg_image + (ctl.gfxpage or 0)
+      end
+      
       cx = cx + gtab.x_offs
       cy = cy + gtab.y_offs
       
@@ -19975,8 +19979,10 @@ function GUI_DrawCtlBitmap_Strips()
             GUI_DrawCtlBrowser(obj, gui)          
           end
           
+          gfx.dest = 1
+          gfx.a = 1
           if show_gaugeedit == true then
-            GUI_DrawGaugeEdit(obj, gu)
+            GUI_DrawGaugeEdit(obj, gui)
           end
           
           if (lvar.ctlpreview_img or (dragparam and dragparam.type ~= 'reassplugin')) and lvar.ctlpreview == true then --and (lupd.update_surface or lupd.update_gfx or lupd.update_sidebar) then
