@@ -14,7 +14,7 @@
   DBG_mode = false
 
   local lvar = {}
-  lvar.scriptver = '0.94.0090' --Script Version
+  lvar.scriptver = '0.94.0091' --Script Version
   
   lvar.ctlupdate_rr = nil
   lvar.ctlupdate_pos = 1
@@ -6681,7 +6681,7 @@
                                                 bypassbg_v = bypass_bgdraw_v_select,
                                                 knobsens = table.copy(settings_defknobsens),
                                                 clickthrough = clickthrough_select,
-                                                eqgraph = def_graph
+                                                eqgraph = nil
                                                }
 
 
@@ -6928,67 +6928,86 @@
       switchers[swcnt].current = -1
       switchers[swcnt].extendpos = extpos
       switchers[swcnt].fxguids = nil
+
+      local cp_c, cp_ctl
+      if cp_switchid then
+        cp_c = Switchers_FindCtl(cp_switchid)
+        cp_ctl = strips[strip][page].controls[cp_c]
+      end
       
-      strips[strip][page].controls[ctlnum] = {c_id = GenID(),
-                                              ctlcat = ctlcats.switcher,
-                                              fxname='Strip Switcher',
-                                              fxguid=nil, 
-                                              fxnum=nil, 
-                                              fxfound = true,
-                                              param = trctl_select,
-                                              param_info = {paramname = 'Switcher '..string.format('%i',swcnt+1),
-                                                            paramidx = nil},
-                                              ctltype = 5,
-                                              knob_select = knob_select,
-                                              ctl_info = {fn = ctl_files[knob_select].fn,
-                                                          frames = ctl_files[knob_select].frames,
-                                                          imageidx = ctl_files[knob_select].imageidx, 
-                                                          cellh = ctl_files[knob_select].cellh},
-                                              x = x,
-                                              y = y,
-                                              w = w,
-                                              poslock = false,
-                                              scale = scale_select,
-                                              xsc = x + math.floor(w/2 - (w*scale_select)/2),
-                                              ysc = y + math.floor(ctl_files[knob_select].cellh/2 - (ctl_files[knob_select].cellh*scale_select)/2),
-                                              wsc = w*scale_select,
-                                              hsc = ctl_files[knob_select].cellh*scale_select,
-                                              show_paramname = show_paramname,
-                                              show_paramval = false,
-                                              ctlname_override = '',
-                                              textcol = textcol_select,
-                                              textoff = 1,
-                                              textoffval = textoffval_select,
-                                              textoffx = textoff_selectx,
-                                              textoffvalx = textoffval_selectx,
-                                              textsize = textsize_select,
-                                              textsizev = textsizev_select,
-                                              textcolv = textcolv_select,
-                                              enabledefval = enabledefval_select,
-                                              val = 0,
-                                              defval = 0,
-                                              maxdp = maxdp_select,
-                                              cycledata = {statecnt = 0,val = 0,mapptof = false,draggable = false,spread = false, {}},
-                                              xydata = {snapa = 1, snapb = 1, snapc = 1, snapd = 1, x = 0.5, y = 0.5},
-                                              membtn = {state = false,
-                                                        mem = nil},
-                                              switcherid = swcnt,
-                                              id = nil,
-                                              grpid = nil,
-                                              tracknum = nil,
-                                              trackguid = nil,
-                                              scalemode = 8,
-                                              framemode = 1,
-                                              horiz = horiz_select,
-                                              poslock = false,
-                                              bypassbg_c = bypass_bgdraw_c_select,
-                                              bypassbg_n = bypass_bgdraw_n_select,
-                                              bypassbg_v = bypass_bgdraw_v_select,
-                                              knobsens = table.copy(settings_defknobsens),
-                                              clickthrough = clickthrough_select,
-                                              eqgraph = def_graph,
-                                             }
-    
+      if cp_ctl then
+
+        strips[strip][page].controls[ctlnum] = GetControlTable(strip,page,cp_c)
+        local ctl = strips[strip][page].controls[ctlnum]
+        ctl.switcherid = swcnt
+        ctl.x = x
+        ctl.y = y
+        ctl.xsc = x + math.floor(ctl.w/2 - (ctl.w*ctl.scale)/2)
+        ctl.ysc = y + math.floor(ctl_files[ctl.knob_select].cellh/2 - (ctl_files[ctl.knob_select].cellh*ctl.scale)/2)
+        ctl.param_info = {paramname = '[INSERT]' --[['Switcher '..string.format('%i',swcnt+1)]],
+                          paramidx = nil}
+      else
+        strips[strip][page].controls[ctlnum] = {c_id = GenID(),
+                                                ctlcat = ctlcats.switcher,
+                                                fxname='Strip Switcher',
+                                                fxguid=nil, 
+                                                fxnum=nil, 
+                                                fxfound = true,
+                                                param = trctl_select,
+                                                param_info = {paramname = 'Switcher '..string.format('%i',swcnt+1),
+                                                              paramidx = nil},
+                                                ctltype = 5,
+                                                knob_select = knob_select,
+                                                ctl_info = {fn = ctl_files[knob_select].fn,
+                                                            frames = ctl_files[knob_select].frames,
+                                                            imageidx = ctl_files[knob_select].imageidx, 
+                                                            cellh = ctl_files[knob_select].cellh},
+                                                x = x,
+                                                y = y,
+                                                w = w,
+                                                poslock = false,
+                                                scale = scale_select,
+                                                xsc = x + math.floor(w/2 - (w*scale_select)/2),
+                                                ysc = y + math.floor(ctl_files[knob_select].cellh/2 - (ctl_files[knob_select].cellh*scale_select)/2),
+                                                wsc = w*scale_select,
+                                                hsc = ctl_files[knob_select].cellh*scale_select,
+                                                show_paramname = show_paramname,
+                                                show_paramval = false,
+                                                ctlname_override = '',
+                                                textcol = textcol_select,
+                                                textoff = 1,
+                                                textoffval = textoffval_select,
+                                                textoffx = textoff_selectx,
+                                                textoffvalx = textoffval_selectx,
+                                                textsize = textsize_select,
+                                                textsizev = textsizev_select,
+                                                textcolv = textcolv_select,
+                                                enabledefval = enabledefval_select,
+                                                val = 0,
+                                                defval = 0,
+                                                maxdp = maxdp_select,
+                                                cycledata = {statecnt = 0,val = 0,mapptof = false,draggable = false,spread = false, {}},
+                                                xydata = {snapa = 1, snapb = 1, snapc = 1, snapd = 1, x = 0.5, y = 0.5},
+                                                membtn = {state = false,
+                                                          mem = nil},
+                                                switcherid = swcnt,
+                                                id = nil,
+                                                grpid = nil,
+                                                tracknum = nil,
+                                                trackguid = nil,
+                                                scalemode = 8,
+                                                framemode = 1,
+                                                horiz = horiz_select,
+                                                poslock = false,
+                                                bypassbg_c = bypass_bgdraw_c_select,
+                                                bypassbg_n = bypass_bgdraw_n_select,
+                                                bypassbg_v = bypass_bgdraw_v_select,
+                                                knobsens = table.copy(settings_defknobsens),
+                                                clickthrough = clickthrough_select,
+                                                eqgraph = nil,
+                                               } 
+      end
+      
       if insertfx == true then
         Switchers_AddInsertFX(swcnt, tracks[track_select].strip, page, ctlnum, fxloc)
       end 
@@ -11486,6 +11505,9 @@ function GUI_DrawCtlBitmap_Strips()
     stripdim.swidx2 = {}
     stripdim.swdata2 = {}
     stripdim.extposidx = {}
+    stripdim.strip = strip
+    stripdim.page = page
+    
     if #strips[strip][page].graphics > 0 then
       for i = 1, #strips[strip][page].graphics do
 
@@ -11778,6 +11800,8 @@ function GUI_DrawCtlBitmap_Strips()
           end
   
         end
+      else
+        lvar.stripdim = nil
       end    
 
       if (lvar.livemode == 0 and stripgallery_view ~= 0) and (mode == 0 or (mode == 1 and submode == 2)) then
@@ -12310,7 +12334,7 @@ function GUI_DrawCtlBitmap_Strips()
         end
        
         if lvar.mmov_show == true then       
-          if lupd.update_gfx or lupd.update_mmov then  
+          if lupd.update_gfx or lupd.update_mmov or not lvar.mmov_scale then  
             GUI_DrawMMOV(obj, gui)
           end
           if lvar.mixmodedir == 0 then
@@ -22196,29 +22220,33 @@ function GUI_DrawCtlBitmap_Strips()
 
   function GTSI_norm(track,trctl_idx,min,max,c)
 
-    local idx = strips[tracks[track_select].strip][page].controls[c].param_info.paramidx
-    local paramstr = strips[tracks[track_select].strip][page].controls[c].param_info.paramstr
-
-    --if paramstr == nil then return 0 end
+    local strip = tracks[track_select].strip
+    if strips[strip] and strips[strip][page].controls[c] then
     
-    if track == nil then
-      track = GetTrack(nz(strips[tracks[track_select].strip][page].controls[c].tracknum,strips[tracks[track_select].strip].track.tracknum))
-      if not track then return end
-    end
-    
-    if paramstr == 'D_VOL' then
-      local retval, vOut, pOut = reaper.GetTrackSendUIVolPan(track, idx)
-      return normalize(min, max, vOut)
-    elseif paramstr == 'D_PAN' then
-      local retval, vOut, pOut = reaper.GetTrackSendUIVolPan(track, idx)
-      return normalize(min, max, pOut)
-    elseif paramstr == 'B_MUTE' then
-      local retval, muteOut = reaper.GetTrackSendUIMute(track, idx)
-      local mo
-      if muteOut then mo = 1 else mo = 0 end
-      return mo
-    --else    
-    --  return normalize(min,max,reaper.GetTrackSendInfo_Value(track, 0, idx, paramstr))
+      local idx = strips[strip][page].controls[c].param_info.paramidx
+      local paramstr = strips[strip][page].controls[c].param_info.paramstr
+  
+      --if paramstr == nil then return 0 end
+      
+      if track == nil then
+        track = GetTrack(nz(strips[strip][page].controls[c].tracknum,strips[strip].track.tracknum))
+        if not track then return end
+      end
+      
+      if paramstr == 'D_VOL' then
+        local retval, vOut, pOut = reaper.GetTrackSendUIVolPan(track, idx)
+        return normalize(min, max, vOut)
+      elseif paramstr == 'D_PAN' then
+        local retval, vOut, pOut = reaper.GetTrackSendUIVolPan(track, idx)
+        return normalize(min, max, pOut)
+      elseif paramstr == 'B_MUTE' then
+        local retval, muteOut = reaper.GetTrackSendUIMute(track, idx)
+        local mo
+        if muteOut then mo = 1 else mo = 0 end
+        return mo
+      --else    
+      --  return normalize(min,max,reaper.GetTrackSendInfo_Value(track, 0, idx, paramstr))
+      end
     end
     
   end
@@ -29481,7 +29509,8 @@ function GUI_DrawCtlBitmap_Strips()
         sw_cur = 1
         switchers[switchid].grpids[sw_cur] = {}
         switchers[switchid].grpids[sw_cur].id = grpid
-        switchers[switchid].grpids[sw_cur].name = pfx..': '..string.match(fn or loadstrip.fn,'.+/(.-).strip')
+        --switchers[switchid].grpids[sw_cur].name = pfx..': '..string.match(fn or loadstrip.fn,'.+/(.-).strip')
+        switchers[switchid].grpids[sw_cur].name = string.match(fn or loadstrip.fn,'.+/(.-).strip')
         if ctl_sw then
           ctl_sw.param_info.paramname = switchers[switchid].grpids[sw_cur].name
         end
