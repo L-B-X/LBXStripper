@@ -14,7 +14,7 @@
   DBG_mode = false
 
   local lvar = {}
-  lvar.scriptver = '0.94.0091' --Script Version
+  lvar.scriptver = '0.94.0092' --Script Version
   
   lvar.ctlupdate_rr = nil
   lvar.ctlupdate_pos = 1
@@ -9933,7 +9933,7 @@
   
   end
 
-  function GUI_DrawGauge2(gtab, cx, cy, ctl, edit)
+  function GUI_DrawGauge2(gtab, cx, cy, ctl, edit, preview)
   
     if gtab then
     
@@ -9941,7 +9941,7 @@
 
       if edit then
         gfx.dest = 1
-      else
+      elseif not preview then
         gfx.dest = bg_image + (ctl.gfxpage or 0)
       end
       
@@ -11003,7 +11003,7 @@
       --GUI_DrawButton(gui, 'EDIT NAME', obj.sections[59], gui.color.white, gui.skol.butt1_txt, true)
 
       local editname = ''
-      if ctl_select and ctl_select[1].ctl then
+      if ctl_select and ctl_select[1] and ctl_select[1].ctl then
         local ctl = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl]
         if ctl then
           if ctl.ctlcat == ctlcats.midictl then
@@ -13432,7 +13432,7 @@ function GUI_DrawCtlBitmap_Strips()
 
   function CalcSelRect()
   
-    if strips and tracks[track_select] and strips[tracks[track_select].strip] and strips[tracks[track_select].strip][page] then
+    if strips and tracks[track_select] and strips[tracks[track_select].strip] and strips[tracks[track_select].strip][page] and ctl_select and ctl_select[1] then
       if #strips[tracks[track_select].strip][page].controls > 0 then
         local i = ctl_select[1].ctl
         local ctl = strips[tracks[track_select].strip][page].controls[i]
@@ -25225,6 +25225,12 @@ function GUI_DrawCtlBitmap_Strips()
             else
               DBGOut('String parsing new way')
             end
+          else
+            --try old way
+            pickledcontent = match(content,'%[FXDATA%](.-)%[\\FXDATA%]')
+            stripcontent = match(content,'%[STRIPDATA%](.-)%[\\STRIPDATA%]')
+            snapcontent = match(content,'%[SNAPSHOTDATA%](.-)%[\\SNAPSHOTDATA%]')
+            DBGOut('String parsing old way')            
           end
           --SNAPSHOTS --only load if strip imported?
           if pickledcontent and stripcontent then
@@ -25400,6 +25406,11 @@ function GUI_DrawCtlBitmap_Strips()
           else
             DBGOut('String parsing new way')
           end
+        else
+          pickledcontent = match(content,'%[FXDATA%](.-)%[\\FXDATA%]')
+          stripcontent = match(content,'%[STRIPDATA%](.-)%[\\STRIPDATA%]')
+          snapcontent = match(content,'%[SNAPSHOTDATA%](.-)%[\\SNAPSHOTDATA%]')
+          DBGOut('String parsing old way')        
         end
         --SNAPSHOTS --only load if strip imported?
         if pickledcontent and stripcontent then
@@ -25432,7 +25443,6 @@ function GUI_DrawCtlBitmap_Strips()
       
         if newvers == nil or tonumber(newvers) < 5 then
           --compatibility
-          
           
           local ctls = stripdata.strip.controls
           if ctls and #ctls > 0 then
@@ -26624,7 +26634,7 @@ function GUI_DrawCtlBitmap_Strips()
           local gfxx = strip.graphics[i]
         
           local hidden = GenStripPreview_CtlsHidden(switchers, switchconvtab, gfxx.switcher, gfxx.grpid)
-          if hidden == false then
+          if hidden ~= true then
             if (gfxx.gfxtype or lvar.gfxtype.img) == lvar.gfxtype.img then
   
               local x = gfxx.x+offsetx 
@@ -26762,7 +26772,7 @@ function GUI_DrawCtlBitmap_Strips()
         for i = 1, #strip.controls do
           local ctl = strip.controls[i]
           local hidden = GenStripPreview_CtlsHidden(switchers, switchconvtab, ctl.switcher, ctl.grpid)
-          if hidden == false and ctl.hidden ~= true then
+          if hidden ~= true and ctl.hidden ~= true then
             local scale = ctl.scale
             local x = ctl.x+offsetx 
             local y = ctl.y+offsety
@@ -26790,7 +26800,8 @@ function GUI_DrawCtlBitmap_Strips()
             end
             
             if gauge then
-              GUI_DrawGauge2(gauge,x+w/2,y+h/2,ctl)
+              gfx.dest = 1022
+              GUI_DrawGauge2(gauge,x+w/2,y+h/2,ctl,nil, true)
             end
       
             local v2 = ctl.val or 0
@@ -26805,6 +26816,8 @@ function GUI_DrawCtlBitmap_Strips()
             gfx.setfont(1, font, gui.fontsz_knob +tsze-4)
             
             --load image
+            gfx.dest = 1022
+            gfx.a = 1
             gfx.blit(iidx,scale,0, 0, (val2)*gh, w, h, x + w/2-w*scale/2, y + h/2-h*scale/2)
             xywh = {x = x-toffx, y = y+(h/2)-toff, w = w, h = 1}
             if w > ctl.w/2 then
@@ -37496,7 +37509,8 @@ function GUI_DrawCtlBitmap_Strips()
               strips[tracks[track_select].strip][page].controls[c].xsc = strips[tracks[track_select].strip][page].controls[c].xsc - dx
               strips[tracks[track_select].strip][page].controls[c].ysc = strips[tracks[track_select].strip][page].controls[c].ysc - dy
               strips[tracks[track_select].strip][page].controls[c].id = nil
-            
+              strips[tracks[track_select].strip][page].controls[c].switcher = nil
+              
               if ctl_select == nil then
                 ctl_select = {} 
                 ctl_select[1] = {ctl = c}
@@ -37591,7 +37605,8 @@ function GUI_DrawCtlBitmap_Strips()
 
             strips[tracks[track_select].strip][page].graphics[c].x = strips[tracks[track_select].strip][page].graphics[c].x - dx
             strips[tracks[track_select].strip][page].graphics[c].y = strips[tracks[track_select].strip][page].graphics[c].y - dy
-
+            strips[tracks[track_select].strip][page].graphics[c].switcher = nil
+            
             if gfx3_select == nil then
               gfx3_select = {}
             end 
@@ -42417,7 +42432,6 @@ function GUI_DrawCtlBitmap_Strips()
               
               local skip
               if ctls[i].ctlcat == ctlcats.fxmulti then
-                
                 if MOUSE_LB() then
                   local ctl = ctls[i]
                   local cval = ctl.val
@@ -71178,6 +71192,9 @@ DBG(t.. '  '..trigtime)
         offl = true
       end
       reaper.TrackFX_SetOffline(str,fxn,offl)
+      if bypass then
+        SetFXBypass(trn, fxn, bypass)
+      end
     else
       local chunk = chunk or GetTrackChunk(str, settings_usetrackchunkfix)
       local retchunk = chunk
