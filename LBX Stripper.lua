@@ -14,7 +14,7 @@
   DBG_mode = false
 
   local lvar = {}
-  lvar.scriptver = '0.94.0092' --Script Version
+  lvar.scriptver = '0.94.0093' --Script Version
   
   lvar.ctlupdate_rr = nil
   lvar.ctlupdate_pos = 1
@@ -37445,9 +37445,8 @@ function GUI_DrawCtlBitmap_Strips()
   function Paste_Selected()
 
     if copy_ctls and ((copy_ctls.ctls and #copy_ctls.ctls > 0) or (copy_ctls.gfx and #copy_ctls.gfx > 0)) then
-    
       if tracks[track_select] then
-        
+
         movefrom_sc = nil
            
         local strip = Strip_INIT()
@@ -37459,12 +37458,12 @@ function GUI_DrawCtlBitmap_Strips()
         
         local cids = {}      
         local cstart, gstart 
+        local copyflag
       
         if #copy_ctls.ctls > 0 then
 
           cstart = #ctls + 1
       
-          local copyflag
           for c = 1, #copy_ctls.ctls do
             local nc = #ctls+1
             local ctbl = GetControlTable(copy_ctls.strip, copy_ctls.page, copy_ctls.ctls[c])
@@ -37509,7 +37508,7 @@ function GUI_DrawCtlBitmap_Strips()
               strips[tracks[track_select].strip][page].controls[c].xsc = strips[tracks[track_select].strip][page].controls[c].xsc - dx
               strips[tracks[track_select].strip][page].controls[c].ysc = strips[tracks[track_select].strip][page].controls[c].ysc - dy
               strips[tracks[track_select].strip][page].controls[c].id = nil
-              strips[tracks[track_select].strip][page].controls[c].switcher = nil
+              --strips[tracks[track_select].strip][page].controls[c].switcher = nil
               
               if ctl_select == nil then
                 ctl_select = {} 
@@ -37548,7 +37547,7 @@ function GUI_DrawCtlBitmap_Strips()
                   end
                 end
               
-              elseif ctls[c].ctlcat == ctlcats.switcher then
+              --[[elseif ctls[c].ctlcat == ctlcats.switcher then
                 local oldsw = ctls[c].switcherid
                 
                 local swcnt = #switchers+1
@@ -37566,7 +37565,7 @@ function GUI_DrawCtlBitmap_Strips()
                 
                 ctls[c].switcherid = swcnt
                 ctls[c].switcher = nil
-                ctls[c].grpid = nil
+                ctls[c].grpid = nil]]
               end
             end
           end
@@ -37605,7 +37604,7 @@ function GUI_DrawCtlBitmap_Strips()
 
             strips[tracks[track_select].strip][page].graphics[c].x = strips[tracks[track_select].strip][page].graphics[c].x - dx
             strips[tracks[track_select].strip][page].graphics[c].y = strips[tracks[track_select].strip][page].graphics[c].y - dy
-            strips[tracks[track_select].strip][page].graphics[c].switcher = nil
+            --strips[tracks[track_select].strip][page].graphics[c].switcher = nil
             
             if gfx3_select == nil then
               gfx3_select = {}
@@ -37623,21 +37622,33 @@ function GUI_DrawCtlBitmap_Strips()
           end
         end        
         
+        local nsflag
         if copyflag then
           --switchers
           local swstart = #switchers+1
-          local nsflag = false
+          nsflag = false
           for c = cstart, #ctls do
             if ctls[c].ctlcat == ctlcats.switcher then
+              local oldsw = ctls[c].switcherid
               local stab = GetSwitcherTable(ctls[c].switcherid)
               --table.insert(stab, switchers[ctls[c].switcherid]) 
               ns = #switchers+1
               nsflag = true
               switchers[ns] = stab
-              swids[ctls[c].switcherid] = ns
               
+              switchers[ns].switchmode = switchers[oldsw].switchmode
+              if switchers[ns].switchmode == 1 then 
+                switchers[ns].dropx = switchers[oldsw].dropx
+                switchers[ns].dropy = switchers[oldsw].dropy
+                switchers[ns].copypinmap = switchers[oldsw].copypinmap
+                switchers[ns].stripfolder = switchers[oldsw].stripfolder
+                
+                Switchers_AddInsertFX(ns, tracks[track_select].strip, page, c)
+              end
+              swids[ctls[c].switcherid] = ns
             end      
           end
+
           if nsflag then
             for s = swstart, #switchers do
               --[[if switchers[s].parent and swids[switchers[s].parent.switcherid] then
@@ -37674,7 +37685,7 @@ function GUI_DrawCtlBitmap_Strips()
               if swids[ctls[c].switcherid] then
                 ctls[c].switcherid = swids[ctls[c].switcherid]
               else
-              
+                --ctls[c].switcherid = nil
               end
             end
             if ctls[c].switcher then
