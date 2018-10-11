@@ -14,7 +14,7 @@
   DBG_mode = false
 
   local lvar = {}
-  lvar.scriptver = '0.94.0093' --Script Version
+  lvar.scriptver = '0.94.0094' --Script Version
   
   lvar.ctlupdate_rr = nil
   lvar.ctlupdate_pos = 1
@@ -37664,7 +37664,8 @@ function GUI_DrawCtlBitmap_Strips()
                   if grids[switchers[s].grpids[g].id] then
                     switchers[s].grpids[g].id = grids[switchers[s].grpids[g].id]
                   else
-                    switchers[s].grpids[g].id = GenID()
+                    grids[switchers[s].grpids[g].id] = GenID()
+                    switchers[s].grpids[g].id = grids[switchers[s].grpids[g].id]
                   end
                 end
               end
@@ -37681,6 +37682,11 @@ function GUI_DrawCtlBitmap_Strips()
           end
           
           for c = cstart, #ctls do
+            if ctls[c].ctlcat == ctlcats.switcher_pagesel then
+              if grids[ctls[c].param] then
+                ctls[c].param = grids[ctls[c].param]
+              end
+            end
             if ctls[c].switcherid then
               if swids[ctls[c].switcherid] then
                 ctls[c].switcherid = swids[ctls[c].switcherid]
