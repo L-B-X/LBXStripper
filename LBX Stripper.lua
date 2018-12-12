@@ -14,7 +14,7 @@
   DBG_mode = false
 
   local lvar = {}
-  lvar.scriptver = '0.94.0095' --Script Version
+  lvar.scriptver = '0.94.0096' --Script Version
   
   lvar.ctlupdate_rr = nil
   lvar.ctlupdate_pos = 1
@@ -26482,8 +26482,13 @@ function GUI_DrawCtlBitmap_Strips()
       for j = cstart, #strips[strip][page].controls do
         local ctl = strips[strip][page].controls[j]
         if ctl.ctlcat == ctlcats.snapshot then
-            ctl.param_info.paramidx = paramchange[ctl.param]
+            if ctl.param_info.paramnum == 2 then
+              --do not change ctl.param_info.paramidx - it identifies target snapshot
+            else
+              ctl.param_info.paramidx = paramchange[ctl.param]
+            end
             ctl.param = paramchange[ctl.param]
+            
         elseif ctl.ctlcat == ctlcats.xy then
             ctl.param_info.paramidx = paramchange[ctl.param]
             ctl.param = paramchange[ctl.param]        
