@@ -14,7 +14,7 @@
   DBG_mode = false
 
   local lvar = {}
-  lvar.scriptver = '0.94.0097' --Script Version
+  lvar.scriptver = '0.94.0098' --Script Version
   
   lvar.zoomv = 3
   --lvar.zoomtab = {0.25,0.5,0.75,1,1.25,1.5,1.75,2,2.25,2.5,2.75,3,3.5,4}
@@ -64577,7 +64577,7 @@ function GUI_DrawCtlBitmap_Strips()
     local s, p, c, g, k
   
     local t = reaper.time_precise()
-    local data
+    local data = {}
     local cont = true
     
     DBGOut('')
