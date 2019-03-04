@@ -14,7 +14,7 @@
   DBG_mode = false
 
   local lvar = {}
-  lvar.scriptver = '0.94.0098' --Script Version
+  lvar.scriptver = '0.94.0099' --Script Version
   
   lvar.zoomv = 3
   --lvar.zoomtab = {0.25,0.5,0.75,1,1.25,1.5,1.75,2,2.25,2.5,2.75,3,3.5,4}
@@ -11994,6 +11994,10 @@ function GUI_DrawCtlBitmap_Strips()
           stripdim.data[idx].r = math.max(stripdim.data[idx].r, ctl.xsc+ctl.wsc)
           stripdim.data[idx].b = math.max(stripdim.data[idx].b, ctl.ysc+ctl.hsc)
           stripdim.data[idx].gfxpage = ctl.gfxpage or 0
+          
+          --DBG(stripdim.data[idx].l..' '..stripdim.data[idx].t..' '..stripdim.data[idx].r..' '..stripdim.data[idx].b)
+          
+          
         end
         
         local swid = Switcher_GetTopLevelSwitcher(ctl.switcher or ctl.switcherid)
@@ -12025,7 +12029,7 @@ function GUI_DrawCtlBitmap_Strips()
               stripdim.swdata[swid].sb = ctl.ysc+ctl.hsc            
             else
               --local v = math.min(stripdim.swdata[swid].stripl or 2048, ctl.xsc)
-              stripdim.swdata[swid].stripl = --[[math.max(math.floor(v/2)*2,0) --]]math.min(stripdim.swdata[swid].stripl or 2048, ctl.xsc)
+              stripdim.swdata[swid].stripl = --[[math.max(math.floor(v/2)*2,0) --]]math.max(math.min(stripdim.swdata[swid].stripl or 2048, ctl.xsc),0)
               --local v = math.min(stripdim.swdata[swid].stript or 2048, ctl.ysc)
               stripdim.swdata[swid].stript = --[[math.max(math.floor(v/2)*2,0) --]]math.min(stripdim.swdata[swid].stript or 2048, ctl.ysc)
               --local v = math.max(stripdim.swdata[swid].stripr or 0, ctl.xsc+ctl.wsc)
@@ -12329,7 +12333,8 @@ function GUI_DrawCtlBitmap_Strips()
                   local gfxpage = swdata[swid].gfxpage
                   
                   local tx = math.floor(obj.sections[10].w/2) - math.floor(w/2)*lvar.zoom +lvar.mmov_offs --+lvar.mmov_pad
-                  local stx = math.floor(obj.sections[10].w/2) - math.floor(sw/2)*lvar.zoom +lvar.mmov_offs --+lvar.mmov_pad
+                  local stx = math.floor(obj.sections[10].w/2) - math.floor(sw/2)*lvar.zoom +lvar.mmov_offs --+lvar.mmov_pad                  
+                  
                   --gfx.blit(ctlbitmap_image + gfxpage, 1, 0, x, y, w, h, tx, ty)
                   if w > 0 then
                     gfx.blit(ctlbitmap_image + gfxpage, lvar.zoom, 0, x, y, w, h, tx, ty+sh*lvar.zoom)
@@ -12382,6 +12387,7 @@ function GUI_DrawCtlBitmap_Strips()
                   local ty = math.floor(obj.sections[10].h/2) - math.floor((h+sh)/2)*lvar.zoom +lvar.mmov_offs
                   local stx = tx + math.floor(math.max(w, sw)/2)*lvar.zoom - math.floor(sw/2)*lvar.zoom
                   --gfx.blit(ctlbitmap_image + gfxpage, 1, 0, x, y, w, h, tx, ty)
+                  
                   if w > 0 then
                     gfx.blit(ctlbitmap_image + gfxpage, lvar.zoom, 0, x, y, w, h, tx, ty+sh*lvar.zoom)
                   end
@@ -12504,18 +12510,22 @@ function GUI_DrawCtlBitmap_Strips()
     if lvar.mixmodedir == 0 then
       local mixy = surface_offset.startmixy + ((surface_offset.targetmixy - surface_offset.startmixy)*outSine(t))
       surface_offset.mixy = math.floor(mixy)
-      if math.floor(surface_offset.mixy*lvar.mmov_scale) < lvar.mmov_pos then
-        lvar.mmov_pos = math.max(math.floor((surface_offset.mixy*lvar.mmov_scale)),0)
-      elseif math.floor(surface_offset.mixy*lvar.mmov_scale) > obj.sections[10].h + lvar.mmov_pos - math.floor(obj.sections[10].h*lvar.mmov_scale) then
-        lvar.mmov_pos = math.min(math.floor(surface_offset.mixy*lvar.mmov_scale) - (obj.sections[10].h - math.floor(obj.sections[10].h*lvar.mmov_scale)),lvar.mmov_max-obj.sections[10].h) 
+      if lvar.mmov_show == true then
+        if math.floor(surface_offset.mixy*lvar.mmov_scale) < lvar.mmov_pos then
+          lvar.mmov_pos = math.max(math.floor((surface_offset.mixy*lvar.mmov_scale)),0)
+        elseif math.floor(surface_offset.mixy*lvar.mmov_scale) > obj.sections[10].h + lvar.mmov_pos - math.floor(obj.sections[10].h*lvar.mmov_scale) then
+          lvar.mmov_pos = math.min(math.floor(surface_offset.mixy*lvar.mmov_scale) - (obj.sections[10].h - math.floor(obj.sections[10].h*lvar.mmov_scale)),lvar.mmov_max-obj.sections[10].h) 
+        end
       end
     else
       local mixx = surface_offset.startmixx + ((surface_offset.targetmixx - surface_offset.startmixx)*outSine(t))
       surface_offset.mixx = math.floor(mixx)    
-      if math.floor(surface_offset.mixx*lvar.mmov_scale) < lvar.mmov_pos then
-        lvar.mmov_pos = math.max(math.floor((surface_offset.mixx*lvar.mmov_scale)),0)
-      elseif math.floor(surface_offset.mixx*lvar.mmov_scale) > obj.sections[10].w + lvar.mmov_pos - math.floor(obj.sections[10].w*lvar.mmov_scale) then
-        lvar.mmov_pos = math.min(math.floor(surface_offset.mixx*lvar.mmov_scale) - (obj.sections[10].w - math.floor(obj.sections[10].w*lvar.mmov_scale)),lvar.mmov_max-obj.sections[10].w) 
+      if lvar.mmov_show == true then
+        if math.floor(surface_offset.mixx*lvar.mmov_scale) < lvar.mmov_pos then
+          lvar.mmov_pos = math.max(math.floor((surface_offset.mixx*lvar.mmov_scale)),0)
+        elseif math.floor(surface_offset.mixx*lvar.mmov_scale) > obj.sections[10].w + lvar.mmov_pos - math.floor(obj.sections[10].w*lvar.mmov_scale) then
+          lvar.mmov_pos = math.min(math.floor(surface_offset.mixx*lvar.mmov_scale) - (obj.sections[10].w - math.floor(obj.sections[10].w*lvar.mmov_scale)),lvar.mmov_max-obj.sections[10].w) 
+        end
       end
     end  
     lupd.update_surface = true
@@ -13883,15 +13893,16 @@ function GUI_DrawCtlBitmap_Strips()
                     --DBG(xywharea[i].w..'  '..xx-xywharea[i].ox*lvar.zoom)
                     --DBG(xywharea[i].oy)
                     --DBG(lvar.spos[xywharea[i].swid].x..'  '..lvar.spos[xywharea[i].swid].y..' '..xx..'  '..yy..'  '..xywharea[i].h*lvar.zoom)
+                    --DBG(xywharea[i].x..' '..xywharea[i].y..' '..xywharea[i].w..' '..xywharea[i].h..' '..xx..' '..yy)
                     gfx.blit(strip_image,lvar.zoom,0, 
                                        floor(xywharea[i].x),
                                        floor(xywharea[i].y),
                                        floor(xywharea[i].w),
                                        floor(xywharea[i].h),
                                        floor(xx-xywharea[i].ox*lvar.zoom),
-                                       floor(yy-xywharea[i].oy*lvar.zoom),
-                                       floor(xywharea[i].w*lvar.zoom),
-                                       floor(xywharea[i].h*lvar.zoom))
+                                       floor(yy-xywharea[i].oy*lvar.zoom))--,
+                                       --floor(xywharea[i].w*lvar.zoom),
+                                       --floor(xywharea[i].h*lvar.zoom))
                     --gfx.rect(xx-xywharea[i].ox*lvar.zoom-1,yy*lvar.zoom-1,3,3,1)
                   end
                 end
@@ -41410,36 +41421,16 @@ function GUI_DrawCtlBitmap_Strips()
         local pop = strips[strip][page].pop[idx]
         
         mx = obj.sections[10].x + pop.x + (ctl.xsc*lvar.zoom - swdata.stripl*lvar.zoom)
-        --my = obj.sections[10].y + pop.y + ctl.ysc*lvar.zoom - swdata.t*lvar.zoom
         my = obj.sections[10].y + pop.y + (ctl.ysc- swdata.stript + (swdata.sb-swdata.st))*lvar.zoom
         
       elseif lvar.spos[switchid] then
-      --DBG(lvar.spos[switchid])
-        mx =  (lvar.spos[switchid].x + (ctl.xsc - swdata.stripl)*lvar.zoom)
-        --my =  (lvar.spos[switchid].y + (ctl.ysc - swdata.t)*lvar.zoom)
-        --my = (lvar.spos[switchid].y + (ctl.ysc - swdata.t)*lvar.zoom)
+      --DBG(lvar.spos[switchid].x..'  '..ctl.xsc..'  '..swdata.stripl)
+        mx = (lvar.spos[switchid].x + (ctl.xsc - swdata.stripl)*lvar.zoom)
         my = (lvar.spos[switchid].y + (ctl.ysc - swdata.stript + (swdata.sb-swdata.st))*lvar.zoom)
-        --my = yy
-        --DBG(swdata.stript..'  '..swdata.t)
       end
-      --local tt = round(swdata.stripl/2)*2*lvar.zoom 
-      --DBG(tt..'  '..swdata.stripl*lvar.zoom)
-      --if round(swdata.stripl/2)*2*lvar.zoom > swdata.stripl*lvar.zoom then
-        --mx = mx - 1
-        --DBG('a')
-      --elseif round(swdata.stripl/2)*2*lvar.zoom < swdata.stripl*lvar.zoom then
-      --  mx = mx + math.floor(1)*lvar.zoom
-      --end
-      --[[if round(swdata.stript/2)*2 > swdata.stript then
-        my = my - math.floor(round(swdata.stript/2)*2-swdata.stript) --math.floor(1*lvar.zoom)
-        DBG('a')
-      elseif round(swdata.stript/2)*2 < swdata.stript then
-        my = my + math.floor(1*lvar.zoom)
-        DBG('b')
-      end]]
 
     end
-    return mx ,my, swid, yy
+    return mx ,my, swid
   
   end
     
@@ -41629,6 +41620,267 @@ function GUI_DrawCtlBitmap_Strips()
     obj = GetObjects()
     lupd.update_gfx = true
     
+  end
+  
+  function DuplicateStrip()
+  
+    --select only track
+    local srctn = tracks[track_select].tracknum
+    local srctguid = tracks[track_select].guid
+    local dsttn, dsttguid
+    local sstrip = tracks[track_select].strip
+    local track = GetTrack(srctn)
+
+    if track then
+      reaper.SetOnlyTrackSelected(track)
+      reaper.Main_OnCommand(40062,1)
+      dsttn = srctn+1 --assume duplicate track is next track
+      local track2 = GetTrack(dsttn)
+      dsttguid = reaper.GetTrackGUID(track2)
+      
+      local fxlst = {}
+      for i = 0, reaper.TrackFX_GetCount(track2)-1 do
+      
+        local sgui = reaper.TrackFX_GetFXGUID(track, i)
+        local dgui = reaper.TrackFX_GetFXGUID(track2, i)
+        fxlst[i] = {sgui = sgui,
+                    dgui = dgui}
+        fxlst[sgui] = dgui
+              
+      end
+      
+      --Copy strip data
+      PopulateTracks()
+      ChangeTrack(dsttn)   
+      --DBG(reaper.GetTrackState(track2)..'  '..track_select)   
+      
+      local dstrip = Strip_INIT()
+      Snapshots_INIT()
+      
+      for p = 1, 4 do
+        strips[dstrip][p] = table.deepcopy(strips[sstrip][p])
+        snapshots[dstrip][p] = table.deepcopy(snapshots[sstrip][p])
+
+        local stripids = {}
+        local grpids = {}
+        local cids = {}
+        local swids = {}
+        local extids = {}
+        local swcnt = #switchers+1
+        
+        for c = 1, #strips[dstrip][p].controls do
+          local ctl = strips[dstrip][p].controls[c]
+          if ctl.id then
+            if not stripids[ctl.id] then
+              stripids[ctl.id] = GenID()
+            end
+          end
+          if ctl.grpid then
+            if not grpids[ctl.grpid] then
+              grpids[ctl.grpid] = GenID()
+            end          
+          end
+          if ctl.ctlcat == ctlcats.switcher and ctl.switcherid then
+            local swid = #switchers+1
+            swids[ctl.switcherid] = swid
+            switchers[swid] = table.deepcopy(switchers[ctl.switcherid])
+          end
+          cids[ctl.c_id] = GenID()
+        end        
+
+        for g = 1, #strips[dstrip][p].graphics do
+          local ctl = strips[dstrip][p].graphics[g]
+          if ctl.id then
+            if not stripids[ctl.id] then
+              stripids[ctl.id] = GenID()
+            end
+          end
+          if ctl.grpid then
+            if not grpids[ctl.grpid] then
+              grpids[ctl.grpid] = GenID()
+            end          
+          end
+        end
+
+        for s = swcnt, #switchers do
+          if switchers[s].extendid then
+            if not extids[switchers[s].extendid] then
+              extids[switchers[s].extendid] = GenID()
+            end
+            switchers[s].extendid = extids[switchers[s].extendid]
+          end
+          for g = 1, #switchers[s].grpids do
+            switchers[s].grpids[g].id = grpids[switchers[s].grpids[g].id]
+          end
+          if switchers[s].fxguids then
+            for f = 1, #switchers[s].fxguids do
+              switchers[s].fxguids[f] = fxlst[switchers[s].fxguids[f]]
+            end
+          end
+          if switchers[s].parent and switchers[s].parent.switcherid then
+            switchers[s].parent.switcherid = swids[switchers[s].parent.switcherid]
+            switchers[s].parent.grpid = grpids[switchers[s].parent.grpid]
+          end
+          if switchers[s].current then
+            switchers[s].current = grpids[switchers[s].current]
+          end
+        end
+
+        for c = 1, #strips[dstrip][p].controls do
+          local ctl = strips[dstrip][p].controls[c]
+          ctl.c_id = cids[ctl.c_id]
+          if ctl.id then
+            ctl.id = stripids[ctl.id]
+          end
+          if ctl.grpid then
+            ctl.grpid = grpids[ctl.grpid]
+          end
+          if ctl.fxguid and (ctl.trackguid == nil or ctl.trackguid == srctguid) then
+            ctl.fxguid = fxlst[ctl.fxguid]
+          end
+          if ctl.ctlcat == ctlcats.switcher then
+            ctl.switcherid = swids[ctl.switcherid]
+          end
+          if ctl.switcher then
+            ctl.switcher = swids[ctl.switcher]
+          end
+          if ctl.ctlcat == ctlcats.switcher_pagesel then
+            ctl.param = grpids[ctl.param]
+          end
+
+          if ctl.trackguid == srctguid then
+            ctl.trackguid = dsttguid
+          end
+          
+          if ctl.addfx then
+            for a = 1, #ctl.addfx do
+              if ctl.addfx[a].trguid == srctguid then
+                ctl.addfx[a].trguid = dsttguid
+                ctl.addfx[a].guid = fxlst[ctl.addfx[a].guid]
+              end
+            end
+          end
+          
+          if ctl.eqbands then
+            for a = 1, #ctl.eqbands do
+              ctl.eqbands[a].fxguid = fxlst[ctl.eqbands[a].fxguid]
+            end
+          end
+          
+          if ctl.random then
+          
+            ctl.random.parent_cid = cids[ctl.random.parent_cid]
+            if ctl.random.ctls then
+              for cc = 1, #ctl.random.ctls do
+                ctl.random.ctls[cc].c_id = cids[ctl.random.ctls[cc].c_id]
+              end
+            end
+          
+          end
+          
+          --snapshots + c_ids
+        end
+
+        for g = 1, #strips[dstrip][p].graphics do
+          local ctl = strips[dstrip][p].graphics[g]
+          if ctl.id then
+            ctl.id = stripids[ctl.id]
+          end
+          if ctl.grpid then
+            ctl.grpid = grpids[ctl.grpid]
+          end
+          if ctl.switcher then
+            ctl.switcher = swids[ctl.switcher]
+          end
+        end        
+
+        --snapshots
+        local s_ids = {}
+        for sst = 1, #snapshots[dstrip][p] do
+          for ss = 1, #snapshots[dstrip][p][sst] do
+            
+            local sdata 
+            if sst == 1 then            
+              sdata = snapshots[dstrip][p][sst][ss]            
+            else
+              sdata = snapshots[dstrip][p][sst].snapshot[ss]
+              for c = 1, #sdata.ctls do
+                sdata.ctls[c].c_id = cids[sdata.ctls[c].c_id]
+                
+                local id = GenID()
+                s_ids[sdata.ctls[c].id] = id
+                sdata.ctls[c].id = id
+              end
+            end
+
+            for d = 1, #sdata.data do
+              sdata.data[d].c_id = cids[sdata.data[d].c_id]
+              if sst > 1 then
+                sdata.data[d].id = s_ids[sdata.data[d].id]
+              end
+              if sdata.data[d].mf then
+                if sdata.data[d].mfdata.strip == sstrip then
+                  sdata.data[d].mfdata.strip = dstrip
+                  if sdata.data[d].mfdata.c_id then
+                    sdata.data[d].mfdata.c_id = cids[sdata.data[d].mfdata.c_id]
+                  end
+                end
+              end
+              
+              --sdata.data[d].mf = nil
+              --sdata.data[d].mfdata = nil
+              --sdata.data[d].mfset = nil
+              
+            end
+            
+            if sdata.moddata then
+              for m = 1, #faders do
+              
+                if sdata.moddata[m] then
+                
+                  for t = 1, #sdata.moddata[m].targets do
+                    if sdata.moddata[m].targets[t] then
+                      if sdata.moddata[m].targets[t].strip == sstrip then
+                        sdata.moddata[m].targets[t].strip = dstrip 
+                        if sdata.moddata[m].targets[t].c_id then
+                          sdata.moddata[m].targets[t].c_id = cids[sdata.moddata[m].targets[t].c_id]
+                        end 
+                      end
+                    end
+                  end
+                end
+              end
+            end
+            if sdata.faddata then
+              for m = 1, #faders do
+              
+                if sdata.faddata[m] then
+                
+                  if sdata.faddata[m].strip == sstrip then
+                    sdata.faddata[m].strip = dstrip
+                    if sdata.faddata[m].c_id then
+                      sdata.faddata[m].c_id = cids[sdata.faddata[m].c_id]
+                    end
+                  end 
+                end
+              end            
+            end
+            
+            sdata.modset = nil
+            sdata.moddata = nil
+            sdata.fadset = nil
+            sdata.faddata = nil
+            
+        
+          end
+        end
+
+      end
+      
+    end
+    ChangeTrack2(dsttn)
+    update_gfx = true
+  
   end
   
   function A_Run_Mode0(noscroll, rt)
@@ -45060,7 +45312,7 @@ function GUI_DrawCtlBitmap_Strips()
               end
               if tr then
               
-                local mstr = 'Clear track strip data: '..tracks[tr].name..'||Clear strips for ALL tracks' 
+                local mstr = 'Clear track strip data: '..tracks[tr].name..'||Clear strips for ALL tracks||Duplicate Track/Strip' 
                 gfx.x = mouse.mx
                 gfx.y = mouse.my
                 local res = gfx.showmenu(mstr)
@@ -45078,6 +45330,8 @@ function GUI_DrawCtlBitmap_Strips()
                         CleanData()
                       end
                     end
+                  elseif res == 3 then
+                    DuplicateStrip()
                   end
                 
                 end
@@ -62860,7 +63114,7 @@ function GUI_DrawCtlBitmap_Strips()
         
         strip.controls[c].tracknum = tonumber(zn(data[key..'tracknum']))
         strip.controls[c].otracknum = tonumber(zn(data[key..'otracknum']))
-        strip.controls[c].trackguid = data[key..'trackguid']                    
+        strip.controls[c].trackguid = zn(data[key..'trackguid'])                
         strip.controls[c].dvaloffset = tonumber(zn(data[key..'dvaloffset'],0))
         strip.controls[c].minov = tonumber(zn(data[key..'minov']))
         strip.controls[c].maxov = tonumber(zn(data[key..'maxov']))
