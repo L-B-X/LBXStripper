@@ -14,7 +14,7 @@
   DBG_mode = false
 
   local lvar = {}
-  lvar.scriptver = '0.94.0099' --Script Version
+  lvar.scriptver = '0.94.0100' --Script Version
   
   lvar.zoomv = 3
   --lvar.zoomtab = {0.25,0.5,0.75,1,1.25,1.5,1.75,2,2.25,2.5,2.75,3,3.5,4}
@@ -8345,12 +8345,12 @@
     
             local ctl = strips[s][p].controls[c]
             local trn = ctl.tracknum
-            if trn then
+            if trn and tracks[trn] then
               ctl.trackguid = tracks[trn].guid
             end
             if ctl.iteminfo then
               local trn = ctl.iteminfo.tracknum
-              if trn then
+              if trn and tracks[trn] then
                 ctl.iteminfo.trackguid = tracks[trn].guid
               end
             end
@@ -8458,6 +8458,16 @@
                       w = obj.sections[500].w-6,
                       h = butt_h-1}
         local c = gui.skol.track_nostrip 
+
+        if lvar.multiselecttracks then
+          if lvar.multiselecttracks[ii] == 1 then
+            f_Get_SSV('64 64 64')
+            gfx.rect(xywh.x,
+                     xywh.y, 
+                     xywh.w,
+                     xywh.h, 1, 1)
+          end
+        end
         if track_select == ii then
           f_Get_SSV(gui.color.white)
           gfx.rect(xywh.x,
@@ -8485,6 +8495,7 @@
           end 
         
         end
+
         local nm = tracks[ii].name
         if nm == '' then
           nm = '[unnamed track]'
@@ -12371,7 +12382,7 @@ function GUI_DrawCtlBitmap_Strips()
             
             local tx = - pos*lvar.zoom + runpos*lvar.zoom
       
-            if tx+ssw >= 0 then
+            if tx+ssw*lvar.zoom >= 0 then
               if tx <= winw then
                 if lvar.mixupdate == nil then
                   lvar.mixupdate = {runpos = runpos, p = p}
@@ -12668,7 +12679,7 @@ function GUI_DrawCtlBitmap_Strips()
         
           local popidx = strips[strip][page].popidx or {}
           local pop = strips[strip][page].pop
-        
+
           for p = pst, #posidx[extid] do
             local swid = posidx[extid][p]
   
@@ -12684,7 +12695,7 @@ function GUI_DrawCtlBitmap_Strips()
   
             if tx+ssw*lvar.zoom >= obj.sections[10].x then
               if tx <= obj.sections[10].x+winw then
-  
+
                 local x = swdata[swid].stripl or 0
                 local y = swdata[swid].stript or 0         
   
@@ -41668,6 +41679,8 @@ function GUI_DrawCtlBitmap_Strips()
         local extids = {}
         local swcnt = #switchers+1
         
+        strips[dstrip][p].pop = nil
+        
         for c = 1, #strips[dstrip][p].controls do
           local ctl = strips[dstrip][p].controls[c]
           if ctl.id then
@@ -41881,6 +41894,47 @@ function GUI_DrawCtlBitmap_Strips()
     ChangeTrack2(dsttn)
     update_gfx = true
   
+  end
+  
+  function DupSend(OrigSendTrack, NewSendTrack, DestTrack, sendno, recno)
+    local sidx = reaper.CreateTrackSend(NewSendTrack, DestTrack)
+   
+    local B_MUTE,B_PHASE,B_MONO,D_VOL,D_PAN,D_PANLAW,I_SENDMODE,I_SRCCHAN,I_DSTCHAN,I_MIDIFLAGS
+    if sendno then
+      B_MUTE = reaper.GetTrackSendInfo_Value(OrigSendTrack, 0, sendno, 'B_MUTE')
+      B_PHASE = reaper.GetTrackSendInfo_Value(OrigSendTrack, 0, sendno, 'B_PHASE')
+      B_MONO = reaper.GetTrackSendInfo_Value(OrigSendTrack, 0, sendno, 'B_MONO')
+      D_VOL = reaper.GetTrackSendInfo_Value(OrigSendTrack, 0, sendno, 'D_VOL')
+      D_PAN = reaper.GetTrackSendInfo_Value(OrigSendTrack, 0, sendno, 'D_PAN')
+      D_PANLAW = reaper.GetTrackSendInfo_Value(OrigSendTrack, 0, sendno, 'D_PANLAW')
+      I_SENDMODE = reaper.GetTrackSendInfo_Value(OrigSendTrack, 0, sendno, 'I_SENDMODE')
+      I_SRCCHAN = reaper.GetTrackSendInfo_Value(OrigSendTrack, 0, sendno, 'I_SRCCHAN')
+      I_DSTCHAN = reaper.GetTrackSendInfo_Value(OrigSendTrack, 0, sendno, 'I_DSTCHAN')
+      I_MIDIFLAGS = reaper.GetTrackSendInfo_Value(OrigSendTrack, 0, sendno, 'I_MIDIFLAGS')
+    else
+      B_MUTE = reaper.GetTrackSendInfo_Value(OrigSendTrack, -1, recno, 'B_MUTE')
+      B_PHASE = reaper.GetTrackSendInfo_Value(OrigSendTrack, -1, recno, 'B_PHASE')
+      B_MONO = reaper.GetTrackSendInfo_Value(OrigSendTrack, -1, recno, 'B_MONO')
+      D_VOL = reaper.GetTrackSendInfo_Value(OrigSendTrack, -1, recno, 'D_VOL')
+      D_PAN = reaper.GetTrackSendInfo_Value(OrigSendTrack, -1, recno, 'D_PAN')
+      D_PANLAW = reaper.GetTrackSendInfo_Value(OrigSendTrack, -1, recno, 'D_PANLAW')
+      I_SENDMODE = reaper.GetTrackSendInfo_Value(OrigSendTrack, -1, recno, 'I_SENDMODE')
+      I_SRCCHAN = reaper.GetTrackSendInfo_Value(OrigSendTrack, -1, recno, 'I_SRCCHAN')
+      I_DSTCHAN = reaper.GetTrackSendInfo_Value(OrigSendTrack, -1, recno, 'I_DSTCHAN')
+      I_MIDIFLAGS = reaper.GetTrackSendInfo_Value(OrigSendTrack, -1, recno, 'I_MIDIFLAGS')    
+    end
+    
+    reaper.SetTrackSendInfo_Value(NewSendTrack, 0, sidx, 'B_MUTE', B_MUTE)
+    reaper.SetTrackSendInfo_Value(NewSendTrack, 0, sidx, 'B_PHASE', B_PHASE)
+    reaper.SetTrackSendInfo_Value(NewSendTrack, 0, sidx, 'B_MONO', B_MONO)
+    reaper.SetTrackSendInfo_Value(NewSendTrack, 0, sidx, 'D_VOL', D_VOL)
+    reaper.SetTrackSendInfo_Value(NewSendTrack, 0, sidx, 'D_PAN', D_PAN)
+    reaper.SetTrackSendInfo_Value(NewSendTrack, 0, sidx, 'D_PANLAW', D_PANLAW)
+    reaper.SetTrackSendInfo_Value(NewSendTrack, 0, sidx, 'I_SENDMODE', I_SENDMODE)
+    reaper.SetTrackSendInfo_Value(NewSendTrack, 0, sidx, 'I_SRCCHAN', I_SRCCHAN)
+    reaper.SetTrackSendInfo_Value(NewSendTrack, 0, sidx, 'I_DSTCHAN', I_DSTCHAN)
+    reaper.SetTrackSendInfo_Value(NewSendTrack, 0, sidx, 'I_MIDIFLAGS', I_MIDIFLAGS)
+    
   end
   
   function A_Run_Mode0(noscroll, rt)
@@ -43481,7 +43535,7 @@ function GUI_DrawCtlBitmap_Strips()
         noscroll = true
       end
           
-    elseif mouse.context == nil and mouse.alt and not mouse.altlatch and not mouse.LB and not mouse.RB and MOUSE_over(obj.sections[10]) then
+    elseif mouse.context == nil and mouse.alt and not mouse.altlatch and not mouse.LB and not mouse.RB and lvar.livemode == 0 and MOUSE_over(obj.sections[10]) then
 
       CreateStripCB()      
           
@@ -43506,6 +43560,7 @@ function GUI_DrawCtlBitmap_Strips()
                 local mpad = lvar.mmov_pad
                 if mouse.mx < obj.sections[10].x+lvar.mmov_vsize+mpad*2 then
                   mouse.context = contexts.mmov_dragv
+                  lvar.mixupdate = nil
                   lvar.mmov_drag = true
                   c = nil
                   noscroll = true
@@ -43514,6 +43569,7 @@ function GUI_DrawCtlBitmap_Strips()
                 local mpad = lvar.mmov_pad
                 if mouse.my < obj.sections[10].y+lvar.mmov_vsize+mpad*2 then
                   mouse.context = contexts.mmov_dragh
+                  lvar.mixupdate = nil
                   lvar.mmov_drag = true
                   c = nil
                   noscroll = true
@@ -45281,19 +45337,34 @@ function GUI_DrawCtlBitmap_Strips()
             lupd.update_gfx = true
             
           elseif (hideunusedtracks ~= true and tracks[i-1 + tlist_offset]) or (hideunusedtracks == true and tracksused_idx[i + tlist_offset]) then
-            if hideunusedtracks == true then
-              local tr = tracksused_idx[i + tlist_offset]
-              if tr == LBX_GTRACK then
-                SetGlobalPage()
+            if mouse.ctrl then
+              local tr
+              if hideunusedtracks == true then
+                tr = tracksused_idx[i + tlist_offset]
               else
-                ChangeTrack2(tr)
-              end          
+                tr = i-1 + tlist_offset
+              end
+              if not lvar.multiselecttracks then
+                lvar.multiselecttracks = {}
+              end
+              lvar.multiselecttracks[tr] = 1-(lvar.multiselecttracks[tr] or 0)
+              lupd.update_sidebar = true
             else
-              local tr = i-1 + tlist_offset
-              if tr == LBX_GTRACK then
-                SetGlobalPage()
+              lvar.multiselecttracks = {}
+              if hideunusedtracks == true then
+                local tr = tracksused_idx[i + tlist_offset]
+                if tr == LBX_GTRACK then
+                  SetGlobalPage()
+                else
+                  ChangeTrack2(tr)
+                end          
               else
-                ChangeTrack2(i-1 + tlist_offset)
+                local tr = i-1 + tlist_offset
+                if tr == LBX_GTRACK then
+                  SetGlobalPage()
+                else
+                  ChangeTrack2(tr)
+                end
               end
             end
           end
@@ -45312,7 +45383,8 @@ function GUI_DrawCtlBitmap_Strips()
               end
               if tr then
               
-                local mstr = 'Clear track strip data: '..tracks[tr].name..'||Clear strips for ALL tracks||Duplicate Track/Strip' 
+                local mstr = 'Clear track strip data: '..tracks[tr].name..'|Clear strips for ALL tracks||Duplicate Track/Strip|Duplicate Highlighted Tracks'..
+                             '|Duplicate Highlighted Tracks (Retain Links)||Save Set (Highlighted Tracks)||Load Set (Merge)' 
                 gfx.x = mouse.mx
                 gfx.y = mouse.my
                 local res = gfx.showmenu(mstr)
@@ -45332,6 +45404,110 @@ function GUI_DrawCtlBitmap_Strips()
                     end
                   elseif res == 3 then
                     DuplicateStrip()
+                    
+                  elseif res == 4 then
+                    lvar.multiselecttracks[track_select] = 1
+                    local trcnt = 0
+                    for i = -1, reaper.CountTracks(0)-1 do
+                      if lvar.multiselecttracks[i] then
+                        trcnt = trcnt + 1
+                      end
+                    end
+                    local fn='lbx_duplicatetracks_set'
+                    SaveSet2(fn,lvar.multiselecttracks,trcnt,false)
+                    local load_path=paths.sets_path
+                    local ffn=load_path..fn..".stripset"
+                    local ft, lt = LoadSet2(ffn,true)
+                    
+                  elseif res == 5 then
+                    lvar.multiselecttracks[track_select] = 1
+                    local trcnt = 0
+                    for i = -1, reaper.CountTracks(0)-1 do
+                      if lvar.multiselecttracks[i] then
+                        trcnt = trcnt + 1
+                      end
+                    end
+                    local fn='lbx_duplicatetracks_set'
+                    SaveSet2(fn,lvar.multiselecttracks,trcnt,false)
+                    local load_path=paths.sets_path
+                    local ffn=load_path..fn..".stripset"
+                    local ft, lt = LoadSet2(ffn,true,true)
+                    --DBG(ft..'  '..lt)
+                    local trlst = {}
+                    for a,b in pairs(lvar.multiselecttracks) do
+                      trlst[#trlst+1] = a
+                    end
+                    table.sort(trlst)
+                    
+                    for i = 1, #trlst do
+                      local tr = GetTrack(trlst[i])
+                      local scnt = reaper.GetTrackNumSends(tr, 0)
+                      for s = 0, scnt-1 do
+                        local dtr = reaper.BR_GetMediaTrackSendInfo_Track(tr, 0, s, 1)
+                        if dtr then
+                          local dtn = reaper.GetMediaTrackInfo_Value(dtr, 'IP_TRACKNUMBER')
+                          if not lvar.multiselecttracks[dtn-1] then
+                            --duplicate send to copied track
+                            local ttr = GetTrack(ft + (i-1))
+                            if ttr then
+                              DupSend(tr, ttr, dtr, s)
+                            end
+                          end
+                        end
+                      end
+                    end
+
+                    for i = 1, #trlst do
+                      local tr = GetTrack(trlst[i])
+                      local scnt = reaper.GetTrackNumSends(tr, -1)
+                      for s = 0, scnt-1 do
+                        local dtr = reaper.BR_GetMediaTrackSendInfo_Track(tr, -1, s, 0)
+                        if dtr then
+                          local dtn = reaper.GetMediaTrackInfo_Value(dtr, 'IP_TRACKNUMBER')
+                          if not lvar.multiselecttracks[dtn-1] then
+                            --duplicate send to copied track
+                            local ttr = GetTrack(ft + (i-1))
+                            if ttr then
+                              DupSend(tr, dtr, ttr, nil, s)
+                            end
+                          end
+                        end
+                      end
+                    end
+                    os.remove(ffn)
+                    
+                  elseif res == 6 then
+                  
+                    local retval, fileName = reaper.JS_Dialog_BrowseForSaveFile('Save Strip Set As...', paths.sets_path, '', "stripset files (.stripset)\0*.stripset\0\0")
+                    if retval == 1 then
+                    
+                      local retval = 6
+                      if reaper.file_exists(fileName) then
+                        local str = 'The strip set file already exists:\n\n'..fileName..'\n\nOverwrite?'
+                        retval = reaper.MB(str, 'Merge Strip Set', 4)                      
+                      end
+                      
+                      if retval == 6 then
+                        local fn = string.match(fileName,'.+[\\/](.*)$')
+                        fn = string.match(fn,'(.+)%.stripset$') or fn
+                        
+                        if fn then
+                          if not lvar.multiselecttracks then
+                            lvar.multiselecttracks = {}
+                          end
+                          lvar.multiselecttracks[track_select] = 1
+                          local trcnt = 0
+                          for i = -1, reaper.CountTracks(0)-1 do
+                            if lvar.multiselecttracks[i] then
+                              trcnt = trcnt + 1
+                            end
+                          end
+                          SaveSet2(fn,lvar.multiselecttracks,trcnt,true)
+                        end
+                      end
+                    end
+                  elseif res == 7 then
+                    loadset_fn = LoadSet(true)
                   end
                 
                 end
@@ -57652,7 +57828,7 @@ function GUI_DrawCtlBitmap_Strips()
         local my = mouse.my - obj.sections[10].y - mpad + lvar.mmov_pos
         local scale = lvar.mmov_scale
         local h = math.floor(obj.sections[10].h * scale)
-        surface_offset.mixy = F_limit(math.floor((my - h/2) / scale),0-math.floor(obj.sections[10].h/2), lvar.mixpos_max-math.floor(obj.sections[10].h/2))
+        surface_offset.mixy = F_limit(math.floor((my - h/(2*lvar.zoom)) / scale), 0-math.floor(obj.sections[10].h/(2*lvar.zoom)), lvar.mixpos_max-math.floor(obj.sections[10].h/(2*lvar.zoom)))
 
         local scale = lvar.mmov_scale
         local y = math.floor((surface_offset.mixy or 0)*scale)
@@ -57674,7 +57850,7 @@ function GUI_DrawCtlBitmap_Strips()
         local mx = mouse.mx - obj.sections[10].x - mpad + lvar.mmov_pos
         local scale = lvar.mmov_scale
         local w = math.floor(obj.sections[10].w * scale)
-        surface_offset.mixx = F_limit(math.floor((mx - w/2) / scale),0-math.floor(obj.sections[10].w/2), lvar.mixpos_max-math.floor(obj.sections[10].w/2))
+        surface_offset.mixx = F_limit(math.floor((mx - w/(2*lvar.zoom)) / scale),0-math.floor(obj.sections[10].w/(2*lvar.zoom)), lvar.mixpos_max-math.floor(obj.sections[10].w/(2*lvar.zoom)))
 
         local scale = lvar.mmov_scale
         local x = math.floor((surface_offset.mixx or 0)*scale)
@@ -70455,8 +70631,10 @@ DBG(t.. '  '..trigtime)
   
   end
 
-  function SaveSet2(fn)
+  function SaveSet2(fn, trlst, trcnt2, verbose)
   
+    if verbose == nil then verbose = true end
+    
     if fn and string.len(fn)>0 then
       
       CleanData()
@@ -70467,93 +70645,124 @@ DBG(t.. '  '..trigtime)
       local fn=save_path..fn..".stripset"  
       local file
       file=io.open(fn,"w")
-      file:write('[STRIPSET_VERSION]2\n')
+      file:write('[STRIPSET_VERSION]3\n')
 
       local trcnt = reaper.CountTracks(0)
-      file:write('[TRACKS]'..trcnt..'\n')
-
+      if trlst then
+        file:write('[TRACKS]'..trcnt2..'\n')
+        file:write('[SUBSET]'..1 ..'\n')
+        local lst = ''
+        for a,b in pairs(trlst) do
+          lst = lst..','..a
+        end
+        file:write('[TRLST]'..string.sub(lst,2)..'\n')
+      else
+        file:write('[TRACKS]'..trcnt..'\n')
+      end
       local bpm, _ = reaper.GetProjectTimeSignature2(0)
       file:write('[BPM]'..bpm..'\n')      
       
       local savestrip = {}
+      local switchlst = {}
+      local switchidx = {}
       
       for t = -1, trcnt-1 do
 
-        GUI_DrawMsgX(obj, gui, 'Saving Track Data...', t+1, trcnt)
-        
-        strip = tracks[t].strip
+        if not trlst or trlst[t] then
 
-        local tr = GetTrack(t)
-        local i, j
-        local chunk = GetTrackChunk(tr, settings_usetrackchunkfix)
-        local trackdata = {track = t,
-                           guid = reaper.GetTrackGUID(tr),
-                           chunkdata = chunk}
-        --check tracknums 
-
-        if strip ~= -1 then
-          for p = 1,4 do
-            Snapshot_DeleteOrphanedSubsets(strip, p)
-            for j = 1, #strips[strip][p].controls do
-              local ctl = strips[strip][p].controls[j]
-              if ctl.tracknum and ctl.tracknum == strips[strip].track.tracknum then
-                ctl.tracknum = nil
+          if verbose then
+            GUI_DrawMsgX(obj, gui, 'Saving Track Data...', t+1, trcnt)
+          end
+          
+          strip = tracks[t].strip
+  
+          local tr = GetTrack(t)
+          local i, j
+          local chunk = GetTrackChunk(tr, settings_usetrackchunkfix)
+          local trackdata = {track = t,
+                             guid = reaper.GetTrackGUID(tr),
+                             chunkdata = chunk}
+          --check tracknums 
+  
+          if strip ~= -1 then
+            for p = 1,4 do
+              Snapshot_DeleteOrphanedSubsets(strip, p)
+              for j = 1, #strips[strip][p].controls do
+                local ctl = strips[strip][p].controls[j]
+                if ctl.tracknum and ctl.tracknum == strips[strip].track.tracknum then
+                  ctl.tracknum = nil
+                end
+                if trlst and ctl.ctlcat == ctlcats.switcher and not switchidx[ctl.switcherid] then
+                  local sidx = #switchlst+1
+                  switchlst[sidx] = switchers[ctl.switcherid]
+                  switchidx[ctl.switcherid] = sidx
+                end
               end
             end
           end
-        end
-                        
-        --local switchtab = {}
-        --local saveswitchers = {}
-        --local switchcnt = 1
-        
-        if strip ~= -1 then
-          for p = 1,4 do
-            for j = 1, #strips[strip][p].controls do
-              local ctl = strips[strip][p].controls[j]
-              if ctl.ctlcat == ctlcats.pkmeter then
-                ctl.val = -150
-              end
-              
-              --[[if ctl.ctlcat == ctlcats.switcher then
-                switchtab[ctl.switcherid] = switchcnt
-                saveswitchers[switchcnt] = switchers[ctl.switcherid]
-                switchcnt = switchcnt + 1    
-              end]]
-            end
-          end          
-        end
+                          
+          --local switchtab = {}
+          --local saveswitchers = {}
+          --local switchcnt = 1
+          
+          if strip ~= -1 then
+            for p = 1,4 do
+              for j = 1, #strips[strip][p].controls do
+                local ctl = strips[strip][p].controls[j]
+                if ctl.ctlcat == ctlcats.pkmeter then
+                  ctl.val = -150
+                end
                 
-        --[[savestrip.switchers = saveswitchers
-        savestrip.switchconvtab = switchtab]]
-        --savestrip.trackdata = {}
-        --savestrip.trackdata[t] = trackdata
-        local pickleddata = pickle(trackdata)
-      
-        file:write('[TRACK]'..t..'\n')
-        file:write('[DATA]\n'..pickleddata..'\n[\\DATA]\n')
-        file:write('[STRIPDATA]'.. strip ..'\n')
-        local t = SaveStripData_FN(strip,nil,nil,file)
-        file:write('[\\STRIPDATA]\n')      
+                --[[if ctl.ctlcat == ctlcats.switcher then
+                  switchtab[ctl.switcherid] = switchcnt
+                  saveswitchers[switchcnt] = switchers[ctl.switcherid]
+                  switchcnt = switchcnt + 1    
+                end]]
+              end
+            end          
+          end
+                  
+          --[[savestrip.switchers = saveswitchers
+          savestrip.switchconvtab = switchtab]]
+          --savestrip.trackdata = {}
+          --savestrip.trackdata[t] = trackdata
+          local pickleddata = pickle(trackdata)
         
-        if snapshots and snapshots[strip] then
-          file:write('[SNAPSHOTDATA]\n')      
-          SaveSnapshotData_FN(strip,nil,nil,file)
-          file:write('[\\SNAPSHOTDATA]\n')      
+          file:write('[TRACK]'..t..'\n')
+          file:write('[DATA]\n'..pickleddata..'\n[\\DATA]\n')
+          file:write('[STRIPDATA]'.. strip ..'\n')
+          local t = SaveStripData_FN(strip,nil,nil,file)
+          file:write('[\\STRIPDATA]\n')      
+          
+          if snapshots and snapshots[strip] then
+            file:write('[SNAPSHOTDATA]\n')      
+            SaveSnapshotData_FN(strip,nil,nil,file)
+            file:write('[\\SNAPSHOTDATA]\n')      
+          end
+          file:write('[\\TRACK]\n')
+          
+          --faders
+          --modulators
+        
         end
-        file:write('[\\TRACK]\n')
-        
-        --faders
-        --modulators
-      
-      end
 
-      local switchdata = pickle(switchers)
-      file:write('[SWITCHDATA]\n'..switchdata..'\n[\\SWITCHDATA]\n')
+      end
       
+      if not trlst then
+        local switchdata = pickle(switchers)
+        file:write('[SWITCHDATA]\n'..switchdata..'\n[\\SWITCHDATA]\n')
+      else
+        local switchdata = pickle(switchlst)
+        local switchdataidx = pickle(switchidx)
+        file:write('[SWITCHDATA]\n'..switchdata..'\n[\\SWITCHDATA]\n')
+        file:write('[SWITCHDATAIDX]\n'..switchdataidx..'\n[\\SWITCHDATAIDX]\n')
+      end
+            
       file:close()
 
-      OpenMsgBox(1,'Strip set saved.',1)
+      if verbose then
+        OpenMsgBox(1,'Strip set saved.',1)
+      end
       
     else
       return nil
@@ -70609,7 +70818,14 @@ DBG(t.. '  '..trigtime)
     end
   end
 
-  function LoadSet2(fn, merge)
+  function splitnum(s,sep)
+     local sep, fields = sep or ":", {}
+     local pattern = s.format("([^%s]+)", sep)
+     s:gsub(pattern, function(c) fields[#fields+1] = tonumber(c) end)
+     return fields
+  end
+  
+  function LoadSet2(fn, merge, preserve_unknown_guids)
 
     if merge == nil then merge = false end
     
@@ -70634,7 +70850,10 @@ DBG(t.. '  '..trigtime)
     
     version = tonumber(version)
     
-    if version and version == 2 then
+    local subset, trlst
+    local stripc = 0
+    
+    if version and version == 2 or version == 3 then
     
       loaddata.version = version
       loaddata.trackdata = {}
@@ -70642,7 +70861,31 @@ DBG(t.. '  '..trigtime)
       loaddata.snapdata = {}
       loaddata.switchers = {}
 
-      for t = -1, trcnt-1 do
+      local ts, te
+      if match(header or '','%[SUBSET%]') then
+        subset = true
+        trlst = splitnum(match(header or '','%[TRLST%](.-)\n'),',')
+        table.sort(trlst)
+        --for i = 1, #trlst do
+        --  DBG(trlst[i])
+        --end
+        ts = 1
+        te = trcnt
+      else
+        ts = -1
+        te = trcnt-1
+      end
+
+      local tidx
+      for tt = ts, te do
+      
+        if subset then
+          t = trlst[tt]
+          tidx = tt-ts+1
+        else
+          t = tt
+          tidx = tt
+        end
       
         GUI_DrawMsgX(obj, gui, 'Loading Track Data...', t+1, trcnt)
         
@@ -70662,12 +70905,10 @@ DBG(t.. '  '..trigtime)
       
           --local tt = reaper.time_precise()
           local data = match(trdata,'%[DATA%]\n(.-)%[\\DATA%]')      
-          
-          local strip, sdata = match(trdata,'%[STRIPDATA%](%d+)\n(.-)%[\\STRIPDATA%]')
+          local strip
+          local stripx, sdata = match(trdata,'%[STRIPDATA%](%d+)\n(.-)%[\\STRIPDATA%]')
           local ssdata = match(trdata,'%[SNAPSHOTDATA%]\n(.-)%[\\SNAPSHOTDATA%]')
           --DBG('Find Data'..t+1 ..': '..round(reaper.time_precise()-tt,6))
-      
-          strip = tonumber(strip)
       
           --load data
           --local tt = reaper.time_precise()
@@ -70697,12 +70938,17 @@ DBG(t.. '  '..trigtime)
           --DBG('Track Data'..t+1 ..': '..round(reaper.time_precise()-tt,6))
 
           --local tt = reaper.time_precise()
-          loaddata.trackdata[t] = unpickle(data)
+          loaddata.trackdata[tidx] = unpickle(data)
           --DBG('Unpickle'..': '..round(reaper.time_precise()-tt,6))
 
-          if strip then
-            local pfx = 'strip_s'..strip..'_'
-            local pfx2 = 'snap_s'..strip..'_'
+          if stripx then
+            --DBG('aaa')
+            stripc = stripc + 1
+            strip = tonumber(stripc)
+            --DBG(strip..'  '..tostring(stripx))
+
+            local pfx = 'strip_s'..stripx..'_'
+            local pfx2 = 'snap_s'..stripx..'_'
             
             loaddata.stripdata[strip] = {{}}
             loaddata.snapdata[strip] = {}
@@ -70730,11 +70976,17 @@ DBG(t.. '  '..trigtime)
       end  
 
       local swdata = match(content,'%[SWITCHDATA%]\n(.-)%[\\SWITCHDATA%]')
+      local swdataidx = match(content,'%[SWITCHDATAIDX%]\n(.-)%[\\SWITCHDATAIDX%]')
+      
       loaddata.switchers = unpickle(swdata)
+      if subset and swdataidx then
+        loaddata.switchersidx = unpickle(swdataidx)
+      end
         
     else
     
       loaddata = unpickle(content)
+      stripc = #loaddata.stripdata
   
     end
 
@@ -70744,7 +70996,15 @@ DBG(t.. '  '..trigtime)
     --INIT()
     local t_offset = reaper.CountTracks(0)
     local tstart = 0
-    if version then
+    local t_offtab = {}
+    
+    if subset then
+      tstart = 1
+      t_offset = t_offset - 1
+      for i = 1, #trlst do
+        t_offtab[trlst[i]] = i
+      end
+    elseif version then
       t_offset = t_offset + 1
       tstart = -1
     end
@@ -70753,7 +71013,11 @@ DBG(t.. '  '..trigtime)
       loaddata.trackdata[i].chunkdata = string.gsub(loaddata.trackdata[i].chunkdata,
                                                     '({%x%x%x%x%x%x%x%x%-%x%x%x%x%-%x%x%x%x%-%x%x%x%x%-%x%x%x%x%x%x%x%x%x%x%x%x})',
                                                     function(d) if guids[d] == nil then guids[d]=reaper.genGuid('') end return guids[d] end)
-      loaddata.trackdata[i].chunkdata = ReplaceRCVs(loaddata.trackdata[i].chunkdata, t_offset)
+      if subset then
+        loaddata.trackdata[i].chunkdata = ReplaceRCVs(loaddata.trackdata[i].chunkdata, t_offset, t_offtab)      
+      else  
+        loaddata.trackdata[i].chunkdata = ReplaceRCVs(loaddata.trackdata[i].chunkdata, t_offset)
+      end
     end    
     
     local obpm, tb
@@ -70766,6 +71030,8 @@ DBG(t.. '  '..trigtime)
       reaper.SetCurrentBPM(0, pbpm, false)
     end
     
+    local ft = reaper.CountTracks(0)
+    local lt = ft + #loaddata.trackdata-1
     for i = tstart, #loaddata.trackdata do
     
       reaper.InsertTrackAtIndex(t_offset+i+1, false)
@@ -70779,8 +71045,9 @@ DBG(t.. '  '..trigtime)
       if condition_chunk ~= loaddata.trackdata[i].chunkdata then
         SetTrackChunk(tr, condition_chunk, false)     
       end]]
+
       SetTrackChunk(tr, loaddata.trackdata[i].chunkdata, false) 
-      if i == -1 then
+      if i == -1 or loaddata.trackdata[i].track == -1 then
         reaper.GetSetMediaTrackInfo_String(tr, "P_NAME", 'SET MASTER', true)
         reaper.SetOnlyTrackSelected(tr)
         --if reaper.ActionExists()
@@ -70800,33 +71067,55 @@ DBG(t.. '  '..trigtime)
     local swids = {}
     
     --update tracknums and guids, and cids
+
     for s = 1, #loaddata.stripdata do
-    
       if loaddata.stripdata and loaddata.stripdata[s] then
-    
         GUI_DrawMsgX(obj, gui, 'Parsing Strip Data...', s, #loaddata.stripdata)
-    
+
         loaddata.stripdata[s].track.tracknum = loaddata.stripdata[s].track.tracknum + t_offset
         loaddata.stripdata[s].track.guid = guids[loaddata.stripdata[s].track.guid]
     
         for p = 1, 4 do
     
           if loaddata.stripdata[s][p] then
+
+            loaddata.stripdata[s][p].pop = nil
+          
             if #loaddata.stripdata[s][p].controls > 0 then
             
               for c = 1, #loaddata.stripdata[s][p].controls do
               
                 local ctl = loaddata.stripdata[s][p].controls[c]
                 if ctl.tracknum then
-                  ctl.tracknum = ctl.tracknum + t_offset
-                  ctl.trackguid = guids[ctl.trackguid]
+                  if preserve_unknown_guids then
+                    if guids[ctl.trackguid] then
+                      ctl.tracknum = ctl.tracknum + t_offset
+                      ctl.trackguid = guids[ctl.trackguid]
+                    end
+                  else
+                    ctl.tracknum = ctl.tracknum + t_offset
+                    ctl.trackguid = guids[ctl.trackguid]
+                  end
                 end
                 if ctl.fxguid then
-                  ctl.fxguid = guids[ctl.fxguid]
+                  if preserve_unknown_guids then
+                    if guids[ctl.fxguid] then
+                      ctl.fxguid = guids[ctl.fxguid]
+                    end
+                  else
+                    ctl.fxguid = guids[ctl.fxguid]
+                  end
                 end
                 if ctl.param_info.paramdesttrnum then
-                  ctl.param_info.paramdesttrnum = ctl.param_info.paramdesttrnum + t_offset
-                  ctl.param_info.paramdestguid = guids[ctl.param_info.paramdestguid]
+                  if preserve_unknown_guids then
+                    if guids[ctl.param_info.paramdestguid] then
+                      ctl.param_info.paramdesttrnum = ctl.param_info.paramdesttrnum + t_offset
+                      ctl.param_info.paramdestguid = guids[ctl.param_info.paramdestguid]                    
+                    end
+                  else
+                    ctl.param_info.paramdesttrnum = ctl.param_info.paramdesttrnum + t_offset
+                    ctl.param_info.paramdestguid = guids[ctl.param_info.paramdestguid]
+                  end
                 end
                 if merge then
                   if cids[ctl.c_id] == nil then
@@ -70940,40 +71229,41 @@ DBG(t.. '  '..trigtime)
         for s = 1, #loaddata.snapdata do
         
           GUI_DrawMsgX(obj, gui, 'Merging Snapshot Data...', s, #loaddata.snapdata)
-        
-          for p = 1, 4 do
-          
-            if loaddata.snapdata[s][p] and #loaddata.snapdata[s][p] > 0 then
-              for sst = 1, #loaddata.snapdata[s][p] do
-          
-                if sst == 1 then
-                  if loaddata.snapdata[s][p][sst] and #loaddata.snapdata[s][p][sst] > 0 then
-                
-                    for ss = 1, #loaddata.snapdata[s][p][sst] do
-                      if loaddata.snapdata[s][p][sst][ss].data and #loaddata.snapdata[s][p][sst][ss].data > 0 then
-                        for d = 1, #loaddata.snapdata[s][p][sst][ss].data do 
-                          if cids[loaddata.snapdata[s][p][sst][ss].data[d].c_id] then
-                            loaddata.snapdata[s][p][sst][ss].data[d].c_id = cids[loaddata.snapdata[s][p][sst][ss].data[d].c_id]
+          if loaddata.snapdata[s] then
+            for p = 1, 4 do
+            
+              if loaddata.snapdata[s][p] and #loaddata.snapdata[s][p] > 0 then
+                for sst = 1, #loaddata.snapdata[s][p] do
+            
+                  if sst == 1 then
+                    if loaddata.snapdata[s][p][sst] and #loaddata.snapdata[s][p][sst] > 0 then
+                  
+                      for ss = 1, #loaddata.snapdata[s][p][sst] do
+                        if loaddata.snapdata[s][p][sst][ss].data and #loaddata.snapdata[s][p][sst][ss].data > 0 then
+                          for d = 1, #loaddata.snapdata[s][p][sst][ss].data do 
+                            if cids[loaddata.snapdata[s][p][sst][ss].data[d].c_id] then
+                              loaddata.snapdata[s][p][sst][ss].data[d].c_id = cids[loaddata.snapdata[s][p][sst][ss].data[d].c_id]
+                            end
                           end
                         end
                       end
                     end
-                  end
-                else
-                  if loaddata.snapdata[s][p][sst].ctls and #loaddata.snapdata[s][p][sst].ctls > 0 then
-                    for ctl = 1, #loaddata.snapdata[s][p][sst].ctls do
-                      if cids[loaddata.snapdata[s][p][sst].ctls[ctl].c_id] then
-                        loaddata.snapdata[s][p][sst].ctls[ctl].c_id = cids[loaddata.snapdata[s][p][sst].ctls[ctl].c_id]
-                      end                
+                  else
+                    if loaddata.snapdata[s][p][sst].ctls and #loaddata.snapdata[s][p][sst].ctls > 0 then
+                      for ctl = 1, #loaddata.snapdata[s][p][sst].ctls do
+                        if cids[loaddata.snapdata[s][p][sst].ctls[ctl].c_id] then
+                          loaddata.snapdata[s][p][sst].ctls[ctl].c_id = cids[loaddata.snapdata[s][p][sst].ctls[ctl].c_id]
+                        end                
+                      end
                     end
-                  end
-                
-                  if loaddata.snapdata[s][p][sst].snapshot and #loaddata.snapdata[s][p][sst].snapshot > 0 then
-                    for ss = 1, #loaddata.snapdata[s][p][sst].snapshot do
-                      if loaddata.snapdata[s][p][sst].snapshot[ss].data and #loaddata.snapdata[s][p][sst].snapshot[ss].data > 0 then
-                        for d = 1, #loaddata.snapdata[s][p][sst].snapshot[ss].data do
-                          if cids[loaddata.snapdata[s][p][sst].snapshot[ss].data[d].c_id] then
-                            loaddata.snapdata[s][p][sst].snapshot[ss].data[d].c_id = cids[loaddata.snapdata[s][p][sst].snapshot[ss].data[d].c_id]
+                  
+                    if loaddata.snapdata[s][p][sst].snapshot and #loaddata.snapdata[s][p][sst].snapshot > 0 then
+                      for ss = 1, #loaddata.snapdata[s][p][sst].snapshot do
+                        if loaddata.snapdata[s][p][sst].snapshot[ss].data and #loaddata.snapdata[s][p][sst].snapshot[ss].data > 0 then
+                          for d = 1, #loaddata.snapdata[s][p][sst].snapshot[ss].data do
+                            if cids[loaddata.snapdata[s][p][sst].snapshot[ss].data[d].c_id] then
+                              loaddata.snapdata[s][p][sst].snapshot[ss].data[d].c_id = cids[loaddata.snapdata[s][p][sst].snapshot[ss].data[d].c_id]
+                            end
                           end
                         end
                       end
@@ -70995,7 +71285,7 @@ DBG(t.. '  '..trigtime)
       if loaddata.stripdata and loaddata.stripdata[s] then
       
         GUI_DrawMsgX(obj, gui, 'Merging Switcher Data...', s, #loaddata.stripdata)
-    
+
         for p = 1, 4 do
     
           if loaddata.stripdata[s][p] then
@@ -71005,9 +71295,15 @@ DBG(t.. '  '..trigtime)
                 local ctl = loaddata.stripdata[s][p].controls[c]
                 if ctl.ctlcat == ctlcats.switcher then
                   --local stab = GetSwitcherTable(ctls[c].switcherid)
-                  local stab = loaddata.switchers[ctl.switcherid]
+                  local stab
+                  if subset then
+                    stab = loaddata.switchers[loaddata.switchersidx[ctl.switcherid]]
+                  else
+                    stab = loaddata.switchers[ctl.switcherid]
+                  end
                   ns = #switchers+1
                   nsflag = true
+
                   switchers[ns] = stab
                   swids[ctl.switcherid] = ns
                 end
@@ -71016,9 +71312,29 @@ DBG(t.. '  '..trigtime)
                 
                   if ctl.iteminfo then
                   
-                    ctl.iteminfo.guid = guids[ctl.iteminfo.guid]
-                    ctl.iteminfo.trackguid = guids[ctl.iteminfo.trackguid]
-                    ctl.iteminfo.utilguid = guids[ctl.iteminfo.utilguid]
+                    if preserve_unknown_guids then
+                      if guids[ctl.iteminfo.guid] then
+                        ctl.iteminfo.guid = guids[ctl.iteminfo.guid]
+                      end
+                    else
+                      ctl.iteminfo.guid = guids[ctl.iteminfo.guid]
+                    end
+
+                    if preserve_unknown_guids then
+                      if guids[ctl.iteminfo.trackguid] then
+                        ctl.iteminfo.trackguid = guids[ctl.iteminfo.trackguid]
+                      end
+                    else
+                      ctl.iteminfo.trackguid = guids[ctl.iteminfo.trackguid]
+                    end
+                    
+                    if preserve_unknown_guids then
+                      if guids[ctl.iteminfo.utilguid] then
+                        ctl.iteminfo.utilguid = guids[ctl.iteminfo.utilguid]
+                      end
+                    else
+                      ctl.iteminfo.utilguid = guids[ctl.iteminfo.utilguid]
+                    end
                   end
                 
                 end
@@ -71029,6 +71345,8 @@ DBG(t.. '  '..trigtime)
         end
       end
     end    
+    
+    local extids = {}
     
     if nsflag then
       for s = swstart, #switchers do
@@ -71056,6 +71374,17 @@ DBG(t.. '  '..trigtime)
             switchers[s].current = switchers[s].grpids[1].id
           else
             switchers[s].current = -1
+          end
+        end
+        if switchers[s].extendid then
+          if not extids[switchers[s].extendid] then
+            extids[switchers[s].extendid] = GenID()
+          end
+          switchers[s].extendid = extids[switchers[s].extendid]
+        end
+        if switchers[s].fxguids then
+          for f = 1, #switchers[s].fxguids do
+            switchers[s].fxguids[f] = guids[switchers[s].fxguids[f]]
           end
         end
       end
@@ -71119,7 +71448,6 @@ DBG(t.. '  '..trigtime)
       for s = 1, #loaddata.stripdata do
       
         GUI_DrawMsgX(obj, gui, 'Loading Graphics Images...', s, #loaddata.stripdata)
-        
         for p = 1, 4 do
           if #loaddata.stripdata[s][p].graphics > 0 then
             for i = 1, #loaddata.stripdata[s][p].graphics do
@@ -71205,18 +71533,23 @@ DBG(t.. '  '..trigtime)
     end    
   
     PopulateTracks()
-      
+    
+    return ft, lt  
     --[[if msg then
       OpenMsgBox(1, msg, 1, msg2)
     end]]
     
   end
   
-  function ReplaceRCVs(chunk, t_offset)
+  function ReplaceRCVs(chunk, t_offset, t_offtab)
   
-    local ch = string.gsub(chunk,'AUXRECV (%d-) ',function(d) return 'AUXRECV '..string.format('%i',t_offset+d)..' ' end)
-    return ch
-    
+    if t_offtab then
+      local ch = string.gsub(chunk,'AUXRECV (%d-) ',function(d) return 'AUXRECV '..string.format('%i',t_offset+(t_offtab[tonumber(d)] or -10000))..' ' end)
+      return ch    
+    else
+      local ch = string.gsub(chunk,'AUXRECV (%d-) ',function(d) return 'AUXRECV '..string.format('%i',t_offset+d)..' ' end)
+      return ch
+    end
   end
   
   function Strip_SetPlugDef(stripfile, stripfol)
@@ -73512,6 +73845,7 @@ DBG(vald) ]]
   --TestStuff()  
   --testchunkcopy(0,3)
 --testfxinsert()
+  
   
   if def_knob == -1 or def_knobsm == -1 or def_snapshot == -1 or def_xy == -1 or def_xytarget == -1 or def_eqcknobf == -1 or def_eqcknobg == -1 or def_box == -1 or def_switch == -1 then
     DBG("Please ensure you have the: \n\n__default\nSimpleFlat_48\nSimpleFlat_96\nSimpleFlat2_96\n__Snapshot\n__XY\n__XYTarget\nSimpleBox_9632\nSwitcher\n\nfiles in your LBXCS_resources/controls/ folder.")
