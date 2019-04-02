@@ -14,7 +14,7 @@
   DBG_mode = false
 
   local lvar = {}
-  lvar.scriptver = '0.94.0101' --Script Version
+  lvar.scriptver = '0.94.0102' --Script Version
   
   lvar.shadowmax = 20
   lvar.enablegfxshadows = true
@@ -46155,7 +46155,9 @@ function GUI_DrawCtlBitmap_Strips()
     end
     
     if mode0_submode == 0 then
+      --DBG(tostring(lvar.show_addstripdialog)..'  '..tostring(navigate))
       if MOUSE_click(obj.sections[500]) and (navigate or lvar.show_addstripdialog) then
+      --DBG('A')
         if show_fsnapshots then
           show_fsnapshots = false
           lupd.update_surface = true
@@ -57158,6 +57160,7 @@ function GUI_DrawCtlBitmap_Strips()
       insertstrip = nil
       loadstrip = nil
     
+      navigate = true
       lupd.update_surface = true
 
     elseif MOUSE_click(obj.sections[4005]) then
@@ -57305,6 +57308,8 @@ function GUI_DrawCtlBitmap_Strips()
         loadstrip = nil
           
       end
+      
+      navigate = true
       
     elseif MOUSE_click(obj.sections[4001]) then
       local yp = math.floor((my - obj.sections[4001].y) / butt_h)+1 + afxdialogS_offset
