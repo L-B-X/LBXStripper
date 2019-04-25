@@ -14,7 +14,7 @@
   DBG_mode = false
 
   local lvar = {}
-  lvar.scriptver = '0.94.0102' --Script Version
+  lvar.scriptver = '0.94.0103' --Script Version
   
   lvar.shadowmax = 20
   lvar.enablegfxshadows = true
@@ -12208,8 +12208,8 @@ function GUI_DrawCtlBitmap_Strips()
       for i = 1, #strips[strip][page].graphics do
 
         local gfxx = strips[strip][page].graphics[i]
+        local idx 
         if gfxx.id ~= nil then
-          local idx 
           if stripdim.idx[gfxx.id] then
             idx = stripdim.idx[gfxx.id]
           else
@@ -12238,25 +12238,17 @@ function GUI_DrawCtlBitmap_Strips()
             end
             
             if not stripdim.swdata[swid] then
-              stripdim.swdata[swid] = {l = 2048, t = 2048, r = 0, b = 0}
+              stripdim.swdata[swid] = {l = 2048, t = 2048, r = 0, b = 0, stripidx = idx}
             end
-            --local v = math.min(stripdim.swdata[swid].l, gfxx.x)
-            stripdim.swdata[swid].l = --[[math.max(math.floor(v/2)*2,0)--]]math.min(stripdim.swdata[swid].l, gfxx.x)
-            --local v = math.min(stripdim.swdata[swid].t, gfxx.y)
-            stripdim.swdata[swid].t = --[[math.max(math.floor(v/2)*2,0)--]]math.min(stripdim.swdata[swid].t, gfxx.y)
-            --local v = math.max(stripdim.swdata[swid].r, gfxx.x+gfxx.stretchw)
-            stripdim.swdata[swid].r = --[[math.max(math.floor(v/2)*2,0)--]]math.max(stripdim.swdata[swid].r, gfxx.x+gfxx.stretchw)
-            --local v = math.max(stripdim.swdata[swid].b, gfxx.y+gfxx.stretchh)
-            stripdim.swdata[swid].b = --[[math.max(math.floor(v/2)*2,0)--]]math.max(stripdim.swdata[swid].b, gfxx.y+gfxx.stretchh)
+            stripdim.swdata[swid].l = math.min(stripdim.swdata[swid].l, gfxx.x)
+            stripdim.swdata[swid].t = math.min(stripdim.swdata[swid].t, gfxx.y)
+            stripdim.swdata[swid].r = math.max(stripdim.swdata[swid].r, gfxx.x+gfxx.stretchw)
+            stripdim.swdata[swid].b = math.max(stripdim.swdata[swid].b, gfxx.y+gfxx.stretchh)
             stripdim.swdata[swid].gfxpage = gfxx.gfxpage or 0
-            --local v = math.max(math.min(stripdim.swdata[swid].stripl or 2048, gfxx.x),0)
-            stripdim.swdata[swid].stripl = --[[math.max(math.floor(v/2)*2,0)--]]math.max(math.min(stripdim.swdata[swid].stripl or 2048, gfxx.x),0)
-            --local v = math.min(stripdim.swdata[swid].stript or 2048, gfxx.y)
-            stripdim.swdata[swid].stript = --[[math.max(math.floor(v/2)*2,0)--]]math.min(stripdim.swdata[swid].stript or 2048, gfxx.y)
-            --local v = math.max(stripdim.swdata[swid].stripr or 0, gfxx.x+gfxx.stretchw)
-            stripdim.swdata[swid].stripr = --[[math.max(math.floor(v/2)*2,0)--]]math.max(stripdim.swdata[swid].stripr or 0, gfxx.x+gfxx.stretchw)
-            --local v = math.max(stripdim.swdata[swid].stripb or 0, gfxx.y+gfxx.stretchh)
-            stripdim.swdata[swid].stripb = --[[math.max(math.floor(v/2)*2,0)--]]math.max(stripdim.swdata[swid].stripb or 0, gfxx.y+gfxx.stretchh)
+            stripdim.swdata[swid].stripl = math.max(math.min(stripdim.swdata[swid].stripl or 2048, gfxx.x),0)
+            stripdim.swdata[swid].stript = math.min(stripdim.swdata[swid].stript or 2048, gfxx.y)
+            stripdim.swdata[swid].stripr = math.max(stripdim.swdata[swid].stripr or 0, gfxx.x+gfxx.stretchw)
+            stripdim.swdata[swid].stripb = math.max(stripdim.swdata[swid].stripb or 0, gfxx.y+gfxx.stretchh)
             
             if gfxx.id and not stripdim.swidx[gfxx.id] then
               stripdim.swidx[gfxx.id] = gfxx.switcher
@@ -12291,8 +12283,8 @@ function GUI_DrawCtlBitmap_Strips()
       for i = 1, #strips[strip][page].controls do
 
         local ctl = strips[strip][page].controls[i]
+        local idx 
         if ctl.id ~= nil then
-          local idx 
           if stripdim.idx[ctl.id] then
             idx = stripdim.idx[ctl.id]
           else
@@ -12327,7 +12319,7 @@ function GUI_DrawCtlBitmap_Strips()
             end
   
             if not stripdim.swdata[swid] then
-              stripdim.swdata[swid] = {l = 2048, t = 2048, r = 0, b = 0}
+              stripdim.swdata[swid] = {l = 2048, t = 2048, r = 0, b = 0, stripidx = idx}
             end
             stripdim.swdata[swid].l = math.min(stripdim.swdata[swid].l, ctl.xsc)
             stripdim.swdata[swid].t = math.min(stripdim.swdata[swid].t, ctl.ysc)
@@ -12340,14 +12332,10 @@ function GUI_DrawCtlBitmap_Strips()
               stripdim.swdata[swid].st = ctl.ysc
               stripdim.swdata[swid].sb = ctl.ysc+ctl.hsc            
             else
-              --local v = math.min(stripdim.swdata[swid].stripl or 2048, ctl.xsc)
-              stripdim.swdata[swid].stripl = --[[math.max(math.floor(v/2)*2,0) --]]math.max(math.min(stripdim.swdata[swid].stripl or 2048, ctl.xsc),0)
-              --local v = math.min(stripdim.swdata[swid].stript or 2048, ctl.ysc)
-              stripdim.swdata[swid].stript = --[[math.max(math.floor(v/2)*2,0) --]]math.min(stripdim.swdata[swid].stript or 2048, ctl.ysc)
-              --local v = math.max(stripdim.swdata[swid].stripr or 0, ctl.xsc+ctl.wsc)
-              stripdim.swdata[swid].stripr = --[[math.max(math.floor(v/2)*2,0) --]]math.max(stripdim.swdata[swid].stripr or 0, ctl.xsc+ctl.wsc)
-              --local v = math.max(stripdim.swdata[swid].stripb or 0, ctl.ysc+ctl.hsc)
-              stripdim.swdata[swid].stripb = --[[math.max(math.floor(v/2)*2,0) --]]math.max(stripdim.swdata[swid].stripb or 0, ctl.ysc+ctl.hsc)
+              stripdim.swdata[swid].stripl = math.max(math.min(stripdim.swdata[swid].stripl or 2048, ctl.xsc),0)
+              stripdim.swdata[swid].stript = math.min(stripdim.swdata[swid].stript or 2048, ctl.ysc)
+              stripdim.swdata[swid].stripr = math.max(stripdim.swdata[swid].stripr or 0, ctl.xsc+ctl.wsc)
+              stripdim.swdata[swid].stripb = math.max(stripdim.swdata[swid].stripb or 0, ctl.ysc+ctl.hsc)
             end
             
             if ctl.id and not stripdim.swidx[ctl.id] then
@@ -12613,6 +12601,7 @@ function GUI_DrawCtlBitmap_Strips()
       local extid = swdata.extid
       if extid then
       
+        local coffset = 8388608
         if lvar.mixmodedir == 0 then
           local pos = surface_offset.mixy or 0 --0
           local padgap = lvar.mmpadgap
@@ -12652,6 +12641,11 @@ function GUI_DrawCtlBitmap_Strips()
                   local stx = math.floor(rect10.w/2) - math.floor(sw/2)*lvar.zoom +lvar.mmov_offs --+lvar.mmov_pad                  
                   
                   --gfx.blit(ctlbitmap_image + gfxpage, 1, 0, x, y, w, h, tx, ty)
+                  if swdata[swid].stripidx then
+                    SetColor2(swdata[swid].stripidx+coffset)
+                    gfx.rect(0,ty+(sh+gap)*lvar.zoom,2048,h*lvar.zoom,1)
+                  end
+                  
                   if w > 0 then
                     gfx.blit(ctlbitmap_image + gfxpage, lvar.zoom, 0, x, y, w, h, tx, ty+(sh+gap)*lvar.zoom)
                   end
@@ -12704,7 +12698,11 @@ function GUI_DrawCtlBitmap_Strips()
                   local ty = math.floor(rect10.h/2) - math.floor((h+sh)/2)*lvar.zoom +lvar.mmov_offs
                   local stx = tx + math.floor(math.max(w, sw)/2)*lvar.zoom - math.floor(sw/2)*lvar.zoom
                   --gfx.blit(ctlbitmap_image + gfxpage, 1, 0, x, y, w, h, tx, ty)
-                  
+                 
+                  if swdata[swid].stripidx then
+                    SetColor2(swdata[swid].stripidx+coffset)
+                    gfx.rect(tx,0,w*lvar.zoom,2048,1)
+                  end
                   if w > 0 then
                     gfx.blit(ctlbitmap_image + gfxpage, lvar.zoom, 0, x, y, w, h, tx, ty+(sh+gap)*lvar.zoom)
                   end
@@ -20267,7 +20265,7 @@ function GUI_DrawCtlBitmap_Strips()
                 if spos then
                   if lvar.mixmodedir == 0 then
                     local x = spos.x
-                    local y = spos.y
+                    local y = spos.y                    
                     local w = spos.w*lvar.zoom
                     local h = spos.h*lvar.zoom
                     f_Get_SSV(backcol2 or backcol)          
@@ -20280,17 +20278,16 @@ function GUI_DrawCtlBitmap_Strips()
                     gfx.rect(x,y + (spos.sh+lvar.mmgap)*lvar.zoom,w,h - (spos.sh+lvar.mmgap)*lvar.zoom,0)
                   else
                     local x = spos.x
-                    --local y = spos.y*lvar.zoom
-                    local y = obj.sections[10].y + math.floor(obj.sections[10].h/2) - math.floor(((spos.h+spos.sh)/2)*lvar.zoom) +spos.sh*lvar.zoom +lvar.mmov_offs
+                    local y = spos.y
                     local w = spos.w*lvar.zoom
-                    local h = (spos.h --[[+ spos.sh]])*lvar.zoom
+                    local h = spos.h*lvar.zoom
                     f_Get_SSV(backcol2 or backcol)          
                     gfx.a = 0.9
-                    gfx.rect(x,y-1,w,h+1,1)
+                    gfx.rect(x,y,w,h + (spos.sh+lvar.mmgap)*lvar.zoom,1)
                     gfx.rect(spos.sx,spos.sy,spos.sw*lvar.zoom,spos.sh*lvar.zoom,1)          
                     f_Get_SSV(gui.color.red)          
                     gfx.a = 1
-                    gfx.rect(x,y,w,h,0)                  
+                    gfx.rect(x,y + (spos.sh+lvar.mmgap)*lvar.zoom,w,h,0)                  
                   end
                 end
               end
@@ -20339,13 +20336,13 @@ function GUI_DrawCtlBitmap_Strips()
                   end
                 else
                   local x = spos.x
-                  --local y = spos.y + spos.sh
-                  local y = obj.sections[10].y + math.floor(obj.sections[10].h/2) - math.floor(((spos.h+spos.sh)/2)*lvar.zoom) +spos.sh*lvar.zoom +lvar.mmov_offs
+                  local y = spos.y
+                  --local y = obj.sections[10].y + math.floor(obj.sections[10].h/2) - math.floor(((spos.h+spos.sh)/2)*lvar.zoom) +spos.sh*lvar.zoom +lvar.mmov_offs
                   local w = spos.w*lvar.zoom
                   if w == 0 then 
                     h = spos.sh*lvar.zoom 
-                    --y = spos.sy
-                    y = obj.sections[10].y + math.floor(obj.sections[10].h/2) - math.floor(((spos.h+spos.sh)/2)*lvar.zoom) +lvar.mmov_offs
+                    y = spos.sy
+                    --y = obj.sections[10].y + math.floor(obj.sections[10].h/2) - math.floor(((spos.h+spos.sh)/2)*lvar.zoom) +lvar.mmov_offs
                   end
                   local h = spos.h*lvar.zoom
                   f_Get_SSV(backcol2 or backcol)          
@@ -20353,9 +20350,9 @@ function GUI_DrawCtlBitmap_Strips()
                   f_Get_SSV(gui.color.yellow)
                   local barw = math.min(math.floor(w/2),40)
                   if lvar.dragswitcher.before == true then
-                    gfx.rect(x,y,barw,h,1)
+                    gfx.rect(x,y + (spos.sh+lvar.mmgap)*lvar.zoom,barw,h,1)
                   else
-                    gfx.rect(x+w-barw,y,barw,h,1)            
+                    gfx.rect(x+w-barw,y + (spos.sh+lvar.mmgap)*lvar.zoom,barw,h,1)            
                   end                
                 end
                 gfx.a = 1
@@ -31967,7 +31964,7 @@ function GUI_DrawCtlBitmap_Strips()
     
     lupd.update_gfx = true
     lupd.update_bg = true
-    SetCtlBitmapRedraw()
+    SetCtlBitmapRedraw(true)
     reaper.MarkProjectDirty(0)
     
 
@@ -45842,7 +45839,7 @@ function GUI_DrawCtlBitmap_Strips()
                       local yy = mouse.my
                       local spos = lvar.spos[dst_switchid]
                       if spos then
-                        if yy < spos.y + math.floor((spos.h)/2) then
+                        if yy < spos.y + math.floor((spos.h*lvar.zoom)/2) then
                           lvar.dragswitcher.before = true
                         else
                           lvar.dragswitcher.before = nil
@@ -45852,7 +45849,7 @@ function GUI_DrawCtlBitmap_Strips()
                       local xx = mouse.mx
                       local spos = lvar.spos[dst_switchid]
                       if spos then
-                        if xx < spos.x + math.floor((spos.w)/2) then
+                        if xx < spos.x + math.floor((spos.w*lvar.zoom)/2) then
                           lvar.dragswitcher.before = true
                         else
                           lvar.dragswitcher.before = nil
@@ -50194,9 +50191,23 @@ function GUI_DrawCtlBitmap_Strips()
                     SetCtlSelectVals()
                     SetPosLockCtl()
   
-                    if ctl_select then                  
-                      dragoff = {x = mouse.mx - strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].x - 0.5*strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].w - surface_offset.x,
-                                 y = mouse.my - strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].y - 0.5*strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].ctl_info.cellh - surface_offset.y}
+                    if ctl_select then
+                      if c then
+                        for cc = 1, #ctl_select do
+                          if ctl_select[cc].ctl == c then
+                            local tmpc = ctl_select[1].ctl
+                            ctl_select[1].ctl = c
+                            ctl_select[cc].ctl = tmpc
+                            ReselectSelection()
+                            break
+                          end
+                        end
+                      end      
+                      local cs = ctl_select[1].ctl            
+                      dragoff = {x = mouse.mx - strips[tracks[track_select].strip][page].controls[cs].x 
+                                     - 0.5*strips[tracks[track_select].strip][page].controls[cs].w - surface_offset.x,
+                                 y = mouse.my - strips[tracks[track_select].strip][page].controls[cs].y 
+                                     - 0.5*strips[tracks[track_select].strip][page].controls[cs].ctl_info.cellh - surface_offset.y}
                       mouse.context = contexts.dummy
                       if --[[ctl_select ~= nil and]] not mouse.ctrl then --and not mouse.alt then
                         --dragctl = 'dragctl'
@@ -50821,16 +50832,19 @@ function GUI_DrawCtlBitmap_Strips()
               end            
             end
             lupd.update_surface = true
-          end              
+          end   
+                     
         else
+        
           if math.floor(mouse.mx/settings_gridsize) ~= math.floor(mouse.last_x/settings_gridsize) or math.floor(mouse.my/settings_gridsize) ~= math.floor(mouse.last_y/settings_gridsize) then
             local i
-            local ctl = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl]
+            local cs = ctl_select[1].ctl
+            local ctl = strips[tracks[track_select].strip][page].controls[cs]
             local scale = ctl.scale
             local zx, zy = 0.5*ctl.w, 0.5*ctl.ctl_info.cellh
             
-            local mxx, myy = (mouse.mx - obj.sections[10].x + surface_offset.x*lvar.zoom)/lvar.zoom, (mouse.my - obj.sections[10].y + surface_offset.y*lvar.zoom)/lvar.zoom
-            --DBG(mxx..'  '..myy..'  '..dragoff.x..'  '..dragoff.y..'  '..zx..'  '..zy)
+            local mxx, myy = (mouse.mx - obj.sections[10].x + surface_offset.x*lvar.zoom)/lvar.zoom, 
+                             (mouse.my - obj.sections[10].y + surface_offset.y*lvar.zoom)/lvar.zoom
             if nz(ctl.poslock,false) == false then
               
               if (lvar.lockx or false) == false then
@@ -55509,7 +55523,7 @@ function GUI_DrawCtlBitmap_Strips()
           if settings_savesnapafterselected then
             sp = '!'
           end
-          mstr = 'Rename||Delete||Delete All|Delete All Except Selected||Capture (Overwrite)||'..sp..'Save Snapshot After Selected||'..st..'Follow Selected'
+          mstr = 'Rename||Delete||Delete All|Delete All Except Selected||Capture (Overwrite)||'..sp..'Save Snapshot After Selected||'..st..'Follow Selected||Render All Snapshots (use last render settings)'
           gfx.x, gfx.y = snapmx, snapmy
           res = OpenMenu(mstr)
           if res ~= 0 then
@@ -55531,6 +55545,8 @@ function GUI_DrawCtlBitmap_Strips()
               settings_savesnapafterselected = not settings_savesnapafterselected
             elseif res == 7 then
               settings_followsnapshot = not settings_followsnapshot
+            elseif res == 8 then
+              RenderSnaps()
             end
           end
         else
@@ -55569,6 +55585,40 @@ function GUI_DrawCtlBitmap_Strips()
     mouse.mx = snapmx
     mouse.my = snapmy
     
+  end
+  
+  function RenderSnaps()
+  
+    if reaper.JS_Dialog_BrowseForFolder and reaper.GetSetProjectInfo_String then
+      local retval, fol = reaper.JS_Dialog_BrowseForFolder('Select folder', lvar.lastrenderfolder or '')
+    
+      if retval == 1 and fol then
+        lvar.lastrenderfolder = fol
+        local strip = tracks[track_select].strip
+        local snapcnt
+        local snaps
+        if sstype_select == 1 then
+          snaps = snapshots[strip][page][sstype_select]
+        else
+          snaps = snapshots[strip][page][sstype_select].snapshot
+        end
+        
+        local retval, val = reaper.GetSetProjectInfo_String(0, 'RENDER_FILE', fol, true)
+        snapcnt = #snaps
+        
+        for ss = 1, snapcnt do
+          --DBG('Rendering: '..(snaps[ss].name or ss))
+          Progress('Rendering: '..(snaps[ss].name or ss),ss/snapcnt)
+          Snapshot_Set(strip, page, sstype_select, ss, true)
+          
+          local retval, val = reaper.GetSetProjectInfo_String(0, 'RENDER_PATTERN', snaps[ss].name, true)
+          reaper.Main_OnCommand(42230, 0)
+    
+        end
+        Progress('Rendering Complete',1)
+        --DBG('*** Done ***')
+      end
+    end
   end
   
   function A_Run_MacroLearn()
@@ -63466,6 +63516,19 @@ function GUI_DrawCtlBitmap_Strips()
       
       ctl_select = tbl
     end
+    if gfx3_select then
+      local tbl = {}
+      for i = 1, #gfx3_select do
+      
+        tbl[i] = {}
+        tbl[i].ctl = gfx3_select[i].ctl
+        tbl[i].relx = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].x - strips[tracks[track_select].strip][page].graphics[gfx3_select[i].ctl].x    
+        tbl[i].rely = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].y - strips[tracks[track_select].strip][page].graphics[gfx3_select[i].ctl].y
+      
+      end
+      
+      gfx3_select = tbl
+    end
     
   end
 
@@ -67059,6 +67122,8 @@ function GUI_DrawCtlBitmap_Strips()
     lockw = tonumber(nz(GES('lockw',true),400))
     lockh = tonumber(nz(GES('lockh',true),400))
 
+    lvar.lastrenderfolder = GES('renderfolder',true)
+
     auto_delay = tonumber(nz(GES('auto_sensitivity',true),auto_delay))    
     tb_butt_h = tonumber(nz(GES('tb_butt_h',true),tb_butt_h))    
     pnl_scale = tonumber(nz(GES('pnl_scale',true),pnl_scale))
@@ -67273,6 +67338,8 @@ function GUI_DrawCtlBitmap_Strips()
     reaper.SetExtState(SCRIPT,'fontscale',nz(fontscale,8), true)
     reaper.SetExtState(SCRIPT,'tb_fontscale',nz(tb_fontscale,0), true)
     reaper.SetExtState(SCRIPT,'lst_fontscale',nz(lst_fontscale,0), true)
+
+    reaper.SetExtState(SCRIPT,'renderfolder',nz(lvar.lastrenderfolder,''), true)
 
     reaper.SetExtState(SCRIPT,'addstrip_sepids',tostring(lvar.addstrip_keepseparateids), true)    
 
@@ -74942,9 +75009,15 @@ DBG(vald) ]]
   
   function CheckReqs()
   
+    local app = '5.974'
     local sws = '2.10.0.1'
     local js = '0.961'
     local err
+  
+    if string.match(reaper.GetAppVersion(),'(.+)/') < app then
+      DBG('Stripper version '..lvar.scriptver..' requires Reaper version '..app..' or later') 
+      err = true     
+    end
   
     if reaper.APIExists('CF_GetSWSVersion') then
       local buf = reaper.CF_GetSWSVersion('')
@@ -74973,7 +75046,7 @@ DBG(vald) ]]
     end
     
     if err then
-      DBG('Running incorrect versions of these extensions will result in crashes when performing certain functions.')
+      DBG('Running incorrect versions may result in crashes when performing certain functions, or functions not working.')
     end
   end
   
