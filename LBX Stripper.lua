@@ -14,7 +14,7 @@
   DBG_mode = false
 
   local lvar = {}
-  lvar.scriptver = '0.94.0103' --Script Version
+  lvar.scriptver = '0.94.0104' --Script Version
   
   lvar.shadowmax = 20
   lvar.enablegfxshadows = true
@@ -25353,14 +25353,23 @@ function GUI_DrawCtlBitmap_Strips()
   end
   
   function EditSSName2(txt)
+    local sst, ss
+    --[[if ed_sstype_select then
+      sst = ed_sstype_select
+      ss = ed_ss_select
+    else]]
+    --end
 
-    if sstype_select == 1 then
-      if ss_select and snapshots and snapshots[tracks[track_select].strip] and snapshots[tracks[track_select].strip][page][sstype_select][ss_select] then
-        snapshots[tracks[track_select].strip][page][sstype_select][ss_select].name = txt
+    sst = sstype_select
+    ss = ss_select
+
+    if sst == 1 then
+      if ss and snapshots and snapshots[tracks[track_select].strip] and snapshots[tracks[track_select].strip][page][sst][ss] then
+        snapshots[tracks[track_select].strip][page][sst][ss].name = txt
       end
-    elseif sstype_select > 1 then
-      if ss_select and snapshots and snapshots[tracks[track_select].strip] and snapshots[tracks[track_select].strip][page][sstype_select].snapshot[ss_select] then
-        snapshots[tracks[track_select].strip][page][sstype_select].snapshot[ss_select].name = txt
+    elseif sst > 1 then
+      if ss and snapshots and snapshots[tracks[track_select].strip] and snapshots[tracks[track_select].strip][page][sst].snapshot[ss] then
+        snapshots[tracks[track_select].strip][page][sst].snapshot[ss].name = txt
       end    
     end
   end
@@ -47613,29 +47622,46 @@ function GUI_DrawCtlBitmap_Strips()
                             
     else
       --ADVANCED SNAPSHOT CTL
-      if mmy < ctlxywh.h/2 then
-        sstype_select = ctls[i].param
-        if snapshots and snapshots[tracks[track_select].strip] and snapshots[tracks[track_select].strip][page][sstype_select] 
-                                    and snapshots[tracks[track_select].strip][page][sstype_select].selected then
+      local scale = ctls[i].scale
+      if mmy < (ctlxywh.h)/2 then
+        if mmx < (30*scale) then
+          sstype_select = ctls[i].param
           ss_select = snapshots[tracks[track_select].strip][page][sstype_select].selected
-          
-          if settings_followsnapshot then
-            local snaps = snapshots[tracks[track_select].strip][page][sstype_select]
-            if ss_select < ssoffset+1 or ss_select > ssoffset+SS_butt_cnt then
-              if sstype_select == 1 then
-                ssoffset = math.max(math.min(ss_select-math.floor(SS_butt_cnt/2),#snaps-SS_butt_cnt),0)
-              else
-                ssoffset = math.max(math.min(ss_select-math.floor(SS_butt_cnt/2),#snaps.snapshot-SS_butt_cnt),0)
-              end
-              --lupd.update_snaps = true
-            end
+          if sstype_select and ss_select then
+            OpenEB(11,'Please enter new snapshot name:')
           end
-          
-          show_snapshots = true
-          SetShowSS(show_snapshots)
-          lupd.update_snaps = true
-        end                      
-      elseif mmx < 20 then
+        elseif mmx > ctlxywh.w-(30*scale) then
+          sstype_select = ctls[i].param
+          if sstype_select then
+            Snapshots_CREATE(tracks[track_select].strip, page, sstype_select)
+            SetCtlDirty(i)
+            lupd.update_snaps = true
+            lupd.update_ctls = true 
+          end
+        else
+          sstype_select = ctls[i].param
+          if snapshots and snapshots[tracks[track_select].strip] and snapshots[tracks[track_select].strip][page][sstype_select] 
+                                      and snapshots[tracks[track_select].strip][page][sstype_select].selected then
+            ss_select = snapshots[tracks[track_select].strip][page][sstype_select].selected
+            
+            if settings_followsnapshot then
+              local snaps = snapshots[tracks[track_select].strip][page][sstype_select]
+              if ss_select < ssoffset+1 or ss_select > ssoffset+SS_butt_cnt then
+                if sstype_select == 1 then
+                  ssoffset = math.max(math.min(ss_select-math.floor(SS_butt_cnt/2),#snaps-SS_butt_cnt),0)
+                else
+                  ssoffset = math.max(math.min(ss_select-math.floor(SS_butt_cnt/2),#snaps.snapshot-SS_butt_cnt),0)
+                end
+                --lupd.update_snaps = true
+              end
+            end
+            
+            show_snapshots = true
+            SetShowSS(show_snapshots)
+            lupd.update_snaps = true
+          end
+        end
+      elseif mmx < 20*scale then
         local xsstype_select,xss_select
         xsstype_select = ctls[i].param
         if snapshots and snapshots[tracks[track_select].strip] and snapshots[tracks[track_select].strip][page][xsstype_select] 
@@ -47673,7 +47699,7 @@ function GUI_DrawCtlBitmap_Strips()
             --lupd.update_fsnaps = true                       
           end
         end                                            
-      elseif mmx > ctlxywh.w-20 then
+      elseif mmx > ctlxywh.w-(20*scale) then
         local xsstype_select,xss_select
         xsstype_select = ctls[i].param
         if snapshots and snapshots[tracks[track_select].strip] and snapshots[tracks[track_select].strip][page][xsstype_select] 
