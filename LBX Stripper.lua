@@ -14,7 +14,7 @@
   DBG_mode = false
 
   local lvar = {}
-  lvar.scriptver = '0.94.0107' --Script Version
+  lvar.scriptver = '0.94.0108' --Script Version
 
   lvar.shadowmax = 20
   lvar.enablegfxshadows = true
@@ -36,7 +36,7 @@
 
   lvar.bgmatchestrackcolour = 0
 
-  lvar.hidecursordrag = true
+  lvar.hidecursordrag = false
 
   lvar.ctlupdate_rr = nil
   lvar.ctlupdate_pos = 1
@@ -5063,35 +5063,41 @@
                         y = settingswin_off + yoff + yoffm*1,
                         w = sw,
                         h = butt_h}
-    obj.sections[749] = {x = xofftm,
+                        
+    obj.sections[748] = {x = xofftm,
                               y = settingswin_off + yoff + yoffm*3,
                               w = bw,
                               h = bh}
 
-    obj.sections[704] = {x = xofftm,
+    obj.sections[749] = {x = xofftm,
                               y = settingswin_off + yoff + yoffm*4,
                               w = bw,
                               h = bh}
-    obj.sections[712] = {x = xofftm,
+
+    obj.sections[704] = {x = xofftm,
                               y = settingswin_off + yoff + yoffm*5,
                               w = bw,
                               h = bh}
-    obj.sections[714] = {x = xofftm,
+    obj.sections[712] = {x = xofftm,
                               y = settingswin_off + yoff + yoffm*6,
                               w = bw,
                               h = bh}
+    obj.sections[714] = {x = xofftm,
+                              y = settingswin_off + yoff + yoffm*7,
+                              w = bw,
+                              h = bh}
     obj.sections[729] = {x = xofftm,
-                              y = settingswin_off + yoff + yoffm*8,
+                              y = settingswin_off + yoff + yoffm*9,
                               w = bw,
                               h = bh}
 
     obj.sections[730] = {x = xofftm,
-                              y = settingswin_off + yoff + yoffm*10,
+                              y = settingswin_off + yoff + yoffm*11,
                               w = bw,
                               h = bh}
 
     obj.sections[736] = {x = xofft-100,
-                              y = settingswin_off + yoff + yoffm*12,
+                              y = settingswin_off + yoff + yoffm*13,
                               w = 500,
                               h = butt_h}
 
@@ -22684,6 +22690,7 @@ function GUI_DrawCtlBitmap_Strips()
       end
       GUI_DrawButton(gui, sbt, obj.sections[703], gui.color.white, gui.skol.butt1_txt, sb, 'Nebula scanboot location', true, gui.fontsz.settings,true)
 
+      GUI_DrawTick(gui, 'Hide mouse pointer when dragging control', obj.sections[748], gui.color.white, lvar.hidecursordrag or false, gui.fontsz.settings,true)
       GUI_DrawTick(gui, 'Touch screen mode', obj.sections[749], gui.color.white, settings_touchmode, gui.fontsz.settings,true)
       GUI_DrawTick(gui, 'Touch feedback indicator', obj.sections[704], gui.color.white, settings_touchFB, gui.fontsz.settings,true)
       GUI_DrawTick(gui, 'Morph fader/mod assigned controls', obj.sections[714], gui.color.white, settings_morphfaderassignedctls, gui.fontsz.settings,true)
@@ -60392,17 +60399,27 @@ function GUI_DrawCtlBitmap_Strips()
 
             end
 
-          elseif MOUSE_click(obj.sections[749]) then
-            settings_touchmode = not settings_touchmode
-            if settings_touchmode == false then
-              if lvar.cursor_invisible and reaper.JS_Mouse_SetPosition then
-                lvar.hidecursordrag = true
-              else
-                lvar.hidecursordrag = nil
-                reaper.MB("Please note - mouse pointer hiding requires Julian Sader's API\n\n","Touch screen mode",0)
+          elseif MOUSE_click(obj.sections[748]) then
+            if reaper.JS_Mouse_SetPosition then
+              lvar.hidecursordrag = not (lvar.hidecursordrag or false)
+              if lvar.hidecursordrag then
+                settings_touchmode = false
               end
             else
-              lvar.hidecursordrag = nil
+              reaper.MB("Please note - mouse pointer hiding requires Julian Sader's API\n\n","Hide mouse pointer",0)
+              lvar.hidecursordrag = false
+            end
+            lupd.update_gfx = true
+
+          elseif MOUSE_click(obj.sections[749]) then
+            if reaper.JS_Mouse_SetPosition then
+              settings_touchmode = not settings_touchmode
+              if settings_touchmode == true then
+                lvar.hidecursordrag = false
+              end
+            else
+              reaper.MB("Please note - touch mode requires Julian Sader's API\n\n","Touch mode",0)
+              settings_touchmode = false
             end
             lupd.update_gfx = true
 
@@ -60683,7 +60700,7 @@ function GUI_DrawCtlBitmap_Strips()
     lvar.settingsinf[2] = {74,731,88,715,726,72,738,740}
     lvar.settingsinf[3] = {73,87,95,98,728}
     lvar.settingsinf[4] = {85,86,89,96,720,721,722,723,724,725,702,706,717,737}
-    lvar.settingsinf[5] = {703,704,714,730,729,712,736}
+    lvar.settingsinf[5] = {703,704,714,730,729,712,736,749,748}
 
     lvar.settingsinf_txt = {}
 
@@ -60779,9 +60796,12 @@ function GUI_DrawCtlBitmap_Strips()
 
     lvar.settingsinf_txt[703] = {'When using Nebula plugin from Acustica Audio - use this to set the scanboot file',
                                  'This is essential when sharing strips to ensure the different libraries on different computers load correctly'}
-    lvar.settingsinf_txt[749] = {'Enable if using stripper on a touchscreen',
+    lvar.settingsinf_txt[748] = {'Hides the mouse cursor when dragging a control in live mode',
+                                 'Not suitable for touchscreens if you wish to touch-drag a control',
+                                 'Prevents hitting top or bottom of screen with mouse pointer'}
+    lvar.settingsinf_txt[749] = {'Enables pointer relocation if using stripper on a touchscreen with no mouse input',
                                  '',
-                                 'Prevents hiding and repositioning of pointer when dragging a control'}
+                                 'Not implemented yet!'}
     lvar.settingsinf_txt[704] = {'This option flashes a tiny square in the corner of the script window when a control is clicked or released',
                                  'This square can be monitored by an external AutoHotKey script to perform actions when a control is clicked',
                                  'Useful for example to return the mouse to a previous position when using a touch monitor'}
@@ -67455,6 +67475,7 @@ function GUI_DrawCtlBitmap_Strips()
     settings_showminimaltopbar = tobool(nz(GES('settings_showminimaltopbar',true),settings_showminimaltopbar))
     backcol = nz(GES('backcol',true),'16 16 16')
     nebscanboot_file = zn(GES('nebscanboot',true),nil)
+    lvar.hidecursordrag = tobool(nz(GES('hidecursordrag',true),lvar.hidecursordrag))
     settings_touchmode = tobool(nz(GES('settings_touchmode',true),settings_touchmode))
     settings_touchFB = tobool(nz(GES('settings_touchfb',true),settings_touchFB))
     settings_trackchangemidi = tobool(nz(GES('settings_trackchangemidi',true),settings_trackchangemidi))
@@ -67650,6 +67671,7 @@ function GUI_DrawCtlBitmap_Strips()
     reaper.SetExtState(SCRIPT,'lock_surface',tostring(settings_locksurfaceonnewproject), true)
     reaper.SetExtState(SCRIPT,'backcol',tostring(backcol), true)
     reaper.SetExtState(SCRIPT,'nebscanboot',tostring(nebscanboot_file), true)
+    reaper.SetExtState(SCRIPT,'hidecursordrag',tostring(lvar.hidecursordrag), true)
     reaper.SetExtState(SCRIPT,'settings_touchmode',tostring(settings_touchmode), true)
     reaper.SetExtState(SCRIPT,'settings_touchfb',tostring(settings_touchFB), true)
     reaper.SetExtState(SCRIPT,'settings_trackchangemidi',tostring(settings_trackchangemidi), true)
@@ -75587,11 +75609,10 @@ DBG(vald) ]]
     LoadSettings()
     skin, ret = LoadSkin()
 
-    lvar.hidecursordrag = nil
     if reaper.JS_Mouse_LoadCursorFromFile then
       lvar.cursor_invisible = reaper.JS_Mouse_LoadCursorFromFile(paths.icon_path..'invisible.cur')
-      if settings_touchmode == false and lvar.cursor_invisible and reaper.JS_Mouse_SetPosition then
-        lvar.hidecursordrag = true
+      if not lvar.cursor_invisible or not reaper.JS_Mouse_SetPosition then
+        lvar.hidecursordrag = false
       end
     end
 
