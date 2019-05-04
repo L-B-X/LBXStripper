@@ -14,7 +14,7 @@
   DBG_mode = false
 
   local lvar = {}
-  lvar.scriptver = '0.94.0105' --Script Version
+  lvar.scriptver = '0.94.0106' --Script Version
 
   lvar.shadowmax = 20
   lvar.enablegfxshadows = true
@@ -75493,9 +75493,12 @@ DBG(vald) ]]
 
   --def_knob = 0
   gfx.loadimg(1021,paths.icon_path.."bin.png")
-  lvar.cursor_invisible = reaper.JS_Mouse_LoadCursorFromFile(paths.icon_path..'invisible.cur')
-  if not lvar.cursor_invisible or not reaper.JS_Mouse_SetPosition then
-    lvar.hidecursordrag = nil
+  lvar.hidecursordrag = nil
+  if reaper.JS_Mouse_LoadCursorFromFile then
+    lvar.cursor_invisible = reaper.JS_Mouse_LoadCursorFromFile(paths.icon_path..'invisible.cur')
+    if lvar.cursor_invisible and reaper.JS_Mouse_SetPosition then
+      lvar.hidecursordrag = true
+    end
   end
   
   defctls = {}
