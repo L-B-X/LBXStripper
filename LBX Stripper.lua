@@ -14,7 +14,7 @@
   DBG_mode = false
 
   local lvar = {}
-  lvar.scriptver = '0.94.0106' --Script Version
+  lvar.scriptver = '0.94.0107' --Script Version
 
   lvar.shadowmax = 20
   lvar.enablegfxshadows = true
@@ -5063,6 +5063,11 @@
                         y = settingswin_off + yoff + yoffm*1,
                         w = sw,
                         h = butt_h}
+    obj.sections[749] = {x = xofftm,
+                              y = settingswin_off + yoff + yoffm*3,
+                              w = bw,
+                              h = bh}
+
     obj.sections[704] = {x = xofftm,
                               y = settingswin_off + yoff + yoffm*4,
                               w = bw,
@@ -22678,6 +22683,8 @@ function GUI_DrawCtlBitmap_Strips()
         sbt = 'SET'
       end
       GUI_DrawButton(gui, sbt, obj.sections[703], gui.color.white, gui.skol.butt1_txt, sb, 'Nebula scanboot location', true, gui.fontsz.settings,true)
+
+      GUI_DrawTick(gui, 'Touch screen mode', obj.sections[749], gui.color.white, settings_touchmode, gui.fontsz.settings,true)
       GUI_DrawTick(gui, 'Touch feedback indicator', obj.sections[704], gui.color.white, settings_touchFB, gui.fontsz.settings,true)
       GUI_DrawTick(gui, 'Morph fader/mod assigned controls', obj.sections[714], gui.color.white, settings_morphfaderassignedctls, gui.fontsz.settings,true)
       GUI_DrawTick(gui, 'Disable key input when surface locked', obj.sections[712], gui.color.white, settings_disablekeysonlockedsurface, gui.fontsz.settings,true)
@@ -60385,6 +60392,20 @@ function GUI_DrawCtlBitmap_Strips()
 
             end
 
+          elseif MOUSE_click(obj.sections[749]) then
+            settings_touchmode = not settings_touchmode
+            if settings_touchmode == false then
+              if lvar.cursor_invisible and reaper.JS_Mouse_SetPosition then
+                lvar.hidecursordrag = true
+              else
+                lvar.hidecursordrag = nil
+                reaper.MB("Please note - mouse pointer hiding requires Julian Sader's API\n\n","Touch screen mode",0)
+              end
+            else
+              lvar.hidecursordrag = nil
+            end
+            lupd.update_gfx = true
+
           elseif MOUSE_click(obj.sections[704]) then
             settings_touchFB = not settings_touchFB
             lupd.update_gfx = true
@@ -60758,6 +60779,9 @@ function GUI_DrawCtlBitmap_Strips()
 
     lvar.settingsinf_txt[703] = {'When using Nebula plugin from Acustica Audio - use this to set the scanboot file',
                                  'This is essential when sharing strips to ensure the different libraries on different computers load correctly'}
+    lvar.settingsinf_txt[749] = {'Enable if using stripper on a touchscreen',
+                                 '',
+                                 'Prevents hiding and repositioning of pointer when dragging a control'}
     lvar.settingsinf_txt[704] = {'This option flashes a tiny square in the corner of the script window when a control is clicked or released',
                                  'This square can be monitored by an external AutoHotKey script to perform actions when a control is clicked',
                                  'Useful for example to return the mouse to a previous position when using a touch monitor'}
@@ -67431,6 +67455,7 @@ function GUI_DrawCtlBitmap_Strips()
     settings_showminimaltopbar = tobool(nz(GES('settings_showminimaltopbar',true),settings_showminimaltopbar))
     backcol = nz(GES('backcol',true),'16 16 16')
     nebscanboot_file = zn(GES('nebscanboot',true),nil)
+    settings_touchmode = tobool(nz(GES('settings_touchmode',true),settings_touchmode))
     settings_touchFB = tobool(nz(GES('settings_touchfb',true),settings_touchFB))
     settings_trackchangemidi = tobool(nz(GES('settings_trackchangemidi',true),settings_trackchangemidi))
     settings_savefaderboxassinsnapshots = tobool(nz(GES('settings_savefaderboxassinsnapshots',true),settings_savefaderboxassinsnapshots))
@@ -67625,6 +67650,7 @@ function GUI_DrawCtlBitmap_Strips()
     reaper.SetExtState(SCRIPT,'lock_surface',tostring(settings_locksurfaceonnewproject), true)
     reaper.SetExtState(SCRIPT,'backcol',tostring(backcol), true)
     reaper.SetExtState(SCRIPT,'nebscanboot',tostring(nebscanboot_file), true)
+    reaper.SetExtState(SCRIPT,'settings_touchmode',tostring(settings_touchmode), true)
     reaper.SetExtState(SCRIPT,'settings_touchfb',tostring(settings_touchFB), true)
     reaper.SetExtState(SCRIPT,'settings_trackchangemidi',tostring(settings_trackchangemidi), true)
     reaper.SetExtState(SCRIPT,'settings_savefaderboxassinsnapshots',tostring(settings_savefaderboxassinsnapshots), true)
@@ -75376,6 +75402,7 @@ DBG(vald) ]]
   settings_showminimaltopbar = true
   settings_createbackuponmanualsave = true
   settings_UCV = 1
+  settings_touchmode = false
   settings_touchFB = false
   settings_trackchangemidi = false
   settings_savefaderboxassinsnapshots = false
@@ -75493,13 +75520,6 @@ DBG(vald) ]]
 
   --def_knob = 0
   gfx.loadimg(1021,paths.icon_path.."bin.png")
-  lvar.hidecursordrag = nil
-  if reaper.JS_Mouse_LoadCursorFromFile then
-    lvar.cursor_invisible = reaper.JS_Mouse_LoadCursorFromFile(paths.icon_path..'invisible.cur')
-    if lvar.cursor_invisible and reaper.JS_Mouse_SetPosition then
-      lvar.hidecursordrag = true
-    end
-  end
   
   defctls = {}
 
@@ -75566,6 +75586,14 @@ DBG(vald) ]]
     def_graph = EQC_LoadGraph()
     LoadSettings()
     skin, ret = LoadSkin()
+
+    lvar.hidecursordrag = nil
+    if reaper.JS_Mouse_LoadCursorFromFile then
+      lvar.cursor_invisible = reaper.JS_Mouse_LoadCursorFromFile(paths.icon_path..'invisible.cur')
+      if settings_touchmode == false and lvar.cursor_invisible and reaper.JS_Mouse_SetPosition then
+        lvar.hidecursordrag = true
+      end
+    end
 
     LoadData()
     CleanData()
