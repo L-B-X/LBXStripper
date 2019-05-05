@@ -14,7 +14,7 @@
   DBG_mode = false
 
   local lvar = {}
-  lvar.scriptver = '0.94.0109' --Script Version
+  lvar.scriptver = '0.94.0110' --Script Version
 
   lvar.shadowmax = 20
   lvar.enablegfxshadows = true
@@ -45935,7 +45935,7 @@ function GUI_DrawCtlBitmap_Strips()
             if val < 0 then val = 0 end
             if val > 1 then val = 1 end
             if val ~= octlval then
-              local pos = F_limit(math.floor(val*ctl.cycledata.statecnt),1,
+              local pos = F_limit(round(val*ctl.cycledata.statecnt),1,
                                   ctl.cycledata.statecnt)
               if pos ~= ctl.cycledata.pos then
                 ctl.cycledata.pos = pos
@@ -45943,15 +45943,16 @@ function GUI_DrawCtlBitmap_Strips()
                 A_SetParam(strip,page,trackfxparam_select,ctl)
                 ctl.dirty = true
                 SetCtlDirty(trackfxparam_select)
+  
+                if lvar.hidecursordrag == true then
+                  reaper.JS_Mouse_SetPosition(mouse.ox, mouse.oy)
+                  ctlpos = normalize(0, ctl.cycledata.statecnt,
+                                 ctl.cycledata.pos)
+                end
               end
               octlval = val
               lupd.update_ctls = true
               
-              if lvar.hidecursordrag == true then
-                reaper.JS_Mouse_SetPosition(mouse.ox, mouse.oy)
-                ctlpos = normalize(0, ctl.cycledata.statecnt,
-                               ctl.cycledata.pos)
-              end
             else
               if lvar.hidecursordrag == true then
                 ctlpos = normalize(0, ctl.cycledata.statecnt,
@@ -45989,7 +45990,7 @@ function GUI_DrawCtlBitmap_Strips()
             if val < 0 then val = 0 end
             if val > 1 then val = 1 end
             if val ~= octlval then
-              local pos = F_limit(math.floor(val*ctl.cycledata.statecnt),1,
+              local pos = F_limit(round(val*ctl.cycledata.statecnt),1,
                                   ctl.cycledata.statecnt)
               if pos ~= ctl.cycledata.pos then
                 ctl.cycledata.pos = pos
@@ -45998,15 +45999,15 @@ function GUI_DrawCtlBitmap_Strips()
                 ctl.dirty = true
                 SetCtlDirty(trackfxparam_select)
 
+                if lvar.hidecursordrag == true then
+                  reaper.JS_Mouse_SetPosition(mouse.ox, mouse.oy)
+                  ctlpos = normalize(0, ctl.cycledata.statecnt,
+                                 ctl.cycledata.pos)
+                end
               end
               octlval = val
               lupd.update_ctls = true
 
-              if lvar.hidecursordrag == true then
-                reaper.JS_Mouse_SetPosition(mouse.ox, mouse.oy)
-                ctlpos = normalize(0, ctl.cycledata.statecnt,
-                               ctl.cycledata.pos)
-              end
             else
               if lvar.hidecursordrag == true then
                 ctlpos = normalize(0, ctl.cycledata.statecnt,
@@ -46044,7 +46045,7 @@ function GUI_DrawCtlBitmap_Strips()
             if val < 0 then val = 0 end
             if val > 1 then val = 1 end
             if val ~= octlval then
-              local pos = F_limit(math.floor(val*ctl.cycledata.statecnt),1,
+              local pos = F_limit(round(val*ctl.cycledata.statecnt),1,
                                   ctl.cycledata.statecnt)
               if pos ~= ctl.cycledata.pos then
                 ctl.cycledata.pos = pos
@@ -46052,15 +46053,16 @@ function GUI_DrawCtlBitmap_Strips()
                 A_SetParam(strip,page,trackfxparam_select,ctl)
                 ctl.dirty = true
                 SetCtlDirty(trackfxparam_select)
+
+                if lvar.hidecursordrag == true then
+                  reaper.JS_Mouse_SetPosition(mouse.ox, mouse.oy)
+                  ctlpos = normalize(0, ctl.cycledata.statecnt,
+                                 ctl.cycledata.pos)
+                end
               end
               octlval = val
               lupd.update_ctls = true
 
-              if lvar.hidecursordrag == true then
-                reaper.JS_Mouse_SetPosition(mouse.ox, mouse.oy)
-                ctlpos = normalize(0, ctl.cycledata.statecnt,
-                               ctl.cycledata.pos)
-              end
             else
               if lvar.hidecursordrag == true then
                 ctlpos = normalize(0, ctl.cycledata.statecnt,
