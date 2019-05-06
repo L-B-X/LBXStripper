@@ -14,7 +14,7 @@
   DBG_mode = false
 
   local lvar = {}
-  lvar.scriptver = '0.94.0110' --Script Version
+  lvar.scriptver = '0.94.0112' --Script Version
 
   lvar.shadowmax = 20
   lvar.enablegfxshadows = true
@@ -36467,6 +36467,11 @@ function GUI_DrawCtlBitmap_Strips()
   end
 
   function AssAction_GetNameFromID2(comid, atab, section)
+    
+    if not comid then
+      return
+    end
+    
     local seclist = {0,100,32060,32061,32062,32063}
     if string.sub(comid,1,1) == '_' then
       comid = string.sub(comid,2)
@@ -36902,7 +36907,7 @@ function GUI_DrawCtlBitmap_Strips()
     trackfxparam_select = i
     local ctl = strips[tracks[track_select].strip][page].controls[i]
     if ctl.enabledefval == false then return end
-    if ctltype == 1 then
+    if ctltype == 1 or ctltype == 11 then
 
       ctl.val = ctl.defval
       SetParam()
@@ -44708,26 +44713,32 @@ function GUI_DrawCtlBitmap_Strips()
                           mouse.context = contexts.sliderctlxy
                           mouse.slideoff = ctlxywh.y+ctlxywh.h/2 - mouse.smy
                           mouse.slideoffh = ctlxywh.x+ctlxywh.w/2 - mouse.smx
+                          octlval = ctls[i].val
                           if lvar.hidecursordrag == true then
                             mouse.ox, mouse.oy  = mouse.smx, mouse.smy --reaper.GetMousePosition()
-                            reaper.JS_Mouse_SetCursor(lvar.cursor_invisible)
+                            lvar.hidecursor = true
+                            --reaper.JS_Mouse_SetCursor(lvar.cursor_invisible)
                           end
                           
                         else
                           if ctls[i].horiz then
                             mouse.context = contexts.sliderctl_h
                             mouse.slideoff = ctlxywh.x+ctlxywh.w/2 - mouse.smx
+                            octlval = ctls[i].val
                             if lvar.hidecursordrag == true then
                               mouse.ox, mouse.oy  = mouse.smx, mouse.smy --reaper.GetMousePosition()
-                              reaper.JS_Mouse_SetCursor(lvar.cursor_invisible)
+                              lvar.hidecursor = true
+                              --reaper.JS_Mouse_SetCursor(lvar.cursor_invisible)
                             end
                             
                           else
                             mouse.context = contexts.sliderctl
                             mouse.slideoff = ctlxywh.y+ctlxywh.h/2 - mouse.smy
+                            octlval = ctls[i].val
                             if lvar.hidecursordrag == true then
                               mouse.ox, mouse.oy  = mouse.smx, mouse.smy --reaper.GetMousePosition()
-                              reaper.JS_Mouse_SetCursor(lvar.cursor_invisible)
+                              lvar.hidecursor = true
+                              --reaper.JS_Mouse_SetCursor(lvar.cursor_invisible)
                             end
                           end
                         end
@@ -44799,25 +44810,31 @@ function GUI_DrawCtlBitmap_Strips()
                           mouse.context = contexts.macctlxy
                           mouse.slideoff = ctlxywh.y+ctlxywh.h/2 - mouse.smy
                           mouse.slideoffh = ctlxywh.x+ctlxywh.w/2 - mouse.smx
+                          octlval = ctls[i].val
                           if lvar.hidecursordrag == true then
                             mouse.ox, mouse.oy  = mouse.smx, mouse.smy --reaper.GetMousePosition()
-                            reaper.JS_Mouse_SetCursor(lvar.cursor_invisible)
+                            lvar.hidecursor = true
+                            --reaper.JS_Mouse_SetCursor(lvar.cursor_invisible)
                           end
                         else
                           if ctls[i].horiz then
                             mouse.context = contexts.macctl_h
                             mouse.slideoff = ctlxywh.x+ctlxywh.w/2 - mouse.smx
+                            octlval = ctls[i].val
                             if lvar.hidecursordrag == true then
                               mouse.ox, mouse.oy  = mouse.smx, mouse.smy --reaper.GetMousePosition()
-                              reaper.JS_Mouse_SetCursor(lvar.cursor_invisible)
+                              lvar.hidecursor = true
+                              --reaper.JS_Mouse_SetCursor(lvar.cursor_invisible)
                             end
                             
                           else
                             mouse.context = contexts.macctl
                             mouse.slideoff = ctlxywh.y+ctlxywh.h/2 - mouse.smy
+                            octlval = ctls[i].val
                             if lvar.hidecursordrag == true then
                               mouse.ox, mouse.oy  = mouse.smx, mouse.smy --reaper.GetMousePosition()
-                              reaper.JS_Mouse_SetCursor(lvar.cursor_invisible)
+                              lvar.hidecursor = true
+                              --reaper.JS_Mouse_SetCursor(lvar.cursor_invisible)
                             end
                             
                           end
@@ -44921,7 +44938,8 @@ function GUI_DrawCtlBitmap_Strips()
                         mouse.slideoffh = ctlxywh.x+ctlxywh.w/2 - mouse.smx
                         if lvar.hidecursordrag == true then
                           mouse.ox, mouse.oy  = mouse.smx, mouse.smy --reaper.GetMousePosition()
-                          reaper.JS_Mouse_SetCursor(lvar.cursor_invisible)
+                          lvar.hidecursor = true
+                          --reaper.JS_Mouse_SetCursor(lvar.cursor_invisible)
                         end
                       else
                         if ctls[i].horiz then
@@ -44929,14 +44947,16 @@ function GUI_DrawCtlBitmap_Strips()
                           mouse.slideoff = ctlxywh.x+ctlxywh.w/2 - mouse.smx
                           if lvar.hidecursordrag == true then
                             mouse.ox, mouse.oy  = mouse.smx, mouse.smy --reaper.GetMousePosition()
-                            reaper.JS_Mouse_SetCursor(lvar.cursor_invisible)
+                            lvar.hidecursor = true
+                            --reaper.JS_Mouse_SetCursor(lvar.cursor_invisible)
                           end
                         else
                           mouse.context = contexts.dragcycle
                           mouse.slideoff = ctlxywh.y+ctlxywh.h/2 - mouse.smy
                           if lvar.hidecursordrag == true then
                             mouse.ox, mouse.oy  = mouse.smx, mouse.smy --reaper.GetMousePosition()
-                            reaper.JS_Mouse_SetCursor(lvar.cursor_invisible)
+                            lvar.hidecursor = true
+                            --reaper.JS_Mouse_SetCursor(lvar.cursor_invisible)
                           end
                         end
                       end
@@ -45471,11 +45491,19 @@ function GUI_DrawCtlBitmap_Strips()
                 lupd.update_ctls = true
                 
                 if lvar.hidecursordrag == true then
+                  if lvar.hidecursor then
+                    reaper.JS_Mouse_SetCursor(lvar.cursor_invisible)
+                    lvar.hidecursor = nil
+                  end
                   reaper.JS_Mouse_SetPosition(mouse.ox, mouse.oy)
                   ctlpos = val
                 end
               else
                 if lvar.hidecursordrag == true then
+                  if lvar.hidecursor and (mouse.smx ~= mouse.ox or mouse.smy ~= mouse.oy) then
+                    reaper.JS_Mouse_SetCursor(lvar.cursor_invisible)
+                    lvar.hidecursor = nil
+                  end
                   ctlpos = val
                   reaper.JS_Mouse_SetPosition(mouse.ox, mouse.oy)                  
                 end     
@@ -45530,11 +45558,19 @@ function GUI_DrawCtlBitmap_Strips()
                 octlval = val2
                 lupd.update_ctls = true
                 if lvar.hidecursordrag == true then
+                  if lvar.hidecursor then
+                    reaper.JS_Mouse_SetCursor(lvar.cursor_invisible)
+                    lvar.hidecursor = nil
+                  end
                   reaper.JS_Mouse_SetPosition(mouse.ox, mouse.oy)
                   ctlpos = val
                 end
               else
                 if lvar.hidecursordrag == true then
+                  if lvar.hidecursor and (mouse.smx ~= mouse.ox or mouse.smy ~= mouse.oy) then
+                    reaper.JS_Mouse_SetCursor(lvar.cursor_invisible)
+                    lvar.hidecursor = nil
+                  end
                   ctlpos = val
                   reaper.JS_Mouse_SetPosition(mouse.ox, mouse.oy)                  
                 end              
@@ -45587,11 +45623,19 @@ function GUI_DrawCtlBitmap_Strips()
               octlval = val2
               lupd.update_ctls = true
               if lvar.hidecursordrag == true then
+                if lvar.hidecursor then
+                  reaper.JS_Mouse_SetCursor(lvar.cursor_invisible)
+                  lvar.hidecursor = nil
+                end
                 reaper.JS_Mouse_SetPosition(mouse.ox, mouse.oy)
                 ctlpos = val
               end
             else
               if lvar.hidecursordrag == true then
+                if lvar.hidecursor and (mouse.smx ~= mouse.ox or mouse.smy ~= mouse.oy) then
+                  reaper.JS_Mouse_SetCursor(lvar.cursor_invisible)
+                  lvar.hidecursor = nil
+                end
                 ctlpos = val
                 reaper.JS_Mouse_SetPosition(mouse.ox, mouse.oy)                  
               end     
@@ -45766,11 +45810,19 @@ function GUI_DrawCtlBitmap_Strips()
               trackfxparam_select = tfxp_s
               
               if lvar.hidecursordrag == true then
+                if lvar.hidecursor then
+                  reaper.JS_Mouse_SetCursor(lvar.cursor_invisible)
+                  lvar.hidecursor = nil
+                end
                 reaper.JS_Mouse_SetPosition(mouse.ox, mouse.oy)
                 ctlpos = val
               end
             else
               if lvar.hidecursordrag == true then
+                if lvar.hidecursor and (mouse.smx ~= mouse.ox or mouse.smy ~= mouse.oy) then
+                  reaper.JS_Mouse_SetCursor(lvar.cursor_invisible)
+                  lvar.hidecursor = nil
+                end
                 ctlpos = val
                 reaper.JS_Mouse_SetPosition(mouse.ox, mouse.oy)                  
               end    
@@ -45830,11 +45882,19 @@ function GUI_DrawCtlBitmap_Strips()
               trackfxparam_select = tfxp_s
               
               if lvar.hidecursordrag == true then
+                if lvar.hidecursor then
+                  reaper.JS_Mouse_SetCursor(lvar.cursor_invisible)
+                  lvar.hidecursor = nil
+                end
                 reaper.JS_Mouse_SetPosition(mouse.ox, mouse.oy)
                 ctlpos = val
               end
             else
               if lvar.hidecursordrag == true then
+                if lvar.hidecursor and (mouse.smx ~= mouse.ox or mouse.smy ~= mouse.oy) then
+                  reaper.JS_Mouse_SetCursor(lvar.cursor_invisible)
+                  lvar.hidecursor = nil
+                end
                 ctlpos = val
                 reaper.JS_Mouse_SetPosition(mouse.ox, mouse.oy)                  
               end    
@@ -45894,11 +45954,19 @@ function GUI_DrawCtlBitmap_Strips()
               trackfxparam_select = tfxp_s
               
               if lvar.hidecursordrag == true then
+                if lvar.hidecursor then
+                  reaper.JS_Mouse_SetCursor(lvar.cursor_invisible)
+                  lvar.hidecursor = nil
+                end
                 reaper.JS_Mouse_SetPosition(mouse.ox, mouse.oy)
                 ctlpos = val
               end
             else
               if lvar.hidecursordrag == true then
+                if lvar.hidecursor and (mouse.smx ~= mouse.ox or mouse.smy ~= mouse.oy) then
+                  reaper.JS_Mouse_SetCursor(lvar.cursor_invisible)
+                  lvar.hidecursor = nil
+                end
                 ctlpos = val
                 reaper.JS_Mouse_SetPosition(mouse.ox, mouse.oy)                  
               end    
@@ -45950,11 +46018,19 @@ function GUI_DrawCtlBitmap_Strips()
                                  ctl.cycledata.pos)
                 end
               end
+              if lvar.hidecursor and (mouse.smx ~= mouse.ox or mouse.smy ~= mouse.oy) then
+                reaper.JS_Mouse_SetCursor(lvar.cursor_invisible)
+                lvar.hidecursor = nil
+              end
               octlval = val
               lupd.update_ctls = true
               
             else
               if lvar.hidecursordrag == true then
+                if lvar.hidecursor and (mouse.smx ~= mouse.ox or mouse.smy ~= mouse.oy) then
+                  reaper.JS_Mouse_SetCursor(lvar.cursor_invisible)
+                  lvar.hidecursor = nil
+                end
                 ctlpos = normalize(0, ctl.cycledata.statecnt,
                                ctl.cycledata.pos)
                 reaper.JS_Mouse_SetPosition(mouse.ox, mouse.oy)                  
@@ -46005,11 +46081,19 @@ function GUI_DrawCtlBitmap_Strips()
                                  ctl.cycledata.pos)
                 end
               end
+              if lvar.hidecursor and (mouse.smx ~= mouse.ox or mouse.smy ~= mouse.oy) then
+                reaper.JS_Mouse_SetCursor(lvar.cursor_invisible)
+                lvar.hidecursor = nil
+              end
               octlval = val
               lupd.update_ctls = true
 
             else
               if lvar.hidecursordrag == true then
+                if lvar.hidecursor and (mouse.smx ~= mouse.ox or mouse.smy ~= mouse.oy) then
+                  reaper.JS_Mouse_SetCursor(lvar.cursor_invisible)
+                  lvar.hidecursor = nil
+                end
                 ctlpos = normalize(0, ctl.cycledata.statecnt,
                                ctl.cycledata.pos)
                 reaper.JS_Mouse_SetPosition(mouse.ox, mouse.oy)                  
@@ -46060,11 +46144,19 @@ function GUI_DrawCtlBitmap_Strips()
                                  ctl.cycledata.pos)
                 end
               end
+              if lvar.hidecursor and (mouse.smx ~= mouse.ox or mouse.smy ~= mouse.oy) then
+                reaper.JS_Mouse_SetCursor(lvar.cursor_invisible)
+                lvar.hidecursor = nil
+              end
               octlval = val
               lupd.update_ctls = true
 
             else
               if lvar.hidecursordrag == true then
+                if lvar.hidecursor and (mouse.smx ~= mouse.ox or mouse.smy ~= mouse.oy) then
+                  reaper.JS_Mouse_SetCursor(lvar.cursor_invisible)
+                  lvar.hidecursor = nil
+                end
                 ctlpos = normalize(0, ctl.cycledata.statecnt,
                                ctl.cycledata.pos)
                 reaper.JS_Mouse_SetPosition(mouse.ox, mouse.oy)                  
