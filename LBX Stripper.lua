@@ -14,7 +14,7 @@
   DBG_mode = false
 
   local lvar = {}
-  lvar.scriptver = '0.94.0112' --Script Version
+  lvar.scriptver = '0.94.0113' --Script Version
 
   lvar.shadowmax = 20
   lvar.enablegfxshadows = true
@@ -83,7 +83,7 @@
 
   lvar.divmult_table = {1,2,3,4,5,6,7,8,16,32,64,128}
 
-  lvar.focus_table = {'Off','Arrange','MIDI Editor'}
+  lvar.focus_table = {'Off','Arrange','MIDI Editor','Custom Window'}
   lvar.ctlfile_type_table = {'Knob','Slider','Button','Meter','Misc','Slider2','Slider2H','Slider3'}
   lvar.undotypeflag_table = {delete = 1}
   lvar.framemode_table = {'NORMAL','CIRC'}
@@ -3851,7 +3851,7 @@
       obj = PopMacroEditSec(obj,lvar.macrosech)
 
       --MIDI OUt
-      local mow, moh = math.floor(350*pnl_scale), math.floor(430*pnl_scale)
+      local mow, moh = math.floor(350*pnl_scale), math.floor(450*pnl_scale)
       obj.sections[950] = {x = math.floor(obj.sections[10].x+obj.sections[10].w/2 - mow/2),
                            y = math.floor(obj.sections[10].y+obj.sections[10].h/2 - moh/2),
                            w = mow,
@@ -3886,16 +3886,27 @@
                            y = obj.sections[950].y+math.floor((butt_h*3 + (butt_h+10) * 8)*pnl_scale),
                            w = math.floor((60)*pnl_scale),
                            h = math.floor((butt_h)*pnl_scale)}
-      obj.sections[958] = {x = obj.sections[952].x+obj.sections[952].w+math.floor((80)*pnl_scale),
+      obj.sections[958] = {x = obj.sections[952].x+obj.sections[952].w+math.floor((40)*pnl_scale),
                            y = obj.sections[950].y+math.floor((butt_h*3 + (butt_h+10) * 9)*pnl_scale),
-                           w = math.floor((60)*pnl_scale),
+                           w = math.floor((100)*pnl_scale),
                            h = math.floor((butt_h)*pnl_scale)}
-      obj.sections[959] = {x = obj.sections[952].x+obj.sections[952].w+math.floor((120)*pnl_scale),
+
+      obj.sections[963] = {x = obj.sections[952].x+obj.sections[952].w -math.floor((50)*pnl_scale),
                            y = obj.sections[950].y+math.floor((butt_h*3 + (butt_h+10) * 10)*pnl_scale),
+                           w = math.floor((160)*pnl_scale),
+                           h = math.floor((butt_h)*pnl_scale)}
+
+      obj.sections[964] = {x = obj.sections[963].x+obj.sections[963].w +math.floor((50)*pnl_scale),
+                           y = obj.sections[950].y+math.floor((butt_h*3 + (butt_h+10) * 10 +4)*pnl_scale),
+                           w = math.floor((butt_h/2+4)*pnl_scale),
+                           h = math.floor((butt_h/2+4)*pnl_scale)}
+
+      obj.sections[959] = {x = obj.sections[952].x+obj.sections[952].w+math.floor((120)*pnl_scale),
+                           y = obj.sections[950].y+math.floor((butt_h*3 + (butt_h+10) * 11)*pnl_scale),
                            w = math.floor((butt_h/2+4)*pnl_scale),
                            h = math.floor((butt_h/2+4)*pnl_scale)}
       obj.sections[961] = {x = obj.sections[952].x+obj.sections[952].w+math.floor((120)*pnl_scale),
-                           y = obj.sections[950].y+math.floor((butt_h*3 + (butt_h+10) * 11)*pnl_scale),
+                           y = obj.sections[950].y+math.floor((butt_h*3 + (butt_h+10) * 12)*pnl_scale),
                            w = math.floor((butt_h/2+4)*pnl_scale),
                            h = math.floor((butt_h/2+4)*pnl_scale)}
 
@@ -10463,6 +10474,11 @@
     GUI_DrawButton(gui, midiout_select.vmax, obj.sections[957], gui.color.white, gui.skol.butt1_txt, true, 'TO',false,gui.fontsz.butt)
 
     GUI_DrawButton(gui, lvar.focus_table[nz(midiout_select.focus, 1)], obj.sections[958], gui.color.white, gui.skol.butt1_txt, true, 'FOCUS WINDOW',false,gui.fontsz.butt)
+    if midiout_select.focus == 4 and reaper.JS_Window_Find then --custom
+      GUI_DrawButton(gui, midiout_select.focus_wintit or '[Enter window title]', obj.sections[963], gui.color.white, gui.skol.butt1_txt, true, 'FOCUS WIN. TITLE',false,gui.fontsz.butt)
+      GUI_DrawTick(gui, 'EXACT', obj.sections[964], gui.skol.pnl_txt, nz(midiout_select.focus_winexact, false),gui.fontsz.butt)
+    end
+    
     GUI_DrawTick(gui, 'UPDATE DISPLAY BEFORE SENDING MSG', obj.sections[959], gui.skol.pnl_txt, nz(midiout_select.updategfx, false),gui.fontsz.butt)
     GUI_DrawTick(gui, 'SEND MIDI ON MOUSE UP', obj.sections[961], gui.skol.pnl_txt, nz(midiout_select.onmu, false),gui.fontsz.butt)
 
@@ -35031,6 +35047,8 @@ function GUI_DrawCtlBitmap_Strips()
                                   vmin = 0,
                                   vmax = 127,
                                   focus = 1,
+                                  focus_wintit = nil,
+                                  focus_winexact = false,
                                   updategfx = false}
               end
               show_midiout = true
@@ -38722,6 +38740,8 @@ function GUI_DrawCtlBitmap_Strips()
                                   vmin = 0,
                                   vmax = 127,
                                   focus = 1,
+                                  focus_wintit = nil,
+                                  focus_winexact = false,
                                   updategfx = false}
               end
               show_midiout = true
@@ -41287,6 +41307,21 @@ function GUI_DrawCtlBitmap_Strips()
       end
       lupd.update_surface = true
 
+    elseif mouse.context == nil and MOUSE_click(obj.sections[963]) then
+      if reaper.JS_Window_Find then
+        local ret, tit = reaper.GetUserInputs('Focus Window',1,'Please enter title of window to focus:',midiout_select.focus_wintit or '')
+        if ret == true then
+          midiout_select.focus_wintit = tit
+        end
+        lupd.update_surface = true
+      end
+
+    elseif mouse.context == nil and MOUSE_click(obj.sections[964]) then
+      if reaper.JS_Window_Find then
+        midiout_select.focus_winexact = not (midiout_select.focus_winexact or false)
+        lupd.update_surface = true
+      end
+            
     elseif mouse.context == nil and MOUSE_click(obj.sections[959]) then
       midiout_select.updategfx = not midiout_select.updategfx
       lupd.update_surface = true
@@ -41333,6 +41368,8 @@ function GUI_DrawCtlBitmap_Strips()
                              vmin = midiout_select.vmin,
                              vmax = midiout_select.vmax,
                              focus = midiout_select.focus,
+                             focus_wintit = midiout_select.focus_wintit,
+                             focus_winexact = midiout_select.focus_winexact,
                              updategfx = midiout_select.updategfx,
                              onmu = midiout_select.onmu}
 
@@ -41354,6 +41391,8 @@ function GUI_DrawCtlBitmap_Strips()
                          vmin = midiout_select.vmin,
                          vmax = midiout_select.vmax,
                          focus = midiout_select.focus,
+                         focus_wintit = midiout_select.focus_wintit,
+                         focus_winexact = midiout_select.focus_winexact,
                          updategfx = midiout_select.updategfx,
                          onmu = midiout_select.onmu}
 
@@ -49987,6 +50026,8 @@ function GUI_DrawCtlBitmap_Strips()
                                     vmin = 0,
                                     vmax = 127,
                                     focus = 1,
+                                    focus_wintit = nil,
+                                    focus_winexact = false,
                                     updategfx = false}
                 end
                 show_midiout = true
@@ -65214,6 +65255,8 @@ function GUI_DrawCtlBitmap_Strips()
           strip.controls[c].midiout.vmin = tonumber(zn(data[key..'midiout_vmin'],0))
           strip.controls[c].midiout.vmax = tonumber(zn(data[key..'midiout_vmax'],127))
           strip.controls[c].midiout.focus = tonumber(zn(data[key..'midiout_focus'],1))
+          strip.controls[c].midiout.focus_wintit = zn(data[key..'midiout_focus_wintit'])
+          strip.controls[c].midiout.focus_winexact = tobool(zn(data[key..'midiout_focus_winexact'],false))
           strip.controls[c].midiout.updategfx = tobool(zn(data[key..'midiout_updategfx'],false))
           strip.controls[c].midiout.onmu = tobool(zn(data[key..'midiout_onmu'],false))
         --end
@@ -68881,6 +68924,8 @@ function GUI_DrawCtlBitmap_Strips()
                 file:write('['..key..'midiout_vmin]'..nz(ctl.midiout.vmin,0)..'\n')
                 file:write('['..key..'midiout_vmax]'..nz(ctl.midiout.vmax,127)..'\n')
                 file:write('['..key..'midiout_focus]'..nz(ctl.midiout.focus,1)..'\n')
+                file:write('['..key..'midiout_focus_wintit]'..nz(ctl.midiout.focus_wintit,'')..'\n')
+                file:write('['..key..'midiout_focus_winexact]'..tostring(nz(ctl.midiout.focus_winexact,false))..'\n')
                 file:write('['..key..'midiout_updategfx]'..tostring(nz(ctl.midiout.updategfx,false))..'\n')
                 file:write('['..key..'midiout_onmu]'..tostring(nz(ctl.midiout.onmu,false))..'\n')
               end
@@ -75284,6 +75329,13 @@ DBG(t.. '  '..trigtime)
         FocusArrange()
       elseif miditab.focus == 3 then
         FocusMIDIEditor()
+      elseif miditab.focus == 4 and reaper.JS_Window_Find then
+        if miditab.focus_wintit then
+          local hwnd = reaper.JS_Window_Find(miditab.focus_wintit, miditab.focus_winexact or false)
+          if hwnd then
+            reaper.JS_Window_SetFocus(hwnd)
+          end
+        end
       end
     end
     if miditab.onmu ~= true or mu == true then
