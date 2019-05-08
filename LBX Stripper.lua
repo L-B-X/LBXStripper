@@ -14,7 +14,7 @@
   DBG_mode = false
 
   local lvar = {}
-  lvar.scriptver = '0.94.0113' --Script Version
+  lvar.scriptver = '0.94.0114' --Script Version
 
   lvar.shadowmax = 20
   lvar.enablegfxshadows = true
@@ -42409,11 +42409,11 @@ function GUI_DrawCtlBitmap_Strips()
       if swid and lvar.showpop == true and strips[strip][page].popidx and strips[strip][page].popidx[swid] then
         local idx = strips[strip][page].popidx[swid]
         local pop = strips[strip][page].pop[idx]
-        mx = swdata[swid].sl + (mx - pop.x)
-        my = swdata[swid].st + (my - pop.y)
+        mx = swdata[swid].sl + (mx - pop.x) - surface_offset.x
+        my = swdata[swid].st + (my - pop.y) - surface_offset.y
       elseif swid and lvar.spos[swid] then
-        mx = obj.sections[10].x + swdata[swid].sl + (mx - lvar.spos[swid].x)
-        my = obj.sections[10].y + swdata[swid].st + (my - lvar.spos[swid].y)
+        mx = obj.sections[10].x + swdata[swid].sl + (mx - lvar.spos[swid].x) - surface_offset.x
+        my = obj.sections[10].y + swdata[swid].st + (my - lvar.spos[swid].y) - surface_offset.y
       end
     end
     return mx, my, swid
@@ -75322,8 +75322,8 @@ DBG(t.. '  '..trigtime)
 
   function SendMIDIMsg(miditab, val, mu)
 
-
     --Send MIDI CC
+    local hwnd
     if miditab.focus > 1 then
       if miditab.focus == 2 then
         FocusArrange()
@@ -75331,9 +75331,11 @@ DBG(t.. '  '..trigtime)
         FocusMIDIEditor()
       elseif miditab.focus == 4 and reaper.JS_Window_Find then
         if miditab.focus_wintit then
-          local hwnd = reaper.JS_Window_Find(miditab.focus_wintit, miditab.focus_winexact or false)
+          hwnd = reaper.JS_Window_Find(miditab.focus_wintit, miditab.focus_winexact or false)
           if hwnd then
+            reaper.JS_Window_Enable(hwnd, true)
             reaper.JS_Window_SetFocus(hwnd)
+            reaper.JS_Window_SetZOrder(hwnd, 'TOPMOST', hwnd)
           end
         end
       end
@@ -75432,7 +75434,7 @@ DBG(vald) ]]
       end
 
     end
-
+    
   end
 
   function FocusArrange()
