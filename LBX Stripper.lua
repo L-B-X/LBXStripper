@@ -14,7 +14,7 @@
   DBG_mode = false
 
   local lvar = {}
-  lvar.scriptver = '0.94.0114' --Script Version
+  lvar.scriptver = '0.94.0115' --Script Version
 
   lvar.shadowmax = 20
   lvar.enablegfxshadows = true
@@ -23,6 +23,9 @@
   lvar.shadow_offsy = 8
   lvar.shadow_feather = 0
   lvar.shadows = {}
+
+  lvar.TSM_active = true
+  lvar.TSM_coord = {l = 0, t = 0, r = 400, b = 400}
 
   lvar.mmgap = 4
   lvar.mmpadgap = 20
@@ -40727,6 +40730,18 @@ function GUI_DrawCtlBitmap_Strips()
         lupd.update_snaps = true
         lupd.update_samplemanager = true
       end
+      
+      if lvar.TSM_MOver == true and mouse.context == nil then
+        if lvar.TSM_MOver then
+          if lvar.TSM_FocusHwnd then
+            reaper.JS_Window_SetFocus(lvar.TSM_FocusHwnd)
+          end
+          if lvar.TSM_LegalMP then
+            reaper.JS_Mouse_SetPosition(lvar.TSM_LegalMP.x, lvar.TSM_LegalMP.y) 
+          end
+          lvar.TSM_MOver = nil
+        end
+      end
     end
     --[[if mouse.context == nil and undotxt then
       reaper.Undo_OnStateChange2(0, undotxt)
@@ -42950,6 +42965,33 @@ function GUI_DrawCtlBitmap_Strips()
     local lvar = lvar
     local lupd = lupd
 
+    if lvar.TSM_active == true and mouse.context == nil then
+      --local tt = reaper.time_precise()
+      local smx, smy = reaper.GetMousePosition()
+      if not lvar.TSM_StripperHwnd then
+        lvar.TSM_StripperHwnd = reaper.JS_Window_Find('- LBX Stripper -',true)
+      end
+      if lvar.TSM_StripperHwnd then
+        local retval, l, t, r, b = reaper.JS_Window_GetRect(lvar.TSM_StripperHwnd)
+        --DBG(l..'  '..t..'  '..r..'  '..b..' mouse '..smx..'  '..smy)
+        if smx >= l and smx <= r and smy >= t and smy <= b then
+          if mouse.LB and lvar_MOStripper ~= true then
+            lvar.TSM_MOver = true
+          else
+            lvar_MOStripper = true
+          end
+        else
+          lvar_MOStripper = false
+          lvar.TSM_LegalMP = {x = smx, y = smy}
+          local hwnd = reaper.JS_Window_GetFocus()
+          if hwnd and hwnd ~= lvar.TSM_StripperHwnd then
+            lvar.TSM_FocusHwnd = hwnd
+          end
+        end
+      end
+      --DBG(reaper.time_precise()-tt)
+    end
+    
     if surface_offset.targetmixy or surface_offset.targetmixx then
       MixMode_Swiping()
     end
@@ -44937,6 +44979,16 @@ function GUI_DrawCtlBitmap_Strips()
 
                   elseif ctltype == 2 or ctltype == 3 then
                     --button/button inverse
+                    if lvar.TSM_MOver then
+                      if lvar.TSM_FocusHwnd then
+                        reaper.JS_Window_SetFocus(lvar.TSM_FocusHwnd)
+                      end
+                      if lvar.TSM_LegalMP then
+                        reaper.JS_Mouse_SetPosition(lvar.TSM_LegalMP.x, lvar.TSM_LegalMP.y) 
+                      end
+                      lvar.TSM_MOver = nil
+                    end
+                    
                     trackfxparam_select = i
                     if ctls[i].val and ctls[i].val < 0.5 then
                       ctls[i].val = 1
@@ -45005,6 +45057,16 @@ function GUI_DrawCtlBitmap_Strips()
                       ctls[i].cycledata.posdirty = false
                       oms = mouse.shift
                     else
+                      if lvar.TSM_MOver then
+                        if lvar.TSM_FocusHwnd then
+                          reaper.JS_Window_SetFocus(lvar.TSM_FocusHwnd)
+                        end
+                        if lvar.TSM_LegalMP then
+                          reaper.JS_Mouse_SetPosition(lvar.TSM_LegalMP.x, lvar.TSM_LegalMP.y) 
+                        end
+                        lvar.TSM_MOver = nil
+                      end
+                      
                       if ctls[i].cycledata.pos == nil then
                         ctls[i].cycledata.pos = 1
                       else
@@ -45199,6 +45261,16 @@ function GUI_DrawCtlBitmap_Strips()
 
                   elseif ctltype == 7 or ctltype == 8 or ctltype == 9 or ctltype == 10 then
                     --hold button
+                    if lvar.TSM_MOver then
+                      if lvar.TSM_FocusHwnd then
+                        reaper.JS_Window_SetFocus(lvar.TSM_FocusHwnd)
+                      end
+                      if lvar.TSM_LegalMP then
+                        reaper.JS_Mouse_SetPosition(lvar.TSM_LegalMP.x, lvar.TSM_LegalMP.y) 
+                      end
+                      lvar.TSM_MOver = nil
+                    end
+                    
                     holdbtn = i
                     trackfxparam_select = i
                     mouse.context = contexts.hold
@@ -47887,6 +47959,7 @@ function GUI_DrawCtlBitmap_Strips()
       end
     end
 
+    
     return noscroll
 
   end
@@ -60637,6 +60710,7 @@ function GUI_DrawCtlBitmap_Strips()
               lvar.hidecursordrag = not (lvar.hidecursordrag or false)
               if lvar.hidecursordrag then
                 settings_touchmode = false
+                lvar.TSM_active = false
               end
             else
               reaper.MB("Please note - mouse pointer hiding requires Julian Sader's API\n\n","Hide mouse pointer",0)
@@ -60647,6 +60721,7 @@ function GUI_DrawCtlBitmap_Strips()
           elseif MOUSE_click(obj.sections[749]) then
             if reaper.JS_Mouse_SetPosition then
               settings_touchmode = not settings_touchmode
+              lvar.TSM_active = settings_touchmode
               if settings_touchmode == true then
                 lvar.hidecursordrag = false
               end
@@ -61034,7 +61109,7 @@ function GUI_DrawCtlBitmap_Strips()
                                  'Prevents hitting top or bottom of screen with mouse pointer'}
     lvar.settingsinf_txt[749] = {'Enables pointer relocation if using stripper on a touchscreen with no mouse input',
                                  '',
-                                 'Not implemented yet!'}
+                                 'Experimental!'}
     lvar.settingsinf_txt[704] = {'This option flashes a tiny square in the corner of the script window when a control is clicked or released',
                                  'This square can be monitored by an external AutoHotKey script to perform actions when a control is clicked',
                                  'Useful for example to return the mouse to a previous position when using a touch monitor'}
@@ -67712,6 +67787,7 @@ function GUI_DrawCtlBitmap_Strips()
     nebscanboot_file = zn(GES('nebscanboot',true),nil)
     lvar.hidecursordrag = tobool(nz(GES('hidecursordrag',true),lvar.hidecursordrag))
     settings_touchmode = tobool(nz(GES('settings_touchmode',true),settings_touchmode))
+    lvar.TSM_active = settings_touchmode
     settings_touchFB = tobool(nz(GES('settings_touchfb',true),settings_touchFB))
     settings_trackchangemidi = tobool(nz(GES('settings_trackchangemidi',true),settings_trackchangemidi))
     settings_savefaderboxassinsnapshots = tobool(nz(GES('settings_savefaderboxassinsnapshots',true),settings_savefaderboxassinsnapshots))
@@ -75194,6 +75270,8 @@ DBG(t.. '  '..trigtime)
     --SaveSettings()
     --StripperRunning(false)
     gfx.quit()
+    reaper.SetToggleCommandState(0, lvar.lbx_commid, 0)
+    reaper.RefreshToolbar2(0, lvar.lbx_commid)
 
   end
 
@@ -75224,7 +75302,10 @@ DBG(t.. '  '..trigtime)
     StripperRunning(false)
 
     gfx.quit()
-
+    
+    reaper.SetToggleCommandState(0, lvar.lbx_commid, 0)
+    reaper.RefreshToolbar2(0, lvar.lbx_commid)
+    
   end
 
   function Sleep(sec)
@@ -75635,6 +75716,10 @@ DBG(vald) ]]
   LBX_GTRACK_NAME = '__GLOBAL'
   LBX_GTRACK = nil
 
+  lvar.lbx_commid = ({reaper.get_action_context()})[4]
+  reaper.SetToggleCommandState(0, lvar.lbx_commid, 1)
+  reaper.RefreshToolbar2(0, lvar.lbx_commid)
+  
   CheckReqs()
 
   settings_savedatainprojectfolder = true
