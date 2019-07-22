@@ -14,7 +14,7 @@
   DBG_mode = false
 
   local lvar = {}
-  lvar.scriptver = '0.94.0116' --Script Version
+  lvar.scriptver = '0.94.0117' --Script Version
 
   lvar.shadowmax = 20
   lvar.enablegfxshadows = true
@@ -41795,7 +41795,7 @@ function GUI_DrawCtlBitmap_Strips()
 
     if char then
       if char == 32 then reaper.Main_OnCommandEx(40044, 0,0) end
-      if char>=0 and char~=27 then reaper.defer(run) end
+      if char>=0 and not (char==27 and not mouse.ctrl) then reaper.defer(run) end
     else
       reaper.defer(run)
     end
