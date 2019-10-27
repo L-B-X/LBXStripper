@@ -95,7 +95,7 @@ local(bupdate)
   (this.last_val[nr] != _val) ? 
   (
     slider(nr) = _val;
-    slider_automate(slider(nr));
+    //slider_automate(slider(nr));
     this.bupdate[nr] = 1;
   ):
   (
