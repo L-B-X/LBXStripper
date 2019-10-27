@@ -16,7 +16,7 @@
   local lvar = {}
   local cbi = {}
 
-  lvar.scriptver = '0.94.0125' --Script Version
+  lvar.scriptver = '0.94.0126' --Script Version
 
   lvar.mmtouch = false
 
@@ -40613,8 +40613,9 @@ function GUI_DrawCtlBitmap_Strips()
             local track = GetTrack(trn)
             if track then
               local fx = reaper.TrackFX_GetCount(track) --math.max(maxpos-1,0)
+              local swid = ctls[c].switcherid
               local swok = Switcher_AddStrip(nil, c, loadstrip, nil, trn, fx, nil, true)
-              local extid = switchers[switchid].extendid
+              local extid = switchers[swid].extendid
               Strip_ReposSwitcher_Ext(extid, 1)
 
               UpdateControlValues3(reaper.time_precise(), ctls_upd, ctls_orr)
