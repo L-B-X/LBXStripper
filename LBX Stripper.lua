@@ -16,7 +16,7 @@
   local lvar = {}
   local cbi = {}
 
-  lvar.scriptver = '0.94.0119' --Script Version
+  lvar.scriptver = '0.94.0121' --Script Version
 
   lvar.mmtouch = false
 
@@ -46711,7 +46711,7 @@ function GUI_DrawCtlBitmap_Strips()
 
     if char then
       if char == 32 then reaper.Main_OnCommandEx(40044, 0,0) end
-      if char>=0 and char~=27 then reaper.defer(run) end
+      if char>=0 and not (char==27 and not mouse.ctrl) then reaper.defer(run) end
     else
       reaper.defer(run)
     end
