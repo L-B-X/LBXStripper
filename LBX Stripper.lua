@@ -16,7 +16,7 @@
   local lvar = {}
   local cbi = {}
 
-  lvar.scriptver = '0.94.0122' --Script Version
+  lvar.scriptver = '0.94.0125' --Script Version
 
   lvar.mmtouch = false
 
@@ -13915,23 +13915,25 @@ function GUI_DrawCtlBitmap_Strips()
           end
           for i = 1, pcnt do
 
-            local swid = pop[i].swid
-            if swdata[swid] then
-              local w = (swdata[swid].stripr or 0) - (swdata[swid].stripl or 0)
-              local h = (swdata[swid].stripb or 0) - (swdata[swid].stript or 0)
-              local sw = swdata[swid].sr-swdata[swid].sl
-              local sh = swdata[swid].sb-swdata[swid].st
-              local x = swdata[swid].stripl or 0
-              local y = swdata[swid].stript or 0
-              local sx = swdata[swid].sl
-              local sy = swdata[swid].st
-              local gfxpage = swdata[swid].gfxpage
-  
-              local stx = pop[i].x + math.floor(w/2 - sw/2)*lvar.zoom
-              if w > 0 then
-                gfx.blit(ctlbitmap_image + gfxpage, lvar.zoom, 0, x, y, w, h, pop[i].x, pop[i].y+(sh+lvar.mmgap)*lvar.zoom)
+            if pop[i] then
+              local swid = pop[i].swid
+              if swdata[swid] then
+                local w = (swdata[swid].stripr or 0) - (swdata[swid].stripl or 0)
+                local h = (swdata[swid].stripb or 0) - (swdata[swid].stript or 0)
+                local sw = swdata[swid].sr-swdata[swid].sl
+                local sh = swdata[swid].sb-swdata[swid].st
+                local x = swdata[swid].stripl or 0
+                local y = swdata[swid].stript or 0
+                local sx = swdata[swid].sl
+                local sy = swdata[swid].st
+                local gfxpage = swdata[swid].gfxpage
+    
+                local stx = pop[i].x + math.floor(w/2 - sw/2)*lvar.zoom
+                if w > 0 then
+                  gfx.blit(ctlbitmap_image + gfxpage, lvar.zoom, 0, x, y, w, h, pop[i].x, pop[i].y+(sh+lvar.mmgap)*lvar.zoom)
+                end
+                gfx.blit(ctlbitmap_image + gfxpage, lvar.zoom, 0, sx, sy, sw, sh, stx, pop[i].y)
               end
-              gfx.blit(ctlbitmap_image + gfxpage, lvar.zoom, 0, sx, sy, sw, sh, stx, pop[i].y)
             end
           end
         end
@@ -14499,57 +14501,59 @@ function GUI_DrawCtlBitmap_Strips()
         end
         for i = 1, pcnt do
 
-          local swid = pop[i].swid
-          if swdata[swid] then
-
-            local w = (swdata[swid].stripr or 0) - (swdata[swid].stripl or 0)
-            local h = (swdata[swid].stripb or 0) - (swdata[swid].stript or 0)
-            local sw = swdata[swid].sr-swdata[swid].sl
-            local sh = swdata[swid].sb-swdata[swid].st
-            local x = (swdata[swid].stripl or 0)
-            local y = (swdata[swid].stript or 0)
-            local sx = swdata[swid].sl
-            local sy = swdata[swid].st
-            local gfxpage = swdata[swid].gfxpage
-            
-            local stx = pop[i].x + math.floor(w/2 - sw/2)*lvar.zoom
-            if lvar.enablegfxshadows then
-              w = w + lvar.shadowmax
-              h = h + lvar.shadowmax
-            end
-
-            local o10x = rect10.x
-            local o10y = rect10.y
-            local o10r = rect10.x + rect10.w
-            local o10b = rect10.y + rect10.h -1           
-            
-            if lvar.mmov_show then
-              if lvar.mixmodedir == 0 then
-                o10x = o10x + lvar.mmov_vsize+lvar.mmov_pad*2 + 1
-              else
-                o10y = o10y + lvar.mmov_vsize+lvar.mmov_pad*2 + 1         
+          if pop[i] then
+            local swid = pop[i].swid
+            if swdata[swid] then
+  
+              local w = (swdata[swid].stripr or 0) - (swdata[swid].stripl or 0)
+              local h = (swdata[swid].stripb or 0) - (swdata[swid].stript or 0)
+              local sw = swdata[swid].sr-swdata[swid].sl
+              local sh = swdata[swid].sb-swdata[swid].st
+              local x = (swdata[swid].stripl or 0)
+              local y = (swdata[swid].stript or 0)
+              local sx = swdata[swid].sl
+              local sy = swdata[swid].st
+              local gfxpage = swdata[swid].gfxpage
+              
+              local stx = pop[i].x + math.floor(w/2 - sw/2)*lvar.zoom
+              if lvar.enablegfxshadows then
+                w = w + lvar.shadowmax
+                h = h + lvar.shadowmax
               end
-            end
-
-            local xx = rect10.x + pop[i].x
-            local yy = rect10.y + pop[i].y+(sh+gap)*lvar.zoom
-            local xx,yy,w,h,x,y = CropToRect2(xx,yy,w,h,o10x,o10y,o10r,o10b, x, y, lvar.zoom)
-            
-            if w > 0 then
-              --gfx.blit(strip_image + gfxpage, lvar.zoom, 0, x, y, w, h, rect10.x + pop[i].x, rect10.y + pop[i].y+(sh+gap)*lvar.zoom)
-              blittbl[lvar.blittbl_cnt] = {strip_image + gfxpage, lvar.zoom, 0, x, y, w, h, xx, yy}
+  
+              local o10x = rect10.x
+              local o10y = rect10.y
+              local o10r = rect10.x + rect10.w
+              local o10b = rect10.y + rect10.h -1           
+              
+              if lvar.mmov_show then
+                if lvar.mixmodedir == 0 then
+                  o10x = o10x + lvar.mmov_vsize+lvar.mmov_pad*2 + 1
+                else
+                  o10y = o10y + lvar.mmov_vsize+lvar.mmov_pad*2 + 1         
+                end
+              end
+  
+              local xx = rect10.x + pop[i].x
+              local yy = rect10.y + pop[i].y+(sh+gap)*lvar.zoom
+              local xx,yy,w,h,x,y = CropToRect2(xx,yy,w,h,o10x,o10y,o10r,o10b, x, y, lvar.zoom)
+              
+              if w > 0 then
+                --gfx.blit(strip_image + gfxpage, lvar.zoom, 0, x, y, w, h, rect10.x + pop[i].x, rect10.y + pop[i].y+(sh+gap)*lvar.zoom)
+                blittbl[lvar.blittbl_cnt] = {strip_image + gfxpage, lvar.zoom, 0, x, y, w, h, xx, yy}
+                blittbl[lvar.blittbl_cnt][0] = gfx.a
+                lvar.blittbl_cnt = lvar.blittbl_cnt + 1
+              end
+              
+              --gfx.blit(strip_image + gfxpage, lvar.zoom, 0, sx, sy, sw, sh, rect10.x + stx, rect10.y + pop[i].y)
+              blittbl[lvar.blittbl_cnt] = {strip_image + gfxpage, lvar.zoom, 0, sx, sy, sw, sh, rect10.x + stx, rect10.y + pop[i].y}
               blittbl[lvar.blittbl_cnt][0] = gfx.a
               lvar.blittbl_cnt = lvar.blittbl_cnt + 1
+  
+              --f_Get_SSV(gui.color.black)
+              --gfx.rect(math.min(stx, pop[i].x),pop[i].y,math.max(w,sw),sh+h,0)
+              --gfx.rect(rect10.x + pop[i].x,rect10.y + pop[i].y+(sh+gap)*lvar.zoom,w*lvar.zoom,h*lvar.zoom,0)
             end
-            
-            --gfx.blit(strip_image + gfxpage, lvar.zoom, 0, sx, sy, sw, sh, rect10.x + stx, rect10.y + pop[i].y)
-            blittbl[lvar.blittbl_cnt] = {strip_image + gfxpage, lvar.zoom, 0, sx, sy, sw, sh, rect10.x + stx, rect10.y + pop[i].y}
-            blittbl[lvar.blittbl_cnt][0] = gfx.a
-            lvar.blittbl_cnt = lvar.blittbl_cnt + 1
-
-            --f_Get_SSV(gui.color.black)
-            --gfx.rect(math.min(stx, pop[i].x),pop[i].y,math.max(w,sw),sh+h,0)
-            --gfx.rect(rect10.x + pop[i].x,rect10.y + pop[i].y+(sh+gap)*lvar.zoom,w*lvar.zoom,h*lvar.zoom,0)
           end
         end
       end
