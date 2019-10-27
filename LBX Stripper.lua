@@ -16,7 +16,7 @@
   local lvar = {}
   local cbi = {}
 
-  lvar.scriptver = '0.94.0118' --Script Version
+  lvar.scriptver = '0.94.0119' --Script Version
 
   lvar.mmtouch = false
 
@@ -14814,6 +14814,7 @@ function GUI_DrawCtlBitmap_Strips()
 
           local runpos = 0
           local maxh = 0
+          local gap = lvar.mmgap
 
           gfx.a = 1
 
@@ -14822,14 +14823,13 @@ function GUI_DrawCtlBitmap_Strips()
 
             local h = (swdata[swid].stripb or 0) - (swdata[swid].stript or 0)
             local sh = swdata[swid].sb-swdata[swid].st
-            maxh = math.max(h, sh, maxh)
+            maxh = math.max(h + sh + gap, maxh)
 
           end
 
           local scale = vsize/maxh
           lvar.mmov_scale = scale
           local padgap = lvar.mmpadgap
-          local gap = lvar.mmgap
 
           for p = 1, #posidx[extid] do
             local swid = posidx[extid][p]
@@ -14861,11 +14861,11 @@ function GUI_DrawCtlBitmap_Strips()
             --local ty = math.floor((vsize/scale)/2) - math.floor((h+sh)/2)
             --local stx = tx + math.floor(math.max(w, sw)/2) - math.floor(sw/2)
 
-            local ty = math.floor((vsize/scale)/2) - math.floor((math.max(h,sh))/2)
+            local ty = math.floor((vsize/scale)/2) - math.floor((math.max(h+sh+gap))/2)
             local stx = tx + math.floor(math.max(w, sw)/2) - math.floor(sw/2)
 
             if w > 0 then
-              gfx.blit(strip_image + gfxpage, scale, 0, x, y, w, h, math.floor(tx*scale), math.floor((ty+sh)*scale) + row*(vsize*2))
+              gfx.blit(strip_image + gfxpage, scale, 0, x, y, w, h, math.floor(tx*scale), math.floor((ty+sh+gap)*scale) + row*(vsize*2))
             end
             gfx.blit(strip_image + gfxpage, scale, 0, sx, sy, sw, sh, math.floor(stx*scale), math.floor(ty*scale) + row*(vsize*2))
             SetColor2(p)
