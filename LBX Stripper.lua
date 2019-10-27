@@ -16,7 +16,7 @@
   local lvar = {}
   local cbi = {}
 
-  lvar.scriptver = '0.94.0121' --Script Version
+  lvar.scriptver = '0.94.0122' --Script Version
 
   lvar.mmtouch = false
 
@@ -14190,6 +14190,8 @@ function GUI_DrawCtlBitmap_Strips()
                rect10.h,
                1)
     end
+    
+    lvar.centrepos = -1
     
     local strip = tracks[track_select].strip
     if lvar.stripdim and strips[strip] then
@@ -44132,13 +44134,13 @@ function GUI_DrawCtlBitmap_Strips()
       elseif char == lvar.keypress['mixmode_down'] then
 
         if lvar.livemode >= 1 and mode == 0 and not lvar.showpoponly then
-          MixMode_Swipe(lvar.centrepos, lvar.centrepos+1)
+          MixMode_Swipe((lvar.centrepos or 0), (lvar.centrepos or 0)+1)
         end
 
       elseif char == lvar.keypress['mixmode_up'] then
 
         if lvar.livemode >= 1 and mode == 0 and not lvar.showpoponly then
-          MixMode_Swipe(lvar.centrepos, math.max(lvar.centrepos-1,0))
+          MixMode_Swipe((lvar.centrepos or 0), math.max((lvar.centrepos or 0)-1,0))
         end
 
       elseif char == lvar.keypress['surface_zoom_in'] then
@@ -48463,7 +48465,7 @@ function GUI_DrawCtlBitmap_Strips()
 
   function TranslateMixCtlPos(c, swid)
 
-    local mx, my--, yy|
+    local mx, my = 0,0 --, yy|
     local strip = tracks[track_select].strip
     local ctl = strips[strip][page].controls[c]
 
@@ -48471,7 +48473,7 @@ function GUI_DrawCtlBitmap_Strips()
       swid = Switcher_GetTopLevelSwitcher(ctl.switcher)
     end
     local switchid = swid
-    if switchid then
+    if switchid and lvar.stripdim then
       local swdata = lvar.stripdim.swdata[switchid]
 
       if switchid and lvar.showpop == true and strips[strip][page].popidx and strips[strip][page].popidx[switchid] then
