@@ -16,7 +16,7 @@
   local lvar = {}
   local cbi = {}
 
-  lvar.scriptver = '0.94.0128' --Script Version
+  lvar.scriptver = '0.94.0129' --Script Version
 
   lvar.savesettingstofile = true
   
@@ -68076,7 +68076,7 @@ function GUI_DrawCtlBitmap_Strips()
                     idx = idx + 1
                   end
                   plugdefstrips[idx] = {plug = plug, stripfile = stripfn..'.strip', stripfol = fol}
-                  plugdefstrips_idx[plugid] = idx                
+                  plugdefstrips_idx[plug] = idx                
                   p2 = plug
                 end              
               end
@@ -68092,7 +68092,7 @@ function GUI_DrawCtlBitmap_Strips()
                       idx = idx + 1
                     end
                     plugdefstrips[idx] = {plug = plug, stripfile = stripfn..'.strip', stripfol = fol}
-                    plugdefstrips_idx[plugid] = idx                
+                    plugdefstrips_idx[plug] = idx                
                   end
                 end
               end
