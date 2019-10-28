@@ -16,7 +16,7 @@
   local lvar = {}
   local cbi = {}
 
-  lvar.scriptver = '0.94.0129' --Script Version
+  lvar.scriptver = '0.94.0131' --Script Version
 
   lvar.savesettingstofile = true
   
@@ -34538,7 +34538,7 @@ function GUI_DrawCtlBitmap_Strips()
         for a, b in pairs(switchers[swids[s].id].grpids) do
           swids[s].stripfn = b.stripfn
         end
-        if not string.match(swids[s].stripfn,'dynamic_placeholder.strip$') and swids[s].fxguids then
+        if not string.match(swids[s].stripfn or '','dynamic_placeholder.strip$') and swids[s].fxguids then
           for f = 1, #swids[s].fxguids do
 
             fxguids[swids[s].fxguids[f]] = {id = s}
