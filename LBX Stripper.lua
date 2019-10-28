@@ -16,7 +16,7 @@
   local lvar = {}
   local cbi = {}
 
-  lvar.scriptver = '0.94.0131' --Script Version
+  lvar.scriptver = '0.94.0132' --Script Version
 
   lvar.savesettingstofile = true
   
@@ -34,7 +34,9 @@
   lvar.trbtns_meters = true
   lvar.trbtns_pkcolor = '0 128 255'
   lvar.trbtns_solocolor = '0 255 0'
-
+  lvar.dm_padx = 50
+  lvar.dm_pady = 20
+  
   lvar.mm_fadepop = 0.2
   lvar.mm_fadepopamt = 0.2
 
@@ -36209,8 +36211,8 @@ function GUI_DrawCtlBitmap_Strips()
 
     if #ext_switchers > 0 then
 
-      local padx = 50
-      local pady = 20
+      local padx = lvar.dm_padx
+      local pady = lvar.dm_pady
       local l,r,t,b,sl,sr,st,sb, extctls, extgfx = Switcher_ContentsLocInfo_all2(extid)
       if topy == nil and extctls[1] then
         topy = extctls[1].ctl_sw.y
@@ -37719,7 +37721,7 @@ function GUI_DrawCtlBitmap_Strips()
         else
           mstr = mstr .. '||#Set Strip Drop Location'
         end
-        mstr = mstr .. '||Set Default Switcher Location||Set Gap X ('..(switchers[switchid].padx or 50)..')|Set Gap Y ('..(switchers[switchid].pady or 20)..')'
+        mstr = mstr .. '||Set Default Switcher Location||Set Gap X ('..(switchers[switchid].padx or lvar.dm_padx)..')|Set Gap Y ('..(switchers[switchid].pady or lvar.dm_pady)..')'
         mstr = mstr .. '||Save As Ext Switcher Default'
         gfx.x, gfx.y = mouse.mx, mouse.my
         local res = OpenMenu(mstr)
@@ -67966,6 +67968,8 @@ function GUI_DrawCtlBitmap_Strips()
 
         elseif EB_Open == 1500 then
           if tonumber(editbox.text) then
+            lvar.dm_padx = tonumber(editbox.text)
+            
             local ctl = strips[tracks[track_select].strip][page].controls[switcher_select]
             if ctl then
               local switchid = ctl.switcherid
@@ -67981,6 +67985,8 @@ function GUI_DrawCtlBitmap_Strips()
 
         elseif EB_Open == 1501 then
           if tonumber(editbox.text) then
+            lvar.dm_pady = tonumber(editbox.text)
+
             local ctl = strips[tracks[track_select].strip][page].controls[switcher_select]
             if ctl then
               local switchid = ctl.switcherid
@@ -76225,6 +76231,9 @@ function GUI_DrawCtlBitmap_Strips()
     lvar.mmtouch = tobool(nz(GES('mmtouch',true,data),lvar.mmtouch))
     lvar.dm_autorefresh = tobool(nz(GES('dm_autorefresh',true,data),lvar.dm_autorefresh))
 
+    lvar.dm_padx = tonumber(nz(GES('dm_padx',true,data),lvar.dm_padx))
+    lvar.dm_pady = tonumber(nz(GES('dm_pady',true,data),lvar.dm_pady))
+
     skin_select = nz(GES('skin',true,data),skin_select)
     settings_saveallfxinststrip = tobool(nz(GES('saveallfxinststrip',true,data),settings_saveallfxinststrip))
     settings_followselectedtrack = tobool(nz(GES('followselectedtrack',true,data),settings_followselectedtrack))
@@ -76565,6 +76574,8 @@ function GUI_DrawCtlBitmap_Strips()
     SetExtState(SCRIPT,'dm_singlepopup',tostring(lvar.dm_singlepopup), true)
     SetExtState(SCRIPT,'mmtouch',tostring(lvar.mmtouch), true)
     SetExtState(SCRIPT,'dm_autorefresh',tostring(lvar.dm_autorefresh), true)
+    SetExtState(SCRIPT,'dm_padx',tostring(lvar.dm_padx), true)
+    SetExtState(SCRIPT,'dm_pady',tostring(lvar.dm_pady), true)
     
     SetExtState(SCRIPT,'skin',tostring(skin_select), true)
     SetExtState(SCRIPT,'saveallfxinststrip',tostring(settings_saveallfxinststrip), true)
