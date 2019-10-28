@@ -16,8 +16,10 @@
   local lvar = {}
   local cbi = {}
 
-  lvar.scriptver = '0.94.0127' --Script Version
+  lvar.scriptver = '0.94.0128' --Script Version
 
+  lvar.savesettingstofile = true
+  
   lvar.mmtouch = false
 
   lvar.bgcentred = true
@@ -477,6 +479,7 @@
   paths.mod_path = paths.resource_path.."modpresets/"
   paths.update_path = paths.resource_path.."updater/"
 
+  file_settings = paths.resource_path..'settings.txt'
   file_bgimage = paths.resource_path..'bg.jpg'
 
   local pi = 3.14159265359
@@ -68061,14 +68064,36 @@ function GUI_DrawCtlBitmap_Strips()
               
               --Check if different from plug name
               local _, plug = reaper.TrackFX_GetFXName(track, 0, '')
+              local p1 = plugid
+              local p2 = ''
+              
               if plug then
                 plug = TrimStr(CropFXName(plug))
                 if plug ~= plugid then
                   if plugdefstrips_idx[plug] then
                     idx = plugdefstrips_idx[plug]
+                  else
+                    idx = idx + 1
                   end
                   plugdefstrips[idx] = {plug = plug, stripfile = stripfn..'.strip', stripfol = fol}
                   plugdefstrips_idx[plugid] = idx                
+                  p2 = plug
+                end              
+              end
+              
+
+              local _, plug = reaper.BR_TrackFX_GetFXModuleName(track,0,'',64)
+              if plug then
+                if plug ~= plugid then
+                  if reaper.MB('This strip has been associated with strip/plugin names: \n\n'..p1..'\n'..p2..'\n\nAlso associate this strip with plugin filename: '..plug..'?','DM Strip Save',4) == 6 then
+                    if plugdefstrips_idx[plug] then
+                      idx = plugdefstrips_idx[plug]
+                    else
+                      idx = idx + 1
+                    end
+                    plugdefstrips[idx] = {plug = plug, stripfile = stripfn..'.strip', stripfol = fol}
+                    plugdefstrips_idx[plugid] = idx                
+                  end
                 end
               end
               
@@ -76150,179 +76175,212 @@ function GUI_DrawCtlBitmap_Strips()
     end
   end
 
+  function xGES(key, nilallowed, data)
+    val = data[key]
+    if nilallowed then
+      if val == '' or val == 'nil' then
+        val = nil
+      end
+    end
+    return val
+  end
+
   function LoadSettings()
 
-    lvar.livemode = tonumber(nz(GES('livemode',0),lvar.livemode))
+    local t = reaper.time_precise()
+
+    local GES = GES
+    local data
+    
+    if lvar.savesettingstofile then
+      if reaper.file_exists(file_settings) then
+
+        data = {}
+        
+        GES = xGES
+        
+        for line in io.lines(file_settings) do
+          local idx, val = string.match(line,'%[(.-)%](.*)') --decipher(line)
+          if idx then
+            data[idx] = val
+          end
+        end
+
+      end
+  
+    end
+
+    lvar.livemode = tonumber(nz(GES('livemode',0,data),lvar.livemode))
     lvar.glivemode = lvar.livemode
 
-    file_bgimage = nz(GES('file_bgimage',true),file_bgimage)
-    lvar.mmov_bgimgon = tobool(nz(GES('mmov_bgimgon',true),lvar.mmov_bgimgon))
-    lvar.bgstretch = tobool(nz(GES('bgstretch',true),lvar.bgstretch))
-    lvar.bgbright = tonumber(nz(GES('bgbright',true),lvar.bgbright))
-    lvar.bgcentred = tobool(nz(GES('bgcentred',true),lvar.bgcentred))
-    lvar.livebg = tobool(nz(GES('livebg',true),lvar.livebg))
-    lvar.mm_disablenonpoppedctls = tobool(nz(GES('mm_disablenonpoppedctls',true),lvar.mm_disablenonpoppedctls))
-    lvar.showpoponly = tobool(nz(GES('showpoponly',true),lvar.showpoponly))
-    lvar.dm_singlepopup = tobool(nz(GES('dm_singlepopup',true),lvar.dm_singlepopup))
-    lvar.mmtouch = tobool(nz(GES('mmtouch',true),lvar.mmtouch))
-    lvar.dm_autorefresh = tobool(nz(GES('dm_autorefresh',true),lvar.dm_autorefresh))
+    file_bgimage = nz(GES('file_bgimage',true,data),file_bgimage)
+    lvar.mmov_bgimgon = tobool(nz(GES('mmov_bgimgon',true,data),lvar.mmov_bgimgon))
+    lvar.bgstretch = tobool(nz(GES('bgstretch',true,data),lvar.bgstretch))
+    lvar.bgbright = tonumber(nz(GES('bgbright',true,data),lvar.bgbright))
+    lvar.bgcentred = tobool(nz(GES('bgcentred',true,data),lvar.bgcentred))
+    lvar.livebg = tobool(nz(GES('livebg',true,data),lvar.livebg))
+    lvar.mm_disablenonpoppedctls = tobool(nz(GES('mm_disablenonpoppedctls',true,data),lvar.mm_disablenonpoppedctls))
+    lvar.showpoponly = tobool(nz(GES('showpoponly',true,data),lvar.showpoponly))
+    lvar.dm_singlepopup = tobool(nz(GES('dm_singlepopup',true,data),lvar.dm_singlepopup))
+    lvar.mmtouch = tobool(nz(GES('mmtouch',true,data),lvar.mmtouch))
+    lvar.dm_autorefresh = tobool(nz(GES('dm_autorefresh',true,data),lvar.dm_autorefresh))
 
-    skin_select = nz(GES('skin',true),skin_select)
-    settings_saveallfxinststrip = tobool(nz(GES('saveallfxinststrip',true),settings_saveallfxinststrip))
-    settings_followselectedtrack = tobool(nz(GES('followselectedtrack',true),settings_followselectedtrack))
-    settings_disablesendchecks = tobool(nz(GES('disablesendchecks',false),settings_disablesendchecks))
-    settings_updatefreq = tonumber(nz(GES('updatefreq',true),settings_updatefreq))
-    settings_mousewheelknob = tobool(nz(GES('mousewheelknob',true),settings_mousewheelknob))
-    lvar.sliderxy = tobool(nz(GES('sliderxy',true),lvar.sliderxy))
-    dockstate = nz(GES('dockstate',true),0)
+    skin_select = nz(GES('skin',true,data),skin_select)
+    settings_saveallfxinststrip = tobool(nz(GES('saveallfxinststrip',true,data),settings_saveallfxinststrip))
+    settings_followselectedtrack = tobool(nz(GES('followselectedtrack',true,data),settings_followselectedtrack))
+    settings_disablesendchecks = tobool(nz(GES('disablesendchecks',false,data),settings_disablesendchecks))
+    settings_updatefreq = tonumber(nz(GES('updatefreq',true,data),settings_updatefreq))
+    settings_mousewheelknob = tobool(nz(GES('mousewheelknob',true,data),settings_mousewheelknob))
+    lvar.sliderxy = tobool(nz(GES('sliderxy',true,data),lvar.sliderxy))
+    dockstate = nz(GES('dockstate',true,data),0)
 
-    local wx = GES('winx',true)
-    local wy = GES('winy',true)
-    local ww = GES('winw',true)
-    local wh = GES('winh',true)
+    local wx = GES('winx',true,data)
+    local wy = GES('winy',true,data)
+    local ww = GES('winw',true,data)
+    local wh = GES('winh',true,data)
     if wx and wy and ww and wh then
       lbxwin_dim = {x = tonumber(wx), y = tonumber(wy), w = tonumber(ww), h = tonumber(wh)}
     end
 
-    local fxl = GES('fxpos_l',true)
-    local fxt = GES('fxpos_t',true)
-    local fxw = GES('fxpos_w',true)
-    local fxh = GES('fxpos_h',true)
+    local fxl = GES('fxpos_l',true,data)
+    local fxt = GES('fxpos_t',true,data)
+    local fxw = GES('fxpos_w',true,data)
+    local fxh = GES('fxpos_h',true,data)
     if fxl and fxt and fxw and fxh then
       lvar.fxpos = {l = tonumber(fxl), t = tonumber(fxt), w = tonumber(fxw), h = tonumber(fxh)}
     end
 
-    lockx = tobool(nz(GES('lockx',true),false))
-    locky = tobool(nz(GES('locky',true),false))
-    lockw = tonumber(nz(GES('lockw',true),400))
-    lockh = tonumber(nz(GES('lockh',true),400))
+    lockx = tobool(nz(GES('lockx',true,data),false))
+    locky = tobool(nz(GES('locky',true,data),false))
+    lockw = tonumber(nz(GES('lockw',true,data),400))
+    lockh = tonumber(nz(GES('lockh',true,data),400))
 
-    lvar.lastrenderfolder = GES('renderfolder',true)
+    lvar.lastrenderfolder = GES('renderfolder',true,data)
 
-    lvar.ctlbrowserfav_select = tonumber(nz(GES('ctlbrowserfav_select',true),lvar.ctlbrowserfav_select))
-    lvar.ctlbrowser_offs = tonumber(nz(GES('ctlbrowser_offs',true),lvar.ctlbrowser_offs))
-    cbi_filter = tonumber(nz(GES('cbi_filter',true),cbi_filter))
-    lvar.ctlbrowser_docked_w = tonumber(nz(GES('ctlbrowser_docked_w',true),lvar.ctlbrowser_docked_w))
+    lvar.ctlbrowserfav_select = tonumber(nz(GES('ctlbrowserfav_select',true,data),lvar.ctlbrowserfav_select))
+    lvar.ctlbrowser_offs = tonumber(nz(GES('ctlbrowser_offs',true,data),lvar.ctlbrowser_offs))
+    cbi_filter = tonumber(nz(GES('cbi_filter',true,data),cbi_filter))
+    lvar.ctlbrowser_docked_w = tonumber(nz(GES('ctlbrowser_docked_w',true,data),lvar.ctlbrowser_docked_w))
 
     cbi_offset = 0
     --cbi_filter = -2
     PopulateCtlBrowser_Cbi()
 
-    auto_delay = tonumber(nz(GES('auto_sensitivity',true),auto_delay))
-    tb_butt_h = tonumber(nz(GES('tb_butt_h',true),tb_butt_h))
-    pnl_scale = tonumber(nz(GES('pnl_scale',true),pnl_scale))
+    auto_delay = tonumber(nz(GES('auto_sensitivity',true,data),auto_delay))
+    tb_butt_h = tonumber(nz(GES('tb_butt_h',true,data),tb_butt_h))
+    pnl_scale = tonumber(nz(GES('pnl_scale',true,data),pnl_scale))
 
-    fontscale = tonumber(nz(GES('fontscale',true),fontscale))
-    tb_fontscale = tonumber(nz(GES('tb_fontscale',true),tb_fontscale))
-    lst_fontscale = tonumber(nz(GES('lst_fontscale',true),lst_fontscale))
+    fontscale = tonumber(nz(GES('fontscale',true,data),fontscale))
+    tb_fontscale = tonumber(nz(GES('tb_fontscale',true,data),tb_fontscale))
+    lst_fontscale = tonumber(nz(GES('lst_fontscale',true,data),lst_fontscale))
 
-    lvar.addstrip_keepseparateids = tobool(nz(GES('addstrip_sepids',true),lvar.addstrip_keepseparateids))
+    lvar.addstrip_keepseparateids = tobool(nz(GES('addstrip_sepids',true,data),lvar.addstrip_keepseparateids))
 
-    settings_swapctrlclick = tobool(nz(GES('swapctrlclick',true),settings_swapctrlclick))
-    settings_showbars = tobool(nz(GES('showbars',true),settings_showbars))
-    settings_insertdefaultoneverytrack = tobool(nz(GES('insertdefstripontrack',true),settings_insertdefaultoneverytrack))
-    settings_insertdefaultoneverypage = tobool(nz(GES('insertdefstriponpage',true),settings_insertdefaultoneverypage))
-    settings_snaplistbgcol = tostring(nz(GES('snaplistbgcol',true),settings_snaplistbgcol))
-    lvar.gridcolor = tostring(nz(GES('gridcolor',true),lvar.gridcolor))
-    lvar.showtakeover = tobool(nz(GES('showtakeover',true),lvar.showtakeover))
-    lvar.mousefadermode = tonumber(nz(GES('mousefadermode',true),lvar.mousefadermode))
+    settings_swapctrlclick = tobool(nz(GES('swapctrlclick',true,data),settings_swapctrlclick))
+    settings_showbars = tobool(nz(GES('showbars',true,data),settings_showbars))
+    settings_insertdefaultoneverytrack = tobool(nz(GES('insertdefstripontrack',true,data),settings_insertdefaultoneverytrack))
+    settings_insertdefaultoneverypage = tobool(nz(GES('insertdefstriponpage',true,data),settings_insertdefaultoneverypage))
+    settings_snaplistbgcol = tostring(nz(GES('snaplistbgcol',true,data),settings_snaplistbgcol))
+    lvar.gridcolor = tostring(nz(GES('gridcolor',true,data),lvar.gridcolor))
+    lvar.showtakeover = tobool(nz(GES('showtakeover',true,data),lvar.showtakeover))
+    lvar.mousefadermode = tonumber(nz(GES('mousefadermode',true,data),lvar.mousefadermode))
 
-    lvar.bgmatchestrackcolour = tonumber(nz(GES('bgmatchestrackcolour',true),lvar.bgmatchestrackcolour))
+    lvar.bgmatchestrackcolour = tonumber(nz(GES('bgmatchestrackcolour',true,data),lvar.bgmatchestrackcolour))
 
-    lvar.mixmodedir = tonumber(nz(GES('mixmodedir',0),lvar.mixmodedir))
-    lvar.mixmodealign = tonumber(nz(GES('mixmodealign',0),lvar.mixmodealign))
-    lvar.mmov_show = tobool(nz(GES('mmov_show',0),lvar.mmov_show))
-    lvar.mmov_vsize = tonumber(nz(GES('mmov_vsize',0),lvar.mmov_vsize))
+    lvar.mixmodedir = tonumber(nz(GES('mixmodedir',0,data),lvar.mixmodedir))
+    lvar.mixmodealign = tonumber(nz(GES('mixmodealign',0,data),lvar.mixmodealign))
+    lvar.mmov_show = tobool(nz(GES('mmov_show',0,data),lvar.mmov_show))
+    lvar.mmov_vsize = tonumber(nz(GES('mmov_vsize',0,data),lvar.mmov_vsize))
     if lvar.mmov_show == true then
       lvar.mmov_offs = math.floor((lvar.mmov_vsize + lvar.mmov_pad*2)/2)
     else
       lvar.mmov_offs = 0
     end
-    lvar.trbtns_show = tobool(nz(GES('trbtns_show',0),lvar.trbtns_show))
-    lvar.trbtns_meters = tobool(nz(GES('trbtns_meters',0),lvar.trbtns_meters))
-    lvar.trbtns_pkcolor = nz(GES('trbtns_pkcolor',0),lvar.trbtns_pkcolor)
-    lvar.mm_fadepop = tonumber(nz(GES('mm_fadepop',0),lvar.mm_fadepop))
-    lvar.mm_fadepopamt = tonumber(nz(GES('mm_fadepopamt',0),lvar.mm_fadepopamt))
+    lvar.trbtns_show = tobool(nz(GES('trbtns_show',0,data),lvar.trbtns_show))
+    lvar.trbtns_meters = tobool(nz(GES('trbtns_meters',0,data),lvar.trbtns_meters))
+    lvar.trbtns_pkcolor = nz(GES('trbtns_pkcolor',0,data),lvar.trbtns_pkcolor)
+    lvar.mm_fadepop = tonumber(nz(GES('mm_fadepop',0,data),lvar.mm_fadepop))
+    lvar.mm_fadepopamt = tonumber(nz(GES('mm_fadepopamt',0,data),lvar.mm_fadepopamt))
 
-    lvar.enablegfxshadows = tobool(nz(GES('shadow_enabled',true),lvar.enablegfxshadows))
-    lvar.shadow_offsx = tonumber(nz(GES('shadow_sz',true),lvar.shadow_offsx))
-    lvar.shadow_alpha = tonumber(nz(GES('shadow_alpha',true),lvar.shadow_alpha))
-    lvar.shadow_feather = tonumber(nz(GES('shadow_feather',true),lvar.shadow_feather))
+    lvar.enablegfxshadows = tobool(nz(GES('shadow_enabled',true,data),lvar.enablegfxshadows))
+    lvar.shadow_offsx = tonumber(nz(GES('shadow_sz',true,data),lvar.shadow_offsx))
+    lvar.shadow_alpha = tonumber(nz(GES('shadow_alpha',true,data),lvar.shadow_alpha))
+    lvar.shadow_feather = tonumber(nz(GES('shadow_feather',true,data),lvar.shadow_feather))
 
-    settings_savedatainprojectfolder = tobool(nz(GES('savedatainprojectfolder',true),settings_savedatainprojectfolder))
-    save_subfolder = nz(GES('save_subfolder',true),save_subfolder)
-    settings_createbackuponmanualsave = tobool(nz(GES('createbackup',true),settings_createbackuponmanualsave))
-    settings_backupduringsave = tobool(nz(GES('createtmpbackup',true),settings_backupduringsave))
+    settings_savedatainprojectfolder = tobool(nz(GES('savedatainprojectfolder',true,data),settings_savedatainprojectfolder))
+    save_subfolder = nz(GES('save_subfolder',true,data),save_subfolder)
+    settings_createbackuponmanualsave = tobool(nz(GES('createbackup',true,data),settings_createbackuponmanualsave))
+    settings_backupduringsave = tobool(nz(GES('createtmpbackup',true,data),settings_backupduringsave))
 
-    settings_usectlbitmap = tobool(nz(GES('usectlbitmap',true),settings_usectlbitmap))
-    lvar.ctlupdate_rr = tonumber(nz(GES('ctlupdate_rr',true),lvar.ctlupdate_rr))
-    settings_macroeditmonitor = tobool(nz(GES('macroeditmonitor',true),settings_macroeditmonitor))
-    hide_topbar = tobool(nz(GES('hide_topbar',true),hide_topbar))
-    settings_hideeditbaronnewproject = tobool(nz(GES('hide_editbar',true),settings_hideeditbaronnewproject))
-    settings_locksurfaceonnewproject = tobool(nz(GES('lock_surface',true),settings_locksurfaceonnewproject))
-    settings_showminimaltopbar = tobool(nz(GES('settings_showminimaltopbar',true),settings_showminimaltopbar))
-    backcol = nz(GES('backcol',true),'16 16 16')
-    nebscanboot_file = zn(GES('nebscanboot',true),nil)
-    lvar.hidecursordrag = tobool(nz(GES('hidecursordrag',true),lvar.hidecursordrag))
-    settings_touchmode = tobool(nz(GES('settings_touchmode',true),settings_touchmode))
+    settings_usectlbitmap = tobool(nz(GES('usectlbitmap',true,data),settings_usectlbitmap))
+    lvar.ctlupdate_rr = tonumber(nz(GES('ctlupdate_rr',true,data),lvar.ctlupdate_rr))
+    settings_macroeditmonitor = tobool(nz(GES('macroeditmonitor',true,data),settings_macroeditmonitor))
+    hide_topbar = tobool(nz(GES('hide_topbar',true,data),hide_topbar))
+    settings_hideeditbaronnewproject = tobool(nz(GES('hide_editbar',true,data),settings_hideeditbaronnewproject))
+    settings_locksurfaceonnewproject = tobool(nz(GES('lock_surface',true,data),settings_locksurfaceonnewproject))
+    settings_showminimaltopbar = tobool(nz(GES('settings_showminimaltopbar',true,data),settings_showminimaltopbar))
+    backcol = nz(GES('backcol',true,data),'16 16 16')
+    nebscanboot_file = zn(GES('nebscanboot',true,data),nil)
+    lvar.hidecursordrag = tobool(nz(GES('hidecursordrag',true,data),lvar.hidecursordrag))
+    settings_touchmode = tobool(nz(GES('settings_touchmode',true,data),settings_touchmode))
     lvar.TSM_active = settings_touchmode
-    settings_touchFB = tobool(nz(GES('settings_touchfb',true),settings_touchFB))
-    settings_trackchangemidi = tobool(nz(GES('settings_trackchangemidi',true),settings_trackchangemidi))
-    settings_savefaderboxassinsnapshots = tobool(nz(GES('settings_savefaderboxassinsnapshots',true),settings_savefaderboxassinsnapshots))
-    settings_savemodsinsnapshots = tobool(nz(GES('settings_savemodsinsnapshots',true),settings_savemodsinsnapshots))
-    settings_showfaderassignments = tobool(nz(GES('settings_showfaderassignments',false),settings_showfaderassignments))
-    settings_stripautosnap = tobool(nz(GES('settings_stripautosnap',false),settings_stripautosnap))
-    autosnap_rowheight = tonumber(nz(GES('autosnap_rowheight',true),autosnap_rowheight))
-    autosnap_itemgap = tonumber(nz(GES('autosnap_itemgap',true),autosnap_itemgap))
-    autosnap_itemgapmax = tonumber(nz(GES('autosnap_itemgapmax',true),autosnap_itemgapmax))
+    settings_touchFB = tobool(nz(GES('settings_touchfb',true,data),settings_touchFB))
+    settings_trackchangemidi = tobool(nz(GES('settings_trackchangemidi',true,data),settings_trackchangemidi))
+    settings_savefaderboxassinsnapshots = tobool(nz(GES('settings_savefaderboxassinsnapshots',true,data),settings_savefaderboxassinsnapshots))
+    settings_savemodsinsnapshots = tobool(nz(GES('settings_savemodsinsnapshots',true,data),settings_savemodsinsnapshots))
+    settings_showfaderassignments = tobool(nz(GES('settings_showfaderassignments',false,data),settings_showfaderassignments))
+    settings_stripautosnap = tobool(nz(GES('settings_stripautosnap',false,data),settings_stripautosnap))
+    autosnap_rowheight = tonumber(nz(GES('autosnap_rowheight',true,data),autosnap_rowheight))
+    autosnap_itemgap = tonumber(nz(GES('autosnap_itemgap',true,data),autosnap_itemgap))
+    autosnap_itemgapmax = tonumber(nz(GES('autosnap_itemgapmax',true,data),autosnap_itemgapmax))
 
-    gallery_itemgap = tonumber(nz(GES('gallery_itemgap',true),gallery_itemgap))
-    sg_view = tonumber(nz(GES('stripgallery_view',true),stripgallery_view))
+    gallery_itemgap = tonumber(nz(GES('gallery_itemgap',true,data),gallery_itemgap))
+    sg_view = tonumber(nz(GES('stripgallery_view',true,data),stripgallery_view))
 
-    settings_disablekeysonlockedsurface = tobool(nz(GES('settings_disablekeysonlockedsurface',false),settings_disablekeysonlockedsurface))
-    settings_deletefxwithstrip = tobool(nz(GES('settings_deletefxwithstrip',false),settings_deletefxwithstrip))
-    settings_morphfaderassignedctls = tobool(nz(GES('settings_morphfaderassignedctls',true),settings_morphfaderassignedctls))
-    settings_followsnapshot = tobool(nz(GES('settings_followsnapshot',true),settings_followsnapshot))
-    settings_alwaysrunmods = tobool(nz(GES('settings_alwaysrunmods',true),settings_alwaysrunmods))
-    settings_showmorphpop = tobool(nz(GES('settings_showmorphpop',true),settings_showmorphpop))
-    settings_groupsel = tobool(nz(GES('settings_groupsel',true),settings_groupsel))
-    settings_savesnapafterselected = tobool(nz(GES('settings_savesnapafterselected',true),settings_savesnapafterselected))
-    settings_drawbglabelsontop = tobool(nz(GES('settings_drawbglabelsontop',true),settings_drawbglabelsontop))
-    autosnap_itemgapmax = tonumber(nz(GES('autosnap_itemgapmax',true),autosnap_itemgapmax))
-    settings_ssdock = tobool(nz(GES('settings_ssdock',true),settings_ssdock))
-    settings_sbdock = tobool(nz(GES('settings_sbdock',true),settings_sbdock))
-    settings_hideplugnotfound = tobool(nz(GES('settings_hideplugnotfound',true),settings_hideplugnotfound))
-    settings_enablednu = tobool(nz(GES('settings_enablednu',true),settings_enablednu))
-    lvar.snapcapture_midi_dt = tobool(nz(GES('snapcapture_midi_dt',true),lvar.snapcapture_midi_dt))
+    settings_disablekeysonlockedsurface = tobool(nz(GES('settings_disablekeysonlockedsurface',false,data),settings_disablekeysonlockedsurface))
+    settings_deletefxwithstrip = tobool(nz(GES('settings_deletefxwithstrip',false,data),settings_deletefxwithstrip))
+    settings_morphfaderassignedctls = tobool(nz(GES('settings_morphfaderassignedctls',true,data),settings_morphfaderassignedctls))
+    settings_followsnapshot = tobool(nz(GES('settings_followsnapshot',true,data),settings_followsnapshot))
+    settings_alwaysrunmods = tobool(nz(GES('settings_alwaysrunmods',true,data),settings_alwaysrunmods))
+    settings_showmorphpop = tobool(nz(GES('settings_showmorphpop',true,data),settings_showmorphpop))
+    settings_groupsel = tobool(nz(GES('settings_groupsel',true,data),settings_groupsel))
+    settings_savesnapafterselected = tobool(nz(GES('settings_savesnapafterselected',true,data),settings_savesnapafterselected))
+    settings_drawbglabelsontop = tobool(nz(GES('settings_drawbglabelsontop',true,data),settings_drawbglabelsontop))
+    autosnap_itemgapmax = tonumber(nz(GES('autosnap_itemgapmax',true,data),autosnap_itemgapmax))
+    settings_ssdock = tobool(nz(GES('settings_ssdock',true,data),settings_ssdock))
+    settings_sbdock = tobool(nz(GES('settings_sbdock',true,data),settings_sbdock))
+    settings_hideplugnotfound = tobool(nz(GES('settings_hideplugnotfound',true,data),settings_hideplugnotfound))
+    settings_enablednu = tobool(nz(GES('settings_enablednu',true,data),settings_enablednu))
+    lvar.snapcapture_midi_dt = tobool(nz(GES('snapcapture_midi_dt',true,data),lvar.snapcapture_midi_dt))
 
-    show_stripbrowser = tobool(nz(GES('show_stripbrowser',true),show_stripbrowser))
-    sbwin.x = tonumber(nz(GES('sbwin_x',true),sbwin.x))
-    sbwin.y = tonumber(nz(GES('sbwin_y',true),sbwin.y))
-    sbwin.w = tonumber(nz(GES('sbwin_w',true),sbwin.w))
-    sbwin.h = tonumber(nz(GES('sbwin_h',true),sbwin.h))
-    lvar.stripbrowser.minw = tonumber(nz(GES('stripbrowser_minw',true),lvar.stripbrowser.minw))
-    lvar.stripbrowser.minh = tonumber(nz(GES('stripbrowser_minh',true),lvar.stripbrowser.minh))
-    lvar.stripbrowser.dockpos = tonumber(nz(GES('stripbrowser_dockpos',true),lvar.stripbrowser.dockpos))
-    lvar.stripbrowser.showlabel = tobool(nz(GES('stripbrowser_showlabel',true),lvar.stripbrowser.showlabel))
+    show_stripbrowser = tobool(nz(GES('show_stripbrowser',true,data),show_stripbrowser))
+    sbwin.x = tonumber(nz(GES('sbwin_x',true,data),sbwin.x))
+    sbwin.y = tonumber(nz(GES('sbwin_y',true,data),sbwin.y))
+    sbwin.w = tonumber(nz(GES('sbwin_w',true,data),sbwin.w))
+    sbwin.h = tonumber(nz(GES('sbwin_h',true,data),sbwin.h))
+    lvar.stripbrowser.minw = tonumber(nz(GES('stripbrowser_minw',true,data),lvar.stripbrowser.minw))
+    lvar.stripbrowser.minh = tonumber(nz(GES('stripbrowser_minh',true,data),lvar.stripbrowser.minh))
+    lvar.stripbrowser.dockpos = tonumber(nz(GES('stripbrowser_dockpos',true,data),lvar.stripbrowser.dockpos))
+    lvar.stripbrowser.showlabel = tobool(nz(GES('stripbrowser_showlabel',true,data),lvar.stripbrowser.showlabel))
 
-    lvar.macrosech = tonumber(nz(GES('macrosech',true),lvar.macrosech))
-    undo.max = tonumber(nz(GES('maxundo',true),undo.max))
+    lvar.macrosech = tonumber(nz(GES('macrosech',true,data),lvar.macrosech))
+    undo.max = tonumber(nz(GES('maxundo',true,data),undo.max))
 
-    settings_moddock = tobool(nz(GES('settings_moddock',true),settings_moddock))
+    settings_moddock = tobool(nz(GES('settings_moddock',true,data),settings_moddock))
     modwinsz = {}
-    modwinsz.x = tonumber(nz(GES('modwin_x',true),0))
-    modwinsz.y = tonumber(nz(GES('modwin_y',true),0))
-    modwinsz.w = tonumber(nz(GES('modwin_w',true),500))
-    modwinsz.h = tonumber(nz(GES('modwin_h',true),300))
-    modwinsz.minimized = tobool(nz(GES('modwin_min',true),false))
-    show_lfoedit = tobool(nz(GES('modwin_show',true),false))
+    modwinsz.x = tonumber(nz(GES('modwin_x',true,data),0))
+    modwinsz.y = tonumber(nz(GES('modwin_y',true,data),0))
+    modwinsz.w = tonumber(nz(GES('modwin_w',true,data),500))
+    modwinsz.h = tonumber(nz(GES('modwin_h',true,data),300))
+    modwinsz.minimized = tobool(nz(GES('modwin_min',true,data),false))
+    show_lfoedit = tobool(nz(GES('modwin_show',true,data),false))
 
-    modulator_cnt = tonumber(nz(GES('modulator_cnt',true),modulator_cnt))
-    lvar.mutate_settings.mutate_max = tonumber(nz(GES('mutate_max',true),lvar.mutate_settings.mutate_max))
-    settings_pagescrolldir = tonumber(nz(GES('settings_pagescrolldir',true),settings_pagescrolldir))
+    modulator_cnt = tonumber(nz(GES('modulator_cnt',true,data),modulator_cnt))
+    lvar.mutate_settings.mutate_max = tonumber(nz(GES('mutate_max',true,data),lvar.mutate_settings.mutate_max))
+    settings_pagescrolldir = tonumber(nz(GES('settings_pagescrolldir',true,data),settings_pagescrolldir))
 
-    settings_dragmode = tobool(nz(GES('settings_dragmode',true),settings_dragmode))
-    settings_runstartbat = tobool(nz(GES('settings_runstartbat',true),settings_runstartbat))
+    settings_dragmode = tobool(nz(GES('settings_dragmode',true,data),settings_dragmode))
+    settings_runstartbat = tobool(nz(GES('settings_runstartbat',true,data),settings_runstartbat))
 
     if settings_hideeditbaronnewproject then
       plist_w = 0
@@ -76336,25 +76394,27 @@ function GUI_DrawCtlBitmap_Strips()
       settings_locksurface = true
     end
 
-    local sd = tonumber(GES('strip_default',true))
-    local sdf = tonumber(GES('stripfol_default',true))
+    local sd = tonumber(GES('strip_default',true,data))
+    local sdf = tonumber(GES('stripfol_default',true,data))
     if sd and sdf then
       strip_default = {stripfol_select = sdf, strip_select = sd}
     end
 
-    local sd = tonumber(GES('strip_default_mast',true))
-    local sdf = tonumber(GES('stripfol_default_mast',true))
+    local sd = tonumber(GES('strip_default_mast',true,data))
+    local sdf = tonumber(GES('stripfol_default_mast',true,data))
     if sd and sdf then
       strip_default_mast = {stripfol_select = sdf, strip_select = sd}
     end
 
-    local sd = tonumber(GES('strip_default_glob',true))
-    local sdf = tonumber(GES('stripfol_default_glob',true))
+    local sd = tonumber(GES('strip_default_glob',true,data))
+    local sdf = tonumber(GES('stripfol_default_glob',true,data))
     if sd and sdf then
       strip_default_glob = {stripfol_select = sdf, strip_select = sd}
     end
 
-    lvar.striploadoverride = zn(GES('striploadoverride',true))
+    lvar.striploadoverride = zn(GES('striploadoverride',true,data))
+
+    --DBG('load '..reaper.time_precise()-t)
 
     LoadFavStrips()
     LoadDefSwitchFormat()
@@ -76469,8 +76529,14 @@ function GUI_DrawCtlBitmap_Strips()
     reaper.DeleteExtState(SCRIPT,'stripfol_default_glob',true)
   end
 
+  function xSetExtState(file,key,val)
+    file:write('['..key..']'..(val or '')..'\n')
+  end
+
   function SaveSettings()
     local SCRIPT = lvar.SCRIPT
+
+    local t = reaper.time_precise()
 
     --[[if #lvar.dm_trackbtns > 0 then
       reaper.SetProjExtState(0,SCRIPT,'dm_trackbtns_count',#lvar.dm_trackbtns)
@@ -76480,185 +76546,198 @@ function GUI_DrawCtlBitmap_Strips()
         reaper.SetProjExtState(0,SCRIPT,'dm_trackbtns_trn_'..key, lvar.dm_trackbtns[i].trn)
       end
     end]]
+    local SetExtState = reaper.SetExtState
+    local file
+    if lvar.savesettingstofile then
+      SetExtState = xSetExtState
+      file=io.open(file_settings,"w")      
+      SCRIPT = file
+    end
 
-    reaper.SetExtState(SCRIPT,'file_bgimage',nz(file_bgimage,''), true)
-    reaper.SetExtState(SCRIPT,'mmov_bgimgon',tostring(lvar.mmov_bgimgon), true)
-    reaper.SetExtState(SCRIPT,'bgstretch',tostring(lvar.bgstretch), true)
-    reaper.SetExtState(SCRIPT,'bgbright',tostring(lvar.bgbright), true)
-    reaper.SetExtState(SCRIPT,'bgcentred',tostring(lvar.bgcentred), true)
-    reaper.SetExtState(SCRIPT,'livebg',tostring(lvar.livebg), true)
-    reaper.SetExtState(SCRIPT,'mm_disablenonpoppedctls',tostring(lvar.mm_disablenonpoppedctls), true)
-    reaper.SetExtState(SCRIPT,'showpoponly',tostring(lvar.showpoponly), true)
-    reaper.SetExtState(SCRIPT,'dm_singlepopup',tostring(lvar.dm_singlepopup), true)
-    reaper.SetExtState(SCRIPT,'mmtouch',tostring(lvar.mmtouch), true)
-    reaper.SetExtState(SCRIPT,'dm_autorefresh',tostring(lvar.dm_autorefresh), true)
+    SetExtState(SCRIPT,'file_bgimage',nz(file_bgimage,''), true)
+    SetExtState(SCRIPT,'mmov_bgimgon',tostring(lvar.mmov_bgimgon), true)
+    SetExtState(SCRIPT,'bgstretch',tostring(lvar.bgstretch), true)
+    SetExtState(SCRIPT,'bgbright',tostring(lvar.bgbright), true)
+    SetExtState(SCRIPT,'bgcentred',tostring(lvar.bgcentred), true)
+    SetExtState(SCRIPT,'livebg',tostring(lvar.livebg), true)
+    SetExtState(SCRIPT,'mm_disablenonpoppedctls',tostring(lvar.mm_disablenonpoppedctls), true)
+    SetExtState(SCRIPT,'showpoponly',tostring(lvar.showpoponly), true)
+    SetExtState(SCRIPT,'dm_singlepopup',tostring(lvar.dm_singlepopup), true)
+    SetExtState(SCRIPT,'mmtouch',tostring(lvar.mmtouch), true)
+    SetExtState(SCRIPT,'dm_autorefresh',tostring(lvar.dm_autorefresh), true)
     
-    reaper.SetExtState(SCRIPT,'skin',tostring(skin_select), true)
-    reaper.SetExtState(SCRIPT,'saveallfxinststrip',tostring(settings_saveallfxinststrip), true)
-    reaper.SetExtState(SCRIPT,'followselectedtrack',tostring(settings_followselectedtrack), true)
-    reaper.SetExtState(SCRIPT,'disablesendchecks',tostring(settings_disablesendchecks), true)
-    reaper.SetExtState(SCRIPT,'updatefreq',settings_updatefreq, true)
-    reaper.SetExtState(SCRIPT,'mousewheelknob',tostring(settings_mousewheelknob), true)
-    reaper.SetExtState(SCRIPT,'sliderxy',tostring(lvar.sliderxy), true)
+    SetExtState(SCRIPT,'skin',tostring(skin_select), true)
+    SetExtState(SCRIPT,'saveallfxinststrip',tostring(settings_saveallfxinststrip), true)
+    SetExtState(SCRIPT,'followselectedtrack',tostring(settings_followselectedtrack), true)
+    SetExtState(SCRIPT,'disablesendchecks',tostring(settings_disablesendchecks), true)
+    SetExtState(SCRIPT,'updatefreq',settings_updatefreq, true)
+    SetExtState(SCRIPT,'mousewheelknob',tostring(settings_mousewheelknob), true)
+    SetExtState(SCRIPT,'sliderxy',tostring(lvar.sliderxy), true)
     local d,wx,wy,ww,wh = gfx.dock(-1,-1,-1,-1,-1)
 
     if wx and wy and ww and wh then
-      reaper.SetExtState(SCRIPT,'winx',wx, true)
-      reaper.SetExtState(SCRIPT,'winy',wy, true)
-      reaper.SetExtState(SCRIPT,'winw',ww, true)
-      reaper.SetExtState(SCRIPT,'winh',wh, true)
+      SetExtState(SCRIPT,'winx',wx, true)
+      SetExtState(SCRIPT,'winy',wy, true)
+      SetExtState(SCRIPT,'winw',ww, true)
+      SetExtState(SCRIPT,'winh',wh, true)
     end
 
-    reaper.SetExtState(SCRIPT,'dockstate',d, true)
-    reaper.SetExtState(SCRIPT,'lockx',tostring(lockx), true)
-    reaper.SetExtState(SCRIPT,'locky',tostring(locky), true)
-    reaper.SetExtState(SCRIPT,'lockw',tostring(lockw), true)
-    reaper.SetExtState(SCRIPT,'lockh',tostring(lockh), true)
+    SetExtState(SCRIPT,'dockstate',d, true)
+    SetExtState(SCRIPT,'lockx',tostring(lockx), true)
+    SetExtState(SCRIPT,'locky',tostring(locky), true)
+    SetExtState(SCRIPT,'lockw',tostring(lockw), true)
+    SetExtState(SCRIPT,'lockh',tostring(lockh), true)
 
     --DBG(lvar.ctlbrowserfav_select)
-    reaper.SetExtState(SCRIPT,'ctlbrowserfav_select',tostring(nz(lvar.ctlbrowserfav_select, '')), true)
-    reaper.SetExtState(SCRIPT,'ctlbrowser_offs',tostring(nz(lvar.ctlbrowser_offs,'')), true)
-    reaper.SetExtState(SCRIPT,'cbi_filter',tostring(nz(cbi_filter,-1)), true)
-    reaper.SetExtState(SCRIPT,'ctlbrowser_docked_w',tostring(nz(lvar.ctlbrowser_docked_w,220)), true)
+    SetExtState(SCRIPT,'ctlbrowserfav_select',tostring(nz(lvar.ctlbrowserfav_select, '')), true)
+    SetExtState(SCRIPT,'ctlbrowser_offs',tostring(nz(lvar.ctlbrowser_offs,'')), true)
+    SetExtState(SCRIPT,'cbi_filter',tostring(nz(cbi_filter,-1)), true)
+    SetExtState(SCRIPT,'ctlbrowser_docked_w',tostring(nz(lvar.ctlbrowser_docked_w,220)), true)
 
-    reaper.SetExtState(SCRIPT,'tb_butt_h',nz(tb_butt_h,20), true)
-    reaper.SetExtState(SCRIPT,'pnl_scale',nz(pnl_scale,1), true)
-    reaper.SetExtState(SCRIPT,'fontscale',nz(fontscale,8), true)
-    reaper.SetExtState(SCRIPT,'tb_fontscale',nz(tb_fontscale,0), true)
-    reaper.SetExtState(SCRIPT,'lst_fontscale',nz(lst_fontscale,0), true)
+    SetExtState(SCRIPT,'tb_butt_h',nz(tb_butt_h,20), true)
+    SetExtState(SCRIPT,'pnl_scale',nz(pnl_scale,1), true)
+    SetExtState(SCRIPT,'fontscale',nz(fontscale,8), true)
+    SetExtState(SCRIPT,'tb_fontscale',nz(tb_fontscale,0), true)
+    SetExtState(SCRIPT,'lst_fontscale',nz(lst_fontscale,0), true)
 
-    reaper.SetExtState(SCRIPT,'renderfolder',nz(lvar.lastrenderfolder,''), true)
+    SetExtState(SCRIPT,'renderfolder',nz(lvar.lastrenderfolder,''), true)
 
-    reaper.SetExtState(SCRIPT,'addstrip_sepids',tostring(lvar.addstrip_keepseparateids), true)
+    SetExtState(SCRIPT,'addstrip_sepids',tostring(lvar.addstrip_keepseparateids), true)
 
-    reaper.SetExtState(SCRIPT,'auto_sensitivity',auto_delay, true)
-    reaper.SetExtState(SCRIPT,'swapctrlclick',tostring(settings_swapctrlclick), true)
-    reaper.SetExtState(SCRIPT,'showbars',tostring(settings_showbars), true)
-    reaper.SetExtState(SCRIPT,'insertdefstripontrack',tostring(settings_insertdefaultoneverytrack), true)
-    reaper.SetExtState(SCRIPT,'insertdefstriponpage',tostring(settings_insertdefaultoneverypage), true)
-    reaper.SetExtState(SCRIPT,'snaplistbgcol',settings_snaplistbgcol, true)
-    reaper.SetExtState(SCRIPT,'gridcolor',lvar.gridcolor, true)
-    reaper.SetExtState(SCRIPT,'showtakeover',tostring(lvar.showtakeover), true)
-    reaper.SetExtState(SCRIPT,'mousefadermode',lvar.mousefadermode or 0, true)
+    SetExtState(SCRIPT,'auto_sensitivity',auto_delay, true)
+    SetExtState(SCRIPT,'swapctrlclick',tostring(settings_swapctrlclick), true)
+    SetExtState(SCRIPT,'showbars',tostring(settings_showbars), true)
+    SetExtState(SCRIPT,'insertdefstripontrack',tostring(settings_insertdefaultoneverytrack), true)
+    SetExtState(SCRIPT,'insertdefstriponpage',tostring(settings_insertdefaultoneverypage), true)
+    SetExtState(SCRIPT,'snaplistbgcol',settings_snaplistbgcol, true)
+    SetExtState(SCRIPT,'gridcolor',lvar.gridcolor, true)
+    SetExtState(SCRIPT,'showtakeover',tostring(lvar.showtakeover), true)
+    SetExtState(SCRIPT,'mousefadermode',lvar.mousefadermode or 0, true)
 
-    reaper.SetExtState(SCRIPT,'savedatainprojectfolder',tostring(settings_savedatainprojectfolder), true)
-    reaper.SetExtState(SCRIPT,'save_subfolder',nz(save_subfolder,''), true)
-    reaper.SetExtState(SCRIPT,'createbackup',tostring(settings_createbackuponmanualsave), true)
-    reaper.SetExtState(SCRIPT,'createtmpbackup',tostring(settings_backupduringsave), true)
+    SetExtState(SCRIPT,'savedatainprojectfolder',tostring(settings_savedatainprojectfolder), true)
+    SetExtState(SCRIPT,'save_subfolder',nz(save_subfolder,''), true)
+    SetExtState(SCRIPT,'createbackup',tostring(settings_createbackuponmanualsave), true)
+    SetExtState(SCRIPT,'createtmpbackup',tostring(settings_backupduringsave), true)
 
-    reaper.SetExtState(SCRIPT,'usectlbitmap',tostring(settings_usectlbitmap), true)
-    reaper.SetExtState(SCRIPT,'ctlupdate_rr',tostring(lvar.ctlupdate_rr), true)
+    SetExtState(SCRIPT,'usectlbitmap',tostring(settings_usectlbitmap), true)
+    SetExtState(SCRIPT,'ctlupdate_rr',tostring(lvar.ctlupdate_rr), true)
 
-    reaper.SetExtState(SCRIPT,'macroeditmonitor',tostring(settings_macroeditmonitor), true)
-    reaper.SetExtState(SCRIPT,'hide_topbar',tostring(hide_topbar), true)
-    reaper.SetExtState(SCRIPT,'settings_showminimaltopbar',tostring(settings_showminimaltopbar), true)
-    reaper.SetExtState(SCRIPT,'hide_editbar',tostring(settings_hideeditbaronnewproject), true)
-    reaper.SetExtState(SCRIPT,'lock_surface',tostring(settings_locksurfaceonnewproject), true)
-    reaper.SetExtState(SCRIPT,'backcol',tostring(backcol), true)
-    reaper.SetExtState(SCRIPT,'nebscanboot',tostring(nebscanboot_file), true)
-    reaper.SetExtState(SCRIPT,'hidecursordrag',tostring(lvar.hidecursordrag), true)
-    reaper.SetExtState(SCRIPT,'settings_touchmode',tostring(settings_touchmode), true)
-    reaper.SetExtState(SCRIPT,'settings_touchfb',tostring(settings_touchFB), true)
-    reaper.SetExtState(SCRIPT,'settings_trackchangemidi',tostring(settings_trackchangemidi), true)
-    reaper.SetExtState(SCRIPT,'settings_savefaderboxassinsnapshots',tostring(settings_savefaderboxassinsnapshots), true)
-    reaper.SetExtState(SCRIPT,'settings_savemodsinsnapshots',tostring(settings_savemodsinsnapshots), true)
+    SetExtState(SCRIPT,'macroeditmonitor',tostring(settings_macroeditmonitor), true)
+    SetExtState(SCRIPT,'hide_topbar',tostring(hide_topbar), true)
+    SetExtState(SCRIPT,'settings_showminimaltopbar',tostring(settings_showminimaltopbar), true)
+    SetExtState(SCRIPT,'hide_editbar',tostring(settings_hideeditbaronnewproject), true)
+    SetExtState(SCRIPT,'lock_surface',tostring(settings_locksurfaceonnewproject), true)
+    SetExtState(SCRIPT,'backcol',tostring(backcol), true)
+    SetExtState(SCRIPT,'nebscanboot',tostring(nebscanboot_file), true)
+    SetExtState(SCRIPT,'hidecursordrag',tostring(lvar.hidecursordrag), true)
+    SetExtState(SCRIPT,'settings_touchmode',tostring(settings_touchmode), true)
+    SetExtState(SCRIPT,'settings_touchfb',tostring(settings_touchFB), true)
+    SetExtState(SCRIPT,'settings_trackchangemidi',tostring(settings_trackchangemidi), true)
+    SetExtState(SCRIPT,'settings_savefaderboxassinsnapshots',tostring(settings_savefaderboxassinsnapshots), true)
+    SetExtState(SCRIPT,'settings_savemodsinsnapshots',tostring(settings_savemodsinsnapshots), true)
 
-    reaper.SetExtState(SCRIPT,'settings_showfaderassignments',tostring(settings_showfaderassignments), true)
-    reaper.SetExtState(SCRIPT,'settings_stripautosnap',tostring(settings_stripautosnap), true)
-    reaper.SetExtState(SCRIPT,'autosnap_rowheight',tostring(autosnap_rowheight), true)
-    reaper.SetExtState(SCRIPT,'autosnap_itemgap',tostring(autosnap_itemgap), true)
-    reaper.SetExtState(SCRIPT,'autosnap_itemgapmax',tostring(autosnap_itemgapmax), true)
+    SetExtState(SCRIPT,'settings_showfaderassignments',tostring(settings_showfaderassignments), true)
+    SetExtState(SCRIPT,'settings_stripautosnap',tostring(settings_stripautosnap), true)
+    SetExtState(SCRIPT,'autosnap_rowheight',tostring(autosnap_rowheight), true)
+    SetExtState(SCRIPT,'autosnap_itemgap',tostring(autosnap_itemgap), true)
+    SetExtState(SCRIPT,'autosnap_itemgapmax',tostring(autosnap_itemgapmax), true)
 
-    reaper.SetExtState(SCRIPT,'livemode',tostring(lvar.glivemode), true)
-    reaper.SetExtState(SCRIPT,'mixmodedir',tostring(lvar.mixmodedir), true)
-    reaper.SetExtState(SCRIPT,'mixmodealign',tostring(lvar.mixmodealign), true)
-    reaper.SetExtState(SCRIPT,'mmov_show',tostring(lvar.mmov_show), true)
-    reaper.SetExtState(SCRIPT,'mmov_vsize',tostring(lvar.mmov_vsize), true)
+    SetExtState(SCRIPT,'livemode',tostring(lvar.glivemode), true)
+    SetExtState(SCRIPT,'mixmodedir',tostring(lvar.mixmodedir), true)
+    SetExtState(SCRIPT,'mixmodealign',tostring(lvar.mixmodealign), true)
+    SetExtState(SCRIPT,'mmov_show',tostring(lvar.mmov_show), true)
+    SetExtState(SCRIPT,'mmov_vsize',tostring(lvar.mmov_vsize), true)
 
-    reaper.SetExtState(SCRIPT,'trbtns_show',tostring(lvar.trbtns_show), true)
-    reaper.SetExtState(SCRIPT,'trbtns_meters',tostring(lvar.trbtns_meters), true)
-    reaper.SetExtState(SCRIPT,'trbtns_pkcolor',tostring(lvar.trbtns_pkcolor), true)
-    reaper.SetExtState(SCRIPT,'mm_fadepopamt',lvar.mm_fadepopamt, true)
-    reaper.SetExtState(SCRIPT,'mm_fadepop',lvar.mm_fadepop, true)
+    SetExtState(SCRIPT,'trbtns_show',tostring(lvar.trbtns_show), true)
+    SetExtState(SCRIPT,'trbtns_meters',tostring(lvar.trbtns_meters), true)
+    SetExtState(SCRIPT,'trbtns_pkcolor',tostring(lvar.trbtns_pkcolor), true)
+    SetExtState(SCRIPT,'mm_fadepopamt',lvar.mm_fadepopamt, true)
+    SetExtState(SCRIPT,'mm_fadepop',lvar.mm_fadepop, true)
 
-    reaper.SetExtState(SCRIPT,'shadow_enabled',tostring(lvar.enablegfxshadows), true)
-    reaper.SetExtState(SCRIPT,'shadow_sz',tostring(lvar.shadow_offsx), true)
-    reaper.SetExtState(SCRIPT,'shadow_alpha',tostring(lvar.shadow_alpha), true)
-    reaper.SetExtState(SCRIPT,'shadow_feather',tostring(lvar.shadow_feather), true)
+    SetExtState(SCRIPT,'shadow_enabled',tostring(lvar.enablegfxshadows), true)
+    SetExtState(SCRIPT,'shadow_sz',tostring(lvar.shadow_offsx), true)
+    SetExtState(SCRIPT,'shadow_alpha',tostring(lvar.shadow_alpha), true)
+    SetExtState(SCRIPT,'shadow_feather',tostring(lvar.shadow_feather), true)
 
-    reaper.SetExtState(SCRIPT,'gallery_itemgap',tostring(gallery_itemgap), true)
-    reaper.SetExtState(SCRIPT,'stripgallery_view',tostring(stripgallery_view), true)
-    reaper.SetExtState(SCRIPT,'settings_disablekeysonlockedsurface',tostring(settings_disablekeysonlockedsurface), true)
-    reaper.SetExtState(SCRIPT,'settings_deletefxwithstrip',tostring(settings_deletefxwithstrip), true)
-    reaper.SetExtState(SCRIPT,'settings_morphfaderassignedctls',tostring(settings_morphfaderassignedctls), true)
-    reaper.SetExtState(SCRIPT,'settings_alwaysrunmods',tostring(settings_alwaysrunmods), true)
-    reaper.SetExtState(SCRIPT,'settings_followsnapshot',tostring(settings_followsnapshot), true)
-    reaper.SetExtState(SCRIPT,'settings_showmorphpop',tostring(settings_showmorphpop), true)
-    reaper.SetExtState(SCRIPT,'settings_groupsel',tostring(settings_groupsel), true)
-    reaper.SetExtState(SCRIPT,'settings_savesnapafterselected',tostring(settings_savesnapafterselected), true)
-    reaper.SetExtState(SCRIPT,'settings_drawbglabelsontop',tostring(settings_drawbglabelsontop), true)
-    reaper.SetExtState(SCRIPT,'settings_pagescrolldir',tostring(settings_pagescrolldir), true)
-    reaper.SetExtState(SCRIPT,'settings_ssdock',tostring(settings_ssdock), true)
-    reaper.SetExtState(SCRIPT,'settings_sbdock',tostring(settings_sbdock), true)
-    reaper.SetExtState(SCRIPT,'settings_hideplugnotfound',tostring(settings_hideplugnotfound), true)
-    reaper.SetExtState(SCRIPT,'settings_enablednu',tostring(settings_enablednu), true)
-    reaper.SetExtState(SCRIPT,'snapcapture_midi_dt',tostring((lvar.snapcapture_midi_dt or false)), true)
+    SetExtState(SCRIPT,'gallery_itemgap',tostring(gallery_itemgap), true)
+    SetExtState(SCRIPT,'stripgallery_view',tostring(stripgallery_view), true)
+    SetExtState(SCRIPT,'settings_disablekeysonlockedsurface',tostring(settings_disablekeysonlockedsurface), true)
+    SetExtState(SCRIPT,'settings_deletefxwithstrip',tostring(settings_deletefxwithstrip), true)
+    SetExtState(SCRIPT,'settings_morphfaderassignedctls',tostring(settings_morphfaderassignedctls), true)
+    SetExtState(SCRIPT,'settings_alwaysrunmods',tostring(settings_alwaysrunmods), true)
+    SetExtState(SCRIPT,'settings_followsnapshot',tostring(settings_followsnapshot), true)
+    SetExtState(SCRIPT,'settings_showmorphpop',tostring(settings_showmorphpop), true)
+    SetExtState(SCRIPT,'settings_groupsel',tostring(settings_groupsel), true)
+    SetExtState(SCRIPT,'settings_savesnapafterselected',tostring(settings_savesnapafterselected), true)
+    SetExtState(SCRIPT,'settings_drawbglabelsontop',tostring(settings_drawbglabelsontop), true)
+    SetExtState(SCRIPT,'settings_pagescrolldir',tostring(settings_pagescrolldir), true)
+    SetExtState(SCRIPT,'settings_ssdock',tostring(settings_ssdock), true)
+    SetExtState(SCRIPT,'settings_sbdock',tostring(settings_sbdock), true)
+    SetExtState(SCRIPT,'settings_hideplugnotfound',tostring(settings_hideplugnotfound), true)
+    SetExtState(SCRIPT,'settings_enablednu',tostring(settings_enablednu), true)
+    SetExtState(SCRIPT,'snapcapture_midi_dt',tostring((lvar.snapcapture_midi_dt or false)), true)
 
-    reaper.SetExtState(SCRIPT,'show_stripbrowser',tostring(show_stripbrowser), true)
-    reaper.SetExtState(SCRIPT,'sbwin_x',tostring(sbwin.x), true)
-    reaper.SetExtState(SCRIPT,'sbwin_y',tostring(sbwin.y), true)
-    reaper.SetExtState(SCRIPT,'sbwin_w',tostring(sbwin.w), true)
-    reaper.SetExtState(SCRIPT,'sbwin_h',tostring(sbwin.h), true)
-    reaper.SetExtState(SCRIPT,'stripbrowser_minw',tostring(lvar.stripbrowser.minw), true)
-    reaper.SetExtState(SCRIPT,'stripbrowser_minh',tostring(lvar.stripbrowser.minh), true)
-    reaper.SetExtState(SCRIPT,'stripbrowser_dockpos',tostring(lvar.stripbrowser.dockpos or 1), true)
-    reaper.SetExtState(SCRIPT,'stripbrowser_showlabel',tostring(lvar.stripbrowser.showlabel), true)
+    SetExtState(SCRIPT,'show_stripbrowser',tostring(show_stripbrowser), true)
+    SetExtState(SCRIPT,'sbwin_x',tostring(sbwin.x), true)
+    SetExtState(SCRIPT,'sbwin_y',tostring(sbwin.y), true)
+    SetExtState(SCRIPT,'sbwin_w',tostring(sbwin.w), true)
+    SetExtState(SCRIPT,'sbwin_h',tostring(sbwin.h), true)
+    SetExtState(SCRIPT,'stripbrowser_minw',tostring(lvar.stripbrowser.minw), true)
+    SetExtState(SCRIPT,'stripbrowser_minh',tostring(lvar.stripbrowser.minh), true)
+    SetExtState(SCRIPT,'stripbrowser_dockpos',tostring(lvar.stripbrowser.dockpos or 1), true)
+    SetExtState(SCRIPT,'stripbrowser_showlabel',tostring(lvar.stripbrowser.showlabel), true)
 
-    reaper.SetExtState(SCRIPT,'settings_moddock',tostring(settings_moddock), true)
-    reaper.SetExtState(SCRIPT,'modwin_min',tostring(modwinsz.minimized), true)
-    reaper.SetExtState(SCRIPT,'modwin_h',tostring(modwinsz.h), true)
-    reaper.SetExtState(SCRIPT,'modwin_w',tostring(modwinsz.w), true)
-    reaper.SetExtState(SCRIPT,'modwin_x',tostring(modwinsz.x), true)
-    reaper.SetExtState(SCRIPT,'modwin_y',tostring(modwinsz.y), true)
-    reaper.SetExtState(SCRIPT,'modwin_show',tostring(show_lfoedit), true)
+    SetExtState(SCRIPT,'settings_moddock',tostring(settings_moddock), true)
+    SetExtState(SCRIPT,'modwin_min',tostring(modwinsz.minimized), true)
+    SetExtState(SCRIPT,'modwin_h',tostring(modwinsz.h), true)
+    SetExtState(SCRIPT,'modwin_w',tostring(modwinsz.w), true)
+    SetExtState(SCRIPT,'modwin_x',tostring(modwinsz.x), true)
+    SetExtState(SCRIPT,'modwin_y',tostring(modwinsz.y), true)
+    SetExtState(SCRIPT,'modwin_show',tostring(show_lfoedit), true)
 
-    reaper.SetExtState(SCRIPT,'macrosech',tostring(lvar.macrosech), true)
-    reaper.SetExtState(SCRIPT,'maxundo',tostring(undo.max), true)
+    SetExtState(SCRIPT,'macrosech',tostring(lvar.macrosech), true)
+    SetExtState(SCRIPT,'maxundo',tostring(undo.max), true)
 
-    reaper.SetExtState(SCRIPT,'modulator_cnt',tostring(modulator_cnt), true)
+    SetExtState(SCRIPT,'modulator_cnt',tostring(modulator_cnt), true)
 
-    reaper.SetExtState(SCRIPT,'mutate_max',tostring(lvar.mutate_settings.mutate_max), true)
-    reaper.SetExtState(SCRIPT,'mutate_dir',tostring(lvar.mutate_settings.dir), true)
+    SetExtState(SCRIPT,'mutate_max',tostring(lvar.mutate_settings.mutate_max), true)
+    SetExtState(SCRIPT,'mutate_dir',tostring(lvar.mutate_settings.dir), true)
 
-    reaper.SetExtState(SCRIPT,'settings_dragmode',tostring(settings_dragmode), true)
-    reaper.SetExtState(SCRIPT,'settings_runstartbat',tostring(settings_runstartbat or false), true)
+    SetExtState(SCRIPT,'settings_dragmode',tostring(settings_dragmode), true)
+    SetExtState(SCRIPT,'settings_runstartbat',tostring(settings_runstartbat or false), true)
 
-    reaper.SetExtState(SCRIPT,'bgmatchestrackcolour',tostring(lvar.bgmatchestrackcolour or 0), true)
+    SetExtState(SCRIPT,'bgmatchestrackcolour',tostring(lvar.bgmatchestrackcolour or 0), true)
 
     if strip_default then
-      reaper.SetExtState(SCRIPT,'strip_default',tostring(strip_default.strip_select), true)
-      reaper.SetExtState(SCRIPT,'stripfol_default',tostring(strip_default.stripfol_select), true)
+      SetExtState(SCRIPT,'strip_default',tostring(strip_default.strip_select), true)
+      SetExtState(SCRIPT,'stripfol_default',tostring(strip_default.stripfol_select), true)
     else
-      reaper.SetExtState(SCRIPT,'strip_default','',true)
-      reaper.SetExtState(SCRIPT,'stripfol_default','',true)
+      SetExtState(SCRIPT,'strip_default','',true)
+      SetExtState(SCRIPT,'stripfol_default','',true)
     end
     if strip_default_mast then
-      reaper.SetExtState(SCRIPT,'strip_default_mast',tostring(strip_default_mast.strip_select), true)
-      reaper.SetExtState(SCRIPT,'stripfol_default_mast',tostring(strip_default_mast.stripfol_select), true)
+      SetExtState(SCRIPT,'strip_default_mast',tostring(strip_default_mast.strip_select), true)
+      SetExtState(SCRIPT,'stripfol_default_mast',tostring(strip_default_mast.stripfol_select), true)
     else
-      reaper.SetExtState(SCRIPT,'strip_default_mast', '', true)
-      reaper.SetExtState(SCRIPT,'stripfol_default_mast', '', true)
+      SetExtState(SCRIPT,'strip_default_mast', '', true)
+      SetExtState(SCRIPT,'stripfol_default_mast', '', true)
     end
     if strip_default_glob then
-      reaper.SetExtState(SCRIPT,'strip_default_glob',tostring(strip_default_glob.strip_select), true)
-      reaper.SetExtState(SCRIPT,'stripfol_default_glob',tostring(strip_default_glob.stripfol_select), true)
+      SetExtState(SCRIPT,'strip_default_glob',tostring(strip_default_glob.strip_select), true)
+      SetExtState(SCRIPT,'stripfol_default_glob',tostring(strip_default_glob.stripfol_select), true)
     else
-      reaper.SetExtState(SCRIPT,'strip_default_glob', '', true)
-      reaper.SetExtState(SCRIPT,'stripfol_default_glob', '', true)
+      SetExtState(SCRIPT,'strip_default_glob', '', true)
+      SetExtState(SCRIPT,'stripfol_default_glob', '', true)
     end
 
-    reaper.SetExtState(SCRIPT,'striploadoverride', lvar.striploadoverride or '', true)
+    SetExtState(SCRIPT,'striploadoverride', lvar.striploadoverride or '', true)
 
+    if lvar.savesettingstofile then
+      file:close()
+    end
+  
+    --DBG('save '..reaper.time_precise()-t)    
+    
     SaveFavStrips()
   end
 
@@ -78136,7 +78215,7 @@ function GUI_DrawCtlBitmap_Strips()
     DBGOut('')
     DBGOut('*** SAVING DATA ***')
 
-    SaveSettings()
+    --SaveSettings()
 
     if lvar.striploadoverride_active and not fffn then
 
