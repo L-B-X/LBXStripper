@@ -16,7 +16,7 @@
   local lvar = {}
   local cbi = {}
 
-  lvar.scriptver = '0.94.0126' --Script Version
+  lvar.scriptver = '0.94.0127' --Script Version
 
   lvar.mmtouch = false
 
@@ -2670,7 +2670,7 @@
 
   function PosEBCtls(obj)
 
-    local sizex, sizey = math.floor(350*pnl_scale), math.floor(100*pnl_scale)
+    local sizex, sizey = obj.sections[8].w, obj.sections[8].h
     local bsizex, bsizey = math.floor(60*pnl_scale), math.floor(20*pnl_scale)
 
     --EDIT BOX - textbox
@@ -6304,6 +6304,12 @@
         gfx.drawstr(text)
   end
 
+  function GUI_StrFontOnly(gui, size_offset, fontnm, flags)
+
+    gfx.setfont(1, fontnm or gui.fontname, gui.fontsz_knob + size_offset, flags)
+
+  end
+  
   function GUI_Str(gui, xywh, text, justify, color, size_offset, alpha, shadowcol, fontnm, flags)
 
     gfx.setfont(1, fontnm or gui.fontname, gui.fontsz_knob + size_offset, flags)
@@ -10665,7 +10671,7 @@
     local butt_h = math.floor(butt_h * pnl_scale)
 
     local ctl
-    if c then
+    if c and strips[tracks[track_select].strip] then
       ctl = strips[tracks[track_select].strip][page].controls[c]
     end
 
@@ -34168,15 +34174,12 @@ function GUI_DrawCtlBitmap_Strips()
   function DM_RefreshPage()
 
     if lvar.dynamicmode_trn then
+      
       local dm_data
-      --[[if lvar.stripstore and lvar.stripstore[lvar.dynamicmode_guid] then
-        --DBG('A'..lvar.dynamicmode_trn)
-        dm_data = DM_GatherDataForRebuild(GetTrack(lvar.dynamicmode_trn), lvar.stripstore[lvar.dynamicmode_guid].controls, lvar.snapstore[lvar.dynamicmode_guid])
-      else
-        --DBG('B')]]
+      if not (mouse.ctrl and mouse.shift) then
         local strip = tracks[track_select].strip
         dm_data = DM_GatherDataForRebuild(GetTrack(lvar.dynamicmode_trn), strips[strip][page].controls, snapshots[strip][page])
-      --end
+      end    
       if lvar.stripstore and lvar.stripstore[lvar.dynamicmode_guid] then
         lvar.stripstore[lvar.dynamicmode_guid] = nil
       end
@@ -34588,7 +34591,7 @@ function GUI_DrawCtlBitmap_Strips()
         if fxinfo[f].swid == -1 then
           local nsd = #newswitcherdata+1
           local ret, fxname = reaper.TrackFX_GetFXName(track, f, '')
-          fxname = string.match(CropFXName(fxname), "^%s*(.-)%s*$")
+          fxname = TrimStr(CropFXName(fxname))
           local fxident = tfxi[f].fxfn
           local stripfn = ''
           local sfol, sfil
@@ -34924,8 +34927,9 @@ function GUI_DrawCtlBitmap_Strips()
                 switchers[dm_data[d].nswid].pady = dm_data.pady
 
                 local _, fxname = reaper.TrackFX_GetFXName(track, dm_data[d].fxn, '')
-                fxname = CropFXName(fxname)
+                fxname = TrimStr(CropFXName(fxname))
                 local fxident = dm_data[d].fxident
+
                 --DBG('A')
                 --DBG(dm_data[d].fxn .. '   '..(fxident or 'nil'))
                 local swok, swid = Switcher_AddStrip(nil, c, loadstrip, nil, trn, dm_data[d].fxn+1, fxname or fxident, nil, dm_data[d])
@@ -35001,7 +35005,6 @@ function GUI_DrawCtlBitmap_Strips()
           DM_RebuildPop(dm_data)
 
         else
-          --DBG('B')
 
           local tfxi = GetTrackFXInfo(nil, trn)
           --local fxchunks = GetFXChunks(trn)
@@ -45546,17 +45549,20 @@ function GUI_DrawCtlBitmap_Strips()
     if lvar.dm_editmode_data.stripfn ~= 'dynamic_placeholder' then
       if not mouse.ctrl or not lvar.dm_editmode_data.stripfn then
         local fxident = lvar.dm_editmode_data.stripfn
-        if not fxident then
+        --if not fxident then
           local track = GetTrackByName('__LBXEDIT')
           if track then
             local fxnum = 0
             local _, plug = reaper.TrackFX_GetFXName(track, fxnum, '')
             if plug then
-              fxident = TrimStr(CropFXName(plug))
+              if not fxident then
+                fxident = TrimStr(CropFXName(plug))
+              end
             end
           end
-        end
-        OpenEB(5020, 'Please enter strip name:', fxident)
+        --end
+        lvar.dm_save_plug = fxident
+        OpenEB(5020, 'Please enter strip name (plug id: '..fxident..') :', fxident)
       else
         SaveStrip3(lvar.dm_editmode_data.stripfn, nil, lvar.dm_editmode_data.sfn)
         if reaper.JS_LICE_WritePNG then
@@ -45589,7 +45595,8 @@ function GUI_DrawCtlBitmap_Strips()
             fxident = TrimStr(CropFXName(plug))
           end
         end
-        OpenEB(5021, 'Please enter strip name:', fxident)
+        lvar.dm_save_plug = fxident
+        OpenEB(5021, 'Please enter strip name (plug id: '..fxident..') :', fxident)
       else
         if fxident then
           local ffn = paths.strips_path..'/'..paths.dmstrip_folder..'/'..fxident..'.strip'
@@ -68041,13 +68048,34 @@ function GUI_DrawCtlBitmap_Strips()
             local track = GetTrackByName('__LBXEDIT')
             if track and reaper.TrackFX_GetCount(track) == 1 then
 
-              if plugdefstrips_idx[stripfn] then
-                idx = plugdefstrips_idx[stripfn]
+              local plugid = lvar.dm_save_plug
+              if not plugid then
+                plugid = stripfn
               end
-              plugdefstrips[idx] = {plug = stripfn, stripfile = stripfn..'.strip', stripfol = fol}
-              plugdefstrips_idx[stripfn] = idx
+
+              if plugdefstrips_idx[plugid] then
+                idx = plugdefstrips_idx[plugid]
+              end
+              plugdefstrips[idx] = {plug = plugid, stripfile = stripfn..'.strip', stripfol = fol}
+              plugdefstrips_idx[plugid] = idx
+              
+              --Check if different from plug name
+              local _, plug = reaper.TrackFX_GetFXName(track, 0, '')
+              if plug then
+                plug = TrimStr(CropFXName(plug))
+                if plug ~= plugid then
+                  if plugdefstrips_idx[plug] then
+                    idx = plugdefstrips_idx[plug]
+                  end
+                  plugdefstrips[idx] = {plug = plug, stripfile = stripfn..'.strip', stripfol = fol}
+                  plugdefstrips_idx[plugid] = idx                
+                end
+              end
+              
               Save_PlugDefs()
             end
+
+            lvar.dm_save_plug = nil
 
             if reaper.JS_LICE_WritePNG then
               lvar.dm_return_set = true
@@ -68081,18 +68109,27 @@ function GUI_DrawCtlBitmap_Strips()
               plugdefstrips = {}
               plugdefstrips_idx = {}
             end
+            
             local idx = #plugdefstrips+1
             --get plug name
             local track = GetTrackByName('__LBXEDIT')
             if track and reaper.TrackFX_GetCount(track) == 1 then
-              if plugdefstrips_idx[fxident] then
-                idx = plugdefstrips_idx[fxident]
+              
+              local plugid = lvar.dm_save_plug
+              if not plugid then
+                plugid = fxident
               end
-              plugdefstrips[idx] = {plug = fxident, stripfile = fxident..'.strip', stripfol = paths.dmstrip_folder}
-              plugdefstrips_idx[fxident] = idx
+
+              if plugdefstrips_idx[plugid] then
+                idx = plugdefstrips_idx[plugid]
+              end
+              plugdefstrips[idx] = {plug = plugid, stripfile = fxident..'.strip', stripfol = paths.dmstrip_folder}
+              plugdefstrips_idx[plugid] = idx
               Save_PlugDefs()
             end
 
+            lvar.dm_save_plug = nil
+            
             if reaper.JS_LICE_WritePNG then
               lvar.dm_return_set = true
             else
@@ -68123,11 +68160,13 @@ function GUI_DrawCtlBitmap_Strips()
         editbox = nil
         EB_Open = 0
         mouse.release = true
+        lvar.dm_save_plug = nil
 
       elseif mouse.LB == true and not lvar.editbox_mouseLB and MOUSE_over(obj.sections[8]) and not MOUSE_over(obj.sections[9]) --[[,mouse.mx-obj.sections[8].x,mouse.my-obj.sections[8].y)]] then
         context = contexts.move_eb
         ebpos = {dx = mouse.mx-obj.sections[8].x, dy = mouse.my-obj.sections[8].y}
       end
+      
     elseif context and context == contexts.move_eb then
 
       local sizex, sizey = 350, 100
@@ -72978,12 +73017,23 @@ function GUI_DrawCtlBitmap_Strips()
 
     f_Get_SSV('0 0 0')
     gfx.a = 1
+    
+    local tscale = (pnl_scale-1)*fontscale
+    GUI_StrFontOnly(gui,gui.fontsz.pnltit + tscale,gui.fontnm.pnltit,gui.fontflag.pnltit)
+    local titw = gfx.measurestr(e.title)
+    gfx.setfont(1, gui.fontname, gui.fontsz_knob + (pnl_scale-1)*fontscale)
+    local valw = gfx.measurestr(e.text)
+    local nw = math.max(math.floor(350*pnl_scale),titw+20*pnl_scale,valw+50*pnl_scale)
+    if nw ~= obj.sections[8].w then
+      obj.sections[8].w = nw
+      obj.sections[8].x = math.floor(gfx1.main_w/2 - nw/2)
+      obj = PosEBCtls(obj)
+    end
+
     GUI_DrawPanel(obj.sections[8],true,e.title)
 
     GUI_DrawButton(gui, 'OK', obj.sections[6], gui.color.white, gui.skol.butt1_txt, true,'',false,gui.fontsz.butt)
     GUI_DrawButton(gui, 'Cancel', obj.sections[7], gui.color.white, gui.skol.butt1_txt, true,'',false,gui.fontsz.butt)
-
-    gfx.setfont(1, gui.fontname, gui.fontsz_knob + (pnl_scale-1)*fontscale)
 
     e.x = obj.sections[9].x
     e.y = obj.sections[9].y
