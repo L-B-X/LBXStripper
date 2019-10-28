@@ -16,7 +16,7 @@
   local lvar = {}
   local cbi = {}
 
-  lvar.scriptver = '0.94.0132' --Script Version
+  lvar.scriptver = '0.94.0133' --Script Version
 
   lvar.savesettingstofile = true
   
@@ -43,6 +43,7 @@
   lvar.maxpage = 4
 
   lvar.shadowmax = 20
+  lvar.shadowmax_p = 20
   lvar.enablegfxshadows = true
   lvar.shadow_alpha = 0.3
   lvar.shadow_offsx = 8
@@ -13771,7 +13772,7 @@ function GUI_DrawCtlBitmap_Strips()
             
             if lvar.mixmodedir == 0 then
               local pos = surface_offset.mixy or 0 --0
-              local padgap = lvar.mmpadgap
+              local padgap = lvar.dm_pady --lvar.mmpadgap
               local runpos = 0
               local gap = lvar.mmgap
               local winh = rect10.h
@@ -13783,7 +13784,7 @@ function GUI_DrawCtlBitmap_Strips()
                 local swid = posidx[extid][p]
     
                 if switchers[swid] then
-                  padgap = switchers[swid].pady or padgap
+                  --padgap = switchers[swid].pady or padgap
     
                   local w = (swdata[swid].stripr or 0) - (swdata[swid].stripl or 0)
                   local h = (swdata[swid].stripb or 0) - (swdata[swid].stript or 0)
@@ -13841,7 +13842,7 @@ function GUI_DrawCtlBitmap_Strips()
             else
     
               local pos = surface_offset.mixx or 0 --0
-              local padgap = lvar.mmpadgap
+              local padgap = lvar.dm_padx
               local runpos = 0
               local gap = lvar.mmgap
               local winw = rect10.w
@@ -13852,7 +13853,7 @@ function GUI_DrawCtlBitmap_Strips()
               for p = 1, #posidx[extid] do
                 local swid = posidx[extid][p]
     
-                padgap = switchers[swid].padx or padgap
+                --padgap = switchers[swid].padx or padgap
     
                 local w = (swdata[swid].stripr or 0) - (swdata[swid].stripl or 0)
                 local h = (swdata[swid].stripb or 0) - (swdata[swid].stript or 0)
@@ -13966,7 +13967,7 @@ function GUI_DrawCtlBitmap_Strips()
       if extid then
 
         if lvar.mixmodedir == 0 then
-          local padgap = lvar.mmpadgap
+          local padgap = lvar.dm_pady
           local gap = lvar.mmgap
           local runpos = 0
           local winh = obj.sections[10000].h
@@ -13974,7 +13975,7 @@ function GUI_DrawCtlBitmap_Strips()
           for p = 1, #posidx[extid] do
             local swid = posidx[extid][p]
 
-            padgap = switchers[swid].pady or padgap
+            --padgap = switchers[swid].pady or padgap
 
             local h = (swdata[swid].stripb or 0) - (swdata[swid].stript or 0)
             local sh = swdata[swid].sb-swdata[swid].st
@@ -13997,14 +13998,14 @@ function GUI_DrawCtlBitmap_Strips()
 
           end
         else
-          local padgap = lvar.mmpadgap
+          local padgap = lvar.dm_padx
           local runpos = 0
           local winw = obj.sections[10000].w
 
           for p = 1, #posidx[extid] do
             local swid = posidx[extid][p]
 
-            padgap = switchers[swid].padx or padgap
+            --padgap = switchers[swid].padx or padgap
 
             local w = ((swdata[swid].stripr or 0) - (swdata[swid].stripl or 0))
             local sw = (swdata[swid].sr-swdata[swid].sl)
@@ -14047,14 +14048,14 @@ function GUI_DrawCtlBitmap_Strips()
       if extid then
 
         if lvar.mixmodedir == 0 then
-          local padgap = lvar.mmpadgap
+          local padgap = lvar.dm_pady
           local gap = lvar.mmgap
           local winh = obj.sections[10000].h
 
           for p = 1, #posidx[extid] do
             local swid = posidx[extid][p]
 
-            padgap = switchers[swid].pady or padgap
+            --padgap = switchers[swid].pady or padgap
 
             local h = (swdata[swid].stripb or 0) - (swdata[swid].stript or 0)
             local sh = swdata[swid].sb-swdata[swid].st
@@ -14062,13 +14063,13 @@ function GUI_DrawCtlBitmap_Strips()
 
           end
         else
-          local padgap = lvar.mmpadgap
+          local padgap = lvar.dm_padx
           local winw = obj.sections[10000].w
 
           for p = 1, #posidx[extid] do
             local swid = posidx[extid][p]
 
-            padgap = switchers[swid].padx or padgap
+            --padgap = switchers[swid].padx or padgap
 
             local w = ((swdata[swid].stripr or 0) - (swdata[swid].stripl or 0))
             local sw = (swdata[swid].sr-swdata[swid].sl)
@@ -14219,7 +14220,7 @@ function GUI_DrawCtlBitmap_Strips()
           if lvar.mixmodedir == 0 then
             local pos = surface_offset.mixy or 0 --0
   
-            local padgap = lvar.mmpadgap
+            local padgap = lvar.dm_pady
             local gap = lvar.mmgap
             local runpos = 0
             local pst = 1
@@ -14238,7 +14239,7 @@ function GUI_DrawCtlBitmap_Strips()
             for p = pst, #posidx[extid] do
               local swid = posidx[extid][p]
   
-              padgap = switchers[swid].pady or padgap
+              --padgap = switchers[swid].pady or padgap
   
               local w = (swdata[swid].stripr or 0) - (swdata[swid].stripl or 0)
               local h = (swdata[swid].stripb or 0) - (swdata[swid].stript or 0)
@@ -14334,7 +14335,7 @@ function GUI_DrawCtlBitmap_Strips()
             local pos = surface_offset.mixx or 0 --0
             --DBG(pos)
   
-            local padgap = lvar.mmpadgap
+            local padgap = lvar.dm_padx
             local gap = lvar.mmgap
             local runpos = 0
             local pst = 1
@@ -14353,7 +14354,7 @@ function GUI_DrawCtlBitmap_Strips()
             for p = pst, #posidx[extid] do
               local swid = posidx[extid][p]
   
-              padgap = switchers[swid].padx or padgap
+              --padgap = switchers[swid].padx or padgap
   
               local w = (swdata[swid].stripr or 0) - (swdata[swid].stripl or 0)
               local h = (swdata[swid].stripb or 0) - (swdata[swid].stript or 0)
@@ -14777,13 +14778,13 @@ function GUI_DrawCtlBitmap_Strips()
 
           local scale = vsize/maxw
           lvar.mmov_scale = scale
-          local padgap = lvar.mmpadgap
+          local padgap = lvar.dm_pady
           local gap = lvar.mmgap
 
           for p = 1, #posidx[extid] do
             local swid = posidx[extid][p]
 
-            padgap = switchers[swid].pady or padgap
+            --padgap = switchers[swid].pady or padgap
 
             local w = (swdata[swid].stripr or 0) - (swdata[swid].stripl or 0)
             local h = (swdata[swid].stripb or 0) - (swdata[swid].stript or 0)
@@ -14846,12 +14847,12 @@ function GUI_DrawCtlBitmap_Strips()
 
           local scale = vsize/maxh
           lvar.mmov_scale = scale
-          local padgap = lvar.mmpadgap
+          local padgap = lvar.dm_padx
 
           for p = 1, #posidx[extid] do
             local swid = posidx[extid][p]
 
-            padgap = switchers[swid].padx or padgap
+            --padgap = switchers[swid].padx or padgap
 
             local w = (swdata[swid].stripr or 0) - (swdata[swid].stripl or 0)
             local h = (swdata[swid].stripb or 0) - (swdata[swid].stript or 0)
@@ -36211,8 +36212,8 @@ function GUI_DrawCtlBitmap_Strips()
 
     if #ext_switchers > 0 then
 
-      local padx = lvar.dm_padx
-      local pady = lvar.dm_pady
+      local padx = math.max(lvar.dm_padx, lvar.shadowmax_p)
+      local pady = math.max(lvar.dm_pady, lvar.shadowmax_p)
       local l,r,t,b,sl,sr,st,sb, extctls, extgfx = Switcher_ContentsLocInfo_all2(extid)
       if topy == nil and extctls[1] then
         topy = extctls[1].ctl_sw.y
@@ -36244,12 +36245,12 @@ function GUI_DrawCtlBitmap_Strips()
         ny = topy
       end
 
-      if switchers[extctls[1].ctl_sw.switcherid].padx then
+      --[[if switchers[extctls[1].ctl_sw.switcherid].padx then
         padx = switchers[extctls[1].ctl_sw.switcherid].padx
       end
       if switchers[extctls[1].ctl_sw.switcherid].pady then
         pady = switchers[extctls[1].ctl_sw.switcherid].pady
-      end
+      end]]
 
       local gfxpage = 0
 
@@ -36273,8 +36274,7 @@ function GUI_DrawCtlBitmap_Strips()
             ny = topy-pady
           end
 
-          if --[[(ny + pady + ctl_sw.hsc + ext_h > surface_size.h) or ]]
-             (nx + ext_w > surface_size.w) then
+          if (nx + ext_w > surface_size.w) then
             gfxpage = gfxpage + 1
             nx = 0
             ny = 0
@@ -37721,7 +37721,7 @@ function GUI_DrawCtlBitmap_Strips()
         else
           mstr = mstr .. '||#Set Strip Drop Location'
         end
-        mstr = mstr .. '||Set Default Switcher Location||Set Gap X ('..(switchers[switchid].padx or lvar.dm_padx)..')|Set Gap Y ('..(switchers[switchid].pady or lvar.dm_pady)..')'
+        mstr = mstr .. '||Set Default Switcher Location||Set Gap X ('..(lvar.dm_padx)..')|Set Gap Y ('..(lvar.dm_pady)..')'
         mstr = mstr .. '||Save As Ext Switcher Default'
         gfx.x, gfx.y = mouse.mx, mouse.my
         local res = OpenMenu(mstr)
@@ -68635,6 +68635,11 @@ function GUI_DrawCtlBitmap_Strips()
           elseif MOUSE_click(obj.sections[742]) then
 
             lvar.enablegfxshadows = not lvar.enablegfxshadows
+            if lvar.enablegfxshadows then
+              lvar.shadowmax = lvar.shadowmax_p
+            else
+              lvar.shadowmax = 0            
+            end
             lupd.update_bg = true
             lupd.update_gfx = true
 
@@ -76312,6 +76317,12 @@ function GUI_DrawCtlBitmap_Strips()
     lvar.mm_fadepopamt = tonumber(nz(GES('mm_fadepopamt',0,data),lvar.mm_fadepopamt))
 
     lvar.enablegfxshadows = tobool(nz(GES('shadow_enabled',true,data),lvar.enablegfxshadows))
+    if lvar.enablegfxshadows then
+      lvar.shadowmax = lvar.shadowmax_p
+    else
+      lvar.shadowmax = 0            
+    end
+    
     lvar.shadow_offsx = tonumber(nz(GES('shadow_sz',true,data),lvar.shadow_offsx))
     lvar.shadow_alpha = tonumber(nz(GES('shadow_alpha',true,data),lvar.shadow_alpha))
     lvar.shadow_feather = tonumber(nz(GES('shadow_feather',true,data),lvar.shadow_feather))
