@@ -16,7 +16,7 @@
   local lvar = {}
   local cbi = {}
 
-  lvar.scriptver = '0.94.0135' --Script Version
+  lvar.scriptver = '0.94.0136' --Script Version
 
   lvar.savesettingstofile = true
   
@@ -34374,20 +34374,22 @@ function GUI_DrawCtlBitmap_Strips()
       for i = 1, scnt do
         local key = 'guid_'..string.format('%i',i)
         local guid = data[key]
-        guids[i] = guid
-
-        local key = 's'..string.format('%i',i)..'_'
-        --DBG('fxcnt '..tostring(zn(data[key..'fxcnt'])))
-        --DBG('fxstr '..tostring(zn(data[key..'fxstr'])))
-        --DBG(key)
-
-        lvar.stripstore[guid] = LoadStripDataX(key,data)
-        --DBG(guid)
-        local key = 'snap'..string.format('%i',i)..'_'
-
-        lvar.snapstore[guid] = LoadSnapDataX(key,data)
-        --DBG(lvar.snapstore[guid].morph_time)
-
+        if lvar.trackguids[guid] then
+          guids[i] = guid
+  
+          local key = 's'..string.format('%i',i)..'_'
+          --DBG('fxcnt '..tostring(zn(data[key..'fxcnt'])))
+          --DBG('fxstr '..tostring(zn(data[key..'fxstr'])))
+          --DBG(key)
+  
+          lvar.stripstore[guid] = LoadStripDataX(key,data)
+          --DBG(guid)
+          local key = 'snap'..string.format('%i',i)..'_'
+  
+          lvar.snapstore[guid] = LoadSnapDataX(key,data)
+          --DBG(lvar.snapstore[guid].morph_time)
+        end
+        
       end
 
       LoadSwitchers(data)
