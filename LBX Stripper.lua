@@ -16,7 +16,7 @@
   local lvar = {}
   local cbi = {}
 
-  lvar.scriptver = '0.94.0134' --Script Version
+  lvar.scriptver = '0.94.0135' --Script Version
 
   lvar.savesettingstofile = true
   
@@ -35270,9 +35270,8 @@ function GUI_DrawCtlBitmap_Strips()
             end
           end
           
-          if #delswids > 0 then
-            for d = #delswids,1,-1  do
-              --DBG('del '..delswids[d])
+          for d = extmax,1,-1  do
+            if delswids[d] then
               if delswids[d] == switchid then
                 DeleteSwitcherStrip(delswids[d], false, true, fxdata)
               else
