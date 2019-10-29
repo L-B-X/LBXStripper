@@ -16,7 +16,7 @@
   local lvar = {}
   local cbi = {}
 
-  lvar.scriptver = '0.94.0133' --Script Version
+  lvar.scriptver = '0.94.0134' --Script Version
 
   lvar.savesettingstofile = true
   
@@ -46341,7 +46341,7 @@ function GUI_DrawCtlBitmap_Strips()
 
           end
 
-          if lvar.ss3_bmp and reaper.time_precise() > lvar.ss3_bmp.delay then
+          if lvar.ss3_bmp and not lvar.ss3_bmp.pause and reaper.time_precise() > lvar.ss3_bmp.delay then
             SaveStrip_CreateThumb2(lvar.ss3_bmp)
             lvar.ss3_bmp = nil
           end
@@ -46432,7 +46432,7 @@ function GUI_DrawCtlBitmap_Strips()
 
           end
 
-          if lvar.ss3_bmp and reaper.time_precise() > lvar.ss3_bmp.delay then
+          if lvar.ss3_bmp and not lvar.ss3_bmp.pause and reaper.time_precise() > lvar.ss3_bmp.delay then
             SaveStrip_CreateThumb2(lvar.ss3_bmp)
             lvar.ss3_bmp = nil
           end
@@ -68047,7 +68047,8 @@ function GUI_DrawCtlBitmap_Strips()
             DM_EM_AddDummyFX(stripfn, lvar.dm_editmode_data.edit_trn)
             
             SaveStrip3(stripfn, nil, ffn)
-
+            lvar.ss3_bmp.pause = true
+            
             if not plugdefstrips then
               plugdefstrips = {}
               plugdefstrips_idx = {}
@@ -68091,14 +68092,17 @@ function GUI_DrawCtlBitmap_Strips()
               local _, plug = reaper.BR_TrackFX_GetFXModuleName(track,0,'',64)
               if plug then
                 if plug ~= plugid then
-                  if reaper.MB('This strip has been associated with strip/plugin names: \n\n'..p1..'\n'..p2..'\n\nAlso associate this strip with plugin filename: '..plug..'?','DM Strip Save',4) == 6 then
-                    if plugdefstrips_idx[plug] then
-                      idx = plugdefstrips_idx[plug]
-                    else
-                      idx = idx + 1
+                  local ii = plugdefstrips_idx[plug]
+                  if not ii or plugdefstrips[ii].stripfile ~= stripfn..'.strip' or plugdefstrips[ii].stripfol ~= fol then 
+                    if reaper.MB('This strip has been associated with strip/plugin names: \n\n'..p1..'\n'..p2..'\n\nAlso associate this strip with plugin filename: '..plug..'?','DM Strip Save',4) == 6 then
+                      if plugdefstrips_idx[plug] then
+                        idx = plugdefstrips_idx[plug]
+                      else
+                        idx = idx + 1
+                      end
+                      plugdefstrips[idx] = {plug = plug, stripfile = stripfn..'.strip', stripfol = fol}
+                      plugdefstrips_idx[plug] = idx                
                     end
-                    plugdefstrips[idx] = {plug = plug, stripfile = stripfn..'.strip', stripfol = fol}
-                    plugdefstrips_idx[plug] = idx                
                   end
                 end
               end
@@ -68110,6 +68114,8 @@ function GUI_DrawCtlBitmap_Strips()
 
             if reaper.JS_LICE_WritePNG then
               lvar.dm_return_set = true
+              lvar.ss3_bmp.delay = reaper.time_precise()+0.5
+              lvar.ss3_bmp.pause = nil
             else
               local ret_page = lvar.dm_editmode_data.ret_page
               local ret_trn = tracks[lvar.dm_editmode_data.ret_trn].tracknum
@@ -68134,6 +68140,7 @@ function GUI_DrawCtlBitmap_Strips()
           if fxident ~= '' then
             local ffn = paths.strips_path..'/'..paths.dmstrip_folder..'/'..fxident..'.strip'
             SaveStrip3(fxident, nil, ffn)
+            lvar.ss3_bmp.pause = true
 
             local sfn = lvar.dm_editmode_data.sfn
             if not plugdefstrips then
@@ -68156,6 +68163,44 @@ function GUI_DrawCtlBitmap_Strips()
               end
               plugdefstrips[idx] = {plug = plugid, stripfile = fxident..'.strip', stripfol = paths.dmstrip_folder}
               plugdefstrips_idx[plugid] = idx
+              
+              --Check if different from plug name
+              local _, plug = reaper.TrackFX_GetFXName(track, 0, '')
+              local p1 = plugid
+              local p2 = ''
+              
+              if plug then
+                plug = TrimStr(CropFXName(plug))
+                if plug ~= plugid then
+                  if plugdefstrips_idx[plug] then
+                    idx = plugdefstrips_idx[plug]
+                  else
+                    idx = idx + 1
+                  end
+                  plugdefstrips[idx] = {plug = plug, stripfile = fxident..'.strip', stripfol = paths.dmstrip_folder}
+                  plugdefstrips_idx[plug] = idx                
+                  p2 = plug
+                end              
+              end              
+              
+              local _, plug = reaper.BR_TrackFX_GetFXModuleName(track,0,'',64)
+              if plug then
+                if plug ~= plugid then
+                  local ii = plugdefstrips_idx[plug]
+                  if not ii or plugdefstrips[ii].stripfile ~= stripfn..'.strip' or plugdefstrips[ii].stripfol ~= paths.dmstrip_folder then 
+                    if reaper.MB('This strip has been associated with strip/plugin names: \n\n'..p1..'\n'..p2..'\n\nAlso associate this strip with plugin filename: '..plug..'?','DM Strip Save',4) == 6 then
+                      if plugdefstrips_idx[plug] then
+                        idx = plugdefstrips_idx[plug]
+                      else
+                        idx = idx + 1
+                      end
+                      plugdefstrips[idx] = {plug = plug, stripfile = fxident..'.strip', stripfol = paths.dmstrip_folder}
+                      plugdefstrips_idx[plug] = idx                
+                    end
+                  end
+                end
+              end
+              
               Save_PlugDefs()
             end
 
@@ -68163,6 +68208,8 @@ function GUI_DrawCtlBitmap_Strips()
             
             if reaper.JS_LICE_WritePNG then
               lvar.dm_return_set = true
+              lvar.ss3_bmp.delay = reaper.time_precise()+0.5
+              lvar.ss3_bmp.pause = nil
             else
               local ret_page = lvar.dm_editmode_data.ret_page
               local ret_trn = tracks[lvar.dm_editmode_data.ret_trn].tracknum
@@ -82577,6 +82624,8 @@ DBG(t.. '  '..trigtime)
             if plugdefstrips[p].plug then
               plugdefstrips_idx[plugdefstrips[p].plug] = p
             end
+          else
+            save = true
           end
         end
       end
