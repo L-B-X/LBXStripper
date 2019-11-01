@@ -16,7 +16,7 @@
   local lvar = {}
   local cbi = {}
 
-  lvar.scriptver = '0.94.0136' --Script Version
+  lvar.scriptver = '0.94.0137' --Script Version
 
   lvar.savesettingstofile = true
   
@@ -700,13 +700,16 @@
     end
   end
 
-  function GetTrackFXInfo(stripid, tracknum)
+  function GetTrackFXInfo(stripid, tracknum, swtgt)
 
     local tfxi = {}
     local tr = GetTrack(tracknum or track_select)
     if tr then
       local fxcnt = reaper.TrackFX_GetCount(tr)
-
+      --[[local ts = track_select
+      if lvar.livemode == 2 then
+        ts = tracknum
+      end]]
       local stripctls = {}
 
       local strip = tracks[track_select].strip
@@ -714,10 +717,10 @@
         for p = 1, lvar.maxpage do
           ctls = strips[strip][p].controls
           for c = 1, #ctls do
+            --DBG(tostring(stripid)..'  '..tostring(ctls[c].switcher))
             if stripid and ctls[c].id
                and ((tracknum == track_select and ctls[c].fxnum) or (ctls[c].tracknum == tracknum and ctls[c].fxnum))
                and ctls[c].id == stripid then
-              
               if lvar.show_addstripdialog == true and lvar.livemode == 2 and ctls[c].switcher then
                 local dynplaceholder
                 switchid = Switcher_GetTopLevelSwitcher(ctls[c].switcher)
@@ -744,7 +747,7 @@
                     dynplaceholder = true
                   end
                 end
-                if dynplaceholder ~= true then
+                if dynplaceholder ~= true and (not swtgt or swtgt ~= switchid) then
                   stripctls[ctls[c].fxnum] = 2
                 end
               else
@@ -11139,6 +11142,7 @@
         if h > maxh then
           h = maxh
           size = math.floor(h / butt_h)
+          h = size*butt_h
         end
         ddlist.size = size
         ddlist.h = h
@@ -21786,6 +21790,19 @@ function GUI_DrawCtlBitmap_Strips()
 
   end
 
+  function DM_Flash_Refresh()
+    lvar.dm_refresh_timer = reaper.time_precise()+0.4
+    lupd.update_trbtns = true
+    
+    --GUI_draw(obj, gui)
+    
+    --[[bc = -2
+    gfx.dest = -1
+    GUI_DrawButton(gui,'REFRESH',obj.sections[5000],bc,gui.color.white,true,nil,nil,4)
+    gfx.update()]]
+    
+  end
+
   ------------------------------------------------------------
 
   function GUI_draw(obj, gui)
@@ -22117,10 +22134,16 @@ function GUI_DrawCtlBitmap_Strips()
                   end
                 end
                 
-                x, y, w, h = CropToRect(x,y,w,h,o10x,o10y,o10r,o10b)
+                local spos = lvar.spos[t_swid]
+                
+                if lvar.mixmodedir == 0 then
+                  x, y, w, h = CropToRect(x,y+spos.sh*lvar.zoom,w-lvar.shadowmax*lvar.zoom,h-spos.sh*lvar.zoom,o10x,o10y,o10r,o10b)
+                else
+                  x, y, w, h = CropToRect(x,y,w,h,o10x,o10y,o10r,o10b)                
+                end
               end
               --gfx.a = 0.6
-              if mouse.shift or mouse.alt then
+              --[[if mouse.shift or mouse.alt then
 
                 if lvar.bgloaded > 0 then
                   gfx.a = 0.9
@@ -22133,6 +22156,8 @@ function GUI_DrawCtlBitmap_Strips()
                     yp = yp - spos.sh*lvar.zoom
                     hp = (spos.h+spos.sh+lvar.mmgap)*lvar.zoom
                     yy = yy - (spos.sh)*lvar.zoom
+                  else
+                    w=w-lvar.shadowmax
                   end
                   
                   gfx.blit(lvar.bgloaded,1,0,xx-lvar.bgoffx-1,yy-lvar.bgoffy,w,hp,x,yp)
@@ -22142,7 +22167,7 @@ function GUI_DrawCtlBitmap_Strips()
                   gfx.a = 1
                   gfx.rect(x,y,w,h,1)
                 end
-              end
+              end]]
               gfx.a = 1
               f_Get_SSV(gui.color.yellow)
               if lvar.mixmodedir == 0 then
@@ -22150,17 +22175,23 @@ function GUI_DrawCtlBitmap_Strips()
                   local barh = --[[math.max(pady-4,10)]] math.min(math.floor(h/2),40)
                   local pad = math.floor(gap)
                   if istrip.before == true then
-                    gfx.rect(x,y,w-lvar.shadowmax*lvar.zoom,barh+1,1)
+                    gfx.rect(x,y,w,barh+1,1)
                   else
-                    gfx.rect(x,y+h-barh-1,w-lvar.shadowmax*lvar.zoom,barh+1,1)
+                    gfx.rect(x,y+h-barh-1,w,barh+1,1)
                   end
                 end
                 gfx.a = 1
                 if mouse.shift or mouse.alt then
                   local spos = lvar.spos[t_swid]
-                  x,y,w,h = CropToRect(spos.x,y,w,h,o10x,o10y,o10r,o10b)
                   if spos then
-                    gfx.rect(x,y--[[+(spos.sh)*lvar.zoom]],w,h--[[-spos.sh]],0)
+                    --x,y,w,h = CropToRect(spos.x,y,w,h,o10x,o10y,o10r,o10b)
+                    if mouse.alt then
+                      f_Get_SSV(gui.color.green)
+                      GUI_Str(gui,{x=x+4,y=y,w=40,h=20},'LINK',4,gui.color.green,2,1,gui.color.black,nil,nil)
+                    else
+                      GUI_Str(gui,{x=x+4,y=y,w=60,h=20},'REPLACE',4,gui.color.yellow,2,1,gui.color.black,nil,nil)                    
+                    end                  
+                    gfx.rect(x,y,w,h,0)
                   end
                 end
               else
@@ -22176,6 +22207,12 @@ function GUI_DrawCtlBitmap_Strips()
                 if mouse.shift or mouse.alt then
                   local spos = lvar.spos[t_swid]
                   if spos then
+                    if mouse.alt then
+                      f_Get_SSV(gui.color.green)
+                      GUI_Str(gui,{x=x+4,y=y,w=40,h=20},'LINK',5,gui.color.green,2,1,gui.color.black,nil,nil)
+                    else
+                      GUI_Str(gui,{x=x+4,y=y,w=60,h=20},'REPLACE',4,gui.color.yellow,2,1,gui.color.black,nil,nil)                    
+                    end                  
                     gfx.rect(x,y,w,h+lvar.mmgap*lvar.zoom,0)
                   end
                 end
@@ -22631,7 +22668,7 @@ function GUI_DrawCtlBitmap_Strips()
 
             gfx.a = 1
             if lvar.bgloaded > 0 and lvar.mmov_bgimgon then
-              gfx.blit(lvar.bgloaded,1,0,-lvar.bgoffx,obj.sections[4999].y-obj.sections[10].y-lvar.bgoffy,obj.sections[4999].w,obj.sections[4999].h,obj.sections[4999].x,obj.sections[4999].y)
+              gfx.blit(lvar.bgloaded,1,0,-(lvar.bgoffx or 0),obj.sections[4999].y-obj.sections[10].y-(lvar.bgoffy or 0),obj.sections[4999].w,obj.sections[4999].h,obj.sections[4999].x,obj.sections[4999].y)
             else
               f_Get_SSV(backcol2 or backcol)
               gfx.rect(obj.sections[4999].x, obj.sections[4999].y, obj.sections[4999].w, obj.sections[4999].h, 1)
@@ -22651,12 +22688,39 @@ function GUI_DrawCtlBitmap_Strips()
           end
 
           if lvar.trbtns_show then
-            GUI_DrawButton(gui,'BACK',obj.sections[5006],-1,gui.color.white,true,nil,nil,4)
             if LBX_GTRACK and obj.sections[5007] then
               GUI_DrawButton(gui,'GLOBAL',obj.sections[5007],-1,gui.color.white,true,nil,nil,4)
             end
             GUI_DrawButton(gui,'< TRACK',obj.sections[5002],-1,gui.color.white,true,nil,nil,4)
             GUI_DrawButton(gui,'TRACK >',obj.sections[5003],-1,gui.color.white,true,nil,nil,4)
+            if lvar.dm_backtrack then
+              local trname = '-'
+              local track = GetTrack(lvar.dm_backtrack.trn)
+              if reaper.GetTrackGUID(track) ~= lvar.dm_backtrack.guid then
+                local trn = GetTRNfromGUID(lvar.dm_backtrack.guid)
+                if trn then
+                  lvar.dm_backtrack.trn = trn
+                  track = GetTrack(trn)
+                else
+                  track = nil
+                end
+              end
+              if track then    
+                _, trname = reaper.GetTrackName(track)
+                if trname == '' then
+                  trname = 'Track '..string.format('%i',dm_trackbtns[tb].trn+1)
+                  GUI_DrawButton(gui,trname,obj.sections[5006],bc,gui.color.white,true,nil,nil,4)
+                else
+                  local tab, th = GetWWData(trname, obj.sections[5006].w-10)
+                  if not tab[#tab].t then
+                    tab[#tab] = nil
+                  end
+                  GUI_DrawButtonWW(gui, tab, th, 4, obj.sections[5006], bc, gui.color.white, true, nil, nil, 4)
+                end                
+              end
+            else
+              GUI_DrawButton(gui,'BACK',obj.sections[5006],-1,gui.color.white,true,nil,nil,4)
+            end
 
             if lupd.update_gfx or lupd.update_trbtns or resize_display then
 
@@ -22720,7 +22784,7 @@ function GUI_DrawCtlBitmap_Strips()
 
           gfx.a = 1
           local bc = -1
-          if lvar.dm_refresh == true then
+          if lvar.dm_refresh == true or lvar.dm_refresh_timer then
             bc = -2
           end
           GUI_DrawButton(gui,'REFRESH',obj.sections[5000],bc,gui.color.white,true,nil,nil,4)
@@ -23887,7 +23951,7 @@ function GUI_DrawCtlBitmap_Strips()
               local alpha = 0.2
               if lvar.bgloaded > 0 and lvar.mmov_bgimgon then
                 --local hh = math.floor(h-math.max(v1*h,v2*h))
-                gfx.blit(lvar.bgloaded,1,0,x-lvar.bgoffx-obj.sections[10].x,y-lvar.bgoffy-obj.sections[10].y,6,h,x,y)
+                gfx.blit(lvar.bgloaded,1,0,x-(lvar.bgoffx or 0)-obj.sections[10].x,y-(lvar.bgoffy or 0)-obj.sections[10].y,6,h,x,y)
               else
                 f_Get_SSV(backcol2 or backcol)
                 gfx.rect(x, y, 6, h, 1)
@@ -34190,6 +34254,7 @@ function GUI_DrawCtlBitmap_Strips()
         lvar.stripstore[lvar.dynamicmode_guid] = nil
       end
       DM_AddStrips(true, dm_data)
+      DM_Flash_Refresh()
     end
 
   end
@@ -34541,7 +34606,28 @@ function GUI_DrawCtlBitmap_Strips()
       if switchers[swids[s].id] then
         swids[s].fxguids = switchers[swids[s].id].fxguids
         for a, b in pairs(switchers[swids[s].id].grpids) do
-          swids[s].stripfn = b.stripfn
+          
+          if swids[s].fxguids and #swids[s].fxguids == 1 then
+            --[[local sss = PlugDef_GetFromFXGUID(track, swids[s].fxguids[1])
+            if sss then            
+              swids[s].stripfn = paths.strips_path..sss 
+            else]]
+              swids[s].stripfn = b.stripfn
+            --end
+          else
+            --[[local sss = string.match(b.stripfn,'.+[\\/]strips[\\/](.+).strip$')
+            if sss then
+              sss = string.match(sss,'.-[\\/](.*)')
+              if sss and plugdefstrips_idx[sss] then
+                local idx = plugdefstrips_idx[sss]
+                swids[s].stripfn = paths.strips_path..plugdefstrips[idx].stripfol..'/'..plugdefstrips[idx].stripfile
+              else
+                swids[s].stripfn = b.stripfn
+              end
+            else]]
+              swids[s].stripfn = b.stripfn          
+            --end
+          end
         end
         if not string.match(swids[s].stripfn or '','dynamic_placeholder.strip$') and swids[s].fxguids then
           for f = 1, #swids[s].fxguids do
@@ -34583,6 +34669,8 @@ function GUI_DrawCtlBitmap_Strips()
     newswitcherdata.padx = padx
     newswitcherdata.pady = pady
     newswitcherdata.showpop = lvar.showpop
+    newswitcherdata.mixx = surface_offset.mixx
+    newswitcherdata.mixy = surface_offset.mixy    
     
     local strip = tracks[track_select].strip
     if strip then
@@ -35012,6 +35100,9 @@ function GUI_DrawCtlBitmap_Strips()
           DM_RebuildFaders(dm_data, nctldata, nctldataidx)
           DM_RebuildPop(dm_data)
 
+          surface_offset.mixx = dm_data.mixx
+          surface_offset.mixy = dm_data.mixy
+
         else
 
           local tfxi = GetTrackFXInfo(nil, trn)
@@ -35140,17 +35231,17 @@ function GUI_DrawCtlBitmap_Strips()
         end
         strips[strip][page].fxstr = table.concat(fxguid,'')
 
-        surface_offset.mixx = -40
-        surface_offset.mixy = -40
+        --surface_offset.mixx = -40
+        --surface_offset.mixy = -40
 
         SetCtlBitmapRedraw(true)
 
         local mmlen = MixMode_GetLength()
-        if lvar.mixmodedir == 0 then
+        --[[if lvar.mixmodedir == 0 then
           surface_offset.mixy = math.min(math.floor((0-obj.sections[10].h/2)+(mmlen/2)),-40)
         else
           surface_offset.mixx = math.min(math.floor((0-obj.sections[10].w/2)+(mmlen/2)),-40)
-        end
+        end]]
         --DBG(mmlen..'  '..surface_offset.mixy..'  '..math.floor((0-obj.sections[10].h/2)+(mmlen/2)))
         --MixMode_Swipe(1,1,true)
         DM_StoreStripData()--force)
@@ -35230,6 +35321,24 @@ function GUI_DrawCtlBitmap_Strips()
 
       elseif switchers[switchid].switchmode == 1 then
 
+        --set strip folder
+        local sss = string.match(loadstrip.fn,'.+[\\/]strips[\\/](.+).strip$')
+        if sss then
+          local sss2 = string.match(sss,'(.-)[\\/].*')
+          if sss2 then
+            switchers[switchid].stripfolder = sss2
+          end
+        else
+          local sss2 = string.match(loadstrip.fn,'(.-)[\\/].*')
+          local dph = string.match(loadstrip.fn,'.+[\\/](.*)')
+          if dph == 'dynamic_placeholder.strip' then
+            switchers[switchid].stripfolder = '__LBXFAVS'
+          elseif sss2 then
+            switchers[switchid].stripfolder = sss2
+          end
+          
+        end
+          
         if switchers[switchid].dropx and switchers[switchid].dropy then
           x = switchers[switchid].dropx + ctl_sw.x - surface_offset.x
           y = switchers[switchid].dropy + ctl_sw.y - surface_offset.y
@@ -35602,6 +35711,8 @@ function GUI_DrawCtlBitmap_Strips()
 
   function Switchers_Ext_MovePos(extid, oldpos, newpos, before, movefx, force)
 
+    --reaper.PreventUIRefresh(1)
+    
     if oldpos < newpos and before == true then
       newpos = newpos - 1
     elseif oldpos > newpos and before ~= true then
@@ -35703,7 +35814,7 @@ function GUI_DrawCtlBitmap_Strips()
         if movefx == true then
           if reaper.APIExists('TrackFX_CopyToTrack') == true then
 
-            reaper.PreventUIRefresh(1)
+            --reaper.PreventUIRefresh(1)
             local dsttrack = GetTrack(dst_trn)
 
             Switchers_SortFXChain(extid, dsttrack)
@@ -35725,18 +35836,20 @@ function GUI_DrawCtlBitmap_Strips()
             --reaper.TrackFX_CopyToTrack(srctrack,src_fxn,dsttrack,dst_fxn,true)
             --MoveFXByGUID(srctrack,srcctl_sw.fxguid,dsttrack,dst_fxn,srcctl_sw)
 
-            reaper.PreventUIRefresh(-1)
+            --reaper.PreventUIRefresh(-1)
           end
         end
 
         lupd.update_gfx = true
-        lupd.update_bg = true
+        lupd.update_bg = true        
+        
         SetCtlBitmapRedraw()
         reaper.MarkProjectDirty(0)
       end
 
     end
-
+    --reaper.PreventUIRefresh(-1)
+    
   end
 
   function MoveFXByGUID(srctr, srcguid, dsttr, dstfxn)
@@ -35785,12 +35898,13 @@ function GUI_DrawCtlBitmap_Strips()
 
   function Switchers_SortFXChain2(extid, dtr, nosort)
     --This function sorts fx so each switchers fx are next to each other in original order
-
     local track = GetTrack(lvar.dynamicmode_trn)
     if track then
 
-      local pos = 0
+      --local pos = 0
       local extmax = Switcher_Ext_GetMaxPos(extid)
+
+      reaper.PreventUIRefresh(1)
 
       for i = 1, extmax do
 
@@ -35802,14 +35916,14 @@ function GUI_DrawCtlBitmap_Strips()
             for p = 1, #fxguids do
               local pp = GetFXNFromGUID(track, fxguids[p])
               if pp then
-                ps = p+1
-                pos = pp+1
-                break
+                pos = math.min((pos or 9999),pp)
+                --ps = p+1
+                --pos = pp+1
+                --break
               end
             end
-            --local pos = GetFXNFromGUID(track, fxguids[1])+1
             if pos then
-              for fg = ps, #fxguids do
+              for fg = 1, #fxguids do
   
                 if MoveFXByGUID(track, fxguids[fg], track, pos) == true then
                   pos = pos + 1
@@ -35817,6 +35931,15 @@ function GUI_DrawCtlBitmap_Strips()
   
               end
             end
+            --[[for p = 1, #fxguids do
+              local pp = GetFXNFromGUID(track, fxguids[p])
+              if pp then
+                if MoveFXByGUID(track, fxguids[fg], track, pos) == true then
+                  pos = pos + 1
+                end
+                
+              end
+            end]]
           end
         end
 
@@ -35826,6 +35949,8 @@ function GUI_DrawCtlBitmap_Strips()
       end
       DM_RefreshFX()
 
+      reaper.PreventUIRefresh(-1)
+
     end
 
   end
@@ -35833,8 +35958,10 @@ function GUI_DrawCtlBitmap_Strips()
   function Switchers_SortFXChain(extid, dtr, nosort)
     --Sorts entire ext switcher chain
 
-    if lvar.livemode == 2 --[[and oldpos and newpos]] then
 
+    if lvar.livemode == 2 --[[and oldpos and newpos]] then
+      
+      --Switchers_SortFXChain2(extid, dtr, nosort)
       local track = GetTrack(lvar.dynamicmode_trn)
       if track then
 
@@ -36144,43 +36271,45 @@ function GUI_DrawCtlBitmap_Strips()
 
   function Switchers_AddInsertFX(switchid, strip, page, c, fxloc)
 
-    local ctl = strips[strip][page].controls[c]
-    local trn = strips[strip].track.tracknum
-    local track = GetTrack(trn)
-    --[[if trn == -3 then
-      trn = reaper.GetMediaTrackInfo_Value(track, 'IP_TRACKNUMBER')-1
-    end]]
-
-    if track then
-
-      local chunk = GetTrackChunk(track,true)
-      local insfxchunk = lvar.lbxinsfx_chunk
-      local nchunk, nguid = Chunk_InsertFXChunkAtEndOfFXChain(trn,chunk,insfxchunk)
-
-      --Move
-      --if fxloc > 1 then
-      --  nchunk = MoveFXChunk2(nchunk, trn, fxcnt, 1, fxcnt)
-      --end
-
-      if nchunk then
-        SetTrackChunk(track, nchunk, false)
-      end
-
-      local fxcnt = reaper.TrackFX_GetCount(track)
-
-      if fxloc then
-        if reaper.APIExists('TrackFX_CopyToTrack') == true then
-          reaper.TrackFX_CopyToTrack(track,fxcnt-1,track,fxloc,true)
-        else
-          fxloc = fxcnt
+    if lvar.livemode ~= 2 then
+      local ctl = strips[strip][page].controls[c]
+      local trn = strips[strip].track.tracknum
+      local track = GetTrack(trn)
+      --[[if trn == -3 then
+        trn = reaper.GetMediaTrackInfo_Value(track, 'IP_TRACKNUMBER')-1
+      end]]
+  
+      if track then
+  
+        local chunk = GetTrackChunk(track,true)
+        local insfxchunk = lvar.lbxinsfx_chunk
+        local nchunk, nguid = Chunk_InsertFXChunkAtEndOfFXChain(trn,chunk,insfxchunk)
+  
+        --Move
+        --if fxloc > 1 then
+        --  nchunk = MoveFXChunk2(nchunk, trn, fxcnt, 1, fxcnt)
+        --end
+  
+        if nchunk then
+          SetTrackChunk(track, nchunk, false)
         end
+  
+        local fxcnt = reaper.TrackFX_GetCount(track)
+  
+        if fxloc then
+          if reaper.APIExists('TrackFX_CopyToTrack') == true then
+            reaper.TrackFX_CopyToTrack(track,fxcnt-1,track,fxloc,true)
+          else
+            fxloc = fxcnt
+          end
+        end
+  
+        ctl.fxnum = fxloc or fxcnt
+        ctl.fxguid = nguid
+  
       end
-
-      ctl.fxnum = fxloc or fxcnt
-      ctl.fxguid = nguid
-
     end
-
+    
   end
 
   function Strip_ReposSwitcher_Ext(extid, extpos, topx, topy, avoidtop)
@@ -36254,6 +36383,7 @@ function GUI_DrawCtlBitmap_Strips()
       end]]
 
       local gfxpage = 0
+      
 
       for i = 1, extmax do
 
@@ -36270,12 +36400,12 @@ function GUI_DrawCtlBitmap_Strips()
             ext_h = sb[i] - st[i]
           end
 
-          if ny + pady + ctl_sw.hsc + ext_h > surface_size.h then
+          if ny + pady + ctl_sw.hsc + ext_h + lvar.shadowmax_p > surface_size.h then
             nx = xx + padx
             ny = topy-pady
           end
 
-          if (nx + ext_w > surface_size.w) then
+          if (nx + ext_w + lvar.shadowmax_p > surface_size.w) then
             gfxpage = gfxpage + 1
             nx = 0
             ny = 0
@@ -36927,7 +37057,7 @@ function GUI_DrawCtlBitmap_Strips()
         local fxguids = Switchers_GetFXGUIDs(extid, extpos)
     
         local track = GetTrack(lvar.dynamicmode_trn)
-        if track then
+        if track and fxguids then
           for f = 1, #fxguids do
             DeleteFXByGUID(track, fxguids[f])
           end
@@ -37335,7 +37465,6 @@ function GUI_DrawCtlBitmap_Strips()
           local mstr = ''
           for i = 1, #ctl.rcmdata do
             ddtab.items[i] = ctl.rcmdata[i].name
-
           end
 
           OpenDropDown(1, ddtab, true)
@@ -37551,6 +37680,34 @@ function GUI_DrawCtlBitmap_Strips()
       end
     end
   end
+  
+  function StripModuleList(fxmod)
+  
+    local cnt = 1
+    local idxtab = {}
+    local ddtab = {}
+    local mstr = ''
+    for i = 1, #plugdefstrips do 
+      if plugdefstrips[i].plug == fxmod then
+        idxtab[cnt] = i
+        cnt = cnt + 1
+      end  
+    end
+    for i = 1, cnt-1 do
+      local idx = idxtab[i]
+      if cnt == 1 then
+        mstr = plugdefstrips[idx].stripfile
+      elseif i == cnt-1 then
+        mstr = mstr..'|<'..plugdefstrips[idx].stripfile
+      else
+        mstr = mstr..'|'..plugdefstrips[idx].stripfile
+      end
+      ddtab[i] = plugdefstrips[idx].stripfile
+    end
+    return mstr, idxtab, cnt-1, ddtab
+      
+  end
+  
   function SwitcherMenu_RB()
 
     show_dd = false
@@ -37708,6 +37865,24 @@ function GUI_DrawCtlBitmap_Strips()
             stripfolders = stripfolders .. '|' ..tk..strip_folders[i].fn
           end
         end
+        
+        local dll_cnt = 0
+        local dllstr = ''
+        local dlltab = {}
+        if lvar.livemode == 2 and #switchers[switchid].fxguids == 1 then
+          local track = GetTrack(lvar.dynamicmode_trn)
+          if track then
+            local fxn = GetFXNFromGUID(track,switchers[switchid].fxguids[1])
+            local _, mod = reaper.BR_TrackFX_GetFXModuleName(track,fxn,'',64)
+            if mod then
+              dllstr, dlltab, dll_cnt = StripModuleList(mod)          
+              if dllstr ~= '' then
+                dllstr = '|>Select plugin strip|'..dllstr
+              end
+            end
+          end
+        end
+        
         local tk2 = ''
         if switchers[switchid].copypinmap == true then
           tk2 = '!'
@@ -37716,7 +37891,7 @@ function GUI_DrawCtlBitmap_Strips()
         if switchers[switchid].extendmode == true then
           tk3 = '#!'
         end
-        mstr = mstr .. '#Pages Mode|!Strip Switch Mode||>Select Strip Folder'..stripfolders..'||Link To New InsertFX|'..tk2..'Copy PinMap To Plugins||'..tk3..'Auto Extend Mode'
+        mstr = mstr .. '#Pages Mode|!Strip Switch Mode||>Select Strip Folder'..stripfolders..'|'..dllstr..'||Link To New InsertFX|'..tk2..'Copy PinMap To Plugins||'..tk3..'Auto Extend Mode'
         if mode == 1 and submode == 0 then
           mstr = mstr .. '||Set Strip Drop Location'
         else
@@ -37739,33 +37914,78 @@ function GUI_DrawCtlBitmap_Strips()
             else
               switchers[switchid].stripfolder = '__LBXFAVS'
             end
-          elseif res == 4+sfcnt then
+          elseif dll_cnt > 0 and res >= 4+sfcnt and res <= 4+sfcnt+dll_cnt then
+
+            local idx = res-(4+sfcnt) + 1
+            local idx2 = dlltab[idx]
+            if idx2 then
+              
+              --local trn = lvar.dynamicmode_trn
+              local fn = plugdefstrips[idx2].stripfol..'/'..plugdefstrips[idx2].stripfile
+              
+              switchers[switchid].grpids[1].stripfn = paths.strips_path..fn
+              DM_RefreshPage()
+              
+              --[[loadstrip = LoadStripFN(fn)
+              if loadstrip then
+                
+                lvar.addstripdialog_tracknum = lvar.dynamicmode_trn
+                lvar.show_addstripdialog = true
+
+                local pos = DM_Switcher_GetFXPos(switchid) or 0
+                local fxdata = AddStripDialog_GetFxData(trn,pos)
+
+                if #fxdata > 0 then           
+                  fxdata.loadstrip = loadstrip
+                  fxdata.mode = 1
+                  AddStripDialog_UpdateSel(fxdata)
+                  
+                  local extpos = switchers[switchid].extendpos
+                  
+                  local fx = pos
+                  local swok = Switcher_AddStrip(nil, switcher_select, loadstrip, fxdata, trn, fx, nil, true)
+                  local extid = switchers[switchid].extendid
+                  Strip_ReposSwitcher_Ext(extid, 1)
+                  UpdateControlValues3(reaper.time_precise(), ctls_upd, ctls_orr)
+                  DM_RefreshFX()
+                  
+                  DM_RefreshPage()
+                  DM_StoreStripData()
+                  
+                end
+                lvar.show_addstripdialog = false
+                loadstrip = nil
+                
+              end]]
+              
+            end
+          elseif res == 4+sfcnt+dll_cnt then
             Switchers_AddInsertFX(switchid, tracks[track_select].strip, page, switcher_select)
-          elseif res == 5+sfcnt then
+          elseif res == 5+sfcnt+dll_cnt then
             switchers[switchid].copypinmap = not (switchers[switchid].copypinmap or false)
-          elseif res == 6+sfcnt then
+          elseif res == 6+sfcnt+dll_cnt then
             switchers[switchid].extendmode = not (switchers[switchid].extendmode or false)
             if switchers[switchid].extendmode == true then
               switchers[switchid].extenddir = 1
               switchers[switchid].extendid = GenID()
               switchers[switchid].extendpos = 1
             end
-          elseif res == 7+sfcnt then
+          elseif res == 7+sfcnt+dll_cnt then
             stripswitch_droploc = {c = switcher_select, swid = switchid, x = switchers[switchid].dropx or mouse.mx, y = switchers[switchid].dropy or mouse.my}
 
             lupd.update_surface = true
-          elseif res == 8+sfcnt then
+          elseif res == 8+sfcnt+dll_cnt then
             Switcher_SetPosDefLoc(switchid, ctl.x, ctl.y)
             local extid = switchers[switchid].extendid
             Strip_ReposSwitcher_Ext(extid, 1)
             GUI_DrawCtlBitmap()
             lupd.update_gfx = true
 
-          elseif res == 9+sfcnt then
+          elseif res == 9+sfcnt+dll_cnt then
             OpenEB(1500,'Please enter switcher gap X (pixels):')
-          elseif res == 10+sfcnt then
+          elseif res == 10+sfcnt+dll_cnt then
             OpenEB(1501,'Please enter switcher gap Y (pixels):')
-          elseif res == 11+sfcnt then
+          elseif res == 11+sfcnt+dll_cnt then
             local ctl = strips[tracks[track_select].strip][page].controls[switcher_select]
             SaveDefSwitchFormat(switchid, ctl)
           end
@@ -37816,6 +38036,10 @@ function GUI_DrawCtlBitmap_Strips()
           end
         end
 
+      elseif mouse.alt then
+      
+        SwitcherMenu_Alt()
+        
       else
 
         SwitcherMenu_LB()
@@ -37926,7 +38150,7 @@ function GUI_DrawCtlBitmap_Strips()
             y = obj.sections[10].y + pop.y + (swdata.sb - swdata.st)*lvar.zoom
 
           else
-            x = lvar.spos[ctl.switcherid].x + math.floor(lvar.spos[ctl.switcherid].w/2 - lvar.spos[ctl.switcherid].sw/2)*lvar.zoom
+            x = lvar.spos[ctl.switcherid].x + math.floor((lvar.spos[ctl.switcherid].w-lvar.shadowmax)/2 - lvar.spos[ctl.switcherid].sw/2)*lvar.zoom
             y = lvar.spos[ctl.switcherid].y + lvar.spos[ctl.switcherid].sh*lvar.zoom
           end
         end
@@ -37977,6 +38201,60 @@ function GUI_DrawCtlBitmap_Strips()
       end
     end
 
+  end
+
+  function SwitcherMenu_Alt()
+    
+    local ctl = strips[tracks[track_select].strip][page].controls[switcher_select]
+    local switchid = ctl.switcherid
+    
+    local dll_cnt = 0
+    local dllstr = ''
+    local dlltab = {}
+    local items
+    if lvar.livemode == 2 and #switchers[switchid].fxguids == 1 then
+      local track = GetTrack(lvar.dynamicmode_trn)
+      if track then
+        local fxn = GetFXNFromGUID(track,switchers[switchid].fxguids[1])
+        local _, mod = reaper.BR_TrackFX_GetFXModuleName(track,fxn,'',64)
+        if mod then
+          _, dlltab, dll_cnt, items  = StripModuleList(mod)          
+
+          if items and #items > 0 then
+            local x,y
+        
+            local strip = tracks[track_select].strip
+            if strips[strip][page].popidx and strips[strip][page].popidx[switchid] then
+              local idx = strips[strip][page].popidx[switchid]
+              local pop = strips[strip][page].pop[idx]
+              local swdata = lvar.stripdim.swdata[switchid]
+        
+              x = obj.sections[10].x + pop.x + math.floor(((swdata.stripr - swdata.stripl)/2)*lvar.zoom - ((swdata.sr - swdata.sl)/2)*lvar.zoom)
+              y = obj.sections[10].y + pop.y + (swdata.sb - swdata.st)*lvar.zoom
+        
+            else
+              x = lvar.spos[switchid].x + math.floor((lvar.spos[switchid].w-lvar.shadowmax)/2 - lvar.spos[switchid].sw/2)*lvar.zoom
+              y = lvar.spos[switchid].y + lvar.spos[switchid].sh*lvar.zoom
+            end
+            local w = ctl.wsc*lvar.zoom
+        
+            local ddtab = {idx = 4, x = x, y = y, w = w, h = 100, items = {}, wpad = 40, switchid = switchid}
+            if lvar.mixmodealign == 1 and lvar.mixmodedir == 0 then
+              ddtab.x = lvar.spos[switchid].x
+            end
+        
+            ddtab.items = items
+            ddtab.data = dlltab
+            ddtab.cnt = dll_cnt
+            OpenDropDown(4, ddtab, true, true)
+        
+          end
+          
+        end
+      end
+    end
+        
+        
   end
 
   function MenuMidiMsgType()
@@ -40694,9 +40972,9 @@ function GUI_DrawCtlBitmap_Strips()
     end
     local gv
     if mode == 0 and stripgallery_view == 0 then
-      gv = '!Page View|Gallery View'
+      gv = '!Page View|#Gallery View'
     elseif mode == 0 then
-      gv = 'Page View|!Gallery View'
+      gv = 'Page View|#Gallery View'
     else
       gv = '#Page View|#Gallery View'
     end
@@ -40718,7 +40996,7 @@ function GUI_DrawCtlBitmap_Strips()
         stripgallery_view = 0
         lupd.update_surface = true
       elseif res == 4 then
-        stripgallery_view = 1
+        stripgallery_view = 0
         if settings_usectlbitmap then
           local xpos = 0
           stlay_data = AutoSnap_GetStripLocs(true)
@@ -41101,7 +41379,7 @@ function GUI_DrawCtlBitmap_Strips()
   end
 
   function SetGalleryView()
-
+    stripgallery_view = 0
     if stripgallery_view ~= 0 then
 
       stlay_data = AutoSnap_GetStripLocs(true)
@@ -44123,7 +44401,7 @@ function GUI_DrawCtlBitmap_Strips()
         else
           show_striplayout = false
           if mode == 0 then
-            stripgallery_view = stripgallery_view +1
+            stripgallery_view = 0--stripgallery_view +1
             if stripgallery_view == 2 then
 
               stripgallery_view = 0
@@ -49023,6 +49301,11 @@ function GUI_DrawCtlBitmap_Strips()
 
     if lvar.livemode == 2 then
 
+      if lvar.dm_refresh_timer and rt > lvar.dm_refresh_timer then
+        lvar.dm_refresh_timer = nil
+        lupd.update_trbtns = true
+      end
+
       local seltr = reaper.GetSelectedTrack2(0,0, true)
       if seltr and (lvar.dynamicmode_trn == nil or seltr ~= GetTrack(math.max(lvar.dynamicmode_trn,-1))) then
 
@@ -50837,9 +51120,73 @@ function GUI_DrawCtlBitmap_Strips()
           end
         end
 
+      elseif MOUSE_click_RB(obj.sections[5006]) then
+      
+        local trn = lvar.dynamicmode_trn
+        if trn then
+          local track = GetTrack(trn)
+          if track then
+            local _, trnm = reaper.GetTrackName(track)
+            local mstr
+            if lvar.dm_backtrack then
+              local pt1,pt2,pt3,pt4 = '','','',''
+              if lvar.dm_backtrack.page == 1 then
+                pt1 = '!'
+              elseif lvar.dm_backtrack.page == 2 then
+                pt2 = '!'
+              elseif lvar.dm_backtrack.page == 3 then
+                pt3 = '!'
+              elseif lvar.dm_backtrack.page == 4 then
+                pt4 = '!'
+              end              
+              mstr = "Set '"..trnm.."' as return track||#Set return track page:|"..pt1.."Page 1|"..pt2.."Page 2|"..pt3.."Page 3|"..pt4.."Page 4||Clear return track"
+            else
+              mstr = "Set '"..trnm.."' as return track||#Set return track page:|#Page 1|#Page 2|#Page 3|#Page 4"            
+            end
+            gfx.x = mouse.mx
+            gfx.y = mouse.my
+            local res = gfx.showmenu(mstr)
+            if res > 0 then
+              if res == 1 then
+                lvar.dm_backtrack = {trn = lvar.dynamicmode_trn, guid = lvar.dynamicmode_guid, page = 1}
+                lupd.update_trbtns = true
+              elseif res >= 3 and res <= 6 then
+                local p = res - 2
+                lvar.dm_backtrack.page = p
+              elseif res == 7 then
+                lvar.dm_backtrack = nil
+                lupd.update_trbtns = true
+              end
+            end
+          end
+        end
+      
       elseif MOUSE_click(obj.sections[5006]) then
 
-        if lvar.dm_ret_track then
+        if lvar.dm_backtrack then
+          local trn = lvar.dm_backtrack.trn
+          if trn ~= -1 then
+            local track = GetTrack(trn)          
+            if not track then
+              trn = GetTRNfromGUID(lvar.dm_backtrack.guid)
+              if trn then
+                lvar.dm_backtrack.trn = trn
+              end
+            else
+              --check guid
+              if lvar.dm_backtrack.guid == reaper.GetTrackGUID(track) then              
+              else
+                trn = GetTRNfromGUID(lvar.dm_backtrack.guid)
+                if trn then
+                  lvar.dm_backtrack.trn = trn
+                end              
+              end
+            end
+          end
+          if trn then
+            ChangeTrack2(trn, lvar.dm_backtrack.page, true)        
+          end
+        elseif lvar.dm_ret_track then
           ChangeTrack2(lvar.dm_ret_track, lvar.dm_ret_page, true)
         end
 
@@ -54726,7 +55073,7 @@ function GUI_DrawCtlBitmap_Strips()
       if lvar.mixmodedir == 0 then
         if mouse.my < obj.sections[10].y+zone then
           local jump = math.min(10+math.floor(((obj.sections[10].y+zone)-mouse.my)/4),max) * lvar.edgedrag_mult
-          surface_offset.mixy = math.max((surface_offset.mixy or 0)-jump,0)
+          surface_offset.mixy = math.max((surface_offset.mixy or 0)-jump,-math.floor(obj.sections[10].h/2))
           lupd.update_surface = true
           GUI_DrawCtlBitmap_Mix()
         elseif mouse.my > obj.sections[10].y+obj.sections[10].h-zone then
@@ -64638,7 +64985,9 @@ function GUI_DrawCtlBitmap_Strips()
                 local fx, trn
                 if lvar.livemode == 2 then
 
-                  fx = switchers[ctl.switcherid].extendpos-1
+                  fx = DM_Switcher_GetFXPos(ctl.switcherid) or 0
+                  
+                  --fx = switchers[ctl.switcherid].extendpos-1
                   trn = lvar.dynamicmode_trn
                   Switcher_AddStrip(fn, switcher_select,nil,nil,trn,fx,nil,true)
                   local extid = switchers[ctl.switcherid].extendid
@@ -64652,7 +65001,8 @@ function GUI_DrawCtlBitmap_Strips()
             elseif switchers[ctl.switcherid].stripfolder and ddlist.items[sel] then
               local fn = switchers[ctl.switcherid].stripfolder ..'/'.. ddlist.items[sel]..'.strip'
               if lvar.livemode == 2 then
-                fx = switchers[ctl.switcherid].extendpos-1
+                fx = DM_Switcher_GetFXPos(ctl.switcherid) or 0
+                --fx = switchers[ctl.switcherid].extendpos-1
                 trn = lvar.dynamicmode_trn
                 Switcher_AddStrip(fn, switcher_select,nil,nil,trn,fx,nil,true)
                 local extid = switchers[ctl.switcherid].extendid
@@ -64678,7 +65028,22 @@ function GUI_DrawCtlBitmap_Strips()
           end
         end
         lupd.update_stripbrowser = true
+      
+      elseif ddlist.idx == 4 then
+      
+        local switchid = ddlist.switchid
+        
+        local idx2 = ddlist.data[sel]
+        if idx2 then
+          
+          local fn = plugdefstrips[idx2].stripfol..'/'..plugdefstrips[idx2].stripfile
+          
+          switchers[switchid].grpids[1].stripfn = paths.strips_path..fn
+          DM_RefreshPage()
+        end
+        
       end
+      
     end
     mouse.context = contexts.dd
 
@@ -65086,10 +65451,13 @@ function GUI_DrawCtlBitmap_Strips()
 
   end
 
-  function AddStripDialog_GetFxData(trn)
-
-    local fxdata = {}
-    local tfxi = GetTrackFXInfo(nil, lvar.addstripdialog_tracknum, true)
+  function AddStripDialog_GetFxData(trn, fxtgt, swtgt)
+  --fxtgt - optional - single plugin to link to
+  --swtgt - optional - switcher being replaced
+  
+    local fxdata = {} 
+    local stripid
+    local tfxi = GetTrackFXInfo(nil, lvar.addstripdialog_tracknum, swtgt)
     local sfxi = GetStripFXInfo(nil, loadstrip)
 
     local tr = GetTrack(trn or track_select)
@@ -65097,26 +65465,34 @@ function GUI_DrawCtlBitmap_Strips()
     local fxcnt = reaper.TrackFX_GetCount(tr)
     local fx_min = fxcnt-1
     local fxn = {}
-    for i = 1, #sfxi do
-      local fx
-      if tfxi[0] then
-        for f = 0, #tfxi do
-          if tfxi[f].fxfn == sfxi[i].fxfn and not fxn[f] and not tfxi[f].stripinfo then
-            fx = f
-            fxn[f] = true
-            break
+    
+    if fxtgt then
+      local i = 1
+      local fx = fxtgt
+      fxdata[i] = {fxnm = sfxi[i].fxname, ofxguid = sfxi[i].fxguid, fxguid = tfxi[fx].fxguid, fxfn = tfxi[fx].fxfn, fxname = tfxi[fx].fxname,
+                   fxnum = fx, trnum = lvar.addstripdialog_tracknum, trguid = trguid}    
+    else
+      for i = 1, #sfxi do
+        local fx
+        if tfxi[0] then
+          for f = 0, #tfxi do
+            if tfxi[f].fxfn == sfxi[i].fxfn and not fxn[f] and not tfxi[f].stripinfo then
+              fx = f
+              fxn[f] = true
+              break
+            end
           end
         end
-      end
-      fx_min = math.min(fx_min,fx or fxcnt)
-      if fx then
-        fxdata[i] = {fxnm = sfxi[i].fxname, ofxguid = sfxi[i].fxguid, fxguid = tfxi[fx].fxguid, fxfn = tfxi[fx].fxfn, fxname = tfxi[fx].fxname,
-                     fxnum = fx, trnum = lvar.addstripdialog_tracknum, trguid = trguid}
-      else
-        fxdata[i] = {fxnm = sfxi[i].fxname, ofxguid = sfxi[i].fxguid}
+        fx_min = math.min(fx_min,fx or fxcnt)
+        if fx then
+          fxdata[i] = {fxnm = sfxi[i].fxname, ofxguid = sfxi[i].fxguid, fxguid = tfxi[fx].fxguid, fxfn = tfxi[fx].fxfn, fxname = tfxi[fx].fxname,
+                       fxnum = fx, trnum = lvar.addstripdialog_tracknum, trguid = trguid}
+        else
+          fxdata[i] = {fxnm = sfxi[i].fxname, ofxguid = sfxi[i].fxguid}
+        end
       end
     end
-
+    
     fxdata.tfxi = tfxi
     fxdata.sel = 1
     fxdata.fx_min = fx_min
@@ -65125,6 +65501,31 @@ function GUI_DrawCtlBitmap_Strips()
 
     return fxdata
 
+  end
+  
+  function DM_Switcher_GetFXPos(switchid)
+  
+    local extpos = switchers[switchid].extendpos
+    local trn = lvar.dynamicmode_trn
+
+    local pos
+    local extid = switchers[switchid].extendid
+    local tfxguids = GetTrackFXGUIDs(trn)
+
+    for i = 1, extpos-1 do
+
+      local fxguids = Switchers_GetFXGUIDs(extid, i)
+      for fg = 1, #fxguids do
+        if tfxguids[fxguids[fg]] then
+
+          pos = (pos or 0) + 1
+
+        end
+      end
+
+    end
+
+    return pos    
   end
 
   function A_RunAddStrip(noscroll, rt)
@@ -65253,7 +65654,9 @@ function GUI_DrawCtlBitmap_Strips()
             local extpos = switchers[insertstrip.target].extendpos
             local trn = lvar.dynamicmode_trn
 
-            local pos = 0
+            local pos = DM_Switcher_GetFXPos(insertstrip.target) or 0
+
+            --[[local pos = 0
             --local extmax = Switcher_Ext_GetMaxPos(extid)
             local extid = switchers[insertstrip.target].extendid
             local tfxguids = GetTrackFXGUIDs(trn)
@@ -65262,7 +65665,7 @@ function GUI_DrawCtlBitmap_Strips()
 
               local fxguids = Switchers_GetFXGUIDs(extid, i)
               for fg = 1, #fxguids do
-                if tfxguids[fxguids[fg]] then
+                if tfxguids[fxguids[fg] ] then
 
                   pos = pos + 1
 
@@ -65270,7 +65673,7 @@ function GUI_DrawCtlBitmap_Strips()
               end
 
             end
-            --DBG(pos)
+            --DBG(pos)]]
             local fx = pos
             --local fx = extpos-1
             local swok = Switcher_AddStrip(nil, c, loadstrip, fxdata, trn, fx, nil, true)
@@ -66968,20 +67371,43 @@ function GUI_DrawCtlBitmap_Strips()
               end
             end
             insertstrip.target = dst_switchid
-            if dst_switchid and (dst_switchid ~= oswid or insertstrip.before ~= ob) then
+            if dst_switchid and (dst_switchid ~= oswid or insertstrip.before ~= ob or mouse.shift ~= isoms or mouse.alt ~= isoma) then
+              if oswid and switchers[oswid].dragging then
+                switchers[oswid].dragging = nil
+                lupd.update_surface = true
+              end
+              if mouse.shift or mouse.alt and not switchers[dst_switchid].dragging then
+                switchers[dst_switchid].dragging = true
+                lupd.update_surface = true
+              end 
               oswid = dst_switchid
               --lvar.dragswitcher.target = dst_switchid
               --lupd.update_surface = true
+            elseif not dst_switchid then
+              if oswid and switchers[oswid].dragging then
+                switchers[oswid].dragging = nil
+                oswid = nil
+                lupd.update_surface = true
+              end                        
             end
             if isdt ~= insertstrip.target or isdb ~= insertstrip.before then
               lupd.update_surface = true
               isdt = insertstrip.target
               isdb = insertstrip.before
             end
+            
             --DBG(lupd.update_surface)
           end
         end
         if not CheckOver10() then
+          if oswid and switchers[oswid].dragging then
+            switchers[oswid].dragging = nil      
+            lupd.update_surface = true        
+          end
+          if insertstrip and insertstrip.target and switchers[insertstrip.target].dragging then
+            switchers[insertstrip.target].dragging = nil
+            lupd.update_surface = true
+          end
           mouse.context = contexts.sb_dragstrip
           if sb_drag then
             if lvar.livemode >= 1 and sb_drag.showpop == true then
@@ -66989,6 +67415,7 @@ function GUI_DrawCtlBitmap_Strips()
             end
             sb_drag.alpha = 0
           end
+          oswid = nil
         end
 
         if lvar.livemode == 0 then
@@ -67001,9 +67428,19 @@ function GUI_DrawCtlBitmap_Strips()
       if CheckOver10() then
 
         if lvar.livemode >= 1 then
+          if oswid and switchers[oswid].dragging then
+            switchers[oswid].dragging = nil      
+            lupd.update_surface = true        
+          end
+          if insertstrip and insertstrip.target and switchers[insertstrip.target].dragging then
+            switchers[insertstrip.target].dragging = nil      
+            lupd.update_surface = true        
+          end
+          
           if not lvar.livemode == 2 and (mouse.shift or mouse.alt) then
 
             if insertstrip.target then
+              --switchers[insertstrip.target].dragging = nil
               local c = Switchers_FindCtl(insertstrip.target)
               if c then
                 if mouse.shift and not mouse.alt then
@@ -67040,7 +67477,6 @@ function GUI_DrawCtlBitmap_Strips()
                 end
               end
             else
-
               --addstripdialog
               lvar.addstripdialog_tracknum = track_select
               local fxdata = AddStripDialog_GetFxData()
@@ -67063,6 +67499,7 @@ function GUI_DrawCtlBitmap_Strips()
           else
 
             if insertstrip.target then
+              --switchers[insertstrip.target].dragging = nil
 
               if mouse.shift and not mouse.alt then
                 local c = Switchers_FindCtl(insertstrip.target)
@@ -67114,21 +67551,16 @@ function GUI_DrawCtlBitmap_Strips()
                 --addstripdialog
                 lvar.addstripdialog_tracknum = lvar.dynamicmode_trn
                 lvar.show_addstripdialog = true
-                local fxdata = AddStripDialog_GetFxData()
+                local fxdata = AddStripDialog_GetFxData(lvar.dynamicmode_trn, nil, insertstrip.target)
                 if #fxdata > 0 then
 
                   fxdata.dx = dx
                   fxdata.dy = dy
                   fxdata.insertstrip = insertstrip
                   fxdata.loadstrip = loadstrip
-                  --if mouse.shift and mouse.alt then
-                    fxdata.mode = 1
-                  --else
-                  --  fxdata.mode = 2
-                  --end
+                  fxdata.mode = 1
                   AddStripDialog_UpdateSel(fxdata)
                   lvar.fxdata = fxdata
-                  --lvar.show_addstripdialog = true
                   lupd.update_gfx = true
                   retain = true
                 else
@@ -68064,15 +68496,18 @@ function GUI_DrawCtlBitmap_Strips()
                 plugid = stripfn
               end
 
-              if plugdefstrips_idx[plugid] then
+              --[[if plugdefstrips_idx[plugid] then
                 idx = plugdefstrips_idx[plugid]
               end
               plugdefstrips[idx] = {plug = plugid, stripfile = stripfn..'.strip', stripfol = fol}
-              plugdefstrips_idx[plugid] = idx
-              
-              --Check if different from plug name
+              plugdefstrips_idx[plugid] = idx]]
+              --local p1 = PlugDef_Add(plugid, stripfn, fol, false, nil)
+              --local p3 = PlugDef_Add(stripfn, stripfn, fol, false, nil)
+                            
               local _, plug = reaper.TrackFX_GetFXName(track, 0, '')
-              local p1 = plugid
+              local p2 = PlugDef_Add(plug, stripfn, fol, false, nil)
+
+              --[[local p1 = plugid
               local p2 = ''
               
               if plug then
@@ -68087,11 +68522,11 @@ function GUI_DrawCtlBitmap_Strips()
                   plugdefstrips_idx[plug] = idx                
                   p2 = plug
                 end              
-              end
+              end]]
               
 
               local _, plug = reaper.BR_TrackFX_GetFXModuleName(track,0,'',64)
-              if plug then
+              --[[if plug then
                 if plug ~= plugid then
                   local ii = plugdefstrips_idx[plug]
                   if not ii or plugdefstrips[ii].stripfile ~= stripfn..'.strip' or plugdefstrips[ii].stripfol ~= fol then 
@@ -68106,9 +68541,16 @@ function GUI_DrawCtlBitmap_Strips()
                     end
                   end
                 end
-              end
+              end]]
+              local asslist = (p3 or '') ..'\n'.. (p1 or '') ..'\n'.. (p2 or '')
+              PlugDef_Add(plug, stripfn, fol, true, asslist)
+              
               
               Save_PlugDefs()
+            else
+              --multi plugin
+              
+            
             end
 
             lvar.dm_save_plug = nil
@@ -68154,7 +68596,7 @@ function GUI_DrawCtlBitmap_Strips()
             local track = GetTrackByName('__LBXEDIT')
             if track and reaper.TrackFX_GetCount(track) == 1 then
               
-              local plugid = lvar.dm_save_plug
+              --[[local plugid = lvar.dm_save_plug
               if not plugid then
                 plugid = fxident
               end
@@ -68163,11 +68605,12 @@ function GUI_DrawCtlBitmap_Strips()
                 idx = plugdefstrips_idx[plugid]
               end
               plugdefstrips[idx] = {plug = plugid, stripfile = fxident..'.strip', stripfol = paths.dmstrip_folder}
-              plugdefstrips_idx[plugid] = idx
+              plugdefstrips_idx[plugid] = idx]]
               
-              --Check if different from plug name
               local _, plug = reaper.TrackFX_GetFXName(track, 0, '')
-              local p1 = plugid
+              local p2 = PlugDef_Add(plug, fxident, paths.dmstrip_folder, false, nil)
+              
+              --[[local p1 = plugid
               local p2 = ''
               
               if plug then
@@ -68182,10 +68625,13 @@ function GUI_DrawCtlBitmap_Strips()
                   plugdefstrips_idx[plug] = idx                
                   p2 = plug
                 end              
-              end              
+              end  ]]            
               
               local _, plug = reaper.BR_TrackFX_GetFXModuleName(track,0,'',64)
-              if plug then
+              local asslist = --[[(p1 or '') ..'\n'.. ]](p2 or '')
+              PlugDef_Add(plug, fxident, paths.dmstrip_folder, true, asslist)
+              
+              --[[if plug then
                 if plug ~= plugid then
                   local ii = plugdefstrips_idx[plug]
                   if not ii or plugdefstrips[ii].stripfile ~= stripfn..'.strip' or plugdefstrips[ii].stripfol ~= paths.dmstrip_folder then 
@@ -68200,7 +68646,7 @@ function GUI_DrawCtlBitmap_Strips()
                     end
                   end
                 end
-              end
+              end]]
               
               Save_PlugDefs()
             end
@@ -68267,6 +68713,62 @@ function GUI_DrawCtlBitmap_Strips()
 
     return context
 
+  end
+
+  function PlugDef_GetFromFXGUID(track, guid)
+    local fxn = GetFXNFromGUID(track, guid)
+    if fxn then
+    
+      local _, fxname = reaper.TrackFX_GetFXName(track, fxn, '')
+      fxname = TrimStr(CropFXName(fxname))
+      local _, fxmod = reaper.BR_TrackFX_GetFXModuleName(track,fxn,'',64)
+      
+      local idx = plugdefstrips_idx[fxname]
+      if not idx then
+        idx = plugdefstrips_idx[fxmod]
+      end
+
+      if idx then
+        return plugdefstrips[idx].stripfol..'/'..plugdefstrips[idx].stripfile        
+      end      
+    
+    end
+  end  
+
+  function PlugDef_Add(plug, stripfn, fol, ask, asslist)
+    
+    if plug then
+      local fnd
+      for p = 1, #plugdefstrips do
+        if plugdefstrips[p].plug == plug and plugdefstrips[p].stripfile == stripfn..'.strip' and plugdefstrips[p].stripfol == fol then
+          --DBG('found '..p)
+          fnd = p
+          break
+        end
+      end
+  
+      if not fnd then
+        local msg = ''
+        if asslist then
+          msg = 'This strip has been associated with strip/plugin names: \n\n'..asslist..'\n\n'
+        end
+        if not ask or reaper.MB(msg..'Associate this strip with plugin filename: '..plug..'?','DM Strip Save',4) == 6 then
+          local idx 
+          if not ask and plugdefstrips_idx[plug] then
+            idx = plugdefstrips_idx[plug]
+          else
+            idx = #plugdefstrips + 1
+          end
+          --DBG(idx)
+          if idx then
+            plugdefstrips[idx] = {plug = plug, stripfile = stripfn..'.strip', stripfol = fol}
+            plugdefstrips_idx[plug] = idx                
+          end
+          
+          return plug
+        end
+      end
+    end
   end
 
   function TrimStr(s)
@@ -75454,6 +75956,14 @@ function GUI_DrawCtlBitmap_Strips()
     else
       lvar.dm_trackbtns = {}
     end
+    lvar.dm_backtrack = nil
+    local guid = GPES('dm_backtrack_guid',true)
+    if guid then
+      lvar.dm_backtrack = {}
+      lvar.dm_backtrack.guid = guid
+      lvar.dm_backtrack.trn = tonumber(GPES('dm_backtrack_trn',true))
+      lvar.dm_backtrack.page = tonumber(GPES('dm_backtrack_page',true))
+    end
 
     local find = string.find
     local match = string.match
@@ -76403,7 +76913,7 @@ function GUI_DrawCtlBitmap_Strips()
     autosnap_itemgapmax = tonumber(nz(GES('autosnap_itemgapmax',true,data),autosnap_itemgapmax))
 
     gallery_itemgap = tonumber(nz(GES('gallery_itemgap',true,data),gallery_itemgap))
-    sg_view = tonumber(nz(GES('stripgallery_view',true,data),stripgallery_view))
+    sg_view = --[[tonumber(nz(GES('stripgallery_view',true,data),]]stripgallery_view--))
 
     settings_disablekeysonlockedsurface = tobool(nz(GES('settings_disablekeysonlockedsurface',false,data),settings_disablekeysonlockedsurface))
     settings_deletefxwithstrip = tobool(nz(GES('settings_deletefxwithstrip',false,data),settings_deletefxwithstrip))
@@ -78297,6 +78807,11 @@ function GUI_DrawCtlBitmap_Strips()
           reaper.SetProjExtState(0,SCRIPT,'dm_trackbtns_trn_'..key, lvar.dm_trackbtns[i].trn)
         end
       end
+      if lvar.dm_backtrack then
+        reaper.SetProjExtState(0,SCRIPT,'dm_backtrack_guid', lvar.dm_backtrack.guid)
+        reaper.SetProjExtState(0,SCRIPT,'dm_backtrack_trn', lvar.dm_backtrack.trn)
+        reaper.SetProjExtState(0,SCRIPT,'dm_backtrack_page', lvar.dm_backtrack.page)        
+      end
 
       DM_SaveData(tmp)
 
@@ -78352,6 +78867,12 @@ function GUI_DrawCtlBitmap_Strips()
           reaper.SetProjExtState(0,SCRIPT,'dm_trackbtns_guid_'..key, lvar.dm_trackbtns[i].guid)
           reaper.SetProjExtState(0,SCRIPT,'dm_trackbtns_trn_'..key, lvar.dm_trackbtns[i].trn)
         end
+      end
+
+      if lvar.dm_backtrack then
+        reaper.SetProjExtState(0,SCRIPT,'dm_backtrack_guid', lvar.dm_backtrack.guid)
+        reaper.SetProjExtState(0,SCRIPT,'dm_backtrack_trn', lvar.dm_backtrack.trn)
+        reaper.SetProjExtState(0,SCRIPT,'dm_backtrack_page', lvar.dm_backtrack.page)        
       end
     end
 
@@ -82553,6 +83074,8 @@ DBG(t.. '  '..trigtime)
 
   function Load_PlugDefs()
 
+    plugdefstrips = {}
+    plugdefstrips_idx = {}
 
     local file = io.open(paths.strips_path..'PluginDefaults.lbx','r')
     if file then
@@ -82573,8 +83096,6 @@ DBG(t.. '  '..trigtime)
 
       local p = 0
       local cnt = data['count']
-      plugdefstrips = {}
-      plugdefstrips_idx = {}
 
       local save
 
@@ -84959,7 +85480,7 @@ DBG(vald) ]]
     LoadLocation()
 
     if sg_view then
-      stripgallery_view = sg_view
+      stripgallery_view = 0
       if stripgallery_view > 0 then
         obj = GetObjects()
         stlay_data = AutoSnap_GetStripLocs(true)
