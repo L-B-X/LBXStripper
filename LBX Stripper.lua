@@ -742,7 +742,7 @@
                 local dynplaceholder
                 switchid = Switcher_GetTopLevelSwitcher(ctls[c].switcher)
                 if switchid then
-                  local stripfn = string.match(switchers[switchid].grpids[1].stripfn, '.+[\\/](.*).strip')
+                  local stripfn = string.match(switchers[switchid].grpids[1].stripfn or '', '.+[\\/](.*).strip')
                   if stripfn == 'dynamic_placeholder' then
                     dynplaceholder = true
                   end
@@ -11933,7 +11933,6 @@
 
     gfx.a = 1
 
-    
     backcol2 = nil
     if lvar.bgmatchestrackcolour > 0 then
       local col
@@ -11963,7 +11962,7 @@
       f_Get_SSV(backcol)
       lvar.backcol = backcol
     end
-    if lvar.livemode == 0 or mode > 0 then
+    if lvar.livemode == 0 or mode > 0 or snaplrn_mode or macro_lrn_mode then
       for i = 0, lvar.gfxpages do
         gfx.dest = bg_image+i
         if lvar.bgloaded > 0 and lvar.livebg then
@@ -21814,7 +21813,7 @@ function GUI_DrawCtlBitmap_Strips()
 
     --local shadows = lvar.shadows
     local fullscreen_open
-    if show_eqcontrol == true or macro_edit_mode == true or snap_edit_mode == true or show_pinmatrix == true or show_xxy then
+    if show_eqcontrol == true or macro_edit_mode == true or snap_edit_mode == true or show_pinmatrix == true or show_xxy or macro_lrn_mode or snaplearn or snaplrn_mode then
       fullscreen_open = true
     end
 
@@ -23972,7 +23971,7 @@ function GUI_DrawCtlBitmap_Strips()
       end
     end
 
-    if lvar.enablegfxshadows and (lupd.update_gfx or lupd.update_surface or resize_display) then
+    if lvar.enablegfxshadows and not fullscreen_open and (lupd.update_gfx or lupd.update_surface or resize_display) then
 
       local shadows = {}
       if lvar.enablegfxshadows then
@@ -24020,7 +24019,7 @@ function GUI_DrawCtlBitmap_Strips()
       end
       lvar.shadowbits = nil
 
-    elseif lvar.enablegfxshadows and lupd.update_ctls and lvar.shadowbits then
+    elseif lvar.enablegfxshadows and not fullscreen_open and lupd.update_ctls and lvar.shadowbits then
       local shadows = lvar.shadowbits
       if #shadows > 0 then
 
@@ -26742,6 +26741,198 @@ function GUI_DrawCtlBitmap_Strips()
     end
   end
 
+  function DM_SaveSnapsToStrip2(swid)
+
+    --find edit track
+    local track = GetTrackByName('__LBXEDIT')
+
+    --if not found - create edit track
+    if not track then
+      reaper.InsertTrackAtIndex(reaper.GetNumTracks(), false)
+      track = GetTrack(reaper.GetNumTracks()-1)
+      reaper.GetSetMediaTrackInfo_String(track, "P_NAME", '__LBXEDIT', true)
+      reaper.SetMediaTrackInfo_Value(track,'B_MAINSEND',0)
+      reaper.SetMediaTrackInfo_Value(track,'D_VOL',0)
+      reaper.SetMediaTrackInfo_Value(track,'B_SHOWINTCP',0)
+      --reaper.SetMediaTrackInfo_Value(track,'B_SHOWINMIXER',0)
+      PopulateTracks()
+    end
+
+    local edit_trn = reaper.GetMediaTrackInfo_Value(track, 'IP_TRACKNUMBER')-1
+    local dmemd = GetOEMData(ctl, swid, edit_trn, p_sfn)
+
+    if dmemd then
+
+      local stripfn = dmemd.stripfn
+      local sfn = dmemd.sfn
+      local edit_trn = dmemd.edit_trn
+      local pos = dmemd.pos
+
+      if track then
+        if stripfn == 'dynamic_placeholder' or (stripfn or '') == '' then
+        elseif stripfn then
+
+          lvar.edmode_ss = true
+          if lvar.edmode_ss == true then
+            lvar.edmode_ssdata = DM_EdModeSS(swid)
+          end
+
+          if lvar.edmode_ssdata then
+            if plist_w == 0 then
+              plist_w = oplist_w
+              show_editbar = true
+              resize_display = true
+            end
+  
+            --[[local ots = track_select
+            local olm = lvar.livemode
+            track_select = edit_trn
+            lvar.livemode = 0]]
+            
+            setmode(2)
+            ChangeTrack2(edit_trn, 1)
+  
+            local strip = tracks[track_select].strip
+            for fx = 0, reaper.TrackFX_GetCount(track)-1 do
+              reaper.TrackFX_Delete(track, 0)
+            end
+            ClearPage(page, true)
+  
+            --load strip
+            local loadstrip, content = LoadStripFN(nil, sfn)
+            DBG(string.sub(content,14837,300))
+            if loadstrip then
+  
+  
+  
+  
+  
+  
+  
+              reaper.PreventUIRefresh(1)
+              local w, h = GenStripPreview(gui, loadstrip.strip, loadstrip.switchers, loadstrip.switchconvtab)
+              local gs = settings_gridsize
+              local x = math.floor(obj.sections[10].w/2) - math.floor(w/2)
+              local y = math.floor(obj.sections[10].h/2) - math.floor(h/2)
+              x = round(x/gs)*gs
+              y = round(y/gs)*gs
+              Strip_AddStrip(loadstrip,x,y,true, nil, nil, 0)
+              
+              if lvar.edmode_ssdata then
+                DM_EdModeSSReplace(lvar.edmode_ssdata)
+              end
+              lvar.edmode_ssdata = nil            
+              
+              lvar.dm_editmode_data = dmemd
+              DM_SaveStrip(true)
+  
+              local ret_page = lvar.dm_editmode_data.ret_page
+              local ret_trn = tracks[lvar.dm_editmode_data.ret_trn].tracknum
+              navigate = true
+        
+              if lvar.dm_editmode_data.plist_w == 0 then
+                plist_w = lvar.dm_editmode_data.plist_w
+                show_editbar = false
+                resize_display = true
+              end
+              lvar.dm_editmode_data = nil
+        
+              setmode(1)
+              ChangeTrack2(ret_trn, ret_page, true)
+              obj = PosTrBtns(obj)
+        
+              --[[track_select = ots
+              lvar.livemode = olm]]
+              
+              reaper.PreventUIRefresh(-1)
+  
+            end
+          end
+          --DBG(sfn)
+          --DBG(stripfn)
+
+        end
+      end
+
+    end
+  end
+  
+  function DM_SaveSnapsToStrip(swid)
+  
+    local t = reaper.time_precise()
+    
+    local dmemd = GetOEMData(ctl, swid, edit_trn, p_sfn)
+  
+    if dmemd then
+  
+      local stripfn = dmemd.stripfn
+      local sfn = dmemd.sfn
+      if stripfn == 'dynamic_placeholder' or (stripfn or '') == '' then
+      elseif stripfn then
+  
+        lvar.edmode_ss = true
+        if lvar.edmode_ss == true then
+          lvar.edmode_ssdata = DM_EdModeSS(swid)
+        end
+
+        if lvar.edmode_ssdata then
+          --load strip
+          local loadstrip, content = LoadStripFN(nil, sfn)
+          if loadstrip and loadstrip.version >= 4 then
+  
+            --load snapshot data
+            if loadstrip.snapcontent then
+              local snapcontent = loadstrip.snapcontent
+              local data = {}
+              local cnt = 0
+              local lines = splitln(snapcontent)
+              if lines and #lines > 0 then
+                for ln = 1, #lines do
+                  local idx, val = string.match(lines[ln],'%[(.-)%](.*)')
+                  if idx then
+                    data[idx] = val
+                  end
+                end
+              end
+              loadstrip.snapshots = LoadSnapDataX(nil,data)
+            end
+  
+            if lvar.edmode_ssdata then
+              DM_EdModeSSReplace(lvar.edmode_ssdata, loadstrip)
+            end
+            lvar.edmode_ssdata = nil            
+            
+            local content_nosnaps = string.match(content,'(.+%[\\STRIPDATA%]\r?\n)')
+            if content_nosnaps then
+            
+              file = io.open(sfn,'w')
+              if file then
+              
+                file:write(content_nosnaps)                        
+                file:write('[SNAPSHOTDATA]\n')
+                SaveSnapshotDataX(loadstrip.snapshots,nil,file)
+                file:write('[\\SNAPSHOTDATA]\n')
+            
+                file:close()
+                
+                UpdateStripFileHeader(sfn)
+              end
+            end
+            
+          else
+            OpenMsgBox(1,'Strip file version too old.  Please update first.',1)
+          end  
+        
+        else
+          OpenMsgBox(1,'No snapshot data to save.',1)
+        end
+        
+      end
+    end
+
+    --DBG(reaper.time_precise()-t)
+  end
+  
   function DM_OpenEditMode(ctl, swid, p_sfn)
 
     --find edit track
@@ -26807,6 +26998,11 @@ function GUI_DrawCtlBitmap_Strips()
 
         elseif stripfn then
 
+          lvar.edmode_ss = true
+          if lvar.edmode_ss == true then
+            lvar.edmode_ssdata = DM_EdModeSS(swid)
+          end
+
           if plist_w == 0 then
             plist_w = oplist_w
             show_editbar = true
@@ -26834,6 +27030,12 @@ function GUI_DrawCtlBitmap_Strips()
             x = round(x/gs)*gs
             y = round(y/gs)*gs
             Strip_AddStrip(loadstrip,x,y,true, nil, nil, 0)
+            
+            if lvar.edmode_ssdata then
+              DM_EdModeSSReplace(lvar.edmode_ssdata)
+            end
+            lvar.edmode_ssdata = nil
+            
             reaper.PreventUIRefresh(-1)
 
           end
@@ -26846,6 +27048,132 @@ function GUI_DrawCtlBitmap_Strips()
 
     end
 
+  end
+
+  function DM_EdModeSSReplace(ssdata, stripdata)
+  
+    local strip = tracks[track_select].strip
+    local ocids = DM_GetStripDataCtls_ocid(stripdata.strip)
+    for sst = 1, #ssdata do
+      for c = 1, #ssdata[sst].ctls do
+        local oc = ssdata[sst].ctls[c].ctl
+        local ocid = ssdata.ctltab[oc]
+        if ocid then
+          ssdata[sst].ctls[c].ctl = ocids[ocid].ctl
+          ssdata[sst].ctls[c].c_id = ocids[ocid].cid
+        end
+      end
+      for ss = 1, #ssdata[sst].snapshot do
+        for d = 1, #ssdata[sst].snapshot[ss].data do
+          local oc = ssdata[sst].snapshot[ss].data[d].ctl
+          local ocid = ssdata.ctltab[oc]
+          if ocid then
+            ssdata[sst].snapshot[ss].data[d].ctl = ocids[ocid].ctl
+            ssdata[sst].snapshot[ss].data[d].c_id = ocids[ocid].cid
+          end
+          
+          if ssdata[sst].snapshot[ss].data[d].mf then
+            local oc = ssdata[sst].snapshot[ss].data[d].mfdata.ctl
+            local ocid = ssdata.ctltab[oc]
+            if ocid then
+              ssdata[sst].snapshot[ss].data[d].mfdata.ctl = ocids[ocid].ctl
+              ssdata[sst].snapshot[ss].data[d].mfdata.c_id = ocids[ocid].cid
+            end
+          end
+        end
+      end
+    end
+ 
+    local snaps = stripdata.snapshots
+    if not snaps then
+      stripdata.snapshots = Snapshots_sst_INIT()
+      snaps = stripdata.snapshots
+    end
+    for sst = 2, #ssdata+1 do    
+      snaps[sst] = ssdata[sst-1]    
+    end 
+  end
+
+  function DM_EdModeSS(swid)
+  
+    local ctltab = DM_GetSwitcherCtls_ocid(swid)
+    local strip = tracks[track_select].strip
+    local snaps = snapshots[strip][page]
+    local ctls = strips[strip][page].controls
+    local validsubsets = {}
+    
+    local subsets = {}
+    if #snaps > 1 then
+      for sst = 2, #snaps do
+        --DBG('checking sst '..sst)
+        local invalid 
+        for c = 1, #snaps[sst].ctls do
+          --DBG(snaps[sst].ctls[c].ctl)
+          local ctl = ctls[snaps[sst].ctls[c].ctl]
+          if not ctltab[snaps[sst].ctls[c].ctl] then
+            --DBG('invalid '..snaps[sst].ctls[c].ctl)
+            invalid = true
+            break
+          end
+        end
+        if not invalid then
+          validsubsets[#validsubsets+1] = sst
+        end
+      end
+    end
+    
+    if #validsubsets > 0 then
+      for vss = 1, #validsubsets do
+        local sst = #subsets+1 
+        subsets[sst] = table.deepcopy(snaps[validsubsets[vss]])
+      end
+      subsets.ctltab = ctltab
+      return subsets
+    end
+      
+  end
+
+  function DM_GetStripDataCtls_ocid(stripdata)
+
+    local ctltab = {} --, ctltabidx = {},{}
+    local ctls = stripdata.controls
+    local cnt = 1
+    for c = 1, #ctls do
+      ctltab[ctls[c].o_cid] = {ctl = c, cid = ctls[c].c_id}
+      cnt = cnt + 1
+    end
+    return ctltab--, ctltabidx    
+
+  end
+
+  function DM_GetStripCtls_ocid(strip)
+
+    local ctltab = {} --, ctltabidx = {},{}
+    local ctls = strips[strip][page].controls
+    local cnt = 1
+    for c = 1, #ctls do
+      ctltab[ctls[c].o_cid] = {ctl = c, cid = ctls[c].c_id}
+      cnt = cnt + 1
+    end
+    return ctltab--, ctltabidx    
+
+  end
+  
+  function DM_GetSwitcherCtls_ocid(swid)
+  
+    local ctltab = {} --, ctltabidx = {},{}
+    local strip = tracks[track_select].strip
+    local ctls = strips[strip][page].controls
+    local cnt = 1
+    for c = 1, #ctls do
+      if ctls[c].switcher == swid then
+        ctltab[c] = ctls[c].o_cid
+        --ctltabidx[c] = cnt
+        cnt = cnt + 1
+      end
+    end
+    return ctltab--, ctltabidx
+    
   end
 
   function GetOEMData(ctl, swid, edit_trn, p_sfn)
@@ -29158,8 +29486,12 @@ function GUI_DrawCtlBitmap_Strips()
 
   end
 
+  function ReplaceSnapshotContentInStripFile(content, stripdata)
+  
+  end
+
   --new version
-  function SaveStrip3(fn, fixactionstring, ffn)
+  function SaveStrip3(fn, fixactionstring, ffn, nothumb)
 
     --test
 
@@ -29321,7 +29653,7 @@ function GUI_DrawCtlBitmap_Strips()
 
         if not reaper.JS_LICE_WritePNG then
           OpenMsgBox(1,'Strip saved.',1)
-        else
+        elseif not nothumb then
           SaveStrip_CreateThumb(fn)
         end
       else
@@ -30432,11 +30764,13 @@ function GUI_DrawCtlBitmap_Strips()
             --should be only one
             local nfxguid, ofxguid
             local fxnum = math.max(targetfxpos-1,0)
-            ofxguid = '{'..stripdata.fx[1].fxguid..'}'
-            local tr = GetTrack(trnum)
-            nfxguid = reaper.TrackFX_GetFXGUID(tr, fxnum)
-            fxguids[ofxguid] = {guid = nfxguid, found = true, fxnum = fxnum}
-  
+            if stripdata.fx[1] then
+              ofxguid = '{'..stripdata.fx[1].fxguid..'}'
+              local tr = GetTrack(trnum)
+              nfxguid = reaper.TrackFX_GetFXGUID(tr, fxnum)
+              fxguids[ofxguid] = {guid = nfxguid, found = true, fxnum = fxnum}
+            end
+            
             retfxguids[#retfxguids+1] = nfxguid
   
             if templateload then --only do for templates
@@ -37869,7 +38203,7 @@ function GUI_DrawCtlBitmap_Strips()
         local dll_cnt = 0
         local dllstr = ''
         local dlltab = {}
-        if lvar.livemode == 2 and #switchers[switchid].fxguids == 1 then
+        if lvar.livemode == 2 and #(switchers[switchid].fxguids or {}) == 1 then
           local track = GetTrack(lvar.dynamicmode_trn)
           if track then
             local fxn = GetFXNFromGUID(track,switchers[switchid].fxguids[1])
@@ -37992,7 +38326,7 @@ function GUI_DrawCtlBitmap_Strips()
         end
       elseif mouse.shift == true then
 
-        mstr = 'Edit Strip||Insert Switcher||Delete Switcher||Delete Strip'
+        mstr = 'Edit Strip||Save Snapshots To Strip File||Insert Switcher||Delete Switcher||Delete Strip'
         gfx.x, gfx.y = mouse.mx, mouse.my
         local res = OpenMenu(mstr)
         if res > 0 then
@@ -38001,14 +38335,18 @@ function GUI_DrawCtlBitmap_Strips()
             DM_OpenEditMode(nil, switchid)
 
           elseif res == 2 then
-            Switchers_Ext_Insert(switchid, switchers[switchid].extendpos)
+
+            DM_SaveSnapsToStrip(switchid)
+
           elseif res == 3 then
+            Switchers_Ext_Insert(switchid, switchers[switchid].extendpos)
+          elseif res == 4 then
 
             Switcher_DeleteExt(switchid)
             UpdateControlValues3(reaper.time_precise(), ctls_upd, ctls_orr)
             DM_RefreshFX()
 
-          elseif res == 4 then
+          elseif res == 5 then
 
             DeleteSwitcherStrip(switchid, true, true)
 
@@ -38212,7 +38550,7 @@ function GUI_DrawCtlBitmap_Strips()
     local dllstr = ''
     local dlltab = {}
     local items
-    if lvar.livemode == 2 and #switchers[switchid].fxguids == 1 then
+    if lvar.livemode == 2 and #(switchers[switchid].fxguids or {}) == 1 then
       local track = GetTrack(lvar.dynamicmode_trn)
       if track then
         local fxn = GetFXNFromGUID(track,switchers[switchid].fxguids[1])
@@ -43913,7 +44251,7 @@ function GUI_DrawCtlBitmap_Strips()
       if settings_ssdock == true and show_snapshots and mode == 0 then
         obj.sections[10].w = obj.sections[10].w - math.floor(gui.winsz.snaps*pnl_scale)
       end
-      if settings_sbdock == true and show_stripbrowser == true and mode == 0 then
+      if settings_sbdock == true and show_stripbrowser == true and mode == 0 and not macro_lrn_mode and not snaplrn_mode then
         if lvar.stripbrowser.dockpos == 1 then
           obj.sections[10].y = obj.sections[10].y + math.floor(sbwin.h*pnl_scale)
           obj.sections[10].h = math.floor(obj.sections[10].h - math.floor(sbwin.h*pnl_scale))
@@ -43921,7 +44259,7 @@ function GUI_DrawCtlBitmap_Strips()
           obj.sections[10].w = obj.sections[10].w - math.floor(sbwin.w*pnl_scale)
         end
       end
-      if settings_moddock == true and show_lfoedit == true and mode == 0 then
+      if settings_moddock == true and show_lfoedit == true and mode == 0 and not macro_lrn_mode and not snaplrn_mode then
         local msz
         if modwinsz and modwinsz.h then
           msz = modwinsz.h
@@ -43942,7 +44280,7 @@ function GUI_DrawCtlBitmap_Strips()
         end
       end
       if mode == 0 and lvar.livemode == 2 then
-        if lvar.trbtns_show then
+        if lvar.trbtns_show and not macro_lrn_mode and not snaplrn_mode then
           obj.sections[10].h = obj.sections[10].h - 90
         end
       end
@@ -45495,18 +45833,14 @@ function GUI_DrawCtlBitmap_Strips()
       local ret, retstripidx, retstripid
       if settings_usectlbitmap then
         local coffset = 8388608
-        if (lvar.livemode == 0 or mode == 1) and (stripgallery_view == 0 or show_striplayout == true or (mode == 1 and submode == 0)) then
+        if (lvar.livemode == 0 or mode == 1 or macro_lrn_mode) and (stripgallery_view == 0 or show_striplayout == true or (mode == 1 and submode == 0)) then
           gfx.dest = ctl_bitmap
           if absolute then
-
-
             gfx.x = math.floor(x/lvar.zoom)
             gfx.y = math.floor(y/lvar.zoom)
           else
-
             gfx.x = math.floor((x  -obj.sections[10].x)/lvar.zoom) + surface_offset.x
             gfx.y = math.floor((y  -obj.sections[10].y)/lvar.zoom) + surface_offset.y
-            --DBG(gfx.x ..'  '..gfx.y)
           end
         else
           gfx.dest = ctl_bitmap2
@@ -45828,9 +46162,26 @@ function GUI_DrawCtlBitmap_Strips()
 
   end
 
-  function DM_SaveStrip()
+  function DM_SaveStrip(quick)
 
-    if lvar.dm_editmode_data.stripfn ~= 'dynamic_placeholder' then
+    if quick then
+      SaveStrip3(lvar.dm_editmode_data.stripfn, nil, lvar.dm_editmode_data.sfn, true)
+      --[[local ret_page = lvar.dm_editmode_data.ret_page
+      local ret_trn = tracks[lvar.dm_editmode_data.ret_trn].tracknum
+      navigate = true
+
+      if lvar.dm_editmode_data.plist_w == 0 then
+        plist_w = lvar.dm_editmode_data.plist_w
+        show_editbar = false
+        resize_display = true
+      end
+      lvar.dm_editmode_data = nil
+
+      setmode(1)
+      ChangeTrack2(ret_trn, ret_page, true)
+      obj = PosTrBtns(obj)]]
+
+    elseif lvar.dm_editmode_data.stripfn ~= 'dynamic_placeholder' then
       if not mouse.ctrl or not lvar.dm_editmode_data.stripfn then
         local fxident = lvar.dm_editmode_data.stripfn
         --if not fxident then
@@ -46776,7 +47127,7 @@ function GUI_DrawCtlBitmap_Strips()
             if MOUSE_click(obj.sections[10]) then
               if noscroll == false then
                 mouse.context = "dragsurface"
-                if lvar.livemode == 0 or mode ~= 0 then
+                if lvar.livemode == 0 or mode ~= 0 or macro_lrn_mode or snaplrn_mode then
                   surx = surface_offset.x
                   sury = surface_offset.y
                 else
@@ -49492,7 +49843,7 @@ function GUI_DrawCtlBitmap_Strips()
         gfx.mouse_wheel = 0
       end
 
-      if snap_edit_mode ~= true and macro_edit_mode ~= true and show_pinmatrix ~= true then
+      if snap_edit_mode ~= true and macro_edit_mode ~= true and show_pinmatrix ~= true and not snaplrn_mode and not macro_lrn_mode then
         local xywh = {x = obj.sections[1350].x,
                       y = obj.sections[1350].y,
                       w = obj.sections[1350].w,
@@ -49688,7 +50039,8 @@ function GUI_DrawCtlBitmap_Strips()
 
       noscroll = A_RunAddStrip(noscroll, rt)
 
-    elseif mouse.context == nil and show_stripbrowser == true and show_eqcontrol ~= true and show_pinmatrix ~= true and (MOUSE_click(obj.sections[1350]) or MOUSE_click_RB(obj.sections[1350])) then
+    elseif mouse.context == nil and show_stripbrowser == true and show_eqcontrol ~= true and show_pinmatrix ~= true and 
+           not macro_lrn_mode and not snaplrn_mode and (MOUSE_click(obj.sections[1350]) or MOUSE_click_RB(obj.sections[1350])) then
 
       noscroll = true
       mx,my = mouse.mx, mouse.my
@@ -50481,7 +50833,8 @@ function GUI_DrawCtlBitmap_Strips()
       mouse.mx = mx
       mouse.my = my
 
-    elseif mouse.context == nil and show_lfoedit == true and show_eqcontrol ~= true and show_pinmatrix ~= true and (MOUSE_click(obj.sections[1100]) or MOUSE_click_RB(obj.sections[1100])) then
+    elseif mouse.context == nil and show_lfoedit == true and show_eqcontrol ~= true and show_pinmatrix ~= true and 
+           not snaplrn_mode and not macro_lrn_mode and (MOUSE_click(obj.sections[1100]) or MOUSE_click_RB(obj.sections[1100])) then
 
       noscroll = true
       if show_fsnapshots == true or show_xysnapshots then
@@ -63654,7 +64007,14 @@ function GUI_DrawCtlBitmap_Strips()
           end
           if ok then
             snaplrn_mode = true
+            if lvar.livemode >= 1 then
+              surface_offset.x = 0
+              surface_offset.y = 0            
+              SetSurfaceSize2(obj)
+              obj = DockableWindows(obj, obj.sections[160], obj.sections[1350])
+            end
             navigate = false
+            lupd.update_bg = true
             lupd.update_gfx = true
           end
         end
@@ -63783,6 +64143,10 @@ function GUI_DrawCtlBitmap_Strips()
     elseif mouse.context == nil and MOUSE_click(obj.sections[167]) then
 
       snaplrn_mode = false
+      
+      SetSurfaceSize2(obj)
+      obj = DockableWindows(obj, obj.sections[160], obj.sections[1350])
+      
       Snap_RemoveDeletedSS(tracks[track_select].strip,page,sstype_select)
       CleanSortSS(tracks[track_select].strip, page, sstype_select)
       CheckRandom(tracks[track_select].strip, page, sstype_select)
@@ -65514,7 +65878,7 @@ function GUI_DrawCtlBitmap_Strips()
 
     for i = 1, extpos-1 do
 
-      local fxguids = Switchers_GetFXGUIDs(extid, i)
+      local fxguids = Switchers_GetFXGUIDs(extid, i) or {}
       for fg = 1, #fxguids do
         if tfxguids[fxguids[fg]] then
 
@@ -81349,6 +81713,17 @@ DBG(t.. '  '..trigtime)
         end
       end
     end
+  end
+
+  function Snapshots_sst_INIT()
+
+    local snapshots = {}
+    
+    snapshots[1] = {morph_time = 0,
+                    morph_sync = false,
+                    morph_syncv = 15,
+                    morph_scale = 1}
+    return snapshots
   end
 
   --[[function Snapshots_INIT2(s, p) --dynamic mode only
