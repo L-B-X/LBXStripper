@@ -16,7 +16,7 @@
   local lvar = {}
   local cbi = {}
 
-  lvar.scriptver = '0.94.0138' --Script Version
+  lvar.scriptver = '0.94.0139' --Script Version
 
   lvar.savesettingstofile = true
   
@@ -24080,7 +24080,7 @@ function GUI_DrawCtlBitmap_Strips()
       0,0, gfx1.main_w,gfx1.main_h, 0,0)
 
     if not fullscreen_open and mode == 0 --[[and lvar.livemode > 0 --[[and lvar.showpop]] then
-      
+      if show_bitmap == false then
       if lvar.blittbl_cnt > 1 then
         gfx.dest = -1 
         gfx.a = 1
@@ -24092,7 +24092,7 @@ function GUI_DrawCtlBitmap_Strips()
         end        
         
       end
-      
+      end
       if settings_ssdock ~= true and show_snapshots and macro_lrn_mode ~= true then
       
         gfx.dest = -1
@@ -33057,6 +33057,7 @@ function GUI_DrawCtlBitmap_Strips()
 
     strips[strip][page].pop = npop
     strips[strip][page].popidx = nidx
+    GUI_DrawCtlBitmap_Mix()
   end
 
   function PopOut_Delete(swid)
@@ -51831,8 +51832,16 @@ function GUI_DrawCtlBitmap_Strips()
             if lvar.dragswitcher then
               switchers[lvar.dragswitcher.selected].dragging = true
               mouse.context = contexts.switchdrag_ext2
+            end          
+          elseif stripid and lvar.livemode >= 1 then
+            if lvar.stripdim then
+              switchid = lvar.stripdim.swidx[stripid]
+              if lvar.showpop == true and strips[strip][page].popidx and strips[strip][page].popidx[switchid] then
+                PopOut_ToTop(switchid)
+              end
             end
           end
+          
           if i and not ctls[i].hidden and not ctls[i].ctllock then
 
             if ctls[i].fxfound or ctls[i].ctlcat == ctlcats.switcher then
@@ -53874,7 +53883,7 @@ function GUI_DrawCtlBitmap_Strips()
 
           --reorder
           PopOut_ToTop(lvar.dragswitcher.selected)
-          GUI_DrawCtlBitmap_Mix()
+          --GUI_DrawCtlBitmap_Mix()
         else
           if not mouse.ctrl then
             if lvar.dragswitcher.showpop then
