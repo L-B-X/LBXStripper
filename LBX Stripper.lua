@@ -16,7 +16,7 @@
   local lvar = {}
   local cbi = {}
 
-  lvar.scriptver = '0.94.0137' --Script Version
+  lvar.scriptver = '0.94.0138' --Script Version
 
   lvar.savesettingstofile = true
   
@@ -67617,7 +67617,7 @@ function GUI_DrawCtlBitmap_Strips()
     insertstrip.x = mouse.mx
     insertstrip.y = mouse.my
 
-    if not mouse.shift then
+    if not mouse.shift and (lvar.livemode == 0 or mode ~= 0) then
       nx = surface_offset.x - (math.floor(surface_offset.x/settings_gridsize)*settings_gridsize)
       ny = surface_offset.y - (math.floor(surface_offset.y/settings_gridsize)*settings_gridsize)
       insertstrip.x = math.floor((insertstrip.x-obj.sections[10].x+surface_offset.x+nx)/settings_gridsize)*settings_gridsize -surface_offset.x+obj.sections[10].x-insertstrip.dx
