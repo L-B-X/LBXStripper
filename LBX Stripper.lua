@@ -16,7 +16,7 @@
   local lvar = {}
   local cbi = {}
 
-  lvar.scriptver = '0.94.0140' --Script Version
+  lvar.scriptver = '0.94.0141' --Script Version
 
   lvar.savesettingstofile = true
   
@@ -21618,10 +21618,14 @@ function GUI_DrawCtlBitmap_Strips()
     
       if plugdefstrips[pd].stripfol == stripfol and plugdefstrips[pd].stripfile == stripfn then
         tab[cnt] = plugdefstrips[pd].plug
-        tabidx[plugdefstrips[pd].plug] = cnt
+        --tabidx[plugdefstrips[pd].plug] = cnt
         cnt=cnt+1
       end
     
+    end
+    table.sort(tab)
+    for t = 1, #tab do
+      tabidx[tab[t]] = t
     end
     return tab, tabidx
   
@@ -21753,6 +21757,10 @@ function GUI_DrawCtlBitmap_Strips()
                    y = obj.sections[4501].y,
                    w = obj.sections[4501].w-134,
                    h = butt_h}
+    local xywh3 = {x = obj.sections[4501].x+obj.sections[4501].w - math.floor(23*pnl_scale),
+                   y = obj.sections[4501].y+2,
+                   w = math.floor(20*pnl_scale),
+                   h = butt_h-4}
     for r = 1, rowcnt do
       
       local idx = r+lvar.sapd.offset
@@ -21761,14 +21769,29 @@ function GUI_DrawCtlBitmap_Strips()
         local c = gui.skol.lst_txt
         if lvar.sapd.selected == idx then
           f_Get_SSV(gui.skol.lst_barhl)
-          gfx.rect(xywh.x-2,xywh.y,obj.sections[4501].w-4,xywh.h,1)
+          gfx.rect(xywh.x-2,xywh.y+1,obj.sections[4501].w-4,xywh.h-2,1)
           c = gui.skol.lst_txthl
+          if lvar.sapd.selected and lvar.sapd.assselected and lvar.sapd[lvar.sapd.selected].assoc[lvar.sapd.assselected] then
+            local plug = lvar.sapd[lvar.sapd.selected].assoc[lvar.sapd.assselected]
+            if (lvar.sapd.defaults[plug].fil == lvar.sapd[idx].fil and lvar.sapd.defaults[plug].fol == lvar.sapd[idx].fol) then
+              xywh3.y = xywh.y+2
+              f_Get_SSV(gui.color.black)
+              gfx.rect(xywh3.x,xywh3.y,xywh3.w,xywh3.h,1)              
+              GUI_Str(gui, xywh3, 'D', 5, gui.skol.lst_txt, -4 + gui.fontsz.lst + lst_fontscale, 1, nil, gui.fontnm.lst, gui.fontflag.lst)        
+            end
+          end
         elseif lvar.sapd.selected and lvar.sapd.assselected and lvar.sapd[lvar.sapd.selected].assoc[lvar.sapd.assselected] then
           local plug = lvar.sapd[lvar.sapd.selected].assoc[lvar.sapd.assselected]
           if lvar.sapd[idx].associdx[plug] then
             f_Get_SSV('64 64 64')
-            gfx.rect(xywh.x-2,xywh.y,obj.sections[4501].w-4,xywh.h,1)
+            gfx.rect(xywh.x-2,xywh.y+1,obj.sections[4501].w-4,xywh.h-2,1)
             c = gui.color.white            
+          end
+          if (lvar.sapd.defaults[plug].fil == lvar.sapd[idx].fil and lvar.sapd.defaults[plug].fol == lvar.sapd[idx].fol) then
+            xywh3.y = xywh.y+2
+            f_Get_SSV(gui.color.black)
+            gfx.rect(xywh3.x,xywh3.y,xywh3.w,xywh3.h,1)              
+            GUI_Str(gui, xywh3, 'D', 5, gui.skol.lst_txt, -4 + gui.fontsz.lst + lst_fontscale, 1, nil, gui.fontnm.lst, gui.fontflag.lst)        
           end
         end        
         GUI_Str(gui, xywh, lvar.sapd[idx].fol, 4, c, -4 + gui.fontsz.lst + lst_fontscale, 1, nil, gui.fontnm.lst, gui.fontflag.lst)        
