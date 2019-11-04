@@ -4487,7 +4487,7 @@
                             h = butt_h}
                             
       --plugin associations window
-      local szw = math.min(obj.sections[10].w-40,800)
+      local szw = math.max(math.min(obj.sections[10].w-40,1000),680)
       local szh = math.min(obj.sections[10].h-40,800)
       obj.sections[4500] = {x = obj.sections[10].x + math.floor(obj.sections[10].w/2 - szw/2),
                             y = obj.sections[10].y + math.floor(obj.sections[10].h/2 - szh/2),
@@ -4500,17 +4500,36 @@
       obj.sections[4501] = {x = math.floor(10*pnl_scale),
                             y = ptop2,
                             w = math.floor(szw/2)-math.floor(15*pnl_scale),
-                            h = szh - ptop - 2*(ptop2-ptop)}
+                            h = szh - ptop - (ptop2-ptop) - math.floor(10*pnl_scale)}
       obj.sections[4502] = {x = math.floor(szw/2) + math.floor(5*pnl_scale),
                             y = ptop2,
                             w = math.floor(szw/2)-math.floor(15*pnl_scale),
                             h = math.floor((szh - ptop)/2)-ptop2}
-      local yy = obj.sections[4502].y+obj.sections[4502].h+math.floor(10*pnl_scale)
+      local yy = obj.sections[4502].y+obj.sections[4502].h+math.floor(40*pnl_scale)
       local hh = math.floor(obj.sections[4501].h - obj.sections[4502].h) 
       obj.sections[4503] = {x = obj.sections[4502].x,
                             y = yy,
                             w = obj.sections[4502].w,
-                            h = hh-math.floor(10*pnl_scale)}
+                            h = hh-math.floor(40*pnl_scale)}
+      local yy = obj.sections[4502].y+obj.sections[4502].h+math.floor(2*pnl_scale)
+      local hh = math.floor(34*pnl_scale)
+      local ww = math.floor((obj.sections[4502].w-8) / 4)
+      obj.sections[4505] = {x = obj.sections[4502].x,
+                            y = yy,
+                            w = ww,
+                            h = hh}
+      obj.sections[4506] = {x = obj.sections[4505].x+ww+2,
+                            y = yy,
+                            w = ww,
+                            h = hh}
+      obj.sections[4507] = {x = obj.sections[4506].x+ww+2,
+                            y = yy,
+                            w = ww,
+                            h = hh}
+      obj.sections[4508] = {x = obj.sections[4507].x+ww+2,
+                            y = yy,
+                            w = ww,
+                            h = hh}
 
     return obj
   end
@@ -21578,21 +21597,33 @@ function GUI_DrawCtlBitmap_Strips()
 
   end
 
+  function StripAssoc_GetDefaults()
+
+    local tabdef = {}
+    for pd = 1, #plugdefstrips do
+    
+      tabdef[plugdefstrips[pd].plug] = {fil = plugdefstrips[pd].stripfile, fol = plugdefstrips[pd].stripfol}
+    
+    end
+    return tabdef
+
+  end
+  
   function StripAssoc_GetAssoc(stripfn, stripfol)
   
     local tab = {}
-    local tabdef = {}
+    local tabidx = {}
     local cnt = 1
     for pd = 1, #plugdefstrips do
     
       if plugdefstrips[pd].stripfol == stripfol and plugdefstrips[pd].stripfile == stripfn then
         tab[cnt] = plugdefstrips[pd].plug
-        tabdef[plugdefstrips[pd].plug] = cnt
+        tabidx[plugdefstrips[pd].plug] = cnt
         cnt=cnt+1
       end
     
     end
-    return tab, tabdef
+    return tab, tabidx
   
   end
   
@@ -21625,12 +21656,24 @@ function GUI_DrawCtlBitmap_Strips()
         
     lvar.sapd = table_slowsort_gen2(sapd,'sort')
     
+    lvar.sapd.defaults = StripAssoc_GetDefaults()
     for s = 1, #lvar.sapd do  
-      local tab, tabdef = StripAssoc_GetAssoc(lvar.sapd[s].fil, lvar.sapd[s].fol)
+      local tab, tabidx = StripAssoc_GetAssoc(lvar.sapd[s].fil, lvar.sapd[s].fol)
       lvar.sapd[s].assoc = tab
-      lvar.sapd[s].assocdef = tabdef
+      lvar.sapd[s].associdx = tabidx
     end
     lvar.sapd.offset = 0
+    
+  end
+  
+  function StripAssoc_RefreshAssData()
+  
+    lvar.sapd.defaults = StripAssoc_GetDefaults()
+    for s = 1, #lvar.sapd do  
+      local tab, tabidx = StripAssoc_GetAssoc(lvar.sapd[s].fil, lvar.sapd[s].fol)
+      lvar.sapd[s].assoc = tab
+      lvar.sapd[s].associdx = tabidx
+    end
     
   end
 
@@ -21641,7 +21684,7 @@ function GUI_DrawCtlBitmap_Strips()
       gfx.setimgdim(977,obj.sections[4500].w,obj.sections[4500].h)
     end
     
-    GUI_DrawPanel(obj.sections[4500],false,'STRIP ASSOCIATIONS')
+    GUI_DrawPanel(obj.sections[4500],false,'STRIP ASSOCIATION MANAGER')
     
     f_Get_SSV(gui.skol.ss_bg)
     gfx.a = 1
@@ -21691,12 +21734,12 @@ function GUI_DrawCtlBitmap_Strips()
                   y = obj.sections[4504].y,
                   w = obj.sections[4501].w-8,
                   h = obj.sections[4504].h}
-    GUI_Str(gui, xywh, 'Strip Files', 5, gui.color.white, -4 + gui.fontsz.lst + lst_fontscale, 1, nil, gui.fontnm.lst, gui.fontflag.lst)            
+    GUI_Str(gui, xywh, 'Strip Files', 5, gui.color.white, -1 + gui.fontsz.lst + lst_fontscale, 1, nil, gui.fontnm.lst, gui.fontflag.lst)            
     local xywh = {x = obj.sections[4502].x+4,
                   y = obj.sections[4504].y,
                   w = obj.sections[4502].w-8,
                   h = obj.sections[4504].h}
-    GUI_Str(gui, xywh, 'Plugin Name/Module Associations', 5, gui.color.white, -4 + gui.fontsz.lst + lst_fontscale, 1, nil, gui.fontnm.lst, gui.fontflag.lst)            
+    GUI_Str(gui, xywh, 'Plugin Name/Module Associations', 5, gui.color.white, -1 + gui.fontsz.lst + lst_fontscale, 1, nil, gui.fontnm.lst, gui.fontflag.lst)            
 
     
     --plugin ident list
@@ -21715,11 +21758,18 @@ function GUI_DrawCtlBitmap_Strips()
       local idx = r+lvar.sapd.offset
       if lvar.sapd[idx] then
 
-        local c = gui.color.white
+        local c = gui.skol.lst_txt
         if lvar.sapd.selected == idx then
-          f_Get_SSV(c)
+          f_Get_SSV(gui.skol.lst_barhl)
           gfx.rect(xywh.x-2,xywh.y,obj.sections[4501].w-4,xywh.h,1)
-          c = gui.color.black
+          c = gui.skol.lst_txthl
+        elseif lvar.sapd.selected and lvar.sapd.assselected and lvar.sapd[lvar.sapd.selected].assoc[lvar.sapd.assselected] then
+          local plug = lvar.sapd[lvar.sapd.selected].assoc[lvar.sapd.assselected]
+          if lvar.sapd[idx].associdx[plug] then
+            f_Get_SSV('64 64 64')
+            gfx.rect(xywh.x-2,xywh.y,obj.sections[4501].w-4,xywh.h,1)
+            c = gui.color.white            
+          end
         end        
         GUI_Str(gui, xywh, lvar.sapd[idx].fol, 4, c, -4 + gui.fontsz.lst + lst_fontscale, 1, nil, gui.fontnm.lst, gui.fontflag.lst)        
         GUI_Str(gui, xywh2, lvar.sapd[idx].fil, 4, c, -4 + gui.fontsz.lst + lst_fontscale, 1, nil, gui.fontnm.lst, gui.fontflag.lst)        
@@ -21730,26 +21780,33 @@ function GUI_DrawCtlBitmap_Strips()
     end
     
     if lvar.sapd.selected then
-    
+      
       local rowcnt = math.floor(obj.sections[4502].h / butt_h)
       local xywh = {x = obj.sections[4502].x+4,
                     y = obj.sections[4502].y,
                     w = obj.sections[4502].w-8,
                     h = butt_h}
       for r = 1, rowcnt do
+        local def
         
         local idx = r+lvar.sapd.assoffset
         if lvar.sapd[lvar.sapd.selected].assoc[idx] then
+          local plug = lvar.sapd[lvar.sapd.selected].assoc[idx]
+          if (lvar.sapd.defaults[plug].fil == lvar.sapd[lvar.sapd.selected].fil and lvar.sapd.defaults[plug].fol == lvar.sapd[lvar.sapd.selected].fol) then
+            def = '(DEFAULT)'
+          end
   
-          local c = gui.color.white
+          local c = gui.skol.lst_txt --gui.color.white
           if lvar.sapd.assselected == idx then
-            f_Get_SSV(c)
-            gfx.rect(xywh.x-2,xywh.y,xywh.w-4,xywh.h,1)
-            c = gui.color.black
+            f_Get_SSV(gui.skol.lst_barhl)
+            gfx.rect(xywh.x-2,xywh.y,xywh.w+4,xywh.h,1)
+            c = gui.skol.lst_txthl
           end
                   
-          GUI_Str(gui, xywh, lvar.sapd[lvar.sapd.selected].assoc[idx], 4, c, -4 + gui.fontsz.lst + lst_fontscale, 1, nil, gui.fontnm.lst, gui.fontflag.lst)        
-        
+          GUI_Str(gui, xywh, plug, 4, c, -4 + gui.fontsz.lst + lst_fontscale, 1, nil, gui.fontnm.lst, gui.fontflag.lst)        
+          if def then
+            GUI_Str(gui, xywh, def, 6, c, -4 + gui.fontsz.lst + lst_fontscale, 1, nil, gui.fontnm.lst, gui.fontflag.lst)        
+          end
         end
         xywh.y = xywh.y + butt_h
       end  
@@ -21769,6 +21826,20 @@ function GUI_DrawCtlBitmap_Strips()
       
       end
     
+      if lvar.sapd.selected and lvar.sapd.stripdata and #lvar.sapd.stripdata.fx == 1 then
+        GUI_DrawButton(gui, '+ MODULE', obj.sections[4505], gui.color.white, gui.skol.butt1_txt, true, '', false)
+        GUI_DrawButton(gui, '+ FX NAME', obj.sections[4506], gui.color.white, gui.skol.butt1_txt, true, '', false)
+        GUI_DrawButton(gui, '+ MANUAL', obj.sections[4507], gui.color.white, gui.skol.butt1_txt, true, '', false)
+        local c = -1
+        if lvar.sapd.assselected then
+          c = gui.color.white
+        end
+        GUI_DrawButton(gui, 'SET DEFAULT', obj.sections[4508], c, gui.skol.butt1_txt, true, '', false)
+      elseif lvar.sapd.selected and lvar.sapd.stripdata and #lvar.sapd.stripdata.fx ~= 1 then
+        local xywh = {x = obj.sections[4505].x, y = obj.sections[4505].y, w = obj.sections[4508].x+obj.sections[4508].w - obj.sections[4505].x, h = obj.sections[4505].h}
+        GUI_Str(gui, xywh, 'Strip cannot be associated with a plugin', 5, gui.color.red, -4 + gui.fontsz.lst + lst_fontscale, 1, nil, gui.fontnm.lst, gui.fontflag.lst)        
+      end
+          
     end
     
     gfx.dest = 1
@@ -27144,10 +27215,6 @@ function GUI_DrawCtlBitmap_Strips()
           local loadstrip = LoadStripFN(nil, sfn)
           if loadstrip then
 
-            if lvar.edmode_ssdata then
-              DM_EdModeSSReplace(lvar.edmode_ssdata, loadstrip)
-            end
-
             reaper.PreventUIRefresh(1)
             local w, h = GenStripPreview(gui, loadstrip.strip, loadstrip.switchers, loadstrip.switchconvtab)
             local gs = settings_gridsize
@@ -27157,6 +27224,9 @@ function GUI_DrawCtlBitmap_Strips()
             y = round(y/gs)*gs
             Strip_AddStrip(loadstrip,x,y,true, nil, nil, 0)
             
+            if lvar.edmode_ssdata then
+              DM_EdModeSSReplace(lvar.edmode_ssdata, loadstrip)
+            end
             lvar.edmode_ssdata = nil
             
             reaper.PreventUIRefresh(-1)
@@ -29867,6 +29937,68 @@ function GUI_DrawCtlBitmap_Strips()
 
   end
 
+  function GetPlugNameFromChunk3(fxchunk)
+
+    local fxn
+    local fxc = string.match(fxchunk,'<(.-)\n')
+    if fxc then
+      fxchunk = fxc
+    else
+      fxc = string.match(fxchunk,'(.-)\n')
+      if fxc then
+        fxchunk = fxc
+      end
+    end
+    if string.sub(fxchunk,1,3) == 'VST' then
+      fxn = string.match(fxchunk, '.*%s0%s\"(.-)\"%s')
+      if fxn then
+        fxn = string.gsub(fxn,'%"','')
+      else
+        fxn = string.match(fxchunk, '.*%s0%s(.-)%s')
+      end
+      if fxn == '' then
+        fxn = string.match(fxchunk, '.*(VST.-%))')
+        if fxn == nil then
+          fxn = string.match(fxchunk, '.*(VST.-)%"')
+        end      
+      end
+
+    elseif string.sub(fxchunk,1,2) == 'JS' then
+      fxn = string.match(fxchunk, 'JS \".-\"%s(.*)$')
+      if fxn == nil then
+        fxn = string.match(fxchunk, 'JS%s.-%s(.*)$')
+      end
+      if string.sub(fxn,string.len(fxn)) == '"' then
+        fxn = string.gsub(fxn,'\"','')
+      end
+      if fxn == '' or fxn == '\"\"' then
+        fxn = string.match(fxchunk, '.*(JS%s\".-\")')
+        if fxn == nil then
+          fxn = string.match(fxchunk, '(JS%s.-)%s')  -- gets full path of effect          
+        end
+        
+        if string.sub(fxn,string.len(fxn)) == '"' then
+          fxn = string.sub(fxn,1,string.len(fxn)-1)
+        end
+      end
+
+      --[[fxn = string.match(fxchunk, '.*(JS.*%/+.-) \"')
+      if fxn == nil then
+        fxn = string.match(fxchunk, '(JS%s.-)%s')  -- gets full path of effect
+        --fxn = string.match(fxn, '([^/]+)$') -- gets filename
+      end]]
+      --remove final " if exists
+      --[[if fxn == nil then
+        --JS \"AB Level Matching JSFX [2.5]/AB_LMLT_cntrl\" \"MSTR /B\"\
+        fxn = string.match(fxchunk, 'JS.*%/(.-)%"%\"')
+        fxn = string.sub(fxn,1,string.len(fxn)-2)
+      end]]
+    end
+
+    return fxn
+
+  end
+
   function GetPlugIdentifierFromChunk(fxchunk)
 
     local fxn
@@ -30259,6 +30391,90 @@ function GUI_DrawCtlBitmap_Strips()
     end
 
   end
+
+  function LoadStripFN_ContentOnly(sfn, ffn)
+    local find = string.find
+    local match = string.match
+  
+    local content
+    local stripdata = nil
+    local load_path, fn
+    if ffn == nil then
+      load_path=paths.strips_path
+      fn=load_path..sfn
+    else
+      fn = ffn
+    end
+  
+    if reaper.file_exists(fn) then
+      local file
+      file=io.open(fn,"r")
+      content=file:read("*a")
+      file:close()
+      local _,e = find(content,'.-\n')
+      local line = string.sub(content,0,e)
+      local newvers = tonumber(match(line,'[[STRIPFILE_VERSION]](%d+)'))
+      if newvers then
+        local pickledcontent, stripcontent, snapcontent
+        if newvers == 5 then
+          pickledcontent = match(content,'%[FXDATA%](.-)%[\\FXDATA%]')
+          stripcontent = match(content,'%[STRIPDATA%](.-)%[\\STRIPDATA%]')
+          snapcontent = match(content,'%[SNAPSHOTDATA%](.-)%[\\SNAPSHOTDATA%]')
+        elseif newvers == 6 then
+          local s, e = find(content, '%[DATA%]\r?\n')
+          local header = string.sub(content, 1, s-1)
+          local body = string.sub(content, e)
+          local fx_s, fx_e = match(header, '%[FXDATA_LOC%](%d+) (%d+)')
+          local sd_s, sd_e = match(header, '%[STRIPDATA_LOC%](%d+) (%d+)')
+          local sn_s, sn_e = match(header, '%[SNAPSHOTDATA_LOC%](%d+) (%d+)')
+  
+          pickledcontent = string.sub(body,fx_s+2,fx_e)
+          pickledcontent = match(pickledcontent,'.-({.*})')
+          stripcontent = string.sub(body,sd_s,sd_e)
+          snapcontent = string.sub(body,sn_s,sn_e)
+  
+          --Required due to messed up calculations to load version 6 strips with incorrect encoding...
+          if not match(string.sub(stripcontent,1,20),'.-%[STRIPDATA%].*') or
+             not match(string.sub(stripcontent,string.len(stripcontent)-15,string.len(stripcontent)),'.-%[\\STRIPDATA') or
+             not match(string.sub(snapcontent,1,20),'.-%[SNAPSHOTDATA%].*') or
+             not match(string.sub(snapcontent,string.len(snapcontent)-15,string.len(snapcontent)),'.-%[\\SNAPSHOTDATA') then
+            pickledcontent = match(content,'%[FXDATA%](.-)%[\\FXDATA%]')
+            stripcontent = match(content,'%[STRIPDATA%](.-)%[\\STRIPDATA%]')
+            snapcontent = match(content,'%[SNAPSHOTDATA%](.-)%[\\SNAPSHOTDATA%]')
+            DBGOut('String parsing old way')
+            --Option to reencode here
+            UpdateStripFileHeader(fn)
+          else
+            DBGOut('String parsing new way')
+          end
+        else
+          pickledcontent = match(content,'%[FXDATA%](.-)%[\\FXDATA%]')
+          stripcontent = match(content,'%[STRIPDATA%](.-)%[\\STRIPDATA%]')
+          snapcontent = match(content,'%[SNAPSHOTDATA%](.-)%[\\SNAPSHOTDATA%]')
+          DBGOut('String parsing old way')
+        end
+        --SNAPSHOTS --only load if strip imported?
+        if pickledcontent and stripcontent then
+          stripdata = unpickle(pickledcontent)
+          stripdata.version = tonumber(newvers)
+          stripdata.snapcontent = snapcontent
+          stripdata.stripcontent = stripcontent
+        end
+        --return nil --remove
+      else
+        stripdata = unpickle(content)
+      end
+  
+      if stripdata then
+        stripdata.fn = fn
+      end
+
+    end
+    
+    return stripdata
+  end  
+  
+  
 
   function LoadStripFN(sfn, ffn, skipcompat)
     local find = string.find
@@ -46459,7 +46675,7 @@ function GUI_DrawCtlBitmap_Strips()
       end
     end
     
-    if MOUSE_click(obj.sections[4500]) then
+    if MOUSE_click(obj.sections[4500]) or MOUSE_click_RB(obj.sections[4500]) then
       local mx, my = mouse.mx, mouse.my
       mouse.mx, mouse.my = mx - obj.sections[4500].x, my - obj.sections[4500].y
       local butt_h = tb_butt_h
@@ -46470,9 +46686,11 @@ function GUI_DrawCtlBitmap_Strips()
         if lvar.sapd[idx] then
           lvar.sapd.assoffset = 0
           lvar.sapd.selected = idx
+          lvar.sapd.assselected = nil
           lupd.update_stripass = true      
         
-          local fn = paths.strips_path..lvar.sapd[idx].fol..'/'..string.gsub(lvar.sapd[idx].fil,'%.strip$','.png')
+          local ffn = paths.strips_path..lvar.sapd[idx].fol..'/'..lvar.sapd[idx].fil
+          local fn = string.gsub(ffn,'%.strip$','.png')
           if fn and reaper.file_exists(fn) then
           
             local ret = gfx.loadimg(976, fn)
@@ -46488,20 +46706,97 @@ function GUI_DrawCtlBitmap_Strips()
           
           end
         
+          lvar.sapd.stripdata = LoadStripFN_ContentOnly(nil, ffn) 
+        
         else
           lvar.sapd.preview = nil
           lvar.sapd.assoffset = 0
           lvar.sapd.selected = nil
+          lvar.sapd.assselected = nil
+          lvar.sapd.stripdata = nil
           lupd.update_stripass = true                        
         end
       
         
+      elseif MOUSE_click(obj.sections[4502]) then
+        local n = math.floor((mouse.my - obj.sections[4502].y) / butt_h) + 1
+        local idx = n + lvar.sapd.assoffset
+        if lvar.sapd[lvar.sapd.selected].assoc[idx] then
+          lvar.sapd.assselected = n
+          lupd.update_stripass = true      
+        else
+          lvar.sapd.assselected = nil
+          lupd.update_stripass = true              
+        end
+
+      elseif MOUSE_click_RB(obj.sections[4502]) then
+
+        if lvar.sapd.selected and lvar.sapd.assselected and lvar.sapd[lvar.sapd.selected].assoc[lvar.sapd.assselected] then
+          local mstr = 'Remove Association'
+          gfx.x = mx
+          gfx.y = my
+          local res = gfx.showmenu(mstr)
+          if res > 0 then
+            if res == 1 then
+            
+              PlugDef_RemoveX(lvar.sapd[lvar.sapd.selected].assoc[lvar.sapd.assselected], lvar.sapd[lvar.sapd.selected].fil, lvar.sapd[lvar.sapd.selected].fol)
+              StripAssoc_RefreshAssData()
+              lupd.update_stripass = true
+                          
+            end
+          end
+        end
+        
+      elseif MOUSE_click(obj.sections[4505]) then
+      
+        if lvar.sapd.stripdata and #lvar.sapd.stripdata.fx == 1 and lvar.sapd.selected then
+          local fxident = GetPlugIdentifierFromChunk(lvar.sapd.stripdata.fx[1].fxchunk)
+          local fnd 
+          local cnt = #lvar.sapd[lvar.sapd.selected].assoc
+          for i = 1, cnt do
+            if lvar.sapd[lvar.sapd.selected].assoc[i] == fxident then
+              fnd = i
+              break
+            end
+          end
+          if not fnd then
+            PlugDef_AddX(fxident, lvar.sapd[lvar.sapd.selected].fil, lvar.sapd[lvar.sapd.selected].fol)
+            StripAssoc_RefreshAssData()
+            lupd.update_stripass = true
+          end
+        end
+
+      elseif MOUSE_click(obj.sections[4506]) then
+      
+        if lvar.sapd.stripdata and #lvar.sapd.stripdata.fx == 1 and lvar.sapd.selected then
+          local fxident = GetPlugNameFromChunk3(lvar.sapd.stripdata.fx[1].fxchunk)
+          if fxident then
+            fxident = TrimStr(CropFXName(fxident))
+            PlugDef_AddX(fxident, lvar.sapd[lvar.sapd.selected].fil, lvar.sapd[lvar.sapd.selected].fol, true)
+            StripAssoc_RefreshAssData()
+            lupd.update_stripass = true
+          end
+        end
+        
+      elseif MOUSE_click(obj.sections[4507]) then
+      
+        OpenEB(4507, 'Please enter plugin name to associate with this strip:','')      
+      
+      elseif MOUSE_click(obj.sections[4508]) then
+      
+        if lvar.sapd.selected and lvar.sapd.assselected and lvar.sapd[lvar.sapd.selected].assoc[lvar.sapd.assselected] then
+          local plug = lvar.sapd[lvar.sapd.selected].assoc[lvar.sapd.assselected]
+          PlugDef_SetDefaultX(plug, lvar.sapd[lvar.sapd.selected].fil, lvar.sapd[lvar.sapd.selected].fol)
+          StripAssoc_RefreshAssData()
+          lupd.update_stripass = true
+        end
       end
 
       mouse.mx = mx
       mouse.my = my
     elseif mouse.LB and not mouse.last_LB then
       
+      Save_PlugDefs()
       lvar.show_stripassoc = false
       lupd.update_gfx = true
       
@@ -50313,10 +50608,10 @@ function GUI_DrawCtlBitmap_Strips()
         local impfol = strip_folders[stripfol_select].fn
         local mstr = 'Import Share Strip File (to '..impfol..' folder)||' 
                       .. export .. 'Export Share Strip File ('..exportstrip..')'..
-                      '||Strip Associations'
+                      '||Strip Association Manager'
                       
-        gfx.x = mouse.mx
-        gfx.y = mouse.my
+        gfx.x = mx
+        gfx.y = my
         local res = gfx.showmenu(mstr)
         if res > 0 then
           if res == 1 then
@@ -69324,6 +69619,19 @@ function GUI_DrawCtlBitmap_Strips()
             end
           end
 
+        elseif EB_Open == 4507 then
+        
+          if lvar.sapd then
+            local fxident = TrimStr(editbox.text)                      
+            if lvar.sapd.stripdata and #lvar.sapd.stripdata.fx == 1 and lvar.sapd.selected then
+              if fxident and fxident ~= '' then  
+                PlugDef_AddX(fxident, lvar.sapd[lvar.sapd.selected].fil, lvar.sapd[lvar.sapd.selected].fol, true)
+                StripAssoc_RefreshAssData()
+                lupd.update_stripass = true
+              end
+            end
+          end
+          
         end
 
         editbox = nil
@@ -69384,6 +69692,79 @@ function GUI_DrawCtlBitmap_Strips()
     end
   end  
 
+  function PlugDef_SetDefaultX(plug, fil, fol)
+
+    local tab = {}
+    local tabidx = {}
+    local cnt = 1
+    for p = 1, #plugdefstrips do
+      if plugdefstrips[p].plug == plug and plugdefstrips[p].stripfile == fil and plugdefstrips[p].stripfol == fol then
+      else
+        tab[cnt] = {plug = plugdefstrips[p].plug, stripfile = plugdefstrips[p].stripfile, stripfol = plugdefstrips[p].stripfol}
+        tabidx[plugdefstrips[p].plug] = cnt
+        cnt=cnt+1
+      end
+    
+    end
+    tab[cnt] = {plug = plug, stripfile = fil, stripfol = fol}
+    tabidx[plug] = cnt
+    
+    plugdefstrips = tab
+    plugdefstrips_idx = tabidx 
+    
+  end
+
+  function PlugDef_RemoveX(plug, fil, fol)
+
+    local tab = {}
+    local tabidx = {}
+    local cnt = 1
+    for p = 1, #plugdefstrips do
+      if plugdefstrips[p].plug == plug and plugdefstrips[p].stripfile == fil and plugdefstrips[p].stripfol == fol then
+      else
+        tab[cnt] = {plug = plugdefstrips[p].plug, stripfile = plugdefstrips[p].stripfile, stripfol = plugdefstrips[p].stripfol}
+        tabidx[plugdefstrips[p].plug] = cnt
+        cnt=cnt+1
+      end
+    
+    end
+    
+    plugdefstrips = tab
+    plugdefstrips_idx = tabidx 
+    
+  end
+  
+  function PlugDef_AddX(plug, fil, fol, replace)
+  
+    local tab = {}
+    local tabidx = {}
+    local insert
+    if replace then
+      if plugdefstrips_idx[plug] then
+        local idx = plugdefstrips_idx[plug]
+        plugdefstrips[idx] = {plug = plug, stripfile = fil, stripfol = fol}
+        --DBG(plug..'  '..fil..'  '..fol)
+      else
+        insert = true
+      end  
+    else
+      insert = true
+    end
+    
+    if insert then
+      tab[1] = {plug = plug, stripfile = fil, stripfol = fol}
+      tabidx[plug] = 1
+      for p = 1, #plugdefstrips do
+        tab[p+1] = plugdefstrips[p]
+        tabidx[plugdefstrips[p].plug] = p+1    
+      end
+    
+      plugdefstrips = tab
+      plugdefstrips_idx = tabidx
+    end
+    
+  end
+  
   function PlugDef_Add(plug, stripfn, fol, ask, asslist)
     
     if plug then
@@ -86030,7 +86411,8 @@ DBG(vald) ]]
   for i = 1, #ttest do
     DBG(ttest[i].ctl)
   end]]
-
+--DBG(GetPlugNameFromChunk3('<JS "Tube Input" ""\n'))
+--DBG(GetPlugNameFromChunk3('JS Tunca_LBX/TubeInput sdf\n'))
   --Table_Test()
 
   gfx.loadimg(1020,paths.controls_path.."LBX_Invisible.png") --update to missing png
