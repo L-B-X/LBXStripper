@@ -16,7 +16,7 @@
   local lvar = {}
   local cbi = {}
 
-  lvar.scriptver = '0.94.0141' --Script Version
+  lvar.scriptver = '0.94.0143' --Script Version
 
   lvar.savesettingstofile = true
   
@@ -21757,9 +21757,10 @@ function GUI_DrawCtlBitmap_Strips()
                    y = obj.sections[4501].y,
                    w = obj.sections[4501].w-134,
                    h = butt_h}
-    local xywh3 = {x = obj.sections[4501].x+obj.sections[4501].w - math.floor(23*pnl_scale),
+    local d = math.floor(22*pnl_scale)
+    local xywh3 = {x = obj.sections[4501].x+obj.sections[4501].w - d,
                    y = obj.sections[4501].y+2,
-                   w = math.floor(20*pnl_scale),
+                   w = d-3,
                    h = butt_h-4}
     for r = 1, rowcnt do
       
@@ -26854,6 +26855,7 @@ function GUI_DrawCtlBitmap_Strips()
         lupd.update_ctls = true
 
       elseif cc == ctlcats.snapshot then
+        
         if ctl.param_info.paramnum == 2 then
           FixedSS(c)
         end
@@ -31756,20 +31758,21 @@ function GUI_DrawCtlBitmap_Strips()
             if ctl.param_info.paramnum == 2 then
               --do not change ctl.param_info.paramidx - it identifies target snapshot
             else
-              ctl.param_info.paramidx = paramchange[ctl.param]
+              ctl.param_info.paramidx = paramchange[ctl.param] or 1
             end
-            ctl.param = paramchange[ctl.param]
+            ctl.param = paramchange[ctl.param] or 1
 
         elseif ctl.ctlcat == ctlcats.xy then
             ctl.param_info.paramidx = paramchange[ctl.param]
-            ctl.param = paramchange[ctl.param]
+            ctl.param = paramchange[ctl.param] or 1
+            
         elseif ctl.ctlcat == ctlcats.snapshotrand then
           if paramchange[ctl.param] then
             if ctl.random then
               ctl.random.sst = paramchange[ctl.param]
             end
             ctl.param_info.paramidx = paramchange[ctl.param]
-            ctl.param = paramchange[ctl.param]
+            ctl.param = paramchange[ctl.param] or 1
           end
         end
 
@@ -34946,15 +34949,18 @@ function GUI_DrawCtlBitmap_Strips()
 
     if lvar.dynamicmode_trn then
       
-      local dm_data
+      local dm_data, cdata
       if not (mouse.ctrl and mouse.shift) then
         local strip = tracks[track_select].strip
         dm_data = DM_GatherDataForRebuild(GetTrack(lvar.dynamicmode_trn), strips[strip][page].controls, snapshots[strip][page])
+      else
+        local strip = tracks[track_select].strip
+        cdata = DM_GatherSnapCtlDataForRebuild(strips[strip][page].controls, snapshots[strip][page])
       end    
       if lvar.stripstore and lvar.stripstore[lvar.dynamicmode_guid] then
         lvar.stripstore[lvar.dynamicmode_guid] = nil
       end
-      DM_AddStrips(true, dm_data)
+      DM_AddStrips(true, dm_data, cdata)
       DM_Flash_Refresh()
     end
 
@@ -35256,6 +35262,33 @@ function GUI_DrawCtlBitmap_Strips()
 
     return ctldata
 
+  end
+   function DM_GatherSnapCtlDataForRebuild(ctls, snaps)
+
+    local ctldata = {}
+    local ctldataidx = {}
+
+    if ctls then
+      for c = 1, #ctls do
+        local ctl = ctls[c]
+        local cd = DM_GetCtlData(ctl, c)
+        if cd then
+          local idx = #ctldata+1
+          ctldata[idx] = cd
+          ctldataidx[ctl.c_id] = cd.key
+        end
+      end
+    end
+
+    local cdata = {}
+    cdata.ctldata = ctldata
+    cdata.ctldataidx = ctldataidx
+    cdata.pagesnaps = snaps[1]
+    
+    if #ctldata > 0 then
+      return cdata
+    end
+    
   end
 
   function DM_GatherDataForRebuild(track, ctls, snaps)
@@ -35607,7 +35640,7 @@ function GUI_DrawCtlBitmap_Strips()
     
   end
 
-  function DM_AddStrips(force, dm_data)
+  function DM_AddStrips(force, dm_data, cdata)
 
     DM_StoreStripData(force)
 
@@ -35912,6 +35945,12 @@ function GUI_DrawCtlBitmap_Strips()
 
             end
           end
+          if cdata then
+            local nctldata, nctldataidx = DM_GetCtlTranslateTable(cdata)
+            DM_RebuildPageSnaps(cdata, nctldata, nctldataidx)
+            DM_RebuildModulators(cdata, nctldata, nctldataidx)
+            DM_RebuildFaders(cdata, nctldata, nctldataidx)            
+          end                                
 
         end
 
@@ -36572,10 +36611,24 @@ function GUI_DrawCtlBitmap_Strips()
     end
   end
 
-  function GetFXNFromGUID(tr, guid)
-    for i = 0, reaper.TrackFX_GetCount(tr)-1 do
-      if reaper.TrackFX_GetFXGUID(tr,i) == guid then
-        return i
+  function GetFXNFromGUID(tr, guid, searchtracks)
+    if tr then
+      for i = 0, reaper.TrackFX_GetCount(tr)-1 do
+        if reaper.TrackFX_GetFXGUID(tr,i) == guid then
+          return i, tr
+        end
+      end
+    end
+    if searchtracks then
+      for t = -1, reaper.CountTracks(0)-1 do
+        local tr = GetTrack(t)
+        if tr then
+          for i = 0, reaper.TrackFX_GetCount(tr)-1 do
+            if reaper.TrackFX_GetFXGUID(tr,i) == guid then
+              return i, tr
+            end
+          end          
+        end
       end
     end
   end
@@ -40732,12 +40785,24 @@ function GUI_DrawCtlBitmap_Strips()
       local tr = GetTrack(trn)
       if not tr then return end
 
-      if fxnum < reaper.TrackFX_GetCount(tr) and csel ~= true then
-        main = 'Delete FX'
-      else
-        main = '#Delete FX'
+      local paste = '#'
+      local pastefxname = ''
+      local pastestr = 'Paste FX'
+      if lvar.copyfx then
+        local str = GetTrack(lvar.copyfx.trn)
+        local sfxnum, str = GetFXNFromGUID(str,lvar.copyfx.guid,true)
+        if sfxnum and str then
+          paste = ''
+          pastefxname = ' ('..lvar.copyfx.name..')'
+        end
       end
-      suskip = 1
+
+      if fxnum < reaper.TrackFX_GetCount(tr) and csel ~= true then
+        main = 'Delete FX||Copy FX|'..paste..'Paste FX'..pastefxname..'|'..paste..'Paste FX'..pastefxname..' (Delete Original)'
+      else
+        main = '#Delete FX||#Copy FX|'..paste..'Paste FX'..pastefxname..'|'..paste..'Paste FX'..pastefxname..' (Delete Original)'
+      end
+      suskip = 4
     end
 
     cspec = ''
@@ -40802,6 +40867,56 @@ function GUI_DrawCtlBitmap_Strips()
           --local trn = ctl.tracknum or tracks[track_select].tracknum
           --local fxnum = ctl.param_info.paramidx + (lvar.slotoffset[trn] or 0)
           DeleteFX(trn, fxnum+1)
+        elseif res == 2 then
+          local tr = GetTrack(trn)
+          if not tr then return end
+          local _, fxname = reaper.TrackFX_GetFXName(tr, fxnum, '')
+          lvar.copyfx = {guid = reaper.TrackFX_GetFXGUID(tr, fxnum),
+                         name = TrimStr(CropFXName(fxname)),
+                         trn = trn}
+        elseif res == 3 then
+          local str = GetTrack(lvar.copyfx.trn)
+          local sfxnum, str = GetFXNFromGUID(str,lvar.copyfx.guid,true)
+          if sfxnum and str then
+            local tr = GetTrack(trn)
+            if not tr then return end
+            reaper.Undo_BeginBlock()
+            local ubtxt = 'LBX Paste FX'
+            if tr == str and sfxnum < fxnum then --fix some weirdness
+              reaper.TrackFX_CopyToTrack(str,sfxnum,tr,fxnum-1,false)
+            else
+              reaper.TrackFX_CopyToTrack(str,sfxnum,tr,fxnum,false)
+            end          
+            reaper.Undo_EndBlock(ubtxt, 0)
+          else
+            OpenMsgBox(1, 'Cannot find FX to copy', 1)
+            lvar.copyfx = nil
+          end
+          
+        elseif res == 4 then
+          local str = GetTrack(lvar.copyfx.trn)
+          local sfxnum, str = GetFXNFromGUID(str,lvar.copyfx.guid,true)
+          if sfxnum and str then
+            local tr = GetTrack(trn)
+            if not tr then return end
+            reaper.Undo_BeginBlock()
+            local ubtxt = 'LBX Cut + Paste FX'
+            if tr == str and sfxnum < fxnum then --fix some weirdness
+              reaper.TrackFX_CopyToTrack(str,sfxnum,tr,fxnum-1,false)
+            else
+              reaper.TrackFX_CopyToTrack(str,sfxnum,tr,fxnum,false)
+            end          
+            local sfxnum, str = GetFXNFromGUID(str,lvar.copyfx.guid,true)
+            if sfxnum and str then
+              reaper.TrackFX_Delete(str, sfxnum)
+              lvar.copyfx = nil
+            end
+            reaper.Undo_EndBlock(ubtxt, 0)
+
+          else
+            OpenMsgBox(1, 'Cannot find FX to copy', 1)
+            lvar.copyfx = nil
+          end          
         end
       end
     end
@@ -44222,7 +44337,10 @@ function GUI_DrawCtlBitmap_Strips()
                     end
                     if fnd then
                       Snapshot_Set(strip,page,sstype_select,ss_select)
-                      lupd.update_gfx = true
+                      lupd.update_snaps = true
+                      lupd.update_ctls = true
+                      --lupd.update_gfx = true
+                      --lupd.update_gfx = true
                     end
 
                   elseif faders[p+1].targettype == 9 then
@@ -44302,7 +44420,8 @@ function GUI_DrawCtlBitmap_Strips()
                       end
                       if fnd then
                         Snapshot_Set(faders[p+1].strip,faders[p+1].page,sstype,ss)
-                        lupd.update_gfx = true
+                        lupd.update_ctls = true
+                        lupd.update_snaps = true                        
                       end
                     end
 
@@ -44393,6 +44512,7 @@ function GUI_DrawCtlBitmap_Strips()
       end
 
     end
+  
   end
 
   function AssignFader(f, ftab)
@@ -46803,8 +46923,10 @@ function GUI_DrawCtlBitmap_Strips()
         
       elseif MOUSE_click(obj.sections[4507]) then
       
-        OpenEB(4507, 'Please enter plugin name to associate with this strip:','')      
-      
+        if lvar.sapd.stripdata and #lvar.sapd.stripdata.fx == 1 and lvar.sapd.selected then
+          OpenEB(4507, 'Please enter plugin name to associate with this strip:','')      
+        end
+            
       elseif MOUSE_click(obj.sections[4508]) then
       
         if lvar.sapd.selected and lvar.sapd.assselected and lvar.sapd[lvar.sapd.selected].assoc[lvar.sapd.assselected] then
@@ -47894,7 +48016,9 @@ function GUI_DrawCtlBitmap_Strips()
     if show_cycleoptions == false then cycle_editmode = false end
 
     if settings_disablefaderautomationineditmode == false or mode == 0 then
+    
       ReadAutomationFaders()
+    
     end
 
     if #morph_data > 0 then
@@ -56286,6 +56410,7 @@ function GUI_DrawCtlBitmap_Strips()
 
       else
         --open fss
+        
         togfsnap = true
         if fsstype_select == ctls[i].param then
           show_fsnapshots = not show_fsnapshots
@@ -56298,7 +56423,7 @@ function GUI_DrawCtlBitmap_Strips()
         fsstype_color = ctls[i].textcolv
         if show_fsnapshots then
           if snapshots and snapshots[tracks[track_select].strip] and snapshots[tracks[track_select].strip][page][fsstype_select]
-            and snapshots[tracks[track_select].strip][page][fsstype_select].selected then
+            --[[and snapshots[tracks[track_select].strip][page][fsstype_select].selected]] then
 
             local w = ctls[i].wsc
             obj.sections[180].w = w--math.max(w - (170-138),138)
