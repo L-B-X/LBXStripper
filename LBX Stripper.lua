@@ -16,7 +16,7 @@
   local lvar = {}
   local cbi = {}
 
-  lvar.scriptver = '0.94.0143' --Script Version
+  lvar.scriptver = '0.94.0144' --Script Version
 
   lvar.savesettingstofile = true
   
@@ -35745,11 +35745,11 @@ function GUI_DrawCtlBitmap_Strips()
                       break
                     end
                   end
+
                   if switchid2 --[[and #switchers[switchid2].grpids > 0]] then
                     maxpos = maxpos + 1
                   end
                 end
-
                 local c = Switchers_Ext_Insert(switchid, maxpos)
                 dm_data[d].nswid = ctls[c].switcherid
 
@@ -35760,7 +35760,6 @@ function GUI_DrawCtlBitmap_Strips()
                 fxname = TrimStr(CropFXName(fxname))
                 local fxident = dm_data[d].fxident
 
-                --DBG('A')
                 --DBG(dm_data[d].fxn .. '   '..(fxident or 'nil'))
                 local swok, swid = Switcher_AddStrip(nil, c, loadstrip, nil, trn, dm_data[d].fxn+1, fxname or fxident, nil, dm_data[d])
                 
@@ -35770,6 +35769,7 @@ function GUI_DrawCtlBitmap_Strips()
 
               local sfol = dm_data[d].sfol
               local sfil = dm_data[d].sfil
+
               loadstrip = LoadStrip(nil, sfol, sfil, true)
 
               if loadstrip then
@@ -35817,6 +35817,7 @@ function GUI_DrawCtlBitmap_Strips()
                 --DBG(dm_data[d].fxn .. '   '..(fxident or 'nil')..'  '..dm_data[d].stripfn)
 
                 local swok = Switcher_AddStrip(nil, c, loadstrip, nil, trn, dm_data[d].fxn+1, nil, nil, dm_data[d])
+                
                 --if swok ~= true then
                 --  Switcher_DeleteExt(ctls[c].switcherid)
                 --end
@@ -36354,10 +36355,13 @@ function GUI_DrawCtlBitmap_Strips()
           end
         end
       end
+
       for c = ng, #gfxx do
         if gfxx[c].id == stripid then
-          if swok == true or (gfxx[c].switcher == nil) then
+          if swok == true and (gfxx[c].switcher == nil) then
+            --if gfxx[c].grpid == nil then
             gfxx[c].grpid = grpid
+            --end
             gfxx[c].switcher = switchid
           end
         end
@@ -36417,6 +36421,7 @@ function GUI_DrawCtlBitmap_Strips()
       reaper.MarkProjectDirty(0)
 
       reaper.PreventUIRefresh(-1)
+
       return swok
     end
 
@@ -36963,11 +36968,11 @@ function GUI_DrawCtlBitmap_Strips()
 
         Strip_ReposSwitcher_Ext(extid, 1)
       else
-
         Switchers_Ext_Shift(extid, extpos, 1)
         c = Strip_AddSwitcher_Ext(topx,topy,ctl_sw.knob_select,switchid,extpos,false,fxn)
 
         Strip_ReposSwitcher_Ext(extid, 1)
+
       end
     else
 
@@ -37098,7 +37103,9 @@ function GUI_DrawCtlBitmap_Strips()
 
       local padx = math.max(lvar.dm_padx, lvar.shadowmax_p)
       local pady = math.max(lvar.dm_pady, lvar.shadowmax_p)
+      
       local l,r,t,b,sl,sr,st,sb, extctls, extgfx = Switcher_ContentsLocInfo_all2(extid)
+
       if topy == nil and extctls[1] then
         topy = extctls[1].ctl_sw.y
       else
@@ -37293,19 +37300,23 @@ function GUI_DrawCtlBitmap_Strips()
       local ctl = gfxx[i]
       local sid = gids[ctl.grpid]
       if sid and switchers[sid] then
-        local extpos = switchers[sid].extendpos
-        l[extpos] = math.min(l[extpos],ctl.x)
-        r[extpos] = math.max(r[extpos],ctl.x+ctl.stretchw)
-        t[extpos] = math.min(t[extpos],ctl.y)
-        b[extpos] = math.max(b[extpos],ctl.y+ctl.stretchh)
-        if not extgfx[extpos] then
-          extgfx[extpos] = {}
+        if not switchers[sid].extendpos then
+          sid = Switcher_GetTopLevelSwitcher(sid)
         end
-        extgfx[extpos][#extgfx[extpos]+1] = ctl
-        ctl.ext_dx = ctl.x-extctls[extpos].ctl_sw.x
-        ctl.ext_dy = ctl.y-extctls[extpos].ctl_sw.y
+        if sid then
+          local extpos = switchers[sid].extendpos
+          l[extpos] = math.min(l[extpos],ctl.x)
+          r[extpos] = math.max(r[extpos],ctl.x+ctl.stretchw)
+          t[extpos] = math.min(t[extpos],ctl.y)
+          b[extpos] = math.max(b[extpos],ctl.y+ctl.stretchh)
+          if not extgfx[extpos] then
+            extgfx[extpos] = {}
+          end
+          extgfx[extpos][#extgfx[extpos]+1] = ctl
+          ctl.ext_dx = ctl.x-extctls[extpos].ctl_sw.x
+          ctl.ext_dy = ctl.y-extctls[extpos].ctl_sw.y
+        end
       end
-
     end
 
     return l,r,t,b,swl,swr,swt,swb, extctls, extgfx
