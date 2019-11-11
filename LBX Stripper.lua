@@ -16,7 +16,7 @@
   local lvar = {}
   local cbi = {}
 
-  lvar.scriptver = '0.94.0144' --Script Version
+  lvar.scriptver = '0.94.0145' --Script Version
 
   lvar.savesettingstofile = true
   
@@ -35231,6 +35231,12 @@ function GUI_DrawCtlBitmap_Strips()
                  id = ctl.c_id,
                  key = table.concat(t)}
 
+    elseif ctl.ctlcat == ctlcats.snapshot then
+      local t = {tostring(ctl.ctlcat),tostring(ctl.param),tostring(ctl.param_info.paramname)}
+      ctldata = {idx = idx,
+                 id = ctl.c_id,
+                 key = table.concat(t)}
+
     elseif ctl.ctlcat == ctlcats.fxoffline then
       local t = {tostring(ctl.ctlcat),tostring(ctl.fxguid),tostring(ctl.param),tostring(ctl.trackguid)}
       ctldata = {idx = idx,
@@ -64369,7 +64375,7 @@ function GUI_DrawCtlBitmap_Strips()
           ksel_size = {w = 50, h = 50}
         end
         mouse.context = contexts.addsnapctl
-
+        
       elseif mouse.context == nil and MOUSE_click(obj.sections[1010]) then
 
         if snapshots[tracks[track_select].strip] and snapshots[tracks[track_select].strip][page][sstype_select] then
@@ -64391,7 +64397,12 @@ function GUI_DrawCtlBitmap_Strips()
 
         if snapshots[tracks[track_select].strip] and snapshots[tracks[track_select].strip][page][sstype_select] then
           if snapshots[tracks[track_select].strip][page][sstype_select].morph_sync == false then
-
+            if mouse.shift == true then
+              snapshots[tracks[track_select].strip][page][sstype_select].morph_time = 0
+              lupd.update_snaps = true
+            else
+              OpenEB(1010,'Enter no. of bars:','')
+            end
           else
             snapshots[tracks[track_select].strip][page][sstype_select].morph_syncv = math.max(snapshots[tracks[track_select].strip][page][sstype_select].morph_syncv - 1,1)
             lupd.update_snaps = true
@@ -69790,7 +69801,15 @@ function GUI_DrawCtlBitmap_Strips()
               end
             end
           end
-          
+        
+        elseif EB_Open == 1010 then
+          local bars = tonumber(editbox.text)                      
+          if bars then
+            --calculate time in secs
+            local bt = CalcBarTime()
+            snapshots[tracks[track_select].strip][page][sstype_select].morph_time = bars*bt /100
+            lupd.update_snaps = true
+          end
         end
 
         editbox = nil
