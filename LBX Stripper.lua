@@ -16,7 +16,7 @@
   local lvar = {}
   local cbi = {}
 
-  lvar.scriptver = '0.94.0145' --Script Version
+  lvar.scriptver = '0.94.0146' --Script Version
 
   lvar.savesettingstofile = true
   
@@ -21249,8 +21249,12 @@ function GUI_DrawCtlBitmap_Strips()
         elseif strip_folders[idx-1] then
           t = strip_folders[idx-1].fn      
         end
-        GUI_DrawButton(gui, t, xywh, c, gui.skol.butt1_txt, true, '', false)
-        xywh.x = xywh.x + lvar.sb_folbtn_w   
+        if t then
+          GUI_DrawButton(gui, t, xywh, c, gui.skol.butt1_txt, true, '', false)
+          xywh.x = xywh.x + lvar.sb_folbtn_w   
+        else
+          break
+        end
       end
     end
     
