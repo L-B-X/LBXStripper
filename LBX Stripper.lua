@@ -16,7 +16,7 @@
   local lvar = {}
   local cbi = {}
 
-  lvar.scriptver = '0.94.0146' --Script Version
+  lvar.scriptver = '0.94.0147' --Script Version
 
   lvar.savesettingstofile = true
   
@@ -5367,7 +5367,7 @@
     local th = math.floor(gui.winsz.pnltit*pnl_scale)
     obj.sections[1353] = {x = math.floor(pad--[[*pnl_scale]]),
                            y = 2,
-                           w = (140*pnl_scale),
+                           w = math.min((140*pnl_scale),obj.sections[1350].w - 44),
                            h = th-2}
 
     --end
@@ -5421,6 +5421,7 @@
     lvar.sb_folbtn_w = math.floor(obj.sections[1358].w / nb)
     lvar.sb_folbtn_c = nb
     
+    --DBG(lvar.sb_folbtn_c..'  '..lvar.sb_folbtn_w)
     if not lvar.stripbrowser.minw then
       lvar.stripbrowser.minw = 120 * pnl_scale
       lvar.stripbrowser.minh = 90 * pnl_scale
@@ -21197,7 +21198,7 @@ function GUI_DrawCtlBitmap_Strips()
 
     local butt_h = math.floor(butt_h*pnl_scale)
     local t = ''
-    if settings_sbdock == false or lvar.stripbrowser.dockpos ~= 1 or not lvar.sb_folbtn_show then
+    if lvar.sb_folbtn_c <= 1 or not lvar.sb_folbtn_show then
       t = 'STRIPS'
     end
     GUI_DrawPanel(obj.sections[1350],false,t)
@@ -21227,12 +21228,14 @@ function GUI_DrawCtlBitmap_Strips()
     end
     GUI_DrawButton(gui, t, obj.sections[1353], c, gui.skol.butt1_txt, true, '', false)
 
-    if lvar.sb_folbtn_show and settings_sbdock == true and lvar.stripbrowser.dockpos == 1 then
+    if lvar.sb_folbtn_show and lvar.sb_folbtn_c > 1 then
 
       local c = gui.color.white
-      GUI_DrawButton(gui, '<', obj.sections[1359], c, gui.skol.butt1_txt, true, '', false)
-      GUI_DrawButton(gui, '>', obj.sections[1360], c, gui.skol.butt1_txt, true, '', false)
-    
+      if settings_sbdock then
+        GUI_DrawButton(gui, '<', obj.sections[1359], c, gui.skol.butt1_txt, true, '', false)
+        GUI_DrawButton(gui, '>', obj.sections[1360], c, gui.skol.butt1_txt, true, '', false)
+      end
+      
       local xywh = {x = obj.sections[1358].x,
                     y = obj.sections[1358].y,
                     w = lvar.sb_folbtn_w-2,
@@ -24477,67 +24480,69 @@ function GUI_DrawCtlBitmap_Strips()
       end
     end
 
-    if lvar.enablegfxshadows and not fullscreen_open and (lupd.update_gfx or lupd.update_surface or resize_display) then
-
-      local shadows = {}
-      if lvar.enablegfxshadows then
-        local shad_w, shad_h = gfx.getimgdim(skin.shadow)
-
-        gfx.a = lvar.shadow_alpha
-        local edge = 50
-        local nedge_h = lvar.shadow_offsx
-        local nedge_w = lvar.shadow_offsx
-
-        local offs,offs2 = 0,0
-        if mode == 0 then
-          if lvar.livemode >= 1 and lvar.mixmodedir == 0 and lvar.mmov_show then
-            offs = lvar.mmov_vsize + lvar.mmov_pad*2
-          elseif lvar.livemode >= 1 and lvar.mixmodedir == 1 and lvar.mmov_show then
-            offs2 = lvar.mmov_vsize + lvar.mmov_pad*2
+    --if mode == 0 then
+      if lvar.enablegfxshadows and not fullscreen_open and (lupd.update_gfx or lupd.update_sidebar or lupd.update_surface or resize_display) then
+  
+        local shadows = {}
+        if lvar.enablegfxshadows then
+          local shad_w, shad_h = gfx.getimgdim(skin.shadow)
+  
+          gfx.a = lvar.shadow_alpha
+          local edge = 50
+          local nedge_h = lvar.shadow_offsx
+          local nedge_w = lvar.shadow_offsx
+  
+          local offs,offs2 = 0,0
+          if mode == 0 then
+            if lvar.livemode >= 1 and lvar.mixmodedir == 0 and lvar.mmov_show then
+              offs = lvar.mmov_vsize + lvar.mmov_pad*2
+            elseif lvar.livemode >= 1 and lvar.mixmodedir == 1 and lvar.mmov_show then
+              offs2 = lvar.mmov_vsize + lvar.mmov_pad*2
+            end
+          end
+  
+          shadows[1] = {x = obj.sections[10].x+offs, y = obj.sections[10].y+offs2, w = obj.sections[10].w-offs, h = nedge_h,
+                        srcx = edge*2, srcy = shad_h - edge*1.5 + (lvar.shadow_feather*1.5), srcw = edge, srch = edge}
+  
+          local offs,offs2, offs3 = 0,0,0
+          if mode == 0 then
+            if lvar.livemode >= 1 and lvar.mixmodedir == 0 and lvar.mmov_show then
+              offs = lvar.mmov_vsize + lvar.mmov_pad*2
+            elseif lvar.livemode >= 1 and lvar.mixmodedir == 1 and lvar.mmov_show then
+              offs3 = lvar.mmov_vsize + lvar.mmov_pad*2
+            end
+            if lvar.livemode == 2 and lvar.trbtns_show then
+              offs2 = obj.sections[4999].h
+            end
+          end
+          shadows[2] = {x = obj.sections[10].x+offs, y = obj.sections[10].y+offs3, w = nedge_w, h = obj.sections[10].h-offs3, --offs2,
+                        srcx = shad_w - edge*1.5 + (lvar.shadow_feather*1.5), srcy = edge*2, srcw = edge, srch = edge}
+        end
+  
+        lvar.shadows = shadows
+        if #shadows > 0 then
+          gfx.a = lvar.shadow_alpha
+          for i = 1, #shadows do
+            gfx.blit(skin.shadow,1,0, shadows[i].srcx, shadows[i].srcy, shadows[i].srcw, shadows[i].srch,
+                     shadows[i].x, shadows[i].y, shadows[i].w, shadows[i].h)
           end
         end
-
-        shadows[1] = {x = obj.sections[10].x+offs, y = obj.sections[10].y+offs2, w = obj.sections[10].w-offs, h = nedge_h,
-                      srcx = edge*2, srcy = shad_h - edge*1.5 + (lvar.shadow_feather*1.5), srcw = edge, srch = edge}
-
-        local offs,offs2, offs3 = 0,0,0
-        if mode == 0 then
-          if lvar.livemode >= 1 and lvar.mixmodedir == 0 and lvar.mmov_show then
-            offs = lvar.mmov_vsize + lvar.mmov_pad*2
-          elseif lvar.livemode >= 1 and lvar.mixmodedir == 1 and lvar.mmov_show then
-            offs3 = lvar.mmov_vsize + lvar.mmov_pad*2
-          end
-          if lvar.livemode == 2 and lvar.trbtns_show then
-            offs2 = obj.sections[4999].h
+        lvar.shadowbits = nil
+  
+      elseif lvar.enablegfxshadows and not fullscreen_open and lupd.update_ctls and lvar.shadowbits then
+        local shadows = lvar.shadowbits
+        if #shadows > 0 then
+  
+          gfx.a = lvar.shadow_alpha
+          for i = 1, #shadows do
+            gfx.blit(skin.shadow,1,0, shadows[i].srcx, shadows[i].srcy, shadows[i].srcw, shadows[i].srch,
+                     shadows[i].x, shadows[i].y, shadows[i].w, shadows[i].h)
           end
         end
-        shadows[2] = {x = obj.sections[10].x+offs, y = obj.sections[10].y+offs3, w = nedge_w, h = obj.sections[10].h-offs3, --offs2,
-                      srcx = shad_w - edge*1.5 + (lvar.shadow_feather*1.5), srcy = edge*2, srcw = edge, srch = edge}
+        lvar.shadowbits = nil
       end
-
-      lvar.shadows = shadows
-      if #shadows > 0 then
-        gfx.a = lvar.shadow_alpha
-        for i = 1, #shadows do
-          gfx.blit(skin.shadow,1,0, shadows[i].srcx, shadows[i].srcy, shadows[i].srcw, shadows[i].srch,
-                   shadows[i].x, shadows[i].y, shadows[i].w, shadows[i].h)
-        end
-      end
-      lvar.shadowbits = nil
-
-    elseif lvar.enablegfxshadows and not fullscreen_open and lupd.update_ctls and lvar.shadowbits then
-      local shadows = lvar.shadowbits
-      if #shadows > 0 then
-
-        gfx.a = lvar.shadow_alpha
-        for i = 1, #shadows do
-          gfx.blit(skin.shadow,1,0, shadows[i].srcx, shadows[i].srcy, shadows[i].srcw, shadows[i].srch,
-                   shadows[i].x, shadows[i].y, shadows[i].w, shadows[i].h)
-        end
-      end
-      lvar.shadowbits = nil
-    end
-
+    --end
+    
     --[[if show_dd == true then
       if lupd.update_gfx == true or lupd.update_dd == true or resize_display == true then
         GUI_DrawDropdown(gui, obj)
@@ -50754,7 +50759,7 @@ function GUI_DrawCtlBitmap_Strips()
             sbsflist_offset = F_limit(sbsflist_offset - v,0,math.max(#strip_folders - bcnt +1,0))
             lupd.update_stripbrowser = true
 
-          elseif settings_sbdock == true and lvar.stripbrowser.dockpos == 1 and MOUSE_over(obj.sections[1358]) and lvar.sb_folbtn_show then
+          elseif lvar.sb_folbtn_c > 1 and MOUSE_over(obj.sections[1358]) and lvar.sb_folbtn_show then
 
             lvar.sb_folbtn_offs = F_limit(lvar.sb_folbtn_offs - v*lvar.sb_folbtn_c, 0, #strip_folders-lvar.sb_folbtn_c+2)
             lupd.update_stripbrowser = true
@@ -50993,7 +50998,7 @@ function GUI_DrawCtlBitmap_Strips()
           end
         end
 
-      elseif MOUSE_click(obj.sections[1358]) and settings_sbdock == true and lvar.stripbrowser.dockpos == 1 and lvar.sb_folbtn_show then
+      elseif MOUSE_click(obj.sections[1358]) and lvar.sb_folbtn_c > 1 and lvar.sb_folbtn_show then
       
         local idx = math.floor((mouse.mx-obj.sections[1358].x)/lvar.sb_folbtn_w)
         if idx < lvar.sb_folbtn_c then 
@@ -51012,12 +51017,12 @@ function GUI_DrawCtlBitmap_Strips()
           end
         end
         
-      elseif MOUSE_click(obj.sections[1359]) and settings_sbdock == true and lvar.stripbrowser.dockpos == 1 and lvar.sb_folbtn_show then
+      elseif MOUSE_click(obj.sections[1359]) and settings_sbdock == true and lvar.sb_folbtn_c > 1 and lvar.sb_folbtn_show then
 
         lvar.sb_folbtn_offs = math.max(lvar.sb_folbtn_offs - lvar.sb_folbtn_c,0)
         lupd.update_stripbrowser = true
 
-      elseif MOUSE_click(obj.sections[1360]) and settings_sbdock == true and lvar.stripbrowser.dockpos == 1 and lvar.sb_folbtn_show then
+      elseif MOUSE_click(obj.sections[1360]) and settings_sbdock == true and lvar.sb_folbtn_c > 1 and lvar.sb_folbtn_show then
       
         lvar.sb_folbtn_offs = math.min(lvar.sb_folbtn_offs + lvar.sb_folbtn_c, #strip_folders-lvar.sb_folbtn_c+2)
         lupd.update_stripbrowser = true
