@@ -42905,7 +42905,12 @@ function GUI_DrawCtlBitmap_Strips()
         cnt = cnt + 1
       else
         while sfil ~= nil do
-
+          local sfil2 = ''
+          while sfil2 and string.sub(sfil2, string.len(sfil2)-5) ~= '.strip' do
+            j=j+1
+            sfil2 = reaper.EnumerateFiles(paths.strips_path..mfol, j)
+          end
+          --DBG(paths.strips_path..mfol..'     '..tostring(sfil2))
           if string.sub(sfil, string.len(sfil)-5) == '.strip' then
             cnt = cnt + 1
             filcnt = filcnt + 1
@@ -42913,17 +42918,18 @@ function GUI_DrawCtlBitmap_Strips()
             local mfil = sfil
             mstripfolders[#mstripfolders+1] = mfol..'/'..mfil
 
-            j=j+1
-            sfil = reaper.EnumerateFiles(paths.strips_path..mfol, j)
+            --j=j+1
+            --sfil = reaper.EnumerateFiles(paths.strips_path..mfol, j)
 
-            if sfil == nil then
+            if sfil2 == nil then
               mstr = mstr ..'|<'..string.sub(mfil, 1, string.len(mfil)-6)
             else
               mstr = mstr ..'|'..string.sub(mfil, 1, string.len(mfil)-6)
             end
+            sfil = sfil2
           else
-            j=j+1
-            sfil = reaper.EnumerateFiles(paths.strips_path..mfol, j)
+            --j=j+1
+            sfil = sfil2--reaper.EnumerateFiles(paths.strips_path..mfol, j)
           end
 
         end
