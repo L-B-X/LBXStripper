@@ -16,7 +16,7 @@
   local lvar = {}
   local cbi = {}
 
-  lvar.scriptver = '0.94.0148' --Script Version
+  lvar.scriptver = '0.94.0149' --Script Version
 
   lvar.savesettingstofile = true
 
@@ -48,7 +48,9 @@
   lvar.analyzer.controls[1][10] = {param = 3, type = 1}
   lvar.analyzer.controls[1][11] = {param = 6, type = 1}
   lvar.analyzer.controls[1][12] = {param = 2, type = 2}
-  lvar.analyzer.controls[1][13] = {param = 21, type = 1}
+  lvar.analyzer.controls[1][13] = {param = 22, type = 1}
+  lvar.analyzer.controls[1][14] = {param = 24, type = 1}
+  --lvar.analyzer.controls[1][15] = {param = 25, type = 1}
   lvar.analyzer.controls[2] = {}
   lvar.analyzer.controls[2][1] = {param = 0, type = 2}
   lvar.analyzer.controls[2][2] = {param = 1, type = 1}
@@ -913,8 +915,6 @@
         tfxi[i].fxfn = nm2
         tfxi[i].fxguid = reaper.TrackFX_GetFXGUID(tr,i)
         tfxi[i].stripinfo = stripctls[i]
-
-        --DBG(nm..'  '..nm2)
       end
     end
     return tfxi
@@ -37873,8 +37873,8 @@ function GUI_DrawCtlBitmap_Strips()
         if fxinfo[f].swid == -1 then
           local nsd = #newswitcherdata+1
           local ret, fxname = reaper.TrackFX_GetFXName(track, f, '')
-          fxname = TrimStr(CropFXName(fxname))
-          local fxident = tfxi[f].fxfn
+          fxname = string.lower(TrimStr(CropFXName(fxname)))
+          local fxident = string.lower(tfxi[f].fxfn)
           local stripfn = ''
           local sfol, sfil
           if fxident and plugdefstrips_idx and (plugdefstrips_idx[fxname] or plugdefstrips_idx[fxident]) then
@@ -38311,9 +38311,9 @@ function GUI_DrawCtlBitmap_Strips()
 
           for fx = 1, reaper.TrackFX_GetCount(track) do
             local ret, fxname = reaper.TrackFX_GetFXName(track, fx-1, '')
-            fxname = string.match(CropFXName(fxname), "^%s*(.-)%s*$")
+            fxname = string.lower(string.match(CropFXName(fxname), "^%s*(.-)%s*$"))
             --local fxident = GetPlugIdentifierFromChunk(fxchunks[fx].chunk)
-            local fxident = tfxi[fx-1].fxfn
+            local fxident = string.lower(tfxi[fx-1].fxfn)
             if fxident and plugdefstrips_idx and (plugdefstrips_idx[fxname] or plugdefstrips_idx[fxident]) then
 
               local idx = plugdefstrips_idx[fxname] or plugdefstrips_idx[fxident]
@@ -40930,7 +40930,11 @@ function GUI_DrawCtlBitmap_Strips()
 
   function SBMenu_RB()
     if lvar.stripbrowser.select then
-      mstr = 'Edit Strip'
+      if lvar.stripbrowser.favs == true then
+        mstr = 'Edit Strip||#Associate All Strips With Plugins'
+      else
+        mstr = 'Edit Strip||Associate All Strips With Plugins'
+      end
       gfx.x = mouse.mx
       gfx.y = mouse.my
       local res = gfx.showmenu(mstr)
@@ -40947,6 +40951,12 @@ function GUI_DrawCtlBitmap_Strips()
               DM_OpenEditMode(nil, nil, sfn)
             end
           end
+        elseif res == 2 then
+          local sfcnt = #strip_files + 1
+          for i = 0, sfcnt-1 do
+            Strip_SetPlugDef(i, stripfol_select, true)
+            Save_PlugDefs()
+          end
         end
       end
     end
@@ -40959,7 +40969,7 @@ function GUI_DrawCtlBitmap_Strips()
     local ddtab = {}
     local mstr = ''
     for i = 1, #plugdefstrips do
-      if plugdefstrips[i].plug == fxmod then
+      if plugdefstrips[i].plug == string.lower(fxmod) then
         idxtab[cnt] = i
         cnt = cnt + 1
       end
@@ -49409,14 +49419,14 @@ function GUI_DrawCtlBitmap_Strips()
         end
       end
     else
-      local fxident = lvar.dm_editmode_data.plugname
+      local fxident = string.lower(lvar.dm_editmode_data.plugname)
       if not mouse.ctrl then
         local track = GetTrackByName('__LBXEDIT')
         if track then
           local fxnum = 0
           local _, plug = reaper.TrackFX_GetFXName(track, fxnum, '')
           if plug then
-            fxident = TrimStr(CropFXName(plug))
+            fxident = string.lower(TrimStr(CropFXName(plug)))
           end
         end
         lvar.dm_save_plug = fxident
@@ -64616,7 +64626,7 @@ function GUI_DrawCtlBitmap_Strips()
             --local chunk = GetTrackChunk(track, settings_usetrackchunkfix)
             --local fnd, fxc, s, e = GetFXChunkFromTrackChunk(chunk,i+1 + flist_offset)
             --local fxident = GetPlugIdentifierFromChunk(fxc)
-            local _, fxident = reaper.BR_TrackFX_GetFXModuleName(track, trackfx_select, '', 64)
+            local _, fxident = string.lower(reaper.BR_TrackFX_GetFXModuleName(track, trackfx_select, '', 64))
             if plugdefstrips_idx then
               local idx = plugdefstrips_idx[fxident]
               if idx and plugdefstrips[idx] then
@@ -74313,9 +74323,9 @@ function GUI_DrawCtlBitmap_Strips()
       fxname = TrimStr(CropFXName(fxname))
       local _, fxmod = reaper.BR_TrackFX_GetFXModuleName(track,fxn,'',64)
 
-      local idx = plugdefstrips_idx[fxname]
+      local idx = plugdefstrips_idx[string.lower(fxname)]
       if not idx then
-        idx = plugdefstrips_idx[fxmod]
+        idx = plugdefstrips_idx[string.lower(fxmod)]
       end
 
       if idx then
@@ -74330,6 +74340,7 @@ function GUI_DrawCtlBitmap_Strips()
     local tab = {}
     local tabidx = {}
     local cnt = 1
+    plug = string.lower(plug)
     for p = 1, #plugdefstrips do
       if plugdefstrips[p].plug == plug and plugdefstrips[p].stripfile == fil and plugdefstrips[p].stripfol == fol then
       else
@@ -74352,6 +74363,8 @@ function GUI_DrawCtlBitmap_Strips()
     local tab = {}
     local tabidx = {}
     local cnt = 1
+    plug = string.lower(plug)
+    
     for p = 1, #plugdefstrips do
       if plugdefstrips[p].plug == plug and plugdefstrips[p].stripfile == fil and plugdefstrips[p].stripfol == fol then
       else
@@ -74372,6 +74385,8 @@ function GUI_DrawCtlBitmap_Strips()
     local tab = {}
     local tabidx = {}
     local insert
+    plug = string.lower(plug)
+    
     if replace then
       if plugdefstrips_idx[plug] then
         local idx = plugdefstrips_idx[plug]
@@ -74401,6 +74416,8 @@ function GUI_DrawCtlBitmap_Strips()
   function PlugDef_Add(plug, stripfn, fol, ask, asslist)
 
     if plug then
+      plug = string.lower(plug)
+      
       local fnd
       for p = 1, #plugdefstrips do
         if plugdefstrips[p].plug == plug and plugdefstrips[p].stripfile == stripfn..'.strip' and plugdefstrips[p].stripfol == fol then
@@ -88743,34 +88760,42 @@ DBG(t.. '  '..trigtime)
     end
   end
 
-  function Strip_SetPlugDef(stripfile, stripfol)
+  function Strip_SetPlugDef(stripfile, stripfol, batch)
 
     local stripdata = LoadStrip(stripfile)
-    if #stripdata.fx == 1 then
-      local fxc = stripdata.fx[1].fxchunk
-      local fxident = GetPlugIdentifierFromChunk(fxc)
-      if fxident then
-
-        if plugdefstrips_idx and plugdefstrips_idx[fxident] then
-          local idx = plugdefstrips_idx[fxident]
-          plugdefstrips[idx] = {plug = fxident, stripfile = strip_files[stripfile].fn, stripfol = strip_folders[stripfol].fn}
-          OpenMsgBox(1,'Default strip for plugin '..fxident..' updated.',1)
-        else
-          if not plugdefstrips then
-            plugdefstrips = {}
-            plugdefstrips_idx = {}
+    if stripdata then
+      if #stripdata.fx == 1 then
+        local fxc = stripdata.fx[1].fxchunk
+        local fxident = GetPlugIdentifierFromChunk(fxc)
+        if fxident then
+          if batch then
+            DBG(fxident)
           end
-          local idx = #plugdefstrips+1
-          plugdefstrips[idx] = {plug = fxident, stripfile = strip_files[stripfile].fn, stripfol = strip_folders[stripfol].fn}
-          plugdefstrips_idx[fxident] = idx
-          OpenMsgBox(1,'Default strip for plugin '..fxident..' set.',1)
+          if plugdefstrips_idx and plugdefstrips_idx[fxident] then
+            local idx = plugdefstrips_idx[fxident]
+            plugdefstrips[idx] = {plug = fxident, stripfile = strip_files[stripfile].fn, stripfol = strip_folders[stripfol].fn}
+            OpenMsgBox(1,'Default strip for plugin '..fxident..' updated.',1)
+          else
+            if not plugdefstrips then
+              plugdefstrips = {}
+              plugdefstrips_idx = {}
+            end
+            local idx = #plugdefstrips+1
+            plugdefstrips[idx] = {plug = fxident, stripfile = strip_files[stripfile].fn, stripfol = strip_folders[stripfol].fn}
+            plugdefstrips_idx[fxident] = idx
+            OpenMsgBox(1,'Default strip for plugin '..fxident..' set.',1)
+          end
+  
+          if not batch then
+            Save_PlugDefs()
+          end
         end
-
-        Save_PlugDefs()
+        --DBG(fxident)
+      else
+        OpenMsgBox(1,'A default plugin strip must contain ONE fx plugin',1)
       end
-      --DBG(fxident)
     else
-      OpenMsgBox(1,'A default plugin strip must contain ONE fx plugin',1)
+      DBG('Error loading: '..strip_files[strip_select].fn)
     end
     lupd.update_surface = true
 
@@ -88807,7 +88832,7 @@ DBG(t.. '  '..trigtime)
     local stripdata = LoadStrip(stripfile)
     if #stripdata.fx == 1 then
       if fxident and fxident ~= '' then
-
+        fxident = string.lower(fxident)
         if plugdefstrips_idx and plugdefstrips_idx[fxident] then
           local idx = plugdefstrips_idx[fxident]
           plugdefstrips[idx] = {plug = fxident, stripfile = strip_files[stripfile].fn, stripfol = strip_folders[stripfol].fn}
@@ -88887,7 +88912,7 @@ DBG(t.. '  '..trigtime)
       for i = 1, cnt do
         if data[i..'_plug'] then
 
-          local plug = data[i..'_plug']
+          local plug = string.lower(data[i..'_plug'])
           local fol = data[i..'_fol']
           local fil = data[i..'_file']
           local fnd
