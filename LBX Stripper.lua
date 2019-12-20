@@ -16,7 +16,7 @@
   local lvar = {}
   local cbi = {}
 
-  lvar.scriptver = '0.94.0149' --Script Version
+  lvar.scriptver = '0.94.0150' --Script Version
 
   lvar.savesettingstofile = true
 
@@ -125,6 +125,7 @@
   lvar.trmix_sndpnl_dirty = {}
   lvar.trmix_animateshow = true
 
+  lvar.dm_showtrackname = true
   lvar.dm_btnpnlidx = 1
   lvar.dm_btnpnl2idx = 2
   lvar.dm_btnpnl = {}
@@ -2234,7 +2235,7 @@
 
   end
 
-  function StripShare_Export(fol, fn)
+  function StripShare_Export(fol, fn, dfol)
 
     savefn = fn
 
@@ -2305,7 +2306,9 @@
     end
     stripdata.sharedata = {stripfn = fn, ctls = ctlf, gfx = gfxf, sbdata = sbdata}
 
-    local save_path=paths.share_path..'/'
+    local save_path=paths.share_path..'/'..(dfol or '')..'/'
+    reaper.RecursiveCreateDirectory(save_path,1)
+    
     local fn=save_path..string.match(savefn,'(.+)%.')..".sharestrip"
 
     local DELETE=true
@@ -2364,12 +2367,45 @@
 
   end
 
-  function StripShare_Import()
+  function BatchImportShareStrips()
+  
+    local retval, fol = reaper.JS_Dialog_BrowseForFolder('Import Share Strips - Select folder', '')
+    if retval == 1 then
+    
+      local fol1 = string.match(fol,".+[\\/](.*)")
+      local f = 0
+      local c = 0
+      local sfn = reaper.EnumerateFiles(fol, f)
+      while sfn do
+    
+        if string.match(sfn,'.+%.(.*)$') == 'sharestrip' then
+          DBG('Importing: '..sfn)
+          StripShare_Import(fol..'/'..sfn, fol1, true)          
+          c=c+1
+        end
+    
+        f=f+1
+        sfn = reaper.EnumerateFiles(fol, f)
+      end
+      
+      PopulateStripFolders()
+      PopulateStrips()
+      lupd.update_gfx = true
+      
+      DBG(string.format('%i',c)..' strip files imported')
+    end
+  
+  end
+
+  function StripShare_Import(fn, fol, verbose)
 
     local savefn
     local loadfn, path
     DBGOut('IMPORT SHARESTRIP - Get Filename')
-    local retval, fn = reaper.GetUserFileNameForRead(paths.share_path..'*', 'Load Strip Share File', '.sharestrip')
+    local retval = true
+    if not fn then
+      retval, fn = reaper.GetUserFileNameForRead(paths.share_path..'*', 'Load Strip Share File', '.sharestrip')
+    end
     if retval then
 
       DBGOut('IMPORT SHARESTRIP - Retval True')
@@ -2393,32 +2429,36 @@
       if stripdata then
         if stripdata.fx then
 
-          DBGOut('IMPORT SHARESTRIP - Plugins required')
-
-          local fxstring = 'The following plugins are required by this strip layout:\n\n'
-          local fxns = {}
-          for f = 1, #stripdata.fx do
-
-            local fxn = nil
-            if stripdata.fx[f].fxname then
-              fxn = stripdata.fx[f].fxname
-            else
-              local fxc = string.match(stripdata.fx[f].fxchunk,'.-<(.-)\n')
-              fxn = GetPlugNameFromChunk(fxc)
-              if fxn and fxns[fxn] == nil then
-                fxns[fxn] = true
+          if not verbose then
+            DBGOut('IMPORT SHARESTRIP - Plugins required')
+  
+            local fxstring = 'The following plugins are required by this strip layout:\n\n'
+            local fxns = {}
+            for f = 1, #stripdata.fx do
+  
+              local fxn = nil
+              if stripdata.fx[f].fxname then
+                fxn = stripdata.fx[f].fxname
               else
-                fxn = nil
+                local fxc = string.match(stripdata.fx[f].fxchunk,'.-<(.-)\n')
+                fxn = GetPlugNameFromChunk(fxc)
+                if fxn and fxns[fxn] == nil then
+                  fxns[fxn] = true
+                else
+                  fxn = nil
+                end
+              end
+              if fxn then
+                fxstring = fxstring .. fxn .. '\n'
               end
             end
-            if fxn then
-              fxstring = fxstring .. fxn .. '\n'
+            fxstring = fxstring .. '\nContinue with import?'
+            local retval = reaper.MB(fxstring, 'Import Strip File', 4)
+            if retval == 6 then
+              continue = true
             end
-          end
-          fxstring = fxstring .. '\nContinue with import?'
-          local retval = reaper.MB(fxstring, 'Import Strip File', 4)
-          if retval == 6 then
-            continue = true
+          else
+            continue = true          
           end
         end
 
@@ -2602,10 +2642,16 @@
           GUI_DrawStateWin(obj,gui,'')
 
           savefn = stripdata.sharedata.stripfn
-          local save_path=paths.strips_path..strip_folders[stripfol_select].fn..'/'
+          local save_path
+          if fol then
+            save_path=paths.strips_path..fol..'/'
+            reaper.RecursiveCreateDirectory(save_path,1)
+          else
+            save_path=paths.strips_path..strip_folders[stripfol_select].fn..'/'
+          end
           local fn=save_path..savefn--..".strip"
           local copy = 0
-          if reaper.file_exists(fn) then
+          if not verbose or reaper.file_exists(fn) then
             local str = 'The strip file already exists:\n\n'..savefn..'\n\nOverwrite?'
             local retval = reaper.MB(str, 'Import Strip', 4)
             if retval == 6 then
@@ -23678,7 +23724,7 @@ function GUI_DrawCtlBitmap_Strips()
         end
 
         if lvar.livemode == 2 and (lupd.update_gfx or lupd.update_surface or lvar.blitmmov or lupd.update_trbtns) and not fullscreen_open then
-          if lvar.dm_trname then
+          if lvar.dm_showtrackname and lvar.dm_trname then
             GUI_Str(gui,obj.sections[5001],lvar.dm_trname,4,gui.color.white,18,1,gui.color.black,nil,105)
           end
 
@@ -43864,9 +43910,13 @@ function GUI_DrawCtlBitmap_Strips()
         if lvar.dm_singlepopup then
           mo9 = '!'
         end
+        local mt = ''
+        if lvar.dm_showtrackname then
+          mt = '!'
+        end
         mmstr = '||>Mix Mode Options|'..mo2..'Horizontal Layout|'..mo..'Vertical Layout||'..ma..'Align Left/Top||'
                 ..fp..'Fade Stack When Strip Popped|Fade Alpha ('..string.format('%i',lvar.mm_fadepopamt*100)..')||'..mo6..'Disable Stack When Strip Popped'..
-                '|'..mo7..'Pop Up Only Mode|'..mo9..'Single Pop Up Only Mode||<'..mo8..'Enable SK2 Touch'
+                '|'..mo7..'Pop Up Only Mode|'..mo9..'Single Pop Up Only Mode||'..mo8..'Enable SK2 Touch||<'..mt..'Show Track Name On Surface (DM Mode)'
 
       else
         mmstr = '||>#Mix Mode Options|Horizontal Layout|Vertical Layout||Align Left/Top||Fade Stack When Strip Popped|Fade Alpha||Disable Stack When Strip Popped|Pop Up Only Mode|Single Pop Up Only Mode||<Enable SK2 Touch'
@@ -43990,6 +44040,10 @@ function GUI_DrawCtlBitmap_Strips()
           lvar.mmtouch = not lvar.mmtouch
 
         elseif res == sfcnt + 25 then
+          lvar.dm_showtrackname = not lvar.dm_showtrackname
+          lupd.update_surface = true
+          
+        elseif res == sfcnt + 26 then
           local fn = file_bgimage --string.match(file_bgimage,'(.+[\\/]).*')
           local retval, nfn = reaper.GetUserFileNameForRead(fn or '', 'Load background image:', '*.jpg;*.png')
           if retval then
@@ -44000,20 +44054,20 @@ function GUI_DrawCtlBitmap_Strips()
               lupd.update_gfx = true
             end
           end
-        elseif res == sfcnt + 26 then
+        elseif res == sfcnt + 27 then
           file_bgimage = nil
           LoadBGImage(file_bgimage)
           lupd.update_bg = true
           lupd.update_gfx = true
 
-        elseif res == sfcnt + 27 then
+        elseif res == sfcnt + 28 then
 
           lvar.bgstretch = not lvar.bgstretch
           LoadBGImage(file_bgimage)
           lupd.update_bg = true
           lupd.update_gfx = true
 
-        elseif res == sfcnt + 28 then
+        elseif res == sfcnt + 29 then
 
           local ret, val = reaper.GetUserInputs('Background Brightness',1,'Enter brightness (-100 to 100)',lvar.bgbright)
           if ret and tonumber(val) then
@@ -44023,12 +44077,12 @@ function GUI_DrawCtlBitmap_Strips()
             lupd.update_gfx = true
           end
 
-        elseif res == sfcnt + 29 then
+        elseif res == sfcnt + 30 then
 
           lvar.mmov_bgimgon = not lvar.mmov_bgimgon
           lupd.update_gfx = true
 
-        elseif res == sfcnt + 30 then
+        elseif res == sfcnt + 31 then
 
           local ret, val = reaper.GetUserInputs('Surface Toolbar Tint',1,'Enter tint amount (0-0.7)',lvar.mmov_tint)
           if ret and tonumber(val) then
@@ -44036,13 +44090,13 @@ function GUI_DrawCtlBitmap_Strips()
             lupd.update_gfx = true
           end
 
-        elseif res == sfcnt + 31 then
+        elseif res == sfcnt + 32 then
 
           lvar.livebg = not lvar.livebg
           lupd.update_bg = true
           lupd.update_gfx = true
 
-        elseif res == sfcnt + 32 then
+        elseif res == sfcnt + 33 then
 
           lvar.bgcentred = not lvar.bgcentred
           lupd.update_surface = true
@@ -53934,9 +53988,13 @@ function GUI_DrawCtlBitmap_Strips()
           fbs = '!'
         end
         local impfol = strip_folders[stripfol_select].fn
-        local mstr = 'Import Share Strip File (to '..impfol..' folder)||'
-                      .. export .. 'Export Share Strip File ('..exportstrip..')'..
-                      '||Strip Association Manager||'..fbs..'Show Additional Folder Buttons'
+        local ass = ''
+        if lvar.stripbrowser.favs == true then
+          ass = '#'
+        end
+        local mstr = 'Import Share Strip File (to '..impfol..' folder)|Batch Import Folder Of Share Strips||'
+                      .. export .. 'Export Share Strip File ('..exportstrip..')|'..ass..'Batch Export All Strips In Folder As Share Strip Files'..
+                      '||'..ass..'Associate All Strips With Plugins|Strip Association Manager||'..fbs..'Show Additional Folder Buttons'
 
         gfx.x = mx
         gfx.y = my
@@ -53953,13 +54011,31 @@ function GUI_DrawCtlBitmap_Strips()
                 PlugDef_Add(sfxi[1].fxfn, stripfn2, impfol, true, nil)
               end
             end
+            
           elseif res == 2 then
-            StripShare_Export(exportfolder..'/',exportstrip)
+          
+            BatchImportShareStrips()
+          
           elseif res == 3 then
+            StripShare_Export(exportfolder..'/',exportstrip)
+          elseif res == 4 then
+            local sfcnt = #strip_files + 1
+            exportfolder = strip_folders[stripfol_select].fn
+            for i = 0, sfcnt-1 do
+              exportstrip = strip_files[i].fn
+              StripShare_Export(exportfolder..'/',exportstrip,exportfolder)
+            end          
+          elseif res == 5 then
+            local sfcnt = #strip_files + 1
+            for i = 0, sfcnt-1 do
+              Strip_SetPlugDef(i, stripfol_select, true)
+              Save_PlugDefs()
+            end
+          elseif res == 6 then
             lvar.show_stripassoc = true
             StripAssoc_GetData()
             lupd.update_gfx = true
-          elseif res == 4 then
+          elseif res == 7 then
             lvar.sb_folbtn_show = not lvar.sb_folbtn_show
             lupd.update_stripbrowser = true
           end
@@ -73378,6 +73454,8 @@ function GUI_DrawCtlBitmap_Strips()
 
   function Process_MMOV()
 
+    if lvar.mmov_offset == nil then return end
+
     if lvar.mixmodedir == 0 then
       if lvar.omy ~= mouse.my then
         lvar.omy = mouse.my
@@ -82503,7 +82581,7 @@ function GUI_DrawCtlBitmap_Strips()
     lvar.mmtouch = tobool(nz(GES('mmtouch',true,data),lvar.mmtouch))
     lvar.dm_autorefresh = tobool(nz(GES('dm_autorefresh',true,data),lvar.dm_autorefresh))
     lvar.dm_maxvistracks = tonumber(nz(GES('dm_maxvistracks',true,data),lvar.dm_maxvistracks))
-
+    lvar.dm_showtrackname = tobool(nz(GES('dm_showtrackname',true,data),lvar.dm_showtrackname))
     lvar.trmix_panelsz = tonumber(nz(GES('trmix_panelsz',true,data),lvar.trmix_panelsz))
 
     lvar.trmix_sndpnl_show = tobool(nz(GES('trmix_sndpnl_show',true,data),lvar.trmix_sndpnl_show))
@@ -82871,6 +82949,7 @@ function GUI_DrawCtlBitmap_Strips()
     SetExtState(SCRIPT,'dm_padx',tostring(lvar.dm_padx), true)
     SetExtState(SCRIPT,'dm_pady',tostring(lvar.dm_pady), true)
     SetExtState(SCRIPT,'dm_maxvistracks',tostring(lvar.dm_maxvistracks), true)
+    SetExtState(SCRIPT,'dm_showtrackname',tostring(lvar.dm_showtrackname), true)
 
     SetExtState(SCRIPT,'trmix_panelsz',tostring(lvar.trmix_panelsz), true)
 
