@@ -16,7 +16,7 @@
   local lvar = {}
   local cbi = {}
 
-  lvar.scriptver = '0.94.0152' --Script Version
+  lvar.scriptver = '0.94.0153' --Script Version
 
   lvar.savesettingstofile = true
 
@@ -49698,6 +49698,7 @@ function GUI_DrawCtlBitmap_Strips()
 
         if lvar.sapd.stripdata and #lvar.sapd.stripdata.fx == 1 and lvar.sapd.selected then
           local fxident = GetPlugIdentifierFromChunk(lvar.sapd.stripdata.fx[1].fxchunk)
+          fxident = string.lower(fxident)
           local fnd
           local cnt = #lvar.sapd[lvar.sapd.selected].assoc
           for i = 1, cnt do
@@ -49719,6 +49720,7 @@ function GUI_DrawCtlBitmap_Strips()
           local fxident = GetPlugNameFromChunk3(lvar.sapd.stripdata.fx[1].fxchunk)
           if fxident then
             fxident = TrimStr(CropFXName(fxident))
+            fxident = string.lower(fxident)
             PlugDef_AddX(fxident, lvar.sapd[lvar.sapd.selected].fil, lvar.sapd[lvar.sapd.selected].fol, true)
             StripAssoc_RefreshAssData()
             lupd.update_stripass = true
@@ -49735,7 +49737,7 @@ function GUI_DrawCtlBitmap_Strips()
 
         if lvar.sapd.selected and lvar.sapd.assselected and lvar.sapd[lvar.sapd.selected].assoc[lvar.sapd.assselected] then
           local plug = lvar.sapd[lvar.sapd.selected].assoc[lvar.sapd.assselected]
-          PlugDef_SetDefaultX(plug, lvar.sapd[lvar.sapd.selected].fil, lvar.sapd[lvar.sapd.selected].fol)
+          PlugDef_SetDefaultX(string.lower(plug), lvar.sapd[lvar.sapd.selected].fil, lvar.sapd[lvar.sapd.selected].fol)
           StripAssoc_RefreshAssData()
           lupd.update_stripass = true
         end
@@ -74406,7 +74408,7 @@ function GUI_DrawCtlBitmap_Strips()
         elseif EB_Open == 4507 then
 
           if lvar.sapd then
-            local fxident = TrimStr(editbox.text)
+            local fxident = string.lower(TrimStr(editbox.text))
             if lvar.sapd.stripdata and #lvar.sapd.stripdata.fx == 1 and lvar.sapd.selected then
               if fxident and fxident ~= '' then
                 PlugDef_AddX(fxident, lvar.sapd[lvar.sapd.selected].fil, lvar.sapd[lvar.sapd.selected].fol, true)
