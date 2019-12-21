@@ -16,7 +16,7 @@
   local lvar = {}
   local cbi = {}
 
-  lvar.scriptver = '0.94.0150' --Script Version
+  lvar.scriptver = '0.94.0151' --Script Version
 
   lvar.savesettingstofile = true
 
@@ -42814,6 +42814,71 @@ function GUI_DrawCtlBitmap_Strips()
 
   end
 
+  function CheckControlAssignments()
+
+    local strip = tracks[track_select].strip
+    if strips and strips[strip] then
+
+      if #strips[strip][page].controls > 0 then
+
+        for i = 1, #strips[strip][page].controls do
+          local ctl = strips[strip][page].controls[i]
+          local track = GetTrack(ctl.tracknum or tracks[track_select].tracknum)
+          
+          local r, pn = reaper.TrackFX_GetParamName(track, ctl.fxnum, ctl.param, '')
+          if pn ~= ctl.param_info.paramname then
+            local cnt = reaper.TrackFX_GetNumParams(track, ctl.fxnum)-1
+            local fnd
+            
+            if ctl.param_info.paramname == 'Open GUI' then
+              if ctl.param ~= cnt + 3 then
+                fnd = cnt + 3
+              else
+                fnd = -1
+              end
+            elseif ctl.param_info.paramname == 'Offline' then
+              if ctl.param ~= cnt + 1 then
+                fnd = cnt + 1  
+              else
+                fnd = -1
+              end
+            elseif ctl.param_info.paramname == 'Off/Byp/Wet' then
+              if ctl.param ~= cnt + 2 then
+                fnd = cnt + 2  
+              else
+                fnd = -1
+              end
+            elseif ctl.param_info.paramname == 'Dummy' then
+              if ctl.param ~= cnt + 4 then
+                fnd = cnt + 4  
+              else
+                fnd = -1
+              end
+            else
+              for p = 0, cnt do
+                local r, pn = reaper.TrackFX_GetParamName(track, ctl.fxnum, p, '')
+                if pn == ctl.param_info.paramname then                        
+                  fnd = p
+                  break
+                end
+              end
+            end
+            if fnd and fnd ~= -1 then
+              ctl.param = fnd
+              ctl.param_info.paramnum = fnd
+              DBG('FIXED: '..ctl.param_info.paramname)
+            elseif fnd ~= -1 then
+              DBG('ERROR: '..ctl.param_info.paramname)            
+            end
+          else
+            --DBG(ctl.param_info.paramname..' OK')          
+          end
+        end
+      end
+    end
+      
+  end
+
   function RepatriateControls()
 
     local strip = tracks[track_select].strip
@@ -53994,7 +54059,7 @@ function GUI_DrawCtlBitmap_Strips()
         end
         local mstr = 'Import Share Strip File (to '..impfol..' folder)|Batch Import Folder Of Share Strips||'
                       .. export .. 'Export Share Strip File ('..exportstrip..')|'..ass..'Batch Export All Strips In Folder As Share Strip Files'..
-                      '||'..ass..'Associate All Strips With Plugins|Strip Association Manager||'..fbs..'Show Additional Folder Buttons'
+                      '||'..ass..'Associate All Strips In Folder With Plugins|Strip Association Manager||'..fbs..'Show Additional Folder Buttons'
 
         gfx.x = mx
         gfx.y = my
@@ -55441,7 +55506,7 @@ function GUI_DrawCtlBitmap_Strips()
 
       CreateStripCB()
 
-    elseif lvar.livemode == 2 and lvar.trmix_show and (MOUSE_click(obj.sections[5024]) or MOUSE_click_RB(obj.sections[5024])) then
+    elseif lvar.livemode == 2 and lvar.trbtns_show and lvar.trmix_show and (MOUSE_click(obj.sections[5024]) or MOUSE_click_RB(obj.sections[5024])) then
 
       if lvar.analyzer.active and lvar.analyzer.showcontrols and MOUSE_click(obj.sections[5047]) then
 
@@ -64558,7 +64623,7 @@ function GUI_DrawCtlBitmap_Strips()
                 cpp = '#'
               end
 
-              cp = cpp..'Paste||Repatriate Lost Controls'
+              cp = cpp..'Paste||Check Control Assignments||Repatriate Lost Controls'
               local mstr = cp
               gfx.x, gfx.y = mouse.mx, mouse.my
               local res = OpenMenu(mstr)
@@ -64574,6 +64639,10 @@ function GUI_DrawCtlBitmap_Strips()
                 lupd.update_gfx = true
 
               elseif res == 2 then
+              
+                CheckControlAssignments()
+              
+              elseif res == 3 then
                 RepatriateControls()
               end
             end
@@ -76264,7 +76333,7 @@ function GUI_DrawCtlBitmap_Strips()
       end
       lvar.oseltrack = reaper.GetSelectedTrack2(0,0,true)
 
-    elseif #ctls_orr > 0 then
+    elseif ctls_orr and #ctls_orr > 0 then
       UpdateORR(rt, ctls_orr)
     end
 
