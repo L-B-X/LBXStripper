@@ -16,7 +16,7 @@
   local lvar = {}
   local cbi = {}
 
-  lvar.scriptver = '0.94.0151' --Script Version
+  lvar.scriptver = '0.94.0152' --Script Version
 
   lvar.savesettingstofile = true
 
@@ -42829,6 +42829,7 @@ function GUI_DrawCtlBitmap_Strips()
           if pn ~= ctl.param_info.paramname then
             local cnt = reaper.TrackFX_GetNumParams(track, ctl.fxnum)-1
             local fnd
+            local fndcnt = 0
             
             if ctl.param_info.paramname == 'Open GUI' then
               if ctl.param ~= cnt + 3 then
@@ -42857,13 +42858,22 @@ function GUI_DrawCtlBitmap_Strips()
             else
               for p = 0, cnt do
                 local r, pn = reaper.TrackFX_GetParamName(track, ctl.fxnum, p, '')
-                if pn == ctl.param_info.paramname then                        
-                  fnd = p
+                if pn == ctl.param_info.paramname then
+                  if ctl.param ~= p then                        
+                    fnd = p
+                    fndcnt = 1
+                  end
                   break
+                elseif string.match(pn, '.*'..ctl.param_info.paramname..'.*') or string.match(ctl.param_info.paramname, '.*'..pn..'.*') then
+                  --DBG('XXX'..pn)
+                  if ctl.param ~= p then                        
+                    fnd = p
+                  end
+                  fndcnt = fndcnt + 1
                 end
               end
             end
-            if fnd and fnd ~= -1 then
+            if fnd and fnd ~= -1 and fndcnt < 2 then
               ctl.param = fnd
               ctl.param_info.paramnum = fnd
               DBG('FIXED: '..ctl.param_info.paramname)
@@ -64771,7 +64781,8 @@ function GUI_DrawCtlBitmap_Strips()
             --local chunk = GetTrackChunk(track, settings_usetrackchunkfix)
             --local fnd, fxc, s, e = GetFXChunkFromTrackChunk(chunk,i+1 + flist_offset)
             --local fxident = GetPlugIdentifierFromChunk(fxc)
-            local _, fxident = string.lower(reaper.BR_TrackFX_GetFXModuleName(track, trackfx_select, '', 64))
+            local _, fxident = reaper.BR_TrackFX_GetFXModuleName(track, trackfx_select, '', 64)
+            fxident = string.lower(fxident)
             if plugdefstrips_idx then
               local idx = plugdefstrips_idx[fxident]
               if idx and plugdefstrips[idx] then
