@@ -16,7 +16,7 @@
   local lvar = {}
   local cbi = {}
 
-  lvar.scriptver = '0.94.0154' --Script Version
+  lvar.scriptver = '0.94.0155' --Script Version
 
   lvar.savesettingstofile = true
 
@@ -91111,8 +91111,9 @@ DBG(vald) ]]
     local sws = '2.10.0.1'
     local js = '0.961'
     local err
-
-    if not reaper.GetAppVersion() or (reaper.GetAppVersion() and string.match(reaper.GetAppVersion(),'(.+)/') < app) then
+    
+    --DBG(reaper.GetAppVersion())
+    if (string.match(reaper.GetAppVersion(),'(.+)[/]') or reaper.GetAppVersion()) < app then
       DBG('Stripper version '..lvar.scriptver..' requires Reaper version '..app..' or later')
       err = true
     end
