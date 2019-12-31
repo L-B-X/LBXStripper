@@ -16,7 +16,7 @@
   local lvar = {}
   local cbi = {}
 
-  lvar.scriptver = '0.94.0158' --Script Version
+  lvar.scriptver = '0.94.0159' --Script Version
 
   lvar.savesettingstofile = true
 
@@ -61291,12 +61291,9 @@ function GUI_DrawCtlBitmap_Strips()
       if tonumber(l) and tonumber(t) and tonumber(w) and tonumber(h) then
         lvar.fxpos = {l = tonumber(l), t = tonumber(t), w = tonumber(w), h = tonumber(h)}
 
-        local SCRIPT = lvar.SCRIPT
-        reaper.SetExtState(SCRIPT,'fxpos_l',tostring(l), true)
-        reaper.SetExtState(SCRIPT,'fxpos_t',tostring(t), true)
-        reaper.SetExtState(SCRIPT,'fxpos_w',tostring(w), true)
-        reaper.SetExtState(SCRIPT,'fxpos_h',tostring(h), true)
+        SaveSettings()        
       end
+      lupd.update_gfx = true
     end
 
   end
@@ -82622,6 +82619,7 @@ function GUI_DrawCtlBitmap_Strips()
 
   function xGES(key, nilallowed, data)
     val = data[key]
+    --DBG(key..'  '..tostring(val))
     if nilallowed then
       if val == '' or val == 'nil' then
         val = nil
@@ -83219,6 +83217,11 @@ function GUI_DrawCtlBitmap_Strips()
     end
 
     SetExtState(SCRIPT,'striploadoverride', lvar.striploadoverride or '', true)
+
+    SetExtState(SCRIPT,'fxpos_l',tostring(lvar.fxpos.l), true)
+    SetExtState(SCRIPT,'fxpos_t',tostring(lvar.fxpos.t), true)
+    SetExtState(SCRIPT,'fxpos_w',tostring(lvar.fxpos.w), true)
+    SetExtState(SCRIPT,'fxpos_h',tostring(lvar.fxpos.h), true)
 
     if lvar.savesettingstofile then
       file:close()
