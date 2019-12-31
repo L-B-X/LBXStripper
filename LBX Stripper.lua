@@ -16,7 +16,7 @@
   local lvar = {}
   local cbi = {}
 
-  lvar.scriptver = '0.94.0157' --Script Version
+  lvar.scriptver = '0.94.0158' --Script Version
 
   lvar.savesettingstofile = true
 
@@ -30259,8 +30259,8 @@ function GUI_DrawCtlBitmap_Strips()
       elseif cc == ctlcats.tracksend then
         if not track then return end
         local param = ctl.param
-        ctl.val = v
-        ctl.dirty = true
+        --ctl.val = v
+        --ctl.dirty = true
         STSI_denorm(track,param,v,c,strip,page)
 
       elseif cc == ctlcats.takeswitcher then
@@ -43999,7 +43999,8 @@ function GUI_DrawCtlBitmap_Strips()
                 '|'..mo7..'Pop Up Only Mode|'..mo9..'Single Pop Up Only Mode||'..mo8..'Enable SK2 Touch||<'..mt..'Show Track Name On Surface (DM Mode)'
 
       else
-        mmstr = '||>#Mix Mode Options|Horizontal Layout|Vertical Layout||Align Left/Top||Fade Stack When Strip Popped|Fade Alpha||Disable Stack When Strip Popped|Pop Up Only Mode|Single Pop Up Only Mode||<Enable SK2 Touch'
+        mmstr = '||>#Mix Mode Options|Horizontal Layout|Vertical Layout||Align Left/Top||Fade Stack When Strip Popped|Fade Alpha||Disable Stack When Strip Popped|Pop Up Only Mode|'..
+                'Single Pop Up Only Mode||Enable SK2 Touch||<Show Track Name On Surface (DM Mode)'
       end
 
       local bstr = ''
