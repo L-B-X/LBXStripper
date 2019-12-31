@@ -16,7 +16,7 @@
   local lvar = {}
   local cbi = {}
 
-  lvar.scriptver = '0.94.0156' --Script Version
+  lvar.scriptver = '0.94.0157' --Script Version
 
   lvar.savesettingstofile = true
 
@@ -30309,7 +30309,12 @@ function GUI_DrawCtlBitmap_Strips()
 
         --local state = FXMulti_GetState(track, ctl)
         FXMulti_SetAddFX(ctl, state)
-
+      
+      elseif cc == ctlcats.switcher_pagesel and v == 1 then
+        Switcher_ClickPageButton(c)
+        ctl.val = 1
+        SetCtlDirty(c)
+        
       end
       if ctl.midiout then SendMIDIMsg(ctl.midiout,v) end
 
@@ -68639,7 +68644,8 @@ function GUI_DrawCtlBitmap_Strips()
                        ctl.ctlcat == ctlcats.midictl or
                        ctl.ctlcat == ctlcats.takeswitcher or
                        ctl.ctlcat == ctlcats.macro or
-                       ctl.ctlcat == ctlcats.rs5k then
+                       ctl.ctlcat == ctlcats.rs5k or 
+                       ctl.ctlcat == ctlcats.switcher_pagesel then
                       local strip = tracks[track_select].strip
                       --Add / Remove
                       local ctlidx = GetSnapshotCtlIdx(strip, page, sstype_select, i)
@@ -87539,7 +87545,8 @@ DBG(t.. '  '..trigtime)
                    ctl.ctlcat == ctlcats.midictl or
                    ctl.ctlcat == ctlcats.takeswitcher or
                    ctl.ctlcat == ctlcats.rs5k or
-                   ctl.ctlcat == ctlcats.fxmulti then
+                   ctl.ctlcat == ctlcats.fxmulti or 
+                   ctl.ctlcat == ctlcats.switcher_pagesel then
                   if ctl.ctltype ~= 5 then
                     local track = GetTrack(nz(ctl.tracknum,strips[strip].track.tracknum))
                     local cc = ctl.ctlcat
