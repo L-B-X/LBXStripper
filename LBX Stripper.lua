@@ -16,7 +16,7 @@
   local lvar = {}
   local cbi = {}
 
-  lvar.scriptver = '0.94.0155' --Script Version
+  lvar.scriptver = '0.94.0156' --Script Version
 
   lvar.savesettingstofile = true
 
@@ -82194,7 +82194,7 @@ function GUI_DrawCtlBitmap_Strips()
 
                         --load control images - reshuffled to ensure no wasted slots between sessions
                         local iidx
-                        local knob_sel = fidx[ctl.ctl_info.fn]
+                        local knob_sel = fidx[strips[ss][p].controls[c].ctl_info.fn]
                         if knob_sel then
                           strips[ss][p].controls[c].knob_select = knob_sel
 
