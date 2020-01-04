@@ -16,7 +16,7 @@
   local lvar = {}
   local cbi = {}
 
-  lvar.scriptver = '0.94.0159' --Script Version
+  lvar.scriptver = '0.94.0160' --Script Version
 
   lvar.savesettingstofile = true
 
@@ -54084,7 +54084,7 @@ function GUI_DrawCtlBitmap_Strips()
         local res = gfx.showmenu(mstr)
         if res > 0 then
           if res == 1 then
-            local stripfn = StripShare_Import('')
+            local stripfn = StripShare_Import()
             loadstrip = LoadStrip(nil, impfol, stripfn)
             if loadstrip then
               local sfxi = GetStripFXInfo(nil, loadstrip)
@@ -67957,7 +67957,7 @@ function GUI_DrawCtlBitmap_Strips()
           elseif res == 9 then
             StripShare_Export(strip_folders[stripfol_select].fn..'/', strip_files[strip_select].fn)
           elseif res == 10 then
-            StripShare_Import('')
+            StripShare_Import()
 
           elseif res == 11 then
             Strip_SetPlugDef(strip_select, stripfol_select)
