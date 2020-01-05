@@ -16,7 +16,7 @@
   local lvar = {}
   local cbi = {}
 
-  lvar.scriptver = '0.94.0160' --Script Version
+  lvar.scriptver = '0.94.0161' --Script Version
 
   lvar.savesettingstofile = true
 
@@ -61034,7 +61034,7 @@ function GUI_DrawCtlBitmap_Strips()
 
     elseif not mouse.ctrl and MOUSE_click(obj.sections[3001]) then
 
-      settings_gridsize = settings_gridsize * 2
+      settings_gridsize = math.min(settings_gridsize * 2,256)
       ogrid = settings_gridsize
       lupd.update_gfx = true
 
@@ -61046,7 +61046,7 @@ function GUI_DrawCtlBitmap_Strips()
 
     elseif not mouse.ctrl and MOUSE_click_RB(obj.sections[3001]) then
 
-      settings_gridsize = math.floor(settings_gridsize / 2)
+      settings_gridsize = math.max(math.floor(settings_gridsize / 2),1)
       ogrid = settings_gridsize
       lupd.update_gfx = true
 
