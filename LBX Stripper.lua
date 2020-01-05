@@ -16,7 +16,7 @@
   local lvar = {}
   local cbi = {}
 
-  lvar.scriptver = '0.94.0161' --Script Version
+  lvar.scriptver = '0.94.0162' --Script Version
 
   lvar.savesettingstofile = true
 
@@ -62280,7 +62280,11 @@ function GUI_DrawCtlBitmap_Strips()
 
         elseif show_ctlbrowser and MOUSE_over(obj.sections[209]) then
 
-          local v = (gfx.mouse_wheel/120)*6
+          local slh = math.floor(lvar.ctlbrowser_btnh*pnl_scale)
+          local buttslots = math.floor(obj.sections[209].h / slh)
+          
+          local v = (gfx.mouse_wheel/120)*buttslots
+          
           lvar.ctlbrowser_offs = F_limit(lvar.ctlbrowser_offs-v,0,lvar.ctlbrowserfavs_max-2+#lvar.ctlbrowserbutt_table)
           lupd.update_surface = true
           noscroll = true
