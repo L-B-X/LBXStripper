@@ -16,7 +16,7 @@
   local lvar = {}
   local cbi = {}
 
-  lvar.scriptver = '0.94.0162' --Script Version
+  lvar.scriptver = '0.94.0163' --Script Version
 
   lvar.savesettingstofile = true
 
@@ -2403,7 +2403,8 @@
     local loadfn, path
     DBGOut('IMPORT SHARESTRIP - Get Filename')
     local retval = true
-    if not fn then
+    
+    if (fn or '') == '' then
       retval, fn = reaper.GetUserFileNameForRead(paths.share_path..'*', 'Load Strip Share File', '.sharestrip')
     end
     if retval then
