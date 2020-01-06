@@ -16,7 +16,7 @@
   local lvar = {}
   local cbi = {}
 
-  lvar.scriptver = '0.94.0163' --Script Version
+  lvar.scriptver = '0.94.0164' --Script Version
 
   lvar.savesettingstofile = true
 
@@ -86569,7 +86569,7 @@ function GUI_DrawCtlBitmap_Strips()
 
               for ss = 1, #snaptbl.data do
 
-                if snapctls[ss].stage == stage then
+                if snapctls[ss] and snapctls[ss].stage == stage then
                   local c = snaptbl.data[ss].ctl
                   local v = snaptbl.data[ss].dval
                   local nv = snaptbl.data[ss].val
