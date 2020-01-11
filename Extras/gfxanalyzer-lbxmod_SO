@@ -1,0 +1,1963 @@
+desc:Frequency Spectrum Analyzer Meter (Cockos + LBX Mod (SO))
+//tags: analysis FFT meter spectrum
+//author: Cockos -Modded by LBX
+/*
+Copyright (C) 2007 Cockos Incorporated
+License: LGPL - http://www.gnu.org/licenses/lgpl.html
+*/
+/*
+- LBX Modifications:
+* Accepts more than 2 input channels (in pairs)
+* Added horizontal zoom and scrolling and vertical scrolling
+* Removed GUI controls (controlled externally via automation)
+* Added sliders to adjust fill amount, alpha, and line thickness
+*/
+
+slider1:6<0,9,1{16,32,64,128,256,512,1024,2048,4096,8192,16384,32768}>FFT size
+slider2:-120<-450,-12,6>floor
+slider3:0<0,1,1{disabled,enabled}>-show phase
+slider4:2<0,3,1{rectangular,hamming,blackman-harris,blackman}>window
+slider5:500<0,2500,1>integration time (ms)
+slider6:0<0,12,0.1>slope (dB/octave)
+slider7:1000<10,10000,1>octave gain center (Hz)
+slider8:1<1,25,0.01>zoom freq
+slider9:0<0,1,0.001>focus freq
+slider10:0<0,1,0.001>focus dB
+slider11:1<0,1,1>Fill
+slider12:0.1<0,1,0.01>FillAlpha
+slider13:1<0,1,1>-Chan1+2 On/Off
+slider14:1<0,1,1>-Chan3+4 On/Off
+slider15:1<0,1,1>-Chan5+6 On/Off
+slider16:1<0,1,1>-Chan7+8 On/Off
+slider17:1<0,1,1>-Chan9+10 On/Off
+slider18:1<0,1,1>-Chan11+12 On/Off
+slider19:1<0,1,1>-Chan13+14 On/Off
+slider20:1<0,1,1>-Chan15+16 On/Off
+slider21:1<0,1,1>-Chan17+18 On/Off
+slider22:3<0,3,1>-Line Thickness
+slider23:20<1,50,1>Line Rounding
+slider24:0<-1,1,0.01>Bias
+slider25:0<0,50,1>Avg Smoothing 
+//slider26:1<1,50,1>-Smooth Width
+
+in_pin:left input
+in_pin:right input
+in_pin:left input 2
+in_pin:right input 2
+in_pin:left input 3
+in_pin:right input 3
+in_pin:left input 4
+in_pin:right input 4
+in_pin:left input 5
+in_pin:right input 5
+in_pin:left input 6
+in_pin:right input 6
+
+options:no_meter
+
+@init
+gmode = 0;
+PI = 3.147;
+
+gpoints_x = 4000000;
+gpoints_y = 4010000;
+
+points_x = 4020000;
+points_y = 4030000;
+
+//gc1points_x = 4060000;
+//gc1points_y = 4070000;
+//gc2points_x = 4080000;
+//gc2points_y = 4090000;
+
+/*c1points_x = 4020000;
+c1points_y = 4030000;
+c2points_x = 4040000;
+c2points_y = 4050000;
+bezpoint = 4060000;
+
+rhs = 4100000;
+tmp = 4110000;~*/
+
+offs1 = 200000;
+offs2 = 400000;
+offs3 = 600000;
+offs4 = 800000;
+offs5 = 1000000;
+gfx_ext_retina=1.0;
+ext_nodenorm=1;
+recpos=0;
+recpos1=offs1;
+recpos2=offs2;
+recpos3=offs3;
+recpos4=offs4;
+recpos5=offs5;
+max_fft_size=32768;
+fftsize=max_fft_size; 
+gfx_clear=-1;
+windowtype=-1;
+windowtype1=-1;
+windowtype2=-1;
+windowtype3=-1;
+windowtype4=-1;
+windowtype5=-1;
+fftidx=-1;
+
+histsize=max_fft_size + (max_fft_size*0.5 - 1);
+window=histsize;
+window1=histsize+offs1;
+window2=histsize+offs2;
+window3=histsize+offs3;
+window4=histsize+offs4;
+window5=histsize+offs5;
+fftworkspace=window+(max_fft_size*0.5 + 1);
+integrate_buf = fftworkspace + max_fft_size*2;
+fftworkspace1=window1+(max_fft_size*0.5 + 1);
+integrate_buf1 = fftworkspace1 + max_fft_size*2;
+fftworkspace2=window2+(max_fft_size*0.5 + 1);
+integrate_buf2 = fftworkspace2 + max_fft_size*2;
+fftworkspace3=window3+(max_fft_size*0.5 + 1);
+integrate_buf3 = fftworkspace3 + max_fft_size*2;
+fftworkspace4=window4+(max_fft_size*0.5 + 1);
+integrate_buf4 = fftworkspace4 + max_fft_size*2;
+fftworkspace5=window5+(max_fft_size*0.5 + 1);
+integrate_buf5 = fftworkspace5 + max_fft_size*2;
+
+@slider
+old_w=0;
+
+@block
+slider2 != lfloor ? (
+  lfloor = slider2;
+  minvol=2*exp(log(10)/20*slider2);
+);
+
+@sample
+abs(recpos[]=spl0+spl1) > minvol ? update=1;
+recpos = ((recpos+1) >= histsize ? 0 : (recpos+1));
+
+abs(recpos1[]=spl2+spl3) > minvol ? update1=1;
+recpos1 = ((recpos1+1) >= offs1 + histsize ? offs1 : (recpos1+1));
+
+abs(recpos2[]=spl4+spl5) > minvol ? update2=1;
+recpos2 = ((recpos2+1) >= offs2 + histsize ? offs2 : (recpos2+1));
+
+abs(recpos3[]=spl6+spl7) > minvol ? update3=1;
+recpos3 = ((recpos3+1) >= offs3 + histsize ? offs3 : (recpos3+1));
+
+abs(recpos4[]=spl8+spl9) > minvol ? update4=1;
+recpos4 = ((recpos4+1) >= offs4 + histsize ? offs4 : (recpos4+1));
+
+abs(recpos5[]=spl10+spl11) > minvol ? update5=1;
+recpos5 = ((recpos5+1) >= offs5 + histsize ? offs5 : (recpos5+1));
+
+@gfx 640 400
+ 
+gfx_ext_retina>1 ? gfx_setfont(1,"Arial",16*gfx_ext_retina,'b') : gfx_setfont(0);
+
+function draw_button(xp, yp, str) 
+  instance(w,h,x,y) 
+  globals(gfx_r,gfx_g,gfx_b,gfx_x,gfx_y) 
+(
+  gfx_measurestr(str, w, h);
+  xp -= w+3;
+  x=xp;
+  y=yp;
+  gfx_set(0,0,.75);
+  w+=3;
+  h+=3;
+  gfx_rect(x,y,w,h);
+  gfx_set(0,.5,1);
+  gfx_line(x,y,x+w,y);
+  gfx_line(x+w,y,x+w,y+h);
+  gfx_line(x,y+h,x+w,y+h);
+  gfx_line(x,y,x,y+h);
+  h+=1;
+  w+=1;
+  gfx_x=xp+2; gfx_y=yp+2;
+  gfx_drawstr(str);
+  gfx_x = xp;
+);
+function hit_button(xp,yp,cm) 
+  instance(w,h,x,y) 
+  globals(cap_mode, cap_last_x, cap_last_y) 
+( 
+  xp>=x&&yp>=y&&xp<x+w&&yp<y+h ? (
+    cap_last_x = xp;
+    cap_last_y = yp;
+    cap_mode=cm;
+  );
+);
+
+function drag_slider(x, y, z, dx)
+  globals(mouse_y, cap_last_y, cap_drag)
+(
+  x = min(max(x + dx * (cap_last_y-mouse_y),y),z);
+  cap_last_y=mouse_y;
+  cap_drag=1;
+  x;
+);
+
+function drag_slider_precise(x, y, z, dx)
+  globals(mouse_cap)
+(
+  (mouse_cap & 4) ? dx *= 0.1;
+  drag_slider(x, y, z, dx);
+);
+
+function cycle_slider(x, y, z, dx)
+  globals(last_mouse_cap)
+(
+  (last_mouse_cap & 16) ? x -= dx : x += dx;
+  y > z ? ( dx=y; y=z; z=dx; );
+  x > z ? y : x < y ? z : x;
+);
+
+function GetFirstControlPoints_X()
+  local(b,i)
+  globals(c1points_x,points,rhs,tmp)
+(
+  //int n = rhs.Length;
+  //double[] x = new double[n]; // Solution vector.
+  //double[] tmp = new double[n]; // Temp workspace.
+
+  b = 2.0;
+  c1points_x[0] = rhs[0] / b;
+  i=1;
+  loop(points-1,
+    tmp[i] = 1 / b;
+    i < points - 1 ? ( b = 4 - tmp[i]; ) : ( b = 3.5 - tmp[i];);
+    
+    //b = (i < points - 1 ? 4.0 : 3.5) - tmp[i];
+    c1points_x[i] = (rhs[i] - c1points_x[i - 1]) / b;
+    i+=1;
+  );
+  i=1;
+  loop(points-1,
+    c1points_x[points - i - 1] -= tmp[points - i] * c1points_x[points - i]; // Backsubstitution.
+    i+=1;
+  );  
+  
+  //for (int i = 1; i < n; i++) // Decomposition and forward substitution.
+  //{
+  //  tmp[i] = 1 / b;
+  //  b = (i < n - 1 ? 4.0 : 3.5) - tmp[i];
+  //  x[i] = (rhs[i] - x[i - 1]) / b;
+  //}
+  //for (int i = 1; i < n; i++)
+  //  x[n - i - 1] -= tmp[n - i] * x[n - i]; // Backsubstitution.
+
+  //return x;
+);
+
+function GetFirstControlPoints_Y()
+  local(b,i)
+  globals(c1points_y,points,rhs,tmp)
+(
+  //int n = rhs.Length;
+  //double[] x = new double[n]; // Solution vector.
+  //double[] tmp = new double[n]; // Temp workspace.
+
+  b = 2.0;
+  c1points_y[0] = rhs[0] / b;
+  i=1;
+  loop(points-1,
+    tmp[i] = 1 / b;
+    i < points - 1 ? ( b = 4 - tmp[i]; ) : ( b = 3.5 - tmp[i];);
+    c1points_y[i] = (rhs[i] - c1points_y[i - 1]) / b;
+    i+=1;
+  );
+  i=1;
+  loop(points-1,
+    c1points_y[points - i - 1] -= tmp[points - i] * c1points_y[points - i]; // Backsubstitution.
+    i+=1;
+  );  
+  
+  //for (int i = 1; i < n; i++) // Decomposition and forward substitution.
+  //{
+  //  tmp[i] = 1 / b;
+  //  b = (i < n - 1 ? 4.0 : 3.5) - tmp[i];
+  //  x[i] = (rhs[i] - x[i - 1]) / b;
+  //}
+  //for (int i = 1; i < n; i++)
+  //  x[n - i - 1] -= tmp[n - i] * x[n - i]; // Backsubstitution.
+
+  //return x;
+);
+
+function PointOnCubicBezier(cp1x, cp1y, cp2x, cp2y, cp3x, cp3y, cp4x, cp4y, t)
+    local  (ax, bx, cx, ay, by, cy, tSquared, tCubed)
+    global (bezpoint)
+( 
+  /* calculation of the polinomial coeficients */
+ 
+    cx = 3.0 * (cp2x - cp1x);
+    bx = 3.0 * (cp1x - cp2x) - cx;
+    ax = cp4x - cp1x - cx - bx;
+ 
+    cy = 3.0 * (cp2y - cp1y);
+    by = 3.0 * (cp3y - cp2y) - cy;
+    ay = cp4y - cp1y - cy - by;
+ 
+  --  /* calculate the curve point at parameter value t */
+ 
+    tSquared = t * t;
+    tCubed = tSquared * t;
+ 
+    bezpoint[0] = (ax * tCubed) + (bx * tSquared) + (cx * t) + cp1x;
+    bezpoint[1] = (ay * tCubed) + (by * tSquared) + (cy * t) + cp1y;
+ 
+);
+
+function CosineInterpolate(y1,y2,mu)
+  global (ret,PI)
+  local (mu2)
+(
+   mu2 = (1-cos(mu*PI))/2;
+   ret = (y1*(1-mu2)+y2*mu2);
+   ret; 
+);
+
+/*
+   Tension: 1 is high, 0 normal, -1 is low
+   Bias: 0 is even,
+         positive is towards first segment,
+         negative towards the other
+*/
+function HermiteInterpolate(y0,y1,y2,y3,mu,tension,bias)
+  global (ret,PI)
+  local (m0,m1,mu2,mu3,a0,a1,a2,a3)
+(
+
+  mu2 = mu * mu;
+  mu3 = mu2 * mu;
+   m0  = (y1-y0)*(1+bias)*(1-tension)/2;
+   m0 += (y2-y1)*(1-bias)*(1-tension)/2;
+   m1  = (y2-y1)*(1+bias)*(1-tension)/2;
+   m1 += (y3-y2)*(1-bias)*(1-tension)/2;
+   a0 =  2*mu3 - 3*mu2 + 1;
+   a1 =    mu3 - 2*mu2 + mu;
+   a2 =    mu3 -   mu2;
+   a3 = -2*mu3 + 3*mu2;
+
+   ret = (a0*y1+a1*m0+a2*m1+a3*y2);
+   ret;
+);
+
+function Smooth1(y0,y1,y2,y3,y4)
+  global (smoothret)
+(
+  smoothret = (y0+2*y1+3*y2+2*y3+y4)/9;
+  smoothret;
+);
+
+function Smooth2(y,w,minp,maxp)
+  global (smoothret)
+  local (n,c,d,r)
+(
+  c = 1;
+  r = 0;
+  d = 0;
+  loop(w,
+    c <= ceil(w/2) ? (
+      n=c;
+    ) : (
+      n=(w-c+1);
+    );
+    d+=n;
+    (y+(c-1) >= 0 && y+(c-1) <= maxp) ? (
+      r += n*y[c-1]; 
+    );
+    c+=1;
+  );  
+  smoothret = r/d;
+  smoothret;
+);
+/*(mouse_cap & 1) ? (
+   !(last_mouse_cap & 1) ? (
+       (cap_mode == 1||cap_mode == 4) && !cap_drag && cap_timer < 12 ? (
+         cap_mode == 1 ? (
+            slider2 = -120;
+            slider_automate(slider2);
+          ) : (
+            slider5 = 0;
+            slider_automate(slider5);
+          );
+         cap_mode=0;
+         old_w=0;
+       ) : (
+         cap_mode = cap_drag = cap_timer = 0;
+         phase_button.hit_button(mouse_x,mouse_y,-1) ? (
+           slider3=!slider3;
+           slider_automate(slider3);
+           old_w = 0;
+         ) : (
+           floor_button.hit_button(mouse_x,mouse_y,1)||
+           window_button.hit_button(mouse_x,mouse_y,2)||
+           fft_button.hit_button(mouse_x,mouse_y,3)||
+           integrate_button.hit_button(mouse_x,mouse_y,4)||
+           slope_button.hit_button(mouse_x,mouse_y,5);
+         );
+       );
+    );
+    cap_mode == 1 && cap_last_y != mouse_y ? (
+      slider2 = drag_slider_precise(slider2, -450, -12, 0.2);
+      old_w=0;
+      slider_automate(slider2);
+    );
+    cap_mode == 2 && cap_last_y != mouse_y ? (
+      slider4 = drag_slider(slider4, 0.0, 3.0, .03);
+      old_w=0;
+      slider_automate(slider4);
+    );
+    cap_mode == 3 && cap_last_y != mouse_y ? (
+      slider1 = drag_slider(slider1, 0.0, 11.0, .03);
+      old_w=0;
+      slider_automate(slider1);
+    );
+    cap_mode == 4 && cap_last_y != mouse_y ? (
+      slider5 = drag_slider_precise(slider5, 0.0, 2500.0, 5);
+      old_w=0;
+      slider_automate(slider5);
+    );
+    cap_mode == 5 && cap_last_y != mouse_y ? (
+      slider6 = drag_slider_precise(slider6, 0.0, 12.0, .1);
+      old_w=0;
+      slider_automate(slider6);
+    );
+) :
+(last_mouse_cap & 1) && !cap_drag ? (
+  cap_mode == 2 ? (
+    slider4 = cycle_slider(slider4, 0.0, 3.0, 1.0);
+    old_w=0;
+    slider_automate(slider4);
+  );
+  cap_mode == 3 ? (
+    slider1 = cycle_slider(slider1, 0.0, 11.0, 1.0);
+    old_w=0;
+    slider_automate(slider1);
+  );
+);*/ 
+
+linethick = slider22;
+
+cap_mode && cap_timer < 12 ? cap_timer += 1;
+last_mouse_cap = mouse_cap;
+
+// only update if new fft data is there or if the size changed
+update || update1 || update2 || update3 || update4 || update5 || old_w != gfx_w || old_h!=gfx_h? (
+
+old_w=gfx_w; old_h=gfx_h;
+
+gfx_r=gfx_g=gfx_b=0; gfx_a=1;
+gfx_x=gfx_y=0;
+gfx_rectto(gfx_w,gfx_h);
+
+sc=(gfx_h-20)*20/(-slider2 * log(10));
+
+mmm = abs(gfx_h-(-450/slider2)*gfx_h);
+offy = max(min(ceil(slider10*mmm),mmm),0); //((slider2/gfx_h)));
+
+// draw horz grid
+gfx_r=gfx_g=gfx_b=0.6;
+gfx_a=0.5;
+gv=1;
+cnt=100;
+gfx_y=-100;
+while(
+  y=20-log(gv)*sc-offy;
+  y> gfx_y ? (
+    gfx_line(0,y,gfx_w,y,0);
+    bottom_line = gfx_y;
+    gfx_x=0; 
+    gfx_y=y+2;
+    gfx_drawnumber(log10(gv)*20,0);
+    gfx_drawchar($'d');
+    gfx_drawchar($'B');
+    gfx_y+=gfx_texth;
+  );
+  gv*=0.5;
+
+  gfx_y<gfx_h && cnt-=1 > 0;
+);
+
+
+wsc=gfx_w/log(1+400);
+
+//offx = ceil(slider9*((gfx_w*slider8)-gfx_w));
+zm = ((gfx_w)*slider8);
+offx = ceil(slider9*zm - gfx_w/2);
+offx = max(offx,0);
+offx = min(offx,(gfx_w)*slider8-gfx_w);
+
+// draw vert grid
+f=20;
+gfx_x+=4;
+lx=gfx_x;
+while(
+  tx = log(1.0+(f/srate*2.0)*400)*wsc;
+  tx*=slider8;
+  tx-=offx;
+  dotext = tx > gfx_x && f!=40 && f!=4000 && f != 15000 &&
+     (f<400 || f >= 1000 || f == 500) && (f<6000 || f>=10000);
+  tx > lx ? ( lx=tx+4; gfx_line(tx,0,tx,gfx_h - (dotext ? 0 : gfx_texth+2),0); );
+  dotext ? (
+    gfx_x=tx +3;
+    gfx_y = gfx_h-gfx_texth;
+    f>=1000 ? gfx_printf("%dkHz",f*.001) : gfx_printf("%dHz",f);
+  );
+  f += (f<100?10:f<1000?100:f<10000?1000:5000);
+  f < srate*0.5;
+);
+
+//draw freq focus marker
+ff_tw = gfx_w * slider8;
+ff_x = slider9 * ff_tw - offx; //+ (offx*(1/slider8));
+gfx_r=gfx_g=gfx_b=0.8;
+gfx_a=1;
+gfx_triangle(ff_x-4,gfx_h,ff_x+4,gfx_h,ff_x,gfx_h-6);
+
+
+/*fft_button.draw_button(gfx_w, 0, sprintf(#,"%s%d",gfx_w<400?"":"FFT: ",16<<slider1));
+window_button.draw_button(gfx_x-8, 0, 
+  (slider4|0)==1 ? "hamming" :  
+  (slider4|0)==2 ? "blackman-harris" :
+  (slider4|0)==3 ? "blackman" :
+  "rectangular"); 
+sprintf(#floorstr,"%s%.1fdB",gfx_w<420?"":"floor: ",slider2);
+sprintf(#intstr,"%s: %dms",gfx_w<420 ? "int" : "integrate", slider5|0);
+sprintf(#slopestr,"%s%.1fdB/oct",gfx_w<420?"":"slope: ",floor(slider6*10+0.5)/10);
+rowpos = gfx_w<700?gfx_texth+8:0;
+rowpos > 0 ? (
+  phase_button.draw_button(gfx_x-8,0, slider3?"phase on" : "phase off");
+  gfx_x=gfx_w;
+) : gfx_x-=8;
+
+floor_button.draw_button(gfx_x,rowpos,#floorstr);
+slope_button.draw_button(gfx_x-8,rowpos, #slopestr);
+integrate_button.draw_button(gfx_x-8,rowpos, #intstr);
+rowpos <= 0 ? phase_button.draw_button(gfx_x-8,rowpos, slider3?"phase on" : "phase off");
+*/
+
+update && slider13 == 1 ? (
+  update=0;
+
+  integrate_sc = 1;
+  slider5 > 0 ? (
+    integrate_now = time_precise();
+    integrate_en ? (
+      // fps = 1/(integrate_now - integrate_lastt);
+      integrate_sc -= exp(-5 * 1000.0 * (integrate_now - integrate_lastt) / slider5);
+    ) : (
+      // force overwrite of buffer
+      integrate_en = 1;
+    );
+    integrate_lastt = integrate_now;
+  ) : (
+    integrate_en = 0;
+  );
+
+  fftidx != (slider1|0) ? (
+    fftidx=slider1|0;
+    fftsize=2^(min(max(fftidx,0),11)+4);
+    integrate_sc=1;
+  );
+
+  windowsize != fftsize || windowtype != (slider4|0) ? (
+    windowtype=slider4|0; 
+    windowsize=fftsize;
+    dwindowpos = $pi*2/fftsize;
+    i=pwr=0;
+    loop(fftsize*.5+1,
+       windowpos=i*dwindowpos;
+       pwr += (window[i] = (
+         windowtype==1 ? 0.53836 - cos(windowpos)*0.46164 :
+         windowtype==2 ? 0.35875 - 0.48829 * cos(windowpos) + 0.14128 * cos(2*windowpos) - 0.01168 * cos(3*windowpos) :
+         windowtype==3 ? 0.42 - 0.50 * cos(windowpos) + 0.08 * cos(2.0*windowpos) :
+          1.0));
+       i+=1;
+    );
+    pwr=.5/(pwr*2-window[i-1]);
+    loop(fftsize*.5+1,window[i-=1]*=pwr);
+    integrate_sc=1;
+  );
+
+
+  buf1=recpos-fftsize;
+  buf1<0 ? buf1+=histsize;
+  buf2=window;
+  buf3=fftworkspace;
+  loop(fftsize*.5 + 1,
+    buf3[] = buf1[]*buf2[];
+    buf3+=1;
+
+    buf2+=1;
+    (buf1+=1) >= histsize ? buf1 -= histsize;
+  );
+  buf2-=1;
+  loop(fftsize*.5 - 1,
+    buf3[] = buf1[]*(buf2-=1)[];
+    buf3+=1;
+    (buf1+=1) >= histsize ? buf1 -= histsize;
+  );
+
+  fft_real(fftworkspace,fftsize);
+  fft_permute(fftworkspace,fftsize/2);
+  fftworkspace[1]=0;
+
+  ascale=gfx_h/$pi*0.25;
+  xscale=800/(fftsize-4);
+
+  buf3=fftworkspace;
+  buf2=integrate_buf+max_fft_size*0.5;
+  i=0;
+  lx=0;
+  slider3 ? loop(fftsize*0.5,
+    ang=-atan2(buf3[1],buf3[]);
+    buf3+=2;
+    
+    integrate_en ? (
+      ang = buf2[] += integrate_sc * (ang - buf2[]);
+      buf2+=1;
+    );
+    
+
+    ty2=ang*ascale + gfx_h*0.5;
+    tx = log(1.0+i*xscale)*wsc;
+
+    i ? 
+    ( 
+      gfx_r=0.6; gfx_g=0; gfx_b=0.8; gfx_a=1;
+      gfx_x=lx; gfx_y=ly2; gfx_lineto(tx,ty2,1) ;
+    );
+
+    lx=tx; ly2=ty2;
+    i+=1;
+  );  
+  
+  buf3=fftworkspace;
+  buf2=integrate_buf;
+  lx=0;
+  i=0;
+  points = 0;
+  fill_slmin=gfx_h;
+  fill_slast=0;
+  octavegain = floor(slider6*10+0.5) * ((log(10)*2.0/10.0)/(log(2)*20.0));
+  octavegainoffs = log(1 + slider7 * fftsize / srate);
+  loop(fftsize*0.5,   
+    ty = log(max(sqr(buf3[0])+sqr(buf3[1]),(10^(-500/20*2))));
+    octavegain > 0 ? ty += (log(i+1) - octavegainoffs)*octavegain;
+    buf3+=2;    
+
+    integrate_en ? (
+      ty = buf2[] += integrate_sc * (ty - buf2[]);
+      buf2+=1;
+    );
+    
+    ty = ty*-0.5*sc + 20;
+    tx = log(1.0+i*xscale)*wsc *slider8;
+
+    i ? 
+    ( 
+      gfx_r=gfx_g=1; gfx_b=0;
+      /*gfx_mode = gmode;
+      
+      slider11 == 1 ? (
+        gfx_a=slider12;
+        tx0=tx|0;
+        lx0=lx|0;
+        tx0>lx0? (
+          ly-offy < gfx_h || ty-offy < gfx_h ? gfx_triangle(lx0-offx,max(gfx_h,ly-offy),(lx0)-offx,ly-offy,(tx0-1)-offx,ty-offy,(tx0-1)-offx,max(gfx_h,ty-offy));
+        ) : (
+          tx0 > fill_slast ? (
+           fill_slast < gfx_h ? gfx_line(fill_slast-offx,gfx_h,fill_slast-offx,fill_slmin);
+           fill_slmin=gfx_h;
+          ) : (
+           fill_slmin=min(fill_slmin,ty-offy);
+          );
+        );
+        fill_slast=tx0;        
+      );  
+      gfx_mode = 0;*/
+
+      points == 0 ? (
+        gpoints_x[points] = lx-offx;
+        gpoints_y[points] = ly-offy;
+        gpoints_x[points+1] = tx-offx;
+        gpoints_y[points+1] = ty-offy;
+        points+=1;
+      ) : (
+        gpoints_x[points] = tx-offx;
+        gpoints_y[points] = ty-offy;
+        points+=1;      
+      );
+      
+      //loop(linethick,
+      //  gfx_x=lx-offx; gfx_y=ly-offy+lthick; gfx_lineto(tx-offx,ty-offy+lthick,1) ;
+      //  lthick+=1;
+      //);
+      //gfx_x=lx-offx; gfx_y=ly-offy+1; gfx_lineto(tx-offx,ty-offy+1,1) ;
+    );
+
+    ty<gfx_h ? update=1;
+
+    lx=tx; ly=ty; ly2=ty2;
+    i+=1;
+  );
+  
+  points > 0 ? (
+  
+    smooth = slider23;
+    skipsize = 1;
+    osz = skipsize;
+    ssz = 0;
+    smooth == 0 ? (
+      pcnt = 0;
+      loop(points-1,
+        pcnt < points ? (
+          ssz < 50 && pcnt > ssz ? (
+            skipsize *= 2;            
+            ssz = ssz + skipsize*ssz;
+          );
+          gfx_x=gpoints_x[pcnt]; 
+          gfx_y=gpoints_y[pcnt]; 
+          gfx_lineto(gpoints_x[min(pcnt+skipsize,points-1)],gpoints_y[min(pcnt+skipsize,points-1)],1);      
+          pcnt+=skipsize; 
+        );
+      );    
+    ) : (
+
+      pcnt = 0;
+      pos = 0;
+      my = -1;
+      myc = 0;
+
+      loop(points-1,
+        xx = gpoints_x[pcnt];
+        (xx >= ssz) || (pcnt == points-1) ? (
+          myc += 1;
+          my == -1 ? (
+            my = gpoints_y[pcnt];
+          ) : (
+            my = (my+gpoints_y[pcnt])/myc;
+          );
+          points_x[pos] = gpoints_x[pcnt];
+          points_y[pos] = my;
+          
+          myc = 0;
+          my = -1;
+          vvvvv = ((50-slider25)*10+10);
+          ssz += (gfx_w*slider8)/vvvvv;
+          pos += 1;
+        ) : (
+          myc += 1;
+          my = my+gpoints_y[pcnt];          
+        );
+        pcnt += 1;
+      );
+      
+      //pos = points;
+      /*ps_y = points_y;
+      ps_x = points_x;
+
+      smw = slider26*2-1;
+      smw > 1 ? (
+        sms = floor(smw/2);
+        loop(pos,
+          xx = ps_x[pcnt];
+          yy = Smooth2(ps_y+pcnt-sms,smw,ps_y,ps_y+pos);
+          points_x[pcnt] = xx;
+          points_y[pcnt] = yy;//gpoints_y[pcnt];
+          
+          pcnt+=1;
+        );          
+      );*/
+      
+      pcnt = 0;
+      ox = 0;
+      loop(pos-1,
+        
+        gfx_x=points_x[pcnt]; 
+        gfx_y=points_y[pcnt]; 
+        i = 0;
+        
+        gfX_r=gfx_g=1; gfx_b=0;
+        loop(smooth+1,
+          t = i / smooth;
+          bias = slider24;
+          pcnt < 2 ? ( bias = -1; );
+          ny = HermiteInterpolate(points_y[pcnt-1],points_y[pcnt],points_y[min(pcnt+1,pos-1)],points_y[min(pcnt+2,pos-1)],max(min(t,1),0),0,bias);
+          nx = points_x[pcnt] + (points_x[pcnt+1]-points_x[pcnt])*t;
+          
+          rt = max(ny,gfx_y);
+          floor(nx) > ox ? (
+            gfx_a = slider12;              
+            gfx_rect(gfx_x,rt,max(ceil(nx)-gfx_x,1),gfx_h-rt,1);
+            gfx_a = 1;
+          );
+          gfx_lineto(nx,ny,1);      
+          ox = floor(gfx_x);
+          i+=1; 
+        );
+
+        pcnt+=1;
+      );
+    );
+  );
+);
+
+update1 && slider14 == 1 ? (
+  update1=0;
+
+  integrate_sc1 = 1;
+  slider5 > 0 ? (
+    integrate_now1 = time_precise();
+    integrate_en1 ? (
+      // fps = 1/(integrate_now - integrate_lastt);
+      integrate_sc1 -= exp(-5 * 1000.0 * (integrate_now1 - integrate_lastt1) / slider5);
+    ) : (
+      // force overwrite of buffer
+      integrate_en1 = 1;
+    );
+    integrate_lastt1 = integrate_now1;
+  ) : (
+    integrate_en1 = 0;
+  );
+
+  fftidx != (slider1|0) ? (
+    fftidx=slider1|0;
+    fftsize=2^(min(max(fftidx,0),11)+4);
+    integrate_sc1=1;
+  );
+
+  windowsize1 != fftsize || windowtype1 != (slider4|0) ? (
+    windowtype1=slider4|0; 
+    windowsize1=fftsize;
+    dwindowpos1 = $pi*2/fftsize;
+    i=pwr=0;
+    loop(fftsize*.5+1,
+       windowpos1=i*dwindowpos1;
+       pwr += (window1[i] = (
+         windowtype1==1 ? 0.53836 - cos(windowpos1)*0.46164 :
+         windowtype1==2 ? 0.35875 - 0.48829 * cos(windowpos1) + 0.14128 * cos(2*windowpos1) - 0.01168 * cos(3*windowpos1) :
+         windowtype1==3 ? 0.42 - 0.50 * cos(windowpos1) + 0.08 * cos(2.0*windowpos1) :
+          1.0));
+       i+=1;
+    );
+    pwr=.5/(pwr*2-window1[i-1]);
+    loop(fftsize*.5+1,window1[i-=1]*=pwr);
+    integrate_sc1=1;
+  );
+
+
+  buf4=recpos1-fftsize;
+  buf4<recpos1 ? buf4+=histsize;
+  buf5=window1;
+  buf6=fftworkspace1;
+  loop(fftsize*.5 + 1,
+    buf6[] = buf4[]*buf5[];
+    buf6+=1;
+
+    buf5+=1;
+    (buf4+=1) >= histsize+offs1 ? buf4 -= histsize;
+  );
+  buf5-=1;
+  loop(fftsize*.5 - 1,
+    buf6[] = buf4[]*(buf5-=1)[];
+    buf6+=1;
+    (buf4+=1) >= histsize+offs1 ? buf4 -= histsize;
+  );
+
+  fft_real(fftworkspace1,fftsize);
+  fft_permute(fftworkspace1,fftsize/2);
+  fftworkspace1[1]=0;
+
+  ascale=gfx_h/$pi*0.25;
+  xscale=800/(fftsize-4);
+
+  buf6=fftworkspace1;
+  buf5=integrate_buf1+max_fft_size*0.5;
+  i=0;
+  lx=0;
+  slider3 ? loop(fftsize*0.5,
+    ang=-atan2(buf6[1],buf6[]);
+    buf6+=2;
+    
+    integrate_en1 ? (
+      ang = buf5[] += integrate_sc1 * (ang - buf5[]);
+      buf5+=1;
+    );
+    
+
+    ty2=ang*ascale + gfx_h*0.5;
+    tx = log(1.0+i*xscale)*wsc;
+
+    i ? 
+    ( 
+      gfx_r=0.6; gfx_g=0; gfx_b=0.8; gfx_a=1;
+      gfx_x=lx; gfx_y=ly2; gfx_lineto(tx,ty2,1) ;
+    );
+
+    lx=tx; ly2=ty2;
+    i+=1;
+  );  
+  
+  buf6=fftworkspace1;
+  buf5=integrate_buf1;
+  lx=0;
+  i=0;
+  points = 0;
+  fill_slmin=gfx_h;
+  fill_slast=0;
+  octavegain = floor(slider6*10+0.5) * ((log(10)*2.0/10.0)/(log(2)*20.0));
+  octavegainoffs = log(1 + slider7 * fftsize / srate);
+  loop(fftsize*0.5,   
+    ty = log(max(sqr(buf6[0])+sqr(buf6[1]),(10^(-500/20*2))));
+    octavegain > 0 ? ty += (log(i+1) - octavegainoffs)*octavegain;
+    buf6+=2;    
+
+    integrate_en1 ? (
+      ty = buf5[] += integrate_sc1 * (ty - buf5[]);
+      buf5+=1;
+    );
+    
+    ty = ty*-0.5*sc + 20;
+    tx = log(1.0+i*xscale)*wsc *slider8;
+
+    i ? 
+    ( 
+      //gfX_r=gfx_b=1; gfx_g=0;
+      /*gfx_mode = gmode;
+       
+      slider11 == 1 ? (
+        gfx_a=slider12;
+        tx0=tx|0;
+        lx0=lx|0;
+        tx0>lx0? (
+          ly-offy < gfx_h || ty-offy < gfx_h ? gfx_triangle(lx0-offx,max(gfx_h,ly-offy),(lx0)-offx,ly-offy,(tx0-1)-offx,ty-offy,(tx0-1)-offx,max(gfx_h,ty-offy));
+        ) : (
+          tx0 > fill_slast ? (
+           fill_slast < gfx_h ? gfx_line(fill_slast-offx,gfx_h,fill_slast-offx,fill_slmin);
+           fill_slmin=gfx_h;
+          ) : (
+           fill_slmin=min(fill_slmin,ty-offy);
+          );
+        );
+        fill_slast=tx0;        
+      );  
+      gfx_mode = 0;
+      gfx_a=1.0;
+      lthick = 0;
+      loop(linethick,
+        gfx_x=lx-offx; gfx_y=ly-offy+lthick; gfx_lineto(tx-offx,ty-offy+lthick,1) ;
+        lthick+=1;
+      );*/
+      //gfx_x=lx-offx; gfx_y=ly-offy+1; gfx_lineto(tx-offx,ty-offy+1,1) ;
+      
+      points == 0 ? (
+        gpoints_x[points] = lx-offx;
+        gpoints_y[points] = ly-offy;
+        gpoints_x[points+1] = tx-offx;
+        gpoints_y[points+1] = ty-offy;
+        points+=1;
+      ) : (
+        gpoints_x[points] = tx-offx;
+        gpoints_y[points] = ty-offy;
+        points+=1;      
+      );
+      
+    );
+
+    ty<gfx_h ? update1=1;
+
+    lx=tx; ly=ty; ly2=ty2;
+    i+=1;
+  );
+  
+  points > 0 ? (
+    smooth = slider23;
+    skipsize = 1;
+    osz = skipsize;
+    ssz = 0;
+    smooth == 0 ? (
+      pcnt = 0;
+      loop(points-1,
+        pcnt < points ? (
+          ssz < 50 && pcnt > ssz ? (
+            skipsize *= 2;            
+            ssz = ssz + skipsize*ssz;
+          );
+          gfx_x=gpoints_x[pcnt]; 
+          gfx_y=gpoints_y[pcnt]; 
+          gfx_lineto(gpoints_x[min(pcnt+skipsize,points-1)],gpoints_y[min(pcnt+skipsize,points-1)],1);      
+          pcnt+=skipsize; 
+        );
+      );    
+    ) : (
+  
+      pcnt = 0;
+      pos = 0;
+      my = -1;
+      myc = 0;
+  
+      loop(points-1,
+        xx = gpoints_x[pcnt];
+        (xx >= ssz) || (pcnt == points-1) ? (
+          myc += 1;
+          my == -1 ? (
+            my = gpoints_y[pcnt];
+          ) : (
+            my = (my+gpoints_y[pcnt])/myc;
+          );
+          points_x[pos] = gpoints_x[pcnt];
+          points_y[pos] = my;
+          
+          myc = 0;
+          my = -1;
+          vvvvv = ((50-slider25)*10+10);
+          ssz += (gfx_w*slider8)/vvvvv;
+          pos += 1;
+        ) : (
+          myc += 1;
+          my = my+gpoints_y[pcnt];          
+        );
+        pcnt += 1;
+      );
+            
+      pcnt = 0;
+      ox = 0;
+      loop(pos-1,
+        
+        gfx_x=points_x[pcnt]; 
+        gfx_y=points_y[pcnt]; 
+        i = 0;
+        
+        gfX_r=gfx_b=1; gfx_g=0;
+        loop(smooth+1,
+          t = i / smooth;
+          bias = slider24;
+          pcnt < 2 ? ( bias = -1; );
+          ny = HermiteInterpolate(points_y[pcnt-1],points_y[pcnt],points_y[min(pcnt+1,pos-1)],points_y[min(pcnt+2,pos-1)],max(min(t,1),0),0,bias);
+          nx = points_x[pcnt] + (points_x[pcnt+1]-points_x[pcnt])*t;
+          
+          rt = max(ny,gfx_y);
+          floor(nx) > ox ? (
+            gfx_a = slider12;              
+            gfx_rect(gfx_x,rt,max(ceil(nx)-gfx_x,1),gfx_h-rt,1);
+            gfx_a = 1;
+          );
+          gfx_lineto(nx,ny,1);      
+          ox = floor(gfx_x);
+          i+=1; 
+        );
+  
+        pcnt+=1;
+      );
+    );
+  );
+);
+
+
+update2 && slider15 == 1 ? (
+  update2=0;
+
+  integrate_sc2 = 1;
+  slider5 > 0 ? (
+    integrate_now2 = time_precise();
+    integrate_en2 ? (
+      // fps = 1/(integrate_now - integrate_lastt);
+      integrate_sc2 -= exp(-5 * 1000.0 * (integrate_now2 - integrate_lastt2) / slider5);
+    ) : (
+      // force overwrite of buffer
+      integrate_en2 = 1;
+    );
+    integrate_lastt2 = integrate_now2;
+  ) : (
+    integrate_en2 = 0;
+  );
+
+  fftidx != (slider1|0) ? (
+    fftidx=slider1|0;
+    fftsize=2^(min(max(fftidx,0),11)+4);
+    integrate_sc2=1;
+  );
+
+  windowsize2 != fftsize || windowtype2 != (slider4|0) ? (
+    windowtype2=slider4|0; 
+    windowsize2=fftsize;
+    dwindowpos2 = $pi*2/fftsize;
+    i=pwr=0;
+    loop(fftsize*.5+1,
+       windowpos2=i*dwindowpos2;
+       pwr += (window2[i] = (
+         windowtype2==1 ? 0.53836 - cos(windowpos2)*0.46164 :
+         windowtype2==2 ? 0.35875 - 0.48829 * cos(windowpos2) + 0.14128 * cos(2*windowpos2) - 0.01168 * cos(3*windowpos2) :
+         windowtype2==3 ? 0.42 - 0.50 * cos(windowpos2) + 0.08 * cos(2.0*windowpos2) :
+          1.0));
+       i+=1;
+    );
+    pwr=.5/(pwr*2-window2[i-1]);
+    loop(fftsize*.5+1,window2[i-=1]*=pwr);
+    integrate_sc2=1;
+  );
+
+
+  buf7=recpos2-fftsize;
+  buf7<recpos2 ? buf7+=histsize;
+  buf8=window2;
+  buf9=fftworkspace2;
+  loop(fftsize*.5 + 1,
+    buf9[] = buf7[]*buf8[];
+    buf9+=1;
+
+    buf8+=1;
+    (buf7+=1) >= histsize+offs2 ? buf7 -= histsize;
+  );
+  buf8-=1;
+  loop(fftsize*.5 - 1,
+    buf9[] = buf7[]*(buf8-=1)[];
+    buf9+=1;
+    (buf7+=1) >= histsize+offs2 ? buf7 -= histsize;
+  );
+
+  fft_real(fftworkspace2,fftsize);
+  fft_permute(fftworkspace2,fftsize/2);
+  fftworkspace2[1]=0;
+
+  ascale=gfx_h/$pi*0.25;
+  xscale=800/(fftsize-4);
+
+  buf9=fftworkspace2;
+  buf8=integrate_buf2+max_fft_size*0.5;
+  i=0;
+  lx=0;
+  slider3 ? loop(fftsize*0.5,
+    ang=-atan2(buf9[1],buf9[]);
+    buf9+=2;
+    
+    integrate_en2 ? (
+      ang = buf8[] += integrate_sc2 * (ang - buf8[]);
+      buf8+=1;
+    );
+    
+
+    ty2=ang*ascale + gfx_h*0.5;
+    tx = log(1.0+i*xscale)*wsc;
+
+    i ? 
+    ( 
+      gfx_r=0.6; gfx_g=0; gfx_b=0.8; gfx_a=1;
+      gfx_x=lx; gfx_y=ly2; gfx_lineto(tx,ty2,1) ;
+    );
+
+    lx=tx; ly2=ty2;
+    i+=1;
+  );  
+  
+  buf9=fftworkspace2;
+  buf8=integrate_buf2;
+  lx=0;
+  i=0;
+  points = 0;
+  fill_slmin=gfx_h;
+  fill_slast=0;
+  octavegain = floor(slider6*10+0.5) * ((log(10)*2.0/10.0)/(log(2)*20.0));
+  octavegainoffs = log(1 + slider7 * fftsize / srate);
+  loop(fftsize*0.5,   
+    ty = log(max(sqr(buf9[0])+sqr(buf9[1]),(10^(-500/20*2))));
+    octavegain > 0 ? ty += (log(i+1) - octavegainoffs)*octavegain;
+    buf9+=2;    
+
+    integrate_en2 ? (
+      ty = buf8[] += integrate_sc2 * (ty - buf8[]);
+      buf8+=1;
+    );
+    
+    ty = ty*-0.5*sc + 20;
+    tx = log(1.0+i*xscale)*wsc *slider8;
+
+    i ? 
+    ( 
+      points == 0 ? (
+        gpoints_x[points] = lx-offx;
+        gpoints_y[points] = ly-offy;
+        gpoints_x[points+1] = tx-offx;
+        gpoints_y[points+1] = ty-offy;
+        points+=1;
+      ) : (
+        gpoints_x[points] = tx-offx;
+        gpoints_y[points] = ty-offy;
+        points+=1;      
+      );
+      
+    );
+
+    ty<gfx_h ? update2=1;
+
+    lx=tx; ly=ty; ly2=ty2;
+    i+=1;
+  );
+  
+  points > 0 ? (
+  
+    smooth = slider23;
+    skipsize = 1;
+    osz = skipsize;
+    ssz = 0;
+    smooth == 0 ? (
+      pcnt = 0;
+      loop(points-1,
+        pcnt < points ? (
+          ssz < 50 && pcnt > ssz ? (
+            skipsize *= 2;            
+            ssz = ssz + skipsize*ssz;
+          );
+          gfx_x=gpoints_x[pcnt]; 
+          gfx_y=gpoints_y[pcnt]; 
+          gfx_lineto(gpoints_x[min(pcnt+skipsize,points-1)],gpoints_y[min(pcnt+skipsize,points-1)],1);      
+          pcnt+=skipsize; 
+        );
+      );    
+    ) : (
+  
+      pcnt = 0;
+      pos = 0;
+      my = -1;
+      myc = 0;
+  
+      loop(points-1,
+        xx = gpoints_x[pcnt];
+        (xx >= ssz) || (pcnt == points-1) ? (
+          myc += 1;
+          my == -1 ? (
+            my = gpoints_y[pcnt];
+          ) : (
+            my = (my+gpoints_y[pcnt])/myc;
+          );
+          points_x[pos] = gpoints_x[pcnt];
+          points_y[pos] = my;
+          
+          myc = 0;
+          my = -1;
+          vvvvv = ((50-slider25)*10+10);
+          ssz += (gfx_w*slider8)/vvvvv;
+          pos += 1;
+        ) : (
+          myc += 1;
+          my = my+gpoints_y[pcnt];          
+        );
+        pcnt += 1;
+      );
+            
+      pcnt = 0;
+      ox = 0;
+      loop(pos-1,
+        
+        gfx_x=points_x[pcnt]; 
+        gfx_y=points_y[pcnt]; 
+        i = 0;
+        
+        gfX_r=gfx_g=0.5; gfx_b=1;
+        loop(smooth+1,
+          t = i / smooth;
+          bias = slider24;
+          pcnt < 2 ? ( bias = -1; );
+          ny = HermiteInterpolate(points_y[pcnt-1],points_y[pcnt],points_y[min(pcnt+1,pos-1)],points_y[min(pcnt+2,pos-1)],max(min(t,1),0),0,bias);
+          nx = points_x[pcnt] + (points_x[pcnt+1]-points_x[pcnt])*t;
+          
+          rt = max(ny,gfx_y);
+          floor(nx) > ox ? (
+            gfx_a = slider12;              
+            gfx_rect(gfx_x,rt,max(ceil(nx)-gfx_x,1),gfx_h-rt,1);
+            gfx_a = 1;
+          );
+          gfx_lineto(nx,ny,1);      
+          ox = floor(gfx_x);
+          i+=1; 
+        );
+  
+        pcnt+=1;
+      );
+    );
+  );
+);
+
+
+update3 && slider16 == 1 ? (
+  update3=0;
+
+  integrate_sc3 = 1;
+  slider5 > 0 ? (
+    integrate_now3 = time_precise();
+    integrate_en3 ? (
+      // fps = 1/(integrate_now - integrate_lastt);
+      integrate_sc3 -= exp(-5 * 1000.0 * (integrate_now3 - integrate_lastt3) / slider5);
+    ) : (
+      // force overwrite of buffer
+      integrate_en3 = 1;
+    );
+    integrate_lastt3 = integrate_now3;
+  ) : (
+    integrate_en3 = 0;
+  );
+
+  fftidx != (slider1|0) ? (
+    fftidx=slider1|0;
+    fftsize=2^(min(max(fftidx,0),11)+4);
+    integrate_sc3=1;
+  );
+
+  windowsize3 != fftsize || windowtype3 != (slider4|0) ? (
+    windowtype3=slider4|0; 
+    windowsize3=fftsize;
+    dwindowpos3 = $pi*2/fftsize;
+    i=pwr=0;
+    loop(fftsize*.5+1,
+       windowpos3=i*dwindowpos3;
+       pwr += (window3[i] = (
+         windowtype3==1 ? 0.53836 - cos(windowpos3)*0.46164 :
+         windowtype3==2 ? 0.35875 - 0.48829 * cos(windowpos3) + 0.14128 * cos(2*windowpos3) - 0.01168 * cos(3*windowpos3) :
+         windowtype3==3 ? 0.42 - 0.50 * cos(windowpos3) + 0.08 * cos(2.0*windowpos3) :
+          1.0));
+       i+=1;
+    );
+    pwr=.5/(pwr*2-window3[i-1]);
+    loop(fftsize*.5+1,window3[i-=1]*=pwr);
+    integrate_sc3=1;
+  );
+
+
+  buf10=recpos3-fftsize;
+  buf10<recpos3 ? buf10+=histsize;
+  buf11=window3;
+  buf12=fftworkspace3;
+  loop(fftsize*.5 + 1,
+    buf12[] = buf10[]*buf11[];
+    buf12+=1;
+
+    buf11+=1;
+    (buf10+=1) >= histsize+offs3 ? buf10 -= histsize;
+  );
+  buf11-=1;
+  loop(fftsize*.5 - 1,
+    buf12[] = buf10[]*(buf11-=1)[];
+    buf12+=1;
+    (buf10+=1) >= histsize+offs3 ? buf10 -= histsize;
+  );
+
+  fft_real(fftworkspace3,fftsize);
+  fft_permute(fftworkspace3,fftsize/2);
+  fftworkspace3[1]=0;
+
+  ascale=gfx_h/$pi*0.25;
+  xscale=800/(fftsize-4);
+
+  buf12=fftworkspace3;
+  buf11=integrate_buf3+max_fft_size*0.5;
+  i=0;
+  lx=0;
+  slider3 ? loop(fftsize*0.5,
+    ang=-atan2(buf12[1],buf12[]);
+    buf12+=2;
+    
+    integrate_en3 ? (
+      ang = buf11[] += integrate_sc3 * (ang - buf11[]);
+      buf11+=1;
+    );
+    
+
+    ty2=ang*ascale + gfx_h*0.5;
+    tx = log(1.0+i*xscale)*wsc;
+
+    i ? 
+    ( 
+      gfx_r=0.6; gfx_g=0; gfx_b=0.8; gfx_a=1;
+      gfx_x=lx; gfx_y=ly2; gfx_lineto(tx,ty2,1) ;
+    );
+
+    lx=tx; ly2=ty2;
+    i+=1;
+  );  
+  
+  buf12=fftworkspace3;
+  buf11=integrate_buf3;
+  lx=0;
+  i=0;
+  points = 0;
+  fill_slmin=gfx_h;
+  fill_slast=0;
+  octavegain = floor(slider6*10+0.5) * ((log(10)*2.0/10.0)/(log(2)*20.0));
+  octavegainoffs = log(1 + slider7 * fftsize / srate);
+  loop(fftsize*0.5,   
+    ty = log(max(sqr(buf12[0])+sqr(buf12[1]),(10^(-500/20*2))));
+    octavegain > 0 ? ty += (log(i+1) - octavegainoffs)*octavegain;
+    buf12+=2;    
+
+    integrate_en3 ? (
+      ty = buf11[] += integrate_sc3 * (ty - buf11[]);
+      buf11+=1;
+    );
+    
+    ty = ty*-0.5*sc + 20;
+    tx = log(1.0+i*xscale)*wsc *slider8;
+
+    i ? 
+    ( 
+      points == 0 ? (
+        gpoints_x[points] = lx-offx;
+        gpoints_y[points] = ly-offy;
+        gpoints_x[points+1] = tx-offx;
+        gpoints_y[points+1] = ty-offy;
+        points+=1;
+      ) : (
+        gpoints_x[points] = tx-offx;
+        gpoints_y[points] = ty-offy;
+        points+=1;      
+      );
+      
+    );
+
+    ty<gfx_h ? update3=1;
+
+    lx=tx; ly=ty; ly2=ty2;
+    i+=1;
+  );
+  
+  points > 0 ? (
+  
+    smooth = slider23;
+    skipsize = 1;
+    osz = skipsize;
+    ssz = 0;
+    smooth == 0 ? (
+      pcnt = 0;
+      loop(points-1,
+        pcnt < points ? (
+          ssz < 50 && pcnt > ssz ? (
+            skipsize *= 2;            
+            ssz = ssz + skipsize*ssz;
+          );
+          gfx_x=gpoints_x[pcnt]; 
+          gfx_y=gpoints_y[pcnt]; 
+          gfx_lineto(gpoints_x[min(pcnt+skipsize,points-1)],gpoints_y[min(pcnt+skipsize,points-1)],1);      
+          pcnt+=skipsize; 
+        );
+      );    
+    ) : (
+  
+      pcnt = 0;
+      pos = 0;
+      my = -1;
+      myc = 0;
+  
+      loop(points-1,
+        xx = gpoints_x[pcnt];
+        (xx >= ssz) || (pcnt == points-1) ? (
+          myc += 1;
+          my == -1 ? (
+            my = gpoints_y[pcnt];
+          ) : (
+            my = (my+gpoints_y[pcnt])/myc;
+          );
+          points_x[pos] = gpoints_x[pcnt];
+          points_y[pos] = my;
+          
+          myc = 0;
+          my = -1;
+          vvvvv = ((50-slider25)*10+10);
+          ssz += (gfx_w*slider8)/vvvvv;
+          pos += 1;
+        ) : (
+          myc += 1;
+          my = my+gpoints_y[pcnt];          
+        );
+        pcnt += 1;
+      );
+            
+      pcnt = 0;
+      ox = 0;
+      loop(pos-1,
+        
+        gfx_x=points_x[pcnt]; 
+        gfx_y=points_y[pcnt]; 
+        i = 0;
+        
+        gfX_b=gfx_g=0; gfx_r=1;
+        loop(smooth+1,
+          t = i / smooth;
+          bias = slider24;
+          pcnt < 2 ? ( bias = -1; );
+          ny = HermiteInterpolate(points_y[pcnt-1],points_y[pcnt],points_y[min(pcnt+1,pos-1)],points_y[min(pcnt+2,pos-1)],max(min(t,1),0),0,bias);
+          nx = points_x[pcnt] + (points_x[pcnt+1]-points_x[pcnt])*t;
+          
+          rt = max(ny,gfx_y);
+          floor(nx) > ox ? (
+            gfx_a = slider12;              
+            gfx_rect(gfx_x,rt,max(ceil(nx)-gfx_x,1),gfx_h-rt,1);
+            gfx_a = 1;
+          );
+          gfx_lineto(nx,ny,1);      
+          ox = floor(gfx_x);
+          i+=1; 
+        );
+  
+        pcnt+=1;
+      );
+    );
+  );
+);
+
+
+update4 && slider17 == 1 ? (
+  update4=0;
+
+  integrate_sc4 = 1;
+  slider5 > 0 ? (
+    integrate_now4 = time_precise();
+    integrate_en4 ? (
+      // fps = 1/(integrate_now - integrate_lastt);
+      integrate_sc4 -= exp(-5 * 1000.0 * (integrate_now4 - integrate_lastt4) / slider5);
+    ) : (
+      // force overwrite of buffer
+      integrate_en4 = 1;
+    );
+    integrate_lastt4 = integrate_now4;
+  ) : (
+    integrate_en4 = 0;
+  );
+
+  fftidx != (slider1|0) ? (
+    fftidx=slider1|0;
+    fftsize=2^(min(max(fftidx,0),11)+4);
+    integrate_sc4=1;
+  );
+
+  windowsize4 != fftsize || windowtype4 != (slider4|0) ? (
+    windowtype4=slider4|0; 
+    windowsize4=fftsize;
+    dwindowpos4 = $pi*2/fftsize;
+    i=pwr=0;
+    loop(fftsize*.5+1,
+       windowpos4=i*dwindowpos4;
+       pwr += (window4[i] = (
+         windowtype4==1 ? 0.53836 - cos(windowpos4)*0.46164 :
+         windowtype4==2 ? 0.35875 - 0.48829 * cos(windowpos4) + 0.14128 * cos(2*windowpos4) - 0.01168 * cos(3*windowpos4) :
+         windowtype4==3 ? 0.42 - 0.50 * cos(windowpos4) + 0.08 * cos(2.0*windowpos4) :
+          1.0));
+       i+=1;
+    );
+    pwr=.5/(pwr*2-window4[i-1]);
+    loop(fftsize*.5+1,window4[i-=1]*=pwr);
+    integrate_sc4=1;
+  );
+
+
+  buf13=recpos4-fftsize;
+  buf13<recpos4 ? buf13+=histsize;
+  buf14=window4;
+  buf15=fftworkspace4;
+  loop(fftsize*.5 + 1,
+    buf15[] = buf13[]*buf14[];
+    buf15+=1;
+
+    buf14+=1;
+    (buf13+=1) >= histsize+offs4 ? buf13 -= histsize;
+  );
+  buf14-=1;
+  loop(fftsize*.5 - 1,
+    buf15[] = buf13[]*(buf14-=1)[];
+    buf15+=1;
+    (buf13+=1) >= histsize+offs4 ? buf13 -= histsize;
+  );
+
+  fft_real(fftworkspace4,fftsize);
+  fft_permute(fftworkspace4,fftsize/2);
+  fftworkspace4[1]=0;
+
+  ascale=gfx_h/$pi*0.25;
+  xscale=800/(fftsize-4);
+
+  buf15=fftworkspace4;
+  buf14=integrate_buf4+max_fft_size*0.5;
+  i=0;
+  lx=0;
+  slider3 ? loop(fftsize*0.5,
+    ang=-atan2(buf15[1],buf15[]);
+    buf15+=2;
+    
+    integrate_en4 ? (
+      ang = buf14[] += integrate_sc4 * (ang - buf14[]);
+      buf14+=1;
+    );
+    
+
+    ty2=ang*ascale + gfx_h*0.5;
+    tx = log(1.0+i*xscale)*wsc;
+
+    i ? 
+    ( 
+      gfx_r=0.6; gfx_g=0; gfx_b=0.8; gfx_a=1;
+      gfx_x=lx; gfx_y=ly2; gfx_lineto(tx,ty2,1) ;
+    );
+
+    lx=tx; ly2=ty2;
+    i+=1;
+  );  
+  
+  buf15=fftworkspace4;
+  buf14=integrate_buf4;
+  lx=0;
+  i=0;
+  points = 0;
+  fill_slmin=gfx_h;
+  fill_slast=0;
+  octavegain = floor(slider6*10+0.5) * ((log(10)*2.0/10.0)/(log(2)*20.0));
+  octavegainoffs = log(1 + slider7 * fftsize / srate);
+  loop(fftsize*0.5,   
+    ty = log(max(sqr(buf15[0])+sqr(buf15[1]),(10^(-500/20*2))));
+    octavegain > 0 ? ty += (log(i+1) - octavegainoffs)*octavegain;
+    buf15+=2;    
+
+    integrate_en4 ? (
+      ty = buf14[] += integrate_sc4 * (ty - buf14[]);
+      buf14+=1;
+    );
+    
+    ty = ty*-0.5*sc + 20;
+    tx = log(1.0+i*xscale)*wsc *slider8;
+
+    i ? 
+    ( 
+      points == 0 ? (
+        gpoints_x[points] = lx-offx;
+        gpoints_y[points] = ly-offy;
+        gpoints_x[points+1] = tx-offx;
+        gpoints_y[points+1] = ty-offy;
+        points+=1;
+      ) : (
+        gpoints_x[points] = tx-offx;
+        gpoints_y[points] = ty-offy;
+        points+=1;      
+      );
+      
+    );
+
+    ty<gfx_h ? update4=1;
+
+    lx=tx; ly=ty; ly2=ty2;
+    i+=1;
+  );
+  
+  points > 0 ? (
+  
+    smooth = slider23;
+    skipsize = 1;
+    osz = skipsize;
+    ssz = 0;
+    smooth == 0 ? (
+      pcnt = 0;
+      loop(points-1,
+        pcnt < points ? (
+          ssz < 50 && pcnt > ssz ? (
+            skipsize *= 2;            
+            ssz = ssz + skipsize*ssz;
+          );
+          gfx_x=gpoints_x[pcnt]; 
+          gfx_y=gpoints_y[pcnt]; 
+          gfx_lineto(gpoints_x[min(pcnt+skipsize,points-1)],gpoints_y[min(pcnt+skipsize,points-1)],1);      
+          pcnt+=skipsize; 
+        );
+      );    
+    ) : (
+  
+      pcnt = 0;
+      pos = 0;
+      my = -1;
+      myc = 0;
+  
+      loop(points-1,
+        xx = gpoints_x[pcnt];
+        (xx >= ssz) || (pcnt == points-1) ? (
+          myc += 1;
+          my == -1 ? (
+            my = gpoints_y[pcnt];
+          ) : (
+            my = (my+gpoints_y[pcnt])/myc;
+          );
+          points_x[pos] = gpoints_x[pcnt];
+          points_y[pos] = my;
+          
+          myc = 0;
+          my = -1;
+          vvvvv = ((50-slider25)*10+10);
+          ssz += (gfx_w*slider8)/vvvvv;
+          pos += 1;
+        ) : (
+          myc += 1;
+          my = my+gpoints_y[pcnt];          
+        );
+        pcnt += 1;
+      );
+            
+      pcnt = 0;
+      ox = 0;
+      loop(pos-1,
+        
+        gfx_x=points_x[pcnt]; 
+        gfx_y=points_y[pcnt]; 
+        i = 0;
+        
+        gfX_b=gfx_r=0; gfx_g=1;
+        loop(smooth+1,
+          t = i / smooth;
+          bias = slider24;
+          pcnt < 2 ? ( bias = -1; );
+          ny = HermiteInterpolate(points_y[pcnt-1],points_y[pcnt],points_y[min(pcnt+1,pos-1)],points_y[min(pcnt+2,pos-1)],max(min(t,1),0),0,bias);
+          nx = points_x[pcnt] + (points_x[pcnt+1]-points_x[pcnt])*t;
+          
+          rt = max(ny,gfx_y);
+          floor(nx) > ox ? (
+            gfx_a = slider12;              
+            gfx_rect(gfx_x,rt,max(ceil(nx)-gfx_x,1),gfx_h-rt,1);
+            gfx_a = 1;
+          );
+          gfx_lineto(nx,ny,1);      
+          ox = floor(gfx_x);
+          i+=1; 
+        );
+  
+        pcnt+=1;
+      );
+    );
+  );      
+);
+
+
+update5 && slider18 == 1 ? (
+  update5=0;
+
+  integrate_sc5 = 1;
+  slider5 > 0 ? (
+    integrate_now5 = time_precise();
+    integrate_en5 ? (
+      // fps = 1/(integrate_now - integrate_lastt);
+      integrate_sc5 -= exp(-5 * 1000.0 * (integrate_now5 - integrate_lastt5) / slider5);
+    ) : (
+      // force overwrite of buffer
+      integrate_en5 = 1;
+    );
+    integrate_lastt5 = integrate_now5;
+  ) : (
+    integrate_en5 = 0;
+  );
+
+  fftidx != (slider1|0) ? (
+    fftidx=slider1|0;
+    fftsize=2^(min(max(fftidx,0),11)+4);
+    integrate_sc5=1;
+  );
+
+  windowsize5 != fftsize || windowtype5 != (slider4|0) ? (
+    windowtype5=slider4|0; 
+    windowsize5=fftsize;
+    dwindowpos5 = $pi*2/fftsize;
+    i=pwr=0;
+    loop(fftsize*.5+1,
+       windowpos5=i*dwindowpos5;
+       pwr += (window5[i] = (
+         windowtype5==1 ? 0.53836 - cos(windowpos5)*0.46164 :
+         windowtype5==2 ? 0.35875 - 0.48829 * cos(windowpos5) + 0.14128 * cos(2*windowpos5) - 0.01168 * cos(3*windowpos5) :
+         windowtype5==3 ? 0.42 - 0.50 * cos(windowpos5) + 0.08 * cos(2.0*windowpos5) :
+          1.0));
+       i+=1;
+    );
+    pwr=.5/(pwr*2-window5[i-1]);
+    loop(fftsize*.5+1,window5[i-=1]*=pwr);
+    integrate_sc5=1;
+  );
+
+
+  buf16=recpos5-fftsize;
+  buf16<recpos5 ? buf16+=histsize;
+  buf17=window5;
+  buf18=fftworkspace5;
+  loop(fftsize*.5 + 1,
+    buf18[] = buf16[]*buf17[];
+    buf18+=1;
+
+    buf17+=1;
+    (buf16+=1) >= histsize+offs5 ? buf16 -= histsize;
+  );
+  buf17-=1;
+  loop(fftsize*.5 - 1,
+    buf18[] = buf16[]*(buf17-=1)[];
+    buf18+=1;
+    (buf16+=1) >= histsize+offs5 ? buf16 -= histsize;
+  );
+
+  fft_real(fftworkspace5,fftsize);
+  fft_permute(fftworkspace5,fftsize/2);
+  fftworkspace5[1]=0;
+
+  ascale=gfx_h/$pi*0.25;
+  xscale=800/(fftsize-4);
+
+  buf18=fftworkspace5;
+  buf17=integrate_buf5+max_fft_size*0.5;
+  i=0;
+  lx=0;
+  slider3 ? loop(fftsize*0.5,
+    ang=-atan2(buf18[1],buf18[]);
+    buf18+=2;
+    
+    integrate_en5 ? (
+      ang = buf17[] += integrate_sc5 * (ang - buf17[]);
+      buf17+=1;
+    );
+    
+
+    ty2=ang*ascale + gfx_h*0.5;
+    tx = log(1.0+i*xscale)*wsc;
+
+    i ? 
+    ( 
+      gfx_r=0.6; gfx_g=0; gfx_b=0.8; gfx_a=1;
+      gfx_x=lx; gfx_y=ly2; gfx_lineto(tx,ty2,1) ;
+    );
+
+    lx=tx; ly2=ty2;
+    i+=1;
+  );  
+  
+  buf18=fftworkspace5;
+  buf17=integrate_buf5;
+  lx=0;
+  i=0;
+  points = 0;
+  fill_slmin=gfx_h;
+  fill_slast=0;
+  octavegain = floor(slider6*10+0.5) * ((log(10)*2.0/10.0)/(log(2)*20.0));
+  octavegainoffs = log(1 + slider7 * fftsize / srate);
+  loop(fftsize*0.5,   
+    ty = log(max(sqr(buf18[0])+sqr(buf18[1]),(10^(-500/20*2))));
+    octavegain > 0 ? ty += (log(i+1) - octavegainoffs)*octavegain;
+    buf18+=2;    
+
+    integrate_en5 ? (
+      ty = buf17[] += integrate_sc5 * (ty - buf17[]);
+      buf17+=1;
+    );
+    
+    ty = ty*-0.5*sc + 20;
+    tx = log(1.0+i*xscale)*wsc *slider8;
+
+    i ? 
+    ( 
+      points == 0 ? (
+        gpoints_x[points] = lx-offx;
+        gpoints_y[points] = ly-offy;
+        gpoints_x[points+1] = tx-offx;
+        gpoints_y[points+1] = ty-offy;
+        points+=1;
+      ) : (
+        gpoints_x[points] = tx-offx;
+        gpoints_y[points] = ty-offy;
+        points+=1;      
+      );
+      
+    );
+
+    ty<gfx_h ? update5=1;
+
+    lx=tx; ly=ty; ly2=ty2;
+    i+=1;
+  );
+  
+  points > 0 ? (
+  
+    smooth = slider23;
+    skipsize = 1;
+    osz = skipsize;
+    ssz = 0;
+    smooth == 0 ? (
+      pcnt = 0;
+      loop(points-1,
+        pcnt < points ? (
+          ssz < 50 && pcnt > ssz ? (
+            skipsize *= 2;            
+            ssz = ssz + skipsize*ssz;
+          );
+          gfx_x=gpoints_x[pcnt]; 
+          gfx_y=gpoints_y[pcnt]; 
+          gfx_lineto(gpoints_x[min(pcnt+skipsize,points-1)],gpoints_y[min(pcnt+skipsize,points-1)],1);      
+          pcnt+=skipsize; 
+        );
+      );    
+    ) : (
+  
+      pcnt = 0;
+      pos = 0;
+      my = -1;
+      myc = 0;
+  
+      loop(points-1,
+        xx = gpoints_x[pcnt];
+        (xx >= ssz) || (pcnt == points-1) ? (
+          myc += 1;
+          my == -1 ? (
+            my = gpoints_y[pcnt];
+          ) : (
+            my = (my+gpoints_y[pcnt])/myc;
+          );
+          points_x[pos] = gpoints_x[pcnt];
+          points_y[pos] = my;
+          
+          myc = 0;
+          my = -1;
+          vvvvv = ((50-slider25)*10+10);
+          ssz += (gfx_w*slider8)/vvvvv;
+          pos += 1;
+        ) : (
+          myc += 1;
+          my = my+gpoints_y[pcnt];          
+        );
+        pcnt += 1;
+      );
+            
+      pcnt = 0;
+      ox = 0;
+      loop(pos-1,
+        
+        gfx_x=points_x[pcnt]; 
+        gfx_y=points_y[pcnt]; 
+        i = 0;
+        
+        gfX_g=gfx_b=1; gfx_r=0;
+        loop(smooth+1,
+          t = i / smooth;
+          bias = slider24;
+          pcnt < 2 ? ( bias = -1; );
+          ny = HermiteInterpolate(points_y[pcnt-1],points_y[pcnt],points_y[min(pcnt+1,pos-1)],points_y[min(pcnt+2,pos-1)],max(min(t,1),0),0,bias);
+          nx = points_x[pcnt] + (points_x[pcnt+1]-points_x[pcnt])*t;
+          
+          rt = max(ny,gfx_y);
+          floor(nx) > ox ? (
+            gfx_a = slider12;              
+            gfx_rect(gfx_x,rt,max(ceil(nx)-gfx_x,1),gfx_h-rt,1);
+            gfx_a = 1;
+          );
+          gfx_lineto(nx,ny,1);      
+          ox = floor(gfx_x);
+          i+=1; 
+        );
+  
+        pcnt+=1;
+      );
+    );
+  );
+);
+
+);
+
+
+
