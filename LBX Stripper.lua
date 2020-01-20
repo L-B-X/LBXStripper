@@ -16,7 +16,7 @@
   local lvar = {}
   local cbi = {}
 
-  lvar.scriptver = '0.94.0165' --Script Version
+  lvar.scriptver = '0.94.0166' --Script Version
 
   lvar.mousewheel_div = 120 --default 120 - change to 30 for weird Mac mice!
 
@@ -15446,6 +15446,7 @@ function GUI_DrawCtlBitmap_Strips()
     local vsize = lvar.mmov_vsize
     local mmov_rows = {}
     local mmov_max = 0
+    lvar.mmov_max = 0
     local mixpos_max = 0
     lvar.mmov_scale = 0
 
@@ -26121,7 +26122,7 @@ function GUI_DrawCtlBitmap_Strips()
     end
     gfx.mode = gmode
 
-    local t = 'Action Panel '..string.format('%i',lvar.dm_btnpnl_page+1)
+    local t = 'Action Panel '..string.format('%i',math.floor(lvar.dm_btnpnl_page+1))
     GUI_Str(gui,obj.sections[5045],t,5,'160 160 160',-2 + gui.fontsz.sb,1,gui.skol.sb_shad,gui.fontnm.sb,98)
 
     f_Get_SSV(gui.color.black)
@@ -33120,11 +33121,14 @@ function GUI_DrawCtlBitmap_Strips()
         for i = 1, reaper.TrackFX_GetCount(track) do
         --for i = 1, #tar_fxtbl do
           tar_fxtbl[i] = {}
-          tar_fxtbl[i].identifier = reaper.BR_TrackFX_GetFXModuleName(tr, i-1, '', 64)
+          local _, idnt = reaper.BR_TrackFX_GetFXModuleName(tr, i-1, '', 64)
+          tar_fxtbl[i].identifier = idnt
           tar_fxtbl[i].guid = reaper.TrackFX_GetFXGUID(tr, i-1)
           --tar_fxtbl[i].identifier = GetPlugIdentifierFromChunk(tar_fxtbl[i].chunk)
         end
-
+        
+        --DBG('tarcnt '..#tar_fxtbl)
+        
         for i = 1, #stripdata.fx do
           local nfxguid, ofxguid
           ofxguid = '{'..stripdata.fx[i].fxguid..'}'
@@ -49417,6 +49421,10 @@ function GUI_DrawCtlBitmap_Strips()
       if trlbl then
         local tracknm, stripnm = string.match(trlbl, '(.-)LBXSTRIP%[(.-)%]')
         if stripnm then
+        
+          local olm = lvar.livemode
+        
+          lvar.livemode = 0
           if string.match(stripnm,'.+(%..*)') ~= '.strip' then
             stripnm = stripnm..'.strip'
           end
@@ -49431,6 +49439,7 @@ function GUI_DrawCtlBitmap_Strips()
               GenStripPreview(gui, loadstrip.strip, loadstrip.switchers, loadstrip.switchconvtab)
 
               track_select = t
+              loadstrip.autoload_lbxstrip = true
               local _, strip = Strip_AddStrip(loadstrip,0,0,nil,t,trg,-1)
               track_select = otrack
               poptr = true
@@ -49445,6 +49454,8 @@ function GUI_DrawCtlBitmap_Strips()
 
           end
 
+          lvar.livemode = olm
+          
         else
           tracknm, stripnm = string.match(trlbl, '(.-)LBXSET%[(.-)%]')
           if stripnm then
@@ -53761,27 +53772,29 @@ function GUI_DrawCtlBitmap_Strips()
 
       if lvar.trbtns_show then
         local dm_trackbtns = lvar.dm_trackbtns[lvar.dm_tbidx]
-        local cnt = math.min(--[[#dm_trackbtns,]] lvar.trov_maxrows-1, lvar.dm_maxvistracks)
-        for i = 1, cnt do
-          local x = i+lvar.trbtns_offs
-          if dm_trackbtns[x] then
-            local tr = GetTrack(dm_trackbtns[x].trn)
-            if tr then
-              local solo = reaper.GetMediaTrackInfo_Value(tr, 'I_SOLO')
-              if solo ~= dm_trackbtns[x].solo then
-                dm_trackbtns[x].solo = solo
-                lupd.update_trbtns = true
+        if dm_trackbtns then
+          local cnt = math.min(--[[#dm_trackbtns,]] lvar.trov_maxrows-1, lvar.dm_maxvistracks)
+          for i = 1, cnt do
+            local x = i+lvar.trbtns_offs
+            if dm_trackbtns[x] then
+              local tr = GetTrack(dm_trackbtns[x].trn)
+              if tr then
+                local solo = reaper.GetMediaTrackInfo_Value(tr, 'I_SOLO')
+                if solo ~= dm_trackbtns[x].solo then
+                  dm_trackbtns[x].solo = solo
+                  lupd.update_trbtns = true
+                end
+                local mute = reaper.GetMediaTrackInfo_Value(tr, 'B_MUTE')
+                if mute ~= dm_trackbtns[x].mute then
+                  dm_trackbtns[x].mute = mute
+                  lupd.update_trbtns = true
+                end
+                local col = reaper.GetMediaTrackInfo_Value(tr, 'I_CUSTOMCOLOR')
+                if col ~= dm_trackbtns[x].col then
+                  dm_trackbtns[x].col = col
+                  lupd.update_trbtns = true
+                end              
               end
-              local mute = reaper.GetMediaTrackInfo_Value(tr, 'B_MUTE')
-              if mute ~= dm_trackbtns[x].mute then
-                dm_trackbtns[x].mute = mute
-                lupd.update_trbtns = true
-              end
-              local col = reaper.GetMediaTrackInfo_Value(tr, 'I_CUSTOMCOLOR')
-              if col ~= dm_trackbtns[x].col then
-                dm_trackbtns[x].col = col
-                lupd.update_trbtns = true
-              end              
             end
           end
         end
@@ -56761,7 +56774,7 @@ function GUI_DrawCtlBitmap_Strips()
                     GUI_DrawCtlBitmap_Mix()
                     gfx.mouse_wheel = 0
                   else
-                    if obj.sections[10000].w < lvar.mmov_max then
+                    if obj.sections[10000].w < lvar.mmov_max then  
                       local v = gfx.mouse_wheel/lvar.mousewheel_div
                       lvar.mmov_pos = F_limit(lvar.mmov_pos - v*20,0,lvar.mmov_max-obj.sections[10000].w)
                       lupd.update_surface = true
@@ -59829,7 +59842,7 @@ function GUI_DrawCtlBitmap_Strips()
       elseif mouse.context == contexts.modwin_move then
 
         modwinsz.x = math.min(math.max(modwinmv.x + (mouse.mx - modwinmv.mx),0),obj.sections[10].x+obj.sections[10].w-10)
-        modwinsz.y = math.min(math.max(modwinmv.y + (mouse.my - modwinmv.my),obj.sections[10].y),gfx1.main_h-modwinsz.h*pnl_scale --[[obj.sections[10].y+obj.sections[10].h-10]])
+        modwinsz.y = math.min(math.max(modwinmv.y + (mouse.my - modwinmv.my),obj.sections[10].y),gfx1.main_h-(modwinsz.h or 300)*pnl_scale --[[obj.sections[10].y+obj.sections[10].h-10]])
         if modwinsz.x ~= modwinsz.ox or modwinsz.y ~= modwinsz.oy then
           --obj.sections[1100].x = modwinsz.x
           --obj.sections[1100].y = modwinsz.y
