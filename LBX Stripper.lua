@@ -16,11 +16,13 @@
   local lvar = {}
   local cbi = {}
 
-  lvar.scriptver = '0.94.0166' --Script Version
+  lvar.scriptver = '0.94.0167' --Script Version
 
   lvar.mousewheel_div = 120 --default 120 - change to 30 for weird Mac mice!
 
   lvar.savesettingstofile = true
+
+  lvar.dm_fixtrack = nil
 
   lvar.spos = {}
   lvar.mac_coord_hack = true
@@ -2659,7 +2661,7 @@
           end
           local fn=save_path..savefn--..".strip"
           local copy = 0
-          if not verbose or reaper.file_exists(fn) then
+          if not verbose and reaper.file_exists(fn) then
             local str = 'The strip file already exists:\n\n'..savefn..'\n\nOverwrite?'
             local retval = reaper.MB(str, 'Import Strip', 4)
             if retval == 6 then
@@ -9235,7 +9237,6 @@
   end
 
   function RepopulateControls()
-
     local ctltab = {}
     for i = 0, #ctl_files do
       ctltab[ctl_files[i].fn] = true
@@ -9244,7 +9245,7 @@
     local fidx = lvar.ctlfiles_idx
 
     local i = 0
-    local c = 0
+    local c = #ctl_files+1 --0
     local kf = reaper.EnumerateFiles(paths.controls_path,i)
     while kf ~= nil do
       if string.sub(kf,string.len(kf)-3) == '.knb' then
@@ -9264,6 +9265,7 @@
       i=i+1
       kf = reaper.EnumerateFiles(paths.controls_path,i)
     end
+    --LoadDefSwitchFormat()
     lupd.update_gfx = true
 
   end
@@ -41540,9 +41542,12 @@ function GUI_DrawCtlBitmap_Strips()
             local pop = strips[strip][page].pop[idx]
             local swdata = lvar.stripdim.swdata[ctl.switcherid]
 
-            x = obj.sections[10].x + pop.x + math.floor(((swdata.stripr - swdata.stripl)/2)*lvar.zoom - ((swdata.sr - swdata.sl)/2)*lvar.zoom)
-            y = obj.sections[10].y + pop.y + (swdata.sb - swdata.st)*lvar.zoom
-
+            x = obj.sections[10].x + pop.x
+            y = obj.sections[10].y + pop.y
+            if swdata.stripr then
+              x = x + math.floor(((swdata.stripr - swdata.stripl)/2)*lvar.zoom - ((swdata.sr - swdata.sl)/2)*lvar.zoom)
+              y = y + (swdata.sb - swdata.st)*lvar.zoom
+            end
           else
             x = lvar.spos[ctl.switcherid].x + math.floor((lvar.spos[ctl.switcherid].w-lvar.shadowmax)/2 - lvar.spos[ctl.switcherid].sw/2)*lvar.zoom
             y = lvar.spos[ctl.switcherid].y + lvar.spos[ctl.switcherid].sh*lvar.zoom
@@ -45062,28 +45067,37 @@ function GUI_DrawCtlBitmap_Strips()
     end
     lvar.mixupdate = nil
 
-    if strips[strip] and strips[strip][page].lmode then
-      if lvar.livemode ~= strips[strip][page].lmode then
-        lvar.livemode = strips[strip][page].lmode
-        if obj then
-          SetSurfaceSize2(obj)
-        end
+    if lvar.dm_fixtrack and track_select == lvar.dm_fixtrack and page == 1 then
+      lvar.livemode = 2
+      if obj then
+        SetSurfaceSize2(obj)
       end
     else
-      if lvar.livemode ~= lvar.glivemode then
-        lvar.livemode = lvar.glivemode
-        if obj then
-          SetSurfaceSize2(obj)
+      if strips[strip] and strips[strip][page].lmode then
+        if lvar.livemode ~= strips[strip][page].lmode then
+          lvar.livemode = strips[strip][page].lmode
+          if obj then
+            SetSurfaceSize2(obj)
+          end
+        end
+      else
+        if lvar.livemode ~= lvar.glivemode then
+          lvar.livemode = lvar.glivemode
+          if obj then
+            SetSurfaceSize2(obj)
+          end
         end
       end
     end
-
+    
     if lvar.livemode ~= 2 then
       if lvar.analyzer.active then
         DM_ShowAnalyzer(false)
         lupd.update_trbtns = true
         lvar.saveanalactive = true
       end
+    else
+      settings_followselectedtrack = false
     end
 
     ctl_select = nil
@@ -46457,20 +46471,27 @@ function GUI_DrawCtlBitmap_Strips()
     trackedit_select = t
 
     local strip = tracks[track_select].strip
-    if strips[strip] and strips[strip][page].lmode then
-      if lvar.livemode ~= strips[strip][page].lmode then
-        lvar.livemode = strips[strip][page].lmode
+    if lvar.dm_fixtrack and track_select == lvar.dm_fixtrack and page == 1 then
+      lvar.livemode = 2
+      if obj then
+        SetSurfaceSize2(obj)
+      end
+    else
+      if strips[strip] and strips[strip][page].lmode then
+        if lvar.livemode ~= strips[strip][page].lmode then
+          lvar.livemode = strips[strip][page].lmode
+          if obj then
+            SetSurfaceSize2(obj)
+          end
+        end
+      elseif lvar.livemode ~= lvar.glivemode then
+        lvar.livemode = lvar.glivemode
         if obj then
           SetSurfaceSize2(obj)
         end
       end
-    elseif lvar.livemode ~= lvar.glivemode then
-      lvar.livemode = lvar.glivemode
-      if obj then
-        SetSurfaceSize2(obj)
-      end
     end
-
+    
     if lvar.livemode == 2 and not noscrollreset then
       surface_offset.mixy = -40
       surface_offset.mixx = -40
@@ -46493,6 +46514,8 @@ function GUI_DrawCtlBitmap_Strips()
         lupd.update_trbtns = true
         lvar.saveanalactive = true
       end
+    else
+      settings_followselectedtrack = false
     end
 
     --[[if stripgallery_view == 1 then
@@ -59388,11 +59411,19 @@ function GUI_DrawCtlBitmap_Strips()
                 if lvar.livemode == 2 then
                   lmd = '#'
                 end
+                local dmft = ''
+                local dmft2 = '#'
+                if lvar.dm_fixtrack then
+                  dmft2 = ''
+                end
+                if lvar.dm_fixtrack == track_select then
+                  dmft = '!'
+                end
                 local mstr = lmd..'Clear track strip data: '..tracks[tr].name..'|'..lmd..'Clear strips for ALL tracks||'..lmd..'Duplicate Track/Strip|'..lmd..'Duplicate Highlighted Tracks'..
                              '|'..lmd..'Duplicate Highlighted Tracks (Retain Links)||Save Set (Highlighted Tracks)||Load Set (Merge)'..
                              '||'..lm_a..lm_lm..'Set Track/Strip To Live Mode (Current Page)|'..lm_a..lm_mm..'Set Track/Strip To Mix Mode (Current Page)|'..
                              lm_a..lm_dm..'Set Track/Strip To Dynamic Mode (Current Page)|'..
-                             lm_a..'Clear Track/Strip Mode Flag'
+                             lm_a..'Clear Track/Strip Mode Flag||'..dmft..'(Global) Set Track/Strip (Page 1) To Dynamic Mode|'..dmft2..'Disable Global DM Setting'
                 gfx.x = mouse.mx
                 gfx.y = mouse.my
                 local res = gfx.showmenu(mstr)
@@ -59570,8 +59601,13 @@ function GUI_DrawCtlBitmap_Strips()
                         lupd.update_gfx = true
                       end
                     end
+                  elseif res == 12 then
+                    lvar.dm_fixtrack = track_select
+                    SetPage(1)
+                  elseif res == 13 then
+                    lvar.dm_fixtrack = nil
+                    SetPage(1)
                   end
-
                 end
               end
             end
@@ -60050,7 +60086,8 @@ function GUI_DrawCtlBitmap_Strips()
 
         snapshot_win_pos = {x = obj.sections[160].x, y = obj.sections[160].y}
         lupd.update_msnaps = true
-        --lupd.update_surface = true
+        --lupd.update_stripbrowser = true
+        lupd.update_surface = true
 
       elseif mouse.context == contexts.addsnapctl then
         local iw, ih
@@ -60223,7 +60260,7 @@ function GUI_DrawCtlBitmap_Strips()
         lupd.update_msnaps = true
         resize_snaps = true
 
-        --lupd.update_surface = true
+        lupd.update_surface = true
         --lupd.update_gfx = true
 
       elseif mouse.context == contexts.resizefsnapwindow then
@@ -81334,12 +81371,12 @@ function GUI_DrawCtlBitmap_Strips()
           local p = fads[f].page
           local c = fads[f].ctl
           local cid = fads[f].c_id
-          if (dmg and dmg == lvar.dynamicmode_guid and cid == strips[s][p].controls[c].c_id) or
+          if (dmg and dmg == lvar.dynamicmode_guid and strips[s][p].controls[c] and cid == strips[s][p].controls[c].c_id) or
              (not dmg and strips[s] and strips[s][p].controls[c] and cid == strips[s][p].controls[c].c_id) then
             --all good
             strips[s][p].controls[c].macrofader = f
             fnd = true
-          elseif (dmg and dmg ~= lvar.dynamicmode_guid and lvar.stripstore[dmg] and cid == lvar.stripstore[dmg].controls[c].c_id) then
+          elseif (dmg and dmg ~= lvar.dynamicmode_guid and lvar.stripstore[dmg] and lvar.stripstore[dmg].controls[c] and cid == lvar.stripstore[dmg].controls[c].c_id) then
             lvar.stripstore[dmg].controls[c].macrofader = f
             fnd = true
           else
@@ -81472,12 +81509,12 @@ function GUI_DrawCtlBitmap_Strips()
             local c = mod.targets[t].ctl
             local cid = mod.targets[t].c_id
             if strips[s] then
-              if (dmg and dmg == lvar.dynamicmode_guid and strips[s] and cid == strips[s][p].controls[c].c_id) or
+              if (dmg and dmg == lvar.dynamicmode_guid and strips[s] and strips[s][p].controls[c] and cid == strips[s][p].controls[c].c_id) or
                  (not dmg and strips[s] and strips[s][p].controls[c] and cid == strips[s][p].controls[c].c_id) then
                 --all good
                 strips[s][p].controls[c].mod = m
                 fnd = true
-              elseif (dmg and dmg ~= lvar.dynamicmode_guid and lvar.stripstore[dmg] and cid == lvar.stripstore[dmg].controls[c].c_id) then
+              elseif (dmg and dmg ~= lvar.dynamicmode_guid and lvar.stripstore[dmg] and lvar.stripstore[dmg].controls[c] and cid == lvar.stripstore[dmg].controls[c].c_id) then
                 lvar.stripstore[dmg].controls[c].mod = m
                 fnd = true
               else
@@ -82857,7 +82894,7 @@ function GUI_DrawCtlBitmap_Strips()
     lvar.livemode = tonumber(nz(GES('livemode',0,data),lvar.livemode))
     lvar.glivemode = lvar.livemode
 
-  lvar.zoom = tonumber(nz(GES('surface_zoom',0,data),lvar.zoom))                                
+    lvar.zoom = tonumber(nz(GES('surface_zoom',0,data),lvar.zoom))                                
     file_bgimage = nz(GES('file_bgimage',true,data),file_bgimage)
     lvar.mmov_bgimgon = tobool(nz(GES('mmov_bgimgon',true,data),lvar.mmov_bgimgon))
     lvar.bgstretch = tobool(nz(GES('bgstretch',true,data),lvar.bgstretch))
@@ -82871,6 +82908,8 @@ function GUI_DrawCtlBitmap_Strips()
     lvar.dm_autorefresh = tobool(nz(GES('dm_autorefresh',true,data),lvar.dm_autorefresh))
     lvar.dm_maxvistracks = tonumber(nz(GES('dm_maxvistracks',true,data),lvar.dm_maxvistracks))
     lvar.dm_showtrackname = tobool(nz(GES('dm_showtrackname',true,data),lvar.dm_showtrackname))
+    lvar.dm_fixtrack = tonumber(nz(GES('dm_fixtrack',true,data),lvar.dm_fixtrack))
+    
     lvar.trmix_panelsz = tonumber(nz(GES('trmix_panelsz',true,data),lvar.trmix_panelsz))
 
     lvar.trmix_sndpnl_show = tobool(nz(GES('trmix_sndpnl_show',true,data),lvar.trmix_sndpnl_show))
@@ -83224,7 +83263,7 @@ function GUI_DrawCtlBitmap_Strips()
       SCRIPT = file
     end
 
-  SetExtState(SCRIPT,'surface_zoom',tostring(lvar.zoom), true)                              
+    SetExtState(SCRIPT,'surface_zoom',tostring(lvar.zoom), true)                              
     SetExtState(SCRIPT,'file_bgimage',nz(file_bgimage,''), true)
     SetExtState(SCRIPT,'mmov_bgimgon',tostring(lvar.mmov_bgimgon), true)
     SetExtState(SCRIPT,'bgstretch',tostring(lvar.bgstretch), true)
@@ -83240,6 +83279,7 @@ function GUI_DrawCtlBitmap_Strips()
     SetExtState(SCRIPT,'dm_pady',tostring(lvar.dm_pady), true)
     SetExtState(SCRIPT,'dm_maxvistracks',tostring(lvar.dm_maxvistracks), true)
     SetExtState(SCRIPT,'dm_showtrackname',tostring(lvar.dm_showtrackname), true)
+    SetExtState(SCRIPT,'dm_fixtrack',tostring(lvar.dm_fixtrack), true)
 
     SetExtState(SCRIPT,'trmix_panelsz',tostring(lvar.trmix_panelsz), true)
 
