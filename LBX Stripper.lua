@@ -16,9 +16,9 @@
   local lvar = {}
   local cbi = {}
 
-  lvar.scriptver = '0.94.0167' --Script Version
+  lvar.scriptver = '0.94.0168' --Script Version
 
-  lvar.mousewheel_div = 120 --default 120 - change to 30 for weird Mac mice!
+  lvar.mousewheel_div = 120 --default 120 - change to 30 or ? for weird Mac mice!
 
   lvar.savesettingstofile = true
 
@@ -6536,17 +6536,17 @@
                          w = gsw,
                          h = math.floor((butt_h/2+8)*pnl_scale)}
 
-    obj.sections[811] = {x = math.floor(obj.sections[800].x + obj.sections[800].w - 40*pnl_scale),
+    obj.sections[811] = {x = math.floor(obj.sections[800].x + obj.sections[800].w - 55*pnl_scale),
                          y = math.floor(obj.sections[800].y + 25*pnl_scale),
-                         w = math.floor(35*pnl_scale),
+                         w = math.floor(50*pnl_scale),
                          h = math.floor((butt_h/2+8)*pnl_scale)}
-    obj.sections[812] = {x = math.floor(obj.sections[800].x + obj.sections[800].w - 40*pnl_scale),
+    obj.sections[812] = {x = math.floor(obj.sections[800].x + obj.sections[800].w - 55*pnl_scale),
                          y = math.floor(obj.sections[800].y + (25+ butt_h)*pnl_scale),
-                         w = math.floor(35*pnl_scale),
+                         w = math.floor(50*pnl_scale),
                          h = math.floor((butt_h/2+8)*pnl_scale)}
-    obj.sections[813] = {x = math.floor(obj.sections[800].x + obj.sections[800].w - 40*pnl_scale),
+    obj.sections[813] = {x = math.floor(obj.sections[800].x + obj.sections[800].w - 55*pnl_scale),
                          y = math.floor(obj.sections[800].y + (25 + butt_h*2)*pnl_scale),
-                         w = math.floor(35*pnl_scale),
+                         w = math.floor(50*pnl_scale),
                          h = math.floor((butt_h/2+8)*pnl_scale)}
 
     obj.sections[814] = {x = math.floor(obj.sections[800].x + obj.sections[800].w/2 + 55*pnl_scale),
@@ -6594,15 +6594,15 @@
                          w = gsw,
                          h = math.floor((butt_h*1.5)*pnl_scale)}
 
-    obj.sections[820] = {x = math.floor(obj.sections[800].x + obj.sections[800].w - (38 + butt_h)*pnl_scale),
+    obj.sections[820] = {x = math.floor(obj.sections[800].x + obj.sections[800].w - (53 + butt_h)*pnl_scale),
                          y = math.floor(obj.sections[800].y + 27*pnl_scale),
                          w = math.floor((butt_h/2+4)*pnl_scale),
                          h = math.floor((butt_h/2+4)*pnl_scale)}
-    obj.sections[821] = {x = math.floor(obj.sections[800].x + obj.sections[800].w - (38 + butt_h)*pnl_scale),
+    obj.sections[821] = {x = math.floor(obj.sections[800].x + obj.sections[800].w - (53 + butt_h)*pnl_scale),
                          y = math.floor(obj.sections[800].y + (27+ butt_h)*pnl_scale),
                          w = math.floor((butt_h/2+4)*pnl_scale),
                          h = math.floor((butt_h/2+4)*pnl_scale)}
-    obj.sections[822] = {x = math.floor(obj.sections[800].x + obj.sections[800].w - (38 + butt_h)*pnl_scale),
+    obj.sections[822] = {x = math.floor(obj.sections[800].x + obj.sections[800].w - (53 + butt_h)*pnl_scale),
                          y = math.floor(obj.sections[800].y + (27 + butt_h*2)*pnl_scale),
                          w = math.floor((butt_h/2+4)*pnl_scale),
                          h = math.floor((butt_h/2+4)*pnl_scale)}
@@ -11997,7 +11997,15 @@
         end
         GUI_DrawButton(gui, txt, obj.sections[811], gui.color.white, gui.skol.butt1_txt, gauge_select.show_arc,'',false,gui.fontsz.butt)
 
-        GUI_DrawButton(gui, 'TICKS', obj.sections[812], gui.color.white, gui.skol.butt1_txt, gauge_select.show_tick,'',false,gui.fontsz.butt)
+        local ticklbl
+        if gauge_select.tick_shape == 2 then
+          ticklbl = 'TICKS C'
+        elseif gauge_select.tick_shape == 1 then
+          ticklbl = 'TICKS L'
+        else
+          ticklbl = 'TICKS'        
+        end
+        GUI_DrawButton(gui, ticklbl, obj.sections[812], gui.color.white, gui.skol.butt1_txt, gauge_select.show_tick,'',false,gui.fontsz.butt)
         GUI_DrawButton(gui, 'VALS', obj.sections[813], gui.color.white, gui.skol.butt1_txt, gauge_select.show_val,'',false,gui.fontsz.butt)
         GUI_DrawColorBox(gui, '', obj.sections[820], gui.color.white, gauge_select.col_arc)
         GUI_DrawColorBox(gui, '', obj.sections[821], gui.color.white, gauge_select.col_tick)
@@ -12097,7 +12105,11 @@
                 else
                   f_Get_SSV(gtab.col_tick)
                 end
-                gfx.line(x1,y1,x2,y2)
+                if gtab.tick_shape == 2 then
+                  gfx.circle(x1,y1,ticksize-2,1,1)
+                else
+                  gfx.line(x1,y1,x2,y2)
+                end  
               end
               if gtab.show_val == true and gtab.vals[i+1] then
                 if showv then
@@ -12423,6 +12435,7 @@
               col_val = gt.col_val,
               show_arc = gt.show_arc,
               show_tick = gt.show_tick,
+              tick_shape = gt.tick_shape,
               show_val = gt.show_val,
               vals = {},
               val_dp = gt.val_dp,
@@ -23999,7 +24012,7 @@ function GUI_DrawCtlBitmap_Strips()
           gfx.mode = gmode
 
         else
-          if lvar.livemode == 2 and lvar.trmix_show and (lupd.update_trmix or lupd.update_trmix2) and not fullscreen_open then
+          if lvar.livemode == 2 and lvar.trbtns_show and lvar.trmix_show and (lupd.update_trmix or lupd.update_trmix2) and not fullscreen_open then
             --update mixer track only
             if #lvar.trmix_dirty > 0 then
               local cnt = math.min(lvar.dm_maxvistracks,lvar.trov_maxrows-1) --math.min(#lvar.dm_trackbtns[lvar.dm_tbidx], lvar.trov_maxrows-1, lvar.dm_maxvistracks)
@@ -26477,7 +26490,7 @@ function GUI_DrawCtlBitmap_Strips()
     local dm_trackbtns = lvar.dm_trackbtns[lvar.dm_tbidx]
     for tb2 = 1, cnt do
       local tb = tb2 + lvar.trbtns_offs
-      if dm_trackbtns[tb] then
+      if dm_trackbtns and dm_trackbtns[tb] then
         gfx.a = 1
       else
         gfx.a = 0.3
@@ -62080,7 +62093,15 @@ function GUI_DrawCtlBitmap_Strips()
         gauge_select.show_arc = not gauge_select.show_arc
         lupd.update_surface = true
       elseif mouse.context == nil and MOUSE_click(obj.sections[812]) then
-        gauge_select.show_tick = not gauge_select.show_tick
+        gauge_select.tick_shape = gauge_select.tick_shape + 1
+        if gauge_select.tick_shape == 3 then
+          gauge_select.tick_shape = 0
+        end
+        if gauge_select.tick_shape > 0 then
+          gauge_select.show_tick = true
+        else
+          gauge_select.show_tick = false
+        end
         lupd.update_surface = true
       elseif mouse.context == nil and MOUSE_click(obj.sections[813]) then
         gauge_select.show_val = not gauge_select.show_val
@@ -80330,6 +80351,14 @@ function GUI_DrawCtlBitmap_Strips()
           strip.controls[c].gauge.col_val = (zn(data[key..'gauge_col_val']))
           strip.controls[c].gauge.show_arc = tobool(zn(data[key..'gauge_show_arc']))
           strip.controls[c].gauge.show_tick = tobool(zn(data[key..'gauge_show_tick']))
+          strip.controls[c].gauge.tick_shape = tonumber(zn(data[key..'gauge_tick_shape']))
+          if not strip.controls[c].gauge.tick_shape then
+            if strip.controls[c].gauge.show_tick then
+              strip.controls[c].gauge.tick_shape = 1
+            else
+              strip.controls[c].gauge.tick_shape = 0
+            end
+          end
           strip.controls[c].gauge.show_val = tobool(zn(data[key..'gauge_show_val']))
           strip.controls[c].gauge.val = 0
           strip.controls[c].gauge.dval = ''
@@ -84532,6 +84561,7 @@ function GUI_DrawCtlBitmap_Strips()
                 file:write('['..key..'gauge_col_val]'..nz(ctl.gauge.col_val,'205 205 205')..'\n')
                 file:write('['..key..'gauge_show_arc]'..tostring(nz(ctl.gauge.show_arc,true))..'\n')
                 file:write('['..key..'gauge_show_tick]'..tostring(nz(ctl.gauge.show_tick,true))..'\n')
+                file:write('['..key..'gauge_tick_shape]'..tostring(nz(ctl.gauge.tick_shape,''))..'\n')
                 file:write('['..key..'gauge_show_val]'..tostring(nz(ctl.gauge.show_val,true))..'\n')
                 file:write('['..key..'gauge_val_dp]'..nz(ctl.gauge.val_dp,0)..'\n')
                 file:write('['..key..'gauge_font]'..nz(ctl.gauge.font,fontname_def)..'\n')
@@ -89498,6 +89528,7 @@ DBG(t.. '  '..trigtime)
                 col_val = '192 192 192',
                 show_arc = true,
                 show_tick = true,
+                tick_shape = 1,
                 show_val = true,
                 val = 0,
                 dval = '',
