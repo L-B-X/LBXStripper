@@ -16,7 +16,7 @@
   local lvar = {}
   local cbi = {}
 
-  lvar.scriptver = '0.94.0168' --Script Version
+  lvar.scriptver = '0.94.0169' --Script Version
 
   lvar.mousewheel_div = 120 --default 120 - change to 30 or ? for weird Mac mice!
 
@@ -49705,6 +49705,8 @@ function GUI_DrawCtlBitmap_Strips()
             fxident = string.lower(TrimStr(CropFXName(plug)))
           end
         end
+        local fxi = string.match(fxident,'.+[\\/](.*)')
+        fxident = fxi or fxident
         lvar.dm_save_plug = fxident
         OpenEB(5021, 'Please enter strip name (plug id: '..fxident..') :', fxident)
       else
@@ -74575,6 +74577,7 @@ function GUI_DrawCtlBitmap_Strips()
           local fxident = TrimStr(editbox.text)
           if fxident ~= '' then
             local ffn = paths.strips_path..'/'..paths.dmstrip_folder..'/'..fxident..'.strip'
+            --DBG(ffn..'  '..fxident)
             SaveStrip3(fxident, nil, ffn)
             lvar.ss3_bmp.pause = true
 
