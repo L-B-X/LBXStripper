@@ -16,7 +16,7 @@
   local lvar = {}
   local cbi = {}
 
-  lvar.scriptver = '0.94.0169' --Script Version
+  lvar.scriptver = '0.94.0170' --Script Version
 
   lvar.mousewheel_div = 120 --default 120 - change to 30 or ? for weird Mac mice!
 
@@ -36429,11 +36429,13 @@ function GUI_DrawCtlBitmap_Strips()
   function GFX_Copy()
 
     gfx_clip = {}
-    table.sort(gfx4_select)
-    for i = 1, #gfx4_select do
-      gfx_clip[i] = GetGraphicsTable(tracks[track_select].strip, page, gfx4_select[i])
+    if gfx4_select then
+      table.sort(gfx4_select)
+      for i = 1, #gfx4_select do
+        gfx_clip[i] = GetGraphicsTable(tracks[track_select].strip, page, gfx4_select[i])
+      end
     end
-
+    
   end
 
   function GFX_Paste()
