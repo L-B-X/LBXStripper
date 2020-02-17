@@ -16,7 +16,7 @@
   local lvar = {}
   local cbi = {}
 
-  lvar.scriptver = '0.94.0170' --Script Version
+  lvar.scriptver = '0.94.0173' --Script Version
 
   lvar.mousewheel_div = 120 --default 120 - change to 30 or ? for weird Mac mice!
 
@@ -31729,12 +31729,12 @@ function GUI_DrawCtlBitmap_Strips()
         local gdi_dc = reaper.JS_GDI_GetClientDC(win_hwnd)
         --gfx.blit(strip_image,1,0,x,y,w,h,0,0)
         --gfx.update()
-        local xx = math.max(0, x-surface_offset.x)
-        local yy = math.max(0, y-surface_offset.y)
-        local rr = math.min(x-surface_offset.x+w,obj.sections[10].w)
-        local bb = math.min(y-surface_offset.y+h,obj.sections[10].h)
-        local ww = rr-xx
-        local hh = bb-yy
+        local xx = math.floor(math.max(0, x-surface_offset.x))
+        local yy = math.floor(math.max(0, y-surface_offset.y))
+        local rr = math.floor(math.min(x-surface_offset.x+w,obj.sections[10].w))
+        local bb = math.floor(math.min(y-surface_offset.y+h,obj.sections[10].h))
+        local ww = math.floor(rr-xx)
+        local hh = math.floor(bb-yy)
 
         local lice_bmp = reaper.JS_LICE_CreateBitmap(true, ww, hh)
         local lice_dc = reaper.JS_LICE_GetDC(lice_bmp)
@@ -32113,6 +32113,12 @@ function GUI_DrawCtlBitmap_Strips()
             fxn = string.match(fxchunk, '.*%s"(.-%.vst3)"')
             if fxn == nil then
               fxn = string.match(fxchunk, '.*%s(.-%.vst3)')
+              if fxn == nil then
+                fxn = string.match(fxchunk, '.*%s"(.-%.vst)"')
+                if fxn == nil then
+                  fxn = string.match(fxchunk, '.*%s(.-%.vst)')
+                end
+              end
             end
           end
         end
@@ -36256,9 +36262,9 @@ function GUI_DrawCtlBitmap_Strips()
       if nz(strips[tracks[track_select].strip][page].graphics[gfx4_select[1]].poslock,false) == true then
         mm2 = '!'..mm2
       end
-      mstr = more1..'Move up|'..more1..'Move down|Bring to front|Send to back||Insert label||'..lb..'Labels on top||'..mm..'||'..mm2..'||Delete||Copy|'..gp
+      mstr = more1..'Move up|'..more1..'Move down|Bring to front|Send to back||Insert label||'..lb..'Labels on top||'..mm..'||'..mm2..'||Delete||Copy|'..gp..'||Ungroup'
     else
-      mstr = '#Move up|#Move down|#Bring to front|#Send to back||Insert label||'..lb..'Labels on top||#Copy formatting|#Paste formatting||#Lock position||#Delete|#Copy|'..gp
+      mstr = '#Move up|#Move down|#Bring to front|#Send to back||Insert label||'..lb..'Labels on top||#Copy formatting|#Paste formatting||#Lock position||#Delete|#Copy|'..gp..'||#Ungroup'
     end
     mstr = mstr .. '||Gfx Info'
     gfx.x, gfx.y = mouse.mx, mouse.my
@@ -36408,6 +36414,16 @@ function GUI_DrawCtlBitmap_Strips()
         GFX_Paste()
 
       elseif res == 13 then
+        if gfx4_select and #gfx4_select > 0 then
+          for c = 1, #gfx4_select do
+            strips[tracks[track_select].strip][page].graphics[gfx4_select[c]].grpid = nil
+            strips[tracks[track_select].strip][page].graphics[gfx4_select[c]].switcher = nil
+          end
+        end
+        lupd.update_gfx = true
+        lupd.update_bg = true
+        
+      elseif res == 14 then
         if gfx4_select and #gfx4_select > 0 then
           for c = 1, #gfx4_select do
             GfxInfo(tracks[track_select].strip, page, gfx4_select[c])
@@ -71808,12 +71824,14 @@ function GUI_DrawCtlBitmap_Strips()
       end
       ClearPage(page, true)
 
-      local srctrack = GetTrack(lvar.dynamicmode_trn)
-      local fxguids = Switchers_GetFXGUIDs(extid, pos+1)
-      if fxguids and fxguids[1] then
-        local fxn = GetFXNFromGUID(srctrack, fxguids[1])
-        if fxn then
-          reaper.TrackFX_CopyToTrack(srctrack,fxn,track,0,false)
+      if pos then
+        local srctrack = GetTrack(lvar.dynamicmode_trn)
+        local fxguids = Switchers_GetFXGUIDs(extid, pos+1)
+        if fxguids and fxguids[1] then
+          local fxn = GetFXNFromGUID(srctrack, fxguids[1])
+          if fxn then
+            reaper.TrackFX_CopyToTrack(srctrack,fxn,track,0,false)
+          end
         end
       end
 
@@ -89402,6 +89420,8 @@ DBG(t.. '  '..trigtime)
             plugdefstrips[p].plug = plug
             plugdefstrips[p].stripfile = fil
             plugdefstrips[p].stripfol = fol
+
+            --DBG(p..'  '..plug..'  '..fil..'  '..fol)
 
             if plugdefstrips[p].plug then
               plugdefstrips_idx[plugdefstrips[p].plug] = p
