@@ -16,7 +16,7 @@
   local lvar = {}
   local cbi = {}
 
-  lvar.scriptver = '0.94.0175' --Script Version
+  lvar.scriptver = '0.94.0176' --Script Version
 
   lvar.mousewheel_div = 120 --default 120 - change to 30 or ? for weird Mac mice!
 
@@ -15814,7 +15814,9 @@ function GUI_DrawCtlBitmap_Strips()
                     local range
                     if ctlcat == ctlcats.fxparam or ctlcat == ctlcats.trackparam or ctlcat == ctlcats.tracksend or ctlcat == ctlcats.pkmeter or ctlcat == ctlcats.gr_meter then
                       if settings_enablednu ~= true or ctl.dnu ~= true then
+              
                         v2 = math.max(math.min(GetParamValue2(ctlcat,track,fxnum,param,i),1),0)
+              
                         if ctl.scalemode ~= 8 and (ctype == 7 or ctype == 5 or ctype == 6) then
                           v2 = ctlScaleInv(ctl.scalemode, v2)
                         else
@@ -28031,7 +28033,7 @@ function GUI_DrawCtlBitmap_Strips()
       return DenormalizeValue(-60,0,val)
     elseif ctl.ctlcat == ctlcats.gr_meter then
       local min, max = ctl.grmin or -20, ctl.grmax or 0
-      return DenormalizeValue(min,max,val)    
+      return DenormalizeValue(min,max,val or 0)    
     else
       local tracknum = strips[strip].track.tracknum
       if ctl.tracknum ~= nil then
@@ -28220,6 +28222,16 @@ function GUI_DrawCtlBitmap_Strips()
         else
           return 0
         end
+
+      elseif cc == ctlcats.gr_meter then
+        local min, max, v
+        min, max = ctl.grmin, ctl.grmax
+        _, val = reaper.TrackFX_GetNamedConfigParm(track, fxnum, 'GainReduction_dB')
+        if tonumber(val) then
+          v = tonumber(val)
+        end        
+        return normalize(min or -20, max or 0, v or 0)
+
       elseif cc == ctlcats.macro then
         return ctl.val
       end
@@ -28439,6 +28451,19 @@ function GUI_DrawCtlBitmap_Strips()
         return 0
       end
 
+    elseif ctlcat == ctlcats.gr_meter then
+
+      local min, max, v
+      if c then
+        local ctl = strips[tracks[track_select].strip][page].controls[c]        
+        min, max = ctl.grmin, ctl.grmax
+        _, val = reaper.TrackFX_GetNamedConfigParm(track, fxnum, 'GainReduction_dB')
+        if tonumber(val) then
+          v = tonumber(val)
+        end
+      end
+      return normalize(min or -20, max or 0, v or 0)
+
     elseif ctlcat == ctlcats.midictl then
       local ctl = strips[tracks[track_select].strip][page].controls[c]
       local v = ctl.val
@@ -28517,6 +28542,26 @@ function GUI_DrawCtlBitmap_Strips()
         else
           return 0
         end
+      
+      elseif ctlcat == ctlcats.gr_meter then
+  
+        local min, max, v
+        if ctl then
+          min, max = ctl.grmin, ctl.grmax
+          _, val = reaper.TrackFX_GetNamedConfigParm(track, fxnum, 'GainReduction_dB')
+          if tonumber(val) then
+            v = tonumber(val)
+          end        
+        elseif c then
+          local ctl = strips[strip][page].controls[c]        
+          min, max = ctl.grmin, ctl.grmax
+          _, val = reaper.TrackFX_GetNamedConfigParm(track, fxnum, 'GainReduction_dB')
+          if tonumber(val) then
+            v = tonumber(val)
+          end
+        end
+        return normalize(min or -20, max or 0, v or 0)
+      
       end
     end
   end
@@ -75913,11 +75958,14 @@ function GUI_DrawCtlBitmap_Strips()
             SendMIDIMsg(ctl.midiout, ctl.val)
           end]]
 
+        --[[else
+          ctl.val = 0
+          ctl.dval = '0']]
         end
 
       else
-        ctl.val = max
-        ctl.dval = '-'
+        ctl.val = 0
+        ctl.dval = '0'
       end
     else
       if ctl.fxfound then
