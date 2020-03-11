@@ -16,7 +16,7 @@
   local lvar = {}
   local cbi = {}
 
-  lvar.scriptver = '0.94.0173' --Script Version
+  lvar.scriptver = '0.94.0174' --Script Version
 
   lvar.mousewheel_div = 120 --default 120 - change to 30 or ? for weird Mac mice!
 
@@ -548,6 +548,7 @@
                    statectl = 28,
                    statectl_str = 29,
                    navictl = 30,
+                   gr_meter = 31,
                    }
 
   lvar.ctlcats_nm = {'fxparam',
@@ -7195,7 +7196,12 @@
         local spv = show_paramval
         local toff = textoff_select
         local param = trackfxparam_select
-        if trackfxparam_select == #trackfxparams-3 then
+
+        if trackfxparam_select == #trackfxparams-4 then
+          ccats = ctlcats.gr_meter
+          cts = 5
+        
+        elseif trackfxparam_select == #trackfxparams-3 then
           ccats = ctlcats.fxoffline
           cts = 2
         elseif trackfxparam_select == #trackfxparams-2 then
@@ -10031,6 +10037,9 @@
       end
 
       local p = #trackfxparams+1
+      trackfxparams[p] = {paramnum = p,
+                          paramname = 'Gain Reduction (*)'}
+      p=p+1
       trackfxparams[p] = {paramnum = p,
                           paramname = 'Offline'}
       p=p+1
@@ -15803,7 +15812,7 @@ function GUI_DrawCtlBitmap_Strips()
 
                   if track ~= nil then
                     local range
-                    if ctlcat == ctlcats.fxparam or ctlcat == ctlcats.trackparam or ctlcat == ctlcats.tracksend or ctlcat == ctlcats.pkmeter then
+                    if ctlcat == ctlcats.fxparam or ctlcat == ctlcats.trackparam or ctlcat == ctlcats.tracksend or ctlcat == ctlcats.pkmeter or ctlcat == ctlcats.gr_meter then
                       if settings_enablednu ~= true or ctl.dnu ~= true then
                         v2 = math.max(math.min(GetParamValue2(ctlcat,track,fxnum,param,i),1),0)
                         if ctl.scalemode ~= 8 and (ctype == 7 or ctype == 5 or ctype == 6) then
@@ -16051,6 +16060,17 @@ function GUI_DrawCtlBitmap_Strips()
                         Disp_ParamV = ''
                       end
 
+                    elseif ctlcat == ctlcats.gr_meter then
+                      if ctlnmov == '' then
+                        Disp_Name = pname
+                      else
+                        Disp_Name = ctlnmov
+                      end
+                      Disp_ParamV = ctl.dval
+                      if maxdp > -1 then
+                        Disp_ParamV = roundX(Disp_ParamV, maxdp)
+                      end
+                      
                     elseif ctlcat == ctlcats.snapshot then
                       if ctlnmov == '' then
                         Disp_Name = pname
@@ -28008,6 +28028,9 @@ function GUI_DrawCtlBitmap_Strips()
 
     if ctl.ctlcat == ctlcats.pkmeter then
       return DenormalizeValue(-60,0,val)
+    elseif ctl.ctlcat == ctlcats.gr_meter then
+      local min, max = ctl.grmin or -20, ctl.grmax or 0
+      return DenormalizeValue(min,max,val)    
     else
       local tracknum = strips[strip].track.tracknum
       if ctl.tracknum ~= nil then
@@ -28518,6 +28541,19 @@ function GUI_DrawCtlBitmap_Strips()
     elseif ctlcat == ctlcats.tracksend then
       local min, max = GetParamMinMax(ctlcat,nil,nil,paramnum,true,c)
       return GTSI_norm(track, paramnum, min, max,c)
+
+    elseif ctlcat == ctlcats.gr_meter then
+
+      local min, max, v
+      if c then
+        local ctl = strips[tracks[track_select].strip][page].controls[c]        
+        min, max = ctl.grmin, ctl.grmax
+        _, val = reaper.TrackFX_GetNamedConfigParm(track, fxnum, 'GainReduction_dB')
+        if tonumber(val) then
+          v = tonumber(val)
+        end
+      end
+      return normalize(min or -20, max or 0, v or 0)
 
     elseif ctlcat == ctlcats.action then
       return 0
@@ -66376,7 +66412,10 @@ function GUI_DrawCtlBitmap_Strips()
     end
     local ccats = ctlcats.fxparam
     local param = trackfxparam_select
-    if trackfxparam_select == #trackfxparams-3 then
+    if trackfxparam_select == #trackfxparams-4 then
+      ccats = ctlcats.gr_meter
+    
+    elseif trackfxparam_select == #trackfxparams-3 then
       ccats = ctlcats.fxoffline
       --cts = 2
     elseif trackfxparam_select == #trackfxparams-2 then
@@ -75835,6 +75874,63 @@ function GUI_DrawCtlBitmap_Strips()
     end
   end
 
+  local function UCV_grmeter(tr, ctl, strip, rt)
+
+    local fxguid = reaper.TrackFX_GetFXGUID(tr, ctl.fxnum)
+    if ctl.fxguid == fxguid then
+
+      local ret, v = reaper.TrackFX_GetNamedConfigParm(tr, ctl.fxnum, 'GainReduction_dB')
+      local min = ctl.grmin or -20
+      local max = ctl.grmax or 0
+      if tonumber(v) then
+        v2 = normalize(min, max, v)
+      
+        local diff
+        if tostring(ctl.dval) ~= tostring(v) then
+          diff = true
+        end
+  
+        if v ~= '' then
+          ctl.val = v2
+          ctl.dval = v
+          if diff == true then
+            ctl.dirty = true
+            if ctl.param_info.paramname == 'Bypass' then
+              SetCtlEnabled(ctl.fxnum)
+            end
+            --lupd.update_ctls = true
+
+            if ctl.midiout then
+              SendMIDIMsg(ctl.midiout, ctl.val)
+            end
+          end
+        elseif ctl.val ~= v2 then
+          ctl.val = v2
+          ctl.dval = v
+          ctl.dirty = true
+          if ctl.param_info.paramname == 'Bypass' then
+            SetCtlEnabled(ctl.fxnum)
+          end
+          --lupd.update_ctls = true
+
+          if ctl.midiout then
+            SendMIDIMsg(ctl.midiout, ctl.val)
+          end
+
+        end
+
+      else
+        ctl.val = max
+        ctl.dval = '-'
+      end
+    else
+      if ctl.fxfound then
+        CheckStripControls()
+      end
+    end
+
+  end
+  
   local function UCV_fxparam(tr, ctl, strip, rt)
 
     local fxguid = reaper.TrackFX_GetFXGUID(tr, ctl.fxnum)
@@ -76643,6 +76739,7 @@ function GUI_DrawCtlBitmap_Strips()
   function SetUp_UCV_Functions()
     local tmp = {}
 
+    tmp[ctlcats.gr_meter] = UCV_grmeter
     tmp[ctlcats.fxparam] = UCV_fxparam
     tmp[ctlcats.trackparam] = UCV_trackparam
     tmp[ctlcats.tracksend] = UCV_tracksend
