@@ -16,7 +16,7 @@
   local lvar = {}
   local cbi = {}
 
-  lvar.scriptver = '0.94.0174' --Script Version
+  lvar.scriptver = '0.94.0175' --Script Version
 
   lvar.mousewheel_div = 120 --default 120 - change to 30 or ? for weird Mac mice!
 
@@ -7253,11 +7253,11 @@
                                                 textsizev = textsizev_select,
                                                 textcolv = textcolv_select,
                                                 enabledefval = enabledefval_select,
-                                                val = GetParamValue(ctlcats.fxparam,
+                                                val = GetParamValue(ccats,
                                                                     tracks[trackedit_select].tracknum,
                                                                     trackfx[trackfx_select].fxnum,
                                                                     trackfxparam_select, nil),
-                                                defval = GetParamValue(ctlcats.fxparam,
+                                                defval = GetParamValue(ccats,
                                                                     tracks[trackedit_select].tracknum,
                                                                     trackfx[trackfx_select].fxnum,
                                                                     trackfxparam_select, nil),
@@ -23153,6 +23153,7 @@ function GUI_DrawCtlBitmap_Strips()
               local cx = ctl_select[c].ctl
               local sctl = strips[tracks[track_select].strip][page].controls[cx]
               if sctl.ctlcat == ctlcats.fxparam or
+                 sctl.ctlcat == ctlcats.gr_meter or
                  sctl.ctlcat == ctlcats.trackparam or
                  sctl.ctlcat == ctlcats.tracksend or
                  sctl.ctlcat == ctlcats.fxoffline or
@@ -33282,7 +33283,8 @@ function GUI_DrawCtlBitmap_Strips()
             or stripdata.strip.controls[j].ctlcat == ctlcats.rcm_switch
             or stripdata.strip.controls[j].ctlcat == ctlcats.rs5k
             or stripdata.strip.controls[j].ctlcat == ctlcats.fxmulti
-            or stripdata.strip.controls[j].ctlcat == ctlcats.switcher)
+            or stripdata.strip.controls[j].ctlcat == ctlcats.switcher
+            or stripdata.strip.controls[j].ctlcat == ctlcats.gr_meter)
             and stripdata.strip.controls[j].fxguid then
           if stripdata.version == 3 then
             stripdata.strip.controls[j].fxguid = '{'..stripdata.strip.controls[j].fxguid..'}'
@@ -35089,7 +35091,7 @@ function GUI_DrawCtlBitmap_Strips()
                   if tr_found then
                     tr2 = GetTrack(ctl.tracknum)
 
-                    if ctl.ctlcat == ctlcats.fxparam or ctl.ctlcat == ctlcats.fxoffline or ctl.ctlcat == ctlcats.fxmulti
+                    if ctl.ctlcat == ctlcats.fxparam or ctl.ctlcat == ctlcats.fxoffline or ctl.ctlcat == ctlcats.fxmulti or ctl.ctlcat == ctlcats.gr_meter
                        or ctl.ctlcat == ctlcats.fxgui or ctl.ctlcat == ctlcats.rs5k or (ctl.ctlcat == ctlcats.rcm_switch and ctl.fxnum ~= nil)
                        or (ctl.ctlcat == ctlcats.switcher and switchers[ctl.switcherid] and switchers[ctl.switcherid].switchmode == 1 and ctl.fxnum) then
 
@@ -35157,7 +35159,7 @@ function GUI_DrawCtlBitmap_Strips()
                     ctl.fxfound = false
                   end
                 else
-                  if ctl.ctlcat == ctlcats.fxparam or ctl.ctlcat == ctlcats.fxoffline or ctl.ctlcat == ctlcats.fxmulti
+                  if ctl.ctlcat == ctlcats.fxparam or ctl.ctlcat == ctlcats.fxoffline or ctl.ctlcat == ctlcats.fxmulti or ctl.ctlcat == ctlcats.gr_meter
                      or ctl.ctlcat == ctlcats.fxgui or ctl.ctlcat == ctlcats.rs5k or (ctl.ctlcat == ctlcats.rcm_switch and ctl.fxnum ~= nil)
                      or (ctl.ctlcat == ctlcats.switcher and switchers[ctl.switcherid] and switchers[ctl.switcherid].switchmode == 1) then
                     if ctl.fxguid == reaper.TrackFX_GetFXGUID(tr2, nz(ctl.fxnum,-1)) then
@@ -37822,7 +37824,7 @@ function GUI_DrawCtlBitmap_Strips()
   local function DM_GetCtlData(ctl, idx)
 
     local ctldata
-    if ctl.ctlcat == ctlcats.fxparam then
+    if ctl.ctlcat == ctlcats.fxparam or ctl.ctlcat == ctlcats.gr_meter then
       local t = {tostring(ctl.ctlcat),tostring(ctl.fxguid),tostring(ctl.param),tostring(ctl.trackguid)}
       ctldata = {idx = idx,
                  id = ctl.c_id,
@@ -75895,27 +75897,21 @@ function GUI_DrawCtlBitmap_Strips()
           ctl.dval = v
           if diff == true then
             ctl.dirty = true
-            if ctl.param_info.paramname == 'Bypass' then
-              SetCtlEnabled(ctl.fxnum)
-            end
             --lupd.update_ctls = true
 
-            if ctl.midiout then
+            --[[if ctl.midiout then
               SendMIDIMsg(ctl.midiout, ctl.val)
-            end
+            end]]
           end
         elseif ctl.val ~= v2 then
           ctl.val = v2
           ctl.dval = v
           ctl.dirty = true
-          if ctl.param_info.paramname == 'Bypass' then
-            SetCtlEnabled(ctl.fxnum)
-          end
           --lupd.update_ctls = true
 
-          if ctl.midiout then
+          --[[if ctl.midiout then
             SendMIDIMsg(ctl.midiout, ctl.val)
-          end
+          end]]
 
         end
 
