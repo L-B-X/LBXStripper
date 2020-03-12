@@ -16,7 +16,7 @@
   local lvar = {}
   local cbi = {}
 
-  lvar.scriptver = '0.94.0176' --Script Version
+  lvar.scriptver = '0.94.0177' --Script Version
 
   lvar.mousewheel_div = 120 --default 120 - change to 30 or ? for weird Mac mice!
 
@@ -62149,6 +62149,27 @@ function GUI_DrawCtlBitmap_Strips()
       end
 
       if mouse.context == nil and MOUSE_click(obj.sections[802]) then mouse.context = contexts.gauge_arcrad
+      elseif mouse.context == nil and MOUSE_click(obj.sections[820]) then
+        local gtab = gauge_select
+        local retval, c = reaper.GR_SelectColor(_,ConvertColorString(gtab.col_arc))
+        if retval ~= 0 then
+          gtab.col_arc = ConvertColor(c)
+          lupd.update_surface = true
+        end
+      elseif mouse.context == nil and MOUSE_click(obj.sections[821]) then
+        local gtab = gauge_select
+        local retval, c = reaper.GR_SelectColor(_,ConvertColorString(gtab.col_tick))
+        if retval ~= 0 then
+          gtab.col_tick = ConvertColor(c)
+          lupd.update_surface = true
+        end
+      elseif mouse.context == nil and MOUSE_click(obj.sections[822]) then
+        local gtab = gauge_select
+        local retval, c = reaper.GR_SelectColor(_,ConvertColorString(gtab.col_val))
+        if retval ~= 0 then
+          gtab.col_val = ConvertColor(c)
+          lupd.update_surface = true
+        end
       elseif mouse.context == nil and MOUSE_click(obj.sections[803]) then mouse.context = contexts.gauge_arclen
       elseif mouse.context == nil and MOUSE_click(obj.sections[804]) then mouse.context = contexts.gauge_arcrot
       elseif mouse.context == nil and MOUSE_click(obj.sections[806]) then mouse.context = contexts.gauge_val
@@ -62284,28 +62305,6 @@ function GUI_DrawCtlBitmap_Strips()
           Gauge_SortVals()
           lupd.update_surface = true
 
-        end
-
-      elseif mouse.context == nil and MOUSE_click(obj.sections[820]) then
-        local gtab = gauge_select
-        local retval, c = reaper.GR_SelectColor(_,ConvertColorString(gtab.col_arc))
-        if retval ~= 0 then
-          gtab.col_arc = ConvertColor(c)
-          lupd.update_surface = true
-        end
-      elseif mouse.context == nil and MOUSE_click(obj.sections[821]) then
-        local gtab = gauge_select
-        local retval, c = reaper.GR_SelectColor(_,ConvertColorString(gtab.col_tick))
-        if retval ~= 0 then
-          gtab.col_tick = ConvertColor(c)
-          lupd.update_surface = true
-        end
-      elseif mouse.context == nil and MOUSE_click(obj.sections[822]) then
-        local gtab = gauge_select
-        local retval, c = reaper.GR_SelectColor(_,ConvertColorString(gtab.col_val))
-        if retval ~= 0 then
-          gtab.col_val = ConvertColor(c)
-          lupd.update_surface = true
         end
 
       elseif mouse.context == nil and MOUSE_click(obj.sections[823]) then
