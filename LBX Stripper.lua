@@ -16,7 +16,7 @@
   local lvar = {}
   local cbi = {}
 
-  lvar.scriptver = '0.94.0177' --Script Version
+  lvar.scriptver = '0.94.0178' --Script Version
 
   lvar.mousewheel_div = 120 --default 120 - change to 30 or ? for weird Mac mice!
 
@@ -15815,7 +15815,7 @@ function GUI_DrawCtlBitmap_Strips()
                     if ctlcat == ctlcats.fxparam or ctlcat == ctlcats.trackparam or ctlcat == ctlcats.tracksend or ctlcat == ctlcats.pkmeter or ctlcat == ctlcats.gr_meter then
                       if settings_enablednu ~= true or ctl.dnu ~= true then
               
-                        v2 = math.max(math.min(GetParamValue2(ctlcat,track,fxnum,param,i),1),0)
+                        v2 = math.max(math.min(GetParamValue2(ctlcat,track,fxnum,param,i) or 0,1),0)
               
                         if ctl.scalemode ~= 8 and (ctype == 7 or ctype == 5 or ctype == 6) then
                           v2 = ctlScaleInv(ctl.scalemode, v2)
@@ -16068,7 +16068,7 @@ function GUI_DrawCtlBitmap_Strips()
                       else
                         Disp_Name = ctlnmov
                       end
-                      Disp_ParamV = ctl.dval
+                      Disp_ParamV = ctl.dval or 0
                       if maxdp > -1 then
                         Disp_ParamV = roundX(Disp_ParamV, maxdp)
                       end
@@ -28226,7 +28226,7 @@ function GUI_DrawCtlBitmap_Strips()
       elseif cc == ctlcats.gr_meter then
         local min, max, v
         min, max = ctl.grmin, ctl.grmax
-        _, val = reaper.TrackFX_GetNamedConfigParm(track, fxnum, 'GainReduction_dB')
+        _, val = reaper.TrackFX_GetNamedConfigParm(track, ctl.fxnum, 'GainReduction_dB')
         if tonumber(val) then
           v = tonumber(val)
         end        
