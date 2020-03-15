@@ -16,7 +16,7 @@
   local lvar = {}
   local cbi = {}
 
-  lvar.scriptver = '0.94.0179' --Script Version
+  lvar.scriptver = '0.94.0180' --Script Version
 
   lvar.mousewheel_div = 120 --default 120 - change to 30 or ? for weird Mac mice!
 
@@ -83350,7 +83350,10 @@ function GUI_DrawCtlBitmap_Strips()
         local fnd = 0
         for k = 0, #ctl_files do
           if ctl_files[k].fn == tmp.knob_fn then
-            tmp.knob_fn = ctl_files[k].fn
+            --DBG(ctl_files[k].fn..'  '..tmp.knob_fn)
+            --DBG(tmp.knob..'  '..k)
+            --tmp.knob_fn = ctl_files[k].fn
+            tmp.knob = k
             fnd = 1
             break
           end
