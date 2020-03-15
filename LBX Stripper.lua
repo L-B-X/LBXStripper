@@ -16,7 +16,7 @@
   local lvar = {}
   local cbi = {}
 
-  lvar.scriptver = '0.94.0180' --Script Version
+  lvar.scriptver = '0.94.0181' --Script Version
 
   lvar.mousewheel_div = 120 --default 120 - change to 30 or ? for weird Mac mice!
 
@@ -25476,7 +25476,7 @@ function GUI_DrawCtlBitmap_Strips()
         gfx.dest = -1
         for tb2 = 1, cnt-1 do
           local tb = tb2 + lvar.trbtns_offs
-          if dm_trackbtns[tb] then
+          if dm_trackbtns and dm_trackbtns[tb] then
 
             local tr = GetTrack(dm_trackbtns[tb].trn)
             if tr then
@@ -26600,7 +26600,7 @@ function GUI_DrawCtlBitmap_Strips()
       master = true
     end]]
     local tr 
-    if dm_trackbtns[tb] then
+    if dm_trackbtns and dm_trackbtns[tb] then
       tr = GetTrack(dm_trackbtns[tb].trn)
       if tr then
         if reaper.GetTrackGUID(tr) ~= dm_trackbtns[tb].guid and dm_trackbtns[tb].trn ~= -1 then
@@ -53736,49 +53736,51 @@ function GUI_DrawCtlBitmap_Strips()
 
       elseif lvar.trmix_show then
         local dm_trackbtns = lvar.dm_trackbtns[lvar.dm_tbidx]
-        local cnt = math.min(#dm_trackbtns, lvar.trov_maxrows)
-        if cnt > 0 then
-
-          lvar.trmix_dirty = {}
-
-          for tb2 = 1, cnt do
-
-            local tb = tb2 + lvar.trbtns_offs
-            if dm_trackbtns[tb] then
-              local tr = GetTrack(dm_trackbtns[tb].trn)
-              if tr then
-
-              end
-              if tr then
-
-                local r, vol, pan = trctls_table[1].funcget(tr)
-                local phs = reaper.GetMediaTrackInfo_Value(tr, 'B_PHASE')
-                local rec = reaper.GetMediaTrackInfo_Value(tr, 'I_RECARM')
-                local fxb = reaper.GetMediaTrackInfo_Value(tr, 'I_FXEN')
-                local mas = reaper.GetMediaTrackInfo_Value(tr, 'B_MAINSEND')
-                if rec ~= dm_trackbtns[tb].recarm or
-                   fxb ~= dm_trackbtns[tb].fxbyp or
-                   phs ~= dm_trackbtns[tb].phase or
-                   mas ~= dm_trackbtns[tb].master then
-                  dm_trackbtns[tb].vol = vol
-                  dm_trackbtns[tb].pan = pan
-                  dm_trackbtns[tb].phase = phs
-                  dm_trackbtns[tb].recarm = rec
-                  dm_trackbtns[tb].fxbyp = fxb
-                  dm_trackbtns[tb].master = mas
-                  lvar.trmix_dirty[#lvar.trmix_dirty+1] = tb
-                  lupd.update_trmix = true
-                elseif vol ~= dm_trackbtns[tb].vol or pan ~= dm_trackbtns[tb].pan then
-                  dm_trackbtns[tb].vol = vol
-                  dm_trackbtns[tb].pan = pan
-                  lvar.trmix_dirty[#lvar.trmix_dirty+1] = tb
-                  lupd.update_trmix2 = true
+        if dm_trackbtns then
+          local cnt = math.min(#dm_trackbtns, lvar.trov_maxrows)
+          if cnt > 0 then
+  
+            lvar.trmix_dirty = {}
+  
+            for tb2 = 1, cnt do
+  
+              local tb = tb2 + lvar.trbtns_offs
+              if dm_trackbtns[tb] then
+                local tr = GetTrack(dm_trackbtns[tb].trn)
+                if tr then
+  
+                end
+                if tr then
+  
+                  local r, vol, pan = trctls_table[1].funcget(tr)
+                  local phs = reaper.GetMediaTrackInfo_Value(tr, 'B_PHASE')
+                  local rec = reaper.GetMediaTrackInfo_Value(tr, 'I_RECARM')
+                  local fxb = reaper.GetMediaTrackInfo_Value(tr, 'I_FXEN')
+                  local mas = reaper.GetMediaTrackInfo_Value(tr, 'B_MAINSEND')
+                  if rec ~= dm_trackbtns[tb].recarm or
+                     fxb ~= dm_trackbtns[tb].fxbyp or
+                     phs ~= dm_trackbtns[tb].phase or
+                     mas ~= dm_trackbtns[tb].master then
+                    dm_trackbtns[tb].vol = vol
+                    dm_trackbtns[tb].pan = pan
+                    dm_trackbtns[tb].phase = phs
+                    dm_trackbtns[tb].recarm = rec
+                    dm_trackbtns[tb].fxbyp = fxb
+                    dm_trackbtns[tb].master = mas
+                    lvar.trmix_dirty[#lvar.trmix_dirty+1] = tb
+                    lupd.update_trmix = true
+                  elseif vol ~= dm_trackbtns[tb].vol or pan ~= dm_trackbtns[tb].pan then
+                    dm_trackbtns[tb].vol = vol
+                    dm_trackbtns[tb].pan = pan
+                    lvar.trmix_dirty[#lvar.trmix_dirty+1] = tb
+                    lupd.update_trmix2 = true
+                  end
                 end
               end
             end
           end
         end
-
+        
         if lvar.trmix_sndpnl_show then
           local tr = GetTrack(lvar.dynamicmode_trn)
           if tr then
