@@ -16,7 +16,7 @@
   local lvar = {}
   local cbi = {}
 
-  lvar.scriptver = '0.94.0178' --Script Version
+  lvar.scriptver = '0.94.0179' --Script Version
 
   lvar.mousewheel_div = 120 --default 120 - change to 30 or ? for weird Mac mice!
 
@@ -28482,6 +28482,8 @@ function GUI_DrawCtlBitmap_Strips()
       return strips[tracks[track_select].strip][page].controls[c].val
     --elseif ctlcat == ctlcats.statectl then
     --  return ctl.val
+    else
+      return 0
     end
   end
 
