@@ -16,8 +16,10 @@
   local lvar = {}
   local cbi = {}
 
-  lvar.scriptver = '0.94.0181' --Script Version
+  lvar.scriptver = '0.94.0182' --Script Version
 
+  lvar.maxdim = 4096
+  
   lvar.mousewheel_div = 120 --default 120 - change to 30 or ? for weird Mac mice!
 
   lvar.savesettingstofile = true
@@ -143,6 +145,8 @@
   lvar.phtime = 1
   lvar.btnpnl_update = {}
 
+  lvar.enablelargegui = true
+  
   lvar.dm_maxvistracks = 99
   lvar.dm_maxvissends = 8
 
@@ -196,6 +200,9 @@
   lvar.snapstages = 32
   lvar.swdropsz = 16
   lvar.deletestripwhentrackdeleted = true
+
+  local redraw_ctlbitmapmix
+  local redraw_ctlbitmap
 
   lvar.gfxpages = 0
   lvar.gfxpagesmax = 9
@@ -591,26 +598,6 @@
   lvar.CP4Funcs = {}
 
   local paths = {}
-  paths.resource_path = reaper.GetResourcePath().."/Scripts/LBX/LBXCS_resources/"
-  paths.controls_path = paths.resource_path.."controls/"
-  paths.graphics_path = paths.resource_path.."graphics/"
-  paths.actiondump_path = paths.resource_path.."actiondumps/"
-  paths.icon_path = paths.resource_path.."icons/"
-  paths.strips_path = paths.resource_path.."strips/"
-  paths.templates_folder = "LBX_TEMPLATES"
-  paths.dmstrip_folder = "LBX_DMSTRIPS"
-  paths.sets_path = paths.resource_path.."sets/"
-  paths.projsave_path = paths.resource_path.."projsave/"
-  paths.paths_path = paths.resource_path.."paths/"
-  paths.eqbands_path = paths.resource_path.."eqbands/"
-  paths.eq_path = paths.resource_path.."eq/"
-  paths.skins_path = paths.resource_path.."skins/"
-  paths.share_path = paths.resource_path.."share/"
-  paths.mod_path = paths.resource_path.."modpresets/"
-  paths.update_path = paths.resource_path.."updater/"
-
-  file_settings = paths.resource_path..'settings.txt'
-  file_bgimage = paths.resource_path..'bg.jpg'
 
   local pi = 3.14159265359
 
@@ -759,6 +746,45 @@
   lvar.livebg = true
   lvar.mm_disablenonpoppedctls = false
 
+  local function Img_SetDim(img, w, h, noclear, clearmethod2, bcol)
+    --DBG(img .. '  '..tostring(noclear))
+    if (w <= 2048 and h <= 2048) or lvar.missingTI then
+      w = math.min(w, 2048)
+      h = math.min(h, 2048)
+      if not noclear then
+        if clearmethod2 then
+          local od = gfx.dest          
+          gfx.dest = img
+          gfx.muladdrect(0,0,w,h,0,0,0,0)
+          gfx.dest = od
+        else
+          gfx.setimgdim(img,-1,-1)
+        end
+      end
+      if w ~= -1 and h ~= -1 then
+        gfx.setimgdim(img,w,h)     
+      end 
+    else    
+      local od = gfx.dest          
+      gfx.dest = img
+      local w2, h2 = gfx.getimgdim(img)
+      --DBG(w2..'  '..h2)
+      if w2 < lvar.maxdim or h2 < lvar.maxdim then
+        gfx.loadimg(img,lvar.tranimg)
+        
+        --lupd.update_gfx = true
+      elseif not noclear then
+        gfx.muladdrect(0,0,w,h,0,0,0,0)
+      end
+  
+      if bcol then
+        f_Get_SSV(bcol) 
+        gfx.rect(0,0,w,h,1)
+      end  
+      gfx.dest = od
+    end
+  end
+
   function LoadBGImage(file_bgimage)
 
     if file_bgimage then
@@ -777,17 +803,19 @@
       gfx.setimgdim(979,-1,-1)
     else
       local w, h = gfx.getimgdim(978)
-      gfx.setimgdim(979,-1,-1)
-      gfx.setimgdim(979,2048,2048)
+      --[[gfx.setimgdim(979,-1,-1)
+      gfx.setimgdim(979,lvar.maxdim,lvar.maxdim)]]
+      Img_SetDim(979,lvar.maxdim,lvar.maxdim)
+      
       gfx.dest = 979
       gfx.a = 1
       f_Get_SSV('0 0 0')
-      gfx.rect(0,0,2048,2048,1)
+      gfx.rect(0,0,lvar.maxdim,lvar.maxdim,1)
       if lvar.bgstretch then
-        gfx.blit(978,1,0,0,0,w,h,0,0,2048,2048)
+        gfx.blit(978,1,0,0,0,w,h,0,0,lvar.maxdim,lvar.maxdim)
       else
-        for y = 0, math.max(math.ceil(2048/h)-1,1) do
-          for x = 0, math.max(math.ceil(2048/w)-1,1) do
+        for y = 0, math.max(math.ceil(lvar.maxdim/h)-1,1) do
+          for x = 0, math.max(math.ceil(lvar.maxdim/w)-1,1) do
             gfx.blit(978,1,0,0,0,w,h,x*w,y*h)
           end
         end
@@ -795,7 +823,7 @@
       if lvar.bgbright ~= 0 then
         local m = ((lvar.bgbright+100)/100)
         gfx.dest = 979
-        gfx.muladdrect(0,0,2048,2048,m,m,m,1)
+        gfx.muladdrect(0,0,lvar.maxdim,lvar.maxdim,m,m,m,1)
         --gfx.rect(0,0,2048,2048,1)
         gfx.a = 1
       end
@@ -3894,7 +3922,7 @@
       if lvar.ctlbrowser_docked then
         --local butt_h = butt_h*lvar.zoom
         local cb_bw = lvar.ctlbrowser_docked_w-20
-        ctl_browser_size = {w = cb_bw+20 --[[ obj.sections[45].w]], h = math.min(obj.sections[10].h,2048)}
+        ctl_browser_size = {w = cb_bw+20 --[[ obj.sections[45].w]], h = math.min(obj.sections[10].h,lvar.maxdim)}
         ctl_browser_size.slotsz = slsz
         ctl_browser_size.slots_x = math.floor((ctl_browser_size.w - 20) / slsz)
         ctl_browser_size.slots_y = math.max(math.min(math.floor((ctl_browser_size.h/2 - (butt_h+2)*2 -20) / slsz),8),1)
@@ -4047,7 +4075,7 @@
 
       else
         local cb_bw = 160
-        ctl_browser_size = {w = math.min(obj.sections[10].w - 50,2048+cb_bw) --[[ obj.sections[45].w]], h = math.min(obj.sections[10].h -50,2048)}
+        ctl_browser_size = {w = math.min(obj.sections[10].w - 50,lvar.maxdim+cb_bw) --[[ obj.sections[45].w]], h = math.min(obj.sections[10].h -50,lvar.maxdim)}
         ctl_browser_size.slotsz = slsz
         ctl_browser_size.slots_x = math.max(math.min(math.floor((ctl_browser_size.w - 20 - cb_bw) / slsz),2),2)
         ctl_browser_size.slots_y = math.max(math.min(math.floor((ctl_browser_size.h - (butt_h+2)*2 -20) / slsz),6),3)
@@ -5028,7 +5056,7 @@
 
     local ssh
     if settings_ssdock == true then
-      snaph = math.min(math.max((gfx1.main_h-obj.sections[10000].y),252*pnl_scale),2048)
+      snaph = math.min(math.max((gfx1.main_h-obj.sections[10000].y),252*pnl_scale),lvar.maxdim)
       ssh = math.floor(snaph-(208*pnl_scale))
       obj.sections[160] = {x = gfx1.main_w - math.floor(gui.winsz.snaps*pnl_scale),
                           y = math.floor(obj.sections[10000].y),
@@ -5210,7 +5238,7 @@
         end
 
         obj.sections[1350].y = obj.sections[10000].y
-        local hh = math.floor(math.min(math.max((gfx1.main_h-obj.sections[10000].y),lvar.sbmin*pnl_scale),2048))
+        local hh = math.floor(math.min(math.max((gfx1.main_h-obj.sections[10000].y),lvar.sbmin*pnl_scale),lvar.maxdim))
         obj.sections[1350].h = hh
       end
     end
@@ -5790,6 +5818,11 @@
                                w = bw,
                                h = bh}
 
+    obj.sections[751] = {x = obj.sections[70].w/2+xofft,
+                              y = settingswin_off + yoff + yoffm*14,
+                              w = bw,
+                              h = bh}
+
     -- PAGE 5
 
     obj.sections[703] = {x = xofftm,
@@ -5831,6 +5864,11 @@
 
     obj.sections[736] = {x = xofft-100,
                               y = settingswin_off + yoff + yoffm*13,
+                              w = 500,
+                              h = butt_h}
+                              
+    obj.sections[750] = {x = xofft-100,
+                              y = settingswin_off + yoff + yoffm*15,
                               w = 500,
                               h = butt_h}
 
@@ -12544,8 +12582,8 @@
     if resize_display then
       if surface_size.w == -1 then
         for i = 0, lvar.gfxpages do
-          gfx.setimgdim(strip_image+i,obj.sections[10].w, obj.sections[10].h)
-          gfx.setimgdim(bg_image+i,obj.sections[10].w, obj.sections[10].h)
+          Img_SetDim(strip_image+i,obj.sections[10].w, obj.sections[10].h, true)
+          Img_SetDim(bg_image+i,obj.sections[10].w, obj.sections[10].h, true)
         end
       end
     end
@@ -12596,10 +12634,10 @@
     else
       for i = 0, lvar.gfxpages do
         --if surface_size.w == -1 then
-          gfx.setimgdim(strip_image+i,-1,-1)
-          gfx.setimgdim(bg_image+i,-1,-1)
-          gfx.setimgdim(strip_image+i,surface_size.w, surface_size.h)
-          gfx.setimgdim(bg_image+i,surface_size.w, surface_size.h)
+          --gfx.setimgdim(strip_image+i,-1,-1)
+          --gfx.setimgdim(bg_image+i,-1,-1)
+          Img_SetDim(strip_image+i,surface_size.w, surface_size.h)
+          Img_SetDim(bg_image+i,surface_size.w, surface_size.h)
         --end
       end
     end
@@ -14051,15 +14089,15 @@ function GUI_DrawCtlBitmap_Strips()
             end
 
             if not stripdim.swdata[swid] then
-              stripdim.swdata[swid] = {l = 2048, t = 2048, r = 0, b = 0, stripidx = idx}
+              stripdim.swdata[swid] = {l = lvar.maxdim, t = lvar.maxdim, r = 0, b = 0, stripidx = idx}
             end
             stripdim.swdata[swid].l = math.min(stripdim.swdata[swid].l, gfxx.x)
             stripdim.swdata[swid].t = math.min(stripdim.swdata[swid].t, gfxx.y)
             stripdim.swdata[swid].r = math.max(stripdim.swdata[swid].r, gfxx.x+gfxx.stretchw)
             stripdim.swdata[swid].b = math.max(stripdim.swdata[swid].b, gfxx.y+gfxx.stretchh)
             stripdim.swdata[swid].gfxpage = gfxx.gfxpage or 0
-            stripdim.swdata[swid].stripl = math.max(math.min(stripdim.swdata[swid].stripl or 2048, gfxx.x),0)
-            stripdim.swdata[swid].stript = math.min(stripdim.swdata[swid].stript or 2048, gfxx.y)
+            stripdim.swdata[swid].stripl = math.max(math.min(stripdim.swdata[swid].stripl or lvar.maxdim, gfxx.x),0)
+            stripdim.swdata[swid].stript = math.min(stripdim.swdata[swid].stript or lvar.maxdim, gfxx.y)
             stripdim.swdata[swid].stripr = math.max(stripdim.swdata[swid].stripr or 0, gfxx.x+gfxx.stretchw)
             stripdim.swdata[swid].stripb = math.max(stripdim.swdata[swid].stripb or 0, gfxx.y+gfxx.stretchh)
 
@@ -14135,7 +14173,7 @@ function GUI_DrawCtlBitmap_Strips()
             end
 
             if not stripdim.swdata[swid] then
-              stripdim.swdata[swid] = {l = 2048, t = 2048, r = 0, b = 0, stripidx = idx}
+              stripdim.swdata[swid] = {l = lvar.maxdim, t = lvar.maxdim, r = 0, b = 0, stripidx = idx}
             end
             stripdim.swdata[swid].l = math.min(stripdim.swdata[swid].l, ctl.xsc)
             stripdim.swdata[swid].t = math.min(stripdim.swdata[swid].t, ctl.ysc)
@@ -14148,8 +14186,8 @@ function GUI_DrawCtlBitmap_Strips()
               stripdim.swdata[swid].st = ctl.ysc
               stripdim.swdata[swid].sb = ctl.ysc+ctl.hsc
             else
-              stripdim.swdata[swid].stripl = math.max(math.min(stripdim.swdata[swid].stripl or 2048, ctl.xsc),0)
-              stripdim.swdata[swid].stript = math.min(stripdim.swdata[swid].stript or 2048, ctl.ysc)
+              stripdim.swdata[swid].stripl = math.max(math.min(stripdim.swdata[swid].stripl or lvar.maxdim, ctl.xsc),0)
+              stripdim.swdata[swid].stript = math.min(stripdim.swdata[swid].stript or lvar.maxdim, ctl.ysc)
               stripdim.swdata[swid].stripr = math.max(stripdim.swdata[swid].stripr or 0, ctl.xsc+ctl.wsc)
               stripdim.swdata[swid].stripb = math.max(stripdim.swdata[swid].stripb or 0, ctl.ysc+ctl.hsc)
             end
@@ -14274,11 +14312,15 @@ function GUI_DrawCtlBitmap_Strips()
     end
     --DBG('B'..lvar.gfxpages)
     for i = 0, lvar.gfxpagesmax do
-      gfx.setimgdim(ctlbitmap_image+i,-1,-1)
+      --gfx.setimgdim(ctlbitmap_image+i,-1,-1)
       if i <= (lvar.gfxpages or 0) then
-        gfx.setimgdim(strip_image+i,surface_size.w, surface_size.h)
-        gfx.setimgdim(bg_image+i,surface_size.w, surface_size.h)
-        gfx.setimgdim(ctlbitmap_image+i,surface_size.w, surface_size.h)
+        --gfx.setimgdim(strip_image+i,surface_size.w, surface_size.h)
+        --gfx.setimgdim(bg_image+i,surface_size.w, surface_size.h)
+        --gfx.setimgdim(ctlbitmap_image+i,surface_size.w, surface_size.h)
+        --DBG(i..'  '..surface_size.w..'  '..surface_size.h)
+        Img_SetDim(strip_image+i,surface_size.w, surface_size.h, true)
+        Img_SetDim(bg_image+i,surface_size.w, surface_size.h, true)
+        Img_SetDim(ctlbitmap_image+i,surface_size.w, surface_size.h)        
       end
     end
     --DBG(reaper.time_precise()-t)
@@ -14347,8 +14389,9 @@ function GUI_DrawCtlBitmap_Strips()
 
 
   function GUI_DrawCtlBitmap2()
-    gfx.setimgdim(ctl_bitmap2,-1,-1)
-    gfx.setimgdim(ctl_bitmap2,obj.sections[10].w, obj.sections[10].h)
+    --gfx.setimgdim(ctl_bitmap2,-1,-1)
+    --gfx.setimgdim(ctl_bitmap2,obj.sections[10].w, obj.sections[10].h)
+    Img_SetDim(ctl_bitmap2,obj.sections[10].w, obj.sections[10].h)
     gfx.dest = ctl_bitmap2
 
     if stlay_data then
@@ -14413,13 +14456,15 @@ function GUI_DrawCtlBitmap_Strips()
 
     gfx.a = 1
 
-    gfx.setimgdim(ctl_bitmap2,-1,-1)
+    --Img_SetDim(ctl_bitmap2,-1,-1)
 
     local strip = tracks[track_select].strip
     if obj and lvar.stripdim and strips[strip] then
       local rect10 = obj.sections[10000]
 
-      gfx.setimgdim(ctl_bitmap2,rect10.w, rect10.h)
+      --gfx.setimgdim(ctl_bitmap2,rect10.w, rect10.h)
+      Img_SetDim(ctl_bitmap2, rect10.w, rect10.h)
+      
       gfx.dest = ctl_bitmap2
 
       local posidx = lvar.stripdim.extposidx
@@ -14488,7 +14533,7 @@ function GUI_DrawCtlBitmap_Strips()
                         --gfx.blit(ctlbitmap_image + gfxpage, 1, 0, x, y, w, h, tx, ty)
                         if swdata[swid].stripidx then
                           SetColor2(swdata[swid].stripidx+coffset)
-                          gfx.rect(0,ty,2048,h*lvar.zoom+(sh+gap)*lvar.zoom,1)
+                          gfx.rect(0,ty,lvar.maxdim,h*lvar.zoom+(sh+gap)*lvar.zoom,1)
                         end
 
                         if w > 0 then
@@ -14562,7 +14607,7 @@ function GUI_DrawCtlBitmap_Strips()
   
                         if swdata[swid].stripidx then
                           SetColor2(swdata[swid].stripidx+coffset)
-                          gfx.rect(tx,0,w*lvar.zoom,2048,1)
+                          gfx.rect(tx,0,w*lvar.zoom,lvar.maxdim,1)
                         end
                         if w > 0 then
                           gfx.blit(ctlbitmap_image + gfxpage, lvar.zoom, 0, x, y, w, h, tx, ty+(sh+gap)*lvar.zoom)
@@ -14798,7 +14843,8 @@ function GUI_DrawCtlBitmap_Strips()
       lvar.centrepos = surface_offset.dstpos
       surface_offset.targetmixy = nil
       surface_offset.targetmixx = nil
-      GUI_DrawCtlBitmap_Mix()
+      SetCtlBitmapRedraw_Mix()
+      --GUI_DrawCtlBitmap_Mix()
     end
 
   end
@@ -15010,6 +15056,7 @@ function GUI_DrawCtlBitmap_Strips()
   
                       --stx,ty,sw,sh,sx,sy = CropToRect2(stx,ty,sw,sh,rect10.x+offx,rect10.y,rect10.x+rect10.w,rect10.y+rect10.h, sx, sy, lvar.zoom)
                       gfx.blit(strip_image + gfxpage, lvar.zoom, 0, sx, sy, sw, sh, stx, ty)
+                      
                     --end
                   end
                   
@@ -15462,8 +15509,9 @@ function GUI_DrawCtlBitmap_Strips()
 
   function GUI_DrawMMOV(obj, gui)
 
-    gfx.setimgdim(950, -1, -1)
-    gfx.setimgdim(950, 2048, 2048)
+    --[[gfx.setimgdim(950, -1, -1)
+    gfx.setimgdim(950, lvar.maxdim, lvar.maxdim)]]
+    Img_SetDim(950, lvar.maxdim, lvar.maxdim)
 
     gfx.dest = 950
 
@@ -15522,7 +15570,7 @@ function GUI_DrawCtlBitmap_Strips()
             --mmov_rows[row] = math.floor(runpos*scale)
             mixpos_max = mixpos_max + ssh + padgap + gap
 
-            if math.floor(runpos*scale)+math.floor(ssh*scale) > 2048 then
+            if math.floor(runpos*scale)+math.floor(ssh*scale) > lvar.maxdim then
               mmov_max = mmov_max + math.floor(runpos*scale)
               row = row + 1
               runpos = 0
@@ -15590,7 +15638,7 @@ function GUI_DrawCtlBitmap_Strips()
             --mmov_rows[row] = math.floor(runpos*scale)
             mixpos_max = mixpos_max + ssw + padgap
 
-            if math.floor(runpos*scale)+math.floor(ssw*scale) > 2048 then
+            if math.floor(runpos*scale)+math.floor(ssw*scale) > lvar.maxdim then
               mmov_max = mmov_max + math.floor(runpos*scale)
               row = row + 1
               runpos = 0
@@ -16949,7 +16997,7 @@ function GUI_DrawCtlBitmap_Strips()
     if strips and tracks[track_select] and strips[tracks[track_select].strip] and strips[tracks[track_select].strip][page] then
       if #strips[tracks[track_select].strip][page].graphics > 0 and gfx4_select then
 
-        local x,y,r,b,w,h,rx,ry = 2048, 2048, 0, 0, 0, 0
+        local x,y,r,b,w,h,rx,ry = lvar.maxdim, lvar.maxdim, 0, 0, 0, 0
         local strip = tracks[track_select].strip
         for g = 1, #gfx4_select do
           local i = gfx4_select[g]
@@ -17312,8 +17360,8 @@ function GUI_DrawCtlBitmap_Strips()
 
     local butt_h = butt_h*pnl_scale
 
-    gfx.setimgdim(1003,-1,-1)
-    gfx.setimgdim(1003,obj.sections[160].w,obj.sections[160].h)
+    --gfx.setimgdim(1003,-1,-1)
+    Img_SetDim(1003,obj.sections[160].w,obj.sections[160].h)
     GUI_DrawPanel(obj.sections[160], nil, 'SNAPSHOTS')
     local b
     if settings_ssdock == true then
@@ -17621,7 +17669,7 @@ function GUI_DrawCtlBitmap_Strips()
     gfx.dest = 1005
     local w, h = gfx.getimgdim(1005)
     if obj.sections[180].w ~= w then
-      gfx.setimgdim(1005, obj.sections[180].w, h)
+      Img_SetDim(1005, obj.sections[180].w, h, true)
     end
 
     gfx.a=1
@@ -18016,8 +18064,8 @@ function GUI_DrawCtlBitmap_Strips()
 
     gfx.dest = 905
 
-    gfx.setimgdim(905, -1, -1)
-    gfx.setimgdim(905, obj.sections[210].w, obj.sections[210].h)
+    --gfx.setimgdim(905, -1, -1)
+    Img_SetDim(905, obj.sections[210].w, obj.sections[210].h)
 
     --local p = math.floor(cbi_offset / (ctl_browser_size.slots_x*ctl_browser_size.slots_y))+1
     for cg = 0, ctl_browser_size.slots_x*ctl_browser_size.slots_y-1 do
@@ -18956,7 +19004,7 @@ function GUI_DrawCtlBitmap_Strips()
     gfx.dest = 1009
     local w, h = gfx.getimgdim(1009)
     if obj.sections[300].w ~= w or obj.sections[300].h ~= h or lupd.update_gfx then
-      gfx.setimgdim(1009, obj.sections[300].w, obj.sections[300].h)
+      Img_SetDim(1009, obj.sections[300].w, obj.sections[300].h, true)
 
       f_Get_SSV(gui.color.black)
       gfx.rect(0,
@@ -19753,7 +19801,7 @@ function GUI_DrawCtlBitmap_Strips()
     if obj.sections[300].w ~= w or obj.sections[300].h ~= h then update_size = true lupd.update_gfx = true end
     if lupd.update_gfx or lupd.update_surface or lupd.update_macroedit or lupd.update_macrobutt then
       if update_size then
-        gfx.setimgdim(1008, obj.sections[300].w, obj.sections[300].h)
+        Img_SetDim(1008, obj.sections[300].w, obj.sections[300].h, true)
       end
 
       if lupd.update_gfx or lupd.update_macrobutt then
@@ -20078,7 +20126,7 @@ function GUI_DrawCtlBitmap_Strips()
     if obj.sections[300].w ~= w or obj.sections[300].h ~= h then update_size = true lupd.update_gfx = true end
     if lupd.update_gfx or lupd.update_surface or lupd.update_macroedit or lupd.update_macrobutt then
       if update_size then
-        gfx.setimgdim(1008, obj.sections[300].w, obj.sections[300].h)
+        Img_SetDim(1008, obj.sections[300].w, obj.sections[300].h, true)
       end
 
       if lupd.update_gfx then --or update_surface then
@@ -20379,7 +20427,7 @@ function GUI_DrawCtlBitmap_Strips()
   function StripLayout_DrawImage(d)
 
     gfx.dest = 995
-    gfx.setimgdim(995,d.w,d.h)
+    Img_SetDim(995,d.w,d.h, true)
     gfx.blit(strip_image,0,0,0,0,surface_size.w,surface_size.h,0,0,d.w,d.h)
     gfx.dest = 1
 
@@ -20403,8 +20451,8 @@ function GUI_DrawCtlBitmap_Strips()
 
       local iw = math.ceil(dw*sc)
       local ih = math.ceil(dh*sc)
-      gfx.setimgdim(993,-1,-1)
-      gfx.setimgdim(993,iw,ih)
+      --gfx.setimgdim(993,-1,-1)
+      Img_SetDim(993,iw,ih)
 
       local ix = math.floor((ww-(dw*sc))/2)
       for i = 1, #d.loc do
@@ -21010,17 +21058,17 @@ function GUI_DrawCtlBitmap_Strips()
 
     gfx.dest = 992
     if resize_display or lupd.update_gfx or modwinsz.resize then
-      gfx.setimgdim(992, -1, -1)
+      --gfx.setimgdim(992, -1, -1)
       if not settings_moddock and obj.sections[1100].w > obj.sections[10].w then
         obj.sections[1100].w = 800
         modwinsz.w = obj.sections[1100].w
       end
-      gfx.setimgdim(992, obj.sections[1100].w,obj.sections[1100].h)
+      Img_SetDim(992, obj.sections[1100].w,obj.sections[1100].h)
       modwinsz.resize = nil
     end
 
-    gfx.setimgdim(992, -1, -1)
-    gfx.setimgdim(992, obj.sections[1100].w,obj.sections[1100].h)
+    --gfx.setimgdim(992, -1, -1)
+    Img_SetDim(992, obj.sections[1100].w,obj.sections[1100].h)
     if settings_moddock == true and modwinsz and modwinsz.minimized == true then
       GUI_DrawPanel(obj.sections[1100],false,'MODULATORS')
     else
@@ -21219,8 +21267,8 @@ function GUI_DrawCtlBitmap_Strips()
     local kend = math.floor(lvar.kb.kend) or -1
 
     gfx.dest = 908
-    gfx.setimgdim(908,-1,-1)
-    gfx.setimgdim(908,wkey_w*wkeys,wkey_h)
+    --gfx.setimgdim(908,-1,-1)
+    Img_SetDim(908,wkey_w*wkeys,wkey_h)
 
     local key = -1
     f_Get_SSV(gui.color.green)
@@ -21372,7 +21420,7 @@ function GUI_DrawCtlBitmap_Strips()
     gfx.dest = 909
     gfx.a = 1
 
-    gfx.setimgdim(909,wkey_w*wkeys,wkey_h*2)
+    Img_SetDim(909,wkey_w*wkeys,wkey_h*2, true)
 
     f_Get_SSV(gui.color.white)
     gfx.rect(0,
@@ -21442,8 +21490,8 @@ function GUI_DrawCtlBitmap_Strips()
   function GUI_DrawSampleManager(obj, gui)
 
     gfx.dest = 986
-    gfx.setimgdim(986,-1,-1)
-    gfx.setimgdim(986,obj.sections[1300].w,obj.sections[1300].h)
+    --gfx.setimgdim(986,-1,-1)
+    Img_SetDim(986,obj.sections[1300].w,obj.sections[1300].h)
 
     gfx.a = 1
 
@@ -21595,8 +21643,8 @@ function GUI_DrawCtlBitmap_Strips()
   function GUI_DrawSB_Strips(obj, gui)
 
     gfx.dest = 906
-    gfx.setimgdim(906,-1,-1)
-    gfx.setimgdim(906,obj.sections[1352].w,obj.sections[1352].h)
+    --gfx.setimgdim(906,-1,-1)
+    Img_SetDim(906,obj.sections[1352].w,obj.sections[1352].h)
     gfx.a = 1
 
     f_Get_SSV(gui.skol.lst_bg)
@@ -21642,15 +21690,19 @@ function GUI_DrawCtlBitmap_Strips()
     if lvar.reloadsbimages then
       lvar.reloadsbimages = nil
 
-      gfx.setimgdim(911,-1,-1)
+      --[[gfx.setimgdim(911,-1,-1)
       gfx.setimgdim(912,-1,-1)
       gfx.setimgdim(913,-1,-1)
       gfx.setimgdim(914,-1,-1)
-      gfx.setimgdim(911,2048,2048)
-      gfx.setimgdim(912,2048,2048)
-      gfx.setimgdim(913,2048,2048)
-      gfx.setimgdim(914,2048,2048)
-
+      gfx.setimgdim(911,lvar.maxdim,lvar.maxdim)
+      gfx.setimgdim(912,lvar.maxdim,lvar.maxdim)
+      gfx.setimgdim(913,lvar.maxdim,lvar.maxdim)
+      gfx.setimgdim(914,lvar.maxdim,lvar.maxdim)]]
+      Img_SetDim(911, lvar.maxdim, lvar.maxdim)
+      Img_SetDim(912, lvar.maxdim, lvar.maxdim)
+      Img_SetDim(913, lvar.maxdim, lvar.maxdim)
+      Img_SetDim(914, lvar.maxdim, lvar.maxdim)
+      
       local cnt
       if lvar.stripbrowser.favs == true then
         cnt = #strip_favs-1
@@ -21658,8 +21710,8 @@ function GUI_DrawCtlBitmap_Strips()
         cnt = #strip_files
       end
 
-      lvar.stripbrowser.store_cols = math.floor(2048/lvar.stripbrowser.minw)
-      lvar.stripbrowser.store_rows = math.floor(2048/lvar.stripbrowser.minh)
+      lvar.stripbrowser.store_cols = math.floor(lvar.maxdim/lvar.stripbrowser.minw)
+      lvar.stripbrowser.store_rows = math.floor(lvar.maxdim/lvar.stripbrowser.minh)
 
       local sb_tfn = {}
       local sb_ffn = {}
@@ -21818,8 +21870,8 @@ function GUI_DrawCtlBitmap_Strips()
   function GUI_DrawStripBrowser(obj, gui)
 
     gfx.dest = 907
-    gfx.setimgdim(907,-1,-1)
-    gfx.setimgdim(907,obj.sections[1350].w,obj.sections[1350].h)
+    --gfx.setimgdim(907,-1,-1)
+    Img_SetDim(907,obj.sections[1350].w,obj.sections[1350].h)
 
     gfx.a = 1
 
@@ -21938,7 +21990,7 @@ function GUI_DrawCtlBitmap_Strips()
     local mutate_settings = lvar.mutate_settings
 
     gfx.dest = 989
-    gfx.setimgdim(989,obj.sections[1120].w,obj.sections[1120].h)
+    Img_SetDim(989,obj.sections[1120].w,obj.sections[1120].h, true)
 
     GUI_DrawPanel(obj.sections[1120],false,'MUTATE SETTINGS')
 
@@ -21987,7 +22039,7 @@ function GUI_DrawCtlBitmap_Strips()
     if obj.sections[1130].y + obj.sections[1130].h > obj.sections[10].y+obj.sections[10].h then
       obj.sections[1130].y = math.max(obj.sections[10].y+obj.sections[10].h - obj.sections[1130].h,obj.sections[10].y)
     end
-    gfx.setimgdim(988,obj.sections[1130].w,obj.sections[1130].h)
+    Img_SetDim(988,obj.sections[1130].w,obj.sections[1130].h, true)
 
     local txt = 'RANDOMIZE OPTS - '..subname
 
@@ -22219,7 +22271,7 @@ function GUI_DrawCtlBitmap_Strips()
 
     local w, h = obj.sections[1200].w, obj.sections[1200].h
     local lcol = '96 96 96'
-    gfx.setimgdim(987,w,h)
+    Img_SetDim(987,w,h, true)
     gfx.dest = 987
     f_Get_SSV(gui.color.black)
     gfx.rect(0,0,w,h)
@@ -22528,7 +22580,7 @@ function GUI_DrawCtlBitmap_Strips()
 
     gfx.dest = 977
     if lupd.update_gfx or resize_display then
-      gfx.setimgdim(977,obj.sections[4500].w,obj.sections[4500].h)
+      Img_SetDim(977,obj.sections[4500].w,obj.sections[4500].h, true)
     end
 
     GUI_DrawPanel(obj.sections[4500],false,'STRIP ASSOCIATION MANAGER')
@@ -22858,8 +22910,8 @@ function GUI_DrawCtlBitmap_Strips()
 
   function GUI_DrawTemplateChooser(obj, gui)
 
-    gfx.setimgdim(952, -1, -1)
-    gfx.setimgdim(952, obj.sections[5050].w,obj.sections[5050].h)
+    --gfx.setimgdim(952, -1, -1)
+    Img_SetDim(952, obj.sections[5050].w,obj.sections[5050].h)
 
     gfx.dest = 952
     gfx.a = 1
@@ -22979,28 +23031,29 @@ function GUI_DrawCtlBitmap_Strips()
       gfx.dest = 1
 
       if lupd.update_gfx or resize_display then
-        gfx.setimgdim(1, -1, -1)
-        gfx.setimgdim(1, gfx1.main_w,gfx1.main_h)
+        --gfx.setimgdim(1, -1, -1)
+        --gfx.setimgdim(1, gfx1.main_w,gfx1.main_h)
+        Img_SetDim(1, gfx1.main_w,gfx1.main_h)
       end
 
       if resize_display then
-        gfx.setimgdim(1003,-1,-1)
-        gfx.setimgdim(1005,-1,-1)
-        gfx.setimgdim(1006,-1,-1)
-        gfx.setimgdim(1007,-1,-1)
-        gfx.setimgdim(1011,-1,-1)
-        gfx.setimgdim(1003,obj.sections[160].w, obj.sections[160].h)
-        gfx.setimgdim(1005,obj.sections[180].w, obj.sections[180].h)
-        gfx.setimgdim(1006,obj.sections[221].w, obj.sections[221].h)
-        gfx.setimgdim(1007,obj.sections[220].w, obj.sections[220].h)
-        gfx.setimgdim(1011,obj.sections[45].w, obj.sections[45].h)
+        --gfx.setimgdim(1003,-1,-1)
+        --gfx.setimgdim(1005,-1,-1)
+        --gfx.setimgdim(1006,-1,-1)
+        --gfx.setimgdim(1007,-1,-1)
+        --gfx.setimgdim(1011,-1,-1)
+        Img_SetDim(1003,obj.sections[160].w, obj.sections[160].h)
+        Img_SetDim(1005,obj.sections[180].w, obj.sections[180].h)
+        Img_SetDim(1006,obj.sections[221].w, obj.sections[221].h)
+        Img_SetDim(1007,obj.sections[220].w, obj.sections[220].h)
+        Img_SetDim(1011,obj.sections[45].w, obj.sections[45].h)
         --lupd.update_gfx = true
 
       elseif resize_snaps then
-        gfx.setimgdim(1003,-1,-1)
-        gfx.setimgdim(1003,obj.sections[160].w, obj.sections[160].h)
+        --gfx.setimgdim(1003,-1,-1)
+        Img_SetDim(1003,obj.sections[160].w, obj.sections[160].h)
       elseif resize_fsnaps then
-        gfx.setimgdim(1005,obj.sections[180].w, obj.sections[180].h)
+        Img_SetDim(1005,obj.sections[180].w, obj.sections[180].h, true)
       end
 
       if mode == 0 then
@@ -23056,8 +23109,8 @@ function GUI_DrawCtlBitmap_Strips()
               if (lvar.livemode == 0 and stripgallery_view == 0) or macro_lrn_mode == true or snaplrn_mode == true then
                 gfx.blit(strip_image,lvar.zoom,0,surface_offset.x,
                                   surface_offset.y,
-                                  math.min(math.ceil(obj.sections[10].w/lvar.zoom),2047),
-                                  math.min(math.ceil(obj.sections[10].h/lvar.zoom),2047),
+                                  math.min(math.ceil(obj.sections[10].w/lvar.zoom),lvar.maxdim),
+                                  math.min(math.ceil(obj.sections[10].h/lvar.zoom),lvar.maxdim),
                                   math.floor(obj.sections[10].x),
                                   math.floor(obj.sections[10].y))
               elseif lvar.livemode >= 1 and (stripgallery_view == 0 or macro_lrn_mode == true or snaplrn_mode == true) then
@@ -23897,8 +23950,9 @@ function GUI_DrawCtlBitmap_Strips()
               local w = (xywh.w + 10)*(cnt+1)
 
               gfx.dest = 951
-              gfx.setimgdim(951, -1,-1)
-              gfx.setimgdim(951, w,obj.sections[5004].h)
+              --[[gfx.setimgdim(951, -1,-1)
+              gfx.setimgdim(951, w,obj.sections[5004].h)]]
+              Img_SetDim(951, w,obj.sections[5004].h, nil, true) --No idea why but need to use mthod2 to clear or graphics goes squiffy.
 
               local ts = 3
               local dm_trackbtns = lvar.dm_trackbtns[lvar.dm_tbidx]
@@ -24030,7 +24084,7 @@ function GUI_DrawCtlBitmap_Strips()
           local y = lvar.mixerscroll_y
           local h = lvar.mixerscroll_h
 
-          gfx.mode = -2
+          gfx.mode = 2
           gfx.blit(825,1,0,0,0,obj.sections[5024].w,h,obj.sections[5024].x,y)
           gfx.mode = gmode
 
@@ -24052,7 +24106,7 @@ function GUI_DrawCtlBitmap_Strips()
                   gfx.dest = 1
                   if lvar.analyzer.active ~= true then
                     local x = (tb2-1)*(obj.sections[5025].w+10)
-                    gfx.mode = -2
+                    gfx.mode = 2
                     gfx.blit(954, 1, 0, x, 0, obj.sections[5025].w+10, obj.sections[5025].h, obj.sections[5025].x + x, obj.sections[5024].y)
                     gfx.mode = gmode
                   end
@@ -24066,7 +24120,7 @@ function GUI_DrawCtlBitmap_Strips()
                 local x, tb2 = GUI_DrawSendChannel(obj, gui, tb)
                 gfx.dest = 1
                 local x = (tb2)*(lvar.sndpnl_cwidth+10)
-                gfx.mode = -2
+                gfx.mode = 2
                 gfx.blit(955, 1, 0, x, 0, lvar.sndpnl_cwidth+10, obj.sections[5030].h, obj.sections[5030].x + x, obj.sections[5024].y)
                 gfx.mode = gmode
               end
@@ -25038,8 +25092,9 @@ function GUI_DrawCtlBitmap_Strips()
       gfx.line(obj.sections[43].w-1,0,obj.sections[43].w-1,gfx1.main_h)
 
       if resize_display or lupd.update_gfx or lupd.update_topbar then
-        gfx.setimgdim(999,-1,-1)
-        gfx.setimgdim(999,gfx1.main_w-plist_w, tb_butt_h+1)
+        --[[gfx.setimgdim(999,-1,-1)
+        gfx.setimgdim(999,gfx1.main_w-plist_w, tb_butt_h+1)]]
+        Img_SetDim(999,gfx1.main_w-plist_w, tb_butt_h+1)
         GUI_DrawTopBar(gui,obj)
       end
       gfx.dest=1
@@ -25061,8 +25116,8 @@ function GUI_DrawCtlBitmap_Strips()
                               obj.sections[21].y)
           end
         end
-        local w,h = gfx.getimgdim(999)
-        gfx.blit(999,1,0,0,0,w,h,plist_w,0)
+        --local w,h = gfx.getimgdim(999)
+        gfx.blit(999,1,0,0,0,gfx1.main_w-plist_w,tb_butt_h+1,plist_w,0)
         gfx.dest = 1
         f_Get_SSV(gui.color.black)
         gfx.line(0,h,gfx1.main_w,h)
@@ -25111,16 +25166,17 @@ function GUI_DrawCtlBitmap_Strips()
 
       gfx.dest = 1
       if lupd.update_gfx or resize_display then
-        gfx.setimgdim(1, -1, -1)
-        gfx.setimgdim(1, gfx1.main_w,gfx1.main_h)
+        --gfx.setimgdim(1, -1, -1)
+        --gfx.setimgdim(1, gfx1.main_w,gfx1.main_h)
+        Img_SetDim(1, gfx1.main_w,gfx1.main_h)
       end
 
       if resize_display or resize_snaps then
         --gfx.setimgdim(1002,obj.sections[45].w, obj.sections[45].h)
-        gfx.setimgdim(1003,obj.sections[160].w, obj.sections[160].h)
-        gfx.setimgdim(1005,obj.sections[180].w, obj.sections[180].h)
-        gfx.setimgdim(1006,obj.sections[221].w, obj.sections[221].h)
-        gfx.setimgdim(1007,obj.sections[220].w, obj.sections[220].h)
+        Img_SetDim(1003,obj.sections[160].w, obj.sections[160].h, true)
+        Img_SetDim(1005,obj.sections[180].w, obj.sections[180].h, true)
+        Img_SetDim(1006,obj.sections[221].w, obj.sections[221].h, true)
+        Img_SetDim(1007,obj.sections[220].w, obj.sections[220].h, true)
       end
 
       --Edges
@@ -25944,6 +26000,11 @@ function GUI_DrawCtlBitmap_Strips()
     resize_snaps = false
     resize_fsnaps = false
 
+    --[[if redraw_ctlbitmapmix then
+      redraw_ctlbitmapmix = nil
+      GUI_DrawCtlBitmap_Mix()
+    end]]
+    
     lupd = {}
     return lupd
 
@@ -25992,8 +26053,8 @@ function GUI_DrawCtlBitmap_Strips()
     local offy = obj.sections[5024].y
     lvar.mixerscrollsetup = nil
     gfx.dest = 825
-    gfx.setimgdim(825,-1,-1)
-    gfx.setimgdim(825,obj.sections[5024].w,obj.sections[5024].h)
+    --gfx.setimgdim(825,-1,-1)
+    Img_SetDim(825,obj.sections[5024].w,obj.sections[5024].h)
 
     gfx.a=1
     --gfx.mode = -2
@@ -26021,8 +26082,8 @@ function GUI_DrawCtlBitmap_Strips()
   function GUI_DrawAnalyzerTracks(obj, gui)
     gfx.a = 1
     gfx.dest = 963
-    gfx.setimgdim(963, -1,-1)
-    gfx.setimgdim(963, obj.sections[5048].w, 15)
+    --gfx.setimgdim(963, -1,-1)
+    Img_SetDim(963, obj.sections[5048].w, 15)
 
     local atr = Analyzer_GetTrack()
 
@@ -26070,8 +26131,8 @@ function GUI_DrawCtlBitmap_Strips()
     gfx.a = 1
     gfx.dest = 962
 
-    gfx.setimgdim(962, -1,-1)
-    gfx.setimgdim(962, obj.sections[5047].w, obj.sections[5047].h)
+    --gfx.setimgdim(962, -1,-1)
+    Img_SetDim(962, obj.sections[5047].w, obj.sections[5047].h)
 
     f_Get_SSV(gui.color.black)
     gfx.rect(0, 0, obj.sections[5047].w, obj.sections[5047].h, 1)
@@ -26137,7 +26198,7 @@ function GUI_DrawCtlBitmap_Strips()
 
     gfx.a = 1
     gfx.blit(956, 1, 0, 0, 0, obj.sections[5040].w, obj.sections[5040].h, obj.sections[5040].x-offx, obj.sections[5040].y-offy)
-    gfx.mode = -2
+    gfx.mode = 2
     if not lvar.analyzer.active then
       gfx.blit(954, 1, 0, 0, 0, obj.sections[5005].w, obj.sections[5025].h, obj.sections[5025].x-offx, obj.sections[5025].y-offy)
     else
@@ -26213,8 +26274,8 @@ function GUI_DrawCtlBitmap_Strips()
   function GUI_DrawTrackBtnPanel(obj, gui, iidx, box, cols, rows, idx, dir)
 
     gfx.dest = iidx
-    gfx.setimgdim(iidx, -1,-1)
-    gfx.setimgdim(iidx, box.w, box.h)
+    --gfx.setimgdim(iidx, -1,-1)
+    Img_SetDim(iidx, box.w, box.h)
 
     local xywh = {w = lvar.trmixbtns_size, h = lvar.trmixbtns_size}
 
@@ -26276,8 +26337,8 @@ function GUI_DrawCtlBitmap_Strips()
     local cnt = lvar.sndpnl_maxrows
 
     gfx.dest = 955
-    gfx.setimgdim(955, -1,-1)
-    gfx.setimgdim(955, xywh.w,xywh.h)
+    --gfx.setimgdim(955, -1,-1)
+    Img_SetDim(955, xywh.w,xywh.h)
 
     lvar.trmix_sndpnl_data = {}
 
@@ -26406,8 +26467,9 @@ function GUI_DrawCtlBitmap_Strips()
     local w = (xywh.w + 10)*(cnt+1)
 
     gfx.dest = 954
-    gfx.setimgdim(954, -1,-1)
-    gfx.setimgdim(954, w,xywh.h)
+    --gfx.setimgdim(954, -1,-1)
+    --gfx.setimgdim(954, w,xywh.h)
+    Img_SetDim(954, w,xywh.h)
 
     --DBG('A')
     if lvar.mixerchan_redraw then
@@ -26433,7 +26495,7 @@ function GUI_DrawCtlBitmap_Strips()
 
     local xywh = obj.sections[5008]
     gfx.a = 1
-    gfx.mode = -2
+    gfx.mode = 2
     gfx.blit(959,1,0,obj.sections[5005].w-xywh.w,0,xywh.w,obj.sections[5025].h,(xywh.w+10)*(cnt),0)
     gfx.mode = gmode
     GUI_StrFontOnly(gui,gui.fontsz.butt,gui.fontnm.butt,gui.fontflag.butt)
@@ -26492,8 +26554,9 @@ function GUI_DrawCtlBitmap_Strips()
     local w = (xywh.w + 10)*(cnt+1)
 
     gfx.dest = 959
-    gfx.setimgdim(959, -1,-1)
-    gfx.setimgdim(959, w,xywh.h)
+    --gfx.setimgdim(959, -1,-1)
+    --gfx.setimgdim(959, w,xywh.h)
+    Img_SetDim(959, w,xywh.h)
 
     if lvar.bgloaded > 0 and lvar.mmov_bgimgon then
       gfx.blit(lvar.bgloaded,1,0,obj.sections[5005].x - obj.sections[10].x -(lvar.bgoffx or 0),
@@ -26532,8 +26595,9 @@ function GUI_DrawCtlBitmap_Strips()
     --local w = (xywh.w + 10)*(cnt+1)
 
     gfx.dest = 958
-    gfx.setimgdim(958, -1,-1)
-    gfx.setimgdim(958, xywh.w+10,xywh.h)
+    --gfx.setimgdim(958, -1,-1)
+    --gfx.setimgdim(958, xywh.w+10,xywh.h)
+    Img_SetDim(958,xywh.w+10,xywh.h)
 
     f_Get_SSV('0 0 0')
     gfx.line(0, 0, 0, lvar.trmix_h)
@@ -26637,7 +26701,7 @@ function GUI_DrawCtlBitmap_Strips()
     local xywh = {x = xx+o5026.x, y = o5026.y-35, w = o5026.w, h = 10}
 
     gfx.a = 1
-    gfx.mode = -2
+    gfx.mode = 2
     gfx.blit(959,1,0,xx,0, o5025.w+10, o5025.h, xx, 0)
     gfx.mode = gmode
 
@@ -26778,7 +26842,7 @@ function GUI_DrawCtlBitmap_Strips()
       local bh = o5025.h - o5028.y
 
       gfx.a = 1
-      gfx.mode = -2
+      gfx.mode = 2
       gfx.blit(959,1,0,bx,by,bw,bh, bx, by)
       gfx.mode = gmode
 
@@ -27106,8 +27170,9 @@ function GUI_DrawCtlBitmap_Strips()
     gfx.dest = 981
 
     if lupd.update_gfx or resize_display then
-      gfx.setimgdim(981,-1,-1)
-      gfx.setimgdim(981,obj.sections[3000].w,obj.sections[3000].h)
+      --gfx.setimgdim(981,-1,-1)
+      --gfx.setimgdim(981,obj.sections[3000].w,obj.sections[3000].h)
+      Img_SetDim(981,obj.sections[3000].w,obj.sections[3000].h)
     end
 
     gfx.a = 1
@@ -27604,9 +27669,11 @@ function GUI_DrawCtlBitmap_Strips()
     end
 
     gfx.dest = 990
-    gfx.setimgdim(990,-1,-1)
-    gfx.setimgdim(990,obj.sections[70].w,obj.sections[70].h)
-
+    --gfx.setimgdim(990,-1,-1)
+    --gfx.setimgdim(990,obj.sections[70].w,obj.sections[70].h)
+    Img_SetDim(990,obj.sections[70].w,obj.sections[70].h)
+    
+    
     f_Get_SSV('0 0 0')
     gfx.a = 1
     --[[gfx.rect(0,
@@ -27721,6 +27788,7 @@ function GUI_DrawCtlBitmap_Strips()
       GUI_DrawTick(gui, 'Show fader assignments on grid', obj.sections[706], gui.color.white, settings_showfaderassignments, gui.fontsz.settings,true)
       GUI_DrawTick(gui, 'Activate snapshot morphing pop-ups', obj.sections[717], gui.color.white, settings_showmorphpop, gui.fontsz.settings, true)
       GUI_DrawTick(gui, 'Hide "plugin not found" text when plugin missing', obj.sections[737], gui.color.white, settings_hideplugnotfound, gui.fontsz.settings, true)
+      GUI_DrawTick(gui, 'Enable surface size > 2048 pixels', obj.sections[751], gui.color.white, lvar.enablelargegui, gui.fontsz.settings, true)
       GUI_DrawTick(gui, 'Show labels in strip browser', obj.sections[739], gui.color.white, lvar.stripbrowser.showlabel, gui.fontsz.settings,true)
 
 
@@ -27745,7 +27813,8 @@ function GUI_DrawCtlBitmap_Strips()
       if lvar.striploadoverride then
         sb = true
       end
-      GUI_DrawButton(gui, lvar.striploadoverride or 'NOT SET', obj.sections[736], gui.color.white, gui.skol.butt1_txt, sb, 'Data file override', true, gui.fontsz.settings,true)
+      GUI_DrawButton(gui, lvar.striploadoverride or 'NOT SET', obj.sections[736], gui.color.white, gui.skol.butt1_txt, sb, 'Data file override', true, gui.fontsz.settings -2,true)
+      GUI_DrawButton(gui, lvar.altrespath or paths.resource_path or 'NOT SET', obj.sections[750], gui.color.white, gui.skol.butt1_txt, sb, 'LBX Resource path', true, gui.fontsz.settings -2,true, 5)
 
     end
     gfx.dest = dest or 1
@@ -27887,10 +27956,10 @@ function GUI_DrawCtlBitmap_Strips()
   function UpdateEdges()
 
     local winw, winh = obj.sections[10].w , obj.sections[10].h
-    if surface_offset.x == 0 and 2048*lvar.zoom < obj.sections[10].w then
-      local xywh = {x = obj.sections[10].x+2048*lvar.zoom-1,
+    if surface_offset.x == 0 and lvar.maxdim*lvar.zoom < obj.sections[10].w then
+      local xywh = {x = obj.sections[10].x+lvar.maxdim*lvar.zoom-1,
                     y = obj.sections[10].y,
-                    w = obj.sections[10].w-2048*lvar.zoom+1,
+                    w = obj.sections[10].w-lvar.maxdim*lvar.zoom+1,
                     h = winh}
       gfx.a = 1
       gfx.rect(xywh.x,
@@ -27898,11 +27967,11 @@ function GUI_DrawCtlBitmap_Strips()
                xywh.w,
                xywh.h, 1 )
     end
-    if surface_offset.y == 0 and 2048*lvar.zoom < obj.sections[10].h then
+    if surface_offset.y == 0 and lvar.maxdim*lvar.zoom < obj.sections[10].h then
       local xywh = {x = obj.sections[10].x,
-                    y = obj.sections[10].y+2048*lvar.zoom-1,
+                    y = obj.sections[10].y+lvar.maxdim*lvar.zoom-1,
                     w = winh,
-                    h = obj.sections[10].w-2048*lvar.zoom+1}
+                    h = obj.sections[10].w-lvar.maxdim*lvar.zoom+1}
       gfx.a = 1
       gfx.rect(xywh.x,
                xywh.y,
@@ -31784,7 +31853,7 @@ function GUI_DrawCtlBitmap_Strips()
     local osg = ss3.osg
 
     local strip = tracks[track_select].strip
-    local l,t,r,b = 2048,2048,0,0
+    local l,t,r,b = lvar.maxdim,lvar.maxdim,0,0
     if strips[strip] then
       for c = 1, #strips[strip][page].controls do
         local ctl = strips[strip][page].controls[c]
@@ -34099,8 +34168,8 @@ function GUI_DrawCtlBitmap_Strips()
       maxy = maxy or 0
 
       gfx.dest = 1022
-      gfx.setimgdim(1022,-1,-1)
-      gfx.setimgdim(1022,maxx+offsetx,maxy+offsety)
+      --gfx.setimgdim(1022,-1,-1)
+      Img_SetDim(1022,maxx+offsetx,maxy+offsety)
 
       --draw gfx
       if #strip.graphics > 0 then
@@ -34157,8 +34226,8 @@ function GUI_DrawCtlBitmap_Strips()
 
                 local ma = gfxx.alpha
 
-                gfx.setimgdim(iidx, -1, -1)
-                gfx.setimgdim(iidx, sw, sh)
+                --gfx.setimgdim(iidx, -1, -1)
+                Img_SetDim(iidx, sw, sh)
                 gfx.dest = iidx
                 gfx.a = 1
                 --gfx.blit(imageidx,1,0, 0, 0, w, h, 0, 0, sw, sh)
@@ -34401,8 +34470,8 @@ function GUI_DrawCtlBitmap_Strips()
     offsety = -miny
 
     gfx.dest = 1022
-    gfx.setimgdim(1022,-1,-1)
-    gfx.setimgdim(1022,maxx+offsetx,maxy+offsety)
+    --gfx.setimgdim(1022,-1,-1)
+    Img_SetDim(1022,maxx+offsetx,maxy+offsety)
 
     --draw gfx
     if gfx2_select then
@@ -34455,8 +34524,8 @@ function GUI_DrawCtlBitmap_Strips()
 
           local ma = gfxx.alpha
 
-          gfx.setimgdim(iidx, -1, -1)
-          gfx.setimgdim(iidx, sw, sh)
+          --gfx.setimgdim(iidx, -1, -1)
+          Img_SetDim(iidx, sw, sh)
           gfx.dest = iidx
           gfx.a = 1
           --gfx.blit(imageidx,1,0, 0, 0, w, h, 0, 0, sw, sh)
@@ -34570,8 +34639,8 @@ function GUI_DrawCtlBitmap_Strips()
         offsety = -miny
 
         gfx.dest = 1022
-        gfx.setimgdim(1022,-1,-1)
-        gfx.setimgdim(1022,maxx+offsetx,maxy+offsety)
+        --gfx.setimgdim(1022,-1,-1)
+        Img_SetDim(1022,maxx+offsetx,maxy+offsety)
 
         --draw gfx
         if gfx4_select and #gfx4_select > 0 then
@@ -34626,8 +34695,8 @@ function GUI_DrawCtlBitmap_Strips()
 
                 local ma = gfxx.alpha
 
-                gfx.setimgdim(iidx, -1, -1)
-                gfx.setimgdim(iidx, sw, sh)
+                --gfx.setimgdim(iidx, -1, -1)
+                Img_SetDim(iidx, sw, sh)
                 gfx.dest = iidx
                 gfx.a = 1
                 --gfx.blit(imageidx,1,0, 0, 0, w, h, 0, 0, sw, sh)
@@ -34758,8 +34827,8 @@ function GUI_DrawCtlBitmap_Strips()
 
     gfx.a = 1
     gfx.dest = 1022
-    gfx.setimgdim(1022,-1,-1)
-    gfx.setimgdim(1022,maxx+offsetx+b_sz*2,maxy+offsety+b_sz*2)
+    --gfx.setimgdim(1022,-1,-1)
+    Img_SetDim(1022,maxx+offsetx+b_sz*2,maxy+offsety+b_sz*2)
 
       --draw gfx
       if gfx3_select and #gfx3_select > 0 then
@@ -34816,8 +34885,8 @@ function GUI_DrawCtlBitmap_Strips()
 
                 local ma = gfxx.alpha
 
-                gfx.setimgdim(iidx, -1, -1)
-                gfx.setimgdim(iidx, sw, sh)
+                --gfx.setimgdim(iidx, -1, -1)
+                Img_SetDim(iidx, sw, sh)
                 gfx.dest = iidx
                 gfx.a = 1
                 --gfx.blit(imageidx,1,0, 0, 0, w, h, 0, 0, sw, sh)
@@ -35430,8 +35499,8 @@ function GUI_DrawCtlBitmap_Strips()
 
   function GetLeftTopControlSelected()
 
-    local minx,x = 2048,2048
-    local miny,y = 2048,2048
+    local minx,x = lvar.maxdim,lvar.maxdim
+    local miny,y = lvar.maxdim,lvar.maxdim
     local lctl = -1
     local tctl = -1
 
@@ -35716,7 +35785,7 @@ function GUI_DrawCtlBitmap_Strips()
             if swid and switchers[swid].switchmode == 1 and
                switchers[swid].extendmode == true and (all == true or switchers[swid].extendid == extid) then
               if not switch_loc[swid] then
-                switch_loc[swid] = {l = 2048, t = 2048, r = 0, b = 0}
+                switch_loc[swid] = {l = lvar.maxdim, t = lvar.maxdim, r = 0, b = 0}
               end
               switch_loc[swid].l = math.min(switch_loc[swid].l, ctls[i].xsc)
               switch_loc[swid].t = math.min(switch_loc[swid].t, ctls[i].ysc)
@@ -35735,7 +35804,7 @@ function GUI_DrawCtlBitmap_Strips()
             if swid and switchers[swid].switchmode == 1 and
                switchers[swid].extendmode == true and (all == true or switchers[swid].extendid == extid) then
               if not switch_loc[swid] then
-                switch_loc[swid] = {l = 2048, t = 2048, r = 0, b = 0}
+                switch_loc[swid] = {l = lvar.maxdim, t = lvar.maxdim, r = 0, b = 0}
               end
               switch_loc[swid].l = math.min(switch_loc[swid].l, gfxx[i].x)
               switch_loc[swid].t = math.min(switch_loc[swid].t, gfxx[i].y)
@@ -35811,8 +35880,8 @@ function GUI_DrawCtlBitmap_Strips()
 
   function GetLTRBControlInGrp(grpid, switchctl)
 --  local tt = reaper.time_precise()
-    local l,t,r,b = 2048,2048,0,0
-    local gl,gt,gr,gb = 2048,2048,0,0
+    local l,t,r,b = lvar.maxdim,lvar.maxdim,0,0
+    local gl,gt,gr,gb = lvar.maxdim,lvar.maxdim,0,0
     local set, gset = false, false
     local ctls = strips[tracks[track_select].strip][page].controls
     local swctl = strips[tracks[track_select].strip][page].controls[switchctl]
@@ -35885,8 +35954,8 @@ function GUI_DrawCtlBitmap_Strips()
 
   function GetLTRBControlInSel(switchctl)
 
-    local l,t,r,b = 2048,2048,0,0
-    local gl,gt,gr,gb = 2048,2048,0,0
+    local l,t,r,b = lvar.maxdim,lvar.maxdim,0,0
+    local gl,gt,gr,gb = lvar.maxdim,lvar.maxdim,0,0
     local set, gset = false, false
     local ctls = strips[tracks[track_select].strip][page].controls
     local swctl = strips[tracks[track_select].strip][page].controls[switchctl]
@@ -35954,8 +36023,8 @@ function GUI_DrawCtlBitmap_Strips()
     if gfx3_select == nil then
       return 0, 0, 0, 0
     else
-      local l,t,r,b = 2048,2048,0,0
-      local gl,gt,gr,gb = 2048,2048,0,0
+      local l,t,r,b = lvar.maxdim,lvar.maxdim,0,0
+      local gl,gt,gr,gb = lvar.maxdim,lvar.maxdim,0,0
       local ctls = strips[tracks[track_select].strip][page].controls
       for i = 1, #ctl_select do
         local c = ctl_select[i].ctl
@@ -35979,7 +36048,7 @@ function GUI_DrawCtlBitmap_Strips()
 
   function GetLeftControlInStrip(controls, stripid)
 
-    local minx,x = 2048,2048
+    local minx,x = lvar.maxdim,lvar.maxdim
     local lctl = -1
 
     for j = 1, #controls do
@@ -35997,7 +36066,7 @@ function GUI_DrawCtlBitmap_Strips()
 
   function GetLeftControlInGroup(controls, grpid)
 
-    local minx,x = 2048,2048
+    local minx,x = lvar.maxdim,lvar.maxdim
     local lctl = -1
 
     for j = 1, #controls do
@@ -36016,13 +36085,13 @@ function GUI_DrawCtlBitmap_Strips()
   --with respect to gfx
   function GetLeftControlInStrip2(strip)
 
-    local minx,gminx,miny,gminy,x,y = 2048,2048,2048,2048,2048,2048
+    local minx,gminx,miny,gminy,x,y = lvar.maxdim,lvar.maxdim,lvar.maxdim,lvar.maxdim,lvar.maxdim,lvar.maxdim
     for j = 1, #strip.controls do
       local x,y = math.min(x,strip.controls[j].x),strip.controls[j].y
       if x < minx then minx = x ly = y end
       if y < miny then miny = y end
     end
-    x,y=2048,2048
+    x,y=lvar.maxdim,lvar.maxdim
     if #strip.graphics > 0 then
       for j = 1, #strip.graphics do
         local x,y = math.min(x,strip.graphics[j].x),math.min(y,strip.graphics[j].y)
@@ -36032,10 +36101,10 @@ function GUI_DrawCtlBitmap_Strips()
     end
 
     local rx, ry = 0,0
-    if gminx < 2048 then
+    if gminx < lvar.maxdim then
       rx = math.max(minx - gminx,0)
     end
-    if miny < 2048 then
+    if miny < lvar.maxdim then
       ry = ly - miny
     end
     return rx, ry
@@ -36709,7 +36778,7 @@ function GUI_DrawCtlBitmap_Strips()
         SortCtlSel_Horiz()
 
         local ctls = strips[tracks[track_select].strip][page].controls
-        local minx = 2048
+        local minx = lvar.maxdim
         local minxc = -1
         local maxx = 0
         local maxxc = -1
@@ -36747,7 +36816,7 @@ function GUI_DrawCtlBitmap_Strips()
         SortGfxSel_Horiz()
 
         local ctls = strips[tracks[track_select].strip][page].graphics
-        local minx = 2048
+        local minx = lvar.maxdim
         local minxc = -1
         local maxx = 0
         local maxxc = -1
@@ -36861,7 +36930,7 @@ function GUI_DrawCtlBitmap_Strips()
         SortCtlSel_Vert()
 
         local ctls = strips[tracks[track_select].strip][page].controls
-        local miny = 2048
+        local miny = lvar.maxdim
         local minyc = -1
         local maxy = 0
         local maxyc = -1
@@ -36900,7 +36969,7 @@ function GUI_DrawCtlBitmap_Strips()
         SortGfxSel_Vert()
 
         local ctls = strips[tracks[track_select].strip][page].graphics
-        local miny = 2048
+        local miny = lvar.maxdim
         local minyc = -1
         local maxy = 0
         local maxyc = -1
@@ -36982,7 +37051,7 @@ function GUI_DrawCtlBitmap_Strips()
 
   function Switcher_ContentsLocInfo(switchid)
 
-    local l,r,t,b = 2048,0,2048,0
+    local l,r,t,b = lvar.maxdim,0,lvar.maxdim,0
     local swl, swr, swt, swb
     local c
 
@@ -39848,10 +39917,10 @@ function GUI_DrawCtlBitmap_Strips()
 
           local ext_h = (b[i] or 0) - (t[i] or 0)
           local ext_w = (r[i] or 0) - (l[i] or 0)
-          if ext_w == -2048 then
+          if ext_w == -lvar.maxdim then
             ext_w = sr[i] - sl[i]
           end
-          if ext_h == -2048 then
+          if ext_h == -lvar.maxdim then
             ext_h = sb[i] - st[i]
           end
 
@@ -39976,7 +40045,7 @@ function GUI_DrawCtlBitmap_Strips()
           if swctl and swctl.extendmode == true and swctl.extendid == extid then
 
             local extpos = swctl.extendpos
-            l[extpos],r[extpos],t[extpos],b[extpos] = 2048,0,2048,0
+            l[extpos],r[extpos],t[extpos],b[extpos] = lvar.maxdim,0,lvar.maxdim,0
 
             if not extctls[extpos] then
               extctls[extpos] = {}
@@ -40066,7 +40135,7 @@ function GUI_DrawCtlBitmap_Strips()
       if ctl.ctlcat == ctlcats.switcher and ctl.extendmode == true and (extid == nil or ctl.extendid == extid) then
         for i = 1, #switchers[switchid].grpids do
           gids[switchers[switchid].grpids[i].id] = i
-          l[i],r[i],t[i],b[i] = 2048,0,2048,0
+          l[i],r[i],t[i],b[i] = lvar.maxdim,0,lvar.maxdim,0
         end
       end
     end
@@ -47139,7 +47208,7 @@ function GUI_DrawCtlBitmap_Strips()
                             break
 
                           elseif faders[p+1].latch then
-                            local vv = math.floor(GetParamValue(ctl.ctlcat,ctl.tracknum or tracks[track_select].tracknum,ctl.fxnum,ctl.param,c)*2048)/2048
+                            local vv = math.floor(GetParamValue(ctl.ctlcat,ctl.tracknum or tracks[track_select].tracknum,ctl.fxnum,ctl.param,c)*lvar.maxdim)/lvar.maxdim
                             faders[p+1].val = reaper.TrackFX_GetParam(track, fxnum, pf)
                             if vv and faders[p+1].val == vv then
                               faders[p+1].latch = nil
@@ -48606,8 +48675,8 @@ function GUI_DrawCtlBitmap_Strips()
 
     if reaper.time_precise() >= zi.et then
       lvar.zoom = zi.tgt
-      surface_offset.x = math.min(surface_offset.x, 2048-(obj.sections[10].w/lvar.zoom))
-      surface_offset.y = math.min(surface_offset.y, 2048-(obj.sections[10].h/lvar.zoom))
+      surface_offset.x = math.min(surface_offset.x, lvar.maxdim-(obj.sections[10].w/lvar.zoom))
+      surface_offset.y = math.min(surface_offset.y, lvar.maxdim-(obj.sections[10].h/lvar.zoom))
       surface_offset.x = math.max(surface_offset.x, 0)
       surface_offset.y = math.max(surface_offset.y, 0)
       if lvar.livemode >= 1 then
@@ -48625,8 +48694,8 @@ function GUI_DrawCtlBitmap_Strips()
     else
       local zz = (reaper.time_precise() - zi.st)/(zi.et-zi.st)
       lvar.zoom = zi.src + zz*(zi.tgt - zi.src)
-      surface_offset.x = math.min(surface_offset.x, 2048-(obj.sections[10].w/lvar.zoom))
-      surface_offset.y = math.min(surface_offset.y, 2048-(obj.sections[10].h/lvar.zoom))
+      surface_offset.x = math.min(surface_offset.x, lvar.maxdim-(obj.sections[10].w/lvar.zoom))
+      surface_offset.y = math.min(surface_offset.y, lvar.maxdim-(obj.sections[10].h/lvar.zoom))
       surface_offset.x = math.max(surface_offset.x, 0)
       surface_offset.y = math.max(surface_offset.y, 0)
 
@@ -49659,7 +49728,7 @@ function GUI_DrawCtlBitmap_Strips()
 
   function GetStripDim(trn)
 
-    local l, t, r, b = 2048, 2048, 0, 0
+    local l, t, r, b = lvar.maxdim, lvar.maxdim, 0, 0
     local strip = tracks[trn].strip
     if strips[strip] then
       local ctls = strips[strip][page].controls
@@ -50130,6 +50199,10 @@ function GUI_DrawCtlBitmap_Strips()
 
     end
 
+    --[[if not lvar.runonce then
+      CheckOversizeImage()
+    end]]
+    
     ------------------------------------------------
     -- GFX RESIZE
     ------------------------------------------------
@@ -50163,7 +50236,7 @@ function GUI_DrawCtlBitmap_Strips()
           end
 
           plist_w = math.min(plist_w, ww)
-          plist_w = math.min(math.max(plist_w,0),2048)
+          plist_w = math.min(math.max(plist_w,0),lvar.maxdim)
 
         end
 
@@ -50198,7 +50271,12 @@ function GUI_DrawCtlBitmap_Strips()
 
     if not lvar.runonce then
       lvar.runonce = true
-
+      
+      if lvar.missingTI and lvar.enablelargegui then       
+        OpenMsgBox(1,'Transparent_4096.png missing from the resources folder',1,'GUI size limited to 2048 pixels')
+        lupd.update_gfx = true
+      end
+      
       if lvar.livemode == 2 then
         local seltr = reaper.GetSelectedTrack2(0,0, true)
         if seltr and (lvar.dynamicmode_trn == nil or seltr ~= GetTrack(math.max(lvar.dynamicmode_trn,-1))) then
@@ -51155,6 +51233,9 @@ function GUI_DrawCtlBitmap_Strips()
     if redraw_ctlbitmap and reaper.time_precise() >= redraw_ctlbitmap then
       redraw_ctlbitmap = nil
       GUI_DrawCtlBitmap()
+    elseif redraw_ctlbitmapmix and reaper.time_precise() >= redraw_ctlbitmapmix then
+      redraw_ctlbitmapmix = nil
+      GUI_DrawCtlBitmap_Mix()     
     end
     if midimsg == true and reaper.time_precise() >= midimsgto then
       midimsg = false
@@ -53039,7 +53120,7 @@ function GUI_DrawCtlBitmap_Strips()
 
   function TranslateMixCtlPos(c, swid)
 
-    local mx, my = -2048,-2048 --, yy|
+    local mx, my = -lvar.maxdim,-lvar.maxdim --, yy|
     local strip = tracks[track_select].strip
     local ctl = strips[strip][page].controls[c]
 
@@ -59948,10 +60029,10 @@ function GUI_DrawCtlBitmap_Strips()
 
       elseif mouse.context == contexts.modwin_resize then
 
-        modwinsz.w = math.min(math.max(modwinrsz.w + (mouse.mx - modwinrsz.mx)/pnl_scale,modwin.minw),2048)
-        modwinsz.h = math.min(math.max(modwinrsz.h + (mouse.my - modwinrsz.my)/pnl_scale,modwin.minh),2048)
-        --modwinsz.w = math.min(math.max(modwinrsz.w + (mouse.mx - modwinrsz.mx),modwin.minw),2048)
-        --modwinsz.h = math.min(math.max(modwinrsz.h + (mouse.my - modwinrsz.my),modwin.minh),2048)
+        modwinsz.w = math.min(math.max(modwinrsz.w + (mouse.mx - modwinrsz.mx)/pnl_scale,modwin.minw),lvar.maxdim)
+        modwinsz.h = math.min(math.max(modwinrsz.h + (mouse.my - modwinrsz.my)/pnl_scale,modwin.minh),lvar.maxdim)
+        --modwinsz.w = math.min(math.max(modwinrsz.w + (mouse.mx - modwinrsz.mx),modwin.minw),lvar.maxdim)
+        --modwinsz.h = math.min(math.max(modwinrsz.h + (mouse.my - modwinrsz.my),modwin.minh),lvar.maxdim)
         if modwinsz.w ~= modwinsz.ow or modwinsz.h ~= modwinsz.oh then
 
           modwinsz.resize = true
@@ -59973,7 +60054,7 @@ function GUI_DrawCtlBitmap_Strips()
         end
         if s > 50*pnl_scale or (modwinsz.minimized == true and s >= modwin.minh*pnl_scale) then
           s = modwinrsz.h - (mouse.my - modwinrsz.my)
-          modwinsz.h = math.min(math.min(math.max(s,modwin.minh*pnl_scale),gfx1.main_h-obj.sections[10].y),2048)
+          modwinsz.h = math.min(math.min(math.max(s,modwin.minh*pnl_scale),gfx1.main_h-obj.sections[10].y),lvar.maxdim)
           modwinsz.minimized = false
           --modwinsz.oh = modwinsz.h
         else
@@ -60735,7 +60816,7 @@ function GUI_DrawCtlBitmap_Strips()
               obj.sections[1350].x = obj.sections[10000].x+obj.sections[10000].w
             end
             obj.sections[1350].y = obj.sections[10000].y
-            local hh = math.min(math.max((gfx1.main_h-obj.sections[10000].y),lvar.sbmin*pnl_scale),2048)
+            local hh = math.min(math.max((gfx1.main_h-obj.sections[10000].y),lvar.sbmin*pnl_scale),lvar.maxdim)
             obj.sections[1350].h = hh
           else
             obj.sections[1350].x = sbwinrsz.ep - math.floor(sbwin.w*pnl_scale) -- sbwinrsz.mmx
@@ -67419,7 +67500,7 @@ function GUI_DrawCtlBitmap_Strips()
         dragoff = {mx = lvar.dg2.mx, my = lvar.dg2.my, x = {}, y = {}}
         lvar.dg2 = nil
 
-        local l, t = 2048, 2048
+        local l, t = lvar.maxdim, lvar.maxdim
         for g = 1, #gfx4_select do
           local gfxx = strips[tracks[track_select].strip][page].graphics[gfx4_select[g]]
           dragoff.x[g] = gfxx.x
@@ -69135,7 +69216,7 @@ function GUI_DrawCtlBitmap_Strips()
       if settings_ssdock == true then
         osnaph = snaph
       elseif osnaph then
-        snaph = math.max(math.min(osnaph,obj.sections[10].h,2048),252*pnl_scale)
+        snaph = math.max(math.min(osnaph,obj.sections[10].h,lvar.maxdim),252*pnl_scale)
         obj.sections[160].h = snaph
         resize_display = true
       else
@@ -70185,7 +70266,7 @@ function GUI_DrawCtlBitmap_Strips()
             --local rt = reaper.time_precise()
             snapparamdrag = {iidx = 980, p = lvar.snapedit.selected, yy = yy, xoff = mouse.mx - obj.sections[420].x, yoff = mouse.my - obj.sections[420].y - (yy*macroedit.sech)}
 
-            gfx.setimgdim(iidx,obj.sections[420].w+4,macroedit.sech)
+            Img_SetDim(iidx,obj.sections[420].w+4,macroedit.sech, true)
             gfx.dest = iidx
             gfx.blit(1008,1,0,obj.sections[420].x-2,obj.sections[420].y+yy*macroedit.sech,obj.sections[420].w+4,macroedit.sech,0,0)
             f_Get_SSV(gui.color.yellow)
@@ -71974,8 +72055,8 @@ function GUI_DrawCtlBitmap_Strips()
         --local y = math.floor(obj.sections[10].h/2) - math.floor(h/2)
         surface_offset.x = 0
         surface_offset.y = 0
-        local x = math.floor(2048/2) - math.floor(w/2)
-        local y = math.floor(2048/2) - math.floor(h/2)
+        local x = math.floor(lvar.maxdim/2) - math.floor(w/2)
+        local y = math.floor(lvar.maxdim/2) - math.floor(h/2)
 
         x = round(x/gs)*gs
         y = round(y/gs)*gs
@@ -73531,7 +73612,7 @@ function GUI_DrawCtlBitmap_Strips()
       if CheckOver10() then
 
         if lvar.livemode >= 1 then
-          if oswid and switchers[oswid].dragging then
+          if oswid and switchers[oswid] and switchers[oswid].dragging then
             switchers[oswid].dragging = nil
             lupd.update_surface = true
           end
@@ -74331,7 +74412,7 @@ function GUI_DrawCtlBitmap_Strips()
           end
           lupd.update_gfx = true
         elseif EB_Open == 100 then
-          autosnap_rowheight = F_limit(nz(tonumber(editbox.text),autosnap_rowheight),50,2048)
+          autosnap_rowheight = F_limit(nz(tonumber(editbox.text),autosnap_rowheight),50,lvar.maxdim)
           lupd.update_gfx = true
         elseif EB_Open == 101 then
           autosnap_itemgap = F_limit(nz(tonumber(editbox.text),autosnap_itemgap),0,1000)
@@ -75291,7 +75372,7 @@ function GUI_DrawCtlBitmap_Strips()
             if settings_usectlbitmap then
               GUI_DrawCtlBitmap()
             else
-              gfx.setimgdim(ctl_bitmap,-1,-1)
+              Img_SetDim(ctl_bitmap,-1,-1)
             end
             lupd.update_gfx = true
           elseif MOUSE_click(obj.sections[715]) then
@@ -75429,6 +75510,12 @@ function GUI_DrawCtlBitmap_Strips()
           elseif MOUSE_click(obj.sections[737]) then
             settings_hideplugnotfound = not settings_hideplugnotfound
             lupd.update_gfx = true
+
+          elseif MOUSE_click(obj.sections[751]) then
+            lvar.enablelargegui = not lvar.enablelargegui
+            reaper.SetExtState(lvar.SCRIPT,'enablelargegui',tostring(lvar.enablelargegui), true)
+            OpenMsgBox(1,'Please restart LBX Stripper for change to take effect',1)
+            lupd.update_gfx = true
           end
 
         elseif lvar.settingspage == 5 then
@@ -75513,6 +75600,25 @@ function GUI_DrawCtlBitmap_Strips()
               --lvar.newloc_preserveid = true
             end
 
+          elseif MOUSE_click(obj.sections[750]) then
+            if not mouse.ctrl then
+              local retval, folder = reaper.JS_Dialog_BrowseForFolder('Please select resources folder:', paths.resource_path)
+              if retval == 1 then
+                folder = folder..'/'
+                reaper.SetExtState(lvar.SCRIPT,'lbx_alternative_resources_path',tostring(folder), true)
+                lvar.altrespath = folder
+                lupd.update_gfx = true  
+                OpenMsgBox(1, 'Please restart the script before making any further changes.', 1)
+              end
+            else
+              local folder = reaper.GetResourcePath().."/Scripts/LBX/LBXCS_resources/"
+              if folder ~= paths.resource_folder then
+                reaper.SetExtState(lvar.SCRIPT,'lbx_alternative_resources_path',tostring(folder), true)
+                lvar.altrespath = folder
+                lupd.update_gfx = true  
+              end
+              OpenMsgBox(1, 'Please restart the script before making any further changes.', 1)
+            end
           elseif MOUSE_click_RB(obj.sections[736]) then
 
             local mstr = 'Clear'
@@ -75839,6 +75945,7 @@ function GUI_DrawCtlBitmap_Strips()
     lvar.settingsinf_txt[706] = {'Draw coloured boxes around controls that have fader and modulator assignments'}
     lvar.settingsinf_txt[717] = {'When morphing - draw a pop-up control on the top left of the strip surface','Use this pop-up to stop/pause/change direction of and crossfade the morph'}
     lvar.settingsinf_txt[737] = {'Removes "plugin not found" text when a plugin is not found - makes it look offline'}
+    lvar.settingsinf_txt[751] = {'Allow GUI size > 2048 pixels (surface size of 4096 pixels','Takes slightly longer to initialize script'}
 
     --PAGE 5
 
@@ -75864,6 +75971,9 @@ function GUI_DrawCtlBitmap_Strips()
     lvar.settingsinf_txt[736] = {'EXPERIMENTAL: This option forces Stripper to load the specified data file for every project and disables saving',
                                  'Useful if you use Stripper just as a template for performing actions',
                                  'Be careful what you include in the data file as any links to fx plugins etc. will likely not work'}
+    lvar.settingsinf_txt[750] = {'EXPERIMENTAL: Change resource folder path',
+                                 'Useful if you want to store your Stripper data in another location',
+                                 'or try out a new resources folder'}
 
     --lvar.settingsinf_txt[0] = {''}
 
@@ -78390,6 +78500,16 @@ function GUI_DrawCtlBitmap_Strips()
       redraw_ctlbitmap = reaper.time_precise() + 0.5
     else
       redraw_ctlbitmap = nil
+    end
+  end
+
+  function SetCtlBitmapRedraw_Mix(forcenow)
+    if settings_usectlbitmap and forcenow then
+      GUI_DrawCtlBitmap_Mix()
+    elseif settings_usectlbitmap then
+      redraw_ctlbitmapmix = reaper.time_precise() + 0.2
+    else
+      redraw_ctlbitmapmix = nil
     end
   end
 
@@ -82063,8 +82183,8 @@ function GUI_DrawCtlBitmap_Strips()
     DBGOut('*** LOADING DATA ***')
     DBGOut('LoadData: Saved OK: '..tostring(GPES('savedok')))
 
-    gfx.setimgdim(1, -1, -1)
-    gfx.setimgdim(1, gfx1.main_w,gfx1.main_h)
+    --gfx.setimgdim(1, -1, -1)
+    Img_SetDim(1, gfx1.main_w,gfx1.main_h)
     GUI_DrawMsgX(obj, gui, 'Reading data file...  Please wait...')
 
     DBGOut('LoadData: ffn: '..tostring(ffn))
@@ -82325,8 +82445,8 @@ function GUI_DrawCtlBitmap_Strips()
         end
       end
 
-      gfx.setimgdim(1, -1, -1)
-      gfx.setimgdim(1, gfx1.main_w,gfx1.main_h)
+      --gfx.setimgdim(1, -1, -1)
+      Img_SetDim(1, gfx1.main_w,gfx1.main_h)
       GUI_DrawMsgX(obj, gui, 'Reading data file...  Please wait...')
 
       local rv, v = reaper.GetProjExtState(0,lvar.SCRIPT,'version')
@@ -83090,7 +83210,8 @@ function GUI_DrawCtlBitmap_Strips()
     lvar.livemode = tonumber(nz(GES('livemode',0,data),lvar.livemode))
     lvar.glivemode = lvar.livemode
 
-    lvar.zoom = tonumber(nz(GES('surface_zoom',0,data),lvar.zoom))                                
+    lvar.zoom = tonumber(nz(GES('surface_zoom',0,data),lvar.zoom))  
+    --lvar.enablelargegui = tobool(nz(GES('enablelargegui',true,data),lvar.enablelargegui))
     file_bgimage = nz(GES('file_bgimage',true,data),file_bgimage)
     lvar.mmov_bgimgon = tobool(nz(GES('mmov_bgimgon',true,data),lvar.mmov_bgimgon))
     lvar.bgstretch = tobool(nz(GES('bgstretch',true,data),lvar.bgstretch))
@@ -83463,6 +83584,7 @@ function GUI_DrawCtlBitmap_Strips()
     end
 
     SetExtState(SCRIPT,'surface_zoom',tostring(lvar.zoom), true)                              
+
     SetExtState(SCRIPT,'file_bgimage',nz(file_bgimage,''), true)
     SetExtState(SCRIPT,'mmov_bgimgon',tostring(lvar.mmov_bgimgon), true)
     SetExtState(SCRIPT,'bgstretch',tostring(lvar.bgstretch), true)
@@ -83479,7 +83601,6 @@ function GUI_DrawCtlBitmap_Strips()
     SetExtState(SCRIPT,'dm_maxvistracks',tostring(lvar.dm_maxvistracks), true)
     SetExtState(SCRIPT,'dm_showtrackname',tostring(lvar.dm_showtrackname), true)
     SetExtState(SCRIPT,'dm_fixtrack',tostring(lvar.dm_fixtrack), true)
-
     SetExtState(SCRIPT,'trmix_panelsz',tostring(lvar.trmix_panelsz), true)
 
     SetExtState(SCRIPT,'trmix_sndpnl_show',tostring(lvar.trmix_sndpnl_show), true)
@@ -85441,8 +85562,8 @@ function GUI_DrawCtlBitmap_Strips()
   function SetSurfaceSize()
 
     for i = 0, lvar.gfxpages do
-      gfx.setimgdim(strip_image+i,surface_size.w, surface_size.h)
-      gfx.setimgdim(bg_image+i,surface_size.w, surface_size.h)
+      Img_SetDim(strip_image+i,surface_size.w, surface_size.h, true)
+      Img_SetDim(bg_image+i,surface_size.w, surface_size.h, true)
     end
 
   end
@@ -90047,16 +90168,16 @@ DBG(t.. '  '..trigtime)
       skin, ret = LoadSkin()
 
       obj = GetObjects()
-      gfx.setimgdim(1003,-1,-1)
-      gfx.setimgdim(1005,-1,-1)
-      gfx.setimgdim(1006,-1,-1)
-      gfx.setimgdim(1007,-1,-1)
-      gfx.setimgdim(1011,-1,-1)
-      gfx.setimgdim(1003,obj.sections[160].w, obj.sections[160].h)
-      gfx.setimgdim(1005,obj.sections[180].w, obj.sections[180].h)
-      gfx.setimgdim(1006,obj.sections[221].w, obj.sections[221].h)
-      gfx.setimgdim(1007,obj.sections[220].w, obj.sections[220].h)
-      gfx.setimgdim(1011,obj.sections[45].w, obj.sections[45].h)
+      --gfx.setimgdim(1003,-1,-1)
+      --gfx.setimgdim(1005,-1,-1)
+      --gfx.setimgdim(1006,-1,-1)
+      --gfx.setimgdim(1007,-1,-1)
+      --gfx.setimgdim(1011,-1,-1)
+      Img_SetDim(1003,obj.sections[160].w, obj.sections[160].h)
+      Img_SetDim(1005,obj.sections[180].w, obj.sections[180].h)
+      Img_SetDim(1006,obj.sections[221].w, obj.sections[221].h)
+      Img_SetDim(1007,obj.sections[220].w, obj.sections[220].h)
+      Img_SetDim(1011,obj.sections[45].w, obj.sections[45].h)
       --resize_display = true
       lupd.update_gfx = true
 
@@ -91606,6 +91727,47 @@ DBG(vald) ]]
     end
   end
 
+  function SetPaths()
+  
+    local altrespath = GES('lbx_alternative_resources_path',true)
+    
+    paths.resource_path = altrespath or reaper.GetResourcePath().."/Scripts/LBX/LBXCS_resources/"
+    paths.controls_path = paths.resource_path.."controls/"
+    paths.graphics_path = paths.resource_path.."graphics/"
+    paths.actiondump_path = paths.resource_path.."actiondumps/"
+    paths.icon_path = paths.resource_path.."icons/"
+    paths.strips_path = paths.resource_path.."strips/"
+    paths.templates_folder = "LBX_TEMPLATES"
+    paths.dmstrip_folder = "LBX_DMSTRIPS"
+    paths.sets_path = paths.resource_path.."sets/"
+    paths.projsave_path = paths.resource_path.."projsave/"
+    paths.paths_path = paths.resource_path.."paths/"
+    paths.eqbands_path = paths.resource_path.."eqbands/"
+    paths.eq_path = paths.resource_path.."eq/"
+    paths.skins_path = paths.resource_path.."skins/"
+    paths.share_path = paths.resource_path.."share/"
+    paths.mod_path = paths.resource_path.."modpresets/"
+    paths.update_path = paths.resource_path.."updater/"
+  
+    file_settings = paths.resource_path..'settings.txt'
+    file_bgimage = paths.resource_path..'bg.jpg'
+    
+    lvar.tranimg =  paths.resource_path..'transparent_4096.png'
+    
+    
+  end
+
+  function CheckOversizeImage()
+  
+    lvar.enablelargegui = tobool(nz(GES('enablelargegui',true),lvar.enablelargegui))
+    if not reaper.file_exists(lvar.tranimg) or not lvar.enablelargegui then
+      lvar.maxdim = 2048
+      force_resize = true
+      lvar.missingTI = true
+    end
+  
+  end
+  
   ------------------------------------------------------------
 
   math.randomseed(os.clock())
@@ -91619,6 +91781,8 @@ DBG(vald) ]]
   end
 
   --font_folder = "C:/Windows/Fonts/"
+
+  SetPaths()
 
   LoadFontList()
   Load_PlugDefs()
@@ -91779,6 +91943,7 @@ DBG(vald) ]]
   gx_h = def_gx_h
   sf_h = def_sf_h
 
+  CheckOversizeImage()
 
   lvar.updateravailable, lvar.git, lvar.gitclone = CheckUpdater()
   SetDefKP()
@@ -91793,7 +91958,7 @@ DBG(vald) ]]
     local w,h = gfx.getimgdim(strip_image)
     surface_size = {w = w, h = h, limit = true}
   else
-    surface_size = {w = 2048, h = 2048, limit = true}
+    surface_size = {w = lvar.maxdim, h = lvar.maxdim, limit = true}
   end
 
   gfx.loadimg(0,paths.controls_path.."__default.png") -- default control
