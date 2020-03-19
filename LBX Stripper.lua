@@ -16,7 +16,7 @@
   local lvar = {}
   local cbi = {}
 
-  lvar.scriptver = '0.94.0182' --Script Version
+  lvar.scriptver = '0.94.0183' --Script Version
 
   lvar.maxdim = 4096
   
@@ -75601,7 +75601,7 @@ function GUI_DrawCtlBitmap_Strips()
             end
 
           elseif MOUSE_click(obj.sections[750]) then
-            if not mouse.ctrl then
+            if not mouse.ctrl and reaper.JS_Dialog_BrowseForFolder then
               local retval, folder = reaper.JS_Dialog_BrowseForFolder('Please select resources folder:', paths.resource_path)
               if retval == 1 then
                 folder = folder..'/'
@@ -75610,7 +75610,7 @@ function GUI_DrawCtlBitmap_Strips()
                 lupd.update_gfx = true  
                 OpenMsgBox(1, 'Please restart the script before making any further changes.', 1)
               end
-            else
+            elseif mouse.ctrl then
               local folder = reaper.GetResourcePath().."/Scripts/LBX/LBXCS_resources/"
               if folder ~= paths.resource_folder then
                 reaper.SetExtState(lvar.SCRIPT,'lbx_alternative_resources_path',tostring(folder), true)
