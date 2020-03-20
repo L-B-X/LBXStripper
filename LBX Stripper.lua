@@ -16,7 +16,7 @@
   local lvar = {}
   local cbi = {}
 
-  lvar.scriptver = '0.94.0183' --Script Version
+  lvar.scriptver = '0.94.0184' --Script Version
 
   lvar.maxdim = 4096
   
@@ -50265,8 +50265,24 @@ function GUI_DrawCtlBitmap_Strips()
         end
 
         lvar.resizetimer = rt+0.25
+        lvar.resize_check = true
       end
 
+    end
+    if lvar.resize_check and not (reaper.JS_Mouse_GetState(1)==1) then
+      --if gfx.dock(-1)&1~=1 then
+        if (gfx1.main_w > lvar.maxdim or gfx1.main_h > lvar.maxdim) and reaper.JS_Window_Find then
+          local hwnd = reaper.JS_Window_Find('- LBX Stripper -', true)
+          if hwnd then
+            local retval, wleft, wtop, wright, wbottom = reaper.JS_Window_GetRect(hwnd)
+            local w, h = math.abs(wright-wleft), math.abs(wbottom-wtop)
+            local retval, cwidth, cheight = reaper.JS_Window_GetClientSize(hwnd)
+            local dw, dh = w-cwidth, h-cheight
+            reaper.JS_Window_Resize(hwnd, math.min(gfx1.main_w,lvar.maxdim)+dw, math.min(gfx1.main_h,lvar.maxdim)+dh)
+          end
+        end
+      --end
+      lvar.resize_check = nil
     end
 
     if not lvar.runonce then
@@ -50290,6 +50306,7 @@ function GUI_DrawCtlBitmap_Strips()
       --local slsz = 100
       --local slots_x = 2 --math.max(math.min(math.floor((ctl_browser_size.w - 20) / slsz),2),2)
       --local slots_y = math.max(math.min(math.floor((ctl_browser_size.h/2 - (butt_h+2)*2 -20) / slsz),8),1)
+      --check size
       if lvar.ctlbrowser_docked and (lvar.slotsx ~= ctl_browser_size.slots_x or lvar.slotsx ~= ctl_browser_size.slots_y) then
         lvar.cbi_loaded = nil
         lupd.update_surface = true
