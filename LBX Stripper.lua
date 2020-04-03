@@ -11,13 +11,15 @@
   ]]
 
   --------------------------------------------
+  --------------------------------------------
   DBG_mode = false
 
   local lvar = {}
   local cbi = {}
 
-  lvar.scriptver = '0.94.0185' --Script Version
+  lvar.scriptver = '0.94.0186' --Script Version
 
+  lvar.delayfunction = {}
   lvar.maxdim = 4096
   
   lvar.mousewheel_div = 120 --default 120 - change to 30 or ? for weird Mac mice!
@@ -205,8 +207,8 @@
   lvar.swdropsz = 16
   lvar.deletestripwhentrackdeleted = true
 
-  local redraw_ctlbitmapmix
-  local redraw_ctlbitmap
+  --local redraw_ctlbitmapmix
+  --local redraw_ctlbitmap
 
   lvar.gfxpages = 0
   lvar.gfxpagesmax = 9
@@ -630,6 +632,9 @@
   local bg_image = 930
   local ctlbitmap_image = 940
 
+  local guibitmap = 964
+  lvar.showguibitmap = true
+
   local ctl_browser_image = 910
   local maximg_browse = 79
   local b_sz = 100
@@ -751,6 +756,19 @@
   lvar.livebg = true
   lvar.mm_disablenonpoppedctls = false
 
+  local function RedrawGUIBitmap(t)
+  --DBG('T')
+    if t then
+      lvar.redrawguibitmap_timer = reaper.time_precise() + t
+    else
+      if mouse.context == nil then
+        lvar.redrawguibitmap = true
+      else
+        lvar.redrawguibitmap_nocontext = true      
+      end
+    end
+  end
+  
   local function Img_SetDim(img, w, h, noclear, clearmethod2, bcol)
     --DBG(img .. '  '..tostring(noclear))
     if (w <= 2048 and h <= 2048) or lvar.missingTI then
@@ -953,8 +971,8 @@
       for i = 0, fxcnt-1 do
         tfxi[i] = {}
         local _, nm = reaper.TrackFX_GetFXName(tr,i,'')
-        local _, nm2 = reaper.BR_TrackFX_GetFXModuleName(tr,i,'',64)
-
+        local _, nm2 = reaper.BR_TrackFX_GetFXModuleName(tr,i,'',64) --bug with video processor
+--DBG(i..'  '..nm2)
         tfxi[i].fxname = nm
         tfxi[i].fxfn = nm2
         tfxi[i].fxguid = reaper.TrackFX_GetFXGUID(tr,i)
@@ -5201,13 +5219,21 @@
                     math.floor(math.max(math.min(math.floor((sbwin.h*pnl_scale)),obj.sections[10000].h),lvar.sbmin*pnl_scale))
     end
     if mm1350 then
-      obj.sections[1350] = {x = math.max(F_limit(mm1350.x,obj.sections[10000].x,obj.sections[10000].x+obj.sections[10000].w-sbw),obj.sections[10000].x),
+      --[[obj.sections[1350] = {x = math.max(F_limit(mm1350.x,obj.sections[10000].x,obj.sections[10000].x+obj.sections[10000].w-sbw),obj.sections[10000].x),
                             y = math.max(F_limit(mm1350.y,obj.sections[10000].y,obj.sections[10000].y+obj.sections[10000].h-sbh),obj.sections[10000].y),
+                            w = sbw,
+                            h = sbh}]]
+      obj.sections[1350] = {x = F_limit(mm1350.x,0,gfx1.main_w-sbw),
+                            y = F_limit(mm1350.y,obj.sections[10000].y,gfx1.main_h-sbh),
                             w = sbw,
                             h = sbh}
     elseif sbwin.x and sbwin.y then
-      obj.sections[1350] = {x = F_limit(sbwin.x,obj.sections[10000].x,obj.sections[10000].x+obj.sections[10000].w-sbw),
+      --[[obj.sections[1350] = {x = F_limit(sbwin.x,obj.sections[10000].x,obj.sections[10000].x+obj.sections[10000].w-sbw),
                             y = F_limit(sbwin.y,obj.sections[10000].y,obj.sections[10000].y+obj.sections[10000].h-sbh),
+                            w = sbw,
+                            h = sbh}]]
+      obj.sections[1350] = {x = F_limit(sbwin.x,0,gfx1.main_w-sbw),
+                            y = F_limit(sbwin.y,obj.sections[10000].y,gfx1.main_h-sbh),
                             w = sbw,
                             h = sbh}
     else
@@ -9390,6 +9416,7 @@
     skin.butt18O = LoadSkinIMG(847, 'Button18O.png')
     skin.butt18Gr = LoadSkinIMG(848, 'Button18Gr.png')
     skin.butt18B = LoadSkinIMG(849, 'Button18B.png')
+    skin.butt18W = LoadSkinIMG(965, 'Button18W.png')
     skin.panela_top = LoadSkinIMG(850, 'PanelA_TOP.png')
     skin.panela_mid = LoadSkinIMG(851, 'PanelA_MID.png')
     skin.panela_bot = LoadSkinIMG(852, 'PanelA_BOT.png')
@@ -9457,6 +9484,7 @@
        skin.butt18R == -2 or
        skin.butt18T == -2 or
        skin.butt18B == -2 or
+       skin.butt18W == -2 or
        skin.bar == -2 or
        skin.barR == -2 or
        skin.barUD == -2 or
@@ -11790,6 +11818,8 @@
       lupd.update_dd = true
       lupd.update_surface = true
       mouse.context = contexts.dd
+      
+      RedrawGUIBitmap()
     end
 
   end
@@ -13716,7 +13746,7 @@
 
   end
 
-  function GUI_DrawButtonWW(gui, t, th, maxrows, b, colb, colt, v, opttxt, limit, t_sz,noscale, butt_justify, opttxt_col, toptext, toptextsz)
+  function GUI_DrawButtonWW(gui, t, th, maxrows, b, colb, colt, v, opttxt, limit, t_sz,noscale, butt_justify, opttxt_col, toptext, toptextsz, rgbadjust)
 
     local tscale = 0
     if noscale ~= true then
@@ -13775,6 +13805,11 @@
         w, h = gfx.getimgdim(skin.butt18O)
         sl = skin.butt18O
         fcol = gui.skol.butt10_txt
+
+      elseif colb == -11 then
+        w, h = gfx.getimgdim(skin.butt18W)
+        sl = skin.butt18W
+        fcol = gui.skol.butt10_txt
       else
         w, h = gfx.getimgdim(skin.butt18)
         sl = skin.butt18
@@ -13802,6 +13837,12 @@
       --M
       gfx.blit(sl, 1, 0, corner, corner, w-corner2, h-corner2, b.x+corner, b.y+corner, b.w-corner2, b.h-corner2)
 
+      if rgbadjust then
+        local mr = ((rgbadjust & 255) / 255)
+        local mg = (((rgbadjust >> 8) & 255) / 255)
+        local mb = (((rgbadjust >> 16) & 255) / 255)
+        gfx.muladdrect(b.x,b.y,b.w,b.h,mr,mg,mb)
+      end
     else
       --w, h = gfx.getimgdim(skin.butt18)
       --sl = skin.butt18
@@ -14937,11 +14978,12 @@ function GUI_DrawCtlBitmap_Strips()
     if lvar.bgloaded > 0 then
       if lvar.bgcentred then
         local w,h = gfx.getimgdim(lvar.bgloaded)
-        lvar.bgoffx = math.floor(rect10.w/2 - w/2)
-        lvar.bgoffy = math.floor(rect10.h/2 - h/2)
+        lvar.bgoffx = math.floor(rect10.w/2 - w/2) + (lvar.bg_coffx or 0)
+        lvar.bgoffy = math.floor(rect10.h/2 - h/2) + (lvar.bg_coffy or 0)
       else
-        lvar.bgoffx = 0
-        lvar.bgoffy = 0
+      
+        lvar.bgoffx = 0 + (lvar.bg_coffx or 0) -- (surface_offset.mixx/50)
+        lvar.bgoffy = 0 + (lvar.bg_coffy or 0)
       end
       gfx.blit(lvar.bgloaded,1,0,-lvar.bgoffx,-lvar.bgoffy,rect10.w,rect10.h,rect10.x,rect10.y)
     else
@@ -16848,6 +16890,14 @@ function GUI_DrawCtlBitmap_Strips()
                           xywha.x = xywha.x-dx
                           xywha.w = xywha.w+dx
                           shadleft = true
+                        end
+                      end
+                      if xxx + floor(xywha.w*lvar.zoom) > obj.sections[10].x+obj.sections[10].w then
+                        local nw = floor(xywha.w*lvar.zoom) - ((xxx+floor(xywha.w*lvar.zoom)) - (obj.sections[10].x+obj.sections[10].w))
+                        if nw > 0 then
+                          xywha.w = nw/lvar.zoom -- 1
+                        else
+                          disp = false
                         end
                       end
                     end
@@ -19078,7 +19128,7 @@ function GUI_DrawCtlBitmap_Strips()
       gfx.line(xywh.x,xywh.y,xywh.x+xywh.w,xywh.y+xywh.h,1)
       gfx.line(xywh.x+xywh.w,xywh.y,xywh.x,xywh.y+xywh.h,1)
 
-      GUI_DrawBar(gui,'ADD',obj.sections[304],skin.bar,true,gui.color.black,nil,-2)
+      GUI_DrawBar(gui,'ADD',obj.sections[304],skin.bar,true,gui.color.black,nil,-2,true,false,nil,nil,true)
 
       f_Get_SSV(gui.color.white)
       local c = gui.color.white
@@ -19087,7 +19137,7 @@ function GUI_DrawCtlBitmap_Strips()
         c = gui.color.black
         f = skin.bar
       end
-      GUI_DrawBar(gui,'EDIT',obj.sections[311],f,true,c,nil,-2)
+      GUI_DrawBar(gui,'EDIT',obj.sections[311],f,true,c,nil,-2,true,false,nil,nil,true)
 
       f_Get_SSV(gui.color.white)
       local c = gui.color.white
@@ -19096,7 +19146,7 @@ function GUI_DrawCtlBitmap_Strips()
         c = gui.color.black
         f = skin.bar
       end
-      GUI_DrawBar(gui,'',obj.sections[320],f,true,c,nil,-2)
+      GUI_DrawBar(gui,'',obj.sections[320],f,true,c,nil,-2,true,false,nil,nil,true)
       xywh = {x = obj.sections[320].x,
               y = obj.sections[320].y-6,
               w = obj.sections[320].w,
@@ -19112,7 +19162,7 @@ function GUI_DrawCtlBitmap_Strips()
         c = gui.color.black
         f = skin.bar
       end
-      GUI_DrawBar(gui,'',obj.sections[321],f,true,c,nil,-2)
+      GUI_DrawBar(gui,'',obj.sections[321],f,true,c,nil,-2,true,false,nil,nil,true)
       xywh = {x = obj.sections[321].x,
               y = obj.sections[321].y-1,
               w = obj.sections[321].w,
@@ -19122,7 +19172,7 @@ function GUI_DrawCtlBitmap_Strips()
       f_Get_SSV(gui.color.white)
       f = skin.bar
       c = gui.color.black
-      GUI_DrawBar(gui,'',obj.sections[345],f,true,c,nil,-2)
+      GUI_DrawBar(gui,'',obj.sections[345],f,true,c,nil,-2,true,false,nil,nil,true)
 
       xywh = {x = obj.sections[345].x,
               y = obj.sections[345].y-6,
@@ -19199,9 +19249,9 @@ function GUI_DrawCtlBitmap_Strips()
 
           gfx.a=1
 
-          GUI_DrawBar(gui,'SAVE BAND',obj.sections[312],skin.bar,true,gui.color.black,nil,-5)
-          GUI_DrawBar(gui,'DEL BAND',obj.sections[315],skin.bar,true,gui.color.black,nil,-5)
-          GUI_DrawBar(gui,'SAVE EQ',obj.sections[340],skin.bar,true,gui.color.black,nil,-5)
+          GUI_DrawBar(gui,'SAVE BAND',obj.sections[312],skin.bar,true,gui.color.black,nil,-5,true,false,nil,nil,true)
+          GUI_DrawBar(gui,'DEL BAND',obj.sections[315],skin.bar,true,gui.color.black,nil,-5,true,false,nil,nil,true)
+          GUI_DrawBar(gui,'SAVE EQ',obj.sections[340],skin.bar,true,gui.color.black,nil,-5,true,false,nil,nil,true)
 
           local f = skin.barG
           local c = gui.color.white
@@ -19211,7 +19261,7 @@ function GUI_DrawCtlBitmap_Strips()
             c = gui.color.black
             txt = bands[eqcontrolband_select].bandtype
           end
-          GUI_DrawBar(gui,txt,obj.sections[313],f,true,c,nil,-5)
+          GUI_DrawBar(gui,txt,obj.sections[313],f,true,c,nil,-5,true,false,nil,nil,true)
 
           GUI_DrawColorBox(gui, '', obj.sections[355], gui.color.white, bands[eqcontrolband_select].col)
           local xywh = {x = obj.sections[355].x,
@@ -19230,7 +19280,7 @@ function GUI_DrawCtlBitmap_Strips()
             c = gui.color.black
             txt = bands[eqcontrolband_select].bandname
           end
-          GUI_DrawBar(gui,txt,obj.sections[314],f,true,c,nil,-5)
+          GUI_DrawBar(gui,txt,obj.sections[314],f,true,c,nil,-5,true,false,nil,nil,true)
 
           local f = skin.barG
           local c = gui.color.white
@@ -19245,7 +19295,7 @@ function GUI_DrawCtlBitmap_Strips()
               txt = string.format('%i',bands[eqcontrolband_select].fxnum+1)..': '
             end
           end
-          GUI_DrawBar(gui,txt,obj.sections[305],f,true,c,nil,-5)
+          GUI_DrawBar(gui,txt,obj.sections[305],f,true,c,nil,-5,true,false,nil,nil,true)
 
           if bands[eqcontrolband_select].fxnum then
 
@@ -19257,9 +19307,9 @@ function GUI_DrawCtlBitmap_Strips()
               c = gui.color.black
               txt = bands[eqcontrolband_select].freq_param_name
             end
-            GUI_DrawBar(gui,txt,obj.sections[306],f,true,c,nil,-5)
-            GUI_DrawBar(gui,'',obj.sections[309],f,true,c,nil,-5)
-            GUI_DrawBar(gui,'',obj.sections[336],f,true,c,nil,-5)
+            GUI_DrawBar(gui,txt,obj.sections[306],f,true,c,nil,-5,true,false,nil,nil,true)
+            GUI_DrawBar(gui,'',obj.sections[309],f,true,c,nil,-5,true,false,nil,nil,true)
+            GUI_DrawBar(gui,'',obj.sections[336],f,true,c,nil,-5,true,false,nil,nil,true)
 
             local xywh = {x = obj.sections[337].x-6,
                           y = obj.sections[337].y-13,
@@ -19304,7 +19354,7 @@ function GUI_DrawCtlBitmap_Strips()
               c = gui.color.black
               txt = bands[eqcontrolband_select].bypass_param_name
             end
-            GUI_DrawBar(gui,txt,obj.sections[322],f,true,c,nil,-5)
+            GUI_DrawBar(gui,txt,obj.sections[322],f,true,c,nil,-5,true,false,nil,nil,true)
 
             f = skin.barG
             c = gui.color.white
@@ -19314,7 +19364,7 @@ function GUI_DrawCtlBitmap_Strips()
               c = gui.color.black
               txt = bands[eqcontrolband_select].c1_param_name
             end
-            GUI_DrawBar(gui,txt,obj.sections[323],f,true,c,nil,-5)
+            GUI_DrawBar(gui,txt,obj.sections[323],f,true,c,nil,-5,true,false,nil,nil,true)
 
             f = skin.barG
             c = gui.color.white
@@ -19324,7 +19374,7 @@ function GUI_DrawCtlBitmap_Strips()
               c = gui.color.black
               txt = bands[eqcontrolband_select].c2_param_name
             end
-            GUI_DrawBar(gui,txt,obj.sections[324],f,true,c,nil,-5)
+            GUI_DrawBar(gui,txt,obj.sections[324],f,true,c,nil,-5,true,false,nil,nil,true)
 
             f = skin.barG
             c = gui.color.white
@@ -19334,7 +19384,7 @@ function GUI_DrawCtlBitmap_Strips()
               c = gui.color.black
               txt = bands[eqcontrolband_select].c3_param_name
             end
-            GUI_DrawBar(gui,txt,obj.sections[331],f,true,c,nil,-5)
+            GUI_DrawBar(gui,txt,obj.sections[331],f,true,c,nil,-5,true,false,nil,nil,true)
 
             f = skin.barG
             c = gui.color.white
@@ -19344,7 +19394,7 @@ function GUI_DrawCtlBitmap_Strips()
               c = gui.color.black
               txt = bands[eqcontrolband_select].c4_param_name
             end
-            GUI_DrawBar(gui,txt,obj.sections[332],f,true,c,nil,-5)
+            GUI_DrawBar(gui,txt,obj.sections[332],f,true,c,nil,-5,true,false,nil,nil,true)
 
             f = skin.barG
             c = gui.color.white
@@ -19354,11 +19404,11 @@ function GUI_DrawCtlBitmap_Strips()
               c = gui.color.black
               txt = bands[eqcontrolband_select].c5_param_name
             end
-            GUI_DrawBar(gui,txt,obj.sections[333],f,true,c,nil,-5)
+            GUI_DrawBar(gui,txt,obj.sections[333],f,true,c,nil,-5,true,false,nil,nil,true)
 
             f = skin.bar
             c = gui.color.black
-            GUI_DrawBar(gui,'CAPTURE CURRENT VALUES AS DEFAULT',obj.sections[356],f,true,c,nil,-5)
+            GUI_DrawBar(gui,'CAPTURE CURRENT VALUES AS DEFAULT',obj.sections[356],f,true,c,nil,-5,true,false,nil,nil,true)
 
             c = gui.color.black
             if bands[eqcontrolband_select].lookmap then
@@ -19372,7 +19422,7 @@ function GUI_DrawCtlBitmap_Strips()
                     y = obj.sections[357].y+10,
                     w = obj.sections[357].w,
                     h = butt_h}
-            GUI_DrawBar(gui,'',obj.sections[357],skin.bar,true,c,nil,-5)
+            GUI_DrawBar(gui,'',obj.sections[357],skin.bar,true,c,nil,-5,true,false,nil,nil,true)
 
             GUI_textC(gui,xywh,'ALIGN',c,-5)
             xywh.y = xywh.y + 14
@@ -19398,7 +19448,7 @@ function GUI_DrawCtlBitmap_Strips()
             if bands[eqcontrolband_select].khz == true then
               txt = 'kHz'
             end
-            GUI_DrawBar(gui,txt,obj.sections[316],f,true,c,nil,-5)
+            GUI_DrawBar(gui,txt,obj.sections[316],f,true,c,nil,-5,true,false,nil,nil,true)
 
             f = skin.barG
             c = gui.color.white
@@ -19408,7 +19458,7 @@ function GUI_DrawCtlBitmap_Strips()
               c = gui.color.black
               txt = bands[eqcontrolband_select].gain_param_name
             end
-            GUI_DrawBar(gui,txt,obj.sections[307],f,true,c,nil,-5)
+            GUI_DrawBar(gui,txt,obj.sections[307],f,true,c,nil,-5,true,false,nil,nil,true)
 
             f = skin.barG
             c = gui.color.white
@@ -19416,7 +19466,7 @@ function GUI_DrawCtlBitmap_Strips()
               f = skin.bar
               c = gui.color.black
             end
-            GUI_DrawBar(gui,'INVERT',obj.sections[317],f,true,c,nil,-5)
+            GUI_DrawBar(gui,'INVERT',obj.sections[317],f,true,c,nil,-5,true,false,nil,nil,true)
 
             f = skin.barG
             c = gui.color.white
@@ -19426,7 +19476,7 @@ function GUI_DrawCtlBitmap_Strips()
               c = gui.color.black
               txt = bands[eqcontrolband_select].q_param_name
             end
-            GUI_DrawBar(gui,txt,obj.sections[308],f,true,c,nil,-5)
+            GUI_DrawBar(gui,txt,obj.sections[308],f,true,c,nil,-5,true,false,nil,nil,true)
 
             f = skin.barG
             c = gui.color.white
@@ -19434,7 +19484,7 @@ function GUI_DrawCtlBitmap_Strips()
               f = skin.bar
               c = gui.color.black
             end
-            GUI_DrawBar(gui,'INVERT',obj.sections[318],f,true,c,nil,-5)
+            GUI_DrawBar(gui,'INVERT',obj.sections[318],f,true,c,nil,-5,true,false,nil,nil,true)
 
           end
         else
@@ -21777,6 +21827,7 @@ function GUI_DrawCtlBitmap_Strips()
             ffn = strip_favs[n+1]
             fn = string.match(strip_favs[n+1],'(.+)%..*')..'.png'
             tfn = string.match(strip_favs[n+1],'.+[\\/](.+)%..*')
+            strip_favs_n[n+1] = n
           end
         else
           if strip_files[n] then
@@ -21822,50 +21873,22 @@ function GUI_DrawCtlBitmap_Strips()
     local xywh = {x = 0, y = 0, w = 0, h = 0}
     GUI_DrawButton(gui, '', xywh, -5, gui.skol.butt1_txt, true, '', false, 0, false, 4)
 
-    --local pad = 15
-    --if lvar.stripbrowser.ynum == 1 then
-     -- pad = 5
-    --end
     for y = 0, lvar.stripbrowser.ynum-1 do
       for x = 0, lvar.stripbrowser.xnum-1 do
 
-        local n = y*lvar.stripbrowser.xnum + x + offset
-
-        --[[local fn, tfn, ffn
+        local nn = y*lvar.stripbrowser.xnum + x + offset
+        local n
         if lvar.stripbrowser.favs == true then
-          if strip_favs[n+1] then
-            ffn = strip_favs[n+1]
-            fn = string.match(strip_favs[n+1],'(.+)%..*')..'.png'
-            tfn = string.match(strip_favs[n+1],'.+[\\/](.+)%..*')
-          end
+          n = strip_favs_n[nn+1]
         else
-          if strip_files[n] then
-            ffn = strip_folders[stripfol_select].fn..'/'..strip_files[n].fn
-            fn = strip_folders[stripfol_select].fn..'/'..string.match(strip_files[n].fn,'(.+)%..*')..'.png'
-            tfn = string.match(strip_files[n].fn,'(.+)%..*')
-          end
-        end]]
+          n = nn
+        end
 
         if lvar.sb_tfn[n] then
-
-        --if fn then
-        --if strip_files[n] then
 
           local px = math.floor(x*(lvar.stripbrowser.imgw+10)+15+dx)
           local py = math.floor(y*(lvar.stripbrowser.imgh+10)+5+dy)
 
-          --[[local iidx = -1
-          if reaper.file_exists(paths.strips_path..fn) then
-            iidx = gfx.loadimg(985,paths.strips_path..fn)
-            if iidx == -1 then
-              iidx = skin.sbicon
-            end
-          else
-            iidx = skin.sbicon
-          end]]
-
-          --local w,h = gfx.getimgdim(iidx)
-          --local scale = math.min(pw/w,ph/h)
           local xoff = math.floor((pw-(lvar.stripbrowser.imgw))/2)
           local yoff = math.floor((ph-(lvar.stripbrowser.imgh))/2)
 
@@ -21886,7 +21909,7 @@ function GUI_DrawCtlBitmap_Strips()
             end
             GUI_DrawButton(gui, tfn, xywh, -1, gui.skol.butt1_txt, true, '', false, 0, false, just)
 
-            if lvar.stripbrowser.select and lvar.stripbrowser.select == n then
+            if lvar.stripbrowser.select and lvar.stripbrowser.select == nn then
               f_Get_SSV(gui.color.yellow)
               --gfx.rect(px+xoff,py+yoff,math.floor(w*scale),math.floor(h*scale),0)
 
@@ -22085,6 +22108,7 @@ function GUI_DrawCtlBitmap_Strips()
     else
       obj.sections[1130].h = math.floor(300*pnl_scale)
     end
+    RedrawGUIBitmap()
     if obj.sections[1130].y + obj.sections[1130].h > obj.sections[10].y+obj.sections[10].h then
       obj.sections[1130].y = math.max(obj.sections[10].y+obj.sections[10].h - obj.sections[1130].h,obj.sections[10].y)
     end
@@ -22814,9 +22838,9 @@ function GUI_DrawCtlBitmap_Strips()
 
   end
 
-  function GUI_DrawAddStripDialog(obj, gui)
+  function GUI_DrawAddStripDialog(obj, gui, dest)
 
-    gfx.dest = 1
+    gfx.dest = dest or 1
 
     GUI_DrawPanel(obj.sections[4000],true,'ADD/REPLACE STRIP')
 
@@ -23047,6 +23071,19 @@ function GUI_DrawCtlBitmap_Strips()
     lvar.highbox[#lvar.highbox+1] = {x = box_x, y = box_y, w = box_w, h = box_h, col = col, time = reaper.time_precise()+time}
   end
 
+  function HighlightBox2(box_x, box_y, box_w, box_h, col, time)
+    gfx.dest = -1
+    if not col then
+      col = 205 + (205 << 8) + (205 << 16)
+    end
+    gfx.r = (col & 255)/255
+    gfx.g = ((col >> 8) & 255)/255
+    gfx.b = ((col >> 16) & 255)/255
+    gfx.rect(box_x,box_y,box_w,box_h,0)
+    gfx.update()
+    lvar.highbox[#lvar.highbox+1] = {x = box_x, y = box_y, w = box_w, h = box_h, col = col, time = reaper.time_precise()+time}
+  end
+
   ------------------------------------------------------------
 
   function GUI_draw(obj, gui)
@@ -23196,8 +23233,8 @@ function GUI_DrawCtlBitmap_Strips()
               end
             end
 
-          else
-
+          --[[else
+            
             f_Get_SSV(gui.color.white)
             gfx.rect(obj.sections[10000].x,
                      obj.sections[10000].y,
@@ -23218,7 +23255,7 @@ function GUI_DrawCtlBitmap_Strips()
                                 obj.sections[10000].h,
                                 obj.sections[10000].x,
                                 obj.sections[10000].y)
-            end
+            end]]
           end
 
         elseif show_striplayout == true and (lupd.update_gfx or lupd.update_surface or lupd.update_bg) then
@@ -24260,10 +24297,6 @@ function GUI_DrawCtlBitmap_Strips()
           gfx.blit(1005,1,0,0,0,obj.sections[180].w,obj.sections[180].h,obj.sections[180].x,obj.sections[180].y)
         end]]
 
-        if lvar.show_addstripdialog == true then
-          GUI_DrawAddStripDialog(obj, gui)
-        end
-
         if show_eqcontrol then
           if lupd.update_gfx or lupd.update_surface then
             GUI_DrawEQControl(obj, gui)
@@ -24361,9 +24394,9 @@ function GUI_DrawCtlBitmap_Strips()
           if lupd.update_gfx or lupd.update_surface then
             GUI_DrawModAssign(obj, gui)
           end
-          if not settings_moddock or lupd.update_gfx then
+          --if --[[not settings_moddock or]] lupd.update_gfx then
             gfx.blit(983,1,0,0,0,obj.sections[1125].w,obj.sections[1125].h,obj.sections[1125].x,obj.sections[1125].y)
-          end
+          --end
         end
 
         --[[if dragfader then
@@ -24839,6 +24872,10 @@ function GUI_DrawCtlBitmap_Strips()
           local x,y = gfx.getimgdim(981)
           gfx.blit(981,1,0,0,0,obj.sections[3000].w,obj.sections[3000].h,obj.sections[3000].x,obj.sections[3000].y)
 
+          if show_midiout then
+            GUI_DrawMIDIOut(gui, obj)
+          end
+      
         elseif submode == 1 then
 
           --DRAW SUBMODE 1
@@ -25111,6 +25148,10 @@ function GUI_DrawCtlBitmap_Strips()
           end
         end
 
+        if show_settings then
+          --gfx.dest = -1
+          GUI_DrawSettings(gui, obj)
+        end
         --[[if surface_size.exceed == true then
           if lupd.update_gfx or lupd.update_surface then
             f_Get_SSV(gui.color.red)
@@ -25194,9 +25235,9 @@ function GUI_DrawCtlBitmap_Strips()
 
       end]]
 
-      if show_midiout then
+      --[[if show_midiout then
         GUI_DrawMIDIOut(gui, obj)
-      end
+      end]]
 
       if lbx_midilrnctl then
         GUI_DrawMIDILrn(gui, obj)
@@ -25781,6 +25822,10 @@ function GUI_DrawCtlBitmap_Strips()
         end
       end
 
+      if show_midiout then
+        GUI_DrawMIDIOut(gui, obj)
+      end
+      
       if insertstrip and CheckOver10() then
         gfx.dest = -1
         local istrip = insertstrip
@@ -25902,6 +25947,10 @@ function GUI_DrawCtlBitmap_Strips()
 
       end
 
+      if lvar.show_addstripdialog == true then
+        GUI_DrawAddStripDialog(obj, gui, -1)
+      end
+
       if show_trackfxorder then
 
         if lupd.update_gfx or lupd.update_trackfxorder or resize_display then
@@ -25977,7 +26026,14 @@ function GUI_DrawCtlBitmap_Strips()
       for x = 1, hb do
         local box = lvar.highbox[x]
         if reaper.time_precise() < box.time then
-          f_Get_SSV(box.col)
+          local col = box.col
+          if tonumber(col) then
+            gfx.r = (col & 255)/255
+            gfx.g = ((col >> 8) & 255)/255
+            gfx.b = ((col >> 16) & 255)/255            
+          else
+            f_Get_SSV(col)
+          end
           gfx.rect(box.x,box.y,box.w,box.h,0)
           clear = false
         end
@@ -26018,7 +26074,7 @@ function GUI_DrawCtlBitmap_Strips()
       f_Get_SSV('0 0 255')
       gfx.rect(0,0,5,5,1)
     end
-    if touch_timer then
+    if lvar.delayfunction.touch_timer then
       f_Get_SSV('255 255 255')
       gfx.rect(0,0,5,5,1)
     end
@@ -26042,6 +26098,38 @@ function GUI_DrawCtlBitmap_Strips()
 
     end]]
 
+    if show_bitmap then
+      if lvar.showguibitmap then
+        gfx.blit(guibitmap,1,0,0,
+                          0,
+                          gfx1.main_w,
+                          gfx1.main_h,
+                          0,
+                          0)      
+      end
+      --[[f_Get_SSV(gui.color.white)
+      gfx.rect(obj.sections[10000].x,
+               obj.sections[10000].y,
+               obj.sections[10000].w,
+               obj.sections[10000].h)
+      
+      if stripgallery_view == 0 and lvar.livemode == 0 then
+        gfx.blit(ctl_bitmap,1,0,surface_offset.x,
+                          surface_offset.y,
+                          obj.sections[10].w,
+                          obj.sections[10].h,
+                          obj.sections[10].x,
+                          obj.sections[10].y)
+      else
+        gfx.blit(ctl_bitmap2,1,0,0,
+                          0,
+                          obj.sections[10000].w,
+                          obj.sections[10000].h,
+                          obj.sections[10000].x,
+                          obj.sections[10000].y)
+      end    ]]  
+    end
+
     gfx.update()
 
 
@@ -26049,6 +26137,14 @@ function GUI_DrawCtlBitmap_Strips()
     resize_snaps = false
     resize_fsnaps = false
 
+    if --[[lupd.update_gfx or]] lvar.redrawguibitmap == true or (lvar.redrawguibitmap_nocontext == true and mouse.context == nil) then
+      RedrawGUIBitmap2()
+      lvar.redrawguibitmap_nocontext = nil
+    elseif lvar.redrawguibitmap_timer and reaper.time_precise() > lvar.redrawguibitmap_timer then
+      RedrawGUIBitmap2()
+      lvar.redrawguibitmap_timer = nil
+    end
+    
     --[[if redraw_ctlbitmapmix then
       redraw_ctlbitmapmix = nil
       GUI_DrawCtlBitmap_Mix()
@@ -26308,10 +26404,11 @@ function GUI_DrawCtlBitmap_Strips()
         tab[#tab] = nil
       end
       local bc = -1
+      local rgbadjust = actdata.rgb or (205 + (205 << 8) + (205 << 16))
       if actdata.val and actdata.val == 1 then
-        bc = -8
+        bc = -11
       end
-      GUI_DrawButtonWW(gui, tab, th-3, 4, xywh, bc, gui.color.white, true, nil, nil, 0)
+      GUI_DrawButtonWW(gui, tab, th-3, 4, xywh, bc, gui.color.white, true, nil, nil, 0, nil, nil, nil, nil, nil, rgbadjust)
     else
       GUI_DrawButton(gui,'+',xywh,-7,'48 48 48',true,nil,nil,10)
     end
@@ -26359,10 +26456,11 @@ function GUI_DrawCtlBitmap_Strips()
             v = reaper.GetToggleCommandStateEx(0, reaper.NamedCommandLookup(commid))
           end
           local bc = -1
+          local rgbadjust = actdata.rgb or (205 + (205 << 8) + (205 << 16))
           if v == 1 then
-            bc = -8
+            bc = -11            
           end
-          GUI_DrawButtonWW(gui, tab, th-3, 4, xywh, bc, gui.color.white, true, nil, nil, 0)
+          GUI_DrawButtonWW(gui, tab, th-3, 4, xywh, bc, gui.color.white, true, nil, nil, 0, nil, nil, nil, nil, nil, rgbadjust)
           if v ~= -1 then
             uptab[uptabcnt] = {tab = lvar.dm_btnpnl[idx][row][col+offs],
                                iidx = iidx, box = box, cols = cols, rows = rows, idx = idx, dir = dir, row = r, col = c}
@@ -29502,6 +29600,7 @@ function GUI_DrawCtlBitmap_Strips()
 
             lvar.dm_editmode_data_tmp = dmemd
             lvar.show_templatechooser = true
+            RedrawGUIBitmap()
             lupd.update_tchooser = true
             lupd.update_surface = true
 
@@ -38725,14 +38824,12 @@ function GUI_DrawCtlBitmap_Strips()
 
           local tfxi = GetTrackFXInfo(nil, trn)
           --local fxchunks = GetFXChunks(trn)
-
           for fx = 1, reaper.TrackFX_GetCount(track) do
             local ret, fxname = reaper.TrackFX_GetFXName(track, fx-1, '')
             fxname = string.lower(string.match(CropFXName(fxname), "^%s*(.-)%s*$"))
             --local fxident = GetPlugIdentifierFromChunk(fxchunks[fx].chunk)
             local fxident = string.lower(tfxi[fx-1].fxfn)
-            if fxident and plugdefstrips_idx and (plugdefstrips_idx[fxname] or plugdefstrips_idx[fxident]) then
-
+            if fxident and fxident ~= '' and plugdefstrips_idx and (plugdefstrips_idx[fxname] or plugdefstrips_idx[fxident]) then
               local idx = plugdefstrips_idx[fxname] or plugdefstrips_idx[fxident]
               if idx and plugdefstrips[idx] then
                 local sfol = plugdefstrips[idx].stripfol
@@ -38834,7 +38931,7 @@ function GUI_DrawCtlBitmap_Strips()
             DM_RebuildPageSnaps(cdata, nctldata, nctldataidx)
             DM_RebuildModulators(cdata, nctldata, nctldataidx)
             DM_RebuildFaders(cdata, nctldata, nctldataidx)
-            DM_RebuildMacro(dm_data, nctldata, nctldataidx)            
+            DM_RebuildMacro(cdata, nctldata, nctldataidx)            
           end
 
         end
@@ -44236,6 +44333,8 @@ function GUI_DrawCtlBitmap_Strips()
               end
               show_midiout = true
               lupd.update_gfx = true
+              RedrawGUIBitmap()
+              
             elseif res == 6 +lastp then
               ctl.midiout = nil
 
@@ -44410,12 +44509,15 @@ function GUI_DrawCtlBitmap_Strips()
         if lvar.bgcentred then
           bg0 = '!'
         end
+
         local ta = lvar.mmov_tint
         bstr = '||Set Background Image|Clear Background Image||>BG Options|'..mo4..'Stretch Image|'
                 ..'Brightness ('..string.format('%i',lvar.bgbright)..')||'
-                ..mo3..'Add Image To Surface Toolbars|Tint Amount ('..ta..')||'..mo5..'Add Image To Live Mode Pages||<'..bg0..'Centre Image In Mix/Dynamic Modes'
+                ..mo3..'Add Image To Surface Toolbars|Tint Amount ('..ta..')||'..mo5..'Add Image To Live Mode Pages||'..bg0..'Centre Image In Mix/Dynamic Modes|<'
+                ..'Set Image Offset'
       else
-        bstr = '||#Set BG Image|#Clear BG Image||>#BG Options|Stretch Image|Brightness||Add Image To Surface Toolbars|Tint Amount||Add Image To Live Mode Pages||<Centre Pages In Mix/Dynamic Modes'
+        bstr = '||#Set BG Image|#Clear BG Image||>#BG Options|Stretch Image|Brightness||Add Image To Surface Toolbars|Tint Amount||Add Image To Live Mode Pages||<Centre Pages In Mix/Dynamic Modes|'
+                ..'Set Image Offset'        
       end
       mstr = mstr .. mmstr .. bstr
       gfx.x, gfx.y = mouse.mx, mouse.my
@@ -44574,6 +44676,15 @@ function GUI_DrawCtlBitmap_Strips()
           lvar.bgcentred = not lvar.bgcentred
           lupd.update_surface = true
 
+        elseif res == sfcnt + 34 then
+          local ret, vals = reaper.GetUserInputs('Centred Image Offset',2,'X,Y',(lvar.bg_coffx or 0)..','..(lvar.bg_coffy or 0))
+          if ret then
+            local valtab = split2(vals,',')
+            if tonumber(valtab[1]) and tonumber(valtab[2]) then
+              lvar.bg_coffx, lvar.bg_coffy = valtab[1], valtab[2]
+            end
+            lupd.update_surface = true
+          end
         end
       end
 
@@ -44744,6 +44855,8 @@ function GUI_DrawCtlBitmap_Strips()
             lvar.show_addstripdialog = true
             lupd.update_gfx = true
             retain = true
+            RedrawGUIBitmap()
+            
           end
           insertstrip = nil
           dragstrip = nil
@@ -44914,6 +45027,8 @@ function GUI_DrawCtlBitmap_Strips()
       elseif res == 10 then
         show_settings = not show_settings
         lupd.update_surface = true
+        RedrawGUIBitmap()
+        
       elseif res >= 11 and res <= 14 and navigate then
         SetPage(res-10)
       elseif res == 15 then
@@ -45183,6 +45298,7 @@ function GUI_DrawCtlBitmap_Strips()
         show_fsnapshots = false
         show_xysnapshots = false
         lupd.update_surface = true
+        RedrawGUIBitmap()
       end
 
       gpage = true
@@ -45335,8 +45451,11 @@ function GUI_DrawCtlBitmap_Strips()
     if lvar.dm_editmode_data then return end
     if mouse.context ~= nil and mouse.context ~= contexts.hold then return end
 
-    show_randomopts = false
-    show_samplemanager = false
+    if show_randomopts or show_samplemanager then
+      show_randomopts = false
+      show_samplemanager = false
+      RedrawGUIBitmap()
+    end
 
     local strip = tracks[track_select].strip
     SetReturnPage(track_select, lpage)
@@ -45353,6 +45472,7 @@ function GUI_DrawCtlBitmap_Strips()
       show_fsnapshots = false
       show_xysnapshots = false
       lupd.update_surface = true
+      RedrawGUIBitmap()
     end
 
     if strips[strip] then
@@ -46761,8 +46881,11 @@ function GUI_DrawCtlBitmap_Strips()
       StoreFaders()
     end
 
-    show_randomopts = false
-    show_samplemanager = false
+    if show_randomopts or show_samplemanager then
+      show_randomopts = false
+      show_samplemanager = false
+      RedrawGUIBitmap()
+    end
 
     --if lvar.livemode == 2 then
     --else
@@ -46857,7 +46980,7 @@ function GUI_DrawCtlBitmap_Strips()
     ctl_select = nil
 
     GUI_DrawCtlBitmap()
-
+    RedrawGUIBitmap()
 
     SetASLocs()
     striplayout_selstripid = nil
@@ -47875,6 +47998,7 @@ function GUI_DrawCtlBitmap_Strips()
       SetCtlBitmapRedraw()
       lupd.update_bg = true
       lupd.update_gfx = true
+      RedrawGUIBitmap()
     end
 
   end
@@ -48015,7 +48139,10 @@ function GUI_DrawCtlBitmap_Strips()
     if lvar.livemode >= 1 then
       SetCtlBitmapRedraw()
     end
-
+    if not lvar.mixerscroll_time then
+      RedrawGUIBitmap()
+    end
+    
   end
 
   function SetDefKP()
@@ -48277,6 +48404,7 @@ function GUI_DrawCtlBitmap_Strips()
       elseif char == lvar.keypress['show_settings'] then
         show_settings = not show_settings
         lupd.update_surface = true
+        RedrawGUIBitmap()
       elseif char == lvar.keypress['bg_trans_dec'] then
         if lvar.livemode > 0 then
           lvar.bgbright = math.max(lvar.bgbright-4,-100)
@@ -48318,6 +48446,7 @@ function GUI_DrawCtlBitmap_Strips()
             --lupd.update_gfx = true
             lupd.update_trackfxorder = true
             lupd.update_trbtns = true
+            RedrawGUIBitmap()
           end
         --end
         char = 0
@@ -48325,7 +48454,7 @@ function GUI_DrawCtlBitmap_Strips()
         RBMenu(2,nil,nil)
       elseif char == lvar.keypress['show_ctlbitmap'] then
         show_bitmap = not show_bitmap
-        lupd.update_gfx = true
+        lupd.update_surface = true
       elseif char == lvar.keypress['show_striplayout'] then
         if lvar.livemode == 0 then
           if mode == 0 or (mode == 1 and submode == 2) then
@@ -48480,6 +48609,7 @@ function GUI_DrawCtlBitmap_Strips()
             GUI_DrawCtlBitmap_Mix()
           end
           lupd.update_gfx = true
+          RedrawGUIBitmap()
         end
 
       elseif char == lvar.keypress['show_gallery'] then
@@ -48674,7 +48804,8 @@ function GUI_DrawCtlBitmap_Strips()
           pinmatrix_scrollpos = {x = 30, y = 10}
         end
         lupd.update_surface = true
-
+        RedrawGUIBitmap()
+        
       --[[elseif char == 30064 then
         if mode == 0 then
           --tlist_offset = F_limit(tlist_offset - 1, 0, #tracks+1)
@@ -48889,6 +49020,7 @@ function GUI_DrawCtlBitmap_Strips()
       obj = GetObjects()
     end
     lupd.update_gfx = true
+    RedrawGUIBitmap()
   end
 
   function SetShowSS(show)
@@ -48898,6 +49030,7 @@ function GUI_DrawCtlBitmap_Strips()
       --obj = GetObjects()
     end
     lupd.update_gfx = true
+    RedrawGUIBitmap()
   end
 
   function SetShowSB(show)
@@ -48907,6 +49040,7 @@ function GUI_DrawCtlBitmap_Strips()
       --obj = GetObjects()
     end
     lupd.update_surface = true
+    RedrawGUIBitmap()
   end
 
   function SetShowSampleManager(show, c)
@@ -48968,6 +49102,7 @@ function GUI_DrawCtlBitmap_Strips()
 
     end
     lupd.update_gfx = true
+    RedrawGUIBitmap()
   end
 
   function GallerySwipe(dir)
@@ -50387,6 +50522,9 @@ function GUI_DrawCtlBitmap_Strips()
         resize_display = true
         lupd.update_surface = true
         force_resize = false
+        
+        mouse.context = contexts.dummy
+        lvar.preservecontext = true
 
         if surface_size.w < obj.sections[10].w then
           surface_offset.x = -math.floor((obj.sections[10].w - surface_size.w)/2)
@@ -50421,6 +50559,9 @@ function GUI_DrawCtlBitmap_Strips()
           end
         end
       --end
+      mouse.context = nil
+      lvar.preservecontext = nil
+      RedrawGUIBitmap()
       lvar.resize_check = nil
     end
 
@@ -50589,6 +50730,27 @@ function GUI_DrawCtlBitmap_Strips()
       mouse.RB = nil
     end
 
+    ----------------
+    
+      --[[if MC() or gfx.mouse_wheel ~= 0 then
+        gfx.dest = guibitmap
+        gfx.x = mouse.mx
+        gfx.y = mouse.my
+        local r,g,b = gfx.getpixel()
+        local rgb = (r*255) + ((g*255) << 8) + ((b*255) << 16)
+        if not lvar.guibmp then
+          RedrawGUIBitmap2()
+        end
+        local guibmp = lvar.guibmp[lvar.guibmp.idx[rgb] ]        
+        if guibmp then
+          if guibmp.funcRun then
+            noscroll = guibmp.funcRun(rt, noscroll)
+          end
+        end
+      end]]
+    
+    ----------------
+      
     if show_dd and mouse.context == nil then
       A_Run_DropDown()
     end
@@ -51272,21 +51434,34 @@ function GUI_DrawCtlBitmap_Strips()
           end
         end
 
-        if settings_mousewheelknob == false and gfx.mouse_wheel ~= 0 and show_ctlbrowser == false and show_cycleoptions == false and show_ctloptions == false then
+        if (settings_mousewheelknob == false or mouse.ctrl and not mouse.shift) and gfx.mouse_wheel ~= 0 and show_ctlbrowser == false and show_cycleoptions == false and show_ctloptions == false then
           if noscroll == false then
-            if lvar.livemode ~= 0 or lockx == false or locky == false then
+            if (lvar.livemode ~= 0 or lockx == false or locky == false) then
               local v = gfx.mouse_wheel/lvar.mousewheel_div
               if mouse.mx > obj.sections[10].x and MOUSE_over(obj.sections[10]) then
                 if ctl_select then
                   ctl_select = nil
                   lupd.update_gfx = true
                 end
-                if locky then
-                  surface_offset.x = F_limit(surface_offset.x - v * 50,0,surface_size.w - obj.sections[10].w)
-                elseif lockx then
-                  surface_offset.y = F_limit(surface_offset.y - v * 50,0,surface_size.h - obj.sections[10].h)
+                if lvar.livemode ~= 0 then
+                  if lvar.mixmodedir == 0 then
+                    --surface_offset.mixy = F_limit((surface_offset.mixy or 0) - v * 50, 0-math.floor(obj.sections[10].h/(2*lvar.zoom)), lvar.mixpos_max-math.floor(obj.sections[10].h/(2*lvar.zoom)))
+                    if v > 0 then v = 1 else v = -1 end
+                    MixMode_Swipe((lvar.centrepos or 0), (lvar.centrepos or 0)-v, true)
+                  else
+                    --surface_offset.mixx = F_limit((surface_offset.mixx or 0) + v * 50, 0-math.floor(obj.sections[10].w/(2*lvar.zoom)), lvar.mixpos_max-math.floor(obj.sections[10].w/(2*lvar.zoom)))
+                    if v > 0 then v = 1 else v = -1 end
+                    MixMode_Swipe((lvar.centrepos or 0), (lvar.centrepos or 0)-v, true)
+                  end
+                  SetCtlBitmapRedraw()
                 else
-                  surface_offset.y = F_limit(surface_offset.y - v * 50,0,surface_size.h - obj.sections[10].h)
+                  if locky then
+                    surface_offset.x = F_limit(surface_offset.x - v * 50,0,surface_size.w - obj.sections[10].w)
+                  elseif lockx then
+                    surface_offset.y = F_limit(surface_offset.y - v * 50,0,surface_size.h - obj.sections[10].h)
+                  else
+                    surface_offset.y = F_limit(surface_offset.y - v * 50,0,surface_size.h - obj.sections[10].h)
+                  end
                 end
                 if strips and tracks[track_select] and strips[tracks[track_select].strip] then
                   strips[tracks[track_select].strip][page].surface_x = surface_offset.x
@@ -51317,7 +51492,7 @@ function GUI_DrawCtlBitmap_Strips()
       A_Run_XXYMode(rt)
 
     end
-    if not mouse.LB and not mouse.RB and not preservecontext then mouse.context = nil end
+    if not mouse.LB and not mouse.RB and not preservecontext and not lvar.preservecontext --[[and not reaper.JS_Mouse_GetState(1)==1]] then mouse.context = nil end
 
     if mouse.context == nil then
       if lvar.scrollbar_clear then
@@ -51384,34 +51559,46 @@ function GUI_DrawCtlBitmap_Strips()
     end
     gfx.mouse_wheel = 0
     if ctl_select then ctls = true else ctls = false end
-    if closectlbrowser then closectlbrowser = nil showctlbrowser(false) end
-    if closegaugeedit then closegaugeedit  = nil show_gaugeedit = false end
-    if redraw_ctlbitmap and reaper.time_precise() >= redraw_ctlbitmap then
-      redraw_ctlbitmap = nil
-      GUI_DrawCtlBitmap()
-    elseif redraw_ctlbitmapmix and reaper.time_precise() >= redraw_ctlbitmapmix then
-      redraw_ctlbitmapmix = nil
-      GUI_DrawCtlBitmap_Mix()     
-    end
-    if midimsg == true and reaper.time_precise() >= midimsgto then
-      midimsg = false
-      lupd.update_surface = true
-    end
-    if touch_timer and touch_timer <= reaper.time_precise() then
-      touch_timer = nil
-      lupd.update_surface = true
+    
+    if next(lvar.delayfunction) then
+      local reaper = reaper
+      
+      --if lvar.delayfunction.closectlbrowser then lvar.delayfunction.closectlbrowser = nil showctlbrowser(false) end
+      if lvar.delayfunction.closegaugeedit then lvar.delayfunction.closegaugeedit = nil show_gaugeedit = false end
+      if lvar.delayfunction.redraw_ctlbitmap and reaper.time_precise() >= lvar.delayfunction.redraw_ctlbitmap then
+        lvar.delayfunction.redraw_ctlbitmap = nil
+        GUI_DrawCtlBitmap()
+      elseif lvar.delayfunction.redraw_ctlbitmapmix and reaper.time_precise() >= lvar.delayfunction.redraw_ctlbitmapmix then
+        lvar.delayfunction.redraw_ctlbitmapmix = nil
+        GUI_DrawCtlBitmap_Mix()     
+      end
+      if lvar.delayfunction.midimsg == true and reaper.time_precise() >= midimsgto then
+        lvar.delayfunction.midimsg = false
+        lupd.update_surface = true
+      end
+      if lvar.delayfunction.touch_timer and lvar.delayfunction.touch_timer <= reaper.time_precise() then
+        lvar.delayfunction.touch_timer = nil
+        lupd.update_surface = true
+      end
+      if lvar.delayfunction.exit_macro_edit then
+        navigate = true
+        macro_edit_mode = false
+        macroctl_select = nil
+        lupd.update_surface = true
+        lvar.delayfunction.exit_macro_edit = nil
+        RedrawGUIBitmap()
+      end
+      if lvar.delayfunction.stripbrowser_reload_delay and reaper.time_precise() >= lvar.delayfunction.stripbrowser_reload_delay then
+        lvar.delayfunction.stripbrowser_reload_delay = nil
+        PopulateStrips()
+        lvar.reloadsbimages = true
+        lupd.update_stripbrowser = true
+      end
     end
     if lvar.zoominfo then
       StripZoom()
     end
-    if lvar.exit_macro_edit then
-      navigate = true
-      macro_edit_mode = false
-      macroctl_select = nil
-      lupd.update_surface = true
-      lvar.exit_macro_edit = nil
-    end
-
+    
     --if setpage_wait then
     --  SetPage(setpage_wait)
     --  setpage_wait = nil
@@ -51891,112 +52078,144 @@ function GUI_DrawCtlBitmap_Strips()
 
   function A_Run_MidiOut(char)
 
-    if mouse.context == nil and MOUSE_click(obj.sections[951]) then
-      local res = MenuMidiOuts()
-      if res and res > 1 then
-        midiout_select.output = midiouts[res-1].name
+    if mouse.context == nil then
+      
+      if MC() then
+      
+        if MOUSE_click(obj.sections[951]) then
+          local res = MenuMidiOuts()
+          if res and res > 1 then
+            midiout_select.output = midiouts[res-1].name
+          else
+            midiout_select.output = nil
+          end
+          lupd.update_surface = true
+    
+        elseif MOUSE_click(obj.sections[954]) then
+          local res = MenuMidiMsgType()
+          if res then
+            midiout_select.msgtype = res
+          end
+          lupd.update_surface = true
+    
+        elseif MOUSE_click(obj.sections[955]) then
+    
+          local retval, msg = reaper.GetUserInputs('Osc Message',1,'OSC:,extrawidth=220',nz(midiout_select.osc,''))
+          if retval == true then
+            midiout_select.osc = msg
+          end
+          lupd.update_surface = true
+    
+        elseif MOUSE_click(obj.sections[956]) then
+    
+          local retval, msg = reaper.GetUserInputs('Value Range',1,'Value Min:',nz(midiout_select.vmin,0))
+          if retval == true then
+            local msgv = tonumber(msg)
+            if msgv then
+              midiout_select.vmin = msgv
+            end
+          end
+          lupd.update_surface = true
+    
+        elseif MOUSE_click(obj.sections[957]) then
+    
+          local retval, msg = reaper.GetUserInputs('Value Range',1,'Value Max:',nz(midiout_select.vmax,127))
+          if retval == true then
+            local msgv = tonumber(msg)
+            if msgv then
+              midiout_select.vmax = msgv
+            end
+          end
+          lupd.update_surface = true
+    
+        elseif MOUSE_click(obj.sections[958]) then
+          midiout_select.focus = midiout_select.focus + 1
+          if midiout_select.focus > #lvar.focus_table then
+            midiout_select.focus = 1
+          end
+          lupd.update_surface = true
+    
+        elseif MOUSE_click(obj.sections[963]) then
+          if reaper.JS_Window_Find then
+            local ret, tit = reaper.GetUserInputs('Focus Window',1,'Please enter title of window to focus:',midiout_select.focus_wintit or '')
+            if ret == true then
+              midiout_select.focus_wintit = tit
+            end
+            lupd.update_surface = true
+          end
+    
+        elseif MOUSE_click(obj.sections[964]) then
+          if reaper.JS_Window_Find then
+            midiout_select.focus_winexact = not (midiout_select.focus_winexact or false)
+            lupd.update_surface = true
+          end
+    
+        elseif MOUSE_click(obj.sections[959]) then
+          midiout_select.updategfx = not midiout_select.updategfx
+          lupd.update_surface = true
+    
+        elseif MOUSE_click(obj.sections[961]) then
+          midiout_select.onmu = not midiout_select.onmu
+          lupd.update_surface = true
+    
+        elseif MOUSE_click(obj.sections[952]) then
+          mouse.context = contexts.midiout_chan
+          midiout_select.mchan = F_limit(midiout_select.mchan + 1,1,16)
+          dragmidi = {pos = midiout_select.mchan, yoff = mouse.my-obj.sections[952].y}
+    
+          lupd.update_surface = true
+        elseif MOUSE_click_RB(obj.sections[952]) then
+          midiout_select.mchan = F_limit(midiout_select.mchan - 1,1,16)
+          lupd.update_surface = true
+    
+        elseif MOUSE_click(obj.sections[953]) then
+          mouse.context = contexts.midiout_msg
+          midiout_select.msg3 = F_limit(midiout_select.msg3 + 1,0,127)
+          dragmidi = {pos = midiout_select.msg3, yoff = mouse.my-obj.sections[953].y}
+    
+          lupd.update_surface = true
+        elseif MOUSE_click_RB(obj.sections[953]) then
+          midiout_select.msg3 = F_limit(midiout_select.msg3 - 1,0,127)
+          lupd.update_surface = true
+          
+        end
+        
       else
-        midiout_select.output = nil
-      end
-      lupd.update_surface = true
-
-    elseif mouse.context == nil and MOUSE_click(obj.sections[954]) then
-      local res = MenuMidiMsgType()
-      if res then
-        midiout_select.msgtype = res
-      end
-      lupd.update_surface = true
-
-    elseif mouse.context == nil and MOUSE_click(obj.sections[955]) then
-
-      local retval, msg = reaper.GetUserInputs('Osc Message',1,'OSC:,extrawidth=220',nz(midiout_select.osc,''))
-      if retval == true then
-        midiout_select.osc = msg
-      end
-      lupd.update_surface = true
-
-    elseif mouse.context == nil and MOUSE_click(obj.sections[956]) then
-
-      local retval, msg = reaper.GetUserInputs('Value Range',1,'Value Min:',nz(midiout_select.vmin,0))
-      if retval == true then
-        local msgv = tonumber(msg)
-        if msgv then
-          midiout_select.vmin = msgv
-        end
-      end
-      lupd.update_surface = true
-
-    elseif mouse.context == nil and MOUSE_click(obj.sections[957]) then
-
-      local retval, msg = reaper.GetUserInputs('Value Range',1,'Value Max:',nz(midiout_select.vmax,127))
-      if retval == true then
-        local msgv = tonumber(msg)
-        if msgv then
-          midiout_select.vmax = msgv
-        end
-      end
-      lupd.update_surface = true
-
-    elseif mouse.context == nil and MOUSE_click(obj.sections[958]) then
-      midiout_select.focus = midiout_select.focus + 1
-      if midiout_select.focus > #lvar.focus_table then
-        midiout_select.focus = 1
-      end
-      lupd.update_surface = true
-
-    elseif mouse.context == nil and MOUSE_click(obj.sections[963]) then
-      if reaper.JS_Window_Find then
-        local ret, tit = reaper.GetUserInputs('Focus Window',1,'Please enter title of window to focus:',midiout_select.focus_wintit or '')
-        if ret == true then
-          midiout_select.focus_wintit = tit
-        end
-        lupd.update_surface = true
-      end
-
-    elseif mouse.context == nil and MOUSE_click(obj.sections[964]) then
-      if reaper.JS_Window_Find then
-        midiout_select.focus_winexact = not (midiout_select.focus_winexact or false)
-        lupd.update_surface = true
-      end
-
-    elseif mouse.context == nil and MOUSE_click(obj.sections[959]) then
-      midiout_select.updategfx = not midiout_select.updategfx
-      lupd.update_surface = true
-
-    elseif mouse.context == nil and MOUSE_click(obj.sections[961]) then
-      midiout_select.onmu = not midiout_select.onmu
-      lupd.update_surface = true
-
-    elseif mouse.context == nil and MOUSE_click(obj.sections[952]) then
-      mouse.context = contexts.midiout_chan
-      midiout_select.mchan = F_limit(midiout_select.mchan + 1,1,16)
-      dragmidi = {pos = midiout_select.mchan, yoff = mouse.my-obj.sections[952].y}
-
-      lupd.update_surface = true
-    elseif mouse.context == nil and MOUSE_click_RB(obj.sections[952]) then
-      midiout_select.mchan = F_limit(midiout_select.mchan - 1,1,16)
-      lupd.update_surface = true
-
-    elseif mouse.context == nil and MOUSE_click(obj.sections[953]) then
-      mouse.context = contexts.midiout_msg
-      midiout_select.msg3 = F_limit(midiout_select.msg3 + 1,0,127)
-      dragmidi = {pos = midiout_select.msg3, yoff = mouse.my-obj.sections[953].y}
-
-      lupd.update_surface = true
-    elseif mouse.context == nil and MOUSE_click_RB(obj.sections[953]) then
-      midiout_select.msg3 = F_limit(midiout_select.msg3 - 1,0,127)
-      lupd.update_surface = true
-
-    elseif mouse.context == nil and mouse.LB and not MOUSE_over(obj.sections[950]) then
-      show_midiout = false
-
-      local strip = tracks[track_select].strip
-      if midioutedit_ctlselect == true then
-        if ctl_select and #ctl_select > 0 then
-          for c = 1, #ctl_select do
-            local ctl = strips[strip][page].controls[ctl_select[c].ctl]
+    
+        if mouse.LB and not MOUSE_over(obj.sections[950]) then
+          show_midiout = false
+    
+          local strip = tracks[track_select].strip
+          if midioutedit_ctlselect == true then
+            if ctl_select and #ctl_select > 0 then
+              for c = 1, #ctl_select do
+                local ctl = strips[strip][page].controls[ctl_select[c].ctl]
+                if ctl and ((midiout_select.output and midioutsidx[midiout_select.output]) or midiout_select.osc) then
+    
+                  ctl.midiout = {output = midiout_select.output,
+                                 msgtype = midiout_select.msgtype,
+                                 mchan = midiout_select.mchan,
+                                 msg3 = midiout_select.msg3,
+                                 osc = midiout_select.osc,
+                                 vmin = midiout_select.vmin,
+                                 vmax = midiout_select.vmax,
+                                 focus = midiout_select.focus,
+                                 focus_wintit = midiout_select.focus_wintit,
+                                 focus_winexact = midiout_select.focus_winexact,
+                                 updategfx = midiout_select.updategfx,
+                                 onmu = midiout_select.onmu}
+    
+                else
+                  ctl.midiout = nil
+                end
+              end
+            end
+            midioutedit_ctlselect = nil
+          
+          elseif midioutedit_select then
+            local ctl = strips[strip][page].controls[midioutedit_select]
             if ctl and ((midiout_select.output and midioutsidx[midiout_select.output]) or midiout_select.osc) then
-
+    
               ctl.midiout = {output = midiout_select.output,
                              msgtype = midiout_select.msgtype,
                              mchan = midiout_select.mchan,
@@ -52009,55 +52228,39 @@ function GUI_DrawCtlBitmap_Strips()
                              focus_winexact = midiout_select.focus_winexact,
                              updategfx = midiout_select.updategfx,
                              onmu = midiout_select.onmu}
-
+    
             else
               ctl.midiout = nil
             end
           end
-        end
-        midioutedit_ctlselect = nil
-      elseif midioutedit_select then
-        local ctl = strips[strip][page].controls[midioutedit_select]
-        if ctl and ((midiout_select.output and midioutsidx[midiout_select.output]) or midiout_select.osc) then
-
-          ctl.midiout = {output = midiout_select.output,
-                         msgtype = midiout_select.msgtype,
-                         mchan = midiout_select.mchan,
-                         msg3 = midiout_select.msg3,
-                         osc = midiout_select.osc,
-                         vmin = midiout_select.vmin,
-                         vmax = midiout_select.vmax,
-                         focus = midiout_select.focus,
-                         focus_wintit = midiout_select.focus_wintit,
-                         focus_winexact = midiout_select.focus_winexact,
-                         updategfx = midiout_select.updategfx,
-                         onmu = midiout_select.onmu}
-
-        else
-          ctl.midiout = nil
+    
+          lupd.update_gfx = true
+          RedrawGUIBitmap()
+          
         end
       end
+      
+    else --context
 
-      lupd.update_gfx = true
-    end
-
-    if mouse.context and mouse.context == contexts.midiout_chan then
-      local v = MOUSE_slider(obj.sections[952], -dragmidi.yoff)
-      if v then
-        v=v-0.5
-        midiout_select.mchan = F_limit(math.floor(dragmidi.pos - v*32),1,16)
-        lupd.update_surface = true
+      if mouse.context and mouse.context == contexts.midiout_chan then
+        local v = MOUSE_slider(obj.sections[952], -dragmidi.yoff)
+        if v then
+          v=v-0.5
+          midiout_select.mchan = F_limit(math.floor(dragmidi.pos - v*32),1,16)
+          lupd.update_surface = true
+        end
+  
+      elseif mouse.context and mouse.context == contexts.midiout_msg then
+        local v = MOUSE_sliderX(obj.sections[953], -dragmidi.yoff)
+        if v then
+          v=v-0.5
+          midiout_select.msg3 = F_limit(math.floor(dragmidi.pos - v*96),0,127)
+          lupd.update_surface = true
+        end
       end
 
-    elseif mouse.context and mouse.context == contexts.midiout_msg then
-      local v = MOUSE_sliderX(obj.sections[953], -dragmidi.yoff)
-      if v then
-        v=v-0.5
-        midiout_select.msg3 = F_limit(math.floor(dragmidi.pos - v*96),0,127)
-        lupd.update_surface = true
-      end
     end
-
+    
   end
 
   function A_Run_TFXOrder(char, rt)
@@ -52068,12 +52271,14 @@ function GUI_DrawCtlBitmap_Strips()
         --lupd.update_gfx = true
         --lupd.update_trackfxorder = true
         lupd.update_trbtns = true
+        RedrawGUIBitmap()
 
       elseif char == 52 then
         if mode == 0 then
           show_pinmatrix = not show_pinmatrix
           lupd.update_surface = true
           char = 0
+          RedrawGUIBitmap()
         end
       end
     end
@@ -52092,89 +52297,109 @@ function GUI_DrawCtlBitmap_Strips()
 
       if butt_cnt < #tfxorder then
         tfxo_listpos = F_limit(tfxo_listpos -v,0,#tfxorder-butt_cnt)
-        lupd.update_surface = true
+        --lupd.update_surface = true
+        lupd.update_trackfxorder = true
         gfx.mouse_wheel = 0
       end
-    elseif mouse.context == nil and MOUSE_click(xywh2) then
-      mouse.context = contexts.move_fxorder
-      movewin = {dx = mouse.mx, dy = mouse.my, ox = obj.sections[900].x, oy = obj.sections[900].y}
-
-    elseif mouse.context == nil and MOUSE_click(xywh) then
-      tfxo_sel =  F_limit(math.floor((mouse.my - xywh.y) / bh)+1 +tfxo_listpos, 1, #tfxorder)
-      if tfxo_sel <= #tfxorder then
-        if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.2 then
-          track = GetTrack(tracks[track_select].tracknum)
-          local fxnum = tfxo_sel
-          reaper.TrackFX_Show(track, fxnum, 3)
-        else
-          mouse.context = contexts.tfxo_shift
-          tfxo_scrolldel = reaper.time_precise()
-          tfxo_pos = tfxo_sel
-        end
-      else
-        tfxo_sel = nil
-      end
-      lupd.update_trackfxorder = true
-      --lupd.update_surface = true
-    elseif mouse.context == nil and MOUSE_click(obj.sections[900]) then
-      mouse.context = contexts.dummy
-
-    elseif mouse.context == nil and mouse.LB and not MOUSE_over(obj.sections[900]) and show_pinmatrix == false then
-      show_trackfxorder = false
-      --lupd.update_surface = true
-      lupd.update_trbtns = true
     end
-
-    if mouse.context and mouse.context == contexts.tfxo_shift then
-      tfxo_lastpos = tfxo_pos
-      local mpos = math.floor((mouse.my - xywh.y) / bh)+1
-      tfxo_pos = F_limit(mpos +tfxo_listpos, 1, #tfxorder)
-      if reaper.time_precise() > tfxo_scrolldel then
-        if mpos < 1 then
-          tfxo_listpos = math.max(tfxo_listpos -1,0)
-        elseif mpos > butt_cnt then --hard coded size :/
-          tfxo_listpos = math.min(tfxo_listpos +1,#tfxorder-butt_cnt)
-        end
-        tfxo_scrolldel = reaper.time_precise() + 0.1
-        lupd.update_surface = true
-      end
-      if tfxo_pos ~= tfxo_lastpos then
-        tfxreorder = ReOrderTable(tfxorder, 1, tfxo_sel, tfxo_pos)
-        lupd.update_trackfxorder = true
-        --lupd.update_surface = true
-      end
-    elseif mouse.context == nil and tfxo_pos then
-      if lvar.livemode > 0 then
-        if tfxo_pos ~= tfxo_sel then
-          local extid = lvar.stripdim.swdata.extid
-          local before = true
-          if tfxo_pos > tfxo_sel then
-            before = false
+    
+    if mouse.context == nil then
+      
+      if MC() then
+      
+        if MOUSE_click(xywh2) then
+          mouse.context = contexts.move_fxorder
+          movewin = {dx = mouse.mx, dy = mouse.my, ox = obj.sections[900].x, oy = obj.sections[900].y}
+    
+        elseif MOUSE_click(xywh) then
+          tfxo_sel =  F_limit(math.floor((mouse.my - xywh.y) / bh)+1 +tfxo_listpos, 1, #tfxorder)
+          if tfxo_sel <= #tfxorder then
+            if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.2 then
+              track = GetTrack(tracks[track_select].tracknum)
+              local fxnum = tfxo_sel
+              reaper.TrackFX_Show(track, fxnum, 3)
+            else
+              mouse.context = contexts.tfxo_shift
+              tfxo_scrolldel = reaper.time_precise()
+              tfxo_pos = tfxo_sel
+            end
+          else
+            tfxo_sel = nil
           end
-          reaper.Undo_BeginBlock2(0)
-          Switchers_Ext_MovePos(extid,tfxo_sel,tfxo_pos,before,true,true)
-          reaper.Undo_EndBlock2(0,"Move Strip",-1)
-
+          lupd.update_trackfxorder = true
+          --lupd.update_surface = true
+        
+        elseif MOUSE_click(obj.sections[900]) then
+          mouse.context = contexts.dummy
+    
         end
-        tfxo_pos = nil
-        tfxo_sel = nil
-        tfxorder = tfxreorder
-      else
-        MoveFXChunk(tfxo_sel, tfxo_pos)
-        tfxo_pos = nil
-        tfxo_sel = nil
-        tfxorder = tfxreorder
+        
+      elseif tfxo_pos then
+      
+        if lvar.livemode > 0 then
+          if tfxo_pos ~= tfxo_sel then
+            local extid = lvar.stripdim.swdata.extid
+            local before = true
+            if tfxo_pos > tfxo_sel then
+              before = false
+            end
+            reaper.Undo_BeginBlock2(0)
+            Switchers_Ext_MovePos(extid,tfxo_sel,tfxo_pos,before,true,true)
+            reaper.Undo_EndBlock2(0,"Move Strip",-1)
+  
+          end
+          tfxo_pos = nil
+          tfxo_sel = nil
+          tfxorder = tfxreorder
+        else
+          MoveFXChunk(tfxo_sel, tfxo_pos)
+          tfxo_pos = nil
+          tfxo_sel = nil
+          tfxorder = tfxreorder
+        end
+        lupd.update_trackfxorder = true
+        lupd.update_surface = true
+      
+      elseif mouse.LB and not MOUSE_over(obj.sections[900]) and show_pinmatrix == false then
+        show_trackfxorder = false
+        --lupd.update_surface = true
+        lupd.update_trbtns = true
+        RedrawGUIBitmap()
+      
       end
-      lupd.update_trackfxorder = true
-      lupd.update_surface = true
-    elseif mouse.context == contexts.move_fxorder then
-      obj.sections[900].x = F_limit(movewin.ox + mouse.mx - movewin.dx,obj.sections[10000].x,gfx1.main_w -obj.sections[900].w)
-      obj.sections[900].y = F_limit(movewin.oy + mouse.my - movewin.dy,obj.sections[10000].y,gfx1.main_h -obj.sections[900].h)
-      obj.sections[900].y = math.max(obj.sections[900].y,obj.sections[10000].y)
-      --lupd.update_surface = true
-      lupd.update_trackfxorder = true
+      
+    else
+        
+      if mouse.context == contexts.tfxo_shift then
+        tfxo_lastpos = tfxo_pos
+        local mpos = math.floor((mouse.my - xywh.y) / bh)+1
+        tfxo_pos = F_limit(mpos +tfxo_listpos, 1, #tfxorder)
+        if reaper.time_precise() > tfxo_scrolldel then
+          if mpos < 1 then
+            tfxo_listpos = math.max(tfxo_listpos -1,0)
+          elseif mpos > butt_cnt then --hard coded size :/
+            tfxo_listpos = math.min(tfxo_listpos +1,#tfxorder-butt_cnt)
+          end
+          tfxo_scrolldel = reaper.time_precise() + 0.1
+          lupd.update_surface = true
+        end
+        if tfxo_pos ~= tfxo_lastpos then
+          tfxreorder = ReOrderTable(tfxorder, 1, tfxo_sel, tfxo_pos)
+          lupd.update_trackfxorder = true
+          --lupd.update_surface = true
+        end
+        
+      elseif mouse.context == contexts.move_fxorder then
+        obj.sections[900].x = F_limit(movewin.ox + mouse.mx - movewin.dx,obj.sections[10000].x,gfx1.main_w -obj.sections[900].w)
+        obj.sections[900].y = F_limit(movewin.oy + mouse.my - movewin.dy,obj.sections[10000].y,gfx1.main_h -obj.sections[900].h)
+        obj.sections[900].y = math.max(obj.sections[900].y,obj.sections[10000].y)
+        --lupd.update_surface = true
+        lupd.update_trackfxorder = true
+        RedrawGUIBitmap()
+      end
+      
     end
-
+    
     return char
   end
 
@@ -52512,11 +52737,16 @@ function GUI_DrawCtlBitmap_Strips()
       cpd = '#'
     end
     local bobj_f = ''
+    local pastecol = '#'
     if not btnobj then
       bobj_f = '#'
+    else
+      if lvar.pnlbtn_colour then
+        pastecol = ''
+      end
     end
     
-    mstr = bobj_f..'Rename||'..bobj_f..'Copy|'..bobj_f..'Cut||'..cpd..'Replace|'..cpd..'Swap||Clear||Clear All'
+    mstr = bobj_f..'Rename||'..bobj_f..'Set Colour|'..bobj_f..'Copy Colour|'..pastecol..'Paste Colour||'..bobj_f..'Copy|'..bobj_f..'Cut||'..cpd..'Replace|'..cpd..'Swap||Clear||Clear All'
     gfx.x = mx
     gfx.y = my
     local res = gfx.showmenu(mstr)
@@ -52525,16 +52755,28 @@ function GUI_DrawCtlBitmap_Strips()
 
         lvar.btnpnl_obj = btnobj
         OpenEB(5040, 'Enter new description: ',btnobj.ndesc or '')
-        
+
       elseif res == 2 then
+        local retval, c = reaper.GR_SelectColor(_,lvar.dm_btnpnl[idx][row][col].rgb or (205 + (205 << 8) + (205 << 16)))
+        if retval ~= 0 then
+          lvar.dm_btnpnl[idx][row][col].rgb = c
+          lupd.update_trbtns = true
+        end
+
+      elseif res == 3 then
+        lvar.pnlbtn_colour = lvar.dm_btnpnl[idx][row][col].rgb or (205 + (205 << 8) + (205 << 16))
+      elseif res == 4 then
+        lvar.dm_btnpnl[idx][row][col].rgb = lvar.pnlbtn_colour
+        lupd.update_trbtns = true
+      elseif res == 5 then
 
         lvar.btnpnlcopy = {idx = idx, row = row, col = col, tab = lvar.dm_btnpnl[idx][row][col], copy = true}
 
-      elseif res == 3 then
+      elseif res == 6 then
 
         lvar.btnpnlcopy = {idx = idx, row = row, col = col, tab = lvar.dm_btnpnl[idx][row][col], copy = false}
 
-      elseif res == 4 then
+      elseif res == 7 then
       
         if lvar.btnpnlcopy then
           lvar.dm_btnpnl[idx][row][col] = lvar.btnpnlcopy.tab
@@ -52544,7 +52786,7 @@ function GUI_DrawCtlBitmap_Strips()
           lupd.update_trbtns = true
         end
 
-      elseif res == 5 then
+      elseif res == 8 then
       
         if lvar.btnpnlcopy then
           local tab = lvar.dm_btnpnl[idx][row][col]
@@ -52553,11 +52795,11 @@ function GUI_DrawCtlBitmap_Strips()
           lupd.update_trbtns = true
         end
         
-      elseif res == 6 then
+      elseif res == 9 then
         lvar.dm_btnpnl[idx][row][col] = nil
         lupd.update_trbtns = true
 
-      elseif res == 7 then
+      elseif res == 10 then
 
         lvar.dm_btnpnl[idx] = {}
         lupd.update_trbtns = true
@@ -53456,7 +53698,7 @@ function GUI_DrawCtlBitmap_Strips()
   end
 
   function SBDock(d)
-DBG('bl')
+
     if d == true then
       if d ~= settings_sbdock then
         lvar.osbh = {x = obj.sections[1350].x,
@@ -53827,6 +54069,3907 @@ DBG('bl')
     end
   end
 
+  ------------------------
+  --- M0 MOUSE CLICK
+  ------------------------
+
+  function A_Click_M0_StripSurface(rt, noscroll)
+    
+    local togfsnap = false
+    
+    if mouse.mx > obj.sections[10000].x then
+      if strips and tracks[track_select] and strips[tracks[track_select].strip] then
+
+        local i
+        --local ttt = reaper.time_precise()
+        local strip = tracks[track_select].strip
+        local ctls = strips[strip][page].controls
+        local c, stripidx, stripid = GetControlAtXY(strip, page, mouse.mx, mouse.my)
+
+        --[[if lvar.livemode == 2 and MOUSE_click(obj.sections[5000]) then
+
+          c = nil
+          noscroll = true
+
+          GUI_DrawButton(gui,'REFRESH',obj.sections[5000],-2,gui.color.white,true,nil,nil,4)
+          lupd = GUI_draw(obj, gui)
+          gfx.update()
+          DM_RefreshPage()
+
+        else]]if lvar.livemode >= 1 and lvar.mmov_show == true then
+          if mouse.RB then
+            local strip = tracks[track_select].strip
+            if (lvar.showpoponly or (lvar.showpop and lvar.mm_fadepop == 0 and strips[strip][page].pop and #strips[strip][page].pop > 0)) then
+              if lvar.mixmodedir == 0 then
+                local mpad = lvar.mmov_pad
+                if mouse.mx < obj.sections[10000].x+lvar.mmov_vsize+mpad*2 then
+                  Process_MMOV2(rt,nil,true)
+                  c = nil
+                  noscroll = true
+                end
+              else
+                local mpad = lvar.mmov_pad
+                if mouse.my < obj.sections[10000].y+lvar.mmov_vsize+mpad*2 then
+                  Process_MMOV2(rt,nil,true)
+                  c = nil
+                  noscroll = true
+                end
+              end
+            else
+              if lvar.mixmodedir == 0 then
+                local mpad = lvar.mmov_pad
+                if mouse.mx < obj.sections[10000].x+lvar.mmov_vsize+mpad*2 then
+                  mouse.context = contexts.mmov_dragv
+                  lvar.mixupdate = nil
+                  lvar.mmov_drag = true
+                  c = nil
+                  noscroll = true
+                end
+              else
+                local mpad = lvar.mmov_pad
+                if mouse.my < obj.sections[10000].y+lvar.mmov_vsize+mpad*2 then
+                  mouse.context = contexts.mmov_dragh
+                  lvar.mixupdate = nil
+                  lvar.mmov_drag = true
+                  c = nil
+                  noscroll = true
+                end
+              end
+            end
+
+          elseif mouse.LB then
+            if lvar.mixmodedir == 0 then
+              local mpad = lvar.mmov_pad
+              if mouse.mx < obj.sections[10000].x+lvar.mmov_vsize+mpad*2 then
+                Process_MMOV2(rt,true,nil)
+                c = nil
+                noscroll = true
+              end
+            else
+              local mpad = lvar.mmov_pad
+              if mouse.my < obj.sections[10000].y+lvar.mmov_vsize+mpad*2 then
+                Process_MMOV2(rt,true,nil)
+                c = nil
+                noscroll = true
+              end
+            end
+          elseif gfx.mouse_wheel ~= 0 then
+            if lvar.mixmodedir == 0 then
+              local mpad = lvar.mmov_pad
+              if mouse.mx < obj.sections[10000].x+lvar.mmov_vsize+mpad*2 then
+                if mouse.shift then
+                  local v = gfx.mouse_wheel/lvar.mousewheel_div
+                  lvar.mmov_vsize = F_limit(lvar.mmov_vsize + v*4,32,200)
+                  lvar.mmov_offs = math.floor((lvar.mmov_vsize + lvar.mmov_pad*2)/2)
+                  lupd.update_mmov = true
+                  lupd.update_surface = true
+                  --Repos5001()
+                  Repos5005()
+                  GUI_DrawCtlBitmap_Mix()
+                  RedrawGUIBitmap()
+                  gfx.mouse_wheel = 0
+                else
+                  if obj.sections[10000].h < lvar.mmov_max then
+                    local v = gfx.mouse_wheel/lvar.mousewheel_div
+                    lvar.mmov_pos = F_limit(lvar.mmov_pos - v*20,0,lvar.mmov_max-obj.sections[10000].h)
+                    lupd.update_surface = true
+                  end
+                  gfx.mouse_wheel = 0
+                end                  
+              end
+            else
+              local mpad = lvar.mmov_pad
+              if mouse.my < obj.sections[10000].y+lvar.mmov_vsize+mpad*2 then
+                if mouse.shift then
+                  local v = gfx.mouse_wheel/lvar.mousewheel_div
+                  lvar.mmov_vsize = F_limit(lvar.mmov_vsize + v*4,32,200)
+                  lvar.mmov_offs = math.floor((lvar.mmov_vsize + lvar.mmov_pad*2)/2)
+                  lupd.update_mmov = true
+                  lupd.update_surface = true
+                  --Repos5001()
+                  Repos5005()
+                  GUI_DrawCtlBitmap_Mix()
+                  RedrawGUIBitmap(0.3)
+                  gfx.mouse_wheel = 0
+                else
+                  if obj.sections[10000].w < lvar.mmov_max then  
+                    local v = gfx.mouse_wheel/lvar.mousewheel_div
+                    lvar.mmov_pos = F_limit(lvar.mmov_pos - v*20,0,lvar.mmov_max-obj.sections[10000].w)
+                    lupd.update_surface = true
+                  end
+                  gfx.mouse_wheel = 0
+                end
+              end
+            end
+          end
+        end
+        if c then
+          i = c
+
+          local ctl = ctls[i]
+          ctlxywh = {x = ctl.xsc * lvar.zoom - surface_offset.x * lvar.zoom +obj.sections[10].x,
+                     y = ctl.ysc * lvar.zoom - surface_offset.y * lvar.zoom +obj.sections[10].y,
+                     w = ctl.wsc * lvar.zoom,
+                     h = ctl.hsc * lvar.zoom}
+          noscroll = (ctls[i].ctllock or noscroll)
+        elseif mouse.shift and stripid and lvar.livemode >= 1 then
+          lvar.dragswitcher = DragSwitcher_Ext(stripid)
+          if lvar.dragswitcher then
+            switchers[lvar.dragswitcher.selected].dragging = true
+            lupd.update_surface = true
+
+            mouse.context = contexts.switchdrag_ext2
+          end
+        elseif stripid and lvar.livemode >= 1 then
+          if lvar.stripdim then
+            switchid = lvar.stripdim.swidx[stripid]
+            if lvar.showpop == true and strips[strip][page].popidx and strips[strip][page].popidx[switchid] then
+              PopOut_ToTop(switchid)
+            end
+          end
+        end
+
+        if i and not ctls[i].hidden and not ctls[i].ctllock then
+
+          if ctls[i].fxfound or ctls[i].ctlcat == ctlcats.switcher then
+
+            if MOUSE_LB() or gfx.mouse_wheel ~= 0 then
+              lvar.disabletakeover_ctl = i
+            end
+
+            local skip
+            if ctls[i].ctlcat == ctlcats.fxmulti then
+              if MOUSE_LB() then
+                local ctl = ctls[i]
+                local cval = ctl.val
+                local trn = ctl.tracknum or tracks[track_select].tracknum
+                if mouse.ctrl then
+                  SetFXOffline3(trn, ctl.fxnum, 1)
+                elseif mouse.shift then
+                  SetFXOffline3(trn, ctl.fxnum, 0, 1)
+                else
+                  SetFXOffline3(trn, ctl.fxnum, 0, 0)
+                  if cval <= 0.34 then
+                    ToggleFXWet(strip, page, i, strips[strip].track.tracknum)
+                  else
+                    ToggleFXWet(strip, page, i, strips[strip].track.tracknum,true)
+                  end
+                end
+                SetCtlEnabled(ctl.fxnum)
+
+                local state = FXMulti_GetState(tr, ctl)
+                ctl.val = (state-1)/(#lvar.fxmulti_table-1)
+
+                if ctl.addfx and #ctl.addfx > 0 then
+                  local tr = GetTrack(ctl.tracknum or tracks[track_select].tracknum)
+                  if tr then
+                    FXMulti_SetAddFX(ctl, state)
+                  end
+                end
+
+                SetCtlDirty(i)
+                lupd.update_ctls = true
+
+                skip = true
+                noscroll = true
+              end
+            end
+
+            local todef = false
+
+            if not skip then
+              if MOUSE_LB() and not mouse.ctrl and not mouse.alt then
+                local ctltype = ctls[i].ctltype
+
+                if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.2 and ctltype ~= 5 and ctltype ~= 2 and ctltype ~= 3 then
+                  if ctls[i].ctlcat ~= ctlcats.rs5k then
+                    if settings_swapctrlclick == false then
+                      SetParam_ToDef(i)
+                      todef = true
+                    else
+                      SetParam_EnterVal(i)
+                    end
+                  else
+                    SetShowSampleManager(true, i)
+                  end
+                  noscroll = true
+
+                end
+
+                --if ctltype == 12 then
+
+                if ctltype == 1 or ctltype == 11 or ctltype == 12 then
+                  if ctltype == 12 then
+                    lvar.magnetic_active = i
+                  end
+
+                  local ctype = ctl_files[ctls[i].knob_select].ctltype
+
+                  if ctls[i].ctlcat ~= ctlcats.macro then
+                    --knob/slider
+                    if ctype ~= 5 and ctype ~= 6 and ctype ~= 7 then
+                      if lvar.sliderxy == true then
+                        mouse.context = contexts.sliderctlxy
+                        mouse.slideoff = ctlxywh.y+ctlxywh.h/2 - mouse.smy
+                        mouse.slideoffh = ctlxywh.x+ctlxywh.w/2 - mouse.smx
+                        octlval = ctls[i].val
+                        if lvar.hidecursordrag == true then
+                          mouse.ox, mouse.oy  = mouse.smx, mouse.smy --reaper.GetMousePosition()
+                          lvar.hidecursor = true
+                          --reaper.JS_Mouse_SetCursor(lvar.cursor_invisible)
+                        end
+
+                      else
+                        if ctls[i].horiz then
+                          mouse.context = contexts.sliderctl_h
+                          mouse.slideoff = ctlxywh.x+ctlxywh.w/2 - mouse.smx
+                          octlval = ctls[i].val
+                          if lvar.hidecursordrag == true then
+                            mouse.ox, mouse.oy  = mouse.smx, mouse.smy --reaper.GetMousePosition()
+                            lvar.hidecursor = true
+                            --reaper.JS_Mouse_SetCursor(lvar.cursor_invisible)
+                          end
+
+                        else
+                          mouse.context = contexts.sliderctl
+                          mouse.slideoff = ctlxywh.y+ctlxywh.h/2 - mouse.smy
+                          octlval = ctls[i].val
+                          if lvar.hidecursordrag == true then
+                            mouse.ox, mouse.oy  = mouse.smx, mouse.smy --reaper.GetMousePosition()
+                            lvar.hidecursor = true
+                            --reaper.JS_Mouse_SetCursor(lvar.cursor_invisible)
+                          end
+                        end
+                      end
+                      ctlpos = ctlScaleInv(ctls[i].scalemode or 8,
+                                           ctls[i].val)
+                    else
+
+                      if todef == false then
+                        local ctl = ctls[i]
+                        if ctype == 6 or (ctype == 7 and ctl.horiz == true) then
+                          mouse.context = contexts.sliderctl_h_t2
+                          slidt2 = {}
+                          slidt2.offs = 0
+                          slidt2.knbsz = ctl_files[ctl.knob_select].knbsz * lvar.zoom
+
+                          local mx = mouse.mx-ctlxywh.x
+                          local my, ci
+                          if stripgallery_view > 0 then
+                            mx, my, ci = TranslateGalleryPos(mouse.mx, mouse.my, i)
+                            mx, my = mx - ctlxywh.x, my - ctlxywh.y
+                          end
+                          local knbctr = math.floor((ctlxywh.w-(slidt2.knbsz*ctl.scale)) * ctlScaleInv(ctl.scalemode,ctl.val)) + math.floor((slidt2.knbsz*ctl.scale)/2)
+                          if mx >= knbctr-math.ceil((slidt2.knbsz*ctl.scale)/2) and mx <= knbctr+math.ceil((slidt2.knbsz*ctl.scale)/2) then
+                            slidt2.offs = mx-knbctr
+                          end
+
+                        elseif ctype == 5 or ctype == 7 then
+
+                          mouse.context = contexts.sliderctl_t2
+                          slidt2 = {}
+                          slidt2.offs = 0
+                          slidt2.knbsz = ctl_files[ctl.knob_select].knbsz * lvar.zoom
+
+                          if lvar.livemode == 0 then
+                            local my = (mouse.my-ctlxywh.y)
+                            local mx, ci
+                            if stripgallery_view > 0 then
+                              mx, my, ci = TranslateGalleryPos(mouse.mx, mouse.my, i)
+                              mx, my = mx - ctlxywh.x, my - ctlxywh.y
+                            end
+                            local knbctr = math.floor((ctlxywh.h -(slidt2.knbsz*ctl.scale)) - math.floor((ctlxywh.h -(slidt2.knbsz*ctl.scale))
+                                           * ctlScaleInv(ctl.scalemode,ctl.val)) + math.floor((slidt2.knbsz*ctl.scale)/2))
+
+                            if my >= knbctr-math.ceil((slidt2.knbsz*ctl.scale)/2) and my <= knbctr+math.ceil((slidt2.knbsz*ctl.scale)/2) then
+                              slidt2.offs = math.floor((my-knbctr))
+                            end
+                          else
+                            local mx, my, swid
+
+                            _, _, swid = TranslateMixPos(mouse.mx, mouse.my, i)
+                            local xx, yy = TranslateMixCtlPos(i, swid)
+                            my = mouse.my - yy -math.floor((((slidt2.knbsz)*ctl.scale)/2))
+
+                            slidt2.swid = swid
+                            local knbctr = math.floor((ctlxywh.h -(slidt2.knbsz*ctl.scale)) - ((ctlxywh.h -(slidt2.knbsz*ctl.scale))
+                                            * ctlScaleInv(ctl.scalemode,ctl.val)) )-- math.floor((slidt2.knbsz*ctl.scale)/2)) --+((lvar.zoom-1)*4)*(slidt2.knbsz/lvar.zoom)
+                            if my >= knbctr-math.ceil((slidt2.knbsz*ctl.scale)/2) and my <= knbctr+math.ceil((slidt2.knbsz*ctl.scale)/2) then
+                              slidt2.offs = math.floor(my-knbctr)
+                            end
+                          end
+                        end
+                      end
+                    end
+                    trackfxparam_select = i
+                    oms = mouse.shift
+                  else
+                    if ctype ~= 5 and ctype ~= 6 and ctype ~= 7 then
+                      if lvar.sliderxy == true then
+                        mouse.context = contexts.macctlxy
+                        mouse.slideoff = ctlxywh.y+ctlxywh.h/2 - mouse.smy
+                        mouse.slideoffh = ctlxywh.x+ctlxywh.w/2 - mouse.smx
+                        octlval = ctls[i].val
+                        if lvar.hidecursordrag == true then
+                          mouse.ox, mouse.oy  = mouse.smx, mouse.smy --reaper.GetMousePosition()
+                          lvar.hidecursor = true
+                          --reaper.JS_Mouse_SetCursor(lvar.cursor_invisible)
+                        end
+                      else
+                        if ctls[i].horiz then
+                          mouse.context = contexts.macctl_h
+                          mouse.slideoff = ctlxywh.x+ctlxywh.w/2 - mouse.smx
+                          octlval = ctls[i].val
+                          if lvar.hidecursordrag == true then
+                            mouse.ox, mouse.oy  = mouse.smx, mouse.smy --reaper.GetMousePosition()
+                            lvar.hidecursor = true
+                            --reaper.JS_Mouse_SetCursor(lvar.cursor_invisible)
+                          end
+
+                        else
+                          mouse.context = contexts.macctl
+                          mouse.slideoff = ctlxywh.y+ctlxywh.h/2 - mouse.smy
+                          octlval = ctls[i].val
+                          if lvar.hidecursordrag == true then
+                            mouse.ox, mouse.oy  = mouse.smx, mouse.smy --reaper.GetMousePosition()
+                            lvar.hidecursor = true
+                            --reaper.JS_Mouse_SetCursor(lvar.cursor_invisible)
+                          end
+
+                        end
+                      end
+                      ctlpos = ctlScaleInv(nz(ctls[i].scalemode,8),
+                                           ctls[i].val)
+                    else
+
+                      if todef == false then
+                        local ctl = ctls[i]
+                        if ctype == 6 or (ctype == 7 and ctl.horiz == true) then
+                          mouse.context = contexts.macsliderctl_h_t2
+                          slidt2 = {}
+                          slidt2.offs = 0
+                          slidt2.knbsz = ctl_files[ctl.knob_select].knbsz * lvar.zoom
+
+                          local mx = mouse.mx-ctlxywh.x
+                          local my, ci
+                          if stripgallery_view > 0 then
+                            mx, my, ci = TranslateGalleryPos(mouse.mx, mouse.my, i)
+                            mx, my = mx - ctlxywh.x, my - ctlxywh.y
+                          end
+                          local knbctr = math.floor((ctlxywh.w-(slidt2.knbsz*ctl.scale)) * ctlScaleInv(ctl.scalemode,ctl.val)) + math.floor((slidt2.knbsz*ctl.scale)/2)
+                          if mx >= knbctr-math.ceil((slidt2.knbsz*ctl.scale)/2) and mx <= knbctr+math.ceil((slidt2.knbsz*ctl.scale)/2) then
+                            slidt2.offs = mx-knbctr
+                          end
+
+                        elseif ctype == 5 or ctype == 7 then
+                          mouse.context = contexts.macsliderctl_t2
+                          slidt2 = {}
+                          slidt2.offs = 0
+                          slidt2.knbsz = ctl_files[ctl.knob_select].knbsz * lvar.zoom
+
+                          local my = mouse.my-ctlxywh.y
+                          local mx, ci
+                          if stripgallery_view > 0 then
+                            mx, my, ci = TranslateGalleryPos(mouse.mx, mouse.my, i)
+                            mx, my = mx - ctlxywh.x, my - ctlxywh.y
+                          end
+                          local knbctr = (ctlxywh.h-(slidt2.knbsz*ctl.scale)) - math.floor((ctlxywh.h-(slidt2.knbsz*ctl.scale)) * ctlScaleInv(ctl.scalemode,ctl.val)) + math.floor((slidt2.knbsz*ctl.scale)/2)
+                          if my >= knbctr-math.ceil((slidt2.knbsz*ctl.scale)/2) and my <= knbctr+math.ceil((slidt2.knbsz*ctl.scale)/2) then
+                            slidt2.offs = my-knbctr
+                          end
+                        end
+                      end
+
+                    end
+
+                    macctlactive = i
+                    --ctls[i].mval = nil
+                    trackfxparam_select = i
+                    oms = mouse.shift
+                  end
+                  if ctls[i].mod and mod_select ~= ctls[i].mod then
+                    mod_select = ctls[i].mod
+                    lupd.update_gfx = true
+                  end
+
+                  --undotxt = 'Parameter Change'
+                  --reaper.Undo_BeginBlock2()
+
+                elseif ctltype == 2 or ctltype == 3 then
+                  --button/button inverse
+                  if lvar.TSM_MOver then
+                    if lvar.TSM_FocusHwnd then
+                      reaper.JS_Window_SetFocus(lvar.TSM_FocusHwnd)
+                    end
+                    if lvar.TSM_LegalMP then
+                      reaper.JS_Mouse_SetPosition(lvar.TSM_LegalMP.x, lvar.TSM_LegalMP.y)
+                    end
+                    --lvar.TSM_Timer = reaper.time_precise()+lvar.TSM_time
+                    --lvar.TSM_MOver = nil
+                  end
+
+                  trackfxparam_select = i
+                  if ctls[i].val and ctls[i].val < 0.5 then
+                    ctls[i].val = 1
+                  else
+                    ctls[i].val = 0
+                  end
+                  if ctls[i].mod == nil or (ctls[i].mod and modulators[ctls[i].mod].active ~= true) then
+                    A_SetParam(tracks[track_select].strip,page,i,ctls[i])
+                    --ctls[i].dirty = true
+                    SetCtlDirty(i)
+                    if ctls[i].param_info.paramname == 'Bypass' then
+                      SetCtlEnabled(ctls[i].fxnum)
+                    end
+                    if ctls[i].random then
+                      if show_randomopts == true and randopts_selectctl then
+                        SetCtlDirty(randopts_selectctl)
+                        RandomOpts_INIT(i)
+                        randopts_selectctl = i
+                        lupd.update_randomopts = true
+                      end
+                    end
+                  end
+                  if ctls[i].mod and mod_select ~= ctls[i].mod then
+                    mod_select = ctls[i].mod
+                    lupd.update_gfx = true
+                  end
+                  noscroll = true
+
+                  SetCtlDirty(i)
+                  lupd.update_ctls = true
+
+                elseif ctltype == 4 then
+                  --cycle
+                  if ctls[i].cycledata.draggable then
+                    if lvar.sliderxy == true then
+                      mouse.context = contexts.dragcyclexy
+                      mouse.slideoff = ctlxywh.y+ctlxywh.h/2 - mouse.smy
+                      mouse.slideoffh = ctlxywh.x+ctlxywh.w/2 - mouse.smx
+                      if lvar.hidecursordrag == true then
+                        mouse.ox, mouse.oy  = mouse.smx, mouse.smy --reaper.GetMousePosition()
+                        lvar.hidecursor = true
+                        --reaper.JS_Mouse_SetCursor(lvar.cursor_invisible)
+                      end
+                    else
+                      if ctls[i].horiz then
+                        mouse.context = contexts.dragcycle_h
+                        mouse.slideoff = ctlxywh.x+ctlxywh.w/2 - mouse.smx
+                        if lvar.hidecursordrag == true then
+                          mouse.ox, mouse.oy  = mouse.smx, mouse.smy --reaper.GetMousePosition()
+                          lvar.hidecursor = true
+                          --reaper.JS_Mouse_SetCursor(lvar.cursor_invisible)
+                        end
+                      else
+                        mouse.context = contexts.dragcycle
+                        mouse.slideoff = ctlxywh.y+ctlxywh.h/2 - mouse.smy
+                        if lvar.hidecursordrag == true then
+                          mouse.ox, mouse.oy  = mouse.smx, mouse.smy --reaper.GetMousePosition()
+                          lvar.hidecursor = true
+                          --reaper.JS_Mouse_SetCursor(lvar.cursor_invisible)
+                        end
+                      end
+                    end
+                    ctlpos = normalize(0, ctls[i].cycledata.statecnt,
+                                       ctls[i].cycledata.pos)
+                    trackfxparam_select = i
+                    ctls[i].cycledata.posdirty = false
+                    oms = mouse.shift
+                  else
+                    if lvar.TSM_MOver then
+                      if lvar.TSM_FocusHwnd then
+                        reaper.JS_Window_SetFocus(lvar.TSM_FocusHwnd)
+                      end
+                      if lvar.TSM_LegalMP then
+                        reaper.JS_Mouse_SetPosition(lvar.TSM_LegalMP.x, lvar.TSM_LegalMP.y)
+                      end
+                      --lvar.TSM_Timer = reaper.time_precise()+lvar.TSM_time
+                      --lvar.TSM_MOver = nil
+                    end
+
+                    if ctls[i].cycledata.pos == nil then
+                      ctls[i].cycledata.pos = 1
+                    else
+                      ctls[i].cycledata.pos = ctls[i].cycledata.pos +1
+                      if ctls[i].cycledata.pos > ctls[i].cycledata.statecnt
+                         or ctls[i].cycledata.pos < 1 then
+                        ctls[i].cycledata.pos = 1
+                      end
+                    end
+                    if ctls[i].cycledata.pos <=
+                              ctls[i].cycledata.statecnt then
+                      trackfxparam_select = i
+                      ctls[i].val =
+                          ctls[i].cycledata[ctls[i].cycledata.pos].val
+                      A_SetParam(tracks[track_select].strip,page,i,ctls[i])
+                      ctls[i].dirty = true
+                      ctls[i].cycledata.posdirty = false
+                      lupd.update_ctls = true
+                    end
+                    SetCtlDirty(i)
+                    lupd.update_ctls = true
+                  end
+                  if ctls[i].mod and mod_select ~= ctls[i].mod then
+                    mod_select = ctls[i].mod
+                    lupd.update_gfx = true
+                  end
+
+                  noscroll = true
+                elseif ctltype == 6 then
+                  --mem button
+                  trackfxparam_select = i
+                  if ctls[i].membtn.state == nil then
+                    ctls[i].membtn.state = false
+                  end
+                  ctls[i].membtn.state = not ctls[i].membtn.state
+                  if ctls[i].membtn.state == true then
+                    ctls[i].membtn.mem = ctls[i].val
+                    ctls[i].val = ctls[i].defval
+                    A_SetParam(strip,page,i,ctls[i])
+                  else
+                    ctls[i].val = ctls[i].membtn.mem
+                    A_SetParam(strip,page,i,ctls[i])
+                  end
+                  if ctls[i].mod and mod_select ~= ctls[i].mod then
+                    mod_select = ctls[i].mod
+                    lupd.update_gfx = true
+                  end
+                  SetCtlDirty(i)
+                  lupd.update_ctls = true
+
+                elseif ctltype == 5 then
+
+                  if ctls[i].ctlcat == ctlcats.xy then
+
+                    local ctlx, ctly
+                    if lvar.livemode == 0 then
+                      ctly = (ctls[i].y*lvar.zoom + obj.sections[10].y - surface_offset.y*lvar.zoom)
+                      ctlx = ctls[i].x*lvar.zoom + obj.sections[10].x - surface_offset.x*lvar.zoom
+                    else
+                      local _, _, swid = TranslateMixPos(mouse.mx, mouse.my, i)
+                      local xx, yy = TranslateMixCtlPos(i, swid)
+                      ctlx, ctly = xx, yy
+                    end
+
+                    if mouse.my - ctly --[[obj.sections[10].y + surface_offset.y*lvar.zoom - ctls[i].y*lvar.zoom]] < (ctls[i].ctl_info.cellh - 38)*lvar.zoom then
+                      mouse.context = contexts.dragxy
+                      lvar.xyswid = swid
+                      xy_select = i
+                    else
+                      local xp = math.floor((mouse.mx-12*lvar.zoom - ctlx)/((((ctls[i].w-24)*lvar.zoom)/4)))+1
+                      xp = F_limit(xp, 1, 4)
+                      --DBG(ctlx..'  '..mouse.mx-ctlx-12*lvar.zoom ..'  '..xp)
+                      xysnap_select = xp
+                      xy_select = i
+
+                      --open fss
+                      togfsnap = true
+                      if fsstype_select == ctls[i].param then
+                        show_xysnapshots = not show_xysnapshots
+                        show_fsnapshots = false
+                        RedrawGUIBitmap()
+                      else
+                        show_xysnapshots = true
+                        show_fsnapshots = false
+                        RedrawGUIBitmap()
+                      end
+                      fsstype_select = ctls[i].param
+                      fsstype_color = ctls[i].textcolv
+                      if show_xysnapshots then
+                        if snapshots and snapshots[tracks[track_select].strip] and snapshots[tracks[track_select].strip][page][fsstype_select] then
+
+                          if xysnap_select == 1 then
+                            fss_select = ctls[i].xydata.snapa
+                          elseif xysnap_select == 2 then
+                            fss_select = ctls[i].xydata.snapb
+                          elseif xysnap_select == 3 then
+                            fss_select = ctls[i].xydata.snapc
+                          elseif xysnap_select == 4 then
+                            fss_select = ctls[i].xydata.snapd
+                          end
+                          --[[obj.sections[180].x = F_limit(ctls[i].x - surface_offset.x + obj.sections[10].x +
+                                                        math.floor((ctls[i].w - obj.sections[180].w)/2),
+                                                        obj.sections[10].x,obj.sections[10].x+obj.sections[10].w-obj.sections[180].w)]]
+                          --[[obj.sections[180].y = F_limit(ctls[i].y+ctls[i].ctl_info.cellh
+                                                        - surface_offset.y  + obj.sections[10].y - 3,
+                                                        obj.sections[10].y,obj.sections[10].y+obj.sections[10].h-obj.sections[180].h)]]
+                          obj.sections[180].x = F_limit(ctlx,
+                                                        obj.sections[10].x,obj.sections[10].x+obj.sections[10].w-obj.sections[180].w)
+                          obj.sections[180].y = F_limit(ctly +ctls[i].ctl_info.cellh*lvar.zoom,
+                                                        obj.sections[10].y,obj.sections[10].y+obj.sections[10].h-obj.sections[180].h)
+                          --obj.sections[180].w = ctls[i].wsc * lvar.zoom
+                        else
+                          show_xysnapshots = false
+                        end
+                      end
+                      lupd.update_fsnaps = true
+                      lupd.update_surface = true
+                    end
+
+                  elseif ctls[i].ctlcat == ctlcats.snapshot then
+
+                    togfsnap = FSS_Click(i, ctlxywh, togfsnap)
+
+                  elseif ctls[i].ctlcat == ctlcats.eqcontrol then
+                    eqcontrol_select = i
+                    show_eqcontrol = true
+                    --navigate = false
+                    if ctls[i].eqbands and ctls[i].eqbands[1] then
+                      eqcontrolband_select = 1
+                    end
+                    --EQC_OpenEQs()
+                    lupd.update_gfx = true
+                    RedrawGUIBitmap()
+                  elseif ctls[i].ctlcat == ctlcats.switcher then
+
+                    switcher_select = i
+                    local swctl = switchers[ctls[i].switcherid]
+                    if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.2 then
+                      local strip = tracks[track_select].strip
+                      if lvar.livemode >= 1 and lvar.showpop == true and strips[strip][page].popidx and strips[strip][page].popidx[ctls[i].switcherid] then
+                        PopOut_Delete(ctls[i].switcherid)
+                      elseif lvar.livemode >= 1 and ((strips[strip][page].popidx and not strips[strip][page].popidx[ctls[i].switcherid]) or
+                        strips[strip][page].popidx == nil) then
+                        local x = lvar.spos[ctls[i].switcherid].x - obj.sections[10].x
+                        local y = lvar.spos[ctls[i].switcherid].y - obj.sections[10].y
+                        local w = lvar.spos[ctls[i].switcherid].w
+                        local h = lvar.spos[ctls[i].switcherid].h
+
+                        if lvar.dm_singlepopup then
+                          PopOut_DeleteAll()
+                          x = math.floor(obj.sections[10].w/2 - w/2) -- obj.sections[10].x
+                          y = math.floor(obj.sections[10].h/2 - h/2) -- obj.sections[10].y
+                          if lvar.mmov_show then
+                            if lvar.mixmodedir == 0 then
+                              x = x + math.floor((lvar.mmov_vsize + 2*lvar.mmov_pad)/2)
+                            else
+                              y = y + math.floor((lvar.mmov_vsize + 2*lvar.mmov_pad)/2)
+                            end
+                          end
+                        end
+
+                        PopOut(ctls[i].switcherid,x,y)
+                        ShowPop(true)
+                      elseif lvar.livemode >= 1 and (strips[strip][page].popidx and strips[strip][page].popidx[ctls[i].switcherid]) then
+                        if lvar.dm_singlepopup then
+                          PopOut_DeleteAll()
+                          local w = lvar.spos[ctls[i].switcherid].w
+                          local h = lvar.spos[ctls[i].switcherid].h
+                          local x = math.floor(obj.sections[10].w/2 - w/2) -- obj.sections[10].x
+                          local y = math.floor(obj.sections[10].h/2 - h/2) -- obj.sections[10].y
+                          if lvar.mmov_show then
+                            if lvar.mixmodedir == 0 then
+                              x = x + math.floor((lvar.mmov_vsize + 2*lvar.mmov_pad)/2)
+                            else
+                              y = y + math.floor((lvar.mmov_vsize + 2*lvar.mmov_pad)/2)
+                            end
+                          end
+                          PopOut(ctls[i].switcherid,x,y)
+                        end
+                        ShowPop(true)
+                      end
+
+                    elseif swctl.switchmode == 1 and swctl.extendmode == true then
+                      lvar.dragswitcher = DragSwitcher_Ext(nil, ctls[i].switcherid)
+                      if lvar.dragswitcher then
+                        local strip = tracks[track_select].strip
+                        lvar.omx, lvar.omy = mouse.mx, mouse.my
+
+                        if lvar.livemode >= 1 and lvar.showpop == true and strips[strip][page].popidx and strips[strip][page].popidx[ctls[i].switcherid] then
+                          PopOut_ToTop(ctls[i].switcherid)
+                        else
+                          switchers[ctls[i].switcherid].dragging = true
+                          lupd.update_surface = true
+                        end
+                        lvar.edgedrag_mult = 1
+                        mouse.context = contexts.switchdrag_ext2
+                      end
+                    else
+                      SwitcherMenu_LB()
+                    end
+                    --DragSwitcher_Ext(nil, ctls[i].switcherid)
+                    --if mouse.shift and swctl.switchmode == 1 and swctl.extendmode == true then
+                      --Switcher_Ext_Drag(ctls[i].switcherid, i)
+                      --mouse.context = contexts.switchdrag_ext
+                      --lvar.switchdrag = {c = i, switchid = ctls[i].switcherid}
+                    --else
+                    --  SwitcherMenu_LB()
+                    --end
+                  elseif ctls[i].ctlcat == ctlcats.rcm_switch then
+                    rcm_select = i
+                    RCMMenu_RB()
+                  elseif ctls[i].ctlcat == ctlcats.infoctl then
+
+                    if ctls[i].param == 2 then
+                      mouse.context = contexts.infoctl_click
+                      local ctl = ctls[i]
+                      local offs = lvar.slotoffset[ctl.tracknum or tracks[track_select].tracknum] or 0
+                      lvar.infoclick = {src = i, soffs = offs, t = reaper.time_precise(), active = false, mx = mouse.mx, my = mouse.my}
+                      lvar.omx = mouse.mx
+                      lvar.omy = mouse.my
+                    end
+
+                  elseif ctls[i].ctlcat == ctlcats.statectl_str then
+
+                    lvar.statestr_edit = i
+                    OpenEB(499,'Enter state string to store:',ctls[i].param_info.paramstr or '')
+
+                  end
+
+                elseif ctltype == 7 or ctltype == 8 or ctltype == 9 or ctltype == 10 then
+                  --hold button
+                  if lvar.TSM_MOver then
+                    if lvar.TSM_FocusHwnd then
+                      reaper.JS_Window_SetFocus(lvar.TSM_FocusHwnd)
+                    end
+                    if lvar.TSM_LegalMP then
+                      reaper.JS_Mouse_SetPosition(lvar.TSM_LegalMP.x, lvar.TSM_LegalMP.y)
+                    end
+                    --lvar.TSM_Timer = reaper.time_precise()+lvar.TSM_time
+                    --lvar.TSM_MOver = nil
+                  end
+
+                  holdbtn = i
+                  trackfxparam_select = i
+                  mouse.context = contexts.hold
+                  ctls[i].val = 1
+                  ctls[i].dirty = true
+                  SetCtlDirty(i)
+                  lupd.update_ctls = true
+
+                  A_SetParam(strip, page, i, ctls[i])
+                end
+                noscroll = true
+                --break
+
+              elseif MOUSE_RB() and mouse.ctrl == false then
+                local ccat = ctls[i].ctlcat
+                if ccat == ctlcats.macro then
+                 -- mstr = 'Select Macro Parameters|Edit Macro Parameters'
+                  macroedittype_select = 0
+                  macro_edit_mode = true
+                  macroedit_poffs = 0
+                  trackfxparam_select = i
+                  macroctl_select = trackfxparam_select
+                  RedrawGUIBitmap()
+                  --lupd.update_surface = true
+                  lupd.update_gfx = true
+                elseif ccat == ctlcats.macro_updateparam then
+                  macroedittype_select = 1
+                  macro_edit_mode = true
+                  macroedit_poffs = 0
+                  trackfxparam_select = i
+                  macroctl_select = trackfxparam_select
+                  --lupd.update_surface = true
+                  lupd.update_gfx = true
+                  RedrawGUIBitmap()
+                elseif ccat == ctlcats.snapshotrand then
+                  if not mouse.shift then
+                    if show_mutate then
+                      local ctltype = ctls[i].ctltype
+                      if ctltype == 7 or ctltype == 8 or ctltype == 9 or ctltype == 10 then
+                        --hold button
+                        holdbtn = i
+                        trackfxparam_select = i
+                        mouse.context = contexts.hold
+                        ctls[i].val = 1
+                        ctls[i].dirty = true
+                        SetCtlDirty(i)
+                        lupd.update_ctls = true
+                      end
+                      A_SetParam(strip, page, i, ctls[i])
+                    else
+                      show_mutate = not show_mutate
+                      lupd.update_surface = true
+                      lupd.update_mutate = true
+                      RedrawGUIBitmap()
+                    end
+                  else
+                    show_mutate = not show_mutate
+                    lupd.update_surface = true
+                    lupd.update_mutate = true
+                    RedrawGUIBitmap()
+                    --RBMenu(0, ccat, i)
+                  end
+                elseif ccat == ctlcats.fxgui then
+                  CloseFXGUI(ctls[i])
+                else
+                  RBMenu(0, ccat, i)
+                end
+                noscroll = true
+
+              elseif MOUSE_LB() and mouse.alt then
+
+                if ctls[i].ctlcat == ctlcats.fxparam or
+                   ctls[i].ctlcat == ctlcats.fxoffline then
+                  OpenFXGUI(ctls[i])
+                end
+
+              elseif MOUSE_LB() and mouse.ctrl then --make double-click?
+                local ccat = ctls[i].ctlcat
+                if ccat == ctlcats.switcher and switchers[ctls[i].switcherid].switchmode == 1 and
+                   switchers[ctls[i].switcherid].extendmode == true and mouse.shift then
+                  ShowPop(true)
+                  lvar.dragswitcher = DragSwitcher_Ext(nil, ctls[i].switcherid)
+                  if lvar.dragswitcher then
+                    lvar.edgedrag_mult = 1
+                    mouse.context = contexts.switchdrag_ext2
+                  end
+
+                elseif ccat == ctlcats.snapshotrand then
+                  show_randomopts = true
+                  if randopts_selectctl then
+                    SetCtlDirty(randopts_selectctl)
+                  end
+                  randopts_selectctl = i
+
+                  SetCtlDirty(i)
+                  lupd.update_ctls = true
+
+                  if ctls[i].param == 1 then
+                    show_randomopts = false
+                  end
+                  if show_randomopts == true then
+
+                    RandomOpts_INIT(i)
+
+                  end
+                  lupd.update_gfx = true
+                  RedrawGUIBitmap()
+                  
+                else
+                  if settings_swapctrlclick == true then
+                    SetParam_ToDef(i)
+                  else
+                    SetParam_EnterVal(i)
+                  end
+                end
+                noscroll = true
+
+              elseif settings_mousewheelknob and not mouse.ctrl and gfx.mouse_wheel ~= 0 --[[and i]] then
+
+                local ctltype = ctls[i].ctltype
+                if ctltype == 1 or ctltype == 11 then
+                  trackfxparam_select = i
+                  local v
+                  if ctls[i].ctlcat ~= ctlcats.rs5k then
+                    if mouse.shift then
+                      local mult = ctls[i].knobsens.wheelfine
+                      if mult == 0 then mult = settings_defknobsens.wheelfine end
+                      v = gfx.mouse_wheel/lvar.mousewheel_div * mult
+                    else
+                      local mult = ctls[i].knobsens.wheel
+                      if mult == 0 then mult = settings_defknobsens.wheel end
+                      v = gfx.mouse_wheel/lvar.mousewheel_div * mult
+                    end
+                  else
+                    local mult = 1/lvar.maxsamples
+                    v = gfx.mouse_wheel/lvar.mousewheel_div * mult
+                  end
+                  if ctltype == 11 then v=-v end
+                  ctls[i].val = F_limit(ctls[i].val+v,0,1)
+                  A_SetParam(tracks[track_select].strip,page,i,ctls[i])
+                  --SetParam()
+                  SetCtlDirty(i)
+                  --ctls[i].dirty = true
+                  lupd.update_ctls = true
+                  gfx.mouse_wheel = 0
+
+                elseif ctltype == 4 then
+                  local v = gfx.mouse_wheel/lvar.mousewheel_div
+                  if ctls[i].cycledata.pos == nil then
+                    ctls[i].cycledata.pos = 1
+                  else
+                    ctls[i].cycledata.pos = ctls[i].cycledata.pos + v
+                    if ctls[i].cycledata.pos < 1 then
+                      if ctls[i].cycledata.draggable then
+                        ctls[i].cycledata.pos = 1
+                      else
+                        ctls[i].cycledata.pos = ctls[i].cycledata.statecnt
+                      end
+                    elseif ctls[i].cycledata.pos >
+                            ctls[i].cycledata.statecnt then
+                      if ctls[i].cycledata.draggable then
+                        ctls[i].cycledata.pos = ctls[i].cycledata.statecnt
+                      else
+                        ctls[i].cycledata.pos = 1
+                      end
+                    end
+                  end
+                  if ctls[i].cycledata.pos <=
+                            ctls[i].cycledata.statecnt then
+                    trackfxparam_select = i
+                    if ctls[i].cycledata[ctls[i].cycledata.pos] then
+                      ctls[i].val =
+                          ctls[i].cycledata[ctls[i].cycledata.pos].val
+                      --SetParam()
+                      A_SetParam(tracks[track_select].strip,page,i,ctls[i])
+                      --ctls[i].dirty = true
+                      SetCtlDirty(i)
+                      lupd.update_ctls = true
+                    end
+                  end
+                  noscroll = true
+                  gfx.mouse_wheel = 0
+
+                elseif ctls[i].ctlcat == ctlcats.snapshot then
+
+                  if ctls[i].param_info.paramnum == 1 then
+                    local v = gfx.mouse_wheel/lvar.mousewheel_div
+                    local xsstype_select,xss_select
+                    xsstype_select = ctls[i].param
+                    if snapshots and snapshots[tracks[track_select].strip] and snapshots[tracks[track_select].strip][page][xsstype_select]
+                                                and snapshots[tracks[track_select].strip][page][xsstype_select].selected then
+                      if snapshots[tracks[track_select].strip][page][xsstype_select].selected then
+                        if xsstype_select == 1 then
+                          xss_select = snapshots[tracks[track_select].strip][page][xsstype_select].selected-v
+                          if xss_select < 1 then
+                            xss_select = #snapshots[tracks[track_select].strip][page][xsstype_select]
+                          elseif xss_select > #snapshots[tracks[track_select].strip][page][xsstype_select] then
+                            xss_select = 1
+                          end
+
+                        else
+                          xss_select = snapshots[tracks[track_select].strip][page][xsstype_select].selected-v
+                          if xss_select < 1 then
+                            xss_select = #snapshots[tracks[track_select].strip][page][xsstype_select].snapshot
+                          elseif xss_select > #snapshots[tracks[track_select].strip][page][xsstype_select].snapshot then
+                            xss_select = 1
+                          end
+                        end
+                      else
+                        if xsstype_select == 1 then
+                          if #snapshots[tracks[track_select].strip][page][xsstype_select] > 0 then
+                            xss_select = 1
+                          end
+                        else
+                          if #snapshots[tracks[track_select].strip][page][xsstype_select].snapshot > 0 then
+                            xss_select = 1
+                          end
+                        end
+                      end
+                      if xss_select then
+                        Snapshot_Set(tracks[track_select].strip, page, xsstype_select, xss_select)
+                        if xsstype_select == sstype_select then
+                          ss_select = xss_select
+                        end
+                        SetCtlDirty(i)
+                        lupd.update_ctls = true
+                        lupd.update_snaps = true
+                        --lupd.update_fsnaps = true
+                      end
+                    end
+                  end
+                  noscroll = true
+                  gfx.mouse_wheel = 0
+                elseif ctls[i].ctlcat == ctlcats.infoctl then
+                  local ctl = ctls[i]
+
+                  if ctl.param == 2 then
+                    local v = gfx.mouse_wheel/lvar.mousewheel_div
+                    local idx = ctl.tracknum or tracks[track_select].tracknum
+                    if idx then
+                      local tr = GetTrack(idx)
+                      local fxcnt = reaper.TrackFX_GetCount(tr)
+                      lvar.slotoffset[idx] = math.min(math.max((lvar.slotoffset[idx] or 0) - v,0),fxcnt)
+                      SetCtlDirty(i)
+                      lupd.update_ctls = true
+                    end
+                  end
+                  noscroll = true
+                  gfx.mouse_wheel = 0
+                end
+              end
+            end
+
+            if show_randomopts == true and randomopts_ctls then
+              if randomopts_ctls[i] and randomopts_ctls[i] ~= randomopts_select.param then
+                randomopts_select.param = randomopts_ctls[i]
+                lupd.update_randomopts = true
+              end
+            end
+
+          end
+        end
+
+      end
+
+      if tracks[track_select] then
+        if noscroll == false and MOUSE_click_RB(obj.sections[10]) then
+          local i = GetControlAtXY(tracks[track_select].strip,page,mouse.mx,mouse.my)
+          if i then
+            local ctl = strips[tracks[track_select].strip][page].controls[i]
+            RBMenu(0,ctl.ctlcat,i)
+          else
+            RBMenu(1,nil,nil)
+          end
+        end
+      end
+
+    end
+
+    if show_fsnapshots and togfsnap == false then
+      show_fsnapshots = false
+      lupd.update_surface = true
+      RedrawGUIBitmap()
+    end
+
+    return noscroll
+  end
+
+  function A_Click_M0_StripBrowser(rt, noscroll)
+  
+    noscroll = true
+    mx,my = mouse.mx, mouse.my
+    mouse.mx = mouse.mx - obj.sections[1350].x
+    mouse.my = mouse.my - obj.sections[1350].y
+
+    if MOUSE_click(obj.sections[1353]) then
+
+      --lvar.stripbrowser.favs = true
+      --DBG('AA')
+      --lvar.stripbrowser.showlist = not (lvar.stripbrowser.showlist or false)
+      --lupd.update_stripbrowser = true
+      local ddtab = {idx = 3, x = obj.sections[1350].x+obj.sections[1353].x, y = obj.sections[1350].y+obj.sections[1353].y+obj.sections[1353].h+2, w = obj.sections[1353].w, h = 100, items = {}, wpad = 40}
+      local cnt = #strip_folders
+      ddtab.items[1] = 'FAVS'
+      for sid = 0, cnt do
+        ddtab.items[sid+2] = strip_folders[sid].fn
+      end
+      OpenDropDown(3, ddtab, true, true)
+
+    elseif MOUSE_click_RB(obj.sections[1353]) then
+
+      local export = '#'
+      local exportstrip, exportfolder = ''
+      if lvar.stripbrowser.select then
+        if lvar.stripbrowser.favs == true and strip_favs[lvar.stripbrowser.select+1] then
+          export = ''
+          exportfolder = string.match(strip_favs[lvar.stripbrowser.select+1],'(.-)[\\/].*')
+          exportstrip = string.match(strip_favs[lvar.stripbrowser.select+1],'.-[\\/](.*)')
+        elseif lvar.stripbrowser.favs ~= true and strip_files[lvar.stripbrowser.select] then
+          export = ''
+          exportfolder = strip_folders[stripfol_select].fn
+          exportstrip = strip_files[lvar.stripbrowser.select].fn
+        end
+      end
+      local fbs = ''
+      if lvar.sb_folbtn_show then
+        fbs = '!'
+      end
+      local impfol = strip_folders[stripfol_select].fn
+      local ass = ''
+      if lvar.stripbrowser.favs == true then
+        ass = '#'
+      end
+      local mstr = 'Import Share Strip File (to '..impfol..' folder)|Batch Import Folder Of Share Strips||'
+                    .. export .. 'Export Share Strip File ('..exportstrip..')|'..ass..'Batch Export All Strips In Folder As Share Strip Files'..
+                    '||'..ass..'Associate All Strips In Folder With Plugins|Strip Association Manager||'..fbs..'Show Additional Folder Buttons'
+
+      gfx.x = mx
+      gfx.y = my
+      local res = gfx.showmenu(mstr)
+      if res > 0 then
+        if res == 1 then
+          local stripfn = StripShare_Import()
+          loadstrip = LoadStrip(nil, impfol, stripfn)
+          if loadstrip then
+            local sfxi = GetStripFXInfo(nil, loadstrip)
+            if sfxi and #sfxi == 1 then
+              local stripfn2 = string.match(stripfn,'(.+)%.strip')
+
+              PlugDef_Add(sfxi[1].fxfn, stripfn2, impfol, true, nil)
+            end
+          end
+          
+        elseif res == 2 then
+        
+          BatchImportShareStrips()
+        
+        elseif res == 3 then
+          StripShare_Export(exportfolder..'/',exportstrip)
+        elseif res == 4 then
+          local sfcnt = #strip_files + 1
+          exportfolder = strip_folders[stripfol_select].fn
+          for i = 0, sfcnt-1 do
+            exportstrip = strip_files[i].fn
+            StripShare_Export(exportfolder..'/',exportstrip,exportfolder)
+          end          
+        elseif res == 5 then
+          local sfcnt = #strip_files + 1
+          for i = 0, sfcnt-1 do
+            Strip_SetPlugDef(i, stripfol_select, true)
+            Save_PlugDefs()
+          end
+        elseif res == 6 then
+          lvar.show_stripassoc = true
+          StripAssoc_GetData()
+          lupd.update_gfx = true
+        elseif res == 7 then
+          lvar.sb_folbtn_show = not lvar.sb_folbtn_show
+          lupd.update_stripbrowser = true
+        end
+      end
+
+    elseif MOUSE_click(obj.sections[1358]) and lvar.sb_folbtn_c > 1 and lvar.sb_folbtn_show then
+
+      local idx = math.floor((mouse.mx-obj.sections[1358].x)/lvar.sb_folbtn_w)
+      if idx < lvar.sb_folbtn_c then
+        idx = idx + lvar.sb_folbtn_offs
+        if idx == 0 then
+          lvar.stripbrowser.favs = true
+          lupd.update_stripbrowser = true
+          lvar.reloadsbimages = true
+          PopulateStrips()
+        elseif strip_folders[idx-1] then
+          lvar.stripbrowser.favs = false
+          stripfol_select = idx-1
+          lupd.update_stripbrowser = true
+          lvar.reloadsbimages = true
+          PopulateStrips()
+        end
+      end
+
+    elseif MOUSE_click(obj.sections[1359]) and settings_sbdock == true and lvar.sb_folbtn_c > 1 and lvar.sb_folbtn_show then
+
+      lvar.sb_folbtn_offs = math.max(lvar.sb_folbtn_offs - lvar.sb_folbtn_c,0)
+      lupd.update_stripbrowser = true
+
+    elseif MOUSE_click(obj.sections[1360]) and settings_sbdock == true and lvar.sb_folbtn_c > 1 and lvar.sb_folbtn_show then
+
+      lvar.sb_folbtn_offs = math.min(lvar.sb_folbtn_offs + lvar.sb_folbtn_c, #strip_folders-lvar.sb_folbtn_c+2)
+      lupd.update_stripbrowser = true
+
+    elseif mouse.my < butt_h*pnl_scale then
+      if mouse.RB and MOUSE_over(obj.sections[1357]) then
+
+        if lvar.stripbrowser.dockpos == 1 then
+          mstr = '!Dock to top edge|Dock to right edge'
+        else
+          mstr = 'Dock to top edge|!Dock to right edge'
+        end
+        gfx.x, gfx.y = mx, my
+        local res = gfx.showmenu(mstr)
+        if res > 0 then
+          lvar.stripbrowser.dockpos = res
+          sbwin.w = lvar.sbmin*pnl_scale
+          sbwin.h = lvar.sbmin*pnl_scale
+          SBDock(true)
+          obj = GetObjects()
+          lupd.update_gfx = true
+        end
+
+      elseif mouse.RB then
+        SetShowSB(false)
+        lupd.update_surface = true
+
+      elseif mouse.LB then
+        if MOUSE_click(obj.sections[1357]) then
+
+          SBDock(not settings_sbdock)
+
+        elseif settings_sbdock ~= true then
+          mouse.context = contexts.move_sbwin
+          movesbwin = {dx = mouse.mx, dy = mouse.my}
+        end
+      end
+
+    elseif MOUSE_click(obj.sections[1354])  then
+
+      if settings_sbdock ~= true then
+        mouse.context = contexts.resize_sbwin
+        sbwinrsz = {mx = mx, my = my, w = sbwin.w, h = sbwin.h, x = obj.sections[1350].x, y = obj.sections[1350].y, sc_w = obj.sections[1350].w, sc_h = obj.sections[1350].h}
+      end
+
+    elseif MOUSE_click(obj.sections[1355]) then
+
+      if settings_sbdock ~= true or lvar.stripbrowser.dockpos == 1 then
+        mouse.context = contexts.resize_sbwinv
+        sbwinrsz = {my = my, h = sbwin.h, y = obj.sections[1350].y, sc_h = obj.sections[1350].h}
+      end
+
+    elseif MOUSE_click(obj.sections[1356])  then
+
+      mouse.context = contexts.resize_sbwinh
+      sbwinrsz = {mx = mx, w = sbwin.w, x = obj.sections[1350].x, sc_w = obj.sections[1350].w, mmx = mouse.mx, ddx = mx - obj.sections[1350].x, ep = obj.sections[1350].x + obj.sections[1350].w}
+
+    elseif lvar.stripbrowser.showlist == true and MOUSE_click(obj.sections[1351]) then
+
+      local n = math.floor((mouse.my - obj.sections[1351].y) / math.floor(butt_h*pnl_scale))-1
+      if n == -1 then
+        lvar.stripbrowser.favs = true
+      else
+        if strip_folders[n+sbsflist_offset] then
+          lvar.stripbrowser.favs = false
+          stripfol_select = n+sbsflist_offset
+          PopulateStrips()
+        end
+      end
+      lvar.stripbrowser.showlist = false
+      lupd.update_stripbrowser = true
+
+    elseif MOUSE_click(obj.sections[1352]) then
+
+      if lvar.stripbrowser.showlist == true then
+        lvar.stripbrowser.showlist = false
+        lupd.update_stripbrowser = true
+      end
+      local minw, minh = math.floor(lvar.stripbrowser.minw), math.floor(lvar.stripbrowser.minh)
+
+      local w,h = gfx.getimgdim(skin.star)
+      local dx, dy = math.max(math.floor((lvar.stripbrowser.imgw-minw)/2),math.floor(5*pnl_scale)),
+                     math.max(math.floor((lvar.stripbrowser.imgh-minh)/2),math.floor(5*pnl_scale))
+      local x = math.floor(mouse.mx - (obj.sections[1352].x +dx+15)) % (lvar.stripbrowser.imgw+10)
+      local y = math.floor(mouse.my - (obj.sections[1352].y +dy+5) + h/2) % (lvar.stripbrowser.imgh+10)
+
+      if x >= minw/2-w/2 and x <= minw/2+w/2
+         and y > 2 and y <= 15 then
+
+        local x = math.floor((mouse.mx - obj.sections[1352].x)/(obj.sections[1352].w/lvar.stripbrowser.xnum))
+        local y = math.floor((mouse.my - obj.sections[1352].y)/(obj.sections[1352].h/lvar.stripbrowser.ynum))
+        local offset = (lvar.stripbrowser.ynum*lvar.stripbrowser.xnum) * lvar.stripbrowser.page
+
+        local n = x + (y*lvar.stripbrowser.xnum) + offset
+        lvar.stripbrowser.select = n
+
+        if (lvar.stripbrowser.favs == true and strip_favs[n+1]) or (lvar.stripbrowser.favs ~= true and strip_files[n]) then
+          local fn
+          if lvar.stripbrowser.favs == true then
+            fn = strip_favs[n+1]
+          else
+            fn = strip_folders[stripfol_select].fn..'/'..strip_files[n].fn
+          end
+
+          if InFavs(fn) then
+            RemoveFav(fn)
+          else
+            strip_favs[#strip_favs+1] = fn
+          end
+        end
+        lupd.update_stripbrowser = true
+
+      elseif mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.2 then
+
+        if lvar.livemode == 0 then
+          if lvar.stripbrowser.select then
+            loadstrip = nil
+            local fn
+            if lvar.stripbrowser.favs == true then
+              fn = strip_favs[lvar.stripbrowser.select+1]
+            else
+              if strip_files[lvar.stripbrowser.select] then
+                fn = strip_folders[stripfol_select].fn..'/'..strip_files[lvar.stripbrowser.select].fn
+              end
+            end
+            if fn then
+              if settings_stripautosnap == true or show_striplayout == false or stripgallery_view > 0 then
+                InsStrip(fn)
+              end
+            end
+          end
+        end
+
+      else
+
+        loadstrip = nil
+        local x = math.floor((mouse.mx - obj.sections[1352].x)/(obj.sections[1352].w/lvar.stripbrowser.xnum))
+        local y = math.floor((mouse.my - obj.sections[1352].y)/(obj.sections[1352].h/lvar.stripbrowser.ynum))
+        local offset = (lvar.stripbrowser.ynum*lvar.stripbrowser.xnum) * lvar.stripbrowser.page
+
+        local n = x + (y*lvar.stripbrowser.xnum) + offset
+        lvar.stripbrowser.select = n
+
+        lupd.update_stripbrowser = true
+        if (lvar.stripbrowser.favs == true and strip_favs[n+1]) or
+           (lvar.stripbrowser.favs ~= true and strip_files[n]) then
+
+          if show_striplayout == false and stripgallery_view == 0 then
+            mouse.context = contexts.sb_dragstrip
+            local fn
+            if lvar.stripbrowser.favs == true then
+              fn = paths.strips_path..string.match(strip_favs[n+1],'(.+)%.strip')..'.png'
+            else
+              fn = paths.strips_path..strip_folders[stripfol_select].fn..'/'..string.match(strip_files[n].fn,'(.+)%.strip')..'.png'
+            end
+            local img = 980
+            if reaper.file_exists(fn) then
+              gfx.loadimg(img, fn)
+            else
+              img = skin.sbicon
+            end
+            local pw = lvar.stripbrowser.minw
+            local ph = lvar.stripbrowser.minh
+            local w,h = gfx.getimgdim(img)
+            local scale = math.min(pw/w,ph/h)
+
+            local drags
+            if lvar.livemode >= 1 then
+              drags = DragSwitcher_Ext(nil, nil, true)
+            end
+            --if drags then
+              sb_drag = {x = mouse.mx, y = mouse.my, img = img, scale = scale, w = w, h = h,
+                         xoff = math.floor((w*scale)/2), yoff = math.floor((h*scale)/2),
+                         alpha = 0, drags = drags, fn = fn, showpop = lvar.showpop}
+            
+            --end
+          end
+        end
+
+      end
+
+    elseif MOUSE_click_RB(obj.sections[1352]) then
+
+      local x = math.floor((mouse.mx - obj.sections[1352].x)/(obj.sections[1352].w/lvar.stripbrowser.xnum))
+      local y = math.floor((mouse.my - obj.sections[1352].y)/(obj.sections[1352].h/lvar.stripbrowser.ynum))
+      local offset = (lvar.stripbrowser.ynum*lvar.stripbrowser.xnum) * lvar.stripbrowser.page
+
+      local n = x + (y*lvar.stripbrowser.xnum) + offset
+      lvar.stripbrowser.select = n
+
+      if mouse.shift then
+        lupd.update_stripbrowser = true
+        lupd = GUI_draw(obj, gui)
+        gfx.update()
+
+        lvar.openmenu = {func = SBMenu_RB}
+
+      else
+        lupd.update_stripbrowser = true
+        if (lvar.stripbrowser.favs == true and strip_favs[n+1]) then
+          movefav = table.copy(strip_favs)
+          movefav_n = table.copy(strip_favs_n)
+          lvar.stripbrowser.moveselect = n
+          mouse.context = contexts.sb_movefav
+        end
+      end
+    end
+
+    mouse.mx = mx
+    mouse.my = my
+
+    return noscroll
+    
+  end
+
+  function A_Click_M0_SampleManager(rt, noscroll)
+
+    noscroll = true
+    mx,my = mouse.mx, mouse.my
+    mouse.mx = mouse.mx - obj.sections[1300].x
+    mouse.my = mouse.my - obj.sections[1300].y
+
+    local strip = tracks[track_select].strip
+    local ctl = strips[strip][page].controls[rs5k_select]
+
+    if mouse.my < butt_h*pnl_scale then
+      if mouse.RB then
+        SetShowSampleManager(false)
+      elseif mouse.LB then
+        mouse.context = contexts.move_smwin
+        movesmwin = {dx = mouse.mx, dy = mouse.my}
+      end
+
+    elseif MOUSE_click(obj.sections[1310])  then
+
+      mouse.context = contexts.resize_smwin
+      smwinrsz = {mx = mx, my = my, w = smwin.w, h = smwin.h, x = obj.sections[1300].x, y = obj.sections[1300].y, sc_w = obj.sections[1300].w, sc_h = obj.sections[1300].h}
+
+    elseif MOUSE_click(obj.sections[1311])  then
+
+      mouse.context = contexts.resize_smwinv
+      smwinrsz = {my = my, h = smwin.h, y = obj.sections[1300].y, sc_h = obj.sections[1300].h}
+
+    elseif MOUSE_click(obj.sections[1303]) then
+
+      local rsdata
+      if smshowfavs then
+        rsdata = samplefavs
+      else
+        rsdata = ctl.rsdata
+      end
+
+      local msbh = obj.sections[1303].h
+      local p1 = 1 / #rsdata.samples
+      local sbh = math.ceil(F_limit(p1*SM_butt_cnt * msbh,20,msbh))
+      local p2 = p1*msbh
+      local sby = math.floor(smlist_offset * p2)
+
+      sby = math.min(sby,--[[obj.sections[1303].y+]]msbh-sbh-1)
+
+      if mouse.my >= obj.sections[1303].y + sby and mouse.my <= obj.sections[1303].y + sby+sbh then
+
+        if SM_butt_cnt < #rsdata.samples then
+          mouse.context = contexts.scrollsamples
+          scrollsamps = {y = mouse.my-obj.sections[1303].y, lo = smlist_offset}
+          lupd.update_samplemanager = true
+        else
+          smlist_offset = 0
+        end
+
+      elseif mouse.my < obj.sections[1303].y + sby then
+
+      elseif mouse.my > obj.sections[1303].y + sby+sbh then
+
+      end
+
+    elseif MOUSE_click(obj.sections[1302]) then
+      local v = math.floor((mouse.my - obj.sections[1302].y) / tb_butt_h)+1 + smlist_offset
+      local rsdata
+      if smshowfavs then
+        rsdata = samplefavs
+      else
+        rsdata = ctl.rsdata
+      end
+      if v <= #rsdata.samples then
+        local starw, starh = gfx.getimgdim(skin.star)
+
+        if mouse.mx < obj.sections[1302].w-starw then
+          if smshowfavs then
+            v = rsdata.samples[v].idx
+          end
+          sample_select = v
+          lupd.update_samplemanager = true
+          --if ctl.rsdata.samples[v].fn then
+            ctl.val = (v-1) / lvar.maxsamples
+            A_SetParam(strip,page,rs5k_select,ctl)
+            SetCtlDirty(rs5k_select)
+            lupd.update_ctls = true
+          --end
+        else
+          if rsdata.samples[v].fn then
+            rsdata.samples[v].fav = not (rsdata.samples[v].fav or false)
+            --PopSampleFavIdx()
+            lupd.update_samplemanager = true
+          end
+        end
+      end
+
+    elseif MOUSE_click(obj.sections[1304]) then
+
+      if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.15 then
+        gfx.dest = 909
+        gfx.x = mouse.mx - obj.sections[1304].x + lvar.kb.offset
+        gfx.y = mouse.my - obj.sections[1304].y + lvar.kb.wkey_h
+        local r,_,_ = gfx.getpixel()
+
+        lvar.kb.kstart = r*255
+        lvar.kb.kend = r*255
+
+        GUI_DrawKeyboardOverlay(obj, gui)
+        lupd.update_samplemanager = true
+
+        gfx.dest = 1
+
+        --Set plugin params
+        --local ctl = strips[tracks[track_select].strip][page].controls[rs5k_select]
+        local trn = ctl.tracknum or strips[strip].track.tracknum
+        local track = GetTrack(trn)
+        local fxnum = ctl.fxnum
+        local pstart = 3
+        local pend = 4
+        reaper.TrackFX_SetParam(track,fxnum,pstart,lvar.kb.kstart/128)
+        reaper.TrackFX_SetParam(track,fxnum,pend,lvar.kb.kend/128)
+
+      elseif mouse.shift then
+        gfx.dest = 909
+        gfx.x = mouse.mx - obj.sections[1304].x + lvar.kb.offset
+        gfx.y = mouse.my - obj.sections[1304].y + lvar.kb.wkey_h
+        local r,_,_ = gfx.getpixel()
+
+        lvar.kb.kend = r*255
+        if not lvar.kb.kstart then
+          lvar.kb.kstart = r*255
+        end
+        if lvar.kb.kstart > lvar.kb.kend then
+          local ke = lvar.kb.kend
+          lvar.kb.kend = lvar.kb.kstart
+          lvar.kb.kstart = ke
+        end
+        GUI_DrawKeyboardOverlay(obj, gui)
+        lupd.update_samplemanager = true
+
+        gfx.dest = 1
+
+        --Set plugin params
+        --local ctl = strips[tracks[track_select].strip][page].controls[rs5k_select]
+        local trn = ctl.tracknum or strips[strip].track.tracknum
+        local track = GetTrack(trn)
+        local fxnum = ctl.fxnum
+        local pstart = 3
+        local pend = 4
+        reaper.TrackFX_SetParam(track,fxnum,pstart,lvar.kb.kstart/128)
+        reaper.TrackFX_SetParam(track,fxnum,pend,lvar.kb.kend/128)
+
+      else
+        mouse.context = contexts.scrollkeyb
+        scrollkeyb = {x = mouse.mx-obj.sections[1304].x, lo = lvar.kb.offset}
+      end
+
+    elseif MOUSE_click_RB(obj.sections[1304]) then
+
+      gfx.dest = 909
+      gfx.x = mouse.mx - obj.sections[1304].x + lvar.kb.offset
+      gfx.y = mouse.my - obj.sections[1304].y + lvar.kb.wkey_h
+      local r,_,_ = gfx.getpixel()
+
+      lvar.rs.pitch = (r*255)-72
+      local v = 0.5 - (lvar.rs.pitch*(1/160))
+
+      local trn = ctl.tracknum or strips[strip].track.tracknum
+      local track = GetTrack(trn)
+      local fxnum = ctl.fxnum
+      reaper.TrackFX_SetParam(track,fxnum,15,v)
+
+      GUI_DrawKeyboardOverlay(obj, gui)
+      lupd.update_samplemanager = true
+
+    elseif MOUSE_click(obj.sections[1305]) then
+
+      RSMenuOut(mx,my)
+
+    elseif MOUSE_click(obj.sections[1306]) then
+
+      local fol, fil = RS5k_GetSample()
+      if fol and fil then
+
+        local sidx = #ctl.rsdata.samples+1
+        ctl.rsdata.samples[sidx] = {fol = fol,
+                                    fn = fil}
+        ctl.rsdata.samplesidx[fol..fil] = sidx
+        lupd.update_samplemanager = true
+        smlist_offset = sidx - SM_butt_cnt
+
+      end
+
+    elseif MOUSE_click(obj.sections[1307]) then
+
+      if sample_select then
+        local fol, fil = RS5k_GetSample()
+        if fol and fil then
+
+          local sidx = sample_select
+          if ctl.rsdata.samples[sidx] and ctl.rsdata.samples[sidx].fn then
+            ctl.rsdata.samplesidx[ctl.rsdata.samples[sidx].fol..ctl.rsdata.samples[sidx].fn] = nil
+          end
+          ctl.rsdata.samples[sidx] = {fol = fol,
+                                      fn = fil}
+          ctl.rsdata.samplesidx[fol..fil] = sidx
+          lupd.update_samplemanager = true
+          ctl.val = (sample_select-1) / lvar.maxsamples
+          A_SetParam(strip,page,rs5k_select,ctl)
+          SetCtlDirty(rs5k_select)
+          lupd.update_ctls = true
+
+        end
+      end
+
+    elseif MOUSE_click(obj.sections[1308]) then
+
+      if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.15 then
+        if sample_select then
+
+          if ctl.rsdata.samples[sample_select] and ctl.rsdata.samples[sample_select].fn then
+            ctl.rsdata.samplesidx[ctl.rsdata.samples[sample_select].fol..ctl.rsdata.samples[sample_select].fn] = nil
+            ctl.rsdata.samples[sample_select].fn = nil
+          end
+
+          lupd.update_samplemanager = true
+          ctl.val = (sample_select-1) / lvar.maxsamples
+          A_SetParam(strip,page,rs5k_select,ctl)
+          SetCtlDirty(rs5k_select)
+          lupd.update_ctls = true
+        end
+      end
+
+    elseif MOUSE_click(obj.sections[1309]) then
+
+      smshowfavs = not (smshowfavs or false)
+      smlist_offset = 0
+      if smshowfavs == true then
+        PopSampleFavIdx()
+      end
+      lupd.update_samplemanager = true
+
+    elseif MOUSE_click(obj.sections[1301]) then
+
+      if not ctl.rsdata.samplefolder then
+        RS5k_LoadFolder(strip, page, rs5k_select, false)
+        smlist_offset = 0
+        lupd.update_samplemanager = true
+
+      else
+        mstr = 'Rescan Folder||Load Folder|Load Folder (+subfolders)'
+        gfx.x = mx
+        gfx.y = my
+        local res = gfx.showmenu(mstr)
+        if res > 0 then
+
+          if res == 1 then
+            RS5k_RescanFolder(strip, page, rs5k_select)
+          elseif res == 2 then
+            RS5k_LoadFolder(strip, page, rs5k_select, false)
+            smlist_offset = 0
+          elseif res == 3 then
+            RS5k_LoadFolder(strip, page, rs5k_select, true)
+            smlist_offset = 0
+          end
+          lupd.update_samplemanager = true
+
+        end
+      end
+
+    elseif MOUSE_click_RB(obj.sections[1301]) then
+
+      local t = ''
+      if not ctl.rsdata.samplefolder then
+        t = '#'
+      end
+      mstr = t..'Rescan Folder||Load Folder|Load Folder (+subfolders)'
+      gfx.x = mx
+      gfx.y = my
+      local res = gfx.showmenu(mstr)
+      if res > 0 then
+
+        if res == 1 then
+          RS5k_RescanFolder(strip, page, rs5k_select)
+        elseif res == 2 then
+          RS5k_LoadFolder(strip, page, rs5k_select, false)
+          smlist_offset = 0
+        elseif res == 3 then
+          RS5k_LoadFolder(strip, page, rs5k_select, true)
+          smlist_offset = 0
+        end
+        lupd.update_samplemanager = true
+
+      end
+
+    end
+
+    mouse.mx = mx
+    mouse.my = my
+
+    return noscroll
+    
+  end
+
+  function A_Click_M0_TopBar(rt, noscroll)
+
+
+
+    return noscroll
+    
+  end
+
+  function A_Click_M0_Sidebar(rt, noscroll)
+
+
+
+    return noscroll
+    
+  end
+
+  function A_Click_M0_TrBtns(rt, noscroll)
+
+    if MOUSE_click_RB(obj.sections[5041]) then
+      TrackSetListMenu(mouse.mx,mouse.my)
+
+    elseif MOUSE_click(obj.sections[5041]) then
+      if not mouse.shift then
+        FolderTrackListMenu(mouse.mx,mouse.my)
+      else
+        TrackSetListMenu(mouse.mx,mouse.my)
+      end
+
+    elseif MOUSE_click_RB(obj.sections[5000]) then
+
+      local ar = ''
+      if lvar.dm_autorefresh then
+        ar = '!'
+      end
+      local mstr = '#Clear saved data||'..ar..'Auto Refresh Page'
+      gfx.x = mouse.mx
+      gfx.y = mouse.my
+      local res = gfx.showmenu(mstr)
+      if res > 0 then
+        if res == 1 then
+          lvar.stripstore = nil
+          lvar.snapstore = nil
+          DM_RefreshPage()
+        elseif res == 2 then
+          lvar.dm_autorefresh = not lvar.dm_autorefresh
+        end
+      end
+
+    elseif MOUSE_click_RB(obj.sections[5006]) then
+
+      local trn = lvar.dynamicmode_trn
+      if trn then
+        local track = GetTrack(trn)
+        if track then
+          local _, trnm = reaper.GetTrackName(track)
+          local mstr
+          if lvar.dm_backtrack then
+            local pt1,pt2,pt3,pt4 = '','','',''
+            if lvar.dm_backtrack.page == 1 then
+              pt1 = '!'
+            elseif lvar.dm_backtrack.page == 2 then
+              pt2 = '!'
+            elseif lvar.dm_backtrack.page == 3 then
+              pt3 = '!'
+            elseif lvar.dm_backtrack.page == 4 then
+              pt4 = '!'
+            end
+            mstr = "Set '"..trnm.."' as return track||#Set return track page:|"..pt1.."Page 1|"..pt2.."Page 2|"..pt3.."Page 3|"..pt4.."Page 4||Clear return track"
+          else
+            mstr = "Set '"..trnm.."' as return track||#Set return track page:|#Page 1|#Page 2|#Page 3|#Page 4"
+          end
+          gfx.x = mouse.mx
+          gfx.y = mouse.my
+          local res = gfx.showmenu(mstr)
+          if res > 0 then
+            if res == 1 then
+              lvar.dm_backtrack = {trn = lvar.dynamicmode_trn, guid = lvar.dynamicmode_guid, page = 1}
+              lupd.update_trbtns = true
+            elseif res >= 3 and res <= 6 then
+              local p = res - 2
+              lvar.dm_backtrack.page = p
+            elseif res == 7 then
+              lvar.dm_backtrack = nil
+              lupd.update_trbtns = true
+            end
+          end
+        end
+      end
+
+    elseif MOUSE_click(obj.sections[5006]) then
+
+      if lvar.dm_backtrack then
+        local trn = lvar.dm_backtrack.trn
+        if trn ~= -1 then
+          local track = GetTrack(trn)
+          if not track then
+            trn = GetTRNfromGUID(lvar.dm_backtrack.guid)
+            if trn then
+              lvar.dm_backtrack.trn = trn
+            end
+          else
+            --check guid
+            if lvar.dm_backtrack.guid == reaper.GetTrackGUID(track) then
+            else
+              trn = GetTRNfromGUID(lvar.dm_backtrack.guid)
+              if trn then
+                lvar.dm_backtrack.trn = trn
+              end
+            end
+          end
+        end
+        if trn then
+          ChangeTrack2(trn, lvar.dm_backtrack.page, true)
+        end
+      elseif lvar.dm_ret_track then
+        ChangeTrack2(lvar.dm_ret_track, lvar.dm_ret_page, true)
+      end
+
+    elseif obj.sections[5007] and MOUSE_click(obj.sections[5007]) then
+
+      SetGlobalPage()
+
+    elseif MOUSE_click(obj.sections[5002]) then
+
+      if not mouse.shift then
+        local mr = math.min(lvar.trov_maxrows-1,lvar.dm_maxvistracks)
+        lvar.trbtns_offs = math.max(F_limit(lvar.trbtns_offs - mr,0,#lvar.dm_trackbtns[lvar.dm_tbidx]-mr),0)
+        lupd.update_trbtns = true
+      else
+        local t = (lvar.dynamicmode_trn or 0) - 1
+        if t < -1 then t = #tracks end
+        local track = GetTrack(t)
+        reaper.SetOnlyTrackSelected(track)
+        DM_AddStrips()
+      end
+
+    elseif MOUSE_click(obj.sections[5003]) then
+
+      if not mouse.shift then
+        local mr = math.min(lvar.trov_maxrows-1,lvar.dm_maxvistracks)
+        lvar.trbtns_offs = math.max(F_limit(lvar.trbtns_offs + mr,0,#lvar.dm_trackbtns[lvar.dm_tbidx]-mr),0)
+        lupd.update_trbtns = true
+      else
+        local t = (lvar.dynamicmode_trn or #tracks) + 1
+        if t > #tracks then t = -1 end
+        local track = GetTrack(t)
+        reaper.SetOnlyTrackSelected(track)
+        DM_AddStrips()
+      end
+
+    elseif (MOUSE_click(obj.sections[5005]) or MOUSE_click_RB(obj.sections[5005])) then
+      if MOUSE_click(obj.sections[5005]) then
+        local x = math.floor((mouse.mx - obj.sections[5005].x)/(obj.sections[5004].w+10))+1
+        local dm_trackbtns = lvar.dm_trackbtns[lvar.dm_tbidx]
+        local cnt = math.min(--[[(#dm_trackbtns+1),]] lvar.trov_maxrows, lvar.dm_maxvistracks+1)
+        if x == cnt then
+          local tbguididx = {}
+          for i = 1, #dm_trackbtns do
+            if dm_trackbtns[i].trn == -1 then
+              tbguididx[-1] = true
+            else
+              tbguididx[dm_trackbtns[i].guid] = true
+            end
+          end
+
+          if lvar.dm_tbidx > 0 --[[and lvar.dynamicmode_trn]] then
+            for t = 0, reaper.CountSelectedTracks2(0,true)-1 do
+              local tr = reaper.GetSelectedTrack2(0,t,true)
+              local trn = reaper.GetMediaTrackInfo_Value(tr, 'IP_TRACKNUMBER')
+              local guid = reaper.GetTrackGUID(tr)
+              if not (tbguididx[guid] or tbguididx[trn]) then
+                if trn == -1 then
+                  dm_trackbtns[#dm_trackbtns+1] = {guid = guid, trn = trn}
+                else
+                  dm_trackbtns[#dm_trackbtns+1] = {guid = guid, trn = trn-1}
+                end
+                lupd.update_surface = true
+                lupd.update_trbtns = true
+              end
+            end
+
+            --[[local fnd
+            for i = 1, #dm_trackbtns do
+              if dm_trackbtns[i].guid == lvar.dynamicmode_guid or (lvar.dynamicmode_trn == -1 and dm_trackbtns[i].trn == -1) then
+                fnd = true
+                break
+              end
+            end
+            if not fnd then
+              dm_trackbtns[#dm_trackbtns+1] = {guid = lvar.dynamicmode_guid, trn = lvar.dynamicmode_trn}
+              lupd.update_surface = true
+              lupd.update_trbtns = true
+            end]]
+          end
+
+          --obj = PosTrBtns(obj)
+          Repos5005()
+
+        else
+          local x = x + lvar.trbtns_offs
+          if dm_trackbtns[x] then
+            if not mouse.shift then
+              if dm_trackbtns[x] then
+                local tr = GetTrack(dm_trackbtns[x].trn)
+                if tr then
+                  if reaper.GetTrackGUID(tr) ~= dm_trackbtns[x].guid and dm_trackbtns[x].trn ~= -1 then
+                    tr = reaper.BR_GetMediaTrackByGUID(0, dm_trackbtns[x].guid)
+                    if tr then
+                      dm_trackbtns[x].trn = reaper.GetMediaTrackInfo_Value(tr, 'IP_TRACKNUMBER')-1
+                    end
+                  end
+                end
+                if tr then
+                  if not mouse.ctrl then
+                    if dm_trackbtns[x].trn ~= lvar.dynamicmode_trn then
+                      reaper.SetOnlyTrackSelected(tr)
+                      DM_AddStrips()
+                      reaper.Main_OnCommand(40913,0)
+                      reaper.SetMixerScroll(tr)
+                      
+                      mouse.context = contexts.dm_selecttracks
+                      lvar.dmsl = {x = x - lvar.trbtns_offs, delay = reaper.time_precise()+0.2}
+                      
+                    elseif dm_trackbtns[x].trn ~= -1 then
+                      --solo/unsolo
+                      lvar.trbtn_solo = true
+                      --[[local solo = reaper.GetMediaTrackInfo_Value(tr, 'I_SOLO')
+                      solo = 2-solo
+                      reaper.CSurf_OnSoloChangeEx(tr, solo, true)]]
+
+                      mouse.context = contexts.dm_selecttracks
+                      lvar.dmsl = {x = x - lvar.trbtns_offs, delay = reaper.time_precise()+0.2}
+                      --reaper.SetMediaTrackInfo_Value(tr, 'I_SOLO', solo)
+                    end
+                  else --ctrl
+                    mouse.context = contexts.dm_selecttracks
+                    lvar.dmsl = {x = x - lvar.trbtns_offs, delay = 0}
+                  end
+                end
+              end
+            else
+              local idx
+              for i = 1, #dm_trackbtns do
+                --DBG(math.max(dm_trackbtns[i].trn-1,-1)..'  '..lvar.dynamicmode_trn)
+                if dm_trackbtns[i].guid == lvar.dynamicmode_guid or (lvar.dynamicmode_trn == -1 and dm_trackbtns[i].trn == -1) then
+                  idx = i
+                  break
+                end
+              end
+              if idx and idx ~= x then
+                table.shift(dm_trackbtns,idx,x)
+                lvar.dm_trackbtns[lvar.dm_tbidx] = dm_trackbtns
+                lupd.update_trbtns = true
+              end
+            end
+          end
+        end
+      else --right-click
+        local x = math.floor((mouse.mx - obj.sections[5005].x)/(obj.sections[5004].w+10))+1
+        local dm_trackbtns = lvar.dm_trackbtns[lvar.dm_tbidx]
+        if x == math.min(lvar.trov_maxrows,lvar.dm_maxvistracks+1) or x == #dm_trackbtns + 1 then
+          local pm = ''
+          if lvar.trbtns_meters then
+            pm = '!'
+          end
+          local mstr = 'Max Visible Tracks ('..string.format('%i',lvar.dm_maxvistracks)..')||'..pm..'Show Peak Meters||Set Peak Meter Color'
+          gfx.x, gfx.y = mouse.mx, mouse.my
+          local res = gfx.showmenu(mstr)
+          if res then
+            if res == 1 then
+              local retval, val = reaper.GetUserInputs('Max Mixer Tracks',1,'Enter Maximum:','')
+              if retval and tonumber(val) then
+                lvar.dm_maxvistracks = tonumber(val)
+                obj = PosTrBtns(obj)
+                lupd.update_trbtns = true
+              end
+            elseif res == 2 then
+              lvar.trbtns_meters = not lvar.trbtns_meters
+              lupd.update_trbtns = true
+            elseif res == 3 then
+              local retval, c = reaper.GR_SelectColor(_,ConvertColorString(lvar.trbtns_pkcolor))
+              if retval ~= 0 then
+                lvar.trbtns_pkcolor = ConvertColor(c)
+                lupd.update_trbtns = true
+              end
+            end
+          end
+        else
+          if mouse.shift and lvar.dm_tbidx > 0 then
+            x = x+lvar.trbtns_offs
+            if dm_trackbtns[x] then
+              local mstr = 'Clear'
+              gfx.x, gfx.y = mouse.mx, mouse.my
+              local res = gfx.showmenu(mstr)
+              if res then
+                if res == 1 then
+                  local dm_tbs = {}
+                  for i = 1, #dm_trackbtns do
+                    if i ~= x then
+                      dm_tbs[#dm_tbs+1] = dm_trackbtns[i]
+                    end
+                  end
+                  lvar.dm_trackbtns[lvar.dm_tbidx] = dm_tbs
+                  lupd.update_trbtns = true
+                  Repos5005()
+                  --obj = PosTrBtns(obj)
+                  noscroll = true
+                end
+              end
+            end
+          else
+            --mute/menu
+            if dm_trackbtns[x] then
+              local tr = GetTrack(dm_trackbtns[x].trn)
+              if tr then
+                if reaper.GetTrackGUID(tr) ~= dm_trackbtns[x].guid and dm_trackbtns[x].trn ~= -1 then
+                  tr = reaper.BR_GetMediaTrackByGUID(0, dm_trackbtns[x].guid)
+                  if tr then
+                    dm_trackbtns[x].trn = reaper.GetMediaTrackInfo_Value(tr, 'IP_TRACKNUMBER')-1
+                  end
+                end
+              end
+              if tr then
+                if lvar.trmix_show then
+
+                  local x, y = reaper.GetMousePosition()
+                  reaper.ShowPopupMenu('track_panel',x,y,nil,tr)
+                  lupd.update_trbtns = true
+                  --return selected track to previous
+
+                  local tr2 = GetTrack(lvar.dynamicmode_trn)
+                  reaper.SetOnlyTrackSelected(tr2)
+                else
+                  if dm_trackbtns[x].trn ~= -1 then
+                    --mute/unmute
+                    local mute = reaper.GetMediaTrackInfo_Value(tr, 'B_MUTE')
+                    mute = 1-mute
+                    reaper.SetMediaTrackInfo_Value(tr, 'B_MUTE', mute)
+                  end
+                end
+              end
+            end
+          end
+        end
+      end
+    end
+
+    return noscroll
+    
+  end
+
+  function A_Click_M0_TrMix(rt, noscroll)
+
+    if lvar.analyzer.active and lvar.analyzer.showcontrols and MOUSE_click(obj.sections[5047]) then
+    
+      local p = mouse.my - obj.sections[5047].y - 5
+      local c = math.floor((p)/30)+1
+      local idx = lvar.analyzer.pos+1
+      local ctls = lvar.analyzer.controls[idx]
+      if ctls and ctls[c] then
+
+        local tr = Analyzer_GetTrack()
+        if tr then
+          local param = ctls[c].param
+          local val = reaper.TrackFX_GetParamNormalized(tr,idx-1,param)
+          lvar.draganalyzercontrol = {param = param, val = val, my = mouse.my, tr = tr, sens = ctls[c].sens or 240}
+          mouse.context = contexts.analyzerctl
+        end
+      end
+
+    elseif MOUSE_click(obj.sections[5080]) then
+
+      mouse.context = contexts.mixer_drag
+      
+      local sz = lvar.trbtns_size
+      
+      panelw = (obj.sections[10].w - (lvar.trov_maxrows*(sz+10)))/2
+              
+      lvar.mdrag = {mx = mouse.mx, osz = math.max(lvar.trmix_panelsz,panelw), dir = 1}
+
+    elseif MOUSE_click(obj.sections[5081]) then
+
+      mouse.context = contexts.mixer_drag
+      
+      local sz = lvar.trbtns_size
+      
+      panelw = (obj.sections[10].w - (lvar.trov_maxrows*(sz+10)))/2
+              
+      lvar.mdrag = {mx = mouse.mx, osz = math.max(lvar.trmix_panelsz,panelw), dir = -1}
+
+    elseif mouse.mx < obj.sections[5040].x+obj.sections[5040].w then
+
+      local my = mouse.my - obj.sections[5027].y
+      if my < 10 then
+
+        mouse.context = contexts.resize_mixer
+        lvar.mixresize = {oh = lvar.trmix_h, offs = my, my = mouse.my}
+
+      else
+        local mx, my = mouse.mx, mouse.my
+        mouse.mx = mx - obj.sections[5040].x
+        mouse.my = my - obj.sections[5040].y
+        local offs = lvar.dm_btnpnl_page*lvar.trmix_btnpnl_cols
+  
+        local sz = (lvar.trmixbtns_size+10)
+        local col = lvar.trmix_btnpnl_cols - math.floor(mouse.mx/sz) + offs
+        local col2 = math.floor(mouse.mx/sz)
+        local row = math.floor(mouse.my/sz)+1
+        local idx = lvar.dm_btnpnlidx
+  
+        if mouse.LB then
+          if not lvar.dm_btnpnl then
+            lvar.dm_btnpnl = {}
+          end
+          if not lvar.dm_btnpnl[idx] then
+            lvar.dm_btnpnl[idx] = {}
+          end
+          if not lvar.dm_btnpnl[idx][row] then
+            lvar.dm_btnpnl[idx][row] = {}
+          end
+          if lvar.dm_btnpnl[idx][row][col] then
+  
+            TSM_Trigger() 
+  
+            HighlightBox2(obj.sections[5040].x+col2*sz,obj.sections[5040].y+(row-1)*sz,sz-10,sz-10, lvar.dm_btnpnl[idx][row][col].rgb, lvar.btnflashtime)
+  
+            local actdata = lvar.dm_btnpnl[idx][row][col]
+            --DBG(actdata.commid)
+            if tonumber(actdata.commid) then
+              reaper.Main_OnCommand(tonumber(actdata.commid), -1)
+              --DBG('A '..actdata.commid)
+            else
+              reaper.Main_OnCommand(reaper.NamedCommandLookup(actdata.commid), -1)
+              --DBG('B '..actdata.commid)
+            end
+  
+          else
+  
+            TSM_Trigger()
+  
+            if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.2 then
+              local commid, desc = GetActionInfoFromList()
+              if desc then
+                local ndesc = string.gsub(desc,'Script: ','')
+                lvar.dm_btnpnl[idx][row][col] = {desc = desc, commid = commid, ndesc = ndesc}
+                lupd.update_trbtns = true
+              end
+            end
+          end
+        elseif mouse.RB then
+          if lvar.dm_btnpnl and lvar.dm_btnpnl[idx] and lvar.dm_btnpnl[idx][row] and lvar.dm_btnpnl[idx][row][col] then
+  
+            BtnPnl_Menu(idx,row,col,lvar.dm_btnpnl[idx][row][col],mx,my)
+          
+          else
+  
+            BtnPnl_Menu(idx,row,col,nil,mx,my)
+          
+          end
+        end
+        mouse.mx, mouse.my = mx, my
+      end
+      
+    elseif not lvar.analyzer.active or (mouse.mx >= obj.sections[5005].x + obj.sections[5005].w - (obj.sections[5025].w+10)) or mouse.my - obj.sections[5027].y < 10 then
+
+      --TRACK MIXER
+      local my = mouse.my - obj.sections[5027].y
+      if my < 10 then
+
+        mouse.context = contexts.resize_mixer
+        lvar.mixresize = {oh = lvar.trmix_h, offs = my, my = mouse.my}
+
+      else
+        if mouse.mx >= obj.sections[5005].x and mouse.mx <= obj.sections[5005].x + obj.sections[5005].w - (obj.sections[5025].w+10) then
+          local track_x = math.floor((mouse.mx - obj.sections[5027].x) / (obj.sections[5025].w+10))+1+lvar.trbtns_offs
+          local mx = mouse.mx - obj.sections[5005].x -(((track_x-lvar.trbtns_offs)-1) * (lvar.trbtns_size+10)) --8
+          --DBG(mx..'  '..track_x)
+          if lvar.dm_trackbtns[lvar.dm_tbidx][track_x] and lvar.dm_trackbtns[lvar.dm_tbidx][track_x].vol_normscale then
+            --local mx, my = mouse.mx, mouse.my
+            local vpos = obj.sections[5026].y+obj.sections[5026].h - math.floor(lvar.dm_trackbtns[lvar.dm_tbidx][track_x].vol_normscale*obj.sections[5026].h)
+            local ktop = vpos - math.floor(skin.sliderknb_h/2)
+            if mx >= obj.sections[5028].x and mx <= obj.sections[5028].x+obj.sections[5028].w and my >= obj.sections[5028].y and my <= obj.sections[5028].y+obj.sections[5028].h then
+
+              if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.2 then
+                local dm_trackbtn = lvar.dm_trackbtns[lvar.dm_tbidx][track_x]
+                if dm_trackbtn then
+                  local tr = GetTrack(dm_trackbtn.trn)
+                  if tr then
+                    if reaper.GetTrackGUID(tr) ~= dm_trackbtn.guid and dm_trackbtn.trn ~= -1 then
+                      tr = reaper.BR_GetMediaTrackByGUID(0, dm_trackbtn.guid)
+                      if tr then
+                        dm_trackbtn.trn = reaper.GetMediaTrackInfo_Value(tr, 'IP_TRACKNUMBER')-1
+                      end
+                    end
+                  end
+                  if tr then
+                    trctls_table[2].func(tr, 0, false)
+                    lvar.trmix_dirty[#lvar.trmix_dirty+1] = track_x
+                    lupd.update_trmix2 = true
+                  end
+                end
+              else
+                mouse.context = contexts.mixer_pan
+                lvar.mixpan_drag = {offs = my-obj.sections[5028].y, tb = track_x, pan = lvar.dm_trackbtns[lvar.dm_tbidx][track_x].pan_norm}
+              end
+
+            elseif mx >= obj.sections[5026].x and mx <= obj.sections[5026].x+obj.sections[5026].w and (obj.sections[5026].h >= 90 and my >= ktop and my <= ktop+skin.sliderknb_h) then
+              --track fader
+              if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.2 then
+                local dm_trackbtn = lvar.dm_trackbtns[lvar.dm_tbidx][track_x]
+                if dm_trackbtn then
+                  local tr = GetTrack(dm_trackbtn.trn)
+                  if tr then
+                    if reaper.GetTrackGUID(tr) ~= dm_trackbtn.guid and dm_trackbtn.trn ~= -1 then
+                      tr = reaper.BR_GetMediaTrackByGUID(0, dm_trackbtn.guid)
+                      if tr then
+                        dm_trackbtn.trn = reaper.GetMediaTrackInfo_Value(tr, 'IP_TRACKNUMBER')-1
+                      end
+                    end
+                  end
+                  if tr then
+                    trctls_table[1].func(tr, 1, false)
+                    lvar.trmix_dirty[#lvar.trmix_dirty+1] = track_x
+                    lupd.update_trmix2 = true
+                  end
+                end
+              else
+                --reaper.Undo_BeginBlock2(0)
+                mouse.context = contexts.mixer_vol
+                lvar.mixvol_drag = {snd = false, offs = vpos - my, tb = track_x, vol = lvar.dm_trackbtns[lvar.dm_tbidx][track_x].vol_normscale}
+              end
+
+            --elseif obj.sections[5026].h >= 90 and my >= obj.sections[5026].y and my <= obj.sections[5026].y+obj.sections[5026].h then
+
+            elseif mx >= obj.sections[5029].x and mx <= obj.sections[5029].x+(obj.sections[5029].w*2)+2 and my >= obj.sections[5029].y and my <= obj.sections[5029].y+obj.sections[5029].h then
+
+              local dm_trackbtn = lvar.dm_trackbtns[lvar.dm_tbidx][track_x]
+              if dm_trackbtn then
+                local tr = GetTrack(dm_trackbtn.trn)
+                if tr then
+                  reaper.Track_GetPeakHoldDB(tr, 0, true)
+                  reaper.Track_GetPeakHoldDB(tr, 1, true)
+                end
+              end
+
+            elseif mx >= obj.sections[5070].x and mx <= obj.sections[5070].x+obj.sections[5070].w and my >= obj.sections[5070].y and my <= obj.sections[5070].y+obj.sections[5070].h then
+              local dm_trackbtn = lvar.dm_trackbtns[lvar.dm_tbidx][track_x]
+              if dm_trackbtn then
+                local tr = GetTrack(dm_trackbtn.trn)
+                if tr then
+                  if mouse.LB then
+                    local v = 1-reaper.GetMediaTrackInfo_Value(tr,'I_RECARM')
+                    reaper.CSurf_OnRecArmChangeEx(tr, v, true)
+                    
+                    mouse.context = contexts.dmtrprm_swipe
+                    lvar.dmtrprm_swipe = {val = v, otherval = 1-v, param = 'I_RECARM', x = track_x-lvar.trbtns_offs, delay = reaper.time_precise()+0.1}
+                    lvar.trmix_dirty[#lvar.trmix_dirty+1] = track_x
+                    lupd.update_trmix = true
+
+                  elseif mouse.RB then
+                    local x, y = reaper.GetMousePosition()
+                    reaper.ShowPopupMenu('track_input',x,y,nil,tr)
+                  end
+                end
+              end
+
+            elseif mx >= obj.sections[5073].x and mx <= obj.sections[5073].x+obj.sections[5073].w and my >= obj.sections[5073].y and my <= obj.sections[5073].y+obj.sections[5073].h then
+              local dm_trackbtn = lvar.dm_trackbtns[lvar.dm_tbidx][track_x]
+              if dm_trackbtn then
+                local tr = GetTrack(dm_trackbtn.trn)
+                if tr then
+                  if mouse.LB then
+                    local v = 1-reaper.GetMediaTrackInfo_Value(tr,'B_MUTE')
+                    reaper.CSurf_OnMuteChangeEx(tr, v, true)
+                    
+                    mouse.context = contexts.dmtrprm_swipe
+                    lvar.dmtrprm_swipe = {val = v, otherval = 1-v, param = 'B_MUTE', x = track_x-lvar.trbtns_offs, delay = reaper.time_precise()+0.1}
+                    lvar.trmix_dirty[#lvar.trmix_dirty+1] = track_x
+                    lupd.update_trmix = true
+
+                  elseif mouse.RB then
+
+                  end
+                end
+              end
+
+            elseif mx >= obj.sections[5074].x and mx <= obj.sections[5074].x+obj.sections[5074].w and my >= obj.sections[5074].y and my <= obj.sections[5074].y+obj.sections[5074].h then
+              local dm_trackbtn = lvar.dm_trackbtns[lvar.dm_tbidx][track_x]
+              if dm_trackbtn then
+                local tr = GetTrack(dm_trackbtn.trn)
+                if tr then
+                  if mouse.LB then
+                    local v = 2-reaper.GetMediaTrackInfo_Value(tr,'I_SOLO')
+                    reaper.CSurf_OnSoloChangeEx(tr, v, true)
+                    
+                    mouse.context = contexts.dmtrprm_swipe
+                    lvar.dmtrprm_swipe = {val = v, otherval = 2-v, param = 'I_SOLO', x = track_x-lvar.trbtns_offs, delay = reaper.time_precise()+0.1}
+                    lvar.trmix_dirty[#lvar.trmix_dirty+1] = track_x
+                    lupd.update_trmix = true
+
+                  elseif mouse.RB then
+
+                  end
+                end
+              end
+
+            elseif mx >= obj.sections[5071].x and mx <= obj.sections[5071].x+obj.sections[5071].w and my >= obj.sections[5071].y and my <= obj.sections[5071].y+obj.sections[5071].h then
+              local dm_trackbtn = lvar.dm_trackbtns[lvar.dm_tbidx][track_x]
+              if dm_trackbtn then
+                local tr = GetTrack(dm_trackbtn.trn)
+                if tr then
+                  if mouse.LB then
+                    local v = 1-reaper.GetMediaTrackInfo_Value(tr,'I_FXEN')
+                    reaper.SetMediaTrackInfo_Value(tr,'I_FXEN',v)
+                    
+                    mouse.context = contexts.dmtrprm_swipe
+                    lvar.dmtrprm_swipe = {val = v, otherval = 1-v, param = 'I_FXEN', x = track_x-lvar.trbtns_offs, delay = reaper.time_precise()+0.1}                      
+                    lvar.trmix_dirty[#lvar.trmix_dirty+1] = track_x
+                    lupd.update_trmix = true
+
+                  elseif mouse.RB then
+
+                  end
+                end
+              end
+            elseif mx >= obj.sections[5072].x and mx <= obj.sections[5072].x+obj.sections[5072].w and my >= obj.sections[5072].y and my <= obj.sections[5072].y+obj.sections[5072].h then
+              local dm_trackbtn = lvar.dm_trackbtns[lvar.dm_tbidx][track_x]
+              if dm_trackbtn then
+                local tr = GetTrack(dm_trackbtn.trn)
+                if tr then
+                  if mouse.LB then
+                    local v = 1-reaper.GetMediaTrackInfo_Value(tr,'B_PHASE')
+                    reaper.SetMediaTrackInfo_Value(tr,'B_PHASE',v)
+                    
+                    mouse.context = contexts.dmtrprm_swipe
+                    lvar.dmtrprm_swipe = {val = v, otherval = 1-v, param = 'B_PHASE', x = track_x-lvar.trbtns_offs, delay = reaper.time_precise()+0.1}                                            
+                    lvar.trmix_dirty[#lvar.trmix_dirty+1] = track_x
+                    lupd.update_trmix = true
+                    
+                  elseif mouse.RB then
+
+                  end
+                end
+              end
+
+            elseif mx >= obj.sections[5075].x and mx <= obj.sections[5075].x+obj.sections[5075].w and my >= obj.sections[5075].y and my <= obj.sections[5075].y+obj.sections[5075].h then
+              local dm_trackbtn = lvar.dm_trackbtns[lvar.dm_tbidx][track_x]
+              if dm_trackbtn then
+                local tr = GetTrack(dm_trackbtn.trn)
+                if tr then
+                  if mouse.LB then
+                    if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.2 then
+                      reaper.SetMediaTrackInfo_Value(tr,'B_MAINSEND',1-reaper.GetMediaTrackInfo_Value(tr,'B_MAINSEND'))
+                    end
+                  elseif mouse.RB then
+                    local x, y = reaper.GetMousePosition()
+                    reaper.ShowPopupMenu('track_routing',x,y,nil,tr)
+                  end
+                end
+              end
+
+            --[[elseif (obj.sections[5026].h < 90 and my >= obj.sections[5026].y-skin.sliderknb_h/2 and my <= obj.sections[5026].y+skin.sliderknb_h/2) then
+
+              mouse.context = contexts.mixer_vol2
+              lvar.mixvol_drag = {offs = my-(obj.sections[5026].y-skin.sliderknb_h/2), tb = track_x, vol = lvar.dm_trackbtns[lvar.dm_tbidx][track_x].vol_normscale}
+              ]]
+            end
+          end
+
+        elseif mouse.mx >= obj.sections[5005].x + obj.sections[5005].w - (obj.sections[5025].w+10) and mouse.mx <= obj.sections[5005].x + obj.sections[5005].w then
+
+          local mx, my = mouse.mx, mouse.my
+          mouse.mx, mouse.my = mouse.mx - obj.sections[5005].x, mouse.my - obj.sections[5025].y
+          if MOUSE_click(obj.sections[5009]) then
+            lvar.trmix_sndpnl_show = not lvar.trmix_sndpnl_show
+            lupd.update_trbtns = true
+          elseif MOUSE_click(obj.sections[5010]) then
+            tfxo_listpos = 0
+            tfxorder = TrackFXOrder_Read()
+            tfxreorder = TrackFXOrder_Read()
+            if tfxorder then
+              show_trackfxorder = true
+              --lupd.update_gfx = true
+              lupd.update_trackfxorder = true
+              lupd.update_trbtns = true
+              mouse.context = contexts.dummy
+            end
+          elseif MOUSE_click(obj.sections[5011]) then
+
+            --if mouse.lastLBclicktime and not ((rt-mouse.lastLBclicktime) < 0.5) then
+            if mouse.shift then
+              lvar.analyzer.pos = lvar.analyzer.pos + 1
+              if lvar.analyzer.pos >= #lvar.analyzer.mod then
+                lvar.analyzer.pos = 0
+              end
+              DM_ShowAnalyzer(true)
+              lupd.update_trbtns = true
+            else
+              DM_ShowAnalyzer(not lvar.analyzer.active)
+              lupd.update_trbtns = true
+            end
+
+          elseif MOUSE_click_RB(obj.sections[5011]) then
+
+            DM_AnalyzerMenu(mx, my)
+
+          end
+          mouse.mx, mouse.my = mx, my
+
+        elseif lvar.trmix_sndpnl_show and mouse.mx >= obj.sections[5030].x and mouse.mx <= obj.sections[5030].x + obj.sections[5030].w then
+
+          local snd_idx = math.floor((mouse.mx - obj.sections[5030].x) / (lvar.sndpnl_cwidth+10)) + lvar.trmix_sndpnl_offs
+          local tr = GetTrack(lvar.dynamicmode_trn)
+          if tr then
+            local hwcnt = reaper.GetTrackNumSends(tr, 1)
+            local scnt = reaper.GetTrackNumSends(tr, 0) + reaper.GetTrackNumSends(tr, 1)
+            if snd_idx <= scnt-1 then
+
+              local vpos = obj.sections[5031].y+obj.sections[5031].h - math.floor(lvar.trmix_sndpnl_data[snd_idx].vol_normscale*obj.sections[5031].h)
+              local ktop = vpos - math.floor(skin.sliderknb_h/2)
+              local tr = GetTrack(lvar.dynamicmode_trn)
+              local cat = 0
+              local snd_idx2 = snd_idx
+              if snd_idx < hwcnt then
+                cat = 1
+              else
+                snd_idx2 = snd_idx - hwcnt
+              end
+
+              if my < obj.sections[5032].y then
+
+                if mouse.LB then
+                  reaper.SetTrackSendInfo_Value(tr, cat, snd_idx2, 'B_MUTE', 1-reaper.GetTrackSendInfo_Value(tr, cat, snd_idx2, 'B_MUTE'))
+                  lvar.trmix_sndpnl_dirty[#lvar.trmix_sndpnl_dirty+1] = snd_idx
+                  lupd.update_trmix = true
+                  reaper.Undo_BeginBlock2(0)
+                  reaper.Undo_EndBlock2(0,"Send Mute/Unmute",-1)
+                else
+                  local mstr = 'Remove Send'
+                  gfx.x = mouse.mx
+                  gfx.y = mouse.my
+                  local res = gfx.showmenu(mstr)
+                  if res > 0 then
+                    if res == 1 then
+                      reaper.RemoveTrackSend(tr, cat, snd_idx2)
+                      lupd.update_trmix = true
+                    end
+                  end
+                end
+              elseif my >= obj.sections[5032].y and my <= obj.sections[5032].y+obj.sections[5032].h then
+
+                if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.2 then
+                  local tr = GetTrack(lvar.dynamicmode_trn)
+                  --[[if tr then
+                    if reaper.GetTrackGUID(tr) ~= dm_trackbtn.guid and dm_trackbtn.trn ~= -1 then
+                      tr = reaper.BR_GetMediaTrackByGUID(0, dm_trackbtn.guid)
+                      if tr then
+                        dm_trackbtn.trn = reaper.GetMediaTrackInfo_Value(tr, 'IP_TRACKNUMBER')-1
+                      end
+                    end
+                  end]]
+                  if tr then
+                    reaper.SetTrackSendUIPan(tr, snd_idx, 0, 0)
+                    lvar.trmix_sndpnl_dirty[#lvar.trmix_sndpnl_dirty+1] = snd_idx
+                    lupd.update_trmix = true
+                  end
+                else
+                  mouse.context = contexts.sndpnl_pan
+                  lvar.mixpan_drag = {offs = my-obj.sections[5032].y, tb = snd_idx, pan = lvar.trmix_sndpnl_data[snd_idx].pan_norm}
+                end
+
+              elseif my >= ktop and my <= ktop+skin.sliderknb_h then
+                --send fader
+
+                if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.2 then
+                  local tr = GetTrack(lvar.dynamicmode_trn)
+                  --[[if tr then
+                    if reaper.GetTrackGUID(tr) ~= dm_trackbtn.guid and dm_trackbtn.trn ~= -1 then
+                      tr = reaper.BR_GetMediaTrackByGUID(0, dm_trackbtn.guid)
+                      if tr then
+                        dm_trackbtn.trn = reaper.GetMediaTrackInfo_Value(tr, 'IP_TRACKNUMBER')-1
+                      end
+                    end
+                  end]]
+                  if tr then
+                    reaper.SetTrackSendUIVol(tr, snd_idx, 1, 0)
+                    lvar.trmix_sndpnl_dirty[#lvar.trmix_sndpnl_dirty+1] = snd_idx
+                    lupd.update_trmix = true
+                  end
+                else
+                  --DBG('a')
+                  mouse.context = contexts.sndpnl_vol
+                  lvar.mixvol_drag = {snd = true, offs = vpos - my, tb = snd_idx, vol = lvar.trmix_sndpnl_data[snd_idx].vol_normscale}
+                end
+
+              elseif my >= obj.sections[5031].y and my <= obj.sections[5031].y+obj.sections[5031].h then
+
+
+
+              end
+
+
+            else
+              --Drag Send
+              mouse.context = contexts.sndpnl_drag
+              lvar.trmix_snddrag = {x = mx, y = my}
+            end
+          end
+
+
+        elseif not lvar.trmix_sndpnl_show and mouse.mx >= obj.sections[5042].x and mouse.mx <= obj.sections[5042].x + obj.sections[5042].w then
+          local mx, my = mouse.mx, mouse.my
+          mouse.mx = mx - obj.sections[5042].x
+          mouse.my = my - obj.sections[5042].y
+          local offs = lvar.dm_btnpnl_page*lvar.trmix_btnpnl2_cols
+
+          local sz = (lvar.trmixbtns_size+10)
+          local col = math.floor(mouse.mx/sz)+1+offs
+          local row = math.floor(mouse.my/sz)+1
+          --DBG(col..'  '..row)
+          local idx = lvar.dm_btnpnl2idx
+
+          if mouse.LB then
+            if not lvar.dm_btnpnl then
+              lvar.dm_btnpnl = {}
+            end
+            if not lvar.dm_btnpnl[idx] then
+              lvar.dm_btnpnl[idx] = {}
+            end
+            if not lvar.dm_btnpnl[idx][row] then
+              lvar.dm_btnpnl[idx][row] = {}
+            end
+            if lvar.dm_btnpnl[idx][row][col] then
+
+              TSM_Trigger()
+
+              HighlightBox2(obj.sections[5042].x+(col-1)*sz,obj.sections[5042].y+(row-1)*sz,sz-10,sz-10, lvar.dm_btnpnl[idx][row][col].rgb, lvar.btnflashtime)
+
+              local actdata = lvar.dm_btnpnl[idx][row][col]
+              if tonumber(actdata.commid) then
+                reaper.Main_OnCommand(tonumber(actdata.commid), -1)
+              else
+                reaper.Main_OnCommand(reaper.NamedCommandLookup(actdata.commid), -1)
+              end
+
+            else
+
+              TSM_Trigger()
+
+              if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.2 then
+                local commid, desc = GetActionInfoFromList()
+                if desc and desc ~= '' then
+                  local ndesc = string.gsub(desc,'Script: ','')
+                  lvar.dm_btnpnl[idx][row][col] = {desc = desc, commid = commid, ndesc = ndesc}
+                  lupd.update_trbtns = true
+                else
+                  OpenMsgBox(1, 'No action selected.', 1)
+                end
+              end
+            end
+          elseif mouse.RB then
+            if lvar.dm_btnpnl and lvar.dm_btnpnl[idx] and lvar.dm_btnpnl[idx][row] and lvar.dm_btnpnl[idx][row][col] then
+
+              BtnPnl_Menu(idx,row,col,lvar.dm_btnpnl[idx][row][col],mx,my)
+
+            else
+  
+              BtnPnl_Menu(idx,row,col,nil,mx,my)
+        
+            end
+          end
+          mouse.mx, mouse.my = mx, my
+        end
+          --mouse.mx, mouse.my = mx, my
+      end
+
+    elseif lvar.analyzer.active and (MOUSE_click(obj.sections[5046]) or MOUSE_click_RB(obj.sections[5046])) then
+
+      if lvar.analyzer.pos == 0 then
+        local my = mouse.my - obj.sections[5046].y
+        if my < 25 then
+          local mx = mouse.mx - obj.sections[5046].x
+          local w = (obj.sections[5048].w / (lvar.freqcnt+1))
+          local p = math.floor(mx / w)
+          if lvar.freq[p] then
+            if mouse.LB then
+              if mouse.shift or (mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.2) then
+                local atr = Analyzer_GetTrack()
+                if atr then
+                  Analyzer_Link(lvar.dynamicmode_trn,atr,p)
+                  lupd.update_analyzertracks = true
+                  lupd.update_trmix = true
+                end
+              else
+                local atr = Analyzer_GetTrack()
+                if atr then
+                  local v = reaper.TrackFX_GetParamNormalized(atr,0,12+p)
+                  v = 1-v
+                  reaper.TrackFX_SetParamNormalized(atr,0,12+p,v)
+                  if v == 1 then
+                    lvar.freq[p].active = true
+                  else
+                    lvar.freq[p].active = false
+                  end
+                  lupd.update_analyzertracks = true
+                  lupd.update_trmix = true
+                end
+              end
+            else
+              local atr = Analyzer_GetTrack()
+              if atr then
+                local vv = reaper.TrackFX_GetParamNormalized(atr,0,12+p)
+                if not lvar.freqsolo or (vv == 0) then
+
+                  if not lvar.freqsolo_mem then
+                    lvar.freqsolo_mem = {}
+                    for i = 0, lvar.freqcnt+1 do
+                      lvar.freqsolo_mem[i] = reaper.TrackFX_GetParamNormalized(atr,0,12+i)
+                    end
+                  end
+                  for i = 0, lvar.freqcnt+1 do
+                    if i ~= p then
+                      reaper.TrackFX_SetParamNormalized(atr,0,12+i,0)
+                    end
+                  end
+                  reaper.TrackFX_SetParamNormalized(atr,0,12+p,1)
+                  lvar.freqsolo = p
+                else
+                  lvar.freqsolo = nil
+
+                  for i = 0, lvar.freqcnt+1 do
+                    local v = 1
+                    if lvar.freqsolo_mem and lvar.freqsolo_mem[i] then
+                      v = lvar.freqsolo_mem[i]
+                    end
+                    reaper.TrackFX_SetParamNormalized(atr,0,12+i,v)
+                  end
+                  lvar.freqsolo_mem = nil
+                end
+                lupd.update_analyzertracks = true
+                lupd.update_trmix = true
+              end
+            end
+          end
+        else
+          local tr = Analyzer_GetTrack()
+          local idx = lvar.analyzer.pos
+          if tr then
+            local param = 8
+            local w = obj.sections[5046].w
+            local mx = math.max(0,mouse.mx - obj.sections[5046].x)
+
+            local zm = (reaper.TrackFX_GetParamNormalized(tr,idx,7))*24 + 1
+            local ox = reaper.TrackFX_GetParamNormalized(tr,idx,param)
+            --local offx = math.ceil(ox*((w*zm)-w));
+            local zm2 = ((w)*zm);
+            offx = math.ceil(ox*zm2 - w/2);
+            offx = math.max(offx,0);
+            offx = math.min(offx,(w)*zm-w);
+            local val = (mx+offx)/(w*zm)
+            reaper.TrackFX_SetParamNormalized(tr,idx,param,val)
+            lupd.update_analyzerctls = true
+            lupd.update_trmix = true
+
+          end
+        end
+      end
+    end
+
+    return noscroll
+    
+  end
+
+  function A_Click_M0_Snapshot(rt, noscroll)
+
+    A_Run_SnapshotsWin(rt)
+    noscroll = true
+
+    return noscroll
+    
+  end
+
+  function A_Click_M0_fSnapshot(rt, noscroll)
+
+    if show_xysnapshots == true then
+    
+      if MOUSE_click_RB(obj.sections[180]) then
+        show_xysnapshots = false
+        lupd.update_surface = true
+      end
+
+      local snapmx, snapmy = mouse.mx, mouse.my
+      mouse.mx = mouse.mx - obj.sections[180].x
+      mouse.my = mouse.my - obj.sections[180].y
+
+      if --[[mouse.context == nil and]] MOUSE_click(obj.sections[182]) then
+        mouse.context = contexts.resizefsnapwindow
+        resizesnapwin = {origh = obj.sections[180].h,
+                         offy = mouse.my}
+
+      elseif --[[mouse.context == nil and]] MOUSE_click(obj.sections[181]) then
+        if snapshots and snapshots[tracks[track_select].strip] then
+          local i = math.floor((mouse.my-obj.sections[181].y)/butt_h)
+
+          if i == 0 then
+            local ix = math.floor((mouse.mx-obj.sections[181].x)/(obj.sections[180].w/2))
+            if ix == 0 then
+              fssoffset = fssoffset-FSS_butt_cnt
+              if fssoffset < 0 then fssoffset = 0 end
+            else
+              if fsstype_select == 1 then
+                fssoffset = F_limit(fssoffset+FSS_butt_cnt,0,math.max(0,#snapshots[tracks[track_select].strip][page][fsstype_select]-FSS_butt_cnt))
+              elseif fsstype_select > 1 then
+                fssoffset = F_limit(fssoffset+FSS_butt_cnt,0,math.max(0,#snapshots[tracks[track_select].strip][page][fsstype_select].snapshot-FSS_butt_cnt))
+              end
+            end
+            lupd.update_ctls = true
+            lupd.update_fsnaps = true
+          else
+            if snapshots and snapshots[tracks[track_select].strip] then
+              local maxss
+              if fsstype_select == 1 then
+                maxss = #snapshots[tracks[track_select].strip][page][fsstype_select]
+              else
+                maxss = #snapshots[tracks[track_select].strip][page][fsstype_select].snapshot
+              end
+
+              if fssoffset+i <= maxss then
+                fss_select = fssoffset+i
+
+                if xysnap_select == 1 then
+                  strips[tracks[track_select].strip][page].controls[xy_select].xydata.snapa = fss_select
+                elseif xysnap_select == 2 then
+                  strips[tracks[track_select].strip][page].controls[xy_select].xydata.snapb = fss_select
+                elseif xysnap_select == 3 then
+                  strips[tracks[track_select].strip][page].controls[xy_select].xydata.snapc = fss_select
+                elseif xysnap_select == 4 then
+                  strips[tracks[track_select].strip][page].controls[xy_select].xydata.snapd = fss_select
+                end
+
+                g_savedirty = true
+                show_xysnapshots = false
+                lupd.update_surface = true
+              end
+            end
+          end
+        end
+      end
+
+      mouse.mx = snapmx
+      mouse.my = snapmy
+      noscroll = true
+
+    elseif show_fsnapshots == true then
+
+      if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.15 then
+        show_fsnapshots = false
+        lupd.update_surface = true
+        RedrawGUIBitmap()
+      elseif --[[mouse.context == nil and]] MOUSE_click_RB(obj.sections[180]) then
+        show_fsnapshots = false
+        lupd.update_surface = true
+        RedrawGUIBitmap()
+      end
+
+      local snapmx, snapmy = mouse.mx, mouse.my
+      mouse.mx = mouse.mx - obj.sections[180].x
+      mouse.my = mouse.my - obj.sections[180].y
+
+      if --[[mouse.context == nil and]] MOUSE_click(obj.sections[182]) then
+        mouse.context = contexts.resizefsnapwindow
+        resizesnapwin = {origh = obj.sections[180].h,
+                         offy = mouse.my}
+
+      elseif --[[mouse.context == nil and]] MOUSE_click(obj.sections[181]) then
+        if snapshots and snapshots[tracks[track_select].strip] then
+          local i = math.floor((mouse.my-obj.sections[181].y)/butt_h)
+
+          if i == 0 then
+            local ix = math.floor((mouse.mx-obj.sections[181].x)/(obj.sections[180].w/2))
+            if ix == 0 then
+              fssoffset = fssoffset-FSS_butt_cnt
+              if fssoffset < 0 then fssoffset = 0 end
+            else
+              if fsstype_select == 1 then
+                fssoffset = F_limit(fssoffset+FSS_butt_cnt,0,math.max(0,#snapshots[tracks[track_select].strip][page][fsstype_select]-FSS_butt_cnt))
+              elseif fsstype_select > 1 then
+                fssoffset = F_limit(fssoffset+FSS_butt_cnt,0,math.max(0,#snapshots[tracks[track_select].strip][page][fsstype_select].snapshot-FSS_butt_cnt))
+              end
+            end
+            lupd.update_ctls = true
+            lupd.update_fsnaps = true
+          else
+            if snapshots and snapshots[tracks[track_select].strip] then
+              local maxss
+              if fsstype_select == 1 then
+                maxss = #snapshots[tracks[track_select].strip][page][fsstype_select]
+              else
+                maxss = #snapshots[tracks[track_select].strip][page][fsstype_select].snapshot
+              end
+
+              if fssoffset+i <= maxss then
+                fss_select = fssoffset+i
+                Snapshot_Set(tracks[track_select].strip, page, fsstype_select, fss_select)
+                SetCtlDirty(fss_ctl)
+                lupd.update_ctls = true --to update snapshot ctls
+                lupd.update_fsnaps = true
+                if sstype_select == fsstype_select then
+                  ss_select = fss_select
+                  lupd.update_snaps = true
+                end
+
+                if strips[tracks[track_select].strip][page].controls[fss_ctl].param_info.paramnum == 1 then
+                  show_fsnapshots = false
+                  lupd.update_surface = true
+                  RedrawGUIBitmap()
+                end
+              end
+            end
+          end
+        end
+      end
+
+      mouse.mx = snapmx
+      mouse.my = snapmy
+      noscroll = true
+    end
+
+    return noscroll
+    
+  end
+
+  function A_Click_M0_Modulators(rt, noscroll)
+
+    noscroll = true
+    if show_fsnapshots == true or show_xysnapshots then
+      show_fsnapshots = false
+      show_xysnapshots = false
+      lupd.update_surface = true
+      RedrawGUIBitmap()
+    end
+
+    if modulators[mod_select] then
+
+      local mx, my = mouse.mx, mouse.my
+      mouse.mx = mouse.mx - obj.sections[1100].x
+      mouse.my = mouse.my - obj.sections[1100].y
+
+      local m = modulators[mod_select]
+      local barw = ((obj.sections[1101].w-2) / m.steps)
+      xywh = {x = obj.sections[1101].x,
+              y = obj.sections[1101].y,
+              w = barw * m.steps,
+              h = obj.sections[1101].h}
+
+      if MOUSE_click(xywh) then
+
+        mouse.context = contexts.mod_draw
+        moddraw = {offs = offs, barw = barw}
+
+      elseif MOUSE_click_RB(obj.sections[1101]) then
+
+        ModMenu(mx, my)
+
+      elseif MOUSE_click(obj.sections[1123]) then
+        settings_moddock = not settings_moddock
+        if settings_moddock == false then
+          if modwinsz.h < modwin.minh then
+            modwinsz.h = modwin.minh
+          end
+          modwinsz.minimized = false
+        end
+        obj = GetObjects()
+        lupd.update_gfx = true
+        lupd.update_lfoedit = true
+        RedrawGUIBitmap()
+
+      elseif MOUSE_click(obj.sections[1115]) and modwinsz.minimized ~= true then
+
+        mod_select = mod_select - 1
+        if mod_select < 1 then
+          mod_select = #modulators
+        end
+        lupd.update_gfx = true
+
+      elseif MOUSE_click(obj.sections[1116]) and modwinsz.minimized ~= true then
+
+        mod_select = mod_select + 1
+        if mod_select > #modulators then
+          mod_select = 1
+        end
+        lupd.update_gfx = true
+
+      elseif MOUSE_click_RB(obj.sections[1117]) and modwinsz.minimized ~= true then
+        show_modass = not show_modass
+        if show_modass == true then
+          lvar.modass = PopModAssObj()
+          if lvar.modass then
+            lvar.modass.offset = 0
+          end
+        else
+
+        end
+        lupd.update_gfx = true
+        RedrawGUIBitmap()
+
+      elseif MOUSE_click(obj.sections[1117]) and modwinsz.minimized ~= true then
+
+        if not mouse.ctrl then
+          show_modass = false
+          RedrawGUIBitmap()
+          if show_striplayout == false then
+            mouse.context = contexts.dragmod
+            dragmod = {x = mouse.mx, y = mouse.my}
+          end
+          lupd.update_surface = true
+        else
+          lvar.modass = PopModAssObj()
+          if lvar.modass then
+            lvar.modass.offset = 0
+          end
+          show_modass = true
+          RedrawGUIBitmap()
+          lupd.update_gfx = true
+        end
+
+      elseif MOUSE_click(obj.sections[1118]) and modwinsz.minimized ~= true then
+
+        if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.20 then
+          local m = modulators[mod_select]
+          if m then
+            if m.targets and #m.targets > 0 then
+              for t = #m.targets, 1, -1 do
+                if m.targets[t].strip == tracks[track_select].strip and m.targets[t].page == page then
+                  SetCtlDirty(m.targets[t].ctl)
+                end
+                local ctl
+                if m.targets[t].dm_guid then
+                  if m.targets[t].dm_guid == lvar.dynamicmode_guid then
+                    ctl = strips[tracks[track_select].strip][page].controls[m.targets[t].ctl]
+                  else
+                    ctl = lvar.stripstore[m.targets[t].dm_guid].controls[m.targets[t].ctl]
+                  end
+                else
+                  ctl = strips[m.targets[t].strip][m.targets[t].page].controls[m.targets[t].ctl]
+                end
+
+                Mod_RemoveAssign(m.targets[t].strip, m.targets[t].page, m.targets[t].ctl, m.targets[t].dm_guid)
+                if ctl then
+                  ctl.mod = nil
+                end
+              end
+              lupd.update_sidebar = true
+              lupd.update_lfoedit = true
+              lupd.update_surface = true
+              lupd.update_ctls = true
+            end
+          end
+        end
+
+      elseif MOUSE_click(obj.sections[1111])  then
+
+        if modwinsz and modwinsz.minimized ~= true then
+          mouse.context = contexts.modwin_resize
+          modwinrsz = {mx = mx, my = my, w = modwinsz.w, h = modwinsz.h}
+        end
+
+      elseif MOUSE_click(obj.sections[1112]) then
+
+        if settings_moddock == true then
+          mouse.context = contexts.modwin_resize2
+          modwinrsz = {mx = mx, my = my, w = modwinsz.w, h = modwinsz.h}
+        else
+          mouse.context = contexts.modwin_move
+          modwinmv = {mx = mx, my = my, x = modwinsz.x, y = modwinsz.y}
+        end
+
+      elseif MOUSE_click_RB(obj.sections[1112]) then
+        if modwinsz.minimized == true then
+          modwinsz.h = modwinsz.oh
+          modwinsz.minimized = false
+
+          --modwinsz.resize = true
+          --obj = GetObjects()
+          lupd.update_lfoedit = true
+          lupd.update_gfx = true
+
+        else
+          modwinsz.oh = modwinsz.h
+          modwinsz.h = gui.winsz.pnltit
+          modwinsz.minimized = true
+
+        end
+        modwinsz.resize = true
+
+        if settings_sbdock == true and lvar.stripbrowser.dockpos == 1 then
+          --HACKY - FIX
+          SBWin_CheckSize()
+          obj = GetObjects()
+          obj = GetObjects()
+          lupd.update_gfx = true
+        end
+        obj = GetObjects()
+        lupd.update_lfoedit = true
+        lupd.update_surface = true
+
+
+      elseif MOUSE_click(obj.sections[1102]) then
+
+        local os = m.steps
+        m.stepsmult = math.min(m.stepsmult + 1,#lvar.divmult_table)
+        if mouse.shift == false then
+          if m.stepsmult == 5 or m.stepsmult == 6 or m.stepsmult == 7 then
+            m.stepsmult = 8
+          elseif m.stepsmult == 3 then
+            m.stepsmult = 4
+          end
+        end
+        m.steps = (m.div * lvar.divmult_table[m.stepsmult])
+        if os ~= m.steps then
+          local d = {}
+          local cnt = #m.data
+          if not mouse.ctrl then
+            for i = 1, cnt do
+              d[i*2-1] = m.data[i]
+              if m.interpolate == true then
+                if m.data[i+1] then
+                  d[i*2] = m.data[i] + ((m.data[i+1] - m.data[i])/2)
+                else
+                  d[i*2] = m.data[i] + ((m.data[1] - m.data[i])/2)
+                end
+              else
+                d[i*2] = m.data[i]
+              end
+            end
+            if m.steps > cnt*2 then
+              local v = m.data[cnt*2]
+              for i = cnt*2+1, m.steps do
+                d[i] = v
+              end
+            end
+          else
+            for i = 1, m.steps do
+              d[i] = m.data[i] or 0.5
+            end
+          end
+          m.data = d
+        end
+        lupd.update_lfoedit = true
+
+      elseif MOUSE_click_RB(obj.sections[1102]) then
+
+        local os = m.steps
+        m.stepsmult = math.max(m.stepsmult - 1,1)
+        if mouse.shift == false then
+          if m.stepsmult == 5 or m.stepsmult == 6 or m.stepsmult == 7 then
+            m.stepsmult = 4
+          elseif m.stepsmult == 3 then
+            m.stepsmult = 2
+          end
+        end
+        m.steps = (m.div * lvar.divmult_table[m.stepsmult])
+        if os ~= m.steps then
+          local d = {}
+          if not mouse.ctrl then
+            for i = 1, m.steps do
+              d[i] = m.data[i*2-1] or 0.5
+            end
+          else
+            for i = 1, m.steps do
+              d[i] = m.data[i] or 0.5
+            end
+          end
+          m.data = d
+        end
+        lupd.update_lfoedit = true
+
+      elseif MOUSE_click(obj.sections[1104]) then
+
+        m.syncv = math.min(m.syncv + 1,#lvar.sync_table)
+        lupd.update_lfoedit = true
+
+      elseif MOUSE_click_RB(obj.sections[1104]) then
+
+        m.syncv = math.max(m.syncv - 1,12)
+        lupd.update_lfoedit = true
+
+      elseif MOUSE_click(obj.sections[1105]) then
+
+        m.interpolate = not m.interpolate
+        lupd.update_lfoedit = true
+
+      elseif MOUSE_click(obj.sections[1108]) then
+
+        mouse.context = contexts.modoffset_slider
+        modoffs = {x = obj.sections[1100].x + obj.sections[1108].x,
+                   y = obj.sections[1100].y + obj.sections[1108].y,
+                   w = obj.sections[1108].w,
+                   h = obj.sections[1108].h,
+                   val = m.offset}
+        modoffs.yoff = -(my - (modoffs.y+modoffs.h/2))
+        oms = mouse.shift
+
+      elseif MOUSE_click(obj.sections[1109]) then
+
+        mouse.context = contexts.modmin_slider
+        modoffs = {x = obj.sections[1100].x + obj.sections[1109].x,
+                   y = obj.sections[1100].y + obj.sections[1109].y,
+                   w = obj.sections[1109].w,
+                   h = obj.sections[1109].h,
+                   val = m.min,
+                   odiff = m.max-m.min}
+        modoffs.yoff = -(my - (modoffs.y+modoffs.h/2))
+        oms = mouse.shift
+        omc = mouse.ctrl
+
+      elseif MOUSE_click(obj.sections[1110]) then
+
+        mouse.context = contexts.modmax_slider
+        modoffs = {x = obj.sections[1100].x + obj.sections[1110].x,
+                   y = obj.sections[1100].y + obj.sections[1110].y,
+                   w = obj.sections[1110].w,
+                   h = obj.sections[1110].h,
+                   val = m.max,
+                   odiff = m.max-m.min}
+        modoffs.yoff = -(my - (modoffs.y+modoffs.h/2))
+        oms = mouse.shift
+        omc = mouse.ctrl
+
+      elseif MOUSE_click(obj.sections[1107]) then
+
+        m.div = math.min(m.div + 1,12)
+        m.steps = (m.div * lvar.divmult_table[m.stepsmult])
+        local dcnt = #m.data
+        if m.steps > dcnt then
+          local d = {}
+          local v = m.data[dcnt]
+          for i = 1, m.steps do
+            if m.data[i] then
+              d[i] = m.data[i]
+            else
+              d[i] = v
+            end
+          end
+          m.data = d
+        end
+        lupd.update_lfoedit = true
+
+      elseif MOUSE_click(obj.sections[1113]) then
+        local min = m.min
+        local max = m.max
+        --DBG(max..'  '..min)
+        for i = 1, #m.data do
+          if m.mode >= 2 then
+            maxx = takeswitch_max
+            if m.mode == 3 then
+              maxx = lvar.maxsamples
+            end
+            m.data[i] = math.floor((math.random() * ((max-min)+1/maxx))*maxx)/maxx + min
+          else
+            m.data[i] = ((math.random() * (max-min)) + min)
+          end
+        end
+        lupd.update_lfoedit = true
+
+      elseif MOUSE_click(obj.sections[1114]) then
+
+        if tonumber(m.mode) == nil then
+          m.mode = 1
+        else
+          m.mode = ((m.mode+1) % (#lvar.lfomode_table)) + 1
+          --DBG(m.mode)
+        end
+        lupd.update_lfoedit = true
+
+      elseif MOUSE_click_RB(obj.sections[1114]) then
+
+        if m.targets then
+          local max = 0
+          local mmx
+          for t = 1,#m.targets do
+            if m.targets[t].targettype == 1 then
+              if strips[m.targets[t].strip] and strips[m.targets[t].strip][m.targets[t].page].controls[m.targets[t].ctl] then
+                local ctl = strips[m.targets[t].strip][m.targets[t].page].controls[m.targets[t].ctl]
+                if ctl.ctlcat == ctlcats.takeswitcher then
+                  if ctl.iteminfo then
+                    max = math.max(ctl.iteminfo.numtakes)
+                    mmx = takeswitch_max
+                  end
+                elseif ctl.ctlcat == ctlcats.rs5k then
+                  if ctl.rsdata then
+                    max = #ctl.rsdata.samples
+                    mmx = lvar.maxsamples-1
+                  end
+                end
+              end
+            end
+          end
+          if max > 1 then
+            m.max = (max-1)/mmx
+            m.min = 0
+          end
+        end
+        lupd.update_lfoedit = true
+
+      elseif MOUSE_click_RB(obj.sections[1107]) then
+
+        m.div = math.max(m.div - 1,3)
+        m.steps = (m.div * lvar.divmult_table[m.stepsmult])
+        local dcnt = #m.data
+        if m.steps > dcnt then
+          local d = {}
+          local v = m.data[#m.data]
+          for i = 1, m.steps do
+            if m.data[i] then
+              d[i] = m.data[i]
+            else
+              d[i] = v
+            end
+          end
+          m.data = d
+        end
+        lupd.update_lfoedit = true
+
+      elseif MOUSE_click(obj.sections[1106]) then
+
+        m.active = not m.active
+        Mod_SetTargetsDirty(mod_select)
+        lupd.update_lfoedit = true
+
+      end
+
+      mouse.mx, mouse.my = mx, my
+
+    end
+
+    return noscroll
+    
+  end
+
+  function A_Click_M0_Mutate(rt, noscroll)
+
+    local mutate_settings = lvar.mutate_settings
+    
+    noscroll = true
+    mx,my = mouse.mx, mouse.my
+    mouse.mx = mouse.mx - obj.sections[1120].x
+    mouse.my = mouse.my - obj.sections[1120].y
+
+    xywh = {x = 0, y = 0, w = obj.sections[1120].w, h = gui.winsz.pnltit * pnl_scale}
+    if MOUSE_click(xywh) then
+      mouse.context = contexts.move_mutatewin
+      movemutatewin = {dx = mouse.mx, dy = mouse.my}
+
+    elseif MOUSE_click_RB(xywh) then
+      show_mutate = false
+      lupd.update_surface = true
+      RedrawGUIBitmap()
+
+    elseif MOUSE_click(obj.sections[1121]) then
+      mouse.context = contexts.mutate_amt
+      mutateamt = {pos = mutate_settings.mutate_max, yoff = my-(obj.sections[1121].y+obj.sections[1121].h/2)}
+
+    elseif MOUSE_click(obj.sections[1122]) then
+      mutate_settings.dir = mutate_settings.dir + 1
+      if mutate_settings.dir > 2 then
+        mutate_settings.dir = 0
+      end
+      lupd.update_mutate = true
+
+    elseif MOUSE_click_RB(obj.sections[1122]) then
+      mutate_settings.dir = mutate_settings.dir - 1
+      if mutate_settings.dir < 0 then
+        mutate_settings.dir = 2
+      end
+      lupd.update_mutate = true
+    end
+
+    mouse.mx = mx
+    mouse.my = my
+
+    return noscroll
+    
+  end
+
+  function A_Click_M0_Random(rt, noscroll)
+
+    noscroll = true
+    mx,my = mouse.mx, mouse.my
+    mouse.mx = mouse.mx - obj.sections[1130].x
+    mouse.my = mouse.my - obj.sections[1130].y
+    
+    xywh = {x = 0, y = 0, w = obj.sections[1130].w, h = gui.winsz.pnltit * pnl_scale}
+    if MOUSE_click(xywh) then
+      mouse.context = contexts.move_randomwin
+      moverandomwin = {dx = mouse.mx, dy = mouse.my}
+    
+    elseif MOUSE_click_RB(xywh) then
+      show_randomopts = false
+      if randopts_selectctl then
+        SetCtlDirty(randopts_selectctl)
+        randopts_selectctl = nil
+        lupd.update_ctls = true
+      end
+      lupd.update_surface = true
+      RedrawGUIBitmap()
+      
+    elseif MOUSE_click(obj.sections[1131]) then
+    
+      randomopts_select.useadv = not randomopts_select.useadv
+      lupd.update_randomopts = true
+      lupd.update_surface = true
+    
+    elseif MOUSE_click(obj.sections[1132]) then
+    
+      randomopts_select.snapshotsonly = not randomopts_select.snapshotsonly
+      lupd.update_randomopts = true
+      lupd.update_surface = true
+    
+    elseif MOUSE_click(obj.sections[1133]) then
+    
+      RandomOpts_ParamMenu(mx, my)
+    
+    elseif MOUSE_click(obj.sections[1134]) then
+    
+      local p = randomopts_select.param
+      local lg = randomopts_select.ctls[p].linkgrp
+      local lgtype
+      if lg and randomopts_select.linkgrps[lg] then
+        lgtype = randomopts_select.linkgrps[lg].type
+      end
+    
+      if lgtype ~= 2 and lgtype ~= 3 then
+        if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.2 then
+          OpenEB(201,'Please enter value for min:',randomopts_select.ctls[p].min)
+        else
+          mouse.context = contexts.lg_min
+          draglg = {pos = randomopts_select.ctls[p].min, yoff = my-(obj.sections[1134].y+obj.sections[1134].h/2), shift = mouse.shift}
+        end
+      end
+    
+    elseif MOUSE_click(obj.sections[1135]) then
+    
+      local p = randomopts_select.param
+      local lg = randomopts_select.ctls[p].linkgrp
+      local lgtype
+      if lg and randomopts_select.linkgrps[lg] then
+        lgtype = randomopts_select.linkgrps[lg].type
+      end
+    
+      if lgtype ~= 2 and lgtype ~= 3 then
+        if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.2 then
+          OpenEB(202,'Please enter value for max:',randomopts_select.ctls[p].max)
+        else
+          mouse.context = contexts.lg_max
+          draglg = {pos = randomopts_select.ctls[p].max, yoff = my-(obj.sections[1135].y+obj.sections[1135].h/2), shift = mouse.shift}
+        end
+      end
+    
+    elseif MOUSE_click(obj.sections[1137]) then
+    
+      local p = randomopts_select.param
+      local lg = randomopts_select.ctls[p].linkgrp
+    
+      if not lg then
+        mouse.context = contexts.lg_probability
+        draglg = {pos = randomopts_select.ctls[p].rprob, yoff = my-(obj.sections[1137].y+obj.sections[1137].h/2)}
+      end
+    
+    elseif MOUSE_click(obj.sections[1138]) then
+    
+      local p = randomopts_select.param
+      local lg = randomopts_select.ctls[p].linkgrp
+      local lgtype
+      if lg and randomopts_select.linkgrps[lg] then
+        lgtype = randomopts_select.linkgrps[lg].type
+      end
+    
+      if not lgtype or lgtype == 1 then
+        mouse.context = contexts.lg_bias
+        draglg = {pos = randomopts_select.ctls[p].bias, yoff = my-(obj.sections[1138].y+obj.sections[1138].h/2)}
+      end
+    
+    elseif MOUSE_click(obj.sections[1139]) then
+      local p = randomopts_select.param
+      local rctl = randomopts_select.ctls[p]
+      if rctl then
+        local lg = rctl.linkgrp
+        if lg and randomopts_select.linkgrps[lg].type == 4 then
+          rctl.inverted = not (rctl.inverted or false)
+          lupd.update_randomopts = true
+        end
+      end
+      
+    elseif MOUSE_click(obj.sections[1140]) then
+    
+      local p = randomopts_select.param
+      local lg = randomopts_select.ctls[p].linkgrp
+      local lgtype
+      if lg and randomopts_select.linkgrps[lg] then
+        lgtype = randomopts_select.linkgrps[lg].type
+      end
+    
+      if not lgtype or lgtype == 1 then
+        if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.2 then
+          --if randomopts_select.ctls[p] then
+            OpenEB(203,'Please enter value for range:',randomopts_select.ctls[p].amount*100)
+          --end
+        else
+          mouse.context = contexts.lg_range
+          draglg = {pos = randomopts_select.ctls[p].amount, yoff = my-(obj.sections[1140].y+obj.sections[1140].h/2), shift = mouse.shift}
+        end
+      end
+    
+    elseif MOUSE_click(obj.sections[1146]) then
+    
+      local p = randomopts_select.param
+      local lg = randomopts_select.ctls[p].linkgrp
+      local lgtype
+      if lg and randomopts_select.linkgrps[lg] then
+        lgtype = randomopts_select.linkgrps[lg].type
+      end
+    
+      if not lgtype or lgtype == 1 or lgtype == 4 then
+        mouse.context = contexts.lg_wild
+        draglg = {pos = randomopts_select.ctls[p].wild *10, yoff = my-(obj.sections[1146].y+obj.sections[1146].h/2)}
+      end
+    
+    elseif MOUSE_click(obj.sections[1144]) then
+    
+      local p = randomopts_select.param
+      local lg = randomopts_select.ctls[p].linkgrp
+      if lg and randomopts_select.linkgrps[lg] then
+        if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.2 then
+          if randomopts_select.linkgrps[lg].type == 4 then
+            OpenEB(200,'Please enter value for range:',randomopts_select.linkgrps[lg].X*100)
+          end
+        else
+          --if randomopts_select.linkgrps[lg] and randomopts_select.linkgrps[lg].type <= 3 then
+            mouse.context = contexts.lg_X
+            draglg = {pos = randomopts_select.linkgrps[lg].X, yoff = my-(obj.sections[1144].y+obj.sections[1144].h/2), shift = mouse.shift}
+          --end
+        end
+      end
+    
+    elseif MOUSE_click(obj.sections[1136]) then
+    
+      local p = randomopts_select.param
+    
+      randomopts_select.ctls[p].linkgrp = (randomopts_select.ctls[p].linkgrp or 0) + 1
+      RandomOpts_LG_INIT()
+      lupd.update_randomopts = true
+    
+    elseif MOUSE_click_RB(obj.sections[1136]) then
+    
+      local p = randomopts_select.param
+    
+      randomopts_select.ctls[p].linkgrp = math.max((randomopts_select.ctls[p].linkgrp or 0) - 1,0)
+      if randomopts_select.ctls[p].linkgrp == 0 then
+        randomopts_select.ctls[p].linkgrp = nil
+      else
+        RandomOpts_LG_INIT()
+      end
+      lupd.update_randomopts = true
+    
+    elseif MOUSE_click(obj.sections[1147]) then
+    
+      local p = randomopts_select.param
+      local lg = randomopts_select.ctls[p].linkgrp
+      if not lg or randomopts_select.linkgrps[lg] and randomopts_select.linkgrps[lg].type == 1 then
+        randomopts_select.ctls[p].snap = not (randomopts_select.ctls[p].snap or false)
+        lupd.update_randomopts = true
+      end
+    
+    elseif MOUSE_click(obj.sections[1148]) then
+    
+      local p = randomopts_select.param
+      local lg = randomopts_select.ctls[p].linkgrp
+      if lg and randomopts_select.linkgrps[lg] and randomopts_select.linkgrps[lg].type == 4 then
+        randomopts_select.linkgrps[lg].snap = not (randomopts_select.linkgrps[lg].snap or false)
+        lupd.update_randomopts = true
+      end
+    
+    elseif MOUSE_click(obj.sections[1143]) then
+    
+      local p = randomopts_select.param
+      local lg = randomopts_select.ctls[p].linkgrp
+      if lg and randomopts_select.linkgrps[lg] then
+        randomopts_select.linkgrps[lg].type = math.min(randomopts_select.linkgrps[lg].type + 1,#lvar.linkgrp_table)
+        lupd.update_randomopts = true
+      end
+    
+    elseif MOUSE_click_RB(obj.sections[1143]) then
+    
+      local p = randomopts_select.param
+      local lg = randomopts_select.ctls[p].linkgrp
+      if lg and randomopts_select.linkgrps[lg] then
+        randomopts_select.linkgrps[lg].type = math.max(randomopts_select.linkgrps[lg].type - 1,1)
+        lupd.update_randomopts = true
+      end
+    
+    elseif MOUSE_click(obj.sections[1145]) then
+    
+      if mouse.mx < obj.sections[1145].x+obj.sections[1145].w/2 then
+        randomopts_select.param = randomopts_select.param - 1
+      else
+        randomopts_select.param = randomopts_select.param + 1
+      end
+      randomopts_select.param = F_limit(randomopts_select.param,1,#randomopts_select.ctls)
+      lupd.update_randomopts = true
+    
+    end
+    
+    mouse.mx = mx
+    mouse.my = my
+
+    return noscroll
+    
+  end
+
+  function A_Click_M0_MidiOut(rt, noscroll)
+
+
+
+    return noscroll
+    
+  end
+
+  function A_Click_M0_TFXOrder(rt, noscroll)
+
+
+
+    return noscroll
+    
+  end
+
+  function A_Click_M0_Settings(rt, noscroll)
+
+
+
+    return noscroll
+    
+  end
+
+  function A_Click_M0_Dropdown(rt, noscroll)
+
+
+
+    return noscroll
+    
+  end
+
+  function A_Click_M0_ModAss(rt, noscroll)
+
+    noscroll = A_Run_ModAss(noscroll, rt)
+
+    return noscroll
+    
+  end
+
+  function A_Click_M0_Fullscreen1(rt, noscroll)
+
+    if snap_edit_mode then
+      noscroll = A_Run_SnapEdit(noscroll, rt)
+    elseif macro_edit_mode then
+      noscroll = A_Run_MacroEdit(noscroll, rt)
+    elseif show_eqcontrol then
+      noscroll = A_Run_EQControl(noscroll, rt)
+    end
+    
+    return noscroll
+    
+  end
+
+  function A_Click_M0_Fullscreen2(rt, noscroll)
+
+    noscroll = A_Run_PinMatrix(noscroll, rt)
+    
+    return noscroll
+    
+  end
+
+  ------------------------
+  --- M0 MOUSE WHEEL
+  ------------------------
+  
+  function A_Wheel_M0_StripSurface(rt, noscroll, v)
+  
+    return noscroll
+  
+  end
+  
+  function A_Wheel_M0_Sidebar(rt, noscroll, v)
+    
+    if MOUSE_over(obj.sections[500]) then
+    
+      if mode0_submode == 0 then
+        if hideunusedtracks == true then
+          tlist_offset = F_limit(tlist_offset - v, 0, #tracksused_idx)
+        else
+          tlist_offset = F_limit(tlist_offset - v, 0, #tracks+1)
+        end
+      elseif mode0_submode == 1 then
+        if LBX_CTL_TRACK_INF then
+          fdlist_offset = F_limit(fdlist_offset - v, 0, lvar.LBX_FB_CNT*LBX_CTL_TRACK_INF.count -1)
+        end
+      elseif mode0_submode == 2 then
+        mdlist_offset = F_limit(mdlist_offset - v, 0, #modulators-1)
+      end
+      lupd.update_sidebar = true
+    
+      gfx.mouse_wheel = 0
+    end
+  
+    return noscroll  
+    
+  end
+  
+  function A_Wheel_M0_StripBrowser(rt, noscroll, v)
+
+    local mx, my = mouse.mx, mouse.my
+    mouse.mx, mouse.my = mouse.mx - obj.sections[1350].x, mouse.my - obj.sections[1350].y
+
+    if lvar.stripbrowser.showlist == true and MOUSE_over(obj.sections[1351]) then
+      local bcnt = math.floor(obj.sections[1351].h/(butt_h*pnl_scale))-1
+
+      sbsflist_offset = F_limit(sbsflist_offset - v,0,math.max(#strip_folders - bcnt +1,0))
+      lupd.update_stripbrowser = true
+
+    elseif MOUSE_over(obj.sections[1353]) then
+      local sel
+      if lvar.stripbrowser.favs == true then
+        sel = -1
+      else
+        sel = stripfol_select
+      end
+
+      sel = F_limit(sel - v, -1, #strip_folders)
+      if sel == -1 then
+        lvar.stripbrowser.favs = true
+        lvar.delayfunction.stripbrowser_reload_delay = reaper.time_precise() + 0.2
+      elseif strip_folders[sel] then
+        lvar.stripbrowser.favs = false
+        stripfol_select = sel
+        lvar.delayfunction.stripbrowser_reload_delay = reaper.time_precise() + 0.2
+      end
+      
+      lupd.update_stripbrowser = true
+
+    elseif lvar.sb_folbtn_c > 1 and MOUSE_over(obj.sections[1358]) and lvar.sb_folbtn_show then
+
+      lvar.sb_folbtn_offs = F_limit(lvar.sb_folbtn_offs - v*lvar.sb_folbtn_c, 0, #strip_folders-lvar.sb_folbtn_c+2)
+      lupd.update_stripbrowser = true
+
+    elseif MOUSE_over(obj.sections[1352]) then
+      if mouse.shift ~= true then
+        local perpage = lvar.stripbrowser.xnum * lvar.stripbrowser.ynum
+        local max
+        if lvar.stripbrowser.favs == true then
+          max = math.floor((#strip_favs-1) / perpage)
+        else
+          max = math.floor(#strip_files / perpage)
+        end
+        if v > 0 then v = 1 else v = -1 end
+        lvar.stripbrowser.page = F_limit(lvar.stripbrowser.page - v,0,max)
+        --DBG('page '..lvar.stripbrowser.page..'   mousewheel  '..gfx.mouse_wheel..'  max  '.. max)
+        GUI_DrawSB_Strips(obj, gui)
+        lupd.update_stripbrowser = true
+      else
+        lvar.reloadsbimages = true
+        lvar.stripbrowser.minw = math.max(lvar.stripbrowser.minw + v*5, 60)
+        lvar.stripbrowser.minh = math.floor(lvar.stripbrowser.minw * 3/4)
+        lvar.stripbrowser.minw = math.floor(lvar.stripbrowser.minw)
+        lvar.stripbrowser.page = 0
+        lupd.update_stripbrowser = true
+        obj = PosStripBrowser(obj)
+      end
+    end
+    mouse.mx, mouse.my = mx, my
+    gfx.mouse_wheel = 0
+    
+    return noscroll
+      
+  end
+
+  function A_Wheel_M0_TrBtns(rt, noscroll, v)
+
+    if not mouse.shift and (MOUSE_over(obj.sections[5005])) then
+      local mx = mouse.mx - obj.sections[5005].x
+      
+      local mr = math.min(lvar.trov_maxrows-1,lvar.dm_maxvistracks)
+      if mouse.ctrl then
+        p = math.max(F_limit(lvar.trbtns_offs - v,0,#lvar.dm_trackbtns[lvar.dm_tbidx]-(mr)),0)
+      else
+        p = math.max(F_limit(lvar.trbtns_offs - v*mr,0,#lvar.dm_trackbtns[lvar.dm_tbidx]-(mr)),0)
+      end
+      if p ~= lvar.trbtns_offs then
+        lvar.trbtns_offs = p
+        lupd.update_trbtns = true
+      end
+      gfx.mouse_wheel = 0
+    
+    elseif mouse.shift and (MOUSE_over(obj.sections[4999])) then
+    
+      p = F_limit(lvar.trbtns_size + v*4,80,160)
+      if p ~= lvar.trbtns_size then
+        lvar.trbtns_size = p
+        Repos5005()
+        SetSurfaceSize2(obj)
+        lupd.update_trbtns = true
+        lupd.update_surface = true
+      end
+      gfx.mouse_wheel = 0
+    end
+    
+    return noscroll
+  
+  end
+
+  function A_Wheel_M0_TrMix(rt, noscroll, v)
+
+    if not mouse.shift and MOUSE_over(obj.sections[5027]) then
+      
+      local mx = mouse.mx - obj.sections[5005].x
+      if MOUSE_over(obj.sections[5027]) and lvar.analyzer.active then
+        if lvar.analyzer.pos == 0 then
+          mx = mx - lvar.trbtns_size-20
+          if mx > 0 and mx < obj.sections[5005].w - (lvar.trbtns_size+10)*2 - 10 then
+            local tr = Analyzer_GetTrack()
+            local idx = lvar.analyzer.pos
+            if tr then
+              local param = 7
+              local val = reaper.TrackFX_GetParamNormalized(tr,idx,param)
+              val = F_limit(val + v*0.02,0,1)
+              reaper.TrackFX_SetParamNormalized(tr,idx,param,val)
+              lupd.update_analyzerctls = true
+              lupd.update_trmix = true
+    
+            end
+          end
+        end
+        gfx.mouse_wheel = 0
+      end
+    
+    elseif not mouse.shift and (lvar.trmix_sndpnl_show and MOUSE_over(obj.sections[5030])) then
+
+      local tr = GetTrack(lvar.dynamicmode_trn)
+      if tr then
+
+        local scnt = reaper.GetTrackNumSends(tr, 0) + reaper.GetTrackNumSends(tr, 1)
+
+        lvar.trmix_sndpnl_offs = math.max(math.min(lvar.trmix_sndpnl_offs - v,scnt-lvar.sndpnl_maxrows+1),0)
+        lupd.update_trbtns = true
+      end
+      gfx.mouse_wheel = 0
+
+
+    elseif (MOUSE_over(obj.sections[5043]) or (not lvar.trmix_sndpnl_show and MOUSE_over(obj.sections[5044]))) then
+
+      if mouse.shift then
+        p = F_limit(lvar.trmixbtns_size + v*4,80,160)
+        if p ~= lvar.trmixbtns_size then
+          lvar.trmixbtns_size = p
+          Repos5005()
+          SetSurfaceSize2(obj)
+          lupd.update_trbtns = true
+          lupd.update_surface = true
+        end
+      else
+        lvar.dm_btnpnl_page = F_limit(lvar.dm_btnpnl_page - v,0,15)
+        lupd.update_trbtns = true
+      end
+
+      gfx.mouse_wheel = 0
+    
+    end
+    
+    return noscroll
+  
+  end
+  
+  function A_Wheel_M0_Snapshot(rt, noscroll, v)
+    
+    if snapshots and snapshots[tracks[track_select].strip] and
+       snapshots[tracks[track_select].strip][page][sstype_select] then
+      if sstype_select == 1 then
+        ssoffset = F_limit(ssoffset - v, 0, #snapshots[tracks[track_select].strip][page][sstype_select]-1)
+      elseif sstype_select > 1 then
+        ssoffset = F_limit(ssoffset - v, 0, #snapshots[tracks[track_select].strip][page][sstype_select].snapshot-1)
+      end
+      lupd.update_snaps = true
+    end
+    gfx.mouse_wheel = 0
+    
+    return noscroll
+  
+  end
+
+  function A_Wheel_M0_AddStripDialog(rt, noscroll, v)
+
+    if lvar.fxdata then
+      local fxdata = lvar.fxdata
+      if MOUSE_over(obj.sections[4001]) then
+        afxdialogS_offset = F_limit(afxdialogS_offset - v, 0, #fxdata-1)
+      elseif MOUSE_over(obj.sections[4002]) then
+        afxdialogT_offset = F_limit(afxdialogT_offset - v, 0, #fxdata.tfxi)
+      end
+      lupd.update_surface = true
+    end
+    gfx.mouse_wheel = 0
+    
+    return noscroll
+  
+  end
+
+  function A_Wheel_M0_fSnapshot(rt, noscroll, v)
+
+    if snapshots and snapshots[tracks[track_select].strip] and
+       snapshots[tracks[track_select].strip][page][fsstype_select] then
+      if fsstype_select == 1 then
+        fssoffset = F_limit(fssoffset - v, 0, #snapshots[tracks[track_select].strip][page][fsstype_select]-1)
+      elseif fsstype_select > 1 then
+        fssoffset = F_limit(fssoffset - v, 0, #snapshots[tracks[track_select].strip][page][fsstype_select].snapshot-1)
+      end
+      lupd.update_fsnaps = true
+    end
+    gfx.mouse_wheel = 0
+    
+    return noscroll
+  
+  end
+  
+  function A_Wheel_M0_TemplateChooser(rt, noscroll, v)
+
+    local p = F_limit(lvar.template_strips_offs - v,0,#lvar.template_strips)
+    if p ~= lvar.template_strips_offs then
+      lvar.template_strips_offs = p
+      lupd.update_tchooser = true
+    end
+    gfx.mouse_wheel = 0
+
+    return noscroll
+
+  end
+  
+  function A_Wheel_M0_SampleManager(rt, noscroll, v)
+  
+    local xywh_sm = {x = obj.sections[1300].x+obj.sections[1302].x,
+                  y = obj.sections[1300].y+obj.sections[1302].y,
+                  w = obj.sections[1302].w,
+                  h = obj.sections[1302].h}
+    local xywh_sm2 = {x = obj.sections[1300].x+obj.sections[1304].x,
+                  y = obj.sections[1300].y+obj.sections[1304].y,
+                  w = obj.sections[1304].w,
+                  h = obj.sections[1304].h}
+  
+    if MOUSE_over(xywh_sm2) then
+      lvar.kb.offset = F_limit(lvar.kb.offset - v*20,0,lvar.kb.wkey_w*lvar.kb.wkeys - obj.sections[1304].w)
+      lupd.update_samplemanager = true
+      gfx.mouse_wheel = 0
+    
+    elseif MOUSE_over(xywh_sm) then
+      local ctl = strips[tracks[track_select].strip][page].controls[rs5k_select]
+      local rsdata
+      if smshowfavs then
+        rsdata = samplefavs
+      else
+        rsdata = ctl.rsdata
+      end
+      if ctl and SM_butt_cnt < #rsdata.samples then
+        smlist_offset = F_limit(smlist_offset - v*3, 0, #rsdata.samples-SM_butt_cnt)
+      else
+        smlist_offset = 0
+      end
+      lupd.update_samplemanager = true
+      gfx.mouse_wheel = 0
+    end
+    
+    return noscroll
+  
+  end
+  
+  function A_Wheel_M0_ModAss(rt, noscroll, v)
+  
+    local butt_h = math.floor(butt_h*pnl_scale)+2
+    local but_cy = math.max(math.floor(obj.sections[1127].h / butt_h),1)
+    local cnt = #lvar.modass
+    local mcnt = cnt % but_cy
+    lvar.modass.offset = F_limit(lvar.modass.offset + (-v*but_cy),0,lvar.modass.count-(mcnt+1))
+    gfx.mouse_wheel = 0
+    lupd.update_surface = true    
+  
+    return noscroll
+    
+  end
+
+  function A_Wheel_M0_Fullscreen1(rt, noscroll)
+
+    if snap_edit_mode then
+      noscroll = A_Run_SnapEdit(noscroll, rt)
+    elseif macro_edit_mode then
+      noscroll = A_Run_MacroEdit(noscroll, rt)
+    elseif show_eqcontrol then
+      noscroll = A_Run_EQControl(noscroll, rt)
+    end
+
+    return noscroll
+    
+  end
+  
+  function A_Wheel_M0_Fullscreen2(rt, noscroll)
+  
+    noscroll = A_Run_PinMatrix(noscroll, rt)
+    
+    return noscroll
+    
+  end
+  
   function A_Run_Mode0(noscroll, rt)
 
     local contexts = contexts
@@ -54272,270 +58415,67 @@ DBG('bl')
         mu_mmsg = nil
         touch_trigger = false
         lupd.update_surface = true
-        touch_timer = reaper.time_precise()+0.2
+        lvar.delayfunction.touch_timer = reaper.time_precise()+0.2
         mididelay = nil
       else
         mididelay = reaper.time_precise()+0.2
       end
     end
 
-    if gfx.mouse_wheel ~= 0 then
+    --local guibmp, full_screen, lrn_mode
+    --[[if gfx.mouse_wheel ~= 0 then
+
+      full_screen = snap_edit_mode or macro_edit_mode or show_pinmatrix or show_eqcontrol         
+      lrn_mode = snaplrn_mode or macro_lrn_mode
+    
       local v = gfx.mouse_wheel/lvar.mousewheel_div
-      if MOUSE_over(obj.sections[500]) then
-        if mode0_submode == 0 then
-          if hideunusedtracks == true then
-            tlist_offset = F_limit(tlist_offset - v, 0, #tracksused_idx)
-          else
-            tlist_offset = F_limit(tlist_offset - v, 0, #tracks+1)
-          end
-        elseif mode0_submode == 1 then
-          if LBX_CTL_TRACK_INF then
-            fdlist_offset = F_limit(fdlist_offset - v, 0, lvar.LBX_FB_CNT*LBX_CTL_TRACK_INF.count -1)
-          end
-        elseif mode0_submode == 2 then
-          mdlist_offset = F_limit(mdlist_offset - v, 0, #modulators-1)
-        end
-        lupd.update_sidebar = true
-
-        gfx.mouse_wheel = 0
+      gfx.dest = guibitmap
+      gfx.x = mouse.mx
+      gfx.y = mouse.my
+      local r,g,b = gfx.getpixel()
+      local rgb = (r*255) + ((g*255) << 8) + ((b*255) << 16)
+      if not lvar.guibmp then
+        RedrawGUIBitmap2()
       end
-
-      if snap_edit_mode ~= true and macro_edit_mode ~= true and show_pinmatrix ~= true and not snaplrn_mode and not macro_lrn_mode then
-        local xywh = {x = obj.sections[1350].x,
-                      y = obj.sections[1350].y,
-                      w = obj.sections[1350].w,
-                      h = obj.sections[1350].h}
-
-        if lvar.show_templatechooser and MOUSE_over(obj.sections[5050]) then
-
-          local p = F_limit(lvar.template_strips_offs - v,0,#lvar.template_strips)
-          if p ~= lvar.template_strips_offs then
-            lvar.template_strips_offs = p
-            lupd.update_tchooser = true
-          end
+      guibmp = lvar.guibmp[lvar.guibmp.idx[rgb] ] 
+      --DBG(rgb)       
+      if guibmp then
+        if guibmp.wheel0 --[[and not full_screen] ] and not lrn_mode then
+          noscroll = guibmp.wheel0(rt, noscroll, v)
+        --elseif guibmp.wheel0_fs and full_screen then
+        --  noscroll = guibmp.wheel0_fs(rt, noscroll, v)        
+        else--if not full_screen then
           gfx.mouse_wheel = 0
-
-        elseif lvar.trbtns_show and not mouse.shift and (MOUSE_over(obj.sections[5005]) or (lvar.trmix_show and MOUSE_over(obj.sections[5027]))) then
-          local mx = mouse.mx - obj.sections[5005].x
-          if MOUSE_over(obj.sections[5027]) and lvar.analyzer.active then
-            if lvar.analyzer.pos == 0 then
-              mx = mx - lvar.trbtns_size-20
-              if mx > 0 and mx < obj.sections[5005].w - (lvar.trbtns_size+10)*2 - 10 then
-                local tr = Analyzer_GetTrack()
-                local idx = lvar.analyzer.pos
-                if tr then
-                  local param = 7
-                  local val = reaper.TrackFX_GetParamNormalized(tr,idx,param)
-                  val = F_limit(val + v*0.02,0,1)
-                  reaper.TrackFX_SetParamNormalized(tr,idx,param,val)
-                  lupd.update_analyzerctls = true
-                  lupd.update_trmix = true
-
-                end
-              end
-            end
-          else
-            local mr = math.min(lvar.trov_maxrows-1,lvar.dm_maxvistracks)
-            if mouse.ctrl then
-              p = math.max(F_limit(lvar.trbtns_offs - v,0,#lvar.dm_trackbtns[lvar.dm_tbidx]-(mr)),0)
-            else
-              p = math.max(F_limit(lvar.trbtns_offs - v*mr,0,#lvar.dm_trackbtns[lvar.dm_tbidx]-(mr)),0)
-            end
-            --DBG(p)
-            if p ~= lvar.trbtns_offs then
-              lvar.trbtns_offs = p
-              lupd.update_trbtns = true
-            end
-          end
-          gfx.mouse_wheel = 0
-
-        elseif lvar.trbtns_show and mouse.shift and (MOUSE_over(obj.sections[4999])) then
-
-          p = F_limit(lvar.trbtns_size + v*4,80,160)
-          if p ~= lvar.trbtns_size then
-            lvar.trbtns_size = p
-            Repos5005()
-            SetSurfaceSize2(obj)
-            lupd.update_trbtns = true
-            lupd.update_surface = true
-          end
-          gfx.mouse_wheel = 0
-
-        elseif lvar.trbtns_show and lvar.trmix_show and not mouse.shift and (lvar.trmix_sndpnl_show and MOUSE_over(obj.sections[5030])) then
-
-          local tr = GetTrack(lvar.dynamicmode_trn)
-          if tr then
-
-            local scnt = reaper.GetTrackNumSends(tr, 0) + reaper.GetTrackNumSends(tr, 1)
-
-            lvar.trmix_sndpnl_offs = math.max(math.min(lvar.trmix_sndpnl_offs - v,scnt-lvar.sndpnl_maxrows+1),0)
-            lupd.update_trbtns = true
-          end
-          gfx.mouse_wheel = 0
-
-
-        elseif lvar.trbtns_show and lvar.trmix_show --[[and not mouse.shift]] and (MOUSE_over(obj.sections[5043]) or (not lvar.trmix_sndpnl_show and MOUSE_over(obj.sections[5044]))) then
-
-          if mouse.shift then
-            p = F_limit(lvar.trmixbtns_size + v*4,80,160)
-            if p ~= lvar.trmixbtns_size then
-              lvar.trmixbtns_size = p
-              Repos5005()
-              SetSurfaceSize2(obj)
-              lupd.update_trbtns = true
-              lupd.update_surface = true
-            end
-          else
-            lvar.dm_btnpnl_page = F_limit(lvar.dm_btnpnl_page - v,0,15)
-            lupd.update_trbtns = true
-          end
-
-          gfx.mouse_wheel = 0
-
-        elseif show_stripbrowser == true and MOUSE_over(xywh) then
-
-          local mx, my = mouse.mx, mouse.my
-          mouse.mx, mouse.my = mouse.mx - obj.sections[1350].x, mouse.my - obj.sections[1350].y
-
-          if lvar.stripbrowser.showlist == true and MOUSE_over(obj.sections[1351]) then
-            local bcnt = math.floor(obj.sections[1351].h/(butt_h*pnl_scale))-1
-
-            sbsflist_offset = F_limit(sbsflist_offset - v,0,math.max(#strip_folders - bcnt +1,0))
-            lupd.update_stripbrowser = true
-
-          elseif lvar.sb_folbtn_c > 1 and MOUSE_over(obj.sections[1358]) and lvar.sb_folbtn_show then
-
-            lvar.sb_folbtn_offs = F_limit(lvar.sb_folbtn_offs - v*lvar.sb_folbtn_c, 0, #strip_folders-lvar.sb_folbtn_c+2)
-            lupd.update_stripbrowser = true
-
-          elseif MOUSE_over(obj.sections[1352]) then
-            if mouse.shift ~= true then
-              local perpage = lvar.stripbrowser.xnum * lvar.stripbrowser.ynum
-              local max
-              if lvar.stripbrowser.favs == true then
-                max = math.floor((#strip_favs-1) / perpage)
-              else
-                max = math.floor(#strip_files / perpage)
-              end
-              if v > 0 then v = 1 else v = -1 end
-              lvar.stripbrowser.page = F_limit(lvar.stripbrowser.page - v,0,max)
-              --DBG('page '..lvar.stripbrowser.page..'   mousewheel  '..gfx.mouse_wheel..'  max  '.. max)
-              GUI_DrawSB_Strips(obj, gui)
-              lupd.update_stripbrowser = true
-            else
-              lvar.reloadsbimages = true
-              lvar.stripbrowser.minw = math.max(lvar.stripbrowser.minw + v*5, 60)
-              lvar.stripbrowser.minh = math.floor(lvar.stripbrowser.minw * 3/4)
-              lvar.stripbrowser.minw = math.floor(lvar.stripbrowser.minw)
-              lvar.stripbrowser.page = 0
-              lupd.update_stripbrowser = true
-              obj = PosStripBrowser(obj)
-            end
-          end
-          mouse.mx, mouse.my = mx, my
-          gfx.mouse_wheel = 0
-        elseif show_modass == true and MOUSE_over(obj.sections[1125]) then
-
-          local butt_h = math.floor(butt_h*pnl_scale)+2
-          local but_cy = math.max(math.floor(obj.sections[1127].h / butt_h),1)
-          local cnt = #lvar.modass
-          local mcnt = cnt % but_cy
-          lvar.modass.offset = F_limit(lvar.modass.offset + (-v*but_cy),0,lvar.modass.count-(mcnt+1))
-          gfx.mouse_wheel = 0
-          lupd.update_surface = true
-
-        end
-
-        local xywh = {x = obj.sections[1300].x+obj.sections[1302].x,
-                      y = obj.sections[1300].y+obj.sections[1302].y,
-                      w = obj.sections[1302].w,
-                      h = obj.sections[1302].h}
-        if show_samplemanager == true and MOUSE_over(xywh) then
-          local ctl = strips[tracks[track_select].strip][page].controls[rs5k_select]
-          local rsdata
-          if smshowfavs then
-            rsdata = samplefavs
-          else
-            rsdata = ctl.rsdata
-          end
-          if ctl and SM_butt_cnt < #rsdata.samples then
-            smlist_offset = F_limit(smlist_offset - v*3, 0, #rsdata.samples-SM_butt_cnt)
-          else
-            smlist_offset = 0
-          end
-          lupd.update_samplemanager = true
-          gfx.mouse_wheel = 0
-        end
-
-        local xywh = {x = obj.sections[1300].x+obj.sections[1304].x,
-                      y = obj.sections[1300].y+obj.sections[1304].y,
-                      w = obj.sections[1304].w,
-                      h = obj.sections[1304].h}
-        if show_samplemanager == true and MOUSE_over(xywh) then
-          lvar.kb.offset = F_limit(lvar.kb.offset - v*20,0,lvar.kb.wkey_w*lvar.kb.wkeys - obj.sections[1304].w)
-          lupd.update_samplemanager = true
-          gfx.mouse_wheel = 0
-        end
-
-        if show_snapshots == true and snap_edit_mode ~= true and macro_edit_mode ~= true and MOUSE_over(obj.sections[160]) then
-          if snapshots and snapshots[tracks[track_select].strip] and
-             snapshots[tracks[track_select].strip][page][sstype_select] then
-            if sstype_select == 1 then
-              ssoffset = F_limit(ssoffset - v, 0, #snapshots[tracks[track_select].strip][page][sstype_select]-1)
-            elseif sstype_select > 1 then
-              ssoffset = F_limit(ssoffset - v, 0, #snapshots[tracks[track_select].strip][page][sstype_select].snapshot-1)
-            end
-            lupd.update_snaps = true
-          end
-          gfx.mouse_wheel = 0
-        end
-
-        if show_fsnapshots == true and MOUSE_over(obj.sections[180]) then
-          if snapshots and snapshots[tracks[track_select].strip] and
-             snapshots[tracks[track_select].strip][page][fsstype_select] then
-            if fsstype_select == 1 then
-              fssoffset = F_limit(fssoffset - v, 0, #snapshots[tracks[track_select].strip][page][fsstype_select]-1)
-            elseif fsstype_select > 1 then
-              fssoffset = F_limit(fssoffset - v, 0, #snapshots[tracks[track_select].strip][page][fsstype_select].snapshot-1)
-            end
-            lupd.update_fsnaps = true
-          end
-          gfx.mouse_wheel = 0
-        end
-
-        if lvar.show_addstripdialog and MOUSE_over(obj.sections[4000]) then
-          if lvar.fxdata then
-            local fxdata = lvar.fxdata
-            if MOUSE_over(obj.sections[4001]) then
-              afxdialogS_offset = F_limit(afxdialogS_offset - v, 0, #fxdata-1)
-            elseif MOUSE_over(obj.sections[4002]) then
-              afxdialogT_offset = F_limit(afxdialogT_offset - v, 0, #fxdata.tfxi)
-            end
-            lupd.update_surface = true
-          end
         end
       end
-    end
+          
+    end]]
 
+    local skip
     if insertstrip then
 
       A_Run_InsertStrip()
+      skip = true
 
-    elseif show_eqcontrol == true then
+    --[[elseif show_eqcontrol == true then
 
       noscroll = A_Run_EQControl(noscroll, rt)
+      skip = true
 
-    elseif show_pinmatrix == true then
+    --[[elseif show_pinmatrix == true then
 
       noscroll = A_Run_PinMatrix(noscroll, rt)
+      skip = true
 
     elseif macro_edit_mode == true and macro_lrn_mode == false then
 
       noscroll = A_Run_MacroEdit(noscroll, rt)
+      skip = true]]
 
-    elseif snap_edit_mode == true and snaplrn_mode ~= true then
+    --elseif snap_edit_mode == true and snaplrn_mode ~= true then
 
-      noscroll = A_Run_SnapEdit(noscroll, rt)
+    --  noscroll = A_Run_SnapEdit(noscroll, rt)
+    --  skip = true
 
     elseif lvar.show_templatechooser then
 
@@ -54543,9 +58483,13 @@ DBG('bl')
       if MOUSE_click(obj.sections[5050]) then
         A_Run_TemplateChooser(noscroll, rt)
       elseif MOUSE_click(obj.sections[10]) then
-        lvar.show_templatechooser = nil
+        if lvar.show_templatechooser then
+          lvar.show_templatechooser = nil
+          RedrawGUIBitmap()
+        end
         lvar.dm_editmode_data_tmp = nil
         lupd.update_surface = true
+        
       elseif MOUSE_over(obj.sections[5050]) then
         local my = mouse.my-obj.sections[5050].y-5
         local butt_h = butt_h*pnl_scale
@@ -54561,1462 +58505,79 @@ DBG('bl')
           lupd.update_tchooser = true
         end
       end
+      skip = true
       --navigate = false
     end
 
+    if mouse.context == nil then
+      if show_modass == true and (MOUSE_click(obj.sections[1125]) or MOUSE_click_RB(obj.sections[1125])) then
+  
+        noscroll = A_Run_ModAss(noscroll, rt)
+        skip = true
+        
+      elseif lvar.show_addstripdialog and (MOUSE_click(obj.sections[4000]) or MOUSE_click_RB(obj.sections[4000])) then
+  
+        noscroll = A_RunAddStrip(noscroll, rt)
+        skip = true
+        
+      end
+    end
+    
     -----------------
+    local guibmp, full_screen, lrn_mode
+    if not mouse.context and not skip then
+      if MC() or gfx.mouse_wheel ~= 0 then
+        --if not guibmp then
+
+          full_screen = snap_edit_mode or macro_edit_mode or show_pinmatrix or show_eqcontrol         
+          lrn_mode = snaplrn_mode or macro_lrn_mode
+          
+          gfx.dest = guibitmap
+          gfx.x = mouse.mx
+          gfx.y = mouse.my
+          local r,g,b = gfx.getpixel()
+          local rgb = (r*255) + ((g*255) << 8) + ((b*255) << 16)
+          if not lvar.guibmp then
+            RedrawGUIBitmap2()
+          end
+          local guibmp = lvar.guibmp[lvar.guibmp.idx[rgb]]        
+          if guibmp then
+            if gfx.mouse_wheel ~= 0 then
+              local v = gfx.mouse_wheel/lvar.mousewheel_div
+              if guibmp.wheel0 and not lrn_mode then
+                noscroll = guibmp.wheel0(rt, noscroll, v)
+              else
+                gfx.mouse_wheel = 0 
+              end
+            else
+              if guibmp.func0 --[[and not full_screen]] and not lrn_mode then
+                noscroll = guibmp.func0(rt, noscroll)
+              elseif guibmp.func0_lrn and lrn_mode then
+                noscroll = guibmp.func0_lrn(rt, noscroll)
+              end
+            end
+          end
+        --[[else
+          if guibmp.func0 and not lrn_mode then
+            noscroll = guibmp.func0(rt, noscroll)
+          elseif guibmp.func0_lrn and lrn_mode then
+            noscroll = guibmp.func0_lrn(rt, noscroll)
+          end
+        end]]
+      end
+    end
+
+    if macro_edit_mode then
+      A_Run_MacroEdit2(noscroll, rt)
+    elseif show_eqcontrol then
+      A_Run_EQControl2(rt, noscroll)
+    end
+
     if not mouse.context then
 
 
-    if show_modass == true and (MOUSE_click(obj.sections[1125]) or MOUSE_click_RB(obj.sections[1125])) then
 
-      noscroll = A_Run_ModAss(noscroll, rt)
-
-    elseif --[[mouse.context == nil and]] lvar.show_addstripdialog and (MOUSE_click(obj.sections[4000]) or MOUSE_click_RB(obj.sections[4000])) then
-
-      noscroll = A_RunAddStrip(noscroll, rt)
-
-    elseif --[[mouse.context == nil and]] show_stripbrowser == true and show_eqcontrol ~= true and show_pinmatrix ~= true and
-           not macro_lrn_mode and macro_edit_mode ~= true and not snaplrn_mode and (MOUSE_click(obj.sections[1350]) or MOUSE_click_RB(obj.sections[1350])) then
-
-      noscroll = true
-      mx,my = mouse.mx, mouse.my
-      mouse.mx = mouse.mx - obj.sections[1350].x
-      mouse.my = mouse.my - obj.sections[1350].y
-
-      if MOUSE_click(obj.sections[1353]) then
-
-        --lvar.stripbrowser.favs = true
-        --DBG('AA')
-        --lvar.stripbrowser.showlist = not (lvar.stripbrowser.showlist or false)
-        --lupd.update_stripbrowser = true
-        local ddtab = {idx = 3, x = obj.sections[1350].x+obj.sections[1353].x, y = obj.sections[1350].y+obj.sections[1353].y+obj.sections[1353].h+2, w = obj.sections[1353].w, h = 100, items = {}, wpad = 40}
-        local cnt = #strip_folders
-        ddtab.items[1] = 'FAVS'
-        for sid = 0, cnt do
-          ddtab.items[sid+2] = strip_folders[sid].fn
-        end
-        OpenDropDown(3, ddtab, true, true)
-
-      elseif MOUSE_click_RB(obj.sections[1353]) then
-
-        local export = '#'
-        local exportstrip, exportfolder = ''
-        if lvar.stripbrowser.select then
-          if lvar.stripbrowser.favs == true and strip_favs[lvar.stripbrowser.select+1] then
-            export = ''
-            exportfolder = string.match(strip_favs[lvar.stripbrowser.select+1],'(.-)[\\/].*')
-            exportstrip = string.match(strip_favs[lvar.stripbrowser.select+1],'.-[\\/](.*)')
-          elseif lvar.stripbrowser.favs ~= true and strip_files[lvar.stripbrowser.select] then
-            export = ''
-            exportfolder = strip_folders[stripfol_select].fn
-            exportstrip = strip_files[lvar.stripbrowser.select].fn
-          end
-        end
-        local fbs = ''
-        if lvar.sb_folbtn_show then
-          fbs = '!'
-        end
-        local impfol = strip_folders[stripfol_select].fn
-        local ass = ''
-        if lvar.stripbrowser.favs == true then
-          ass = '#'
-        end
-        local mstr = 'Import Share Strip File (to '..impfol..' folder)|Batch Import Folder Of Share Strips||'
-                      .. export .. 'Export Share Strip File ('..exportstrip..')|'..ass..'Batch Export All Strips In Folder As Share Strip Files'..
-                      '||'..ass..'Associate All Strips In Folder With Plugins|Strip Association Manager||'..fbs..'Show Additional Folder Buttons'
-
-        gfx.x = mx
-        gfx.y = my
-        local res = gfx.showmenu(mstr)
-        if res > 0 then
-          if res == 1 then
-            local stripfn = StripShare_Import()
-            loadstrip = LoadStrip(nil, impfol, stripfn)
-            if loadstrip then
-              local sfxi = GetStripFXInfo(nil, loadstrip)
-              if sfxi and #sfxi == 1 then
-                local stripfn2 = string.match(stripfn,'(.+)%.strip')
-
-                PlugDef_Add(sfxi[1].fxfn, stripfn2, impfol, true, nil)
-              end
-            end
-            
-          elseif res == 2 then
-          
-            BatchImportShareStrips()
-          
-          elseif res == 3 then
-            StripShare_Export(exportfolder..'/',exportstrip)
-          elseif res == 4 then
-            local sfcnt = #strip_files + 1
-            exportfolder = strip_folders[stripfol_select].fn
-            for i = 0, sfcnt-1 do
-              exportstrip = strip_files[i].fn
-              StripShare_Export(exportfolder..'/',exportstrip,exportfolder)
-            end          
-          elseif res == 5 then
-            local sfcnt = #strip_files + 1
-            for i = 0, sfcnt-1 do
-              Strip_SetPlugDef(i, stripfol_select, true)
-              Save_PlugDefs()
-            end
-          elseif res == 6 then
-            lvar.show_stripassoc = true
-            StripAssoc_GetData()
-            lupd.update_gfx = true
-          elseif res == 7 then
-            lvar.sb_folbtn_show = not lvar.sb_folbtn_show
-            lupd.update_stripbrowser = true
-          end
-        end
-
-      elseif MOUSE_click(obj.sections[1358]) and lvar.sb_folbtn_c > 1 and lvar.sb_folbtn_show then
-
-        local idx = math.floor((mouse.mx-obj.sections[1358].x)/lvar.sb_folbtn_w)
-        if idx < lvar.sb_folbtn_c then
-          idx = idx + lvar.sb_folbtn_offs
-          if idx == 0 then
-            lvar.stripbrowser.favs = true
-            lupd.update_stripbrowser = true
-            lvar.reloadsbimages = true
-            PopulateStrips()
-          elseif strip_folders[idx-1] then
-            lvar.stripbrowser.favs = false
-            stripfol_select = idx-1
-            lupd.update_stripbrowser = true
-            lvar.reloadsbimages = true
-            PopulateStrips()
-          end
-        end
-
-      elseif MOUSE_click(obj.sections[1359]) and settings_sbdock == true and lvar.sb_folbtn_c > 1 and lvar.sb_folbtn_show then
-
-        lvar.sb_folbtn_offs = math.max(lvar.sb_folbtn_offs - lvar.sb_folbtn_c,0)
-        lupd.update_stripbrowser = true
-
-      elseif MOUSE_click(obj.sections[1360]) and settings_sbdock == true and lvar.sb_folbtn_c > 1 and lvar.sb_folbtn_show then
-
-        lvar.sb_folbtn_offs = math.min(lvar.sb_folbtn_offs + lvar.sb_folbtn_c, #strip_folders-lvar.sb_folbtn_c+2)
-        lupd.update_stripbrowser = true
-
-      elseif mouse.my < butt_h*pnl_scale then
-        if mouse.RB and MOUSE_over(obj.sections[1357]) then
-
-          if lvar.stripbrowser.dockpos == 1 then
-            mstr = '!Dock to top edge|Dock to right edge'
-          else
-            mstr = 'Dock to top edge|!Dock to right edge'
-          end
-          gfx.x, gfx.y = mx, my
-          local res = gfx.showmenu(mstr)
-          if res > 0 then
-            lvar.stripbrowser.dockpos = res
-            sbwin.w = lvar.sbmin*pnl_scale
-            sbwin.h = lvar.sbmin*pnl_scale
-            SBDock(true)
-            obj = GetObjects()
-            lupd.update_gfx = true
-          end
-
-        elseif mouse.RB then
-          SetShowSB(false)
-          lupd.update_surface = true
-
-        elseif mouse.LB then
-          if MOUSE_click(obj.sections[1357]) then
-
-            SBDock(not settings_sbdock)
-
-          elseif settings_sbdock ~= true then
-            mouse.context = contexts.move_sbwin
-            movesbwin = {dx = mouse.mx, dy = mouse.my}
-          end
-        end
-
-      elseif MOUSE_click(obj.sections[1354])  then
-
-        if settings_sbdock ~= true then
-          mouse.context = contexts.resize_sbwin
-          sbwinrsz = {mx = mx, my = my, w = sbwin.w, h = sbwin.h, x = obj.sections[1350].x, y = obj.sections[1350].y, sc_w = obj.sections[1350].w, sc_h = obj.sections[1350].h}
-        end
-
-      elseif MOUSE_click(obj.sections[1355]) then
-
-        if settings_sbdock ~= true or lvar.stripbrowser.dockpos == 1 then
-          mouse.context = contexts.resize_sbwinv
-          sbwinrsz = {my = my, h = sbwin.h, y = obj.sections[1350].y, sc_h = obj.sections[1350].h}
-        end
-
-      elseif MOUSE_click(obj.sections[1356])  then
-
-        mouse.context = contexts.resize_sbwinh
-        sbwinrsz = {mx = mx, w = sbwin.w, x = obj.sections[1350].x, sc_w = obj.sections[1350].w, mmx = mouse.mx, ddx = mx - obj.sections[1350].x, ep = obj.sections[1350].x + obj.sections[1350].w}
-
-      elseif lvar.stripbrowser.showlist == true and MOUSE_click(obj.sections[1351]) then
-
-        local n = math.floor((mouse.my - obj.sections[1351].y) / math.floor(butt_h*pnl_scale))-1
-        if n == -1 then
-          lvar.stripbrowser.favs = true
-        else
-          if strip_folders[n+sbsflist_offset] then
-            lvar.stripbrowser.favs = false
-            stripfol_select = n+sbsflist_offset
-            PopulateStrips()
-          end
-        end
-        lvar.stripbrowser.showlist = false
-        lupd.update_stripbrowser = true
-
-      elseif MOUSE_click(obj.sections[1352]) then
-
-        if lvar.stripbrowser.showlist == true then
-          lvar.stripbrowser.showlist = false
-          lupd.update_stripbrowser = true
-        end
-        local minw, minh = math.floor(lvar.stripbrowser.minw), math.floor(lvar.stripbrowser.minh)
-
-        local w,h = gfx.getimgdim(skin.star)
-        local dx, dy = math.max(math.floor((lvar.stripbrowser.imgw-minw)/2),math.floor(5*pnl_scale)),
-                       math.max(math.floor((lvar.stripbrowser.imgh-minh)/2),math.floor(5*pnl_scale))
-        local x = math.floor(mouse.mx - (obj.sections[1352].x +dx+15)) % (lvar.stripbrowser.imgw+10)
-        local y = math.floor(mouse.my - (obj.sections[1352].y +dy+5) + h/2) % (lvar.stripbrowser.imgh+10)
-
-        if x >= minw/2-w/2 and x <= minw/2+w/2
-           and y > 2 and y <= 15 then
-
-          local x = math.floor((mouse.mx - obj.sections[1352].x)/(obj.sections[1352].w/lvar.stripbrowser.xnum))
-          local y = math.floor((mouse.my - obj.sections[1352].y)/(obj.sections[1352].h/lvar.stripbrowser.ynum))
-          local offset = (lvar.stripbrowser.ynum*lvar.stripbrowser.xnum) * lvar.stripbrowser.page
-
-          local n = x + (y*lvar.stripbrowser.xnum) + offset
-          lvar.stripbrowser.select = n
-
-          if (lvar.stripbrowser.favs == true and strip_favs[n+1]) or (lvar.stripbrowser.favs ~= true and strip_files[n]) then
-            local fn
-            if lvar.stripbrowser.favs == true then
-              fn = strip_favs[n+1]
-            else
-              fn = strip_folders[stripfol_select].fn..'/'..strip_files[n].fn
-            end
-
-            if InFavs(fn) then
-              RemoveFav(fn)
-            else
-              strip_favs[#strip_favs+1] = fn
-            end
-          end
-          lupd.update_stripbrowser = true
-
-        elseif mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.2 then
-
-          if lvar.livemode == 0 then
-            if lvar.stripbrowser.select then
-              loadstrip = nil
-              local fn
-              if lvar.stripbrowser.favs == true then
-                fn = strip_favs[lvar.stripbrowser.select+1]
-              else
-                if strip_files[lvar.stripbrowser.select] then
-                  fn = strip_folders[stripfol_select].fn..'/'..strip_files[lvar.stripbrowser.select].fn
-                end
-              end
-              if fn then
-                if settings_stripautosnap == true or show_striplayout == false or stripgallery_view > 0 then
-                  InsStrip(fn)
-                end
-              end
-            end
-          end
-
-        else
-
-          loadstrip = nil
-          local x = math.floor((mouse.mx - obj.sections[1352].x)/(obj.sections[1352].w/lvar.stripbrowser.xnum))
-          local y = math.floor((mouse.my - obj.sections[1352].y)/(obj.sections[1352].h/lvar.stripbrowser.ynum))
-          local offset = (lvar.stripbrowser.ynum*lvar.stripbrowser.xnum) * lvar.stripbrowser.page
-
-          local n = x + (y*lvar.stripbrowser.xnum) + offset
-          lvar.stripbrowser.select = n
-
-          lupd.update_stripbrowser = true
-          if (lvar.stripbrowser.favs == true and strip_favs[n+1]) or
-             (lvar.stripbrowser.favs ~= true and strip_files[n]) then
-
-            if show_striplayout == false and stripgallery_view == 0 then
-              mouse.context = contexts.sb_dragstrip
-              local fn
-              if lvar.stripbrowser.favs == true then
-                fn = paths.strips_path..string.match(strip_favs[n+1],'(.+)%.strip')..'.png'
-              else
-                fn = paths.strips_path..strip_folders[stripfol_select].fn..'/'..string.match(strip_files[n].fn,'(.+)%.strip')..'.png'
-              end
-              local img = 980
-              if reaper.file_exists(fn) then
-                gfx.loadimg(img, fn)
-              else
-                img = skin.sbicon
-              end
-              local pw = lvar.stripbrowser.minw
-              local ph = lvar.stripbrowser.minh
-              local w,h = gfx.getimgdim(img)
-              local scale = math.min(pw/w,ph/h)
-
-              local drags
-              if lvar.livemode >= 1 then
-                drags = DragSwitcher_Ext(nil, nil, true)
-              end
-              if drags then
-                sb_drag = {x = mouse.mx, y = mouse.my, img = img, scale = scale, w = w, h = h,
-                           xoff = math.floor((w*scale)/2), yoff = math.floor((h*scale)/2),
-                           alpha = 0, drags = drags, fn = fn, showpop = lvar.showpop}
-              end
-            end
-          end
-
-        end
-
-      elseif MOUSE_click_RB(obj.sections[1352]) then
-
-        local x = math.floor((mouse.mx - obj.sections[1352].x)/(obj.sections[1352].w/lvar.stripbrowser.xnum))
-        local y = math.floor((mouse.my - obj.sections[1352].y)/(obj.sections[1352].h/lvar.stripbrowser.ynum))
-        local offset = (lvar.stripbrowser.ynum*lvar.stripbrowser.xnum) * lvar.stripbrowser.page
-
-        local n = x + (y*lvar.stripbrowser.xnum) + offset
-        lvar.stripbrowser.select = n
-
-        if mouse.shift then
-          lupd.update_stripbrowser = true
-          lupd = GUI_draw(obj, gui)
-          gfx.update()
-
-          lvar.openmenu = {func = SBMenu_RB}
-
-        else
-          lupd.update_stripbrowser = true
-          if (lvar.stripbrowser.favs == true and strip_favs[n+1]) then
-            movefav = table.copy(strip_favs)
-            lvar.stripbrowser.moveselect = n
-            mouse.context = contexts.sb_movefav
-          end
-        end
-      end
-
-      mouse.mx = mx
-      mouse.my = my
-
-
-    elseif --[[mouse.context == nil and]] show_samplemanager == true and show_eqcontrol ~= true and show_pinmatrix ~= true and (MOUSE_click(obj.sections[1300]) or MOUSE_click_RB(obj.sections[1300])) then
-
-      noscroll = true
-      mx,my = mouse.mx, mouse.my
-      mouse.mx = mouse.mx - obj.sections[1300].x
-      mouse.my = mouse.my - obj.sections[1300].y
-
-      local strip = tracks[track_select].strip
-      local ctl = strips[strip][page].controls[rs5k_select]
-
-      if mouse.my < butt_h*pnl_scale then
-        if mouse.RB then
-          SetShowSampleManager(false)
-        elseif mouse.LB then
-          mouse.context = contexts.move_smwin
-          movesmwin = {dx = mouse.mx, dy = mouse.my}
-        end
-
-      elseif MOUSE_click(obj.sections[1310])  then
-
-        mouse.context = contexts.resize_smwin
-        smwinrsz = {mx = mx, my = my, w = smwin.w, h = smwin.h, x = obj.sections[1300].x, y = obj.sections[1300].y, sc_w = obj.sections[1300].w, sc_h = obj.sections[1300].h}
-
-      elseif MOUSE_click(obj.sections[1311])  then
-
-        mouse.context = contexts.resize_smwinv
-        smwinrsz = {my = my, h = smwin.h, y = obj.sections[1300].y, sc_h = obj.sections[1300].h}
-
-      elseif MOUSE_click(obj.sections[1303]) then
-
-        local rsdata
-        if smshowfavs then
-          rsdata = samplefavs
-        else
-          rsdata = ctl.rsdata
-        end
-
-        local msbh = obj.sections[1303].h
-        local p1 = 1 / #rsdata.samples
-        local sbh = math.ceil(F_limit(p1*SM_butt_cnt * msbh,20,msbh))
-        local p2 = p1*msbh
-        local sby = math.floor(smlist_offset * p2)
-
-        sby = math.min(sby,--[[obj.sections[1303].y+]]msbh-sbh-1)
-
-        if mouse.my >= obj.sections[1303].y + sby and mouse.my <= obj.sections[1303].y + sby+sbh then
-
-          if SM_butt_cnt < #rsdata.samples then
-            mouse.context = contexts.scrollsamples
-            scrollsamps = {y = mouse.my-obj.sections[1303].y, lo = smlist_offset}
-            lupd.update_samplemanager = true
-          else
-            smlist_offset = 0
-          end
-
-        elseif mouse.my < obj.sections[1303].y + sby then
-
-        elseif mouse.my > obj.sections[1303].y + sby+sbh then
-
-        end
-
-      elseif MOUSE_click(obj.sections[1302]) then
-        local v = math.floor((mouse.my - obj.sections[1302].y) / tb_butt_h)+1 + smlist_offset
-        local rsdata
-        if smshowfavs then
-          rsdata = samplefavs
-        else
-          rsdata = ctl.rsdata
-        end
-        if v <= #rsdata.samples then
-          local starw, starh = gfx.getimgdim(skin.star)
-
-          if mouse.mx < obj.sections[1302].w-starw then
-            if smshowfavs then
-              v = rsdata.samples[v].idx
-            end
-            sample_select = v
-            lupd.update_samplemanager = true
-            --if ctl.rsdata.samples[v].fn then
-              ctl.val = (v-1) / lvar.maxsamples
-              A_SetParam(strip,page,rs5k_select,ctl)
-              SetCtlDirty(rs5k_select)
-              lupd.update_ctls = true
-            --end
-          else
-            if rsdata.samples[v].fn then
-              rsdata.samples[v].fav = not (rsdata.samples[v].fav or false)
-              --PopSampleFavIdx()
-              lupd.update_samplemanager = true
-            end
-          end
-        end
-
-      elseif MOUSE_click(obj.sections[1304]) then
-
-        if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.15 then
-          gfx.dest = 909
-          gfx.x = mouse.mx - obj.sections[1304].x + lvar.kb.offset
-          gfx.y = mouse.my - obj.sections[1304].y + lvar.kb.wkey_h
-          local r,_,_ = gfx.getpixel()
-
-          lvar.kb.kstart = r*255
-          lvar.kb.kend = r*255
-
-          GUI_DrawKeyboardOverlay(obj, gui)
-          lupd.update_samplemanager = true
-
-          gfx.dest = 1
-
-          --Set plugin params
-          --local ctl = strips[tracks[track_select].strip][page].controls[rs5k_select]
-          local trn = ctl.tracknum or strips[strip].track.tracknum
-          local track = GetTrack(trn)
-          local fxnum = ctl.fxnum
-          local pstart = 3
-          local pend = 4
-          reaper.TrackFX_SetParam(track,fxnum,pstart,lvar.kb.kstart/128)
-          reaper.TrackFX_SetParam(track,fxnum,pend,lvar.kb.kend/128)
-
-        elseif mouse.shift then
-          gfx.dest = 909
-          gfx.x = mouse.mx - obj.sections[1304].x + lvar.kb.offset
-          gfx.y = mouse.my - obj.sections[1304].y + lvar.kb.wkey_h
-          local r,_,_ = gfx.getpixel()
-
-          lvar.kb.kend = r*255
-          if not lvar.kb.kstart then
-            lvar.kb.kstart = r*255
-          end
-          if lvar.kb.kstart > lvar.kb.kend then
-            local ke = lvar.kb.kend
-            lvar.kb.kend = lvar.kb.kstart
-            lvar.kb.kstart = ke
-          end
-          GUI_DrawKeyboardOverlay(obj, gui)
-          lupd.update_samplemanager = true
-
-          gfx.dest = 1
-
-          --Set plugin params
-          --local ctl = strips[tracks[track_select].strip][page].controls[rs5k_select]
-          local trn = ctl.tracknum or strips[strip].track.tracknum
-          local track = GetTrack(trn)
-          local fxnum = ctl.fxnum
-          local pstart = 3
-          local pend = 4
-          reaper.TrackFX_SetParam(track,fxnum,pstart,lvar.kb.kstart/128)
-          reaper.TrackFX_SetParam(track,fxnum,pend,lvar.kb.kend/128)
-
-        else
-          mouse.context = contexts.scrollkeyb
-          scrollkeyb = {x = mouse.mx-obj.sections[1304].x, lo = lvar.kb.offset}
-        end
-
-      elseif MOUSE_click_RB(obj.sections[1304]) then
-
-        gfx.dest = 909
-        gfx.x = mouse.mx - obj.sections[1304].x + lvar.kb.offset
-        gfx.y = mouse.my - obj.sections[1304].y + lvar.kb.wkey_h
-        local r,_,_ = gfx.getpixel()
-
-        lvar.rs.pitch = (r*255)-72
-        local v = 0.5 - (lvar.rs.pitch*(1/160))
-
-        local trn = ctl.tracknum or strips[strip].track.tracknum
-        local track = GetTrack(trn)
-        local fxnum = ctl.fxnum
-        reaper.TrackFX_SetParam(track,fxnum,15,v)
-
-        GUI_DrawKeyboardOverlay(obj, gui)
-        lupd.update_samplemanager = true
-
-      elseif MOUSE_click(obj.sections[1305]) then
-
-        RSMenuOut(mx,my)
-
-      elseif MOUSE_click(obj.sections[1306]) then
-
-        local fol, fil = RS5k_GetSample()
-        if fol and fil then
-
-          local sidx = #ctl.rsdata.samples+1
-          ctl.rsdata.samples[sidx] = {fol = fol,
-                                      fn = fil}
-          ctl.rsdata.samplesidx[fol..fil] = sidx
-          lupd.update_samplemanager = true
-          smlist_offset = sidx - SM_butt_cnt
-
-        end
-
-      elseif MOUSE_click(obj.sections[1307]) then
-
-        if sample_select then
-          local fol, fil = RS5k_GetSample()
-          if fol and fil then
-
-            local sidx = sample_select
-            if ctl.rsdata.samples[sidx] and ctl.rsdata.samples[sidx].fn then
-              ctl.rsdata.samplesidx[ctl.rsdata.samples[sidx].fol..ctl.rsdata.samples[sidx].fn] = nil
-            end
-            ctl.rsdata.samples[sidx] = {fol = fol,
-                                        fn = fil}
-            ctl.rsdata.samplesidx[fol..fil] = sidx
-            lupd.update_samplemanager = true
-            ctl.val = (sample_select-1) / lvar.maxsamples
-            A_SetParam(strip,page,rs5k_select,ctl)
-            SetCtlDirty(rs5k_select)
-            lupd.update_ctls = true
-
-          end
-        end
-
-      elseif MOUSE_click(obj.sections[1308]) then
-
-        if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.15 then
-          if sample_select then
-
-            if ctl.rsdata.samples[sample_select] and ctl.rsdata.samples[sample_select].fn then
-              ctl.rsdata.samplesidx[ctl.rsdata.samples[sample_select].fol..ctl.rsdata.samples[sample_select].fn] = nil
-              ctl.rsdata.samples[sample_select].fn = nil
-            end
-
-            lupd.update_samplemanager = true
-            ctl.val = (sample_select-1) / lvar.maxsamples
-            A_SetParam(strip,page,rs5k_select,ctl)
-            SetCtlDirty(rs5k_select)
-            lupd.update_ctls = true
-          end
-        end
-
-      elseif MOUSE_click(obj.sections[1309]) then
-
-        smshowfavs = not (smshowfavs or false)
-        smlist_offset = 0
-        if smshowfavs == true then
-          PopSampleFavIdx()
-        end
-        lupd.update_samplemanager = true
-
-      elseif MOUSE_click(obj.sections[1301]) then
-
-        if not ctl.rsdata.samplefolder then
-          RS5k_LoadFolder(strip, page, rs5k_select, false)
-          smlist_offset = 0
-          lupd.update_samplemanager = true
-
-        else
-          mstr = 'Rescan Folder||Load Folder|Load Folder (+subfolders)'
-          gfx.x = mx
-          gfx.y = my
-          local res = gfx.showmenu(mstr)
-          if res > 0 then
-
-            if res == 1 then
-              RS5k_RescanFolder(strip, page, rs5k_select)
-            elseif res == 2 then
-              RS5k_LoadFolder(strip, page, rs5k_select, false)
-              smlist_offset = 0
-            elseif res == 3 then
-              RS5k_LoadFolder(strip, page, rs5k_select, true)
-              smlist_offset = 0
-            end
-            lupd.update_samplemanager = true
-
-          end
-        end
-
-      elseif MOUSE_click_RB(obj.sections[1301]) then
-
-        local t = ''
-        if not ctl.rsdata.samplefolder then
-          t = '#'
-        end
-        mstr = t..'Rescan Folder||Load Folder|Load Folder (+subfolders)'
-        gfx.x = mx
-        gfx.y = my
-        local res = gfx.showmenu(mstr)
-        if res > 0 then
-
-          if res == 1 then
-            RS5k_RescanFolder(strip, page, rs5k_select)
-          elseif res == 2 then
-            RS5k_LoadFolder(strip, page, rs5k_select, false)
-            smlist_offset = 0
-          elseif res == 3 then
-            RS5k_LoadFolder(strip, page, rs5k_select, true)
-            smlist_offset = 0
-          end
-          lupd.update_samplemanager = true
-
-        end
-
-      end
-
-
-      mouse.mx = mx
-      mouse.my = my
-
-    elseif --[[mouse.context == nil and]] show_randomopts == true and show_eqcontrol ~= true and show_pinmatrix ~= true and (MOUSE_click(obj.sections[1130]) or MOUSE_click_RB(obj.sections[1130])) then
-
-      noscroll = true
-      mx,my = mouse.mx, mouse.my
-      mouse.mx = mouse.mx - obj.sections[1130].x
-      mouse.my = mouse.my - obj.sections[1130].y
-
-      xywh = {x = 0, y = 0, w = obj.sections[1130].w, h = gui.winsz.pnltit * pnl_scale}
-      if MOUSE_click(xywh) then
-        mouse.context = contexts.move_randomwin
-        moverandomwin = {dx = mouse.mx, dy = mouse.my}
-
-      elseif MOUSE_click_RB(xywh) then
-        show_randomopts = false
-        if randopts_selectctl then
-          SetCtlDirty(randopts_selectctl)
-          randopts_selectctl = nil
-          lupd.update_ctls = true
-        end
-        lupd.update_surface = true
-
-      elseif MOUSE_click(obj.sections[1131]) then
-
-        randomopts_select.useadv = not randomopts_select.useadv
-        lupd.update_randomopts = true
-        lupd.update_surface = true
-
-      elseif MOUSE_click(obj.sections[1132]) then
-
-        randomopts_select.snapshotsonly = not randomopts_select.snapshotsonly
-        lupd.update_randomopts = true
-        lupd.update_surface = true
-
-      elseif MOUSE_click(obj.sections[1133]) then
-
-        RandomOpts_ParamMenu(mx, my)
-
-      elseif MOUSE_click(obj.sections[1134]) then
-
-        local p = randomopts_select.param
-        local lg = randomopts_select.ctls[p].linkgrp
-        local lgtype
-        if lg and randomopts_select.linkgrps[lg] then
-          lgtype = randomopts_select.linkgrps[lg].type
-        end
-
-        if lgtype ~= 2 and lgtype ~= 3 then
-          if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.2 then
-            OpenEB(201,'Please enter value for min:',randomopts_select.ctls[p].min)
-          else
-            mouse.context = contexts.lg_min
-            draglg = {pos = randomopts_select.ctls[p].min, yoff = my-(obj.sections[1134].y+obj.sections[1134].h/2), shift = mouse.shift}
-          end
-        end
-
-      elseif MOUSE_click(obj.sections[1135]) then
-
-        local p = randomopts_select.param
-        local lg = randomopts_select.ctls[p].linkgrp
-        local lgtype
-        if lg and randomopts_select.linkgrps[lg] then
-          lgtype = randomopts_select.linkgrps[lg].type
-        end
-
-        if lgtype ~= 2 and lgtype ~= 3 then
-          if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.2 then
-            OpenEB(202,'Please enter value for max:',randomopts_select.ctls[p].max)
-          else
-            mouse.context = contexts.lg_max
-            draglg = {pos = randomopts_select.ctls[p].max, yoff = my-(obj.sections[1135].y+obj.sections[1135].h/2), shift = mouse.shift}
-          end
-        end
-
-      elseif MOUSE_click(obj.sections[1137]) then
-
-        local p = randomopts_select.param
-        local lg = randomopts_select.ctls[p].linkgrp
-
-        if not lg then
-          mouse.context = contexts.lg_probability
-          draglg = {pos = randomopts_select.ctls[p].rprob, yoff = my-(obj.sections[1137].y+obj.sections[1137].h/2)}
-        end
-
-      elseif MOUSE_click(obj.sections[1138]) then
-
-        local p = randomopts_select.param
-        local lg = randomopts_select.ctls[p].linkgrp
-        local lgtype
-        if lg and randomopts_select.linkgrps[lg] then
-          lgtype = randomopts_select.linkgrps[lg].type
-        end
-
-        if not lgtype or lgtype == 1 then
-          mouse.context = contexts.lg_bias
-          draglg = {pos = randomopts_select.ctls[p].bias, yoff = my-(obj.sections[1138].y+obj.sections[1138].h/2)}
-        end
-
-      elseif MOUSE_click(obj.sections[1139]) then
-        local p = randomopts_select.param
-        local rctl = randomopts_select.ctls[p]
-        local lg = rctl.linkgrp
-        if lg and randomopts_select.linkgrps[lg].type == 4 then
-          rctl.inverted = not (rctl.inverted or false)
-          lupd.update_randomopts = true
-        end
-
-      elseif MOUSE_click(obj.sections[1140]) then
-
-        local p = randomopts_select.param
-        local lg = randomopts_select.ctls[p].linkgrp
-        local lgtype
-        if lg and randomopts_select.linkgrps[lg] then
-          lgtype = randomopts_select.linkgrps[lg].type
-        end
-
-        if not lgtype or lgtype == 1 then
-          if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.2 then
-            --if randomopts_select.ctls[p] then
-              OpenEB(203,'Please enter value for range:',randomopts_select.ctls[p].amount*100)
-            --end
-          else
-            mouse.context = contexts.lg_range
-            draglg = {pos = randomopts_select.ctls[p].amount, yoff = my-(obj.sections[1140].y+obj.sections[1140].h/2), shift = mouse.shift}
-          end
-        end
-
-      elseif MOUSE_click(obj.sections[1146]) then
-
-        local p = randomopts_select.param
-        local lg = randomopts_select.ctls[p].linkgrp
-        local lgtype
-        if lg and randomopts_select.linkgrps[lg] then
-          lgtype = randomopts_select.linkgrps[lg].type
-        end
-
-        if not lgtype or lgtype == 1 or lgtype == 4 then
-          mouse.context = contexts.lg_wild
-          draglg = {pos = randomopts_select.ctls[p].wild *10, yoff = my-(obj.sections[1146].y+obj.sections[1146].h/2)}
-        end
-
-      elseif MOUSE_click(obj.sections[1144]) then
-
-        local p = randomopts_select.param
-        local lg = randomopts_select.ctls[p].linkgrp
-        if lg and randomopts_select.linkgrps[lg] then
-          if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.2 then
-            if randomopts_select.linkgrps[lg].type == 4 then
-              OpenEB(200,'Please enter value for range:',randomopts_select.linkgrps[lg].X*100)
-            end
-          else
-            --if randomopts_select.linkgrps[lg] and randomopts_select.linkgrps[lg].type <= 3 then
-              mouse.context = contexts.lg_X
-              draglg = {pos = randomopts_select.linkgrps[lg].X, yoff = my-(obj.sections[1144].y+obj.sections[1144].h/2), shift = mouse.shift}
-            --end
-          end
-        end
-
-      elseif MOUSE_click(obj.sections[1136]) then
-
-        local p = randomopts_select.param
-
-        randomopts_select.ctls[p].linkgrp = (randomopts_select.ctls[p].linkgrp or 0) + 1
-        RandomOpts_LG_INIT()
-        lupd.update_randomopts = true
-
-      elseif MOUSE_click_RB(obj.sections[1136]) then
-
-        local p = randomopts_select.param
-
-        randomopts_select.ctls[p].linkgrp = math.max((randomopts_select.ctls[p].linkgrp or 0) - 1,0)
-        if randomopts_select.ctls[p].linkgrp == 0 then
-          randomopts_select.ctls[p].linkgrp = nil
-        else
-          RandomOpts_LG_INIT()
-        end
-        lupd.update_randomopts = true
-
-      elseif MOUSE_click(obj.sections[1147]) then
-
-        local p = randomopts_select.param
-        local lg = randomopts_select.ctls[p].linkgrp
-        if not lg or randomopts_select.linkgrps[lg] and randomopts_select.linkgrps[lg].type == 1 then
-          randomopts_select.ctls[p].snap = not (randomopts_select.ctls[p].snap or false)
-          lupd.update_randomopts = true
-        end
-
-      elseif MOUSE_click(obj.sections[1148]) then
-
-        local p = randomopts_select.param
-        local lg = randomopts_select.ctls[p].linkgrp
-        if lg and randomopts_select.linkgrps[lg] and randomopts_select.linkgrps[lg].type == 4 then
-          randomopts_select.linkgrps[lg].snap = not (randomopts_select.linkgrps[lg].snap or false)
-          lupd.update_randomopts = true
-        end
-
-      elseif MOUSE_click(obj.sections[1143]) then
-
-        local p = randomopts_select.param
-        local lg = randomopts_select.ctls[p].linkgrp
-        if lg and randomopts_select.linkgrps[lg] then
-          randomopts_select.linkgrps[lg].type = math.min(randomopts_select.linkgrps[lg].type + 1,#lvar.linkgrp_table)
-          lupd.update_randomopts = true
-        end
-
-      elseif MOUSE_click_RB(obj.sections[1143]) then
-
-        local p = randomopts_select.param
-        local lg = randomopts_select.ctls[p].linkgrp
-        if lg and randomopts_select.linkgrps[lg] then
-          randomopts_select.linkgrps[lg].type = math.max(randomopts_select.linkgrps[lg].type - 1,1)
-          lupd.update_randomopts = true
-        end
-
-      elseif MOUSE_click(obj.sections[1145]) then
-
-        if mouse.mx < obj.sections[1145].x+obj.sections[1145].w/2 then
-          randomopts_select.param = randomopts_select.param - 1
-        else
-          randomopts_select.param = randomopts_select.param + 1
-        end
-        randomopts_select.param = F_limit(randomopts_select.param,1,#randomopts_select.ctls)
-        lupd.update_randomopts = true
-
-      end
-
-      mouse.mx = mx
-      mouse.my = my
-
-    elseif --[[mouse.context == nil and]] show_mutate == true and show_eqcontrol ~= true and show_pinmatrix ~= true and (MOUSE_click(obj.sections[1120]) or MOUSE_click_RB(obj.sections[1120])) then
-
-      local mutate_settings = lvar.mutate_settings
-
-      noscroll = true
-      mx,my = mouse.mx, mouse.my
-      mouse.mx = mouse.mx - obj.sections[1120].x
-      mouse.my = mouse.my - obj.sections[1120].y
-
-      xywh = {x = 0, y = 0, w = obj.sections[1120].w, h = gui.winsz.pnltit * pnl_scale}
-      if MOUSE_click(xywh) then
-        mouse.context = contexts.move_mutatewin
-        movemutatewin = {dx = mouse.mx, dy = mouse.my}
-
-      elseif MOUSE_click_RB(xywh) then
-        show_mutate = false
-        lupd.update_gfx = true
-
-      elseif MOUSE_click(obj.sections[1121]) then
-        mouse.context = contexts.mutate_amt
-        mutateamt = {pos = mutate_settings.mutate_max, yoff = my-(obj.sections[1121].y+obj.sections[1121].h/2)}
-
-      elseif MOUSE_click(obj.sections[1122]) then
-        mutate_settings.dir = mutate_settings.dir + 1
-        if mutate_settings.dir > 2 then
-          mutate_settings.dir = 0
-        end
-        lupd.update_mutate = true
-
-      elseif MOUSE_click_RB(obj.sections[1122]) then
-        mutate_settings.dir = mutate_settings.dir - 1
-        if mutate_settings.dir < 0 then
-          mutate_settings.dir = 2
-        end
-        lupd.update_mutate = true
-      end
-
-      mouse.mx = mx
-      mouse.my = my
-
-    elseif --[[mouse.context == nil and]] show_lfoedit == true and show_eqcontrol ~= true and show_pinmatrix ~= true and
-           not snaplrn_mode and not macro_lrn_mode and (MOUSE_click(obj.sections[1100]) or MOUSE_click_RB(obj.sections[1100])) then
-
-      noscroll = true
-      if show_fsnapshots == true or show_xysnapshots then
-        show_fsnapshots = false
-        show_xysnapshots = false
-        lupd.update_surface = true
-      end
-
-      if modulators[mod_select] then
-
-        local mx, my = mouse.mx, mouse.my
-        mouse.mx = mouse.mx - obj.sections[1100].x
-        mouse.my = mouse.my - obj.sections[1100].y
-
-        local m = modulators[mod_select]
-        local barw = ((obj.sections[1101].w-2) / m.steps)
-        xywh = {x = obj.sections[1101].x,
-                y = obj.sections[1101].y,
-                w = barw * m.steps,
-                h = obj.sections[1101].h}
-
-        if MOUSE_click(xywh) then
-
-          mouse.context = contexts.mod_draw
-          moddraw = {offs = offs, barw = barw}
-
-        elseif MOUSE_click_RB(obj.sections[1101]) then
-
-          ModMenu(mx, my)
-
-        elseif MOUSE_click(obj.sections[1123]) then
-          settings_moddock = not settings_moddock
-          if settings_moddock == false then
-            if modwinsz.h < modwin.minh then
-              modwinsz.h = modwin.minh
-            end
-            modwinsz.minimized = false
-          end
-          obj = GetObjects()
-          lupd.update_gfx = true
-
-        elseif MOUSE_click(obj.sections[1115]) and modwinsz.minimized ~= true then
-
-          mod_select = mod_select - 1
-          if mod_select < 1 then
-            mod_select = #modulators
-          end
-          lupd.update_gfx = true
-
-        elseif MOUSE_click(obj.sections[1116]) and modwinsz.minimized ~= true then
-
-          mod_select = mod_select + 1
-          if mod_select > #modulators then
-            mod_select = 1
-          end
-          lupd.update_gfx = true
-
-        elseif MOUSE_click_RB(obj.sections[1117]) and modwinsz.minimized ~= true then
-          show_modass = not show_modass
-          if show_modass == true then
-            lvar.modass = PopModAssObj()
-            if lvar.modass then
-              lvar.modass.offset = 0
-            end
-          else
-
-          end
-          lupd.update_gfx = true
-
-        elseif MOUSE_click(obj.sections[1117]) and modwinsz.minimized ~= true then
-
-          if not mouse.ctrl then
-            show_modass = false
-            if show_striplayout == false then
-              mouse.context = contexts.dragmod
-              dragmod = {x = mouse.mx, y = mouse.my}
-            end
-            lupd.update_surface = true
-          else
-            lvar.modass = PopModAssObj()
-            if lvar.modass then
-              lvar.modass.offset = 0
-            end
-            show_modass = true
-            lupd.update_gfx = true
-          end
-
-        elseif MOUSE_click(obj.sections[1118]) and modwinsz.minimized ~= true then
-
-          if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.20 then
-            local m = modulators[mod_select]
-            if m then
-              if m.targets and #m.targets > 0 then
-                for t = #m.targets, 1, -1 do
-                  if m.targets[t].strip == tracks[track_select].strip and m.targets[t].page == page then
-                    SetCtlDirty(m.targets[t].ctl)
-                  end
-                  local ctl
-                  if m.targets[t].dm_guid then
-                    if m.targets[t].dm_guid == lvar.dynamicmode_guid then
-                      ctl = strips[tracks[track_select].strip][page].controls[m.targets[t].ctl]
-                    else
-                      ctl = lvar.stripstore[m.targets[t].dm_guid].controls[m.targets[t].ctl]
-                    end
-                  else
-                    ctl = strips[m.targets[t].strip][m.targets[t].page].controls[m.targets[t].ctl]
-                  end
-
-                  Mod_RemoveAssign(m.targets[t].strip, m.targets[t].page, m.targets[t].ctl, m.targets[t].dm_guid)
-                  if ctl then
-                    ctl.mod = nil
-                  end
-                end
-                lupd.update_sidebar = true
-                lupd.update_lfoedit = true
-                lupd.update_surface = true
-                lupd.update_ctls = true
-              end
-            end
-          end
-
-        elseif MOUSE_click(obj.sections[1111])  then
-
-          if modwinsz and modwinsz.minimized ~= true then
-            mouse.context = contexts.modwin_resize
-            modwinrsz = {mx = mx, my = my, w = modwinsz.w, h = modwinsz.h}
-          end
-
-        elseif MOUSE_click(obj.sections[1112]) then
-
-          if settings_moddock == true then
-            mouse.context = contexts.modwin_resize2
-            modwinrsz = {mx = mx, my = my, w = modwinsz.w, h = modwinsz.h}
-          else
-            mouse.context = contexts.modwin_move
-            modwinmv = {mx = mx, my = my, x = modwinsz.x, y = modwinsz.y}
-          end
-
-        elseif MOUSE_click_RB(obj.sections[1112]) then
-          if modwinsz.minimized == true then
-            modwinsz.h = modwinsz.oh
-            modwinsz.minimized = false
-
-            --modwinsz.resize = true
-            --obj = GetObjects()
-            lupd.update_lfoedit = true
-            lupd.update_gfx = true
-
-          else
-            modwinsz.oh = modwinsz.h
-            modwinsz.h = gui.winsz.pnltit
-            modwinsz.minimized = true
-
-          end
-          modwinsz.resize = true
-
-          if settings_sbdock == true and lvar.stripbrowser.dockpos == 1 then
-            --HACKY - FIX
-            SBWin_CheckSize()
-            obj = GetObjects()
-            obj = GetObjects()
-            lupd.update_gfx = true
-          end
-          obj = GetObjects()
-          lupd.update_lfoedit = true
-          lupd.update_surface = true
-
-
-        elseif MOUSE_click(obj.sections[1102]) then
-
-          local os = m.steps
-          m.stepsmult = math.min(m.stepsmult + 1,#lvar.divmult_table)
-          if mouse.shift == false then
-            if m.stepsmult == 5 or m.stepsmult == 6 or m.stepsmult == 7 then
-              m.stepsmult = 8
-            elseif m.stepsmult == 3 then
-              m.stepsmult = 4
-            end
-          end
-          m.steps = (m.div * lvar.divmult_table[m.stepsmult])
-          if os ~= m.steps then
-            local d = {}
-            local cnt = #m.data
-            if not mouse.ctrl then
-              for i = 1, cnt do
-                d[i*2-1] = m.data[i]
-                if m.interpolate == true then
-                  if m.data[i+1] then
-                    d[i*2] = m.data[i] + ((m.data[i+1] - m.data[i])/2)
-                  else
-                    d[i*2] = m.data[i] + ((m.data[1] - m.data[i])/2)
-                  end
-                else
-                  d[i*2] = m.data[i]
-                end
-              end
-              if m.steps > cnt*2 then
-                local v = m.data[cnt*2]
-                for i = cnt*2+1, m.steps do
-                  d[i] = v
-                end
-              end
-            else
-              for i = 1, m.steps do
-                d[i] = m.data[i] or 0.5
-              end
-            end
-            m.data = d
-          end
-          lupd.update_lfoedit = true
-
-        elseif MOUSE_click_RB(obj.sections[1102]) then
-
-          local os = m.steps
-          m.stepsmult = math.max(m.stepsmult - 1,1)
-          if mouse.shift == false then
-            if m.stepsmult == 5 or m.stepsmult == 6 or m.stepsmult == 7 then
-              m.stepsmult = 4
-            elseif m.stepsmult == 3 then
-              m.stepsmult = 2
-            end
-          end
-          m.steps = (m.div * lvar.divmult_table[m.stepsmult])
-          if os ~= m.steps then
-            local d = {}
-            if not mouse.ctrl then
-              for i = 1, m.steps do
-                d[i] = m.data[i*2-1] or 0.5
-              end
-            else
-              for i = 1, m.steps do
-                d[i] = m.data[i] or 0.5
-              end
-            end
-            m.data = d
-          end
-          lupd.update_lfoedit = true
-
-        elseif MOUSE_click(obj.sections[1104]) then
-
-          m.syncv = math.min(m.syncv + 1,#lvar.sync_table)
-          lupd.update_lfoedit = true
-
-        elseif MOUSE_click_RB(obj.sections[1104]) then
-
-          m.syncv = math.max(m.syncv - 1,12)
-          lupd.update_lfoedit = true
-
-        elseif MOUSE_click(obj.sections[1105]) then
-
-          m.interpolate = not m.interpolate
-          lupd.update_lfoedit = true
-
-        elseif MOUSE_click(obj.sections[1108]) then
-
-          mouse.context = contexts.modoffset_slider
-          modoffs = {x = obj.sections[1100].x + obj.sections[1108].x,
-                     y = obj.sections[1100].y + obj.sections[1108].y,
-                     w = obj.sections[1108].w,
-                     h = obj.sections[1108].h,
-                     val = m.offset}
-          modoffs.yoff = -(my - (modoffs.y+modoffs.h/2))
-          oms = mouse.shift
-
-        elseif MOUSE_click(obj.sections[1109]) then
-
-          mouse.context = contexts.modmin_slider
-          modoffs = {x = obj.sections[1100].x + obj.sections[1109].x,
-                     y = obj.sections[1100].y + obj.sections[1109].y,
-                     w = obj.sections[1109].w,
-                     h = obj.sections[1109].h,
-                     val = m.min,
-                     odiff = m.max-m.min}
-          modoffs.yoff = -(my - (modoffs.y+modoffs.h/2))
-          oms = mouse.shift
-          omc = mouse.ctrl
-
-        elseif MOUSE_click(obj.sections[1110]) then
-
-          mouse.context = contexts.modmax_slider
-          modoffs = {x = obj.sections[1100].x + obj.sections[1110].x,
-                     y = obj.sections[1100].y + obj.sections[1110].y,
-                     w = obj.sections[1110].w,
-                     h = obj.sections[1110].h,
-                     val = m.max,
-                     odiff = m.max-m.min}
-          modoffs.yoff = -(my - (modoffs.y+modoffs.h/2))
-          oms = mouse.shift
-          omc = mouse.ctrl
-
-        elseif MOUSE_click(obj.sections[1107]) then
-
-          m.div = math.min(m.div + 1,12)
-          m.steps = (m.div * lvar.divmult_table[m.stepsmult])
-          local dcnt = #m.data
-          if m.steps > dcnt then
-            local d = {}
-            local v = m.data[dcnt]
-            for i = 1, m.steps do
-              if m.data[i] then
-                d[i] = m.data[i]
-              else
-                d[i] = v
-              end
-            end
-            m.data = d
-          end
-          lupd.update_lfoedit = true
-
-        elseif MOUSE_click(obj.sections[1113]) then
-          local min = m.min
-          local max = m.max
-          --DBG(max..'  '..min)
-          for i = 1, #m.data do
-            if m.mode >= 2 then
-              maxx = takeswitch_max
-              if m.mode == 3 then
-                maxx = lvar.maxsamples
-              end
-              m.data[i] = math.floor((math.random() * ((max-min)+1/maxx))*maxx)/maxx + min
-            else
-              m.data[i] = ((math.random() * (max-min)) + min)
-            end
-          end
-          lupd.update_lfoedit = true
-
-        elseif MOUSE_click(obj.sections[1114]) then
-
-          if tonumber(m.mode) == nil then
-            m.mode = 1
-          else
-            m.mode = ((m.mode+1) % (#lvar.lfomode_table)) + 1
-            --DBG(m.mode)
-          end
-          lupd.update_lfoedit = true
-
-        elseif MOUSE_click_RB(obj.sections[1114]) then
-
-          if m.targets then
-            local max = 0
-            local mmx
-            for t = 1,#m.targets do
-              if m.targets[t].targettype == 1 then
-                if strips[m.targets[t].strip] and strips[m.targets[t].strip][m.targets[t].page].controls[m.targets[t].ctl] then
-                  local ctl = strips[m.targets[t].strip][m.targets[t].page].controls[m.targets[t].ctl]
-                  if ctl.ctlcat == ctlcats.takeswitcher then
-                    if ctl.iteminfo then
-                      max = math.max(ctl.iteminfo.numtakes)
-                      mmx = takeswitch_max
-                    end
-                  elseif ctl.ctlcat == ctlcats.rs5k then
-                    if ctl.rsdata then
-                      max = #ctl.rsdata.samples
-                      mmx = lvar.maxsamples-1
-                    end
-                  end
-                end
-              end
-            end
-            if max > 1 then
-              m.max = (max-1)/mmx
-              m.min = 0
-            end
-          end
-          lupd.update_lfoedit = true
-
-        elseif MOUSE_click_RB(obj.sections[1107]) then
-
-          m.div = math.max(m.div - 1,3)
-          m.steps = (m.div * lvar.divmult_table[m.stepsmult])
-          local dcnt = #m.data
-          if m.steps > dcnt then
-            local d = {}
-            local v = m.data[#m.data]
-            for i = 1, m.steps do
-              if m.data[i] then
-                d[i] = m.data[i]
-              else
-                d[i] = v
-              end
-            end
-            m.data = d
-          end
-          lupd.update_lfoedit = true
-
-        elseif MOUSE_click(obj.sections[1106]) then
-
-          m.active = not m.active
-          Mod_SetTargetsDirty(mod_select)
-          lupd.update_lfoedit = true
-
-        end
-
-        mouse.mx, mouse.my = mx, my
-
-      end
-
-    elseif --[[mouse.context == nil and]] show_xysnapshots == true and show_eqcontrol ~= true and macro_edit_mode ~= true and (MOUSE_click(obj.sections[180]) or MOUSE_click_RB(obj.sections[180])) then
-
-      if --[[mouse.context == nil and]] MOUSE_click_RB(obj.sections[180]) then
-        show_xysnapshots = false
-        lupd.update_surface = true
-      end
-
-      local snapmx, snapmy = mouse.mx, mouse.my
-      mouse.mx = mouse.mx - obj.sections[180].x
-      mouse.my = mouse.my - obj.sections[180].y
-
-      if --[[mouse.context == nil and]] MOUSE_click(obj.sections[182]) then
-        mouse.context = contexts.resizefsnapwindow
-        resizesnapwin = {origh = obj.sections[180].h,
-                         offy = mouse.my}
-
-      elseif --[[mouse.context == nil and]] MOUSE_click(obj.sections[181]) then
-        if snapshots and snapshots[tracks[track_select].strip] then
-          local i = math.floor((mouse.my-obj.sections[181].y)/butt_h)
-
-          if i == 0 then
-            local ix = math.floor((mouse.mx-obj.sections[181].x)/(obj.sections[180].w/2))
-            if ix == 0 then
-              fssoffset = fssoffset-FSS_butt_cnt
-              if fssoffset < 0 then fssoffset = 0 end
-            else
-              if fsstype_select == 1 then
-                fssoffset = F_limit(fssoffset+FSS_butt_cnt,0,math.max(0,#snapshots[tracks[track_select].strip][page][fsstype_select]-FSS_butt_cnt))
-              elseif fsstype_select > 1 then
-                fssoffset = F_limit(fssoffset+FSS_butt_cnt,0,math.max(0,#snapshots[tracks[track_select].strip][page][fsstype_select].snapshot-FSS_butt_cnt))
-              end
-            end
-            lupd.update_ctls = true
-            lupd.update_fsnaps = true
-          else
-            if snapshots and snapshots[tracks[track_select].strip] then
-              local maxss
-              if fsstype_select == 1 then
-                maxss = #snapshots[tracks[track_select].strip][page][fsstype_select]
-              else
-                maxss = #snapshots[tracks[track_select].strip][page][fsstype_select].snapshot
-              end
-
-              if fssoffset+i <= maxss then
-                fss_select = fssoffset+i
-
-                if xysnap_select == 1 then
-                  strips[tracks[track_select].strip][page].controls[xy_select].xydata.snapa = fss_select
-                elseif xysnap_select == 2 then
-                  strips[tracks[track_select].strip][page].controls[xy_select].xydata.snapb = fss_select
-                elseif xysnap_select == 3 then
-                  strips[tracks[track_select].strip][page].controls[xy_select].xydata.snapc = fss_select
-                elseif xysnap_select == 4 then
-                  strips[tracks[track_select].strip][page].controls[xy_select].xydata.snapd = fss_select
-                end
-
-                g_savedirty = true
-                show_xysnapshots = false
-                lupd.update_surface = true
-              end
-            end
-          end
-        end
-      end
-
-      mouse.mx = snapmx
-      mouse.my = snapmy
-      noscroll = true
-
-    elseif --[[mouse.context == nil and]] show_fsnapshots == true and show_eqcontrol ~= true and macro_edit_mode ~= true and (MOUSE_click(obj.sections[180]) or MOUSE_click_RB(obj.sections[180])) then
-
-      if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.15 then
-        show_fsnapshots = false
-        lupd.update_surface = true
-      elseif --[[mouse.context == nil and]] MOUSE_click_RB(obj.sections[180]) then
-        show_fsnapshots = false
-        lupd.update_surface = true
-      end
-
-      local snapmx, snapmy = mouse.mx, mouse.my
-      mouse.mx = mouse.mx - obj.sections[180].x
-      mouse.my = mouse.my - obj.sections[180].y
-
-      if --[[mouse.context == nil and]] MOUSE_click(obj.sections[182]) then
-        mouse.context = contexts.resizefsnapwindow
-        resizesnapwin = {origh = obj.sections[180].h,
-                         offy = mouse.my}
-
-      elseif --[[mouse.context == nil and]] MOUSE_click(obj.sections[181]) then
-        if snapshots and snapshots[tracks[track_select].strip] then
-          local i = math.floor((mouse.my-obj.sections[181].y)/butt_h)
-
-          if i == 0 then
-            local ix = math.floor((mouse.mx-obj.sections[181].x)/(obj.sections[180].w/2))
-            if ix == 0 then
-              fssoffset = fssoffset-FSS_butt_cnt
-              if fssoffset < 0 then fssoffset = 0 end
-            else
-              if fsstype_select == 1 then
-                fssoffset = F_limit(fssoffset+FSS_butt_cnt,0,math.max(0,#snapshots[tracks[track_select].strip][page][fsstype_select]-FSS_butt_cnt))
-              elseif fsstype_select > 1 then
-                fssoffset = F_limit(fssoffset+FSS_butt_cnt,0,math.max(0,#snapshots[tracks[track_select].strip][page][fsstype_select].snapshot-FSS_butt_cnt))
-              end
-            end
-            lupd.update_ctls = true
-            lupd.update_fsnaps = true
-          else
-            if snapshots and snapshots[tracks[track_select].strip] then
-              local maxss
-              if fsstype_select == 1 then
-                maxss = #snapshots[tracks[track_select].strip][page][fsstype_select]
-              else
-                maxss = #snapshots[tracks[track_select].strip][page][fsstype_select].snapshot
-              end
-
-              if fssoffset+i <= maxss then
-                fss_select = fssoffset+i
-                Snapshot_Set(tracks[track_select].strip, page, fsstype_select, fss_select)
-                SetCtlDirty(fss_ctl)
-                lupd.update_ctls = true --to update snapshot ctls
-                lupd.update_fsnaps = true
-                if sstype_select == fsstype_select then
-                  ss_select = fss_select
-                  lupd.update_snaps = true
-                end
-
-                if strips[tracks[track_select].strip][page].controls[fss_ctl].param_info.paramnum == 1 then
-                  show_fsnapshots = false
-                  lupd.update_surface = true
-                end
-              end
-            end
-          end
-        end
-      end
-
-      mouse.mx = snapmx
-      mouse.my = snapmy
-      noscroll = true
-
-    elseif --[[mouse.context == nil and]] (show_snapshots == true and snap_edit_mode ~= true and macro_edit_mode ~= true and show_eqcontrol ~= true and show_pinmatrix ~= true) and (MOUSE_click(obj.sections[160]) or MOUSE_click_RB(obj.sections[160])) then
-
-      A_Run_SnapshotsWin(rt)
-      noscroll = true
-
-    elseif --[[mouse.context == nil and]] snaplrn_mode == true then
+    if --[[mouse.context == nil and]] snaplrn_mode == true then
 
       A_Run_SnapshotsLearn()
 
@@ -56024,18 +58585,6 @@ DBG('bl')
 
       A_Run_MacroLearn()
 
---[[    elseif show_eqcontrol == true then
-
-      noscroll = A_Run_EQControl(noscroll, rt)
-
-    elseif show_pinmatrix == true then
-
-      noscroll = A_Run_PinMatrix(noscroll, rt)
-
-    elseif macro_edit_mode == true and macro_lrn_mode == false then
-
-      noscroll = A_Run_MacroEdit(noscroll, rt)
-]]
     elseif morph_puw and settings_showmorphpop and (MOUSE_click(morph_puw) or MOUSE_click_RB(morph_puw)) then
 
       noscroll, mouse.context = A_Run_MorphPU(noscroll, rt)
@@ -56071,616 +58620,9 @@ DBG('bl')
 
       CreateStripCB()
 
-    elseif lvar.livemode == 2 and lvar.trbtns_show and lvar.trmix_show and (MOUSE_click(obj.sections[5024]) or MOUSE_click_RB(obj.sections[5024])) then
+    --elseif lvar.livemode == 2 and lvar.trbtns_show and lvar.trmix_show and (MOUSE_click(obj.sections[5024]) or MOUSE_click_RB(obj.sections[5024])) then
 
-      if lvar.analyzer.active and lvar.analyzer.showcontrols and MOUSE_click(obj.sections[5047]) then
-
-        local p = mouse.my - obj.sections[5047].y - 5
-        local c = math.floor((p)/30)+1
-        local idx = lvar.analyzer.pos+1
-        local ctls = lvar.analyzer.controls[idx]
-        if ctls and ctls[c] then
-
-          local tr = Analyzer_GetTrack()
-          if tr then
-            local param = ctls[c].param
-            local val = reaper.TrackFX_GetParamNormalized(tr,idx-1,param)
-            lvar.draganalyzercontrol = {param = param, val = val, my = mouse.my, tr = tr, sens = ctls[c].sens or 240}
-            mouse.context = contexts.analyzerctl
-          end
-        end
-
-      elseif MOUSE_click(obj.sections[5080]) then
-
-        mouse.context = contexts.mixer_drag
-        
-        local sz = lvar.trbtns_size
-        
-        panelw = (obj.sections[10].w - (lvar.trov_maxrows*(sz+10)))/2
-                
-        lvar.mdrag = {mx = mouse.mx, osz = math.max(lvar.trmix_panelsz,panelw), dir = 1}
-
-      elseif MOUSE_click(obj.sections[5081]) then
-
-        mouse.context = contexts.mixer_drag
-        
-        local sz = lvar.trbtns_size
-        
-        panelw = (obj.sections[10].w - (lvar.trov_maxrows*(sz+10)))/2
-                
-        lvar.mdrag = {mx = mouse.mx, osz = math.max(lvar.trmix_panelsz,panelw), dir = -1}
-
-      elseif mouse.mx < obj.sections[5040].x+obj.sections[5040].w then
-
-        local mx, my = mouse.mx, mouse.my
-        mouse.mx = mx - obj.sections[5040].x
-        mouse.my = my - obj.sections[5040].y
-        local offs = lvar.dm_btnpnl_page*lvar.trmix_btnpnl_cols
-
-        local sz = (lvar.trmixbtns_size+10)
-        local col = lvar.trmix_btnpnl_cols - math.floor(mouse.mx/sz) + offs
-        local col2 = math.floor(mouse.mx/sz)
-        local row = math.floor(mouse.my/sz)+1
-        local idx = lvar.dm_btnpnlidx
-
-        if mouse.LB then
-          if not lvar.dm_btnpnl then
-            lvar.dm_btnpnl = {}
-          end
-          if not lvar.dm_btnpnl[idx] then
-            lvar.dm_btnpnl[idx] = {}
-          end
-          if not lvar.dm_btnpnl[idx][row] then
-            lvar.dm_btnpnl[idx][row] = {}
-          end
-          if lvar.dm_btnpnl[idx][row][col] then
-
-            TSM_Trigger() 
-
-            HighlightBox(obj.sections[5040].x+col2*sz,obj.sections[5040].y+(row-1)*sz,sz-10,sz-10, gui.color.red, lvar.btnflashtime)
-
-            local actdata = lvar.dm_btnpnl[idx][row][col]
-            --DBG(actdata.commid)
-            if tonumber(actdata.commid) then
-              reaper.Main_OnCommand(tonumber(actdata.commid), -1)
-              --DBG('A '..actdata.commid)
-            else
-              reaper.Main_OnCommand(reaper.NamedCommandLookup(actdata.commid), -1)
-              --DBG('B '..actdata.commid)
-            end
-
-          else
-
-            TSM_Trigger()
-
-            if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.2 then
-              local commid, desc = GetActionInfoFromList()
-              if desc then
-                local ndesc = string.gsub(desc,'Script: ','')
-                lvar.dm_btnpnl[idx][row][col] = {desc = desc, commid = commid, ndesc = ndesc}
-                lupd.update_trbtns = true
-              end
-            end
-          end
-        elseif mouse.RB then
-          if lvar.dm_btnpnl and lvar.dm_btnpnl[idx] and lvar.dm_btnpnl[idx][row] and lvar.dm_btnpnl[idx][row][col] then
-
-            BtnPnl_Menu(idx,row,col,lvar.dm_btnpnl[idx][row][col],mx,my)
-          
-          else
-
-            BtnPnl_Menu(idx,row,col,nil,mx,my)
-          
-          end
-        end
-        mouse.mx, mouse.my = mx, my
-
-      elseif not lvar.analyzer.active or (mouse.mx >= obj.sections[5005].x + obj.sections[5005].w - (obj.sections[5025].w+10)) or mouse.my - obj.sections[5027].y < 10 then
-
-        --TRACK MIXER
-        local my = mouse.my - obj.sections[5027].y
-        if my < 10 then
-
-          mouse.context = contexts.resize_mixer
-          lvar.mixresize = {oh = lvar.trmix_h, offs = my, my = mouse.my}
-
-        else
-          if mouse.mx >= obj.sections[5005].x and mouse.mx <= obj.sections[5005].x + obj.sections[5005].w - (obj.sections[5025].w+10) then
-            local track_x = math.floor((mouse.mx - obj.sections[5027].x) / (obj.sections[5025].w+10))+1+lvar.trbtns_offs
-            local mx = mouse.mx - obj.sections[5005].x -(((track_x-lvar.trbtns_offs)-1) * (lvar.trbtns_size+10)) --8
-            --DBG(mx..'  '..track_x)
-            if lvar.dm_trackbtns[lvar.dm_tbidx][track_x] and lvar.dm_trackbtns[lvar.dm_tbidx][track_x].vol_normscale then
-              --local mx, my = mouse.mx, mouse.my
-              local vpos = obj.sections[5026].y+obj.sections[5026].h - math.floor(lvar.dm_trackbtns[lvar.dm_tbidx][track_x].vol_normscale*obj.sections[5026].h)
-              local ktop = vpos - math.floor(skin.sliderknb_h/2)
-              if mx >= obj.sections[5028].x and mx <= obj.sections[5028].x+obj.sections[5028].w and my >= obj.sections[5028].y and my <= obj.sections[5028].y+obj.sections[5028].h then
-
-                if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.2 then
-                  local dm_trackbtn = lvar.dm_trackbtns[lvar.dm_tbidx][track_x]
-                  if dm_trackbtn then
-                    local tr = GetTrack(dm_trackbtn.trn)
-                    if tr then
-                      if reaper.GetTrackGUID(tr) ~= dm_trackbtn.guid and dm_trackbtn.trn ~= -1 then
-                        tr = reaper.BR_GetMediaTrackByGUID(0, dm_trackbtn.guid)
-                        if tr then
-                          dm_trackbtn.trn = reaper.GetMediaTrackInfo_Value(tr, 'IP_TRACKNUMBER')-1
-                        end
-                      end
-                    end
-                    if tr then
-                      trctls_table[2].func(tr, 0, false)
-                      lvar.trmix_dirty[#lvar.trmix_dirty+1] = track_x
-                      lupd.update_trmix2 = true
-                    end
-                  end
-                else
-                  mouse.context = contexts.mixer_pan
-                  lvar.mixpan_drag = {offs = my-obj.sections[5028].y, tb = track_x, pan = lvar.dm_trackbtns[lvar.dm_tbidx][track_x].pan_norm}
-                end
-
-              elseif mx >= obj.sections[5026].x and mx <= obj.sections[5026].x+obj.sections[5026].w and (obj.sections[5026].h >= 90 and my >= ktop and my <= ktop+skin.sliderknb_h) then
-                --track fader
-                if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.2 then
-                  local dm_trackbtn = lvar.dm_trackbtns[lvar.dm_tbidx][track_x]
-                  if dm_trackbtn then
-                    local tr = GetTrack(dm_trackbtn.trn)
-                    if tr then
-                      if reaper.GetTrackGUID(tr) ~= dm_trackbtn.guid and dm_trackbtn.trn ~= -1 then
-                        tr = reaper.BR_GetMediaTrackByGUID(0, dm_trackbtn.guid)
-                        if tr then
-                          dm_trackbtn.trn = reaper.GetMediaTrackInfo_Value(tr, 'IP_TRACKNUMBER')-1
-                        end
-                      end
-                    end
-                    if tr then
-                      trctls_table[1].func(tr, 1, false)
-                      lvar.trmix_dirty[#lvar.trmix_dirty+1] = track_x
-                      lupd.update_trmix2 = true
-                    end
-                  end
-                else
-                  --reaper.Undo_BeginBlock2(0)
-                  mouse.context = contexts.mixer_vol
-                  lvar.mixvol_drag = {snd = false, offs = vpos - my, tb = track_x, vol = lvar.dm_trackbtns[lvar.dm_tbidx][track_x].vol_normscale}
-                end
-
-              --elseif obj.sections[5026].h >= 90 and my >= obj.sections[5026].y and my <= obj.sections[5026].y+obj.sections[5026].h then
-
-              elseif mx >= obj.sections[5029].x and mx <= obj.sections[5029].x+(obj.sections[5029].w*2)+2 and my >= obj.sections[5029].y and my <= obj.sections[5029].y+obj.sections[5029].h then
-
-                local dm_trackbtn = lvar.dm_trackbtns[lvar.dm_tbidx][track_x]
-                if dm_trackbtn then
-                  local tr = GetTrack(dm_trackbtn.trn)
-                  if tr then
-                    reaper.Track_GetPeakHoldDB(tr, 0, true)
-                    reaper.Track_GetPeakHoldDB(tr, 1, true)
-                  end
-                end
-
-              elseif mx >= obj.sections[5070].x and mx <= obj.sections[5070].x+obj.sections[5070].w and my >= obj.sections[5070].y and my <= obj.sections[5070].y+obj.sections[5070].h then
-                local dm_trackbtn = lvar.dm_trackbtns[lvar.dm_tbidx][track_x]
-                if dm_trackbtn then
-                  local tr = GetTrack(dm_trackbtn.trn)
-                  if tr then
-                    if mouse.LB then
-                      local v = 1-reaper.GetMediaTrackInfo_Value(tr,'I_RECARM')
-                      reaper.CSurf_OnRecArmChangeEx(tr, v, true)
-                      
-                      mouse.context = contexts.dmtrprm_swipe
-                      lvar.dmtrprm_swipe = {val = v, otherval = 1-v, param = 'I_RECARM', x = track_x-lvar.trbtns_offs, delay = reaper.time_precise()+0.1}
-                      lvar.trmix_dirty[#lvar.trmix_dirty+1] = track_x
-                      lupd.update_trmix = true
-
-                    elseif mouse.RB then
-                      local x, y = reaper.GetMousePosition()
-                      reaper.ShowPopupMenu('track_input',x,y,nil,tr)
-                    end
-                  end
-                end
-
-              elseif mx >= obj.sections[5073].x and mx <= obj.sections[5073].x+obj.sections[5073].w and my >= obj.sections[5073].y and my <= obj.sections[5073].y+obj.sections[5073].h then
-                local dm_trackbtn = lvar.dm_trackbtns[lvar.dm_tbidx][track_x]
-                if dm_trackbtn then
-                  local tr = GetTrack(dm_trackbtn.trn)
-                  if tr then
-                    if mouse.LB then
-                      local v = 1-reaper.GetMediaTrackInfo_Value(tr,'B_MUTE')
-                      reaper.CSurf_OnMuteChangeEx(tr, v, true)
-                      
-                      mouse.context = contexts.dmtrprm_swipe
-                      lvar.dmtrprm_swipe = {val = v, otherval = 1-v, param = 'B_MUTE', x = track_x-lvar.trbtns_offs, delay = reaper.time_precise()+0.1}
-                      lvar.trmix_dirty[#lvar.trmix_dirty+1] = track_x
-                      lupd.update_trmix = true
-
-                    elseif mouse.RB then
-
-                    end
-                  end
-                end
-
-              elseif mx >= obj.sections[5074].x and mx <= obj.sections[5074].x+obj.sections[5074].w and my >= obj.sections[5074].y and my <= obj.sections[5074].y+obj.sections[5074].h then
-                local dm_trackbtn = lvar.dm_trackbtns[lvar.dm_tbidx][track_x]
-                if dm_trackbtn then
-                  local tr = GetTrack(dm_trackbtn.trn)
-                  if tr then
-                    if mouse.LB then
-                      local v = 2-reaper.GetMediaTrackInfo_Value(tr,'I_SOLO')
-                      reaper.CSurf_OnSoloChangeEx(tr, v, true)
-                      
-                      mouse.context = contexts.dmtrprm_swipe
-                      lvar.dmtrprm_swipe = {val = v, otherval = 2-v, param = 'I_SOLO', x = track_x-lvar.trbtns_offs, delay = reaper.time_precise()+0.1}
-                      lvar.trmix_dirty[#lvar.trmix_dirty+1] = track_x
-                      lupd.update_trmix = true
-
-                    elseif mouse.RB then
-
-                    end
-                  end
-                end
-
-              elseif mx >= obj.sections[5071].x and mx <= obj.sections[5071].x+obj.sections[5071].w and my >= obj.sections[5071].y and my <= obj.sections[5071].y+obj.sections[5071].h then
-                local dm_trackbtn = lvar.dm_trackbtns[lvar.dm_tbidx][track_x]
-                if dm_trackbtn then
-                  local tr = GetTrack(dm_trackbtn.trn)
-                  if tr then
-                    if mouse.LB then
-                      local v = 1-reaper.GetMediaTrackInfo_Value(tr,'I_FXEN')
-                      reaper.SetMediaTrackInfo_Value(tr,'I_FXEN',v)
-                      
-                      mouse.context = contexts.dmtrprm_swipe
-                      lvar.dmtrprm_swipe = {val = v, otherval = 1-v, param = 'I_FXEN', x = track_x-lvar.trbtns_offs, delay = reaper.time_precise()+0.1}                      
-                      lvar.trmix_dirty[#lvar.trmix_dirty+1] = track_x
-                      lupd.update_trmix = true
-
-                    elseif mouse.RB then
-
-                    end
-                  end
-                end
-              elseif mx >= obj.sections[5072].x and mx <= obj.sections[5072].x+obj.sections[5072].w and my >= obj.sections[5072].y and my <= obj.sections[5072].y+obj.sections[5072].h then
-                local dm_trackbtn = lvar.dm_trackbtns[lvar.dm_tbidx][track_x]
-                if dm_trackbtn then
-                  local tr = GetTrack(dm_trackbtn.trn)
-                  if tr then
-                    if mouse.LB then
-                      local v = 1-reaper.GetMediaTrackInfo_Value(tr,'B_PHASE')
-                      reaper.SetMediaTrackInfo_Value(tr,'B_PHASE',v)
-                      
-                      mouse.context = contexts.dmtrprm_swipe
-                      lvar.dmtrprm_swipe = {val = v, otherval = 1-v, param = 'B_PHASE', x = track_x-lvar.trbtns_offs, delay = reaper.time_precise()+0.1}                                            
-                      lvar.trmix_dirty[#lvar.trmix_dirty+1] = track_x
-                      lupd.update_trmix = true
-                      
-                    elseif mouse.RB then
-
-                    end
-                  end
-                end
-
-              elseif mx >= obj.sections[5075].x and mx <= obj.sections[5075].x+obj.sections[5075].w and my >= obj.sections[5075].y and my <= obj.sections[5075].y+obj.sections[5075].h then
-                local dm_trackbtn = lvar.dm_trackbtns[lvar.dm_tbidx][track_x]
-                if dm_trackbtn then
-                  local tr = GetTrack(dm_trackbtn.trn)
-                  if tr then
-                    if mouse.LB then
-                      if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.2 then
-                        reaper.SetMediaTrackInfo_Value(tr,'B_MAINSEND',1-reaper.GetMediaTrackInfo_Value(tr,'B_MAINSEND'))
-                      end
-                    elseif mouse.RB then
-                      local x, y = reaper.GetMousePosition()
-                      reaper.ShowPopupMenu('track_routing',x,y,nil,tr)
-                    end
-                  end
-                end
-
-              --[[elseif (obj.sections[5026].h < 90 and my >= obj.sections[5026].y-skin.sliderknb_h/2 and my <= obj.sections[5026].y+skin.sliderknb_h/2) then
-
-                mouse.context = contexts.mixer_vol2
-                lvar.mixvol_drag = {offs = my-(obj.sections[5026].y-skin.sliderknb_h/2), tb = track_x, vol = lvar.dm_trackbtns[lvar.dm_tbidx][track_x].vol_normscale}
-                ]]
-              end
-            end
-
-          elseif mouse.mx >= obj.sections[5005].x + obj.sections[5005].w - (obj.sections[5025].w+10) and mouse.mx <= obj.sections[5005].x + obj.sections[5005].w then
-
-            local mx, my = mouse.mx, mouse.my
-            mouse.mx, mouse.my = mouse.mx - obj.sections[5005].x, mouse.my - obj.sections[5025].y
-            if MOUSE_click(obj.sections[5009]) then
-              lvar.trmix_sndpnl_show = not lvar.trmix_sndpnl_show
-              lupd.update_trbtns = true
-            elseif MOUSE_click(obj.sections[5010]) then
-              tfxo_listpos = 0
-              tfxorder = TrackFXOrder_Read()
-              tfxreorder = TrackFXOrder_Read()
-              if tfxorder then
-                show_trackfxorder = true
-                --lupd.update_gfx = true
-                lupd.update_trackfxorder = true
-                lupd.update_trbtns = true
-                mouse.context = contexts.dummy
-              end
-            elseif MOUSE_click(obj.sections[5011]) then
-
-              --if mouse.lastLBclicktime and not ((rt-mouse.lastLBclicktime) < 0.5) then
-              if mouse.shift then
-                lvar.analyzer.pos = lvar.analyzer.pos + 1
-                if lvar.analyzer.pos >= #lvar.analyzer.mod then
-                  lvar.analyzer.pos = 0
-                end
-                DM_ShowAnalyzer(true)
-                lupd.update_trbtns = true
-              else
-                DM_ShowAnalyzer(not lvar.analyzer.active)
-                lupd.update_trbtns = true
-              end
-
-            elseif MOUSE_click_RB(obj.sections[5011]) then
-
-              DM_AnalyzerMenu(mx, my)
-
-            end
-            mouse.mx, mouse.my = mx, my
-
-          elseif lvar.trmix_sndpnl_show and mouse.mx >= obj.sections[5030].x and mouse.mx <= obj.sections[5030].x + obj.sections[5030].w then
-
-            local snd_idx = math.floor((mouse.mx - obj.sections[5030].x) / (lvar.sndpnl_cwidth+10)) + lvar.trmix_sndpnl_offs
-            local tr = GetTrack(lvar.dynamicmode_trn)
-            if tr then
-              local hwcnt = reaper.GetTrackNumSends(tr, 1)
-              local scnt = reaper.GetTrackNumSends(tr, 0) + reaper.GetTrackNumSends(tr, 1)
-              if snd_idx <= scnt-1 then
-
-                local vpos = obj.sections[5031].y+obj.sections[5031].h - math.floor(lvar.trmix_sndpnl_data[snd_idx].vol_normscale*obj.sections[5031].h)
-                local ktop = vpos - math.floor(skin.sliderknb_h/2)
-                local tr = GetTrack(lvar.dynamicmode_trn)
-                local cat = 0
-                local snd_idx2 = snd_idx
-                if snd_idx < hwcnt then
-                  cat = 1
-                else
-                  snd_idx2 = snd_idx - hwcnt
-                end
-
-                if my < obj.sections[5032].y then
-
-                  if mouse.LB then
-                    reaper.SetTrackSendInfo_Value(tr, cat, snd_idx2, 'B_MUTE', 1-reaper.GetTrackSendInfo_Value(tr, cat, snd_idx2, 'B_MUTE'))
-                    lvar.trmix_sndpnl_dirty[#lvar.trmix_sndpnl_dirty+1] = snd_idx
-                    lupd.update_trmix = true
-                    reaper.Undo_BeginBlock2(0)
-                    reaper.Undo_EndBlock2(0,"Send Mute/Unmute",-1)
-                  else
-                    local mstr = 'Remove Send'
-                    gfx.x = mouse.mx
-                    gfx.y = mouse.my
-                    local res = gfx.showmenu(mstr)
-                    if res > 0 then
-                      if res == 1 then
-                        reaper.RemoveTrackSend(tr, cat, snd_idx2)
-                        lupd.update_trmix = true
-                      end
-                    end
-                  end
-                elseif my >= obj.sections[5032].y and my <= obj.sections[5032].y+obj.sections[5032].h then
-
-                  if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.2 then
-                    local tr = GetTrack(lvar.dynamicmode_trn)
-                    --[[if tr then
-                      if reaper.GetTrackGUID(tr) ~= dm_trackbtn.guid and dm_trackbtn.trn ~= -1 then
-                        tr = reaper.BR_GetMediaTrackByGUID(0, dm_trackbtn.guid)
-                        if tr then
-                          dm_trackbtn.trn = reaper.GetMediaTrackInfo_Value(tr, 'IP_TRACKNUMBER')-1
-                        end
-                      end
-                    end]]
-                    if tr then
-                      reaper.SetTrackSendUIPan(tr, snd_idx, 0, 0)
-                      lvar.trmix_sndpnl_dirty[#lvar.trmix_sndpnl_dirty+1] = snd_idx
-                      lupd.update_trmix = true
-                    end
-                  else
-                    mouse.context = contexts.sndpnl_pan
-                    lvar.mixpan_drag = {offs = my-obj.sections[5032].y, tb = snd_idx, pan = lvar.trmix_sndpnl_data[snd_idx].pan_norm}
-                  end
-
-                elseif my >= ktop and my <= ktop+skin.sliderknb_h then
-                  --send fader
-
-                  if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.2 then
-                    local tr = GetTrack(lvar.dynamicmode_trn)
-                    --[[if tr then
-                      if reaper.GetTrackGUID(tr) ~= dm_trackbtn.guid and dm_trackbtn.trn ~= -1 then
-                        tr = reaper.BR_GetMediaTrackByGUID(0, dm_trackbtn.guid)
-                        if tr then
-                          dm_trackbtn.trn = reaper.GetMediaTrackInfo_Value(tr, 'IP_TRACKNUMBER')-1
-                        end
-                      end
-                    end]]
-                    if tr then
-                      reaper.SetTrackSendUIVol(tr, snd_idx, 1, 0)
-                      lvar.trmix_sndpnl_dirty[#lvar.trmix_sndpnl_dirty+1] = snd_idx
-                      lupd.update_trmix = true
-                    end
-                  else
-                    --DBG('a')
-                    mouse.context = contexts.sndpnl_vol
-                    lvar.mixvol_drag = {snd = true, offs = vpos - my, tb = snd_idx, vol = lvar.trmix_sndpnl_data[snd_idx].vol_normscale}
-                  end
-
-                elseif my >= obj.sections[5031].y and my <= obj.sections[5031].y+obj.sections[5031].h then
-
-
-
-                end
-
-
-              else
-                --Drag Send
-                mouse.context = contexts.sndpnl_drag
-                lvar.trmix_snddrag = {x = mx, y = my}
-              end
-            end
-
-
-          elseif not lvar.trmix_sndpnl_show and mouse.mx >= obj.sections[5042].x and mouse.mx <= obj.sections[5042].x + obj.sections[5042].w then
-            local mx, my = mouse.mx, mouse.my
-            mouse.mx = mx - obj.sections[5042].x
-            mouse.my = my - obj.sections[5042].y
-            local offs = lvar.dm_btnpnl_page*lvar.trmix_btnpnl2_cols
-
-            local sz = (lvar.trmixbtns_size+10)
-            local col = math.floor(mouse.mx/sz)+1+offs
-            local row = math.floor(mouse.my/sz)+1
-            --DBG(col..'  '..row)
-            local idx = lvar.dm_btnpnl2idx
-
-            if mouse.LB then
-              if not lvar.dm_btnpnl then
-                lvar.dm_btnpnl = {}
-              end
-              if not lvar.dm_btnpnl[idx] then
-                lvar.dm_btnpnl[idx] = {}
-              end
-              if not lvar.dm_btnpnl[idx][row] then
-                lvar.dm_btnpnl[idx][row] = {}
-              end
-              if lvar.dm_btnpnl[idx][row][col] then
-
-                TSM_Trigger()
-
-                HighlightBox(obj.sections[5042].x+(col-1)*sz,obj.sections[5042].y+(row-1)*sz,sz-10,sz-10, gui.color.red, lvar.btnflashtime)
-
-                local actdata = lvar.dm_btnpnl[idx][row][col]
-                if tonumber(actdata.commid) then
-                  reaper.Main_OnCommand(tonumber(actdata.commid), -1)
-                else
-                  reaper.Main_OnCommand(reaper.NamedCommandLookup(actdata.commid), -1)
-                end
-
-              else
-
-                TSM_Trigger()
-
-                if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.2 then
-                  local commid, desc = GetActionInfoFromList()
-                  if desc and desc ~= '' then
-                    local ndesc = string.gsub(desc,'Script: ','')
-                    lvar.dm_btnpnl[idx][row][col] = {desc = desc, commid = commid, ndesc = ndesc}
-                    lupd.update_trbtns = true
-                  else
-                    OpenMsgBox(1, 'No action selected.', 1)
-                  end
-                end
-              end
-            elseif mouse.RB then
-              if lvar.dm_btnpnl and lvar.dm_btnpnl[idx] and lvar.dm_btnpnl[idx][row] and lvar.dm_btnpnl[idx][row][col] then
-
-                BtnPnl_Menu(idx,row,col,lvar.dm_btnpnl[idx][row][col],mx,my)
-
-              else
-    
-                BtnPnl_Menu(idx,row,col,nil,mx,my)
-          
-              end
-            end
-            mouse.mx, mouse.my = mx, my
-          end
-            --mouse.mx, mouse.my = mx, my
-        end
-
-      elseif lvar.analyzer.active and (MOUSE_click(obj.sections[5046]) or MOUSE_click_RB(obj.sections[5046])) then
-
-        if lvar.analyzer.pos == 0 then
-          local my = mouse.my - obj.sections[5046].y
-          if my < 25 then
-            local mx = mouse.mx - obj.sections[5046].x
-            local w = (obj.sections[5048].w / (lvar.freqcnt+1))
-            local p = math.floor(mx / w)
-            if lvar.freq[p] then
-              if mouse.LB then
-                if mouse.shift or (mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.2) then
-                  local atr = Analyzer_GetTrack()
-                  if atr then
-                    Analyzer_Link(lvar.dynamicmode_trn,atr,p)
-                    lupd.update_analyzertracks = true
-                    lupd.update_trmix = true
-                  end
-                else
-                  local atr = Analyzer_GetTrack()
-                  if atr then
-                    local v = reaper.TrackFX_GetParamNormalized(atr,0,12+p)
-                    v = 1-v
-                    reaper.TrackFX_SetParamNormalized(atr,0,12+p,v)
-                    if v == 1 then
-                      lvar.freq[p].active = true
-                    else
-                      lvar.freq[p].active = false
-                    end
-                    lupd.update_analyzertracks = true
-                    lupd.update_trmix = true
-                  end
-                end
-              else
-                local atr = Analyzer_GetTrack()
-                if atr then
-                  local vv = reaper.TrackFX_GetParamNormalized(atr,0,12+p)
-                  if not lvar.freqsolo or (vv == 0) then
-
-                    if not lvar.freqsolo_mem then
-                      lvar.freqsolo_mem = {}
-                      for i = 0, lvar.freqcnt+1 do
-                        lvar.freqsolo_mem[i] = reaper.TrackFX_GetParamNormalized(atr,0,12+i)
-                      end
-                    end
-                    for i = 0, lvar.freqcnt+1 do
-                      if i ~= p then
-                        reaper.TrackFX_SetParamNormalized(atr,0,12+i,0)
-                      end
-                    end
-                    reaper.TrackFX_SetParamNormalized(atr,0,12+p,1)
-                    lvar.freqsolo = p
-                  else
-                    lvar.freqsolo = nil
-
-                    for i = 0, lvar.freqcnt+1 do
-                      local v = 1
-                      if lvar.freqsolo_mem and lvar.freqsolo_mem[i] then
-                        v = lvar.freqsolo_mem[i]
-                      end
-                      reaper.TrackFX_SetParamNormalized(atr,0,12+i,v)
-                    end
-                    lvar.freqsolo_mem = nil
-                  end
-                  lupd.update_analyzertracks = true
-                  lupd.update_trmix = true
-                end
-              end
-            end
-          else
-            local tr = Analyzer_GetTrack()
-            local idx = lvar.analyzer.pos
-            if tr then
-              local param = 8
-              local w = obj.sections[5046].w
-              local mx = math.max(0,mouse.mx - obj.sections[5046].x)
-
-              local zm = (reaper.TrackFX_GetParamNormalized(tr,idx,7))*24 + 1
-              local ox = reaper.TrackFX_GetParamNormalized(tr,idx,param)
-              --local offx = math.ceil(ox*((w*zm)-w));
-              local zm2 = ((w)*zm);
-              offx = math.ceil(ox*zm2 - w/2);
-              offx = math.max(offx,0);
-              offx = math.min(offx,(w)*zm-w);
-              local val = (mx+offx)/(w*zm)
-              reaper.TrackFX_SetParamNormalized(tr,idx,param,val)
-              lupd.update_analyzerctls = true
-              lupd.update_trmix = true
-
-            end
-          end
-        end
-      end
-
+      
     --elseif lvar.analyzer.active and MOUSE_click(obj.sections[5027]) then
 
     elseif lvar.livemode == 2 and mode == 0 and MOUSE_click(obj.sections[5000]) then
@@ -56697,337 +58639,9 @@ DBG('bl')
       --gfx.update()
       DM_RefreshPage()
 
-    elseif --[[mouse.context == nil and]] lvar.livemode == 2 and lvar.trbtns_show and (MOUSE_click(obj.sections[4999]) or MOUSE_click_RB(obj.sections[4999])) then
+    --elseif --[[mouse.context == nil and]] lvar.livemode == 2 and lvar.trbtns_show and (MOUSE_click(obj.sections[4999]) or MOUSE_click_RB(obj.sections[4999])) then
 
-      if MOUSE_click_RB(obj.sections[5041]) then
-        TrackSetListMenu(mouse.mx,mouse.my)
-
-      elseif MOUSE_click(obj.sections[5041]) then
-        if not mouse.shift then
-          FolderTrackListMenu(mouse.mx,mouse.my)
-        else
-          TrackSetListMenu(mouse.mx,mouse.my)
-        end
-
-      elseif MOUSE_click_RB(obj.sections[5000]) then
-
-        local ar = ''
-        if lvar.dm_autorefresh then
-          ar = '!'
-        end
-        local mstr = '#Clear saved data||'..ar..'Auto Refresh Page'
-        gfx.x = mouse.mx
-        gfx.y = mouse.my
-        local res = gfx.showmenu(mstr)
-        if res > 0 then
-          if res == 1 then
-            lvar.stripstore = nil
-            lvar.snapstore = nil
-            DM_RefreshPage()
-          elseif res == 2 then
-            lvar.dm_autorefresh = not lvar.dm_autorefresh
-          end
-        end
-
-      elseif MOUSE_click_RB(obj.sections[5006]) then
-
-        local trn = lvar.dynamicmode_trn
-        if trn then
-          local track = GetTrack(trn)
-          if track then
-            local _, trnm = reaper.GetTrackName(track)
-            local mstr
-            if lvar.dm_backtrack then
-              local pt1,pt2,pt3,pt4 = '','','',''
-              if lvar.dm_backtrack.page == 1 then
-                pt1 = '!'
-              elseif lvar.dm_backtrack.page == 2 then
-                pt2 = '!'
-              elseif lvar.dm_backtrack.page == 3 then
-                pt3 = '!'
-              elseif lvar.dm_backtrack.page == 4 then
-                pt4 = '!'
-              end
-              mstr = "Set '"..trnm.."' as return track||#Set return track page:|"..pt1.."Page 1|"..pt2.."Page 2|"..pt3.."Page 3|"..pt4.."Page 4||Clear return track"
-            else
-              mstr = "Set '"..trnm.."' as return track||#Set return track page:|#Page 1|#Page 2|#Page 3|#Page 4"
-            end
-            gfx.x = mouse.mx
-            gfx.y = mouse.my
-            local res = gfx.showmenu(mstr)
-            if res > 0 then
-              if res == 1 then
-                lvar.dm_backtrack = {trn = lvar.dynamicmode_trn, guid = lvar.dynamicmode_guid, page = 1}
-                lupd.update_trbtns = true
-              elseif res >= 3 and res <= 6 then
-                local p = res - 2
-                lvar.dm_backtrack.page = p
-              elseif res == 7 then
-                lvar.dm_backtrack = nil
-                lupd.update_trbtns = true
-              end
-            end
-          end
-        end
-
-      elseif MOUSE_click(obj.sections[5006]) then
-
-        if lvar.dm_backtrack then
-          local trn = lvar.dm_backtrack.trn
-          if trn ~= -1 then
-            local track = GetTrack(trn)
-            if not track then
-              trn = GetTRNfromGUID(lvar.dm_backtrack.guid)
-              if trn then
-                lvar.dm_backtrack.trn = trn
-              end
-            else
-              --check guid
-              if lvar.dm_backtrack.guid == reaper.GetTrackGUID(track) then
-              else
-                trn = GetTRNfromGUID(lvar.dm_backtrack.guid)
-                if trn then
-                  lvar.dm_backtrack.trn = trn
-                end
-              end
-            end
-          end
-          if trn then
-            ChangeTrack2(trn, lvar.dm_backtrack.page, true)
-          end
-        elseif lvar.dm_ret_track then
-          ChangeTrack2(lvar.dm_ret_track, lvar.dm_ret_page, true)
-        end
-
-      elseif obj.sections[5007] and MOUSE_click(obj.sections[5007]) then
-
-        SetGlobalPage()
-
-      elseif MOUSE_click(obj.sections[5002]) then
-
-        if not mouse.shift then
-          local mr = math.min(lvar.trov_maxrows-1,lvar.dm_maxvistracks)
-          lvar.trbtns_offs = math.max(F_limit(lvar.trbtns_offs - mr,0,#lvar.dm_trackbtns[lvar.dm_tbidx]-mr),0)
-          lupd.update_trbtns = true
-        else
-          local t = (lvar.dynamicmode_trn or 0) - 1
-          if t < -1 then t = #tracks end
-          local track = GetTrack(t)
-          reaper.SetOnlyTrackSelected(track)
-          DM_AddStrips()
-        end
-
-      elseif MOUSE_click(obj.sections[5003]) then
-
-        if not mouse.shift then
-          local mr = math.min(lvar.trov_maxrows-1,lvar.dm_maxvistracks)
-          lvar.trbtns_offs = math.max(F_limit(lvar.trbtns_offs + mr,0,#lvar.dm_trackbtns[lvar.dm_tbidx]-mr),0)
-          lupd.update_trbtns = true
-        else
-          local t = (lvar.dynamicmode_trn or #tracks) + 1
-          if t > #tracks then t = -1 end
-          local track = GetTrack(t)
-          reaper.SetOnlyTrackSelected(track)
-          DM_AddStrips()
-        end
-
-      elseif (MOUSE_click(obj.sections[5005]) or MOUSE_click_RB(obj.sections[5005])) then
-        if MOUSE_click(obj.sections[5005]) then
-          local x = math.floor((mouse.mx - obj.sections[5005].x)/(obj.sections[5004].w+10))+1
-          local dm_trackbtns = lvar.dm_trackbtns[lvar.dm_tbidx]
-          local cnt = math.min(--[[(#dm_trackbtns+1),]] lvar.trov_maxrows, lvar.dm_maxvistracks+1)
-          if x == cnt then
-            local tbguididx = {}
-            for i = 1, #dm_trackbtns do
-              if dm_trackbtns[i].trn == -1 then
-                tbguididx[-1] = true
-              else
-                tbguididx[dm_trackbtns[i].guid] = true
-              end
-            end
-
-            if lvar.dm_tbidx > 0 --[[and lvar.dynamicmode_trn]] then
-              for t = 0, reaper.CountSelectedTracks2(0,true)-1 do
-                local tr = reaper.GetSelectedTrack2(0,t,true)
-                local trn = reaper.GetMediaTrackInfo_Value(tr, 'IP_TRACKNUMBER')
-                local guid = reaper.GetTrackGUID(tr)
-                if not (tbguididx[guid] or tbguididx[trn]) then
-                  if trn == -1 then
-                    dm_trackbtns[#dm_trackbtns+1] = {guid = guid, trn = trn}
-                  else
-                    dm_trackbtns[#dm_trackbtns+1] = {guid = guid, trn = trn-1}
-                  end
-                  lupd.update_surface = true
-                  lupd.update_trbtns = true
-                end
-              end
-
-              --[[local fnd
-              for i = 1, #dm_trackbtns do
-                if dm_trackbtns[i].guid == lvar.dynamicmode_guid or (lvar.dynamicmode_trn == -1 and dm_trackbtns[i].trn == -1) then
-                  fnd = true
-                  break
-                end
-              end
-              if not fnd then
-                dm_trackbtns[#dm_trackbtns+1] = {guid = lvar.dynamicmode_guid, trn = lvar.dynamicmode_trn}
-                lupd.update_surface = true
-                lupd.update_trbtns = true
-              end]]
-            end
-
-            --obj = PosTrBtns(obj)
-            Repos5005()
-
-          else
-            local x = x + lvar.trbtns_offs
-            if dm_trackbtns[x] then
-              if not mouse.shift then
-                if dm_trackbtns[x] then
-                  local tr = GetTrack(dm_trackbtns[x].trn)
-                  if tr then
-                    if reaper.GetTrackGUID(tr) ~= dm_trackbtns[x].guid and dm_trackbtns[x].trn ~= -1 then
-                      tr = reaper.BR_GetMediaTrackByGUID(0, dm_trackbtns[x].guid)
-                      if tr then
-                        dm_trackbtns[x].trn = reaper.GetMediaTrackInfo_Value(tr, 'IP_TRACKNUMBER')-1
-                      end
-                    end
-                  end
-                  if tr then
-                    if not mouse.ctrl then
-                      if dm_trackbtns[x].trn ~= lvar.dynamicmode_trn then
-                        reaper.SetOnlyTrackSelected(tr)
-                        DM_AddStrips()
-                        reaper.Main_OnCommand(40913,0)
-                        reaper.SetMixerScroll(tr)
-                        
-                        mouse.context = contexts.dm_selecttracks
-                        lvar.dmsl = {x = x - lvar.trbtns_offs, delay = reaper.time_precise()+0.2}
-                        
-                      elseif dm_trackbtns[x].trn ~= -1 then
-                        --solo/unsolo
-                        lvar.trbtn_solo = true
-                        --[[local solo = reaper.GetMediaTrackInfo_Value(tr, 'I_SOLO')
-                        solo = 2-solo
-                        reaper.CSurf_OnSoloChangeEx(tr, solo, true)]]
-
-                        mouse.context = contexts.dm_selecttracks
-                        lvar.dmsl = {x = x - lvar.trbtns_offs, delay = reaper.time_precise()+0.2}
-                        --reaper.SetMediaTrackInfo_Value(tr, 'I_SOLO', solo)
-                      end
-                    else --ctrl
-                      mouse.context = contexts.dm_selecttracks
-                      lvar.dmsl = {x = x - lvar.trbtns_offs, delay = 0}
-                    end
-                  end
-                end
-              else
-                local idx
-                for i = 1, #dm_trackbtns do
-                  --DBG(math.max(dm_trackbtns[i].trn-1,-1)..'  '..lvar.dynamicmode_trn)
-                  if dm_trackbtns[i].guid == lvar.dynamicmode_guid or (lvar.dynamicmode_trn == -1 and dm_trackbtns[i].trn == -1) then
-                    idx = i
-                    break
-                  end
-                end
-                if idx and idx ~= x then
-                  table.shift(dm_trackbtns,idx,x)
-                  lvar.dm_trackbtns[lvar.dm_tbidx] = dm_trackbtns
-                  lupd.update_trbtns = true
-                end
-              end
-            end
-          end
-        else --right-click
-          local x = math.floor((mouse.mx - obj.sections[5005].x)/(obj.sections[5004].w+10))+1
-          local dm_trackbtns = lvar.dm_trackbtns[lvar.dm_tbidx]
-          if x == math.min(lvar.trov_maxrows,lvar.dm_maxvistracks+1) or x == #dm_trackbtns + 1 then
-            local pm = ''
-            if lvar.trbtns_meters then
-              pm = '!'
-            end
-            local mstr = 'Max Visible Tracks ('..string.format('%i',lvar.dm_maxvistracks)..')||'..pm..'Show Peak Meters||Set Peak Meter Color'
-            gfx.x, gfx.y = mouse.mx, mouse.my
-            local res = gfx.showmenu(mstr)
-            if res then
-              if res == 1 then
-                local retval, val = reaper.GetUserInputs('Max Mixer Tracks',1,'Enter Maximum:','')
-                if retval and tonumber(val) then
-                  lvar.dm_maxvistracks = tonumber(val)
-                  obj = PosTrBtns(obj)
-                  lupd.update_trbtns = true
-                end
-              elseif res == 2 then
-                lvar.trbtns_meters = not lvar.trbtns_meters
-                lupd.update_trbtns = true
-              elseif res == 3 then
-                local retval, c = reaper.GR_SelectColor(_,ConvertColorString(lvar.trbtns_pkcolor))
-                if retval ~= 0 then
-                  lvar.trbtns_pkcolor = ConvertColor(c)
-                  lupd.update_trbtns = true
-                end
-              end
-            end
-          else
-            if mouse.shift and lvar.dm_tbidx > 0 then
-              x = x+lvar.trbtns_offs
-              if dm_trackbtns[x] then
-                local mstr = 'Clear'
-                gfx.x, gfx.y = mouse.mx, mouse.my
-                local res = gfx.showmenu(mstr)
-                if res then
-                  if res == 1 then
-                    local dm_tbs = {}
-                    for i = 1, #dm_trackbtns do
-                      if i ~= x then
-                        dm_tbs[#dm_tbs+1] = dm_trackbtns[i]
-                      end
-                    end
-                    lvar.dm_trackbtns[lvar.dm_tbidx] = dm_tbs
-                    lupd.update_trbtns = true
-                    Repos5005()
-                    --obj = PosTrBtns(obj)
-                    noscroll = true
-                  end
-                end
-              end
-            else
-              --mute/menu
-              if dm_trackbtns[x] then
-                local tr = GetTrack(dm_trackbtns[x].trn)
-                if tr then
-                  if reaper.GetTrackGUID(tr) ~= dm_trackbtns[x].guid and dm_trackbtns[x].trn ~= -1 then
-                    tr = reaper.BR_GetMediaTrackByGUID(0, dm_trackbtns[x].guid)
-                    if tr then
-                      dm_trackbtns[x].trn = reaper.GetMediaTrackInfo_Value(tr, 'IP_TRACKNUMBER')-1
-                    end
-                  end
-                end
-                if tr then
-                  if lvar.trmix_show then
-
-                    local x, y = reaper.GetMousePosition()
-                    reaper.ShowPopupMenu('track_panel',x,y,nil,tr)
-                    lupd.update_trbtns = true
-                    --return selected track to previous
-
-                    local tr2 = GetTrack(lvar.dynamicmode_trn)
-                    reaper.SetOnlyTrackSelected(tr2)
-                  else
-                    if dm_trackbtns[x].trn ~= -1 then
-                      --mute/unmute
-                      local mute = reaper.GetMediaTrackInfo_Value(tr, 'B_MUTE')
-                      mute = 1-mute
-                      reaper.SetMediaTrackInfo_Value(tr, 'B_MUTE', mute)
-                    end
-                  end
-                end
-              end
-            end
-          end
-        end
-      end
-
+      
     elseif lvar.trbtn_solo then
 
       lvar.trbtn_solo = nil
@@ -57042,1036 +58656,9 @@ DBG('bl')
 
       SetGlobalPage()
 
-    elseif --[[mouse.context == nil and]] (MOUSE_click(obj.sections[10]) or MOUSE_click_RB(obj.sections[10]) or gfx.mouse_wheel ~= 0) then
+    --elseif --[[mouse.context == nil and]] (MOUSE_click(obj.sections[10]) or MOUSE_click_RB(obj.sections[10]) or gfx.mouse_wheel ~= 0) then
 
-      --STRIP SURFACE
-
-      local togfsnap = false
-
-      if mouse.mx > obj.sections[10000].x then
-        if strips and tracks[track_select] and strips[tracks[track_select].strip] then
-
-          local i
-          --local ttt = reaper.time_precise()
-          local strip = tracks[track_select].strip
-          local ctls = strips[strip][page].controls
-          local c, stripidx, stripid = GetControlAtXY(strip, page, mouse.mx, mouse.my)
-
-          --[[if lvar.livemode == 2 and MOUSE_click(obj.sections[5000]) then
-
-            c = nil
-            noscroll = true
-
-            GUI_DrawButton(gui,'REFRESH',obj.sections[5000],-2,gui.color.white,true,nil,nil,4)
-            lupd = GUI_draw(obj, gui)
-            gfx.update()
-            DM_RefreshPage()
-
-          else]]if lvar.livemode >= 1 and lvar.mmov_show == true then
-            if mouse.RB then
-              local strip = tracks[track_select].strip
-              if (lvar.showpoponly or (lvar.showpop and lvar.mm_fadepop == 0 and strips[strip][page].pop and #strips[strip][page].pop > 0)) then
-                if lvar.mixmodedir == 0 then
-                  local mpad = lvar.mmov_pad
-                  if mouse.mx < obj.sections[10000].x+lvar.mmov_vsize+mpad*2 then
-                    Process_MMOV2(rt,nil,true)
-                    c = nil
-                    noscroll = true
-                  end
-                else
-                  local mpad = lvar.mmov_pad
-                  if mouse.my < obj.sections[10000].y+lvar.mmov_vsize+mpad*2 then
-                    Process_MMOV2(rt,nil,true)
-                    c = nil
-                    noscroll = true
-                  end
-                end
-              else
-                if lvar.mixmodedir == 0 then
-                  local mpad = lvar.mmov_pad
-                  if mouse.mx < obj.sections[10000].x+lvar.mmov_vsize+mpad*2 then
-                    mouse.context = contexts.mmov_dragv
-                    lvar.mixupdate = nil
-                    lvar.mmov_drag = true
-                    c = nil
-                    noscroll = true
-                  end
-                else
-                  local mpad = lvar.mmov_pad
-                  if mouse.my < obj.sections[10000].y+lvar.mmov_vsize+mpad*2 then
-                    mouse.context = contexts.mmov_dragh
-                    lvar.mixupdate = nil
-                    lvar.mmov_drag = true
-                    c = nil
-                    noscroll = true
-                  end
-                end
-              end
-
-            elseif mouse.LB then
-              if lvar.mixmodedir == 0 then
-                local mpad = lvar.mmov_pad
-                if mouse.mx < obj.sections[10000].x+lvar.mmov_vsize+mpad*2 then
-                  Process_MMOV2(rt,true,nil)
-                  c = nil
-                  noscroll = true
-                end
-              else
-                local mpad = lvar.mmov_pad
-                if mouse.my < obj.sections[10000].y+lvar.mmov_vsize+mpad*2 then
-                  Process_MMOV2(rt,true,nil)
-                  c = nil
-                  noscroll = true
-                end
-              end
-            elseif gfx.mouse_wheel ~= 0 then
-              if lvar.mixmodedir == 0 then
-                local mpad = lvar.mmov_pad
-                if mouse.mx < obj.sections[10000].x+lvar.mmov_vsize+mpad*2 then
-                  if mouse.shift then
-                    local v = gfx.mouse_wheel/lvar.mousewheel_div
-                    lvar.mmov_vsize = F_limit(lvar.mmov_vsize + v*4,32,200)
-                    lvar.mmov_offs = math.floor((lvar.mmov_vsize + lvar.mmov_pad*2)/2)
-                    lupd.update_mmov = true
-                    lupd.update_surface = true
-                    --Repos5001()
-                    Repos5005()
-                    GUI_DrawCtlBitmap_Mix()
-                    gfx.mouse_wheel = 0
-                  else
-                    if obj.sections[10000].h < lvar.mmov_max then
-                      local v = gfx.mouse_wheel/lvar.mousewheel_div
-                      lvar.mmov_pos = F_limit(lvar.mmov_pos - v*20,0,lvar.mmov_max-obj.sections[10000].h)
-                      lupd.update_surface = true
-                    end
-                    gfx.mouse_wheel = 0
-                  end
-                end
-              else
-                local mpad = lvar.mmov_pad
-                if mouse.my < obj.sections[10000].y+lvar.mmov_vsize+mpad*2 then
-                  if mouse.shift then
-                    local v = gfx.mouse_wheel/lvar.mousewheel_div
-                    lvar.mmov_vsize = F_limit(lvar.mmov_vsize + v*4,32,200)
-                    lvar.mmov_offs = math.floor((lvar.mmov_vsize + lvar.mmov_pad*2)/2)
-                    lupd.update_mmov = true
-                    lupd.update_surface = true
-                    --Repos5001()
-                    Repos5005()
-                    GUI_DrawCtlBitmap_Mix()
-                    gfx.mouse_wheel = 0
-                  else
-                    if obj.sections[10000].w < lvar.mmov_max then  
-                      local v = gfx.mouse_wheel/lvar.mousewheel_div
-                      lvar.mmov_pos = F_limit(lvar.mmov_pos - v*20,0,lvar.mmov_max-obj.sections[10000].w)
-                      lupd.update_surface = true
-                    end
-                    gfx.mouse_wheel = 0
-                  end
-                end
-              end
-            end
-          end
-          if c then
-            i = c
-
-            local ctl = ctls[i]
-            ctlxywh = {x = ctl.xsc * lvar.zoom - surface_offset.x * lvar.zoom +obj.sections[10].x,
-                       y = ctl.ysc * lvar.zoom - surface_offset.y * lvar.zoom +obj.sections[10].y,
-                       w = ctl.wsc * lvar.zoom,
-                       h = ctl.hsc * lvar.zoom}
-            noscroll = (ctls[i].ctllock or noscroll)
-          elseif mouse.shift and stripid and lvar.livemode >= 1 then
-            lvar.dragswitcher = DragSwitcher_Ext(stripid)
-            if lvar.dragswitcher then
-              switchers[lvar.dragswitcher.selected].dragging = true
-              lupd.update_surface = true
-
-              mouse.context = contexts.switchdrag_ext2
-            end
-          elseif stripid and lvar.livemode >= 1 then
-            if lvar.stripdim then
-              switchid = lvar.stripdim.swidx[stripid]
-              if lvar.showpop == true and strips[strip][page].popidx and strips[strip][page].popidx[switchid] then
-                PopOut_ToTop(switchid)
-              end
-            end
-          end
-
-          if i and not ctls[i].hidden and not ctls[i].ctllock then
-
-            if ctls[i].fxfound or ctls[i].ctlcat == ctlcats.switcher then
-
-              if MOUSE_LB() or gfx.mouse_wheel ~= 0 then
-                lvar.disabletakeover_ctl = i
-              end
-
-              local skip
-              if ctls[i].ctlcat == ctlcats.fxmulti then
-                if MOUSE_LB() then
-                  local ctl = ctls[i]
-                  local cval = ctl.val
-                  local trn = ctl.tracknum or tracks[track_select].tracknum
-                  if mouse.ctrl then
-                    SetFXOffline3(trn, ctl.fxnum, 1)
-                  elseif mouse.shift then
-                    SetFXOffline3(trn, ctl.fxnum, 0, 1)
-                  else
-                    SetFXOffline3(trn, ctl.fxnum, 0, 0)
-                    if cval <= 0.34 then
-                      ToggleFXWet(strip, page, i, strips[strip].track.tracknum)
-                    else
-                      ToggleFXWet(strip, page, i, strips[strip].track.tracknum,true)
-                    end
-                  end
-                  SetCtlEnabled(ctl.fxnum)
-
-                  local state = FXMulti_GetState(tr, ctl)
-                  ctl.val = (state-1)/(#lvar.fxmulti_table-1)
-
-                  if ctl.addfx and #ctl.addfx > 0 then
-                    local tr = GetTrack(ctl.tracknum or tracks[track_select].tracknum)
-                    if tr then
-                      FXMulti_SetAddFX(ctl, state)
-                    end
-                  end
-
-                  SetCtlDirty(i)
-                  lupd.update_ctls = true
-
-                  skip = true
-                  noscroll = true
-                end
-              end
-
-              local todef = false
-
-              if not skip then
-                if MOUSE_LB() and not mouse.ctrl and not mouse.alt then
-                  local ctltype = ctls[i].ctltype
-
-                  if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.2 and ctltype ~= 5 and ctltype ~= 2 and ctltype ~= 3 then
-                    if ctls[i].ctlcat ~= ctlcats.rs5k then
-                      if settings_swapctrlclick == false then
-                        SetParam_ToDef(i)
-                        todef = true
-                      else
-                        SetParam_EnterVal(i)
-                      end
-                    else
-                      SetShowSampleManager(true, i)
-                    end
-                    noscroll = true
-
-                  end
-
-                  --if ctltype == 12 then
-
-                  if ctltype == 1 or ctltype == 11 or ctltype == 12 then
-                    if ctltype == 12 then
-                      lvar.magnetic_active = i
-                    end
-
-                    local ctype = ctl_files[ctls[i].knob_select].ctltype
-
-                    if ctls[i].ctlcat ~= ctlcats.macro then
-                      --knob/slider
-                      if ctype ~= 5 and ctype ~= 6 and ctype ~= 7 then
-                        if lvar.sliderxy == true then
-                          mouse.context = contexts.sliderctlxy
-                          mouse.slideoff = ctlxywh.y+ctlxywh.h/2 - mouse.smy
-                          mouse.slideoffh = ctlxywh.x+ctlxywh.w/2 - mouse.smx
-                          octlval = ctls[i].val
-                          if lvar.hidecursordrag == true then
-                            mouse.ox, mouse.oy  = mouse.smx, mouse.smy --reaper.GetMousePosition()
-                            lvar.hidecursor = true
-                            --reaper.JS_Mouse_SetCursor(lvar.cursor_invisible)
-                          end
-
-                        else
-                          if ctls[i].horiz then
-                            mouse.context = contexts.sliderctl_h
-                            mouse.slideoff = ctlxywh.x+ctlxywh.w/2 - mouse.smx
-                            octlval = ctls[i].val
-                            if lvar.hidecursordrag == true then
-                              mouse.ox, mouse.oy  = mouse.smx, mouse.smy --reaper.GetMousePosition()
-                              lvar.hidecursor = true
-                              --reaper.JS_Mouse_SetCursor(lvar.cursor_invisible)
-                            end
-
-                          else
-                            mouse.context = contexts.sliderctl
-                            mouse.slideoff = ctlxywh.y+ctlxywh.h/2 - mouse.smy
-                            octlval = ctls[i].val
-                            if lvar.hidecursordrag == true then
-                              mouse.ox, mouse.oy  = mouse.smx, mouse.smy --reaper.GetMousePosition()
-                              lvar.hidecursor = true
-                              --reaper.JS_Mouse_SetCursor(lvar.cursor_invisible)
-                            end
-                          end
-                        end
-                        ctlpos = ctlScaleInv(ctls[i].scalemode or 8,
-                                             ctls[i].val)
-                      else
-
-                        if todef == false then
-                          local ctl = ctls[i]
-                          if ctype == 6 or (ctype == 7 and ctl.horiz == true) then
-                            mouse.context = contexts.sliderctl_h_t2
-                            slidt2 = {}
-                            slidt2.offs = 0
-                            slidt2.knbsz = ctl_files[ctl.knob_select].knbsz * lvar.zoom
-
-                            local mx = mouse.mx-ctlxywh.x
-                            local my, ci
-                            if stripgallery_view > 0 then
-                              mx, my, ci = TranslateGalleryPos(mouse.mx, mouse.my, i)
-                              mx, my = mx - ctlxywh.x, my - ctlxywh.y
-                            end
-                            local knbctr = math.floor((ctlxywh.w-(slidt2.knbsz*ctl.scale)) * ctlScaleInv(ctl.scalemode,ctl.val)) + math.floor((slidt2.knbsz*ctl.scale)/2)
-                            if mx >= knbctr-math.ceil((slidt2.knbsz*ctl.scale)/2) and mx <= knbctr+math.ceil((slidt2.knbsz*ctl.scale)/2) then
-                              slidt2.offs = mx-knbctr
-                            end
-
-                          elseif ctype == 5 or ctype == 7 then
-
-                            mouse.context = contexts.sliderctl_t2
-                            slidt2 = {}
-                            slidt2.offs = 0
-                            slidt2.knbsz = ctl_files[ctl.knob_select].knbsz * lvar.zoom
-
-                            if lvar.livemode == 0 then
-                              local my = (mouse.my-ctlxywh.y)
-                              local mx, ci
-                              if stripgallery_view > 0 then
-                                mx, my, ci = TranslateGalleryPos(mouse.mx, mouse.my, i)
-                                mx, my = mx - ctlxywh.x, my - ctlxywh.y
-                              end
-                              local knbctr = math.floor((ctlxywh.h -(slidt2.knbsz*ctl.scale)) - math.floor((ctlxywh.h -(slidt2.knbsz*ctl.scale))
-                                             * ctlScaleInv(ctl.scalemode,ctl.val)) + math.floor((slidt2.knbsz*ctl.scale)/2))
-
-                              if my >= knbctr-math.ceil((slidt2.knbsz*ctl.scale)/2) and my <= knbctr+math.ceil((slidt2.knbsz*ctl.scale)/2) then
-                                slidt2.offs = math.floor((my-knbctr))
-                              end
-                            else
-                              local mx, my, swid
-
-                              _, _, swid = TranslateMixPos(mouse.mx, mouse.my, i)
-                              local xx, yy = TranslateMixCtlPos(i, swid)
-                              my = mouse.my - yy -math.floor((((slidt2.knbsz)*ctl.scale)/2))
-
-                              slidt2.swid = swid
-                              local knbctr = math.floor((ctlxywh.h -(slidt2.knbsz*ctl.scale)) - ((ctlxywh.h -(slidt2.knbsz*ctl.scale))
-                                              * ctlScaleInv(ctl.scalemode,ctl.val)) )-- math.floor((slidt2.knbsz*ctl.scale)/2)) --+((lvar.zoom-1)*4)*(slidt2.knbsz/lvar.zoom)
-                              if my >= knbctr-math.ceil((slidt2.knbsz*ctl.scale)/2) and my <= knbctr+math.ceil((slidt2.knbsz*ctl.scale)/2) then
-                                slidt2.offs = math.floor(my-knbctr)
-                              end
-                            end
-                          end
-                        end
-                      end
-                      trackfxparam_select = i
-                      oms = mouse.shift
-                    else
-                      if ctype ~= 5 and ctype ~= 6 and ctype ~= 7 then
-                        if lvar.sliderxy == true then
-                          mouse.context = contexts.macctlxy
-                          mouse.slideoff = ctlxywh.y+ctlxywh.h/2 - mouse.smy
-                          mouse.slideoffh = ctlxywh.x+ctlxywh.w/2 - mouse.smx
-                          octlval = ctls[i].val
-                          if lvar.hidecursordrag == true then
-                            mouse.ox, mouse.oy  = mouse.smx, mouse.smy --reaper.GetMousePosition()
-                            lvar.hidecursor = true
-                            --reaper.JS_Mouse_SetCursor(lvar.cursor_invisible)
-                          end
-                        else
-                          if ctls[i].horiz then
-                            mouse.context = contexts.macctl_h
-                            mouse.slideoff = ctlxywh.x+ctlxywh.w/2 - mouse.smx
-                            octlval = ctls[i].val
-                            if lvar.hidecursordrag == true then
-                              mouse.ox, mouse.oy  = mouse.smx, mouse.smy --reaper.GetMousePosition()
-                              lvar.hidecursor = true
-                              --reaper.JS_Mouse_SetCursor(lvar.cursor_invisible)
-                            end
-
-                          else
-                            mouse.context = contexts.macctl
-                            mouse.slideoff = ctlxywh.y+ctlxywh.h/2 - mouse.smy
-                            octlval = ctls[i].val
-                            if lvar.hidecursordrag == true then
-                              mouse.ox, mouse.oy  = mouse.smx, mouse.smy --reaper.GetMousePosition()
-                              lvar.hidecursor = true
-                              --reaper.JS_Mouse_SetCursor(lvar.cursor_invisible)
-                            end
-
-                          end
-                        end
-                        ctlpos = ctlScaleInv(nz(ctls[i].scalemode,8),
-                                             ctls[i].val)
-                      else
-
-                        if todef == false then
-                          local ctl = ctls[i]
-                          if ctype == 6 or (ctype == 7 and ctl.horiz == true) then
-                            mouse.context = contexts.macsliderctl_h_t2
-                            slidt2 = {}
-                            slidt2.offs = 0
-                            slidt2.knbsz = ctl_files[ctl.knob_select].knbsz * lvar.zoom
-
-                            local mx = mouse.mx-ctlxywh.x
-                            local my, ci
-                            if stripgallery_view > 0 then
-                              mx, my, ci = TranslateGalleryPos(mouse.mx, mouse.my, i)
-                              mx, my = mx - ctlxywh.x, my - ctlxywh.y
-                            end
-                            local knbctr = math.floor((ctlxywh.w-(slidt2.knbsz*ctl.scale)) * ctlScaleInv(ctl.scalemode,ctl.val)) + math.floor((slidt2.knbsz*ctl.scale)/2)
-                            if mx >= knbctr-math.ceil((slidt2.knbsz*ctl.scale)/2) and mx <= knbctr+math.ceil((slidt2.knbsz*ctl.scale)/2) then
-                              slidt2.offs = mx-knbctr
-                            end
-
-                          elseif ctype == 5 or ctype == 7 then
-                            mouse.context = contexts.macsliderctl_t2
-                            slidt2 = {}
-                            slidt2.offs = 0
-                            slidt2.knbsz = ctl_files[ctl.knob_select].knbsz * lvar.zoom
-
-                            local my = mouse.my-ctlxywh.y
-                            local mx, ci
-                            if stripgallery_view > 0 then
-                              mx, my, ci = TranslateGalleryPos(mouse.mx, mouse.my, i)
-                              mx, my = mx - ctlxywh.x, my - ctlxywh.y
-                            end
-                            local knbctr = (ctlxywh.h-(slidt2.knbsz*ctl.scale)) - math.floor((ctlxywh.h-(slidt2.knbsz*ctl.scale)) * ctlScaleInv(ctl.scalemode,ctl.val)) + math.floor((slidt2.knbsz*ctl.scale)/2)
-                            if my >= knbctr-math.ceil((slidt2.knbsz*ctl.scale)/2) and my <= knbctr+math.ceil((slidt2.knbsz*ctl.scale)/2) then
-                              slidt2.offs = my-knbctr
-                            end
-                          end
-                        end
-
-                      end
-
-                      macctlactive = i
-                      --ctls[i].mval = nil
-                      trackfxparam_select = i
-                      oms = mouse.shift
-                    end
-                    if ctls[i].mod and mod_select ~= ctls[i].mod then
-                      mod_select = ctls[i].mod
-                      lupd.update_gfx = true
-                    end
-
-                    --undotxt = 'Parameter Change'
-                    --reaper.Undo_BeginBlock2()
-
-                  elseif ctltype == 2 or ctltype == 3 then
-                    --button/button inverse
-                    if lvar.TSM_MOver then
-                      if lvar.TSM_FocusHwnd then
-                        reaper.JS_Window_SetFocus(lvar.TSM_FocusHwnd)
-                      end
-                      if lvar.TSM_LegalMP then
-                        reaper.JS_Mouse_SetPosition(lvar.TSM_LegalMP.x, lvar.TSM_LegalMP.y)
-                      end
-                      --lvar.TSM_Timer = reaper.time_precise()+lvar.TSM_time
-                      --lvar.TSM_MOver = nil
-                    end
-
-                    trackfxparam_select = i
-                    if ctls[i].val and ctls[i].val < 0.5 then
-                      ctls[i].val = 1
-                    else
-                      ctls[i].val = 0
-                    end
-                    if ctls[i].mod == nil or (ctls[i].mod and modulators[ctls[i].mod].active ~= true) then
-                      A_SetParam(tracks[track_select].strip,page,i,ctls[i])
-                      --ctls[i].dirty = true
-                      SetCtlDirty(i)
-                      if ctls[i].param_info.paramname == 'Bypass' then
-                        SetCtlEnabled(ctls[i].fxnum)
-                      end
-                      if ctls[i].random then
-                        if show_randomopts == true and randopts_selectctl then
-                          SetCtlDirty(randopts_selectctl)
-                          RandomOpts_INIT(i)
-                          randopts_selectctl = i
-                          lupd.update_randomopts = true
-                        end
-                      end
-                    end
-                    if ctls[i].mod and mod_select ~= ctls[i].mod then
-                      mod_select = ctls[i].mod
-                      lupd.update_gfx = true
-                    end
-                    noscroll = true
-
-                    SetCtlDirty(i)
-                    lupd.update_ctls = true
-
-                  elseif ctltype == 4 then
-                    --cycle
-                    if ctls[i].cycledata.draggable then
-                      if lvar.sliderxy == true then
-                        mouse.context = contexts.dragcyclexy
-                        mouse.slideoff = ctlxywh.y+ctlxywh.h/2 - mouse.smy
-                        mouse.slideoffh = ctlxywh.x+ctlxywh.w/2 - mouse.smx
-                        if lvar.hidecursordrag == true then
-                          mouse.ox, mouse.oy  = mouse.smx, mouse.smy --reaper.GetMousePosition()
-                          lvar.hidecursor = true
-                          --reaper.JS_Mouse_SetCursor(lvar.cursor_invisible)
-                        end
-                      else
-                        if ctls[i].horiz then
-                          mouse.context = contexts.dragcycle_h
-                          mouse.slideoff = ctlxywh.x+ctlxywh.w/2 - mouse.smx
-                          if lvar.hidecursordrag == true then
-                            mouse.ox, mouse.oy  = mouse.smx, mouse.smy --reaper.GetMousePosition()
-                            lvar.hidecursor = true
-                            --reaper.JS_Mouse_SetCursor(lvar.cursor_invisible)
-                          end
-                        else
-                          mouse.context = contexts.dragcycle
-                          mouse.slideoff = ctlxywh.y+ctlxywh.h/2 - mouse.smy
-                          if lvar.hidecursordrag == true then
-                            mouse.ox, mouse.oy  = mouse.smx, mouse.smy --reaper.GetMousePosition()
-                            lvar.hidecursor = true
-                            --reaper.JS_Mouse_SetCursor(lvar.cursor_invisible)
-                          end
-                        end
-                      end
-                      ctlpos = normalize(0, ctls[i].cycledata.statecnt,
-                                         ctls[i].cycledata.pos)
-                      trackfxparam_select = i
-                      ctls[i].cycledata.posdirty = false
-                      oms = mouse.shift
-                    else
-                      if lvar.TSM_MOver then
-                        if lvar.TSM_FocusHwnd then
-                          reaper.JS_Window_SetFocus(lvar.TSM_FocusHwnd)
-                        end
-                        if lvar.TSM_LegalMP then
-                          reaper.JS_Mouse_SetPosition(lvar.TSM_LegalMP.x, lvar.TSM_LegalMP.y)
-                        end
-                        --lvar.TSM_Timer = reaper.time_precise()+lvar.TSM_time
-                        --lvar.TSM_MOver = nil
-                      end
-
-                      if ctls[i].cycledata.pos == nil then
-                        ctls[i].cycledata.pos = 1
-                      else
-                        ctls[i].cycledata.pos = ctls[i].cycledata.pos +1
-                        if ctls[i].cycledata.pos > ctls[i].cycledata.statecnt
-                           or ctls[i].cycledata.pos < 1 then
-                          ctls[i].cycledata.pos = 1
-                        end
-                      end
-                      if ctls[i].cycledata.pos <=
-                                ctls[i].cycledata.statecnt then
-                        trackfxparam_select = i
-                        ctls[i].val =
-                            ctls[i].cycledata[ctls[i].cycledata.pos].val
-                        A_SetParam(tracks[track_select].strip,page,i,ctls[i])
-                        ctls[i].dirty = true
-                        ctls[i].cycledata.posdirty = false
-                        lupd.update_ctls = true
-                      end
-                      SetCtlDirty(i)
-                      lupd.update_ctls = true
-                    end
-                    if ctls[i].mod and mod_select ~= ctls[i].mod then
-                      mod_select = ctls[i].mod
-                      lupd.update_gfx = true
-                    end
-
-                    noscroll = true
-                  elseif ctltype == 6 then
-                    --mem button
-                    trackfxparam_select = i
-                    if ctls[i].membtn.state == nil then
-                      ctls[i].membtn.state = false
-                    end
-                    ctls[i].membtn.state = not ctls[i].membtn.state
-                    if ctls[i].membtn.state == true then
-                      ctls[i].membtn.mem = ctls[i].val
-                      ctls[i].val = ctls[i].defval
-                      A_SetParam(strip,page,i,ctls[i])
-                    else
-                      ctls[i].val = ctls[i].membtn.mem
-                      A_SetParam(strip,page,i,ctls[i])
-                    end
-                    if ctls[i].mod and mod_select ~= ctls[i].mod then
-                      mod_select = ctls[i].mod
-                      lupd.update_gfx = true
-                    end
-                    SetCtlDirty(i)
-                    lupd.update_ctls = true
-
-                  elseif ctltype == 5 then
-
-                    if ctls[i].ctlcat == ctlcats.xy then
-
-                      local ctlx, ctly
-                      if lvar.livemode == 0 then
-                        ctly = (ctls[i].y*lvar.zoom + obj.sections[10].y - surface_offset.y*lvar.zoom)
-                        ctlx = ctls[i].x*lvar.zoom + obj.sections[10].x - surface_offset.x*lvar.zoom
-                      else
-                        local _, _, swid = TranslateMixPos(mouse.mx, mouse.my, i)
-                        local xx, yy = TranslateMixCtlPos(i, swid)
-                        ctlx, ctly = xx, yy
-                      end
-
-                      if mouse.my - ctly --[[obj.sections[10].y + surface_offset.y*lvar.zoom - ctls[i].y*lvar.zoom]] < (ctls[i].ctl_info.cellh - 38)*lvar.zoom then
-                        mouse.context = contexts.dragxy
-                        lvar.xyswid = swid
-                        xy_select = i
-                      else
-                        local xp = math.floor((mouse.mx-12*lvar.zoom - ctlx)/((((ctls[i].w-24)*lvar.zoom)/4)))+1
-                        xp = F_limit(xp, 1, 4)
-                        --DBG(ctlx..'  '..mouse.mx-ctlx-12*lvar.zoom ..'  '..xp)
-                        xysnap_select = xp
-                        xy_select = i
-
-                        --open fss
-                        togfsnap = true
-                        if fsstype_select == ctls[i].param then
-                          show_xysnapshots = not show_xysnapshots
-                          show_fsnapshots = false
-                        else
-                          show_xysnapshots = true
-                          show_fsnapshots = false
-                        end
-                        fsstype_select = ctls[i].param
-                        fsstype_color = ctls[i].textcolv
-                        if show_xysnapshots then
-                          if snapshots and snapshots[tracks[track_select].strip] and snapshots[tracks[track_select].strip][page][fsstype_select] then
-
-                            if xysnap_select == 1 then
-                              fss_select = ctls[i].xydata.snapa
-                            elseif xysnap_select == 2 then
-                              fss_select = ctls[i].xydata.snapb
-                            elseif xysnap_select == 3 then
-                              fss_select = ctls[i].xydata.snapc
-                            elseif xysnap_select == 4 then
-                              fss_select = ctls[i].xydata.snapd
-                            end
-                            --[[obj.sections[180].x = F_limit(ctls[i].x - surface_offset.x + obj.sections[10].x +
-                                                          math.floor((ctls[i].w - obj.sections[180].w)/2),
-                                                          obj.sections[10].x,obj.sections[10].x+obj.sections[10].w-obj.sections[180].w)]]
-                            --[[obj.sections[180].y = F_limit(ctls[i].y+ctls[i].ctl_info.cellh
-                                                          - surface_offset.y  + obj.sections[10].y - 3,
-                                                          obj.sections[10].y,obj.sections[10].y+obj.sections[10].h-obj.sections[180].h)]]
-                            obj.sections[180].x = F_limit(ctlx,
-                                                          obj.sections[10].x,obj.sections[10].x+obj.sections[10].w-obj.sections[180].w)
-                            obj.sections[180].y = F_limit(ctly +ctls[i].ctl_info.cellh*lvar.zoom,
-                                                          obj.sections[10].y,obj.sections[10].y+obj.sections[10].h-obj.sections[180].h)
-                            --obj.sections[180].w = ctls[i].wsc * lvar.zoom
-                          else
-                            show_xysnapshots = false
-                          end
-                        end
-                        lupd.update_fsnaps = true
-                        lupd.update_surface = true
-                      end
-
-                    elseif ctls[i].ctlcat == ctlcats.snapshot then
-
-                      togfsnap = FSS_Click(i, ctlxywh, togfsnap)
-
-                    elseif ctls[i].ctlcat == ctlcats.eqcontrol then
-                      eqcontrol_select = i
-                      show_eqcontrol = true
-                      --navigate = false
-                      if ctls[i].eqbands and ctls[i].eqbands[1] then
-                        eqcontrolband_select = 1
-                      end
-                      --EQC_OpenEQs()
-                      lupd.update_gfx = true
-
-                    elseif ctls[i].ctlcat == ctlcats.switcher then
-
-                      switcher_select = i
-                      local swctl = switchers[ctls[i].switcherid]
-                      if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.2 then
-                        local strip = tracks[track_select].strip
-                        if lvar.livemode >= 1 and lvar.showpop == true and strips[strip][page].popidx and strips[strip][page].popidx[ctls[i].switcherid] then
-                          PopOut_Delete(ctls[i].switcherid)
-                        elseif lvar.livemode >= 1 and ((strips[strip][page].popidx and not strips[strip][page].popidx[ctls[i].switcherid]) or
-                          strips[strip][page].popidx == nil) then
-                          local x = lvar.spos[ctls[i].switcherid].x - obj.sections[10].x
-                          local y = lvar.spos[ctls[i].switcherid].y - obj.sections[10].y
-                          local w = lvar.spos[ctls[i].switcherid].w
-                          local h = lvar.spos[ctls[i].switcherid].h
-
-                          if lvar.dm_singlepopup then
-                            PopOut_DeleteAll()
-                            x = math.floor(obj.sections[10].w/2 - w/2) -- obj.sections[10].x
-                            y = math.floor(obj.sections[10].h/2 - h/2) -- obj.sections[10].y
-                            if lvar.mmov_show then
-                              if lvar.mixmodedir == 0 then
-                                x = x + math.floor((lvar.mmov_vsize + 2*lvar.mmov_pad)/2)
-                              else
-                                y = y + math.floor((lvar.mmov_vsize + 2*lvar.mmov_pad)/2)
-                              end
-                            end
-                          end
-
-                          PopOut(ctls[i].switcherid,x,y)
-                          ShowPop(true)
-                        elseif lvar.livemode >= 1 and (strips[strip][page].popidx and strips[strip][page].popidx[ctls[i].switcherid]) then
-                          if lvar.dm_singlepopup then
-                            PopOut_DeleteAll()
-                            local w = lvar.spos[ctls[i].switcherid].w
-                            local h = lvar.spos[ctls[i].switcherid].h
-                            local x = math.floor(obj.sections[10].w/2 - w/2) -- obj.sections[10].x
-                            local y = math.floor(obj.sections[10].h/2 - h/2) -- obj.sections[10].y
-                            if lvar.mmov_show then
-                              if lvar.mixmodedir == 0 then
-                                x = x + math.floor((lvar.mmov_vsize + 2*lvar.mmov_pad)/2)
-                              else
-                                y = y + math.floor((lvar.mmov_vsize + 2*lvar.mmov_pad)/2)
-                              end
-                            end
-                            PopOut(ctls[i].switcherid,x,y)
-                          end
-                          ShowPop(true)
-                        end
-
-                      elseif swctl.switchmode == 1 and swctl.extendmode == true then
-                        lvar.dragswitcher = DragSwitcher_Ext(nil, ctls[i].switcherid)
-                        if lvar.dragswitcher then
-                          local strip = tracks[track_select].strip
-                          lvar.omx, lvar.omy = mouse.mx, mouse.my
-
-                          if lvar.livemode >= 1 and lvar.showpop == true and strips[strip][page].popidx and strips[strip][page].popidx[ctls[i].switcherid] then
-                            PopOut_ToTop(ctls[i].switcherid)
-                          else
-                            switchers[ctls[i].switcherid].dragging = true
-                            lupd.update_surface = true
-                          end
-                          lvar.edgedrag_mult = 1
-                          mouse.context = contexts.switchdrag_ext2
-                        end
-                      else
-                        SwitcherMenu_LB()
-                      end
-                      --DragSwitcher_Ext(nil, ctls[i].switcherid)
-                      --if mouse.shift and swctl.switchmode == 1 and swctl.extendmode == true then
-                        --Switcher_Ext_Drag(ctls[i].switcherid, i)
-                        --mouse.context = contexts.switchdrag_ext
-                        --lvar.switchdrag = {c = i, switchid = ctls[i].switcherid}
-                      --else
-                      --  SwitcherMenu_LB()
-                      --end
-                    elseif ctls[i].ctlcat == ctlcats.rcm_switch then
-                      rcm_select = i
-                      RCMMenu_RB()
-                    elseif ctls[i].ctlcat == ctlcats.infoctl then
-
-                      if ctls[i].param == 2 then
-                        mouse.context = contexts.infoctl_click
-                        local ctl = ctls[i]
-                        local offs = lvar.slotoffset[ctl.tracknum or tracks[track_select].tracknum] or 0
-                        lvar.infoclick = {src = i, soffs = offs, t = reaper.time_precise(), active = false, mx = mouse.mx, my = mouse.my}
-                        lvar.omx = mouse.mx
-                        lvar.omy = mouse.my
-                      end
-
-                    elseif ctls[i].ctlcat == ctlcats.statectl_str then
-
-                      lvar.statestr_edit = i
-                      OpenEB(499,'Enter state string to store:',ctls[i].param_info.paramstr or '')
-
-                    end
-
-                  elseif ctltype == 7 or ctltype == 8 or ctltype == 9 or ctltype == 10 then
-                    --hold button
-                    if lvar.TSM_MOver then
-                      if lvar.TSM_FocusHwnd then
-                        reaper.JS_Window_SetFocus(lvar.TSM_FocusHwnd)
-                      end
-                      if lvar.TSM_LegalMP then
-                        reaper.JS_Mouse_SetPosition(lvar.TSM_LegalMP.x, lvar.TSM_LegalMP.y)
-                      end
-                      --lvar.TSM_Timer = reaper.time_precise()+lvar.TSM_time
-                      --lvar.TSM_MOver = nil
-                    end
-
-                    holdbtn = i
-                    trackfxparam_select = i
-                    mouse.context = contexts.hold
-                    ctls[i].val = 1
-                    ctls[i].dirty = true
-                    SetCtlDirty(i)
-                    lupd.update_ctls = true
-
-                    A_SetParam(strip, page, i, ctls[i])
-                  end
-                  noscroll = true
-                  --break
-
-                elseif MOUSE_RB() and mouse.ctrl == false then
-                  local ccat = ctls[i].ctlcat
-                  if ccat == ctlcats.macro then
-                   -- mstr = 'Select Macro Parameters|Edit Macro Parameters'
-                    macroedittype_select = 0
-                    macro_edit_mode = true
-                    macroedit_poffs = 0
-                    trackfxparam_select = i
-                    macroctl_select = trackfxparam_select
-                    --lupd.update_surface = true
-                    lupd.update_gfx = true
-                  elseif ccat == ctlcats.macro_updateparam then
-                    macroedittype_select = 1
-                    macro_edit_mode = true
-                    macroedit_poffs = 0
-                    trackfxparam_select = i
-                    macroctl_select = trackfxparam_select
-                    --lupd.update_surface = true
-                    lupd.update_gfx = true
-                  elseif ccat == ctlcats.snapshotrand then
-                    if not mouse.shift then
-                      if show_mutate then
-                        local ctltype = ctls[i].ctltype
-                        if ctltype == 7 or ctltype == 8 or ctltype == 9 or ctltype == 10 then
-                          --hold button
-                          holdbtn = i
-                          trackfxparam_select = i
-                          mouse.context = contexts.hold
-                          ctls[i].val = 1
-                          ctls[i].dirty = true
-                          SetCtlDirty(i)
-                          lupd.update_ctls = true
-                        end
-                        A_SetParam(strip, page, i, ctls[i])
-                      else
-                        show_mutate = not show_mutate
-                        lupd.update_gfx = true
-                      end
-                    else
-                      show_mutate = not show_mutate
-                      lupd.update_gfx = true
-                      --RBMenu(0, ccat, i)
-                    end
-                  elseif ccat == ctlcats.fxgui then
-                    CloseFXGUI(ctls[i])
-                  else
-                    RBMenu(0, ccat, i)
-                  end
-                  noscroll = true
-
-                elseif MOUSE_LB() and mouse.alt then
-
-                  if ctls[i].ctlcat == ctlcats.fxparam or
-                     ctls[i].ctlcat == ctlcats.fxoffline then
-                    OpenFXGUI(ctls[i])
-                  end
-
-                elseif MOUSE_LB() and mouse.ctrl then --make double-click?
-                  local ccat = ctls[i].ctlcat
-                  if ccat == ctlcats.switcher and switchers[ctls[i].switcherid].switchmode == 1 and
-                     switchers[ctls[i].switcherid].extendmode == true and mouse.shift then
-                    ShowPop(true)
-                    lvar.dragswitcher = DragSwitcher_Ext(nil, ctls[i].switcherid)
-                    if lvar.dragswitcher then
-                      lvar.edgedrag_mult = 1
-                      mouse.context = contexts.switchdrag_ext2
-                    end
-
-                  elseif ccat == ctlcats.snapshotrand then
-                    show_randomopts = true
-                    if randopts_selectctl then
-                      SetCtlDirty(randopts_selectctl)
-                    end
-                    randopts_selectctl = i
-
-                    SetCtlDirty(i)
-                    lupd.update_ctls = true
-
-                    if ctls[i].param == 1 then
-                      show_randomopts = false
-                    end
-                    if show_randomopts == true then
-
-                      RandomOpts_INIT(i)
-
-                    end
-                    lupd.update_gfx = true
-                  else
-                    if settings_swapctrlclick == true then
-                      SetParam_ToDef(i)
-                    else
-                      SetParam_EnterVal(i)
-                    end
-                  end
-                  noscroll = true
-
-                elseif settings_mousewheelknob and gfx.mouse_wheel ~= 0 --[[and i]] then
-
-                  local ctltype = ctls[i].ctltype
-                  if ctltype == 1 or ctltype == 11 then
-                    trackfxparam_select = i
-                    local v
-                    if ctls[i].ctlcat ~= ctlcats.rs5k then
-                      if mouse.shift then
-                        local mult = ctls[i].knobsens.wheelfine
-                        if mult == 0 then mult = settings_defknobsens.wheelfine end
-                        v = gfx.mouse_wheel/lvar.mousewheel_div * mult
-                      else
-                        local mult = ctls[i].knobsens.wheel
-                        if mult == 0 then mult = settings_defknobsens.wheel end
-                        v = gfx.mouse_wheel/lvar.mousewheel_div * mult
-                      end
-                    else
-                      local mult = 1/lvar.maxsamples
-                      v = gfx.mouse_wheel/lvar.mousewheel_div * mult
-                    end
-                    if ctltype == 11 then v=-v end
-                    ctls[i].val = F_limit(ctls[i].val+v,0,1)
-                    A_SetParam(tracks[track_select].strip,page,i,ctls[i])
-                    --SetParam()
-                    SetCtlDirty(i)
-                    --ctls[i].dirty = true
-                    lupd.update_ctls = true
-                    gfx.mouse_wheel = 0
-
-                  elseif ctltype == 4 then
-                    local v = gfx.mouse_wheel/lvar.mousewheel_div
-                    if ctls[i].cycledata.pos == nil then
-                      ctls[i].cycledata.pos = 1
-                    else
-                      ctls[i].cycledata.pos = ctls[i].cycledata.pos + v
-                      if ctls[i].cycledata.pos < 1 then
-                        if ctls[i].cycledata.draggable then
-                          ctls[i].cycledata.pos = 1
-                        else
-                          ctls[i].cycledata.pos = ctls[i].cycledata.statecnt
-                        end
-                      elseif ctls[i].cycledata.pos >
-                              ctls[i].cycledata.statecnt then
-                        if ctls[i].cycledata.draggable then
-                          ctls[i].cycledata.pos = ctls[i].cycledata.statecnt
-                        else
-                          ctls[i].cycledata.pos = 1
-                        end
-                      end
-                    end
-                    if ctls[i].cycledata.pos <=
-                              ctls[i].cycledata.statecnt then
-                      trackfxparam_select = i
-                      if ctls[i].cycledata[ctls[i].cycledata.pos] then
-                        ctls[i].val =
-                            ctls[i].cycledata[ctls[i].cycledata.pos].val
-                        --SetParam()
-                        A_SetParam(tracks[track_select].strip,page,i,ctls[i])
-                        --ctls[i].dirty = true
-                        SetCtlDirty(i)
-                        lupd.update_ctls = true
-                      end
-                    end
-                    noscroll = true
-                    gfx.mouse_wheel = 0
-
-                  elseif ctls[i].ctlcat == ctlcats.snapshot then
-
-                    if ctls[i].param_info.paramnum == 1 then
-                      local v = gfx.mouse_wheel/lvar.mousewheel_div
-                      local xsstype_select,xss_select
-                      xsstype_select = ctls[i].param
-                      if snapshots and snapshots[tracks[track_select].strip] and snapshots[tracks[track_select].strip][page][xsstype_select]
-                                                  and snapshots[tracks[track_select].strip][page][xsstype_select].selected then
-                        if snapshots[tracks[track_select].strip][page][xsstype_select].selected then
-                          if xsstype_select == 1 then
-                            xss_select = snapshots[tracks[track_select].strip][page][xsstype_select].selected-v
-                            if xss_select < 1 then
-                              xss_select = #snapshots[tracks[track_select].strip][page][xsstype_select]
-                            elseif xss_select > #snapshots[tracks[track_select].strip][page][xsstype_select] then
-                              xss_select = 1
-                            end
-
-                          else
-                            xss_select = snapshots[tracks[track_select].strip][page][xsstype_select].selected-v
-                            if xss_select < 1 then
-                              xss_select = #snapshots[tracks[track_select].strip][page][xsstype_select].snapshot
-                            elseif xss_select > #snapshots[tracks[track_select].strip][page][xsstype_select].snapshot then
-                              xss_select = 1
-                            end
-                          end
-                        else
-                          if xsstype_select == 1 then
-                            if #snapshots[tracks[track_select].strip][page][xsstype_select] > 0 then
-                              xss_select = 1
-                            end
-                          else
-                            if #snapshots[tracks[track_select].strip][page][xsstype_select].snapshot > 0 then
-                              xss_select = 1
-                            end
-                          end
-                        end
-                        if xss_select then
-                          Snapshot_Set(tracks[track_select].strip, page, xsstype_select, xss_select)
-                          if xsstype_select == sstype_select then
-                            ss_select = xss_select
-                          end
-                          SetCtlDirty(i)
-                          lupd.update_ctls = true
-                          lupd.update_snaps = true
-                          --lupd.update_fsnaps = true
-                        end
-                      end
-                    end
-                    noscroll = true
-                    gfx.mouse_wheel = 0
-                  elseif ctls[i].ctlcat == ctlcats.infoctl then
-                    local ctl = ctls[i]
-
-                    if ctl.param == 2 then
-                      local v = gfx.mouse_wheel/lvar.mousewheel_div
-                      local idx = ctl.tracknum or tracks[track_select].tracknum
-                      if idx then
-                        local tr = GetTrack(idx)
-                        local fxcnt = reaper.TrackFX_GetCount(tr)
-                        lvar.slotoffset[idx] = math.min(math.max((lvar.slotoffset[idx] or 0) - v,0),fxcnt)
-                        SetCtlDirty(i)
-                        lupd.update_ctls = true
-                      end
-                    end
-                    noscroll = true
-                    gfx.mouse_wheel = 0
-                  end
-                end
-              end
-
-              if show_randomopts == true and randomopts_ctls then
-                if randomopts_ctls[i] and randomopts_ctls[i] ~= randomopts_select.param then
-                  randomopts_select.param = randomopts_ctls[i]
-                  lupd.update_randomopts = true
-                end
-              end
-
-            end
-          end
-
-        end
-
-        if tracks[track_select] then
-          if noscroll == false and MOUSE_click_RB(obj.sections[10]) then
-            local i = GetControlAtXY(tracks[track_select].strip,page,mouse.mx,mouse.my)
-            if i then
-              local ctl = strips[tracks[track_select].strip][page].controls[i]
-              RBMenu(0,ctl.ctlcat,i)
-            else
-              RBMenu(1,nil,nil)
-            end
-          end
-        end
-
-
-      end
-
-      if show_fsnapshots and togfsnap == false then
-        show_fsnapshots = false
-        lupd.update_surface = true
-      end
+      
 
     end
 
@@ -59376,7 +59963,36 @@ DBG('bl')
         
         end]]
 
+      elseif mouse.context == contexts.scrollmatrix then
+      
+        if mouse.mx ~= omx or mouse.my ~= omy or matrixoff.timer < reaper.time_precise() then
+          if matrixoff.timer < reaper.time_precise() then
+            if matrixoff.x ~= 0 or matrixoff.y ~= 0 then
+              matrixoff.update = true
+              pinmatrix_scrollpos.x = pinmatrix_scrollpos.x + matrixoff.x
+              if settings_lockpinmatrix == false then
+                pinmatrix_scrollpos.y = pinmatrix_scrollpos.y + matrixoff.y
+              end
+              matrixoff.x = 0
+              matrixoff.y = 0
+              matrixoff.dx = mouse.mx
+              matrixoff.dy = mouse.my
+
+              lupd.update_surface = true
+            end
+            matrixoff.timer = reaper.time_precise() + 0.2
+          else
+            matrixoff.update = false
+            matrixoff.x = (mouse.mx - matrixoff.dx)
+            if settings_lockpinmatrix == false then
+              matrixoff.y = (mouse.my - matrixoff.dy)
+            end
+            lupd.update_surface = true
+            omx, omy = mouse.mx, mouse.my
+          end
+        end
       end
+    --end
 
     else --mouse.context == nil
 
@@ -59653,6 +60269,9 @@ DBG('bl')
         lvar.switchdrag = nil
         lupd.update_surface = true
 
+      elseif matrixoff then
+        matrixoff = nil
+        lupd.update_surface = true
       end
 
     end
@@ -59664,6 +60283,7 @@ DBG('bl')
         if show_fsnapshots then
           show_fsnapshots = false
           lupd.update_surface = true
+          RedrawGUIBitmap()
         end
 
         if mouse.my > obj.sections[500].y + obj.sections[500].h - tb_butt_h then
@@ -59706,7 +60326,10 @@ DBG('bl')
                 AddStripDialog_UpdateSel(fxdata)
                 lvar.fxdata = fxdata
                 lvar.show_addstripdialog = true
+                RedrawGUIBitmap()
                 lupd.update_gfx = true
+                RedrawGUIBitmap()
+                
               end
             else
               if mouse.ctrl then
@@ -59984,6 +60607,7 @@ DBG('bl')
         if show_fsnapshots then
           show_fsnapshots = false
           lupd.update_surface = true
+          RedrawGUIBitmap()
         end
 
         local i = math.floor((mouse.my - obj.sections[500].y) / tb_butt_h)-1
@@ -60079,6 +60703,7 @@ DBG('bl')
         if show_fsnapshots then
           show_fsnapshots = false
           lupd.update_surface = true
+          RedrawGUIBitmap()
         end
 
         local i = math.floor((mouse.my - obj.sections[500].y) / tb_butt_h)-1
@@ -60110,6 +60735,7 @@ DBG('bl')
               end
             end
             lupd.update_gfx = true
+            RedrawGUIBitmap()
           end
         elseif modulators[i + mdlist_offset] then
 
@@ -60130,6 +60756,7 @@ DBG('bl')
             end
             show_modass = true
             lupd.update_gfx = true
+            RedrawGUIBitmap()
           end
         end
 
@@ -60148,6 +60775,7 @@ DBG('bl')
             end
           end
           lupd.update_gfx = true
+          RedrawGUIBitmap()
         end
 
       end
@@ -60203,7 +60831,8 @@ DBG('bl')
           obj = GetObjects()
           lupd.update_lfoedit = true
           --lupd.update_surface = true
-
+          RedrawGUIBitmap()
+          
           modwinsz.ow = modwinsz.w
           modwinsz.oh = modwinsz.h
         end
@@ -60230,7 +60859,8 @@ DBG('bl')
           lupd.update_lfoedit = true
           lupd.update_surface = true
           lupd.update_samplemanager = true
-
+          RedrawGUIBitmap()
+          
           modwinsz.ow = modwinsz.w
           modwinsz.oh = modwinsz.h
 
@@ -60249,7 +60879,8 @@ DBG('bl')
           obj = GetObjects()
           --lupd.update_lfoedit = true
           --lupd.update_surface = true
-
+          RedrawGUIBitmap()
+          
           modwinsz.ox = modwinsz.x
           modwinsz.oy = modwinsz.y
         end
@@ -60452,7 +61083,8 @@ DBG('bl')
         lupd.update_msnaps = true
         --lupd.update_stripbrowser = true
         lupd.update_surface = true
-
+        RedrawGUIBitmap()
+        
       elseif mouse.context == contexts.addsnapctl then
         local iw, ih
         if dragparam then
@@ -60626,7 +61258,8 @@ DBG('bl')
 
         lupd.update_surface = true
         --lupd.update_gfx = true
-
+        RedrawGUIBitmap()
+        
       elseif mouse.context == contexts.resizefsnapwindow then
 
         local ly = obj.sections[10].h - obj.sections[180].y + butt_h
@@ -60825,7 +61458,8 @@ DBG('bl')
         obj.sections[1120].x = F_limit(mouse.mx - movemutatewin.dx,obj.sections[10000].x,obj.sections[10000].x+obj.sections[10000].w-obj.sections[1120].w)
         obj.sections[1120].y = F_limit(mouse.my - movemutatewin.dy,obj.sections[10000].y,obj.sections[10000].y+obj.sections[10000].h-obj.sections[1120].h)
         --lupd.update_surface = true
-
+        RedrawGUIBitmap()
+        
       elseif mouse.context == contexts.mutate_amt then
         local val = MOUSE_slider(obj.sections[1121],-mutateamt.yoff)
         if val ~= nil then
@@ -60840,14 +61474,16 @@ DBG('bl')
         obj.sections[1130].y = F_limit(mouse.my - moverandomwin.dy,obj.sections[10000].y,obj.sections[10000].y+obj.sections[10000].h-obj.sections[1130].h)
         obj.sections[1130].y = math.max(obj.sections[1130].y,obj.sections[10000].y)
         --lupd.update_surface = true
-
+        RedrawGUIBitmap()
+        
       elseif mouse.context == contexts.move_smwin then
 
         obj.sections[1300].x = F_limit(mouse.mx - movesmwin.dx,obj.sections[10000].x,obj.sections[10000].x+obj.sections[10000].w-obj.sections[1300].w)
         obj.sections[1300].y = F_limit(mouse.my - movesmwin.dy,obj.sections[10000].y,obj.sections[10000].y+obj.sections[10000].h-obj.sections[1300].h)
         obj.sections[1300].y = math.max(obj.sections[1300].y,obj.sections[10000].y)
         --lupd.update_surface = true
-
+        RedrawGUIBitmap()
+        
       elseif mouse.context == contexts.resize_smwin then
 
         local dx = smwinrsz.x + smwinrsz.sc_w - smwinrsz.mx
@@ -60874,6 +61510,7 @@ DBG('bl')
 
           smwin.ow = smwin.w
           smwin.oh = smwin.h
+          RedrawGUIBitmap()
         end
 
       elseif mouse.context == contexts.resize_smwinv then
@@ -60895,19 +61532,23 @@ DBG('bl')
           obj = PosSampleManager(obj)
           --lupd.update_surface = true
           lupd.update_samplemanager = true
-
+          RedrawGUIBitmap()
+          
           smwin.oh = smwin.h
         end
 
       elseif mouse.context == contexts.move_sbwin then
 
-        obj.sections[1350].x = F_limit(mouse.mx - movesbwin.dx,obj.sections[10000].x,obj.sections[10000].x+obj.sections[10000].w-obj.sections[1350].w)
-        obj.sections[1350].y = F_limit(mouse.my - movesbwin.dy,obj.sections[10000].y,obj.sections[10000].y+obj.sections[10000].h-obj.sections[1350].h)
-        obj.sections[1350].y = math.max(obj.sections[1350].y,obj.sections[10000].y)
+        --obj.sections[1350].x = F_limit(mouse.mx - movesbwin.dx,obj.sections[10000].x,obj.sections[10000].x+obj.sections[10000].w-obj.sections[1350].w)
+        --obj.sections[1350].y = F_limit(mouse.my - movesbwin.dy,obj.sections[10000].y,obj.sections[10000].y+obj.sections[10000].h-obj.sections[1350].h)
 
+        obj.sections[1350].x = F_limit(mouse.mx - movesbwin.dx,0,gfx1.main_w-obj.sections[1350].w)
+        obj.sections[1350].y = F_limit(mouse.my - movesbwin.dy,0,gfx1.main_h-obj.sections[1350].h)
+        obj.sections[1350].y = math.max(obj.sections[1350].y,obj.sections[10000].y)
         sbwin.x = obj.sections[1350].x
         sbwin.y = obj.sections[1350].y
         --lupd.update_surface = true
+        RedrawGUIBitmap()
 
       elseif mouse.context == contexts.resize_sbwin then
 
@@ -60922,14 +61563,19 @@ DBG('bl')
         if sbwin.w ~= sbwin.ow or sbwin.h ~= sbwin.oh then
           sbwin.ow = sbwin.w
           sbwin.oh = sbwin.h
-
+          local maxh = gfx1.main_h - obj.sections[1350].y
           local sbw,sbh = math.max(math.min(math.floor(sbwin.w*pnl_scale),obj.sections[10000].w),lvar.sbmin*pnl_scale),
-                          math.max(math.min(math.floor((sbwin.h*pnl_scale)),obj.sections[10000].h),lvar.sbmin*pnl_scale)
+                          math.max(math.min(math.floor((sbwin.h*pnl_scale)),maxh),lvar.sbmin*pnl_scale)
 
-          obj.sections[1350] = {x = math.max(F_limit(obj.sections[1350].x,obj.sections[10000].x,obj.sections[10000].x+obj.sections[10000].w-sbw),obj.sections[10000].x),
+          --[[obj.sections[1350] = {x = math.max(F_limit(obj.sections[1350].x,obj.sections[10000].x,obj.sections[10000].x+obj.sections[10000].w-sbw),obj.sections[10000].x),
                                 y = math.max(F_limit(obj.sections[1350].y,obj.sections[10000].y,obj.sections[10000].y+obj.sections[10000].h-sbh),obj.sections[10000].y),
                                 w = sbw,
+                                h = sbh}]]
+          obj.sections[1350] = {x = F_limit(obj.sections[1350].x,0,gfx1.main_w-obj.sections[1350].w),
+                                y = F_limit(obj.sections[1350].y,0,gfx1.main_h-obj.sections[1350].h),
+                                w = sbw,
                                 h = sbh}
+          obj.sections[1350].y = math.max(obj.sections[1350].y,obj.sections[10000].y)
           --DBG(obj.sections[1350].w..'  '..obj.sections[1350].h)
           if settings_sbdock == true then
             SetSurfaceSize2(obj)
@@ -60940,6 +61586,7 @@ DBG('bl')
           end
           obj = PosStripBrowser(obj)
           lupd.update_stripbrowser = true
+          RedrawGUIBitmap()
 
         end
 
@@ -60967,10 +61614,15 @@ DBG('bl')
             sbw,sbh = math.max(math.min(math.floor(sbwin.w*pnl_scale),obj.sections[10000].w),lvar.sbmin*pnl_scale),
                       math.max(math.min(math.floor((sbwin.h*pnl_scale)),obj.sections[10000].h),lvar.sbmin*pnl_scale)
           end
-          obj.sections[1350] = {x = math.max(F_limit(obj.sections[1350].x,obj.sections[10000].x,obj.sections[10000].x+obj.sections[10000].w-sbw),obj.sections[10000].x),
+          --[[obj.sections[1350] = {x = math.max(F_limit(obj.sections[1350].x,obj.sections[10000].x,obj.sections[10000].x+obj.sections[10000].w-sbw),obj.sections[10000].x),
                                 y = math.max(F_limit(obj.sections[1350].y,obj.sections[10000].y,obj.sections[10000].y+obj.sections[10000].h-sbh),obj.sections[10000].y),
                                 w = sbw,
+                                h = sbh}]]
+          obj.sections[1350] = {x = F_limit(obj.sections[1350].x,0,gfx1.main_w-obj.sections[1350].w),
+                                y = F_limit(obj.sections[1350].y,0,gfx1.main_h-obj.sections[1350].h),
+                                w = sbw,
                                 h = sbh}
+          obj.sections[1350].y = math.max(obj.sections[1350].y,obj.sections[10000].y)                                
           if settings_sbdock == true then
             SetSurfaceSize2(obj)
             if settings_ssdock == true and show_snapshots == true then
@@ -60989,13 +61641,14 @@ DBG('bl')
           --obj = PosStripBrowser(obj)
           --obj = GetObjects()
           obj = PosStripBrowser(obj)
-          SetSurfaceSize2(obj)
-          obj = DockableWindows(obj, obj.sections[160], obj.sections[1350])
-          obj = PosTrBtns(obj)
-
+          if settings_sbdock == true then
+            SetSurfaceSize2(obj)
+            obj = DockableWindows(obj, obj.sections[160], obj.sections[1350])
+            obj = PosTrBtns(obj)
+          end
           lupd.update_surface = true
           lupd.update_stripbrowser = true
-
+          RedrawGUIBitmap()
         end
 
       elseif mouse.context == contexts.resize_sbwinv then
@@ -61025,6 +61678,12 @@ DBG('bl')
             sbh = math.max(math.min(math.floor(sbwin.h*pnl_scale),maxh),lvar.sbmin*pnl_scale)
             sbwin.h = math.floor(sbh/pnl_scale)
             sbh = math.floor(sbwin.h*pnl_scale)
+          else
+            local add = 0
+            local maxh = gfx1.main_h - obj.sections[1350].y - add
+            sbh = math.max(math.min(math.floor(sbwin.h*pnl_scale),maxh),lvar.sbmin*pnl_scale)
+            sbwin.h = math.floor(sbh/pnl_scale)
+            sbh = math.floor(sbwin.h*pnl_scale)            
           end
           obj.sections[1350] = {x = obj.sections[1350].x,
                                 y = obj.sections[1350].y, --math.max(F_limit(obj.sections[1350].y,obj.sections[10].y,obj.sections[10].y+obj.sections[10].h-sbh),obj.sections[10].y)
@@ -61033,9 +61692,11 @@ DBG('bl')
           --resize_display = true
           --obj = DockableWindows(obj, obj.sections[160], obj.sections[1350])
           obj = PosStripBrowser(obj)
-          SetSurfaceSize2(obj)
-          obj = DockableWindows(obj, obj.sections[160], obj.sections[1350])
-          obj = Repos5001(obj)
+          if settings_sbdock == true then
+            SetSurfaceSize2(obj)
+            obj = DockableWindows(obj, obj.sections[160], obj.sections[1350])
+            obj = Repos5001(obj)
+          end
           --lvar.resize_stripbrowser = true
           --[[if not lvar.resize_stripbrowser_t or reaper.time_precise() > lvar.resize_stripbrowser_t then
             lvar.resize_stripbrowser_t = reaper.time_precise()+0.5
@@ -61046,7 +61707,8 @@ DBG('bl')
 
           lupd.update_surface = true
           lupd.update_stripbrowser = true
-
+          RedrawGUIBitmap()
+          
           if show_striplayout == true and stripgallery_view == 0 then
             SetASLocs()
           end
@@ -61063,17 +61725,24 @@ DBG('bl')
         local n = x + (y*lvar.stripbrowser.xnum) + offset
         if n ~= oldn then
           strip_favs = table.copy(movefav)
+          strip_favs_n = table.copy(movefav_n)
           if strip_favs[n+1] then
             local element = strip_favs[lvar.stripbrowser.moveselect+1]
+            local element_n = strip_favs_n[lvar.stripbrowser.moveselect+1]
             strip_favs = Table_RemoveEntry(strip_favs,#movefav,lvar.stripbrowser.moveselect+1)
             table.insert(strip_favs,n+1,element)
+            strip_favs_n = Table_RemoveEntry(strip_favs_n,#movefav_n,lvar.stripbrowser.moveselect+1)
+            table.insert(strip_favs_n,n+1,element_n)
+
             lvar.stripbrowser.select = n
             oldn = n
           else
             oldn = nil
             lvar.stripbrowser.select = lvar.stripbrowser.moveselect
           end
+          --lvar.reloadsbimages = true --slow - probably a better way to do this somehow
           lupd.update_stripbrowser = true
+          lupd.update_surface = true
         end
 
       elseif mouse.context == contexts.sb_dragstrip then
@@ -61170,8 +61839,8 @@ DBG('bl')
         lupd.update_surface = true
 
       end
+    
     end
-
 
     return noscroll
 
@@ -61259,8 +61928,12 @@ DBG('bl')
       if fsstype_select == ctls[i].param then
         show_fsnapshots = not show_fsnapshots
         show_xysnapshots = false
+        RedrawGUIBitmap()
       else
-        show_fsnapshots = true
+        if not show_fsnapshots then
+          show_fsnapshots = true
+          RedrawGUIBitmap()
+        end        
         show_xysnapshots = false
       end
       fsstype_select = ctls[i].param
@@ -61305,6 +61978,9 @@ DBG('bl')
             end
           end
         else
+          if show_fsnapshots then
+            RedrawGUIBitmap()
+          end
           show_fsnapshots = false
         end
       end
@@ -61471,9 +62147,11 @@ DBG('bl')
         if fsstype_select == ctls[i].param then
           show_fsnapshots = not show_fsnapshots
           show_xysnapshots = false
+          RedrawGUIBitmap()
         else
           show_fsnapshots = true
           show_xysnapshots = false
+          RedrawGUIBitmap()
         end
         fsstype_select = ctls[i].param
         fsstype_color = ctls[i].textcolv
@@ -61508,6 +62186,9 @@ DBG('bl')
               obj.sections[180].y = y + ctls[i].hsc
             end
           else
+            if show_fsnapshots then
+              RedrawGUIBitmap()              
+            end
             show_fsnapshots = false
           end
         end
@@ -62564,7 +63245,7 @@ DBG('bl')
         ctl.gauge = nil
         lupd.update_bg = true
         lupd.update_gfx = true
-        closegaugeedit = true
+        lvar.delayfunction.closegaugeedit = true
 
       elseif mouse.context == nil and MOUSE_click(obj.sections[824]) then
         --RESET
@@ -62583,7 +63264,7 @@ DBG('bl')
         ctl.gauge = Gauge_CopySelect(gauge_select)
         lupd.update_bg = true
         lupd.update_gfx = true
-        closegaugeedit = true
+        lvar.delayfunction.closegaugeedit = true
         --show_gaugeedit = false
 
       elseif mouse.context == nil and MOUSE_click(obj.sections[801]) then
@@ -69257,6 +69938,7 @@ DBG('bl')
       show_fsnapshots = false
       show_xysnapshots = false
       lupd.update_surface = true
+      RedrawGUIBitmap()      
     end
 
     if sstype_select > 1 then
@@ -69384,6 +70066,7 @@ DBG('bl')
       show_fsnapshots = false
       show_xysnapshots = false
       lupd.update_surface = true
+      RedrawGUIBitmap()      
     end
 
     xywh = {x = obj.sections[160].x,
@@ -69433,6 +70116,7 @@ DBG('bl')
           CleanSortSS(strip,page,sstype_select)
         end
         lupd.update_gfx = true
+        RedrawGUIBitmap()
       end
 
     elseif mouse.context == nil and MOUSE_click(xywh) and settings_ssdock ~= true then
@@ -70073,7 +70757,8 @@ DBG('bl')
 
       show_lfoedit = oslfoeedit
       show_snapshots = ossnaps
-
+      RedrawGUIBitmap()
+      
       obj = GetObjects()
       Macro_UpdateCtls(tracks[track_select].strip, page, macroctl_select)
 
@@ -70223,6 +70908,7 @@ DBG('bl')
       CleanSortSS(tracks[track_select].strip,page,sstype_select)
 
       lupd.update_gfx = true
+      RedrawGUIBitmap()
 
     else
 
@@ -70780,7 +71466,7 @@ DBG('bl')
                     h = obj.sections[401].h}
       if mouse.context == nil and MOUSE_click(xywh) then
 
-        lvar.exit_macro_edit = true
+        lvar.delayfunction.exit_macro_edit = true
 
       else
 
@@ -70801,310 +71487,245 @@ DBG('bl')
         local mx, my = mouse.mx, mouse.my
         mouse.mx, mouse.my = mouse.mx - obj.sections[300].x, mouse.my - obj.sections[300].y
 
-        local xywh_403 = {x = obj.sections[403].x - (macroedit.sliderw*0.5),
-                          y = obj.sections[403].y,
-                          w = obj.sections[403].w + macroedit.sliderw,
-                          h = obj.sections[403].h}
-        local xywh_404 = {x = obj.sections[404].x - (macroedit.sliderw*0.5),
-                          y = obj.sections[404].y,
-                          w = obj.sections[404].w + macroedit.sliderw,
-                          h = obj.sections[404].h}
-
-        if mouse.context == nil and MOUSE_click(obj.sections[410]) and macroedittype_select == 0 then --macro test knob
-
-          if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.15 then
-            local i = macroctl_select
-            strips[tracks[track_select].strip][page].controls[i].val = strips[tracks[track_select].strip][page].controls[i].defval
-            SetMacro(tracks[track_select].strip,page,i)
-            lupd.update_macroedit = true
-          else
-            local i = macroctl_select
-            macctlactive = i
-            mouse.context = contexts.macctl2
-            mouse.slideoff = obj.sections[410].y+obj.sections[410].h/2 - mouse.my
-            ctlpos = ctlScaleInv(nz(strips[tracks[track_select].strip][page].controls[i].scalemode,8),
-                                 strips[tracks[track_select].strip][page].controls[i].val)
-            oms = mouse.shift
-          end
-
-        elseif mouse.context == nil and MOUSE_click(xywh_403) and macroedittype_select == 0 then
-          local yy = math.floor((mouse.my - obj.sections[403].y)/macroedit.sech)
-          if macroctl[(yy+1)+macroedit_poffs] then
-
-            local val = macroctl[(yy+1)+macroedit_poffs].A_val
-            local xywh = {x = obj.sections[403].x + (val*obj.sections[403].w) -(macroedit.sliderw*0.5),
-                          y = obj.sections[403].y + (yy*macroedit.sech) + (macroedit.sech*0.5) - (macroedit.sliderh*0.5),
-                          w = macroedit.sliderw,
-                          h = macroedit.sliderh}
-            if MOUSE_over(xywh) then
-
-              mouse.context = contexts.macsliderA
-              macslide = {xoff = mouse.mx-(xywh.x+(xywh.w*0.5)), macparamidx = (yy+1)+macroedit_poffs}
-
-            end
-
-          end
-
-        elseif mouse.context == nil and MOUSE_click(xywh_404) and macroedittype_select == 0 then
-          local yy = math.floor((mouse.my - obj.sections[404].y)/macroedit.sech)
-          if macroctl[(yy+1)+macroedit_poffs] then
-
-            local val = macroctl[(yy+1)+macroedit_poffs].B_val
-            local xywh = {x = obj.sections[404].x + (val*obj.sections[404].w) -(macroedit.sliderw*0.5),
-                          y = obj.sections[404].y + (yy*macroedit.sech) + (macroedit.sech*0.5) - (macroedit.sliderh*0.5),
-                          w = macroedit.sliderw,
-                          h = macroedit.sliderh}
-            if MOUSE_over(xywh) then
-
-              mouse.context = contexts.macsliderB
-              macslide = {xoff = mouse.mx-(xywh.x+(xywh.w*0.5)), macparamidx = (yy+1)+macroedit_poffs}
-
-            end
-
-          end
-
-        elseif mouse.context == nil and MOUSE_click(obj.sections[405]) and macroedittype_select == 0 then
-          local yy = math.floor((mouse.my - obj.sections[405].y)/macroedit.sech)
-          if macroctl[(yy+1)+macroedit_poffs] then
-
-            macroctl[(yy+1)+macroedit_poffs].shape = macroctl[(yy+1)+macroedit_poffs].shape + 1
-            if macroctl[(yy+1)+macroedit_poffs].shape > #lvar.macroscale_table then
-              macroctl[(yy+1)+macroedit_poffs].shape = 1
-            end
-            lupd.update_gfx = true
-
-          end
-
-        elseif mouse.context == nil and MOUSE_click_RB(obj.sections[405]) and macroedittype_select == 0 then
-          local yy = math.floor((mouse.my - obj.sections[405].y)/macroedit.sech)
-          if macroctl[(yy+1)+macroedit_poffs] then
-
-            macroctl[(yy+1)+macroedit_poffs].shape = macroctl[(yy+1)+macroedit_poffs].shape - 1
-            if macroctl[(yy+1)+macroedit_poffs].shape < 1 then
-              macroctl[(yy+1)+macroedit_poffs].shape = #lvar.macroscale_table
-            end
-            lupd.update_gfx = true
-
-          end
-
-        elseif mouse.context == nil and MOUSE_click(obj.sections[406]) then
-          local yy = math.floor((mouse.my - obj.sections[406].y)/macroedit.sech)
-          if macroctl[(yy+1)+macroedit_poffs] then
-            local xywh = {x = obj.sections[406].x,
-                          y = obj.sections[406].y + yy*macroedit.sech + 0.5*macroedit.sech - 10,
-                          w = obj.sections[406].w,
-                          h = 20}
-            if MOUSE_over(xywh) then
-
-              macroctl[(yy+1)+macroedit_poffs].mute = not nz(macroctl[(yy+1)+macroedit_poffs].mute,false)
-              lupd.update_macrobutt = true
-
-            end
-          end
-
-        elseif mouse.context == nil and MOUSE_click(obj.sections[414]) and macroedittype_select == 0 then
-          local yy = math.floor((mouse.my - obj.sections[414].y)/macroedit.sech)
-          if macroctl[(yy+1)+macroedit_poffs] then
-            local xywh = {x = obj.sections[414].x,
-                          y = obj.sections[414].y + yy*macroedit.sech + 0.5*macroedit.sech - 10,
-                          w = obj.sections[414].w,
-                          h = 20}
-            if MOUSE_over(xywh) then
-
-              macroctl[(yy+1)+macroedit_poffs].bi = not nz(macroctl[(yy+1)+macroedit_poffs].bi,false)
-              if settings_macroeditmonitor then
-                SetMacro(tracks[track_select].strip,page,macroctl_select,true)
-              end
-
-              lupd.update_macrobutt = true
-
-            end
-          end
-
-        elseif mouse.context == nil and MOUSE_click(obj.sections[415]) and macroedittype_select == 0 then
-          local yy = math.floor((mouse.my - obj.sections[415].y)/macroedit.sech)
-          if macroctl[(yy+1)+macroedit_poffs] then
-            local xywh = {x = obj.sections[415].x,
-                          y = obj.sections[415].y + yy*macroedit.sech + 0.5*macroedit.sech - 10,
-                          w = obj.sections[415].w,
-                          h = 20}
-            if MOUSE_over(xywh) then
-
-              macroctl[(yy+1)+macroedit_poffs].inv = not nz(macroctl[(yy+1)+macroedit_poffs].inv,false)
-              if settings_macroeditmonitor then
-                SetMacro(tracks[track_select].strip,page,macroctl_select,true)
-              end
-
-              lupd.update_macrobutt = true
-
-            end
-          end
-
-        elseif mouse.context == nil and MOUSE_click(obj.sections[416]) and macroedittype_select == 0 then
-          local yy = math.floor((mouse.my - obj.sections[416].y)/macroedit.sech)
-          if macroctl[(yy+1)+macroedit_poffs] then
-            local xywh = {x = obj.sections[416].x,
-                          y = obj.sections[416].y + yy*macroedit.sech + 0.5*macroedit.sech - 10,
-                          w = obj.sections[416].w,
-                          h = 20}
-            if MOUSE_over(xywh) then
-
-              macroctl[(yy+1)+macroedit_poffs].relative = not nz(macroctl[(yy+1)+macroedit_poffs].relative,false)
-              if macroctl[(yy+1)+macroedit_poffs].relative == false and settings_macroeditmonitor then
-                SetMacro(tracks[track_select].strip,page,macroctl_select,true)
-              end
-
-              lupd.update_macrobutt = true
-
-            end
-          end
-
-        elseif mouse.context == nil and MOUSE_click(obj.sections[407]) then -- delete param
-          local yy = math.floor((mouse.my - obj.sections[407].y)/macroedit.sech)
-          if macroctl[(yy+1)+macroedit_poffs] then
-            local xywh = {x = obj.sections[407].x,
-                          y = obj.sections[407].y + yy*macroedit.sech + 0.5*macroedit.sech - 10,
-                          w = obj.sections[407].w,
-                          h = 20}
-            if MOUSE_over(xywh) then
-
-              local mcnt = #macroctl
-              macroctl[(yy+1)+macroedit_poffs] = nil
-              local mtab = Table_RemoveNils(macroctl, mcnt)
-              strips[tracks[track_select].strip][page].controls[macroctl_select].macroctl = mtab
-              lupd.update_gfx = true
-
-            end
-          end
-
-        elseif mouse.context == nil and MOUSE_click(obj.sections[408]) and macroedittype_select == 0 then
-
-          local f = {targettype = 2,
-                     strip = tracks[track_select].strip,
-                     page = page,
-                     ctl = macroctl_select,
-                     c_id = strips[tracks[track_select].strip][page].controls[macroctl_select].c_id}
-          if lvar.livemode == 2 then
-            f.dm_trn = lvar.dynamicmode_trn
-            f.dm_guid = lvar.dynamicmode_guid
-          end
-          mouse.mx, mouse.my = mx, my
-          local fad = SetAutomationFader(f, strips[tracks[track_select].strip][page].controls[macroctl_select].macrofader, true)
-          if fad == -2 then
-            DeleteFader(strips[tracks[track_select].strip][page].controls[macroctl_select].macrofader)
-            lupd.update_gfx = true
-          elseif fad ~= -1 then
-            --if strips[tracks[track_select].strip][page].controls[macroctl_select].macrofader and strips[tracks[track_select].strip][page].controls[macroctl_select].macrofader ~= fad then
-            --  faders[strips[tracks[track_select].strip][page].controls[macroctl_select].macrofader] = {}
-            --end
-            --strips[tracks[track_select].strip][page].controls[macroctl_select].macrofader = fad
-            AssignFader(fad, f)
-            lupd.update_gfx = true
-          end
-
-        elseif mouse.context == nil and MOUSE_click(obj.sections[409]) then
-
-          macro_lrn_mode = true
-          oslfoeedit = show_lfoedit
-          ossnaps = show_snapshots
-          show_lfoedit = false
-          show_snapshots = false
-
-          obj = GetObjects()
-          lupd.update_gfx = true
-
-        elseif mouse.context == nil and MOUSE_click(obj.sections[411]) and macroedittype_select == 0 then
-
-          Macro_Capture(tracks[track_select].strip,page,macroctl_select,0)
-          if settings_macroeditmonitor then
-            SetMacro(tracks[track_select].strip,page,macroctl_select,true)
-          end
-          lupd.update_macroedit = true
-
-        elseif mouse.context == nil and MOUSE_click(obj.sections[412]) and macroedittype_select == 0 then
-
-          Macro_Capture(tracks[track_select].strip,page,macroctl_select,1)
-          if settings_macroeditmonitor then
-            SetMacro(tracks[track_select].strip,page,macroctl_select,true)
-          end
-          lupd.update_macroedit = true
-
-        elseif mouse.context == nil and MOUSE_click(obj.sections[413]) and macroedittype_select == 0 then
-
-          settings_macroeditmonitor = not settings_macroeditmonitor
-          lupd.update_gfx = true
-
-        end
-
-        if mouse.context and mouse.context == contexts.macctl2 then
-
-          --local tfxp_s = macroctl_select
-          local val = MOUSE_slider(obj.sections[410],mouse.slideoff)
-          if val ~= nil then
-            local ctl = strips[tracks[track_select].strip][page].controls[macroctl_select]
-            if oms ~= mouse.shift then
-              oms = mouse.shift
-              ctlpos = ctl.val
-              mouse.slideoff = ctlxywh.y+ctlxywh.h/2 - mouse.my
+        if mouse.context == nil then
+          local xywh_403 = {x = obj.sections[403].x - (macroedit.sliderw*0.5),
+                            y = obj.sections[403].y,
+                            w = obj.sections[403].w + macroedit.sliderw,
+                            h = obj.sections[403].h}
+          local xywh_404 = {x = obj.sections[404].x - (macroedit.sliderw*0.5),
+                            y = obj.sections[404].y,
+                            w = obj.sections[404].w + macroedit.sliderw,
+                            h = obj.sections[404].h}
+  
+          
+          if MOUSE_click(obj.sections[410]) and macroedittype_select == 0 then --macro test knob
+  
+            if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.15 then
+              local i = macroctl_select
+              strips[tracks[track_select].strip][page].controls[i].val = strips[tracks[track_select].strip][page].controls[i].defval
+              SetMacro(tracks[track_select].strip,page,i)
+              lupd.update_macroedit = true
             else
-              if mouse.shift then
-                local mult = ctl.knobsens.fine
-                if mult == 0 then mult = settings_defknobsens.fine end
-                val = ctlpos + ((0.5-val)*2)*mult
-              else
-                local mult = ctl.knobsens.norm
-                if mult == 0 then mult = settings_defknobsens.norm end
-                val = ctlpos + (0.5-val)*mult
+              local i = macroctl_select
+              macctlactive = i
+              mouse.context = contexts.macctl2
+              mouse.slideoff = obj.sections[410].y+obj.sections[410].h/2 - mouse.my
+              ctlpos = ctlScaleInv(nz(strips[tracks[track_select].strip][page].controls[i].scalemode,8),
+                                   strips[tracks[track_select].strip][page].controls[i].val)
+              oms = mouse.shift
+            end
+  
+          elseif MOUSE_click(xywh_403) and macroedittype_select == 0 then
+            local yy = math.floor((mouse.my - obj.sections[403].y)/macroedit.sech)
+            if macroctl[(yy+1)+macroedit_poffs] then
+  
+              local val = macroctl[(yy+1)+macroedit_poffs].A_val
+              local xywh = {x = obj.sections[403].x + (val*obj.sections[403].w) -(macroedit.sliderw*0.5),
+                            y = obj.sections[403].y + (yy*macroedit.sech) + (macroedit.sech*0.5) - (macroedit.sliderh*0.5),
+                            w = macroedit.sliderw,
+                            h = macroedit.sliderh}
+              if MOUSE_over(xywh) then
+  
+                mouse.context = contexts.macsliderA
+                macslide = {xoff = mouse.mx-(xywh.x+(xywh.w*0.5)), macparamidx = (yy+1)+macroedit_poffs}
+  
               end
-              if val < 0 then val = 0 end
-              if val > 1 then val = 1 end
-              val = ctlScale(ctl.scalemode, val)
-              if val ~= octlval then
-                ctl.diff = val - ctl.val
-                ctl.oval = ctl.val
-                ctl.val = val
-                SetMacro(tracks[track_select].strip, page, macroctl_select)
-                ctl.dirty = true
-                octlval = val
-                --lupd.update_ctls = true
-                lupd.update_macroedit = true
-                --lupd.update_ctls = false
+  
+            end
+  
+          elseif MOUSE_click(xywh_404) and macroedittype_select == 0 then
+            local yy = math.floor((mouse.my - obj.sections[404].y)/macroedit.sech)
+            if macroctl[(yy+1)+macroedit_poffs] then
+  
+              local val = macroctl[(yy+1)+macroedit_poffs].B_val
+              local xywh = {x = obj.sections[404].x + (val*obj.sections[404].w) -(macroedit.sliderw*0.5),
+                            y = obj.sections[404].y + (yy*macroedit.sech) + (macroedit.sech*0.5) - (macroedit.sliderh*0.5),
+                            w = macroedit.sliderw,
+                            h = macroedit.sliderh}
+              if MOUSE_over(xywh) then
+  
+                mouse.context = contexts.macsliderB
+                macslide = {xoff = mouse.mx-(xywh.x+(xywh.w*0.5)), macparamidx = (yy+1)+macroedit_poffs}
+  
+              end
+  
+            end
+  
+          elseif MOUSE_click(obj.sections[405]) and macroedittype_select == 0 then
+            local yy = math.floor((mouse.my - obj.sections[405].y)/macroedit.sech)
+            if macroctl[(yy+1)+macroedit_poffs] then
+  
+              macroctl[(yy+1)+macroedit_poffs].shape = macroctl[(yy+1)+macroedit_poffs].shape + 1
+              if macroctl[(yy+1)+macroedit_poffs].shape > #lvar.macroscale_table then
+                macroctl[(yy+1)+macroedit_poffs].shape = 1
+              end
+              lupd.update_gfx = true
+  
+            end
+  
+          elseif MOUSE_click_RB(obj.sections[405]) and macroedittype_select == 0 then
+            local yy = math.floor((mouse.my - obj.sections[405].y)/macroedit.sech)
+            if macroctl[(yy+1)+macroedit_poffs] then
+  
+              macroctl[(yy+1)+macroedit_poffs].shape = macroctl[(yy+1)+macroedit_poffs].shape - 1
+              if macroctl[(yy+1)+macroedit_poffs].shape < 1 then
+                macroctl[(yy+1)+macroedit_poffs].shape = #lvar.macroscale_table
+              end
+              lupd.update_gfx = true
+  
+            end
+  
+          elseif MOUSE_click(obj.sections[406]) then
+            local yy = math.floor((mouse.my - obj.sections[406].y)/macroedit.sech)
+            if macroctl[(yy+1)+macroedit_poffs] then
+              local xywh = {x = obj.sections[406].x,
+                            y = obj.sections[406].y + yy*macroedit.sech + 0.5*macroedit.sech - 10,
+                            w = obj.sections[406].w,
+                            h = 20}
+              if MOUSE_over(xywh) then
+  
+                macroctl[(yy+1)+macroedit_poffs].mute = not nz(macroctl[(yy+1)+macroedit_poffs].mute,false)
+                lupd.update_macrobutt = true
+  
               end
             end
-          end
-
-        elseif mouse.context == nil and macctlactive ~= nil then
-
-          local strip = tracks[track_select].strip
-          local mac = strips[strip][page].controls[macctlactive].macroctl
-          strips[strip][page].controls[macctlactive].diff = nil
-          if mac and #mac > 0 then
-            for m = 1, #mac do
-              --strips[strip][page].controls[mac[m].ctl].mval = nil
+  
+          elseif MOUSE_click(obj.sections[414]) and macroedittype_select == 0 then
+            local yy = math.floor((mouse.my - obj.sections[414].y)/macroedit.sech)
+            if macroctl[(yy+1)+macroedit_poffs] then
+              local xywh = {x = obj.sections[414].x,
+                            y = obj.sections[414].y + yy*macroedit.sech + 0.5*macroedit.sech - 10,
+                            w = obj.sections[414].w,
+                            h = 20}
+              if MOUSE_over(xywh) then
+  
+                macroctl[(yy+1)+macroedit_poffs].bi = not nz(macroctl[(yy+1)+macroedit_poffs].bi,false)
+                if settings_macroeditmonitor then
+                  SetMacro(tracks[track_select].strip,page,macroctl_select,true)
+                end
+  
+                lupd.update_macrobutt = true
+  
+              end
             end
+  
+          elseif MOUSE_click(obj.sections[415]) and macroedittype_select == 0 then
+            local yy = math.floor((mouse.my - obj.sections[415].y)/macroedit.sech)
+            if macroctl[(yy+1)+macroedit_poffs] then
+              local xywh = {x = obj.sections[415].x,
+                            y = obj.sections[415].y + yy*macroedit.sech + 0.5*macroedit.sech - 10,
+                            w = obj.sections[415].w,
+                            h = 20}
+              if MOUSE_over(xywh) then
+  
+                macroctl[(yy+1)+macroedit_poffs].inv = not nz(macroctl[(yy+1)+macroedit_poffs].inv,false)
+                if settings_macroeditmonitor then
+                  SetMacro(tracks[track_select].strip,page,macroctl_select,true)
+                end
+  
+                lupd.update_macrobutt = true
+  
+              end
+            end
+  
+          elseif MOUSE_click(obj.sections[416]) and macroedittype_select == 0 then
+            local yy = math.floor((mouse.my - obj.sections[416].y)/macroedit.sech)
+            if macroctl[(yy+1)+macroedit_poffs] then
+              local xywh = {x = obj.sections[416].x,
+                            y = obj.sections[416].y + yy*macroedit.sech + 0.5*macroedit.sech - 10,
+                            w = obj.sections[416].w,
+                            h = 20}
+              if MOUSE_over(xywh) then
+  
+                macroctl[(yy+1)+macroedit_poffs].relative = not nz(macroctl[(yy+1)+macroedit_poffs].relative,false)
+                if macroctl[(yy+1)+macroedit_poffs].relative == false and settings_macroeditmonitor then
+                  SetMacro(tracks[track_select].strip,page,macroctl_select,true)
+                end
+  
+                lupd.update_macrobutt = true
+  
+              end
+            end
+  
+          elseif MOUSE_click(obj.sections[407]) then -- delete param
+            local yy = math.floor((mouse.my - obj.sections[407].y)/macroedit.sech)
+            if macroctl[(yy+1)+macroedit_poffs] then
+              local xywh = {x = obj.sections[407].x,
+                            y = obj.sections[407].y + yy*macroedit.sech + 0.5*macroedit.sech - 10,
+                            w = obj.sections[407].w,
+                            h = 20}
+              if MOUSE_over(xywh) then
+  
+                local mcnt = #macroctl
+                macroctl[(yy+1)+macroedit_poffs] = nil
+                local mtab = Table_RemoveNils(macroctl, mcnt)
+                strips[tracks[track_select].strip][page].controls[macroctl_select].macroctl = mtab
+                lupd.update_gfx = true
+  
+              end
+            end
+  
+          elseif MOUSE_click(obj.sections[408]) and macroedittype_select == 0 then
+  
+            local f = {targettype = 2,
+                       strip = tracks[track_select].strip,
+                       page = page,
+                       ctl = macroctl_select,
+                       c_id = strips[tracks[track_select].strip][page].controls[macroctl_select].c_id}
+            if lvar.livemode == 2 then
+              f.dm_trn = lvar.dynamicmode_trn
+              f.dm_guid = lvar.dynamicmode_guid
+            end
+            mouse.mx, mouse.my = mx, my
+            local fad = SetAutomationFader(f, strips[tracks[track_select].strip][page].controls[macroctl_select].macrofader, true)
+            if fad == -2 then
+              DeleteFader(strips[tracks[track_select].strip][page].controls[macroctl_select].macrofader)
+              lupd.update_gfx = true
+            elseif fad ~= -1 then
+              --if strips[tracks[track_select].strip][page].controls[macroctl_select].macrofader and strips[tracks[track_select].strip][page].controls[macroctl_select].macrofader ~= fad then
+              --  faders[strips[tracks[track_select].strip][page].controls[macroctl_select].macrofader] = {}
+              --end
+              --strips[tracks[track_select].strip][page].controls[macroctl_select].macrofader = fad
+              AssignFader(fad, f)
+              lupd.update_gfx = true
+            end
+  
+          elseif MOUSE_click(obj.sections[409]) then
+  
+            macro_lrn_mode = true
+            oslfoeedit = show_lfoedit
+            ossnaps = show_snapshots
+            show_lfoedit = false
+            show_snapshots = false
+            RedrawGUIBitmap()
+            
+            obj = GetObjects()
+            lupd.update_gfx = true
+  
+          elseif MOUSE_click(obj.sections[411]) and macroedittype_select == 0 then
+  
+            Macro_Capture(tracks[track_select].strip,page,macroctl_select,0)
+            if settings_macroeditmonitor then
+              SetMacro(tracks[track_select].strip,page,macroctl_select,true)
+            end
+            lupd.update_macroedit = true
+  
+          elseif MOUSE_click(obj.sections[412]) and macroedittype_select == 0 then
+  
+            Macro_Capture(tracks[track_select].strip,page,macroctl_select,1)
+            if settings_macroeditmonitor then
+              SetMacro(tracks[track_select].strip,page,macroctl_select,true)
+            end
+            lupd.update_macroedit = true
+  
+          elseif MOUSE_click(obj.sections[413]) and macroedittype_select == 0 then
+  
+            settings_macroeditmonitor = not settings_macroeditmonitor
+            lupd.update_gfx = true
+  
           end
-          macctlactive = nil
-
-        elseif mouse.context and mouse.context == contexts.macsliderA then
-
-          local v = F_limit((mouse.mx - macslide.xoff - obj.sections[403].x)/obj.sections[403].w,0,1)
-          macroctl[macslide.macparamidx].A_val = v
-          if settings_macroeditmonitor then
-            SetMacro(tracks[track_select].strip, page, macroctl_select,true)
-          end
-          lupd.update_macroedit = true
-
-        elseif mouse.context and mouse.context == contexts.macsliderB then
-
-          local v = F_limit((mouse.mx - macslide.xoff - obj.sections[404].x)/obj.sections[404].w,0,1)
-          macroctl[macslide.macparamidx].B_val = v
-          if settings_macroeditmonitor then
-            SetMacro(tracks[track_select].strip, page, macroctl_select,true)
-          end
-          lupd.update_macroedit = true
-
-        end
-
+        end        
+        
         noscroll = true
         mouse.mx, mouse.my = mx, my
 
@@ -71114,9 +71735,104 @@ DBG('bl')
       macro_edit_mode = false
       macroctl_select = nil
       lupd.update_gfx = true
+      RedrawGUIBitmap()
     end
     return noscroll
 
+  end
+
+  function A_Run_MacroEdit2(noscroll, rt)
+  
+    if strips[tracks[track_select].strip] and strips[tracks[track_select].strip][page].controls[macroctl_select] and
+       strips[tracks[track_select].strip][page].controls[macroctl_select].ctlcat == ctlcats.macro or
+       strips[tracks[track_select].strip][page].controls[macroctl_select].ctlcat == ctlcats.macro_updateparam then
+    
+      local macroctl = strips[tracks[track_select].strip][page].controls[macroctl_select].macroctl
+      if macroctl then
+      
+        local mx, my = mouse.mx, mouse.my
+        mouse.mx, mouse.my = mouse.mx - obj.sections[300].x, mouse.my - obj.sections[300].y
+        
+        if mouse.context then
+          if mouse.context == contexts.macctl2 then
+        
+            --local tfxp_s = macroctl_select
+            local val = MOUSE_slider(obj.sections[410],mouse.slideoff)
+            if val ~= nil then
+              local ctl = strips[tracks[track_select].strip][page].controls[macroctl_select]
+              if oms ~= mouse.shift then
+                oms = mouse.shift
+                ctlpos = ctl.val
+                mouse.slideoff = ctlxywh.y+ctlxywh.h/2 - mouse.my
+              else
+                if mouse.shift then
+                  local mult = ctl.knobsens.fine
+                  if mult == 0 then mult = settings_defknobsens.fine end
+                  val = ctlpos + ((0.5-val)*2)*mult
+                else
+                  local mult = ctl.knobsens.norm
+                  if mult == 0 then mult = settings_defknobsens.norm end
+                  val = ctlpos + (0.5-val)*mult
+                end
+                if val < 0 then val = 0 end
+                if val > 1 then val = 1 end
+                val = ctlScale(ctl.scalemode, val)
+                if val ~= octlval then
+                  ctl.diff = val - ctl.val
+                  ctl.oval = ctl.val
+                  ctl.val = val
+                  SetMacro(tracks[track_select].strip, page, macroctl_select)
+                  ctl.dirty = true
+                  octlval = val
+                  --lupd.update_ctls = true
+                  lupd.update_macroedit = true
+                  --lupd.update_ctls = false
+                end
+              end
+            end  
+      
+          elseif mouse.context and mouse.context == contexts.macsliderA then
+      
+            local v = F_limit((mouse.mx - macslide.xoff - obj.sections[403].x)/obj.sections[403].w,0,1)
+            macroctl[macslide.macparamidx].A_val = v
+            if settings_macroeditmonitor then
+              SetMacro(tracks[track_select].strip, page, macroctl_select,true)
+            end
+            lupd.update_macroedit = true
+      
+          elseif mouse.context and mouse.context == contexts.macsliderB then
+      
+            local v = F_limit((mouse.mx - macslide.xoff - obj.sections[404].x)/obj.sections[404].w,0,1)
+            macroctl[macslide.macparamidx].B_val = v
+            if settings_macroeditmonitor then
+              SetMacro(tracks[track_select].strip, page, macroctl_select,true)
+            end
+            lupd.update_macroedit = true
+      
+          end
+        
+        else
+          if macctlactive ~= nil then
+          
+            local strip = tracks[track_select].strip
+            local mac = strips[strip][page].controls[macctlactive].macroctl
+            strips[strip][page].controls[macctlactive].diff = nil
+            if mac and #mac > 0 then
+              for m = 1, #mac do
+                --strips[strip][page].controls[mac[m].ctl].mval = nil
+              end
+            end
+            macctlactive = nil
+          end
+        end
+      
+        noscroll = true
+        mouse.mx, mouse.my = mx, my      
+      end
+      
+    end
+    
+    return noscroll
   end
 
   function A_Run_DropDown()
@@ -71153,6 +71869,7 @@ DBG('bl')
 
       if ddlist.select and sel then
         DropDown_ItemSel(ddlist.select)
+        RedrawGUIBitmap()
         ddlist = nil
       end
 
@@ -71167,6 +71884,7 @@ DBG('bl')
         show_dd = false
         ddlist = nil
         lupd.update_surface = true
+        RedrawGUIBitmap()
       end
     end
     lvar.dropenabled_timer = reaper.time_precise()+0.2
@@ -71612,6 +72330,7 @@ DBG('bl')
       elseif char == 52 then
         show_pinmatrix = false
         lupd.update_surface = true
+        RedrawGUIBitmap()
 
       elseif MOUSE_click(obj.sections[1203]) then
         if lvar.livemode == 2 then
@@ -71770,7 +72489,7 @@ DBG('bl')
         lupd.update_surface = true
       end
 
-    else
+    --[[else
 
       if mouse.context == contexts.scrollmatrix then
 
@@ -71800,7 +72519,7 @@ DBG('bl')
             omx, omy = mouse.mx, mouse.my
           end
         end
-      end
+      end]]
 
     end
 
@@ -71912,7 +72631,8 @@ DBG('bl')
 
       --CANCEL
       lvar.show_addstripdialog = false
-
+      RedrawGUIBitmap()
+      
       fxdata = nil
 
       reaper.MarkProjectDirty(0)
@@ -71947,6 +72667,8 @@ DBG('bl')
           lvar.fxdata = fxdata
           lvar.show_addstripdialog = true
           lupd.update_gfx = true
+          RedrawGUIBitmap()
+          
         end
       end
 
@@ -71971,6 +72693,8 @@ DBG('bl')
           lvar.fxdata = fxdata
           lvar.show_addstripdialog = true
           lupd.update_gfx = true
+          RedrawGUIBitmap()
+          
         end
       end
 
@@ -72107,7 +72831,8 @@ DBG('bl')
 
       navigate = true
       lvar.show_addstripdialog = false
-
+      RedrawGUIBitmap()
+      
     elseif MOUSE_click(obj.sections[4001]) then
       local yp = math.floor((my - obj.sections[4001].y) / butt_h)+1 + afxdialogS_offset
       if fxdata[yp] then
@@ -72195,8 +72920,9 @@ DBG('bl')
       end
 
       lvar.dm_editmode_data = dmemd
-      lvar.dm_editmode_data_tmp = nil
+      lvar.dm_editmode_data_tmp = nil      
       lvar.show_templatechooser = nil
+      RedrawGUIBitmap()
 
     elseif lvar.template_strips[p] then
 
@@ -72261,14 +72987,14 @@ DBG('bl')
       lvar.dm_editmode_data = dmemd
       lvar.dm_editmode_data_tmp = nil
       lvar.show_templatechooser = nil
-
+      RedrawGUIBitmap()
+      
     end
     mouse.mx, mouse.my = mx, my
     return noscroll
   end
 
   function A_Run_ModAss(noscroll, rt)
-
     noscroll = true
 
     local mx, my = mouse.mx, mouse.my
@@ -72321,6 +73047,7 @@ DBG('bl')
     elseif MOUSE_click_RB(obj.sections[1127]) then
       show_modass = false
       lupd.update_surface = true
+      RedrawGUIBitmap()
     end
 
     mouse.mx, mouse.my = mx, my
@@ -72332,7 +73059,7 @@ DBG('bl')
     if strips[tracks[track_select].strip] and strips[tracks[track_select].strip][page].controls[eqcontrol_select] and
        strips[tracks[track_select].strip][page].controls[eqcontrol_select].ctlcat == ctlcats.eqcontrol then
 
-      EQC_UpdateVals()
+      --EQC_UpdateVals()
 
       local bands = strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands
 
@@ -72347,7 +73074,7 @@ DBG('bl')
         eq_edit = false
         eqcontrolband_select = nil
         lupd.update_gfx = true
-
+        RedrawGUIBitmap()
       end
 
       local mx, my = mouse.mx, mouse.my
@@ -73267,346 +73994,9 @@ DBG('bl')
 
       end
 
-      if mouse.context and mouse.context == contexts.eqc_drag then
-
-        local mmx, fv, yy, gv
-        if mouse.shift == true then
-          fv = bands[eqcontrolband_select].freq_val
-          gv = bands[eqcontrolband_select].gain_val
-
-          local dx = mouse.mx - eqcdrag.mx
-          local dy = mouse.my - eqcdrag.my
-
-          fv = F_limit(fv + (dx*0.0001),0,1)
-          gv = F_limit(gv - (dy*0.0001),0,1)
-
-          eqcdrag.mx = mouse.mx
-          eqcdrag.my = mouse.my
-
-        else
-          mmx = (mouse.mx-eqcdrag.xoff)-(obj.sections[302].x)
-          fv = F_limit((mmx-(eqcdrag.xmin*obj.sections[302].w))/((eqcdrag.xmax-eqcdrag.xmin)*obj.sections[302].w),0,1)
-
-          yy = obj.sections[302].y+(obj.sections[302].h-(eqcdrag.ymax * obj.sections[302].h))
-          gv = (mouse.my-eqcdrag.yoff-yy)/((eqcdrag.ymax-eqcdrag.ymin)*obj.sections[302].h)
-
-          gv = F_limit(1-gv,0,1)
-
-          if bands[eqcontrolband_select].gain_inv then
-            gv = 1-gv
-          end
-        end
-
-        local track = GetTrack(tracks[track_select].tracknum)
-        local fxnum = GetEQC_FXNum(eqcontrolband_select)
-
-        if fxnum ~= -1 then
-          local param = bands[eqcontrolband_select].freq_param
-          if param and fv ~= ofv then
-            reaper.TrackFX_SetParamNormalized(track,fxnum,param,fv)
-
-            lupd.update_eqcontrol = true
-            ofv = fv
-          end
-
-          param = bands[eqcontrolband_select].gain_param
-          if param and gv ~= ogv then
-            reaper.TrackFX_SetParamNormalized(track,fxnum,param,gv)
-
-            lupd.update_eqcontrol = true
-            ogv = gv
-          end
-        end
-      elseif mouse.context and mouse.context == contexts.eqc_dragfreq then
-
-        local v = bands[eqcontrolband_select].freq_val
-        local dy = mouse.my - eqcdraginf.my
-        if mouse.shift then
-          v = F_limit(v-(dy*0.0002),0,1)
-        else
-          v = F_limit(v-(dy*0.0015),0,1)
-        end
-        local track = GetTrack(tracks[track_select].tracknum)
-        local fxnum = GetEQC_FXNum(eqcontrolband_select)
-
-        if fxnum ~= -1 then
-          local param = bands[eqcontrolband_select].freq_param
-          if param and v ~= ov then
-            reaper.TrackFX_SetParamNormalized(track,fxnum,param,v)
-
-            lupd.update_eqcontrol = true
-            ov = v
-          end
-          eqcdraginf.my = mouse.my
-        end
-      elseif mouse.context and mouse.context == contexts.eqc_draggain then
-
-        local v = bands[eqcontrolband_select].gain_val
-        local dy = mouse.my - eqcdraginf.my
-        if mouse.shift then
-          v = F_limit(v-(dy*0.0002),0,1)
-        else
-          v = F_limit(v-(dy*0.0015),0,1)
-        end
-        local track = GetTrack(tracks[track_select].tracknum)
-        local fxnum = GetEQC_FXNum(eqcontrolband_select)
-
-        if fxnum ~= -1 then
-          local param = bands[eqcontrolband_select].gain_param
-          if param and v ~= ov then
-            reaper.TrackFX_SetParamNormalized(track,fxnum,param,v)
-
-            lupd.update_eqcontrol = true
-            ov = v
-          end
-          eqcdraginf.my = mouse.my
-        end
-
-      elseif mouse.context and mouse.context == contexts.eqc_dragq then
-
-        local v = bands[eqcontrolband_select].q_val
-        local dy = mouse.my - eqcdraginf.my
-        if mouse.shift then
-          v = F_limit(v-(dy*0.0002),0,1)
-        else
-          v = F_limit(v-(dy*0.0015),0,1)
-        end
-        local track = GetTrack(tracks[track_select].tracknum)
-        local fxnum = GetEQC_FXNum(eqcontrolband_select)
-
-        if fxnum ~= -1 then
-          local param = bands[eqcontrolband_select].q_param
-          if param and v ~= ov then
-            reaper.TrackFX_SetParamNormalized(track,fxnum,param,v)
-
-            lupd.update_eqcontrol = true
-            ov = v
-          end
-          eqcdraginf.my = mouse.my
-        end
-
-      elseif mouse.context and mouse.context == contexts.eqc_dragc1 then
-
-        local v = bands[eqcontrolband_select].c1_val
-        local dy = mouse.my - eqcdraginf.my
-        if mouse.shift then
-          v = F_limit(v-(dy*0.0002),0,1)
-        else
-          v = F_limit(v-(dy*0.0015),0,1)
-        end
-        local track = GetTrack(tracks[track_select].tracknum)
-        local fxnum = GetEQC_FXNum(eqcontrolband_select)
-
-        if fxnum ~= -1 then
-          local param = bands[eqcontrolband_select].c1_param
-          if param and v ~= ov then
-            reaper.TrackFX_SetParamNormalized(track,fxnum,param,v)
-
-            lupd.update_eqcontrol = true
-            ov = v
-          end
-          eqcdraginf.my = mouse.my
-        end
-
-      elseif mouse.context and mouse.context == contexts.eqc_dragc2 then
-
-        local v = bands[eqcontrolband_select].c2_val
-        local dy = mouse.my - eqcdraginf.my
-        if mouse.shift then
-          v = F_limit(v-(dy*0.0002),0,1)
-        else
-          v = F_limit(v-(dy*0.0015),0,1)
-        end
-        local track = GetTrack(tracks[track_select].tracknum)
-        local fxnum = GetEQC_FXNum(eqcontrolband_select)
-
-        if fxnum ~= -1 then
-          local param = bands[eqcontrolband_select].c2_param
-          if param and v ~= ov then
-            reaper.TrackFX_SetParamNormalized(track,fxnum,param,v)
-
-            lupd.update_eqcontrol = true
-            ov = v
-          end
-          eqcdraginf.my = mouse.my
-        end
-
-      elseif mouse.context and mouse.context == contexts.eqc_dragc3 then
-
-        local v = bands[eqcontrolband_select].c3_val
-        local dy = mouse.my - eqcdraginf.my
-        if mouse.shift then
-          v = F_limit(v-(dy*0.0002),0,1)
-        else
-          v = F_limit(v-(dy*0.0015),0,1)
-        end
-        local track = GetTrack(tracks[track_select].tracknum)
-        local fxnum = GetEQC_FXNum(eqcontrolband_select)
-
-        if fxnum ~= -1 then
-          local param = bands[eqcontrolband_select].c3_param
-          if param and v ~= ov then
-            reaper.TrackFX_SetParamNormalized(track,fxnum,param,v)
-
-            lupd.update_eqcontrol = true
-            ov = v
-          end
-          eqcdraginf.my = mouse.my
-        end
-
-      elseif mouse.context and mouse.context == contexts.eqc_dragc4 then
-
-        local v = bands[eqcontrolband_select].c4_val
-        local dy = mouse.my - eqcdraginf.my
-        if mouse.shift then
-          v = F_limit(v-(dy*0.0002),0,1)
-        else
-          v = F_limit(v-(dy*0.0015),0,1)
-        end
-        local track = GetTrack(tracks[track_select].tracknum)
-        local fxnum = GetEQC_FXNum(eqcontrolband_select)
-
-        if fxnum ~= -1 then
-          local param = bands[eqcontrolband_select].c4_param
-          if param and v ~= ov then
-            reaper.TrackFX_SetParamNormalized(track,fxnum,param,v)
-
-            lupd.update_eqcontrol = true
-            ov = v
-          end
-          eqcdraginf.my = mouse.my
-        end
-
-      elseif mouse.context and mouse.context == contexts.eqc_dragc5 then
-
-        local v = bands[eqcontrolband_select].c5_val
-        local dy = mouse.my - eqcdraginf.my
-        if mouse.shift then
-          v = F_limit(v-(dy*0.0002),0,1)
-        else
-          v = F_limit(v-(dy*0.0015),0,1)
-        end
-        local track = GetTrack(tracks[track_select].tracknum)
-        local fxnum = GetEQC_FXNum(eqcontrolband_select)
-
-        if fxnum ~= -1 then
-          local param = bands[eqcontrolband_select].c5_param
-          if param and v ~= ov then
-            reaper.TrackFX_SetParamNormalized(track,fxnum,param,v)
-
-            lupd.update_eqcontrol = true
-            ov = v
-          end
-          eqcdraginf.my = mouse.my
-        end
-
-      elseif mouse.context and mouse.context == contexts.eqc_pminslider then
-        local xx = mouse.mx - obj.sections[302].x
-        local pos = F_limit((xx / obj.sections[302].w),0,bands[eqcontrolband_select].posmax-0.01)
-
-        if mouse.shift then
-          local posdif = pos-bands[eqcontrolband_select].posmin
-          local posm = bands[eqcontrolband_select].posmax + posdif
-          if posm < 1 then
-            bands[eqcontrolband_select].posmax = posm
-            bands[eqcontrolband_select].posmin = pos
-          else
-            posdif = posm - 1
-            posm = 1
-            pos = pos - posdif
-            bands[eqcontrolband_select].posmax = posm
-            bands[eqcontrolband_select].posmin = pos
-          end
-        else
-          bands[eqcontrolband_select].posmin = pos
-        end
-        lupd.update_gfx = true
-
-      elseif mouse.context and mouse.context == contexts.eqc_pmaxslider then
-        local xx = mouse.mx - obj.sections[302].x
-        local pos = F_limit((xx / obj.sections[302].w),bands[eqcontrolband_select].posmin+0.01,1)
-
-        if mouse.shift then
-          local posdif = pos-bands[eqcontrolband_select].posmax
-          local posm = bands[eqcontrolband_select].posmin + posdif
-          if posm > 0 then
-            bands[eqcontrolband_select].posmin = posm
-            bands[eqcontrolband_select].posmax = pos
-          else
-            posdif = -posm
-            posm = 0
-            pos = pos + posdif
-            bands[eqcontrolband_select].posmin = posm
-            bands[eqcontrolband_select].posmax = pos
-          end
-        else
-          bands[eqcontrolband_select].posmax = pos
-        end
-        lupd.update_gfx = true
-
-      elseif mouse.context and mouse.context == contexts.eqc_gminslider then
-        local yy = mouse.my - obj.sections[302].y
-
-        local pos = 1-F_limit((yy / obj.sections[302].h),0,1)
-
-        --[[if pos > strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands[eqcontrolband_select].gmax - 0.01 then
-          pos = strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands[eqcontrolband_select].gmax - 0.01
-        end]]
-        if pos > 0.5 then pos = 0.5 end
-
-        if mouse.shift then
-          bands[eqcontrolband_select].gmin = pos
-        else
-          bands[eqcontrolband_select].gmin = pos
-          bands[eqcontrolband_select].gmax = 1-pos
-        end
-        lupd.update_gfx = true
-
-      elseif mouse.context and mouse.context == contexts.eqc_gmaxslider then
-        local yy = mouse.my - obj.sections[302].y
-
-        local pos = 1-F_limit((yy / obj.sections[302].h),0,1)
-
-        --[[if pos < strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands[eqcontrolband_select].gmin + 0.01 then
-          pos = strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands[eqcontrolband_select].gmin + 0.01
-        end   ]]
-        if pos < 0.5 then pos = 0.5 end
-
-        if mouse.shift then
-          bands[eqcontrolband_select].gmax = pos
-        else
-          bands[eqcontrolband_select].gmax = pos
-          bands[eqcontrolband_select].gmin = 1-pos
-        end
-        lupd.update_gfx = true
-
-      elseif mouse.context and mouse.context == contexts.auto_delayslider then
-        local val = F_limit(MOUSE_sliderHBar(obj.sections[337]),0,1)
-        if val ~= nil then
-          auto_delay = math.floor(val * 10)
-          lupd.update_gfx = true
-        end
-
-      elseif autodelay then
-        autodelay = nil
-        local fxnum = GetEQC_FXNum(eqcontrolband_select)
-        local param = bands[eqcontrolband_select].freq_param
-        local param2 = bands[eqcontrolband_select].gain_param
-        bands[eqcontrolband_select].freq_min = nz(calc_eqgraph_getmin(tracks[track_select].tracknum, fxnum, param, true),20)
-        bands[eqcontrolband_select].freq_max = nz(calc_eqgraph_getmax(tracks[track_select].tracknum, fxnum, param, true),24000)
-        bands[eqcontrolband_select].gain_min = nz(calc_eqgraph_getmin(tracks[track_select].tracknum, fxnum, param2),-20)
-        bands[eqcontrolband_select].gain_max = nz(calc_eqgraph_getmax(tracks[track_select].tracknum, fxnum, param2),20)
-        lupd.update_gfx = true
-
-      elseif eqcdrag then
-        eqcdrag = nil
-        lupd.update_gfx = true
-      elseif draggraph then
-        draggraph = nil
-        lupd.update_gfx = true
-      end
       noscroll = true
       mouse.mx, mouse.my = mx, my
+    
     else
 
       navigate = true
@@ -73614,11 +74004,378 @@ DBG('bl')
       eq_edit = false
       eqcontrolband_select = nil
       lupd.update_gfx = true
-
+      RedrawGUIBitmap()
     end
 
     return noscroll
 
+  end
+
+  function A_Run_EQControl2(rt, noscroll)
+    
+    if strips[tracks[track_select].strip] and strips[tracks[track_select].strip][page].controls[eqcontrol_select] and
+       strips[tracks[track_select].strip][page].controls[eqcontrol_select].ctlcat == ctlcats.eqcontrol then
+    
+      EQC_UpdateVals()
+
+      local bands = strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands
+      
+      local mx, my = mouse.mx, mouse.my
+      mouse.mx, mouse.my = mouse.mx - obj.sections[300].x, mouse.my - obj.sections[300].y
+      
+      if mouse.context then
+      
+        if mouse.context == contexts.eqc_drag then
+        
+          local mmx, fv, yy, gv
+          if mouse.shift == true then
+            fv = bands[eqcontrolband_select].freq_val
+            gv = bands[eqcontrolband_select].gain_val
+    
+            local dx = mouse.mx - eqcdrag.mx
+            local dy = mouse.my - eqcdrag.my
+    
+            fv = F_limit(fv + (dx*0.0001),0,1)
+            gv = F_limit(gv - (dy*0.0001),0,1)
+    
+            eqcdrag.mx = mouse.mx
+            eqcdrag.my = mouse.my
+    
+          else
+            mmx = (mouse.mx-eqcdrag.xoff)-(obj.sections[302].x)
+            fv = F_limit((mmx-(eqcdrag.xmin*obj.sections[302].w))/((eqcdrag.xmax-eqcdrag.xmin)*obj.sections[302].w),0,1)
+    
+            yy = obj.sections[302].y+(obj.sections[302].h-(eqcdrag.ymax * obj.sections[302].h))
+            gv = (mouse.my-eqcdrag.yoff-yy)/((eqcdrag.ymax-eqcdrag.ymin)*obj.sections[302].h)
+    
+            gv = F_limit(1-gv,0,1)
+    
+            if bands[eqcontrolband_select].gain_inv then
+              gv = 1-gv
+            end
+          end
+    
+          local track = GetTrack(tracks[track_select].tracknum)
+          local fxnum = GetEQC_FXNum(eqcontrolband_select)
+    
+          if fxnum ~= -1 then
+            local param = bands[eqcontrolband_select].freq_param
+            if param and fv ~= ofv then
+              reaper.TrackFX_SetParamNormalized(track,fxnum,param,fv)
+    
+              lupd.update_eqcontrol = true
+              ofv = fv
+            end
+    
+            param = bands[eqcontrolband_select].gain_param
+            if param and gv ~= ogv then
+              reaper.TrackFX_SetParamNormalized(track,fxnum,param,gv)
+    
+              lupd.update_eqcontrol = true
+              ogv = gv
+            end
+          end
+        elseif mouse.context == contexts.eqc_dragfreq then
+    
+          local v = bands[eqcontrolband_select].freq_val
+          local dy = mouse.my - eqcdraginf.my
+          if mouse.shift then
+            v = F_limit(v-(dy*0.0002),0,1)
+          else
+            v = F_limit(v-(dy*0.0015),0,1)
+          end
+          local track = GetTrack(tracks[track_select].tracknum)
+          local fxnum = GetEQC_FXNum(eqcontrolband_select)
+    
+          if fxnum ~= -1 then
+            local param = bands[eqcontrolband_select].freq_param
+            if param and v ~= ov then
+              reaper.TrackFX_SetParamNormalized(track,fxnum,param,v)
+    
+              lupd.update_eqcontrol = true
+              ov = v
+            end
+            eqcdraginf.my = mouse.my
+          end
+        elseif mouse.context == contexts.eqc_draggain then
+    
+          local v = bands[eqcontrolband_select].gain_val
+          local dy = mouse.my - eqcdraginf.my
+          if mouse.shift then
+            v = F_limit(v-(dy*0.0002),0,1)
+          else
+            v = F_limit(v-(dy*0.0015),0,1)
+          end
+          local track = GetTrack(tracks[track_select].tracknum)
+          local fxnum = GetEQC_FXNum(eqcontrolband_select)
+    
+          if fxnum ~= -1 then
+            local param = bands[eqcontrolband_select].gain_param
+            if param and v ~= ov then
+              reaper.TrackFX_SetParamNormalized(track,fxnum,param,v)
+    
+              lupd.update_eqcontrol = true
+              ov = v
+            end
+            eqcdraginf.my = mouse.my
+          end
+    
+        elseif mouse.context == contexts.eqc_dragq then
+    
+          local v = bands[eqcontrolband_select].q_val
+          local dy = mouse.my - eqcdraginf.my
+          if mouse.shift then
+            v = F_limit(v-(dy*0.0002),0,1)
+          else
+            v = F_limit(v-(dy*0.0015),0,1)
+          end
+          local track = GetTrack(tracks[track_select].tracknum)
+          local fxnum = GetEQC_FXNum(eqcontrolband_select)
+    
+          if fxnum ~= -1 then
+            local param = bands[eqcontrolband_select].q_param
+            if param and v ~= ov then
+              reaper.TrackFX_SetParamNormalized(track,fxnum,param,v)
+    
+              lupd.update_eqcontrol = true
+              ov = v
+            end
+            eqcdraginf.my = mouse.my
+          end
+    
+        elseif mouse.context == contexts.eqc_dragc1 then
+    
+          local v = bands[eqcontrolband_select].c1_val
+          local dy = mouse.my - eqcdraginf.my
+          if mouse.shift then
+            v = F_limit(v-(dy*0.0002),0,1)
+          else
+            v = F_limit(v-(dy*0.0015),0,1)
+          end
+          local track = GetTrack(tracks[track_select].tracknum)
+          local fxnum = GetEQC_FXNum(eqcontrolband_select)
+    
+          if fxnum ~= -1 then
+            local param = bands[eqcontrolband_select].c1_param
+            if param and v ~= ov then
+              reaper.TrackFX_SetParamNormalized(track,fxnum,param,v)
+    
+              lupd.update_eqcontrol = true
+              ov = v
+            end
+            eqcdraginf.my = mouse.my
+          end
+    
+        elseif mouse.context == contexts.eqc_dragc2 then
+    
+          local v = bands[eqcontrolband_select].c2_val
+          local dy = mouse.my - eqcdraginf.my
+          if mouse.shift then
+            v = F_limit(v-(dy*0.0002),0,1)
+          else
+            v = F_limit(v-(dy*0.0015),0,1)
+          end
+          local track = GetTrack(tracks[track_select].tracknum)
+          local fxnum = GetEQC_FXNum(eqcontrolband_select)
+    
+          if fxnum ~= -1 then
+            local param = bands[eqcontrolband_select].c2_param
+            if param and v ~= ov then
+              reaper.TrackFX_SetParamNormalized(track,fxnum,param,v)
+    
+              lupd.update_eqcontrol = true
+              ov = v
+            end
+            eqcdraginf.my = mouse.my
+          end
+    
+        elseif mouse.context == contexts.eqc_dragc3 then
+    
+          local v = bands[eqcontrolband_select].c3_val
+          local dy = mouse.my - eqcdraginf.my
+          if mouse.shift then
+            v = F_limit(v-(dy*0.0002),0,1)
+          else
+            v = F_limit(v-(dy*0.0015),0,1)
+          end
+          local track = GetTrack(tracks[track_select].tracknum)
+          local fxnum = GetEQC_FXNum(eqcontrolband_select)
+    
+          if fxnum ~= -1 then
+            local param = bands[eqcontrolband_select].c3_param
+            if param and v ~= ov then
+              reaper.TrackFX_SetParamNormalized(track,fxnum,param,v)
+    
+              lupd.update_eqcontrol = true
+              ov = v
+            end
+            eqcdraginf.my = mouse.my
+          end
+    
+        elseif mouse.context == contexts.eqc_dragc4 then
+    
+          local v = bands[eqcontrolband_select].c4_val
+          local dy = mouse.my - eqcdraginf.my
+          if mouse.shift then
+            v = F_limit(v-(dy*0.0002),0,1)
+          else
+            v = F_limit(v-(dy*0.0015),0,1)
+          end
+          local track = GetTrack(tracks[track_select].tracknum)
+          local fxnum = GetEQC_FXNum(eqcontrolband_select)
+    
+          if fxnum ~= -1 then
+            local param = bands[eqcontrolband_select].c4_param
+            if param and v ~= ov then
+              reaper.TrackFX_SetParamNormalized(track,fxnum,param,v)
+    
+              lupd.update_eqcontrol = true
+              ov = v
+            end
+            eqcdraginf.my = mouse.my
+          end
+    
+        elseif mouse.context == contexts.eqc_dragc5 then
+    
+          local v = bands[eqcontrolband_select].c5_val
+          local dy = mouse.my - eqcdraginf.my
+          if mouse.shift then
+            v = F_limit(v-(dy*0.0002),0,1)
+          else
+            v = F_limit(v-(dy*0.0015),0,1)
+          end
+          local track = GetTrack(tracks[track_select].tracknum)
+          local fxnum = GetEQC_FXNum(eqcontrolband_select)
+    
+          if fxnum ~= -1 then
+            local param = bands[eqcontrolband_select].c5_param
+            if param and v ~= ov then
+              reaper.TrackFX_SetParamNormalized(track,fxnum,param,v)
+    
+              lupd.update_eqcontrol = true
+              ov = v
+            end
+            eqcdraginf.my = mouse.my
+          end
+    
+        elseif mouse.context == contexts.eqc_pminslider then
+          local xx = mouse.mx - obj.sections[302].x
+          local pos = F_limit((xx / obj.sections[302].w),0,bands[eqcontrolband_select].posmax-0.01)
+    
+          if mouse.shift then
+            local posdif = pos-bands[eqcontrolband_select].posmin
+            local posm = bands[eqcontrolband_select].posmax + posdif
+            if posm < 1 then
+              bands[eqcontrolband_select].posmax = posm
+              bands[eqcontrolband_select].posmin = pos
+            else
+              posdif = posm - 1
+              posm = 1
+              pos = pos - posdif
+              bands[eqcontrolband_select].posmax = posm
+              bands[eqcontrolband_select].posmin = pos
+            end
+          else
+            bands[eqcontrolband_select].posmin = pos
+          end
+          lupd.update_gfx = true
+    
+        elseif mouse.context == contexts.eqc_pmaxslider then
+          local xx = mouse.mx - obj.sections[302].x
+          local pos = F_limit((xx / obj.sections[302].w),bands[eqcontrolband_select].posmin+0.01,1)
+    
+          if mouse.shift then
+            local posdif = pos-bands[eqcontrolband_select].posmax
+            local posm = bands[eqcontrolband_select].posmin + posdif
+            if posm > 0 then
+              bands[eqcontrolband_select].posmin = posm
+              bands[eqcontrolband_select].posmax = pos
+            else
+              posdif = -posm
+              posm = 0
+              pos = pos + posdif
+              bands[eqcontrolband_select].posmin = posm
+              bands[eqcontrolband_select].posmax = pos
+            end
+          else
+            bands[eqcontrolband_select].posmax = pos
+          end
+          lupd.update_gfx = true
+    
+        elseif mouse.context == contexts.eqc_gminslider then
+          local yy = mouse.my - obj.sections[302].y
+    
+          local pos = 1-F_limit((yy / obj.sections[302].h),0,1)
+    
+          --[[if pos > strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands[eqcontrolband_select].gmax - 0.01 then
+            pos = strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands[eqcontrolband_select].gmax - 0.01
+          end]]
+          if pos > 0.5 then pos = 0.5 end
+    
+          if mouse.shift then
+            bands[eqcontrolband_select].gmin = pos
+          else
+            bands[eqcontrolband_select].gmin = pos
+            bands[eqcontrolband_select].gmax = 1-pos
+          end
+          lupd.update_gfx = true
+    
+        elseif mouse.context == contexts.eqc_gmaxslider then
+          local yy = mouse.my - obj.sections[302].y
+    
+          local pos = 1-F_limit((yy / obj.sections[302].h),0,1)
+    
+          --[[if pos < strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands[eqcontrolband_select].gmin + 0.01 then
+            pos = strips[tracks[track_select].strip][page].controls[eqcontrol_select].eqbands[eqcontrolband_select].gmin + 0.01
+          end   ]]
+          if pos < 0.5 then pos = 0.5 end
+    
+          if mouse.shift then
+            bands[eqcontrolband_select].gmax = pos
+          else
+            bands[eqcontrolband_select].gmax = pos
+            bands[eqcontrolband_select].gmin = 1-pos
+          end
+          lupd.update_gfx = true
+    
+        elseif mouse.context == contexts.auto_delayslider then
+          local val = F_limit(MOUSE_sliderHBar(obj.sections[337]),0,1)
+          if val ~= nil then
+            auto_delay = math.floor(val * 10)
+            lupd.update_gfx = true
+          end
+        end
+      
+      else 
+      
+        if autodelay then
+          autodelay = nil
+          local fxnum = GetEQC_FXNum(eqcontrolband_select)
+          local param = bands[eqcontrolband_select].freq_param
+          local param2 = bands[eqcontrolband_select].gain_param
+          bands[eqcontrolband_select].freq_min = nz(calc_eqgraph_getmin(tracks[track_select].tracknum, fxnum, param, true),20)
+          bands[eqcontrolband_select].freq_max = nz(calc_eqgraph_getmax(tracks[track_select].tracknum, fxnum, param, true),24000)
+          bands[eqcontrolband_select].gain_min = nz(calc_eqgraph_getmin(tracks[track_select].tracknum, fxnum, param2),-20)
+          bands[eqcontrolband_select].gain_max = nz(calc_eqgraph_getmax(tracks[track_select].tracknum, fxnum, param2),20)
+          lupd.update_gfx = true
+  
+        elseif eqcdrag then
+          eqcdrag = nil
+          lupd.update_gfx = true
+        elseif draggraph then
+          draggraph = nil
+          lupd.update_gfx = true
+        end
+        
+      end
+
+      noscroll = true
+      mouse.mx, mouse.my = mx, my
+                    
+    end
+    
+    return noscroll
+    
   end
 
   function A_Run_InsertStrip()
@@ -73846,6 +74603,8 @@ DBG('bl')
                     lvar.show_addstripdialog = true
                     lupd.update_gfx = true
                     retain = true
+                    RedrawGUIBitmap()
+                    
                   end
                 end
               end
@@ -73866,6 +74625,8 @@ DBG('bl')
                 lvar.show_addstripdialog = true
                 lupd.update_gfx = true
                 retain = true
+                RedrawGUIBitmap()
+                
               end
             end
 
@@ -73923,6 +74684,7 @@ DBG('bl')
                 --addstripdialog
                 lvar.addstripdialog_tracknum = lvar.dynamicmode_trn
                 lvar.show_addstripdialog = true
+                
                 local fxdata = AddStripDialog_GetFxData(lvar.dynamicmode_trn, nil, insertstrip.target)
                 if #fxdata > 0 then
 
@@ -73935,8 +74697,11 @@ DBG('bl')
                   lvar.fxdata = fxdata
                   lupd.update_gfx = true
                   retain = true
+                  RedrawGUIBitmap()
+                  
                 else
                   lvar.show_addstripdialog = false
+                  RedrawGUIBitmap()                  
                 end
               else
                 local extpos = switchers[insertstrip.target].extendpos
@@ -74124,7 +74889,8 @@ DBG('bl')
               lvar.show_addstripdialog = true
               lupd.update_gfx = true
               retain = true
-
+              RedrawGUIBitmap()
+              
             else
               Strip_AddStrip(loadstrip,math.floor(dx/lvar.zoom),math.floor(dy/lvar.zoom),true, nil, nil, fx_min, nil, fxdata)
             end
@@ -75393,6 +76159,7 @@ DBG('bl')
       show_settings = false
       SaveSettings()
       lupd.update_surface = true
+      RedrawGUIBitmap()
     elseif gfx.mouse_wheel ~= 0 then
       local v = gfx.mouse_wheel/lvar.mousewheel_div
       settingswin_off = F_limit(settingswin_off + (v*25),(-settingswin_maxh)+settingswin_h,0)
@@ -75400,7 +76167,7 @@ DBG('bl')
       lupd.update_surface = true
       gfx.mouse_wheel = 0
 
-    elseif mouse.LB or mouse.RB then
+    elseif MC() --[[mouse.LB or mouse.RB]] then
 
       local mx, my = mouse.mx, mouse.my
 
@@ -75849,181 +76616,185 @@ DBG('bl')
         end
 
       end
-
-      if mouse.context then
-
-        mouse.mx = mx - obj.sections[70].x
-        mouse.my = my - obj.sections[70].y
-
-        if mouse.context == contexts.settingswin_dragoff then
-
-          settingswin_off = dragsetoff.offs + (mouse.my - dragsetoff.dy)
-          settingswin_off = F_limit(settingswin_off,(-settingswin_maxh)+settingswin_h,0)
-          obj = PosSetWinCtls(obj)
-          --DBG(settingswin_off)
-          lupd.update_surface = true
-
-        elseif mouse.context == contexts.updatefreq then
-          local val = F_limit(MOUSE_sliderHBar(obj.sections[74]),0,1)
-          if val ~= nil then
-            settings_updatefreq = (1-val)/10
-            --DBG(settings_updatefreq)
-            if oval ~= settings_updatefreq then
-              lupd.update_settings = true
-            end
-            oval = settings_updatefreq
+    
+    elseif mouse.context then
+    
+      local mx, my = mouse.mx, mouse.my
+    
+      mouse.mx = mx - obj.sections[70].x
+      mouse.my = my - obj.sections[70].y
+    
+      if mouse.context == contexts.settingswin_dragoff then
+    
+        settingswin_off = dragsetoff.offs + (mouse.my - dragsetoff.dy)
+        settingswin_off = F_limit(settingswin_off,(-settingswin_maxh)+settingswin_h,0)
+        obj = PosSetWinCtls(obj)
+        --DBG(settingswin_off)
+        lupd.update_surface = true
+    
+      elseif mouse.context == contexts.updatefreq then
+        local val = F_limit(MOUSE_sliderHBar(obj.sections[74]),0,1)
+        if val ~= nil then
+          settings_updatefreq = (1-val)/10
+          --DBG(settings_updatefreq)
+          if oval ~= settings_updatefreq then
+            lupd.update_settings = true
           end
-        elseif mouse.context == contexts.lockw then
-          local val = F_limit(MOUSE_slider(obj.sections[77]),0,1)
-          if val ~= nil then
-            val = 1-val
-            lockw = F_limit( math.floor((val*1000)/settings_gridsize)*settings_gridsize,64,1000)
-            obj = GetObjects()
-            lupd.update_gfx = true
-          end
-        elseif mouse.context == contexts.lockh then
-          local val = F_limit(MOUSE_slider(obj.sections[78]),0,1)
-          if val ~= nil then
-            val = 1-val
-            lockh = F_limit( math.floor((val*1000)/settings_gridsize)*settings_gridsize,64,1000)
-            obj = GetObjects()
-            lupd.update_gfx = true
-          end
-        elseif mouse.context == contexts.gridslider then
-          local val = F_limit(MOUSE_slider(obj.sections[79]),0,1)
-          if val ~= nil then
-            val = 1-val
-            settings_gridsize = F_limit(ctlpos + math.floor((val-0.5)*200),1,128)
-            ogrid = settings_gridsize
-            if settings_gridsize < 4 then
-              settings_showgrid = false
-            else
-              settings_showgrid = nz(osg,true)
-            end
-            lupd.update_gfx = true
-          end
-        elseif mouse.context == contexts.sbpanszslider then
-          local val = F_limit(MOUSE_slider(obj.sections[721]),0,1)
-          if val ~= nil then
-            val = 1-val
-            tb_butt_h = F_limit(ctlpos + math.floor((val-0.5)*200),16,60)
-            lupd.update_sidebar = true
-            lupd.update_topbar = true
-            lupd.update_cbox = true
-            resize_display = true
-            lupd.update_surface = true
-            if mouse.shift then
-              local sc = (tb_butt_h+1)/(butt_h+1)
-              pnl_scale = math.floor(sc*100)/100
-              lupd.update_stripbrowser = true
-              lupd.update_mutate = true
-              lupd.update_randomopts = true
-              lupd.update_gfx = true
-            end
-            obj = GetObjects()
-            --lupd.update_gfx = true
-          end
-
-        elseif mouse.context == contexts.panszslider then
-          local val = F_limit(MOUSE_slider(obj.sections[722]),0,1)
-          if val ~= nil then
-            val = 1-val
-            pnl_scale = round(F_limit(ctlpos + (val-0.5)*2,0.9,2),2)
-            if pnl_scale ~= ops then
-              resize_display = true
-              pnlscaleflag = true
-              if mouse.shift then
-                tb_butt_h = math.ceil((butt_h+1)*pnl_scale)-1
-              end
-              obj = GetObjects()
-              lupd.update_gfx = true
-              ops = pnl_scale
-            end
-          end
-
-        elseif mouse.context == contexts.panfontszslider then
-          local val = F_limit(MOUSE_slider(obj.sections[723]),0,1)
-          if val ~= nil then
-            val = 1-val
-            fontscale = round(F_limit(ctlpos + (val-0.5)*20,0,20),0)
-            if fontscale ~= ofs then
-              resize_display = true
-              --pnlscaleflag = true
-              --obj = GetObjects()
-              lupd.update_gfx = true
-              ofs = fontscale
-            end
-          end
-
-        elseif mouse.context == contexts.sbfontszslider then
-          local val = F_limit(MOUSE_slider(obj.sections[724]),0,1)
-          if val ~= nil then
-            val = 1-val
-            tb_fontscale = round(F_limit(ctlpos + (val-0.5)*20,-1,20),0)
-            if tb_fontscale ~= tbofs then
-              resize_display = true
-              --pnlscaleflag = true
-              --obj = GetObjects()
-              lupd.update_gfx = true
-              tbofs = tb_fontscale
-            end
-          end
-
-        elseif mouse.context == contexts.lstfontszslider then
-          local val = F_limit(MOUSE_slider(obj.sections[725]),0,1)
-          if val ~= nil then
-            val = 1-val
-            lst_fontscale = round(F_limit(ctlpos + (val-0.5)*20,-1,20),0)
-            if lst_fontscale ~= lstofs then
-              resize_display = true
-              --pnlscaleflag = true
-              --obj = GetObjects()
-              lupd.update_gfx = true
-              lstofs = lst_fontscale
-            end
-          end
-
-        elseif mouse.context == contexts.shadsz_slider then
-
-          local val = F_limit(MOUSE_sliderHBar(obj.sections[743]),0,1)
-          if val ~= nil then
-            lvar.shadow_offsx = round(F_limit(val*lvar.shadowmax,0,lvar.shadowmax),0)
-            if lvar.shadow_offsx ~= ooffs then
-              lupd.update_bg = true
-              lupd.update_gfx = true
-              ooffs = lvar.shadow_offsx
-            end
-          end
-
-        elseif mouse.context == contexts.shadalpha_slider then
-
-          local val = F_limit(MOUSE_sliderHBar(obj.sections[744]),0,1)
-          if val ~= nil then
-            lvar.shadow_alpha = val --round(F_limit(val*lvar.shadowmax,0,lvar.shadowmax),0)
-            if lvar.shadow_alpha ~= ooffs then
-              lupd.update_bg = true
-              lupd.update_gfx = true
-              ooffs = lvar.shadow_alpha
-            end
-          end
-
-        elseif mouse.context == contexts.shadfeather_slider then
-
-          local val = F_limit(MOUSE_sliderHBar(obj.sections[745]),0,1)
-          if val ~= nil then
-            lvar.shadow_feather = val*50 --round(F_limit(val*lvar.shadowmax,0,lvar.shadowmax),0)
-            if lvar.shadow_feather ~= ooffs then
-              lupd.update_bg = true
-              lupd.update_gfx = true
-              ooffs = lvar.shadow_feather
-            end
-          end
-
+          oval = settings_updatefreq
         end
+      elseif mouse.context == contexts.lockw then
+        local val = F_limit(MOUSE_slider(obj.sections[77]),0,1)
+        if val ~= nil then
+          val = 1-val
+          lockw = F_limit( math.floor((val*1000)/settings_gridsize)*settings_gridsize,64,1000)
+          obj = GetObjects()
+          lupd.update_gfx = true
+        end
+      elseif mouse.context == contexts.lockh then
+        local val = F_limit(MOUSE_slider(obj.sections[78]),0,1)
+        if val ~= nil then
+          val = 1-val
+          lockh = F_limit( math.floor((val*1000)/settings_gridsize)*settings_gridsize,64,1000)
+          obj = GetObjects()
+          lupd.update_gfx = true
+        end
+      elseif mouse.context == contexts.gridslider then
+        local val = F_limit(MOUSE_slider(obj.sections[79]),0,1)
+        if val ~= nil then
+          val = 1-val
+          settings_gridsize = F_limit(ctlpos + math.floor((val-0.5)*200),1,128)
+          ogrid = settings_gridsize
+          if settings_gridsize < 4 then
+            settings_showgrid = false
+          else
+            settings_showgrid = nz(osg,true)
+          end
+          lupd.update_gfx = true
+        end
+      
+      elseif mouse.context == contexts.sbpanszslider then
+        local val = F_limit(MOUSE_slider(obj.sections[721]),0,1)
+        if val ~= nil then
+          val = 1-val
+          tb_butt_h = F_limit(ctlpos + math.floor((val-0.5)*200),16,60)
+          lupd.update_sidebar = true
+          lupd.update_topbar = true
+          lupd.update_cbox = true
+          resize_display = true
+          lupd.update_surface = true
+          if mouse.shift then
+            local sc = (tb_butt_h+1)/(butt_h+1)
+            pnl_scale = math.floor(sc*100)/100
+            lupd.update_stripbrowser = true
+            lupd.update_mutate = true
+            lupd.update_randomopts = true
+            lupd.update_gfx = true
+          end
+          obj = GetObjects()
+          --lupd.update_gfx = true
+        end
+    
+      elseif mouse.context == contexts.panszslider then
+        local val = F_limit(MOUSE_slider(obj.sections[722]),0,1)
+        if val ~= nil then
+          val = 1-val
+          pnl_scale = round(F_limit(ctlpos + (val-0.5)*2,0.9,2),2)
+          if pnl_scale ~= ops then
+            resize_display = true
+            pnlscaleflag = true
+            if mouse.shift then
+              tb_butt_h = math.ceil((butt_h+1)*pnl_scale)-1
+            end
+            obj = GetObjects()
+            lupd.update_gfx = true
+            ops = pnl_scale
+          end
+        end
+    
+      elseif mouse.context == contexts.panfontszslider then
+        local val = F_limit(MOUSE_slider(obj.sections[723]),0,1)
+        if val ~= nil then
+          val = 1-val
+          fontscale = round(F_limit(ctlpos + (val-0.5)*20,0,20),0)
+          if fontscale ~= ofs then
+            resize_display = true
+            --pnlscaleflag = true
+            --obj = GetObjects()
+            lupd.update_gfx = true
+            ofs = fontscale
+          end
+        end
+    
+      elseif mouse.context == contexts.sbfontszslider then
+        local val = F_limit(MOUSE_slider(obj.sections[724]),0,1)
+        if val ~= nil then
+          val = 1-val
+          tb_fontscale = round(F_limit(ctlpos + (val-0.5)*20,-1,20),0)
+          if tb_fontscale ~= tbofs then
+            resize_display = true
+            --pnlscaleflag = true
+            --obj = GetObjects()
+            lupd.update_gfx = true
+            tbofs = tb_fontscale
+          end
+        end
+    
+      elseif mouse.context == contexts.lstfontszslider then
+        local val = F_limit(MOUSE_slider(obj.sections[725]),0,1)
+        if val ~= nil then
+          val = 1-val
+          lst_fontscale = round(F_limit(ctlpos + (val-0.5)*20,-1,20),0)
+          if lst_fontscale ~= lstofs then
+            resize_display = true
+            --pnlscaleflag = true
+            --obj = GetObjects()
+            lupd.update_gfx = true
+            lstofs = lst_fontscale
+          end
+        end
+    
+      elseif mouse.context == contexts.shadsz_slider then
+    
+        local val = F_limit(MOUSE_sliderHBar(obj.sections[743]),0,1)
+        if val ~= nil then
+          lvar.shadow_offsx = round(F_limit(val*lvar.shadowmax,0,lvar.shadowmax),0)
+          if lvar.shadow_offsx ~= ooffs then
+            lupd.update_bg = true
+            lupd.update_gfx = true
+            ooffs = lvar.shadow_offsx
+          end
+        end
+    
+      elseif mouse.context == contexts.shadalpha_slider then
+    
+        local val = F_limit(MOUSE_sliderHBar(obj.sections[744]),0,1)
+        if val ~= nil then
+          lvar.shadow_alpha = val --round(F_limit(val*lvar.shadowmax,0,lvar.shadowmax),0)
+          if lvar.shadow_alpha ~= ooffs then
+            lupd.update_bg = true
+            lupd.update_gfx = true
+            ooffs = lvar.shadow_alpha
+          end
+        end
+    
+      elseif mouse.context == contexts.shadfeather_slider then
+    
+        local val = F_limit(MOUSE_sliderHBar(obj.sections[745]),0,1)
+        if val ~= nil then
+          lvar.shadow_feather = val*50 --round(F_limit(val*lvar.shadowmax,0,lvar.shadowmax),0)
+          if lvar.shadow_feather ~= ooffs then
+            lupd.update_bg = true
+            lupd.update_gfx = true
+            ooffs = lvar.shadow_feather
+          end
+        end
+    
       end
 
       mouse.mx, mouse.my = mx, my
-
+    
+    --end
+      
     elseif mouse.context == nil then
 
       local fnd
@@ -78758,9 +79529,9 @@ DBG('bl')
     if settings_usectlbitmap and forcenow then
       GUI_DrawCtlBitmap()
     elseif settings_usectlbitmap then
-      redraw_ctlbitmap = reaper.time_precise() + 0.5
+      lvar.delayfunction.redraw_ctlbitmap = reaper.time_precise() + 0.5
     else
-      redraw_ctlbitmap = nil
+      lvar.delayfunction.redraw_ctlbitmap = nil
     end
   end
 
@@ -78768,9 +79539,9 @@ DBG('bl')
     if settings_usectlbitmap and forcenow then
       GUI_DrawCtlBitmap_Mix()
     elseif settings_usectlbitmap then
-      redraw_ctlbitmapmix = reaper.time_precise() + 0.2
+      lvar.delayfunction.redraw_ctlbitmapmix = reaper.time_precise() + 0.2
     else
-      redraw_ctlbitmapmix = nil
+      lvar.delayfunction.redraw_ctlbitmapmix = nil
     end
   end
 
@@ -82101,12 +82872,12 @@ DBG('bl')
                 --all good
                 strips[s][p].controls[c].mod = m
                 fnd = true
-              elseif (dmg and dmg ~= lvar.dynamicmode_guid and lvar.stripstore[dmg] and lvar.stripstore[dmg].controls[c] and cid == lvar.stripstore[dmg].controls[c].c_id) then
+              elseif (dmg and dmg ~= lvar.dynamicmode_guid and lvar.stripstore and lvar.stripstore[dmg] and lvar.stripstore[dmg].controls[c] and cid == lvar.stripstore[dmg].controls[c].c_id) then
                 lvar.stripstore[dmg].controls[c].mod = m
                 fnd = true
               else
                 if mod.targets[t].dm_guid then
-                  if lvar.stripstore[dmg] then
+                  if lvar.stripstore and lvar.stripstore[dmg] then
                     for cc = 1, #lvar.stripstore[dmg].controls do
                       if lvar.stripstore[dmg].controls[cc].c_id == cid then
                         strips[s][p].controls[cc].mod = m
@@ -83488,6 +84259,9 @@ DBG('bl')
     lvar.bgstretch = tobool(nz(GES('bgstretch',true,data),lvar.bgstretch))
     lvar.bgbright = tonumber(nz(GES('bgbright',true,data),lvar.bgbright))
     lvar.bgcentred = tobool(nz(GES('bgcentred',true,data),lvar.bgcentred))
+    lvar.bg_coffx = tonumber(nz(GES('bg_coffx',true,data),lvar.bg_coffx or 0))
+    lvar.bg_coffy = tonumber(nz(GES('bg_coffy',true,data),lvar.bg_coffy or 0))
+    
     lvar.livebg = tobool(nz(GES('livebg',true,data),lvar.livebg))
     lvar.mm_disablenonpoppedctls = tobool(nz(GES('mm_disablenonpoppedctls',true,data),lvar.mm_disablenonpoppedctls))
     lvar.showpoponly = tobool(nz(GES('showpoponly',true,data),lvar.showpoponly))
@@ -83863,6 +84637,9 @@ DBG('bl')
     SetExtState(SCRIPT,'bgstretch',tostring(lvar.bgstretch), true)
     SetExtState(SCRIPT,'bgbright',tostring(lvar.bgbright), true)
     SetExtState(SCRIPT,'bgcentred',tostring(lvar.bgcentred), true)
+    SetExtState(SCRIPT,'bg_coffx',tostring(lvar.bg_coffx or 0), true)
+    SetExtState(SCRIPT,'bg_coffy',tostring(lvar.bg_coffy or 0), true)
+    
     SetExtState(SCRIPT,'livebg',tostring(lvar.livebg), true)
     SetExtState(SCRIPT,'mm_disablenonpoppedctls',tostring(lvar.mm_disablenonpoppedctls), true)
     SetExtState(SCRIPT,'showpoponly',tostring(lvar.showpoponly), true)
@@ -91905,8 +92682,8 @@ DBG(t.. '  '..trigtime)
             lupd.update_ctls = true
           end
           touch_trigger = false
-          touch_timer = reaper.time_precise()+0.2
-          midimsg = true
+          lvar.delayfunction.touch_timer = reaper.time_precise()+0.2
+          lvar.delayfunction.midimsg = true
           midimsgto = reaper.time_precise() + 0.1
           lupd = GUI_draw(obj, gui)
           gfx.update()
@@ -91955,7 +92732,7 @@ DBG(vald) ]]
           reaper.OscLocalMessageToHost(msg)
         end
 
-        midimsg = true
+        lvar.delayfunction.midimsg = true
         midimsgto = reaper.time_precise() + 0.1
 
       elseif miditab.osc then
@@ -91970,7 +92747,7 @@ DBG(vald) ]]
           reaper.OscLocalMessageToHost(msg)
         end
 
-        midimsg = true
+        lvar.delayfunction.midimsg = true
         midimsgto = reaper.time_precise() + 0.1
       end
     else
@@ -92205,6 +92982,320 @@ DBG(vald) ]]
   
   end
   
+  function guivis(idx)
+    
+    local full_screen = snap_edit_mode or macro_edit_mode or show_pinmatrix or show_eqcontrol
+    local lrn_mode = snaplrn_mode or macro_lrn_mode
+    
+    if idx == 43 then
+      if plist_w > 0 then 
+        return true 
+      end
+    elseif idx == 100000 then --topbar
+      if topbarheight > 0 and hide_topbar == false then 
+        return true 
+      end
+    elseif idx == 100001 and not full_screen and not lrn_mode then --MMOV
+      if lvar.mmov_show then
+        return true
+      end
+    elseif idx == 100002 then --dropdown
+      if show_dd then
+        return true
+      end
+    
+    elseif idx == 4999 and not full_screen and not lrn_mode  then --trbtns
+      if lvar.trbtns_show then
+        return true
+      end
+    elseif idx == 5024 and not full_screen and not lrn_mode  then --trmix
+      if lvar.trbtns_show and lvar.trmix_show then
+        return true
+      end
+
+    elseif idx == 1350 and not full_screen and not lrn_mode then --SB
+      if show_stripbrowser then
+        return true
+      end
+    elseif idx == 1300 and not full_screen and not lrn_mode then --SB
+      if show_samplemanager then
+        return true
+      end
+    elseif idx == 160 and not full_screen then --Snapshots
+      if show_snapshots then
+        return true
+      end
+    elseif idx == 180 and not full_screen and not lrn_mode then --fSnapshots
+      if show_fsnapshots then
+        return true
+      end
+    elseif idx == 1100 and not full_screen and not lrn_mode then --Modulators
+      if show_lfoedit then
+        return true
+      end
+    elseif idx == 900 and not full_screen and not lrn_mode then --TFXOrder
+      if show_trackfxorder then
+        return true
+      end
+    elseif idx == 950 then --midi out
+      if show_midiout and not full_screen and not lrn_mode then
+        return true
+      end
+    elseif idx == 1120 and not full_screen and not lrn_mode then --mutate
+      if show_mutate then
+        return true
+      end
+    elseif idx == 1130 and not full_screen and not lrn_mode then --random
+      if show_randomopts then
+        return true
+      end
+
+    elseif idx == 5050 and not full_screen and not lrn_mode then --template chooser
+      if lvar.show_templatechooser then
+        return true
+      end
+      
+    elseif idx == 4000 and not full_screen and not lrn_mode then --addstripdialog
+      if lvar.show_addstripdialog then
+        return true
+      end
+      
+    elseif idx == 70 and not full_screen and not lrn_mode then --Settings
+      if show_settings then
+        return true
+      end
+    
+    elseif idx == 1125 then --mod assign
+      if show_modass then
+        return true
+      end
+
+    elseif idx == 300 then --snap edit
+      if snap_edit_mode or macro_edit_mode or show_eqcontrol then
+        return true
+      end
+
+    elseif idx == 1200 then --pinmatrix
+      if show_pinmatrix then
+        return true
+      end
+    end
+
+  --EM local show_cycleoptions   
+  --EM local show_paramlearn
+  --local show_snapshots
+  --* local show_fsnapshots
+  --EM local show_actionchooser
+  --* local show_xxy
+  --EM local show_gaugeedit
+  --local show_trackfxorder
+  --local show_midiout
+  --local show_dd
+  --local show_lfoedit
+  --** local show_eqcontrol
+  --** local show_pinmatrix
+
+    return false
+  end
+  
+  function SetGUIBitmap()
+    Img_SetDim(guibitmap, gfx1.main_w, gfx1.main_h)
+  end
+    
+  function RedrawGUIBitmap2()
+  --DBG('X')
+    lvar.redrawguibitmap = false
+    local t = reaper.time_precise()
+    
+    local tab
+    if mode == 0 then      
+      --if lvar.livemode == 2 then
+        --bottom to top --add wheel functions
+        tab = {}
+        tab[#tab+1] = {obj = 10, visible = true, func0 = A_Click_M0_StripSurface, wheel0 = A_Click_M0_StripSurface} 
+        tab[#tab+1] = {obj = 43, visible = guivis(43), funcRun = A_Click_M0_Sidebar, wheel0 = A_Wheel_M0_Sidebar} --sidebar
+        tab[#tab+1] = {obj = 100000, visible = guivis(100000), funcRun = A_Click_M0_TopBar} --topbar
+        if lvar.livemode == 2 then
+          tab[#tab+1] = {obj = 4999, visible = guivis(4999), func0 = A_Click_M0_TrBtns, wheel0 = A_Wheel_M0_TrBtns} --trbtns
+          tab[#tab+1] = {obj = 5024, visible = guivis(5024), func0 = A_Click_M0_TrMix, wheel0 = A_Wheel_M0_TrMix} --trmix
+        end
+        if settings_moddock then
+          tab[#tab+1] = {obj = 1100, visible = guivis(1100), func0 = A_Click_M0_Modulators} --modulators
+        end
+        if settings_ssdock then
+          tab[#tab+1] = {obj = 160, visible = guivis(160), func0 = A_Click_M0_Snapshot, func0_lrn = A_Click_M0_Snapshot, wheel0 = A_Wheel_M0_Snapshot} --snapshot
+        end
+        if settings_sbdock then
+          tab[#tab+1] = {obj = 1350, visible = guivis(1350), func0 = A_Click_M0_StripBrowser, wheel0 = A_Wheel_M0_StripBrowser} --Strip browser
+        end
+        tab[#tab+1] = {obj = 180, visible = guivis(180), func0 = A_Click_M0_fSnapshot, wheel0 = A_Wheel_M0_fSnapshot} --fsnaps
+        if not settings_ssdock then
+          tab[#tab+1] = {obj = 160, visible = guivis(160), func0 = A_Click_M0_Snapshot, wheel0 = A_Wheel_M0_Snapshot} --snapshot
+        end
+        if not settings_moddock then
+          tab[#tab+1] = {obj = 1100, visible = guivis(1100), func0 = A_Click_M0_Modulators} --modulators
+        end
+        tab[#tab+1] = {obj = 1120, visible = guivis(1120), func0 = A_Click_M0_Mutate} --mutate
+        tab[#tab+1] = {obj = 1130, visible = guivis(1130), func0 = A_Click_M0_Random} --random
+        tab[#tab+1] = {obj = 1300, visible = guivis(1300), func0 = A_Click_M0_SampleManager, wheel0 = A_Wheel_M0_SampleManager} --sample win        
+        if not settings_sbdock then
+          tab[#tab+1] = {obj = 1350, visible = guivis(1350), func0 = A_Click_M0_StripBrowser, wheel0 = A_Wheel_M0_StripBrowser} --Strip browser
+        end
+        tab[#tab+1] = {obj = 950, visible = guivis(950), funcRun = A_Click_M0_MidiOut} --midiout
+        tab[#tab+1] = {obj = 4000, visible = guivis(4000), wheel0 = A_Wheel_M0_AddStripDialog} --addstripdialog
+        
+        tab[#tab+1] = {obj = 900, visible = guivis(900), funcRun = A_Click_M0_TFXOrder} --tfxorder
+        tab[#tab+1] = {obj = 5050, visible = guivis(5050), wheel0 = A_Wheel_M0_TemplateChooser} --template chooser
+
+        tab[#tab+1] = {obj = 70, visible = guivis(70), funcRun = A_Click_M0_Settings} --70 = settings                
+                
+        tab[#tab+1] = {obj = 1125, visible = guivis(1125), wheel0 = A_Wheel_M0_ModAss} --modass
+        tab[#tab+1] = {obj = 300, visible = guivis(300), func0 = A_Click_M0_Fullscreen1, wheel0 = A_Wheel_M0_Fullscreen1} --snap edit / macro edit                
+        tab[#tab+1] = {obj = 1200, visible = guivis(1200), func0 = A_Click_M0_Fullscreen2, wheel0 = A_Wheel_M0_Fullscreen2} --pinmap                
+                
+        tab[#tab+1] = {obj = 100002, visible = guivis(100002), funcRun = A_Click_M0_Dropdown} --Dropdown
+        
+                
+      --[[elseif lvar.livemode == 1 then
+        tab = {}
+        tab[#tab+1] = {obj = 10, visible = true, func0 = A_Click_M0_StripSurface, wheel0 = A_Wheel_M0_StripSurface} 
+        tab[#tab+1] = {obj = 43, visible = guivis(43), funcRun = A_Click_M0_Sidebar, wheel0 = A_Wheel_M0_Sidebar} --sidebar
+        tab[#tab+1] = {obj = 100000, visible = guivis(100000), funcRun = A_Click_M0_TopBar} --topbar
+        if settings_moddock then
+          tab[#tab+1] = {obj = 1100, visible = guivis(1100), func0 = A_Click_M0_Modulators} --modulators
+        end
+        if settings_ssdock then
+          tab[#tab+1] = {obj = 160, visible = guivis(160), func0 = A_Click_M0_Snapshot, wheel0 = A_Wheel_M0_Snapshot} --snapshot
+        end
+        if settings_sbdock then
+          tab[#tab+1] = {obj = 1350, visible = guivis(1350), func0 = A_Click_M0_StripBrowser, wheel0 = A_Wheel_M0_StripBrowser} --Strip browser
+        end
+        tab[#tab+1] = {obj = 180, visible = guivis(180), func0 = A_Click_M0_fSnapshot, wheel0 = A_Wheel_M0_fSnapshot} --fsnaps
+        if not settings_ssdock then
+          tab[#tab+1] = {obj = 160, visible = guivis(160), func0 = A_Click_M0_Snapshot, wheel0 = A_Wheel_M0_Snapshot} --snapshot
+        end
+        if not settings_moddock then
+          tab[#tab+1] = {obj = 1100, visible = guivis(1100), func0 = A_Click_M0_Modulators} --modulators
+        end
+        tab[#tab+1] = {obj = 1120, visible = guivis(1120), func0 = A_Click_M0_Mutate} --mutate
+        tab[#tab+1] = {obj = 1130, visible = guivis(1130), func0 = A_Click_M0_Random} --random
+        tab[#tab+1] = {obj = 1300, visible = guivis(1300), func0 = A_Click_M0_SampleManager, wheel0 = A_Wheel_M0_SampleManager} --sample win        
+        if not settings_sbdock then
+          tab[#tab+1] = {obj = 1350, visible = guivis(1350), func0 = A_Click_M0_StripBrowser, wheel0 = A_Wheel_M0_StripBrowser} --Strip browser
+        end
+        tab[#tab+1] = {obj = 950, visible = guivis(950), funcRun = A_Click_M0_MidiOut} --midiout
+        tab[#tab+1] = {obj = 4000, visible = guivis(4000), wheel0 = A_Wheel_M0_AddStripDialog} --addstripdialog
+        
+        tab[#tab+1] = {obj = 900, visible = guivis(900), funcRun = A_Click_M0_TFXOrder} --tfxorder
+        tab[#tab+1] = {obj = 5050, visible = guivis(5050), wheel0 = A_Wheel_M0_TemplateChooser} --template chooser
+
+        tab[#tab+1] = {obj = 70, visible = guivis(70), funcRun = A_Click_M0_Settings} --70 = settings        
+
+        tab[#tab+1] = {obj = 300, visible = guivis(300), func0 = A_Click_M0_Fullscreen1} --snap edit
+
+        tab[#tab+1] = {obj = 100002, visible = guivis(100002), funcRun = A_Click_M0_Dropdown} --Dropdown
+
+
+      elseif lvar.livemode == 0 then
+        tab = {}
+        tab[#tab+1] = {obj = 10, visible = true, func0 = A_Click_M0_StripSurface, wheel0 = A_Wheel_M0_StripSurface} 
+        tab[#tab+1] = {obj = 43, visible = guivis(43), funcRun = A_Click_M0_Sidebar, wheel0 = A_Wheel_M0_Sidebar} --sidebar
+        tab[#tab+1] = {obj = 100000, visible = guivis(100000), funcRun = A_Click_M0_TopBar} --topbar
+        if settings_moddock then
+          tab[#tab+1] = {obj = 1100, visible = guivis(1100), func0 = A_Click_M0_Modulators} --modulators
+        end
+        if settings_ssdock then
+          tab[#tab+1] = {obj = 160, visible = guivis(160), func0 = A_Click_M0_Snapshot, wheel0 = A_Wheel_M0_Snapshot} --snapshot
+        end
+        if settings_sbdock then
+          tab[#tab+1] = {obj = 1350, visible = guivis(1350), func0 = A_Click_M0_StripBrowser, wheel0 = A_Wheel_M0_StripBrowser} --Strip browser
+        end
+        tab[#tab+1] = {obj = 180, visible = guivis(180), func0 = A_Click_M0_fSnapshot, wheel0 = A_Wheel_M0_fSnapshot} --fsnaps
+        if not settings_ssdock then
+          tab[#tab+1] = {obj = 160, visible = guivis(160), func0 = A_Click_M0_Snapshot, wheel0 = A_Wheel_M0_Snapshot} --snapshot
+        end
+        if not settings_moddock then
+          tab[#tab+1] = {obj = 1100, visible = guivis(1100), func0 = A_Click_M0_Modulators} --modulators
+        end
+        tab[#tab+1] = {obj = 1120, visible = guivis(1120), func0 = A_Click_M0_Mutate} --mutate
+        tab[#tab+1] = {obj = 1130, visible = guivis(1130), func0 = A_Click_M0_Random} --random
+        tab[#tab+1] = {obj = 1300, visible = guivis(1300), func0 = A_Click_M0_SampleManager, wheel0 = A_Wheel_M0_SampleManager} --sample win        
+        if not settings_sbdock then
+          tab[#tab+1] = {obj = 1350, visible = guivis(1350), func0 = A_Click_M0_StripBrowser, wheel0 = A_Wheel_M0_StripBrowser} --Strip browser
+        end
+        tab[#tab+1] = {obj = 950, visible = guivis(950), funcRun = A_Click_M0_MidiOut} --midiout
+        tab[#tab+1] = {obj = 4000, visible = guivis(4000), wheel0 = A_Wheel_M0_AddStripDialog} --addstripdialog
+        
+        tab[#tab+1] = {obj = 900, visible = guivis(900), funcRun = A_Click_M0_TFXOrder} --tfxorder
+        tab[#tab+1] = {obj = 5050, visible = guivis(5050), wheel0 = A_Wheel_M0_TemplateChooser} --template chooser
+
+        tab[#tab+1] = {obj = 70, visible = guivis(70), funcRun = A_Click_M0_Settings} --70 = settings        
+        tab[#tab+1] = {obj = 100002, visible = guivis(100002), funcRun = A_Click_M0_Dropdown} --Dropdown
+
+
+      end]]
+    end
+    
+    gfx.dest = guibitmap
+    SetGUIBitmap()
+    
+    if tab then
+      tab.idx = {}
+      for i = 1, #tab do
+  
+        if tab[i].visible then
+          tab.idx[tab[i].obj] = i
+          
+          local objn = tab[i].obj
+          if objn < 100000 then
+          
+            
+            local o = obj.sections[objn]
+            local r = objn & 255
+            local g = (objn >> 8) & 255
+            local b = (objn >> 16) & 255
+            gfx.r, gfx.g, gfx.b = r/255,g/255,b/255
+            gfx.a = 1
+            gfx.rect(o.x,o.y,o.w,o.h,1)
+            --DBG(objn..'  '..r..'  '..g..'  '..b)
+            
+          else
+            local o
+            if objn == 100000 then
+              o = {x = plist_w, y = 0, w = gfx1.main_w - plist_w, h = topbarheight}
+              
+            elseif objn == 100001 then
+              local sz = 2*lvar.mmov_pad + lvar.mmov_vsize
+              if lvar.mixmodedir == 0 then
+                o = {x = obj.sections[10].x, y = obj.sections[10].y, w = sz, h = obj.sections[10].h}              
+              else
+                o = {x = obj.sections[10].x, y = obj.sections[10].y, w = obj.sections[10].w, h = sz}
+              end
+  
+            elseif objn == 100002 then
+              o = {x = ddlist.x, y = ddlist.y, w = ddlist.w, h = ddlist.h}
+            
+            end
+    
+            if o then
+              local r = objn & 255
+              local g = (objn >> 8) & 255
+              local b = (objn >> 16) & 255
+              gfx.r, gfx.g, gfx.b = r/255,g/255,b/255
+              gfx.a = 1
+              gfx.rect(o.x,o.y,o.w,o.h,1)
+            end
+          end
+        end
+            
+      end
+    end
+        
+    lvar.guibmp = tab
+  
+    --DBG(reaper.time_precise()-t)
+  end
+  
   ------------------------------------------------------------
 
   math.randomseed(os.clock())
@@ -92386,6 +93477,7 @@ DBG(vald) ]]
   eq_single = false
 
   strip_favs = {}
+  strip_favs_n = {}
   peak_info = {}
 
   dockstate = 0
