@@ -17,7 +17,7 @@
   local lvar = {}
   local cbi = {}
 
-  lvar.scriptver = '0.94.0186' --Script Version
+  lvar.scriptver = '0.94.0187' --Script Version
 
   lvar.delayfunction = {}
   lvar.maxdim = 4096
@@ -10347,7 +10347,7 @@
                   w = obj.sections[15].w,
                   h = obj.sections[15].h}
     local txt = 'GLOBAL'
-    if settings_localfaders == true then
+    if settings_localfaders == true or lvar.livemode == 2 then
       txt = 'TRACK'
     end
     GUI_DrawBar(gui,txt,xywh,skin.bar,true,gui.skol.sb_txt_on,nil,-2 + gui.fontsz.sb,nil,gui.skol.sb_shad,gui.fontnm.sb,gui.fontflag.sb)
@@ -26951,6 +26951,11 @@ function GUI_DrawCtlBitmap_Strips()
   function GUI_DrawMixerChannel2(obj, gui, tb)
     gfx.dest = 954
     local tb2 = tb-lvar.trbtns_offs
+    local o5028 = obj.sections[5028]
+    local o5026 = obj.sections[5026]
+    local o5025 = obj.sections[5025]
+    local xx = math.floor(((tb2-1)*(o5025.w+10)))
+    local x = math.floor(xx + o5026.x + o5026.w/2)
 
     local dm_trackbtns = lvar.dm_trackbtns[lvar.dm_tbidx]
     local master
@@ -26973,11 +26978,6 @@ function GUI_DrawCtlBitmap_Strips()
       local sk_w, sk_h = skin.sliderknb_w, skin.sliderknb_h
       local rk_w = skin.rotknb_w
 
-      local o5028 = obj.sections[5028]
-      local o5026 = obj.sections[5026]
-      local o5025 = obj.sections[5025]
-      local xx = math.floor(((tb2-1)*(o5025.w+10)))
-      local x = math.floor(xx + o5026.x + o5026.w/2)
       local y = math.floor(o5026.y+o5026.h - (v*o5026.h))
 
       local py = o5028.y
@@ -27013,11 +27013,12 @@ function GUI_DrawCtlBitmap_Strips()
 
       gfx.dest = 1
 
-      return x-math.floor(o5025.w/2), tb2
-
     end
 
     gfx.dest = 1
+
+    return x-math.floor(o5025.w/2), tb2
+
   end
 
   function DrawMD(gui, obj)
@@ -37797,7 +37798,8 @@ function GUI_DrawCtlBitmap_Strips()
   function DM_SaveData(tmp)
 
     if not lvar.dm_saveenabled then return end
-
+    DM_StoreStripData()
+    
     if lvar.stripstore and next(lvar.stripstore) ~= nil then
       local SCRIPT = lvar.SCRIPT
       local ffn, save_path, fn = DM_GetSaveFN(tmp)
@@ -37837,6 +37839,15 @@ function GUI_DrawCtlBitmap_Strips()
         local key = 'snap'..key..'_'
         SaveSnapshotDataX(lvar.snapstore[guids[i]],key,file)
       end
+
+      --fader data
+      for i = 1, cnt-1 do
+        local key = string.format('%i',i)
+        --Save fader data
+        local key = 'fader'..key..'_'
+        SaveFaders(file, key, lvar.faderstore[guids[i]])
+      end
+      
       if switchers then
         SaveSwitchers(file)
       end
@@ -38054,6 +38065,7 @@ function GUI_DrawCtlBitmap_Strips()
 
     lvar.stripstore = {}
     lvar.snapstore = {}
+    lvar.faderstore = {}
 
     if cont == true then
       local scnt
@@ -38075,8 +38087,10 @@ function GUI_DrawCtlBitmap_Strips()
           lvar.stripstore[guid] = LoadStripDataX(key,data)
           --DBG(guid)
           local key = 'snap'..string.format('%i',i)..'_'
-
           lvar.snapstore[guid] = LoadSnapDataX(key,data)
+          
+          local key = 'fader'..string.format('%i',i)..'_'
+          lvar.faderstore[guid] = LoadFaders(data,key,true)
           --DBG(lvar.snapstore[guid].morph_time)
         end
 
@@ -38123,6 +38137,11 @@ function GUI_DrawCtlBitmap_Strips()
           snapshots[strip][page][sstype_select].selected = ss_select
         end
         lvar.snapstore[lvar.dynamicmode_guid] = table.deepcopy(snapshots[strip][page])
+        if not lvar.faderstore then
+          lvar.faderstore = {}
+        end
+        lvar.faderstore[lvar.dynamicmode_guid] = table.deepcopy(faders)
+
       end
     end
 
@@ -38610,7 +38629,7 @@ function GUI_DrawCtlBitmap_Strips()
   function DM_AddStrips(force, dm_data, cdata)
 
     DM_StoreStripData(force)
-
+    
     local track = reaper.GetSelectedTrack2(0,0,true)
 
     if track then
@@ -38987,6 +39006,12 @@ function GUI_DrawCtlBitmap_Strips()
       lvar.dynamicmode_guid = nil
       lvar.dm_trname = ''
       SetCtlBitmapRedraw(true)
+    end
+    
+    RecallFaders(true)
+    
+    if settings_trackchangemidi == true then
+      TrackChangeMidi()
     end
     lvar.dm_refresh = nil
 
@@ -46877,9 +46902,9 @@ function GUI_DrawCtlBitmap_Strips()
     if lvar.dm_editmode_data then return end
     if mouse.context ~= nil and mouse.context ~= contexts.hold then return end
 
-    if settings_localfaders == true then
+    --if settings_localfaders == true then
       StoreFaders()
-    end
+    --end
 
     if show_randomopts or show_samplemanager then
       show_randomopts = false
@@ -46997,9 +47022,9 @@ function GUI_DrawCtlBitmap_Strips()
 
     ctls_dnu, ctls_upd, ctls_orr = CtlDNU()
 
-    if settings_localfaders == true then
+    --if settings_localfaders == true then
       RecallFaders()
-    end
+    --end
 
     if show_modass then
       lvar.modass = PopModAssObj()
@@ -47907,6 +47932,10 @@ function GUI_DrawCtlBitmap_Strips()
     SetSurfaceSize2(obj)
     lupd.update_bg = true
     lupd.update_gfx = true
+    
+    if lvar.livemode == 2 then
+      settings_localfaders = true
+    end
   end
 
   function showctlbrowser(v)
@@ -54903,6 +54932,17 @@ function GUI_DrawCtlBitmap_Strips()
                 if ctls[i].ctlcat == ctlcats.fxparam or
                    ctls[i].ctlcat == ctlcats.fxoffline then
                   OpenFXGUI(ctls[i])
+                elseif ctls[i].ctlcat == ctlcats.switcher then
+                  --delete 
+                  if lvar.livemode == 2 and ctls[i].switcher == nil then
+                    --top level switcher
+                    local switchid = ctls[i].switcherid
+                    if switchid then
+                      Switcher_DeleteExt(switchid)
+                      UpdateControlValues3(nil, ctls_upd, ctls_orr)
+                      DM_RefreshFX()
+                    end
+                  end
                 end
 
               elseif MOUSE_LB() and mouse.ctrl then --make double-click?
@@ -55768,6 +55808,23 @@ function GUI_DrawCtlBitmap_Strips()
     
   end
 
+  function ScrollTCP2(tr)
+
+    if not tr then
+      tr = reaper.GetSelectedTrack2(0,0,true)
+    end
+    if tr then
+      local tcp_y = reaper.GetMediaTrackInfo_Value(tr, 'I_TCPY')
+      local hwnd = reaper.GetMainHwnd()
+      local cwin2 = reaper.JS_Window_FindChildByID(hwnd, 1000)
+      if cwin2 then      
+        local retval, position, pageSize, min, max, trackPos = reaper.JS_Window_GetScrollInfo(cwin2, 'SB_VERT')      
+        reaper.JS_Window_SetScrollPos(cwin2, 'SB_VERT', position + tcp_y)
+      end
+    end
+    
+  end
+  
   function A_Click_M0_TrBtns(rt, noscroll)
 
     if MOUSE_click_RB(obj.sections[5041]) then
@@ -55969,7 +56026,8 @@ function GUI_DrawCtlBitmap_Strips()
                     if dm_trackbtns[x].trn ~= lvar.dynamicmode_trn then
                       reaper.SetOnlyTrackSelected(tr)
                       DM_AddStrips()
-                      reaper.Main_OnCommand(40913,0)
+                      ScrollTCP2(tr)
+                      --reaper.Main_OnCommand(40913,0)
                       reaper.SetMixerScroll(tr)
                       
                       mouse.context = contexts.dm_selecttracks
@@ -56312,8 +56370,13 @@ function GUI_DrawCtlBitmap_Strips()
                     lupd.update_trmix = true
 
                   elseif mouse.RB then
-                    local x, y = reaper.GetMousePosition()
-                    reaper.ShowPopupMenu('track_input',x,y,nil,tr)
+                    if mouse.shift then
+                      local x, y = reaper.GetMousePosition()
+                      reaper.ShowPopupMenu('',x,y,nil,tr)
+                    else
+                      local x, y = reaper.GetMousePosition()
+                      reaper.ShowPopupMenu('track_input',x,y,nil,tr)
+                    end
                   end
                 end
               end
@@ -60615,7 +60678,11 @@ function GUI_DrawCtlBitmap_Strips()
           --if settings_localfaders == true then
           StoreFaders()
           --end
-          settings_localfaders = not settings_localfaders
+          if lvar.livemode == 2 then
+            settings_localfaders = true
+          else
+            settings_localfaders = not settings_localfaders
+          end
           RecallFaders()
           lupd.update_sidebar = true
 
@@ -87998,7 +88065,7 @@ function GUI_DrawCtlBitmap_Strips()
   end
 
   function StoreFaders()
-    if settings_localfaders == true then
+    if settings_localfaders == true or lvar.livemode == 2 then
       if faders and strips[tracks[track_select].strip] then
         strips[tracks[track_select].strip].faders = table.deepcopy(faders)
       elseif strips[tracks[track_select].strip] then
@@ -88009,20 +88076,28 @@ function GUI_DrawCtlBitmap_Strips()
     end
   end
 
-  function RecallFaders()
+  function RecallFaders(dm)
     if faders == nil then return end
 
     local fdata
-    if settings_localfaders == true then
-      local strip = tracks[track_select].strip
-      fdata = {}
-      if strips[strip] and strips[strip].faders then
-        fdata = strips[strip].faders
+    if not dm then
+      if settings_localfaders == true then
+        local strip = tracks[track_select].strip
+        fdata = {}
+        if strips[strip] and strips[strip].faders then
+          fdata = strips[strip].faders
+        end
+      else
+        fdata = lvar.gfaders or {}
       end
     else
-      fdata = lvar.gfaders or {}
+      if lvar.faderstore then
+        fdata = lvar.faderstore[lvar.dynamicmode_guid] or {}
+      else
+        fdata = {}
+      end
     end
-
+    
     for f = 1, #faders do
       if fdata[f] then
         if fdata[f].targettype == 4 or
