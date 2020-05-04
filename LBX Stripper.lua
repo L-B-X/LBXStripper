@@ -17,7 +17,7 @@
   local lvar = {}
   local cbi = {}
 
-  lvar.scriptver = '0.94.0187' --Script Version
+  lvar.scriptver = '0.94.0188' --Script Version
 
   lvar.delayfunction = {}
   lvar.maxdim = 4096
@@ -38149,7 +38149,7 @@ function GUI_DrawCtlBitmap_Strips()
 
   local function DM_GetCtlData(ctl, idx)
 
-    local ctldata
+    local ctldata 
     if ctl.ctlcat == ctlcats.fxparam or ctl.ctlcat == ctlcats.gr_meter then
       local t = {tostring(ctl.ctlcat),tostring(ctl.fxguid),tostring(ctl.param),tostring(ctl.trackguid)}
       ctldata = {idx = idx,
@@ -38211,6 +38211,20 @@ function GUI_DrawCtlBitmap_Strips()
         t[1+(m-1)*3+1] = tostring(ctls[macro[m].ctl].fxguid)
         t[1+(m-1)*3+2] = tostring(ctls[macro[m].ctl].param)
         t[1+(m-1)*3+3] = tostring(ctls[macro[m].ctl].trackguid)
+      end
+      ctldata = {idx = idx,
+                 id = ctl.c_id,
+                 key = table.concat(t),
+                 val = ctl.val}
+
+    elseif ctl.ctlcat == ctlcats.rcm_switch then
+      local t = {}
+      t[1] = tostring(ctl.ctlcat)
+      t[2] = tostring(ctl.fxguid)
+      for m = 1, #ctl.rcmdata do
+        t[2+(m-1)*3+1] = tostring(ctl.rcmdata[m].msb)
+        t[2+(m-1)*3+2] = tostring(ctl.rcmdata[m].lsb)
+        t[2+(m-1)*3+3] = tostring(ctl.rcmdata[m].prog)
       end
       ctldata = {idx = idx,
                  id = ctl.c_id,
@@ -38626,6 +38640,32 @@ function GUI_DrawCtlBitmap_Strips()
 
   end
 
+  function DM_RebuildRCM(dm_data, nctldata, nctldataidx)
+
+    local strip = tracks[track_select].strip
+    local ctls = strips[strip][page].controls
+    local ctldata = dm_data.ctldata
+    local ctldataidx = dm_data.ctldataidx
+
+    for c = 1, #ctls do
+
+      if ctls[c].ctlcat == ctlcats.rcm_switch then
+        local nd = nctldata[nctldataidx[ctls[c].c_id]]
+        if nd then
+          local key = nd.key
+          if key and ctldataidx[key] then
+            local cd = ctldata[ctldataidx[key]]
+            if nd and cd.val then
+              ctls[c].val = cd.val
+            end
+          end
+        end
+      end
+
+    end
+
+  end
+
   function DM_AddStrips(force, dm_data, cdata)
 
     DM_StoreStripData(force)
@@ -38830,6 +38870,7 @@ function GUI_DrawCtlBitmap_Strips()
           end
 
           local nctldata, nctldataidx = DM_GetCtlTranslateTable(dm_data)
+          DM_RebuildRCM(dm_data, nctldata, nctldataidx)
           DM_RebuildMacro(dm_data, nctldata, nctldataidx)
           DM_RebuildPageSnaps(dm_data, nctldata, nctldataidx)
           DM_RebuildModulators(dm_data, nctldata, nctldataidx)
@@ -41235,6 +41276,7 @@ function GUI_DrawCtlBitmap_Strips()
 
           ctl.val = v
           ctl.dirty = true
+          SetCtlDirty(rcm_select)
           lupd.update_ctls = true
 
           if ctl.rcmrefresh and ctl.rcmrefresh.guid then
@@ -77529,6 +77571,7 @@ function GUI_DrawCtlBitmap_Strips()
         CheckStripControls()
       end
     end
+    
     if ctl.fxguid and ctl.fxguid == fxguid then
       local v = 0
       if reaper.TrackFX_GetOpen(tr, ctl.fxnum) then
@@ -77540,7 +77583,22 @@ function GUI_DrawCtlBitmap_Strips()
         ctl.dirty = true
       end
     end
+    
+  end
 
+  local function UCV_rcm(tr, ctl, strip, rt)
+
+    if not ctl.fxnum then return end
+
+    local fxguid = reaper.TrackFX_GetFXGUID(tr, ctl.fxnum)
+
+    if ctl.fxguid and ctl.fxguid ~= fxguid then
+
+      if ctl.fxfound then
+        CheckStripControls()
+      end
+    end
+    
   end
 
   local function UCV_midieditor_pageswitch(tr, ctl, strip, rt)
@@ -78006,7 +78064,7 @@ function GUI_DrawCtlBitmap_Strips()
     tmp[ctlcats.takeswitcher] = UCV_takeswitcher
     tmp[ctlcats.fxmulti] = UCV_fxmulti
     tmp[ctlcats.fxgui] = UCV_fxgui
-    tmp[ctlcats.rcm_switch] = UCV_fxgui
+    tmp[ctlcats.rcm_switch] = UCV_rcm
     tmp[ctlcats.midieditor_pageswitch] = UCV_midieditor_pageswitch
     tmp[ctlcats.paramvalue_glob] = UCV_paramvalue
     tmp[ctlcats.paramvalue_strip] = UCV_paramvalue
