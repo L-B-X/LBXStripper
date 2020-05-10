@@ -17,7 +17,7 @@
   local lvar = {}
   local cbi = {}
 
-  lvar.scriptver = '0.94.0189' --Script Version
+  lvar.scriptver = '0.94.0190' --Script Version
 
   lvar.delayfunction = {}
   lvar.maxdim = 4096
@@ -65381,7 +65381,7 @@ function GUI_DrawCtlBitmap_Strips()
         local val = F_limit(MOUSE_slider(objsec),0,1)
         if val ~= nil then
           val = 1-val
-          wwtext_select = F_limit(ctlpos + math.floor((val-0.5)*(ctl.wsc*2)),1,ctl.wsc*2)
+          wwtext_select = F_limit(ctlpos + math.floor((val-0.5)*(ctl.wsc*2)),0,ctl.wsc*2)
           for c = 1, #ctl_select do
             ctls[ctl_select[c].ctl].wwtext = wwtext_select
             ctls[ctl_select[c].ctl].wwdata = nil
