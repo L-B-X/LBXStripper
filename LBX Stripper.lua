@@ -17,7 +17,7 @@
   local lvar = {}
   local cbi = {}
 
-  lvar.scriptver = '0.94.0188' --Script Version
+  lvar.scriptver = '0.94.0189' --Script Version
 
   lvar.delayfunction = {}
   lvar.maxdim = 4096
@@ -50434,6 +50434,49 @@ function GUI_DrawCtlBitmap_Strips()
     local preservecontext
     local rt = reaper.time_precise()
 
+    if lvar.rendersnaps then
+    
+      if reaper.time_precise() > lvar.rendersnaps.timer then
+        RenderSnap2(lvar.rendersnaps.ss, lvar.rendersnaps.fol)
+        lvar.rendersnaps.timer = reaper.time_precise() + 1
+        lvar.rendersnaps.ss = lvar.rendersnaps.ss +1
+        
+        local strip = tracks[track_select].strip
+        local ss = lvar.rendersnaps.ss
+        if ss <= lvar.rendersnaps.snapcnt then
+          Snapshot_Set(strip, page, sstype_select, ss, true)
+          ss_select = ss
+        end
+        lupd.update_snaps = true
+      else
+        --Progress('Press Q to cancel',1)
+      end
+        
+      if lvar.rendersnaps.ss > lvar.rendersnaps.snapcnt then
+        lvar.rendersnaps = nil
+        Progress('Render Complete',1)
+      else
+        if reaper.GetExtState(lvar.SCRIPT, 'cancelrender') == '1' then
+          lvar.rendersnaps = nil
+          reaper.MB('Render cancelled','Snapshot render',0)
+        end
+        if reaper.JS_Window_Find then
+          local hwnd = reaper.JS_Window_Find('- LBX Stripper -', true)
+          if hwnd then
+            reaper.JS_Window_SetFocus(hwnd)
+          end
+        end
+        local c = gfx.getchar()
+        if c == 27 or c == 113 then
+          lvar.rendersnaps = nil
+          reaper.MB('Render cancelled','Snapshot render',0)
+        end
+      end
+      
+      --reaper.defer(run)
+      --return
+    end
+
     ReadProjectFlags()
 
     ------------------------------------------------
@@ -62983,7 +63026,7 @@ function GUI_DrawCtlBitmap_Strips()
   end
 
   function A_Run_Submode0(noscroll, rt, char)
-
+  
     local contexts = contexts
     local mouse = mouse
     local lvar = lvar
@@ -69000,9 +69043,9 @@ function GUI_DrawCtlBitmap_Strips()
               end]]
               if stripid ~= nil or grpid ~= nil or switchid ~= nil then
 
-                if switchid then
-                  SelectSwitchElements(switchid, i)
-                elseif mouse.shift then
+                --if switchid then
+                --  SelectSwitchElements(switchid, i)  --cannot do this as a simple click on switcher moves all controls to visible switcher page
+                --[[else]]if mouse.shift then
                   ctl_select = SelectGroupElements(grpid)
                 else
                   SelectStripElements(stripid)
@@ -70744,7 +70787,7 @@ function GUI_DrawCtlBitmap_Strips()
             elseif res == 7 then
               settings_followsnapshot = not settings_followsnapshot
             elseif res == 8 then
-              RenderSnaps()
+              RenderSnaps2()
             elseif res == 9 then
               RenderSnap(ss_select)
             end
@@ -70810,6 +70853,9 @@ function GUI_DrawCtlBitmap_Strips()
         local retval, val = reaper.GetSetProjectInfo_String(0, 'RENDER_FILE', fol, true)
         snapcnt = #snaps
 
+        --local rendercancelled
+        --reaper.SetExtState(SCRIPT, 'cancelrender', '0', false)
+
         for ss = 1, snapcnt do
           --DBG('Rendering: '..(snaps[ss].name or ss))
           Progress('Rendering: '..(snaps[ss].name or ss),ss/snapcnt)
@@ -70818,11 +70864,78 @@ function GUI_DrawCtlBitmap_Strips()
           local retval, val = reaper.GetSetProjectInfo_String(0, 'RENDER_PATTERN', string.format('%03d',ss)..'_'..snaps[ss].name, true)
           reaper.Main_OnCommand(42230, 0)
 
+          --if reaper.GetExtState(SCRIPT, 'cancelrender') == '1' then
+          --  rendercancelled = true
+          --  break
+          --end
         end
-        Progress('Rendering Complete',1)
+        --if not rendercancelled then
+          Progress('Rendering Complete',1)
+        --else
+        --  Progress('Rendering Cancelled',1)
+        --end
         --DBG('*** Done ***')
       end
     end
+  end
+
+  function RenderSnaps2()
+
+    if reaper.JS_Dialog_BrowseForFolder and reaper.GetSetProjectInfo_String then
+      local retval, fol = reaper.JS_Dialog_BrowseForFolder('Select folder', lvar.lastrenderfolder or '')
+
+      if retval == 1 and fol then
+        lvar.lastrenderfolder = fol
+        local strip = tracks[track_select].strip
+        local snapcnt
+        local snaps
+        if sstype_select == 1 then
+          snaps = snapshots[strip][page][sstype_select]
+        else
+          snaps = snapshots[strip][page][sstype_select].snapshot
+        end
+
+        local retval, val = reaper.GetSetProjectInfo_String(0, 'RENDER_FILE', fol, true)
+        snapcnt = #snaps
+
+        local rendercancelled
+        reaper.SetExtState(lvar.SCRIPT, 'cancelrender', '0', false)
+
+        lvar.rendersnaps = {}
+        lvar.rendersnaps.ss = 1
+        lvar.rendersnaps.snaps = snaps
+        lvar.rendersnaps.snapcnt = snapcnt
+        lvar.rendersnaps.timer = reaper.time_precise()
+        lvar.rendersnaps.fol = fol
+
+      end
+    end
+  end
+
+  function RenderSnap2(ss, fol)
+
+    --if reaper.JS_Dialog_BrowseForFolder and reaper.GetSetProjectInfo_String then
+    --  local retval, fol = reaper.JS_Dialog_BrowseForFolder('Select folder', lvar.lastrenderfolder or '')
+
+      if fol then
+        lvar.lastrenderfolder = fol
+        local strip = tracks[track_select].strip
+        local snaps = lvar.rendersnaps.snaps
+        local snapcnt = lvar.rendersnaps.snapcnt
+
+        local retval, val = reaper.GetSetProjectInfo_String(0, 'RENDER_FILE', fol, true)
+          
+        --DBG('Rendering: '..(snaps[ss].name or ss))
+        Progress('Rendering: '..(snaps[ss].name or ss),ss/snapcnt)
+        Snapshot_Set(strip, page, sstype_select, ss, true)
+
+        local retval, val = reaper.GetSetProjectInfo_String(0, 'RENDER_PATTERN', string.format('%03d',ss)..'_'..snaps[ss].name, true)
+        reaper.Main_OnCommand(42230, 0)
+
+        --Progress('Rendering Complete',1)
+        --DBG('*** Done ***')
+      end
+    --end
   end
 
   function RenderSnap(ss)
