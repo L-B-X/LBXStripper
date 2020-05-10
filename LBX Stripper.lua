@@ -17,7 +17,7 @@
   local lvar = {}
   local cbi = {}
 
-  lvar.scriptver = '0.94.0190' --Script Version
+  lvar.scriptver = '0.94.0191' --Script Version
 
   lvar.delayfunction = {}
   lvar.maxdim = 4096
@@ -43377,63 +43377,65 @@ function GUI_DrawCtlBitmap_Strips()
           local ctl = strips[strip][page].controls[i]
           local track = GetTrack(ctl.tracknum or tracks[track_select].tracknum)
           
-          local r, pn = reaper.TrackFX_GetParamName(track, ctl.fxnum, ctl.param, '')
-          if pn ~= ctl.param_info.paramname then
-            local cnt = reaper.TrackFX_GetNumParams(track, ctl.fxnum)-1
-            local fnd
-            local fndcnt = 0
-            
-            if ctl.param_info.paramname == 'Open GUI' then
-              if ctl.param ~= cnt + 3 then
-                fnd = cnt + 3
+          if (ctl.ctlcat == ctlcats.fxparam or ctl.ctlcat == ctlcats.fxmulti or ctl.ctlcat == ctlcats.fxgui or ctl.ctlcat == ctlcats.fxoffline) and ctl.fxnum and ctl.param then
+            local r, pn = reaper.TrackFX_GetParamName(track, ctl.fxnum, ctl.param, '')
+            if pn ~= ctl.param_info.paramname then
+              local cnt = reaper.TrackFX_GetNumParams(track, ctl.fxnum)-1
+              local fnd
+              local fndcnt = 0
+              
+              if ctl.param_info.paramname == 'Open GUI' then
+                if ctl.param ~= cnt + 3 then
+                  fnd = cnt + 3
+                else
+                  fnd = -1
+                end
+              elseif ctl.param_info.paramname == 'Offline' then
+                if ctl.param ~= cnt + 1 then
+                  fnd = cnt + 1  
+                else
+                  fnd = -1
+                end
+              elseif ctl.param_info.paramname == 'Off/Byp/Wet' then
+                if ctl.param ~= cnt + 2 then
+                  fnd = cnt + 2  
+                else
+                  fnd = -1
+                end
+              elseif ctl.param_info.paramname == 'Dummy' then
+                if ctl.param ~= cnt + 4 then
+                  fnd = cnt + 4  
+                else
+                  fnd = -1
+                end
               else
-                fnd = -1
-              end
-            elseif ctl.param_info.paramname == 'Offline' then
-              if ctl.param ~= cnt + 1 then
-                fnd = cnt + 1  
-              else
-                fnd = -1
-              end
-            elseif ctl.param_info.paramname == 'Off/Byp/Wet' then
-              if ctl.param ~= cnt + 2 then
-                fnd = cnt + 2  
-              else
-                fnd = -1
-              end
-            elseif ctl.param_info.paramname == 'Dummy' then
-              if ctl.param ~= cnt + 4 then
-                fnd = cnt + 4  
-              else
-                fnd = -1
-              end
-            else
-              for p = 0, cnt do
-                local r, pn = reaper.TrackFX_GetParamName(track, ctl.fxnum, p, '')
-                if pn == ctl.param_info.paramname then
-                  if ctl.param ~= p then                        
-                    fnd = p
-                    fndcnt = 1
+                for p = 0, cnt do
+                  local r, pn = reaper.TrackFX_GetParamName(track, ctl.fxnum, p, '')
+                  if pn == ctl.param_info.paramname then
+                    if ctl.param ~= p then                        
+                      fnd = p
+                      fndcnt = 1
+                    end
+                    break
+                  elseif string.match(pn, '.*'..ctl.param_info.paramname..'.*') or string.match(ctl.param_info.paramname, '.*'..pn..'.*') then
+                    --DBG('XXX'..pn)
+                    if ctl.param ~= p then                        
+                      fnd = p
+                    end
+                    fndcnt = fndcnt + 1
                   end
-                  break
-                elseif string.match(pn, '.*'..ctl.param_info.paramname..'.*') or string.match(ctl.param_info.paramname, '.*'..pn..'.*') then
-                  --DBG('XXX'..pn)
-                  if ctl.param ~= p then                        
-                    fnd = p
-                  end
-                  fndcnt = fndcnt + 1
                 end
               end
+              if fnd and fnd ~= -1 and fndcnt < 2 then
+                ctl.param = fnd
+                ctl.param_info.paramnum = fnd
+                DBG('FIXED: '..ctl.param_info.paramname)
+              elseif fnd ~= -1 then
+                DBG('ERROR: '..ctl.param_info.paramname)            
+              end
+            else
+              --DBG(ctl.param_info.paramname..' OK')          
             end
-            if fnd and fnd ~= -1 and fndcnt < 2 then
-              ctl.param = fnd
-              ctl.param_info.paramnum = fnd
-              DBG('FIXED: '..ctl.param_info.paramname)
-            elseif fnd ~= -1 then
-              DBG('ERROR: '..ctl.param_info.paramname)            
-            end
-          else
-            --DBG(ctl.param_info.paramname..' OK')          
           end
         end
       end
@@ -64901,7 +64903,7 @@ function GUI_DrawCtlBitmap_Strips()
           elseif mouse.context == nil and MOUSE_click(obj.sections[866]) then
             OpenEB(250,'Enter width in pixels',limittext_select or 0)
           elseif mouse.context == nil and MOUSE_click(obj.sections[867]) then
-            OpenEB(251,'Enter text flags',flag_select or '')
+            OpenEB(251,'Enter text flags',flags_select or '')
           elseif mouse.context == nil and MOUSE_click(obj.sections[870]) then
             OpenEB(253,'Enter animate time (ms)',animatetime_select or '')
           
