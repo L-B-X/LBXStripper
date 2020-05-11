@@ -17,7 +17,7 @@
   local lvar = {}
   local cbi = {}
 
-  lvar.scriptver = '0.94.0191' --Script Version
+  lvar.scriptver = '0.94.0192' --Script Version
 
   lvar.delayfunction = {}
   lvar.maxdim = 4096
@@ -33719,7 +33719,7 @@ function GUI_DrawCtlBitmap_Strips()
     local gstart = #strips[strip][page].graphics + 1
 
     local stripids
-    if lvar.addstrip_keepseparateids == true then
+    if lvar.addstrip_keepseparateids == true and lvar.livemode == 0 then
       stripids = {}
       for j = 1, #stripdata.strip.controls do
         if stripdata.strip.controls[j].id and not stripids[stripdata.strip.controls[j].id] then
@@ -33732,7 +33732,7 @@ function GUI_DrawCtlBitmap_Strips()
       stripdata.strip.controls[j].x = stripdata.strip.controls[j].x + offsetx + x + surface_offset.x
       stripdata.strip.controls[j].y = stripdata.strip.controls[j].y + offsety + y + surface_offset.y
 
-      if lvar.addstrip_keepseparateids == true then
+      if lvar.addstrip_keepseparateids == true and lvar.livemode == 0 then
         if stripdata.strip.controls[j].id and stripids[stripdata.strip.controls[j].id] then
           stripdata.strip.controls[j].id = stripids[stripdata.strip.controls[j].id]
         else
@@ -33913,7 +33913,7 @@ function GUI_DrawCtlBitmap_Strips()
       if stripdata.strip.graphics[j].w > 0 and stripdata.strip.graphics[j].h > 0 then
         stripdata.strip.graphics[j].x = stripdata.strip.graphics[j].x + offsetx + x + surface_offset.x -dx
         stripdata.strip.graphics[j].y = stripdata.strip.graphics[j].y + offsety + y + surface_offset.y -dy
-        if lvar.addstrip_keepseparateids == true then
+        if lvar.addstrip_keepseparateids == true and lvar.livemode == 0 then
           if stripids[stripdata.strip.graphics[j].id] then
             stripdata.strip.graphics[j].id = stripids[stripdata.strip.graphics[j].id]
           else
@@ -78094,6 +78094,12 @@ function GUI_DrawCtlBitmap_Strips()
                           end
                         end
 
+                        if ctl.dirty == true then
+                          if ctl.animatetime --[[and not ctl.animate_et]] and lvar.ctltype_buttons[ctl.ctltype] then
+                            SetAnimate_Ctl(ctl)
+                          end
+                        end
+
                         if ctl.animate_et then
                         
                           local animframe
@@ -78120,6 +78126,7 @@ function GUI_DrawCtlBitmap_Strips()
 
                           SetCtlDirty(i)
                           lupd.update_ctls = true
+                          
                         end
 
                       else
