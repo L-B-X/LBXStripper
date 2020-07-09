@@ -17,7 +17,7 @@
   local lvar = {}
   local cbi = {}
 
-  lvar.scriptver = '0.94.0193' --Script Version
+  lvar.scriptver = '0.94.0194' --Script Version
 
   lvar.sliderzoom = true
   
@@ -10560,14 +10560,14 @@
                    xywh.h, 1, 1)
           c = gui.color.black
         
-        elseif track_select == ii and not lvar.dm_trackslocked then
+        elseif track_select == ii and (lvar.livemode ~= 2 or not lvar.dm_trackslocked) then
           f_Get_SSV(gui.color.white)
           gfx.rect(xywh.x,
                    xywh.y,
                    xywh.w,
                    xywh.h, 1, 1)
           c = gui.color.black
-        elseif not lvar.dm_trackslocked then
+        elseif lvar.livemode ~= 2 or not lvar.dm_trackslocked then
           local s = tracks[ii].strip
           if tracks[ii].name == LBX_GTRACK_NAME or
              tracks[ii].name == LBX_CTL_TRNAME then
