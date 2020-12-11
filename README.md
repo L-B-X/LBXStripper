@@ -1,6 +1,16 @@
 # LBXStripper
 Lua Reascript for Reaper to create custom channel strips
 
+----------------------------
+REQUIREMENTS:
+
+A late version 5 - or Reaper 6 installation.
+
+Julian Sader's Reascript API extension - you can get it from here: https://forum.cockos.com/showthread.php?t=212174
+
+You should also install the latest SWS extension if you don't have that yet.  The latest SWS beta has a fix so the videoprocessor can be correctly handled in Stripper. 
+
+----------------------------
 
 IMPORTANT:  Currently - when used in a project - you must first save the project BEFORE trying to close Reaper.  Using the save dialog that pops up when you close Reaper may/will NOT save the Stripper data properly - and you may find you have to rebuild your strips when re-opening the project.  Just ensure the project is saved just before you try to close Reaper and all should be good.
 
