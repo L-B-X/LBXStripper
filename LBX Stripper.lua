@@ -18,7 +18,7 @@
   local xPnl = {}
   local cbi = {}
 
-  lvar.scriptver = '0.94.0200' --Script Version
+  lvar.scriptver = '0.94.0201' --Script Version
 
   lvar.screensize = {x = 1920, y = 1080}
 
@@ -91681,7 +91681,6 @@ end
 
     else
       --error with saved data
-      DBG('x')
       local status = PCALL_SaveData()
       PopulateTracks() --must be called to link tracks to strips
 
