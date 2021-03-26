@@ -18,7 +18,7 @@
   local xPnl = {}
   local cbi = {}
 
-  lvar.scriptver = '0.94.0199' --Script Version
+  lvar.scriptver = '0.94.0200' --Script Version
 
   lvar.screensize = {x = 1920, y = 1080}
 
@@ -55884,7 +55884,7 @@ end
         elseif mode == 0 then
 
           if lvar.dm_editmode_data and (MOUSE_click(obj.sections[5020]) or MOUSE_click(obj.sections[5021]) or MOUSE_click(obj.sections[5022])) and
-             not show_pinmatrix and not show_xysnapshots and not show_eqcontrol and not macro_edit_mode then
+             not show_pinmatrix and not show_xxy and not show_eqcontrol and not macro_edit_mode then
 
             if MOUSE_click(obj.sections[5022]) then
 
@@ -59791,10 +59791,22 @@ end
                       if fsstype_select == ctls[i].param then
                         show_xysnapshots = not show_xysnapshots
                         show_fsnapshots = false
+                        
+                        local w = ctls[i].wsc*lvar.zoom
+                        obj.sections[180].w = w--math.max(w - (170-138),138)
+                        obj.sections[181].w = obj.sections[180].w-6
+                        obj.sections[182].w = obj.sections[180].w
+                        
                         RedrawGUIBitmap()
                       else
                         show_xysnapshots = true
                         show_fsnapshots = false
+                        
+                        local w = ctls[i].wsc*lvar.zoom
+                        obj.sections[180].w = w--math.max(w - (170-138),138)
+                        obj.sections[181].w = obj.sections[180].w-6
+                        obj.sections[182].w = obj.sections[180].w
+                        
                         RedrawGUIBitmap()
                       end
                       fsstype_select = ctls[i].param
@@ -59824,6 +59836,7 @@ end
                           --obj.sections[180].w = ctls[i].wsc * lvar.zoom
                         else
                           show_xysnapshots = false
+                          RedrawGUIBitmap()
                         end
                       end
                       lupd.update_fsnaps = true
@@ -62038,6 +62051,7 @@ end
     
       if MOUSE_click_RB(obj.sections[180]) then
         show_xysnapshots = false
+        RedrawGUIBitmap()
         lupd.update_surface = true
       end
 
@@ -62092,6 +62106,7 @@ end
 
                 g_savedirty = true
                 show_xysnapshots = false
+                RedrawGUIBitmap()
                 lupd.update_surface = true
               end
             end
@@ -100953,7 +100968,7 @@ DBG(vald) ]]
         return true
       end
     elseif idx == 180 and not full_screen and not lrn_mode then --fSnapshots
-      if show_fsnapshots then
+      if show_fsnapshots or show_xysnapshots then
         return true
       end
     elseif idx == 1100 and not full_screen and not lrn_mode then --Modulators
