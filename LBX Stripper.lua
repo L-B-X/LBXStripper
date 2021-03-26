@@ -18,7 +18,7 @@
   local xPnl = {}
   local cbi = {}
 
-  lvar.scriptver = '0.94.0198' --Script Version
+  lvar.scriptver = '0.94.0199' --Script Version
 
   lvar.screensize = {x = 1920, y = 1080}
 
@@ -1555,11 +1555,41 @@
 
   end
 
-  local function TouchFX(track, fxn)
-    local pcnt = reaper.TrackFX_GetNumParams(track, fxn)
+  local function TouchFX(track, trguid, fxn, fxguid)
+    --[[local pcnt = reaper.TrackFX_GetNumParams(track, fxn)
     local v = reaper.TrackFX_GetParamNormalized(track, fxn, pcnt-1)
-    reaper.TrackFX_SetParamNormalized(track, fxn, pcnt-1, v)
+    reaper.TrackFX_SetParamNormalized(track, fxn, pcnt-1, v)]]
+    if lvar.active_switcher and (lvar.active_switcher.fxguid ~= fxguid or lvar.active_switcher.trguid ~= trguid) then
+      lvar.active_switcher.fxguid = fxguid
+      lvar.active_switcher.trguid = trguid
+      local trnum = reaper.GetMediaTrackInfo_Value(track,'IP_TRACKNUMBER')
+      reaper.gmem_attach('LBX_SK2_SharedMem')
+      
+      reaper.SetExtState('LBX_TOUCHED_FX','TRNUM',trnum,false)
+      reaper.SetExtState('LBX_TOUCHED_FX','FXNUM',fxn,false)
+      
+      reaper.SetExtState('LBX_TOUCHED_FX','FXGUID',fxguid,false)
+      reaper.SetExtState('LBX_TOUCHED_FX','TRGUID',trguid,false)
+    end
   end
+
+  local function TouchFX_Switcher(switchid)
+    if switchers[switchid].fxguids then
+      local fxguid = switchers[switchid].fxguids[1]
+      if fxguid then
+        local track = GetTrack(lvar.dynamicmode_trn)
+        if track then
+          local trguid = reaper.GetTrackGUID(track)
+          local fxn = GetFXNFromGUID(track,fxguid)
+          if fxn then
+            lvar.active_switcher = {switchid = switchid}
+            TouchFX(track, trguid, fxn, fxguid)
+          end
+        end
+      end
+    end
+  end
+  
 
   local function normalize(min, max, val)
     if min and max and val then
@@ -16447,6 +16477,8 @@ end
               end
               
               local stx = pop[i].x + math.floor(w/2 - sw/2)*lvar.zoom
+              
+              local ow, oh = w, h
               if lvar.enablegfxshadows then
                 w = w + lvar.shadowmax
                 h = h + lvar.shadowmax
@@ -16473,6 +16505,8 @@ end
 
               local xx = rect10.x + pop[i].x + xoff
               local yy = rect10.y + pop[i].y+(sh+gap)*lvar.zoom + yoff
+              
+              local _,_,ow,oh,_,_ = CropToRect2(xx,yy,ow,oh,o10x,o10y,o10r,o10b, x, y, lvar.zoom)
               local xx,yy,w,h,x,y = CropToRect2(xx,yy,w,h,o10x,o10y,o10r,o10b, x, y, lvar.zoom)
               local sxx = rect10.x + stx + xoff
               local syy = rect10.y + pop[i].y + yoff
@@ -16480,7 +16514,7 @@ end
 
               if w > 0 then
                 --gfx.blit(strip_image + gfxpage, lvar.zoom, 0, x, y, w, h, rect10.x + pop[i].x, rect10.y + pop[i].y+(sh+gap)*lvar.zoom)
-                blittbl[lvar.blittbl_cnt] = {strip_image + gfxpage, lvar.zoom, 0, x, y, w, h, xx, yy}
+                blittbl[lvar.blittbl_cnt] = {strip_image + gfxpage, lvar.zoom, 0, x, y, w, h, xx, yy, ow, oh, swid}
                 blittbl[lvar.blittbl_cnt][0] = gfx.a
                 lvar.blittbl_cnt = lvar.blittbl_cnt + 1
               end
@@ -17138,6 +17172,7 @@ end
                           local p = ctl.cycledata.pos
                           if ctl.cycledata[p] and
                              Disp_ParamV ~= ctl.cycledata[p].dv then
+                            --DBG(Disp_ParamV..'  '..ctl.cycledata[p].dv)
                             --[[for p = 2, ctl.cycledata.statecnt do
                               local vc = ctl.cycledata[p].val
                               --if p < ctl.cycledata.statecnt then
@@ -27256,11 +27291,39 @@ end
         if lvar.blittbl_cnt > 1 then
           gfx.dest = -1
           gfx.a = alp or 1
-  
+          local active
           for b = 1, lvar.blittbl_cnt-1 do
-            gfx.a = alp or blittbl[b][0] or 1
-            gfx.blit(blittbl[b][1],blittbl[b][2],blittbl[b][3],blittbl[b][4],blittbl[b][5],blittbl[b][6],blittbl[b][7],
-                     blittbl[b][8],blittbl[b][9])
+            local bt = blittbl[b]
+            gfx.a = alp or bt[0] or 1
+            gfx.blit(bt[1],bt[2],bt[3],bt[4],bt[5],bt[6],bt[7],
+                     bt[8],bt[9])
+            if lvar.active_switcher and bt[12] and lvar.active_switcher.switchid == bt[12] then
+              active = b
+            end
+          end
+          if active then
+            f_Get_SSV('255 255 255')
+            local x,y,w,h = blittbl[active][8],blittbl[active][9],blittbl[active][10],blittbl[active][11]
+            if h > 0 then
+              --gfx.a = inOutSine(((reaper.time_precise()*10) % 10) /5)*0.2
+              --gfx.a=0.04
+              gfx.a = 0.6
+              --gfx.rect(x,y,w,h,0)
+              w=w*lvar.zoom
+              h=h*lvar.zoom
+              local sz = 40*lvar.zoom
+              gfx.line(x,y,x+sz,y)
+              gfx.line(x,y,x,math.min(y+sz,y+h))
+  
+              gfx.line(x+w,y,x+w-sz,y)
+              gfx.line(x+w,y,x+w,math.min(y+sz,y+h))
+  
+              gfx.line(x,y+h,x+sz,y+h)
+              gfx.line(x,y+h,x,math.max(y+h-sz,y))
+              
+              gfx.line(x+w,y+h,x+w-sz,y+h)
+              gfx.line(x+w,y+h,x+w,math.max(y+h-sz,y))
+            end
           end
           gfx.a = 1
         end
@@ -38564,7 +38627,8 @@ end
             if track then
               local fxn = GetFXNFromGUID(track,fxguid)
               if fxn then
-                TouchFX(track, fxn)
+                local trguid = reaper.GetTrackGUID(track)
+                TouchFX(track, trguid, fxn, fxguid)
               end
             end
           end
@@ -42314,7 +42378,7 @@ end
     return topx, topy
   end
 
-  function Switchers_Ext_MovePos(extid, oldpos, newpos, before, movefx, force)
+  function Switchers_Ext_MovePos(extid, oldpos, newpos, before, movefx, force, nomove)
 
     --reaper.PreventUIRefresh(1)
 
@@ -42324,65 +42388,77 @@ end
       newpos = newpos + 1
     end
 
+    local extmax = Switcher_Ext_GetMaxPos(extid)
+    if newpos < 1 or newpos > extmax then return end
+
     if oldpos ~= newpos or force then
 
-      local src_c, src_c1, dst_c, dts_c1
-      local topx, topy
-      local ctls = strips[tracks[track_select].strip][page].controls
+      if lvar.livemode == 2 then
+        nomove = true
+      end
 
-      for i = 1, #switchers do
-        if switchers[i].switchmode == 1 and switchers[i].extendmode == true then
-          if switchers[i].extendid == extid then
-            if switchers[i].extendpos == oldpos then
-              src_c = Switchers_FindCtl(i)
-            --elseif switchers[i].extendpos == oldpos+1 then
-            --  src_c1 = Switchers_FindCtl(i)
-            end
-            if switchers[i].extendpos == newpos then
-              dst_c = Switchers_FindCtl(i)
-            elseif switchers[i].extendpos == newpos+1 then
-              dst_c1 = Switchers_FindCtl(i)
-            end
-            if src_c and dst_c and dst_c1 then
-              break
+      if not nomove then
+        local src_c, src_c1, dst_c, dts_c1
+        local topx, topy
+        local ctls = strips[tracks[track_select].strip][page].controls
+  
+        for i = 1, #switchers do
+          if switchers[i].switchmode == 1 and switchers[i].extendmode == true then
+            if switchers[i].extendid == extid then
+              if switchers[i].extendpos == oldpos then
+                src_c = Switchers_FindCtl(i)
+              --elseif switchers[i].extendpos == oldpos+1 then
+              --  src_c1 = Switchers_FindCtl(i)
+              end
+              if switchers[i].extendpos == newpos then
+                dst_c = Switchers_FindCtl(i)
+              elseif switchers[i].extendpos == newpos+1 then
+                dst_c1 = Switchers_FindCtl(i)
+              end
+              if src_c and dst_c and dst_c1 then
+                break
+              end
             end
           end
         end
       end
+      
+      if nomove or (src_c and dst_c) then
 
-      if src_c and dst_c then
-
-        local srcctl_sw = ctls[src_c]
-        local dstctl_sw = ctls[dst_c]
-        local dstctl_sw1
-        if dst_c1 then
-          dstctl_sw1 = ctls[dst_c1]
-        end
-
-        local dst_trn, dst_trg, dst_fxn
-        if lvar.livemode ~= 2 then
-          if oldpos < newpos and dstctl_sw1 then
-            dst_trn, dst_trg, dst_fxn, dst_fxg = FindInsertFX(dstctl_sw1.fxguid, dstctl_sw1.tracknum, dstctl_sw1.fxnum)
-          else
-            dst_trn, dst_trg, dst_fxn, dst_fxg = FindInsertFX(dstctl_sw.fxguid, dstctl_sw.tracknum, dstctl_sw.fxnum)
+        if not nomove then
+          local srcctl_sw = ctls[src_c]
+          local dstctl_sw = ctls[dst_c]
+          local dstctl_sw1
+          if dst_c1 then
+            dstctl_sw1 = ctls[dst_c1]
           end
-        end
-
-        local ctl_c
-        for i = 1, #switchers do
-          if switchers[i].switchmode == 1 and switchers[i].extendmode == true then
-            if switchers[i].extendid == extid then
-              if switchers[i].extendpos == 1 then
-                for c = 1, #ctls do
-                  if ctls[c].switcherid == i then
-                    ctl_c = c
+  
+          local dst_trn, dst_trg, dst_fxn
+          if lvar.livemode ~= 2 then
+            if oldpos < newpos and dstctl_sw1 then
+              dst_trn, dst_trg, dst_fxn, dst_fxg = FindInsertFX(dstctl_sw1.fxguid, dstctl_sw1.tracknum, dstctl_sw1.fxnum)
+            else
+              dst_trn, dst_trg, dst_fxn, dst_fxg = FindInsertFX(dstctl_sw.fxguid, dstctl_sw.tracknum, dstctl_sw.fxnum)
+            end
+          end
+  
+          
+          local ctl_c
+          for i = 1, #switchers do
+            if switchers[i].switchmode == 1 and switchers[i].extendmode == true then
+              if switchers[i].extendid == extid then
+                if switchers[i].extendpos == 1 then
+                  for c = 1, #ctls do
+                    if ctls[c].switcherid == i then
+                      ctl_c = c
+                      break
+                    end
+                  end
+                  if ctl_c then
+                    topx = ctls[ctl_c].x
+                    topy = ctls[ctl_c].y
                     break
                   end
-                end
-                if ctl_c then
-                  topx = ctls[ctl_c].x
-                  topy = ctls[ctl_c].y
-                  break
                 end
               end
             end
@@ -42413,8 +42489,15 @@ end
         if newpos == 1 then
           avoidtop = true
         end
-        Strip_ReposSwitcher_Ext(extid, 1, topx, topy, avoidtop)
-
+        
+        if nomove then
+          
+        else
+          Strip_ReposSwitcher_Ext(extid, 1, topx, topy, avoidtop)
+          lupd.update_gfx = true
+          lupd.update_bg = true
+        end
+        
         --Move FX Here...
         if movefx == true then
           if reaper.APIExists('TrackFX_CopyToTrack') == true then
@@ -42445,10 +42528,12 @@ end
           end
         end
 
-        lupd.update_gfx = true
-        lupd.update_bg = true
-
-        SetCtlBitmapRedraw()
+        if nomove then
+          SetCtlBitmapRedraw(true)
+          lupd.update_surface = true
+        else
+          SetCtlBitmapRedraw()
+        end
         reaper.MarkProjectDirty(0)
       end
 
@@ -52658,8 +52743,28 @@ end
           Mode0_SwipeL()
         elseif lvar.livemode == 0 and mode == 0 and show_striplayout == false and stripgallery_view == 1 then
           GallerySwipe(0)
-        elseif lvar.livemode >= 1 and mode == 0 and not lvar.showpoponly then
-          MixMode_Swipe(lvar.centrepos, math.max(lvar.centrepos-1,0))
+        elseif lvar.livemode >= 1 and mode == 0 then
+          if mouse.shift and lvar.active_switcher and lvar.showpop and lvar.popout_autoarrange then
+            local srcswid = lvar.active_switcher.switchid
+            if srcswid and switchers[srcswid] then
+              local src_extid = switchers[srcswid].extendid
+              local oldpos = switchers[srcswid].extendpos
+              local newpos = oldpos - 1
+              Switchers_Ext_MovePos(src_extid, oldpos, newpos, true, true, nil, true)
+              local swdata = lvar.stripdim.swdata
+              if lvar.popout_autoarrange and swdata[srcswid] then
+                local rn = swdata[srcswid].rownum
+                if rn then
+                  MixMode_Swipe_Pop(0,true,rn-1)
+                end
+              end
+              if lvar.mmtouch then
+                TouchFX_Switcher(srcswid)
+              end
+            end
+          elseif not lvar.showpoponly then
+            MixMode_Swipe(lvar.centrepos, math.max(lvar.centrepos-1,0))
+          end
         end
 
       elseif char == lvar.keypress['gallery_swipenext'] then
@@ -52668,8 +52773,28 @@ end
           Mode0_SwipeR()
         elseif lvar.livemode == 0 and mode == 0 and show_striplayout == false and stripgallery_view == 1 then
           GallerySwipe(1)
-        elseif lvar.livemode >= 1 and mode == 0 and not lvar.showpoponly then
-          MixMode_Swipe(lvar.centrepos, lvar.centrepos+1)
+        elseif lvar.livemode >= 1 and mode == 0 then
+          if mouse.shift and lvar.active_switcher and lvar.showpop and lvar.popout_autoarrange then
+            local srcswid = lvar.active_switcher.switchid
+            if srcswid and switchers[srcswid] then
+              local src_extid = switchers[srcswid].extendid
+              local oldpos = switchers[srcswid].extendpos
+              local newpos = oldpos + 1
+              Switchers_Ext_MovePos(src_extid, oldpos, newpos, false, true, nil, true)
+              local swdata = lvar.stripdim.swdata
+              if lvar.popout_autoarrange and swdata[srcswid] then
+                local rn = swdata[srcswid].rownum
+                if rn then
+                  MixMode_Swipe_Pop(0,true,rn-1)
+                end
+              end
+              if lvar.mmtouch then
+                TouchFX_Switcher(srcswid)
+              end
+            end
+          elseif not lvar.showpoponly then
+            MixMode_Swipe(lvar.centrepos, lvar.centrepos+1)
+          end
         end
 
       elseif char == lvar.keypress['show_modedit'] then
@@ -59125,6 +59250,39 @@ end
           end
         end
         
+        if lvar.livemode >= 1 and gfx.mouse_wheel == 0 and lvar.mmtouch and mouse.LB then
+          if stripid then
+            local switchid
+            if lvar.stripdim then
+              switchid = lvar.stripdim.swidx[stripid]
+            else
+              for i = 1, #ctls do
+                if ctls[i].id == stripid then
+                  switchid = ctls[i].switcher
+                  break
+                end
+              end
+            end
+
+            if switchid and switchers[switchid] and not noscroll then
+              lvar.active_switcher = {switchid = switchid}
+              if switchers[switchid].fxguids then
+                local fxguid = switchers[switchid].fxguids[1]
+                if fxguid and lvar.lasttouchedfx ~= fxguid then
+                  lvar.lasttouchedfx = fxguid
+                  local track = GetTrack(lvar.dynamicmode_trn)
+                  if track then
+                    local trguid = reaper.GetTrackGUID(track)
+                    local fxn = GetFXNFromGUID(track,fxguid)
+                    if fxn then
+                      TouchFX(track, trguid, fxn, fxguid)
+                    end
+                  end
+                end
+              end
+            end
+          end
+        end
         
         if c then
           i = c
@@ -82100,6 +82258,7 @@ end
                   local rn = swdata[swid].rownum
                   if rn then
                     MixMode_Swipe_Pop(0,nil,rn-1)
+                    TouchFX_Switcher(swid)
                   end
                 end
               end
@@ -82189,6 +82348,7 @@ end
                   local rn = swdata[swid].rownum
                   if rn then
                     MixMode_Swipe_Pop(0,nil,rn-1)
+                    TouchFX_Switcher(swid)
                   end
                 end
               end
@@ -90965,7 +91125,7 @@ end
           v = lvar.VERSION
         end
 
-        if lvar.striploadoverride or tonumber(v) >= 0.94 then
+        if lvar.striploadoverride or tostring(v) >= '0.94' then
 
           data = {}
           local load_path
@@ -91074,14 +91234,14 @@ end
 
               GUI_DrawMsgX(obj, gui, 'Loading Strip Data...', s, scnt)
 
-              if tonumber(v) == 0.93 then
+              if tostring(v) == '0.93' then
                 LoadStripData(s, ss)
                 ss=ss+1
 
                 --if not CheckTrackExists(ss) then
                 --  ss = ss - 1
                 --end
-              elseif tonumber(v) >= 0.94 then
+              elseif tostring(v) >= '0.94' then
                 LoadStripData(s, ss, data)
                 ss=ss+1
 
@@ -91307,11 +91467,11 @@ end
 
               GUI_DrawMsgX(obj, gui, 'Loading Snapshot Data...', s, scnt)
 
-              if tonumber(v) == 0.93 then
+              if tostring(v) == '0.93' then
 
                 LoadSnapData(s)
 
-              elseif tonumber(v) >= 0.94 then
+              elseif tostring(v) >= '0.94' then
 
                 LoadSnapData(s, data)
 
@@ -91423,11 +91583,11 @@ end
 
             GUI_DrawMsgX(obj, gui, 'Loading Metalite Data...', s, #strips)
 
-            if tonumber(v) == 0.93 then
+            if tostring(v) == '0.93' then
 
               LoadXXYData(s)
 
-            elseif tonumber(v) >= 0.94 then
+            elseif tostring(v) >= '0.94' then
 
               LoadXXYData(s, data)
 
@@ -91461,14 +91621,14 @@ end
 
           end
 
-          if tonumber(v) == 0.93 then
+          if tostring(v) == '0.93' then
             LoadXXYPathData()
             faders, snapshot_fader, capture_fader = LoadFaders()
             if faders == nil then
               faders = Faders_INIT(true)
             end
 
-          elseif tonumber(v) >= 0.94 then
+          elseif tostring(v) >= '0.94' then
 
             LoadXXYPathData(data)
             faders, snapshot_fader, capture_fader = LoadFaders(data,'',_,true)
