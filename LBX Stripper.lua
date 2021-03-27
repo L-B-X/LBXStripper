@@ -18,7 +18,7 @@
   local xPnl = {}
   local cbi = {}
 
-  lvar.scriptver = '0.94.0201' --Script Version
+  lvar.scriptver = '0.94.0202' --Script Version
 
   lvar.screensize = {x = 1920, y = 1080}
 
@@ -43667,14 +43667,16 @@ end
     local swtab = {}
     for s = 1, #strips do
       for p = 1, lvar.maxpage do
-        local ctls = strips[s][p].controls
-        for c = 1, #ctls do
-          swtab[ctls[c].switcherid or -1] = true
-          swtab[ctls[c].switcher or -1] = true
-        end
-        local gfxx = strips[s][p].graphics
-        for g = 1, #gfxx do
-          swtab[gfxx[g].switcher or -1] = true
+        if strips[s][p] then
+          local ctls = strips[s][p].controls
+          for c = 1, #ctls do
+            swtab[ctls[c].switcherid or -1] = true
+            swtab[ctls[c].switcher or -1] = true
+          end
+          local gfxx = strips[s][p].graphics
+          for g = 1, #gfxx do
+            swtab[gfxx[g].switcher or -1] = true
+          end
         end
       end
     end
@@ -43713,50 +43715,51 @@ end
     for s = 1, #strips do
       for p = 1, lvar.maxpage do
 
-        local ctls = strips[s][p].controls
-        for c = 1, #ctls do
-          local ctl = ctls[c]
-          if ctl.switcherid then
-            ctl.switcherid = newswitchtab_idx[ctl.switcherid]
-          end
-          if ctl.switcher then
-            ctl.switcher = newswitchtab_idx[ctl.switcher]
-          end
-          
-          if ctl.ctltype == 4 then
-            local cd = ctl.cycledata
-            if #cd > 0 then
-              for cdidx = 1, #cd do
-                if cd[cdidx].tsp then
-                  if newswitchtab_idx[cd[cdidx].tsp.swid] then
-                    cd[cdidx].tsp.swid = newswitchtab_idx[cd[cdidx].tsp.swid]
-                  else
-                    cd[cdidx].tsp = nil
+        if strips[s][p] then
+          local ctls = strips[s][p].controls
+          for c = 1, #ctls do
+            local ctl = ctls[c]
+            if ctl.switcherid then
+              ctl.switcherid = newswitchtab_idx[ctl.switcherid]
+            end
+            if ctl.switcher then
+              ctl.switcher = newswitchtab_idx[ctl.switcher]
+            end
+            
+            if ctl.ctltype == 4 then
+              local cd = ctl.cycledata
+              if #cd > 0 then
+                for cdidx = 1, #cd do
+                  if cd[cdidx].tsp then
+                    if newswitchtab_idx[cd[cdidx].tsp.swid] then
+                      cd[cdidx].tsp.swid = newswitchtab_idx[cd[cdidx].tsp.swid]
+                    else
+                      cd[cdidx].tsp = nil
+                    end
                   end
                 end
               end
             end
           end
-        end
-        local gfxx = strips[s][p].graphics
-        for g = 1, #gfxx do
-          if gfxx[g].switcher then
-            gfxx[g].switcher = newswitchtab_idx[gfxx[g].switcher]
-          end
-        end
-        local pop = strips[s][p].pop
-
-        if pop then
-          local popidx = {}
-          for i = 1, #pop do
-            pop[i].swid = newswitchtab_idx[pop[i].swid]
-            if pop[i].swid then
-              popidx[pop[i].swid] = i
+          local gfxx = strips[s][p].graphics
+          for g = 1, #gfxx do
+            if gfxx[g].switcher then
+              gfxx[g].switcher = newswitchtab_idx[gfxx[g].switcher]
             end
           end
-          strips[s][p].popidx = popidx
+          local pop = strips[s][p].pop
+  
+          if pop then
+            local popidx = {}
+            for i = 1, #pop do
+              pop[i].swid = newswitchtab_idx[pop[i].swid]
+              if pop[i].swid then
+                popidx[pop[i].swid] = i
+              end
+            end
+            strips[s][p].popidx = popidx
+          end
         end
-
       end
     end
     if lvar.stripstore then
@@ -65977,7 +65980,7 @@ end
                   local iw, ih = gfx.getimgdim(skin.stripctlbtnslock)
                   local scale = math.min(tb_butt_h/ih,1)
                   if lvar.livemode == 2 and ((strips[strip] and strips[strip][page].lmode) or lvar.dm_fixtrack == tr) 
-                     and (strips[strip][page].lmode == 2 or lvar.dm_fixtrack == tr)
+                     and (strips[strip] and strips[strip][page].lmode == 2 or lvar.dm_fixtrack == tr)
                      and mouse.mx >= obj.sections[500].w - iw*scale - 10 then
                     --padlock
                     if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.2 then
