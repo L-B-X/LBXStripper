@@ -18,7 +18,13 @@
   local xPnl = {}
   local cbi = {}
 
-  lvar.scriptver = '0.94.0202' --Script Version
+  lvar.offline_paramcnt = 3
+  --wet and bypass offsets from last param
+  lvar.pn_byp = 3
+  lvar.pn_wet = 2
+  lvar.pn_delta = 1
+  
+  lvar.scriptver = '0.94.0203' --Script Version
 
   lvar.screensize = {x = 1920, y = 1080}
 
@@ -27,6 +33,22 @@
   
   lvar.sk2data_slots = nil
   lvar.sk2data_assign = nil
+  
+  lvar.sk2overlay = {listoffs = 0, slots = 64, slot = {}, assign = {{}}}
+  lvar.sk2overlay_active = 0
+  lvar.sk2overlay_globalassgrp = 1
+  lvar.sk2overlay_solo = 0
+  lvar.sk2overlay_hud = 1
+  lvar.sk2overlay_hudt = 0
+  
+  lvar.anchor = {}
+  lvar.anchor['bottom_centre'] = 1
+  lvar.anchor['top_centre'] = 2
+  
+  lvar.paramhud = {}
+  lvar.paramhud_idx = {}
+  
+  lvar.superfine = 1/4 --TEST - this will be implemented in control params
   
   lvar.show_slotnameoninactivesk2ctls = 0
   
@@ -683,6 +705,11 @@
               stretch_xy3 = 219,
               stretch_xy4 = 220,
               xpnl_move = 5000,
+              xpnl_resize = 5001,
+              xpnl_resizew = 5002,
+              xpnl_resizeh = 5003,
+              xpnl_resizeh_t = 5004,
+              xp_sk2_assignbtn = 5100,
               dummy = 999
               }
 
@@ -925,6 +952,14 @@
   -------------------------------------------------
   
   -------------------------------------------------------------
+    
+  local function GetTrackGUID(track)
+    if reaper.GetMediaTrackInfo_Value(track, 'IP_TRACKNUMBER') == -1 then
+      return '{00000000-0000-0000-0000-000000000000}'
+    else
+      return reaper.GetTrackGUID(track)
+    end
+  end
   
    local function F_limit(val,min,max)
      if val == nil or min == nil or max == nil then return end
@@ -1150,6 +1185,23 @@
      --return nil
    end
   
+  local function mousewheel_val()
+  
+    if lvar.limitmw then
+      
+      local v = math.ceil(gfx.mouse_wheel/lvar.mousewheel_div)
+      if v < 0 then
+        return math.max(v,-1)
+      else
+        return math.min(v,1)
+      end
+      
+    else
+      return math.ceil(gfx.mouse_wheel/lvar.mousewheel_div)
+    end
+  
+  end
+  
   local function RedrawGUIBitmap(t)
   --DBG('T')
     if t then
@@ -1228,45 +1280,411 @@
   
   ------------------------------------------------------------
   
+  local function GetWWData(txt, w, firstline)
+  
+    txt = string.gsub(txt, '[_]', ' ')
+    local tw, th = gfx.measurestr(txt)
+  
+    local tab = {}
+    tab.txt = txt
+  
+    local stab = split2(txt," ")
+    local ln = 1
+    if firstline then
+      if not tab[ln] then
+        tab[ln] = {w=0}
+      end
+      local sw, sh = gfx.measurestr(firstline)
+      tab[ln].w = sw
+      tab[ln].t = firstline
+      ln = 2
+    end
+    for i = 1, #stab do
+      if not tab[ln] then
+        tab[ln] = {w=0}
+      end
+      local pfx = ''
+      if i > 1 then
+        pfx = ' '
+      end
+      local sw, sh = gfx.measurestr(pfx..stab[i])
+      if sw > w then
+        --too big for line
+        if i == 1 then
+          --display on current line
+          tab[ln].w = tab[ln].w + sw
+          tab[ln].t = (tab[ln].t or '') .. pfx..stab[i]
+          ln = ln + 1
+          tab[ln] = {w=0}
+        else
+          --display on next line
+          ln = ln + 1
+          tab[ln] = {}
+          tab[ln].w = sw
+          tab[ln].t = stab[i]
+        end
+      elseif sw + tab[ln].w > w then
+        --display on next line
+          ln = ln + 1
+          tab[ln] = {}
+          tab[ln].w = sw
+          tab[ln].t = stab[i]
+      else
+        --display on current line
+        tab[ln].w = tab[ln].w + sw
+        tab[ln].t = (tab[ln].t or '').. pfx..stab[i]
+      end
+  
+    end
+  
+    return tab, th
+  
+  end
+
+  local function GetHUDIdx(ctl)
+    local idxx = ctl.c_id
+    if ctl.ctlcat == ctlcats.fxparam then
+      idxx = ctl.fxguid..'|'..ctl.param
+    end
+    return idxx
+  end
+  
+  local function SetHUD(ctl)
+    local idx = lvar.paramhud_idx[GetHUDIdx(ctl)]
+    if not idx then
+      idx = #lvar.paramhud + 1
+      lvar.paramhud[idx] = {}
+      local idxx = GetHUDIdx(ctl)
+      lvar.paramhud_idx[idxx] = idx
+    end
+    local ph = lvar.paramhud[idx]
+    ph.ctl = ctl
+    if (ctl.ctlname_override or '') ~= '' then
+      ph.name = ctl.ctlname_override
+    else
+      ph.name = ctl.param_info.paramname
+    end
+    ph.timeout = reaper.time_precise() + 2
+    ph.alpha = nil
+    xPnl.HUD.updategui = true
+  end
+  
   -------------------------------------------------
   -- XPANELS
   -------------------------------------------------
   
-  xPnl.Nav = {name = 'Nav', x = 0, y = 400, w = 300, h = 400, iidx = 827}
+  xPnl.SK2 = {name = 'SK2', x = 0, y = 400, ow = 660, oh = 200, minw = 660, minh = 200, iidx = 827, resize = true}
+  xPnl.HUD = {name = 'HUD', x = 0, y = 0, ow = 200, oh = 100, minw = 150, minh = 100, iidx = 828, resize = false, clickthrough = 1}
+  
   local xPnlIdx = {}
   lvar.xPnlOffset = 1000000
   lvar.xPnlCnt = 0
   
-  function xPnl.Nav:init()
-    self.visible = true
-    self.title = 'Navigate'
+  function xPnl.HUD:init()
+    self.title = 'PARAMETER HUD'
     local idx = #xPnlIdx + 1
     self.guiobj = {}
     self.updategui = true
+    local thh = math.ceil(gui.winsz.pnltit*pnl_scale)
+    self.minh = thh
+    self.w = math.max(math.ceil(self.ow * pnl_scale),self.minw)
+    self.h = math.max(math.ceil(self.oh * pnl_scale),self.minh)
+    self.internalh = self.h - thh
+    --self.anchor = lvar.anchor['bottom_centre']
+    self.obj = {}
+    self.obj[1] = {x = 10, y = thh+10, w = self.w-20, h = self.h-thh-20}
+    
+    gfx.setimgdim(self.iidx,-1,-1)
     gfx.setimgdim(self.iidx,self.w,self.h)
     
     return self
   end
   
-  function xPnl.Nav:draw()
+  function xPnl.HUD:draw()
     gfx.dest = self.iidx
-    GUI_DrawPanel(self, nil, self.title)
+    local alpha = 0.25
+    local tbalpha = 0.25
+    local thh = math.ceil(gui.winsz.pnltit*pnl_scale)
+    local rh = 20
+    local h = 0
+    local cnt = #lvar.paramhud
+    if cnt > 0 then
+      h = cnt*rh            
+    end
+    self.h = thh+h+20
+    self.w = 260
     
-    self.updategui = false
+    gfx.setimgdim(self.iidx,-1,-1)
+    gfx.setimgdim(self.iidx,self.w,self.h)
+
+    GUI_DrawPanel(self, nil, self.title, nil, alpha, tbalpha)
+  
+    local xywh1 = {x = 10, y = thh+10, w = self.w-20, h = rh}
+    local c = gui.color.white
+    local cv = gui.color.yellow
+    for i = 1, cnt do
+      local ctl = lvar.paramhud[i].ctl
+      if ctl then
+        local name = lvar.paramhud[i].name
+        local val = ctl.dval
+        GUI_Str(gui, xywh1, name, 4, c, -4 + gui.fontsz.lst + lst_fontscale, lvar.paramhud[i].alpha or 1, '0 0 0', gui.fontnm.lst, gui.fontflag.lst)
+        GUI_Str(gui, xywh1, (val or ''), 6, cv, -4 + gui.fontsz.lst + lst_fontscale, lvar.paramhud[i].alpha or 1, '0 0 0', gui.fontnm.lst, gui.fontflag.lst)
+        xywh1.y = xywh1.y+rh
+      end
+    end
+    
   end
   
-  function xPnl.Nav:onclick(x,y)
-
+  function xPnl.HUD:onclick(x,y)
+  
     local LB, RB = mouse.LB, mouse.RB
     
     lvar.xPnlSel = self
     if LB then
-      if y < tb_butt_h then
-        mouse.context = contexts.xpnl_move
-        lvar.movexPnl = {xoff = x, yoff = y}
+      mouse.context = contexts.xpnl_move
+      lvar.movexPnl = {xoff = x, yoff = y}
+    end
+  end
+  
+  function xPnl.SK2:init()
+    --self.visible = true
+    self.title = 'SK2'
+    local idx = #xPnlIdx + 1
+    self.guiobj = {}
+    self.updategui = true
+    local thh = math.ceil(gui.winsz.pnltit*pnl_scale)
+    self.minh = thh
+    self.w = math.max(math.ceil(self.ow * pnl_scale),self.minw)
+    self.h = math.max(math.ceil(self.oh * pnl_scale),self.minh)
+    self.internalh = self.h - thh
+    self.anchor = lvar.anchor['bottom_centre']
+    self.obj = {}
+    
+    self.cols = 8
+    self.bsz = ((self.w-10) / self.cols)
+    self.rows = math.min(math.floor((self.internalh-10) / self.bsz),8)
+ 
+    self.obj[1] = {x = 10, y = thh+10, w = self.w-20, h = self.rows*self.bsz}
+    self.obj[2] = {x = 10, y = 3, w = self.bsz, h = thh-6}
+    self.obj[3] = {x = self.obj[2].x+self.obj[2].w+10, y = 3, w = self.bsz, h = thh-6}
+    self.obj[4] = {x = self.obj[3].x+self.obj[3].w+10, y = 3, w = 40, h = thh-6}
+    self.obj[5] = {x = self.obj[4].x+self.obj[4].w+10, y = 3, w = 40, h = thh-6}
+    
+    self.h = math.max(math.floor(self.obj[1].y+self.obj[1].h),self.minh)
+    --self.oh = math.floor(self.h/pnl_scale)
+    
+    gfx.setimgdim(self.iidx,-1,-1)
+    gfx.setimgdim(self.iidx,self.w,self.h)
+    
+    self.bsz = math.floor(self.bsz - 10)
+    
+    return self
+  end
+  
+  function xPnl.SK2:draw()
+    gfx.dest = self.iidx
+    local alpha = 0.75
+    local talpha = 1
+    GUI_DrawPanel(self, nil, self.title, nil, alpha, talpha)
+    local o1 = self.obj[1]
+    --gfx.rect(o1.x,o1.y,o1.w,o1.h,0)
+    local max = (lvar.sk2overlay.slots / self.cols) - self.rows
+    lvar.sk2overlay.listoffs = F_limit(lvar.sk2overlay.listoffs,0,max)
+    
+    for c = 0, self.cols-1 do
+      for r = 0, self.rows-1 do
+        xywh = {x = o1.x + c*(self.bsz+10), y = o1.y + r*(self.bsz+10), w = self.bsz, h = self.bsz}
+        local idx = ((r+lvar.sk2overlay.listoffs)*self.cols + c + 1)
+        
+        local txt = string.format('%i',idx)
+        local cc = gui.color.black
+        local ccc
+        if lvar.sk2overlay.assign[lvar.sk2overlay_globalassgrp] and lvar.sk2overlay.assign[lvar.sk2overlay_globalassgrp][idx] then
+          txt = lvar.sk2overlay.assign[lvar.sk2overlay_globalassgrp][idx].paramname
+          local cidx = lvar.sk2overlay.assign[lvar.sk2overlay_globalassgrp][idx].sscolor
+          if tab_xtouch_colors[cidx] then
+            local xt = tab_xtouch_colors[cidx]
+            ccc = xt.r + (xt.g << 8) + (xt.b << 16)
+            cc = xt.tc or xt.c
+          end
+        elseif lvar.sk2overlay.slot[idx] then
+          txt = --[['['..lvar.sk2overlay.slot[idx].dev..'] '..]]lvar.sk2overlay.slot[idx].name
+          cc = '64 64 64'
+        end
+        
+        GUI_StrFontOnly(gui,gui.fontsz.butt,gui.fontnm.butt,gui.fontflag.butt)
+        local tab, th = GetWWData(txt, self.bsz-10)
+        if not tab[#tab].t then
+          tab[#tab] = nil
+        end
+        GUI_DrawButtonWW(gui, tab, th, 4, xywh, -1, cc, true, nil, nil, 0, nil, nil, nil, nil, nil, ccc, cc)
+
+      end
+    end
+    
+    local c = -1
+    if lvar.sk2overlay_active == 1 then
+      c = -8   
+    end
+    GUI_DrawButton(gui, 'ENABLE', self.obj[2], c, gui.color.white, true, '', false, gui.fontsz.butt)
+    GUI_DrawButton(gui, 'GLOB GRP '..string.format('%i',lvar.sk2overlay_globalassgrp), self.obj[3], c, gui.color.white, true, '', false, gui.fontsz.butt)
+    
+    local c = -1
+    if lvar.sk2overlay_solo == 1 then
+      c = -8   
+    end
+    GUI_DrawButton(gui, 'SOLO', self.obj[4], c, gui.color.white, true, '', false, gui.fontsz.butt)
+    local c = -1
+    if lvar.sk2overlay_hud > 0 then
+      c = -8   
+    end
+    GUI_DrawButton(gui, 'HUD', self.obj[5], c, gui.color.white, true, '', false, gui.fontsz.butt)
+    
+    self.updategui = false
+  end
+
+  function xPnl.SK2:onclick(x,y)
+  
+    local LB, RB = mouse.LB, mouse.RB
+    
+    lvar.xPnlSel = self
+    if LB then
+      if MOUSE_over(self.obj[2],x,y) then
+        lvar.sk2overlay_active = 1-lvar.sk2overlay_active
+        self.updategui = true
+        SendSK2Data_Enable(lvar.sk2overlay_active)
+      elseif MOUSE_over(self.obj[3],x,y) then
+        lvar.sk2overlay_globalassgrp = math.min(lvar.sk2overlay_globalassgrp+1,32)
+        if lvar.sk2overlay_active == 1 then
+          SendSK2Data()
+        end
+        local xpnl = lvar.xPnlSel
+        xpnl.updategui = true
+      elseif MOUSE_over(self.obj[4],x,y) then
+        lvar.sk2overlay_solo = 1-lvar.sk2overlay_solo
+        if lvar.sk2overlay_active == 1 then
+          SendSK2Data()
+        end
+        local xpnl = lvar.xPnlSel
+        xpnl.updategui = true
+        SK2SaveSlots()
+        
+      elseif MOUSE_over(self.obj[5],x,y) then
+        lvar.sk2overlay_hud = 1-lvar.sk2overlay_hud
+        local xpnl = lvar.xPnlSel
+        xpnl.updategui = true
+        SK2SaveSlots()
+        
+      elseif y < 10 then
+        if mouse.lastLBclicktime and (reaper.time_precise()-mouse.lastLBclicktime) < 0.2 then
+          if self.rows <= 0 then
+            self.oh = self.ohh or 200
+            self:init()
+          else
+            local thh = math.ceil(gui.winsz.pnltit*pnl_scale)
+            self.ohh = self.oh
+            self.oh = thh
+            self:init()
+          end
+          RedrawGUIBitmap()
+        else
+          mouse.context = contexts.xpnl_resizeh_t
+          lvar.resizexPnl = {xoff = x, yoff = y, xy = self.y, ow = self.ow, oh = self.oh, w = self.w, h = self.h, wdiff = 0, hdiff = 0}
+        end
+      elseif y < gui.winsz.pnltit*pnl_scale then
+        if mouse.lastLBclicktime and (reaper.time_precise()-mouse.lastLBclicktime) < 0.2 then
+          if self.rows <= 0 then
+            self.oh = self.ohh or 200
+            self:init()
+          else
+            local thh = math.ceil(gui.winsz.pnltit*pnl_scale)
+            self.ohh = self.oh
+            self.oh = thh
+            self:init()
+          end
+          RedrawGUIBitmap()
+        else
+          if self.anchor == lvar.anchor['bottom_centre'] then
+            mouse.context = contexts.xpnl_resizeh_t
+            lvar.resizexPnl = {xoff = x, yoff = y, xy = self.y, ow = self.ow, oh = self.oh, w = self.w, h = self.h, wdiff = 0, hdiff = 0}
+          else
+            mouse.context = contexts.xpnl_move
+            lvar.movexPnl = {xoff = x, yoff = y}
+          end
+        end
+      elseif self.resize and x > self.w-10 and y > self.h-10 then
+        mouse.context = contexts.xpnl_resize
+        lvar.resizexPnl = {xoff = x, yoff = y, ow = self.ow, oh = self.oh, w = self.w, h = self.h, wdiff = 0, hdiff = 0}
+      elseif self.resize and x > self.w-10 then
+        mouse.context = contexts.xpnl_resizew
+        lvar.resizexPnl = {xoff = x, yoff = y, ow = self.ow, oh = self.oh, w = self.w, h = self.h, wdiff = 0, hdiff = 0}
+      elseif self.resize and y > self.h-10 then
+        mouse.context = contexts.xpnl_resizeh
+        lvar.resizexPnl = {xoff = x, yoff = y, ow = self.ow, oh = self.oh, w = self.w, h = self.h, wdiff = 0, hdiff = 0}
+      elseif MOUSE_over(self.obj[1],x,y) then
+      
+        local c = math.floor((x-self.obj[1].x) / (self.bsz+10))
+        local r = math.floor((y-self.obj[1].y) / (self.bsz+10))
+        local btn = (r+lvar.sk2overlay.listoffs)*self.cols + c + 1
+      
+        if mouse.alt then
+          lvar.sk2overlay.assign[lvar.sk2overlay_globalassgrp][btn] = nil
+          
+          local xpnl = lvar.xPnlSel
+          xpnl.updategui = true
+          
+          SendSK2Data()
+        elseif mouse.shift then
+          if lvar.sk2overlay.assign[lvar.sk2overlay_globalassgrp][btn] then
+            lvar.sk2overlay.assign[lvar.sk2overlay_globalassgrp][btn].sscolor = lvar.sk2overlay.assign[lvar.sk2overlay_globalassgrp][btn].sscolor + 1
+            if lvar.sk2overlay.assign[lvar.sk2overlay_globalassgrp][btn].sscolor > #tab_xtouch_colors then
+              lvar.sk2overlay.assign[lvar.sk2overlay_globalassgrp][btn].sscolor = 0
+            end
+            SendSK2Data()
+            --tab_xtouch_colors
+          end
+        else
+          mouse.context = contexts.xp_sk2_assignbtn
+          lvar.xp_sk2_assign = {x = mouse.mx, y = mouse.my, btn = btn}
+        end
       end
     elseif RB then
-      HideXPnl(self.name)
+      if MOUSE_over(self.obj[3],x,y) then
+        lvar.sk2overlay_globalassgrp = math.max(lvar.sk2overlay_globalassgrp-1,1)
+        if lvar.sk2overlay_active == 1 then
+          SendSK2Data()
+        end
+        local xpnl = lvar.xPnlSel
+        xpnl.updategui = true
+      elseif MOUSE_over(self.obj[5],x,y) then
+        lvar.sk2overlay_hudt = lvar.sk2overlay_hudt+1
+        if lvar.sk2overlay_hudt > 2 then
+          lvar.sk2overlay_hudt = 0
+        end
+        local xpnl = lvar.xPnlSel
+        xpnl.updategui = true
+        SK2SaveSlots()
+      elseif y < gui.winsz.pnltit*pnl_scale then
+        HideXPnl(self.name)
+      elseif MOUSE_over(self.obj[1],x,y) then
+        local c = math.floor((x-self.obj[1].x) / (self.bsz+10))
+        local r = math.floor((y-self.obj[1].y) / (self.bsz+10))
+        local btn = (r+lvar.sk2overlay.listoffs)*self.cols + c + 1
+      
+        if mouse.shift then
+          if lvar.sk2overlay.assign[lvar.sk2overlay_globalassgrp][btn] then
+            lvar.sk2overlay.assign[lvar.sk2overlay_globalassgrp][btn].sscolor = lvar.sk2overlay.assign[lvar.sk2overlay_globalassgrp][btn].sscolor - 1
+            if lvar.sk2overlay.assign[lvar.sk2overlay_globalassgrp][btn].sscolor < 0 then
+              lvar.sk2overlay.assign[lvar.sk2overlay_globalassgrp][btn].sscolor = #tab_xtouch_colors
+            end
+            SendSK2Data()
+            --tab_xtouch_colors
+          end
+        else
+        
+          SK2DropDown(btn)
+        end
+      end
     end
     if not mouse.context then
       --prevent mouse click activating anything else
@@ -1274,15 +1692,33 @@
     end
   end
   
+  function xPnl.SK2:onwheel(x,y)
+    lvar.xPnlSel = self
+    local v = mousewheel_val()
+    
+    if MOUSE_over(self.obj[1],x,y) then
+    
+      local noffs = lvar.sk2overlay.listoffs - v
+      local max = (lvar.sk2overlay.slots / lvar.xPnlSel.cols) - lvar.xPnlSel.rows
+      lvar.sk2overlay.listoffs = F_limit(noffs,0,max)
+      lvar.xPnlSel.updategui = true
+    end
+    
+    gfx.mouse_wheel = 0
+  end
+  
   function ShowXPnl(name)
     if xPnl[name] and not xPnlIdx[name] then
+      xPnl[name].visible = true
       lvar.xPnlCnt = lvar.xPnlCnt + 1
       xPnlIdx[lvar.xPnlCnt], xPnlIdx[name] = xPnl[name]:init(), lvar.xPnlCnt
+      RedrawGUIBitmap()
     end
   end
-
+  
   function HideXPnl(name)
     if xPnl[name] and xPnlIdx[name] then
+      xPnl[name].visible = false
       local ntab = {}
       local cnt = 0
       for i = 1, lvar.xPnlCnt do
@@ -1298,27 +1734,137 @@
     end
   end
   
-  function InitXPnls()
+  function InitXPnls(noload)
+    
+    if not noload then
+      XpnlLoadInfo()
+    end
+    
     for a, pnl in pairs(xPnl) do
       pnl:init()
     end
   end
   
+  function XpnlSaveInfo()
+    local str = ''
+    for a, pnl in pairs(xPnl) do
+      str = str..'['..a..'|visible]'..tostring(pnl.visible)..'\n'
+      str = str..'['..a..'|x]'..pnl.x..'\n'
+      str = str..'['..a..'|y]'..pnl.y..'\n'
+      str = str..'['..a..'|ow]'..pnl.ow..'\n'
+      str = str..'['..a..'|oh]'..pnl.oh..'\n'
+    end
+    local fn = paths.resource_path..'xpnlinfo.lbx'
+    file=io.open(fn,"w")
+    file:write(str)
+    file:close()
+  end
+  
+  function XpnlLoadInfo()
+  
+    local fn = paths.resource_path..'xpnlinfo.lbx'
+    if reaper.file_exists(fn) then
+      
+      local match = string.match
+      local data = {}
+      local flines = io.lines
+      for line in flines(fn) do
+        local pnlname, key, val = match(line,'%[(.-)|(.-)%](.*)')
+        if pnlname then
+          if xPnl[pnlname] then
+            if tonumber(val) then
+              xPnl[pnlname][key] = tonumber(val)
+            elseif val == 'true' or val == 'false' then
+              xPnl[pnlname][key] = tobool(val)
+            else
+              xPnl[pnlname][key] = val
+            end
+          end
+        end
+      end
+      
+      for a, b in pairs(xPnl) do
+        if b.visible then
+          ShowXPnl(b.name)
+        end
+      end
+    end
+  end
+  
   function DrawXPnls()
   
-    gfx.dest = -1
+    if mode ~= 0 then return end
+    
+    if resize_display == true then
+      InitXPnls(true)
+    end
+    
     for i = 1, #xPnlIdx do
     
       local xpnl = xPnlIdx[i]
       if xpnl and xpnl.draw then
         if xpnl.updategui then
+          gfx.setimgdim(xpnl.iidx,-1,-1)
+          gfx.setimgdim(xpnl.iidx,xpnl.w,xpnl.h)
           xpnl:draw()
         end
-        
         if xpnl.visible then
+          gfx.dest = -1
+          gfx.a = 1
+          if xpnl.anchor then
+            local o10 = obj.sections[10]
+            if xpnl.anchor == lvar.anchor['bottom_centre'] then
+              xpnl.x = o10.x + math.floor(o10.w/2 - xpnl.w/2)
+              xpnl.y = o10.y + o10.h - xpnl.h
+            elseif xpnl.anchor == lvar.anchor['bottom_centre'] then
+              xpnl.x = o10.x + math.floor(o10.w/2 - xpnl.w/2)
+              xpnl.y = o10.y
+            end
+          end
+          local x,y = xpnl.x, xpnl.y
           gfx.blit(xpnl.iidx, 1, 0, 0, 0, xpnl.w, xpnl.h, xpnl.x, xpnl.y)
         end
       end
+    end
+  
+    gfx.dest = -1
+    
+    local xpnl = lvar.xPnlSel
+    if lvar.xp_sk2_assign then
+      f_Get_SSV('0 0 0')
+      gfx.a = 0.5
+      local y = lvar.xp_sk2_assign.y-80
+      gfx.rect(lvar.xp_sk2_assign.x-50,y,100,100,1)
+      local c
+      local txt = ''
+      if lvar.xp_sk2_assign.assignctl == -1 then
+        f_Get_SSV('255 0 0')
+        c = '255 0 0'
+      elseif lvar.xp_sk2_assign.assignctl then
+        c = '0 255 0'
+        local ctl = lvar.xp_sk2_assign.assignctl
+        if (ctl.ctlname_override or '') ~= '' then
+          txt = ctl.ctlname_override
+        else
+          txt = ctl.param_info.paramname
+        end
+      else
+        c = '255 255 255'
+      end
+      gfx.a = 1
+      local xywh = {x = lvar.xp_sk2_assign.x-50, y = y, w = 100, h = 100}
+      local txt2 = 'SK2 Assign: '..txt
+      GUI_StrFontOnly(gui,gui.fontsz.butt,gui.fontnm.butt,gui.fontflag.butt)
+      local tab, th = GetWWData(txt2, 100)
+      if not tab[#tab].t then
+        tab[#tab] = nil
+      end
+      gfx.a = 0.5
+      GUI_DrawButtonWW(gui, tab, th, 4, xywh, -5, c, true, nil, nil, 0)
+      f_Get_SSV(c)
+      gfx.rect(lvar.xp_sk2_assign.x-50,y,100,100,0)
+  
+      --GUI_textC(gui,xywh,txt2,c,-2 +((lvar.zoom-1)*8))
     end
   
   end
@@ -1326,13 +1872,82 @@
   function A_Run_XPnlContext()
   
     mouse.xpnlcontext = mouse.context
-    if mouse.context == contexts.xpnl_move then
-      local xpnl = lvar.xPnlSel
-      if xpnl then
-        if mouse.mx ~= xpnl.x + lvar.movexPnl.xoff or mouse.my ~= xpnl.y + lvar.movexPnl.yoff then
-          xpnl.x = F_limit(mouse.mx - lvar.movexPnl.xoff,0,gfx1.main_w-xpnl.w)
-          xpnl.y = F_limit(mouse.my - lvar.movexPnl.yoff,0,gfx1.main_h-xpnl.h)
-          --lupd.update_surface = true
+    if mouse.context < 5100 then
+      if mouse.context == contexts.xpnl_move then
+        local xpnl = lvar.xPnlSel
+        if xpnl then
+          if mouse.mx ~= xpnl.x + lvar.movexPnl.xoff or mouse.my ~= xpnl.y + lvar.movexPnl.yoff then
+            xpnl.x = F_limit(mouse.mx - lvar.movexPnl.xoff,0,gfx1.main_w-xpnl.w)
+            xpnl.y = F_limit(mouse.my - lvar.movexPnl.yoff,0,gfx1.main_h-xpnl.h)
+          end
+        end
+      elseif mouse.context == contexts.xpnl_resize then
+        local xpnl = lvar.xPnlSel
+        if xpnl then
+          local wdiff = (mouse.mx - (xpnl.x + lvar.resizexPnl.xoff))
+          local hdiff = (mouse.my - (xpnl.y + lvar.resizexPnl.yoff))
+          if wdiff ~= lvar.resizexPnl.wdiff or hdiff ~= lvar.resizexPnl.hdiff then
+            lvar.resizexPnl.wdiff = wdiff
+            lvar.resizexPnl.hdiff = hdiff
+            xpnl.ow = math.floor((lvar.resizexPnl.w + wdiff)/pnl_scale)
+            xpnl.oh = math.floor((lvar.resizexPnl.h + hdiff)/pnl_scale)
+            xpnl:init()
+          end
+        end
+      elseif mouse.context == contexts.xpnl_resizew then
+        local xpnl = lvar.xPnlSel
+        if xpnl then
+          local wdiff = (mouse.mx - (xpnl.x + lvar.resizexPnl.xoff))
+          if wdiff ~= lvar.resizexPnl.wdiff then
+            lvar.resizexPnl.wdiff = wdiff
+            lvar.resizexPnl.hdiff = hdiff
+            xpnl.ow = math.floor((lvar.resizexPnl.w + wdiff)/pnl_scale)
+            xpnl:init()
+          end
+        end
+      elseif mouse.context == contexts.xpnl_resizeh then
+        local xpnl = lvar.xPnlSel
+        if xpnl then
+          local hdiff = (mouse.my - (xpnl.y + lvar.resizexPnl.yoff))
+          if hdiff ~= lvar.resizexPnl.hdiff then
+            lvar.resizexPnl.wdiff = wdiff
+            lvar.resizexPnl.hdiff = hdiff
+            xpnl.oh = math.floor((lvar.resizexPnl.h + hdiff)/pnl_scale)
+            xpnl:init()
+          end
+        end
+      elseif mouse.context == contexts.xpnl_resizeh_t then
+        local xpnl = lvar.xPnlSel
+        if xpnl then
+          local hdiff = (lvar.resizexPnl.xy + lvar.resizexPnl.yoff)-mouse.my
+          if hdiff ~= lvar.resizexPnl.hdiff then
+            lvar.resizexPnl.wdiff = wdiff
+            lvar.resizexPnl.hdiff = hdiff
+            local ob = xpnl.y+xpnl.h
+            xpnl.oh = math.floor((lvar.resizexPnl.h + hdiff)/pnl_scale)
+            xpnl:init()
+            xpnl.y = ob-xpnl.h            
+          end
+        end
+      end
+      
+    elseif mouse.context < 5120 then
+      if mouse.context == contexts.xp_sk2_assignbtn then
+        lvar.xp_sk2_assign.x = mouse.mx
+        lvar.xp_sk2_assign.y = mouse.my
+        lvar.xp_sk2_assign.assignctl = nil
+        if CheckOver10_gui() then
+          local strip = tracks[track_select].strip
+          local c = GetControlAtXY(strip, page, mouse.mx, mouse.my, true)
+          if c then
+            local ctl = strips[strip][page].controls[c]
+            if ctl and ctl.ctlcat == ctlcats.fxparam then
+              lvar.xp_sk2_assign.assignctl = ctl
+              lvar.xp_sk2_assign.assignctl_c = c
+            else
+              lvar.xp_sk2_assign.assignctl = -1
+            end
+          end
         end
       end
     end
@@ -1341,12 +1956,320 @@
   
   function A_Run_XPnlContext_End()
   
-    if mouse.xpnlcontext == contexts.xpnl_move then
+    if mouse.xpnlcontext == contexts.xpnl_move or 
+       mouse.xpnlcontext == contexts.xpnl_resize or 
+       mouse.xpnlcontext == contexts.xpnl_resizew or 
+       mouse.xpnlcontext == contexts.xpnl_resizeh or 
+       mouse.xpnlcontext == contexts.xpnl_resizeh_t then
       RedrawGUIBitmap()
+    elseif mouse.xpnlcontext == contexts.xp_sk2_assignbtn then
+      if lvar.xp_sk2_assign.assignctl and lvar.xp_sk2_assign.assignctl ~= -1 then
+        local btn = lvar.xp_sk2_assign.btn
+        local ctl = lvar.xp_sk2_assign.assignctl
+        if not lvar.sk2overlay.assign[lvar.sk2overlay_globalassgrp] then
+          lvar.sk2overlay.assign[lvar.sk2overlay_globalassgrp] = {}
+        end
+        if not lvar.sk2overlay.assign[lvar.sk2overlay_globalassgrp][btn] then
+          lvar.sk2overlay.assign[lvar.sk2overlay_globalassgrp][btn] = {}
+        end
+        local tguid, m
+        if lvar.livemode == 2 then
+          tguid = lvar.dynamicmode_guid
+          m = 2
+        else
+          m = 0
+          tguid = GetTrackGUID(GetTrack(tracks[track_select].tracknum))
+        end
+        
+        lvar.sk2overlay.assign[lvar.sk2overlay_globalassgrp][btn].mode = m
+        lvar.sk2overlay.assign[lvar.sk2overlay_globalassgrp][btn].tguid = tguid
+        lvar.sk2overlay.assign[lvar.sk2overlay_globalassgrp][btn].cid = ctl.c_id
+        lvar.sk2overlay.assign[lvar.sk2overlay_globalassgrp][btn].c = lvar.xp_sk2_assign.assignctl_c
+        lvar.sk2overlay.assign[lvar.sk2overlay_globalassgrp][btn].fxguid = ctl.fxguid
+        lvar.sk2overlay.assign[lvar.sk2overlay_globalassgrp][btn].fxparam = ctl.param_info.paramnum
+        lvar.sk2overlay.assign[lvar.sk2overlay_globalassgrp][btn].paramname = ctl.param_info.paramname
+        lvar.sk2overlay.assign[lvar.sk2overlay_globalassgrp][btn].sscolor = lvar.sk2overlay.assign[lvar.sk2overlay_globalassgrp][btn].sscolor or 7
+        
+        local xpnl = lvar.xPnlSel
+        xpnl.updategui = true
+        
+        SendSK2Data()
+      end
+      lvar.xp_sk2_assign = nil
     end
   
     mouse.xpnlcontext = nil
   end
+  
+  -------------------------------------------------------
+  function CheckAllCids()
+  
+    local ccnt = 0
+    
+    local cidlist = {}
+    cidlist.trguids = {}
+    for t = -1, reaper.CountTracks(0)-1 do
+      local track = GetTrack(t)
+      cidlist.trguids[GetTrackGUID(track)] = t
+    end
+    
+    for s = 1, #strips do
+      --DBG('tguid = '..strips[s].track.guid..'='..tostring(cidlist.trguids[strips[s].track.guid])..'='..strips[s].track.tracknum)
+      for p = 1, lvar.maxpage do
+        local ctls = strips[s][p].controls
+        for c = 1, #ctls do
+          if cidlist[ctls[c].c_id] then
+            --cidlist[ctls[c].c_id] = cidlist[ctls[c].c_id] + 1
+            --DBG('DUP FOUND '..c)
+          else
+            ccnt = ccnt + 1
+            cidlist[ctls[c].c_id] = {type = 0, 
+                                     ctl = ctls[c], 
+                                     ctls = ctls, 
+                                     striptab = strips[s][p], 
+                                     trackguid = strips[s].track.guid,
+                                     snaptab = snapshots[s][p]}
+          end
+          
+        end
+      end
+    end
+    for a,b in pairs(lvar.stripstore) do
+      if b then
+        --DBG('*tguid = '..a..'='..tostring(cidlist.trguids[a]))
+        local ctls = b.controls
+        for c = 1, #ctls do
+          if cidlist[ctls[c].c_id] and a ~= cidlist[ctls[c].c_id].trackguid then
+            --cidlist[ctls[c].c_id] = ctls[c]
+            --DBG('DM DUP FOUND '..c..' '..a..'='..tostring(cidlist.trguids[a])..'  '..cidlist[ctls[c].c_id].trackguid..'='..tostring(cidlist.trguids[cidlist[ctls[c].c_id].trackguid]))
+          elseif cidlist[ctls[c].c_id] then
+          
+          else
+            ccnt = ccnt + 1
+            cidlist[ctls[c].c_id] = {type = 1, 
+                                     ctl = ctls[c], 
+                                     ctls = ctls, 
+                                     striptab = b,
+                                     trackguid = a,
+                                     snaptab = lvar.snapstore[a]}
+          end
+        end
+      end
+    end
+    
+
+    --DBG('SCANNED CIDS: '..ccnt)
+    
+    return cidlist 
+    
+  end
+  
+  
+  --[[function MonitorSK2Links()
+    local gmem_rd = reaper.gmem_read
+    reaper.gmem_attach('LBX_SK2_SharedMem')
+    for a, b in pairs(lvar.sk2overlay.assign) do
+      if b then
+      
+        for btn, tab in pairs(b) do
+          local map = lvar.sk2overlay.slot[btn].map
+          local sk2slot = lvar.sk2data_slotsidx[map]
+          local val = gmem_rd(lvar.gm_fb.fader_val + sk2slot) / 16383
+          local ctl = lvar.cids[tab.cid]
+          
+          A_SetParam()
+        end
+      end
+    end
+  end]]
+  
+  function SaveSK2Assign(file)
+    --lvar.sk2overlay_assigntab = {'fxguid','fxparam','paramname','sscolor'}
+    if file then
+      for a, b in pairs(lvar.sk2overlay.assign) do
+        if b then
+        
+          for btn, tab in pairs(b) do
+            local str = '[SK2OL_'..a..'_'..btn..']'
+            for i = 1, #lvar.sk2overlay_assigntab do
+              if i > 1 then
+                str = str..'|'
+              end
+              str = str..(tab[lvar.sk2overlay_assigntab[i]] or '')
+            end
+            file:write(str..'\n')
+          end
+        end
+      end
+    end
+  end
+  
+  function LoadSK2Assign(data)
+    --lvar.sk2overlay_assigntab = {'mode','cid','c','tguid','fxguid','fxparam','paramname','sscolor'}
+    lvar.sk2overlay_assigntab = {'fxguid','fxparam','paramname','sscolor'}
+    local atab = lvar.sk2overlay_assigntab
+    local loadmatchstr = '(.-)'
+    for i = 2, #atab do
+      if i == #atab then
+        loadmatchstr = loadmatchstr .. '|(.*)'
+      else
+        loadmatchstr = loadmatchstr .. '|(.-)'
+      end
+    end
+    for g = 1, 32 do
+      for a = 1, 64 do
+        local key = 'SK2OL_'..g..'_'..a
+        if data[key] then
+          local loadtab = {string.match(data[key],loadmatchstr)}
+          if loadtab and loadtab[1] then
+            if not lvar.sk2overlay.assign[g] then
+              lvar.sk2overlay.assign[g] = {}
+            end
+            
+            lvar.sk2overlay.assign[g][a] = {}
+            for i = 1, #loadtab do
+              if tonumber(loadtab[i]) then
+                lvar.sk2overlay.assign[g][a][atab[i]] = tonumber(loadtab[i])
+              else
+                lvar.sk2overlay.assign[g][a][atab[i]] = loadtab[i]
+              end
+            end
+          end
+        end
+      end
+    end
+  
+  end
+  
+  function SK2SaveSlots()
+    local str = ''
+    str = '[SOLO]'..string.format('%i',lvar.sk2overlay_solo)..'\n'
+    str = str..'[HUD]'..string.format('%i',lvar.sk2overlay_hud)..'\n'
+    str = str..'[HUDTYPE]'..string.format('%i',lvar.sk2overlay_hudt)..'\n'
+    for s = 1, lvar.sk2overlay.slots do
+      if lvar.sk2overlay.slot[s] then
+        for a, b in pairs(lvar.sk2overlay.slot[s]) do
+          local key = '['..s..'_'..a..']'..b..'\n'
+          str = str..key
+        end
+      end
+    end
+    local fn = paths.resource_path..'sk2slotdata.lbx'
+    file=io.open(fn,"w")
+    file:write(str)
+    file:close()
+    
+  end
+
+  function SK2LoadSlots()
+
+    local fn = paths.resource_path..'sk2slotdata.lbx'
+    if reaper.file_exists(fn) then
+      
+      local match = string.match
+      local data = {}
+      local flines = io.lines
+      for line in flines(fn) do
+        local idx, key, val = match(line,'%[(%d+)_(.-)%](.*)')
+        --DBG(tostring(idx)..'  '..tostring(key)..'  '..tostring(val))
+        idx = tonumber(idx)
+        if idx then
+          if not lvar.sk2overlay.slot[idx] then
+            lvar.sk2overlay.slot[idx] = {}
+          end
+          if tonumber(val) then
+            lvar.sk2overlay.slot[idx][key] = tonumber(val)
+          else
+            lvar.sk2overlay.slot[idx][key] = val
+          end
+        else
+          local key, val = match(line,'%[(.-)%](.*)')
+          if key == 'SOLO' then
+            lvar.sk2overlay_solo = tonumber(val)
+          elseif key == 'HUD' then
+            lvar.sk2overlay_hud = tonumber(val)
+          elseif key == 'HUDTYPE' then
+            lvar.sk2overlay_hudt = tonumber(val)
+          end
+        end
+      end
+    end
+  end
+  
+  function SendSK2Data()
+  
+    local sendstr = ''
+    sendstr = sendstr..'[SOLO]'..string.format('%i',lvar.sk2overlay_solo)..'\n'
+    for s = 1, lvar.sk2overlay.slots do
+    
+      if lvar.sk2overlay.slot[s] then
+        
+        local assstring = ''
+        local slotstr = lvar.sk2overlay.slot[s].dev..'|'..lvar.sk2overlay.slot[s].name
+        if lvar.sk2overlay.assign[lvar.sk2overlay_globalassgrp] and lvar.sk2overlay.assign[lvar.sk2overlay_globalassgrp][s] then
+          assstring = lvar.sk2overlay.assign[lvar.sk2overlay_globalassgrp][s].fxguid..'|'
+                      ..lvar.sk2overlay.assign[lvar.sk2overlay_globalassgrp][s].fxparam..'|'..lvar.sk2overlay.assign[lvar.sk2overlay_globalassgrp][s].paramname
+                      ..'|'..lvar.sk2overlay.assign[lvar.sk2overlay_globalassgrp][s].sscolor
+        end
+        sendstr = sendstr .. '['..slotstr..']'..assstring..'\n'
+        
+      end
+    
+    end
+    reaper.SetExtState(REMSCRIPT, 'REMOTE_DATA', sendstr, false)
+    reaper.SetExtState(REMSCRIPT, 'REMOTE_CTL', 'SK2_SET_STRIPPER_LAYER', false)
+    lvar.sk2overlay_active = 1
+    
+    local xpnl = xPnl.SK2
+    xpnl.updategui = true
+    
+  end
+
+  function SendSK2Data_Enable(enable)
+    if enable == 1 then
+      SendSK2Data()
+      --lvar.cids = CheckAllCids()
+      --DBG(strips[tracks[track_select].strip][1].controls[1].c_id)
+      --[[for a, b in pairs(lvar.cids) do
+        DBG(a)
+      end
+      DBG('************')]]
+    else
+      reaper.SetExtState(REMSCRIPT, 'REMOTE_DATA', enable, false)
+      reaper.SetExtState(REMSCRIPT, 'REMOTE_CTL', 'SK2_ENABLE_STRIPPER_LAYER', false)
+    end
+  end
+  
+  function SK2DropDown(btn)
+  
+    local ddtab = {btn = btn, bottom = true, hcentre = true, x = mouse.mx, y = mouse.my, w = 200, h = 100, items = {}, itemcol = {}, itemdisabled = {}, indcol = {}, data = {}, wpad = 40, scroll = -1}
+          
+    local usedidx = {}
+    for s = 1, lvar.sk2overlay.slots do
+      if lvar.sk2overlay.slot[s] then
+        local idx = lvar.sk2overlay.slot[s].map
+        if idx then
+          usedidx[idx] = 1
+        end
+      end
+    end
+    
+    for s = 1, #lvar.sk2data_slots do
+      local tick = ''
+      local idx = lvar.sk2data_slots[s-1].map..'|'..lvar.sk2data_slots[s-1].name
+      if lvar.sk2overlay.slot[ddtab.btn] and lvar.sk2overlay.slot[ddtab.btn].map == idx then
+        tick = '!'
+      end
+      ddtab.items[s] = tostring((lvar.sk2data_slots[s-1].map..' | '..lvar.sk2data_slots[s-1].name) or '')
+      if usedidx[idx] == 1 then
+        ddtab.itemdisabled[s] = true
+      end
+    
+    end
+    
+    OpenDropDown(11, ddtab, true, true)
+  end
+  
   
   -------------------------------------------------------
 
@@ -1490,23 +2413,6 @@
     end
   end
 
-  local function mousewheel_val()
-  
-    if lvar.limitmw then
-      
-      local v = math.ceil(gfx.mouse_wheel/lvar.mousewheel_div)
-      if v < 0 then
-        return math.max(v,-1)
-      else
-        return math.min(v,1)
-      end
-      
-    else
-      return math.ceil(gfx.mouse_wheel/lvar.mousewheel_div)
-    end
-  
-  end
-
   function LoadBGImage(file_bgimage)
 
     if file_bgimage then
@@ -1579,7 +2485,7 @@
       if fxguid then
         local track = GetTrack(lvar.dynamicmode_trn)
         if track then
-          local trguid = reaper.GetTrackGUID(track)
+          local trguid = GetTrackGUID(track)
           local fxn = GetFXNFromGUID(track,fxguid)
           if fxn then
             lvar.active_switcher = {switchid = switchid}
@@ -2483,11 +3389,11 @@
     local fnd = false
 
     if track then
-      if trguid ~= reaper.GetTrackGUID(track) then
+      if trguid ~= GetTrackGUID(track) then
         for i = -1, reaper.CountTracks(0) do
           track = GetTrack(i)
           if track then
-            if trguid == reaper.GetTrackGUID(track) then
+            if trguid == GetTrackGUID(track) then
               trn = i
               fnd = true
               break
@@ -2501,7 +3407,7 @@
       for i = -1, reaper.CountTracks(0) do
         track = GetTrack(i)
         if track then
-          if trguid == reaper.GetTrackGUID(track) then
+          if trguid == GetTrackGUID(track) then
             trn = i
             fnd = true
             break
@@ -3887,7 +4793,7 @@
       obj.sections[49] = {x = gfx1.main_w - cow,
                           y = obj.sections[10000].y, --math.floor(obj.sections[10000].y+obj.sections[10000].h -1 - 320*pnl_scale),
                           w = cow,
-                          h = math.floor(320*pnl_scale)}
+                          h = math.floor(330*pnl_scale)}
       obj = PosGfxOptCtls(obj)
 
 
@@ -7141,8 +8047,13 @@
                         y = math.floor(obj.sections[49].y+(butt_h+10 + (butt_h/2+4 + 10) * 6 + yo)*pnl_scale),
                         w = math.floor((butt_h/2+4)*pnl_scale),
                         h = math.floor((butt_h/2+4)*pnl_scale)}
-    obj.sections[146] = {x = math.floor(obj.sections[49].x+obj.sections[49].w-(40-butt_h/2+4)*pnl_scale),
+    obj.sections[151] = {x = math.floor(obj.sections[49].x+obj.sections[49].w-(40-butt_h/2+4)*pnl_scale),
                         y = math.floor(obj.sections[49].y+(butt_h+10 + (butt_h/2+4 + 10) * 7 + yo)*pnl_scale),
+                        w = math.floor((butt_h/2+4)*pnl_scale),
+                        h = math.floor((butt_h/2+4)*pnl_scale)}
+
+    obj.sections[146] = {x = math.floor(obj.sections[49].x+obj.sections[49].w-(40-butt_h/2+4)*pnl_scale),
+                        y = math.floor(obj.sections[49].y+(butt_h+10 + (butt_h/2+4 + 10) * 8 + yo)*pnl_scale),
                         w = math.floor((butt_h/2+4)*pnl_scale),
                         h = math.floor((butt_h/2+4)*pnl_scale)}
 
@@ -7152,15 +8063,15 @@
                         h = math.floor((butt_h/2+8)*pnl_scale)}
 
     obj.sections[148] = {x = math.floor(obj.sections[49].x+50*pnl_scale),
-                        y = math.floor(obj.sections[49].y+(butt_h+10 + (butt_h/2+4 + 10) * 8 + yo)*pnl_scale),
-                        w = math.floor(obj.sections[49].w-60*pnl_scale),
-                        h = math.floor((butt_h/2+4)*pnl_scale)}
-    obj.sections[149] = {x = math.floor(obj.sections[49].x+50*pnl_scale),
                         y = math.floor(obj.sections[49].y+(butt_h+10 + (butt_h/2+4 + 10) * 9 + yo)*pnl_scale),
                         w = math.floor(obj.sections[49].w-60*pnl_scale),
                         h = math.floor((butt_h/2+4)*pnl_scale)}
-    obj.sections[150] = {x = math.floor(obj.sections[49].x+50*pnl_scale),
+    obj.sections[149] = {x = math.floor(obj.sections[49].x+50*pnl_scale),
                         y = math.floor(obj.sections[49].y+(butt_h+10 + (butt_h/2+4 + 10) * 10 + yo)*pnl_scale),
+                        w = math.floor(obj.sections[49].w-60*pnl_scale),
+                        h = math.floor((butt_h/2+4)*pnl_scale)}
+    obj.sections[150] = {x = math.floor(obj.sections[49].x+50*pnl_scale),
+                        y = math.floor(obj.sections[49].y+(butt_h+10 + (butt_h/2+4 + 10) * 11 + yo)*pnl_scale),
                         w = math.floor(obj.sections[49].w-60*pnl_scale),
                         h = math.floor((butt_h/2+4)*pnl_scale)}
 
@@ -7608,12 +8519,13 @@
 
   function GUI_Str(gui, xywh, text, justify, color, size_offset, alpha, shadowcol, fontnm, flags)
 
+    --Could size_offset need to be different for Mac?
     gfx.setfont(1, fontnm or gui.fontname, gui.fontsz_knob + size_offset, flags)
 
     if (shadowcol or '') ~= '' then
       gfx.x, gfx.y = xywh.x+2, xywh.y+2
       f_Get_SSV(shadowcol)
-      gfx.a = 0.5
+      gfx.a = (alpha or 1)*0.5
       gfx.drawstr(text,justify,xywh.x+xywh.w,xywh.y+xywh.h)
       gfx.x, gfx.y = xywh.x+1, xywh.y+1
       gfx.a = alpha or 1
@@ -7629,6 +8541,7 @@
 
   function GUI_StrB(gui, xywh, text, justify, color, size_offset, alpha, shadowcol, fontnm, flags, backcolor)
 
+    --Could size_offset need to be different for Mac?
     gfx.setfont(1, fontnm or gui.fontname, gui.fontsz_knob + size_offset, flags)
     if backcolor then
       local w, h = gfx.measurestr(text)
@@ -7808,6 +8721,7 @@
                                                   bold = nil,
                                                   italics = nil,
                                                   underline = nil,
+                                                  vertical = nil,
                                                   shadow = nil
                                                   },
                                           text = nil,
@@ -7846,6 +8760,7 @@
                                                   bold = gfx_font_select.bold,
                                                   italics = gfx_font_select.italics,
                                                   underline = gfx_font_select.underline,
+                                                  vertical = gfx_font_select.vertical,
                                                   shadow = gfx_font_select.shadow,
                                                   shadow_x = gfx_font_select.shadow_x,
                                                   shadow_y = gfx_font_select.shadow_y,
@@ -9761,7 +10676,7 @@
                                                 show_paramname = lvar.extswitch_format.show_paramname,
                                                 show_paramval = false,
                                                 ctlname_override = '',
-                                                font = ctlfont_select,
+                                                font = lvar.extswitch_format.font or ctlfont_select,
                                                 textcol = lvar.extswitch_format.textcol,
                                                 textoff = lvar.extswitch_format.textoff,
                                                 textoffval = textoffval_select,
@@ -9796,7 +10711,14 @@
                                                 eqgraph = nil,
                                                 limittext = lvar.extswitch_format.limittext,
                                                 wwtext = lvar.extswitch_format.wwtext,
-                                                textflags = lvar.extswitch_format.textflags
+                                                textflags = lvar.extswitch_format.textflags,
+                                                adjust_active = lvar.extswitch_format.adjust_active or false,
+                                                adjust = {bright = lvar.extswitch_format.adjust_bright or 255,
+                                                          contrast = lvar.extswitch_format.adjust_contrast or 255,
+                                                          r = lvar.extswitch_format.adjust_r or 255,
+                                                          g = lvar.extswitch_format.adjust_g or 255,
+                                                          b = lvar.extswitch_format.adjust_b or 255
+                                                          }
                                                }
       end
 
@@ -9815,7 +10737,7 @@
     local iteminfo = {}
     iteminfo.itemno = reaper.GetMediaItemInfo_Value(item, 'IP_ITEMNUMBER')
     iteminfo.tracknum = reaper.GetMediaTrackInfo_Value(tr, 'IP_TRACKNUMBER')
-    iteminfo.trackguid = reaper.GetTrackGUID(tr)
+    iteminfo.trackguid = GetTrackGUID(tr)
 
     if preservemaxtakes ~= true then
       iteminfo.maxtakes = takeswitch_max
@@ -10438,7 +11360,7 @@
       local track = GetTrack(i)
       if name == reaper.GetTrackState(track) then
         if guid == nil then
-          guid = reaper.GetTrackGUID(track)
+          guid = GetTrackGUID(track)
         end
         cnt = cnt + 1
       end
@@ -10481,7 +11403,7 @@
     local guids = lvar.trackguids or {}
     if guids[guid] then
       local track = GetTrack(guids[guid])
-      if reaper.GetTrackGUID(track) == guid then
+      if GetTrackGUID(track) == guid then
         return guids[guid], track
       end
     end
@@ -10489,7 +11411,7 @@
     for t = 0, reaper.CountTracks(0)-1 do
 
       local tr = reaper.GetTrack(0, t)
-      local tguid = reaper.GetTrackGUID(tr)
+      local tguid = GetTrackGUID(tr)
       guids[tguid] = t
       if guid == tguid then
         lvar.trackguids = guids
@@ -10583,7 +11505,7 @@
         for i = 0, sndcnt-1 do
           local dsttrack = reaper.BR_GetMediaTrackSendInfo_Track(track, 0, i, 1)
           if dsttrack then
-            local guid = reaper.GetTrackGUID(dsttrack)
+            local guid = GetTrackGUID(dsttrack)
             local dst = reaper.GetTrackSendInfo_Value(track, 0, i, 'I_DSTCHAN')
             local src = reaper.GetTrackSendInfo_Value(track, 0, i, 'I_SRCCHAN')
 
@@ -10627,7 +11549,7 @@
 
         local track = GetTrack(t)
         local chunk = GetTrackChunk(track, settings_usetrackchunkfix)
-        local guid = reaper.GetTrackGUID(track)
+        local guid = GetTrackGUID(track)
         local s, e, le = _, 1, 0
         s,e = string.find(string.sub(chunk,e),'AUXRECV .-\n')
         while s and s > 0 do
@@ -10825,7 +11747,7 @@
         local trname, _ = reaper.GetTrackState(track)
 
         tracks_tmp[i] = {name = trname,
-                         guid = reaper.GetTrackGUID(track),
+                         guid = GetTrackGUID(track),
                          tracknum = i,
                          strip = -1
                         }
@@ -13801,7 +14723,7 @@
                 local text = gfxx.text
                 local textcol = gfxx.text_col
 
-                local flagb,flagi,flagu = 0,0,0
+                local flagb,flagi,flagu, flagv = 0,0,0,0
                 if gfxx.font.bold then
                   flagb = 98
                 end
@@ -13811,10 +14733,19 @@
                 if gfxx.font.underline then
                   flagu = 117
                 end
+                if gfxx.font.vertical then
+                  flagv = 122
+                end
                 local flags = flagb + (flagi*256) + (flagu*(256^2))
                 gfx.setfont(1,gfxx.font.name,
                               gfxx.font.size,flags)
                 local w, h = gfx.measurestr(text)
+                if gfxx.font.vertical then
+                  w, h = h, w
+                  flags = flags + (flagv*(256^3))
+                  gfx.setfont(1,gfxx.font.name,
+                                gfxx.font.size,flags)
+                end
                 gfxx.w = w
                 gfxx.h = h
                 gfxx.stretchw = w
@@ -14062,6 +14993,7 @@
     GUI_DrawTick(gui, 'BOLD', obj.sections[143], gui.color.white, gfx_font_select.bold)
     GUI_DrawTick(gui, 'ITALIC', obj.sections[144], gui.color.white, gfx_font_select.italics)
     GUI_DrawTick(gui, 'U/LINE', obj.sections[145], gui.color.white, gfx_font_select.underline)
+    GUI_DrawTick(gui, 'VERTICAL', obj.sections[151], gui.color.white, gfx_font_select.vertical)
     GUI_DrawTick(gui, 'SHADOW', obj.sections[146], gui.color.white, gfx_font_select.shadow)
     GUI_DrawSliderH(gui, 'SHAD X', obj.sections[148], gui.color.black, gui.color.white, F_limit((gfx_font_select.shadow_x+15)/30,0,1))
     GUI_DrawSliderH(gui, 'SHAD Y', obj.sections[149], gui.color.black, gui.color.white, F_limit((gfx_font_select.shadow_y+15)/30,0,1))
@@ -14303,19 +15235,35 @@
       GUI_textC(gui,xywh,'KNOB SENSITIVITY',gui.skol.pnl_txt,-2+tscale)
       GUI_DrawSliderH(gui, 'NORMAL', obj.sections[135], gui.color.black, gui.skol.pnl_txt, ((knobsens_select.norm)/20)*2)
       local txt = string.format('%i',round(knobsens_select.norm*2))
-      if txt == '0' then txt = 'GLOBAL' end
+      if txt == '0' then 
+        txt = 'GLOBAL' 
+      elseif knobsens_select.m_norm ~= 1 then
+        txt = txt..' (x'..knobsens_select.m_norm..')'
+      end
       GUI_textC(gui,obj.sections[135],txt,gui.color.red,-2+tscale)
       GUI_DrawSliderH(gui, 'FINE', obj.sections[136], gui.color.black, gui.skol.pnl_txt, ((knobsens_select.fine)/20)*100)
       txt = string.format('%i',round(knobsens_select.fine*100))
-      if txt == '0' then txt = 'GLOBAL' end
+      if txt == '0' then 
+        txt = 'GLOBAL' 
+      elseif knobsens_select.m_fine ~= 1 then
+        txt = txt..' (x'..knobsens_select.m_fine..')'
+      end
       GUI_textC(gui,obj.sections[136],txt,gui.color.red,-2+tscale)
       GUI_DrawSliderH(gui, 'WHEEL', obj.sections[137], gui.color.black, gui.skol.pnl_txt, ((knobsens_select.wheel)/20)*100)
       txt = string.format('%i',round(knobsens_select.wheel*100))
-      if txt == '0' then txt = 'GLOBAL' end
+      if txt == '0' then 
+        txt = 'GLOBAL' 
+      elseif knobsens_select.m_wheel ~= 1 then
+        txt = txt..' (x'..knobsens_select.m_wheel..')'
+      end
       GUI_textC(gui,obj.sections[137],txt,gui.color.red,-2+tscale)
       GUI_DrawSliderH(gui, 'WHL FINE', obj.sections[138], gui.color.black, gui.skol.pnl_txt, ((knobsens_select.wheelfine)/20)*1000)
       txt = string.format('%i',round(knobsens_select.wheelfine*1000))
-      if txt == '0' then txt = 'GLOBAL' end
+      if txt == '0' then 
+        txt = 'GLOBAL' 
+      elseif knobsens_select.m_wheelfine ~= 1 then
+        txt = txt..' (x'..knobsens_select.m_wheelfine..')'
+      end
       GUI_textC(gui,obj.sections[138],txt,gui.color.red,-2+tscale)
 
       local pmin, pmax = 0, 0
@@ -14677,7 +15625,7 @@
 
   end
 
-  function GUI_DrawButtonWW(gui, t, th, maxrows, b, colb, colt, v, opttxt, limit, t_sz,noscale, butt_justify, opttxt_col, toptext, toptextsz, rgbadjust)
+  function GUI_DrawButtonWW(gui, t, th, maxrows, b, colb, colt, v, opttxt, limit, t_sz,noscale, butt_justify, opttxt_col, toptext, toptextsz, rgbadjust, ovcolt)
 
     local tscale = 0
     if noscale ~= true then
@@ -14812,7 +15760,7 @@
     for i = 1, math.min(#t, maxrows) do
       if t[i].t then
         if xywh.y-b.y+th < b.h then
-          GUI_Str(gui,xywh,t[i].t,butt_justify or 5,colt,-4 + (t_sz or 0) + gui.fontsz.butt +tscale,1,gui.skol.butt_shad,gui.fontnm.butt,gui.fontflag.butt)
+          GUI_Str(gui,xywh,t[i].t,butt_justify or 5,ovcolt or colt,-4 + (t_sz or 0) + gui.fontsz.butt +tscale,1,gui.skol.butt_shad,gui.fontnm.butt,gui.fontflag.butt)
           xywh.y = xywh.y + th
         else
           break
@@ -15060,7 +16008,7 @@ end
   end
 
   function GUI_DrawCtlBitmap_Strips()
---DBG('TT')
+
     local strip = tracks[track_select].strip
 --DBG('-----------------------------------------GUI_DrawCtlBitmap_Strips')
     local stripdim = {}
@@ -15074,6 +16022,7 @@ end
     stripdim.strip = strip
     stripdim.page = page
     stripdim.max = {w = 0, h = 0}
+    stripdim.ctlfxidx = {}
     stripdim.dim = {l = math.huge, t = math.huge, r = 0, b = 0}
     
     if #strips[strip][page].graphics > 0 then
@@ -15196,7 +16145,10 @@ end
 
           --DBG(stripdim.data[idx].l..' '..stripdim.data[idx].t..' '..stripdim.data[idx].r..' '..stripdim.data[idx].b)
 
+        end
 
+        if ctl.ctlcat == ctlcats.fxparam then
+          stripdim.ctlfxidx[(ctl.fxguid or '')..'|'..ctl.param_info.paramnum] = i
         end
 
         local swid = Switcher_GetTopLevelSwitcher(ctl.switcher or ctl.switcherid)
@@ -15883,7 +16835,12 @@ end
       lvar.pop_yoff = lvar.popswipe.ep
       Pop_SetPos(lvar.pop_xoff, lvar.pop_yoff)
       lvar.popswipe = nil
-      SetCtlBitmapRedraw_Mix()
+      SetCtlBitmapRedraw_Mix(lvar.popswipe_redrawforce)
+      if lvar.popswipe_redrawforce then
+        --[[local d,wx,wy,ww,wh = gfx.dock(-1,-1,-1,-1,-1)
+        reaper.JS_Mouse_SetPosition(mouse.smx, wy+math.floor(obj.sections[10].y+obj.sections[10].h/2))]]
+        lvar.popswipe_redrawforce = nil
+      end
     end
   end
   
@@ -16446,6 +17403,8 @@ end
 
         local gap = lvar.mmgap
         local pop = strips[strip][page].pop
+        local popidx = strips[strip][page].popidx
+
         if lvar.popalpha then
           gfx.a = lvar.popalpha.alpha
         else
@@ -16512,17 +17471,24 @@ end
               local syy = rect10.y + pop[i].y + yoff
               local sxx,syy,sw,sh,sx,sy = CropToRect2(sxx,syy,sw,sh,o10x,o10y,o10r,o10b, sx, sy, lvar.zoom)
 
+              local alp
+              if lvar.dragswitcher and lvar.showpop and lvar.popout_autoarrange then
+                if popidx[lvar.dragswitcher.selected] == i then
+                  alp = 0.3
+                end
+              end
+
               if w > 0 then
                 --gfx.blit(strip_image + gfxpage, lvar.zoom, 0, x, y, w, h, rect10.x + pop[i].x, rect10.y + pop[i].y+(sh+gap)*lvar.zoom)
                 blittbl[lvar.blittbl_cnt] = {strip_image + gfxpage, lvar.zoom, 0, x, y, w, h, xx, yy, ow, oh, swid}
-                blittbl[lvar.blittbl_cnt][0] = gfx.a
+                blittbl[lvar.blittbl_cnt][0] = alp or gfx.a
                 lvar.blittbl_cnt = lvar.blittbl_cnt + 1
               end
 
               --gfx.blit(strip_image + gfxpage, lvar.zoom, 0, sx, sy, sw, sh, rect10.x + stx, rect10.y + pop[i].y)
               if not lvar.popout_autoarrange or not lvar.popout_autoarrange_hideswitchers then
                 blittbl[lvar.blittbl_cnt] = {strip_image + gfxpage, lvar.zoom, 0, sx, sy, sw, sh, sxx, syy}
-                blittbl[lvar.blittbl_cnt][0] = gfx.a
+                blittbl[lvar.blittbl_cnt][0] = alp or gfx.a
                 lvar.blittbl_cnt = lvar.blittbl_cnt + 1
               end
               
@@ -16736,6 +17702,8 @@ end
 
         if lvar.mixmodedir == 0 then
 
+          
+
           local runpos = 0
           local maxw = 0
 
@@ -16791,7 +17759,9 @@ end
             if w > 0 then
               gfx.blit(strip_image + gfxpage, scale, 0, x, y, w, h, math.floor(tx*scale) + row*(vsize*2), math.floor((ty+sh+gap)*scale))
             end
-            gfx.blit(strip_image + gfxpage, scale, 0, sx, sy, sw, sh, math.floor(stx*scale) + row*(vsize*2), math.floor(ty*scale))
+            if not lvar.showpop or not lvar.popout_autoarrange_hideswitchers then
+              gfx.blit(strip_image + gfxpage, scale, 0, sx, sy, sw, sh, math.floor(stx*scale) + row*(vsize*2), math.floor(ty*scale))
+            end
             SetColor2(p)
             --gfx.rect(vsize + row*(vsize*2),math.floor((ty+sh)*scale),vsize,math.floor((ssh+padgap)*scale),1)
             gfx.rect(vsize + row*(vsize*2),math.floor((ty)*scale),vsize,math.ceil((ssh+padgap)*scale),1)
@@ -16857,9 +17827,16 @@ end
             local stx = tx + math.floor(--[[math.max(w, sw)]]w/2) - math.floor(sw/2)
 
             if w > 0 then
-              gfx.blit(strip_image + gfxpage, scale, 0, x, y, w, h, math.floor(tx*scale), math.floor((ty+sh+gap)*scale) + row*(vsize*2))
+              local yoffs = 0
+              if lvar.showpop and lvar.popout_autoarrange then
+                yoffs = sh/2
+              end
+              
+              gfx.blit(strip_image + gfxpage, scale, 0, x, y, w, h, math.floor(tx*scale), math.floor((ty+sh+gap-yoffs)*scale) + row*(vsize*2))
             end
-            gfx.blit(strip_image + gfxpage, scale, 0, sx, sy, sw, sh, math.floor(stx*scale), math.floor(ty*scale) + row*(vsize*2))
+            if not lvar.showpop or not lvar.popout_autoarrange_hideswitchers then
+              gfx.blit(strip_image + gfxpage, scale, 0, sx, sy, sw, sh, math.floor(stx*scale), math.floor(ty*scale) + row*(vsize*2))
+            end
             SetColor2(p)
             gfx.rect(math.floor(math.min(tx,stx)*scale),vsize + row*(vsize*2),math.ceil((ssw+padgap)*scale),vsize,1)
 
@@ -16877,67 +17854,6 @@ end
     lvar.mmov_rows = mmov_rows
     lvar.mixpos_max = mixpos_max
     return vsize
-  end
-
-  local function GetWWData(txt, w, firstline)
-
-    txt = string.gsub(txt, '[_]', ' ')
-    local tw, th = gfx.measurestr(txt)
-
-    local tab = {}
-    tab.txt = txt
-
-    local stab = split2(txt," ")
-    local ln = 1
-    if firstline then
-      if not tab[ln] then
-        tab[ln] = {w=0}
-      end
-      local sw, sh = gfx.measurestr(firstline)
-      tab[ln].w = sw
-      tab[ln].t = firstline
-      ln = 2
-    end
-    for i = 1, #stab do
-      if not tab[ln] then
-        tab[ln] = {w=0}
-      end
-      local pfx = ''
-      if i > 1 then
-        pfx = ' '
-      end
-      local sw, sh = gfx.measurestr(pfx..stab[i])
-      if sw > w then
-        --too big for line
-        if i == 1 then
-          --display on current line
-          tab[ln].w = tab[ln].w + sw
-          tab[ln].t = (tab[ln].t or '') .. pfx..stab[i]
-          ln = ln + 1
-          tab[ln] = {w=0}
-        else
-          --display on next line
-          ln = ln + 1
-          tab[ln] = {}
-          tab[ln].w = sw
-          tab[ln].t = stab[i]
-        end
-      elseif sw + tab[ln].w > w then
-        --display on next line
-          ln = ln + 1
-          tab[ln] = {}
-          tab[ln].w = sw
-          tab[ln].t = stab[i]
-      else
-        --display on current line
-        tab[ln].w = tab[ln].w + sw
-        tab[ln].t = (tab[ln].t or '').. pfx..stab[i]
-      end
-
-    end
-
-    return tab, th
-
   end
 
   function GUI_DrawControls(obj, gui)
@@ -18566,13 +19482,15 @@ end
 
   ------------------------------------------------------------
 
-  function GUI_DrawPanel(objPanel, tobgd, tit, noscale)
+  function GUI_DrawPanel(objPanel, tobgd, tit, noscale, alpha, talpha)
 
-    gfx.a=1
+    gfx.a=alpha or 1
     local x,y = 0,0
     if tobgd then
       x,y = objPanel.x, objPanel.y
     end
+    --objPanel.h = math.floor(objPanel.h)
+    
     local wt, ht = gfx.getimgdim(skin.panela_top)
     local wb, hb = gfx.getimgdim(skin.panela_bot)
     local hh = ht + hb
@@ -18599,35 +19517,57 @@ end
       --gfx.blit(skin.panela_top, 1, 0, 10, 0, wt-(2*edge), ht, x+edge, y, pw-(2*edge))
     else
 
+      local adjustth = 0
       if noscale ~= true then
-        local thh = gui.winsz.pnltit*pnl_scale
+    
+        local thh = math.ceil(gui.winsz.pnltit*pnl_scale)
+        --Left top
+        gfx.a = talpha or 1
         gfx.blit(skin.panela_top, 1, 0, 0, 0, edge, edge, x, y)
-        gfx.blit(skin.panela_top, 1, 0, 0, edge, edge, gui.winsz.pnltit-edge, x, y+edge, edge, math.floor((thh)-edge)+2)
-        gfx.blit(skin.panela_top, 1, 0, 0, gui.winsz.pnltit+1, edge, ht-gui.winsz.pnltit, x, math.ceil(y+thh), edge, math.ceil(ht-(thh))+3)
+        gfx.blit(skin.panela_top, 1, 0, 0, edge, edge, gui.winsz.pnltit-edge, x, y+edge, edge, math.ceil((thh)-edge))
+        gfx.a=alpha or 1
+        gfx.blit(skin.panela_top, 1, 0, 0, gui.winsz.pnltit+1, edge, ht-gui.winsz.pnltit, x, math.ceil(y+thh), edge, math.ceil(ht-(thh)))
 
+        --Right top
+        gfx.a = talpha or 1
         gfx.blit(skin.panela_top, 1, 0, wt-edge, 0, edge, edge, x+(pw-edge), y)
-        gfx.blit(skin.panela_top, 1, 0, wt-edge, edge, edge, gui.winsz.pnltit-edge, x+(pw-edge), y+edge, edge, math.floor((thh)-edge)+2)
-        gfx.blit(skin.panela_top, 1, 0, wt-edge, gui.winsz.pnltit+1, edge, ht-gui.winsz.pnltit, x+(pw-edge), math.ceil(y+thh), edge, math.ceil(ht-(thh))+3)
+        gfx.blit(skin.panela_top, 1, 0, wt-edge, edge, edge, gui.winsz.pnltit-edge, x+(pw-edge), y+edge, edge, math.ceil((thh)-edge))
+        gfx.a=alpha or 1
+        gfx.blit(skin.panela_top, 1, 0, wt-edge, gui.winsz.pnltit+1, edge, ht-gui.winsz.pnltit, x+(pw-edge), math.ceil(y+thh), edge, math.ceil(ht-(thh)))
 
+        --Mid top
+        gfx.a = talpha or 1
         gfx.blit(skin.panela_top, 1, 0, edge, 0, wt-(2*edge), edge, x+edge, y, pw-(2*edge))
-        gfx.blit(skin.panela_top, 1, 0, edge, edge, wt-(2*edge), gui.winsz.pnltit-edge, x+edge, y+edge, pw-(2*edge),math.floor((thh)-edge)+2)
-        gfx.blit(skin.panela_top, 1, 0, edge, gui.winsz.pnltit+1, wt-(2*edge), ht-gui.winsz.pnltit, x+edge, math.ceil(y+thh), pw-(2*edge),math.ceil(ht-(thh))+3)
+        gfx.blit(skin.panela_top, 1, 0, edge, edge, wt-(2*edge), gui.winsz.pnltit-edge, x+edge, y+edge, pw-(2*edge),math.ceil((thh)-edge))
+        gfx.a=alpha or 1
+        gfx.blit(skin.panela_top, 1, 0, edge, gui.winsz.pnltit+1, wt-(2*edge), ht-gui.winsz.pnltit, x+edge, math.ceil(y+thh), pw-(2*edge),math.ceil(ht-(thh)))
+      
+        adjustth = ht
       else
         gfx.blit(skin.panela_top, 1, 0, 0, 0, edge, ht, x, y)
         gfx.blit(skin.panela_top, 1, 0, wt-edge, 0, edge, ht, x+(pw-edge), y)
-        gfx.blit(skin.panela_top, 1, 0, 10, 0, wt-(2*edge), ht, x+edge, y, pw-(2*edge))
+        gfx.blit(skin.panela_top, 1, 0, edge, 0, wt-(2*edge), ht, x+edge, y, pw-(2*edge))
+        adjustth = ht
       end
 
-      local th = ht
+      local th = adjustth
+      local ad
+      local shh = ph - th - hb
+      if pnl_scale <= 1 then 
+        --stupid maths to deal with pnl_scale <= 1
+        ad = math.floor(((1-pnl_scale)/0.05))+2
+        th = th - ad
+      end
+      local sh = ph - th - hb
       gfx.blit(skin.panela_bot, 1, 0, 0, 0, edge, hb, x, y+ph-hb)
       gfx.blit(skin.panela_bot, 1, 0, wt-edge, 0, edge, hb, x+(pw-edge), y+ph-hb)
-      gfx.blit(skin.panela_bot, 1, 0, 10, 0, wb-(2*edge), hb, x+edge, y+ph-hb, pw-(2*edge))
-      local sh = ph - hh
-      if sh > 0 then
+      gfx.blit(skin.panela_bot, 1, 0, edge, 0, wb-(2*edge), hb, x+edge, y+ph-hb, pw-(2*edge))
+
+      if shh > 0 then
         local w, h = gfx.getimgdim(skin.panela_mid)
         gfx.blit(skin.panela_mid, 1, 0, 0, 0, edge, h, x, y+th, edge, sh)
         gfx.blit(skin.panela_mid, 1, 0, w-edge, 0, edge, h, x+(pw-edge), y+th, edge, sh)
-        gfx.blit(skin.panela_mid, 1, 0, 10, 0, w-(2*edge), h, x+edge, y+th, pw-(2*edge), sh)
+        gfx.blit(skin.panela_mid, 1, 0, edge, 0, w-(2*edge), h, x+edge, y+th, pw-(2*edge), sh)
       end
     end
 
@@ -18637,7 +19577,7 @@ end
       gfx.blit(skin.texture, 1, 0, 0, 0, pw, ph, x, y)
       gfx.mode = gmode
     end]]
-
+    gfx.a=1
     if tit then
       local yoff = gui.winsz.pnltit - butt_h
       local tscale = 0
@@ -22577,7 +23517,11 @@ end
     if settings_moddock == true and modwinsz and modwinsz.minimized == true then
       GUI_DrawPanel(obj.sections[1100],false,'MODULATORS')
     else
-      GUI_DrawPanel(obj.sections[1100],false,'MODULATORS - MOD '..string.format('%i',mod_select))
+      local alpha=1
+      if settings_moddock == true then
+        alpha = 1
+      end
+      GUI_DrawPanel(obj.sections[1100],false,'MODULATORS - MOD '..string.format('%i',mod_select),nil,alpha)
     end
 
     local b
@@ -23790,7 +24734,7 @@ end
       local retval, inpins, outpins = reaper.TrackFX_GetIOSize(tr,i)
       local pn = reaper.TrackFX_GetNumParams(tr,i)
       local fxw = math.max((inpins + outpins +1) * (pinw),60)
-      if pn == 2 then
+      if pn == lvar.offline_paramcnt then
         fxw = 60
       end
 
@@ -23876,7 +24820,7 @@ end
       local pn = reaper.TrackFX_GetNumParams(tr,i)
       local fxw = math.max((inpins + outpins +1) * (pinw),60)
 
-      if pn ~= 2 then
+      if pn ~= lvar.offline_paramcnt then
         if outpins==-1 and inpins~=-1 then
           outpins=inpins--in some JS outs ret "-1"
         end
@@ -24592,7 +25536,7 @@ end
     end
     local p = 0
 
-    if show_xxy == false and next(lupd) ~= nil or lvar.dragswitcher then
+    if show_xxy == false and next(lupd) ~= nil or (lvar.dragswitcher and not (lvar.showpop and lvar.popout_autoarrange)) then
       --for a,b in pairs(lupd) do if b == true then DBG(a) end end
 
       gfx.dest = 1
@@ -24870,82 +25814,72 @@ end
                 w = (locs[t_swid].r - locs[t_swid].l)
                 h = (locs[t_swid].b - locs[t_swid].t)
               else
-                if lvar.mixmodedir == 0 then
-                  local spos = lvar.spos[t_swid]
-                  if spos then
-                    x = spos.x
-                    y = spos.y
-                    w = spos.w*lvar.zoom
-                    if w == 0 then
-                      w = spos.sw*lvar.zoom
-                      x = spos.sx
-                    end
-                    h = spos.h*lvar.zoom
-                    gap = spos.gap*lvar.zoom
-                  end
+                if lvar.showpop and lvar.popout_autoarrange then
+                  --[[local pop = istrip.pop
+                  if pop then
+                    local swdata = lvar.stripdim.swdata
+                    local rect10 = obj.sections[10]
+                    local xoff, yoff = 0,0
+                    x = rect10.x + pop.x + xoff
+                    y = rect10.y + pop.y+(sh+gap)*lvar.zoom + yoff
+                    w = swdata[t_swid].r - swdata[t_swid].l
+                    h = swdata[t_swid].b - swdata[t_swid].t
+                  end]]
                 else
-                  local spos = lvar.spos[t_swid]
-                  if spos then
-                    x = spos.x
-                    --y = (spos.y + spos.sh)*lvar.zoom
-                    --y = obj.sections[10].y + math.floor(obj.sections[10].h/2) - math.floor(((spos.h+spos.sh)/2)*lvar.zoom) +spos.sh*lvar.zoom +lvar.mmov_offs
-                    y = spos.y + (spos.sh-spos.h) + spos.h
-                    w = spos.w*lvar.zoom
-                    if w == 0 then
-                      w = spos.sw*lvar.zoom
-                      x = spos.sx
+                  if lvar.mixmodedir == 0 then
+                    local spos = lvar.spos[t_swid]
+                    if spos then
+                      x = spos.x
+                      y = spos.y
+                      w = spos.w*lvar.zoom
+                      if w == 0 then
+                        w = spos.sw*lvar.zoom
+                        x = spos.sx
+                      end
+                      h = spos.h*lvar.zoom
+                      gap = spos.gap*lvar.zoom
                     end
-                    h = spos.h*lvar.zoom
+                  else
+                    local spos = lvar.spos[t_swid]
+                    if spos then
+                      x = spos.x
+                      --y = (spos.y + spos.sh)*lvar.zoom
+                      --y = obj.sections[10].y + math.floor(obj.sections[10].h/2) - math.floor(((spos.h+spos.sh)/2)*lvar.zoom) +spos.sh*lvar.zoom +lvar.mmov_offs
+                      y = spos.y + (spos.sh-spos.h) + spos.h
+                      w = spos.w*lvar.zoom
+                      if w == 0 then
+                        w = spos.sw*lvar.zoom
+                        x = spos.sx
+                      end
+                      h = spos.h*lvar.zoom
+                    end
                   end
-                end
-
-                local spos = lvar.spos[t_swid]
-
-                if lvar.mixmodedir == 0 then
-                  x, y, w, h = CropToRect(x,y+spos.sh*lvar.zoom,w-lvar.shadowmax*lvar.zoom,h-spos.sh*lvar.zoom,o10x,o10y,o10r,o10b)
-                else
-                  x, y, w, h = CropToRect(x,y,w,h,o10x,o10y,o10r,o10b)
-                  --x, y, w, h = CropToRect(x,y+spos.sh*lvar.zoom,w-lvar.shadowmax*lvar.zoom,h-spos.sh*lvar.zoom,o10x,o10y,o10r,o10b)
+                  local spos = lvar.spos[t_swid]
+  
+                  if lvar.mixmodedir == 0 then
+                    x, y, w, h = CropToRect(x,y+spos.sh*lvar.zoom,w-lvar.shadowmax*lvar.zoom,h-spos.sh*lvar.zoom,o10x,o10y,o10r,o10b)
+                  else
+                    x, y, w, h = CropToRect(x,y,w,h,o10x,o10y,o10r,o10b)
+                    --x, y, w, h = CropToRect(x,y+spos.sh*lvar.zoom,w-lvar.shadowmax*lvar.zoom,h-spos.sh*lvar.zoom,o10x,o10y,o10r,o10b)
+                  end
                 end
               end
              
               gfx.a = 1
               f_Get_SSV(gui.color.yellow)
-              if lvar.mixmodedir == 0 then
-                local ident = 2
-                local midx = x+ w/2
-
-                if not mouse.shift and not mouse.alt then
-                  local barh = --[[math.max(pady-4,10)]] math.min(math.floor(h/2),40)
-                  local pad = math.floor(gap)
-                  local sz = barh/2
-                  if istrip.before == true then
-                    gfx.rect(x,y,w,barh+1,1)
-                    f_Get_SSV('0 0 0')
-                    gfx.rect(x,y,w,barh+1,0)
-                    gfx.triangle(midx,y+ident,midx-sz,y+barh-ident*2,midx+sz,y+barh-ident*2)
-                  else
-                    gfx.rect(x,y+h-barh-1,w,barh+1,1)
-                    f_Get_SSV('0 0 0')
-                    gfx.rect(x,y+h-barh-1,w,barh+1,0)
-                    gfx.triangle(midx,y+h-ident*2,midx-sz,y+h-barh+ident,midx+sz,y+h-barh+ident)
-                  end
+              if lvar.showpop and lvar.popout_autoarrange then
+                
+                --[[local pop = istrip.pop
+                if pop then
+                  local swdata = lvar.stripdim.swdata
+                  local rect10 = obj.sections[10]
+                  local xoff, yoff = 0,0
+                  x = rect10.x + pop.x + xoff
+                  y = rect10.y + pop.y+(sh+gap)*lvar.zoom + yoff
+                  w = swdata[t_swid].r - swdata[t_swid].l
+                  h = swdata[t_swid].b - swdata[t_swid].t
                 end
-                gfx.a = 1
-                if mouse.shift or mouse.alt then
-                  local spos = lvar.spos[t_swid]
-                  if spos then
-                    --x,y,w,h = CropToRect(spos.x,y,w,h,o10x,o10y,o10r,o10b)
-                    if mouse.alt then
-                      f_Get_SSV(gui.color.green)
-                      GUI_Str(gui,{x=x+4,y=y,w=40,h=20},'LINK',4,gui.color.green,2,1,gui.color.black,nil,nil)
-                    else
-                      GUI_Str(gui,{x=x+4,y=y,w=60,h=20},'REPLACE',4,gui.color.yellow,2,1,gui.color.black,nil,nil)
-                    end
-                    gfx.rect(x,y,w,h,0)
-                  end
-                end
-              else
+                
                 local ident = 2
                 local midy = y+lvar.mmgap*lvar.zoom + h/2
 
@@ -24963,18 +25897,75 @@ end
                     gfx.rect(x+w-barw,y+lvar.mmgap*lvar.zoom,barw,h,0)
                     gfx.triangle(x+w-ident,midy,x+w-barw+ident*2,midy-sz,x+w-barw+ident*2,midy+sz)
                   end
-                end
-                gfx.a = 1
-                if mouse.shift or mouse.alt then
-                  local spos = lvar.spos[t_swid]
-                  if spos then
-                    if mouse.alt then
-                      f_Get_SSV(gui.color.green)
-                      GUI_Str(gui,{x=x+4,y=y,w=40,h=20},'LINK',5,gui.color.green,2,1,gui.color.black,nil,nil)
+                end]]
+              
+              else
+                if lvar.mixmodedir == 0 then
+                  local ident = 2
+                  local midx = x+ w/2
+  
+                  if not mouse.shift and not mouse.alt then
+                    local barh = --[[math.max(pady-4,10)]] math.min(math.floor(h/2),40)
+                    local pad = math.floor(gap)
+                    local sz = barh/2
+                    if istrip.before == true then
+                      gfx.rect(x,y,w,barh+1,1)
+                      f_Get_SSV('0 0 0')
+                      gfx.rect(x,y,w,barh+1,0)
+                      gfx.triangle(midx,y+ident,midx-sz,y+barh-ident*2,midx+sz,y+barh-ident*2)
                     else
-                      GUI_Str(gui,{x=x+4,y=y,w=60,h=20},'REPLACE',4,gui.color.yellow,2,1,gui.color.black,nil,nil)
+                      gfx.rect(x,y+h-barh-1,w,barh+1,1)
+                      f_Get_SSV('0 0 0')
+                      gfx.rect(x,y+h-barh-1,w,barh+1,0)
+                      gfx.triangle(midx,y+h-ident*2,midx-sz,y+h-barh+ident,midx+sz,y+h-barh+ident)
                     end
-                    gfx.rect(x,y,w,h+lvar.mmgap*lvar.zoom,0)
+                  end
+                  gfx.a = 1
+                  if mouse.shift or mouse.alt then
+                    local spos = lvar.spos[t_swid]
+                    if spos then
+                      --x,y,w,h = CropToRect(spos.x,y,w,h,o10x,o10y,o10r,o10b)
+                      if mouse.alt then
+                        f_Get_SSV(gui.color.green)
+                        GUI_Str(gui,{x=x+4,y=y,w=40,h=20},'LINK',4,gui.color.green,2,1,gui.color.black,nil,nil)
+                      else
+                        GUI_Str(gui,{x=x+4,y=y,w=60,h=20},'REPLACE',4,gui.color.yellow,2,1,gui.color.black,nil,nil)
+                      end
+                      gfx.rect(x,y,w,h,0)
+                    end
+                  end
+                else
+                  
+                  local ident = 2
+                  local midy = y+lvar.mmgap*lvar.zoom + h/2
+  
+                  if not mouse.shift and not mouse.alt then
+                    local barw = math.min(math.floor(w/2),40)
+                    local sz = barw/2
+                    if istrip.before == true then
+                      gfx.rect(x,y+lvar.mmgap*lvar.zoom,barw,h,1)
+                      f_Get_SSV('0 0 0')
+                      gfx.rect(x,y+lvar.mmgap*lvar.zoom,barw,h,0)
+                      gfx.triangle(x+ident,midy,x+barw-ident*2,midy-sz,x+barw-ident*2,midy+sz)
+                    else
+                      gfx.rect(x+w-barw,y+lvar.mmgap*lvar.zoom,barw,h,1)
+                      f_Get_SSV('0 0 0')
+                      gfx.rect(x+w-barw,y+lvar.mmgap*lvar.zoom,barw,h,0)
+                      gfx.triangle(x+w-ident,midy,x+w-barw+ident*2,midy-sz,x+w-barw+ident*2,midy+sz)
+                    end
+                  end
+                  gfx.a = 1
+                  if mouse.shift or mouse.alt then
+                    local spos = lvar.spos[t_swid]
+                    if spos then
+                      if mouse.alt then
+                        f_Get_SSV(gui.color.green)
+                        GUI_Str(gui,{x=x+4,y=y,w=40,h=20},'LINK',5,gui.color.green,2,1,gui.color.black,nil,nil)
+                      else
+                        GUI_Str(gui,{x=x+4,y=y,w=60,h=20},'REPLACE',4,gui.color.yellow,2,1,gui.color.black,nil,nil)
+                      end
+                      gfx.rect(x,y,w,h+lvar.mmgap*lvar.zoom,0)
+                    end
                   end
                 end
               end
@@ -25006,7 +25997,7 @@ end
           gfx.blit(1022,lvar.zoom,0,0,0,w,h,x-(b_sz*lvar.zoom),y-(b_sz*lvar.zoom))
           gfx.a = 1
 
-        elseif lvar.dragswitcher then
+        elseif lvar.dragswitcher and not (lvar.showpop and lvar.popout_autoarrange) then
 
           --local locs = lvar.dragswitcher.locs
           local locs = lvar.stripdim.swdata
@@ -25038,94 +26029,7 @@ end
               gfx.a = 1
               gfx.rect(x,y,w*lvar.zoom,h*lvar.zoom,0)
             else
-              --[[if lvar.showpop == true and strips[strip][page].popidx and strips[strip][page].popidx[s_swid] then
-              else
-                local spos = lvar.spos[s_swid]
-                if spos then
-                  if lvar.mixmodedir == 0 then
-                    --fecking messy - sort this out!!
-                    local x = spos.x
-                    local y = spos.y
-                    local w = spos.w*lvar.zoom
-                    local h = spos.h*lvar.zoom
-                    x = x - 1
-                    w = w + 2
-                    --y = y + (spos.sh+lvar.mmgap)*lvar.zoom - 1
-                    --h = h - (spos.sh+lvar.mmgap)*lvar.zoom + 2
-
-                    if lvar.enablegfxshadows then
-                      w = w + lvar.shadowmax
-                      h = h + lvar.shadowmax
-                    end
-
-                    local o10y = obj.sections[10].y
-                    local o10b = obj.sections[10].y + obj.sections[10].h - 1
-                    local o10x = obj.sections[10].x + 1
-                    local o10r = obj.sections[10].x + obj.sections[10].w
-                    if lvar.mmov_show then
-                      o10x = o10x + (lvar.mmov_vsize + lvar.mmov_pad*2)
-                    end
-
-                    x,y,w,h = CropToRect(x,y,w,h,o10x,o10y,o10r,o10b)
-
-                    gfx.a = 1
-                    if lvar.bgloaded > 0 then
-                      local xx = x-o10x+1
-                      if lvar.mmov_show then
-                        xx = xx + (lvar.mmov_vsize + lvar.mmov_pad*2)
-                      end
-                      local yy = y-o10y
-                      gfx.blit(lvar.bgloaded,1,0,xx-lvar.bgoffx,yy-lvar.bgoffy,w,h,x,y)
-                    else
-                      f_Get_SSV(backcol2 or backcol)
-                      gfx.rect(x,y,w,h,1)
-                    end
-
-                    --f_Get_SSV(gui.color.red)
-                    --gfx.rect(x,y,w,h,0)
-                  else
-                    local x = spos.x
-                    local y = spos.y
-                    local w = spos.w*lvar.zoom
-                    local h = spos.h*lvar.zoom
-                    x = x - 1
-                    w = w + 2
-                    --y = y + (spos.sh+lvar.mmgap)*lvar.zoom - 1
-                    h = h + (spos.sh+lvar.mmgap)*lvar.zoom + 2
-
-                    if lvar.enablegfxshadows then
-                      w = w + lvar.shadowmax
-                      h = h + lvar.shadowmax
-                    end
-
-                    local o10y = obj.sections[10].y
-                    local o10b = obj.sections[10].y + obj.sections[10].h - 1
-                    local o10x = obj.sections[10].x
-                    local o10r = obj.sections[10].x + obj.sections[10].w
-                    if lvar.mmov_show then
-                      o10y = o10y + lvar.mmov_vsize + lvar.mmov_pad*2
-                    end
-
-                    x,y,w,h = CropToRect(x,y,w,h,o10x,o10y,o10r,o10b)
-
-                    gfx.a = 1
-                    if lvar.bgloaded > 0 then
-                      local xx = x-o10x
-                      local yy = y-o10y
-                      if lvar.mmov_show then
-                        yy = yy + (lvar.mmov_vsize + lvar.mmov_pad*2)
-                      end
-                      gfx.blit(lvar.bgloaded,1,0,xx-lvar.bgoffx,yy-lvar.bgoffy,w,h,x,y)
-                    else
-                      f_Get_SSV(backcol2 or backcol)
-                      gfx.rect(x,y,w,h,1)
-                    --f_Get_SSV(gui.color.red)
-                    --gfx.rect(x,y,w,h,0)
-                    end
-
-                  end
-                end
-              end]]
+              
             end
           end
           if t_swid and t_swid ~= s_swid then
@@ -25276,6 +26180,10 @@ end
               --crop to obj10
               local mmx = mouse.mx-lvar.dragswitcher.offx
               local mmy = mouse.my-lvar.dragswitcher.offy+(sh+gap)*lvar.zoom
+              local yoff = 0
+              --[[if lvar.showpop and lvar.popout_autoarrange then
+                yoff = mmy + lvar.pop_yoff
+              end]]
 
               if lvar.livemode > 0 then
                 blittbl[lvar.blittbl_cnt] = {strip_image+gpage,lvar.zoom,0,
@@ -25510,7 +26418,7 @@ end
             if lvar.dm_backtrack then
               local trname = '-'
               local track = GetTrack(lvar.dm_backtrack.trn)
-              if reaper.GetTrackGUID(track) ~= lvar.dm_backtrack.guid then
+              if GetTrackGUID(track) ~= lvar.dm_backtrack.guid then
                 local trn = GetTRNfromGUID(lvar.dm_backtrack.guid)
                 if trn then
                   lvar.dm_backtrack.trn = trn
@@ -25556,7 +26464,7 @@ end
                     if dm_trackbtns[tb] then
                       local tr = GetTrack(dm_trackbtns[tb].trn)
                       if tr then
-                        if reaper.GetTrackGUID(tr) ~= dm_trackbtns[tb].guid and dm_trackbtns[tb].trn ~= -1 then
+                        if GetTrackGUID(tr) ~= dm_trackbtns[tb].guid and dm_trackbtns[tb].trn ~= -1 then
                           tr = reaper.BR_GetMediaTrackByGUID(0, dm_trackbtns[tb].guid)
                           if tr then
                             dm_trackbtns[tb].trn = reaper.GetMediaTrackInfo_Value(tr, 'IP_TRACKNUMBER')-1
@@ -25566,7 +26474,7 @@ end
                       if tr then
                         local trname = reaper.GetTrackState(tr)
                         local bc = -1
-                        if reaper.GetTrackGUID(tr) == lvar.dynamicmode_guid then
+                        if GetTrackGUID(tr) == lvar.dynamicmode_guid then
                           bc = -8
                         elseif reaper.IsTrackSelected(tr) then
                           bc = -10                      
@@ -26696,12 +27604,12 @@ end
         end]]
       end
 
-        if lvar.dm_editmode_data then --and (lupd.update_gfx or lupd.update_surface or lupd.update_ctls or lupd.update_trbtns) then
-          gfx.dest = 1
-          GUI_DrawButton(gui,'SAVE',obj.sections[5020],-1,gui.color.white,true,nil,nil,4)
-          GUI_DrawButton(gui,'DISCARD',obj.sections[5021],-1,gui.color.white,true,nil,nil,4)
-          GUI_DrawButton(gui,'CENTER',obj.sections[5022],-1,gui.color.white,true,nil,nil,4)
-        end
+      if lvar.dm_editmode_data then --and (lupd.update_gfx or lupd.update_surface or lupd.update_ctls or lupd.update_trbtns) then
+        gfx.dest = 1
+        GUI_DrawButton(gui,'SAVE',obj.sections[5020],-1,gui.color.white,true,nil,nil,4)
+        GUI_DrawButton(gui,'DISCARD',obj.sections[5021],-1,gui.color.white,true,nil,nil,4)
+        GUI_DrawButton(gui,'CENTER',obj.sections[5022],-1,gui.color.white,true,nil,nil,4)
+      end
 
       local ypad = math.floor(tb_butt_h)
       local xywh = {x = obj.sections[43].w-2,
@@ -26779,14 +27687,14 @@ end
         GUI_DrawMIDILrn(gui, obj)
       end
 
-      if show_arrowupdn then
+      --[[if show_arrowupdn then
         local sk, o = skin.updn, 2000
         if stripgallery_view == 1 or settings_pagescrolldir == 1 then
           sk = skin.lr
           o = 2001
         end
         gfx.blit(sk,1,0,0,moupdn_img*obj.sections[o].h,obj.sections[o].w,obj.sections[o].h,obj.sections[o].x,obj.sections[o].y)
-      end
+      end]]
 
     elseif show_xxy and (lupd.update_gfx or lupd.update_xxy or lupd.update_xxypos or lupd.update_surface or lupd.update_snaps or lupd.update_msnaps or resize_snaps or resize_display) then
 
@@ -27329,6 +28237,232 @@ end
         end
       end
 
+      if insertstrip and lvar.showpop and lvar.popout_autoarrange and CheckOver10() then
+        local istrip = insertstrip
+        local pop = istrip.pop
+        if pop then
+          local t_swid = istrip.target
+          local swdata = lvar.stripdim.swdata
+          if swdata and t_swid and swdata[t_swid] then
+            local rect10 = obj.sections[10]
+            local o10y = rect10.y
+            local o10b = rect10.y + rect10.h - 1
+            local o10x = rect10.x + 1
+            local o10r = rect10.x + rect10.w
+            if lvar.mmov_show then
+              if lvar.mixmodedir == 0 then
+                o10x = o10x + (lvar.mmov_vsize + lvar.mmov_pad*2)
+              else
+                o10y = o10y + (lvar.mmov_vsize + lvar.mmov_pad*2)
+              end
+            end
+            
+            local xoff, yoff = lvar.pop_xoff or 0,lvar.pop_yoff
+            local sh = swdata[t_swid].sb - swdata[t_swid].st
+            local gap = 0 --lvar.mmgap
+            if lvar.popout_autoarrange_hideswitchers == true then
+              sh = 0
+              gap = -lvar.mmgap
+            end
+            local x = rect10.x + pop.x + xoff
+            local y = rect10.y + pop.y +(sh+gap)*lvar.zoom + yoff 
+            local w = (swdata[t_swid].r - swdata[t_swid].l)*lvar.zoom
+            local h = (swdata[t_swid].stripb - swdata[t_swid].stript)*lvar.zoom
+          
+            x, y, w, h = CropToRect(x,y,w,h,o10x,o10y,o10r,o10b)
+            
+            local ident = 2
+            local midy = y+lvar.mmgap*lvar.zoom + h/2
+          
+            f_Get_SSV(gui.color.blue)
+            if not mouse.shift and not mouse.alt then
+              local barw = math.min(math.floor(w/2),40)
+              local sz = barw/2
+              if istrip.before == true then
+                gfx.rect(x,y+lvar.mmgap*lvar.zoom,barw,h,1)
+                f_Get_SSV('0 0 0')
+                gfx.rect(x,y+lvar.mmgap*lvar.zoom,barw,h,0)
+                gfx.triangle(x+ident,midy,x+barw-ident*2,midy-sz,x+barw-ident*2,midy+sz)
+              else
+                gfx.rect(x+w-barw,y+lvar.mmgap*lvar.zoom,barw,h,1)
+                f_Get_SSV('0 0 0')
+                gfx.rect(x+w-barw,y+lvar.mmgap*lvar.zoom,barw,h,0)
+                gfx.triangle(x+w-ident,midy,x+w-barw+ident*2,midy-sz,x+w-barw+ident*2,midy+sz)
+              end
+            end
+            gfx.a = 1
+            if mouse.shift or mouse.alt then
+              if mouse.alt then
+                f_Get_SSV(gui.color.green)
+                GUI_Str(gui,{x=x+4,y=y+lvar.mmgap*lvar.zoom,w=40,h=20},'LINK',5,gui.color.green,2,1,gui.color.black,nil,nil)
+              else
+                GUI_Str(gui,{x=x+4,y=y+lvar.mmgap*lvar.zoom,w=60,h=20},'REPLACE',4,gui.color.yellow,2,1,gui.color.black,nil,nil)
+              end
+              gfx.rect(x,y+lvar.mmgap*lvar.zoom,w,h--[[+lvar.mmgap*lvar.zoom]],0)
+            end
+          end
+        end
+      end
+
+      if lvar.dragswitcher and lvar.showpop == true and lvar.popout_autoarrange then
+        
+        local t_swid = lvar.dragswitcher.target
+        local s_swid = lvar.dragswitcher.selected
+        local swdata = lvar.stripdim.swdata
+        local strip = tracks[track_select].strip
+        local pop = lvar.dragswitcher.pop
+        
+        if swdata and t_swid and t_swid ~= s_swid and swdata[t_swid] then
+          --DBG(switchers[s_swid].extendpos..'  '..switchers[t_swid].extendpos)
+          local rect10 = obj.sections[10]
+          local o10y = rect10.y
+          local o10b = rect10.y + rect10.h - 1
+          local o10x = rect10.x + 1
+          local o10r = rect10.x + rect10.w
+          if lvar.mmov_show then
+            if lvar.mixmodedir == 0 then
+              o10x = o10x + (lvar.mmov_vsize + lvar.mmov_pad*2)
+            else
+              o10y = o10y + (lvar.mmov_vsize + lvar.mmov_pad*2)
+            end
+          end
+          
+          local xoff, yoff = lvar.pop_xoff or 0,lvar.pop_yoff
+          local sh = swdata[t_swid].sb - swdata[t_swid].st
+          local gap = 0 --lvar.mmgap
+          if lvar.popout_autoarrange_hideswitchers == true then
+            sh = 0
+            gap = -lvar.mmgap
+          end
+          local x = rect10.x + pop.x + xoff
+          local y = rect10.y + pop.y +(sh+gap)*lvar.zoom + yoff 
+          local w = (swdata[t_swid].r - swdata[t_swid].l)*lvar.zoom
+          local h = (swdata[t_swid].stripb - swdata[t_swid].stript)*lvar.zoom
+        
+          x, y, w, h = CropToRect(x,y,w,h,o10x,o10y,o10r,o10b)
+          
+          local ident = 2
+          local midy = y+lvar.mmgap*lvar.zoom + h/2
+        
+          f_Get_SSV(gui.color.blue)
+          --if not mouse.shift and not mouse.alt then
+            local barw = math.min(math.floor(w/2),40)
+            local sz = barw/2
+            if lvar.dragswitcher.before == true then
+              gfx.rect(x,y+lvar.mmgap*lvar.zoom,barw,h,1)
+              f_Get_SSV('0 0 0')
+              gfx.rect(x,y+lvar.mmgap*lvar.zoom,barw,h,0)
+              gfx.triangle(x+ident,midy,x+barw-ident*2,midy-sz,x+barw-ident*2,midy+sz)
+            else
+              gfx.rect(x+w-barw,y+lvar.mmgap*lvar.zoom,barw,h,1)
+              f_Get_SSV('0 0 0')
+              gfx.rect(x+w-barw,y+lvar.mmgap*lvar.zoom,barw,h,0)
+              gfx.triangle(x+w-ident,midy,x+w-barw+ident*2,midy-sz,x+w-barw+ident*2,midy+sz)
+            end
+          --end
+        end
+        
+        local a = 0.9
+        if t_swid and t_swid ~= s_swid then
+          a = 0.5
+        --else
+        --  gfx.a = 0.9
+        end
+        local swdata = lvar.stripdim.swdata[s_swid]
+        local gpage = swdata.gfxpage or 0
+        --local swdata = lvar.stripdim.swdata[s_swid]
+        local sh = swdata.sb-swdata.st
+        local sw = swdata.sr-swdata.sl
+        local xw = math.floor(-sw/2)
+        if swdata.stripl then
+          local gap = 0
+          if lvar.livemode >= 1 then
+            --[[if lvar.mixmodealign == 0 or lvar.mixmodedir == 1 then
+              xw = math.floor((swdata.stripr-swdata.stripl)/2 - sw/2)*lvar.zoom
+            else
+              xw = 0
+            end]]
+            gap = lvar.mmgap
+          else
+            xw = 0
+          end
+          gfx.a = 1--a
+
+          --crop to obj10
+          local mmx = mouse.mx-lvar.dragswitcher.offx
+          local mmy = mouse.my-lvar.dragswitcher.offy
+          local yoff = 0
+          if not lvar.popout_autoarrange_hideswitchers then
+            yoff = yoff +(sh+gap)*lvar.zoom
+          end
+
+          gfx.dest = -1
+          mmx = mouse.mx-lvar.dragswitcher.offx
+          mmy = mouse.my-lvar.dragswitcher.offy+yoff
+          gfx.blit(strip_image+gpage,lvar.zoom,0,
+                   swdata.stripl--[[-cutw/lvar.zoom]],
+                   swdata.stript--[[-cuth2/lvar.zoom]],
+                   math.max(swdata.stripr-swdata.stripl--[[+cutw/lvar.zoom]],0),
+                   math.max(swdata.stripb-swdata.stript--[[+cuth/lvar.zoom+cuth2/lvar.zoom]],0),
+                   mmx, mmy)
+        end
+      end
+
+      if lvar.sk2overlay_active == 1 and lvar.sk2overlay_hud > 0 and lvar.sk2overlay.assign[lvar.sk2overlay_globalassgrp] then
+        local ctlfxidx
+        if lvar.stripdim then
+          ctlfxidx = lvar.stripdim.ctlfxidx
+        end
+        if ctlfxidx then
+          local strip = tracks[track_select].strip
+          local o10 = obj.sections[10]
+          local sz = 4
+          gfx.a = (alp or 1)--*0.5
+          for a, b in pairs(lvar.sk2overlay.assign[lvar.sk2overlay_globalassgrp]) do
+            if b then
+              local c = ctlfxidx[b.fxguid..'|'..b.fxparam]
+              if c then
+                local x,y,w,h = GetControlLoc_Screen(strip,page,c)
+                if x and y and w and h then
+                  f_Get_SSV(tab_xtouch_colors[b.sscolor or 7].c)
+                  local mmov, mmovh = 0, 0
+                  if lvar.livemode == 2 then
+                    if lvar.mmov_show then
+                      if lvar.mixmodedir == 1 then
+                        mmov = lvar.mmov_vsize + 2*lvar.mmov_pad
+                      else
+                        mmovh = lvar.mmov_vsize + 2*lvar.mmov_pad
+                      end
+                    end
+                  end
+                  x, y, w, h = CropToRect(x-sz,y-sz,w+sz*2,h+sz*2,o10.x+mmovh,o10.y+mmov,o10.x+o10.w,o10.y+o10.h)
+                  if lvar.sk2overlay_hudt >= 1 then
+                    gfx.roundrect(x,y-2,w,h+2,4,1)
+                  end
+                  if lvar.sk2overlay_hudt <= 1 then
+                    local f = 1
+                    local cc = tab_xtouch_colors[b.sscolor or 7].tc
+                    local xywh = {x = x, y = y-14, w = w+1, h = 16}
+                    xywh.y = F_limit(xywh.y,o10.y+mmov-2,o10.y+o10.h-16)
+                    if lvar.sk2overlay_hudt == 0 then
+                      f = 0
+                      cc = tab_xtouch_colors[b.sscolor or 7].c
+                      gfx.a = (alp or 1)*0.4
+                      f_Get_SSV('0 0 0')
+                      gfx.rect(xywh.x,xywh.y,xywh.w,xywh.h,1)
+                      f_Get_SSV(tab_xtouch_colors[b.sscolor or 7].c)
+                      gfx.a = (alp or 1)
+                    end
+                    gfx.rect(xywh.x,xywh.y,xywh.w,xywh.h,f)
+                    GUI_Str(gui,xywh,lvar.sk2overlay.slot[a].name,5,cc or gui.color.black,-4,1)
+                  end
+                end
+              end
+            end
+          end
+        end
+      end
+
       if settings_ssdock ~= true and show_snapshots and macro_lrn_mode ~= true then
 
         gfx.dest = -1
@@ -27682,6 +28816,39 @@ end
       end
     end
 
+    if show_arrowupdn then
+      local sk, o = skin.updn, 2000
+      if stripgallery_view == 1 or settings_pagescrolldir == 1 then
+        sk = skin.lr
+        o = 2001
+      end
+      gfx.blit(sk,1,0,0,moupdn_img*obj.sections[o].h,obj.sections[o].w,obj.sections[o].h,obj.sections[o].x,obj.sections[o].y)
+    end
+    
+    --[[if lvar.analyzer.active == true and lvar.analyzer.type == 2 then
+
+      --local lvar.analyzer.window = reaper.JS_Window_Find('- LBX Stripper -', true)
+
+      local a_hwnd = reaper.JS_Window_Find(lvar.analyzer.title, true)
+      if a_hwnd then
+        local gdi_dc = reaper.JS_LICE_GetDC(lvar.analyzer.bitmap)
+        local an_dc = reaper.JS_GDI_GetClientDC(a_hwnd)
+        local xywh = obj.sections[5046]
+        reaper.JS_GDI_Blit(gdi_dc, xywh.x, xywh.y, an_dc, 0, 0, xywh.w, xywh.h, "COPY")
+        reaper.JS_Window_InvalidateRect(lvar.analyzer.window,0,0,xywh.x+xywh.w,xywh.y+xywh.h, true)
+        --reaper.JS_LICE_ReleaseDC(, gdi_dc)
+        reaper.JS_GDI_ReleaseDC(a_hwnd, an_dc)
+
+        --reaper.JS_Window_Update(win_hwnd)
+      end
+
+    end]]
+
+    if not fullscreen_open then
+      gfx.a = 1
+      DrawXPnls()
+    end
+    
     if show_dd == true then
       if lupd.update_gfx == true or lupd.update_dd == true or resize_display == true then
         GUI_DrawDropdown(gui, obj)
@@ -27717,28 +28884,6 @@ end
       f_Get_SSV('255 255 255')
       gfx.rect(0,0,5,5,1)
     end
-
-    --[[if lvar.analyzer.active == true and lvar.analyzer.type == 2 then
-
-      --local lvar.analyzer.window = reaper.JS_Window_Find('- LBX Stripper -', true)
-
-      local a_hwnd = reaper.JS_Window_Find(lvar.analyzer.title, true)
-      if a_hwnd then
-        local gdi_dc = reaper.JS_LICE_GetDC(lvar.analyzer.bitmap)
-        local an_dc = reaper.JS_GDI_GetClientDC(a_hwnd)
-        local xywh = obj.sections[5046]
-        reaper.JS_GDI_Blit(gdi_dc, xywh.x, xywh.y, an_dc, 0, 0, xywh.w, xywh.h, "COPY")
-        reaper.JS_Window_InvalidateRect(lvar.analyzer.window,0,0,xywh.x+xywh.w,xywh.y+xywh.h, true)
-        --reaper.JS_LICE_ReleaseDC(, gdi_dc)
-        reaper.JS_GDI_ReleaseDC(a_hwnd, an_dc)
-
-        --reaper.JS_Window_Update(win_hwnd)
-      end
-
-    end]]
-
-    gfx.a = 1
-    DrawXPnls()
 
 
     if show_bitmap then
@@ -27840,6 +28985,23 @@ end
       lvar.surface_fade.st = rt
       lvar.surface_fade.et = rt+lvar.surfacefadetime
       lupd.update_surface = true
+    end
+  end
+
+  function GetControlLoc_Screen(strip, page, c)
+    local ctl = strips[strip][page].controls[c]
+    if ctl then
+      if lvar.livemode >= 1 then
+        if ctl.switcher then
+          local swid = Switcher_GetTopLevelSwitcher(ctl.switcher)
+          local sx, sy = TranslateMixCtlPos(c, swid)
+          return sx, sy, ctl.wsc*lvar.zoom, ctl.hsc*lvar.zoom
+        end
+      else
+        local sx = ctl.xsc - surface_offset.x + obj.sections[10].x 
+        local sy = ctl.ysc - surface_offset.y + obj.sections[10].y
+        return sx, sy, ctl.wsc*lvar.zoom, ctl.hsc*lvar.zoom
+      end
     end
   end
 
@@ -28510,7 +29672,7 @@ end
     if dm_trackbtns and dm_trackbtns[tb] then
       tr = GetTrack(dm_trackbtns[tb].trn)
       if tr then
-        if reaper.GetTrackGUID(tr) ~= dm_trackbtns[tb].guid and dm_trackbtns[tb].trn ~= -1 then
+        if GetTrackGUID(tr) ~= dm_trackbtns[tb].guid and dm_trackbtns[tb].trn ~= -1 then
           tr = reaper.BR_GetMediaTrackByGUID(0, dm_trackbtns[tb].guid)
           if tr then
             dm_trackbtns[tb].trn = reaper.GetMediaTrackInfo_Value(tr, 'IP_TRACKNUMBER')-1
@@ -28657,7 +29819,7 @@ end
     local master
     local tr = GetTrack(dm_trackbtns[tb].trn)
     if tr then
-      if reaper.GetTrackGUID(tr) ~= dm_trackbtns[tb].guid and dm_trackbtns[tb].trn ~= -1 then
+      if GetTrackGUID(tr) ~= dm_trackbtns[tb].guid and dm_trackbtns[tb].trn ~= -1 then
         tr = reaper.BR_GetMediaTrackByGUID(0, dm_trackbtns[tb].guid)
         if tr then
           dm_trackbtns[tb].trn = reaper.GetMediaTrackInfo_Value(tr, 'IP_TRACKNUMBER')-1
@@ -31009,6 +32171,10 @@ end
         Cycle_SwitcherPage(ctl)
       end
       
+      if xPnl.HUD.visible == true and ctl.ctltype ~= 5 then
+        SetHUD(ctl)
+      end
+      
       --[[if ctl.dirty == true then
         SetCtlDirty(c)
       end]]
@@ -32352,7 +33518,7 @@ end
           dm_strip.trn, track = GetTRNfromGUID(guid)
         else
           track = GetTrack(dm_strip.trn)
-          if not dm_strip.trn == reaper.GetTrackGUID(track) then
+          if not dm_strip.trn == GetTrackGUID(track) then
             dm_strip.trn, track = GetTRNfromGUID(guid)
           end
         end
@@ -32860,7 +34026,7 @@ end
   end
 
   function CheckDataTables(allstrips, verbose, ts, pg)
-
+    --DBG('CheckDataTables '..tostring(allstrips))
     if lvar.checkdatatables_active == true then
       if allstrips == true then
 
@@ -32895,6 +34061,7 @@ end
       lupd.update_gfx = true
       lupd.update_bg = true
     end
+    --DBG('CheckDataTables EXIT')
 
   end
 
@@ -32947,7 +34114,6 @@ end
         end
       end
     end
-
   end
 
   function DeleteStrip(stripid, delfx_flag, force)
@@ -33912,12 +35078,20 @@ end
       else
         local mo = tonumber(txt)
         if mo then
-          local nval = GetValFromDVal(trackfxparam_select,txt)
-          --for i = 1, #ctl_select do
-          strips[tracks[track_select].strip][page].controls[trackfxparam_select].val = nval
-          strips[tracks[track_select].strip][page].controls[trackfxparam_select].dirty = true
-          SetParam()
-          --end
+          local ctl = strips[tracks[track_select].strip][page].controls[trackfxparam_select]
+          if ctl then
+            if (ctl.maxdp or -1) >= 0 then
+              local mult = 10^ctl.maxdp
+              txt = math.floor(txt * mult) / mult
+              if ctl.maxdp == 0 then
+                txt = string.format('%i',txt)
+              end
+            end
+            local nval = GetValFromDVal(trackfxparam_select,txt)
+            ctl.val = nval
+            ctl.dirty = true
+            SetParam()
+          end
         end
       end
     end
@@ -34163,6 +35337,7 @@ end
                                               bold = nil,
                                               italics = nil,
                                               underline = nil,
+                                              vertical = nil,
                                               shadow = nil
                                               },
                                       text = nil,
@@ -35359,7 +36534,7 @@ end
       rfxnum = fxnum
       rfxguid = fxguid
       rtrn = trn
-      rtrguid = reaper.GetTrackGUID(track)
+      rtrguid = GetTrackGUID(track)
     else
       local fxcnt = reaper.TrackFX_GetCount(track)
       for i = 0, fxcnt-1 do
@@ -35369,7 +36544,7 @@ end
           rfxnum = i
           rfxguid = fxguid
           rtrn = trn
-          rtrguid = reaper.GetTrackGUID(track)
+          rtrguid = GetTrackGUID(track)
           break
         end
       end
@@ -35387,7 +36562,7 @@ end
                 rfxnum = i
                 rfxguid = fxguid
                 rtrn = t
-                rtrguid = reaper.GetTrackGUID(track)
+                rtrguid = GetTrackGUID(track)
                 break
               end
             end
@@ -35427,7 +36602,7 @@ end
       end
       tr = GetTrack(trnum)
       if tr then
-        trguid = reaper.GetTrackGUID(tr)
+        trguid = GetTrackGUID(tr)
       else
         return
       end
@@ -35844,13 +37019,13 @@ end
               for j = 1, #stripdata.strip.controls do
                 if stripdata.strip.controls[j].ctlcat == ctlcats.fxparam then
                   if stripdata.strip.controls[j].param == 0 then
-                    --change fxbypass assignment
+                    --change fxbypass assignment 
                     local fxpcnt = reaper.TrackFX_GetNumParams(tr, fxnum)
-                    stripdata.strip.controls[j].param = fxpcnt-2
+                    stripdata.strip.controls[j].param = fxpcnt-3
                   elseif stripdata.strip.controls[j].param == 1 then
                     --change fxwet assignment
                     local fxpcnt = reaper.TrackFX_GetNumParams(tr, fxnum)
-                    stripdata.strip.controls[j].param = fxpcnt-1
+                    stripdata.strip.controls[j].param = fxpcnt-2
                   else
                     stripdata.strip.controls[j].param = -1
                   end
@@ -36137,7 +37312,11 @@ end
         strips[strip][page].controls[cc].knobsens = {norm = settings_defknobsens.norm,
                                                      fine = settings_defknobsens.fine,
                                                      wheel = settings_defknobsens.wheel,
-                                                     wheelfine = settings_defknobsens.wheelfine}
+                                                     wheelfine = settings_defknobsens.wheelfine,
+                                                     m_norm = settings_defknobsens.m_norm,
+                                                     m_fine = settings_defknobsens.m_fine,
+                                                     m_wheel = settings_defknobsens.m_wheel,
+                                                     m_wheelfine = settings_defknobsens.m_wheelfine}
       end
 
       if stripdata.plugtrack ~= nil and tracks[stripdata.plugtrack] then
@@ -36269,6 +37448,7 @@ end
                                               bold = nil,
                                               italics = nil,
                                               underline = nil,
+                                              vertical = nil,
                                               shadow = nil
                                               }
           stripdata.strip.graphics[j].text = nil
@@ -36783,11 +37963,12 @@ end
               local text = gfxx.text
               local textcol = gfxx.text_col
 
-              local flagb,flagi,flagu = 0,0,0
+              local flagb,flagi,flagu,flagv = 0,0,0,0
               if gfxx.font.bold then flagb = 98 end
               if gfxx.font.italics then flagi = 105 end
               if gfxx.font.underline then flagu = 117 end
-              local flags = flagb + (flagi*256) + (flagu*(256^2))
+              if gfxx.font.vertical then flagv = 122 end
+              local flags = flagb + (flagi*256) + (flagu*(256^2)) + (flagv*(256^3))
               gfx.setfont(1,gfxx.font.name,
                             gfxx.font.size,flags)
               if gfxx.font.shadow then
@@ -37082,11 +38263,12 @@ end
         local text = gfxx.text
         local textcol = gfxx.text_col
 
-        local flagb,flagi,flagu = 0,0,0
+        local flagb,flagi,flagu,flagv = 0,0,0,0
         if gfxx.font.bold then flagb = 98 end
         if gfxx.font.italics then flagi = 105 end
         if gfxx.font.underline then flagu = 117 end
-        local flags = flagb + (flagi*256) + (flagu*(256^2))
+        if gfxx.font.vertical then flagv = 122 end
+        local flags = flagb + (flagi*256) + (flagu*(256^2)) + (flagv*(256^3))
         gfx.setfont(1,gfxx.font.name,
                       gfxx.font.size,flags)
         if gfxx.font.shadow then
@@ -37134,15 +38316,25 @@ end
             maxy = math.max(maxy, strips[strip][page].graphics[i].y + strips[strip][page].graphics[i].stretchh)
           end
         else
-          local flagb,flagi,flagu = 0,0,0
+          local flagb,flagi,flagu,flagv = 0,0,0,0
           local gfxx = strips[strip][page].graphics[i]
           if gfxx.font.bold then flagb = 98 end
           if gfxx.font.italics then flagi = 105 end
           if gfxx.font.underline then flagu = 117 end
+          if gfxx.font.vertical then flagv = 122 end
           local flags = flagb + (flagi*256) + (flagu*(256^2))
           gfx.setfont(1,gfxx.font.name,
                         gfxx.font.size,flags)
           local w, h = gfx.measurestr(gfxx.text)
+          if gfxx.font.vertical then
+            w, h = h, w
+            flags = flags + (flagv*(256^3))
+            gfx.setfont(1,gfxx.font.name,
+                          gfxx.font.size,flags)
+            --[[local ww, hh = gfx.measurestr(gfxx.text)
+            DBG(ww..'  '..hh) ]]             
+          end
+          
           if minx == nil then
             minx = strips[strip][page].graphics[i].x
             miny = strips[strip][page].graphics[i].y
@@ -37276,11 +38468,12 @@ end
             local text = gfxx.text
             local textcol = gfxx.text_col
 
-            local flagb,flagi,flagu = 0,0,0
+            local flagb,flagi,flagu,flagv = 0,0,0,0
             if gfxx.font.bold then flagb = 98 end
             if gfxx.font.italics then flagi = 105 end
             if gfxx.font.underline then flagu = 117 end
-            local flags = flagb + (flagi*256) + (flagu*(256^2))
+            if gfxx.font.vertical then flagv = 122 end
+            local flags = flagb + (flagi*256) + (flagu*(256^2)) + (flagv*(256^3))
             gfx.setfont(1,gfxx.font.name,
                           gfxx.font.size,flags)
             if gfxx.font.shadow then
@@ -37475,11 +38668,12 @@ end
               local text = gfxx.text
               local textcol = gfxx.text_col
 
-              local flagb,flagi,flagu = 0,0,0
+              local flagb,flagi,flagu,flagv = 0,0,0,0
               if gfxx.font.bold then flagb = 98 end
               if gfxx.font.italics then flagi = 105 end
               if gfxx.font.underline then flagu = 117 end
-              local flags = flagb + (flagi*256) + (flagu*(256^2))
+              if gfxx.font.vertical then flagv = 122 end
+              local flags = flagb + (flagi*256) + (flagu*(256^2)) + (flagv*(256^3))
               gfx.setfont(1,gfxx.font.name,
                             gfxx.font.size,flags)
               if gfxx.font.shadow then
@@ -37730,7 +38924,7 @@ end
   ------------------------------------------------------------
 
   function CheckStripControls(strip)
-
+    --DBG('CheckStripControls '..tostring(strip))
     if strip == nil then
       if tracks[track_select] then
         strip = tracks[track_select].strip
@@ -37756,7 +38950,7 @@ end
         local fxoffline = {}
         for fxn = 0, reaper.TrackFX_GetCount(tr)-1 do
           local pn = reaper.TrackFX_GetNumParams(tr,fxn)
-          if pn == 2 then
+          if pn == lvar.offline_paramcnt then
             fxoffline[fxn] = true
           end
         end
@@ -37832,7 +39026,7 @@ end
                       end
 
                       local pn = reaper.TrackFX_GetNumParams(tr2,ctl.fxnum)
-                      if pn == 2 then
+                      if pn == lvar.offline_paramcnt then
                         ctl.offline = true
                       end
 
@@ -37914,9 +39108,10 @@ end
 
       else
         --Track not found
+        --DBG('TNF')
       end
     end
-
+    --DBG('CheckStripControls EXIT')
   end
 
   function CheckTrack(track, strip, p, c)
@@ -37929,14 +39124,14 @@ end
       local found = false
       local trx = GetTrack(track.tracknum)
       if trx then
-        if track.guid == reaper.GetTrackGUID(trx) then
+        if track.guid == GetTrackGUID(trx) then
           return true
         else
           --Find track and update tracknum
           for i = 0, reaper.CountTracks(0) do
             local tr = GetTrack(i)
             if tr ~= nil then
-              if strips[strip].track.guid == reaper.GetTrackGUID(tr) then
+              if strips[strip].track.guid == GetTrackGUID(tr) then
                 --found
                 found = true
                 strips[strip].track.tracknum = i
@@ -37951,7 +39146,7 @@ end
         for i = 0, reaper.CountTracks(0) do
           local tr = GetTrack(i)
           if tr ~= nil then
-            if strips[strip].track.guid == reaper.GetTrackGUID(tr) then
+            if strips[strip].track.guid == GetTrackGUID(tr) then
               --found
               found = true
               strips[strip].track.tracknum = i
@@ -37969,14 +39164,14 @@ end
         local found = false
         local trx = GetTrack(nz(strips[strip][p].controls[c].tracknum,-2))
         if trx then
-          if strips[strip][p].controls[c].trackguid == reaper.GetTrackGUID(trx) then
+          if strips[strip][p].controls[c].trackguid == GetTrackGUID(trx) then
             return true
           else
             --Find track and update tracknum
             for i = 0, reaper.CountTracks(0) do
               local tr = GetTrack(i)
               if tr ~= nil then
-                if strips[strip][p].controls[c].trackguid == reaper.GetTrackGUID(tr) then
+                if strips[strip][p].controls[c].trackguid == GetTrackGUID(tr) then
                   --found
                   found = true
                   strips[strip][p].controls[c].tracknum = i
@@ -37991,7 +39186,7 @@ end
           for i = 0, reaper.CountTracks(0) do
             local tr = GetTrack(i)
             if tr ~= nil then
-              if strips[strip][p].controls[c].trackguid == reaper.GetTrackGUID(tr) then
+              if strips[strip][p].controls[c].trackguid == GetTrackGUID(tr) then
                 --found
                 found = true
                 strips[strip][p].controls[c].tracknum = i
@@ -38422,6 +39617,7 @@ end
           
           pop.x = x
           pop.y = ny
+          pop.row = i
         
           x = x + (swids[c].stripw or 0) + mingap --xxgap
           c=c+1
@@ -38627,7 +39823,7 @@ end
             if track then
               local fxn = GetFXNFromGUID(track,fxguid)
               if fxn then
-                local trguid = reaper.GetTrackGUID(track)
+                local trguid = GetTrackGUID(track)
                 TouchFX(track, trguid, fxn, fxguid)
               end
             end
@@ -38703,6 +39899,9 @@ end
             local idx = strips[strip][page].popidx[switchid]
             offx = mouse.mx - strips[strip][page].pop[idx].x
             offy = mouse.my - strips[strip][page].pop[idx].y
+            if lvar.popout_autoarrange then
+              offy = offy - lvar.pop_yoff
+            end
           else
             if lvar.spos then
               local spos = lvar.spos[switchid]
@@ -39412,6 +40611,7 @@ end
               strips[tracks[track_select].strip][page].graphics[gfx4_select[i]].font.bold = gfx_lblformat_copy.font.bold
               strips[tracks[track_select].strip][page].graphics[gfx4_select[i]].font.italics = gfx_lblformat_copy.font.italics
               strips[tracks[track_select].strip][page].graphics[gfx4_select[i]].font.underline = gfx_lblformat_copy.font.underline
+              strips[tracks[track_select].strip][page].graphics[gfx4_select[i]].font.vertical = gfx_lblformat_copy.font.vertical
               strips[tracks[track_select].strip][page].graphics[gfx4_select[i]].font.shadow = gfx_lblformat_copy.font.shadow
               strips[tracks[track_select].strip][page].graphics[gfx4_select[i]].font.shadow_x = gfx_lblformat_copy.font.shadow_x
               strips[tracks[track_select].strip][page].graphics[gfx4_select[i]].font.shadow_y = gfx_lblformat_copy.font.shadow_y
@@ -40138,7 +41338,7 @@ end
     reaper.InsertTrackAtIndex(trackcount, false)
     track = GetTrack(trackcount)
     lvar.analyzer.track = trackcount
-    lvar.analyzer.trackguid = reaper.GetTrackGUID(track)
+    lvar.analyzer.trackguid = GetTrackGUID(track)
     reaper.GetSetMediaTrackInfo_String(track, "P_NAME", '__LBX_ANALYZER', true)
     reaper.SetMediaTrackInfo_Value(track,'B_MAINSEND',0)
     reaper.SetMediaTrackInfo_Value(track,'D_VOL',0)
@@ -40158,7 +41358,7 @@ end
 
     if lvar.analyzer.track then
       local tr = GetTrack(lvar.analyzer.track)
-      if reaper.GetTrackGUID(track) == lvar.analyzer.trackguid then
+      if GetTrackGUID(track) == lvar.analyzer.trackguid then
         return tr
       end
     end
@@ -40548,13 +41748,14 @@ end
       end
 
       DM_SaveTrBtns(file)
-
+      
       file:write('[EOF]#EOF\n')
       file:close()
       
       copyfile(ffn..'.tmp',ffn)
       os.remove(ffn..'.tmp')
       
+      return fn
     end
   end
 
@@ -40836,7 +42037,7 @@ end
       if lvar.dynamicmode_trn == nil then
         trn = math.max(reaper.GetMediaTrackInfo_Value(track, 'IP_TRACKNUMBER')-1,-1)
         lvar.dynamicmode_trn = trn
-        lvar.dynamicmode_guid = reaper.GetTrackGUID(track)
+        lvar.dynamicmode_guid = GetTrackGUID(track)
       end
     end
     
@@ -40881,11 +42082,13 @@ end
         strips[strip][pg].trn = lvar.dynamicmode_trn
 
         --DBG(strips[strip][page].mixy)
-        lvar.stripstore[lvar.dynamicmode_guid] = table.deepcopy(strips[strip][pg])
+        --lvar.stripstore[lvar.dynamicmode_guid] = table.deepcopy(strips[strip][pg])
+        lvar.stripstore[lvar.dynamicmode_guid] = strips[strip][pg]
         if snapshots[strip] and snapshots[strip][pg][sstype_select] then
           snapshots[strip][pg][sstype_select].selected = ss_select
         end
-        lvar.snapstore[lvar.dynamicmode_guid] = table.deepcopy(snapshots[strip][pg])
+        --lvar.snapstore[lvar.dynamicmode_guid] = table.deepcopy(snapshots[strip][pg])
+        lvar.snapstore[lvar.dynamicmode_guid] = snapshots[strip][pg]
         if not lvar.faderstore then
           lvar.faderstore = {}
         end
@@ -41516,7 +42719,7 @@ end
           sfade = true
         end
         lvar.dynamicmode_trn = trn
-        lvar.dynamicmode_guid = reaper.GetTrackGUID(track)
+        lvar.dynamicmode_guid = GetTrackGUID(track)
         lvar.dm_trname = reaper.GetTrackState(track)
   
         lvar.trmix_sndpnl_offs = 0
@@ -42062,7 +43265,7 @@ end
           if not fxn then return end
         else
           local tr = GetTrack(trn)
-          trg = reaper.GetTrackGUID(tr)
+          trg = GetTrackGUID(tr)
           fxn = fx-1
         end
         --pins
@@ -44192,7 +45395,7 @@ end
           local fxnum = ctl.fxnum
           if fxnum == nil then return end
           local pcnt = reaper.TrackFX_GetNumParams(track, fxnum)
-          local p_byp = pcnt-1
+          local p_byp = pcnt-2
           local p_msb = 0
           local p_lsb = 1
           local p_prog = 2
@@ -49120,6 +50323,7 @@ end
     gfx_font_select.bold = strips[tracks[track_select].strip][page].graphics[gfx2_select].font.bold
     gfx_font_select.italic = strips[tracks[track_select].strip][page].graphics[gfx2_select].font.italic
     gfx_font_select.underline = strips[tracks[track_select].strip][page].graphics[gfx2_select].font.underline
+    gfx_font_select.vertical = strips[tracks[track_select].strip][page].graphics[gfx2_select].font.vertical
     gfx_font_select.shadow = strips[tracks[track_select].strip][page].graphics[gfx2_select].font.shadow
     gfx_font_select.shadow_x = strips[tracks[track_select].strip][page].graphics[gfx2_select].font.shadow_x
     gfx_font_select.shadow_y = strips[tracks[track_select].strip][page].graphics[gfx2_select].font.shadow_y
@@ -49138,6 +50342,7 @@ end
       gfx_font_select.bold = gfxx.font.bold
       gfx_font_select.italic = gfxx.font.italic
       gfx_font_select.underline = gfxx.font.underline
+      gfx_font_select.vertical = gfxx.font.vertical
       gfx_font_select.shadow = gfxx.font.shadow
       gfx_font_select.shadow_x = gfxx.font.shadow_x
       gfx_font_select.shadow_y = gfxx.font.shadow_y
@@ -50759,7 +51964,7 @@ end
 
     if LBX_CTL_TRACK then
       local track = GetTrack(tracks[LBX_CTL_TRACK].tracknum)
-      if tracks[LBX_CTL_TRACK].guid ~= reaper.GetTrackGUID(track) then
+      if tracks[LBX_CTL_TRACK].guid ~= GetTrackGUID(track) then
         PopulateTracks()
       end
       if LBX_CTL_TRACK then
@@ -50791,7 +51996,7 @@ end
         local ccc = trackfxparam_select
 
         local track = GetTrack(tracks[LBX_CTL_TRACK].tracknum)
-        if tracks[LBX_CTL_TRACK].guid ~= reaper.GetTrackGUID(track) then
+        if tracks[LBX_CTL_TRACK].guid ~= GetTrackGUID(track) then
           PopulateTracks()
         end
         if xxyrecord == false then
@@ -51267,7 +52472,7 @@ end
                       dm_strip.trn, track = GetTRNfromGUID(guid)
                     else
                       track = GetTrack(dm_strip.trn)
-                      if not dm_strip.trn == reaper.GetTrackGUID(track) then
+                      if not dm_strip.trn == GetTrackGUID(track) then
                         dm_strip.trn, track = GetTRNfromGUID(guid)
                       end
                     end
@@ -51763,6 +52968,10 @@ end
 
     lvar.keypress['stripsearch'] = 70
 
+    lvar.keypress['opensk2assign'] = 97
+    lvar.keypress['enablesk2assign'] = 65
+    lvar.keypress['openhud'] = 104
+
     lvar.keypress['screenset1'] = 26161
     lvar.keypress['screenset2'] = 26162
     lvar.keypress['screenset3'] = 26163
@@ -52058,6 +53267,22 @@ end
     --if not mouse.shift then
       if char == lvar.keypress['stripsearch'] then
         StripSearch()
+      elseif char == lvar.keypress['enablesk2assign'] then
+        lvar.sk2overlay_active = 1-lvar.sk2overlay_active
+        xPnl.SK2.updategui = true
+        SendSK2Data_Enable(lvar.sk2overlay_active)
+      elseif char == lvar.keypress['opensk2assign'] then
+        if xPnl.SK2.visible ~= true then
+          ShowXPnl('SK2')
+        else
+          HideXPnl('SK2')
+        end
+      elseif char == lvar.keypress['openhud'] then
+        if xPnl.HUD.visible ~= true then
+          ShowXPnl('HUD')
+        else
+          HideXPnl('HUD')
+        end
       elseif char == lvar.keypress['findfxnotfound'] then
         Find_FXNotFound()      
       elseif char == lvar.keypress['setmode_2'] then
@@ -52094,7 +53319,7 @@ end
         DM_RefreshPage()
 
       elseif char == lvar.keypress['select_all'] then
-
+        
         SelectAll()
 
       elseif char == lvar.keypress['undo_redo'] then
@@ -52176,7 +53401,7 @@ end
           else
             ChangeTrack2(t)
           end
-        elseif lvar.livemode == 2 then
+        elseif lvar.livemode == 2 and mouse.context == nil then
           local track = reaper.GetSelectedTrack2(0,0,true)
           local trn = reaper.GetMediaTrackInfo_Value(track, 'IP_TRACKNUMBER')
           if trn ~= -1 then
@@ -52237,7 +53462,7 @@ end
           else
             ChangeTrack2(t)
           end
-        elseif lvar.livemode == 2 then
+        elseif lvar.livemode == 2 and mouse.context == nil then
           local track = reaper.GetSelectedTrack2(0,0,true)
           local trn = reaper.GetMediaTrackInfo_Value(track, 'IP_TRACKNUMBER')
           if trn ~= -1 then
@@ -52951,8 +54176,8 @@ end
     local t_tab = {}
     for t = 0, reaper.CountTracks(0)-1 do
       local tr = GetTrack(t)
-      t_tab[reaper.GetTrackGUID(tr)] = t
-      --DBG(t..'  '..reaper.GetTrackGUID(tr))
+      t_tab[GetTrackGUID(tr)] = t
+      --DBG(t..'  '..GetTrackGUID(tr))
     end
   
     local strip = tracks[track_select].strip
@@ -53021,9 +54246,9 @@ end
 
       if lvar.livemode >= 1 then
         if lvar.mixmodedir == 0 then
-          surface_offset.mixy = zi.mixp + ((zi.mixpt/zi.tgt)*zz)
+          surface_offset.mixy = (zi.mixp or 0) + ((zi.mixpt/zi.tgt)*zz)
         else
-          surface_offset.mixx = zi.mixp + ((zi.mixpt/zi.tgt)*zz)
+          surface_offset.mixx = (zi.mixp or 0) + ((zi.mixpt/zi.tgt)*zz)
         end
 
         --[[local strip = tracks[track_select].strip
@@ -54547,7 +55772,7 @@ end
 
     for t = -1, trcnt-1 do
       local tr = GetTrack(t)
-      local trg = reaper.GetTrackGUID(tr)
+      local trg = GetTrackGUID(tr)
       local _, trlbl = reaper.GetTrackName(tr, '')
       if trlbl then
         local tracknm, stripnm = string.match(trlbl, '(.-)LBXSTRIP%[(.-)%]')
@@ -54673,7 +55898,7 @@ end
           end
         end
         local dtr = GetTrack(movetracks[mm].target)
-        deltr[reaper.GetTrackGUID(dtr)] = 1
+        deltr[GetTrackGUID(dtr)] = 1
         reaper.ReorderSelectedTracks(movetracks[mm].target+1, 0)
         --reaper.DeleteTrack(dtr)
         offset = offset + (lt-ft)+1
@@ -54682,7 +55907,7 @@ end
       --if #deltr > 0 then
         for t = reaper.CountTracks(0)-1, 0, -1 do
           local dtr = GetTrack(t)
-          if deltr[reaper.GetTrackGUID(dtr)] == 1 then
+          if deltr[GetTrackGUID(dtr)] == 1 then
             reaper.DeleteTrack(dtr)
           end
         end
@@ -55784,6 +57009,10 @@ end
 
           noscroll = true
 
+          if lvar.popswipe then
+            MixMode_Swiping_Pop()
+          end
+
           if gfx.mouse_wheel ~= 0 then
             local v = mousewheel_val() --gfx.mouse_wheel/lvar.mousewheel_div
             if v > 0 then
@@ -55791,47 +57020,67 @@ end
             else
               moupdn_img = 2
             end
+            
             moupdn_timer = reaper.time_precise() + 0.2
             omoupdn_img = moupdn_img
-            if stripgallery_view == 0 then
-              if settings_pagescrolldir == 0 then
-                surface_offset.y = F_limit(surface_offset.y - v*50,0,surface_size.h-obj.sections[10].h)
-              else
-                surface_offset.x = F_limit(surface_offset.x - v*50,0,surface_size.w-obj.sections[10].w)
+            if lvar.livemode == 2 then
+              if lvar.showpop and lvar.popout_autoarrange and mode == 0 then
+                MixMode_Swipe_Pop(1-(moupdn_img-1), false)
               end
             else
-              local min = math.floor(0-(obj.sections[10].w/2 - stlay_data.loc[1].w/2))
-              local max = math.floor(stlay_data.loc[#stlay_data.loc].runx_e-obj.sections[10].w + (obj.sections[10].w/2 - stlay_data.loc[#stlay_data.loc].w/2))
-              stlay_data.xpos = F_limit(stlay_data.xpos - v*50,min,max)
-              if strips and tracks[track_select] and strips[tracks[track_select].strip] then
-                strips[tracks[track_select].strip][page].xpos = stlay_data.xpos
+              if stripgallery_view == 0 then
+                if settings_pagescrolldir == 0 then
+                  surface_offset.y = F_limit(surface_offset.y - v*50,0,surface_size.h-obj.sections[10].h)
+                else
+                  surface_offset.x = F_limit(surface_offset.x - v*50,0,surface_size.w-obj.sections[10].w)
+                end
+              else
+                local min = math.floor(0-(obj.sections[10].w/2 - stlay_data.loc[1].w/2))
+                local max = math.floor(stlay_data.loc[#stlay_data.loc].runx_e-obj.sections[10].w + (obj.sections[10].w/2 - stlay_data.loc[#stlay_data.loc].w/2))
+                stlay_data.xpos = F_limit(stlay_data.xpos - v*50,min,max)
+                if strips and tracks[track_select] and strips[tracks[track_select].strip] then
+                  strips[tracks[track_select].strip][page].xpos = stlay_data.xpos
+                end
+                GUI_DrawCtlBitmap2()
+                --stlay_data.xpos = stlay_data.xpos - v*50
               end
-              GUI_DrawCtlBitmap2()
-              --stlay_data.xpos = stlay_data.xpos - v*50
             end
             lupd.update_surface = true
             gfx.mouse_wheel = 0
 
           elseif mouse.LB and not mouse.last_LB then
 
-            if stripgallery_view == 0 or mode == 1 then
-              if settings_pagescrolldir == 0 then
-                local my = mouse.my-obj.sections[2000].y
-                if my < obj.sections[2000].h/2 then
-                  moupdn_img = 1
-                  surface_offset.y = F_limit(surface_offset.y - obj.sections[10].h,0,surface_size.h-obj.sections[10].h)
-                else
+            if lvar.livemode == 2 or stripgallery_view == 0 or mode == 1 then
+              if lvar.livemode == 2 then
+                if lvar.showpop and lvar.popout_autoarrange and mode == 0 then
+                  local dir = 0
+                  local my = mouse.my-obj.sections[2000].y
                   moupdn_img = 2
-                  surface_offset.y = F_limit(surface_offset.y + obj.sections[10].h,0,surface_size.h-obj.sections[10].h)
+                  if my < obj.sections[2000].h/2 then
+                    dir = 1
+                    moupdn_img = 1
+                  end
+                  MixMode_Swipe_Pop(dir, false)
                 end
               else
-                local mx = mouse.mx-obj.sections[2001].x
-                if mx < obj.sections[2001].w/2 then
-                  moupdn_img = 1
-                  surface_offset.x = F_limit(surface_offset.x - obj.sections[10].w,0,surface_size.w-obj.sections[10].w)
+                if settings_pagescrolldir == 0 then
+                  local my = mouse.my-obj.sections[2000].y
+                  if my < obj.sections[2000].h/2 then
+                    moupdn_img = 1
+                    surface_offset.y = F_limit(surface_offset.y - obj.sections[10].h,0,surface_size.h-obj.sections[10].h)
+                  else
+                    moupdn_img = 2
+                    surface_offset.y = F_limit(surface_offset.y + obj.sections[10].h,0,surface_size.h-obj.sections[10].h)
+                  end
                 else
-                  moupdn_img = 2
-                  surface_offset.x = F_limit(surface_offset.x + obj.sections[10].w,0,surface_size.w-obj.sections[10].w)
+                  local mx = mouse.mx-obj.sections[2001].x
+                  if mx < obj.sections[2001].w/2 then
+                    moupdn_img = 1
+                    surface_offset.x = F_limit(surface_offset.x - obj.sections[10].w,0,surface_size.w-obj.sections[10].w)
+                  else
+                    moupdn_img = 2
+                    surface_offset.x = F_limit(surface_offset.x + obj.sections[10].w,0,surface_size.w-obj.sections[10].w)
+                  end
                 end
               end
             else
@@ -58552,7 +59801,7 @@ end
     if switchid and lvar.stripdim then
       local swdata = lvar.stripdim.swdata[switchid]
 
-      if switchid and lvar.showpop == true and strips[strip][page].popidx and strips[strip][page].popidx[switchid] then
+      if swdata and switchid and lvar.showpop == true and strips[strip][page].popidx and strips[strip][page].popidx[switchid] then
         local idx = strips[strip][page].popidx[switchid]
         local pop = strips[strip][page].pop[idx]
 
@@ -58789,7 +60038,7 @@ end
       reaper.Main_OnCommand(40062,1)
       dsttn = srctn+1 --assume duplicate track is next track
       local track2 = GetTrack(dsttn)
-      dsttguid = reaper.GetTrackGUID(track2)
+      dsttguid = GetTrackGUID(track2)
 
       local fxlst = {}
       for i = 0, reaper.TrackFX_GetCount(track2)-1 do
@@ -59243,9 +60492,9 @@ end
             if mouse.ctrl then
               local v = gfx.mouse_wheel
               if v < 0 then
-                MixMode_Swipe_Pop(0, true)
+                MixMode_Swipe_Pop(0, false)
               else
-                MixMode_Swipe_Pop(1, true)
+                MixMode_Swipe_Pop(1, false)
               end
               SetCtlBitmapRedraw_Mix()
               gfx.mouse_wheel = 0
@@ -59269,13 +60518,21 @@ end
 
             if switchid and switchers[switchid] and not noscroll then
               lvar.active_switcher = {switchid = switchid}
+              local swdata = lvar.stripdim.swdata
+              if not c and lvar.popout_autoarrange and swdata[switchid] then
+                local rn = swdata[switchid].rownum
+                if rn then
+                  MixMode_Swipe_Pop(0,false,rn-1)
+                end
+              end
+              
               if switchers[switchid].fxguids then
                 local fxguid = switchers[switchid].fxguids[1]
                 if fxguid and lvar.lasttouchedfx ~= fxguid then
                   lvar.lasttouchedfx = fxguid
                   local track = GetTrack(lvar.dynamicmode_trn)
                   if track then
-                    local trguid = reaper.GetTrackGUID(track)
+                    local trguid = GetTrackGUID(track)
                     local fxn = GetFXNFromGUID(track,fxguid)
                     if fxn then
                       TouchFX(track, trguid, fxn, fxguid)
@@ -59296,7 +60553,7 @@ end
                      w = ctl.wsc * lvar.zoom,
                      h = ctl.hsc * lvar.zoom}
           noscroll = (ctls[i].ctllock or noscroll)
-        elseif mouse.shift and stripid and lvar.livemode >= 1 and (not lvar.showpop or not lvar.popout_autoarrange) then
+        elseif MC() and mouse.shift and stripid and lvar.livemode >= 1 --[[and (not lvar.showpop or not lvar.popout_autoarrange)]] then
           lvar.dragswitcher = DragSwitcher_Ext(stripid)
           if lvar.dragswitcher then
             local strip = tracks[track_select].strip
@@ -59393,6 +60650,14 @@ end
                 end
                 skip = true
                 noscroll = true
+              
+              elseif mouse.ctrl and mouse.alt then
+                
+                local i = tonumber(ctls[i].param_info.paramidx)
+                if i then
+                  reaper.SetExtState(REMSCRIPT, 'REMOTE_CTL', 'SK2_LEARNFX', false)
+                  reaper.SetExtState(REMSCRIPT, 'REMOTE_DATA', i+1, false)
+                end
               end
             end
 
@@ -59909,7 +61174,7 @@ end
                         ShowPop(true)
                       end
 
-                    elseif swctl.switchmode == 1 and swctl.extendmode == true and (not lvar.showpop or not lvar.popout_autoarrange) then
+                    elseif swctl.switchmode == 1 and swctl.extendmode == true --[[and (not lvar.showpop or not lvar.popout_autoarrange)]] then
                       lvar.dragswitcher = DragSwitcher_Ext(nil, ctls[i].switcherid)
                       if lvar.dragswitcher then
                         local strip = tracks[track_select].strip
@@ -60121,11 +61386,11 @@ end
                   local v
                   if ctls[i].ctlcat ~= ctlcats.rs5k then
                     if mouse.shift then
-                      local mult = ctls[i].knobsens.wheelfine
+                      local mult = ctls[i].knobsens.wheelfine * (ctls[i].knobsens.m_wheelfine or 1)
                       if mult == 0 then mult = settings_defknobsens.wheelfine end
                       v = mousewheel_val() * mult
                     else
-                      local mult = ctls[i].knobsens.wheel
+                      local mult = ctls[i].knobsens.wheel * (ctls[i].knobsens.m_wheel or 1)
                       if mult == 0 then mult = settings_defknobsens.wheel end
                       v = mousewheel_val() * mult
                     end
@@ -61126,7 +62391,7 @@ end
             end
           else
             --check guid
-            if lvar.dm_backtrack.guid == reaper.GetTrackGUID(track) then
+            if lvar.dm_backtrack.guid == GetTrackGUID(track) then
             else
               trn = GetTRNfromGUID(lvar.dm_backtrack.guid)
               if trn then
@@ -61194,7 +62459,7 @@ end
             for t = 0, reaper.CountSelectedTracks2(0,true)-1 do
               local tr = reaper.GetSelectedTrack2(0,t,true)
               local trn = reaper.GetMediaTrackInfo_Value(tr, 'IP_TRACKNUMBER')
-              local guid = reaper.GetTrackGUID(tr)
+              local guid = GetTrackGUID(tr)
               if not (tbguididx[guid] or tbguididx[trn]) then
                 if trn == -1 then
                   dm_trackbtns[#dm_trackbtns+1] = {guid = guid, trn = trn}
@@ -61230,7 +62495,7 @@ end
               if dm_trackbtns[x] then
                 local tr = GetTrack(dm_trackbtns[x].trn)
                 if tr then
-                  if reaper.GetTrackGUID(tr) ~= dm_trackbtns[x].guid and dm_trackbtns[x].trn ~= -1 then
+                  if GetTrackGUID(tr) ~= dm_trackbtns[x].guid and dm_trackbtns[x].trn ~= -1 then
                     tr = reaper.BR_GetMediaTrackByGUID(0, dm_trackbtns[x].guid)
                     if tr then
                       dm_trackbtns[x].trn = reaper.GetMediaTrackInfo_Value(tr, 'IP_TRACKNUMBER')-1
@@ -61342,7 +62607,7 @@ end
             if dm_trackbtns[x] then
               local tr = GetTrack(dm_trackbtns[x].trn)
               if tr then
-                if reaper.GetTrackGUID(tr) ~= dm_trackbtns[x].guid and dm_trackbtns[x].trn ~= -1 then
+                if GetTrackGUID(tr) ~= dm_trackbtns[x].guid and dm_trackbtns[x].trn ~= -1 then
                   tr = reaper.BR_GetMediaTrackByGUID(0, dm_trackbtns[x].guid)
                   if tr then
                     dm_trackbtns[x].trn = reaper.GetMediaTrackInfo_Value(tr, 'IP_TRACKNUMBER')-1
@@ -61517,7 +62782,7 @@ end
                 if dm_trackbtn then
                   local tr = GetTrack(dm_trackbtn.trn)
                   if tr then
-                    if reaper.GetTrackGUID(tr) ~= dm_trackbtn.guid and dm_trackbtn.trn ~= -1 then
+                    if GetTrackGUID(tr) ~= dm_trackbtn.guid and dm_trackbtn.trn ~= -1 then
                       tr = reaper.BR_GetMediaTrackByGUID(0, dm_trackbtn.guid)
                       if tr then
                         dm_trackbtn.trn = reaper.GetMediaTrackInfo_Value(tr, 'IP_TRACKNUMBER')-1
@@ -61542,7 +62807,7 @@ end
                 if dm_trackbtn then
                   local tr = GetTrack(dm_trackbtn.trn)
                   if tr then
-                    if reaper.GetTrackGUID(tr) ~= dm_trackbtn.guid and dm_trackbtn.trn ~= -1 then
+                    if GetTrackGUID(tr) ~= dm_trackbtn.guid and dm_trackbtn.trn ~= -1 then
                       tr = reaper.BR_GetMediaTrackByGUID(0, dm_trackbtn.guid)
                       if tr then
                         dm_trackbtn.trn = reaper.GetMediaTrackInfo_Value(tr, 'IP_TRACKNUMBER')-1
@@ -61820,7 +63085,7 @@ end
                 if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.2 then
                   local tr = GetTrack(lvar.dynamicmode_trn)
                   --[[if tr then
-                    if reaper.GetTrackGUID(tr) ~= dm_trackbtn.guid and dm_trackbtn.trn ~= -1 then
+                    if GetTrackGUID(tr) ~= dm_trackbtn.guid and dm_trackbtn.trn ~= -1 then
                       tr = reaper.BR_GetMediaTrackByGUID(0, dm_trackbtn.guid)
                       if tr then
                         dm_trackbtn.trn = reaper.GetMediaTrackInfo_Value(tr, 'IP_TRACKNUMBER')-1
@@ -61843,7 +63108,7 @@ end
                 if mouse.lastLBclicktime and (rt-mouse.lastLBclicktime) < 0.2 then
                   local tr = GetTrack(lvar.dynamicmode_trn)
                   --[[if tr then
-                    if reaper.GetTrackGUID(tr) ~= dm_trackbtn.guid and dm_trackbtn.trn ~= -1 then
+                    if GetTrackGUID(tr) ~= dm_trackbtn.guid and dm_trackbtn.trn ~= -1 then
                       tr = reaper.BR_GetMediaTrackByGUID(0, dm_trackbtn.guid)
                       if tr then
                         dm_trackbtn.trn = reaper.GetMediaTrackInfo_Value(tr, 'IP_TRACKNUMBER')-1
@@ -63319,6 +64584,7 @@ end
   
   function SK2Data_ReadSlots()
     local t = {}
+    local tidx = {}
     local fcount = tonumber(reaper.GetExtState('SK2DATA_SLOTS', 'COUNT'))
 
     if tracks[track_select].strip and strips[tracks[track_select].strip] then
@@ -63339,6 +64605,7 @@ end
           t[i-1] = {lmode = tonumber(reaper.GetExtState('SK2DATA_SLOTS', pfx..'_LMODE')) or -1, 
                     name = reaper.GetExtState('SK2DATA_SLOTS', pfx..'_NAME'),
                     map = reaper.GetExtState('SK2DATA_SLOTS', pfx..'_MAPTYPE') or ''}
+          tidx[t[i-1].map..'|'..t[i-1].name] = i-1
           if idx[i-1] then
             ctls[idx[i-1]].param = t[i-1].lmode
             ctls[idx[i-1]].param_info.paramname = ' '
@@ -63351,12 +64618,12 @@ end
       end
     end
     reaper.DeleteExtState('SK2DATA_SLOTS', 'DIRTY', true)
-    return t
+    return t, tidx
   end
 
   function SK2Data_ReadAssign()
     --local rt = reaper.time_precise()
-    
+
     local t = {}
     local fcount = tonumber(reaper.GetExtState('SK2DATA_SLOTS', 'COUNT'))
     
@@ -63417,11 +64684,46 @@ end
       lvar.sk2lock = nil
     end
     if tonumber(reaper.GetExtState('SK2DATA_SLOTS', 'DIRTY')) == 1 or not lvar.sk2data_slots then
-      lvar.sk2data_slots = SK2Data_ReadSlots()
+      lvar.sk2data_slots, lvar.sk2data_slotsidx = SK2Data_ReadSlots()
     end
     if tonumber(reaper.GetExtState('SK2DATA_ASSIGN', 'DIRTY')) == 1  or not lvar.sk2data_assign then
       lvar.sk2data_assign = SK2Data_ReadAssign()
       UpdateControlValues3(nil, ctls_upd, ctls_orr)
+    end
+    
+    --[[if lvar.sk2overlay_active == 1 then
+      MonitorSK2Links()
+    end]]
+    if xPnl.HUD.visible and #lvar.paramhud > 0 then
+      local del
+      local ft = 1
+      local cnt = #lvar.paramhud
+      for i = 1, cnt do
+        local ph = lvar.paramhud[i]
+        if rt > ph.timeout then
+          lvar.paramhud[i] = nil
+          del = true
+        elseif rt > ph.timeout - ft then
+          lvar.paramhud[i].alpha = ((ph.timeout-rt)/ft)
+        end
+      end
+      if del then
+        local ncnt = 0
+        local ntab = {}
+        local ntab_idx = {}
+        for i = 1, cnt do
+          local ph = lvar.paramhud[i]
+          if ph then
+            ncnt = ncnt + 1
+            ntab[ncnt] = ph
+            local idxx = GetHUDIdx(ph.ctl)
+            ntab_idx[idxx] = ncnt
+          end
+        end
+        lvar.paramhud = ntab
+        lvar.paramhud_idx = ntab_idx
+        xPnl.HUD.updategui = true
+      end
     end
     
     if lvar.livemode == 2 then
@@ -63547,7 +64849,7 @@ end
               if t <= trcnt then
                 local tr = reaper.GetTrack(0, t)
                 local vis = reaper.IsTrackVisible(tr, true)
-                local guid = reaper.GetTrackGUID(tr)
+                local guid = GetTrackGUID(tr)
                 local _, name = reaper.GetTrackName(tr)
                 if trmon[t].trn ~= t or 
                    trmon[t].guid ~= guid or
@@ -63574,7 +64876,7 @@ end
                 local tb = tb2 + lvar.trbtns_offs
                 if dm_trackbtns[tb] then
                   local tr = GetTrack(dm_trackbtns[tb].trn)
-                  if reaper.GetTrackGUID(tr) ~= dm_trackbtns[tb].guid then
+                  if GetTrackGUID(tr) ~= dm_trackbtns[tb].guid then
                     DM_TrBtns_Auto()
                     lupd.update_trbtns = true
                     break            
@@ -64111,12 +65413,16 @@ end
           if not lvar.guibmp then
             RedrawGUIBitmap2()
           end
-          if rgb >= lvar.xPnlOffset and rgb <= lvar.xPnlOffset + #xPnlIdx then
+          if not full_screen and rgb >= lvar.xPnlOffset and rgb <= lvar.xPnlOffset + #xPnlIdx then
+            
             local o = rgb - lvar.xPnlOffset
             local xpnl = xPnlIdx[o]
             if xpnl and xpnl.visible then
-              if xpnl.onclick then
+              if gfx.mouse_wheel == 0 and xpnl.onclick then
                 xpnl:onclick(mouse.mx-xpnl.x,mouse.my-xpnl.y)
+                noscroll = true
+              elseif gfx.mouse_wheel ~= 0 and xpnl.onwheel then
+                xpnl:onwheel(mouse.mx-xpnl.x,mouse.my-xpnl.y)
                 noscroll = true
               end
             end
@@ -64264,7 +65570,7 @@ end
           if dm_trackbtn then
            local tr = GetTrack(dm_trackbtn.trn)
             if tr then
-              if reaper.GetTrackGUID(tr) ~= dm_trackbtn.guid and dm_trackbtn.trn ~= -1 then
+              if GetTrackGUID(tr) ~= dm_trackbtn.guid and dm_trackbtn.trn ~= -1 then
                 tr = reaper.BR_GetMediaTrackByGUID(0, dm_trackbtn.guid)
                 if tr then
                   dm_trackbtn.trn = reaper.GetMediaTrackInfo_Value(tr, 'IP_TRACKNUMBER')-1
@@ -64291,7 +65597,7 @@ end
           if dm_trackbtn then
            local tr = GetTrack(dm_trackbtn.trn)
             if tr then
-              if reaper.GetTrackGUID(tr) ~= dm_trackbtn.guid and dm_trackbtn.trn ~= -1 then
+              if GetTrackGUID(tr) ~= dm_trackbtn.guid and dm_trackbtn.trn ~= -1 then
                 tr = reaper.BR_GetMediaTrackByGUID(0, dm_trackbtn.guid)
                 if tr then
                   dm_trackbtn.trn = reaper.GetMediaTrackInfo_Value(tr, 'IP_TRACKNUMBER')-1
@@ -64317,7 +65623,7 @@ end
           if trmix_sndpnl_data then
            local tr = GetTrack(lvar.dynamicmode_trn)
             --[[if tr then
-              if reaper.GetTrackGUID(tr) ~= dm_trackbtn.guid and dm_trackbtn.trn ~= -1 then
+              if GetTrackGUID(tr) ~= dm_trackbtn.guid and dm_trackbtn.trn ~= -1 then
                 tr = reaper.BR_GetMediaTrackByGUID(0, dm_trackbtn.guid)
                 if tr then
                   dm_trackbtn.trn = reaper.GetMediaTrackInfo_Value(tr, 'IP_TRACKNUMBER')-1
@@ -64350,7 +65656,7 @@ end
           if trmix_sndpnl_data then
            local tr = GetTrack(lvar.dynamicmode_trn)
             --[[if tr then
-              if reaper.GetTrackGUID(tr) ~= dm_trackbtn.guid and dm_trackbtn.trn ~= -1 then
+              if GetTrackGUID(tr) ~= dm_trackbtn.guid and dm_trackbtn.trn ~= -1 then
                 tr = reaper.BR_GetMediaTrackByGUID(0, dm_trackbtn.guid)
                 if tr then
                   dm_trackbtn.trn = reaper.GetMediaTrackInfo_Value(tr, 'IP_TRACKNUMBER')-1
@@ -64585,7 +65891,7 @@ end
               end
             else
               if mouse.shift then
-                local mult = ctl.knobsens.fine
+                local mult = ctl.knobsens.fine * (ctl.knobsens.m_fine or 1)
                 if mult == 0 then mult = settings_defknobsens.fine end
                 if ctl.ctltype ~= 11 then
                   val = ctlpos + ((0-val)*2)*mult
@@ -64593,7 +65899,7 @@ end
                   val = ctlpos - ((0-val)*2)*mult
                 end
               else
-                local mult = ctl.knobsens.norm
+                local mult = ctl.knobsens.norm * (ctl.knobsens.m_norm or 1)
                 if mult == 0 then mult = settings_defknobsens.norm end
                 if ctl.ctltype ~= 11 then
                   val = ctlpos + (0-val)*mult
@@ -64654,7 +65960,7 @@ end
               end
             else
               if mouse.shift then
-                local mult = ctl.knobsens.fine
+                local mult = ctl.knobsens.fine * (ctl.knobsens.m_fine or 1)
                 if mult == 0 then mult = settings_defknobsens.fine end
                 if ctl.ctltype ~= 11 then
                   val = ctlpos + ((0.5-val)*2)*mult
@@ -64662,7 +65968,7 @@ end
                   val = ctlpos - ((0.5-val)*2)*mult
                 end
               else
-                local mult = ctl.knobsens.norm
+                local mult = ctl.knobsens.norm * (ctl.knobsens.m_norm or 1)
                 if mult == 0 then mult = settings_defknobsens.norm end
                 if ctl.ctltype ~= 11 then
                   val = ctlpos + (0.5-val)*mult
@@ -64719,7 +66025,7 @@ end
             end
           else
             if mouse.shift then
-              local mult = ctl.knobsens.fine
+              local mult = ctl.knobsens.fine * (ctl.knobsens.m_fine or 1)
               if mult == 0 then mult = settings_defknobsens.fine end
               if ctl.ctltype ~= 11 then
                 val = ctlpos - ((0.5-val)*2)*mult
@@ -64727,7 +66033,7 @@ end
                 val = ctlpos + ((0.5-val)*2)*mult
               end
             else
-              local mult = ctl.knobsens.norm
+              local mult = ctl.knobsens.norm * (ctl.knobsens.m_norm or 1)
               if mult == 0 then mult = settings_defknobsens.norm end
               if ctl.ctltype ~= 11 then
                 val = ctlpos - (0.5-val)*mult
@@ -64906,7 +66212,7 @@ end
 
           else
             if mouse.shift then
-              local mult = ctl.knobsens.fine
+              local mult = ctl.knobsens.fine * (ctl.knobsens.m_fine or 1)
               if mult == 0 then mult = settings_defknobsens.fine end
               if ctl.ctltype ~= 11 then
                 val = ctlpos + ((0-val)*2)*mult
@@ -64914,7 +66220,7 @@ end
                 val = ctlpos - ((0-val)*2)*mult
               end
             else
-              local mult = ctl.knobsens.norm
+              local mult = ctl.knobsens.norm * (ctl.knobsens.m_norm or 1)
               if mult == 0 then mult = settings_defknobsens.norm end
               if ctl.ctltype ~= 11 then
                 val = ctlpos + (0-val)*mult
@@ -64977,7 +66283,7 @@ end
             end
           else
             if mouse.shift then
-              local mult = ctl.knobsens.fine
+              local mult = ctl.knobsens.fine * (ctl.knobsens.m_fine or 1)
               if mult == 0 then mult = settings_defknobsens.fine end
               if ctl.ctltype ~= 11 then
                 val = ctlpos + ((0.5-val)*2)*mult
@@ -64985,7 +66291,7 @@ end
                 val = ctlpos - ((0.5-val)*2)*mult
               end
             else
-              local mult = ctl.knobsens.norm
+              local mult = ctl.knobsens.norm * (ctl.knobsens.m_norm or 1)
               if mult == 0 then mult = settings_defknobsens.norm end
               if ctl.ctltype ~= 11 then
                 val = ctlpos + (0.5-val)*mult
@@ -65050,7 +66356,7 @@ end
 
           else
             if mouse.shift then
-              local mult = ctl.knobsens.fine
+              local mult = ctl.knobsens.fine * (ctl.knobsens.m_fine or 1)
               if mult == 0 then mult = settings_defknobsens.fine end
               if ctl.ctltype ~= 11 then
                 val = ctlpos - ((0.5-val)*2)*mult
@@ -65058,7 +66364,7 @@ end
                 val = ctlpos + ((0.5-val)*2)*mult
               end
             else
-              local mult = ctl.knobsens.norm
+              local mult = ctl.knobsens.norm * (ctl.knobsens.m_norm or 1)
               if mult == 0 then mult = settings_defknobsens.norm end
               if ctl.ctltype ~= 11 then
                 val = ctlpos - (0.5-val)*mult
@@ -65120,11 +66426,11 @@ end
             end
           else
             if mouse.shift then
-              local mult = ctl.knobsens.fine
+              local mult = ctl.knobsens.fine * (ctl.knobsens.m_fine or 1)
               if mult == 0 then mult = settings_defknobsens.fine end
               val = ctlpos + ((0-val)*2)*mult
             else
-              local mult = ctl.knobsens.norm
+              local mult = ctl.knobsens.norm * (ctl.knobsens.m_norm or 1)
               if mult == 0 then mult = settings_defknobsens.norm end
               val = ctlpos + (0-val)*mult
             end
@@ -65184,11 +66490,11 @@ end
             end
           else
             if mouse.shift then
-              local mult = ctl.knobsens.fine
+              local mult = ctl.knobsens.fine * (ctl.knobsens.m_fine or 1)
               if mult == 0 then mult = settings_defknobsens.fine end
               val = ctlpos + ((0.5-val)*2)*mult
             else
-              local mult = ctl.knobsens.norm
+              local mult = ctl.knobsens.norm * (ctl.knobsens.m_norm or 1)
               if mult == 0 then mult = settings_defknobsens.norm end
               val = ctlpos + (0.5-val)*mult
             end
@@ -65248,11 +66554,11 @@ end
             end
           else
             if mouse.shift then
-              local mult = ctl.knobsens.fine
+              local mult = ctl.knobsens.fine * (ctl.knobsens.m_fine or 1)
               if mult == 0 then mult = settings_defknobsens.fine end
               val = ctlpos - ((0.5-val)*2)*mult
             else
-              local mult = ctl.knobsens.norm
+              local mult = ctl.knobsens.norm * (ctl.knobsens.m_norm or 1)
               if mult == 0 then mult = settings_defknobsens.norm end
               val = ctlpos - (0.5-val)*mult
             end
@@ -65311,7 +66617,7 @@ end
         else
 
           local strip = tracks[track_select].strip
-          if lvar.livemode >= 1 and lvar.showpop == true and strips[strip][page].popidx and lvar.dragswitcher and strips[strip][page].popidx[lvar.dragswitcher.selected] then
+          if lvar.livemode >= 1 and (lvar.showpop == true and not lvar.popout_autoarrange) and strips[strip][page].popidx and lvar.dragswitcher and strips[strip][page].popidx[lvar.dragswitcher.selected] then
 
             local x = mouse.mx-lvar.dragswitcher.offx
             local y = mouse.my-lvar.dragswitcher.offy
@@ -65330,7 +66636,7 @@ end
                 local strip = tracks[track_select].strip
                 local ctls = strips[strip][page].controls
 
-                if lvar.livemode >= 1 and lvar.showpop == true and strips[strip][page].popidx and not strips[strip][page].popidx[ctls[i].switcherid] then
+                if lvar.livemode >= 1 and (lvar.showpop == true and not lvar.popout_autoarrange) and strips[strip][page].popidx and not strips[strip][page].popidx[ctls[i].switcherid] then
                   lvar.dragswitcher.showpop = lvar.showpop
                   ShowPop(false)
                 end
@@ -65368,7 +66674,47 @@ end
                 end
 
                 if dst_switchid then
-                  if oldpos == newpos - 1 then
+                  if lvar.showpop and lvar.popout_autoarrange then
+                    local o10x = obj.sections[10].x
+                    local pop = strips[strip][page].pop
+                    --need to loop as not all strips may be visible
+                    local pidx = strips[strip][page].popidx[dst_switchid]
+                    local popp = pop[pidx]
+                    
+                    --[[for i = 1, #pop do
+                      if dst_switchid == pop[i].swid then
+                        popp = pop[i]
+                        pidx = i
+                        break
+                      end
+                    end]]
+                    if popp then
+                      local swdata = lvar.stripdim.swdata
+                      local xp = mouse.mx - popp.x - o10x
+                      local w = (swdata[dst_switchid].r - swdata[dst_switchid].l)*lvar.zoom
+                      if oldpos == newpos - 1 then
+                        lvar.dragswitcher.before = nil
+                      elseif oldpos == newpos + 1 then
+                        lvar.dragswitcher.before = true
+                      elseif xp < w/2 then
+                        lvar.dragswitcher.before = true
+                      else
+                        lvar.dragswitcher.before = nil
+                      end
+                      
+                      --[[if popp.row then
+                        lvar.popswipe_redrawforce = true
+                        if popp.row ~= lvar.prsr and reaper.time_precise() > (lvar.popswipe_delay or 0) then
+                          lvar.prsr = popp.row
+                          lvar.popswipe_delay = reaper.time_precise() + 0.2
+                          MixMode_Swipe_Pop(nil, false, popp.row)
+                        end
+                      end]]
+                    end
+                    lvar.dragswitcher.pop = popp
+                    lvar.dragswitcher.popidx = pidx
+                    
+                  elseif oldpos == newpos - 1 then
                     lvar.dragswitcher.before = nil
                   elseif oldpos == newpos + 1 then
                     lvar.dragswitcher.before = true
@@ -65381,27 +66727,54 @@ end
                         lvar.dragswitcher.before = nil
                       end
                     else
-                      if lvar.mixmodedir == 0 then
-                        local yy = mouse.my
-                        local spos = lvar.spos[dst_switchid]
-                        if spos then
-                          if yy < spos.y + math.floor((spos.h*lvar.zoom)/2) then
+                      --[[if lvar.showpop and lvar.popout_autoarrange then
+                        local o10x = obj.sections[10].x
+                        local pop = strips[strip][page].pop
+                        local popp 
+                        --need to loop as not all strips may be visible
+                        local pidx
+                        for i = 1, #pop do
+                          if dst_switchid == pop[i].swid then
+                            popp = pop[i]
+                            pidx = i
+                            break
+                          end
+                        end
+                        if popp then
+                          local swdata = lvar.stripdim.swdata
+                          local xp = mouse.mx - popp.x - o10x
+                          local w = (swdata[dst_switchid].r - swdata[dst_switchid].l)*lvar.zoom
+                          if xp < w/2 then
                             lvar.dragswitcher.before = true
                           else
                             lvar.dragswitcher.before = nil
                           end
                         end
-                      else
-                        local xx = mouse.mx
-                        local spos = lvar.spos[dst_switchid]
-                        if spos then
-                          if xx < spos.x + math.floor((spos.w*lvar.zoom)/2) then
-                            lvar.dragswitcher.before = true
-                          else
-                            lvar.dragswitcher.before = nil
+                        lvar.dragswitcher.pop = popp
+                        lvar.dragswitcher.popidx = pidx
+                      else]]
+                        if lvar.mixmodedir == 0 then
+                          local yy = mouse.my
+                          local spos = lvar.spos[dst_switchid]
+                          if spos then
+                            if yy < spos.y + math.floor((spos.h*lvar.zoom)/2) then
+                              lvar.dragswitcher.before = true
+                            else
+                              lvar.dragswitcher.before = nil
+                            end
+                          end
+                        else
+                          local xx = mouse.mx
+                          local spos = lvar.spos[dst_switchid]
+                          if spos then
+                            if xx < spos.x + math.floor((spos.w*lvar.zoom)/2) then
+                              lvar.dragswitcher.before = true
+                            else
+                              lvar.dragswitcher.before = nil
+                            end
                           end
                         end
-                      end
+                      --end
                     end
                   end
                 end
@@ -65417,6 +66790,18 @@ end
                   osdb = lvar.dragswitcher.before
                 end
               end
+              
+              if lvar.livemode == 2 and lvar.showpop and lvar.popout_autoarrange then
+                if gfx.mouse_wheel ~= 0 then
+                  if gfx.mouse_wheel < 0 then
+                    MixMode_Swipe_Pop(0, false)
+                  else
+                    MixMode_Swipe_Pop(1, false)
+                  end
+                  gfx.mouse_wheel = 0
+                end
+              end
+              
               --DBG(lupd.update_surface)
             elseif mouse.ctrl then
               ShowPop(true, true)
@@ -65825,7 +67210,7 @@ end
         switchers[lvar.dragswitcher.selected].dragging = nil
 
         local strip = tracks[track_select].strip
-        if lvar.showpop == true and strips[strip][page].popidx and strips[strip][page].popidx[lvar.dragswitcher.selected] then
+        if lvar.showpop == true and not lvar.popout_autoarrange and strips[strip][page].popidx and strips[strip][page].popidx[lvar.dragswitcher.selected] then
 
           --reorder
           PopOut_ToTop(lvar.dragswitcher.selected)
@@ -67450,7 +68835,7 @@ end
             if insertstrip then
               insertstrip.alpha = 0
             end
-            if lvar.livemode >= 1 then
+            if lvar.livemode >= 1 and not lvar.popout_autoarrange then
               ShowPop(false, nil, true)
             end
             --sb_drag = nil
@@ -68464,7 +69849,7 @@ end
               if val > -2 then
                 local tr = GetTrack(val)
                 if tr then
-                  tguid = reaper.GetTrackGUID(tr)
+                  tguid = GetTrackGUID(tr)
                 end
               end
               for c = 1, #ctl_select do
@@ -68807,6 +70192,13 @@ end
       lvar.wheelcnt = 0
     end
   
+  end
+  
+  function GetKnobSensMult(val)
+    local res, val = reaper.GetUserInputs('Sensitivity Multiplier',1,'Multiplier:',tostring(val))
+    if res and tonumber(val) then
+      return F_limit(tonumber(val),0.01,10)
+    end
   end
   
   function A_Run_Submode0(noscroll, rt, char)
@@ -69330,11 +70722,11 @@ end
             mouse.slideoff = gaugeglob.ctly - mouse.my
           else
             if mouse.shift then
-              local mult = ctl.knobsens.fine
+              local mult = ctl.knobsens.fine * (ctl.knobsens.m_fine or 1)
               if mult == 0 then mult = settings_defknobsens.fine end
               val = ctlpos + ((0.5-val)*2)*mult
             else
-              local mult = ctl.knobsens.norm
+              local mult = ctl.knobsens.norm * (ctl.knobsens.m_norm or 1)
               if mult == 0 then mult = settings_defknobsens.norm end
               val = ctlpos + (0.5-val)*mult
             end
@@ -70884,6 +72276,58 @@ end
           elseif mouse.context == nil and MOUSE_click(obj.sections[138]) then
             Undo_Set({'knobsens'})
             mouse.context = contexts.knobsens_wheelfine
+          elseif mouse.context == nil and MOUSE_click_RB(obj.sections[135]) then
+            Undo_Set({'knobsens'})
+            local val = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].knobsens.m_norm
+            local mult = GetKnobSensMult(val)
+            if mult then
+              for i = 1, #ctl_select do
+                local ctl = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl]
+                if ctl then
+                  ctl.knobsens.m_norm = mult
+                end
+              end
+            end
+            lupd.update_ctlopts = true
+          elseif mouse.context == nil and MOUSE_click_RB(obj.sections[136]) then
+            Undo_Set({'knobsens'})
+            local val = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].knobsens.m_fine
+            local mult = GetKnobSensMult(val)
+            if mult then
+              for i = 1, #ctl_select do
+                local ctl = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl]
+                if ctl then
+                  ctl.knobsens.m_fine = mult
+                end
+              end
+            end
+            lupd.update_ctlopts = true
+          elseif mouse.context == nil and MOUSE_click_RB(obj.sections[137]) then
+            Undo_Set({'knobsens'})
+            local val = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].knobsens.m_wheel
+            local mult = GetKnobSensMult(val)
+            if mult then
+              for i = 1, #ctl_select do
+                local ctl = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl]
+                if ctl then
+                  ctl.knobsens.m_wheel = mult
+                end
+              end
+            end
+            lupd.update_ctlopts = true
+          elseif mouse.context == nil and MOUSE_click_RB(obj.sections[138]) then
+            Undo_Set({'knobsens'})
+            local val = strips[tracks[track_select].strip][page].controls[ctl_select[1].ctl].knobsens.m_wheelfine
+            local mult = GetKnobSensMult(val)
+            if mult then
+              for i = 1, #ctl_select do
+                local ctl = strips[tracks[track_select].strip][page].controls[ctl_select[i].ctl]
+                if ctl then
+                  ctl.knobsens.m_wheelfine = mult
+                end
+              end
+            end
+            lupd.update_ctlopts = true
           end
 
         elseif ctl_page == 2 then
@@ -73865,16 +75309,24 @@ end
             
             for g = 1, #gfx4_select do
               local gfxx = strips[tracks[track_select].strip][page].graphics[gfx4_select[g]]
-              local flagb,flagi,flagu = 0,0,0
+              local flagb,flagi,flagu,flagv = 0,0,0,0
               if gfxx.gfxtype == lvar.gfxtype.txt then
                 local flagb,flagi,flagu = 0,0,0
                 if gfxx.font.bold then flagb = 98 end
                 if gfxx.font.italics then flagi = 105 end
                 if gfxx.font.underline then flagu = 117 end
-                local flags = flagb + (flagi*256) + (flagu*(256^2))
+                if gfxx.font.vertical then flagv = 122 end
+                local flags = flagb + (flagi*256) + (flagu*(256^2)) --+ (flagv*(256^3))
                 gfx.setfont(1,gfxx.font.name,
                               gfxx.font.size,flags)
                 local w, h = gfx.measurestr(gfxx.text)
+                if gfxx.font.vertical then
+                  w, h = h, w
+                  flags = flags + (flagv*(256^3))
+                  gfx.setfont(1,gfxx.font.name,
+                                gfxx.font.size,flags)
+                end
+                
                 dragoff.x[g] = gfxx.x
                 dragoff.y[g] = gfxx.y
                 dragoff.w[g] = w
@@ -73898,14 +75350,22 @@ end
                 local gfxx = strips[tracks[track_select].strip][page].graphics[gfx4_select[i]]
                 if gfxx.gfxtype == lvar.gfxtype.txt and dragoff then
                   gfxx.font.size = gfx_font_select.size
-                  local flagb,flagi,flagu = 0,0,0
+                  local flagb,flagi,flagu,flagv = 0,0,0,0
                   if gfxx.font.bold then flagb = 98 end
                   if gfxx.font.italics then flagi = 105 end
                   if gfxx.font.underline then flagu = 117 end
-                  local flags = flagb + (flagi*256) + (flagu*(256^2))
+                  if gfxx.font.vertical then flagv = 122 end
+                  local flags = flagb + (flagi*256) + (flagu*(256^2)) --+ (flagv*(256^3))
                   gfx.setfont(1,gfxx.font.name,
                                 gfxx.font.size,flags)
                   local w, h = gfx.measurestr(gfxx.text)
+                  if gfxx.font.vertical then
+                    w, h = h, w
+                    flags = flags + (flagv*(256^3))
+                    gfx.setfont(1,gfxx.font.name,
+                                  gfxx.font.size,flags)
+                  end
+                  
                   local cx = math.floor(dragoff.x[i] + dragoff.w[i]/2)
                   local cy = math.floor(dragoff.y[i] + dragoff.h[i]/2)
                   --DBG(gfx_font_select.size..' '..cx..' '..cy..' '..w..' '..h)
@@ -74126,6 +75586,20 @@ end
             strips[tracks[track_select].strip][page].graphics[gfx4_select[i]].font.underline = gfx_font_select.underline
           end
           lupd.update_gfx = true
+
+        elseif MOUSE_click(obj.sections[151]) then
+          Undo_Set({'font'})
+          gfx_font_select.vertical = not gfx_font_select.vertical
+          for i = 1, #gfx4_select do
+            local gfxx = strips[tracks[track_select].strip][page].graphics[gfx4_select[i]]
+            gfxx.font.vertical = gfx_font_select.vertical
+            gfxx.w, gfxx.h = gfxx.h, gfxx.w
+            gfxx.stretchw, gfxx.stretchh = gfxx.stretchh, gfxx.stretchw
+          end
+          glob_gfxselrect = CalcGFX4SelRect()
+          --lupd.update_bg = true
+          lupd.update_gfx = true
+          movefrom_sc = nil
   
         elseif MOUSE_click(obj.sections[146]) then
           Undo_Set({'font'})
@@ -74146,14 +75620,22 @@ end
             local gfxx = strips[tracks[track_select].strip][page].graphics[gfx4_select[g]]
             local flagb,flagi,flagu = 0,0,0
             if gfxx.gfxtype == lvar.gfxtype.txt then
-              local flagb,flagi,flagu = 0,0,0
+              local flagb,flagi,flagu,flagv = 0,0,0,0
               if gfxx.font.bold then flagb = 98 end
               if gfxx.font.italics then flagi = 105 end
               if gfxx.font.underline then flagu = 117 end
-              local flags = flagb + (flagi*256) + (flagu*(256^2))
+              if gfxx.font.vertical then flagv = 122 end
+              local flags = flagb + (flagi*256) + (flagu*(256^2)) --+ (flagv*(256^3))
               gfx.setfont(1,gfxx.font.name,
                             gfxx.font.size,flags)
               local w, h = gfx.measurestr(gfxx.text)
+              if gfxx.font.vertical then
+                w, h = h, w
+                flags = flags + (flagv*(256^3))
+                gfx.setfont(1,gfxx.font.name,
+                              gfxx.font.size,flags)
+              end
+              
               dragoff.x[g] = gfxx.x
               dragoff.y[g] = gfxx.y
               dragoff.w[g] = w
@@ -74299,10 +75781,18 @@ end
               if gfxx.font.bold then flagb = 98 end
               if gfxx.font.italics then flagi = 105 end
               if gfxx.font.underline then flagu = 117 end
-              local flags = flagb + (flagi*256) + (flagu*(256^2))
+              if gfxx.font.vertical then flagv = 122 end
+              local flags = flagb + (flagi*256) + (flagu*(256^2)) --+ (flagv*(256^3))
               gfx.setfont(1,gfxx.font.name,
                             gfxx.font.size,flags)
               local w, h = gfx.measurestr(gfxx.text)
+              if gfxx.font.vertical then
+                w, h = h, w
+                flags = flags + (flagv*(256^3))
+                gfx.setfont(1,gfxx.font.name,
+                              gfxx.font.size,flags)
+              end
+              
               local cx = math.floor(dragoff.x[i] + dragoff.w[i]/2)
               local cy = math.floor(dragoff.y[i] + dragoff.h[i]/2)
               --DBG(gfx_font_select.size..' '..cx..' '..cy..' '..w..' '..h)
@@ -78762,11 +80252,11 @@ end
                 mouse.slideoff = ctlxywh.y+ctlxywh.h/2 - mouse.my
               else
                 if mouse.shift then
-                  local mult = ctl.knobsens.fine
+                  local mult = ctl.knobsens.fine * (ctl.knobsens.m_fine or 1)
                   if mult == 0 then mult = settings_defknobsens.fine end
                   val = ctlpos + ((0.5-val)*2)*mult
                 else
-                  local mult = ctl.knobsens.norm
+                  local mult = ctl.knobsens.norm * (ctl.knobsens.m_norm or 1)
                   if mult == 0 then mult = settings_defknobsens.norm end
                   val = ctlpos + (0.5-val)*mult
                 end
@@ -79149,6 +80639,24 @@ end
           lupd.update_gfx = true
         end
         
+      elseif ddlist.idx == 11 then
+        local map = lvar.sk2data_slots[sel-1].map..'|'..lvar.sk2data_slots[sel-1].name
+        if not lvar.sk2overlay.slot[ddlist.btn] then
+          lvar.sk2overlay.slot[ddlist.btn] = {}
+        end
+        lvar.sk2overlay.slot[ddlist.btn].map = map
+        lvar.sk2overlay.slot[ddlist.btn].dev = lvar.sk2data_slots[sel-1].map
+        lvar.sk2overlay.slot[ddlist.btn].name = lvar.sk2data_slots[sel-1].name
+        
+        lvar.xPnlSel.updategui = true
+        
+        SK2SaveSlots()
+        if lvar.sk2overlay_active == 1 then
+          SendSK2Data()
+        end
+        
+        --DBG(lvar.sk2data_slots[sel].map..'|'..lvar.sk2data_slots[sel].name)
+        
       end
 
     end
@@ -79180,7 +80688,7 @@ end
     for t = 0, reaper.CountTracks(0)-1 do
       local tr = GetTrack(t)
       local vis = reaper.IsTrackVisible(tr, true)
-      local guid = reaper.GetTrackGUID(tr)
+      local guid = GetTrackGUID(tr)
       local _, name = reaper.GetTrackName(tr)
       tab2[t] = {guid = guid, trn = t, name = name, vis = vis}
       if vis then
@@ -79207,7 +80715,7 @@ end
       local tr = GetTrack(t)
       local item = reaper.GetTrackMediaItem(tr,0)
       if item then
-        local guid = reaper.GetTrackGUID(tr)
+        local guid = GetTrackGUID(tr)
         tab[#tab+1] = {guid = guid, trn = t}
       end
     end
@@ -79231,7 +80739,7 @@ end
         for take_n = 0, reaper.CountTakes(item)-1 do
           local take = reaper.GetMediaItemTake(item, take_n)
           if take and reaper.TakeIsMIDI(take) == takeismidi then
-            local guid = reaper.GetTrackGUID(tr)
+            local guid = GetTrackGUID(tr)
             tab[#tab+1] = {guid = guid, trn = t}
             fnd = true
             break
@@ -79258,7 +80766,7 @@ end
       tab[1] = {guid = nil, trn = -1}
     else
       local tr = GetTrack(trn)
-      local guid = reaper.GetTrackGUID(tr)
+      local guid = GetTrackGUID(tr)
       tab[1] = {guid = guid, trn = trn}
     end
 
@@ -79267,7 +80775,7 @@ end
       local tr = GetTrack(t)
 
       if fd >= 0 then
-        local guid = reaper.GetTrackGUID(tr)
+        local guid = GetTrackGUID(tr)
         tab[#tab+1] = {guid = guid, trn = t}
       elseif fd < 0 then
         break
@@ -79294,7 +80802,7 @@ end
       local fold = reaper.GetMediaTrackInfo_Value(tr, 'I_FOLDERDEPTH')
 
       if fold == 1 then
-        local guid = reaper.GetTrackGUID(tr)
+        local guid = GetTrackGUID(tr)
         tab[#tab+1] = {guid = guid, trn = t}
       end
     end
@@ -79405,7 +80913,7 @@ end
           else
             local pn = reaper.TrackFX_GetNumParams(tr,i)
 
-            if pn ~= 2 then
+            if pn ~= lvar.offline_paramcnt then
               for p = 0, inpins-1 do
                 if pinmatrix_data[i].inpins[p] then
                   local Low32,Hi32 = reaper.TrackFX_GetPinMappings(tr, i, 0, p)
@@ -79750,7 +81258,7 @@ end
     local sfxi = GetStripFXInfo(nil, loadstrip)
 
     local tr = GetTrack(trn or track_select)
-    local trguid = reaper.GetTrackGUID(tr)
+    local trguid = GetTrackGUID(tr)
     local fxcnt = reaper.TrackFX_GetCount(tr)
     local fx_min = fxcnt-1
     local fxn = {}
@@ -79917,7 +81425,7 @@ end
 
         if lvar.addstripdialog_tracknum ~= track_select then
           tnum = lvar.addstripdialog_tracknum
-          tguid = reaper.GetTrackGUID(tr)
+          tguid = GetTrackGUID(tr)
         end
         Strip_AddStrip(loadstrip,math.floor(fxdata.dx/lvar.zoom),math.floor(fxdata.dy/lvar.zoom),true, tnum, tguid, math.max(min,0), nil, fxdata)
         fxdata = nil
@@ -81678,30 +83186,59 @@ end
                     insertstrip.before = nil
                   end
                 else
-                  if lvar.mixmodedir == 0 then
-                    local yy = mouse.my
-                    local spos = lvar.spos[dst_switchid]
-                    if spos then
-                      if yy < spos.y + math.floor((spos.h)/2) then
+                  if lvar.showpop and lvar.popout_autoarrange then
+                    local o10x = obj.sections[10].x
+                    local pop = strips[strip][page].pop
+                    local pidx = strips[strip][page].popidx[dst_switchid]
+                    local popp = pop[pidx]
+                    
+                    --need to loop as not all strips may be visible
+                    --[[for i = 1, #pop do
+                      if dst_switchid == pop[i].swid then
+                        popp = pop[i]
+                        break
+                      end
+                    end]]
+                    if popp then
+                      local swdata = lvar.stripdim.swdata
+                      local xp = mouse.mx - popp.x - o10x
+                      local w = (swdata[dst_switchid].r - swdata[dst_switchid].l)*lvar.zoom
+                      if xp < w/2 then
                         insertstrip.before = true
                       else
                         insertstrip.before = nil
                       end
                     end
+                    insertstrip.pop = popp
+                    
                   else
-                    local xx = mouse.mx
-                    local spos = lvar.spos[dst_switchid]
-                    if spos then
-                      if xx < spos.x + math.floor((spos.w)/2) then
-                        insertstrip.before = true
-                      else
-                        insertstrip.before = nil
+                    if lvar.mixmodedir == 0 then
+                      local yy = mouse.my
+                      local spos = lvar.spos[dst_switchid]
+                      if spos then
+                        if yy < spos.y + math.floor((spos.h)/2) then
+                          insertstrip.before = true
+                        else
+                          insertstrip.before = nil
+                        end
+                      end
+                    else
+                      local xx = mouse.mx
+                      local spos = lvar.spos[dst_switchid]
+                      if spos then
+                        if xx < spos.x + math.floor((spos.w)/2) then
+                          insertstrip.before = true
+                        else
+                          insertstrip.before = nil
+                        end
                       end
                     end
                   end
                 end
               end
             end
+            --DBG(tostring(dst_switchid)..'  '..tostring(insertstrip.before))
+            
             insertstrip.target = dst_switchid
             if dst_switchid and (dst_switchid ~= oswid or insertstrip.before ~= ob or mouse.shift ~= isoms or mouse.alt ~= isoma) then
               if oswid and switchers[oswid] and switchers[oswid].dragging then
@@ -81726,6 +83263,17 @@ end
               lupd.update_surface = true
               isdt = insertstrip.target
               isdb = insertstrip.before
+            end
+
+            if lvar.livemode == 2 and lvar.showpop and lvar.popout_autoarrange then
+              if gfx.mouse_wheel ~= 0 then
+                if gfx.mouse_wheel < 0 then
+                  MixMode_Swipe_Pop(0, false)
+                else
+                  MixMode_Swipe_Pop(1, false)
+                end
+                gfx.mouse_wheel = 0
+              end
             end
 
             --DBG(lupd.update_surface)
@@ -82146,6 +83694,21 @@ end
     end
   end
 
+  function CheckOver10_gui()
+  
+    gfx.dest = guibitmap
+    gfx.x = mouse.mx
+    gfx.y = mouse.my
+    local r,g,b = gfx.getpixel()
+    local rgb = math.floor(((r*255) + ((g*255) << 8) + ((b*255) << 16))+0.5)
+  
+    if rgb == 10 then
+      return true
+    else
+      return false  
+    end
+  end
+  
   function Process_MMOV()
 
     if lvar.mmov_offset == nil then return end
@@ -83345,13 +84908,13 @@ end
         end
         local tr = GetTrack(track_select)
         if st ~= nil and tr ~= nil then
-          if reaper.GetTrackGUID(st) ~= reaper.GetTrackGUID(tr) then
+          if GetTrackGUID(st) ~= GetTrackGUID(tr) then
             PopulateTracks()
             for i = -1, reaper.CountTracks(0) do
               tr = GetTrack(i)
               if tr ~= nil then
                 tracks[i].name = reaper.GetTrackState(tr)
-                if reaper.GetTrackGUID(st) == reaper.GetTrackGUID(tr) then
+                if GetTrackGUID(st) == GetTrackGUID(tr) then
                   if strips[tracks[track_select].strip] then
                     strips[tracks[track_select].strip].page = page
                   end
@@ -84476,7 +86039,7 @@ end
     if ctl.fxguid == fxguid then
 
       local pn = reaper.TrackFX_GetNumParams(tr,ctl.fxnum)
-      if pn ~= 2 then
+      if pn ~= lvar.offline_paramcnt then
         if ctl.offline ~= nil then
           ctl.dirty = true
         end
@@ -84785,7 +86348,7 @@ end
     if ctl.fxguid == fxguid then
 
       local pn = reaper.TrackFX_GetNumParams(tr,ctl.fxnum)
-      if pn ~= 2 then
+      if pn ~= lvar.offline_paramcnt then
         if ctl.offline ~= nil then
           ctl.dirty = true
           --lupd.update_ctls = true
@@ -85350,7 +86913,9 @@ end
                       if tr_found and tr then
 
                         local UCVf = lvar.ctlcats_ucv_funcs[ctl.ctlcat]
+                        local odval = ctl.dval
                         if UCVf then
+                          
                           if UCVf(tr, ctl, strip, rt, i) then
                             break
                           end
@@ -85360,8 +86925,11 @@ end
                           if ctl.animatetime --[[and not ctl.animate_et]] and lvar.ctltype_buttons[ctl.ctltype] and ctl.oval then
                             SetAnimate_Ctl(ctl)
                           end
+                          if xPnl.HUD.visible == true and ctl.ctltype ~= 5 and odval ~= ctl.dval then
+                            SetHUD(ctl)
+                          end
                         end
-
+                        
                         if ctl.animate_et then
                           local animframe
                           local frames = ctl.ctl_info.frames-1 --ctl_files[knob_select].frames-1 
@@ -85474,14 +87042,14 @@ end
     local state = 1
 
     local pn = reaper.TrackFX_GetNumParams(tr,ctl.fxnum)
-    if pn == 2 then
+    if pn == lvar.offline_paramcnt then
       state = 4
     else
-      local byp = reaper.TrackFX_GetParam(tr,ctl.fxnum,pn-2)
+      local byp = reaper.TrackFX_GetParam(tr,ctl.fxnum,pn-lvar.pn_byp) --lvar.pn_byp
       if byp == 1 then
         state = 3
       else
-        local wet = reaper.TrackFX_GetParam(tr,ctl.fxnum,pn-1)
+        local wet = reaper.TrackFX_GetParam(tr,ctl.fxnum,pn-lvar.pn_wet) --lvar.pn_wet
         if wet == 0 then
           state = 2
         end
@@ -85503,7 +87071,7 @@ end
 
           if guid == reaper.TrackFX_GetFXGUID(tr, f) then
 
-            local ntrguid = reaper.GetTrackGUID(tr)
+            local ntrguid = GetTrackGUID(tr)
             return {fxnum = f, guid = guid, trn = t, trguid = ntrguid}
 
           end
@@ -85683,7 +87251,7 @@ end
                         if ctl.fxguid == fxguid then
 
                           local pn = reaper.TrackFX_GetNumParams(tr,ctl.fxnum)
-                          if pn ~= 2 then
+                          if pn ~= lvar.offline_paramcnt then
                             if ctl.offline ~= nil then
                               ctl.dirty = true
                             end
@@ -85932,7 +87500,7 @@ end
                         if ctl.fxguid == fxguid then
 
                           local pn = reaper.TrackFX_GetNumParams(tr,ctl.fxnum)
-                          if pn ~= 2 then
+                          if pn ~= lvar.offline_paramcnt then
                             if ctl.offline ~= nil then
                               ctl.dirty = true
                               lupd.update_ctls = true
@@ -87487,7 +89055,7 @@ end
       local ccc = trackfxparam_select
 
       local track = GetTrack(tracks[LBX_CTL_TRACK].tracknum)
-      if tracks[LBX_CTL_TRACK].guid ~= reaper.GetTrackGUID(track) then
+      if tracks[LBX_CTL_TRACK].guid ~= GetTrackGUID(track) then
         PopulateTracks()
       end
       for fxnum = 0, LBX_CTL_TRACK_INF.count-1 do
@@ -87941,7 +89509,7 @@ end
         local track = GetTrack(tr-1)
         if track ~= nil then
           local tn = reaper.GetTrackState(track)
-          local trg = reaper.GetTrackGUID(track)
+          local trg = GetTrackGUID(track)
           local _, fxn = reaper.TrackFX_GetFXName(track, fx, '')
           local fxg = reaper.TrackFX_GetFXGUID(track, fx)
           local _, prn = reaper.TrackFX_GetParamName(track, fx, pr, '')
@@ -88375,6 +89943,7 @@ end
                            bold = obj.font.bold,
                            italics = obj.font.italics,
                            underline = obj.font.underline,
+                           vertical = obj.font.vertical,
                            shadow = obj.font.shadow,
                            shadow_x = obj.font.shadow_x,
                            shadow_y = obj.font.shadow_y,
@@ -88491,7 +90060,12 @@ end
                    knobsens = {norm = ctl.knobsens.norm,
                                fine = ctl.knobsens.fine,
                                wheel = ctl.knobsens.wheel,
-                               wheelfine = ctl.knobsens.wheelfine},
+                               wheelfine = ctl.knobsens.wheelfine,
+                               m_norm = ctl.knobsens.m_norm,
+                               m_fine = ctl.knobsens.m_fine,
+                               m_wheel = ctl.knobsens.m_wheel,
+                               m_wheelfine = ctl.knobsens.m_wheelfine
+                               },
                    hidden = ctl.hidden,
                    gauge = Gauge_CopySelect(ctl.gauge),
                    noss = ctl.noss,
@@ -88780,12 +90354,12 @@ end
     local found = false
     local trx = GetTrack(strips[s].track.tracknum)
     if trx then
-      if strips[s].track.guid ~= reaper.GetTrackGUID(trx) then
+      if strips[s].track.guid ~= GetTrackGUID(trx) then
         --Find track and update tracknum
         for i = -1, reaper.CountTracks(0) do
           local tr = GetTrack(i)
           if tr ~= nil then
-            if strips[s].track.guid == reaper.GetTrackGUID(tr) then
+            if strips[s].track.guid == GetTrackGUID(tr) then
               --found
               found = true
               strips[s].track.tracknum = i
@@ -88800,7 +90374,7 @@ end
       for i = 0, reaper.CountTracks(0) do
         local tr = GetTrack(i)
         if tr ~= nil then
-          if strips[s].track.guid == reaper.GetTrackGUID(tr) then
+          if strips[s].track.guid == GetTrackGUID(tr) then
             --found
             found = true
             strips[s].track.tracknum = i
@@ -89143,7 +90717,11 @@ end
         strip.controls[c].knobsens = {norm = tonumber(zn(data[key..'knobsens_norm'],settings_defknobsens.norm)),
                                       fine = tonumber(zn(data[key..'knobsens_fine'],settings_defknobsens.fine)),
                                       wheel = tonumber(zn(data[key..'knobsens_wheel'],settings_defknobsens.wheel)),
-                                      wheelfine = tonumber(zn(data[key..'knobsens_wheelfine'],settings_defknobsens.wheelfine))}
+                                      wheelfine = tonumber(zn(data[key..'knobsens_wheelfine'],settings_defknobsens.wheelfine)),
+                                      m_norm = tonumber(zn(data[key..'knobsens_norm_m'],settings_defknobsens.m_norm)),
+                                      m_fine = tonumber(zn(data[key..'knobsens_fine_m'],settings_defknobsens.m_fine)),
+                                      m_wheel = tonumber(zn(data[key..'knobsens_wheel_m'],settings_defknobsens.m_wheel)),
+                                      m_wheelfine = tonumber(zn(data[key..'knobsens_wheelfine_m'],settings_defknobsens.m_wheelfine))}
 
         local itemguid = zn(data[key..'iteminfo_guid'])
         if itemguid then
@@ -89597,6 +91175,7 @@ end
                                             bold = tobool(zn(data[key..'font_bold'])),
                                             italics = tobool(zn(data[key..'font_italics'])),
                                             underline = tobool(zn(data[key..'font_underline'])),
+                                            vertical = tobool(zn(data[key..'font_vertical'])),
                                             shadow = tobool(zn(data[key..'font_shadow'],true)),
                                             shadow_x = tonumber(zn(data[key..'font_shadowx'],1)),
                                             shadow_y = tonumber(zn(data[key..'font_shadowy'],1)),
@@ -90939,6 +92518,8 @@ end
       LoadMods(data)
       LoadSwitchers(data)
 
+      LoadSK2Assign(data)
+
       LoadCompatibility(v, strips)
 
       --DBG('Total Load Time: '..reaper.time_precise() - t)
@@ -91354,7 +92935,12 @@ end
                                                     knobsens = {norm = settings_defknobsens.norm,
                                                                 fine = settings_defknobsens.fine,
                                                                 wheel = settings_defknobsens.wheel,
-                                                                wheelfine = settings_defknobsens.wheelfine}
+                                                                wheelfine = settings_defknobsens.wheelfine,
+                                                                m_norm = settings_defknobsens.m_norm,
+                                                                m_fine = settings_defknobsens.m_fine,
+                                                                m_wheel = settings_defknobsens.m_wheel,
+                                                                m_wheelfine = settings_defknobsens.m_wheelfine,
+                                                                }
                                                    }
                         g_cids[strips[ss][p].controls[c].c_id] = true
                         if strips[ss][p].controls[c].maxdp == nil or (strips[ss][p].controls[c].maxdp and strips[ss][p].controls[c].maxdp == '') then
@@ -91441,6 +93027,7 @@ end
                                                             bold = tobool(GPES(key..'font_bold',true)),
                                                             italics = tobool(GPES(key..'font_italics',true)),
                                                             underline = tobool(GPES(key..'font_underline',true)),
+                                                            vertical = tobool(GPES(key..'font_vertical',true)),
                                                             shadow = tobool(nz(GPES(key..'font_shadow',true),true)),
                                                             shadow_x = tonumber(nz(GPES(key..'font_shadowx',true),1)),
                                                             shadow_y = tonumber(nz(GPES(key..'font_shadowy',true),1)),
@@ -91663,6 +93250,9 @@ end
             if not lvar.dm_switchload then
               LoadSwitchers(data)
             end
+            
+            LoadSK2Assign(data)
+            
             --end
           end
         end
@@ -91747,6 +93337,8 @@ end
     TrackLabelCheck()
     lvar.readpeaks = PopReadPeaks()
 
+    --lvar.cids = CheckAllCids()
+    
   end
 
   function LoadCompatibility(v, strips)
@@ -92217,7 +93809,13 @@ end
                              textoffx = 0,
                              textsize = 2,
                              textcol = '200 200 200',
-                             scale = 1}
+                             scale = 1,
+                             adjust_active = false,
+                             adjust_bright = 255,
+                             adjust_contrast = 255,
+                             adjust_r = 255,
+                             adjust_g = 255,
+                             adjust_b = 255}
 
     local load_path=paths.resource_path
     local fn=load_path.."switcher.txt"
@@ -92262,7 +93860,21 @@ end
                                scale = ctl.scale,
                                limittext = ctl.limittext,
                                textflags = ctl.textflags,
-                               wwtext = ctl.wwtext}
+                               wwtext = ctl.wwtext,
+                               font = ctl.font or fontname_def,
+                               adjust_active = ctl.adjust_active,
+                               adjust_bright = 255,
+                               adjust_contrast = 255,
+                               adjust_r = 255,
+                               adjust_g = 255,
+                               adjust_b = 255}
+      if ctl.adjust then
+        lvar.extswitch_format.adjust_bright = ctl.adjust.bright
+        lvar.extswitch_format.adjust_contrast = ctl.adjust.contrast
+        lvar.extswitch_format.adjust_r = ctl.adjust.r
+        lvar.extswitch_format.adjust_g = ctl.adjust.g
+        lvar.extswitch_format.adjust_b = ctl.adjust.b
+      end
 
       local save_path=paths.resource_path
       local fn=save_path.."switcher.txt"
@@ -92580,6 +94192,8 @@ end
 
     SaveFavStrips()
     SaveMixerSettings()
+    
+    XpnlSaveInfo()
 
   end
 
@@ -93470,6 +95084,10 @@ end
               file:write('['..key..'knobsens_fine]'..tostring(nz(ctl.knobsens.fine,settings_defknobsens.fine))..'\n')
               file:write('['..key..'knobsens_wheel]'..tostring(nz(ctl.knobsens.wheel,settings_defknobsens.wheel))..'\n')
               file:write('['..key..'knobsens_wheelfine]'..tostring(nz(ctl.knobsens.wheelfine,settings_defknobsens.wheelfine))..'\n')
+              file:write('['..key..'knobsens_norm_m]'..tostring(nz(ctl.knobsens.m_norm,1))..'\n')
+              file:write('['..key..'knobsens_fine_m]'..tostring(nz(ctl.knobsens.m_fine,1))..'\n')
+              file:write('['..key..'knobsens_wheel_m]'..tostring(nz(ctl.knobsens.m_wheel,1))..'\n')
+              file:write('['..key..'knobsens_wheelfine_m]'..tostring(nz(ctl.knobsens.m_wheelfine,1))..'\n')
 
               file:write('['..key..'hidden]'..tostring(nz(ctl.hidden,false))..'\n')
               file:write('['..key..'switcherid]'..tostring(nz(ctl.switcherid,''))..'\n')
@@ -93948,6 +95566,7 @@ end
               file:write('['..key..'font_bold]'..nz(tostring(stripdata.graphics[g].font.bold), '')..'\n')
               file:write('['..key..'font_italics]'..nz(tostring(stripdata.graphics[g].font.italics), '')..'\n')
               file:write('['..key..'font_underline]'..nz(tostring(stripdata.graphics[g].font.underline), '')..'\n')
+              file:write('['..key..'font_vertical]'..nz(tostring(stripdata.graphics[g].font.vertical), '')..'\n')
               file:write('['..key..'font_shadow]'..nz(tostring(stripdata.graphics[g].font.shadow), '')..'\n')
               file:write('['..key..'font_shadowx]'..nz(stripdata.graphics[g].font.shadow_x, '')..'\n')
               file:write('['..key..'font_shadowy]'..nz(stripdata.graphics[g].font.shadow_y, '')..'\n')
@@ -93995,10 +95614,13 @@ end
     end
 
     local pn = GetProjectName()
+    
     local projname = string.sub(pn,0,string.len(pn)-4) --..'_'..PROJECTID
     if projname == nil or projname == '' then
       projname = 'unnamed_project'
     end
+    local pn2 = projname
+    
     if save_subfolder and save_subfolder ~= '' then
       local sf = save_subfolder
       if sf == '#' then
@@ -94024,7 +95646,7 @@ end
     end
     local ffn=save_path..fn
 
-    return ffn, save_path, fn
+    return ffn, save_path, fn, reaper.GetProjectPath('')..'/'..pn2..'.rpp'
 
   end
 
@@ -94122,7 +95744,7 @@ end
 
   end
 
-  function SaveData(tmp, bak, noclean, fffn)
+  function SaveData(tmp, bak, noclean, fffn, epflag)
 
     local SCRIPT = lvar.SCRIPT
 
@@ -94166,7 +95788,7 @@ end
       local datafn = GPES('lbxstripper_datafile', true)
       reaper.SetProjExtState(0,SCRIPT,"","") -- clear first
 
-      DM_SaveData(tmp)
+      local dmfn = DM_SaveData(tmp) 
 
       --this will retain any original data file name when the overridden datafile is used
       if datafn then
@@ -94241,7 +95863,7 @@ end
       ffn = fffn
       --DBG(ffn..'  '..save_path..'  '..fn)
     else
-      ffn, save_path, fn = GetSaveFN(tmp)
+      ffn, save_path, fn, projfn = GetSaveFN(tmp)
     end
 
     local rfn
@@ -94262,6 +95884,10 @@ end
     --------------------------------------------
     if not fffn then
       reaper.SetProjExtState(0,SCRIPT,'lbxstripper_datafile',fn)
+      if --[[not]] epflag then
+        --manually write datafile name to rpp file
+        WriteRPPDirect(projfn, fn, dmfn)
+      end
     end
 
     SaveDataFile(file, save_path, strips, snapshots)
@@ -94300,6 +95926,52 @@ end
     DBGOut(infomsg)
     g_savedirty = false
 
+  end
+
+  function GetFileDate(path, created)
+    --code from this thread: https://forum.cockos.com/showthread.php?t=220937
+    --Thanks to the authors
+    
+    -- created is optional: if true, returns creation date, otherwise modified date
+    local m, date
+    if (reaper.GetOS()):find "Win" then
+      if created then m = "c" else m = "" end
+      path = string.gsub(path, '/', '\\')
+      local retval = reaper.ExecProcess( 'cmd.exe /C "dir /T:' .. m .. '  \"' .. path .. '\" "', 0 ):sub(3)
+      date = retval:match( "%d-.%d-.%d+%s-%d-:%d+" )
+    else
+      if created then m = "B" else m = "m" end
+      local f = io.popen('stat -f %S' .. m .. ' "' .. path .. '"')
+      date = f:read()
+      f:close()
+    end
+    return date
+  end
+
+  function WriteRPPDirect(rpp, fn, dmfn)
+
+    if reaper.file_exists(rpp) then
+
+      --check timestamp on file if < 1 minute old
+      local ts = GetFileDate(rpp)
+      
+      --Issue - date is localized - no real way of telling mm and dd apart
+      --Could use (on windows 10) wmic datafile where name="E:\\Bureau\\original.wav" get LastModified 
+      --But other OS's - dunno
+      
+      --Possible solution - every minute or so - write the current time into ProjExtState.
+      --Use this time (from the saved rpp) to determine how recently it was saved...
+      --Hmmmm... - but only if project is dirty maybe - to avoid modified flag being set???
+      --Under LBXFLAGS section?
+      --Also write into the rpp file when saving
+      
+      
+      local dd,mm,yy,hh,mm = string.match(ts,'(%d+).-(%d+).-(%d+).-(%d+).-(%d+)')
+      local tm = os.time{year = yy, month = mm, day = dd, hour = hh, min = mm}
+      --DBG(yy..'  '..mm..'  '..hh..'  '..tm)
+    
+    end
+  
   end
 
   function SaveDataFile(file, save_path, strips, snapshots)
@@ -94353,10 +96025,14 @@ end
     if switchers then
       SaveSwitchers(file)
     end
+    if lvar.sk2overlay then
+      SaveSK2Assign(file)
+    end
     file:write('[EOF]#EOF\n')
 
   end
 
+  
   function convnum(val)
 
     if val == nil then
@@ -97334,7 +99010,7 @@ DBG(t.. '  '..trigtime)
         local tr = GetTrack(t)
         local chunk = GetTrackChunk(tr, settings_usetrackchunkfix)
         savedata.trackdata[t] = {track = t,
-                                 guid = reaper.GetTrackGUID(tr),
+                                 guid = GetTrackGUID(tr),
                                  chunkdata = chunk}
       end
       savedata.stripdata = strips
@@ -97439,7 +99115,7 @@ DBG(t.. '  '..trigtime)
           local i, j
           local chunk = GetTrackChunk(tr, settings_usetrackchunkfix)
           local trackdata = {track = t,
-                             guid = reaper.GetTrackGUID(tr),
+                             guid = GetTrackGUID(tr),
                              chunkdata = chunk}
           --check tracknums
 
@@ -97925,7 +99601,11 @@ DBG(t.. '  '..trigtime)
                   ctl.knobsens = {norm = tonumber(settings_defknobsens.norm),
                                   fine = tonumber(settings_defknobsens.fine),
                                   wheel = tonumber(settings_defknobsens.wheel),
-                                  wheelfine = tonumber(settings_defknobsens.wheelfine)}
+                                  wheelfine = tonumber(settings_defknobsens.wheelfine),
+                                  m_norm = tonumber(settings_defknobsens.m_norm),
+                                  m_fine = tonumber(settings_defknobsens.m_fine),
+                                  m_wheel = tonumber(settings_defknobsens.m_wheel),
+                                  m_wheelfine = tonumber(settings_defknobsens.m_wheelfine)}
                 end
 
                 if ctl.grpid then
@@ -98854,6 +100534,7 @@ DBG(t.. '  '..trigtime)
                          bold = false,
                          italic = false,
                          underline = false,
+                         vertical = false,
                          shadow = true,
                          shadow_x = 1,
                          shadow_y = 1,
@@ -99910,12 +101591,12 @@ DBG(t.. '  '..trigtime)
     local track = GetTrack(trn)
     if track then
       local pn = reaper.TrackFX_GetNumParams(track,ctl.fxnum)
-      local v = reaper.TrackFX_GetParam(track,ctl.fxnum,pn-2)
+      local v = reaper.TrackFX_GetParam(track,ctl.fxnum,pn-lvar.pn_byp)
       local val = 1-v
       --if forceval then
         val = forceval or val
       --end
-      reaper.TrackFX_SetParam(track,ctl.fxnum,pn-2,val)
+      reaper.TrackFX_SetParam(track,ctl.fxnum,pn-lvar.pn_byp,val)
       if strip == tracks[track_select].strip then
         SetCtlDirty(c)
       end
@@ -99926,10 +101607,10 @@ DBG(t.. '  '..trigtime)
     local track = GetTrack(trn)
     if track then
       local pn = reaper.TrackFX_GetNumParams(track,fxnum)
-      local v = reaper.TrackFX_GetParam(track,fxnum,pn-2)
+      local v = reaper.TrackFX_GetParam(track,fxnum,pn-lvar.pn_byp)
       local val = 1-v
       val = forceval or val
-      reaper.TrackFX_SetParam(track,fxnum,pn-2,val)
+      reaper.TrackFX_SetParam(track,fxnum,pn-lvar.pn_byp,val)
     end
   end
 
@@ -99944,7 +101625,7 @@ DBG(t.. '  '..trigtime)
       if val then
         nv = val
       else
-        local v = reaper.TrackFX_GetParam(track,ctl.fxnum,pn-1)
+        local v = reaper.TrackFX_GetParam(track,ctl.fxnum,pn-lvar.pn_wet)
         if v > 0 then
           v = 1
         end
@@ -99954,7 +101635,7 @@ DBG(t.. '  '..trigtime)
         end
       end
 
-      reaper.TrackFX_SetParam(track,ctl.fxnum,pn-1,nv)
+      reaper.TrackFX_SetParam(track,ctl.fxnum,pn-lvar.pn_wet,nv)
       if strip == tracks[track_select].strip then
         SetCtlDirty(c)
       end
@@ -100060,8 +101741,8 @@ DBG(t.. '  '..trigtime)
   function SetFXBypass(trn, fxn, forceval)
     local tr = GetTrack(trn)
     if tr then
-      local pn = reaper.TrackFX_GetNumParams(tr, fxn)
-      reaper.TrackFX_SetParam(tr, fxn, pn-2, forceval)
+      local pn = reaper.TrackFX_GetNumParams(tr, fxn) 
+      reaper.TrackFX_SetParam(tr, fxn, pn-lvar.pn_byp, forceval)
     end
   end
 
@@ -100069,7 +101750,7 @@ DBG(t.. '  '..trigtime)
     local tr = GetTrack(trn)
     if tr then
       local pn = reaper.TrackFX_GetNumParams(tr, fxn)
-      reaper.TrackFX_SetParam(tr, fxn, pn-1, forceval)
+      reaper.TrackFX_SetParam(tr, fxn, pn-lvar.pn_wet, forceval)
     end
   end
 
@@ -100292,15 +101973,15 @@ DBG(t.. '  '..trigtime)
 
   end
 
-  function PCALL_SaveData(tmp, bak, noclean, fffn)
-    local status = pcall(SaveData, tmp, bak, noclean, fffn)
+  function PCALL_SaveData(tmp, bak, noclean, fffn, epflag)
+    local status = pcall(SaveData, tmp, bak, noclean, fffn, epflag)
     if not status then
       DBG('LBX STRIPPER: ERROR SAVING DATA')
     end
     return status    
   end
 
-  function SaveProj(tmp, bak, noclean)
+  function SaveProj(tmp, bak, noclean, epflag)
 
     local status
     if #strips > 0 then
@@ -100330,7 +102011,7 @@ DBG(t.. '  '..trigtime)
         end
       else
         local t = reaper.time_precise()
-        status = PCALL_SaveData(tmp, bak, noclean)
+        status = PCALL_SaveData(tmp, bak, noclean, nil, epflag)
         infomsg = "DATA SAVED (" .. round(reaper.time_precise() - t,2)..'s)'
         --projnamechange = false
       end
@@ -100386,9 +102067,19 @@ DBG(t.. '  '..trigtime)
     file:write('[snapshots]'..#snapshots..'\n')
     file:write('[tracks]'..#tracks..'\n')]]
 
+    --reaper.SetExtState('ENUMPROJ','STATE',tostring(reaper.EnumProjects(0)), true)
+
+    --check if current project exists
+    --if not - signal to SaveProj to manually write necessary data into rpp file
+    local enumproj = tostring(reaper.EnumProjects(0))
+    local epflag
+    if not enumproj then
+      epflag = true
+    end
+    
     local status
     if lvar.nosave ~= true then
-      status = SaveProj(true,nil,true)
+      status = SaveProj(true,nil,true,epflag)
       if not status then
         reaper.defer(run)
         return false
@@ -100400,7 +102091,10 @@ DBG(t.. '  '..trigtime)
     file:write('[snapshots]'..#snapshots..'\n')
     file:write('[tracks]'..#tracks..'\n')
     file:close()]]
-
+    if lvar.sk2overlay_active == 1 then
+      SendSK2Data_Enable(0)
+    end
+    
     StripperRunning(false)
 
     gfx.quit()
@@ -100836,6 +102530,7 @@ DBG(vald) ]]
     local err
     
     local imageappdev = '6.13+dev0809a'
+    local deltaappdev = '6.36+dev0924'
     
     --DBG(reaper.GetAppVersion())
     local appstr = (string.match(reaper.GetAppVersion(),'(.+)[/]') or reaper.GetAppVersion())
@@ -100847,6 +102542,14 @@ DBG(vald) ]]
     if appstr >= imageappdev then
       lvar.largeimages = true
       lvar.maxdim = 8192
+    end
+
+    if appstr < deltaappdev then
+      --if pre delta version - adjust byp/wet parameter offset values
+      lvar.offline_paramcnt = 2
+      lvar.pn_byp = 2
+      lvar.pn_wet = 1
+      lvar.pn_delta = 0
     end
 
     if reaper.APIExists('CF_GetSWSVersion') then
@@ -101238,7 +102941,8 @@ DBG(vald) ]]
       end
     end
     
-    if xPnl then
+    local full_screen = snap_edit_mode or macro_edit_mode or show_pinmatrix or show_eqcontrol
+    if xPnl and not full_screen and mode == 0 then
     
       for i = 1, #xPnlIdx do
         if xPnlIdx[i].visible == true then
@@ -101249,7 +102953,16 @@ DBG(vald) ]]
           local b = (objn >> 16) & 255
           gfx.r, gfx.g, gfx.b = r/255,g/255,b/255
           gfx.a = 1
-          gfx.rect(o.x,o.y,o.w,o.h,1)
+          if o.clickthrough then
+            if o.clickthrough == 1 then
+              local thh = math.ceil(gui.winsz.pnltit*pnl_scale)
+              gfx.rect(o.x,o.y,o.w,thh,1)
+            elseif o.clickthrough == 2 then
+              --draw nothing - cannot be clicked on at all
+            end
+          else
+            gfx.rect(o.x,o.y,o.w,o.h,1)
+          end
         end
       end
     
@@ -101333,7 +103046,11 @@ DBG(vald) ]]
   settings_defknobsens = {norm = 2,
                           fine = 0.1,
                           wheel = 0.05,
-                          wheelfine = 0.003}
+                          wheelfine = 0.003,
+                          m_norm = 1,
+                          m_fine = 1,
+                          m_wheel = 1,
+                          m_wheelfine = 1}
   settings_usectlbitmap = true
   settings_macroeditmonitor = false
   hide_topbar = false
@@ -101465,9 +103182,6 @@ DBG(vald) ]]
   sf_h = def_sf_h
 
   CheckOversizeImage()
-
-  --InitXPnls()
-  --ShowXPnl('Nav')
   
   lvar.updateravailable, lvar.git, lvar.gitclone = CheckUpdater()
   SetDefKP()
@@ -101587,6 +103301,10 @@ DBG(vald) ]]
     --GetStripFXInfo()
     --DBG(#switchers)
 
+    XpnlLoadInfo()
+    --InitXPnls()
+    --ShowXPnl('HUD')
+
     if nebscanboot_file ~= nil then
       LoadScanBoot(nebscanboot_file)
     end
@@ -101620,6 +103338,7 @@ DBG(vald) ]]
   DBG(tostring(version)..'  '..tostring(trcnt))]]
     LoadLocation()
     LoadTrackStrips()
+    SK2LoadSlots()
     
     if sg_view then
       stripgallery_view = 0
