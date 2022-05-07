@@ -24,7 +24,7 @@
   lvar.pn_wet = 2
   lvar.pn_delta = 1
   
-  lvar.scriptver = '0.94.0203' --Script Version
+  lvar.scriptver = '0.94.0204' --Script Version
 
   lvar.screensize = {x = 1920, y = 1080}
 
@@ -97438,10 +97438,12 @@ end
 
   function StoreFaders()
     if settings_localfaders == true or lvar.livemode == 2 then
-      if faders and strips[tracks[track_select].strip] then
-        strips[tracks[track_select].strip].faders = table.deepcopy(faders)
-      elseif strips[tracks[track_select].strip] then
-        strips[tracks[track_select].strip].faders = nil
+      if strips and tracks[track_select].strip then
+        if faders and strips[tracks[track_select].strip] then
+          strips[tracks[track_select].strip].faders = table.deepcopy(faders)
+        elseif strips[tracks[track_select].strip] then
+          strips[tracks[track_select].strip].faders = nil
+        end
       end
     else
       lvar.gfaders = table.deepcopy(faders)
