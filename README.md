@@ -1,7 +1,7 @@
 # LBXStripper
 Lua Reascript for Reaper to create custom channel strips
 
-Please note:  This version of script has been superceded by the Stripper2: https://github.com/L-B-X/LBXStripper2
+Please note:  This version of script has been superceded by the Stripper2 script here: https://github.com/L-B-X/LBXStripper2
 Data files created by Stripper are fully compatible with the newer Stripper2 script.
 
 ----------------------------
